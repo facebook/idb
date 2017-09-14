@@ -49,14 +49,14 @@
 
 #pragma mark Public
 
-- (id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter error:(NSError **)error
+- (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter error:(NSError **)error
 {
   // Return early and fail if there is already a test run for the device.
   // There should only ever be one test run per-device.
   if (self.operation) {
     return [[FBDeviceControlError
-      describeFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]
-      fail:error];
+             describeFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]
+            fail:error];
   }
   // Terminate the reparented xcodebuild invocations.
   NSError *innerError = nil;
@@ -78,6 +78,12 @@
 
   // Create the Task, wrap it and store it
   _operation = [FBXcodeBuildOperation operationWithTarget:self.device configuration:testLaunchConfiguration xcodeBuildPath:xcodeBuildPath testRunFilePath:filePath];
+
+  if (reporter != nil) {
+    [self.operation.completed notifyOfCompletionOnQueue:self.device.workQueue handler:^(FBFuture *task) {
+      [reporter testManagerMediatorDidFinishExecutingTestPlan:nil];
+    }];
+  }
 
   return _operation;
 }
