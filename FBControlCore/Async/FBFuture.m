@@ -118,6 +118,47 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
   return compositeFuture;
 }
 
++ (FBFuture *)race:(NSArray<FBFuture *> *)futures
+{
+  NSParameterAssert(futures.count > 0);
+
+  FBMutableFuture *compositeFuture = [FBMutableFuture new];
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.future.race", DISPATCH_QUEUE_SERIAL);
+  __block NSUInteger remainingCounter = futures.count;
+
+  void (^cancelAllFutures)(void) = ^{
+    for (FBFuture *future in futures) {
+      [future cancel];
+    }
+  };
+
+  void (^futureCompleted)(FBFuture *future) = ^(FBFuture *future){
+    remainingCounter--;
+    if (future.result) {
+      [compositeFuture resolveWithResult:future.result];
+      cancelAllFutures();
+      return;
+    }
+    if (future.error) {
+      [compositeFuture resolveWithError:future.error];
+      cancelAllFutures();
+      return;
+    }
+    if (remainingCounter == 0) {
+      [compositeFuture cancel];
+    }
+  };
+
+  for (FBFuture *future in futures) {
+    if (future.hasCompleted) {
+      futureCompleted(future);
+    } else {
+      [future notifyOfCompletionOnQueue:queue handler:futureCompleted];
+    }
+  }
+  return compositeFuture;
+}
+
 - (instancetype)init
 {
   self = [super init];

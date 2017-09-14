@@ -357,4 +357,90 @@
   XCTAssertEqual(chainFuture.state, FBFutureStateCompletedWithCancellation);
 }
 
+- (void)testRaceSuccessFutures
+{
+  XCTestExpectation *completion = [[XCTestExpectation alloc] initWithDescription:@"Completion is called"];
+  XCTestExpectation *late1Cancelled = [[XCTestExpectation alloc] initWithDescription:@"Cancellation of late future 1"];
+  XCTestExpectation *late2Cancelled = [[XCTestExpectation alloc] initWithDescription:@"Cancellation of late future 2"];
+
+  FBFuture<NSNumber *> *lateFuture1 = [[FBMutableFuture
+    future]
+    notifyOfCancellationOnQueue:self.queue handler:^(FBFuture *_) {
+      [late1Cancelled fulfill];
+    }];
+  FBFuture<NSNumber *> *lateFuture2 = [[FBMutableFuture
+    future]
+    notifyOfCancellationOnQueue:self.queue handler:^(FBFuture *_) {
+      [late2Cancelled fulfill];
+    }];
+  FBFuture<NSNumber *> *raceFuture = [[FBFuture
+    race:@[
+      lateFuture1,
+      [FBFuture futureWithResult:@1],
+      lateFuture2,
+    ]]
+    notifyOfCompletionOnQueue:self.queue handler:^(FBFuture *future) {
+      XCTAssertEqual(future.state, FBFutureStateCompletedWithResult);
+      XCTAssertEqualObjects(future.result, @1);
+      [completion fulfill];
+    }];
+
+  [self waitForExpectations:@[completion, late1Cancelled, late2Cancelled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  XCTAssertEqual(raceFuture.state, FBFutureStateCompletedWithResult);
+  XCTAssertEqualObjects(raceFuture.result, @1);
+  XCTAssertEqual(lateFuture1.state, FBFutureStateCompletedWithCancellation);
+  XCTAssertEqual(lateFuture2.state, FBFutureStateCompletedWithCancellation);
+}
+
+- (void)testAllCancelledPropogates
+{
+  XCTestExpectation *completion = [[XCTestExpectation alloc] initWithDescription:@"Completion is called"];
+  XCTestExpectation *cancel1Called = [[XCTestExpectation alloc] initWithDescription:@"Cancellation of late future 1"];
+  XCTestExpectation *cancel2Called = [[XCTestExpectation alloc] initWithDescription:@"Cancellation of late future 2"];
+  XCTestExpectation *cancel3Called = [[XCTestExpectation alloc] initWithDescription:@"Cancellation of late future 3"];
+
+  FBFuture<NSNumber *> *cancelFuture1 = [[FBMutableFuture
+    future]
+    notifyOfCancellationOnQueue:self.queue handler:^(FBFuture *_) {
+      [cancel1Called fulfill];
+    }];
+  FBFuture<NSNumber *> *cancelFuture2 = [[FBMutableFuture
+    future]
+    notifyOfCancellationOnQueue:self.queue handler:^(FBFuture *_) {
+      [cancel2Called fulfill];
+    }];
+  FBFuture<NSNumber *> *cancelFuture3 = [[FBMutableFuture
+    future]
+    notifyOfCancellationOnQueue:self.queue handler:^(FBFuture *_) {
+      [cancel3Called fulfill];
+    }];
+
+  FBFuture<NSNumber *> *raceFuture = [[FBFuture
+    race:@[
+      cancelFuture1,
+      cancelFuture2,
+      cancelFuture3,
+    ]]
+    notifyOfCompletionOnQueue:self.queue handler:^(FBFuture *future) {
+      XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
+      [completion fulfill];
+    }];
+
+  dispatch_async(self.queue, ^{
+    [cancelFuture1 cancel];
+  });
+  dispatch_async(self.queue, ^{
+    [cancelFuture2 cancel];
+  });
+  dispatch_async(self.queue, ^{
+    [cancelFuture3 cancel];
+  });
+
+  [self waitForExpectations:@[completion, cancel1Called, cancel2Called, cancel3Called] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  XCTAssertEqual(raceFuture.state, FBFutureStateCompletedWithCancellation);
+  XCTAssertEqual(cancelFuture1.state, FBFutureStateCompletedWithCancellation);
+  XCTAssertEqual(cancelFuture2.state, FBFutureStateCompletedWithCancellation);
+  XCTAssertEqual(cancelFuture3.state, FBFutureStateCompletedWithCancellation);
+}
+
 @end

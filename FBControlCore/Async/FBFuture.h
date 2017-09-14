@@ -65,9 +65,19 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
  If any future results in an error, the first one will be progated and results of succeful
 
  @param futures the futures to compose.
- @return a new Future
+ @return a new Future with the resolved results of all the composed futures.
  */
-+ (FBFuture<T> *)futureWithFutures:(NSArray<FBFuture<T> *> *)futures;
++ (FBFuture<NSArray<T> *> *)futureWithFutures:(NSArray<FBFuture<T> *> *)futures;
+
+/**
+ Constructrs a Future from an Array of Futures.
+ The future which resolves the first will be returned.
+ All other futures will be cancelled.
+
+ @param futures the futures to compose.
+ @return a new Future with the first future that resolves.
+ */
++ (FBFuture<T> *)race:(NSArray<FBFuture<T> *> *)futures;
 
 #pragma mark Public Methods
 
