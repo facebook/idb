@@ -52,6 +52,13 @@
 
 - (BOOL)executeWithError:(NSError **)error
 {
+  // Additional timeout added to base timeout to give time to catch a sample.
+  NSTimeInterval timeout = self.configuration.testTimeout + 5;
+  return [NSRunLoop.currentRunLoop awaitCompletionOfFuture:self.testFuture timeout:timeout error:error] != nil;
+}
+
+- (FBFuture<NSNull *> *)testFuture
+{
   id<FBXCTestReporter> reporter = self.reporter;
   FBXCTestLogger *logger = self.logger;
 
@@ -64,7 +71,10 @@
   NSString *otestShimOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"shim-output-pipe"];
   if (mkfifo(otestShimOutputPath.UTF8String, S_IWUSR | S_IRUSR) != 0) {
     NSError *posixError = [[NSError alloc] initWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
-    return [[[FBXCTestError describeFormat:@"Failed to create a named pipe %@", otestShimOutputPath] causedBy:posixError] failBool:error];
+    return [[[FBXCTestError
+      describeFormat:@"Failed to create a named pipe %@", otestShimOutputPath]
+      causedBy:posixError]
+      failFuture];
   }
 
   // The environment requires the shim path and otest-shim path.
@@ -84,7 +94,6 @@
   // Consumes the test output. Separate Readers are used as consuming an EOF will invalidate the reader.
   NSUUID *uuid = [NSUUID UUID];
   dispatch_queue_t queue = dispatch_get_main_queue();
-
 
   id<FBFileConsumer> stdOutReader = [FBLineFileConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
     [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
@@ -106,9 +115,8 @@
     testProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutReader:stdOutReader stdErrReader:stdErrReader]
     start:&pid timeout:self.configuration.testTimeout];
   if (future.error) {
-    return [XCTestBootstrapError failBoolWithError:future.error errorOut:error];
+    return [XCTestBootstrapError failFutureWithError:future.error];
   }
-
   if (self.configuration.waitForDebugger) {
     [reporter processWaitingForDebuggerWithProcessIdentifier:pid];
     // If wait_for_debugger is passed, the child process receives SIGSTOP after immediately launch.
@@ -118,39 +126,37 @@
   }
 
   // Create a reader of the otest-shim path and start reading it.
-  NSError *innerError = nil;
-  FBFileReader *otestShimReader = [FBFileReader readerWithFilePath:otestShimOutputPath consumer:otestShimLineReader error:&innerError];
+  NSError *error = nil;
+  FBFileReader *otestShimReader = [FBFileReader readerWithFilePath:otestShimOutputPath consumer:otestShimLineReader error:&error];
   if (!otestShimReader) {
     [future cancel];
     return [[[FBXCTestError
       describeFormat:@"Failed to open fifo for reading: %@", otestShimOutputPath]
-      causedBy:innerError]
-      failBool:error];
+      causedBy:error]
+      failFuture];
   }
-  if (![otestShimReader startReadingWithError:&innerError]) {
+  if (![otestShimReader startReadingWithError:&error]) {
     [future cancel];
     return [[[FBXCTestError
       describeFormat:@"Failed to start reading fifo: %@", otestShimOutputPath]
-      causedBy:innerError]
-      failBool:error];
+      causedBy:error]
+      failFuture];
   }
 
-  // Wait for the test process to finish.
-  if (![NSRunLoop.currentRunLoop awaitCompletionOfFuture:future timeout:DBL_MAX error:error]) {
-    return NO;
-  }
+  return [future
+    onQueue:self.executor.workQueue map:^(id _) {
+      // Fail if we can't close.
+      NSError *innerError = nil;
+      if (![otestShimReader stopReadingWithError:&innerError]) {
+        return [[[FBXCTestError
+          describeFormat:@"Failed to stop reading fifo: %@", otestShimOutputPath]
+          causedBy:innerError]
+          failFuture];
+      }
+      [reporter didFinishExecutingTestPlan];
 
-  // Fail if we can't close.
-  if (![otestShimReader stopReadingWithError:&innerError]) {
-    return [[[FBXCTestError
-      describeFormat:@"Failed to stop reading fifo: %@", otestShimOutputPath]
-      causedBy:innerError]
-      failBool:error];
-  }
-
-  [reporter didFinishExecutingTestPlan];
-
-  return YES;
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
 }
 
 #pragma mark Private

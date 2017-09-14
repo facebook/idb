@@ -137,6 +137,13 @@ extern NSString *const FBControlCoreErrorDomain;
  */
 + (nullable id)failWithError:(NSError *)failureCause description:(NSString *)description errorOut:(NSError **)errorOut;
 
+/**
+ Return A Future that wraps the error.
+ 
+ @param error the error to wrap.
+ */
++ (FBFuture *)failFutureWithError:(NSError *)error;
+
 @end
 
 NS_ASSUME_NONNULL_END

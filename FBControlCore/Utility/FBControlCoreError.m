@@ -258,4 +258,9 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
   return [[[self causedBy:failureCause] describe:description] failBool:errorOut];
 }
 
++ (FBFuture *)failFutureWithError:(NSError *)error
+{
+  return [FBFuture futureWithError:error];
+}
+
 @end
