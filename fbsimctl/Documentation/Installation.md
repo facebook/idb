@@ -1,6 +1,6 @@
 # Installation
 
-When building `fbsimctl`, you must be using Xcode 8 or greater. Building with Xcode 7 is not supported.
+When building `fbsimctl`, you must be using Xcode 8 or greater ([but not Xcode 9 yet](https://github.com/facebook/FBSimulatorControl/issues/435)). Building with Xcode 7 is not supported.
 
 ## [Homebrew](http://brew.sh)
 
