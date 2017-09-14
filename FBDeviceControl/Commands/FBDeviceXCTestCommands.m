@@ -94,11 +94,11 @@
   return operation ? @[operation] : @[];
 }
 
-- (NSArray<NSString *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout error:(NSError **)error
+- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout
 {
   return [[FBDeviceControlError
     describeFormat:@"Cannot list the tests in bundle %@ as this is not supported on devices", bundlePath]
-    fail:error];
+    failFuture];
 }
 
 #pragma mark Private

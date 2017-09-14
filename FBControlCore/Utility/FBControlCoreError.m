@@ -9,6 +9,7 @@
 
 #import "FBControlCoreError.h"
 
+#import "FBFuture.h"
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"
 
@@ -114,6 +115,12 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
     *error = [self build];
   }
   return nil;
+}
+
+- (FBFuture *)failFuture
+{
+  NSError *error = [self build];
+  return [FBFuture futureWithError:error];
 }
 
 - (instancetype)extraInfo:(NSString *)key value:(id)value

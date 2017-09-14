@@ -15,11 +15,18 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+@interface FBListTestStrategy ()
+
+@property (nonatomic, strong, readonly) id<FBXCTestProcessExecutor> executor;
+@property (nonatomic, strong, readonly) FBListTestConfiguration *configuration;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+
+@end
+
 @interface FBListTestStrategy_ReporterWrapped : NSObject <FBXCTestRunner>
 
 @property (nonatomic, strong, readonly) FBListTestStrategy *strategy;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
-
 
 @end
 
@@ -43,8 +50,9 @@
 {
   [self.reporter didBeginExecutingTestPlan];
 
-  NSTimeInterval timeout = FBControlCoreGlobalConfiguration.slowTimeout;
-  NSArray<NSString *> *testNames = [self.strategy listTestsWithTimeout:timeout error:error];
+  // Additional timeout added to base timeout to give time to catch a sample.
+  NSTimeInterval timeout = self.strategy.configuration.testTimeout + 5;
+  NSArray<NSString *> *testNames = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:self.strategy.listTests timeout:timeout error:error];
   if (!testNames) {
     return NO;
   }
@@ -59,14 +67,6 @@
   [self.reporter didFinishExecutingTestPlan];
   return YES;
 }
-
-@end
-
-@interface FBListTestStrategy ()
-
-@property (nonatomic, strong, readonly) id<FBXCTestProcessExecutor> executor;
-@property (nonatomic, strong, readonly) FBListTestConfiguration *configuration;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -91,7 +91,7 @@
   return self;
 }
 
-- (nullable NSArray<NSString *> *)listTestsWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
+- (FBFuture<NSArray<NSString *> *> *)listTests
 {
   NSString *xctestPath = self.configuration.destination.xctestPath;
   NSString *otestQueryPath = self.executor.queryShimPath;
@@ -103,7 +103,7 @@
     return [[[FBXCTestError
       describeFormat:@"Failed to create a named pipe %@", otestQueryOutputPath]
       causedBy:posixError]
-      fail:error];
+      failFuture];
   }
 
   NSArray<NSString *> *arguments = @[@"-XCTest", @"All", self.configuration.testBundlePath];
@@ -125,46 +125,36 @@
   pid_t processIdentifier = 0;
   FBFuture<NSNumber *> *future = [process start:&processIdentifier timeout:self.configuration.testTimeout];
   if (future.error) {
-    if (error) {
-      *error = future.error;
-    }
-    return nil;
+    return [FBFuture futureWithError:future.error];
   }
+
+  NSError *error = nil;
   FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
-  FBFileReader *reader = [FBFileReader readerWithFilePath:otestQueryOutputPath consumer:consumer error:error];
-  if (![reader startReadingWithError:error]) {
-    return nil;
+  FBFileReader *reader = [FBFileReader readerWithFilePath:otestQueryOutputPath consumer:consumer error:&error];
+  if (![reader startReadingWithError:&error]) {
+    return [FBFuture futureWithError:error];
   }
-
-  // Wait for the subprocess to terminate.
-  // Then make sure that the file has finished being read.
-  NSError *innerError = nil;
-  BOOL completedSuccessfully = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:future timeout:DBL_MAX error:&innerError] != nil;
-  if (![reader stopReadingWithError:error]) {
-    return nil;
-  }
-  if (!completedSuccessfully) {
-    return [[[FBXCTestError
-      describeFormat:@"Waited %f seconds for list-test task to terminate", timeout]
-      causedBy:innerError]
-      fail:error];
-  }
-
-  NSMutableArray<NSString *> *testNames = [NSMutableArray array];
-  for (NSString *line in consumer.lines) {
-    if (line.length == 0) {
-      // Ignore empty lines
-      continue;
-    }
-    NSRange slashRange = [line rangeOfString:@"/"];
-    if (slashRange.length == 0) {
-      return [[FBXCTestError
-        describeFormat:@"Received unexpected test name from shim: %@", line]
-        fail:error];
-    }
-    [testNames addObject:line];
-  }
-  return [testNames copy];
+  return [[future
+    notifyOfCompletionOnQueue:self.executor.workQueue handler:^(FBFuture *_) {
+      [reader stopReadingWithError:nil];
+    }]
+    onQueue:self.executor.workQueue fmap:^(NSNumber *_) {
+      NSMutableArray<NSString *> *testNames = [NSMutableArray array];
+      for (NSString *line in consumer.lines) {
+        if (line.length == 0) {
+          // Ignore empty lines
+          continue;
+        }
+        NSRange slashRange = [line rangeOfString:@"/"];
+        if (slashRange.length == 0) {
+          return [[FBXCTestError
+            describeFormat:@"Received unexpected test name from shim: %@", line]
+            failFuture];
+        }
+        [testNames addObject:line];
+      }
+      return [FBFuture futureWithResult:[testNames copy]];
+    }];
 }
 
 - (id<FBXCTestRunner>)wrapInReporter:(id<FBXCTestReporter>)reporter

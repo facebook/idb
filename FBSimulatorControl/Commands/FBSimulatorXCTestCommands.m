@@ -71,11 +71,12 @@
   return [self.simulator.resourceSink.testManagers copy];
 }
 
-- (nullable NSArray<NSString *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout error:(NSError **)error
+- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout
 {
-  FBXCTestShimConfiguration *shims = [FBXCTestShimConfiguration defaultShimConfigurationWithError:error];
+  NSError *error = nil;
+  FBXCTestShimConfiguration *shims = [FBXCTestShimConfiguration defaultShimConfigurationWithError:&error];
   if (!shims) {
-    return nil;
+    return [FBFuture futureWithError:error];
   }
   FBXCTestDestination *destination = [[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:self.simulator.deviceType.model version:self.simulator.osVersion.name];
   FBListTestConfiguration *configuration = [FBListTestConfiguration
@@ -91,7 +92,7 @@
     strategyWithExecutor:[FBSimulatorXCTestProcessExecutor executorWithSimulator:self.simulator configuration:configuration]
     configuration:configuration
     logger:self.simulator.logger]
-    listTestsWithTimeout:timeout error:error];
+    listTests];
 }
 
 #pragma mark Private

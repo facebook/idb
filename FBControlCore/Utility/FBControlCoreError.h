@@ -10,11 +10,12 @@
 #import <CoreGraphics/CoreGraphics.h>
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBSimulator;
+@class FBFuture;
 
 @protocol FBControlCoreLogger;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Error Domain for FBControlCore.
@@ -47,6 +48,7 @@ extern NSString *const FBControlCoreErrorDomain;
 - (unsigned int)failUInt:(NSError **)error;
 - (CGRect)failRect:(NSError **)error;
 - (nullable id)fail:(NSError **)error;
+- (FBFuture *)failFuture;
 
 /**
  Attach additional diagnostic information.

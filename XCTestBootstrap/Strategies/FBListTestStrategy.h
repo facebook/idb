@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/FBXCTestRunner.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -18,7 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 
 @class FBListTestConfiguration;
-@class FBXCTestContext;
 
 /**
  A Runner for Listing Tests.
@@ -41,11 +41,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  List the tests in the test bundle.
-
- @param timeout the timeout in second.
- @param error an error out for any error that occurs.
  */
-- (nullable NSArray<NSString *> *)listTestsWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+- (FBFuture<NSArray<NSString *> *> *)listTests;
 
 /**
  Wraps the Strategy in a Reporter.
