@@ -97,19 +97,29 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
 - (instancetype)notifyOfCancellationOnQueue:(dispatch_queue_t)queue handler:(void (^)(FBFuture *))handler;
 
 /**
- Chain Futures based on the result.
+ Chain Futures based on any non-cancellation resolution of the reciever.
+ Cancellation will be instantly propogated.
 
  @param queue the queue to chain on.
- @param chain the chaining handler.
+ @param chain the chaining handler, called on all completion events.
  @return a chained future
  */
-- (FBFuture *)onQueue:(dispatch_queue_t)queue chain:(FBFuture * (^)(T result))chain;
+- (FBFuture *)onQueue:(dispatch_queue_t)queue chain:(FBFuture * (^)(FBFuture *future))chain;
 
 /**
- Map a future's result to a new value
+ FlatMap a successful resolution of the reciever to a new Future.
+
+ @param queue the queue to chain on.
+ @param fmap the function to re-map the result to a new future, only called on success.
+ @return a flatmapped future
+ */
+- (FBFuture *)onQueue:(dispatch_queue_t)queue fmap:(FBFuture * (^)(T result))fmap;
+
+/**
+ Map a future's result to a new value, based on a successful resolution of the reciever.
 
  @param queue the queue to map on.
- @param map the mapping block.
+ @param map the mapping block, only called on success.
  @return a mapped future
  */
 - (FBFuture *)onQueue:(dispatch_queue_t)queue map:(id (^)(T result))map;

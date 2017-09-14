@@ -114,7 +114,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   }
   return [self.bundleConnection.connect
     onQueue:self.target.workQueue
-    chain:^FBFuture *(FBTestBundleResult *result) {
+    fmap:^FBFuture *(FBTestBundleResult *result) {
       NSError *error = result.error;
       if (error) {
         return [FBFuture futureWithResult:[FBTestManagerResult bundleConnectionFailed:error.userInfo[XCTestBootstrapResultErrorKey]]];
@@ -127,7 +127,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 {
   return [[[FBFuture
     futureWithFutures:@[self.bundleConnection.startTestPlan, self.daemonConnection.notifyTestPlanStarted]]
-    onQueue:self.target.workQueue chain:^FBFuture *(FBTestManagerResult *result) {
+    onQueue:self.target.workQueue fmap:^FBFuture *(FBTestManagerResult *result) {
       return [FBFuture futureWithFutures:@[self.bundleConnection.completeTestRun, self.daemonConnection.completed]];
     }]
     onQueue:self.target.asyncQueue map:^FBTestManagerResult *(NSArray *results){

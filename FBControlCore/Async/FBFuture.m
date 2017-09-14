@@ -171,7 +171,36 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
   }];
 }
 
-- (FBFuture *)onQueue:(dispatch_queue_t)queue chain:(FBFuture * (^)(id result))chain
+- (FBFuture *)onQueue:(dispatch_queue_t)queue chain:(FBFuture *(^)(FBFuture *))chain
+{
+  FBMutableFuture *chained = FBMutableFuture.future;
+  [self notifyOfCompletionOnQueue:queue handler:^(FBFuture *future) {
+    if (future.state == FBFutureStateCompletedWithCancellation) {
+      [chained cancel];
+      return;
+    }
+    FBFuture *next = chain(future);
+    [next notifyOfCompletionOnQueue:queue handler:^(FBFuture *final) {
+      FBFutureState state = final.state;
+      switch (state) {
+        case FBFutureStateCompletedWithError:
+          [chained resolveWithError:final.error];
+          break;
+        case FBFutureStateCompletedWithResult:
+          [chained resolveWithResult:final.result];
+          break;
+        case FBFutureStateCompletedWithCancellation:
+          [chained cancel];
+          break;
+        default:
+          NSCAssert(NO, @"Invalid State %lu", (unsigned long)state);
+      }
+    }];
+  }];
+  return chained;
+}
+
+- (FBFuture *)onQueue:(dispatch_queue_t)queue fmap:(FBFuture * (^)(id result))fmap
 {
   FBMutableFuture *chained = FBMutableFuture.future;
   [self notifyOfCompletionOnQueue:queue handler:^(FBFuture *future) {
@@ -179,7 +208,11 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
       [chained resolveWithError:future.error];
       return;
     }
-    [chain(future.result) notifyOfCompletionOnQueue:queue handler:^(FBFuture *next) {
+    if (future.state == FBFutureStateCompletedWithCancellation) {
+      [chained cancel];
+      return;
+    }
+    [fmap(future.result) notifyOfCompletionOnQueue:queue handler:^(FBFuture *next) {
       if (next.error) {
         [chained resolveWithError:next.error];
         return;
@@ -190,9 +223,9 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
   return chained;
 }
 
-- (FBFuture *)onQueue:(dispatch_queue_t)queue map:(nonnull id (^)(id result))map
+- (FBFuture *)onQueue:(dispatch_queue_t)queue map:(id (^)(id result))map
 {
-  return [self onQueue:queue chain:^FBFuture *(id result) {
+  return [self onQueue:queue fmap:^FBFuture *(id result) {
     id next = map(result);
     return [FBFuture futureWithResult:next];
   }];

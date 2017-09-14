@@ -59,7 +59,7 @@
   if (!operation) {
     return [FBFuture futureWithError:error];
   }
-  return [operation.future onQueue:self.simulator.asyncQueue chain:^FBFuture<NSArray<NSString *> *> *(NSNumber *statLoc) {
+  return [operation.future onQueue:self.simulator.asyncQueue fmap:^FBFuture<NSArray<NSString *> *> *(NSNumber *statLoc) {
     // Check the exit code.
     int value = statLoc.intValue;
     int exitCode = WEXITSTATUS(value);

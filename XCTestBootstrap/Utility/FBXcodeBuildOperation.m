@@ -65,7 +65,7 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
 - (FBFuture<NSNull *> *)completed
 {
   return [self.future
-    onQueue:self.asyncQueue chain:^(FBTask *task) {
+    onQueue:self.asyncQueue fmap:^(FBTask *task) {
       NSError *error = task.error;
       if (error) {
         return [FBFuture futureWithError:error];
