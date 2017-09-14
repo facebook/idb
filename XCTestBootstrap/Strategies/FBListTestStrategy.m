@@ -122,8 +122,12 @@
     executor:self.executor];
 
   // Start the process.
-  pid_t processIdentifier = [process startWithError:error];
-  if (!processIdentifier) {
+  pid_t processIdentifier = 0;
+  FBFuture<NSNumber *> *future = [process start:&processIdentifier timeout:self.configuration.testTimeout];
+  if (future.error) {
+    if (error) {
+      *error = future.error;
+    }
     return nil;
   }
   FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
@@ -135,7 +139,7 @@
   // Wait for the subprocess to terminate.
   // Then make sure that the file has finished being read.
   NSError *innerError = nil;
-  BOOL completedSuccessfully = [process waitForCompletionWithTimeout:timeout error:&innerError];
+  BOOL completedSuccessfully = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:future timeout:DBL_MAX error:&innerError] != nil;
   if (![reader stopReadingWithError:error]) {
     return nil;
   }

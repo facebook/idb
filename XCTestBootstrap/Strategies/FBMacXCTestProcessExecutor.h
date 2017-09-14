@@ -24,9 +24,10 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Initializer.
 
  @param configuration the configuration to wrap.
+ @param workQueue a queue to synchronize work on.
  @return a new FBXCTestProcessExecutor.
  */
-+ (instancetype)executorWithConfiguration:(FBXCTestConfiguration *)configuration;
++ (instancetype)executorWithConfiguration:(FBXCTestConfiguration *)configuration workQueue:(dispatch_queue_t)workQueue;
 
 @end
 

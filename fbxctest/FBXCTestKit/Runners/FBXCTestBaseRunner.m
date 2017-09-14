@@ -69,7 +69,8 @@
   if ([self.configuration isKindOfClass:FBApplicationTestConfiguration.class]) {
     return [[FBXCTestError describe:@"Application tests are not supported on OS X."] failBool:error];
   }
-  id<FBXCTestProcessExecutor> executor = [FBMacXCTestProcessExecutor executorWithConfiguration:self.configuration];
+  dispatch_queue_t workQueue = dispatch_queue_create("com.facebook.xctestbootstrap.mactest", DISPATCH_QUEUE_SERIAL);
+  id<FBXCTestProcessExecutor> executor = [FBMacXCTestProcessExecutor executorWithConfiguration:self.configuration workQueue:workQueue];
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
     return [[[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] executeWithError:error];
   }

@@ -21,11 +21,12 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 @interface FBXCTestProcess ()
 
 @property (nonatomic, strong, readonly) id<FBXCTestProcessExecutor> executor;
-@property (nonatomic, copy, readwrite, nullable) NSDate *startDate;
 
 @end
 
 @implementation FBXCTestProcess
+
+#pragma mark Initializers
 
 + (instancetype)processWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader executor:(id<FBXCTestProcessExecutor>)executor
 {
@@ -50,48 +51,68 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
   return self;
 }
 
-- (pid_t)startWithError:(NSError **)error
+#pragma mark Public
+
+- (FBFuture<NSNumber *> *)start:(pid_t *)processIdentifierOut timeout:(NSTimeInterval)timeout
 {
   // Construct and launch the task.
-  self.startDate = [NSDate.date dateByAddingTimeInterval:CrashLogStartDateFuzz];
-  return [self.executor xctestProcess:self startWithError:error];
+  NSDate *startDate = [NSDate.date dateByAddingTimeInterval:CrashLogStartDateFuzz];
+  pid_t processIdentifier = 0;
+
+  FBFuture<NSNull *> *base = [[self.executor
+    startProcess:self processIdentifierOut:&processIdentifier]
+    onQueue:self.executor.workQueue fmap:^(FBXCTestProcessInfo *result) {
+      NSError *exitError = [FBXCTestProcess abnormalExitErrorFor:result.processIdentifier exitCode:result.exitCode startDate:startDate];
+      if (exitError) {
+        return [FBFuture futureWithError:exitError];
+      }
+      return [FBFuture futureWithResult:@(result.processIdentifier)];
+    }];
+  FBFuture<NSNumber *> *timeoutFuture = [FBXCTestProcess timeoutFuture:timeout processIdentifier:processIdentifier];
+
+  if (processIdentifierOut) {
+    *processIdentifierOut = processIdentifier;
+  }
+  return [FBFuture race:@[base, timeoutFuture]];
 }
 
-- (void)terminate
+#pragma mark Private
+
++ (FBFuture<NSNumber *> *)timeoutFuture:(NSTimeInterval)timeout processIdentifier:(pid_t)processIdentifier
 {
-  [self.executor terminateXctestProcess:self];
+  FBMutableFuture *future = [FBMutableFuture future];
+  [NSTimer scheduledTimerWithTimeInterval:timeout repeats:NO block:^(NSTimer *_) {
+    NSError *error = [FBXCTestProcess timeoutErrorFor:processIdentifier];
+    [future resolveWithError:error];
+  }];
+  return future;
 }
 
-- (BOOL)waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  return [self.executor xctestProcess:self waitForCompletionWithTimeout:timeout error:error];
-}
-
-- (BOOL)processDidTerminateNormallyWithProcessIdentifier:(pid_t)processIdentifier didTimeout:(BOOL)didTimeout exitCode:(int)exitCode error:(NSError **)error
++ (NSError *)timeoutErrorFor:(pid_t)processIdentifier
 {
   // If the xctest process has stalled, we should sample it (if possible), then terminate it.
-  if (didTimeout) {
-    NSString *sample = [FBXCTestProcess sampleStalledProcess:processIdentifier];
-    [self terminate];
-    return [[FBXCTestError
-      describeFormat:@"The xctest process stalled: %@", sample]
-      failBool:error];
-  }
+  NSString *sample = [FBXCTestProcess sampleStalledProcess:processIdentifier];
+  return [[FBXCTestError
+    describeFormat:@"The xctest process stalled: %@", sample]
+    build];
+}
 
++ (NSError *)abnormalExitErrorFor:(pid_t)processIdentifier exitCode:(int)exitCode startDate:(NSDate *)startDate
+{
   // If exited abnormally, check for a crash log
-  if (exitCode != 0 && exitCode != 1) {
-    FBCrashLogInfo *crashLogInfo = [FBXCTestProcess crashLogsForChildProcessOf:processIdentifier since:self.startDate];
-    if (crashLogInfo) {
-      FBDiagnostic *diagnosticCrash = [crashLogInfo toDiagnostic:FBDiagnosticBuilder.builder];
-      return [[FBXCTestError
-        describeFormat:@"xctest process crashed\n %@", diagnosticCrash.asString]
-        failBool:error];
-    }
-    return [[FBXCTestError
-      describeFormat:@"xctest process exited abnormally with exit code %d", exitCode]
-      failBool:error];
+  if (exitCode == 0 || exitCode == 1) {
+    return nil;
   }
-  return YES;
+  FBCrashLogInfo *crashLogInfo = [FBXCTestProcess crashLogsForChildProcessOf:processIdentifier since:startDate];
+  if (crashLogInfo) {
+    FBDiagnostic *diagnosticCrash = [crashLogInfo toDiagnostic:FBDiagnosticBuilder.builder];
+    return [[FBXCTestError
+      describeFormat:@"xctest process crashed\n %@", diagnosticCrash.asString]
+      build];
+  }
+  return [[FBXCTestError
+    describeFormat:@"xctest process exited abnormally with exit code %d", exitCode]
+    build];
 }
 
 + (nullable FBCrashLogInfo *)crashLogsForChildProcessOf:(pid_t)processIdentifier since:(NSDate *)sinceDate

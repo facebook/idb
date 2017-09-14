@@ -13,15 +13,12 @@
 
 #import "FBAgentLaunchStrategy.h"
 #import "FBSimulatorAgentOperation.h"
+#import "FBSimulator.h"
 
 @interface FBSimulatorXCTestProcessExecutor ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
 @property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
-
-@property (nonatomic, strong, readwrite) FBSimulatorAgentOperation *operation;
-
-@property (atomic, assign, readwrite) int exitCode;
 
 @end
 
@@ -45,18 +42,19 @@
   return self;
 }
 
-- (pid_t)xctestProcess:(FBXCTestProcess *)process startWithError:(NSError **)error
+- (FBFuture<FBXCTestProcessInfo *> *)startProcess:(FBXCTestProcess *)process processIdentifierOut:(pid_t *)processIdentifierOut
 {
+  NSError *error = nil;
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
     configurationWithStdOut:process.stdOutReader
     stdErr:process.stdErrReader
-    error:error];
+    error:&error];
   if (!output) {
-    return -1;
+    return [FBFuture futureWithError:error];
   }
-  FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:process.launchPath error:error];
+  FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:process.launchPath error:&error];
   if (!binary) {
-    return -1;
+    return [FBFuture futureWithError:error];
   }
 
   FBAgentLaunchConfiguration *configuration = [FBAgentLaunchConfiguration
@@ -65,47 +63,27 @@
    environment:process.environment
    output:output];
 
-  // Launch The Process
-  FBAgentTerminationHandler handler = ^(int stat_loc){
-    if (WIFEXITED(stat_loc)) {
-      self.exitCode = WEXITSTATUS(stat_loc);
-    } else if (WIFSIGNALED(stat_loc)) {
-      self.exitCode = WTERMSIG(stat_loc);
-    }
-  };
-
-  NSError *innerError = nil;
-  self.operation = [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator]
-    launchAgent:configuration
-    terminationHandler:handler
-    error:&innerError];
-  if (!self.operation) {
-    [[[FBXCTestError
-      describeFormat:@"Failed to launch Logic Test Process %@", process.launchPath]
-      causedBy:innerError]
-      fail:error];
-    return -1;
+  FBSimulatorAgentOperation *operation = [[FBAgentLaunchStrategy
+    strategyWithSimulator:self.simulator]
+    launchAgent:configuration error:&error];
+  if (!operation) {
+    return [FBFuture futureWithError:error];
   }
 
-  return self.operation.process.processIdentifier;
-}
-
-- (void)terminateXctestProcess:(FBXCTestProcess *)process
-{
-
-}
-
-- (BOOL)xctestProcess:(FBXCTestProcess *)process waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  BOOL waitSuccessful = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
-    return self.operation.hasTerminated;
-  }];
-
-  // Check that we exited normally
-  if (![process processDidTerminateNormallyWithProcessIdentifier:self.operation.process.processIdentifier didTimeout:(waitSuccessful == NO) exitCode:self.exitCode error:error]) {
-    return NO;
+  pid_t processIdentifier = operation.process.processIdentifier;
+  if (processIdentifierOut) {
+    *processIdentifierOut = processIdentifier;
   }
-  return YES;
+
+  return [[operation future]
+    onQueue:self.simulator.asyncQueue map:^(NSNumber *statLocNumber) {
+      int stat_loc = statLocNumber.intValue;
+      if (WIFEXITED(stat_loc)) {
+        return [[FBXCTestProcessInfo alloc] initWithProcessIdentifier:processIdentifier exitCode:WEXITSTATUS(stat_loc)];
+      } else {
+        return [[FBXCTestProcessInfo alloc] initWithProcessIdentifier:processIdentifier exitCode:WTERMSIG(stat_loc)];
+      }
+    }];
 }
 
 - (NSString *)shimPath
@@ -116,6 +94,11 @@
 - (NSString *)queryShimPath
 {
   return self.configuration.shims.iOSSimulatorTestShimPath;
+}
+
+- (dispatch_queue_t)workQueue
+{
+  return self.simulator.workQueue;
 }
 
 @end

@@ -108,6 +108,17 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param future the future to resolve.
  @param timeout the Timeout in Seconds.
+ @param didTimeout an outparam for flagging if the error represents a timeout.
+ @param error an error out for any future error, or timeout.
+ @return the Future result if successful, NO otherwise.
+ */
+- (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout didTimeout:(BOOL *)didTimeout error:(NSError **)error;
+
+/**
+ Spins the Run Loop until the future resolves, or times out.
+
+ @param future the future to resolve.
+ @param timeout the Timeout in Seconds.
  @param error an error out for any future error, or timeout.
  @return the Future result if successful, NO otherwise.
  */

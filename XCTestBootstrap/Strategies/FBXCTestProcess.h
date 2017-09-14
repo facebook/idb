@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBFileConsumer;
@@ -39,43 +41,42 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Starts the Process.
 
- @param error an error out for any error that occurs.
- @return the PID of the launched process, -1 on error.
+ @param processIdentifierOut an outparam for the launched process.
+ @param timeout the timeout in seconds for the process to terminate.
+ @return a Future that will resolve when the process terminates with the exit code returned.
  */
-- (pid_t)startWithError:(NSError **)error;
-
-/**
- Terminates the process.
- */
-- (void)terminate;
-
-/**
- Waits to the process to complete.
-
- @param timeout the timeout in seconds to wait for the process to terminate.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
-
-/**
- To be called when a process terminates.
-
- @param processIdentifier the process identifier.
- @param didTimeout the timeout.
- @param exitCode the exit code.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)processDidTerminateNormallyWithProcessIdentifier:(pid_t)processIdentifier didTimeout:(BOOL)didTimeout exitCode:(int)exitCode error:(NSError **)error;
+- (FBFuture<NSNumber *> *)start:(pid_t *)processIdentifierOut timeout:(NSTimeInterval)timeout;
 
 #pragma mark Properties
 
+/**
+ The Launch Path of the xctest process.
+ */
 @property (nonatomic, copy, readonly) NSString *launchPath;
+
+/**
+ The Arguments of the xctest process.
+ */
 @property (nonatomic, copy, readonly) NSArray<NSString *> *arguments;
+
+/**
+ The environment of the xctest process.
+ */
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *environment;
+
+/**
+ Whether the process will be launched in a SIGSTOP state.
+ */
 @property (nonatomic, assign, readonly) BOOL waitForDebugger;
+
+/**
+ The reader of stdout.
+ */
 @property (nonatomic, strong, readonly) id<FBFileConsumer> stdOutReader;
+
+/**
+ The reader of stderr.
+ */
 @property (nonatomic, strong, readonly) id<FBFileConsumer> stdErrReader;
 
 @end

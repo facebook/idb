@@ -18,18 +18,19 @@
 @interface FBMacXCTestProcessExecutor ()
 
 @property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
-@property (nonatomic, strong, readwrite, nullable) FBTask *task;
 
 @end
 
 @implementation FBMacXCTestProcessExecutor
 
-+ (instancetype)executorWithConfiguration:(FBXCTestConfiguration *)configuration
+@synthesize workQueue = _workQueue;
+
++ (instancetype)executorWithConfiguration:(FBXCTestConfiguration *)configuration workQueue:(dispatch_queue_t)workQueue
 {
-  return [[self alloc] initWithConfiguration:configuration];
+  return [[self alloc] initWithConfiguration:configuration workQueue:workQueue];
 }
 
-- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration
+- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration workQueue:(dispatch_queue_t)workQueue
 {
   self = [super init];
   if (!self) {
@@ -37,57 +38,33 @@
   }
 
   _configuration = configuration;
+  _workQueue = workQueue;
 
   return self;
 }
 
-- (pid_t)xctestProcess:(FBXCTestProcess *)process startWithError:(NSError **)error
+- (FBFuture<FBXCTestProcessInfo *> *)startProcess:(FBXCTestProcess *)process processIdentifierOut:(pid_t *)processIdentifierOut
 {
-  self.task = [[[[[[[[FBTaskBuilder
+  return [[[[[[[[FBTaskBuilder
     withLaunchPath:process.launchPath]
     withArguments:process.arguments]
     withEnvironment:process.environment]
     withStdOutConsumer:process.stdOutReader]
     withStdErrConsumer:process.stdErrReader]
     withAcceptableTerminationStatusCodes:[NSSet setWithArray:@[@0, @1]]]
-    build]
-    startAsynchronously];
-
-  if (self.task.error) {
-    [[[FBControlCoreError
-      describeFormat:@"Logic Test Process Errored %@", self.task.error.localizedDescription]
-      causedBy:self.task.error]
-      fail:error];
-    self.task = nil;
-    return -1;
-  }
-  return self.task.processIdentifier;
-}
-
-- (void)terminateXctestProcess:(FBXCTestProcess *)process;
-{
-  [self.task terminate];
-}
-
-- (BOOL)xctestProcess:(FBXCTestProcess *)process waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  if (!self.task) {
-    return [[FBControlCoreError
-      describe:@"No task to await completion of"]
-      failBool:error];
-  }
-
-  // Perform the underlying wait.
-  FBTask *task = self.task;
-  NSError *timeoutError = nil;
-  BOOL waitSuccessful = [task waitForCompletionWithTimeout:timeout error:&timeoutError];
-  int exitCode = task.error.userInfo[@"exitcode"] ? [task.error.userInfo[@"exitcode"] intValue] : 0;
-
-  // Check that we exited normally
-  if (![process processDidTerminateNormallyWithProcessIdentifier:task.processIdentifier didTimeout:(waitSuccessful == NO) exitCode:exitCode error:error]) {
-    return NO;
-  }
-  return YES;
+    buildFutureWithProcessIdentifierOut:processIdentifierOut]
+    onQueue:self.workQueue chain:^FBFuture<NSNull *> *(FBFuture<FBTask *> *future) {
+      NSError *taskError = future.error;
+      if (taskError) {
+        NSNumber *exitCode = taskError.userInfo[@"exitcode"];
+        NSNumber *processIdentifier = taskError.userInfo[@"pid"];
+        FBXCTestProcessInfo *info = [[FBXCTestProcessInfo alloc] initWithProcessIdentifier:processIdentifier.intValue exitCode:exitCode.intValue];
+        return [FBFuture futureWithResult:info];
+      }
+      FBTask *task = future.result;
+      FBXCTestProcessInfo *info = [[FBXCTestProcessInfo alloc] initWithProcessIdentifier:task.processIdentifier exitCode:task.exitCode];
+      return [FBFuture futureWithResult:info];
+    }];
 }
 
 - (NSString *)shimPath

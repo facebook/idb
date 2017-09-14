@@ -9,9 +9,36 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBXCTestProcess;
+
+/**
+ Identifies an xctest process.
+ */
+@interface FBXCTestProcessInfo : NSObject
+
+/**
+ The Designated Initializer.
+
+ @param processIdentifier the process identifier.
+ @param exitCode the exit code.
+ */
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier exitCode:(int)exitCode;
+
+/**
+ The Process Idenfifer of the Launched Process.
+ */
+@property (nonatomic, assign, readonly) pid_t processIdentifier;
+
+/**
+ The Exit Code of the process.
+ */
+@property (nonatomic, assign, readonly) int exitCode;
+
+@end
 
 /**
  A protocol for defining the platform-specific implementation of running an xctest process.
@@ -22,27 +49,10 @@ NS_ASSUME_NONNULL_BEGIN
  Starts the xctest process.
 
  @param process the process to execute.
- @param error an error out for any error that occurs.
- @return the process identifier of the launched process.
+ @param processIdentifierOut an outparam for the process identifier.
+ @return an FBXCTestProcessInfo identifying the process.
  */
-- (pid_t)xctestProcess:(FBXCTestProcess *)process startWithError:(NSError **)error;
-
-/**
- Terminate the Underlying xctest process.
- 
- @param process the process to terminate.
- */
-- (void)terminateXctestProcess:(FBXCTestProcess *)process;
-
-/**
- Await the completion of the xctest process.
-
- @param process the process to await the completion of.
- @param timeout the timeout to wait for.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise
- */
-- (BOOL)xctestProcess:(FBXCTestProcess *)process waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+- (FBFuture<FBXCTestProcessInfo *> *)startProcess:(FBXCTestProcess *)process processIdentifierOut:(pid_t *)processIdentifierOut;
 
 /**
  The path to the Shim dylib used for reporting test output.
@@ -53,6 +63,11 @@ NS_ASSUME_NONNULL_BEGIN
  The path to the Query Shim dylib used for listing test output.
  */
 @property (nonatomic, copy, readonly) NSString *queryShimPath;
+
+/**
+ A queue to serialize work on.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 
 @end
 

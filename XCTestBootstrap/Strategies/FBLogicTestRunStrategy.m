@@ -101,10 +101,12 @@
   otestShimLineReader = [logger logConsumptionToFile:otestShimLineReader outputKind:@"shim" udid:uuid];
 
   // Construct and start the process
-  FBXCTestProcess *process = [self testProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutReader:stdOutReader stdErrReader:stdErrReader];
-  pid_t pid = [process startWithError:error];
-  if (!pid) {
-    return NO;
+  pid_t pid = 0;
+  FBFuture<NSNumber *> *future = [[self
+    testProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutReader:stdOutReader stdErrReader:stdErrReader]
+    start:&pid timeout:self.configuration.testTimeout];
+  if (future.error) {
+    return [XCTestBootstrapError failBoolWithError:future.error errorOut:error];
   }
 
   if (self.configuration.waitForDebugger) {
@@ -119,14 +121,14 @@
   NSError *innerError = nil;
   FBFileReader *otestShimReader = [FBFileReader readerWithFilePath:otestShimOutputPath consumer:otestShimLineReader error:&innerError];
   if (!otestShimReader) {
-    [process terminate];
+    [future cancel];
     return [[[FBXCTestError
       describeFormat:@"Failed to open fifo for reading: %@", otestShimOutputPath]
       causedBy:innerError]
       failBool:error];
   }
   if (![otestShimReader startReadingWithError:&innerError]) {
-    [process terminate];
+    [future cancel];
     return [[[FBXCTestError
       describeFormat:@"Failed to start reading fifo: %@", otestShimOutputPath]
       causedBy:innerError]
@@ -134,7 +136,7 @@
   }
 
   // Wait for the test process to finish.
-  if (![process waitForCompletionWithTimeout:self.configuration.testTimeout error:error]) {
+  if (![NSRunLoop.currentRunLoop awaitCompletionOfFuture:future timeout:DBL_MAX error:error]) {
     return NO;
   }
 

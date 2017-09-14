@@ -139,15 +139,21 @@
   }];
 }
 
-- (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError **)error
+- (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout didTimeout:(BOOL *)didTimeout error:(NSError **)error
 {
   BOOL completed = [self spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
     return future.hasCompleted;
   }];
   if (!completed) {
+    if (didTimeout) {
+      *didTimeout = YES;
+    }
     return [[FBControlCoreError
       describeFormat:@"Timed out waiting for future %@ in %f seconds", future, timeout]
       fail:error];
+  }
+  if (didTimeout) {
+    *didTimeout = NO;
   }
   if (future.error) {
     if (error) {
@@ -156,6 +162,13 @@
     return nil;
   }
   return future.result;
+}
+
+
+- (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  BOOL didTimeout = NO;
+  return [self awaitCompletionOfFuture:future timeout:timeout didTimeout:&didTimeout error:error];
 }
 
 @end
