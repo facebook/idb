@@ -66,6 +66,11 @@
     executeWithError:error];
 }
 
+- (NSArray<id<FBXCTestOperation>> *)testOperations
+{
+  return [self.simulator.resourceSink.testManagers copy];
+}
+
 - (nullable NSArray<NSString *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   FBXCTestShimConfiguration *shims = [FBXCTestShimConfiguration defaultShimConfigurationWithError:error];
@@ -91,16 +96,5 @@
 
 #pragma mark Private
 
-
-- (BOOL)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  for (FBTestManager *testManager in self.simulator.resourceSink.testManagers.copy) {
-    FBTestManagerResult *result = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:testManager.execute timeout:timeout error:error];
-    if (!result.didEndSuccessfully) {
-      return NO;
-    }
-  }
-  return YES;
-}
 
 @end

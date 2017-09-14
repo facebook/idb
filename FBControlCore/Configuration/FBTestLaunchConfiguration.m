@@ -332,7 +332,7 @@ static NSString *const KeyTargetApplicationBundleID = @"targetApplicationBundleI
     return NO;
   }
   if (self.timeout > 0) {
-    if (![commands waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:self.timeout error:error]) {
+    if (![NSRunLoop.currentRunLoop awaitCompletionOfFuture:operation.completed timeout:self.timeout error:error]) {
       return NO;
     }
   }

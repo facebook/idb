@@ -55,14 +55,10 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTestOperation;
 
 /**
  Calling -[FBXCTestCommands startTestWithLaunchConfiguration:error:] will start the execution of the test run.
- This does not mean that the test execution will have finished.
- This method can be used in order to wait for the testing execution to finish and process the results.
-
- @param timeout the maximum time to wait for test execution to finish.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ It will return a Test Operation which will resolve at some point in the future.
+ This will return the test operations that are pending, so that they can be interrogated.
  */
-- (BOOL)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+- (NSArray<id<FBXCTestOperation>> *)testOperations;
 
 /**
  Lists the testables for a provided test bundle.

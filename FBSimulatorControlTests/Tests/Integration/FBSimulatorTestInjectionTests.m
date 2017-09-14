@@ -52,15 +52,22 @@
   return simulator;
 }
 
+- (void)assertLaunchesTestWithConfiguration:(FBTestLaunchConfiguration *)testLaunch reporter:(id<FBTestManagerTestReporter>)reporter simulator:(FBSimulator *)simulator
+{
+  NSError *error = nil;
+  FBFuture *future = [simulator startTestWithLaunchConfiguration:self.testLaunch reporter:reporter error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(future);
+
+  id result = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:future timeout:20 error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(result);
+}
+
 - (void)testInjectsApplicationTestIntoSampleApp
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithTableSearch];
-  NSError *error = nil;
-  BOOL success = [simulator startTestWithLaunchConfiguration:self.testLaunch reporter:self error:&error]
-              && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-
+  [self assertLaunchesTestWithConfiguration:self.testLaunch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
               failed:@[@"testHostProcessIsMobileSafari", @"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
 }
@@ -76,12 +83,7 @@
   if (!simulator) {
     return;
   }
-  NSError *error = nil;
-  BOOL success = [simulator startTestWithLaunchConfiguration:self.testLaunch reporter:self error:&error]
-              && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-
+  [self assertLaunchesTestWithConfiguration:self.testLaunch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
               failed:@[@"testHostProcessIsMobileSafari", @"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
 }
@@ -89,12 +91,7 @@
 - (void)testInjectsApplicationTestIntoSafari
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  NSError *error = nil;
-  BOOL success = [simulator startTestWithLaunchConfiguration:[self.testLaunch withApplicationLaunchConfiguration:self.safariAppLaunch] reporter:self error:&error]
-              && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-
+  [self assertLaunchesTestWithConfiguration:self.testLaunch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
               failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
 }
@@ -109,11 +106,7 @@
   FBTestLaunchConfiguration *testLaunch = [self.testLaunch withApplicationLaunchConfiguration:applicationLaunchConfiguration];
 
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  NSError *error = nil;
-  BOOL success = [simulator startTestWithLaunchConfiguration:testLaunch reporter:self error:&error]
-              && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
+  [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
 
   NSFileManager *fileManager = [NSFileManager defaultManager];
   XCTAssertTrue([fileManager fileExistsAtPath:stdErrPath]);
@@ -135,12 +128,7 @@
       [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString]];
   FBTestManagerTestReporterJUnit *reporter = [FBTestManagerTestReporterJUnit withOutputFileURL:outputFileURL];
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
-
-  NSError *error = nil;
-  BOOL success = [simulator startTestWithLaunchConfiguration:self.testLaunch reporter:reporter error:&error]
-              && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
+  [self assertLaunchesTestWithConfiguration:self.testLaunch reporter:reporter simulator:simulator];
 
   NSURL *fixtureFileURL = [NSURL fileURLWithPath:[FBSimulatorControlFixtures JUnitXMLResult0Path]];
   NSString *expected = [self stringWithContentsOfJUnitResult:fixtureFileURL];
@@ -152,16 +140,11 @@
 - (void)testInjectsApplicationTestWithTestsToRun
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  FBTestLaunchConfiguration *configuration = [[self.testLaunch
+  FBTestLaunchConfiguration *testLaunch = [[self.testLaunch
     withTestsToRun:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]]
     withApplicationLaunchConfiguration:self.safariAppLaunch];
 
-  NSError *error = nil;
-  BOOL success = [simulator startTestWithLaunchConfiguration:configuration reporter:self error:&error]
-              && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-
+  [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningOnIOS"]
               failed:@[@"testWillAlwaysFail"]];
 }
@@ -169,16 +152,11 @@
 - (void)testInjectsApplicationTestWithTestsToSkip
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  FBTestLaunchConfiguration *configuration = [[self.testLaunch
+  FBTestLaunchConfiguration *testLaunch = [[self.testLaunch
     withTestsToSkip:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]]
     withApplicationLaunchConfiguration:self.safariAppLaunch];
 
-  NSError *error = nil;
-  BOOL success = [simulator startTestWithLaunchConfiguration:configuration reporter:self error:&error]
-              && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-
+  [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
               failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX"]];
 }

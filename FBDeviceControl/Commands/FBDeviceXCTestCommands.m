@@ -82,22 +82,10 @@
   return _operation;
 }
 
-- (BOOL)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
+- (NSArray<id<FBXCTestOperation>> *)testOperations
 {
-  if (!self.operation) {
-    return YES;
-  }
-  NSError *innerError = nil;
-  if (![self.operation waitForCompletionWithTimeout:timeout error:&innerError]) {
-    [self.operation terminate];
-    _operation = nil;
-    return [[[FBDeviceControlError
-      describe:@"Failed waiting for timeout"]
-      causedBy:innerError]
-      failBool:error];
-  }
-  _operation = nil;
-  return YES;
+  id<FBXCTestOperation> operation = self.operation;
+  return operation ? @[operation] : @[];
 }
 
 - (NSArray<NSString *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout error:(NSError **)error
