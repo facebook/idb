@@ -41,15 +41,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs error:(NSError **)error;
 
 /**
- Authorizes the Location Settings for the provided application.
-
- @param application the Application to authorize settings for.
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
- */
-- (BOOL)authorizeLocationSettingForApplication:(FBApplicationBundle *)application error:(NSError **)error;
-
-/**
  Overrides the default SpringBoard watchdog timer for the applications. You can use this to give your application more
  time to startup before being killed by SpringBoard. (SB's default is 20 seconds.)
 

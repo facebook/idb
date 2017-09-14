@@ -60,12 +60,6 @@
     approveLocationServicesForBundleIDs:bundleIDs error:error];
 }
 
-- (BOOL)authorizeLocationSettingForApplication:(FBApplicationBundle *)application error:(NSError **)error
-{
-  NSParameterAssert(application);
-  return [self authorizeLocationSettings:@[application.bundleID] error:error];
-}
-
 - (BOOL)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   return [[FBWatchdogOverrideModificationStrategy
