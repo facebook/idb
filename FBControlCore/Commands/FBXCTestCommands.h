@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBTestLaunchConfiguration.h>
 #import <FBControlCore/FBTerminationHandle.h>
 
@@ -25,6 +26,12 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTestOperation;
  A Running Test Operation that can awaited and cancelled.
  */
 @protocol FBXCTestOperation <NSObject, FBTerminationAwaitable>
+
+/**
+ A future that wraps the completion of the test execution.
+ Presently, the value returned is not significant and therefore NSNull.
+ */
+@property (nonatomic, strong, readonly) FBFuture<NSNull *> *completed;
 
 @end
 

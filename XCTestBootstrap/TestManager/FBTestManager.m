@@ -87,6 +87,14 @@
 
 #pragma mark FBXCTestOperation
 
+- (FBFuture<NSNull *> *)completed
+{
+  return [self.connect
+    onQueue:self.target.asyncQueue map:^(FBTestManagerResult *_) {
+      return NSNull.null;
+    }];
+}
+
 - (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleTypeTestOperation;

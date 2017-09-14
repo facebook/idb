@@ -16,6 +16,7 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
 @interface FBXcodeBuildOperation ()
 
 @property (nonatomic, strong, readonly) FBFuture<FBTask *> *future;
+@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
 
 @end
 
@@ -24,7 +25,7 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
 + (instancetype)operationWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuraton xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath
 {
   FBFuture<FBTask *> *future = [self createTaskFuture:configuraton xcodeBuildPath:xcodeBuildPath testRunFilePath:testRunFilePath target:target];
-  return [[self alloc] initWithFuture:future];
+  return [[self alloc] initWithFuture:future asyncQueue:target.asyncQueue];
 }
 
 + (FBFuture<FBTask *> *)createTaskFuture:(FBTestLaunchConfiguration *)configuraton xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath target:(id<FBiOSTarget>)target
@@ -46,7 +47,7 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
     buildFuture];
 }
 
-- (instancetype)initWithFuture:(FBFuture<FBTask *> *)future
+- (instancetype)initWithFuture:(FBFuture<FBTask *> *)future asyncQueue:(dispatch_queue_t)asyncQueue
 {
   self = [super init];
   if (!self) {
@@ -54,11 +55,24 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
   }
 
   _future = future;
+  _asyncQueue = asyncQueue;
 
   return self;
 }
 
 #pragma mark FBXCTestOperation
+
+- (FBFuture<NSNull *> *)completed
+{
+  return [self.future
+    onQueue:self.asyncQueue chain:^(FBTask *task) {
+      NSError *error = task.error;
+      if (error) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
+}
 
 - (FBTerminationHandleType)handleType
 {
