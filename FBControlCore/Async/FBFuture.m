@@ -89,31 +89,40 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.future.composite", DISPATCH_QUEUE_SERIAL);
   __block NSUInteger remaining = futures.count;
 
-  for (NSUInteger index = 0; index < futures.count; index++) {
-    [futures[index] notifyOfCompletionOnQueue:queue handler:^(FBFuture *future) {
-      if (compositeFuture.hasCompleted) {
+  void (^futureCompleted)(FBFuture *, NSUInteger) = ^(FBFuture *future, NSUInteger index) {
+    if (compositeFuture.hasCompleted) {
+      return;
+    }
+    FBFutureState state = future.state;
+    switch (state) {
+      case FBFutureStateCompletedWithResult:
+        results[index] = future.result;
+        remaining--;
+        if (remaining == 0) {
+          [compositeFuture resolveWithResult:[results copy]];
+        }
         return;
-      }
-      FBFutureState state = future.state;
-      switch (state) {
-        case FBFutureStateCompletedWithResult:
-          results[index] = future.result;
-          remaining--;
-          if (remaining == 0) {
-            [compositeFuture resolveWithResult:[results copy]];
-          }
-          return;
-        case FBFutureStateCompletedWithError:
-          [compositeFuture resolveWithError:future.error];
-          return;
-        case FBFutureStateCompletedWithCancellation:
-          [compositeFuture resolveAsCancelled];
-          return;
-        default:
-          NSCAssert(NO, @"Unexpected state in callback %@", FBFutureStateStringFromState(state));
-          return;
-      }
-    }];
+      case FBFutureStateCompletedWithError:
+        [compositeFuture resolveWithError:future.error];
+        return;
+      case FBFutureStateCompletedWithCancellation:
+        [compositeFuture resolveAsCancelled];
+        return;
+      default:
+        NSCAssert(NO, @"Unexpected state in callback %@", FBFutureStateStringFromState(state));
+        return;
+    }
+  };
+
+  for (NSUInteger index = 0; index < futures.count; index++) {
+    FBFuture *future = futures[index];
+    if (future.hasCompleted) {
+      futureCompleted(future, index);
+    } else {
+      [future notifyOfCompletionOnQueue:queue handler:^(FBFuture *innerFuture){
+        futureCompleted(innerFuture, index);
+      }];
+    }
   }
   return compositeFuture;
 }

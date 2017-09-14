@@ -150,6 +150,18 @@
   XCTAssertEqualObjects(compositeFuture.result, expected);
 }
 
+- (void)testCompositeImmediateValue
+{
+  FBFuture<NSArray<NSNumber *> *> *compositeFuture = [FBFuture futureWithFutures:@[
+    [FBFuture futureWithResult:@0],
+    [FBFuture futureWithResult:@1],
+    [FBFuture futureWithResult:@2],
+  ]];
+
+  XCTAssertEqual(compositeFuture.state, FBFutureStateCompletedWithResult);
+  XCTAssertEqualObjects(compositeFuture.result, (@[@0, @1, @2]));
+}
+
 - (void)testFmappedSuccess
 {
   XCTestExpectation *step1 = [[XCTestExpectation alloc] initWithDescription:@"fmap 1 is called"];
@@ -441,6 +453,38 @@
   XCTAssertEqual(cancelFuture1.state, FBFutureStateCompletedWithCancellation);
   XCTAssertEqual(cancelFuture2.state, FBFutureStateCompletedWithCancellation);
   XCTAssertEqual(cancelFuture3.state, FBFutureStateCompletedWithCancellation);
+}
+
+- (void)testImmediateValue
+{
+  NSError *error = [NSError errorWithDomain:@"foo" code:0 userInfo:nil];
+  FBFuture<NSNumber *> *successFuture = [FBFuture futureWithResult:@1];
+  FBFuture<NSNumber *> *errorFuture = [FBFuture futureWithError:error];
+
+  XCTAssertEqual(successFuture.state, FBFutureStateCompletedWithResult);
+  XCTAssertEqualObjects(successFuture.result, @1);
+  XCTAssertEqual(errorFuture.state, FBFutureStateCompletedWithError);
+  XCTAssertEqualObjects(errorFuture.error, error);
+}
+
+- (void)testImmedateValueInRaceBasedOnOrdering
+{
+  NSError *error = [NSError errorWithDomain:@"foo" code:0 userInfo:nil];
+  FBFuture<NSNumber *> *raceFuture = [FBFuture race:@[
+    [FBFuture futureWithResult:@1],
+    [FBFuture futureWithError:error],
+    [FBMutableFuture future],
+  ]];
+  XCTAssertEqual(raceFuture.state, FBFutureStateCompletedWithResult);
+  XCTAssertEqualObjects(raceFuture.result, @1);
+
+  raceFuture = [FBFuture race:@[
+    [FBFuture futureWithError:error],
+    [FBMutableFuture future],
+    [FBFuture futureWithResult:@2],
+  ]];
+  XCTAssertEqual(raceFuture.state, FBFutureStateCompletedWithError);
+  XCTAssertEqualObjects(raceFuture.error, error);
 }
 
 @end
