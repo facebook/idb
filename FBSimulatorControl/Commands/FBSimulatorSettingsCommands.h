@@ -18,6 +18,15 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulator;
 
 /**
+ An Enumeration Representing the
+ */
+typedef NSString *FBSimulatorApproval NS_STRING_ENUM;
+
+extern FBSimulatorApproval const FBSimulatorApprovalAddressBook;
+extern FBSimulatorApproval const FBSimulatorApprovalPhotos;
+extern FBSimulatorApproval const FBSimulatorApprovalCamera;
+
+/**
  Modifies the Settings, Preferences & Defaults of a Simulator.
  */
 @protocol FBSimulatorSettingsCommands <NSObject, FBiOSTargetCommand>
@@ -50,6 +59,15 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if the command succeeds, NO otherwise,
  */
 - (BOOL)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+
+/**
+ Grants access to the provided services.
+
+ @param bundleIDs the bundle ids to provide access to.
+ @param services the services to grant access to.
+ @return a future that resolves when the access grant has been done.
+ */
+- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSimulatorApproval> *)services;
 
 /**
  Prepares the Simulator Keyboard, prior to launch.

@@ -18,6 +18,10 @@
 #import "FBSimulatorBootConfiguration.h"
 #import "FBDefaultsModificationStrategy.h"
 
+FBSimulatorApproval const FBSimulatorApprovalAddressBook = @"kTCCServiceAddressBook";
+FBSimulatorApproval const FBSimulatorApprovalPhotos = @"kTCCServicePhotos";
+FBSimulatorApproval const FBSimulatorApprovalCamera = @"kTCCServiceCamera";
+
 @interface FBSimulatorSettingsCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
@@ -67,11 +71,46 @@
     overrideWatchDogTimerForApplications:bundleIDs timeout:timeout error:error];
 }
 
+- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSimulatorApproval> *)services
+{
+  NSString *filePath = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/TCC/TCC.db"];
+  if (!filePath) {
+    return [[FBSimulatorError
+      describeFormat:@"Expected file to exist at path %@ but it was not there", filePath]
+      failFuture];
+  }
+  NSArray<NSString *> *arguments = @[
+    filePath,
+    [NSString stringWithFormat:@"INSERT or REPLACE INTO access VALUES %@", [FBSimulatorSettingsCommands buildColumnsForBundleIDs:bundleIDs services:services]],
+  ];
+  return [[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/sqlite3" arguments:arguments]
+    buildFuture]
+    onQueue:self.simulator.asyncQueue map:^(FBTask *_) {
+      return NSNull.null;
+    }];
+}
+
 - (BOOL)setupKeyboardWithError:(NSError **)error
 {
   return [[FBKeyboardSettingsModificationStrategy
     strategyWithSimulator:self.simulator]
     setupKeyboardWithError:error];
+}
+
+#pragma mark Private
+
++ (NSString *)buildColumnsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBSimulatorApproval> *)services
+{
+  NSParameterAssert(bundleIDs.count >= 1);
+  NSParameterAssert(services.count >= 1);
+  NSMutableArray<NSString *> *tuples = [NSMutableArray array];
+  for (NSString *bundleID in bundleIDs) {
+    for (NSString *service in services) {
+      [tuples addObject:[NSString stringWithFormat:@"('%@', '%@', 0, 1, 0, 0, 0)", service, bundleID]];
+    }
+  }
+  return [tuples componentsJoinedByString:@", "];
 }
 
 @end
