@@ -272,7 +272,7 @@
   NSString *basePath = [[self.basePath stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
   if (![bundle.bundlePath hasPrefix:basePath]) {
     return [[FBControlCoreError
-      describeFormat:@"Expected Framework %@ to be loaded for Developer Directory at path %@, but was loaded from %@", bundle.bundlePath.lastPathComponent, bundle.bundlePath, self.basePath]
+      describeFormat:@"Expected %@ to be loaded from library at path %@, but was loaded from %@", bundle.bundlePath.lastPathComponent, bundle.bundlePath, self.basePath]
       failBool:error];
   }
   [logger.debug logFormat:@"%@: %@ has correct path of %@", self.name, className, basePath];

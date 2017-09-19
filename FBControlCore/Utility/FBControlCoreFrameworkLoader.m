@@ -74,7 +74,7 @@ void *FBGetSymbolFromHandle(void *handle, const char *name)
   if (success) {
     return;
   }
-  NSString *message = [NSString stringWithFormat:@"Failed to private frameworks for %@ with error %@", self.frameworkName, error];
+  NSString *message = [NSString stringWithFormat:@"Failed to load private frameworks for %@ with error %@", self.frameworkName, error];
 
   // Log the message.
   [logger.error log:message];
