@@ -18,8 +18,9 @@
 {
   if (FBXcodeConfiguration.isXcode9OrGreater) {
     return [FBWeakFramework frameworkWithPath:@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"]];
+  } else {
+    return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Library/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"]];
   }
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Library/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"]];
 }
 
 + (nonnull instancetype)SimulatorKit
