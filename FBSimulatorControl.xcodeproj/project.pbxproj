@@ -4076,6 +4076,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Vendor",
 				);
+				OTHER_LDFLAGS = "$(inherited)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
 			name = Debug;
@@ -4102,6 +4103,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Vendor",
 				);
+				OTHER_LDFLAGS = "$(inherited)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
 			name = Profile;
@@ -4125,6 +4127,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Vendor",
 				);
+				OTHER_LDFLAGS = "$(inherited)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
 			name = Release;
