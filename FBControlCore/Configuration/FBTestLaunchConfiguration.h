@@ -76,6 +76,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly, nullable) NSString *targetApplicationPath;
 
+/*
+ A dictionary with xctestrun file contents to use.
+ */
+@property (nonatomic, copy, readonly, nullable) NSDictionary<NSString *, id> *xcTestRunProperties;
+
 /**
  Adds application launch configuration
 
@@ -137,6 +142,17 @@ NS_ASSUME_NONNULL_BEGIN
  @return new test launch configuration with changes applied.
  */
 - (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID;
+
+/**
+ Adds xcTestRunProperties. When launching tests those properties will
+ be passed to xcodebuild. Some of them will be overwritten with other
+ values specified in this config.
+
+ @param xcTestRunProperties the dictionary with contents of xctestrun file
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withXCTestRunProperties:(NSDictionary<NSString *, id> *)xcTestRunProperties;
+
 
 @end
 

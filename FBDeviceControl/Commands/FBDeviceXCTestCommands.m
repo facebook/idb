@@ -104,12 +104,34 @@
 
 #pragma mark Private
 
+
++ (NSDictionary<NSString *, id> *)overwriteXCTestRunPropertiesWithBaseProperties:(NSDictionary<NSString *, id> *)baseProperties newProperties:(NSDictionary<NSString *, id> *)newProperties
+{
+  NSMutableDictionary<NSString *, id> *mutableTestRunProperties = [baseProperties mutableCopy];
+  for (NSString *testId in mutableTestRunProperties) {
+    NSMutableDictionary<NSString *, id> *mutableTestProperties = [[mutableTestRunProperties objectForKey:testId] mutableCopy];
+    NSDictionary<NSString *, id> *defaultTestProperties = [newProperties objectForKey:@"StubBundleId"];
+    for (id key in defaultTestProperties) {
+      if ([mutableTestProperties objectForKey:key]) {
+        mutableTestProperties[key] =  [defaultTestProperties objectForKey:key];
+      }
+    }
+    mutableTestRunProperties[testId] = mutableTestProperties;
+  }
+  return [mutableTestRunProperties copy];
+}
+
 - (nullable NSString *)createXCTestRunFileFromConfiguration:(FBTestLaunchConfiguration *)configuration error:(NSError **)error
 {
   NSString *fileName = [NSProcessInfo.processInfo.globallyUniqueString stringByAppendingPathExtension:@"xctestrun"];
   NSString *path = [self.workingDirectory stringByAppendingPathComponent:fileName];
 
-  NSDictionary *testRunProperties = [FBXcodeBuildOperation xctestRunProperties:configuration];
+  NSDictionary<NSString *, id> *defaultTestRunProperties = [FBXcodeBuildOperation xctestRunProperties:configuration];
+
+  NSDictionary<NSString *, id> *testRunProperties = configuration.xcTestRunProperties
+    ? [FBDeviceXCTestCommands overwriteXCTestRunPropertiesWithBaseProperties:configuration.xcTestRunProperties newProperties:defaultTestRunProperties]
+    : defaultTestRunProperties;
+
   if (![testRunProperties writeToFile:path atomically:false]) {
     return [[FBDeviceControlError
       describeFormat:@"Failed to write to file %@", path]

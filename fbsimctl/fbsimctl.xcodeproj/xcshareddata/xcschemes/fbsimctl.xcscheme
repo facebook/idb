@@ -39,6 +39,16 @@
                ReferencedContainer = "container:fbsimctl.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AAC8B2331CEC51120034A865"
+               BuildableName = "FBDeviceControlTests.xctest"
+               BlueprintName = "FBDeviceControlTests"
+               ReferencedContainer = "container:../FBSimulatorControl.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <MacroExpansion>
          <BuildableReference
