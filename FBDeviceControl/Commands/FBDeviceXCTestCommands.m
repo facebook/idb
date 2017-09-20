@@ -82,6 +82,7 @@
   if (reporter != nil) {
     [self.operation.completed notifyOfCompletionOnQueue:self.device.workQueue handler:^(FBFuture *task) {
       [reporter testManagerMediatorDidFinishExecutingTestPlan:nil];
+      self->_operation = nil;
     }];
   }
 
