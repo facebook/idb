@@ -9,9 +9,9 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
+#import <FBControlCore/FBFuture.h>
 
-@class FBFuture;
+NS_ASSUME_NONNULL_BEGIN
 
 @interface FBRunLoopSpinner : NSObject
 
@@ -123,6 +123,31 @@ NS_ASSUME_NONNULL_BEGIN
  @return the Future result if successful, NO otherwise.
  */
 - (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError **)error;
+
+@end
+
+/**
+ Terse Helpers for FBFuture awaiting.
+ */
+@interface FBFuture (NSRunLoop)
+
+/**
+ Await the Future with the Regular Timeout.
+
+ @param error as described in -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
+ @return the return value of -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
+ */
+- (nullable id)await:(NSError **)error;
+
+/**
+ Await the Future with the provided timeout.
+
+ @param timeout the timeout in seconds to wait.
+ @param error as described in -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
+ @return the return value of -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
+ */
+- (nullable id)awaitWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+
 
 @end
 

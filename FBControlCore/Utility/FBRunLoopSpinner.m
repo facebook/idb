@@ -14,6 +14,7 @@
 
 #import "FBFuture.h"
 #import "FBControlCoreError.h"
+#import "FBControlCoreGlobalConfiguration.h"
 
 @interface FBRunLoopSpinner ()
 @property (nonatomic, copy) NSString *timeoutErrorMessage;
@@ -169,6 +170,20 @@
 {
   BOOL didTimeout = NO;
   return [self awaitCompletionOfFuture:future timeout:timeout didTimeout:&didTimeout error:error];
+}
+
+@end
+
+@implementation FBFuture (NSRunLoop)
+
+- (nullable id)await:(NSError **)error
+{
+  return [self awaitWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:error];
+}
+
+- (nullable id)awaitWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  return [NSRunLoop.currentRunLoop awaitCompletionOfFuture:self timeout:timeout error:error];
 }
 
 @end
