@@ -130,8 +130,6 @@ extension Action {
         fallthrough
       case .diagnose:
         return FBiOSTargetQuery.allTargets()
-      case .approve:
-        return FBiOSTargetQuery.state(.shutdown)
       default:
         return FBiOSTargetQuery.state(.booted)
     }

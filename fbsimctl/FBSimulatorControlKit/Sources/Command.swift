@@ -73,7 +73,6 @@ public enum FileOutput {
  An Interaction represents a Single, synchronous interaction with a Simulator.
  */
 public enum Action {
-  case approve([String])
   case clearKeychain(String?)
   case config
   case core(FBiOSTargetAction)
@@ -99,6 +98,10 @@ public enum Action {
   case uninstall(String)
   case upload([FBDiagnostic])
   case watchdogOverride([String], TimeInterval)
+
+  static func approve(_ bundleIDs: [String]) -> Action {
+    return self.core(FBSettingsApproval(bundleIDs: bundleIDs, services: [.location]))
+  }
 
   static func boot(_ configuration: FBSimulatorBootConfiguration) -> Action {
     return self.core(configuration)
@@ -351,8 +354,6 @@ public func == (left: FileOutput, right: FileOutput) -> Bool {
 extension Action : Equatable { }
 public func == (left: Action, right: Action) -> Bool {
   switch (left, right) {
-  case (.approve(let leftBundleIDs), .approve(let rightBundleIDs)):
-    return leftBundleIDs == rightBundleIDs
   case (.clearKeychain(let leftBundleID), .clearKeychain(let rightBundleID)):
     return leftBundleID == rightBundleID
   case (.config, .config):
@@ -411,8 +412,6 @@ public func == (left: Action, right: Action) -> Bool {
 extension Action {
   public var reportable: (EventName, EventReporterSubject?) { get {
     switch self {
-    case .approve(let bundleIDs):
-      return (.approve, StringsSubject(bundleIDs))
     case .clearKeychain(let bundleID):
       return (.clearKeychain, bundleID)
     case .config:

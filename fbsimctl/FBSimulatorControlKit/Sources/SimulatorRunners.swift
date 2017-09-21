@@ -69,10 +69,6 @@ struct SimulatorActionRunner : Runner {
     }
 
     switch action {
-    case .approve(let bundleIDs):
-      return iOSTargetRunner.simple(reporter, .approve, StringsSubject(bundleIDs)) {
-        try simulator.authorizeLocationSettings(bundleIDs)
-      }
     case .clearKeychain(let maybeBundleID):
       return iOSTargetRunner.simple(reporter, .clearKeychain, ControlCoreSubject(simulator)) {
         if let bundleID = maybeBundleID {
