@@ -64,6 +64,7 @@
 #import <FBControlCore/FBRunLoopSpinner.h>
 #import <FBControlCore/FBScale.h>
 #import <FBControlCore/FBServiceManagement.h>
+#import <FBControlCore/FBSettingsApproval.h>
 #import <FBControlCore/FBSocketReader.h>
 #import <FBControlCore/FBSocketServer.h>
 #import <FBControlCore/FBSocketWriter.h>
