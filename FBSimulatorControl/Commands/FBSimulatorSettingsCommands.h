@@ -13,18 +13,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/**
+ The Action Type for an Agent Launch.
+ */
+extern FBiOSTargetActionType const FBiOSTargetActionTypeApproval;
+
 @class FBApplicationBundle;
 @class FBLocalizationOverride;
 @class FBSimulator;
-
-/**
- An Enumeration Representing the
- */
-typedef NSString *FBSimulatorApproval NS_STRING_ENUM;
-
-extern FBSimulatorApproval const FBSimulatorApprovalAddressBook;
-extern FBSimulatorApproval const FBSimulatorApprovalPhotos;
-extern FBSimulatorApproval const FBSimulatorApprovalCamera;
 
 /**
  Modifies the Settings, Preferences & Defaults of a Simulator.
@@ -67,7 +63,7 @@ extern FBSimulatorApproval const FBSimulatorApprovalCamera;
  @param services the services to grant access to.
  @return a future that resolves when the access grant has been done.
  */
-- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSimulatorApproval> *)services;
+- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services;
 
 /**
  Prepares the Simulator Keyboard, prior to launch.
@@ -86,6 +82,13 @@ extern FBSimulatorApproval const FBSimulatorApprovalCamera;
  Modifies the Settings, Preferences & Defaults of a Simulator.
  */
 @interface FBSimulatorSettingsCommands : NSObject <FBSimulatorSettingsCommands>
+
+@end
+
+/**
+ Bridges FBSettingsApproval to Simulators.
+ */
+@interface FBSettingsApproval (FBiOSTargetAction) <FBiOSTargetAction>
 
 @end
 

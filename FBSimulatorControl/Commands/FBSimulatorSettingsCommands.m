@@ -18,9 +18,7 @@
 #import "FBSimulatorBootConfiguration.h"
 #import "FBDefaultsModificationStrategy.h"
 
-FBSimulatorApproval const FBSimulatorApprovalAddressBook = @"kTCCServiceAddressBook";
-FBSimulatorApproval const FBSimulatorApprovalPhotos = @"kTCCServicePhotos";
-FBSimulatorApproval const FBSimulatorApprovalCamera = @"kTCCServiceCamera";
+FBiOSTargetActionType const FBiOSTargetActionTypeApproval = @"approve";
 
 @interface FBSimulatorSettingsCommands ()
 
@@ -71,24 +69,28 @@ FBSimulatorApproval const FBSimulatorApprovalCamera = @"kTCCServiceCamera";
     overrideWatchDogTimerForApplications:bundleIDs timeout:timeout error:error];
 }
 
-- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSimulatorApproval> *)services
+- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services
 {
-  NSString *filePath = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/TCC/TCC.db"];
-  if (!filePath) {
-    return [[FBSimulatorError
-      describeFormat:@"Expected file to exist at path %@ but it was not there", filePath]
-      failFuture];
+  // We need at least one approval in the array.
+  NSParameterAssert(services.count >= 1);
+
+  // Composing different futures due to differences in how these operate.
+  NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
+  if ([[NSSet setWithArray:FBSimulatorSettingsCommands.tccDatabaseMapping.allKeys] intersectsSet:services]) {
+    [futures addObject:[self modifyTCCDatabaseWithBundleIDs:bundleIDs toServices:services]];
   }
-  NSArray<NSString *> *arguments = @[
-    filePath,
-    [NSString stringWithFormat:@"INSERT or REPLACE INTO access VALUES %@", [FBSimulatorSettingsCommands buildColumnsForBundleIDs:bundleIDs services:services]],
-  ];
-  return [[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/sqlite3" arguments:arguments]
-    buildFuture]
-    onQueue:self.simulator.asyncQueue map:^(FBTask *_) {
-      return NSNull.null;
-    }];
+  if ([services containsObject:FBSettingsApprovalServiceLocation]) {
+    NSError *error = nil;
+    if (![self authorizeLocationSettings:bundleIDs.allObjects error:&error]) {
+      return [FBFuture futureWithError:error];
+    }
+    [futures addObject:[FBFuture futureWithResult:NSNull.null]];
+  }
+  // Don't wrap if there's only one future.
+  if (futures.count == 0) {
+    return futures.firstObject;
+  }
+  return [FBFuture futureWithFutures:futures];
 }
 
 - (BOOL)setupKeyboardWithError:(NSError **)error
@@ -100,17 +102,81 @@ FBSimulatorApproval const FBSimulatorApprovalCamera = @"kTCCServiceCamera";
 
 #pragma mark Private
 
-+ (NSString *)buildColumnsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBSimulatorApproval> *)services
+- (FBFuture<NSNull *> *)modifyTCCDatabaseWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services
+{
+  NSString *filePath = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/TCC/TCC.db"];
+  if (!filePath) {
+    return [[FBSimulatorError
+      describeFormat:@"Expected file to exist at path %@ but it was not there", filePath]
+      failFuture];
+  }
+  NSArray<NSString *> *arguments = @[
+    filePath,
+    [NSString stringWithFormat:@"INSERT or REPLACE INTO access VALUES %@", [FBSimulatorSettingsCommands buildRowsForBundleIDs:bundleIDs services:services]],
+  ];
+  return [[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/sqlite3" arguments:arguments]
+    buildFuture]
+    onQueue:self.simulator.asyncQueue map:^(FBTask *_) {
+      return NSNull.null;
+    }];
+}
+
+#pragma mark Private
+
++ (NSDictionary<FBSettingsApprovalService, NSString *> *)tccDatabaseMapping
+{
+  static dispatch_once_t onceToken;
+  static NSDictionary<FBSettingsApprovalService, NSString *> *mapping;
+  dispatch_once(&onceToken, ^{
+    mapping = @{
+      FBSettingsApprovalServiceContacts: @"kTCCServiceAddressBook",
+      FBSettingsApprovalServicePhotos: @"kTCCServicePhotos",
+      FBSettingsApprovalServiceCamera: @"kTCCServiceCamera",
+    };
+  });
+  return mapping;
+}
+
++ (NSSet<FBSettingsApprovalService> *)filteredTCCApprovals:(NSSet<FBSettingsApprovalService> *)approvals
+{
+  NSMutableSet<FBSettingsApprovalService> *filtered = [NSMutableSet setWithSet:approvals];
+  [filtered intersectSet:[NSSet setWithArray:self.tccDatabaseMapping.allKeys]];
+  return [filtered copy];
+}
+
++ (NSString *)buildRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBSettingsApprovalService> *)services
 {
   NSParameterAssert(bundleIDs.count >= 1);
   NSParameterAssert(services.count >= 1);
   NSMutableArray<NSString *> *tuples = [NSMutableArray array];
   for (NSString *bundleID in bundleIDs) {
-    for (NSString *service in services) {
-      [tuples addObject:[NSString stringWithFormat:@"('%@', '%@', 0, 1, 0, 0, 0)", service, bundleID]];
+    for (FBSettingsApprovalService service in [self filteredTCCApprovals:services]) {
+      NSString *serviceName = self.tccDatabaseMapping[service];
+      [tuples addObject:[NSString stringWithFormat:@"('%@', '%@', 0, 1, 0, 0, 0)", serviceName, bundleID]];
     }
   }
   return [tuples componentsJoinedByString:@", "];
+}
+
+@end
+
+@implementation FBSettingsApproval (FBiOSTargetAction)
+
++ (FBiOSTargetActionType)actionType
+{
+  return FBiOSTargetActionTypeApproval;
+}
+
+- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
+{
+  id<FBSimulatorSettingsCommands> commands = (id<FBSimulatorSettingsCommands>) target;
+  if (![target conformsToProtocol:@protocol(FBSimulatorSettingsCommands)]) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ does not conform to FBSimulatorSettingsCommands", target]
+      failBool:error];
+  }
+  return [[commands grantAccess:[NSSet setWithArray:self.bundleIDs] toServices:[NSSet setWithArray:self.services]] await:error] != nil;
 }
 
 @end
