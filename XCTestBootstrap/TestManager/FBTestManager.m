@@ -62,7 +62,7 @@
     return self.connectFuture;
   }
   _connectFuture = [self.mediator.connect
-    notifyOfCancellationOnQueue:self.target.workQueue handler:^(FBFuture *_) {
+    onQueue:self.target.workQueue notifyOfCancellation:^(FBFuture *_) {
       [self terminate];
     }];
   return self.connectFuture;
@@ -74,7 +74,7 @@
     return self.executeFuture;
   }
   _executeFuture = [self.mediator.execute
-    notifyOfCancellationOnQueue:self.target.workQueue handler:^(FBFuture *_) {
+    onQueue:self.target.workQueue notifyOfCancellation:^(FBFuture *_) {
       [self terminate];
     }];
   return self.executeFuture;

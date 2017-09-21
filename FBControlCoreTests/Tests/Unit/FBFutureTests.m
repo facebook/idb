@@ -90,19 +90,19 @@
 {
   FBMutableFuture *future = FBMutableFuture.future;
   __block NSUInteger handlerCount = 0;
-  [future notifyOfCompletionOnQueue:self.queue handler:^(FBFuture *_) {
+  [future onQueue:self.queue notifyOfCompletion:^(FBFuture *_) {
     @synchronized (self)
     {
       handlerCount++;
     }
   }];
-  [future notifyOfCompletionOnQueue:self.queue handler:^(FBFuture *_) {
+  [future onQueue:self.queue notifyOfCompletion:^(FBFuture *_) {
     @synchronized (self)
     {
       handlerCount++;
     }
   }];
-  [future notifyOfCompletionOnQueue:self.queue handler:^(FBFuture *_) {
+  [future onQueue:self.queue notifyOfCompletion:^(FBFuture *_) {
     @synchronized (self)
     {
       handlerCount++;
@@ -130,7 +130,7 @@
   FBMutableFuture<NSNumber *> *future3 = FBMutableFuture.future;
   FBFuture *compositeFuture = [[FBFuture
     futureWithFutures:@[future1, future2, future3]]
-    notifyOfCompletionOnQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0) handler:^(FBFuture *future) {
+    onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0) notifyOfCompletion:^(FBFuture *future) {
       [expectation fulfill];
     }];
 
@@ -180,7 +180,7 @@
       [step2 fulfill];
       return [FBFuture futureWithResult:@3];
     }]
-    notifyOfCompletionOnQueue:self.queue handler:^(FBFuture *future) {
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
       XCTAssertEqualObjects(future.result, @3);
       [step3 fulfill];
     }];
@@ -216,7 +216,7 @@
       XCTFail(@"Chained block should not be called after failure");
       return [FBFuture futureWithError:error];
     }]
-    notifyOfCompletionOnQueue:self.queue handler:^(FBFuture *future) {
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
       XCTAssertEqualObjects(future.error, error);
       [step3 fulfill];
     }];
@@ -291,7 +291,7 @@
       [step3 fulfill];
       return [FBFuture futureWithResult:@4];
     }]
-    notifyOfCompletionOnQueue:self.queue handler:^(FBFuture *future) {
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
       XCTAssertEqualObjects(future.result, @4);
       [step4 fulfill];
     }];
@@ -319,11 +319,11 @@
      XCTFail(@"fmap Should Not be called for cancelled future");
      return [FBFuture futureWithResult:@3];
     }]
-    notifyOfCompletionOnQueue:self.queue handler:^(FBFuture *future) {
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
       XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
       [completion fulfill];
     }]
-    notifyOfCancellationOnQueue:self.queue handler:^(FBFuture *future) {
+    onQueue:self.queue notifyOfCancellation:^(FBFuture *future) {
       XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
       [cancellation fulfill];
     }];
@@ -353,11 +353,11 @@
       XCTFail(@"chain Should Not be called for cancelled future");
       return [FBFuture futureWithResult:@3];
     }]
-    notifyOfCompletionOnQueue:self.queue handler:^(FBFuture *future) {
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
       XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
       [completion fulfill];
     }]
-    notifyOfCancellationOnQueue:self.queue handler:^(FBFuture *future) {
+    onQueue:self.queue notifyOfCancellation:^(FBFuture *future) {
       XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
       [cancellation fulfill];
     }];
@@ -377,12 +377,12 @@
 
   FBFuture<NSNumber *> *lateFuture1 = [[FBMutableFuture
     future]
-    notifyOfCancellationOnQueue:self.queue handler:^(FBFuture *_) {
+    onQueue:self.queue notifyOfCancellation:^(FBFuture *_) {
       [late1Cancelled fulfill];
     }];
   FBFuture<NSNumber *> *lateFuture2 = [[FBMutableFuture
     future]
-    notifyOfCancellationOnQueue:self.queue handler:^(FBFuture *_) {
+    onQueue:self.queue notifyOfCancellation:^(FBFuture *_) {
       [late2Cancelled fulfill];
     }];
   FBFuture<NSNumber *> *raceFuture = [[FBFuture
@@ -391,7 +391,7 @@
       [FBFuture futureWithResult:@1],
       lateFuture2,
     ]]
-    notifyOfCompletionOnQueue:self.queue handler:^(FBFuture *future) {
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
       XCTAssertEqual(future.state, FBFutureStateCompletedWithResult);
       XCTAssertEqualObjects(future.result, @1);
       [completion fulfill];
@@ -413,17 +413,17 @@
 
   FBFuture<NSNumber *> *cancelFuture1 = [[FBMutableFuture
     future]
-    notifyOfCancellationOnQueue:self.queue handler:^(FBFuture *_) {
+    onQueue:self.queue notifyOfCancellation:^(FBFuture *_) {
       [cancel1Called fulfill];
     }];
   FBFuture<NSNumber *> *cancelFuture2 = [[FBMutableFuture
     future]
-    notifyOfCancellationOnQueue:self.queue handler:^(FBFuture *_) {
+    onQueue:self.queue notifyOfCancellation:^(FBFuture *_) {
       [cancel2Called fulfill];
     }];
   FBFuture<NSNumber *> *cancelFuture3 = [[FBMutableFuture
     future]
-    notifyOfCancellationOnQueue:self.queue handler:^(FBFuture *_) {
+    onQueue:self.queue notifyOfCancellation:^(FBFuture *_) {
       [cancel3Called fulfill];
     }];
 
@@ -433,7 +433,7 @@
       cancelFuture2,
       cancelFuture3,
     ]]
-    notifyOfCompletionOnQueue:self.queue handler:^(FBFuture *future) {
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
       XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
       [completion fulfill];
     }];

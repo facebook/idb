@@ -135,7 +135,7 @@
     return [FBFuture futureWithError:error];
   }
   return [[future
-    notifyOfCompletionOnQueue:self.executor.workQueue handler:^(FBFuture *_) {
+    onQueue:self.executor.workQueue notifyOfCompletion:^(FBFuture *_) {
       [reader stopReadingWithError:nil];
     }]
     onQueue:self.executor.workQueue fmap:^(NSNumber *_) {

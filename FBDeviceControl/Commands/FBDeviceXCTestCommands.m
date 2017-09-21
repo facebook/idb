@@ -80,7 +80,7 @@
   _operation = [FBXcodeBuildOperation operationWithTarget:self.device configuration:testLaunchConfiguration xcodeBuildPath:xcodeBuildPath testRunFilePath:filePath];
 
   if (reporter != nil) {
-    [self.operation.completed notifyOfCompletionOnQueue:self.device.workQueue handler:^(FBFuture *task) {
+    [self.operation.completed onQueue:self.device.workQueue notifyOfCompletion:^(FBFuture *task) {
       [reporter testManagerMediatorDidFinishExecutingTestPlan:nil];
       self->_operation = nil;
     }];

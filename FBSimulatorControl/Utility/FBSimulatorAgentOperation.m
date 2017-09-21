@@ -53,7 +53,7 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
     typeof(self) strongSelf = weakSelf;
     [strongSelf performTeardown:stat_loc];
   };
-  [_mutableFuture notifyOfCancellationOnQueue:simulator.workQueue handler:^(FBFuture *_) {
+  [_mutableFuture onQueue:simulator.workQueue notifyOfCancellation:^(FBFuture *_) {
     typeof(self) strongSelf = weakSelf;
     [strongSelf terminate];
   }];

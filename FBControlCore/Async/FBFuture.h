@@ -113,7 +113,7 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
  @param handler the block to invoke.
  @return the Reciever, for chaining.
  */
-- (instancetype)notifyOfCompletionOnQueue:(dispatch_queue_t)queue handler:(void (^)(FBFuture *))handler;
+- (instancetype)onQueue:(dispatch_queue_t)queue notifyOfCompletion:(void (^)(FBFuture *))handler;
 
 /**
  Notifies of Cancellation.
@@ -122,7 +122,7 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
  @param handler the block to invoke.
  @return the Reciever, for chaining.
  */
-- (instancetype)notifyOfCancellationOnQueue:(dispatch_queue_t)queue handler:(void (^)(FBFuture *))handler;
+- (instancetype)onQueue:(dispatch_queue_t)queue notifyOfCancellation:(void (^)(FBFuture *))handler;
 
 /**
  Chain Futures based on any non-cancellation resolution of the reciever.

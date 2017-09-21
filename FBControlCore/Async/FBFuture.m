@@ -144,7 +144,7 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
     if (future.hasCompleted) {
       futureCompleted(future, index);
     } else {
-      [future notifyOfCompletionOnQueue:queue handler:^(FBFuture *innerFuture){
+      [future onQueue:queue notifyOfCompletion:^(FBFuture *innerFuture){
         futureCompleted(innerFuture, index);
       }];
     }
@@ -187,7 +187,7 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
     if (future.hasCompleted) {
       futureCompleted(future);
     } else {
-      [future notifyOfCompletionOnQueue:queue handler:futureCompleted];
+      [future onQueue:queue notifyOfCompletion:futureCompleted];
     }
   }
   return compositeFuture;
@@ -221,7 +221,7 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
   return [self resolveAsCancelled];
 }
 
-- (instancetype)notifyOfCompletionOnQueue:(dispatch_queue_t)queue handler:(void (^)(FBFuture *))handler
+- (instancetype)onQueue:(dispatch_queue_t)queue notifyOfCompletion:(void (^)(FBFuture *))handler
 {
   dispatch_async(self.queue, ^{
     if (self->_state != FBFutureStateRunning) {
@@ -236,9 +236,9 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
   return self;
 }
 
-- (instancetype)notifyOfCancellationOnQueue:(dispatch_queue_t)queue handler:(void (^)(FBFuture *))handler
+- (instancetype)onQueue:(dispatch_queue_t)queue notifyOfCancellation:(void (^)(FBFuture *))handler
 {
-  return [self notifyOfCompletionOnQueue:queue handler:^(FBFuture *future) {
+  return [self onQueue:queue notifyOfCompletion:^(FBFuture *future) {
     if (future.state != FBFutureStateCompletedWithCancellation) {
       return;
     }
@@ -249,13 +249,13 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
 - (FBFuture *)onQueue:(dispatch_queue_t)queue chain:(FBFuture *(^)(FBFuture *))chain
 {
   FBMutableFuture *chained = FBMutableFuture.future;
-  [self notifyOfCompletionOnQueue:queue handler:^(FBFuture *future) {
+  [self onQueue:queue notifyOfCompletion:^(FBFuture *future) {
     if (future.state == FBFutureStateCompletedWithCancellation) {
       [chained cancel];
       return;
     }
     FBFuture *next = chain(future);
-    [next notifyOfCompletionOnQueue:queue handler:^(FBFuture *final) {
+    [next onQueue:queue notifyOfCompletion:^(FBFuture *final) {
       FBFutureState state = final.state;
       switch (state) {
         case FBFutureStateCompletedWithError:
@@ -278,7 +278,7 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
 - (FBFuture *)onQueue:(dispatch_queue_t)queue fmap:(FBFuture * (^)(id result))fmap
 {
   FBMutableFuture *chained = FBMutableFuture.future;
-  [self notifyOfCompletionOnQueue:queue handler:^(FBFuture *future) {
+  [self onQueue:queue notifyOfCompletion:^(FBFuture *future) {
     if (future.error) {
       [chained resolveWithError:future.error];
       return;
@@ -287,7 +287,7 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
       [chained cancel];
       return;
     }
-    [fmap(future.result) notifyOfCompletionOnQueue:queue handler:^(FBFuture *next) {
+    [fmap(future.result) onQueue:queue notifyOfCompletion:^(FBFuture *next) {
       if (next.error) {
         [chained resolveWithError:next.error];
         return;
@@ -434,7 +434,7 @@ static NSString *KeyPathHasCompleted = @"hasCompleted";
   if (future.hasCompleted) {
     resolve(future);
   } else {
-    [future notifyOfCompletionOnQueue:self.queue handler:resolve];
+    [future onQueue:self.queue notifyOfCompletion:resolve];
   }
   return self;
 }
