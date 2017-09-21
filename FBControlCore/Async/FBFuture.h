@@ -152,6 +152,22 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
  */
 - (FBFuture *)onQueue:(dispatch_queue_t)queue map:(id (^)(T result))map;
 
+/**
+ Replaces the value on a successful future.
+
+ @param replacement the replacement
+ @return a future with the replacement.
+ */
+- (FBFuture *)mapReplace:(id)replacement;
+
+/**
+ Replaces the error message in the event of a failure.
+
+ @param format the format string to re-phrase the failure message.
+ @return a future with the replacement.
+ */
+- (FBFuture *)rephraseFailure:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+
 #pragma mark Properties
 
 /**

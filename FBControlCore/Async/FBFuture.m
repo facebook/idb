@@ -10,6 +10,7 @@
 #import "FBFuture.h"
 
 #import "FBCollectionOperations.h"
+#import "FBControlCore.h"
 
 FBFutureStateString const FBFutureStateStringRunning = @"running";
 FBFutureStateString const FBFutureStateStringCompletedWithResult = @"completed_with_result";
@@ -303,6 +304,32 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
   return [self onQueue:queue fmap:^FBFuture *(id result) {
     id next = map(result);
     return [FBFuture futureWithResult:next];
+  }];
+}
+
+- (FBFuture *)mapReplace:(id)replacement
+{
+  return [self onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0) map:^(id _) {
+    return replacement;
+  }];
+}
+
+- (FBFuture *)rephraseFailure:(NSString *)format, ...
+{
+  va_list args;
+  va_start(args, format);
+  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
+  va_end(args);
+
+  return [self onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0) chain:^(FBFuture *future) {
+    NSError *error = future.error;
+    if (!error) {
+      return future;
+    }
+    return [[[FBControlCoreError
+      describe:string]
+      causedBy:error]
+      failFuture];
   }];
 }
 
