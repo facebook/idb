@@ -78,45 +78,21 @@
 
 #pragma mark Public Methods
 
-- (void)startRecordingToFile:(NSString *)filePath group:(dispatch_group_t)group;
+- (FBFuture<FBSimulatorVideo *> *)startRecordingToFile:(nullable NSString *)filePath
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
 }
 
-- (void)stopRecording:(dispatch_group_t)group
+- (FBFuture<FBSimulatorVideo *> *)stopRecording
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
 }
 
 + (BOOL)surfaceSupported
 {
   return FBVideoEncoderSimulatorKit.isSupported;
-}
-
-- (BOOL)startRecordingToFile:(nullable NSString *)filePath timeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  dispatch_group_t waitGroup = dispatch_group_create();
-  [self startRecordingToFile:filePath group:waitGroup];
-  long fail = dispatch_group_wait(waitGroup, [FBSimulatorVideo convertTimeIntervalToDispatchTime:timeout]);
-  if (fail) {
-    return [[FBSimulatorError
-      describeFormat:@"Timeout waiting for video to start recording in %f seconds", timeout]
-      failBool:error];
-  }
-  return YES;
-}
-
-- (BOOL)stopRecordingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  dispatch_group_t waitGroup = dispatch_group_create();
-  [self stopRecording:waitGroup];
-  long fail = dispatch_group_wait(waitGroup, [FBSimulatorVideo convertTimeIntervalToDispatchTime:timeout]);
-  if (fail) {
-    return [[FBSimulatorError
-      describeFormat:@"Timeout waiting for video to stop recording in %f seconds", timeout]
-      failBool:error];
-  }
-  return YES;
 }
 
 #pragma mark FBTerminationHandle
@@ -128,7 +104,7 @@
 
 - (void)terminate
 {
-  [self stopRecordingWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:nil];
+  [self stopRecording];
 }
 
 #pragma mark Private
@@ -159,18 +135,19 @@
 
 #pragma mark Public Methods
 
-- (void)startRecordingToFile:(NSString *)filePath group:(dispatch_group_t)group
+- (FBFuture<NSNull *> *)startRecordingToFile:(NSString *)filePath
 {
   if (self.encoder) {
-    [self.logger log:@"Cannot Start Recording, there is already an active encoder"];
-    return;
+    return [[FBSimulatorError
+      describe:@"Cannot Start Recording, there is already an active encoder"]
+      failFuture];
   }
   // Choose the Path for the Log
   NSString *path = filePath ?: self.configuration.filePath;
 
   // Create the encoder and start it
   self.encoder = [FBVideoEncoderBuiltIn encoderWithConfiguration:self.configuration videoPath:path logger:self.logger];
-  [self.encoder startRecording:group ?: dispatch_group_create()];
+  FBFuture<NSNull *> *future = [self.encoder startRecording];
 
   // Register the encoder with the Frame Generator
   [self.frameGenerator attachSink:self.encoder];
@@ -182,19 +159,23 @@
     updatePath:path]
     build];
   [self.eventSink diagnosticAvailable:diagnostic];
+
+  return future;
 }
 
-- (void)stopRecording:(dispatch_group_t)group
+- (FBFuture<NSNull *> *)stopRecording
 {
   if (!self.encoder) {
-    [self.logger log:@"Cannot Stop Recording, there is no active encoder"];
-    return;
+    return [[FBSimulatorError
+      describe:@"Cannot stop Recording, there is not an active encoder"]
+      failFuture];
   }
 
   // Detach the Encoder, stop, then release it.
   [self.frameGenerator detachSink:self.encoder];
-  [self.encoder stopRecording:group ?: dispatch_group_create()];
+  FBFuture *future = [self.encoder stopRecording];
   self.encoder = nil;
+  return future;
 }
 
 #pragma mark FBFramebufferFrameSink Implementation
@@ -213,7 +194,6 @@
 
 @implementation FBSimulatorVideo_SimulatorKit
 
-
 - (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super initWithConfiguration:configuration logger:logger eventSink:eventSink];
@@ -225,7 +205,7 @@
 
   BOOL pendingStart = (configuration.options & FBVideoEncoderOptionsAutorecord) == FBVideoEncoderOptionsAutorecord;
   if (pendingStart) {
-    [self startRecordingToFile:nil group:dispatch_group_create()];
+    [self startRecordingToFile:nil];
   }
 
   return self;
@@ -233,18 +213,19 @@
 
 #pragma mark Public
 
-- (void)startRecordingToFile:(NSString *)filePath group:(dispatch_group_t)group;
+- (FBFuture<NSNull *> *)startRecordingToFile:(NSString *)filePath
 {
   if (self.encoder) {
-    [self.logger log:@"Cannot Start Recording, there is already an active encoder"];
-    return;
+    return [[FBSimulatorError
+      describe:@"Cannot Start Recording, there is already an active encoder"]
+      failFuture];
   }
   // Choose the Path for the Log
   NSString *path = filePath ?: self.configuration.filePath;
 
   // Create and start the encoder.
   self.encoder = [FBVideoEncoderSimulatorKit encoderWithRenderable:self.surface videoPath:path logger:self.logger];
-  [self.encoder startRecording:group ?: dispatch_group_create()];
+  FBFuture<NSNull *> *future = [self.encoder startRecording];
 
   // Report the availability of the video
   FBDiagnostic *diagnostic = [[[[[FBDiagnosticBuilder builder]
@@ -253,18 +234,22 @@
     updatePath:path]
     build];
   [self.eventSink diagnosticAvailable:diagnostic];
+
+  return future;
 }
 
-- (void)stopRecording:(dispatch_group_t)group
+- (FBFuture<FBSimulatorVideo *> *)stopRecording
 {
   if (!self.encoder) {
-    [self.logger log:@"Cannot Stop Recording, there is no active encoder"];
-    return;
+    return [[FBSimulatorError
+      describe:@"Cannot Stop Recording, there is no active encoder"]
+      failFuture];
   }
 
   // Stop and release the encoder
-  [self.encoder stopRecording:group ?: dispatch_group_create()];
+  FBFuture *future = [self.encoder stopRecording];
   self.encoder = nil;
+  return future;
 }
 
 @end

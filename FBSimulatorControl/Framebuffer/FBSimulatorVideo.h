@@ -52,20 +52,16 @@ NS_ASSUME_NONNULL_BEGIN
  Starts Recording Video.
 
  @param filePath the (optional) file path to record to. If nil is provided, a default path will be used.
- @param timeout the amount of time to wait for the encoding to start.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A Future that resolves when recording has started.
  */
-- (BOOL)startRecordingToFile:(nullable NSString *)filePath timeout:(NSTimeInterval)timeout error:(NSError **)error;
+- (FBFuture<NSNull *> *)startRecordingToFile:(nullable NSString *)filePath;
 
 /**
  Stops Recording Video.
 
- @param timeout the amount of time to wait for the encoding to start.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A Future that resolves when recording has stopped.
  */
-- (BOOL)stopRecordingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+- (FBFuture<NSNull *> *)stopRecording;
 
 /**
  YES if Surface Based Supporting is available, NO otherwise.

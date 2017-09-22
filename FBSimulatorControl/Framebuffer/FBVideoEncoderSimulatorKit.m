@@ -19,13 +19,14 @@
 #import <SimulatorKit/SimDisplayVideoWriter+Removed.h>
 
 #import "FBFramebufferSurface.h"
+#import "FBSimulatorError.h"
 
 @interface FBVideoEncoderSimulatorKit () <FBFramebufferSurfaceConsumer>
 
 @property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
-@property (nonatomic, strong, readonly) dispatch_queue_t mediaQueue;
 @property (nonatomic, strong, readonly) SimDisplayVideoWriter *writer;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finishedWritingFuture;
 
 @end
 
@@ -51,6 +52,7 @@
   _surface = surface;
   _logger = logger;
   _mediaQueue = mediaQueue;
+  _finishedWritingFuture = [FBMutableFuture future];
   _writer = [self createVideoWriterForURL:fileURL mediaQueue:mediaQueue];
 
   return self;
@@ -59,12 +61,17 @@
 - (SimDisplayVideoWriter *)createVideoWriterForURL:(NSURL *)url mediaQueue:(dispatch_queue_t)mediaQueue
 {
   Class class = objc_getClass("SimDisplayVideoWriter");
+  FBMutableFuture<NSNull *> *future = self.finishedWritingFuture;
+
+  // When we don't get a callback from the VideoWriter, assume that the finishedWriting call is synchronous.
+  // This means that the future that is returned from the public API will return the pre-finished future.
   if ([class respondsToSelector:@selector(videoWriterForURL:fileType:)]) {
+    [self.finishedWritingFuture resolveWithResult:NSNull.null];
     return [class videoWriterForURL:url fileType:@"mp4"];
   }
+  // Resolve the Future when writing has finished.
   return [class videoWriterForURL:url fileType:@"mp4" completionQueue:mediaQueue completionHandler:^{
-    // This should be used as a semaphore for the stopRecording: dispatch_group.
-    // As it stands, the behaviour is currently the same as before.
+    [future resolveWithResult:NSNull.null];
   }];
 }
 
@@ -82,18 +89,18 @@
   return objc_getClass("SimDisplayVideoWriter") != nil;
 }
 
-- (void)startRecording:(dispatch_group_t)group
+- (FBFuture<NSNull *> *)startRecording
 {
-  dispatch_group_async(group, self.mediaQueue, ^{
-    [self startRecordingNowWithError:nil];
-  });
+  return [FBFuture onQueue:self.mediaQueue resolveValue:^(NSError **error) {
+    return [self startRecordingNowWithError:nil] ? NSNull.null : nil;
+  }];
 }
 
-- (void)stopRecording:(dispatch_group_t)group
+- (FBFuture<NSNull *> *)stopRecording
 {
-  dispatch_group_async(group, self.mediaQueue, ^{
-    [self stopRecordingNowWithError:nil];
-  });
+  return [FBFuture onQueue:self.mediaQueue resolve:^{
+    return [self stopRecordingNow];
+  }];
 }
 
 #pragma mark Private
@@ -119,12 +126,13 @@
   return YES;
 }
 
-- (BOOL)stopRecordingNowWithError:(NSError **)error
+- (FBFuture<NSNull *> *)stopRecordingNow
 {
   // Don't hit an assertion because we're not started.
   if (!self.writer.startedWriting) {
-    [self.logger log:@"Cannot stop recording, the writer has not started writing"];
-    return YES;
+    return [[FBSimulatorError
+      describeFormat:@"Cannot stop recording, the writer has not started writing"]
+      failFuture];
   }
 
   // Detach the Consumer first, we don't want to send any more Damage Rects.
@@ -135,7 +143,9 @@
   [self.logger log:@"Finishing Writing in Video Writer"];
   [self.writer finishWriting];
 
-  return YES;
+
+  // Return the future that we've wrapped.
+  return self.finishedWritingFuture;
 }
 
 #pragma mark FBFramebufferConsumable

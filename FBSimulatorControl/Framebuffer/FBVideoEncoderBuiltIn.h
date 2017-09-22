@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import <FBSimulatorControl/FBFramebufferFrameGenerator.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -22,6 +24,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBVideoEncoderBuiltIn : NSObject <FBFramebufferFrameSink>
 
+#pragma mark Initializers
+
 /**
  The Designated Initializer.
 
@@ -31,19 +35,24 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)encoderWithConfiguration:(FBVideoEncoderConfiguration *)configuration videoPath:(NSString *)videoPath logger:(nullable id<FBControlCoreLogger>)logger;
 
+#pragma mark Public Methods
+
 /**
  Starts Recording Video.
-
- @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
  */
-- (void)startRecording:(dispatch_group_t)group;
+- (FBFuture<NSNull *> *)startRecording;
 
 /**
  Stops Recording Video.
-
- @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
  */
-- (void)stopRecording:(dispatch_group_t)group;
+- (FBFuture<NSNull *> *)stopRecording;
+
+#pragma mark Properties
+
+/**
+ The Queue used for Serializing Media Actions.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t mediaQueue;
 
 @end
 
