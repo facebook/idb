@@ -20,20 +20,6 @@ protocol ActionPerformer {
   func perform(reporter: EventReporter, action: Action, queryOverride: FBiOSTargetQuery?) -> CommandResult
 }
 
-extension ActionPerformer {
-  func perform(_ input: String, reporter: EventReporter) -> CommandResult {
-    do {
-      let arguments = Arguments.fromString(input)
-      let (_, action) = try Action.parser.parse(arguments)
-      return self.perform(reporter: reporter, action: action, queryOverride: nil)
-    } catch let error as ParseError {
-      return .failure("Error: \(error.description)")
-    } catch let error as NSError {
-      return .failure(error.description)
-    }
-  }
-}
-
 /**
  Defines the Output of running a Command.
  */
