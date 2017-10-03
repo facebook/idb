@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from typing import List, Any, Optional, Dict
 import asyncio
 import json
 import logging
@@ -14,6 +15,14 @@ import urllib.request
 logging.basicConfig(format='%(message)s')
 log = logging.getLogger()
 log.setLevel(logging.INFO)
+
+def async_test(f):
+    def wrapper(*args, **kwargs):
+        coro = asyncio.coroutine(f)
+        future = coro(*args, **kwargs)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(future)
+    return wrapper
 
 
 class Defaults:
@@ -34,10 +43,16 @@ class Defaults:
 
 
 class Events:
-    def __init__(self, events):
+    def __init__(
+        self,
+        events: List[Dict],
+    ) -> None:
         self.__events = events
 
-    def extend(self, events):
+    def extend(
+        self,
+        events: List[Dict],
+    ) -> None:
         self.__events.extend(events)
 
     def __repr__(self):
@@ -45,7 +60,11 @@ class Events:
             [str(event) for event in self.__events],
         )
 
-    def matching(self, event_name, event_type):
+    def matching(
+        self,
+        event_name: str,
+        event_type: str,
+    ) -> List[Dict]:
         return [
             event for event in self.__events
             if event['event_name'] == event_name and event['event_type'] == event_type
@@ -59,55 +78,52 @@ class Simulator:
     def __repr__(self):
         return str(self.__json)
 
-    def get_udid(self):
+    @property
+    def udid(self):
         return self.__json['udid']
 
 
 class FBSimctlProcess:
     def __init__(
         self,
-        arguments,
-        timeout
-    ):
+        arguments: List[str],
+        timeout: int,
+    ) -> None:
         self.__arguments = arguments
         self.__timeout = timeout
         self.__events = Events([])
-        self.__loop = None
-        self.__process = None
+        self.__process: Optional[Any] = None
 
-    def wait_for_event(self, event_name, event_type, timeout=None):
-        timeout = timeout if timeout else self.__timeout
-        return self.__loop.run_until_complete(
-            self._wait_for_event(event_name, event_type, timeout),
-        )
+    async def wait_for_event(
+        self,
+        event_name: str, 
+        event_type: str, 
+        timeout: Optional[int] = None,
+    ) -> None:
+        coro = self._wait_for_event(event_name, event_type, self.__process.stdout)
+        if timeout is None:
+            await coro
+        else:
+            await asyncio.wait_for(coro, timeout)
 
-    def start(self):
+    async def start(self) -> 'FBSimctlProcess':
         if self.__process:
             raise Exception(
                 'A Process {} has allready started'.format(self.__process),
             )
-        self.__process = self.__loop.run_until_complete(
-            self._start_process()
-        )
+        self.__process = await self._start_process()
         return self
 
-    def terminate(self, wait=False):
-        self.__loop.run_until_complete(
-            self._terminate_process(wait),
-        )
+    async def terminate(self, wait=False):
+        await self._terminate_process(wait),
 
-    def __enter__(self):
-        self.__loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.__loop)
-        return self.start()
+    async def __aenter__(self):
+        return await self.start()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.terminate(wait=True)
-        self.__loop.close()
-        self.__loop = None
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.terminate(wait=True)
 
-    @asyncio.coroutine
-    def _start_process(self):
+    async def _start_process(self):
         log.info('Opening Process with Arguments {0}'.format(
             ' '.join(self.__arguments),
         ))
@@ -116,14 +132,16 @@ class FBSimctlProcess:
             stdout=asyncio.subprocess.PIPE,
             stderr=None,
         )
-        process = yield from create
+        process = await create
         return process
 
-    @asyncio.coroutine
-    def _terminate_process(self, wait):
+    async def _terminate_process(
+        self, 
+        wait: bool,
+    ) -> None:
         if not self.__process:
             raise Exception(
-                'Cannot termnated a process when none has started',
+                'Cannot terminate a process when none has started',
             )
         if self.__process.returncode is not None:
             return
@@ -132,22 +150,25 @@ class FBSimctlProcess:
         if not wait:
             log.info('Passing Back to Consumer')
             return
-        yield from self.__process.communicate()
+        await self.__process.communicate()
         log.info('Terminated {0}'.format(self.__process))
 
-    @asyncio.coroutine
-    def _wait_for_event(self, event_name, event_type, timeout):
+    async def _wait_for_event(
+        self,
+        event_name: str,
+        event_type: str,
+        reader: asyncio.StreamReader,
+    ) -> Any:
         matching = self._match_event(
             event_name,
             event_type,
         )
         if matching:
             return matching
-        start_time = time.time()
-        while time.time() < start_time + timeout:
-            data = yield from self.__process.stdout.readline()
+        while True:
+            data = await reader.readline()
             line = data.decode('utf-8').rstrip()
-            if not len(line) and self.__process.stdout.at_eof():
+            if not len(line) and reader.at_eof():
                 raise Exception(
                     'Reached end of output waiting for {0}/{1}'.format(
                     event_name,
@@ -162,11 +183,6 @@ class FBSimctlProcess:
             )
             if matching:
                 return matching
-        raise Exception('Timed out waiting for {0}/{1} in {2}'.format(
-            event_name,
-            event_type,
-            events,
-        ))
 
     def _match_event(self, event_name, event_type, json_event=None):
         if json_event:
@@ -186,37 +202,56 @@ class FBSimctlProcess:
 
 
 class FBSimctl:
-    def __init__(self, executable_path, set_path=None):
+    def __init__(
+        self, 
+        executable_path: str, 
+        set_path: Optional[str] = None,
+    ) -> None:
         self.__executable_path = executable_path
         self.__set_path = set_path
 
     def __call__(self, arguments):
         return self.run(arguments)
 
-    def _make_arguments(self, arguments=[]):
+    def _make_arguments(
+        self, 
+        arguments: List[str] = [],
+    ) -> List[str]:
         base_arguments = [self.__executable_path]
         if self.__set_path:
             base_arguments += ['--set', self.__set_path]
         base_arguments.append('--json')
         return base_arguments + arguments
 
-    def run(self, arguments, timeout=Defaults.TIMEOUT):
+    async def run(
+        self, 
+        arguments: List[str], 
+        timeout: int = Defaults.TIMEOUT,
+    ) -> Events:
         arguments = self._make_arguments(arguments)
         log.info('Running Process with Arguments {0}'.format(
             ' '.join(arguments),
         ))
-        process = subprocess.run(
-            arguments,
+        process = await asyncio.create_subprocess_exec(
+            *arguments,
             stdout=subprocess.PIPE,
-            check=True,
-            timeout=timeout,
+            stderr=None,
         )
+        (stdout, _) = await process.communicate()
+        if process.returncode is not 0:
+            raise Exception(
+                f'Nonzero exit code {process.returncode} {stdout}'
+            )
         events = [
-            json.loads(line) for line in str(process.stdout, 'utf-8').splitlines()
+            json.loads(line) for line in str(stdout, 'utf-8').splitlines()
         ]
         return Events(events)
 
-    def launch(self, arguments, timeout=Defaults.TIMEOUT):
+    def launch(
+        self,
+        arguments: List[str], 
+        timeout: int = Defaults.TIMEOUT,
+    ):
         return FBSimctlProcess(
             arguments=self._make_arguments(arguments),
             timeout=timeout,
@@ -234,24 +269,53 @@ class Metal:
         return self.__supports_metal_exit_code == 0
 
 class WebServer:
-    def __init__(self, port):
-        self.__port = port
 
-    def get(self, path):
+    def __init__(
+        self,
+        port: int,
+        fbsimctl: FBSimctl,
+    ) -> None:
+        self.__port = port
+        self.__fbsimctl = fbsimctl
+        self.__process: Optional[FBSimctlProcess] = None
+
+    async def __aenter__(self):
+        arguments = [
+            '--simulators', 'listen', '--http', str(self.__port),
+        ]
+        self.__process = await self.__fbsimctl.launch(arguments).__aenter__()
+        await self.__process.wait_for_event('listen', 'started')
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.__process.__aexit__(exc_type, exc_val, exc_tb)
+        self.__process = None
+
+    def get(
+        self, 
+        path: str,
+    ) -> Dict:
         request = urllib.request.Request(
             url=self._make_url(path),
             method='GET',
         )
         return self._perform_request(request)
 
-    def get_binary(self, path):
+    def get_binary(
+        self, 
+        path: str,
+    ) -> bytes:
         request = urllib.request.Request(
             url=self._make_url(path),
             method='GET',
         )
         return self._perform_request_binary(request)
 
-    def post(self, path, payload):
+    def post(
+        self,
+        path: str,
+        payload: Dict,
+    ) -> Dict:
         data = json.dumps(payload).encode('utf-8')
         request = urllib.request.Request(
             url=self._make_url(path),
@@ -261,27 +325,41 @@ class WebServer:
         )
         return self._perform_request(request)
 
-    def post_binary(self, path, file, length):
+    def post_binary(
+        self,
+        path: str,
+        file: Any, 
+        length: int,
+    ) -> Dict:
         request = urllib.request.Request(
             self._make_url(path),
             file,
             method='POST',
-            headers={'content-length': length},
+            headers={'content-length': str(length)},
         )
         return self._perform_request(request)
 
-    def _make_url(self, path):
+    def _make_url(
+        self, 
+        path: str,
+    ) -> str:
         return 'http://localhost:{}/{}'.format(
             self.__port,
             path,
         )
 
-    def _perform_request(self, request):
+    def _perform_request(
+        self, 
+        request: urllib.request.Request,
+    ) -> Dict:
         with urllib.request.urlopen(request) as f:
             response = f.read().decode('utf-8')
             return json.loads(response)
 
-    def _perform_request_binary(self, request):
+    def _perform_request_binary(
+        self,
+        request: urllib.request.Request,
+    ) -> bytes:
         with urllib.request.urlopen(request) as f:
             return f.read()
 
