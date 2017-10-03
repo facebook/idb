@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from typing import Any
 from util import (
     FBSimctl,
     Simulator,
@@ -485,8 +486,9 @@ class SuiteBuilder:
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.description = 'fbsimctl e2e test runner'
+    parser = argparse.ArgumentParser(
+        description='fbsimctl e2e test runner',
+    )
     parser.add_argument(
         '--fbsimctl-path',
         default='executable-under-test/bin/fbsimctl',
@@ -503,7 +505,7 @@ if __name__ == '__main__':
         help='The iOS Device Type to run tests against. Multiple may be given.',
         default=[],
     )
-    arguments = parser.parse_args()
+    arguments: Any = parser.parse_args()
     arguments.device_type = list(set(arguments.device_type))
     if not len(arguments.device_type):
         arguments.device_type = ['iPhone 6']
