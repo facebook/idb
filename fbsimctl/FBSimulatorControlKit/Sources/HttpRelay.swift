@@ -453,6 +453,13 @@ class HttpRelay : Relay {
     }
   }}
 
+  fileprivate static var uninstallRoute: Route { get {
+    return ActionRoute.post(.uninstall) { json in
+      let bundleID = try json.getValue("bundle_id").getString()
+      return Action.uninstall(bundleID)
+    }
+  }}
+
   fileprivate static var uploadRoute: Route { get {
     let jsonToDiagnostics:(JSON)throws -> [FBDiagnostic] = { json in
       switch json {
@@ -492,6 +499,7 @@ class HttpRelay : Relay {
       self.setLocationRoute,
       self.tapRoute,
       self.terminateRoute,
+      self.uninstallRoute,
       self.uploadRoute,
       ScreenshotRoute(format: ScreenshotRoute.Format.png),
       ScreenshotRoute(format: ScreenshotRoute.Format.jpeg),
