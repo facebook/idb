@@ -207,71 +207,6 @@ extension HttpRequest {
   }
 }
 
-
-// Currently the protocol methods that return interpreted strings from this class are never called
-// Instead its wrapped in a FBReportingiOSActionReaderDelegate which handles the reporting
-@objc class ActionReaderDelegateBridge : NSObject, FBiOSActionReaderDelegate {
-  let interpreter: EventInterpreter
-  let reporter: EventReporter
-
-  init(interpreter: EventInterpreter, reporter: EventReporter) {
-    self.interpreter = interpreter
-    self.reporter = reporter
-    super.init()
-  }
-
-  func interpret(_ action: FBiOSTargetAction, _ eventType: EventType) -> String {
-    let subject = SimpleSubject(action.eventName, eventType, ControlCoreSubject(action as! ControlCoreValue))
-    return self.interpret(subject)
-  }
-
-  func interpret(_ subject: EventReporterSubject) -> String {
-    self.reporter.report(subject)
-    let lines = self.interpreter.interpret(subject)
-    return lines.joined(separator: "\n") + "\n"
-  }
-
-  func action(_ action: FBiOSTargetAction, target: FBiOSTarget, didGenerate terminationHandle: FBTerminationHandle) {
-
-  }
-
-  func obtainConsumer(for action: FBiOSTargetAction, target: FBiOSTarget) -> FBFileConsumer {
-    return self.reporter.writer
-  }
-
-  func readerDidFinishReading(_ reader: FBiOSActionReader) {
-
-  }
-
-  func reader(_ reader: FBiOSActionReader, failedToInterpretInput input: String, error: Error) -> String? {
-    let message = error.localizedDescription + ". input: " + input
-    let subject = SimpleSubject(.failure, .discrete, message)
-    return self.interpret(subject)
-  }
-
-  func reader(_ reader: FBiOSActionReader, willStartReadingUpload header: FBUploadHeader) -> String? {
-    return self.interpret(header, .started)
-  }
-
-  func reader(_ reader: FBiOSActionReader, didFinishUpload destination: FBUploadedDestination) -> String? {
-    return self.interpret(destination, .ended)
-  }
-
-  func reader(_ reader: FBiOSActionReader, willStartPerforming action: FBiOSTargetAction, on target: FBiOSTarget) -> String? {
-    return self.interpret(action, .started)
-  }
-
-  func reader(_ reader: FBiOSActionReader, didProcessAction action: FBiOSTargetAction, on target: FBiOSTarget) -> String? {
-    return self.interpret(action, .ended)
-  }
-
-  func reader(_ reader: FBiOSActionReader, didFailToProcessAction action: FBiOSTargetAction, on target: FBiOSTarget, error: Error) -> String? {
-    let subject = SimpleSubject(.failure, .discrete, error.localizedDescription)
-    return self.interpret(subject)
-  }
-
-}
-
 extension FBiOSTargetAction {
   func runAction(target: FBiOSTarget, reporter: EventReporter) throws -> FBTerminationHandle? {
     let delegate = AccumilatingActionDelegate(reporter: reporter)
@@ -339,3 +274,4 @@ public extension FileHandleWriter {
 public typealias EventType = FBEventType
 
 public typealias JSONKeys = FBJSONKey
+

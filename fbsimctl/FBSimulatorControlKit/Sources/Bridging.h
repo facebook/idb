@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -209,6 +210,18 @@ NS_ASSUME_NONNULL_BEGIN
  @return a HTTP Response
  */
 - (HttpResponse *)handleRequest:(HttpRequest *)request;
+
+@end
+
+/**
+ A Delegate Bridge that accumulates termination handles.
+ */
+@interface ActionReaderDelegateBridge : NSObject <FBiOSActionReaderDelegate>
+
+/**
+ The Termination Handles.
+ */
+@property (nonatomic, copy, readonly) NSArray<id<FBTerminationHandle>> *handles;
 
 @end
 

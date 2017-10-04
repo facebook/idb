@@ -299,3 +299,40 @@
 }
 
 @end
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wprotocol"
+#pragma clang diagnostic ignored "-Wincomplete-implementation"
+
+@interface ActionReaderDelegateBridge ()
+
+@property (nonatomic, strong, readonly) NSMutableArray<id<FBTerminationHandle>> *mutableHandles;
+
+@end
+
+@implementation ActionReaderDelegateBridge
+
+- (instancetype)init
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _mutableHandles = [NSMutableArray array];
+  return self;
+}
+
+- (NSArray<id<FBTerminationHandle>> *)handles
+{
+  return [self.mutableHandles copy];
+}
+
+- (void)action:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target didGenerateTerminationHandle:(id<FBTerminationHandle>)terminationHandle
+{
+  [self.mutableHandles addObject:terminationHandle];
+}
+
+@end
+
+#pragma clang diagnostic pop
