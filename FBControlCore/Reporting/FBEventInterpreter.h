@@ -9,43 +9,52 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBEventReporterSubject;
-
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBEventReporterSubject;
+
 /**
- * Protcol for providing a way of formatting FBEventReporterSubjects
- * into an array of strings, where each string represents the subject itself
- * or one of its subsubjects
+ Protocol for providing a way of formatting FBEventReporterSubjects
+ into an array of strings, where each string represents the subject itself
+ or one of its subsubjects
  */
 @protocol FBEventInterpreter <NSObject>
 
-- (NSArray<NSString *> *)interpret:(FBEventReporterSubject *)eventReporterSubject;
+/**
+ Interpret the Subject, converting it to a string representation.
+
+ @param subject the subject to interpret.
+ @return the string that has been interpreted.
+ */
+- (NSString *)interpret:(FBEventReporterSubject *)subject;
+
+/**
+ Interpret the Subject, converting it to an array of lines.
+
+ @param subject the subject to interpret.
+ @return the lines that have been interpreted.
+ */
+- (NSArray<NSString *> *)interpretLines:(FBEventReporterSubject *)subject;
 
 @end
 
 /**
- * Abstract base class for classes conforming to FBEventInterpreter
- * Using this is not required
- * Subclasses should implement
- * - (nullable NSString *)getStringFromEventReporterSubject:(nonnull FBEventReporterSubject *)subject
+ Implementations of Event Interpreters.
  */
-@interface FBBaseEventInterpreter : NSObject <FBEventInterpreter>
+@interface FBEventInterpreter : NSObject <FBEventInterpreter>
 
-- (nullable NSString *)getStringFromEventReporterSubject:(nonnull FBEventReporterSubject *)subject;
-@end
+/**
+ A JSON Interpreter.
 
+ @param pretty YES if a pretty printed interpreter, NO otherwise.
+ */
++ (instancetype)jsonEventInterpreter:(BOOL)pretty;
 
-@interface FBJSONEventInterpreter : FBBaseEventInterpreter
+/**
+ A Human Readable Event Interpreter.
+ */
++ (instancetype)humanReadableInterpreter;
 
-@property (nonatomic, assign, readonly) BOOL pretty;
-
-- (instancetype)initWithPrettyFormatting:(BOOL)pretty;
-
-@end
-
-
-@interface FBHumanReadableEventInterpreter : FBBaseEventInterpreter
 @end
 
 NS_ASSUME_NONNULL_END

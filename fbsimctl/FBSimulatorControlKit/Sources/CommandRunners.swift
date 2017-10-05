@@ -241,7 +241,7 @@ struct ListenRunner : Runner, ActionPerformer {
   func makeBaseRelay() throws -> (ListenInterface, Relay, EventReporter, FBTerminationAwaitable?) {
     let (interface, query) = self.context.value
     let reporter = self.context.reporter
-    let interpreter = FBJSONEventInterpreter(prettyFormatting: false)
+    let interpreter = FBEventInterpreter.jsonEventInterpreter(false)
     var relays: [Relay] = []
     var awaitable: FBTerminationAwaitable? = nil
 

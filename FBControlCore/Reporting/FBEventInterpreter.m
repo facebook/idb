@@ -11,9 +11,41 @@
 #import "FBSubject.h"
 #import "FBJSONEnums.h"
 
-@implementation FBBaseEventInterpreter
+@interface FBJSONEventInterpreter : FBEventInterpreter
 
-- (NSArray<NSString *> *)interpret:(FBEventReporterSubject *)eventReporterSubject
+@property (nonatomic, assign, readonly) BOOL pretty;
+
+- (instancetype)initWithPrettyFormatting:(BOOL)pretty;
+
+@end
+
+@interface FBHumanReadableEventInterpreter : FBEventInterpreter
+
+@end
+
+@implementation FBEventInterpreter
+
+#pragma mark Initializers
+
++ (instancetype)jsonEventInterpreter:(BOOL)pretty
+{
+  return [[FBJSONEventInterpreter alloc] initWithPrettyFormatting:pretty];
+}
+
++ (instancetype)humanReadableInterpreter
+{
+  return [[FBHumanReadableEventInterpreter alloc] init];
+}
+
+#pragma mark Public
+
+- (NSString *)interpret:(FBEventReporterSubject *)subject
+{
+  NSArray *lines = [self interpretLines:subject];
+  return [[lines componentsJoinedByString:@"\n"] stringByAppendingString:@"\n"];
+}
+
+- (NSArray<NSString *> *)interpretLines:(FBEventReporterSubject *)eventReporterSubject
 {
   NSMutableArray *results = [[NSMutableArray alloc] init];
   for (id item in eventReporterSubject.subSubjects) {
@@ -35,14 +67,15 @@
   return results;
 }
 
-- (nullable NSString *)getStringFromEventReporterSubject:(nonnull FBEventReporterSubject *)subject
+#pragma mark Private
+
+- (nullable NSString *)getStringFromEventReporterSubject:(FBEventReporterSubject *)subject
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
 }
 
 @end
-
 
 @implementation FBJSONEventInterpreter
 
@@ -59,7 +92,7 @@
   return self;
 }
 
-- (nullable NSString *)getStringFromEventReporterSubject:(nonnull FBEventReporterSubject *)subject
+- (nullable NSString *)getStringFromEventReporterSubject:(FBEventReporterSubject *)subject
 {
   NSDictionary *dict = [subject jsonSerializableRepresentation];
 
@@ -94,7 +127,7 @@
 
 @implementation FBHumanReadableEventInterpreter
 
-- (nullable NSString *)getStringFromEventReporterSubject:(nonnull FBEventReporterSubject *)subject
+- (nullable NSString *)getStringFromEventReporterSubject:(FBEventReporterSubject *)subject
 {
   return subject.description;
 }

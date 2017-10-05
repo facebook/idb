@@ -8,68 +8,73 @@
  */
 
 #import <XCTest/XCTest.h>
-#import <FBControlCore/FBEventInterpreter.h>
-#import <FBControlCore/FBSubject.h>
 
-@interface FBTestInterpreter : FBBaseEventInterpreter
+#import <FBControlCore/FBControlCore.h>
+
+@interface FBControlCoreValueDouble : NSObject <FBJSONSerializable>
+
 @end
 
+@implementation FBControlCoreValueDouble
 
-@implementation FBTestInterpreter
-
-- (NSString *)getStringFromEventReporterSubject:(FBEventReporterSubject *)subject
+- (id)jsonSerializableRepresentation
 {
-  return subject.description;
+  return @{@"foo": @"bar"};
 }
 
 @end
-
 
 @interface FBEventInterpreterTests : XCTestCase
 @end
 
 @implementation FBEventInterpreterTests
 
-- (void)testFBBaseEventInterpreterWithArray
+- (void)assertSubject:(FBEventReporterSubject *)subject hasJSONContents:(NSArray<NSDictionary<NSString *, id> *> *)contents
 {
-  FBBaseEventInterpreter *interpreter = [[FBTestInterpreter alloc] init];
-
-  NSArray<FBEventReporterSubject *> *subSubjects = @[
-    [[FBStringSubject alloc] initWithString:@"foo"],
-    [[FBStringSubject alloc] initWithString:@"bar"],
-    [[FBStringSubject alloc] initWithString:@"zar"],
-  ];
-
-  FBCompositeSubject *subject = [[FBCompositeSubject alloc] initWithArray:subSubjects];
-
-  NSArray<NSString *> *strings = [interpreter interpret:subject];
-
-  NSUInteger expectedCount = subSubjects.count;
-  NSUInteger actualCount = strings.count;
-  XCTAssertEqual(expectedCount, actualCount, @"Should return %lu results, not %lu", expectedCount, actualCount);
-
-  for (unsigned int i = 0; i < subSubjects.count; i++) {
-    FBEventReporterSubject *subsubject = subSubjects[i];
-
-    NSString *actual = strings[i];
-    NSString *expected = subsubject.description;
-    XCTAssertEqualObjects(actual, expected, @"Interpreted result incorrect: %@ =/= %@", actual, expected);
+  id<FBEventInterpreter> interpreter = [FBEventInterpreter jsonEventInterpreter:NO];
+  NSArray<NSString *> *lines = [[interpreter interpret:subject] componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
+  for (NSUInteger index = 0; index < contents.count; index++) {
+    NSDictionary<NSString *, id> *actual = [NSJSONSerialization JSONObjectWithData:[lines[index] dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil];
+    NSDictionary<NSString *, id> *expected = contents[index];
+    for (NSString *key in expected.allKeys) {
+      XCTAssertEqualObjects(expected[key], actual[key]);
+    }
   }
 }
 
-- (void)testFBBaseEventInterpreterWithSingleItem
+- (void)testJSONEventInterpreterOneByOne
 {
-  FBBaseEventInterpreter *interpreter = [[FBTestInterpreter alloc] init];
+  FBControlCoreSubject *subject = [[FBControlCoreSubject alloc] initWithValue:FBControlCoreValueDouble.new];
+  NSArray<FBEventReporterSubject *> *subjects = @[
+    [[FBSimpleSubject alloc] initWithName:FBEventNameLaunch type:FBEventTypeStarted subject:subject],
+    [[FBSimpleSubject alloc] initWithName:FBEventNameLaunch type:FBEventTypeEnded subject:subject],
+    [[FBSimpleSubject alloc] initWithName:FBEventNameLaunch type:FBEventTypeDiscrete subject:subject],
+  ];
+  NSArray<NSDictionary<NSString *, id> *> *contents = @[
+    @{@"event_type": @"started", @"event_name": @"launch"},
+    @{@"event_type": @"ended", @"event_name": @"launch"},
+    @{@"event_type": @"discrete", @"event_name": @"launch"},
+  ];
+  for (NSUInteger index = 0; index < contents.count; index++) {
+    NSDictionary<NSString *, id> *expected = contents[index];
+    [self assertSubject:subjects[index] hasJSONContents:@[expected]];
+  }
+}
 
-  FBStringSubject *subject = [[FBStringSubject alloc] initWithString:@"foo"];
-
-  NSArray<NSString *> *strings = [interpreter interpret:subject];
-
-  XCTAssertEqual(strings.count, (unsigned long)1, @"Should return only one result, not %lu", strings.count);
-
-  NSString *actual = strings[0];
-  NSString *expected = subject.description;
-  XCTAssertEqualObjects(actual, expected, @"Interpreted result incorrect: %@ =/= %@", actual, expected);
+- (void)testJSONEventInterpreterWithCompositeItem
+{
+  FBControlCoreSubject *subject = [[FBControlCoreSubject alloc] initWithValue:FBControlCoreValueDouble.new];
+  NSArray<FBEventReporterSubject *> *subSubjects = @[
+    [[FBSimpleSubject alloc] initWithName:FBEventNameLaunch type:FBEventTypeStarted subject:subject],
+    [[FBSimpleSubject alloc] initWithName:FBEventNameLaunch type:FBEventTypeEnded subject:subject],
+    [[FBSimpleSubject alloc] initWithName:FBEventNameLaunch type:FBEventTypeDiscrete subject:subject],
+  ];
+  FBCompositeSubject *compositeSubject = [[FBCompositeSubject alloc] initWithArray:subSubjects];
+  [self assertSubject:compositeSubject hasJSONContents:@[
+    @{@"event_type": @"started", @"event_name": @"launch"},
+    @{@"event_type": @"ended", @"event_name": @"launch"},
+    @{@"event_type": @"discrete", @"event_name": @"launch"},
+  ]];
 }
 
 @end

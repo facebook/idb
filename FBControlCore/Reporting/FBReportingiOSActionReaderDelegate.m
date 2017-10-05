@@ -62,8 +62,7 @@
 
 - (NSString *)interpretSubject:(FBEventReporterSubject *)subject
 {
-  NSArray *lines = [self.interpreter interpret:subject];
-  return [[lines componentsJoinedByString:@"\n"] stringByAppendingString:@"\n"];
+  return [self.interpreter interpret:subject];
 }
 
 #pragma mark Forwarding
