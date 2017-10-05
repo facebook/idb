@@ -59,9 +59,10 @@
   FBOSVersion *os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
   NSAssert(
     os,
-    @"Could not obtain OS for Default Device '%@'. Available OS Versions %@",
+    @"Could not obtain OS for Default Device '%@'. Supported OS Versions %@. All OS Versions",
     device,
-    [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorConfiguration supportedOSVersionsForDevice:device]]
+    [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorConfiguration supportedOSVersionsForDevice:device]],
+    [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorConfiguration supportedOSVersions]]
   );
   return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:nil];
 }
