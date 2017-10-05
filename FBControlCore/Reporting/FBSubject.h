@@ -91,43 +91,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-
-/**
- * An FBEventReporterSubject that can hold an array of NSStrings
- */
-@interface FBStringsSubject : FBEventReporterSubject
-
-- (instancetype)initWithStrings:(NSArray<NSString *> *)strings;
-
-@end
-
-
-/**
- * An FBEventReporterSubject that holds state about recording
- */
-@interface FBRecordSubject : FBEventReporterSubject
-
-- (instancetype)initWithState:(BOOL)recording path:(nullable NSString *)path;
-
-@end
-
-
 /**
  * An FBEventReporterSubject that can hold a single string
  */
 @interface FBStringSubject : FBEventReporterSubject
 
 - (instancetype)initWithString:(NSString *)string;
-
-@end
-
-
-/**
- * An FBEventReporterSubject that can hold a single BOOL
- */
-@interface FBBoolSubject : FBEventReporterSubject
-
-- (instancetype)initWithBool:(BOOL)boolean;
 
 @end
 

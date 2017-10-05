@@ -331,103 +331,11 @@
 
 @end
 
-
-@interface FBStringsSubject ()
-
-@property (nonatomic, copy, readonly) NSArray<NSString *> *strings;
-
-@end
-
-
-@implementation FBStringsSubject
-
-- (instancetype)initWithStrings:(NSArray<NSString *> *)strings
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _strings = strings;
-
-  return self;
-}
-
-- (id)jsonSerializableRepresentation
-{
-  NSMutableArray *output = [[NSMutableArray alloc] initWithCapacity:self.strings.count];
-
-  for (id eventReporterSubject in self.strings) {
-    [output addObject:[eventReporterSubject jsonSerializableRepresentation]];
-  }
-
-  return output;
-}
-
-- (NSString *)description
-{
-  NSMutableArray *descriptions = [[NSMutableArray alloc] initWithCapacity:self.strings.count];
-  for (id item in self.strings) {
-    [descriptions addObject:[item description]];
-  }
-
-  NSString *base = [descriptions componentsJoinedByString:@","];
-
-  return [NSString stringWithFormat:@"[%@]", base];
-}
-
-@end
-
-@interface FBRecordSubject ()
-
-@property (nonatomic, copy, readonly) NSString *path;
-@property (nonatomic, assign, readonly) BOOL recording;
-
-@end
-
-@implementation FBRecordSubject
-
-- (instancetype)initWithState:(BOOL)recording path:(nullable NSString *)path
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _recording = recording;
-  _path = path;
-
-  return self;
-}
-
-- (id)jsonSerializableRepresentation
-{
-  NSMutableDictionary *contents = [[NSMutableDictionary alloc] init];
-
-  if (self.recording) {
-    contents[@"start"] = @YES;
-
-    if (self.path) {
-      contents[@"path"] = self.path;
-    } else {
-      contents[@"path"] = [NSNull null];
-    }
-  } else {
-    contents[@"start"] = @NO;
-  }
-
-  return contents;
-}
-
-@end
-
-
 @interface FBStringSubject ()
 
 @property (nonatomic, copy, readonly) NSString *string;
 
 @end
-
 
 @implementation FBStringSubject
 
@@ -451,33 +359,6 @@
 - (NSString *)description
 {
   return self.string;
-}
-
-@end
-
-@interface FBBoolSubject ()
-
-@property (nonatomic, assign, readonly) BOOL boolean;
-
-@end
-
-@implementation FBBoolSubject
-
-- (instancetype)initWithBool:(BOOL)boolean
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _boolean = boolean;
-
-  return self;
-}
-
-- (id)jsonSerializableRepresentation
-{
-  return @(self.boolean);
 }
 
 @end

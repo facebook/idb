@@ -96,16 +96,6 @@
   }
 }
 
-- (void)testFBRecordSubject
-{
-  FBRecordSubject *subject = [[FBRecordSubject alloc] initWithState:YES path:@"p"];
-
-  NSDictionary *json = subject.jsonSerializableRepresentation;
-
-  XCTAssertTrue([json[@"start"] boolValue], @"Started value incorrect: %c =/= YES", [json[@"start"] boolValue]);
-  XCTAssertEqualObjects(json[@"path"], @"p", @"Path value incorrect: %@ =/= p", json[@"path"]);
-}
-
 - (void)testFBStringSubject
 {
   FBStringSubject *subject = [[FBStringSubject alloc] initWithString:@"foo"];
@@ -113,16 +103,6 @@
   NSString *json = subject.jsonSerializableRepresentation;
 
   XCTAssertEqualObjects(json, @"foo", @"JSON isn't just the string contained: %@ =/= foo", json);
-}
-
-- (void)testFBBoolSubject
-{
-  FBBoolSubject *subject = [[FBBoolSubject alloc] initWithBool:YES];
-
-  id json = subject.jsonSerializableRepresentation;
-
-  XCTAssertTrue([json isKindOfClass:[NSNumber class]], @"Should return an NSNumber");
-  XCTAssertNotEqual([json intValue], 0, @"Incorrect value");
 }
 
 @end
