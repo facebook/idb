@@ -16,7 +16,7 @@ public protocol EventReporterSubject : CustomStringConvertible {
 
 extension FBEventReporterSubject : EventReporterSubject {
   public var jsonDescription: JSON { get {
-    return try! JSON.encode(self.jsonSerializableRepresentation() as AnyObject)
+    return try! JSON.encode(self.jsonSerializableRepresentation as AnyObject)
   }}
 }
 
@@ -81,7 +81,7 @@ struct ControlCoreSubject : EventReporterSubject {
   }
 
   var jsonDescription: JSON { get {
-    guard let json = try? JSON.encode(self.value.jsonSerializableRepresentation() as AnyObject) else {
+    guard let json = try? JSON.encode(self.value.jsonSerializableRepresentation as AnyObject) else {
       return JSON.null
     }
     return json
