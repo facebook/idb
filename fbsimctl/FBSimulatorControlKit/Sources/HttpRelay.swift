@@ -47,7 +47,7 @@ enum ResponseKeys : String {
 
 private class HttpEventReporter : EventReporter {
   var events: [EventReporterSubject] = []
-  let interpreter: EventInterpreter = JSONEventInterpreter(pretty: false)
+  let interpreter: EventInterpreter = FBEventInterpreter.jsonEventInterpreter(false)
   let writer: Writer = FileHandleWriter.null
 
   fileprivate func report(_ subject: EventReporterSubject) {

@@ -412,14 +412,7 @@
 
 - (NSString *)description
 {
-  NSMutableArray *descriptions = [[NSMutableArray alloc] initWithCapacity:self.subjects.count];
-  for (id item in self.subjects) {
-    [descriptions addObject:[item description]];
-  }
-
-  NSString *base = [descriptions componentsJoinedByString:@","];
-
-  return [NSString stringWithFormat:@"[%@]", base];
+  return [self.subjects componentsJoinedByString:@"\n"];
 }
 
 @end
@@ -483,7 +476,7 @@
 
 - (NSString *)description
 {
-  return [self.strings componentsJoinedByString:@"\n"];
+  return [FBCollectionInformation oneLineDescriptionFromArray:self.strings];
 }
 
 @end

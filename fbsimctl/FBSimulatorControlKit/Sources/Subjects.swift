@@ -26,6 +26,29 @@ extension EventReporterSubject {
   }}
 }
 
+/**
+ FBControlCore Classes must interact with NSObject subclasses, this bridges Swift -> Objective-C
+ */
+@objc class EventReporterSubjectBridge : NSObject, FBEventReporterSubjectProtocol {
+  let wrapped: EventReporterSubject
+
+  init(_ wrapped: EventReporterSubject) {
+    self.wrapped = wrapped
+  }
+
+  var subSubjects: [FBEventReporterSubjectProtocol] { get {
+    return self.wrapped.subSubjects.map(EventReporterSubjectBridge.init)
+  }}
+
+  override var description: String { get {
+    return self.wrapped.description
+  }}
+
+  var jsonSerializableRepresentation: Any { get {
+    return self.wrapped.jsonDescription.decode()
+  }}
+}
+
 extension EventReporterSubject  {
   public func append(_ other: EventReporterSubject) -> EventReporterSubject {
     let joined = self.subSubjects + other.subSubjects
