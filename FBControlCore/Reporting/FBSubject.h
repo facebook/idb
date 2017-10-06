@@ -17,86 +17,92 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- * Abstract base class for providing data to EventReporters
+ A Protocol for providing value-data for further Event Reporting.
  */
-@interface FBEventReporterSubject : NSObject <FBJSONSerializable>
+@protocol FBEventReporterSubject <NSObject, FBJSONSerializable>
 
-@property (nonatomic, copy, readonly) NSArray<FBEventReporterSubject *> *subSubjects;
+/**
+ An Array of all the composed Subjects.
+ */
+@property (nonatomic, copy, readonly) NSArray<id<FBEventReporterSubject>> *subSubjects;
 
 @end
 
 /**
- * An FBEventReporterSubject containing an event name, event type and another subject
+ Implementations of Subjects.
  */
-@interface FBSimpleSubject : FBEventReporterSubject
-
-- (instancetype)initWithName:(FBEventName)name
-                        type:(FBEventType)type
-                     subject:(FBEventReporterSubject *)subject;
-
-@end
-
+@interface FBEventReporterSubject : NSObject <FBEventReporterSubject>
 
 /**
- * An FBEventReporterSubject that holds some FBJSONSerializable value
+ An FBEventReporterSubject containing an event name, event type and another subject.
+
+ @param name the Event Name.
+ @param type the Event Type.
+ @param subject the other content.
+ @return a Event Reporter Subject.
  */
-@interface FBControlCoreSubject : FBEventReporterSubject
-
-- (instancetype)initWithValue:(id<FBJSONSerializable>)controlCoreValue;
-
-@end
-
++ (instancetype)subjectWithName:(FBEventName)name type:(FBEventType)type subject:(id<FBEventReporterSubject>)subject NS_SWIFT_NAME(init(name:type:subject:));
 
 /**
- * An FBEventReporterSubject containing a FBiOSTarget and FBiOSTargetFormat
+ An FBEventReporterSubject for a reportable value.
+
+ @param controlCoreValue the ControlCoreValue, which will conform to (FBJSONSerializable & CustomStringConvertible)
+ @return a Event Reporter Subject.
  */
-@interface FBiOSTargetSubject : FBEventReporterSubject
-
-- (instancetype)initWithTarget:(id<FBiOSTarget>)target
-                        format:(FBiOSTargetFormat *)format;
-
-@end
-
++ (instancetype)subjectWithControlCoreValue:(id<FBJSONSerializable>)controlCoreValue NS_SWIFT_NAME(init(value:));
 
 /**
- * An FBEventReporterSubject containing a target subject,
- * as well as an event name, type and subject to contain
+ A Formated iOS Target Subject.
+
+ @param target the iOS Target.
+ @param format the Target Format.
+ @return a Event Reporter Subject.
  */
-@interface FBiOSTargetWithSubject : FBEventReporterSubject
-
-- (instancetype)initWithTargetSubject:(FBiOSTargetSubject *)targetSubject
-                            eventName:(FBEventName)eventName
-                            eventType:(FBEventType)eventType
-                              subject:(FBEventReporterSubject *)subject;
-
-@end
-
++ (instancetype)subjectWithTarget:(id<FBiOSTarget>)target format:(FBiOSTargetFormat *)format NS_SWIFT_NAME(init(target:format:));
 
 /**
- * An FBEventReporterSubject that holds a string to log and its level
+ A Formatted iOS Target, composing another subject.
+
+ @param target the iOS Target.
+ @param format the Target Format.
+ @param eventName the Event Name.
+ @param eventType the Event Type.
+ @param subject the other content.
  */
-@interface FBLogSubject : FBEventReporterSubject
-
-- (instancetype)initWithLogString:(NSString *)string level:(int)level;
-
-@end
-
++ (instancetype)subjectWithTarget:(id<FBiOSTarget>)target format:(FBiOSTargetFormat *)format eventName:(FBEventName)eventName eventType:(FBEventType)eventType subject:(id<FBEventReporterSubject>)subject NS_SWIFT_NAME(init(target:format:name:type:subject:));
 
 /**
- * An FBEventReporterSubject that has subsubjects
+ A Subject of a single String.
+
+ @param string the String.
+ @return a Event Reporter Subject.
  */
-@interface FBCompositeSubject : FBEventReporterSubject
-
-- (instancetype)initWithArray:(NSArray<FBEventReporterSubject *> *)eventReporterSubject;
-
-@end
++ (instancetype)subjectWithString:(NSString *)string NS_SWIFT_NAME(init(string:));
 
 /**
- * An FBEventReporterSubject that can hold a single string
- */
-@interface FBStringSubject : FBEventReporterSubject
+ A Subject of Strings.
 
-- (instancetype)initWithString:(NSString *)string;
+ @param strings the Strings.
+ @return a Event Reporter Subject.
+ */
++ (instancetype)subjectWithStrings:(NSArray<NSString *> *)strings NS_SWIFT_NAME(init(strings:));
+
+/**
+ A Logging Subject.
+
+ @param string the string to log.
+ @param level the log level.
+ @return a Event Reporter Subject.
+ */
++ (instancetype)logSubjectWithString:(NSString *)string level:(int)level NS_SWIFT_NAME(init(logString:level:));
+
+/**
+ A Subject that composes multiple other subjects.
+
+ @param subjects the composed subjects.
+ @return a Event Reporter Subject.
+ */
++ (instancetype)compositeSubjectWithArray:(NSArray<id<FBEventReporterSubject>> *)subjects NS_SWIFT_NAME(init(subjects:));
 
 @end
 

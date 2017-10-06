@@ -11,7 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBEventReporterSubject;
+@protocol FBEventReporterSubject;
 
 /**
  Protocol for providing a way of formatting FBEventReporterSubjects
@@ -26,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param subject the subject to interpret.
  @return the string that has been interpreted.
  */
-- (NSString *)interpret:(FBEventReporterSubject *)subject;
+- (NSString *)interpret:(id<FBEventReporterSubject>)subject;
 
 /**
  Interpret the Subject, converting it to an array of lines.
@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param subject the subject to interpret.
  @return the lines that have been interpreted.
  */
-- (NSArray<NSString *> *)interpretLines:(FBEventReporterSubject *)subject;
+- (NSArray<NSString *> *)interpretLines:(id<FBEventReporterSubject>)subject;
 
 @end
 

@@ -54,9 +54,10 @@
     eventName = [[action class] actionType];
   }
 
-  FBSimpleSubject *subject = [[FBSimpleSubject alloc] initWithName:eventName
-                                                              type:type
-                                                           subject:[[FBControlCoreSubject alloc] initWithValue:action]];
+  id<FBEventReporterSubject> subject = [FBEventReporterSubject
+    subjectWithName:eventName
+    type:type
+    subject:[FBEventReporterSubject subjectWithControlCoreValue:action]];
   return [self interpretSubject:subject];
 }
 
@@ -81,9 +82,11 @@
 - (nullable NSString *)reader:(FBiOSActionReader *)reader failedToInterpretInput:(NSString *)input error:(NSError *)error
 {
   NSString *message = [NSString stringWithFormat:@"%@. input: %@", error.localizedDescription, input];
-  FBSimpleSubject *subject = [[FBSimpleSubject alloc] initWithName:FBEventNameFailure
-                                                              type:FBEventTypeDiscrete
-                                                           subject:[[FBStringSubject alloc] initWithString:message]];
+  id<FBEventReporterSubject> subject = [FBEventReporterSubject
+    subjectWithName:FBEventNameFailure
+    type:FBEventTypeDiscrete
+    subject:[FBEventReporterSubject subjectWithString:message]];
+
   return [self interpretSubject:subject];
 }
 
@@ -109,9 +112,11 @@
 
 - (nullable NSString *)reader:(FBiOSActionReader *)reader didFailToProcessAction:(id<FBiOSTargetAction>)action onTarget:(id<FBiOSTarget>)target error:(NSError *)error
 {
-  FBSimpleSubject *subject = [[FBSimpleSubject alloc] initWithName:FBEventNameFailure
-                                                              type:FBEventTypeDiscrete
-                                                           subject:[[FBStringSubject alloc] initWithString:error.localizedDescription]];
+  id<FBEventReporterSubject> subject = [FBEventReporterSubject
+    subjectWithName:FBEventNameFailure
+    type:FBEventTypeDiscrete
+    subject:[FBEventReporterSubject subjectWithString:error.localizedDescription]];
+
   return [self interpretSubject:subject];
 }
 

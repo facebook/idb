@@ -9,20 +9,106 @@
 
 #import "FBSubject.h"
 
+#import "FBCollectionInformation.h"
+
+@interface FBSingleItemSubject : FBEventReporterSubject
+
+@end
+
+@interface FBSimpleSubject : FBSingleItemSubject
+
+- (instancetype)initWithName:(FBEventName)name type:(FBEventType)type subject:(FBEventReporterSubject *)subject;
+
+@end
+
+@interface FBControlCoreSubject : FBSingleItemSubject
+
+- (instancetype)initWithValue:(id<FBJSONSerializable>)controlCoreValue;
+
+@end
+
+@interface FBiOSTargetSubject : FBSingleItemSubject
+
+- (instancetype)initWithTarget:(id<FBiOSTarget>)target format:(FBiOSTargetFormat *)format;
+
+@end
+
+@interface FBiOSTargetWithSubject : FBSingleItemSubject
+
+- (instancetype)initWithTargetSubject:(FBiOSTargetSubject *)targetSubject eventName:(FBEventName)eventName eventType:(FBEventType)eventType subject:(id<FBEventReporterSubject>)subject;
+
+@end
+
+@interface FBStringSubject : FBSingleItemSubject
+
+- (instancetype)initWithString:(NSString *)string;
+
+@end
+
+@interface FBStringsSubject : FBSingleItemSubject
+
+- (instancetype)initWithStrings:(NSArray<NSString *> *)strings;
+
+@end
+
+@interface FBLogSubject : FBSingleItemSubject
+
+- (instancetype)initWithLogString:(NSString *)string level:(int)level;
+
+@end
+
+@interface FBCompositeSubject : FBEventReporterSubject
+
+- (instancetype)initWithArray:(NSArray<id<FBEventReporterSubject>> *)eventReporterSubject;
+
+@end
+
 @implementation FBEventReporterSubject
 
-- (instancetype)init
+#pragma mark Initializers
+
++ (instancetype)subjectWithName:(FBEventName)name type:(FBEventType)type subject:(id<FBEventReporterSubject>)subject
 {
-  self = [super init];
-
-  if (!self) {
-    return nil;
-  }
-
-  _subSubjects = @[self];
-
-  return self;
+  return [[FBSimpleSubject alloc] initWithName:name type:type subject:subject];
 }
+
++ (instancetype)subjectWithControlCoreValue:(id<FBJSONSerializable>)controlCoreValue
+{
+  return [[FBControlCoreSubject alloc] initWithValue:controlCoreValue];
+}
+
++ (instancetype)subjectWithTarget:(id<FBiOSTarget>)target format:(FBiOSTargetFormat *)format
+{
+  return [[FBiOSTargetSubject alloc] initWithTarget:target format:format];
+}
+
++ (instancetype)subjectWithTarget:(id<FBiOSTarget>)target format:(FBiOSTargetFormat *)format eventName:(FBEventName)eventName eventType:(FBEventType)eventType subject:(id<FBEventReporterSubject>)subject
+{
+  FBiOSTargetSubject *targetSubject = [[FBiOSTargetSubject alloc] initWithTarget:target format:format];
+  return [[FBiOSTargetWithSubject alloc] initWithTargetSubject:targetSubject eventName:eventName eventType:eventType subject:subject];
+}
+
++ (instancetype)subjectWithString:(NSString *)string
+{
+  return [[FBStringSubject alloc] initWithString:string];
+}
+
++ (instancetype)subjectWithStrings:(NSArray<NSString *> *)strings
+{
+  return [[FBStringsSubject alloc] initWithStrings:strings];
+}
+
++ (instancetype)logSubjectWithString:(NSString *)string level:(int)level
+{
+  return [[FBLogSubject alloc] initWithLogString:string level:level];
+}
+
++ (instancetype)compositeSubjectWithArray:(NSArray<id<FBEventReporterSubject>> *)subjects
+{
+  return [[FBCompositeSubject alloc] initWithArray:subjects];
+}
+
+#pragma mark FBEventReporterSubject Protocol Implementation
 
 - (id)jsonSerializableRepresentation
 {
@@ -44,8 +130,21 @@
   }
 }
 
+- (NSArray<id<FBEventReporterSubject>> *)subSubjects
+{
+  return  @[self];
+}
+
 @end
 
+@implementation FBSingleItemSubject
+
+- (NSArray<id<FBEventReporterSubject>> *)subSubjects
+{
+  return @[self];
+}
+
+@end
 
 @interface FBSimpleSubject ()
 
@@ -100,13 +199,11 @@
 
 @end
 
-
 @interface FBControlCoreSubject ()
 
 @property (nonatomic, copy, readonly) id<FBJSONSerializable> value;
 
 @end
-
 
 @implementation FBControlCoreSubject
 
@@ -134,14 +231,12 @@
 
 @end
 
-
 @interface FBiOSTargetSubject ()
 
 @property (nonatomic, copy, readonly) id<FBiOSTarget> target;
 @property (nonatomic, copy, readonly) FBiOSTargetFormat *format;
 
 @end
-
 
 @implementation FBiOSTargetSubject
 
@@ -225,14 +320,12 @@
 
 @end
 
-
 @interface FBLogSubject ()
 
 @property (nonatomic, copy, readonly) NSString *logString;
 @property (nonatomic, assign, readonly) int level;
 
 @end
-
 
 @implementation FBLogSubject
 
@@ -283,29 +376,29 @@
 
 @interface FBCompositeSubject ()
 
-@property (nonatomic, copy, readonly) NSArray<FBEventReporterSubject *> *array;
+@property (nonatomic, copy, readonly) NSArray<id<FBEventReporterSubject>> *subjects;
 
 @end
 
 @implementation FBCompositeSubject
 
-- (instancetype)initWithArray:(NSArray<FBEventReporterSubject *> *)eventReporterSubjects
+- (instancetype)initWithArray:(NSArray<FBEventReporterSubject *> *)subjects
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _array = eventReporterSubjects;
+  _subjects = subjects;
 
   return self;
 }
 
 - (id)jsonSerializableRepresentation
 {
-  NSMutableArray *output = [[NSMutableArray alloc] initWithCapacity:self.array.count];
+  NSMutableArray *output = [[NSMutableArray alloc] initWithCapacity:self.subjects.count];
 
-  for (id eventReporterSubject in self.array) {
+  for (id eventReporterSubject in self.subjects) {
     [output addObject:[eventReporterSubject jsonSerializableRepresentation]];
   }
 
@@ -314,13 +407,13 @@
 
 - (NSArray<FBEventReporterSubject *> *)subSubjects
 {
-  return self.array;
+  return self.subjects;
 }
 
 - (NSString *)description
 {
-  NSMutableArray *descriptions = [[NSMutableArray alloc] initWithCapacity:self.array.count];
-  for (id item in self.array) {
+  NSMutableArray *descriptions = [[NSMutableArray alloc] initWithCapacity:self.subjects.count];
+  for (id item in self.subjects) {
     [descriptions addObject:[item description]];
   }
 
@@ -359,6 +452,38 @@
 - (NSString *)description
 {
   return self.string;
+}
+
+@end
+
+@interface FBStringsSubject ()
+
+@property (nonatomic, copy, readonly) NSArray<NSString *> *strings;
+
+@end
+
+@implementation FBStringsSubject
+
+- (instancetype)initWithStrings:(NSArray<NSString *> *)strings
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _strings = strings;
+
+  return self;
+}
+
+- (id)jsonSerializableRepresentation
+{
+  return self.strings;
+}
+
+- (NSString *)description
+{
+  return [self.strings componentsJoinedByString:@"\n"];
 }
 
 @end

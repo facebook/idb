@@ -39,15 +39,15 @@
 
 #pragma mark Public
 
-- (NSString *)interpret:(FBEventReporterSubject *)subject
+- (NSString *)interpret:(id<FBEventReporterSubject>)subject
 {
-  NSArray *lines = [self interpretLines:subject];
+  NSArray<NSString *> *lines = [self interpretLines:subject];
   return [[lines componentsJoinedByString:@"\n"] stringByAppendingString:@"\n"];
 }
 
-- (NSArray<NSString *> *)interpretLines:(FBEventReporterSubject *)eventReporterSubject
+- (NSArray<NSString *> *)interpretLines:(id<FBEventReporterSubject>)eventReporterSubject
 {
-  NSMutableArray *results = [[NSMutableArray alloc] init];
+  NSMutableArray<NSString *> *results = [[NSMutableArray alloc] init];
   for (id item in eventReporterSubject.subSubjects) {
     if ([item isKindOfClass:[NSArray class]]) {
       for (id innerItem in item) {
@@ -69,7 +69,7 @@
 
 #pragma mark Private
 
-- (nullable NSString *)getStringFromEventReporterSubject:(FBEventReporterSubject *)subject
+- (nullable NSString *)getStringFromEventReporterSubject:(id<FBEventReporterSubject>)subject
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -92,7 +92,7 @@
   return self;
 }
 
-- (nullable NSString *)getStringFromEventReporterSubject:(FBEventReporterSubject *)subject
+- (nullable NSString *)getStringFromEventReporterSubject:(id<FBEventReporterSubject>)subject
 {
   NSDictionary *dict = [subject jsonSerializableRepresentation];
 
@@ -127,7 +127,7 @@
 
 @implementation FBHumanReadableEventInterpreter
 
-- (nullable NSString *)getStringFromEventReporterSubject:(FBEventReporterSubject *)subject
+- (nullable NSString *)getStringFromEventReporterSubject:(id<FBEventReporterSubject>)subject
 {
   return subject.description;
 }

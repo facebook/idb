@@ -17,20 +17,17 @@
 
 @implementation FBSubjectTests
 
-- (void)testFBEventReporterSubject
+- (void)checkJsonFields:(id)json name:(FBEventName)name type:(FBEventType)type
 {
-  FBEventReporterSubject *subject = [[FBEventReporterSubject alloc] init];
-
-  XCTAssertTrue([subject.subSubjects containsObject:subject], @"Every FBEventReporterSubject should have itself as a subsubject");
+  XCTAssertEqualObjects(json[FBJSONKeyEventName], name, @"Event name not set correctly: %@ =/= %@", json[FBJSONKeyEventName], name);
+  XCTAssertEqualObjects(json[FBJSONKeyEventType], type, @"Event type not set correctly: %@ =/= %@", json[FBJSONKeyEventType], type);
+  XCTAssertTrue([json[FBJSONKeyTimestamp] isKindOfClass:[NSNumber class]], @"Date not encoded correctly");
 }
 
-- (void)testFBSimpleSubject
+- (void)testSimpleSubject
 {
-  FBStringSubject *stringSubject = [[FBStringSubject alloc] initWithString:@"foo"];
-
-  FBSimpleSubject *subject = [[FBSimpleSubject alloc] initWithName:FBEventNameTap
-                                                              type:FBEventTypeStarted
-                                                           subject:stringSubject];
+  id<FBEventReporterSubject> stringSubject = [FBEventReporterSubject subjectWithString:@"foo"];
+  id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:FBEventNameTap type:FBEventTypeStarted subject:stringSubject];
 
   NSDictionary *json = subject.jsonSerializableRepresentation;
 
@@ -39,31 +36,25 @@
     json[FBJSONKeySubject], stringSubject.jsonSerializableRepresentation,
     @"Subject text incorrect: %@ =/= %@", json[FBJSONKeySubject], stringSubject.jsonSerializableRepresentation
   );
+  XCTAssertEqual(subject.subSubjects.count, 1u);
 }
 
-- (void)checkJsonFields:(id)json name:(FBEventName)name type:(FBEventType)type
+- (void)testControlCoreValueSubject
 {
-  XCTAssertEqualObjects(json[FBJSONKeyEventName], name, @"Event name not set correctly: %@ =/= %@", json[FBJSONKeyEventName], name);
-  XCTAssertEqualObjects(json[FBJSONKeyEventType], type, @"Event type not set correctly: %@ =/= %@", json[FBJSONKeyEventType], type);
-  XCTAssertTrue([json[FBJSONKeyTimestamp] isKindOfClass:[NSNumber class]], @"Date not encoded correctly");
-}
-
-- (void)testFBControlCoreSubject
-{
-  FBStringSubject *stringSubject = [[FBStringSubject alloc] initWithString:@"foo"];
-  FBControlCoreSubject *subject = [[FBControlCoreSubject alloc] initWithValue:stringSubject];
+  id<FBEventReporterSubject> stringSubject = [FBEventReporterSubject subjectWithString:@"foo"];
+  id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithControlCoreValue:stringSubject];
 
   XCTAssertEqualObjects(
     subject.jsonSerializableRepresentation, stringSubject.jsonSerializableRepresentation,
     @"FBControlCoreSubject producing incorrect json: %@ =/= %@",
     subject.jsonSerializableRepresentation, stringSubject.jsonSerializableRepresentation
   );
+  XCTAssertEqual(subject.subSubjects.count, 1u);
 }
 
-- (void)FBLogSubject
+- (void)testLogSubject
 {
-  FBLogSubject *subject = [[FBLogSubject alloc] initWithLogString:@"log"
-                                                            level:ASL_LEVEL_DEBUG];
+  id<FBEventReporterSubject> subject = [FBEventReporterSubject logSubjectWithString:@"log" level:ASL_LEVEL_DEBUG];
 
   NSDictionary *json = subject.jsonSerializableRepresentation;
 
@@ -75,16 +66,16 @@
   XCTAssertEqualObjects(json[FBJSONKeyLevel], @"debug", @"Log level text not set correctly: %@ =/= %@",
     json[FBJSONKeyLevel], @"debug"
   );
+  XCTAssertEqual(subject.subSubjects.count, 1u);
 }
 
-- (void)testFBCompositeSubject
+- (void)testCompositeSubject
 {
-  NSArray<FBStringSubject *> *items = @[
-    [[FBStringSubject alloc] initWithString:@"foo"],
-    [[FBStringSubject alloc] initWithString:@"bar"],
+  NSArray<id<FBEventReporterSubject>> *items = @[
+    [FBEventReporterSubject subjectWithString:@"foo"],
+    [FBEventReporterSubject subjectWithString:@"bar"],
   ];
-
-  FBCompositeSubject *composite = [[FBCompositeSubject alloc] initWithArray:items];
+  id<FBEventReporterSubject> composite = [FBEventReporterSubject compositeSubjectWithArray:items];
 
   NSArray *json = composite.jsonSerializableRepresentation;
 
@@ -94,15 +85,27 @@
       json[i], items[i].jsonSerializableRepresentation
     );
   }
+  XCTAssertEqual(composite.subSubjects.count, 2u);
 }
 
-- (void)testFBStringSubject
+- (void)testStringSubject
 {
-  FBStringSubject *subject = [[FBStringSubject alloc] initWithString:@"foo"];
+  id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithString:@"foo"];
 
   NSString *json = subject.jsonSerializableRepresentation;
 
   XCTAssertEqualObjects(json, @"foo", @"JSON isn't just the string contained: %@ =/= foo", json);
+  XCTAssertEqual(subject.subSubjects.count, 1u);
+}
+
+- (void)testStrings
+{
+  id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithStrings:@[@"foo", @"bar"]];
+
+  NSArray<NSString *> *json = subject.jsonSerializableRepresentation;
+
+  XCTAssertEqualObjects(json, (@[@"foo", @"bar"]), @"JSON isn't just the string contained: %@ =/= foo", json);
+  XCTAssertEqual(subject.subSubjects.count, 1u);
 }
 
 @end

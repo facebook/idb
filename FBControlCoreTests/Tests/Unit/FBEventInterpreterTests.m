@@ -44,11 +44,11 @@
 
 - (void)testJSONEventInterpreterOneByOne
 {
-  FBControlCoreSubject *subject = [[FBControlCoreSubject alloc] initWithValue:FBControlCoreValueDouble.new];
+  id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithControlCoreValue:FBControlCoreValueDouble.new];
   NSArray<FBEventReporterSubject *> *subjects = @[
-    [[FBSimpleSubject alloc] initWithName:FBEventNameLaunch type:FBEventTypeStarted subject:subject],
-    [[FBSimpleSubject alloc] initWithName:FBEventNameLaunch type:FBEventTypeEnded subject:subject],
-    [[FBSimpleSubject alloc] initWithName:FBEventNameLaunch type:FBEventTypeDiscrete subject:subject],
+    [FBEventReporterSubject subjectWithName:FBEventNameLaunch type:FBEventTypeStarted subject:subject],
+    [FBEventReporterSubject subjectWithName:FBEventNameLaunch type:FBEventTypeEnded subject:subject],
+    [FBEventReporterSubject subjectWithName:FBEventNameLaunch type:FBEventTypeDiscrete subject:subject],
   ];
   NSArray<NSDictionary<NSString *, id> *> *contents = @[
     @{@"event_type": @"started", @"event_name": @"launch"},
@@ -63,13 +63,13 @@
 
 - (void)testJSONEventInterpreterWithCompositeItem
 {
-  FBControlCoreSubject *subject = [[FBControlCoreSubject alloc] initWithValue:FBControlCoreValueDouble.new];
+  id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithControlCoreValue:FBControlCoreValueDouble.new];
   NSArray<FBEventReporterSubject *> *subSubjects = @[
-    [[FBSimpleSubject alloc] initWithName:FBEventNameLaunch type:FBEventTypeStarted subject:subject],
-    [[FBSimpleSubject alloc] initWithName:FBEventNameLaunch type:FBEventTypeEnded subject:subject],
-    [[FBSimpleSubject alloc] initWithName:FBEventNameLaunch type:FBEventTypeDiscrete subject:subject],
+    [FBEventReporterSubject subjectWithName:FBEventNameLaunch type:FBEventTypeStarted subject:subject],
+    [FBEventReporterSubject subjectWithName:FBEventNameLaunch type:FBEventTypeEnded subject:subject],
+    [FBEventReporterSubject subjectWithName:FBEventNameLaunch type:FBEventTypeDiscrete subject:subject],
   ];
-  FBCompositeSubject *compositeSubject = [[FBCompositeSubject alloc] initWithArray:subSubjects];
+  id<FBEventReporterSubject> compositeSubject = [FBEventReporterSubject compositeSubjectWithArray:subSubjects];
   [self assertSubject:compositeSubject hasJSONContents:@[
     @{@"event_type": @"started", @"event_name": @"launch"},
     @{@"event_type": @"ended", @"event_name": @"launch"},
