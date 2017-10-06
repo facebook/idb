@@ -164,34 +164,6 @@ struct iOSTargetWithSubject : EventReporterSubject {
   }}
 }
 
-struct LogSubject : EventReporterSubject {
-  let logString: String
-  let level: Int32
-
-  var jsonDescription: JSON { get {
-    return JSON.dictionary([
-      JSONKeys.eventName.rawValue : JSON.string(EventName.log.rawValue),
-      JSONKeys.eventType.rawValue : JSON.string(EventType.discrete.rawValue),
-      JSONKeys.level.rawValue : JSON.string(self.levelString),
-      JSONKeys.subject.rawValue : JSON.string(self.logString),
-      JSONKeys.timestamp.rawValue : JSON.number(NSNumber(value: round(Date().timeIntervalSince1970) as Double)),
-    ])
-  }}
-
-  var description: String { get {
-    return self.logString
-  }}
-
-  var levelString: String { get {
-    switch self.level {
-    case Constants.asl_level_debug: return "debug"
-    case Constants.asl_level_err: return "error"
-    case Constants.asl_level_info: return "info"
-    default: return "unknown"
-    }
-  }}
-}
-
 struct CompositeSubject: EventReporterSubject {
   let array: [EventReporterSubject]
 

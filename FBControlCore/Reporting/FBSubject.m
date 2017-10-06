@@ -347,7 +347,7 @@
   return @{
     FBJSONKeyEventType : FBEventTypeDiscrete,
     FBJSONKeyTimestamp : [NSNumber numberWithInt:(int)[[NSDate date] timeIntervalSince1970]],
-    FBJSONKeyLevel     : [self levelString],
+    FBJSONKeyLevel     : self.levelString,
     FBJSONKeySubject   : self.logString,
     FBJSONKeyEventName : FBEventNameLog,
   };
@@ -366,7 +366,7 @@
     case ASL_LEVEL_ERR:
       return @"error";
     case ASL_LEVEL_INFO:
-      return @"into";
+      return @"info";
     default:
       return @"unknown";
   }

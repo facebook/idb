@@ -54,7 +54,7 @@ public typealias ControlCoreValue = FBJSONSerializable & CustomStringConvertible
   }
 
   @objc open func log(_ level: Int32, string: String) {
-    let subject = LogSubject(logString: string, level: level)
+    let subject = FBEventReporterSubject(logString: string, level: level)
     self.reporter.report(subject)
   }
 }
