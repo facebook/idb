@@ -65,7 +65,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) NSSet<NSString *> *testsToSkip;
 
-
 /*
  Bundle ID of to the target application for UI tests
  */
@@ -80,6 +79,11 @@ NS_ASSUME_NONNULL_BEGIN
  A dictionary with xctestrun file contents to use.
  */
 @property (nonatomic, copy, readonly, nullable) NSDictionary<NSString *, id> *xcTestRunProperties;
+
+/*
+ Path to the result bundle.
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *resultBundlePath;
 
 /**
  Adds application launch configuration
@@ -153,6 +157,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (instancetype)withXCTestRunProperties:(NSDictionary<NSString *, id> *)xcTestRunProperties;
 
+/**
+ Adds path to where xcodebuild will save results.
+ Will be passed to xcodebuild with the -resultBundlePath argument.
+
+ @param resultBundlePath path to the result bundle
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withResultBundlePath:(NSString *)resultBundlePath;
 
 @end
 

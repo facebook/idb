@@ -31,18 +31,25 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
 + (FBFuture<FBTask *> *)createTaskFuture:(FBTestLaunchConfiguration *)configuraton xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath target:(id<FBiOSTarget>)target
 {
   NSMutableArray<NSString *> *arguments = [[NSMutableArray alloc] init];
-  [arguments addObjectsFromArray: @[
+  [arguments addObjectsFromArray:@[
     @"test-without-building",
     @"-xctestrun", testRunFilePath,
     @"-destination", [NSString stringWithFormat:@"id=%@", target.udid],
   ]];
 
+  if (configuraton.resultBundlePath) {
+    [arguments addObjectsFromArray:@[
+      @"-resultBundlePath",
+      configuraton.resultBundlePath,
+    ]];
+  }
+
   for (NSString *test in configuraton.testsToRun) {
-    [arguments addObject:[NSString stringWithFormat: @"-only-testing:%@", test]];
+    [arguments addObject:[NSString stringWithFormat:@"-only-testing:%@", test]];
   }
 
   for (NSString *test in configuraton.testsToSkip) {
-    [arguments addObject:[NSString stringWithFormat: @"-skip-testing:%@", test]];
+    [arguments addObject:[NSString stringWithFormat:@"-skip-testing:%@", test]];
   }
 
   NSMutableDictionary<NSString *, NSString *> *environment = [NSProcessInfo.processInfo.environment mutableCopy];
