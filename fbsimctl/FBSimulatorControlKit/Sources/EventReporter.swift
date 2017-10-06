@@ -29,7 +29,7 @@ extension EventReporter {
   }
 
   func reportError(_ message: String) {
-    self.reportSimpleBridge(.failure, .discrete, message as NSString)
+    self.reportSimpleBridge(.failure, .discrete, FBEventReporterSubject(string: message))
   }
 
   func logDebug(_ string: String) {

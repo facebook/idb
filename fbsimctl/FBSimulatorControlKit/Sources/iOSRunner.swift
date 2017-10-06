@@ -33,7 +33,7 @@ struct iOSActionProvider {
     case .diagnose(let query, let format):
       return DiagnosticsRunner(reporter, query, query, format)
     case .uninstall(let appBundleID):
-      return iOSTargetRunner.simple(reporter, .uninstall, ControlCoreSubject(appBundleID as NSString)) {
+      return iOSTargetRunner.simple(reporter, .uninstall, FBEventReporterSubject(string: appBundleID)) {
         try target.uninstallApplication(withBundleID: appBundleID)
       }
     case .core(let action):
@@ -63,7 +63,7 @@ struct iOSActionProvider {
         return stream
       }
     case .terminate(let bundleID):
-      return iOSTargetRunner.simple(reporter, .terminate, ControlCoreSubject(bundleID as NSString)) {
+      return iOSTargetRunner.simple(reporter, .terminate, FBEventReporterSubject(string: bundleID)) {
         try target.killApplication(withBundleID: bundleID)
       }
     default:
