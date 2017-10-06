@@ -14,6 +14,12 @@ public protocol EventReporterSubject : CustomStringConvertible {
   var subSubjects: [EventReporterSubject] { get }
 }
 
+extension FBEventReporterSubject : EventReporterSubject {
+  public var jsonDescription: JSON { get {
+    return try! JSON.encode(self.jsonSerializableRepresentation() as AnyObject)
+  }}
+}
+
 extension EventReporterSubject {
   public var subSubjects: [EventReporterSubject] { get {
     return [self]
