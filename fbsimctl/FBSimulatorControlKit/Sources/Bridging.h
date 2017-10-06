@@ -22,9 +22,9 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface Constants : NSObject
 
-+ (int32_t)asl_level_info;
-+ (int32_t)asl_level_debug;
-+ (int32_t)asl_level_err;
+@property (nonatomic, assign, readonly, class) int32_t asl_level_info;
+@property (nonatomic, assign, readonly, class) int32_t asl_level_debug;
+@property (nonatomic, assign, readonly, class) int32_t asl_level_err;
 
 @end
 

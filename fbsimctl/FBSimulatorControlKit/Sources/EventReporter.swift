@@ -33,11 +33,11 @@ extension EventReporter {
   }
 
   func logDebug(_ string: String) {
-    self.report(LogSubject(logString: string, level: Constants.asl_level_debug()))
+    self.report(LogSubject(logString: string, level: Constants.asl_level_debug))
   }
 
   func logInfo(_ string: String) {
-    self.report(LogSubject(logString: string, level: Constants.asl_level_info()))
+    self.report(LogSubject(logString: string, level: Constants.asl_level_info))
   }
 }
 

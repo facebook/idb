@@ -184,9 +184,9 @@ struct LogSubject : EventReporterSubject {
 
   var levelString: String { get {
     switch self.level {
-    case Constants.asl_level_debug(): return "debug"
-    case Constants.asl_level_err(): return "error"
-    case Constants.asl_level_info(): return "info"
+    case Constants.asl_level_debug: return "debug"
+    case Constants.asl_level_err: return "error"
+    case Constants.asl_level_info: return "info"
     default: return "unknown"
     }
   }}
