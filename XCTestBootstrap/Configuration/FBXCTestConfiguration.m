@@ -34,7 +34,13 @@ FBXCTestType const FBXCTestTypeListTest = @"list-test";
   _workingDirectory = workingDirectory;
   _testBundlePath = testBundlePath;
   _waitForDebugger = waitForDebugger;
-  _testTimeout = timeout > 0 ? timeout : [self defaultTimeout];
+
+  NSString *timeoutFromEnv = NSProcessInfo.processInfo.environment[@"FB_TEST_TIMEOUT"];
+  if (timeoutFromEnv) {
+    _testTimeout = timeoutFromEnv.intValue;
+  } else {
+    _testTimeout = timeout > 0 ? timeout : [self defaultTimeout];
+  }
 
   return self;
 }
