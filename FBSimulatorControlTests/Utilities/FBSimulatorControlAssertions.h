@@ -53,7 +53,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Assertion failure if there isn't a last launched application or launchctl isn't aware of the process.
  */
-- (void)assertLastLaunchedApplicationIsRunning:(FBSimulator *)simulator;
+- (void)assertSimulator:(FBSimulator *)simulator isRunningApplicationFromConfiguration:(FBApplicationLaunchConfiguration *)launchConfiguration;
 
 @end
 
@@ -90,59 +90,61 @@ NS_ASSUME_NONNULL_BEGIN
  @param application the Application to install.
  @return a Simulator if succesful, nil otherwise.
  */
-- (nullable FBSimulator *)assertObtainsBootedSimulatorWithInstalledApplication:(FBApplicationDescriptor *)application;
+- (nullable FBSimulator *)assertObtainsBootedSimulatorWithInstalledApplication:(FBApplicationBundle *)application;
 
 /**
  Asserts that a booted Simulator with the provided configurations can be obtained.
 
  @param configuration the Simulator Configuration to obtain.
- @param launchConfiguration the Launch configuration to boot with.
+ @param bootConfiguration the Simulator Boot Configuration.
  @return a Simulator if succesful, nil otherwise.
  */
-- (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration launchConfiguration:(FBSimulatorBootConfiguration *)launchConfiguration;
+- (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration bootConfiguration:(FBSimulatorBootConfiguration *)bootConfiguration;
 
 /**
- An Assertion for:
- - Installing the Application (if relevant).
- - Launching the Application with the given configuration.
+ An Assertion for Installing the Application.
 
  @param simulator the booted Simulator.
  @param application the Application to install.
- @param applicationLaunchConfiguration the Application to then launch.
  @return a Simulator if successful, nil otherwise.
  */
-- (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator launchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
+- (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator installs:(FBApplicationBundle *)application;
+
+/**
+ An Assertion for Launching the Application with the given configuration.
+
+ @param simulator the booted Simulator.
+ @param configuration the Application to then launch.
+ @return a Simulator if successful, nil otherwise.
+ */
+- (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator launches:(FBApplicationLaunchConfiguration *)configuration;
 
 /**
  An Assertion for:
  - Obtaining a Simulator with a given configuration.
- - Launching it with the launch configuration.
- - Installing the Application (if relevant).
+ - Booting it with the Boot Configuration
  - Launching the Application with the given configuration.
 
  @param simulatorConfiguration the Configuration of the Simulator to launch.
- @param simulatorLaunchConfiguration the Launch Configuration for the Simulator.
- @param application the Application to install.
- @param applicationLaunchConfiguration the Application to then launch.
+ @param bootConfiguration the Boot Configuration for the Simulator.
+ @param launchConfiguration the Application to then launch.
  @return a Simulator if successful, nil otherwise.
  */
-- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration launches:(FBSimulatorBootConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration boots:(FBSimulatorBootConfiguration *)bootConfiguration thenLaunchesApplication:(FBApplicationLaunchConfiguration *)launchConfiguration;
 
 /**
  An Assertion for:
  - Obtaining a Simulator with a given configuration.
- - Launching it with the launch configuration.
- - Installing the Application (if relevant).
- - Launching the Aplication with the given configuration.
+ - Booting it with the Boot Configuration
+ - Launching the Application with the given configuration.
  - Relaunching the same Application.
 
  @param simulatorConfiguration the Configuration of the Simulator to launch.
- @param simulatorLaunchConfiguration the Launch Configuration for the Simulator.
- @param application the Application to install.
- @param applicationLaunchConfiguration the Application to then launch.
+ @param bootConfiguration the Boot Configuration for the Simulator.
+ @param launchConfiguration the Application to then launch.
  @return a Simulator if successful, nil otherwise.
  */
-- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration relaunches:(FBSimulatorBootConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration boots:(FBSimulatorBootConfiguration *)bootConfiguration launchesThenRelaunchesApplication:(FBApplicationLaunchConfiguration *)launchConfiguration;
 
 @end
 

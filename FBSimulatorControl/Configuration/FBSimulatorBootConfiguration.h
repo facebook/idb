@@ -10,7 +10,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBSimulatorControl/FBSimulatorScale.h>
 
 @class FBFramebufferConfiguration;
 
@@ -34,7 +33,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeBoot;
 /**
  A Value Object for defining how to launch a Simulator.
  */
-@interface FBSimulatorBootConfiguration : NSObject <NSCoding, NSCopying, FBiOSTargetAction, FBDebugDescribeable>
+@interface FBSimulatorBootConfiguration : NSObject <NSCopying, FBiOSTargetAction, FBDebugDescribeable>
 
 /**
  Options for how the Simulator should be launched.
@@ -49,7 +48,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeBoot;
 /**
  The Scale of the Framebuffer.
  */
-@property (nonatomic, nullable, copy, readonly) FBSimulatorScale scale;
+@property (nonatomic, nullable, copy, readonly) FBScale scale;
 
 /**
  Configuration for the Framebuffer.
@@ -62,7 +61,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeBoot;
 /**
  The Default Configuration.
  */
-+ (instancetype)defaultConfiguration;
+@property (nonatomic, strong, class, readonly) FBSimulatorBootConfiguration *defaultConfiguration;
 
 #pragma mark Launch Options
 
@@ -75,34 +74,10 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeBoot;
 #pragma mark Device Scale
 
 /**
- Launch at 25% Scale.
- */
-+ (instancetype)scale25Percent;
-- (instancetype)scale25Percent;
-
-/**
- Launch at 50% Scale.
- */
-+ (instancetype)scale50Percent;
-- (instancetype)scale50Percent;
-
-/**
- Launch at 75% Scale.
- */
-+ (instancetype)scale75Percent;
-- (instancetype)scale75Percent;
-
-/**
- Launch at 100% Scale.
- */
-+ (instancetype)scale100Percent;
-- (instancetype)scale100Percent;
-
-/**
  Returns a new Configuration with the Scale Applied.
  */
-+ (instancetype)withScale:(nullable FBSimulatorScale)scale;
-- (instancetype)withScale:(nullable FBSimulatorScale)scale;
++ (instancetype)withScale:(nullable FBScale)scale;
+- (instancetype)withScale:(nullable FBScale)scale;
 
 #pragma mark Locale
 

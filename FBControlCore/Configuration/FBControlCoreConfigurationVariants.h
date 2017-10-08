@@ -32,6 +32,7 @@ typedef NSString *FBDeviceModel NS_STRING_ENUM;
 
 extern FBDeviceModel const FBDeviceModeliPhone4s;
 extern FBDeviceModel const FBDeviceModeliPhone5;
+extern FBDeviceModel const FBDeviceModeliPhone5c;
 extern FBDeviceModel const FBDeviceModeliPhone5s;
 extern FBDeviceModel const FBDeviceModeliPhone6;
 extern FBDeviceModel const FBDeviceModeliPhone6Plus;
@@ -75,6 +76,7 @@ extern FBOSVersionName const FBOSVersionNameiOS_10_1;
 extern FBOSVersionName const FBOSVersionNameiOS_10_2;
 extern FBOSVersionName const FBOSVersionNameiOS_10_3;
 extern FBOSVersionName const FBOSVersionNameiOS_11_0;
+extern FBOSVersionName const FBOSVersionNameiOS_11_1;
 extern FBOSVersionName const FBOSVersionNametvOS_9_0;
 extern FBOSVersionName const FBOSVersionNametvOS_9_1;
 extern FBOSVersionName const FBOSVersionNametvOS_9_2;
@@ -82,6 +84,7 @@ extern FBOSVersionName const FBOSVersionNametvOS_10_0;
 extern FBOSVersionName const FBOSVersionNametvOS_10_1;
 extern FBOSVersionName const FBOSVersionNametvOS_10_2;
 extern FBOSVersionName const FBOSVersionNametvOS_11_0;
+extern FBOSVersionName const FBOSVersionNametvOS_11_1;
 extern FBOSVersionName const FBOSVersionNamewatchOS_2_0;
 extern FBOSVersionName const FBOSVersionNamewatchOS_2_1;
 extern FBOSVersionName const FBOSVersionNamewatchOS_2_2;
@@ -89,10 +92,11 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_3_0;
 extern FBOSVersionName const FBOSVersionNamewatchOS_3_1;
 extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
 extern FBOSVersionName const FBOSVersionNamewatchOS_4_0;
+extern FBOSVersionName const FBOSVersionNamewatchOS_4_1;
 
 #pragma mark Devices
 
-@interface FBDeviceType : NSObject <NSCopying, NSCoding>
+@interface FBDeviceType : NSObject <NSCopying>
 
 /**
  The Device Name of the Device.
@@ -128,7 +132,7 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_4_0;
 
 #pragma mark OS Versions
 
-@interface FBOSVersion : NSObject <NSCopying, NSCoding>
+@interface FBOSVersion : NSObject <NSCopying>
 
 /**
  The Version name of the OS.

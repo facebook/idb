@@ -17,8 +17,14 @@ static NSString *const FBDiagnosticQueryTypeAppFiles = @"app_files";
 static NSString *const FBDiagnosticQueryTypeCrashes = @"crashes";
 static NSString *const FBDiagnosticQueryTypeNamed = @"named";
 
-
 @implementation FBDiagnosticQuery_All
+
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return @"All Logs";
+}
 
 #pragma mark NSCopying
 
@@ -39,13 +45,6 @@ static NSString *const FBDiagnosticQueryTypeNamed = @"named";
   return @{
     @"type" : FBDiagnosticQueryTypeAll,
   };
-}
-
-#pragma mark FBDebugDescribeable
-
-- (NSString *)shortDescription
-{
-  return @"All Logs";
 }
 
 @end
@@ -77,31 +76,19 @@ static NSString *const FBDiagnosticQueryTypeNamed = @"named";
   return self.names.hash;
 }
 
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Logs Named %@",
+    [FBCollectionInformation oneLineDescriptionFromArray:self.names]
+  ];
+}
+
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
   return [[self.class alloc] initWithNames:self.names];
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super initWithCoder:coder];
-  if (!self) {
-    return nil;
-  }
-
-  _names = [coder decodeObjectForKey:NSStringFromSelector(@selector(names))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [super encodeWithCoder:coder];
-  [coder encodeObject:self.names forKey:NSStringFromSelector(@selector(names))];
 }
 
 #pragma mark JSON
@@ -121,16 +108,6 @@ static NSString *const FBDiagnosticQueryTypeNamed = @"named";
     @"type" : FBDiagnosticQueryTypeNamed,
     @"names" : self.names,
   };
-}
-
-#pragma mark FBDebugDescribeable
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:
-    @"Logs Named %@",
-    [FBCollectionInformation oneLineDescriptionFromArray:self.names]
-  ];
 }
 
 @end
@@ -164,33 +141,20 @@ static NSString *const FBDiagnosticQueryTypeNamed = @"named";
   return self.bundleID.hash ^ self.filenames.hash;
 }
 
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"App Logs %@ %@",
+    self.bundleID,
+    [FBCollectionInformation oneLineDescriptionFromArray:self.filenames]
+  ];
+}
+
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
   return [[self.class alloc] initWithBundleID:self.bundleID filenames:self.filenames];
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super initWithCoder:coder];
-  if (!self) {
-    return nil;
-  }
-
-  _bundleID = [coder decodeObjectForKey:NSStringFromSelector(@selector(bundleID))];
-  _filenames = [coder decodeObjectForKey:NSStringFromSelector(@selector(filenames))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [super encodeWithCoder:coder];
-  [coder encodeObject:self.bundleID forKey:NSStringFromSelector(@selector(bundleID))];
-  [coder encodeObject:self.filenames forKey:NSStringFromSelector(@selector(filenames))];
 }
 
 #pragma mark JSON
@@ -216,17 +180,6 @@ static NSString *const FBDiagnosticQueryTypeNamed = @"named";
     @"bundle_id" : self.bundleID,
     @"filenames" : self.filenames,
   };
-}
-
-#pragma mark FBDebugDescribeable
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:
-    @"App Logs %@ %@",
-    self.bundleID,
-    [FBCollectionInformation oneLineDescriptionFromArray:self.filenames]
-  ];
 }
 
 @end
@@ -260,33 +213,20 @@ static NSString *const FBDiagnosticQueryTypeNamed = @"named";
   return self.processType ^ self.date.hash;
 }
 
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Crashes %@ %@",
+    [FBCollectionInformation oneLineDescriptionFromArray:[FBDiagnosticQuery_Crashes typeStringsFromProcessType:self.processType]],
+    self.date
+  ];
+}
+
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
   return [[self.class alloc] initWithProcessType:self.processType since:self.date];
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super initWithCoder:coder];
-  if (!self) {
-    return nil;
-  }
-
-  _processType = [[coder decodeObjectForKey:NSStringFromSelector(@selector(processType))] unsignedIntegerValue];
-  _date = [coder decodeObjectForKey:NSStringFromSelector(@selector(date))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [super encodeWithCoder:coder];
-  [coder encodeObject:@(self.processType) forKey:NSStringFromSelector(@selector(processType))];
-  [coder encodeObject:self.date forKey:NSStringFromSelector(@selector(date))];
 }
 
 #pragma mark JSON
@@ -354,17 +294,6 @@ static NSString *const FBDiagnosticQueryCrashesSystem = @"system";
   return processType;
 }
 
-#pragma mark FBDebugDescribeable
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:
-    @"Crashes %@ %@",
-    [FBCollectionInformation oneLineDescriptionFromArray:[FBDiagnosticQuery_Crashes typeStringsFromProcessType:self.processType]],
-    self.date
-  ];
-}
-
 @end
 
 @implementation FBDiagnosticQuery
@@ -406,23 +335,6 @@ static NSString *const FBDiagnosticQueryCrashesSystem = @"system";
   return nil;
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [self init];
-  if (!self) {
-    return nil;
-  }
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-
-}
-
 #pragma mark JSON
 
 + (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
@@ -450,24 +362,6 @@ static NSString *const FBDiagnosticQueryCrashesSystem = @"system";
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
-}
-
-#pragma mark FBDebugDescribeable
-
-- (NSString *)description
-{
-  return self.shortDescription;
-}
-
-- (NSString *)shortDescription
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (NSString *)debugDescription
-{
-  return self.shortDescription;
 }
 
 @end

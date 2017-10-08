@@ -90,34 +90,19 @@
          (self.fileType == configuration.fileType || [self.fileType isEqualToString:configuration.fileType]);
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)decoder
+- (NSString *)description
 {
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _options = [[decoder decodeObjectOfClass:NSNumber.class forKey:NSStringFromSelector(@selector(options))] unsignedIntegerValue];
-  _timescale = [decoder decodeInt32ForKey:NSStringFromSelector(@selector(timescale))];
-  _roundingMethod = [[decoder decodeObjectOfClass:NSNumber.class forKey:NSStringFromSelector(@selector(roundingMethod))] unsignedIntValue];
-  _filePath = [decoder decodeObjectOfClass:NSString.class forKey:NSStringFromSelector(@selector(filePath))];
-  _fileType = [decoder decodeObjectOfClass:NSString.class forKey:NSStringFromSelector(@selector(fileType))];
-
-  return self;
+  return [NSString stringWithFormat:
+    @"Options %@ | Timescale %d | Rounding Method %d | File Path %@ | File Type %@",
+    [FBVideoEncoderConfiguration stringsFromVideoOptions:self.options],
+    self.timescale,
+    self.roundingMethod,
+    self.filePath,
+    self.fileType
+  ];
 }
 
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:@(self.options) forKey:NSStringFromSelector(@selector(options))];
-  [coder encodeInt32:self.timescale forKey:NSStringFromSelector(@selector(timescale))];
-  [coder encodeObject:@(self.roundingMethod) forKey:NSStringFromSelector(@selector(roundingMethod))];
-  [coder encodeObject:self.filePath forKey:NSStringFromSelector(@selector(filePath))];
-  [coder encodeObject:self.fileType forKey:NSStringFromSelector(@selector(fileType))];
-}
-
-#pragma mark FBJSONSerializable
+#pragma mark JSON Conversion
 
 static NSString *const KeyOptions = @"options";
 static NSString *const KeyTimescale = @"timescale";
@@ -182,30 +167,6 @@ static NSString *const KeyFileType = @"file_type";
     roundingMethod:roundingMethodNumber.unsignedIntValue
     filePath:filePath
     fileType:fileType];
-}
-
-#pragma mark FBDebugDescribeable
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:
-    @"Options %@ | Timescale %d | Rounding Method %d | File Path %@ | File Type %@",
-    [FBVideoEncoderConfiguration stringsFromVideoOptions:self.options],
-    self.timescale,
-    self.roundingMethod,
-    self.filePath,
-    self.fileType
-  ];
-}
-
-- (NSString *)debugDescription
-{
-  return self.shortDescription;
-}
-
-- (NSString *)description
-{
-  return self.shortDescription;
 }
 
 #pragma mark Autorecord

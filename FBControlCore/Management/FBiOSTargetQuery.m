@@ -270,33 +270,6 @@ static NSString *const KeyRange = @"range";
   return [[FBiOSTargetQuery alloc] initWithNames:self.names udids:self.udids states:self.states architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  NSSet<NSString *> *names = [coder decodeObjectForKey:KeyNames];
-  NSSet<NSString *> *udids = [coder decodeObjectForKey:KeyUDIDs];
-  NSIndexSet *states = [coder decodeObjectForKey:KeyStates];
-  NSSet<NSString *> *architectures = [coder decodeObjectForKey:KeyArchitectures];
-  FBiOSTargetType targetType = [[coder decodeObjectForKey:KeyTargetTypes] unsignedIntegerValue];
-  NSSet<FBOSVersionName> *osVersions = [coder decodeObjectForKey:KeyOSVersions];
-  NSSet<FBDeviceModel> *devices = [coder decodeObjectForKey:KeyDevices];
-  NSRange range = [[coder decodeObjectForKey:KeyRange] rangeValue];
-  return [self initWithNames:names udids:udids states:states architectures:architectures targetType:targetType osVersions:osVersions devices:devices range:range];
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.names forKey:KeyNames];
-  [coder encodeObject:self.udids forKey:KeyUDIDs];
-  [coder encodeObject:self.states forKey:KeyStates];
-  [coder encodeObject:self.architectures forKey:KeyArchitectures];
-  [coder encodeObject:@(self.targetType) forKey:KeyTargetTypes];
-  [coder encodeObject:self.osVersions forKey:KeyOSVersions];
-  [coder encodeObject:self.devices forKey:KeyDevices];
-  [coder encodeObject:[NSValue valueWithRange:self.range] forKey:KeyRange];
-}
-
 #pragma mark JSON
 
 - (id)jsonSerializableRepresentation

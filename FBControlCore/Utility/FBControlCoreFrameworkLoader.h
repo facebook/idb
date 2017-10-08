@@ -13,10 +13,40 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBWeakFramework;
+
+/**
+ Loads a Symbol from a Handle, using dlsym.
+
+ @param handle the handle to obtain.
+ @param name the name of the symbol.
+ @return the Symbol if successful.
+ */
+void *FBGetSymbolFromHandle(void *handle, const char *name);
+
 /**
  A Base Framework loader, that will ensure that the current user can load Frameworks.
  */
 @interface FBControlCoreFrameworkLoader : NSObject
+
+/**
+ */
++ (instancetype)loaderWithName:(NSString *)frameworkName frameworks:(NSArray<FBWeakFramework *> *)frameworks;
+
+/**
+ The Named set of Frameworks.
+ */
+@property (nonatomic, copy, readonly) NSString *frameworkName;
+
+/**
+ The Frameworks to load.
+ */
+@property (nonatomic, copy, readonly) NSArray<FBWeakFramework *> *frameworks;
+
+/**
+ YES if the Frameworks are loaded, NO otherwise.
+ */
+@property (nonatomic, assign, readonly) BOOL hasLoadedFrameworks;
 
 /**
  Confirms that the current user can load Frameworks.
@@ -24,20 +54,14 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param logger the Logger to log events to.
  @param error any error that occurred during performing the preconditions.
- @returns YES if FBSimulatorControl is usable, NO otherwise.
+ @return YES if FBSimulatorControl is usable, NO otherwise.
  */
-+ (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
+- (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Calls +[FBControlCore loadPrivateFrameworks:error], aborting in the event the Frameworks could not be loaded
  */
-+ (void)loadPrivateFrameworksOrAbort;
-
-/**
- The Name of the Loading Framework.
- Subclasses should re-define this method.
- */
-+ (NSString *)loadingFrameworkName;
+- (void)loadPrivateFrameworksOrAbort;
 
 @end
 

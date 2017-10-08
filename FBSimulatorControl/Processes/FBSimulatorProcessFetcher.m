@@ -15,10 +15,12 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBApplicationBundle+Simulator.h"
 #import "FBSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
 
 NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBSIMULATORCONTROL_SIM_UDID";
+NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath = @"FBSIMULATORCONTROL_SIM_SET_PATH";
 
 @implementation FBSimulatorProcessFetcher
 
@@ -68,6 +70,16 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
   return [dictionary copy];
 }
 
+- (NSDictionary<id, FBProcessInfo *> *)simulatorApplicationProcessesByDeviceSetPath
+{
+  NSMutableDictionary<id, FBProcessInfo *> *dictionary = [NSMutableDictionary dictionary];
+  for (FBProcessInfo *processInfo in self.simulatorApplicationProcesses) {
+    id deviceSetPath = [FBSimulatorProcessFetcher deviceSetPathForApplicationProcess:processInfo] ?: NSNull.null;
+    dictionary[deviceSetPath] = processInfo;
+  }
+  return [dictionary copy];
+}
+
 - (nullable FBProcessInfo *)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice
 {
   return [self simulatorApplicationProcessesByUDIDs:@[simDevice.UDID.UUIDString] unclaimed:nil][simDevice.UDID.UUIDString];
@@ -89,12 +101,12 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
 
 - (NSDictionary<NSString *, FBProcessInfo *> *)launchdProcessesByUDIDs:(NSArray<NSString *> *)udids
 {
-  NSDictionary<NSString *, NSString *> *launchdSimServiceNames = [FBSimulatorProcessFetcher launchdSimServiceNamesForUDIDs:udids];
-  NSDictionary<NSString *, NSDictionary<NSString *, id> *> *jobs = [FBServiceManagement jobInformationForUserServicesNamed:launchdSimServiceNames.allValues];
+  NSDictionary<NSString *, NSString *> *serviceNameToUDID = [FBSimulatorProcessFetcher launchdSimServiceNamesToUDIDs:udids];
+  NSDictionary<NSString *, NSDictionary<NSString *, id> *> *jobs = [FBServiceManagement jobInformationForUserServicesNamed:serviceNameToUDID.allKeys];
 
   NSMutableDictionary<NSString *, FBProcessInfo *> *processes = [NSMutableDictionary dictionary];
-  for (NSString *udid in launchdSimServiceNames.allKeys) {
-    NSString *serviceName = launchdSimServiceNames[udid];
+  for (NSString *serviceName in serviceNameToUDID.allKeys) {
+    NSString *udid = serviceNameToUDID[serviceName];
     NSDictionary<NSString *, id> *job = jobs[serviceName];
     if (!job) {
       continue;
@@ -143,7 +155,7 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
 + (NSPredicate *)simulatorProcessesWithCorrectLaunchPath
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
-    return [process.launchPath isEqualToString:FBApplicationDescriptor .xcodeSimulator.binary.path];
+    return [process.launchPath isEqualToString:FBApplicationBundle.xcodeSimulator.binary.path];
   }];
 }
 
@@ -174,7 +186,7 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
 
 + (NSPredicate *)coreSimulatorProcessesForCurrentXcode
 {
-  return [FBProcessFetcher processesWithLaunchPath:FBControlCoreGlobalConfiguration.developerDirectory];
+  return [FBProcessFetcher processesWithLaunchPath:FBXcodeConfiguration.developerDirectory];
 }
 
 #pragma mark Private
@@ -226,6 +238,11 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
   return process.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID];
 }
 
++ (nullable NSString *)deviceSetPathForApplicationProcess:(FBProcessInfo *)process
+{
+  return process.environment[FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath];
+}
+
 + (NSCharacterSet *)launchdSimEnvironmentVariableUDIDSplitCharacterSet
 {
   static dispatch_once_t onceToken;
@@ -236,18 +253,26 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
   return characterSet;
 }
 
-+ (NSDictionary<NSString *, NSString *> *)launchdSimServiceNamesForUDIDs:(NSArray<NSString *> *)udids
++ (NSDictionary<NSString *, NSString *> *)launchdSimServiceNamesToUDIDs:(NSArray<NSString *> *)udids
 {
   NSMutableDictionary<NSString *, NSString *> *dictionary = [NSMutableDictionary dictionary];
   for (NSString *udid in udids) {
-    dictionary[udid] = [self launchdSimServiceNameForUDID:udid];
+    NSString *serviceName = [self xcode8LaunchdSimServiceNameForUDID:udid];
+    dictionary[serviceName] = udid;
+    serviceName = [self xcode9LaunchdSimServiceNameForUDID:udid];
+    dictionary[serviceName] = udid;
   }
   return [dictionary copy];
 }
 
-+ (NSString *)launchdSimServiceNameForUDID:(NSString *)udid
++ (NSString *)xcode8LaunchdSimServiceNameForUDID:(NSString *)udid
 {
   return [NSString stringWithFormat:@"com.apple.CoreSimulator.SimDevice.%@.launchd_sim", udid];
+}
+
++ (NSString *)xcode9LaunchdSimServiceNameForUDID:(NSString *)udid
+{
+  return [NSString stringWithFormat:@"com.apple.CoreSimulator.SimDevice.%@", udid];
 }
 
 + (NSSet<NSString *> *)launchdSimEnvironmentSubtractableComponents

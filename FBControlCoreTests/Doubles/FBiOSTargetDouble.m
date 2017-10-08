@@ -15,6 +15,11 @@
 @synthesize deviceOperator;
 @synthesize logger;
 
++ (instancetype)commandsWithTarget:(id<FBiOSTarget>)target
+{
+  return nil;
+}
+
 #pragma mark FBDebugDescribeable
 
 - (NSString *)description
@@ -30,6 +35,16 @@
 - (NSString *)shortDescription
 {
   return [FBiOSTargetFormat.defaultFormat format:self];
+}
+
+- (dispatch_queue_t)workQueue
+{
+  return dispatch_get_main_queue();
+}
+
+- (dispatch_queue_t)asyncQueue
+{
+  return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
 }
 
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target
@@ -86,7 +101,22 @@
   return NO;
 }
 
-- (NSArray<FBApplicationDescriptor *> *)installedApplications
+- (NSArray<FBInstalledApplication *> *)installedApplicationsWithError:(NSError **)error
+{
+  return nil;
+}
+
+- (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBTestManagerTestReporter>)reporter error:(NSError **)error
+{
+  return nil;
+}
+
+- (nonnull NSArray<id<FBXCTestOperation>> *)testOperations
+{
+  return @[];
+}
+
+- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout
 {
   return nil;
 }

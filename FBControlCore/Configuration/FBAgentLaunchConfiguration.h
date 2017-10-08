@@ -11,9 +11,8 @@
 
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
 #import <FBControlCore/FBJSONConversion.h>
-#import <FBControlCore/FBDebugDescribeable.h>
 
-@class FBApplicationDescriptor;
+@class FBApplicationBundle;
 @class FBBinaryDescriptor;
 @class FBProcessOutputConfiguration;
 
@@ -31,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param arguments an array-of-strings of arguments to the process. Must not be nil.
  @param environment a Dictionary, mapping Strings to Strings of the Environment to set in the launched Application process. Must not be nil.
  @param output the output configuration for the launched process.
- @returns a new Configuration Object with the arguments applied.
+ @return a new Configuration Object with the arguments applied.
  */
 + (instancetype)configurationWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output;
 

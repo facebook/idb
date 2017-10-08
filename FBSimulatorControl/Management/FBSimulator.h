@@ -14,13 +14,17 @@
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import <FBSimulatorControl/FBSimulatorAgentCommands.h>
+#import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
+#import <FBSimulatorControl/FBSimulatorApplicationDataCommands.h>
 #import <FBSimulatorControl/FBSimulatorBridgeCommands.h>
 #import <FBSimulatorControl/FBSimulatorKeychainCommands.h>
-#import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
-#import <FBSimulatorControl/FBSimulatorSettingsCommands.h>
-#import <FBSimulatorControl/FBSimulatorXCTestCommands.h>
+#import <FBSimulatorControl/FBSimulatorLaunchCtlCommands.h>
 #import <FBSimulatorControl/FBSimulatorLifecycleCommands.h>
+#import <FBSimulatorControl/FBSimulatorSettingsCommands.h>
 #import <FBSimulatorControl/FBSimulatorVideoRecordingCommands.h>
+#import <FBSimulatorControl/FBSimulatorXCTestCommands.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBSimulatorEventSink;
 @protocol FBControlCoreLogger;
@@ -29,17 +33,14 @@
 @class FBProcessInfo;
 @class FBSimulatorConfiguration;
 @class FBSimulatorDiagnostics;
-@class FBSimulatorHistory;
 @class FBSimulatorPool;
 @class FBSimulatorSet;
 @class SimDevice;
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Defines the High-Level Properties and Methods that exist on any Simulator returned from `FBSimulatorPool`.
  */
-@interface FBSimulator : NSObject <FBiOSTarget, FBXCTestCommands, FBSimulatorAgentCommands, FBSimulatorApplicationCommands, FBSimulatorBridgeCommands, FBSimulatorKeychainCommands, FBSimulatorSettingsCommands, FBSimulatorXCTestCommands, FBSimulatorLifecycleCommands>
+@interface FBSimulator : NSObject <FBiOSTarget, FBLogCommands, FBSimulatorAgentCommands, FBSimulatorApplicationCommands, FBApplicationDataCommands, FBSimulatorBridgeCommands, FBSimulatorKeychainCommands, FBSimulatorSettingsCommands, FBSimulatorXCTestCommands, FBSimulatorLifecycleCommands, FBSimulatorLaunchCtlCommands>
 
 /**
  The Underlying SimDevice.
@@ -74,11 +75,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readwrite, nullable) id<FBSimulatorEventSink> userEventSink;
 
 /**
- History of the Simulator.
- */
-@property (nonatomic, strong, readonly, nonnull) FBSimulatorHistory *history;
-
-/**
  The State of the allocated Simulator.
  */
 @property (nonatomic, assign, readonly) FBSimulatorState state;
@@ -91,7 +87,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A string representation of the Simulator State.
  */
-@property (nonatomic, copy, readonly, nonnull) NSString *stateString;
+@property (nonatomic, copy, readonly, nonnull) FBSimulatorStateString stateString;
 
 /**
  The Directory that Contains the Simulator's Data

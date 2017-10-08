@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Designated Initializer
- 
+
  @param configuration the test configuration.
  @param context the context to run with.
  */

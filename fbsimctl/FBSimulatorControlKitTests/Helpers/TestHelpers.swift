@@ -56,14 +56,21 @@ public extension XCTestCase {
   }
 }
 
-class TestWriter : Writer, CustomStringConvertible {
+@objc class TestWriter : NSObject, Writer {
+  let buffer: FBLineBuffer = FBLineBuffer()
   var output: [String] = []
 
-  func write(_ string: String) {
-    output.append(string)
+  func consumeData(_ data: Data) {
+    self.buffer.append(data)
+    while let line = self.buffer.consumeLineString() {
+      self.output.append(line)
+    }
   }
 
-  var description: String { get {
+  func consumeEndOfFile() {
+  }
+
+  override var description: String { get {
     return output.joined(separator: "\n")
   }}
 }

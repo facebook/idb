@@ -9,7 +9,12 @@
 
 #import "FBRunLoopSpinner.h"
 
+#import <libkern/OSAtomic.h>
+#import <objc/runtime.h>
+
+#import "FBFuture.h"
 #import "FBControlCoreError.h"
+#import "FBControlCoreGlobalConfiguration.h"
 
 @interface FBRunLoopSpinner ()
 @property (nonatomic, copy) NSString *timeoutErrorMessage;
@@ -133,6 +138,52 @@
   return [self spinRunLoopWithTimeout:timeout untilTrue:^ BOOL {
     return didFinish == 1;
   }];
+}
+
+- (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout didTimeout:(BOOL *)didTimeout error:(NSError **)error
+{
+  BOOL completed = [self spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
+    return future.hasCompleted;
+  }];
+  if (!completed) {
+    if (didTimeout) {
+      *didTimeout = YES;
+    }
+    return [[FBControlCoreError
+      describeFormat:@"Timed out waiting for future %@ in %f seconds", future, timeout]
+      fail:error];
+  }
+  if (didTimeout) {
+    *didTimeout = NO;
+  }
+  if (future.error) {
+    if (error) {
+      *error = future.error;
+    }
+    return nil;
+  }
+  return future.result;
+}
+
+
+- (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  BOOL didTimeout = NO;
+  return [self awaitCompletionOfFuture:future timeout:timeout didTimeout:&didTimeout error:error];
+}
+
+@end
+
+@implementation FBFuture (NSRunLoop)
+
+- (nullable id)await:(NSError **)error
+{
+  return [self awaitWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:error];
+}
+
+- (nullable id)awaitWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  return [NSRunLoop.currentRunLoop awaitCompletionOfFuture:self timeout:timeout error:error];
 }
 
 @end

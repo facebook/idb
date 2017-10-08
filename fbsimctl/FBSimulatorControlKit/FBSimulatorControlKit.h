@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 
 //! Project version number for FBSimulatorControlKit.
 FOUNDATION_EXPORT double FBSimulatorControlKitVersionNumber;

@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Value representing a way of fetching Simulators.
  */
-@interface FBiOSTargetQuery : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable>
+@interface FBiOSTargetQuery : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
 
 /**
  A Query that matches all iOS Targets.
@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Query that matches the given Names.
- 
+
  @param names the names to match against.
  @return a new Target Query.
  */

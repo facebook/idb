@@ -9,17 +9,23 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBApplicationDescriptor;
+/**
+ The Action Type for an Agent Launch.
+ */
+extern FBiOSTargetActionType const FBiOSTargetActionTypeApproval;
+
+@class FBApplicationBundle;
 @class FBLocalizationOverride;
 @class FBSimulator;
-@class FBSimulatorBootConfiguration;
 
 /**
  Modifies the Settings, Preferences & Defaults of a Simulator.
  */
-@protocol FBSimulatorSettingsCommands <NSObject>
+@protocol FBSimulatorSettingsCommands <NSObject, FBiOSTargetCommand>
 
 /**
  Overrides the Global Localization of the Simulator.
@@ -40,15 +46,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs error:(NSError **)error;
 
 /**
- Authorizes the Location Settings for the provided application.
-
- @param application the Application to authorize settings for.
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
- */
-- (BOOL)authorizeLocationSettingForApplication:(FBApplicationDescriptor *)application error:(NSError **)error;
-
-/**
  Overrides the default SpringBoard watchdog timer for the applications. You can use this to give your application more
  time to startup before being killed by SpringBoard. (SB's default is 20 seconds.)
 
@@ -58,6 +55,15 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if the command succeeds, NO otherwise,
  */
 - (BOOL)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+
+/**
+ Grants access to the provided services.
+
+ @param bundleIDs the bundle ids to provide access to.
+ @param services the services to grant access to.
+ @return a future that resolves when the access grant has been done.
+ */
+- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services;
 
 /**
  Prepares the Simulator Keyboard, prior to launch.
@@ -77,13 +83,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorSettingsCommands : NSObject <FBSimulatorSettingsCommands>
 
-/**
- Creates and returns a new Commmands Instance.
+@end
 
- @param simulator the Simulator to operate on.
- @return a strategy for the provided Simulator.
+/**
+ Bridges FBSettingsApproval to Simulators.
  */
-+ (instancetype)commandWithSimulator:(FBSimulator *)simulator;
+@interface FBSettingsApproval (FBiOSTargetAction) <FBiOSTargetAction>
 
 @end
 

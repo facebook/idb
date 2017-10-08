@@ -32,11 +32,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak, readonly) FBDeviceSet *set;
 
 /**
- The DVTDevice, corresponding to the reciever.
- */
-@property (nonatomic, nullable, strong, readonly) DVTiOSDevice *dvtDevice;
-
-/**
  Device's name
  */
 @property (nonatomic, copy, readonly) NSString *name;
@@ -50,11 +45,6 @@ NS_ASSUME_NONNULL_BEGIN
  Device's system Version
  */
 @property (nonatomic, copy, readonly) NSString *systemVersion;
-
-/**
- Architectures suported by device
- */
-@property (nonatomic, copy, readonly) NSSet *supportedArchitectures;
 
 @end
 

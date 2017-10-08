@@ -88,33 +88,6 @@
   return self;
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _shortName = [coder decodeObjectForKey:NSStringFromSelector(@selector(shortName))];
-  _fileType = [coder decodeObjectForKey:NSStringFromSelector(@selector(fileType))];
-  _humanReadableName = [coder decodeObjectForKey:NSStringFromSelector(@selector(humanReadableName))];
-  _storageDirectory = [coder decodeObjectForKey:NSStringFromSelector(@selector(storageDirectory))];
-  _destination = [coder decodeObjectForKey:NSStringFromSelector(@selector(destination))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.shortName forKey:NSStringFromSelector(@selector(shortName))];
-  [coder encodeObject:self.fileType forKey:NSStringFromSelector(@selector(fileType))];
-  [coder encodeObject:self.humanReadableName forKey:NSStringFromSelector(@selector(humanReadableName))];
-  [coder encodeObject:self.storageDirectory forKey:NSStringFromSelector(@selector(storageDirectory))];
-  [coder encodeObject:self.destination forKey:NSStringFromSelector(@selector(destination))];
-}
-
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
@@ -308,26 +281,6 @@
 
 @implementation FBDiagnostic_Data
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super initWithCoder:coder];
-  if (!self) {
-    return nil;
-  }
-
-  self.backingData = [coder decodeObjectForKey:NSStringFromSelector(@selector(backingData))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [super encodeWithCoder:coder];
-  [coder encodeObject:self.backingData forKey:NSStringFromSelector(@selector(backingData))];
-}
-
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
@@ -442,26 +395,6 @@
 @end
 
 @implementation FBDiagnostic_String
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super initWithCoder:coder];
-  if (!self) {
-    return nil;
-  }
-
-  self.backingString = [coder decodeObjectForKey:NSStringFromSelector(@selector(backingString))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [super encodeWithCoder:coder];
-  [coder encodeObject:self.backingString forKey:NSStringFromSelector(@selector(backingString))];
-}
 
 #pragma mark NSCopying
 
@@ -580,26 +513,6 @@
 
 @implementation FBDiagnostic_Path
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super initWithCoder:coder];
-  if (!self) {
-    return nil;
-  }
-
-  self.backingFilePath = [coder decodeObjectForKey:NSStringFromSelector(@selector(backingFilePath))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [super encodeWithCoder:coder];
-  [coder encodeObject:self.backingFilePath forKey:NSStringFromSelector(@selector(backingFilePath))];
-}
-
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
@@ -701,26 +614,6 @@
 @end
 
 @implementation FBDiagnostic_JSON
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super initWithCoder:coder];
-  if (!self) {
-    return nil;
-  }
-
-  self.backingJSON = [coder decodeObjectForKey:NSStringFromSelector(@selector(backingJSON))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [super encodeWithCoder:coder];
-  [coder encodeObject:self.backingJSON forKey:NSStringFromSelector(@selector(backingJSON))];
-}
 
 #pragma mark NSCopying
 

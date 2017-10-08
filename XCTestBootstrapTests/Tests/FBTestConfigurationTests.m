@@ -19,58 +19,47 @@
 
 @implementation FBTestConfigurationTests
 
-- (void)testSessionIdentifier
+- (void)testSimpleConstructor
 {
-  NSError *error;
   NSUUID *sessionIdentifier = [[NSUUID alloc] initWithUUIDString:@"E621E1F8-C36C-495A-93FC-0C247A3E6E5F"];
-  FBTestConfiguration *testConfiguration =
-  [[[FBTestConfigurationBuilder builder]
-    withSessionIdentifier:sessionIdentifier]
-   buildWithError:&error];
-  XCTAssertNil(error);
+  FBTestConfiguration *testConfiguration = [FBTestConfiguration
+    configurationWithSessionIdentifier:sessionIdentifier
+    moduleName:@"Franek"
+    testBundlePath:@"BundlePath"
+    path:@"ConfigPath"
+    uiTesting:YES];
+
   XCTAssertTrue([testConfiguration isKindOfClass:FBTestConfiguration.class]);
   XCTAssertEqual(testConfiguration.sessionIdentifier, sessionIdentifier);
-}
-
-- (void)testModuleName
-{
-  NSError *error;
-  FBTestConfiguration *testConfiguration =
-  [[[FBTestConfigurationBuilder builder]
-    withModuleName:@"Franek"]
-   buildWithError:&error];
-  XCTAssertNil(error);
   XCTAssertTrue([testConfiguration isKindOfClass:FBTestConfiguration.class]);
-  XCTAssertEqual(testConfiguration.moduleName, @"Franek");
-}
-
-- (void)testBundlePath
-{
-  NSError *error;
-  FBTestConfiguration *testConfiguration =
-  [[[FBTestConfigurationBuilder builder]
-    withTestBundlePath:@"MagicPath"]
-   buildWithError:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue([testConfiguration isKindOfClass:FBTestConfiguration.class]);
-  XCTAssertEqual(testConfiguration.testBundlePath, @"MagicPath");
-  XCTAssertNil(testConfiguration.path);
+  XCTAssertEqual(testConfiguration.testBundlePath, @"BundlePath");
+  XCTAssertEqual(testConfiguration.path, @"ConfigPath");
+  XCTAssertTrue(testConfiguration.shouldInitializeForUITesting);
 }
 
 - (void)testSaveAs
 {
-  NSString *path = @"/Key/To/Heaven";
-  OCMockObject<FBFileManager> *fileManagerMock = [OCMockObject mockForProtocol:@protocol(FBFileManager)];
-  [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] writeData:[OCMArg any] toFile:path options:0 error:[OCMArg anyObjectRef]];
-
   NSError *error;
-  FBTestConfiguration *testConfiguration =
-  [[[FBTestConfigurationBuilder builderWithFileManager:fileManagerMock]
-    saveAs:path]
-   buildWithError:&error];
+  NSUUID *sessionIdentifier = NSUUID.UUID;
+  NSString *savePath = [NSTemporaryDirectory() stringByAppendingPathComponent:sessionIdentifier.UUIDString];
+
+  FBTestConfiguration *testConfiguration = [FBTestConfiguration
+    configurationWithFileManager:NSFileManager.defaultManager
+    sessionIdentifier:sessionIdentifier
+    moduleName:@"ModuleName"
+    testBundlePath:@"BundlePath"
+    uiTesting:YES
+    testsToRun:[NSSet set]
+    testsToSkip:[NSSet set]
+    targetApplicationPath:@"targetAppPath"
+    targetApplicationBundleID:@"targetBundleID"
+    savePath:savePath
+    error:&error];
+
   XCTAssertNil(error);
-  XCTAssertEqual(testConfiguration.path, path);
-  [fileManagerMock verify];
+  XCTAssertNotNil(testConfiguration);
+  XCTAssertEqual(testConfiguration.path, savePath);
+  XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:savePath]);
 }
 
 @end

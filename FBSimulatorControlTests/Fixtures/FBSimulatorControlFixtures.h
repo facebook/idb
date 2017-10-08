@@ -11,7 +11,7 @@
 #import <XCTest/XCTest.h>
 
 @class FBAgentLaunchConfiguration;
-@class FBApplicationDescriptor ;
+@class FBApplicationBundle ;
 @class FBApplicationLaunchConfiguration;
 @class FBDiagnostic;
 @class FBProcessInfo;
@@ -57,11 +57,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBTestLaunchConfiguration *)testLaunch;
 
 /**
- An Application for the built in Mobile Safari.
- */
-- (FBApplicationDescriptor *)safariApplication;
-
-/**
  An App Launch for the built in Mobile Safari.
  */
 - (FBApplicationLaunchConfiguration *)safariAppLaunch;
@@ -70,7 +65,7 @@ NS_ASSUME_NONNULL_BEGIN
  A build of Apple's 'Table Search' Sample Application.
  Source is available at: https://developer.apple.com/library/ios/samplecode/TableSearch_UISearchController/Introduction/Intro.html#//apple_ref/doc/uid/TP40014683
  */
-- (FBApplicationDescriptor *)tableSearchApplication;
+- (FBApplicationBundle *)tableSearchApplication;
 
 /**
  A build of Apple's 'Table Search' Sample Application.
@@ -82,31 +77,6 @@ NS_ASSUME_NONNULL_BEGIN
  An Agent Launch Config. Not to be used to launch agents for real.
  */
 - (FBAgentLaunchConfiguration *)agentLaunch1;
-
-/**
- An App Launch Config. Not to be used to launch applications for real.
- */
-- (FBApplicationLaunchConfiguration *)appLaunch1;
-
-/**
- Another App Launch Config. Not to be used to launch applications for real.
- */
-- (FBApplicationLaunchConfiguration *)appLaunch2;
-
-/**
- A Process Info. Does not represent a real process.
- */
-- (FBProcessInfo *)processInfo1;
-
-/**
- Another Process Info. Does not represent a real process.
- */
-- (FBProcessInfo *)processInfo2;
-
-/**
- Another Process Info, like 'processInfo2a' but with a different pid. Does not represent a real process.
- */
-- (FBProcessInfo *)processInfo2a;
 
 /**
  An iOS Unit Test XCTest Target.

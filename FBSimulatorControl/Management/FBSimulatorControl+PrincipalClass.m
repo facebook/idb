@@ -11,7 +11,7 @@
 
 #import <objc/runtime.h>
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 
 #import <CoreSimulator/SimServiceContext.h>
 #import <CoreSimulator/SimDeviceSet.h>
@@ -22,7 +22,6 @@
 #import "FBSimulatorServiceContext.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorHistory.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorControlFrameworkLoader.h"
@@ -33,7 +32,7 @@
 
 + (void)initialize
 {
-  [FBSimulatorControlFrameworkLoader loadPrivateFrameworksOrAbort];
+  [FBSimulatorControlFrameworkLoader.essentialFrameworks loadPrivateFrameworksOrAbort];
 }
 
 + (nullable instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error

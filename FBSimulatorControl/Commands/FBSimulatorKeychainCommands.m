@@ -10,9 +10,8 @@
 #import "FBSimulatorKeychainCommands.h"
 
 #import "FBSimulator.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorLaunchCtl.h"
+#import "FBSimulatorLaunchCtlCommands.h"
 
 static NSString *const SecuritydServiceName = @"com.apple.securityd";
 
@@ -24,9 +23,9 @@ static NSString *const SecuritydServiceName = @"com.apple.securityd";
 
 @implementation FBSimulatorKeychainCommands
 
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator
++ (instancetype)commandsWithTarget:(FBSimulator *)target
 {
-  return [[self alloc] initWithSimulator:simulator];
+  return [[self alloc] initWithSimulator:target];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator
@@ -47,7 +46,7 @@ static NSString *const SecuritydServiceName = @"com.apple.securityd";
 {
   NSError *innerError = nil;
   if (self.simulator.state == FBSimulatorStateBooted) {
-    if (![self.simulator.launchctl stopServiceWithName:SecuritydServiceName error:&innerError]) {
+    if (![self.simulator stopServiceWithName:SecuritydServiceName error:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
   }
@@ -55,7 +54,7 @@ static NSString *const SecuritydServiceName = @"com.apple.securityd";
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
   if (self.simulator.state == FBSimulatorStateBooted) {
-    if (![self.simulator.launchctl startServiceWithName:SecuritydServiceName error:&innerError]) {
+    if (![self.simulator startServiceWithName:SecuritydServiceName error:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
   }

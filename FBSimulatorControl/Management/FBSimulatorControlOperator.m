@@ -46,7 +46,7 @@
 
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
-  FBApplicationDescriptor *application = [FBApplicationDescriptor userApplicationWithPath:path error:error];
+  FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:path error:error];
   if (![self.simulator installApplicationWithPath:application.path error:error]) {
     return NO;
   }
@@ -116,7 +116,7 @@
   }
 
   NSString *testManagerSocketString = [self testManagerDaemonSocketPathWithLogger:logger];
-  if(testManagerSocketString.length == 0) {
+  if (testManagerSocketString.length == 0) {
     [[[FBSimulatorError
        describe:@"Failed to retrieve testmanagerd socket path"]
       logger:logger]
@@ -124,7 +124,7 @@
     return -1;
   }
 
-  if(![[NSFileManager new] fileExistsAtPath:testManagerSocketString]) {
+  if (![[NSFileManager new] fileExistsAtPath:testManagerSocketString]) {
     [[[FBSimulatorError
        describeFormat:@"Simulator indicated unix domain socket for testmanagerd at path %@, but no file was found at that path.", testManagerSocketString]
       logger:logger]
@@ -133,7 +133,7 @@
   }
 
   const char *testManagerSocketPath = testManagerSocketString.UTF8String;
-  if(strlen(testManagerSocketPath) >= 0x68) {
+  if (strlen(testManagerSocketPath) >= 0x68) {
     [[[FBSimulatorError
        describeFormat:@"Unix domain socket path for simulator testmanagerd service '%s' is too big to fit in sockaddr_un.sun_path", testManagerSocketPath]
       logger:logger]
@@ -182,14 +182,14 @@
 
 - (FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  FBApplicationDescriptor *application = [self.simulator installedApplicationWithBundleID:bundleID error:error];
+  FBInstalledApplication *application = [self.simulator installedApplicationWithBundleID:bundleID error:error];
   if (!application) {
     return nil;
   }
 
   FBProductBundle *productBundle =
   [[[FBProductBundleBuilder builder]
-    withBundlePath:application.path]
+    withBundlePath:application.bundle.path]
    buildWithError:error];
 
   return productBundle;
@@ -197,13 +197,13 @@
 
 - (BOOL)launchApplicationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment waitForDebugger:(BOOL)waitForDebugger error:(NSError **)error
 {
-  FBApplicationDescriptor *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];
+  FBInstalledApplication *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];
   if (!app) {
     return NO;
   }
 
   FBApplicationLaunchConfiguration *configuration = [FBApplicationLaunchConfiguration
-    configurationWithApplication:app
+    configurationWithApplication:app.bundle
     arguments:arguments
     environment:environment
     waitForDebugger:waitForDebugger
@@ -223,7 +223,7 @@
 - (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   pid_t processIdentifier = 0;
-  NSString *serviceName = [self.simulator.launchctl serviceNameForBundleID:bundleID processIdentifierOut:&processIdentifier error:error];
+  NSString *serviceName = [self.simulator serviceNameForBundleID:bundleID processIdentifierOut:&processIdentifier error:error];
   if (!serviceName) {
     return -1;
   }
@@ -235,9 +235,9 @@
   return processIdentifier;
 }
 
-- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID
+- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID sinceDate:(NSDate *)date
 {
-  return [[self.simulator.simulatorDiagnostics userLaunchedProcessCrashesSinceLastLaunchWithProcessIdentifier:pid] firstObject];
+  return [[self.simulator.simulatorDiagnostics subprocessCrashesAfterDate:date processsIdentifier:pid processType:FBCrashLogInfoProcessTypeApplication] firstObject];
 }
 
 #pragma mark - Unsupported FBDeviceOperator protocol method

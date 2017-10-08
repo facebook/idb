@@ -82,11 +82,19 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An implementation of `FBControlCoreLogger` that logs all to a file descriptor using ASL.
 
- @param fileDescriptor the file descriptor to log to, if 0 no file descriptor logging will occur.
- @param debugLogging YES if Debug messages should be written to stderr, NO otherwise.
+ @param fileHandle the file handle to log to, or nil to not log to the file handle. Logging to stderr may still occur.
+ @param debugLogging YES if Debug messages should be written to the file descriptor.
  @return an FBControlCoreLogger instance.
  */
-+ (id<FBControlCoreLogger>)systemLoggerWritingToFileDescriptor:(int)fileDescriptor withDebugLogging:(BOOL)debugLogging;
++ (id<FBControlCoreLogger>)systemLoggerWritingToFileHandle:(nullable NSFileHandle *)fileHandle withDebugLogging:(BOOL)debugLogging;
+
+/**
+ Compose multiple loggers into one.
+ 
+ @param loggers the loggers to compose.
+ @return the composite logger.
+ */
++ (id<FBControlCoreLogger>)compositeLoggerWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers;
 
 @end
 

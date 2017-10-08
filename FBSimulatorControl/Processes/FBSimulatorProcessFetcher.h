@@ -25,6 +25,14 @@ NS_ASSUME_NONNULL_BEGIN
 extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID;
 
 /**
+ An Environment Variable that is inserted into Simulator.app processes launched by FBSimulatorControl.
+ This makes the process of determining launched Simulator.app processes far simpler
+ as otherwise it is difficult to determine the UDID corresponding to a Simulator.app based on information
+ available to external processes.
+ */
+extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath;
+
+/**
  A class for obtaining information about Simulators that FBSimulatorControl cares about.
  */
 @interface FBSimulatorProcessFetcher : NSObject
@@ -46,13 +54,28 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
 
 /**
  Fetches an NSArray<FBProcessInfo *> of all Simulator Application Processes.
+
+ @return an Array of all the Simulator.app Processes for the current version of Xcode.
  */
 - (NSArray<FBProcessInfo *> *)simulatorApplicationProcesses;
 
 /**
- Fetches a Dictionary, mapping Simulator UDID to Simulator Application Process.
+ Fetches a Dictionary, mapping Simulator UDID to Simulator.app Process.
+ This can be used to obtain an understanding of the Simulator.app processes are for a number of Simulators.
+
+ @param udids an array of the udids to look for.
+ @param unclaimedOut an outparam for optionally returning Simulator.app processes that are not associated with any particular UDID.
+ @return a Dictionary mapping UDIDs to Simulator.app processes.
  */
 - (NSDictionary<NSString *, FBProcessInfo *> *)simulatorApplicationProcessesByUDIDs:(NSArray<NSString *> *)udids unclaimed:(NSArray<FBProcessInfo *> *_Nullable * _Nullable)unclaimedOut;
+
+/**
+ Fetches a Dictionary, mapping Device Set Path to Simulator Application Process.
+ If no Device Set Path defined, NSNull will be the key.
+
+ @return a Dictionary, mapping a String Device Set Path to UDID. NSNull if a Simulator.app does not have an identifiable Device Set Path.
+ */
+- (NSDictionary<id, FBProcessInfo *> *)simulatorApplicationProcessesByDeviceSetPath;
 
 /**
  Fetches the Process Info for a given Simulator.
@@ -75,6 +98,8 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
 
 /**
  Fetches an NSArray<FBProcessInfo *> of all launchd_sim processes.
+
+ @return an Array of launchd_sim processes.
  */
 - (NSArray<FBProcessInfo *> *)launchdProcesses;
 
@@ -88,11 +113,16 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
 
 /**
  Fetches a Dictionary, mapping Simulator UDID to launchd_sim process.
+
+ @param udids an Array of all the UDIDs to obtain launchd_sim processes for.
+ @return a Dictionary, mapping UDIDs to launchd_sim processes.
  */
 - (NSDictionary<NSString *, FBProcessInfo *> *)launchdProcessesByUDIDs:(NSArray<NSString *> *)udids;
 
 /**
  Fetches a Dictionary, mapping launchd_sim to the device set that contains it.
+
+ @return Dictionary, mapping launchd_sim to the device set that contains it.
  */
 - (NSDictionary<FBProcessInfo *, NSString *> *)launchdProcessesToContainingDeviceSet;
 
@@ -100,6 +130,8 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
 
 /**
  Fetches an NSArray<FBProcessInfo *> of all com.apple.CoreSimulator.CoreSimulatorService.
+
+ @return an Array of all the CoreSimulatorService Processes.
  */
 - (NSArray<FBProcessInfo *> *)coreSimulatorServiceProcesses;
 

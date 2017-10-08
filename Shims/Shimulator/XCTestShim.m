@@ -164,24 +164,23 @@ static void ProcessTestSuite(id testSuite)
   NSMutableSet *classesToSwizzle = [NSMutableSet set];
 
   for (id test in TestsFromSuite(testSuite)) {
-    NSString *description = [test performSelector:@selector(description)];
-    [seenCounts addObject:description];
+    NSString *testName = [test respondsToSelector:@selector(nameForLegacyLogging)]
+      ? [test nameForLegacyLogging]
+      : [test description];
 
-    NSUInteger seenCount = [seenCounts countForObject:description];
-
-    NSString *newDescription = nil;
+    [seenCounts addObject:testName];
+    NSUInteger seenCount = [seenCounts countForObject:testName];
 
     if (seenCount > 1) {
       // It's a duplicate - we need to override the name.
-      newDescription = TestNameWithCount(description, seenCount);
-    } else {
-      newDescription = description;
+      testName = TestNameWithCount(testName, seenCount);
     }
-
-    objc_setAssociatedObject(test,
-                             &TestDescriptionKey,
-                             newDescription,
-                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(
+      test,
+      &TestDescriptionKey,
+      testName,
+      OBJC_ASSOCIATION_RETAIN_NONATOMIC
+    );
     [classesToSwizzle addObject:[test class]];
   }
 
@@ -816,21 +815,18 @@ static void queryTestBundlePath(NSString *testBundlePath)
   id allTestsSuite = [testSuiteClass performSelector:@selector(allTests)];
   NSCAssert(allTestsSuite, @"Should have gotten a test suite from allTests");
 
-  NSArray *fullTestNames = testNamesFromSuite(allTestsSuite);
-  NSMutableArray *testNames = [NSMutableArray array];
-
-  for (NSString *fullTestName in fullTestNames) {
+  NSArray<NSString *> *fullTestNames = [testNamesFromSuite(allTestsSuite) sortedArrayUsingSelector:@selector(compare:)];
+  for (NSUInteger index = 0; index < fullTestNames.count; index++) {
+    NSString *fullTestName = fullTestNames[index];
     NSString *className = nil;
     NSString *methodName = nil;
     ParseClassAndMethodFromTestName(&className, &methodName, fullTestName);
-
-    [testNames addObject:[NSString stringWithFormat:@"%@/%@", className, methodName]];
+    NSString *line = index == 0
+      ? [NSString stringWithFormat:@"%@/%@", className, methodName]
+      : [NSString stringWithFormat:@"\n%@/%@", className, methodName];
+    NSData *output = [line dataUsingEncoding:NSUTF8StringEncoding];
+    [fileHandle writeData:output];
   }
-
-  [testNames sortUsingSelector:@selector(compare:)];
-
-  NSData *json = [NSJSONSerialization dataWithJSONObject:testNames options:0 error:nil];
-  [fileHandle writeData:json];
   exit(kSuccess);
 }
 

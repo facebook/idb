@@ -9,12 +9,13 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBAgentLaunchConfiguration;
 @class FBProcessInfo;
 @class FBSimulator;
+@class FBSimulatorAgentOperation;
 @protocol FBFileConsumer;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Callback when an Agent process terminates.
@@ -41,16 +42,16 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
  */
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator;
 
-#pragma mark Public Methdds
+#pragma mark Long-Running Processes
 
 /**
  Launches an agent with the given configuration.
 
  @param agentLaunch the agent to launch.
  @param error an error out for any error that occurs.
- @return the Process Info of the launched agent, nil if there was a failure.
+ @return an Agent Operation wrapper, nil on failure.
  */
-- (nullable FBProcessInfo *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error;
+- (nullable FBSimulatorAgentOperation *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error;
 
 /**
  Launches an agent with the given configuration.
@@ -58,9 +59,9 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
  @param agentLaunch the agent to launch.
  @param terminationHandler the Termnation Handler to call when the process has terminated.
  @param error an error out for any error that occurs.
- @return the Process Info of the launched agent, nil if there was a failure.
+ @return an Agent Operation wrapper, nil on failure.
  */
-- (nullable FBProcessInfo *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch terminationHandler:(nullable FBAgentTerminationHandler)terminationHandler error:(NSError **)error;
+- (nullable FBSimulatorAgentOperation *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch terminationHandler:(nullable FBAgentTerminationHandler)terminationHandler error:(NSError **)error;
 
 /**
  Launches an agent with the provided parameters.
@@ -75,6 +76,8 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
  @return the Process Info of the launched agent, nil if there was a failure.
  */
 - (nullable FBProcessInfo *)launchAgentWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr terminationHandler:(nullable FBAgentTerminationHandler)terminationHandler error:(NSError **)error;
+
+#pragma mark Short-Running Processes
 
 /**
  Launches an agent, consuming it's output with the consumer.

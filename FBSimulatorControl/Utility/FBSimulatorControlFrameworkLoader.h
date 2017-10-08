@@ -18,6 +18,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorControlFrameworkLoader : FBControlCoreFrameworkLoader
 
+/**
+ The Frameworks needed for most operations.
+ */
+@property (nonatomic, strong, class, readonly) FBSimulatorControlFrameworkLoader *essentialFrameworks;
+
+/**
+ All of the Frameworks for operations involving the HID and Framebuffer.
+ */
+@property (nonatomic, strong, class, readonly) FBSimulatorControlFrameworkLoader *xcodeFrameworks;
+
 @end
 
 NS_ASSUME_NONNULL_END

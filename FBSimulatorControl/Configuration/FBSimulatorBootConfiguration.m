@@ -9,7 +9,6 @@
 
 #import "FBSimulatorBootConfiguration.h"
 
-#import "FBSimulatorScale.h"
 #import "FBFramebufferConfiguration.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
@@ -32,12 +31,14 @@ FBiOSTargetActionType const FBiOSTargetActionTypeBoot = @"boot";
   return configuration;
 }
 
+static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsAwaitServices | FBSimulatorBootOptionsUseNSWorkspace;
+
 - (instancetype)init
 {
-  return [self initWithOptions:FBSimulatorBootOptionsAwaitServices scale:nil localizationOverride:nil framebuffer:nil];
+  return [self initWithOptions:DefaultBootOptions scale:nil localizationOverride:nil framebuffer:nil];
 }
 
-- (instancetype)initWithOptions:(FBSimulatorBootOptions)options scale:(FBSimulatorScale)scale localizationOverride:(FBLocalizationOverride *)localizationOverride framebuffer:(FBFramebufferConfiguration *)framebuffer
+- (instancetype)initWithOptions:(FBSimulatorBootOptions)options scale:(FBScale)scale localizationOverride:(FBLocalizationOverride *)localizationOverride framebuffer:(FBFramebufferConfiguration *)framebuffer
 {
   self = [super init];
   if (!self) {
@@ -57,31 +58,6 @@ FBiOSTargetActionType const FBiOSTargetActionTypeBoot = @"boot";
 - (instancetype)copyWithZone:(NSZone *)zone
 {
   return [[self.class alloc] initWithOptions:self.options scale:self.scale localizationOverride:self.localizationOverride framebuffer:self.framebuffer];
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _options = [[coder decodeObjectForKey:NSStringFromSelector(@selector(options))] unsignedIntegerValue];
-  _scale = [coder decodeObjectForKey:NSStringFromSelector(@selector(scale))];
-  _localizationOverride = [coder decodeObjectForKey:NSStringFromSelector(@selector(localizationOverride))];
-  _framebuffer = [coder decodeObjectForKey:NSStringFromSelector(@selector(framebuffer))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:@(self.options) forKey:NSStringFromSelector(@selector(options))];
-  [coder encodeObject:self.scale forKey:NSStringFromSelector(@selector(scale))];
-  [coder encodeObject:self.localizationOverride forKey:NSStringFromSelector(@selector(localizationOverride))];
-  [coder encodeObject:self.framebuffer forKey:NSStringFromSelector(@selector(framebuffer))];
 }
 
 #pragma mark NSObject
@@ -135,7 +111,7 @@ static NSString *const KeyFramebuffer = @"framebuffer";
 
 + (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
 {
-  FBSimulatorScale scale = [FBCollectionOperations nullableValueForDictionary:json key:KeyScale];
+  FBScale scale = [FBCollectionOperations nullableValueForDictionary:json key:KeyScale];
   if (![scale isKindOfClass:NSString.class]) {
     return [[FBSimulatorError
       describeFormat:@"%@ is not a String %@", scale, KeyScale]
@@ -199,52 +175,12 @@ static NSString *const KeyFramebuffer = @"framebuffer";
 
 #pragma mark Scale
 
-+ (instancetype)scale25Percent
-{
-  return [self.defaultConfiguration scale25Percent];
-}
-
-- (instancetype)scale25Percent
-{
-  return [self withScale:FBSimulatorScale25];
-}
-
-+ (instancetype)scale50Percent
-{
-  return [self.defaultConfiguration scale50Percent];
-}
-
-- (instancetype)scale50Percent
-{
-  return [self withScale:FBSimulatorScale50];
-}
-
-+ (instancetype)scale75Percent
-{
-  return [self.defaultConfiguration scale75Percent];
-}
-
-- (instancetype)scale75Percent
-{
-  return [self withScale:FBSimulatorScale75];
-}
-
-+ (instancetype)scale100Percent
-{
-  return [self.defaultConfiguration scale25Percent];
-}
-
-- (instancetype)scale100Percent
-{
-  return [self withScale:FBSimulatorScale100];
-}
-
-+ (instancetype)withScale:(FBSimulatorScale)scale
++ (instancetype)withScale:(FBScale)scale
 {
   return [self.defaultConfiguration withScale:scale];
 }
 
-- (instancetype)withScale:(FBSimulatorScale)scale
+- (instancetype)withScale:(FBScale)scale
 {
   if (!scale) {
     return self;
@@ -328,7 +264,7 @@ static NSString *const BootOptionStringUseNSWorkspace = @"Use NSWorkspace";
       failBool:error];
   }
   FBSimulator *simulator = (FBSimulator *) target;
-  return [simulator bootSimulator:self error:error];
+  return [simulator boot:self error:error];
 }
 
 @end

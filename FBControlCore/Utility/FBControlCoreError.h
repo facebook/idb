@@ -10,12 +10,12 @@
 #import <CoreGraphics/CoreGraphics.h>
 #import <Foundation/Foundation.h>
 
-@class FBProcessFetcher;
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBSimulator;
+@class FBFuture;
 
 @protocol FBControlCoreLogger;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Error Domain for FBControlCore.
@@ -48,6 +48,7 @@ extern NSString *const FBControlCoreErrorDomain;
 - (unsigned int)failUInt:(NSError **)error;
 - (CGRect)failRect:(NSError **)error;
 - (nullable id)fail:(NSError **)error;
+- (FBFuture *)failFuture;
 
 /**
  Attach additional diagnostic information.
@@ -59,15 +60,6 @@ extern NSString *const FBControlCoreErrorDomain;
  */
 - (instancetype)recursiveDescription;
 - (instancetype)noRecursiveDescription;
-
-/**
- Attaches Process Information to the error.
-
- @param processIdentifier the Process Identifier to find information for.
- @param processFetcher the Process Fetcher object to obtain process information from.
- @return the reciever, for chaining.
- */
-- (instancetype)attachProcessInfoForIdentifier:(pid_t)processIdentifier processFetcher:(FBProcessFetcher *)processFetcher;
 
 /**
  Attaches a Logger to the error.
@@ -111,6 +103,11 @@ extern NSString *const FBControlCoreErrorDomain;
 + (NSError *)errorForDescription:(NSString *)description;
 
 /**
+ Construct an error from a format string.
+ */
++ (NSError *)errorForFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+
+/**
  Return NO, wrapping `failureCause` in the FBControlCore domain.
  */
 + (BOOL)failBoolWithError:(NSError *)failureCause errorOut:(NSError **)errorOut;
@@ -139,6 +136,13 @@ extern NSString *const FBControlCoreErrorDomain;
  Return nil, wrapping `failureCause` in the FBControlCore domain with an additional description.
  */
 + (nullable id)failWithError:(NSError *)failureCause description:(NSString *)description errorOut:(NSError **)errorOut;
+
+/**
+ Return A Future that wraps the error.
+ 
+ @param error the error to wrap.
+ */
++ (FBFuture *)failFutureWithError:(NSError *)error;
 
 @end
 

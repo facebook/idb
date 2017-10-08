@@ -11,9 +11,12 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulatorControlFixtures.h"
+#import <FBSimulatorControl/FBSimulatorControl.h>
 
-@interface FBSimulatorApplicationDescriptorTests : XCTestCase
+#import "FBSimulatorControlFixtures.h"
+#import "FBSimulatorControlAssertions.h"
+
+@interface FBSimulatorApplicationDescriptorTests : FBSimulatorControlTestCase
 
 @end
 
@@ -21,14 +24,15 @@
 
 - (void)testCanFetchSimulatorApplications
 {
-  XCTAssertNotNil([FBApplicationDescriptor systemApplicationNamed:@"MobileSafari" error:nil]);
-  XCTAssertNotNil([FBApplicationDescriptor systemApplicationNamed:@"Camera" error:nil]);
-  XCTAssertNotNil([FBApplicationDescriptor systemApplicationNamed:@"Maps" error:nil]);
+  FBSimulator *simulator = [self assertObtainsSimulator];
+  XCTAssertNotNil([FBApplicationBundle systemApplicationNamed:@"MobileSafari" simulator:simulator error:nil]);
+  XCTAssertNotNil([FBApplicationBundle systemApplicationNamed:@"Camera" simulator:simulator error:nil]);
+  XCTAssertNotNil([FBApplicationBundle systemApplicationNamed:@"Maps" simulator:simulator error:nil]);
 }
 
 - (void)testCreatesSampleApplication
 {
-  FBApplicationDescriptor *application = self.tableSearchApplication;
+  FBApplicationBundle *application = self.tableSearchApplication;
   XCTAssertEqualObjects(application.bundleID, @"com.example.apple-samplecode.TableSearch");
   XCTAssertEqualObjects(application.binary.architectures, [NSSet setWithArray:@[@"i386"]]);
 }

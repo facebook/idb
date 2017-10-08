@@ -49,7 +49,7 @@
 - (nullable NSString *)iOSUnitTestBundlePath
 {
   NSString *bundlePath = FBXCTestKitFixtures.iOSUnitTestBundlePath;
-  if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+  if (!FBXcodeConfiguration.isXcode8OrGreater) {
     return bundlePath;
   }
   id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;

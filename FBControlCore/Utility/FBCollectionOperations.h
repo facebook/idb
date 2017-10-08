@@ -43,6 +43,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable id)nullableValueForDictionary:(NSDictionary<id<NSCopying>, id> *)dictionary key:(id<NSCopying>)key;
 
+/**
+ Create an Array of the same object.
+
+ @param object the object.
+ @param count the number of occurrences.
+ */
++ (NSArray *)arrayWithObject:(id)object count:(NSUInteger)count;
+
 @end
 
 NS_ASSUME_NONNULL_END

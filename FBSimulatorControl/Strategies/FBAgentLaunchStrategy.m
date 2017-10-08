@@ -13,12 +13,14 @@
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBSimulator+Helpers.h"
-#import "FBSimulator+Private.h"
-#import "FBSimulatorEventSink.h"
-#import "FBSimulatorError.h"
 #import "FBProcessLaunchConfiguration+Simulator.h"
+#import "FBAgentLaunchConfiguration+Simulator.h"
+#import "FBSimulator+Private.h"
+#import "FBSimulatorAgentOperation.h"
 #import "FBSimulatorDiagnostics.h"
+#import "FBSimulatorError.h"
+#import "FBProcessOutput.h"
+#import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"
 
 @interface FBAgentLaunchStrategy ()
@@ -29,6 +31,8 @@
 @end
 
 @implementation FBAgentLaunchStrategy
+
+#pragma mark Initializers
 
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator
 {
@@ -48,61 +52,47 @@
   return self;
 }
 
-- (nullable FBProcessInfo *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
+#pragma mark Long-Running Processes
+
+- (nullable FBSimulatorAgentOperation *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
 {
   return [self launchAgent:agentLaunch terminationHandler:NULL error:error];
 }
 
-- (nullable FBProcessInfo *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch terminationHandler:(nullable FBAgentTerminationHandler)terminationHandler error:(NSError **)error
+- (nullable FBSimulatorAgentOperation *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch terminationHandler:(nullable FBAgentTerminationHandler)terminationHandler error:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
-  FBDiagnostic *stdOutDiagnostic = nil;
-  FBDiagnostic *stdErrDiagnostic = nil;
-  NSFileHandle *stdOutHandle = nil;
-  NSFileHandle *stdErrHandle = nil;
-
-  // Create the File Handles, based on the configuration for the AgentLaunch.
-  if (![agentLaunch createStdOutDiagnosticForSimulator:simulator diagnosticOut:&stdOutDiagnostic error:error]) {
+  FBProcessOutput *stdOut = nil;
+  FBProcessOutput *stdErr = nil;
+  if (![agentLaunch createOutputForSimulator:self.simulator stdOutOut:&stdOut stdErrOut:&stdErr error:error]) {
     return nil;
-  }
-  if (stdOutDiagnostic) {
-    NSString *path = stdOutDiagnostic.asPath;
-    stdOutHandle = [NSFileHandle fileHandleForWritingAtPath:path];
-    if (!stdOutHandle) {
-      return [[FBSimulatorError
-        describeFormat:@"Could not file handle for stdout at path '%@' for config '%@'", path, self]
-        fail:error];
-    }
-  }
-  if (![agentLaunch createStdErrDiagnosticForSimulator:simulator diagnosticOut:&stdErrDiagnostic error:error]) {
-    return nil;
-  }
-  if (stdErrDiagnostic) {
-    NSString *path = stdErrDiagnostic.asPath;
-    stdErrHandle = [NSFileHandle fileHandleForWritingAtPath:path];
-    if (!stdOutHandle) {
-      return [[FBSimulatorError
-        describeFormat:@"Could not file handle for stderr at path '%@' for config '%@'", path, self]
-        fail:error];
-    }
   }
 
   // Actually launch the process with the appropriate API.
+  FBSimulatorAgentOperation *operation = [FBSimulatorAgentOperation
+    operationWithSimulator:simulator
+    configuration:agentLaunch
+    stdOut:stdOut
+    stdErr:stdErr
+    handler:terminationHandler];
+
+  // Create the container for the Agent Process.
   FBProcessInfo *process = [self
     launchAgentWithLaunchPath:agentLaunch.agentBinary.path
     arguments:agentLaunch.arguments
     environment:agentLaunch.environment
     waitForDebugger:NO
-    stdOut:stdOutHandle
-    stdErr:stdErrHandle
-    terminationHandler:terminationHandler
+    stdOut:stdOut.fileHandle
+    stdErr:stdErr.fileHandle
+    terminationHandler:operation.handler
     error:error];
   if (!process) {
     return nil;
   }
 
-  [simulator.eventSink agentDidLaunch:agentLaunch didStart:process stdOut:stdOutHandle stdErr:stdErrHandle];
-  return process;
+  [operation processDidLaunch:process];
+  [simulator.eventSink agentDidLaunch:operation];
+  return operation;
 }
 
 - (nullable FBProcessInfo *)launchAgentWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr terminationHandler:(nullable FBAgentTerminationHandler)terminationHandler error:(NSError **)error
@@ -131,6 +121,8 @@
   }
   return process;
 }
+
+#pragma mark Short-Running Processes
 
 - (BOOL)launchAndWait:(FBAgentLaunchConfiguration *)agentLaunch consumer:(id<FBFileConsumer>)consumer error:(NSError **)error
 {

@@ -11,8 +11,10 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class SimDeviceIOClient;
 @class SimDeviceFramebufferService;
+@class SimDeviceIOClient;
+
+@protocol FBControlCoreLogger;
 @protocol SimDisplayDamageRectangleDelegate;
 @protocol SimDisplayIOSurfaceRenderableDelegate;
 @protocol SimDeviceIOPortConsumer;
@@ -24,14 +26,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Called when an IOSurface becomes available or invalid
- 
+
  @param surface the surface, or NULL if a surface is not available/becomes unavailable
  */
 - (void)didChangeIOSurface:(nullable IOSurfaceRef)surface;
 
 /**
  When a Damage Rect becomes available.
- 
+
  @param rect the damage rectangle.
  */
 - (void)didReceiveDamageRect:(CGRect)rect;
@@ -48,21 +50,27 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBFramebufferSurface : NSObject
 
+#pragma mark Initializers
+
 /**
  Obtains an IOSurface from the SimDeviceIOClient.
 
  @param ioClient the IOClient to attach to.
+ @param logger the logger to log to.
  @return a new FBFramebufferSurface.
  */
-+ (nullable instancetype)mainScreenSurfaceForClient:(SimDeviceIOClient *)ioClient;
++ (nullable instancetype)mainScreenSurfaceForClient:(SimDeviceIOClient *)ioClient logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Obtains an IOSurface from the SimDeviceFramebufferService.
 
  @param framebufferService the Framebuffer Service to obtain from.
+ @param logger the logger to log to.
  @return a new FBFramebufferSurface.
  */
-+ (instancetype)mainScreenSurfaceForFramebufferService:(SimDeviceFramebufferService *)framebufferService;
++ (instancetype)mainScreenSurfaceForFramebufferService:(SimDeviceFramebufferService *)framebufferService logger:(id<FBControlCoreLogger>)logger;
+
+#pragma mark Public Methods
 
 /**
  Attaches a Consumer.

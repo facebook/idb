@@ -26,6 +26,7 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      language = ""
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
          <TestableReference
@@ -36,6 +37,16 @@
                BuildableName = "FBSimulatorControlKitTests.xctest"
                BlueprintName = "FBSimulatorControlKitTests"
                ReferencedContainer = "container:fbsimctl.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AAC8B2331CEC51120034A865"
+               BuildableName = "FBDeviceControlTests.xctest"
+               BlueprintName = "FBDeviceControlTests"
+               ReferencedContainer = "container:../FBSimulatorControl.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,6 +66,7 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      language = ""
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
       ignoresPersistentStateOnLaunch = "NO"
@@ -73,7 +85,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "record start"
+            argument = "list_apps"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

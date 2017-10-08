@@ -11,9 +11,7 @@ import Foundation
 import FBSimulatorControl
 import XCTestBootstrap
 
-public protocol EventInterpreter {
-  func interpret(_ subject: EventReporterSubject) -> [String]
-}
+public typealias EventInterpreter = FBEventInterpreterProtocol
 
 public protocol EventReporter {
   var interpreter: EventInterpreter { get }
@@ -31,15 +29,15 @@ extension EventReporter {
   }
 
   func reportError(_ message: String) {
-    self.reportSimpleBridge(.failure, .discrete, message as NSString)
+    self.reportSimpleBridge(.failure, .discrete, FBEventReporterSubject(string: message))
   }
 
   func logDebug(_ string: String) {
-    self.report(LogSubject(logString: string, level: Constants.asl_level_debug()))
+    self.report(FBEventReporterSubject(logString: string, level: Constants.asl_level_debug))
   }
 
   func logInfo(_ string: String) {
-    self.report(LogSubject(logString: string, level: Constants.asl_level_info()))
+    self.report(FBEventReporterSubject(logString: string, level: Constants.asl_level_info))
   }
 }
 
@@ -53,44 +51,11 @@ class WritingEventReporter : EventReporter {
   }
 
   public func report(_ subject: EventReporterSubject) {
-    for line in self.interpreter.interpret(subject) {
+    for line in self.interpreter.interpretLines(EventReporterSubjectBridge(subject)) {
+      if line.count == 0 {
+        continue
+      }
       self.writer.write(line)
-    }
-  }
-}
-
-struct HumanReadableEventInterpreter : EventInterpreter {
-  public func interpret(_ subject: EventReporterSubject) -> [String] {
-    return subject.subSubjects.flatMap { item in
-      let string = item.description
-      if string.isEmpty {
-        return nil
-      }
-      return string
-    }
-  }
-}
-
-struct JSONEventInterpreter : EventInterpreter {
-  let pretty: Bool
-
-  public func interpret(_ subject: EventReporterSubject) -> [String] {
-    return subject.subSubjects.flatMap { item in
-      let json = item.jsonDescription
-      guard let _ = try? json.getValue(JSONKeys.EventName.rawValue).getString() else {
-        assertionFailure("\(json) does not have a \(JSONKeys.EventName.rawValue)")
-        return nil
-      }
-      guard let _ = try? json.getValue(JSONKeys.EventType.rawValue).getString() else {
-        assertionFailure("\(json) does not have a \(JSONKeys.EventType.rawValue)")
-        return nil
-      }
-      do {
-        return try json.serializeToString(pretty)
-      } catch let error {
-        assertionFailure("Failed to Serialize \(json) to string: \(error)")
-        return nil
-      }
     }
   }
 }
@@ -103,9 +68,9 @@ public extension OutputOptions {
   private func createInterpreter() -> EventInterpreter {
     if self.contains(OutputOptions.JSON) {
       let pretty = self.contains(OutputOptions.Pretty)
-      return JSONEventInterpreter(pretty: pretty)
+      return FBEventInterpreter.jsonEventInterpreter(pretty)
     }
-    return HumanReadableEventInterpreter()
+    return FBEventInterpreter.humanReadable()
   }
 
   public func createLogWriter() -> Writer {
@@ -133,7 +98,7 @@ public extension CLI {
     case .show(let help):
       return help.createReporter(writer)
     case .print:
-      return WritingEventReporter(writer: writer, interpreter: HumanReadableEventInterpreter())
+      return WritingEventReporter(writer: writer, interpreter: FBEventInterpreter.humanReadable())
     }
   }
 }

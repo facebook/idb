@@ -11,43 +11,47 @@
 
 #import "FBControlCoreConfigurationVariants.h"
 
+FBSimulatorStateString const FBSimulatorStateStringCreating = @"Creating";
+FBSimulatorStateString const FBSimulatorStateStringShutdown = @"Shutdown";
+FBSimulatorStateString const FBSimulatorStateStringBooting = @"Booting";
+FBSimulatorStateString const FBSimulatorStateStringBooted = @"Booted";
+FBSimulatorStateString const FBSimulatorStateStringShuttingDown = @"Shutting Down";
+FBSimulatorStateString const FBSimulatorStateStringUnknown = @"Unknown";
+
 NSString *FBSimulatorStateStringFromState(FBSimulatorState state)
 {
   switch (state) {
     case FBSimulatorStateCreating:
-      return @"Creating";
+      return FBSimulatorStateStringCreating;
     case FBSimulatorStateShutdown:
-      return @"Shutdown";
+      return FBSimulatorStateStringShutdown;
     case FBSimulatorStateBooting:
-      return @"Booting";
+      return FBSimulatorStateStringBooting;
     case FBSimulatorStateBooted:
-      return @"Booted";
+      return FBSimulatorStateStringBooted;
     case FBSimulatorStateShuttingDown:
-      return @"Shutting Down";
+      return FBSimulatorStateStringShuttingDown;
     default:
-      return @"Unknown";
+      return FBSimulatorStateStringUnknown;
   }
 }
 
 FBSimulatorState FBSimulatorStateFromStateString(NSString *stateString)
 {
   stateString = [stateString.lowercaseString stringByReplacingOccurrencesOfString:@"-" withString:@" "];
-  if ([stateString isEqualToString:@"creating"]) {
+  if ([stateString isEqualToString:FBSimulatorStateStringCreating.lowercaseString]) {
     return FBSimulatorStateCreating;
   }
-  if ([stateString isEqualToString:@"shutdown"]) {
+  if ([stateString isEqualToString:FBSimulatorStateStringShutdown.lowercaseString]) {
     return FBSimulatorStateShutdown;
   }
-  if ([stateString isEqualToString:@"booting"]) {
+  if ([stateString isEqualToString:FBSimulatorStateStringBooting.lowercaseString]) {
     return FBSimulatorStateBooting;
   }
-  if ([stateString isEqualToString:@"booted"]) {
+  if ([stateString isEqualToString:FBSimulatorStateStringBooted.lowercaseString]) {
     return FBSimulatorStateBooted;
   }
-  if ([stateString isEqualToString:@"creating"]) {
-    return FBSimulatorStateCreating;
-  }
-  if ([stateString isEqualToString:@"shutting down"]) {
+  if ([stateString isEqualToString:FBSimulatorStateStringShuttingDown.lowercaseString]) {
     return FBSimulatorStateShuttingDown;
   }
   return FBSimulatorStateUnknown;

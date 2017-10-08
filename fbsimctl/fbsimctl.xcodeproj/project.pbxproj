@@ -53,7 +53,6 @@
 		AAE35AC51C2865C10073CC70 /* FBSimulatorControlKit.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE35AC41C2865C10073CC70 /* FBSimulatorControlKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAE35ACC1C2865C10073CC70 /* FBSimulatorControlKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */; };
 		AAE9E9551D23B4140033EF28 /* DeviceRunners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE9E9541D23B4140033EF28 /* DeviceRunners.swift */; };
-		AAF2D34E1C32EA4D00434516 /* Writer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF2D34D1C32EA4D00434516 /* Writer.swift */; };
 		AAFD4A361CC5082D00FF38FA /* CommandParsersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFD4A341CC5082D00FF38FA /* CommandParsersTests.swift */; };
 		AAFD4A371CC5082D00FF38FA /* EnvironmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFD4A351CC5082D00FF38FA /* EnvironmentTests.swift */; };
 		AAFD4A391CC5084600FF38FA /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFD4A381CC5084600FF38FA /* IntegrationTests.swift */; };
@@ -155,7 +154,6 @@
 		AAE35ACB1C2865C10073CC70 /* FBSimulatorControlKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FBSimulatorControlKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAE35AD21C2865C10073CC70 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AAE9E9541D23B4140033EF28 /* DeviceRunners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeviceRunners.swift; sourceTree = "<group>"; };
-		AAF2D34D1C32EA4D00434516 /* Writer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Writer.swift; sourceTree = "<group>"; };
 		AAFD4A341CC5082D00FF38FA /* CommandParsersTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = CommandParsersTests.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		AAFD4A351CC5082D00FF38FA /* EnvironmentTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EnvironmentTests.swift; sourceTree = "<group>"; };
 		AAFD4A381CC5084600FF38FA /* IntegrationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IntegrationTests.swift; sourceTree = "<group>"; };
@@ -227,7 +225,6 @@
 				AA3DB63F1CB3A971000BE7A1 /* SimulatorReporter.swift */,
 				AA60468E1C7A96E500639DD5 /* SimulatorRunners.swift */,
 				AAAD4A2E1CB3AF6C00B2068C /* Subjects.swift */,
-				AAF2D34D1C32EA4D00434516 /* Writer.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -495,7 +492,6 @@
 				AA54EF751C48275B006D5118 /* JSON.swift in Sources */,
 				AAA6C3AF1D0953F400720BF6 /* iOSRunner.swift in Sources */,
 				AA78DCD61C4E9A09006FAB41 /* EventReporter.swift in Sources */,
-				AAF2D34E1C32EA4D00434516 /* Writer.swift in Sources */,
 				AA3DB6401CB3A971000BE7A1 /* SimulatorReporter.swift in Sources */,
 				AA83D5EC1C58E368003B253E /* Events.swift in Sources */,
 				AA1B7F701C2867EE0038C6A5 /* Help.swift in Sources */,

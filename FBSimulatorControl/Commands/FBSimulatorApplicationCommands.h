@@ -14,13 +14,14 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
+@class FBSimulatorApplicationOperation;
 
 /**
  Simulator-Specific Application Commands.
  */
-@protocol FBSimulatorApplicationCommands <FBApplicationCommands>
+@protocol FBSimulatorApplicationCommands <FBApplicationCommands, FBiOSTargetCommand>
 
-#pragma mark Launching / Terminating Applications
+#pragma mark Application Lifecycle
 
 /**
  Uninstalls the given Application.
@@ -42,48 +43,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error;
 
-/**
- Terminates an Application based on the Application.
- Will fail if a running Application could not be found, or the kill fails.
-
- @param application the Application to terminate.
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
- */
-- (BOOL)terminateApplication:(FBApplicationDescriptor *)application error:(NSError **)error;
-
-/**
- Relaunches the last-known-launched Application:
- - If the Application is running, it will be killed first then launched.
- - If the Application has terminated, it will be launched.
- - If no known Application has been launched yet, the interaction will fail.
-
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
- */
-- (BOOL)relaunchLastLaunchedApplicationWithError:(NSError **)error;
-
-/**
- Terminates the last-launched Application:
- - If the Application is running, it will be killed first then launched.
- - If the Application has terminated, the interaction will fail.
- - If no known Application has been launched yet, the interaction will fail.
-
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
- */
-- (BOOL)terminateLastLaunchedApplicationWithError:(NSError **)error;
-
 #pragma mark Querying Application State
 
 /**
- Fetches the FBApplicationDescriptor instance by Bundle ID, on the Simulator.
+ Fetches the FBApplicationBundle instance by Bundle ID, on the Simulator.
 
  @param bundleID the Bundle ID to fetch an installed application for.
  @param error an error out for any error that occurs.
- @return a FBApplicationDescriptor instance if one could be obtained, nil otherwise.
+ @return a FBApplicationBundle instance if one could be obtained, nil otherwise.
  */
-- (nullable FBApplicationDescriptor *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (nullable FBInstalledApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
  Determines whether a provided Bundle ID represents a System Application
@@ -118,14 +87,6 @@ NS_ASSUME_NONNULL_BEGIN
  Implementation of FBApplicationCommands for Simulators.
  */
 @interface FBSimulatorApplicationCommands : NSObject <FBSimulatorApplicationCommands>
-
-/**
- Creates a FBSimulatorApplicationCommands instance.
-
- @param simulator the Simulator to perform actions on.
- @return a new FBSimulatorApplicationCommands instance.
- */
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
 
 @end
 

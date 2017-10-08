@@ -145,7 +145,7 @@
 
 #pragma mark FBTerminationHandle
 
-+ (FBTerminationHandleType)handleType
+- (FBTerminationHandleType)handleType
 {
   return FBTerminationTypeHandleVideoRecording;
 }

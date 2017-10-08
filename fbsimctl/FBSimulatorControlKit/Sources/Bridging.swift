@@ -12,7 +12,7 @@ import FBSimulatorControl
 
 extension FBSimulatorState {
   public var description: String { get {
-    return FBSimulator.stateString(from: self)
+    return FBSimulatorStateStringFromState(self).rawValue
   }}
 }
 
@@ -54,7 +54,7 @@ public typealias ControlCoreValue = FBJSONSerializable & CustomStringConvertible
   }
 
   @objc open func log(_ level: Int32, string: String) {
-    let subject = LogSubject(logString: string, level: level)
+    let subject = FBEventReporterSubject(logString: string, level: level)
     self.reporter.report(subject)
   }
 }
@@ -170,14 +170,6 @@ extension IndividualCreationConfiguration {
   }}
 }
 
-extension FBApplicationDescriptor {
-  static func findOrExtract(atPath: String) throws -> (String, URL?) {
-    var url: NSURL? = nil
-    let result = try FBApplicationDescriptor.findOrExtractApplication(atPath: atPath, extractPathOut: &url)
-    return (result, url as URL?)
-  }
-}
-
 extension Bool {
   static func fallback(from: String?, to: Bool) -> Bool {
     guard let from = from else {
@@ -197,58 +189,6 @@ extension HttpRequest {
   }
 }
 
-struct LineBufferDataIterator : IteratorProtocol {
-  let lineBuffer: FBLineBuffer
-
-  mutating func next() -> Data? {
-    return self.lineBuffer.consumeLineData()
-  }
-}
-
-struct LineBufferStringIterator : IteratorProtocol {
-  let lineBuffer: FBLineBuffer
-
-  mutating func next() -> String? {
-    return self.lineBuffer.consumeLineString()
-  }
-}
-
-extension FBLineBuffer {
-  func dataIterator() -> LineBufferDataIterator {
-    return LineBufferDataIterator(lineBuffer: self)
-  }
-
-  func stringIterator() -> LineBufferStringIterator {
-    return LineBufferStringIterator(lineBuffer: self)
-  }
-}
-
-@objc class WriterBridge : NSObject, FBFileConsumer {
-  let writer: Writer
-
-  init(writer: Writer) {
-    self.writer = writer
-    super.init()
-  }
-
-  func consumeData(_ data: Data) {
-    guard let string = String(data: data, encoding: String.Encoding.utf8) else {
-      return
-    }
-    self.writer.write(string)
-  }
-
-  func consumeEndOfFile() {
-
-  }
-}
-
-extension Writer {
-  var fileWriter: FBFileConsumer { get {
-    return WriterBridge(writer: self)
-  }}
-}
-
 @objc class AccumilatingActionDelegate : NSObject, FBiOSTargetActionDelegate {
   var handle: FBTerminationHandle? = nil
   let reporter: EventReporter
@@ -263,70 +203,8 @@ extension Writer {
   }
 
   func obtainConsumer(for action: FBiOSTargetAction, target: FBiOSTarget) -> FBFileConsumer {
-    return self.reporter.writer.fileWriter
+    return self.reporter.writer
   }
-}
-
-@objc class ActionReaderDelegateBridge : NSObject, FBiOSActionReaderDelegate {
-  let interpreter: EventInterpreter
-  let reporter: EventReporter
-
-  init(interpreter: EventInterpreter, reporter: EventReporter) {
-    self.interpreter = interpreter
-    self.reporter = reporter
-    super.init()
-  }
-
-  func interpret(_ action: FBiOSTargetAction, _ eventType: EventType) -> String {
-    let subject = SimpleSubject(action.eventName, eventType, ControlCoreSubject(action as! ControlCoreValue))
-    return self.interpret(subject)
-  }
-
-  func interpret(_ subject: EventReporterSubject) -> String {
-    self.reporter.report(subject)
-    let lines = self.interpreter.interpret(subject)
-    return lines.joined(separator: "\n") + "\n"
-  }
-
-  func action(_ action: FBiOSTargetAction, target: FBiOSTarget, didGenerate terminationHandle: FBTerminationHandle) {
-
-  }
-
-  func obtainConsumer(for action: FBiOSTargetAction, target: FBiOSTarget) -> FBFileConsumer {
-    return self.reporter.writer.fileWriter
-  }
-
-  func readerDidFinishReading(_ reader: FBiOSActionReader) {
-
-  }
-
-  func reader(_ reader: FBiOSActionReader, failedToInterpretInput input: String, error: Error) -> String? {
-    let message = error.localizedDescription + ". input: " + input
-    let subject = SimpleSubject(.failure, .discrete, message)
-    return self.interpret(subject)
-  }
-
-  func reader(_ reader: FBiOSActionReader, willStartReadingUpload header: FBUploadHeader) -> String? {
-    return self.interpret(header, .started)
-  }
-
-  func reader(_ reader: FBiOSActionReader, didFinishUpload destination: FBUploadedDestination) -> String? {
-    return self.interpret(destination, .ended)
-  }
-
-  func reader(_ reader: FBiOSActionReader, willStartPerforming action: FBiOSTargetAction, on target: FBiOSTarget) -> String? {
-    return self.interpret(action, .started)
-  }
-
-  func reader(_ reader: FBiOSActionReader, didProcessAction action: FBiOSTargetAction, on target: FBiOSTarget) -> String? {
-    return self.interpret(action, .ended)
-  }
-
-  func reader(_ reader: FBiOSActionReader, didFailToProcessAction action: FBiOSTargetAction, on target: FBiOSTarget, error: Error) -> String? {
-    let subject = SimpleSubject(.failure, .discrete, error.localizedDescription)
-    return self.interpret(subject)
-  }
-
 }
 
 extension FBiOSTargetAction {
@@ -366,3 +244,34 @@ extension FBTestLaunchConfiguration : EnvironmentAdditive {
     return self.withApplicationLaunchConfiguration(appLaunchConf.withEnvironmentAdditions(environmentAdditions))
   }
 }
+
+
+public typealias Writer = FBFileConsumer
+public extension Writer {
+  func write(_ string: String) {
+    var output = string
+    if (output.characters.last != "\n") {
+      output.append("\n" as Character)
+    }
+    guard let data = output.data(using: String.Encoding.utf8) else {
+      return
+    }
+    self.consumeData(data)
+  }
+}
+
+public typealias FileHandleWriter = FBFileWriter
+public extension FileHandleWriter {
+  static var stdOutWriter: FileHandleWriter { get {
+    return FileHandleWriter.syncWriter(with: FileHandle.standardOutput)
+  }}
+
+  static var stdErrWriter: FileHandleWriter { get {
+    return FileHandleWriter.syncWriter(with: FileHandle.standardError)
+  }}
+}
+
+public typealias EventType = FBEventType
+
+public typealias JSONKeys = FBJSONKey
+

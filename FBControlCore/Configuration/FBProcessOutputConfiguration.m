@@ -17,15 +17,15 @@ NSString *const FBProcessOutputToFileDefaultLocation = @"FBProcessOutputToFileDe
 
 + (nullable instancetype)configurationWithStdOut:(id)stdOut stdErr:(id)stdErr error:(NSError **)error
 {
-  if (![stdOut isKindOfClass:NSNull.class] && ![stdOut isKindOfClass:NSString.class]) {
+  if (![stdOut isKindOfClass:NSNull.class] && ![stdOut isKindOfClass:NSString.class] && ![stdOut conformsToProtocol:@protocol(FBFileConsumer)]) {
     return [[FBControlCoreError
-      describeFormat:@"'stdout' should be Null | String but is %@",  stdOut]
+      describeFormat:@"'stdout' should be (Null | String | FBFileConsumer) but is %@",  stdOut]
       fail:error];
   }
 
-  if (![stdErr isKindOfClass:NSNull.class] && ![stdErr isKindOfClass:NSString.class]) {
+  if (![stdErr isKindOfClass:NSNull.class] && ![stdErr isKindOfClass:NSString.class] && ![stdErr conformsToProtocol:@protocol(FBFileConsumer)]) {
     return [[FBControlCoreError
-      describeFormat:@"'stderr' should be Null | String but is %@",  stdErr]
+      describeFormat:@"'stderr' should be (Null | String | FBFileConsumer) but is %@",  stdErr]
       fail:error];
   }
   return [[self alloc] initWithStdOut:stdOut stdErr:stdErr];
@@ -75,27 +75,6 @@ NSString *const FBProcessOutputToFileDefaultLocation = @"FBProcessOutputToFileDe
   return self;
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _stdOut = [coder decodeObjectForKey:NSStringFromSelector(@selector(stdOut))];
-  _stdErr = [coder decodeObjectForKey:NSStringFromSelector(@selector(stdErr))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.stdOut forKey:NSStringFromSelector(@selector(stdOut))];
-  [coder encodeObject:self.stdErr forKey:NSStringFromSelector(@selector(stdErr))];
-}
-
 #pragma mark NSObject
 
 - (NSUInteger)hash
@@ -109,18 +88,6 @@ NSString *const FBProcessOutputToFileDefaultLocation = @"FBProcessOutputToFileDe
     return NO;
   }
   return [self.stdOut isEqual:object.stdOut] && [self.stdErr isEqual:object.stdErr];
-}
-
-#pragma mark FBDebugDescribeable
-
-- (NSString *)shortDescription
-{
-  return self.description;
-}
-
-- (NSString *)debugDescription
-{
-  return self.description;
 }
 
 - (NSString *)description

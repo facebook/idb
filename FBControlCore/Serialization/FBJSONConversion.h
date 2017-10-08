@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return an NSJSONSerialization-compatible representation of the reciever.
  */
-- (id)jsonSerializableRepresentation;
+@property (nonatomic, copy, readonly) id jsonSerializableRepresentation;
 
 @end
 

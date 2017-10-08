@@ -142,19 +142,6 @@ FBiOSTargetFormatKey const FBiOSTargetFormatContainerApplicationProcessIdentifie
   return self;
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  NSArray<FBiOSTargetFormatKey> *fields = [coder decodeObjectForKey:NSStringFromSelector(@selector(fields))];
-  return [self initWithFields:fields];
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.fields forKey:NSStringFromSelector(@selector(fields))];
-}
-
 #pragma mark JSON
 
 - (id)jsonSerializableRepresentation

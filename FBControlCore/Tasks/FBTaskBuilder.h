@@ -16,6 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 @protocol FBFileConsumer;
 
+@class FBFuture;
+
 /**
  An interface to building FBTask instances
  */
@@ -71,18 +73,32 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)withEnvironmentAdditions:(NSDictionary<NSString *, NSString *> *)environment;
 
 /**
- Reads stdout into memory.
+ Reads stdout into memory, as a Data.
 
  @return the reciever, for chaining.
  */
-- (instancetype)withStdOutInMemory;
+- (instancetype)withStdOutInMemoryAsData;
 
 /**
- Reads stderr into memory.
+ Reads stderr into memory, as a Data.
 
  @return the reciever, for chaining.
  */
-- (instancetype)withStdErrInMemory;
+- (instancetype)withStdErrInMemoryAsData;
+
+/**
+ Reads stdout into memory, as a String.
+
+ @return the reciever, for chaining.
+ */
+- (instancetype)withStdOutInMemoryAsString;
+
+/**
+ Reads stderr into memory, as a String.
+
+ @return the reciever, for chaining.
+ */
+- (instancetype)withStdErrInMemoryAsString;
 
 /**
  Assigns a path to write stdout to.
@@ -163,6 +179,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)withStdErrToLogger:(id<FBControlCoreLogger>)logger;
 
 /**
+ Creates a File Consumer for stdin.
+
+ @return the reciver, for chaining.
+ */
+- (instancetype)withStdInConnected;
+
+/**
  The Set of Return Codes that are considered non-erroneous.
 
  @param statusCodes the non-erroneous stats codes.
@@ -209,6 +232,21 @@ NS_ASSUME_NONNULL_BEGIN
  @return The stdout of the process if successful, nil otherwise.
  */
 - (nullable NSString *)executeReturningError:(NSError **)error;
+
+/**
+ Builds the Task, wrapping it in a future.
+
+ @return a Future, encapsulating the task on completion.
+ */
+- (FBFuture<FBTask *> *)buildFuture;
+
+/**
+ Builds the Task, wrapping it in a future.
+
+ @param processIdentifierOut the process identifier of the launched process.
+ @return a Future, encapsulating the task on completion.
+ */
+- (FBFuture<FBTask *> *)buildFutureWithProcessIdentifierOut:(pid_t *)processIdentifierOut;
 
 @end
 

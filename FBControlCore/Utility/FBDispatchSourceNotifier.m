@@ -13,13 +13,13 @@ FBTerminationHandleType const FBTerminationHandleTypeDispatchSource = @"Dispatch
 
 @implementation FBDispatchSourceNotifier
 
-+ (instancetype)processTerminationNotifierForProcessIdentifier:(pid_t)processIdentifier handler:(void (^)(FBDispatchSourceNotifier *))handler
++ (instancetype)processTerminationNotifierForProcessIdentifier:(pid_t)processIdentifier queue:(dispatch_queue_t)queue handler:(void (^)(FBDispatchSourceNotifier *))handler
 {
   dispatch_source_t dispatchSource = dispatch_source_create(
     DISPATCH_SOURCE_TYPE_PROC,
     (unsigned long) processIdentifier,
     DISPATCH_PROC_EXIT,
-    dispatch_get_main_queue()
+    queue
   );
   return [[self alloc] initWithDispatchSource:dispatchSource handler:handler];
 }
@@ -61,7 +61,7 @@ FBTerminationHandleType const FBTerminationHandleTypeDispatchSource = @"Dispatch
   }
 }
 
-+ (FBTerminationHandleType)handleType
+- (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleTypeDispatchSource;
 }

@@ -26,9 +26,11 @@
 
 @implementation FBDeviceXCTestCommands
 
-+ (instancetype)commandsWithDevice:(FBDevice *)device
+#pragma mark Initializers
+
++ (instancetype)commandsWithTarget:(FBDevice *)target
 {
-  return [[self alloc] initWithDevice:device workingDirectory:NSTemporaryDirectory()];
+  return [[self alloc] initWithDevice:target workingDirectory:NSTemporaryDirectory()];
 }
 
 - (instancetype)initWithDevice:(FBDevice *)device workingDirectory:(NSString *)workingDirectory
@@ -45,31 +47,16 @@
   return self;
 }
 
-+ (NSDictionary<NSString *, NSDictionary<NSString *, NSObject *> *> *)xctestRunProperties:(FBTestLaunchConfiguration *)testLaunch
-{
-  return @{
-    @"StubBundleId" : @{
-      @"TestHostPath" : testLaunch.testHostPath,
-      @"TestBundlePath" : testLaunch.testBundlePath,
-      @"UseUITargetAppProvidedByTests" : @YES,
-      @"IsUITestBundle" : @YES,
-      @"CommandLineArguments": testLaunch.applicationLaunchConfiguration.arguments,
-      @"TestingEnvironmentVariables": @{
-            @"DYLD_FRAMEWORK_PATH": @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
-            @"DYLD_LIBRARY_PATH": @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
-      },
-    }
-  };
-}
+#pragma mark Public
 
-- (id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration error:(NSError **)error
+- (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter error:(NSError **)error
 {
   // Return early and fail if there is already a test run for the device.
   // There should only ever be one test run per-device.
   if (self.operation) {
     return [[FBDeviceControlError
-      describeFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]
-      fail:error];
+             describeFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]
+            fail:error];
   }
   // Terminate the reparented xcodebuild invocations.
   NSError *innerError = nil;
@@ -92,25 +79,46 @@
   // Create the Task, wrap it and store it
   _operation = [FBXcodeBuildOperation operationWithTarget:self.device configuration:testLaunchConfiguration xcodeBuildPath:xcodeBuildPath testRunFilePath:filePath];
 
+  if (reporter != nil) {
+    [self.operation.completed onQueue:self.device.workQueue notifyOfCompletion:^(FBFuture *task) {
+      [reporter testManagerMediatorDidFinishExecutingTestPlan:nil];
+      self->_operation = nil;
+    }];
+  }
+
   return _operation;
 }
 
-- (BOOL)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
+- (NSArray<id<FBXCTestOperation>> *)testOperations
 {
-  if (!self.operation) {
-    return YES;
+  id<FBXCTestOperation> operation = self.operation;
+  return operation ? @[operation] : @[];
+}
+
+- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout
+{
+  return [[FBDeviceControlError
+    describeFormat:@"Cannot list the tests in bundle %@ as this is not supported on devices", bundlePath]
+    failFuture];
+}
+
+#pragma mark Private
+
+
++ (NSDictionary<NSString *, id> *)overwriteXCTestRunPropertiesWithBaseProperties:(NSDictionary<NSString *, id> *)baseProperties newProperties:(NSDictionary<NSString *, id> *)newProperties
+{
+  NSMutableDictionary<NSString *, id> *mutableTestRunProperties = [baseProperties mutableCopy];
+  for (NSString *testId in mutableTestRunProperties) {
+    NSMutableDictionary<NSString *, id> *mutableTestProperties = [[mutableTestRunProperties objectForKey:testId] mutableCopy];
+    NSDictionary<NSString *, id> *defaultTestProperties = [newProperties objectForKey:@"StubBundleId"];
+    for (id key in defaultTestProperties) {
+      if ([mutableTestProperties objectForKey:key]) {
+        mutableTestProperties[key] =  [defaultTestProperties objectForKey:key];
+      }
+    }
+    mutableTestRunProperties[testId] = mutableTestProperties;
   }
-  NSError *innerError = nil;
-  if (![self.operation waitForCompletionWithTimeout:timeout error:&innerError]) {
-    [self.operation terminate];
-    _operation = nil;
-    return [[[FBDeviceControlError
-      describe:@"Failed waiting for timeout"]
-      causedBy:innerError]
-      failBool:error];
-  }
-  _operation = nil;
-  return YES;
+  return [mutableTestRunProperties copy];
 }
 
 - (nullable NSString *)createXCTestRunFileFromConfiguration:(FBTestLaunchConfiguration *)configuration error:(NSError **)error
@@ -118,7 +126,12 @@
   NSString *fileName = [NSProcessInfo.processInfo.globallyUniqueString stringByAppendingPathExtension:@"xctestrun"];
   NSString *path = [self.workingDirectory stringByAppendingPathComponent:fileName];
 
-  NSDictionary *testRunProperties = [FBDeviceXCTestCommands xctestRunProperties:configuration];
+  NSDictionary<NSString *, id> *defaultTestRunProperties = [FBXcodeBuildOperation xctestRunProperties:configuration];
+
+  NSDictionary<NSString *, id> *testRunProperties = configuration.xcTestRunProperties
+    ? [FBDeviceXCTestCommands overwriteXCTestRunPropertiesWithBaseProperties:configuration.xcTestRunProperties newProperties:defaultTestRunProperties]
+    : defaultTestRunProperties;
+
   if (![testRunProperties writeToFile:path atomically:false]) {
     return [[FBDeviceControlError
       describeFormat:@"Failed to write to file %@", path]
@@ -129,7 +142,7 @@
 
 + (NSString *)xcodeBuildPathWithError:(NSError **)error
 {
-  NSString *path = [FBControlCoreGlobalConfiguration.developerDirectory stringByAppendingPathComponent:@"/usr/bin/xcodebuild"];
+  NSString *path = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"/usr/bin/xcodebuild"];
   if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
     return [[FBDeviceControlError
       describeFormat:@"xcodebuild does not exist at expected path %@", path]

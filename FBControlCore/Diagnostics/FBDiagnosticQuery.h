@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A value object for describing which diagnostics to fetch.
  */
-@interface FBDiagnosticQuery : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
+@interface FBDiagnosticQuery : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
 
 #pragma mark Initializers
 

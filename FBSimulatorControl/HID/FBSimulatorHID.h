@@ -11,34 +11,19 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <FBSimulatorControl/FBSimulatorIndigoHID.h>
+
 @class FBSimulator;
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- An Enumeration for the Direction of the Event.
- */
-typedef NS_ENUM(NSUInteger, FBSimulatorHIDDirection) {
-  FBSimulatorHIDDirectionDown = 1,
-  FBSimulatorHIDDirectionUp = 2,
-};
-
-/**
- An Enumeration Representing a button press.
- */
-typedef NS_ENUM(NSUInteger, FBSimulatorHIDButton) {
-  FBSimulatorHIDButtonApplePay = 1,
-  FBSimulatorHIDButtonHomeButton = 2,
-  FBSimulatorHIDButtonLock = 3,
-  FBSimulatorHIDButtonSideButton = 4,
-  FBSimulatorHIDButtonSiri = 5,
-};
-
-/**
  A Wrapper around the mach_port_t that is created in the booting of a Simulator.
  The IndigoHIDRegistrationPort is essential for backboard, otherwise UI events aren't synthesized properly.
  */
-@interface FBSimulatorHID : NSObject <FBDebugDescribeable, FBJSONSerializable>
+@interface FBSimulatorHID : NSObject <FBJSONSerializable>
+
+#pragma mark Initializers
 
 /**
  Creates and returns a FBSimulatorHID Instance for the provided Simulator.
@@ -50,6 +35,8 @@ typedef NS_ENUM(NSUInteger, FBSimulatorHIDButton) {
  @return a FBSimulatorHID if successful, nil otherwise.
  */
 + (instancetype)hidPortForSimulator:(FBSimulator *)simulator error:(NSError **)error;
+
+#pragma mark Lifecycle
 
 /**
  Obtains the Reply Port for the Simulator.

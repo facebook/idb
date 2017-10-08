@@ -9,83 +9,79 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
 @class DTXConnection;
 @class DVTDevice;
 @class FBTestDaemonResult;
 @class FBTestManagerContext;
 @class XCTestBootstrapError;
 
+@protocol FBControlCoreLogger;
+@protocol FBiOSTarget;
+@protocol XCTestDriverInterface;
 @protocol XCTestManager_DaemonConnectionInterface;
 @protocol XCTestManager_IDEInterface;
-@protocol FBControlCoreLogger;
-@protocol XCTestDriverInterface;
-@protocol FBDeviceOperator;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Connection to a Test Daemon.
  */
 @interface FBTestDaemonConnection : NSObject
 
+#pragma mark Initializers
+
 /**
  Creates a Strategy for the provided Transport.
 
  @param context the Context of the Test Manager.
- @param deviceOperator the device operator used to connect with device.
+ @param target the iOS Target.
  @param interface the interface to delegate to.
- @param queue the dispatch queue to serialize asynchronous events on.
+ @param requestQueue the dispatch queue to serialize asynchronous events on.
  @param logger the logger to log to.
  @return a new Strategy
  */
-+ (instancetype)connectionWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)connectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger;
+
+#pragma mark Lifecycle
 
 /**
- Synchronously Connects the Daemon.
+ Asynchronously Connects the Daemon.
 
- @param timeout the time to wait for connection to appear.
- @return a Result if unsuccessful, nil otherwise.
+ @return a Future that resolves when the Daemon Connection is established.
  */
-- (nullable FBTestDaemonResult *)connectWithTimeout:(NSTimeInterval)timeout;
+- (FBFuture<FBTestDaemonResult *> *)connect;
 
 /**
  Notifies the Connection that the Test Plan has started.
  Test Events will be delivered asynchronously to the interface.
 
- @return a Result if unsuccessful, nil otherwise.
+ @return a Future that resolves when the notification is successful.
  */
-- (nullable FBTestDaemonResult *)notifyTestPlanStarted;
+- (FBFuture<FBTestDaemonResult *> *)notifyTestPlanStarted;
 
 /**
  Notifies the Connection that the Test Plan has ended.
  Test Events will be delivered asynchronously to the interface.
 
- @return a Result if unsuccessful, nil otherwise.
+ @return a Future that resolves when the notification is successful.
  */
-- (nullable FBTestDaemonResult *)notifyTestPlanEnded;
+- (FBFuture<FBTestDaemonResult *> *)notifyTestPlanEnded;
 
 /**
  Checks that a Result is available.
+ 
+ @return a Future that resolves when the daemon has completed it's work.
  */
-- (nullable FBTestDaemonResult *)checkForResult;
+- (FBFuture<FBTestDaemonResult *> *)completed;
 
 /**
  Disconnects any active connection.
 
- @return a Result.
+ @return a Future that resolves when the disconnection has completed.
  */
 - (FBTestDaemonResult *)disconnect;
-
-/**
- Properties from the Constructor.
- */
-
-/**
- Properties populated during the connection.
- */
-@property (atomic, assign, readonly) long long daemonProtocolVersion;
-@property (atomic, nullable, strong, readonly) id<XCTestManager_DaemonConnectionInterface> daemonProxy;
-@property (atomic, nullable, strong, readonly) DTXConnection *daemonConnection;
 
 @end
 

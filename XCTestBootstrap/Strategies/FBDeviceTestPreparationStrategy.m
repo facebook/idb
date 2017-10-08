@@ -16,7 +16,6 @@
 #import "FBProductBundle.h"
 #import "FBTestBundle.h"
 #import "FBTestConfiguration.h"
-#import "FBTestLaunchConfiguration.h"
 #import "FBTestRunnerConfiguration.h"
 #import "XCTestBootstrapError.h"
 
@@ -102,12 +101,14 @@
 
   // Load XCTest bundle
   NSUUID *sessionIdentifier = [NSUUID UUID];
-  FBTestBundle *testBundle = [[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
+  FBTestBundle *testBundle = [[[[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
     withBundlePath:self.testLaunchConfiguration.testBundlePath]
     withSessionIdentifier:sessionIdentifier]
     withUITesting:self.testLaunchConfiguration.shouldInitializeUITesting]
     withTestsToSkip:self.testLaunchConfiguration.testsToSkip]
     withTestsToRun:self.testLaunchConfiguration.testsToRun]
+    withTargetApplicationPath:self.testLaunchConfiguration.targetApplicationPath]
+    withTargetApplicationBundleID:self.testLaunchConfiguration.targetApplicationBundleID]
     buildWithError:&innerError];
 
   if (!testBundle) {
@@ -146,14 +147,13 @@
     stringByReplacingOccurrencesOfString:dataPackage.bundlePath
     withString:dataPackage.bundlePathOnDevice];
 
-  return [[[[[[[[FBTestRunnerConfigurationBuilder builder]
-    withSessionIdentifer:dataPackage.testConfiguration.sessionIdentifier]
-    withTestRunnerApplication:remoteTestRunner]
-    withIDEBundleInjectionFramework:remoteIDEBundleInjectionFramework]
-    withWebDriverAgentTestBundle:testBundle]
-    withTestConfigurationPath:remoteTestConfigurationPath]
-    withFrameworkSearchPath:dataPackage.bundlePathOnDevice]
-    build];
+  return [FBTestRunnerConfiguration
+   configurationWithSessionIdentifier:dataPackage.testConfiguration.sessionIdentifier
+   hostApplication:remoteTestRunner
+   ideInjectionFramework:remoteIDEBundleInjectionFramework
+   testBundle:testBundle
+   testConfigurationPath:remoteTestConfigurationPath
+   frameworkSearchPath:dataPackage.bundlePathOnDevice];
 }
 
 @end

@@ -17,6 +17,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBiOSDeviceOperator.h"
+#import "FBDeviceApplicationCommands.h"
 #import "FBDeviceVideoRecordingCommands.h"
 #import "FBDeviceXCTestCommands.h"
 #import "FBDeviceSet+Private.h"
@@ -37,6 +38,7 @@ _Nullable CFStringRef (*_Nonnull FBAMDeviceCopyValue)(CFTypeRef device, _Nullabl
 int (*FBAMDeviceSecureTransferPath)(int arg0, CFTypeRef arg1, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable arg4, int arg5);
 int (*FBAMDeviceSecureInstallApplication)(int arg0, CFTypeRef arg1, CFURLRef arg2, CFDictionaryRef arg3,  void *_Nullable arg4, int arg5);
 int (*FBAMDeviceSecureUninstallApplication)(int arg0, CFTypeRef arg1, CFStringRef arg2, int arg3, void *_Nullable arg4, int arg5);
+int (*FBAMDeviceLookupApplications)(CFTypeRef arg0, int arg1, CFDictionaryRef *arg2);
 void (*FBAMDSetLogLevel)(int32_t level);
 
 #pragma clang diagnostic push
@@ -46,10 +48,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
 @implementation FBDevice
 
 @synthesize deviceOperator = _deviceOperator;
-@synthesize dvtDevice = _dvtDevice;
 @synthesize logger = _logger;
-@synthesize recordingCommand = _recordingCommand;
-@synthesize xcTestCommand = _xcTestCommand;
 
 #pragma mark Initializers
 
@@ -63,6 +62,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
   _set = set;
   _amDevice = amDevice;
   _logger = [logger withPrefix:[NSString stringWithFormat:@"%@: ", amDevice.udid]];
+  _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBDevice.commandResponders memoize:YES];
 
   return self;
 }
@@ -101,7 +101,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 - (FBSimulatorState)state
 {
-  return FBSimulatorStateUnknown;
+  return FBSimulatorStateBooted;
 }
 
 - (FBiOSTargetType)targetType
@@ -132,6 +132,16 @@ void (*FBAMDSetLogLevel)(int32_t level);
 - (FBiOSTargetDiagnostics *)diagnostics
 {
   return [[FBiOSTargetDiagnostics alloc] initWithStorageDirectory:self.auxillaryDirectory];
+}
+
+- (dispatch_queue_t)workQueue
+{
+  return dispatch_get_main_queue();
+}
+
+- (dispatch_queue_t)asyncQueue
+{
+  return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
 }
 
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target
@@ -165,14 +175,6 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 #pragma mark Properties
 
-- (DVTiOSDevice *)dvtDevice
-{
-  if (_dvtDevice == nil) {
-    _dvtDevice = [self.set dvtDeviceWithUDID:self.udid];
-  }
-  return _dvtDevice;
-}
-
 - (id<FBDeviceOperator>)deviceOperator
 {
   if (_deviceOperator == nil) {
@@ -191,42 +193,35 @@ void (*FBAMDSetLogLevel)(int32_t level);
   return self.amDevice.systemVersion;
 }
 
-- (NSSet *)supportedArchitectures
-{
-  return self.dvtDevice.supportedArchitectures.set;
-}
-
 #pragma mark Forwarding
+
++ (NSArray<Class> *)commandResponders
+{
+  static dispatch_once_t onceToken;
+  static NSArray<Class> *commandClasses;
+  dispatch_once(&onceToken, ^{
+    commandClasses = @[
+      FBDeviceApplicationCommands.class,
+      FBDeviceVideoRecordingCommands.class,
+      FBDeviceXCTestCommands.class,
+    ];
+  });
+  return commandClasses;
+}
 
 - (id)forwardingTargetForSelector:(SEL)selector
 {
-  // Try the Recording Command first, constructing a DeviceOperator is expensive.
-  if ([FBDeviceVideoRecordingCommands instancesRespondToSelector:selector]) {
-    return self.recordingCommand;
+  // Try the forwarder.
+  id command = [self.forwarder forwardingTargetForSelector:selector];
+  if (command) {
+    return command;
   }
-  if ([FBDeviceXCTestCommands instancesRespondToSelector:selector]) {
-    return self.xcTestCommand;
-  }
+  // Otherwise try the operator
   if ([FBiOSDeviceOperator instancesRespondToSelector:selector]) {
     return self.deviceOperator;
   }
+  // Nothing left.
   return [super forwardingTargetForSelector:selector];
-}
-
-- (FBDeviceVideoRecordingCommands *)recordingCommand
-{
-  if (!_recordingCommand) {
-    _recordingCommand = [FBDeviceVideoRecordingCommands commandsWithDevice:self];
-  }
-  return _recordingCommand;
-}
-
-- (id<FBXCTestCommands>)xcTestCommand
-{
-  if (!_xcTestCommand) {
-    _xcTestCommand = [FBDeviceXCTestCommands commandsWithDevice:self];
-  }
-  return _xcTestCommand;
 }
 
 @end

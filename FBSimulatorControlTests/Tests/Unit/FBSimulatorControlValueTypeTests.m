@@ -24,11 +24,10 @@
 - (void)testAppLaunchConfigurations
 {
   NSArray<FBApplicationLaunchConfiguration *> *values = @[
-    self.appLaunch1,
-    self.appLaunch2,
+    self.safariAppLaunch,
+    self.tableSearchAppLaunch,
   ];
   [self assertEqualityOfCopy:values];
-  [self assertUnarchiving:values];
   [self assertJSONSerialization:values];
   [self assertJSONDeserialization:values];
 }
@@ -39,7 +38,6 @@
     self.agentLaunch1,
   ];
   [self assertEqualityOfCopy:values];
-  [self assertUnarchiving:values];
   [self assertJSONSerialization:values];
   [self assertJSONDeserialization:values];
 }
@@ -48,7 +46,6 @@
 {
   NSArray<FBAgentLaunchConfiguration *> *values = @[self.agentLaunch1];
   [self assertEqualityOfCopy:values];
-  [self assertUnarchiving:values];
   [self assertJSONSerialization:values];
 }
 
@@ -60,7 +57,7 @@
     [[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPad2] withOSNamed:FBOSVersionNameiOS_8_3],
   ];
   [self assertEqualityOfCopy:values];
-  [self assertUnarchiving:values];
+
   [self assertJSONSerialization:values];
 }
 
@@ -75,7 +72,6 @@
       options:FBSimulatorManagementOptionsKillAllOnFirstStart | FBSimulatorManagementOptionsKillAllOnFirstStart]
   ];
   [self assertEqualityOfCopy:values];
-  [self assertUnarchiving:values];
   [self assertJSONSerialization:values];
 }
 
@@ -85,13 +81,12 @@
     [[[FBSimulatorBootConfiguration
       withLocalizationOverride:[FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]]]
       withOptions:FBSimulatorBootOptionsEnableDirectLaunch]
-      scale75Percent],
+      withScale:FBScale75],
     [[FBSimulatorBootConfiguration
       withOptions:FBSimulatorBootOptionsUseNSWorkspace]
-      scale25Percent]
+      withScale:FBScale25]
   ];
   [self assertEqualityOfCopy:values];
-  [self assertUnarchiving:values];
   [self assertJSONSerialization:values];
   [self assertJSONDeserialization:values];
 }
@@ -106,11 +101,11 @@
   XCTAssertNil(launchConfiguration.scale);
   XCTAssertNil(launchConfiguration.scale);
 
-  launchConfiguration = [launchConfiguration scale75Percent];
-  XCTAssertEqualObjects(launchConfiguration.scale, FBSimulatorScale75);
-  XCTAssertEqualObjects(launchConfiguration.framebuffer.scale, FBSimulatorScale75);
-  XCTAssertNotEqualObjects(launchConfiguration.scale, FBSimulatorScale50);
-  XCTAssertNotEqualObjects(launchConfiguration.framebuffer.scale, FBSimulatorScale50);
+  launchConfiguration = [launchConfiguration withScale:FBScale75];
+  XCTAssertEqualObjects(launchConfiguration.scale, FBScale75);
+  XCTAssertEqualObjects(launchConfiguration.framebuffer.scale, FBScale75);
+  XCTAssertNotEqualObjects(launchConfiguration.scale, FBScale50);
+  XCTAssertNotEqualObjects(launchConfiguration.framebuffer.scale, FBScale50);
 }
 
 - (void)testEncoderConfigurations
@@ -122,7 +117,6 @@
     [[[FBVideoEncoderConfiguration withOptions:FBVideoEncoderOptionsImmediateFrameStart] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardNegativeInfinity] withFileType:@"bar"]
   ];
   [self assertEqualityOfCopy:values];
-  [self assertUnarchiving:values];
   [self assertJSONSerialization:values];
   [self assertJSONDeserialization:values];
 }
@@ -131,11 +125,10 @@
 {
   NSArray<FBFramebufferConfiguration *> *values = @[
     FBFramebufferConfiguration.defaultConfiguration,
-    [FBFramebufferConfiguration configurationWithScale:FBSimulatorScale25 encoder:FBVideoEncoderConfiguration.defaultConfiguration imagePath:@"/img.png"],
-    [FBFramebufferConfiguration configurationWithScale:FBSimulatorScale75 encoder:FBVideoEncoderConfiguration.prudentConfiguration imagePath:@"/img.png"],
+    [FBFramebufferConfiguration configurationWithScale:FBScale25 encoder:FBVideoEncoderConfiguration.defaultConfiguration imagePath:@"/img.png"],
+    [FBFramebufferConfiguration configurationWithScale:FBScale75 encoder:FBVideoEncoderConfiguration.prudentConfiguration imagePath:@"/img.png"],
   ];
   [self assertEqualityOfCopy:values];
-  [self assertUnarchiving:values];
   [self assertJSONSerialization:values];
   [self assertJSONDeserialization:values];
 }
@@ -149,7 +142,6 @@
     [FBDiagnosticQuery crashesOfType:FBCrashLogInfoProcessTypeCustomAgent | FBCrashLogInfoProcessTypeApplication since:[NSDate dateWithTimeIntervalSince1970:100]],
   ];
   [self assertEqualityOfCopy:values];
-  [self assertUnarchiving:values];
   [self assertJSONSerialization:values];
   [self assertJSONDeserialization:values];
 }

@@ -13,9 +13,8 @@
 #import <CoreSimulator/SimRuntime.h>
 
 #import "FBSimulator.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorLaunchCtl.h"
+#import "FBSimulatorLaunchCtlCommands.h"
 #import "FBAgentLaunchStrategy.h"
 
 @interface FBDefaultsModificationStrategy ()
@@ -101,12 +100,12 @@
   FBSimulatorState state = simulator.state;
   if (state != FBSimulatorStateBooted && state != FBSimulatorStateShutdown) {
     return [[FBSimulatorError
-      describeFormat:@"Cannot amend a plist when the Simulator state is %@, should be %@ or %@", [FBSimulator stateStringFromSimulatorState:state], [FBSimulator stateStringFromSimulatorState:FBSimulatorStateShutdown], [FBSimulator stateStringFromSimulatorState:FBSimulatorStateBooted]]
+      describeFormat:@"Cannot amend a plist when the Simulator state is %@, should be %@ or %@", FBSimulatorStateStringFromState(state), FBSimulatorStateStringShutdown, FBSimulatorStateStringBooted]
       failBool:error];
   }
   // Stop the service, if booted.
   if (state == FBSimulatorStateBooted) {
-    if (![simulator.launchctl stopServiceWithName:serviceName error:error]) {
+    if (![simulator stopServiceWithName:serviceName error:error]) {
       return NO;
     }
   }
@@ -117,7 +116,7 @@
   }
   // Re-start the Service if booted.
   if (state == FBSimulatorStateBooted) {
-    if (![simulator.launchctl startServiceWithName:serviceName error:error]) {
+    if (![simulator startServiceWithName:serviceName error:error]) {
       return NO;
     }
   }

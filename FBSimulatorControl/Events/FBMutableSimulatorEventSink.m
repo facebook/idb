@@ -41,24 +41,24 @@
   [self.eventSink simulatorDidTerminate:launchdProcess expected:expected];
 }
 
-- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)agentDidLaunch:(FBSimulatorAgentOperation *)operation
 {
-  [self.eventSink agentDidLaunch:launchConfig didStart:agentProcess stdOut:stdOut stdErr:stdErr];
+  [self.eventSink agentDidLaunch:operation];
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
-  [self.eventSink agentDidTerminate:agentProcess expected:expected];
+  [self.eventSink agentDidTerminate:operation statLoc:statLoc];
 }
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
+- (void)applicationDidLaunch:(FBSimulatorApplicationOperation *)operation
 {
-  [self.eventSink applicationDidLaunch:launchConfig didStart:applicationProcess];
+  [self.eventSink applicationDidLaunch:operation];
 }
 
-- (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
+- (void)applicationDidTerminate:(FBSimulatorApplicationOperation *)operation expected:(BOOL)expected
 {
-  [self.eventSink applicationDidTerminate:applicationProcess expected:expected];
+  [self.eventSink applicationDidTerminate:operation expected:expected];
 }
 
 - (void)testmanagerDidConnect:(FBTestManager *)testManager

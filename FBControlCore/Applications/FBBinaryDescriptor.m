@@ -49,29 +49,6 @@
   return [[FBBinaryDescriptor alloc] initWithName:self.name path:self.path architectures:self.architectures];
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _name = [coder decodeObjectForKey:NSStringFromSelector(@selector(name))];
-  _path = [coder decodeObjectForKey:NSStringFromSelector(@selector(path))];
-  _architectures = [coder decodeObjectForKey:NSStringFromSelector(@selector(architectures))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.name forKey:NSStringFromSelector(@selector(name))];
-  [coder encodeObject:self.path forKey:NSStringFromSelector(@selector(path))];
-  [coder encodeObject:self.architectures forKey:NSStringFromSelector(@selector(architectures))];
-}
-
 #pragma mark NSObject
 
 - (BOOL)isEqual:(FBBinaryDescriptor *)object
@@ -89,7 +66,17 @@
   return self.name.hash | self.path.hash | self.architectures.hash;
 }
 
-#pragma mark - FBJSONDeserializable
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Name: %@ | Path: %@ | Architectures: %@",
+    self.name,
+    self.path,
+    [FBCollectionInformation oneLineDescriptionFromArray:self.architectures.allObjects]
+  ];
+}
+
+#pragma mark JSON Conversion
 
 + (FBBinaryDescriptor *)inflateFromJSON:(id)json error:(NSError **)error
 {
@@ -107,30 +94,6 @@
   }
   return binary;
 }
-
-#pragma mark FBDebugDescribeable
-
-- (NSString *)description
-{
-  return [NSString stringWithFormat:
-    @"Name: %@ | Path: %@ | Architectures: %@",
-    self.name,
-    self.path,
-    [FBCollectionInformation oneLineDescriptionFromArray:self.architectures.allObjects]
-  ];
-}
-
-- (NSString *)shortDescription
-{
-  return [self description];
-}
-
-- (NSString *)debugDescription
-{
-  return [self description];
-}
-
-#pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {

@@ -26,6 +26,8 @@
 @property (nonatomic, assign) BOOL shouldInitializeForUITesting;
 @property (nonatomic, copy) NSSet<NSString *> *testsToRun;
 @property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
+@property (nonatomic, copy) NSString *targetApplicationBundleID;
+@property (nonatomic, copy) NSString *targetApplicationPath;
 @end
 
 @implementation FBTestBundleBuilder
@@ -54,6 +56,18 @@
   return self;
 }
 
+- (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID
+{
+  self.targetApplicationBundleID = targetApplicationBundleID;
+  return self;
+}
+
+- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath
+{
+  self.targetApplicationPath = targetApplicationPath;
+  return self;
+}
+
 - (Class)productClass
 {
   return FBTestBundle.class;
@@ -68,21 +82,24 @@
   if (self.sessionIdentifier) {
     NSError *innerError;
     NSString *testConfigurationFileName = [NSString stringWithFormat:@"%@-%@.xctestconfiguration", testBundle.name, self.sessionIdentifier.UUIDString];
-    testBundle.configuration =
-    [[[[[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
-      withModuleName:testBundle.name]
-      withSessionIdentifier:self.sessionIdentifier]
-      withTestBundlePath:testBundle.path]
-      withUITesting:self.shouldInitializeForUITesting]
-      withTestsToRun:self.testsToRun]
-      withTestsToSkip:self.testsToSkip]
-      saveAs:[testBundle.path stringByAppendingPathComponent:testConfigurationFileName]]
-      buildWithError:&innerError];
+    testBundle.configuration = [FBTestConfiguration
+      configurationWithFileManager:self.fileManager
+      sessionIdentifier:self.sessionIdentifier
+      moduleName:testBundle.name
+      testBundlePath:testBundle.path
+      uiTesting:self.shouldInitializeForUITesting
+      testsToRun:self.testsToRun
+      testsToSkip:self.testsToSkip
+      targetApplicationPath:self.targetApplicationPath
+      targetApplicationBundleID:self.targetApplicationBundleID
+      savePath:[testBundle.path stringByAppendingPathComponent:testConfigurationFileName]
+      error:&innerError];
+
     if (!testBundle.configuration) {
-      return
-      [[[XCTestBootstrapError describe:@"Failed to generate xtestconfiguration"]
+      return [[[XCTestBootstrapError
+        describe:@"Failed to generate xtestconfiguration"]
         causedBy:innerError]
-       fail:error];
+        fail:error];
     }
   }
   return testBundle;

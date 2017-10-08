@@ -76,31 +76,31 @@
   }
 }
 
-- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)agentDidLaunch:(FBSimulatorAgentOperation *)operation
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink agentDidLaunch:launchConfig didStart:agentProcess stdOut:stdOut stdErr:stdErr];
+    [sink agentDidLaunch:operation];
   }
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)processInfo expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink agentDidTerminate:processInfo expected:expected];
+    [sink agentDidTerminate:operation statLoc:statLoc];
   }
 }
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
+- (void)applicationDidLaunch:(FBSimulatorApplicationOperation *)operation
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink applicationDidLaunch:launchConfig didStart:applicationProcess];
+    [sink applicationDidLaunch:operation];
   }
 }
 
-- (void)applicationDidTerminate:(FBProcessInfo *)processInfo expected:(BOOL)expected
+- (void)applicationDidTerminate:(FBSimulatorApplicationOperation *)operation expected:(BOOL)expected
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink applicationDidTerminate:processInfo expected:expected];
+    [sink applicationDidTerminate:operation expected:expected];
   }
 }
 

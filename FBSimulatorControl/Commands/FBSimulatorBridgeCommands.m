@@ -26,9 +26,9 @@
 
 @implementation FBSimulatorBridgeCommands
 
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator
++ (instancetype)commandsWithTarget:(FBSimulator *)target
 {
-  return [[self alloc] initWithSimulator:simulator];
+  return [[self alloc] initWithSimulator:target];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator
@@ -40,15 +40,6 @@
 
   _simulator = simulator;
   return self;
-}
-
-- (BOOL)tap:(double)x y:(double)y error:(NSError **)error
-{
-  FBSimulatorBridge *bridge = [[self.simulator connectWithError:error] connectToBridge:error];
-  if (!bridge) {
-    return NO;
-  }
-  return [bridge tapX:x y:y error:error];
 }
 
 - (BOOL)setLocation:(double)latitude longitude:(double)longitude error:(NSError **)error

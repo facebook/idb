@@ -97,6 +97,7 @@ struct __va_list_tag {
 - (void)recordFailureInTest:(id)arg1 withDescription:(id)arg2 inFile:(id)arg3 atLine:(NSUInteger)arg4 expected:(BOOL)arg5;
 - (NSUInteger)unexpectedExceptionCount;
 - (NSUInteger)failureCount;
+- (NSString *)nameForLegacyLogging;
 - (void)stop;
 - (void)start;
 
@@ -164,7 +165,7 @@ struct __va_list_tag {
 + (id)xct_testMethodInvocations;
 + (id)xct_allSubclasses;
 @property (atomic, assign) BOOL continueAfterFailure; // @synthesize continueAfterFailure=_continueAfterFailure;
-@property(atomic, retain) XCTestCaseRun *testCaseRun; // @synthesize testCaseRun=_testCaseRun;
+@property (atomic, retain) XCTestCaseRun *testCaseRun;
 - (NSUInteger)numberOfTestIterationsForTestWithSelector:(SEL)arg1;
 - (void)afterTestIteration:(NSUInteger)arg1 selector:(SEL)arg2;
 - (void)beforeTestIteration:(NSUInteger)arg1 selector:(SEL)arg2;

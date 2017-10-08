@@ -108,16 +108,14 @@
   return configurations;
 }
 
++ (NSArray<FBOSVersion *> *)supportedOSVersions
+{
+  return [FBSimulatorConfiguration osVersionsForRuntimes:self.supportedRuntimes];
+}
+
 + (NSArray<FBOSVersion *> *)supportedOSVersionsForDevice:(FBDeviceType *)device
 {
-  NSMutableArray *array = [NSMutableArray array];
-  for (SimRuntime *runtime in [self supportedRuntimesForDevice:device]) {
-    FBOSVersion *os = FBControlCoreConfigurationVariants.nameToOSVersion[runtime.name];
-    if (os) {
-      [array addObject:os];
-    }
-  }
-  return [array copy];
+  return [FBSimulatorConfiguration osVersionsForRuntimes:[self supportedRuntimesForDevice:device]];
 }
 
 + (NSArray<FBSimulatorConfiguration *> *)allAvailableDefaultConfigurationsWithAbsentOSVersionsOut:(NSArray<NSString *> **)absentOSVersionsOut absentDeviceTypesOut:(NSArray<NSString *> **)absentDeviceTypesOut
@@ -197,6 +195,18 @@
 }
 
 #pragma mark Private
+
++ (NSArray<FBOSVersion *> *)osVersionsForRuntimes:(NSArray<SimRuntime *> *)runtimes
+{
+  NSMutableArray<FBOSVersion *> *array = [NSMutableArray array];
+  for (SimRuntime *runtime in runtimes) {
+    FBOSVersion *os = FBControlCoreConfigurationVariants.nameToOSVersion[runtime.name];
+    if (os) {
+      [array addObject:os];
+    }
+  }
+  return [array copy];
+}
 
 + (NSArray<SimRuntime *> *)supportedRuntimes
 {

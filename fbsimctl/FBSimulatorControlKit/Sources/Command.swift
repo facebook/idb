@@ -73,7 +73,6 @@ public enum FileOutput {
  An Interaction represents a Single, synchronous interaction with a Simulator.
  */
 public enum Action {
-  case approve([String])
   case clearKeychain(String?)
   case config
   case core(FBiOSTargetAction)
@@ -82,7 +81,6 @@ public enum Action {
   case diagnose(FBDiagnosticQuery, DiagnosticFormat)
   case erase
   case focus
-  case install(String, Bool)
   case keyboardOverride
   case list
   case listApps
@@ -96,11 +94,14 @@ public enum Action {
   case setLocation(Double,Double)
   case shutdown
   case stream(FBBitmapStreamConfiguration, FileOutput)
-  case tap(Double, Double)
   case terminate(String)
   case uninstall(String)
   case upload([FBDiagnostic])
   case watchdogOverride([String], TimeInterval)
+
+  static func approve(_ bundleIDs: [String]) -> Action {
+    return self.core(FBSettingsApproval(bundleIDs: bundleIDs, services: [.location]))
+  }
 
   static func boot(_ configuration: FBSimulatorBootConfiguration) -> Action {
     return self.core(configuration)
@@ -108,6 +109,10 @@ public enum Action {
 
   static func hid(_ event: FBSimulatorHIDEvent) -> Action {
     return self.core(event)
+  }
+
+  static func install(_ path: String, _ codesign: Bool) -> Action {
+    return self.core(FBApplicationInstallConfiguration.applicationInstall(withPath: path, codesign: codesign))
   }
 
   static func launchApp(_ appLaunch: FBApplicationLaunchConfiguration) -> Action {
@@ -120,6 +125,10 @@ public enum Action {
 
   static func launchXCTest(_ testLaunch: FBTestLaunchConfiguration) -> Action {
     return self.core(testLaunch.withUITesting(true))
+  }
+
+  static func logTail(_ configuration: FBLogTailConfiguration) -> Action {
+    return self.core(configuration)
   }
 }
 
@@ -234,7 +243,7 @@ extension ListenInterface : EventReporterSubject {
     }
     var handleValue = JSON.null
     if let handle = self.handle {
-      handleValue = JSON.string(type(of: handle).handleType.rawValue)
+      handleValue = JSON.string(handle.handleType.rawValue)
     }
 
     return JSON.dictionary([
@@ -263,7 +272,7 @@ extension ListenInterface : EventReporterSubject {
     }
     description += " stdin: \(self.stdin)"
     if let handle = self.handle {
-      description += " due to \(type(of: handle).handleType.rawValue)"
+      description += " due to \(handle.handleType.rawValue)"
     }
     return description
   }}
@@ -275,7 +284,7 @@ extension ListenInterface : EventReporterSubject {
     guard  let handle = self.handle else {
       return nil
     }
-    return type(of: handle).handleType.listenDescription
+    return handle.handleType.listenDescription
   }}
 
   var isEmptyListen: Bool { get {
@@ -345,8 +354,6 @@ public func == (left: FileOutput, right: FileOutput) -> Bool {
 extension Action : Equatable { }
 public func == (left: Action, right: Action) -> Bool {
   switch (left, right) {
-  case (.approve(let leftBundleIDs), .approve(let rightBundleIDs)):
-    return leftBundleIDs == rightBundleIDs
   case (.clearKeychain(let leftBundleID), .clearKeychain(let rightBundleID)):
     return leftBundleID == rightBundleID
   case (.config, .config):
@@ -363,8 +370,6 @@ public func == (left: Action, right: Action) -> Bool {
     return true
   case (.focus, .focus):
     return true
-  case (.install(let leftApp, let leftSign), .install(let rightApp, let rightSign)):
-    return leftApp == rightApp && leftSign == rightSign
   case (.keyboardOverride, .keyboardOverride):
     return true
   case (.list, .list):
@@ -391,8 +396,6 @@ public func == (left: Action, right: Action) -> Bool {
     return true
   case (.stream(let leftConfiguration, let leftOutput), .stream(let rightConfiguration, let rightOutput)):
     return leftConfiguration == rightConfiguration && leftOutput == rightOutput
-  case (.tap(let leftX, let leftY), .tap(let rightX, let rightY)):
-    return leftX == rightX && leftY == rightY
   case (.terminate(let leftBundleID), .terminate(let rightBundleID)):
     return leftBundleID == rightBundleID
   case (.uninstall(let leftBundleID), .uninstall(let rightBundleID)):
@@ -409,8 +412,6 @@ public func == (left: Action, right: Action) -> Bool {
 extension Action {
   public var reportable: (EventName, EventReporterSubject?) { get {
     switch self {
-    case .approve(let bundleIDs):
-      return (.approve, StringsSubject(bundleIDs))
     case .clearKeychain(let bundleID):
       return (.clearKeychain, bundleID)
     case .config:
@@ -427,8 +428,6 @@ extension Action {
       return (.erase, nil)
     case .focus:
       return (.focus, nil)
-    case .install:
-      return (.install, nil)
     case .keyboardOverride:
       return (.keyboardOverride, nil)
     case .list:
@@ -455,8 +454,6 @@ extension Action {
       return (.shutdown, nil)
     case .stream:
       return (.stream, nil)
-    case .tap:
-      return (.tap, nil)
     case .terminate(let bundleID):
       return (.terminate, bundleID)
     case .uninstall(let bundleID):

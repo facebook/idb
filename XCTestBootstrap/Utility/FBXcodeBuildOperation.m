@@ -9,13 +9,14 @@
 
 #import "FBXcodeBuildOperation.h"
 
-#import "FBXCTestCommands.h"
+#import <FBControlCore/FBControlCore.h>
 
-static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_DEVICE_IDENTIFIER";
+static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID";
 
 @interface FBXcodeBuildOperation ()
 
-@property (nonatomic, strong, nullable, readonly) FBTask *task;
+@property (nonatomic, strong, readonly) FBFuture<FBTask *> *future;
+@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
 
 @end
 
@@ -23,67 +24,92 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
 
 + (instancetype)operationWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuraton xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath
 {
-  FBTask *task = [self createTask:configuraton xcodeBuildPath:xcodeBuildPath testRunFilePath:testRunFilePath target:target];
-  [task startAsynchronously];
-  return [[self alloc] initWithTask:task];
+  FBFuture<FBTask *> *future = [self createTaskFuture:configuraton xcodeBuildPath:xcodeBuildPath testRunFilePath:testRunFilePath target:target];
+  return [[self alloc] initWithFuture:future asyncQueue:target.asyncQueue];
 }
 
-+ (FBTask *)createTask:(FBTestLaunchConfiguration *)configuraton xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath target:(id<FBiOSTarget>)target
++ (FBFuture<FBTask *> *)createTaskFuture:(FBTestLaunchConfiguration *)configuraton xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath target:(id<FBiOSTarget>)target
 {
-  NSArray<NSString *> *arguments = @[
+  NSMutableArray<NSString *> *arguments = [[NSMutableArray alloc] init];
+  [arguments addObjectsFromArray:@[
     @"test-without-building",
     @"-xctestrun", testRunFilePath,
     @"-destination", [NSString stringWithFormat:@"id=%@", target.udid],
-  ];
+  ]];
+
+  if (configuraton.resultBundlePath) {
+    [arguments addObjectsFromArray:@[
+      @"-resultBundlePath",
+      configuraton.resultBundlePath,
+    ]];
+  }
+
+  for (NSString *test in configuraton.testsToRun) {
+    [arguments addObject:[NSString stringWithFormat:@"-only-testing:%@", test]];
+  }
+
+  for (NSString *test in configuraton.testsToSkip) {
+    [arguments addObject:[NSString stringWithFormat:@"-skip-testing:%@", test]];
+  }
 
   NSMutableDictionary<NSString *, NSString *> *environment = [NSProcessInfo.processInfo.environment mutableCopy];
-  environment[XcodebuildSubprocessEnvironmentIdentifier] = target.udid;
+  environment[XcodebuildEnvironmentTargetUDID] = target.udid;
 
-  FBTask *task = [[[[[FBTaskBuilder
+  return [[[[[FBTaskBuilder
     withLaunchPath:xcodeBuildPath arguments:arguments]
     withEnvironment:environment]
     withStdOutToLogger:target.logger]
     withStdErrToLogger:target.logger]
-    build];
-
-  return task;
+    buildFuture];
 }
 
-- (instancetype)initWithTask:(FBTask *)task
+- (instancetype)initWithFuture:(FBFuture<FBTask *> *)future asyncQueue:(dispatch_queue_t)asyncQueue
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _task = task;
+  _future = future;
+  _asyncQueue = asyncQueue;
 
   return self;
 }
 
 #pragma mark FBXCTestOperation
 
-+ (FBTerminationHandleType)handleType
+- (FBFuture<NSNull *> *)completed
+{
+  return [self.future
+    onQueue:self.asyncQueue fmap:^(FBTask *task) {
+      NSError *error = task.error;
+      if (error) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
+}
+
+- (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleTypeTestOperation;
 }
 
 - (void)terminate
 {
-  [self.task terminate];
-  _task = nil;
+  [self.future cancel];
 }
 
 - (BOOL)hasTerminated
 {
-  return self.task.hasTerminated || self.task == nil;
+  return self.future.hasCompleted;
 }
 
 #pragma mark Public Methods
 
 - (BOOL)waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  return [self.task waitForCompletionWithTimeout:timeout error:error];
+  return [NSRunLoop.currentRunLoop awaitCompletionOfFuture:self.future timeout:timeout error:error] != nil;
 }
 
 #pragma mark Public
@@ -94,7 +120,7 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
   FBProcessTerminationStrategy *strategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:processFetcher logger:target.logger];
   NSString *udid = target.udid;
   for (FBProcessInfo *process in processes) {
-    if (![process.environment[XcodebuildSubprocessEnvironmentIdentifier] isEqualToString:udid]) {
+    if (![process.environment[XcodebuildEnvironmentTargetUDID] isEqualToString:udid]) {
       continue;
     }
     if (![strategy killProcess:process error:error]) {
@@ -102,6 +128,23 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
     }
   }
   return YES;
+}
+
++ (NSDictionary<NSString *, NSDictionary<NSString *, NSObject *> *> *)xctestRunProperties:(FBTestLaunchConfiguration *)testLaunch
+{
+  return @{
+    @"StubBundleId" : @{
+      @"TestHostPath" : testLaunch.testHostPath,
+      @"TestBundlePath" : testLaunch.testBundlePath,
+      @"UseUITargetAppProvidedByTests" : @YES,
+      @"IsUITestBundle" : @YES,
+      @"CommandLineArguments": testLaunch.applicationLaunchConfiguration.arguments,
+      @"TestingEnvironmentVariables": @{
+        @"DYLD_FRAMEWORK_PATH": @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
+        @"DYLD_LIBRARY_PATH": @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
+      },
+    }
+  };
 }
 
 @end

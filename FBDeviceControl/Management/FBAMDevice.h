@@ -9,8 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBOSVersion;
 @class FBDeviceType;
+@class FBOSVersion;
 
 NS_ASSUME_NONNULL_BEGIN
 

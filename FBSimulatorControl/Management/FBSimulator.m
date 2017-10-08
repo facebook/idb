@@ -10,17 +10,17 @@
 #import "FBSimulator.h"
 #import "FBSimulator+Private.h"
 
-#import <Cocoa/Cocoa.h>
-
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 #import <CoreSimulator/SimDeviceType.h>
 
+#import <Foundation/Foundation.h>
+
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBAccessibilityFetch.h"
 #import "FBCompositeSimulatorEventSink.h"
 #import "FBMutableSimulatorEventSink.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulatorAgentCommands.h"
 #import "FBSimulatorApplicationCommands.h"
 #import "FBSimulatorBridgeCommands.h"
@@ -33,8 +33,8 @@
 #import "FBSimulatorEventRelay.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHIDEvent.h"
-#import "FBSimulatorHistoryGenerator.h"
 #import "FBSimulatorLifecycleCommands.h"
+#import "FBSimulatorLogCommands.h"
 #import "FBSimulatorLoggingEventSink.h"
 #import "FBSimulatorNotificationEventSink.h"
 #import "FBSimulatorPool.h"
@@ -43,6 +43,7 @@
 #import "FBSimulatorSettingsCommands.h"
 #import "FBSimulatorVideoRecordingCommands.h"
 #import "FBSimulatorXCTestCommands.h"
+#import "FBSimulatorApplicationDataCommands.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -81,24 +82,22 @@
   _processFetcher = processFetcher;
   _auxillaryDirectory = auxillaryDirectory;
   _logger = logger;
-  _commandResponders = [FBSimulator commandRespondersForSimulator:self];
+  _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBSimulator.commandResponders memoize:NO];
 
   return self;
 }
 
 - (instancetype)attachEventSinkCompositionWithLaunchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess containerApplicationProcess:(nullable FBProcessInfo *)containerApplicationProcess
 {
-  FBSimulatorHistoryGenerator *historyGenerator = [FBSimulatorHistoryGenerator forSimulator:self];
   FBSimulatorNotificationNameEventSink *notificationSink = [FBSimulatorNotificationNameEventSink withSimulator:self];
   FBSimulatorLoggingEventSink *loggingSink = [FBSimulatorLoggingEventSink withSimulator:self logger:self.logger];
   FBMutableSimulatorEventSink *mutableSink = [FBMutableSimulatorEventSink new];
   FBSimulatorDiagnostics *diagnosticsSink = [FBSimulatorDiagnostics withSimulator:self];
   FBSimulatorResourceManager *resourceSink = [FBSimulatorResourceManager new];
 
-  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[historyGenerator, notificationSink, loggingSink, diagnosticsSink, mutableSink, resourceSink]];
-  FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithSimDevice:self.device launchdProcess:launchdSimProcess containerApplication:containerApplicationProcess processFetcher:self.processFetcher sink:compositeSink];
+  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[notificationSink, loggingSink, diagnosticsSink, mutableSink, resourceSink]];
+  FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithSimDevice:self.device launchdProcess:launchdSimProcess containerApplication:containerApplicationProcess processFetcher:self.processFetcher queue:self.workQueue sink:compositeSink];
 
-  _historyGenerator = historyGenerator;
   _eventRelay = relay;
   _mutableSink = mutableSink;
   _simulatorDiagnostics = diagnosticsSink;
@@ -112,7 +111,9 @@
 - (NSArray<Class> *)actionClasses
 {
   return @[
+    FBAccessibilityFetch.class,
     FBAgentLaunchConfiguration.class,
+    FBLogTailConfiguration.class,
     FBSimulatorHIDEvent.class,
     FBTestLaunchConfiguration.class,
   ];
@@ -166,6 +167,16 @@
   return self.simulatorDiagnostics;
 }
 
+- (dispatch_queue_t)workQueue
+{
+  return dispatch_get_main_queue();
+}
+
+- (dispatch_queue_t)asyncQueue
+{
+  return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+}
+
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target
 {
   return FBiOSTargetComparison(self, target);
@@ -192,7 +203,7 @@
 
 - (NSString *)stateString
 {
-  return [FBSimulator stateStringFromSimulatorState:self.state];
+  return FBSimulatorStateStringFromState(self.state);
 }
 
 - (NSString *)dataDirectory
@@ -221,11 +232,6 @@
 - (FBProcessInfo *)containerApplication
 {
   return self.eventRelay.containerApplication;
-}
-
-- (FBSimulatorHistory *)history
-{
-  return self.historyGenerator.history;
 }
 
 - (id<FBSimulatorEventSink>)eventSink
@@ -286,26 +292,29 @@
 
 - (id)forwardingTargetForSelector:(SEL)selector
 {
-  for (id target in self.commandResponders) {
-    if ([target respondsToSelector:selector]) {
-      return target;
-    }
-  }
-  return nil;
+  return [self.forwarder forwardingTargetForSelector:selector];
 }
 
-+ (NSArray *)commandRespondersForSimulator:(FBSimulator *)simulator
++ (NSArray<Class> *)commandResponders
 {
-  return @[
-    [FBSimulatorAgentCommands commandsWithSimulator:simulator],
-    [FBSimulatorApplicationCommands commandsWithSimulator:simulator],
-    [FBSimulatorBridgeCommands commandsWithSimulator:simulator],
-    [FBSimulatorKeychainCommands commandsWithSimulator:simulator],
-    [FBSimulatorLifecycleCommands commandsWithSimulator:simulator],
-    [FBSimulatorSettingsCommands commandWithSimulator:simulator],
-    [FBSimulatorVideoRecordingCommands commandsWithSimulator:simulator],
-    [FBSimulatorXCTestCommands commandsWithSimulator:simulator],
-  ];
+  static dispatch_once_t onceToken;
+  static NSArray<Class> *commandClasses;
+  dispatch_once(&onceToken, ^{
+    commandClasses = @[
+      FBSimulatorAgentCommands.class,
+      FBSimulatorApplicationCommands.class,
+      FBSimulatorApplicationDataCommands.class,
+      FBSimulatorBridgeCommands.class,
+      FBSimulatorKeychainCommands.class,
+      FBSimulatorLaunchCtlCommands.class,
+      FBSimulatorLifecycleCommands.class,
+      FBSimulatorLogCommands.class,
+      FBSimulatorSettingsCommands.class,
+      FBSimulatorVideoRecordingCommands.class,
+      FBSimulatorXCTestCommands.class,
+    ];
+  });
+  return commandClasses;
 }
 
 #pragma mark Private

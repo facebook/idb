@@ -30,20 +30,22 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param filePath the File Path to write to.
  @param frameGenerator the Frame Generator to register with.
+ @param eventQueue the Event Queu to report Image Logs on.
  @param eventSink the Event Sink to report Image Logs to.
  @return a new FBSimulatorImage instance.
  */
-+ (instancetype)imageWithFilePath:(NSString *)filePath frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)imageWithFilePath:(NSString *)filePath frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator eventQueue:(dispatch_queue_t)eventQueue eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 /**
  Creates a new FBSimulatorImage instance using a Surface.
 
  @param filePath the File Path to write to.
  @param surface the surface to obtain frames from.
+ @param eventQueue the Event Queu to report Image Logs on.
  @param eventSink the Event Sink to report Image Logs to.
  @return a new FBSimulatorImage instance.
  */
-+ (instancetype)imageWithFilePath:(NSString *)filePath surface:(FBFramebufferSurface *)surface eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)imageWithFilePath:(NSString *)filePath surface:(FBFramebufferSurface *)surface eventQueue:(dispatch_queue_t)eventQueue eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 #pragma mark Public Methods
 

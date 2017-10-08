@@ -98,7 +98,7 @@
 
 @interface FBControlCoreLogger_File : NSObject <FBControlCoreLogger>
 
-@property (nonatomic, assign, readonly) int descriptor;
+@property (nonatomic, strong, nullable, readonly) NSFileHandle *fileHandle;
 
 @end
 
@@ -106,22 +106,26 @@
 
 const char *NewLine = "\n";
 
-- (instancetype)initWithFileDescriptor:(int)descriptor
+- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _descriptor = descriptor;
+  _fileHandle = fileHandle;
+
   return self;
 }
 
 - (id<FBControlCoreLogger>)log:(NSString *)string
 {
+  if (!self.fileHandle) {
+    return self;
+  }
   const char *data = string.UTF8String;
-  write(self.descriptor, data, strlen(data));
-  write(self.descriptor, NewLine, strlen(NewLine));
+  write(self.fileHandle.fileDescriptor, data, strlen(data));
+  write(self.fileHandle.fileDescriptor, NewLine, strlen(NewLine));
   return self;
 }
 
@@ -193,7 +197,7 @@ const char *NewLine = "\n";
  */
 @interface FBASLClientManager : NSObject
 
-@property (nonatomic, assign, readonly) int fileDescriptor;
+@property (nonatomic, strong, nullable, readonly) NSFileHandle *fileHandle;
 @property (nonatomic, assign, readonly) BOOL debugLogging;
 @property (nonatomic, strong, readonly) NSMapTable *queueTable;
 
@@ -201,14 +205,14 @@ const char *NewLine = "\n";
 
 @implementation FBASLClientManager
 
-- (instancetype)initWithWritingToFileDescriptor:(int)fileDescriptor debugLogging:(BOOL)debugLogging
+- (instancetype)initWithWritingToFileHandle:(NSFileHandle *)fileHandle debugLogging:(BOOL)debugLogging
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _fileDescriptor = fileDescriptor;
+  _fileHandle = fileHandle;
   _debugLogging = debugLogging;
   _queueTable = [NSMapTable mapTableWithKeyOptions:NSMapTableWeakMemory valueOptions:NSMapTableObjectPointerPersonality];
 
@@ -227,10 +231,10 @@ const char *NewLine = "\n";
     asl_object_t client = asl_open("FBControlCore", "com.facebook.FBControlCore", 0);
     int filterLimit = self.debugLogging ? ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG) : ASL_FILTER_MASK_UPTO(ASL_LEVEL_INFO);
 
-    if (self.fileDescriptor >= STDIN_FILENO) {
-      int result = asl_add_output_file(client, self.fileDescriptor, ASL_MSG_FMT_STD, ASL_TIME_FMT_LCL, filterLimit, ASL_ENCODE_SAFE);
+    if (self.fileHandle) {
+      int result = asl_add_output_file(client, self.fileHandle.fileDescriptor, ASL_MSG_FMT_STD, ASL_TIME_FMT_LCL, filterLimit, ASL_ENCODE_SAFE);
       if (result != 0) {
-        asl_log(client, NULL, ASL_LEVEL_ERR, "Failed to add File Descriptor %d to client with error %d", self.fileDescriptor, result);
+        asl_log(client, NULL, ASL_LEVEL_ERR, "Failed to add File Descriptor %d to client with error %d", self.fileHandle.fileDescriptor, result);
       }
     }
 
@@ -317,29 +321,34 @@ const char *NewLine = "\n";
 
 + (id<FBControlCoreLogger>)systemLoggerWritingToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging
 {
-  int fileDescriptor = writeToStdErr ? STDERR_FILENO : 0;
-  return [self systemLoggerWritingToFileDescriptor:fileDescriptor withDebugLogging:debugLogging];
+  NSFileHandle *fileHandle = writeToStdErr ? NSFileHandle.fileHandleWithStandardError : nil;
+  return [self systemLoggerWritingToFileHandle:fileHandle withDebugLogging:debugLogging];
 }
 
-+ (id<FBControlCoreLogger>)systemLoggerWritingToFileDescriptor:(int)fileDescriptor withDebugLogging:(BOOL)debugLogging
++ (id<FBControlCoreLogger>)systemLoggerWritingToFileHandle:(nullable NSFileHandle *)fileHandle withDebugLogging:(BOOL)debugLogging
 {
   // asl_add_output_file does not work in macOS 10.2, so we need a composite logger to write to a file descriptor.
   if (NSProcessInfo.processInfo.operatingSystemVersion.minorVersion < 12) {
-    return [self aslLoggerWritingToFileDescriptor:fileDescriptor withDebugLogging:debugLogging];
+    return [self aslLoggerWritingToFileHandle:fileHandle withDebugLogging:debugLogging];
   }
-  FBControlCoreLogger_ASL *aslLogger = [self aslLoggerWritingToFileDescriptor:-1 withDebugLogging:debugLogging];
-  return [[FBControlCoreLogger_Composite alloc] initWithLoggers:@[
+  FBControlCoreLogger_ASL *aslLogger = [self aslLoggerWritingToFileHandle:nil withDebugLogging:debugLogging];
+  return [self compositeLoggerWithLoggers:@[
     aslLogger,
-    [[FBControlCoreLogger_File alloc] initWithFileDescriptor:fileDescriptor],
+    [[FBControlCoreLogger_File alloc] initWithFileHandle:fileHandle],
   ]];
 }
 
-+ (FBControlCoreLogger_ASL *)aslLoggerWritingToFileDescriptor:(int)fileDescriptor withDebugLogging:(BOOL)debugLogging
++ (FBControlCoreLogger_ASL *)aslLoggerWritingToFileHandle:(nullable NSFileHandle *)fileHandle withDebugLogging:(BOOL)debugLogging
 {
-  FBASLClientManager *clientManager = [[FBASLClientManager alloc] initWithWritingToFileDescriptor:fileDescriptor debugLogging:debugLogging];
+  FBASLClientManager *clientManager = [[FBASLClientManager alloc] initWithWritingToFileHandle:fileHandle debugLogging:debugLogging];
   asl_object_t client = [clientManager clientHandleForQueue:dispatch_get_main_queue()];
   FBControlCoreLogger_ASL *logger = [[FBControlCoreLogger_ASL alloc] initWithClientManager:clientManager client:client currentLevel:ASL_LEVEL_INFO prefix:nil];
   return logger;
+}
+
++ (id<FBControlCoreLogger>)compositeLoggerWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers
+{
+  return [[FBControlCoreLogger_Composite alloc] initWithLoggers:loggers];
 }
 
 @end

@@ -32,27 +32,16 @@ struct iOSActionProvider {
     switch action {
     case .diagnose(let query, let format):
       return DiagnosticsRunner(reporter, query, query, format)
-    case .install(let appPath, let codeSign):
-      return iOSTargetRunner.simple(reporter, .install, ControlCoreSubject(appPath as NSString)) {
-        let (extractedAppPath, cleanupDirectory) = try FBApplicationDescriptor.findOrExtract(atPath: appPath)
-        if codeSign {
-          try FBCodesignProvider.codeSignCommandWithAdHocIdentity().recursivelySignBundle(atPath: extractedAppPath)
-        }
-        try target.installApplication(withPath: extractedAppPath)
-        if let cleanupDirectory = cleanupDirectory {
-          try? FileManager.default.removeItem(at: cleanupDirectory)
-        }
-      }
     case .uninstall(let appBundleID):
-      return iOSTargetRunner.simple(reporter, .uninstall, ControlCoreSubject(appBundleID as NSString)) {
+      return iOSTargetRunner.simple(reporter, .uninstall, FBEventReporterSubject(string: appBundleID)) {
         try target.uninstallApplication(withBundleID: appBundleID)
       }
     case .core(let action):
       return iOSTargetRunner.core(reporter, action.eventName, target, action)
     case .listApps:
       return iOSTargetRunner.simple(reporter, nil, ControlCoreSubject(target as! ControlCoreValue)) {
-        let subject = ControlCoreSubject(target.installedApplications().map { $0.jsonSerializableRepresentation() }  as NSArray)
-        reporter.reporter.reportSimple(.listApps, .discrete, subject)
+        let applications = try target.installedApplications().map { $0.jsonSerializableRepresentation }
+        reporter.reporter.reportSimple(.listApps, .discrete, ControlCoreSubject(applications as NSArray))
       }
     case .record(let record):
       switch record {
@@ -65,6 +54,8 @@ struct iOSActionProvider {
             try target.stopRecording()
           }
       }
+    case .search(let search):
+      return SearchRunner(target, reporter, search)
     case .stream(let configuration, let output):
       return iOSTargetRunner.handled(reporter, .stream, ControlCoreSubject(configuration)) {
         let stream = try target.createStream(with: configuration)
@@ -72,7 +63,7 @@ struct iOSActionProvider {
         return stream
       }
     case .terminate(let bundleID):
-      return iOSTargetRunner.simple(reporter, .terminate, ControlCoreSubject(bundleID as NSString)) {
+      return iOSTargetRunner.simple(reporter, .terminate, FBEventReporterSubject(string: bundleID)) {
         try target.killApplication(withBundleID: bundleID)
       }
     default:
@@ -175,6 +166,31 @@ private struct DiagnosticsRunner : Runner {
       case .Path:
         return FBDiagnosticBuilder(diagnostic: diagnostic).writeOutToFile().build()
       }
+    }
+  }
+}
+
+private struct SearchRunner : Runner {
+  let target: FBiOSTarget
+  let reporter: iOSReporter
+  let search: FBBatchLogSearch
+
+  init(_ target: FBiOSTarget, _ reporter: iOSReporter, _ search: FBBatchLogSearch) {
+    self.target = target
+    self.reporter = reporter
+    self.search = search
+  }
+
+  func run() -> CommandResult {
+    do {
+      let results = try RunLoop.current.awaitCompletion(
+        of: search.search(on: self.target) as! FBFuture<AnyObject>,
+        timeout: FBControlCoreGlobalConfiguration.regularTimeout
+      )
+      self.reporter.report(.search, .discrete, ControlCoreSubject(results as! ControlCoreValue))
+      return .success(nil)
+    } catch  {
+      return .failure("Failed to search with " + self.search.description)
     }
   }
 }

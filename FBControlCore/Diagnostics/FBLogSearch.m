@@ -53,25 +53,6 @@ static NSString *const KeyRegex = @"regex";
   return [line substringWithRange:result.range];
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _regularExpression = [coder decodeObjectForKey:NSStringFromSelector(@selector(regularExpression))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.regularExpression forKey:NSStringFromSelector(@selector(regularExpression))];
-}
-
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
@@ -88,13 +69,6 @@ static NSString *const KeyRegex = @"regex";
   };
 }
 
-#pragma mark FBDebugDescribeable Implementation
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:@"Of Regex: %@", self.regularExpression.pattern];
-}
-
 #pragma mark NSObject
 
 - (BOOL)isEqual:(FBLogSearchPredicate_Regex *)object
@@ -109,6 +83,11 @@ static NSString *const KeyRegex = @"regex";
 - (NSUInteger)hash
 {
   return self.regularExpression.hash;
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Of Regex: %@", self.regularExpression.pattern];
 }
 
 @end
@@ -144,25 +123,6 @@ static NSString *const KeyRegex = @"regex";
   return nil;
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _substrings = [coder decodeObjectForKey:NSStringFromSelector(@selector(substrings))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.substrings forKey:NSStringFromSelector(@selector(substrings))];
-}
-
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
@@ -179,13 +139,6 @@ static NSString *const KeyRegex = @"regex";
   };
 }
 
-#pragma mark FBDebugDescribeable Implementation
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:@"Of Substrings: %@", [FBCollectionInformation oneLineDescriptionFromArray:self.substrings]];
-}
-
 #pragma mark NSObject
 
 - (BOOL)isEqual:(FBLogSearchPredicate_Substrings *)object
@@ -200,6 +153,11 @@ static NSString *const KeyRegex = @"regex";
 - (NSUInteger)hash
 {
   return self.substrings.hash;
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Of Substrings: %@", [FBCollectionInformation oneLineDescriptionFromArray:self.substrings]];
 }
 
 @end
@@ -224,7 +182,7 @@ static NSString *const KeyRegex = @"regex";
 
 + (instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
 {
-  if (![FBCollectionInformation isArrayHeterogeneous:json.allKeys withClass:NSString.class]) {
+  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not a dictionary<string, id>", json] fail:error];
   }
 
@@ -241,27 +199,35 @@ static NSString *const KeyRegex = @"regex";
   return [[FBControlCoreError describeFormat:@"%@ does not contain a valid predicate", json] fail:error];
 }
 
+#pragma mark Helpers
+
++ (nullable NSString *)logAgumentsFromPredicates:(NSArray<FBLogSearchPredicate *> *)predicates error:(NSError **)error
+{
+  NSMutableArray<NSString *> *tokens = [NSMutableArray array];
+  for (FBLogSearchPredicate *predicate in predicates) {
+    if ([predicate isKindOfClass:FBLogSearchPredicate_Substrings.class]) {
+      for (NSString *substring in ((FBLogSearchPredicate_Substrings *)predicate).substrings) {
+        [tokens addObject:[NSString stringWithFormat:@"eventMessage contains '%@'", substring]];
+      }
+      continue;
+    }
+    if ([predicate isKindOfClass:FBLogSearchPredicate_Regex.class]) {
+      [tokens addObject:[NSString stringWithFormat:@"eventMessage MATCHES '%@'", ((FBLogSearchPredicate_Regex *) predicate).regularExpression.pattern]];
+      continue;
+    }
+    return [[FBControlCoreError
+      describeFormat:@"Could not compile %@ as a log(1) predicate", predicate]
+      fail:error];
+  }
+  return [tokens componentsJoinedByString:@" || "];
+}
+
 #pragma mark Public API
 
 - (NSString *)match:(NSString *)line
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
 }
 
 #pragma mark NSCopying
@@ -278,24 +244,6 @@ static NSString *const KeyRegex = @"regex";
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
-}
-
-#pragma mark FBDebugDescribeable Implementation
-
-- (NSString *)description
-{
-  return self.shortDescription;
-}
-
-- (NSString *)shortDescription
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (NSString *)debugDescription
-{
-  return self.shortDescription;
 }
 
 @end

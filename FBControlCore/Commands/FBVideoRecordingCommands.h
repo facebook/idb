@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBTerminationHandle.h>
+#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -31,7 +32,7 @@ extern FBTerminationHandleType const FBTerminationTypeHandleVideoRecording;
 /**
  Defines an interface for Video Recording.
  */
-@protocol FBVideoRecordingCommands <NSObject>
+@protocol FBVideoRecordingCommands <NSObject, FBiOSTargetCommand>
 
 /**
  Starts the Recording of Video to a File.

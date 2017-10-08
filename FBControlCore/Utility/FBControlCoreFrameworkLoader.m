@@ -12,20 +12,61 @@
 #import "FBControlCoreLogger.h"
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreError.h"
+#import "FBWeakFrameworkLoader.h"
+
+#include <dlfcn.h>
+
+void *FBGetSymbolFromHandle(void *handle, const char *name)
+{
+  void *function = dlsym(handle, name);
+  NSCAssert(function, @"%s could not be located", name);
+  return function;
+}
 
 @implementation FBControlCoreFrameworkLoader
 
-+ (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
+#pragma mark Initializers
+
++ (instancetype)loaderWithName:(NSString *)frameworkName frameworks:(NSArray<FBWeakFramework *> *)frameworks
 {
-  if ([NSUserName() isEqualToString:@"root"]) {
-    return [[FBControlCoreError
-      describeFormat:@"The Frameworks for %@ cannot be loaded from the root user. Don't run this as root.", self.loadingFrameworkName]
-      failBool:error];
-  }
-  return YES;
+  return [[self alloc] initWithName:frameworkName frameworks:frameworks];
 }
 
-+ (void)loadPrivateFrameworksOrAbort
+- (instancetype)initWithName:(NSString *)frameworkName frameworks:(NSArray<FBWeakFramework *> *)frameworks
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _frameworkName = frameworkName;
+  _frameworks = frameworks;
+  _hasLoadedFrameworks = NO;
+
+  return self;
+}
+
+#pragma mark Public Methods.
+
+- (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  if (self.hasLoadedFrameworks) {
+    return YES;
+  }
+
+  if ([NSUserName() isEqualToString:@"root"]) {
+    return [[FBControlCoreError
+      describeFormat:@"The Frameworks for %@ cannot be loaded from the root user. Don't run this as root.", self.frameworkName]
+      failBool:error];
+  }
+  BOOL result = [FBWeakFrameworkLoader loadPrivateFrameworks:self.frameworks logger:logger error:error];
+  if (result) {
+    _hasLoadedFrameworks = YES;
+  }
+  return result;
+}
+
+- (void)loadPrivateFrameworksOrAbort
 {
   id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
   NSError *error = nil;
@@ -33,7 +74,7 @@
   if (success) {
     return;
   }
-  NSString *message = [NSString stringWithFormat:@"Failed to private frameworks for %@ with error %@", self.loadingFrameworkName, error];
+  NSString *message = [NSString stringWithFormat:@"Failed to private frameworks for %@ with error %@", self.frameworkName, error];
 
   // Log the message.
   [logger.error log:message];
@@ -41,11 +82,6 @@
   NSAssert(NO, message);
   // However if assertions are compiled out, then we still need to abort.
   abort();
-}
-
-+ (NSString *)loadingFrameworkName
-{
-  return @"FBControlCore";
 }
 
 @end

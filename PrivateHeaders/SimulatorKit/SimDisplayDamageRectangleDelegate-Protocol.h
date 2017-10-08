@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import <CoreGraphics/CoreGraphics.h>
+
 #import <SimulatorKit/FoundationXPCProtocolProxyable-Protocol.h>
 
 @protocol SimDisplayDamageRectangleDelegate <FoundationXPCProtocolProxyable>

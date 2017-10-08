@@ -13,37 +13,55 @@
 
 #import <CoreSimulator/NSUserDefaults-SimDefaults.h>
 
+@interface FBSimulatorControlFrameworkLoader_Essential : FBSimulatorControlFrameworkLoader
+
+@end
+
 @implementation FBSimulatorControlFrameworkLoader
 
-#pragma mark Framework Loading
+#pragma mark Initializers
 
-static BOOL hasLoadedFrameworks = NO;
-
-+ (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
++ (FBSimulatorControlFrameworkLoader *)essentialFrameworks
 {
-  if (hasLoadedFrameworks) {
-    return YES;
-  }
-  if (![super loadPrivateFrameworks:logger error:error]) {
-    return NO;
-  }
-
-  NSArray<FBWeakFramework *> *frameworks = @[
-    FBWeakFramework.CoreSimulator,
-    FBWeakFramework.SimulatorKit,
-  ];
-  BOOL result = [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error];
-  if (result) {
-    // Set CoreSimulator Logging since it is now loaded.
-    [self setCoreSimulatorLoggingEnabled:FBControlCoreGlobalConfiguration.debugLoggingEnabled];
-    hasLoadedFrameworks = YES;
-  }
-  return result;
+  static dispatch_once_t onceToken;
+  static FBSimulatorControlFrameworkLoader *loader;
+  dispatch_once(&onceToken, ^{
+    loader = [FBSimulatorControlFrameworkLoader loaderWithName:@"FBSimulatorControl" frameworks:@[
+      FBWeakFramework.CoreSimulator,
+    ]];
+  });
+  return loader;
 }
 
-+ (NSString *)loadingFrameworkName
++ (FBSimulatorControlFrameworkLoader *)xcodeFrameworks
 {
-  return @"FBSimulatorControl";
+  static dispatch_once_t onceToken;
+  static FBSimulatorControlFrameworkLoader *loader;
+  dispatch_once(&onceToken, ^{
+    loader = [FBSimulatorControlFrameworkLoader loaderWithName:@"FBSimulatorControl" frameworks:@[
+      FBWeakFramework.SimulatorKit,
+    ]];
+  });
+  return loader;
+}
+
+@end
+
+@implementation FBSimulatorControlFrameworkLoader_Essential
+
+#pragma mark Public Methods
+
+- (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  if (self.hasLoadedFrameworks) {
+    return YES;
+  }
+  BOOL loaded = [super loadPrivateFrameworks:logger error:error];
+  if (loaded) {
+    // Set CoreSimulator Logging since it is now loaded.
+    [FBSimulatorControlFrameworkLoader_Essential setCoreSimulatorLoggingEnabled:FBControlCoreGlobalConfiguration.debugLoggingEnabled];
+  }
+  return loaded;
 }
 
 #pragma mark Private Methods
@@ -58,3 +76,4 @@ static BOOL hasLoadedFrameworks = NO;
 }
 
 @end
+

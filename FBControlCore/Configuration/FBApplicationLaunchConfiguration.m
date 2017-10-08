@@ -12,8 +12,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-FBiOSTargetActionType const FBiOSTargetActionTypeApplicationLaunch = @"applaunch";
-
 static NSString *const KeyBundleID = @"bundle_id";
 static NSString *const KeyBundleName = @"bundle_name";
 static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
@@ -29,7 +27,7 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
   return [[self alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment waitForDebugger:waitForDebugger output:output];
 }
 
-+ (instancetype)configurationWithApplication:(FBApplicationDescriptor *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output
++ (instancetype)configurationWithApplication:(FBApplicationBundle *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output
 {
   if (!application) {
     return nil;
@@ -116,31 +114,6 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
     environment:self.environment
     waitForDebugger:self.waitForDebugger
     output:self.output];
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super initWithCoder:coder];
-  if (!self) {
-    return nil;
-  }
-
-  _bundleID = [coder decodeObjectForKey:NSStringFromSelector(@selector(bundleID))];
-  _bundleName = [coder decodeObjectForKey:NSStringFromSelector(@selector(bundleName))];
-  _waitForDebugger = [coder decodeBoolForKey:NSStringFromSelector(@selector(waitForDebugger))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [super encodeWithCoder:coder];
-
-  [coder encodeObject:self.bundleID forKey:NSStringFromSelector(@selector(bundleID))];
-  [coder encodeObject:self.bundleName forKey:NSStringFromSelector(@selector(bundleName))];
-  [coder encodeBool:self.waitForDebugger forKey:NSStringFromSelector(@selector(waitForDebugger))];
 }
 
 #pragma mark NSObject

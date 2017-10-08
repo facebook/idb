@@ -9,23 +9,43 @@
 
 import Foundation
 
-public enum JSONKeys : String {
-  case EventName = "event_name"
-  case EventType = "event_type"
-  case Level = "level"
-  case Subject = "subject"
-  case Target = "target"
-  case Timestamp = "timestamp"
-}
-
 public protocol EventReporterSubject : CustomStringConvertible {
   var jsonDescription: JSON { get }
   var subSubjects: [EventReporterSubject] { get }
 }
 
+extension FBEventReporterSubject : EventReporterSubject {
+  public var jsonDescription: JSON { get {
+    return try! JSON.encode(self.jsonSerializableRepresentation as AnyObject)
+  }}
+}
+
 extension EventReporterSubject {
   public var subSubjects: [EventReporterSubject] { get {
     return [self]
+  }}
+}
+
+/**
+ FBControlCore Classes must interact with NSObject subclasses, this bridges Swift -> Objective-C
+ */
+@objc class EventReporterSubjectBridge : NSObject, FBEventReporterSubjectProtocol {
+  let wrapped: EventReporterSubject
+
+  init(_ wrapped: EventReporterSubject) {
+    self.wrapped = wrapped
+  }
+
+  var subSubjects: [FBEventReporterSubjectProtocol] { get {
+    return self.wrapped.subSubjects.map(EventReporterSubjectBridge.init)
+  }}
+
+  override var description: String { get {
+    return self.wrapped.description
+  }}
+
+  var jsonSerializableRepresentation: Any { get {
+    return self.wrapped.jsonDescription.decode()
   }}
 }
 
@@ -55,16 +75,16 @@ struct SimpleSubject : EventReporterSubject {
 
   var jsonDescription: JSON { get {
     return JSON.dictionary([
-      JSONKeys.EventName.rawValue : JSON.string(self.eventName.rawValue),
-      JSONKeys.EventType.rawValue : JSON.string(self.eventType.rawValue),
-      JSONKeys.Subject.rawValue : self.subject.jsonDescription,
-      JSONKeys.Timestamp.rawValue : JSON.number(NSNumber(value: round(Date().timeIntervalSince1970) as Double)),
+      JSONKeys.eventName.rawValue : JSON.string(self.eventName.rawValue),
+      JSONKeys.eventType.rawValue : JSON.string(self.eventType.rawValue),
+      JSONKeys.subject.rawValue : self.subject.jsonDescription,
+      JSONKeys.timestamp.rawValue : JSON.number(NSNumber(value: round(Date().timeIntervalSince1970) as Double)),
     ])
   }}
 
   var shortDescription: String { get {
     switch self.eventType {
-    case .discrete:
+    case EventType.discrete:
       return self.subject.description
     default:
       return "\(self.eventName.rawValue) \(self.eventType.rawValue): \(self.subject.description)"
@@ -84,7 +104,7 @@ struct ControlCoreSubject : EventReporterSubject {
   }
 
   var jsonDescription: JSON { get {
-    guard let json = try? JSON.encode(self.value.jsonSerializableRepresentation() as AnyObject) else {
+    guard let json = try? JSON.encode(self.value.jsonSerializableRepresentation as AnyObject) else {
       return JSON.null
     }
     return json
@@ -126,48 +146,20 @@ struct iOSTargetWithSubject : EventReporterSubject {
 
   var jsonDescription: JSON { get {
     return JSON.dictionary([
-      JSONKeys.EventName.rawValue : JSON.string(self.eventName.rawValue),
-      JSONKeys.EventType.rawValue : JSON.string(self.eventType.rawValue),
-      JSONKeys.Target.rawValue : self.targetSubject.jsonDescription,
-      JSONKeys.Subject.rawValue : self.subject.jsonDescription,
-      JSONKeys.Timestamp.rawValue : JSON.number(NSNumber(value: round(self.timestamp.timeIntervalSince1970) as Double)),
+      JSONKeys.eventName.rawValue : JSON.string(self.eventName.rawValue),
+      JSONKeys.eventType.rawValue : JSON.string(self.eventType.rawValue),
+      JSONKeys.target.rawValue : self.targetSubject.jsonDescription,
+      JSONKeys.subject.rawValue : self.subject.jsonDescription,
+      JSONKeys.timestamp.rawValue : JSON.number(NSNumber(value: round(self.timestamp.timeIntervalSince1970) as Double)),
     ])
   }}
 
   var description: String { get {
     switch self.eventType {
-    case .discrete:
+    case EventType.discrete:
       return "\(self.targetSubject): \(self.eventName.rawValue): \(self.subject.description)"
     default:
       return ""
-    }
-  }}
-}
-
-struct LogSubject : EventReporterSubject {
-  let logString: String
-  let level: Int32
-
-  var jsonDescription: JSON { get {
-    return JSON.dictionary([
-      JSONKeys.EventName.rawValue : JSON.string(EventName.log.rawValue),
-      JSONKeys.EventType.rawValue : JSON.string(EventType.discrete.rawValue),
-      JSONKeys.Level.rawValue : JSON.string(self.levelString),
-      JSONKeys.Subject.rawValue : JSON.string(self.logString),
-      JSONKeys.Timestamp.rawValue : JSON.number(NSNumber(value: round(Date().timeIntervalSince1970) as Double)),
-    ])
-  }}
-
-  var description: String { get {
-    return self.logString
-  }}
-
-  var levelString: String { get {
-    switch self.level {
-    case Constants.asl_level_debug(): return "debug"
-    case Constants.asl_level_err(): return "error"
-    case Constants.asl_level_info(): return "info"
-    default: return "unknown"
     }
   }}
 }

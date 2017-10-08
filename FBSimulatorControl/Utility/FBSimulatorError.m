@@ -11,7 +11,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 
 NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorControl";

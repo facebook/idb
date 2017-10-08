@@ -13,7 +13,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBAgentLaunchStrategy.h"
 #import "FBSimulator.h"
@@ -30,9 +29,9 @@
 
 @implementation FBSimulatorAgentCommands
 
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator
++ (instancetype)commandsWithTarget:(FBSimulator *)targets
 {
-  return [[self alloc] initWithSimulator:simulator];
+  return [[self alloc] initWithSimulator:targets];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator
@@ -46,10 +45,10 @@
   return self;
 }
 
-- (BOOL)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
+- (nullable FBSimulatorAgentOperation *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
 {
   NSParameterAssert(agentLaunch);
-  return [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchAgent:agentLaunch error:error] != nil;
+  return [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchAgent:agentLaunch error:error];
 }
 
 @end

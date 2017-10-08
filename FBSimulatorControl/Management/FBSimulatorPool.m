@@ -14,7 +14,6 @@
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBCoreSimulatorTerminationStrategy.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
@@ -118,27 +117,13 @@
   return [self.allocatedUDIDs containsObject:simulator.udid];
 }
 
-#pragma mark FBDebugDescribeable
+#pragma mark NSObject
 
 - (NSString *)description
-{
-  return [self shortDescription];
-}
-
-- (NSString *)shortDescription
 {
   return [NSString stringWithFormat:
     @"Set: %@ | Allocated %@",
     self.set.debugDescription,
-    self.allocatedSimulators.description
-  ];
-}
-
-- (NSString *)debugDescription
-{
-  return [NSString stringWithFormat:
-    @"Set: %@ | Allocated %@",
-    self.set.description,
     self.allocatedSimulators.description
   ];
 }
@@ -205,7 +190,6 @@
   BOOL shutdown = (options & FBSimulatorAllocationOptionsShutdownOnAllocate) == FBSimulatorAllocationOptionsShutdownOnAllocate;
   BOOL erase = (options & FBSimulatorAllocationOptionsEraseOnAllocate) == FBSimulatorAllocationOptionsEraseOnAllocate;
   BOOL reuse = (options & FBSimulatorAllocationOptionsReuse) == FBSimulatorAllocationOptionsReuse;
-  BOOL enablePersistence = (options & FBSimulatorAllocationOptionsPersistHistory) == FBSimulatorAllocationOptionsPersistHistory;
 
   // Shutdown first.
   if (shutdown || erase) {
@@ -236,9 +220,6 @@
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
   }
-
-  // Enable/Disable Persistence
-  simulator.historyGenerator.peristenceEnabled = enablePersistence;
 
   return YES;
 }

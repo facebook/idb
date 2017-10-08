@@ -9,15 +9,13 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBDebugDescribeable.h>
+NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
 @class FBSimulatorPool;
 @class FBSimulatorSet;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  Options for how a pool should handle allocation & freeing.
@@ -29,7 +27,6 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
   FBSimulatorAllocationOptionsEraseOnAllocate = 1 << 4, /** Erasing of the Simulator becomes a precondition of allocation. */
   FBSimulatorAllocationOptionsDeleteOnFree = 1 << 5, /** Deleting of the Simulator becomes a postcondition of freeing. */
   FBSimulatorAllocationOptionsEraseOnFree = 1 << 6, /** Erasing of the Simulator becomes a postcondition of freeing. */
-  FBSimulatorAllocationOptionsPersistHistory = 1 << 7 /** Fetch & Persist History for the allocated Simulator. */
 };
 
 @protocol FBControlCoreLogger;
@@ -39,7 +36,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
  This is an optional part of the API that allows clients to use multiple Simulators in the same set whilst avoiding
  using the same Simulator for multiple tasks.
  */
-@interface FBSimulatorPool : NSObject <FBDebugDescribeable>
+@interface FBSimulatorPool : NSObject
 
 #pragma mark Initializers
 
@@ -48,7 +45,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
 
  @param set the FBSimulatorSet to Manage.
  @param logger the logger to use to verbosely describe what is going on. May be nil.
- @returns a new FBSimulatorPool.
+ @return a new FBSimulatorPool.
  */
 + (instancetype)poolWithSet:(FBSimulatorSet *)set logger:(id<FBControlCoreLogger>)logger;
 

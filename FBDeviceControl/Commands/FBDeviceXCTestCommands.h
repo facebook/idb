@@ -9,32 +9,32 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-@class FBDevice;
-
 NS_ASSUME_NONNULL_BEGIN
+
+@class FBDevice;
 
 /**
  An implementation of FBXCTestCommands, for Devices.
  */
-@interface FBDeviceXCTestCommands : NSObject <FBXCTestCommands>
+@interface FBDeviceXCTestCommands : NSObject <FBXCTestCommands, FBiOSTargetCommand>
+
 
 /**
- The Designated Initializer.
+ A helper method for overwriting xcTestRunProperties.
+ Creates a new properties dictionary with values from baseProperties
+ overwritten with values from newProperties. It overwrites values only
+ for existing keys. It assumes that the dictionary has XCTestRun file
+ format and that base has a single test with bundle id StubBundleId.
 
- @param device the Device.
- @return a new Device Commands Instance.
+ @param baseProperties base properties
+ @param newProperties base properties will be overwritten with newProperties
+ @returns a new xcTestRunProperites with
  */
-+ (instancetype)commandsWithDevice:(FBDevice *)device;
++ (NSDictionary *)overwriteXCTestRunPropertiesWithBaseProperties:(NSDictionary<NSString *, id> *)baseProperties newProperties:(NSDictionary<NSString *, id> *)newProperties;
 
-/**
- The xctest.xctestrun properties for a test launch.
-
- @param testLaunch the test launch to base off.
- @return the xctest.xctestrun properties.
- */
-+ (NSDictionary<NSString *, NSDictionary<NSString *, NSObject *> *> *)xctestRunProperties:(FBTestLaunchConfiguration *)testLaunch;
 
 @end
 

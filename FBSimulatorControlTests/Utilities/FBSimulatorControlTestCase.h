@@ -51,7 +51,7 @@ extern NSString *const FBSimulatorControlTestsLaunchTypeDirect;
 /**
  A default Simulator Launch Configuration.
  */
-@property (nonatomic, strong, readwrite) FBSimulatorBootConfiguration *simulatorLaunchConfiguration;
+@property (nonatomic, strong, readwrite) FBSimulatorBootConfiguration *bootConfiguration;
 
 /**
  The Per-Test-Case Device Set Path.

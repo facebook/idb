@@ -11,8 +11,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
+#import "FBSimulatorAgentOperation.h"
+#import "FBSimulatorApplicationOperation.h"
 
 @interface FBSimulatorLoggingEventSink ()
 
@@ -73,24 +74,24 @@
   [self.logger logFormat:@"Simulator Did Terminate => %@ Expected %d", launchdProcess.shortDescription, expected];
 }
 
-- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)agentDidLaunch:(FBSimulatorAgentOperation *)operation
 {
-  [self.logger logFormat:@"Agent Did Launch => %@", agentProcess.shortDescription];
+  [self.logger logFormat:@"Agent Did Launch => %@", operation];
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
-  [self.logger logFormat:@"Agent Did Terminate => Expected %d %@", expected, agentProcess.shortDescription];
+  [self.logger logFormat:@"Agent Did Terminate => Value %d %@", statLoc, operation.process.shortDescription];
 }
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
+- (void)applicationDidLaunch:(FBSimulatorApplicationOperation *)operation
 {
-  [self.logger logFormat:@"Application Did Launch => %@", applicationProcess.shortDescription];
+  [self.logger logFormat:@"Application Did Launch => %@", operation.process.shortDescription];
 }
 
-- (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
+- (void)applicationDidTerminate:(FBSimulatorApplicationOperation *)operation expected:(BOOL)expected
 {
-  [self.logger logFormat:@"Application Did Terminate => Expected %d %@", expected, applicationProcess.shortDescription];
+  [self.logger logFormat:@"Application Did Terminate => Expected %d %@", expected, operation.process.shortDescription];
 }
 
 - (void)testmanagerDidConnect:(FBTestManager *)testManager
@@ -110,7 +111,7 @@
 
 - (void)didChangeState:(FBSimulatorState)state
 {
-  [self.logger logFormat:@"Did Change State => %@", [FBSimulator stateStringFromSimulatorState:state]];
+  [self.logger logFormat:@"Did Change State => %@", FBSimulatorStateStringFromState(state)];
 }
 
 - (void)terminationHandleAvailable:(id<FBTerminationHandle>)terminationHandle

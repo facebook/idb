@@ -11,7 +11,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBApplicationDescriptor ;
+@class FBApplicationBundle ;
 
 /**
  Options that apply to each FBSimulatorControl instance.
@@ -29,14 +29,14 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Value object with the information required to create a Simulator Pool.
  */
-@interface FBSimulatorControlConfiguration : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBDebugDescribeable>
+@interface FBSimulatorControlConfiguration : NSObject <NSCopying, FBJSONSerializable, FBDebugDescribeable>
 
 /**
  Creates and returns a new Configuration with the provided parameters.
 
  @param options the options for Simulator Management.
  @param deviceSetPath the Path to the Device Set. If nil, the default Device Set will be used.
- @returns a new Configuration Object with the arguments applied.
+ @return a new Configuration Object with the arguments applied.
  */
 + (instancetype)configurationWithDeviceSetPath:(nullable NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options;
 

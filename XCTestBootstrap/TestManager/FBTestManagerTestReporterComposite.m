@@ -119,4 +119,22 @@
   }
 }
 
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCase:(NSString *)testClass method:(NSString *)method willStartActivity:(FBActivityRecord *)activity
+{
+  for (id<FBTestManagerTestReporter> reporter in self.reporters) {
+    if ([reporter respondsToSelector:@selector(testManagerMediator:testCase:method:willStartActivity:)]) {
+      [reporter testManagerMediator:mediator testCase:testClass method:method willStartActivity:activity];
+    }
+  }
+}
+
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCase:(NSString *)testClass method:(NSString *)method didFinishActivity:(FBActivityRecord *)activity
+{
+  for (id<FBTestManagerTestReporter> reporter in self.reporters) {
+    if ([reporter respondsToSelector:@selector(testManagerMediator:testCase:method:didFinishActivity:)]) {
+      [reporter testManagerMediator:mediator testCase:testClass method:method didFinishActivity:activity];
+    }
+  }
+}
+
 @end

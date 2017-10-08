@@ -10,11 +10,17 @@
 #import "FBBatchLogSearch.h"
 
 #import "FBCollectionInformation.h"
+#import "FBCollectionOperations.h"
 #import "FBConcurrentCollectionOperations.h"
 #import "FBControlCoreError.h"
 #import "FBDiagnostic.h"
 #import "NSPredicate+FBControlCore.h"
 #import "FBLogSearch.h"
+#import "FBiOSTarget.h"
+#import "FBiOSTargetDiagnostics.h"
+#import "FBLogCommands.h"
+#import "FBRunLoopSpinner.h"
+#import "FBControlCoreConfigurationVariants.h"
 
 @implementation FBBatchLogSearchResult
 
@@ -32,6 +38,22 @@
   return self;
 }
 
+#pragma mark Public Methods
+
+- (NSArray<NSString *> *)allMatches
+{
+  return [self.mapping.allValues valueForKeyPath:@"@unionOfArrays.self"];
+}
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  return [[FBBatchLogSearchResult alloc] initWithMapping:self.mapping];
+}
+
+#pragma mark JSON Conversion
+
 + (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
 {
   if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSArray.class]) {
@@ -45,58 +67,9 @@
   return [[self alloc] initWithMapping:json];
 }
 
-#pragma mark Public Methods
-
-- (NSArray<NSString *> *)allMatches
-{
-  return [self.mapping.allValues valueForKeyPath:@"@unionOfArrays.self"];
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  id mapping = [coder decodeObjectForKey:NSStringFromSelector(@selector(mapping))];
-  return [self initWithMapping:mapping];
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.mapping forKey:NSStringFromSelector(@selector(mapping))];
-}
-
-#pragma mark NSCopying
-
-- (instancetype)copyWithZone:(NSZone *)zone
-{
-  return [[FBBatchLogSearchResult alloc] initWithMapping:self.mapping];
-}
-
-#pragma mark FBJSONSerializationDescribeable Implementation
-
 - (id)jsonSerializableRepresentation
 {
   return self.mapping;
-}
-
-#pragma mark FBDebugDescribeable Implementation
-
-- (NSString *)description
-{
-  return self.shortDescription;
-}
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:
-    @"Batch Search Result: %@",
-    [FBCollectionInformation oneLineDescriptionFromDictionary:self.mapping]
-  ];
-}
-
-- (NSString *)debugDescription
-{
-  return self.shortDescription;
 }
 
 #pragma mark NSObject
@@ -115,12 +88,13 @@
   return self.mapping.hash;
 }
 
-@end
-
-@interface FBBatchLogSearch ()
-
-@property (nonatomic, copy, readonly) NSDictionary *mapping;
-@property (nonatomic, assign, readonly) FBBatchLogSearchOptions options;
+- (NSString *)shortDescription
+{
+  return [NSString stringWithFormat:
+    @"Batch Search Result: %@",
+    [FBCollectionInformation oneLineDescriptionFromDictionary:self.mapping]
+  ];
+}
 
 @end
 
@@ -129,10 +103,11 @@
 static NSString *const KeyLines = @"lines";
 static NSString *const KeyFirst = @"first";
 static NSString *const KeyMapping = @"mapping";
+static NSString *const KeySince = @"since";
 
 #pragma mark Initializers
 
-+ (instancetype)withMapping:(NSDictionary<NSArray<FBDiagnosticName> *, NSArray<FBLogSearchPredicate *> *> *)mapping options:(FBBatchLogSearchOptions)options error:(NSError **)error
++ (instancetype)searchWithMapping:(NSDictionary<FBDiagnosticName, NSArray<FBLogSearchPredicate *> *> *)mapping options:(FBBatchLogSearchOptions)options since:(nullable NSDate *)since error:(NSError **)error
 {
   if (![FBCollectionInformation isDictionaryHeterogeneous:mapping keyClass:NSString.class valueClass:NSArray.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not an dictionary<string, string>", mapping] fail:error];
@@ -143,8 +118,31 @@ static NSString *const KeyMapping = @"mapping";
       return [[FBControlCoreError describeFormat:@"%@ value is not an array of log search predicates", value] fail:error];
     }
   }
-  return [[FBBatchLogSearch alloc] initWithMapping:mapping options:options];
+  return [[FBBatchLogSearch alloc] initWithMapping:mapping options:options since:since];
 }
+
+- (instancetype)initWithMapping:(NSDictionary *)mapping options:(FBBatchLogSearchOptions)options since:(nullable NSDate *)since
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _mapping = mapping;
+  _options = options;
+  _since = since;
+
+  return self;
+}
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  return self;
+}
+
+#pragma mark JSON Conversion
 
 + (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
 {
@@ -160,8 +158,8 @@ static NSString *const KeyMapping = @"mapping";
   NSNumber *first = json[KeyFirst] ?: @NO;
   if (![lines isKindOfClass:NSNumber.class]) {
     return [[FBControlCoreError
-    describeFormat:@"%@ is not a number for '%@'", lines, KeyFirst]
-    fail:error];
+      describeFormat:@"%@ is not a number for '%@'", lines, KeyFirst]
+      fail:error];
   }
   FBBatchLogSearchOptions options = 0;
   if (lines.boolValue) {
@@ -170,6 +168,13 @@ static NSString *const KeyMapping = @"mapping";
   if (first.boolValue) {
     options = options | FBBatchLogSearchOptionsFirstMatch;
   }
+  NSNumber *sinceTimestamp = [FBCollectionOperations nullableValueForDictionary:json key:KeySince] ?: nil;
+  if (sinceTimestamp && ![sinceTimestamp isKindOfClass:NSNumber.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ is not a timestamp for '%@'", sinceTimestamp, KeySince]
+      fail:error];
+  }
+  NSDate *since = sinceTimestamp ? [NSDate dateWithTimeIntervalSince1970:sinceTimestamp.doubleValue] : nil;
 
   NSDictionary<NSString *, NSArray *> *jsonMapping = json[KeyMapping];
   if (![FBCollectionInformation isDictionaryHeterogeneous:jsonMapping keyClass:NSString.class valueClass:NSArray.class]) {
@@ -191,56 +196,13 @@ static NSString *const KeyMapping = @"mapping";
 
     predicateMapping[key] = [predicates copy];
   }
-  return [self withMapping:[predicateMapping copy] options:options error:error];
+  return [self searchWithMapping:[predicateMapping copy] options:options since:since error:error];
 }
-
-- (instancetype)initWithMapping:(NSDictionary *)mapping options:(FBBatchLogSearchOptions)options
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _mapping = mapping;
-  _options = options;
-
-  return self;
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _mapping = [coder decodeObjectForKey:KeyMapping];
-  _options = (NSUInteger) [coder decodeIntegerForKey:NSStringFromSelector(@selector(options))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.mapping forKey:KeyMapping];
-  [coder encodeInteger:(NSInteger)self.options forKey:NSStringFromSelector(@selector(options))];
-}
-
-#pragma mark NSCopying
-
-- (instancetype)copyWithZone:(NSZone *)zone
-{
-  return self;
-}
-
-#pragma mark FBJSONSerializationDescribeable Implementation
 
 - (id)jsonSerializableRepresentation
 {
   NSMutableDictionary *mappingDictionary = [NSMutableDictionary dictionary];
-  for (NSArray *key in self.mapping) {
+  for (FBDiagnosticName key in self.mapping) {
     mappingDictionary[key] = [self.mapping[key] valueForKey:@"jsonSerializableRepresentation"];
   }
   BOOL lines = self.options & FBBatchLogSearchOptionsFullLines;
@@ -249,27 +211,8 @@ static NSString *const KeyMapping = @"mapping";
     KeyLines: @(lines),
     KeyFirst: @(first),
     KeyMapping: [mappingDictionary copy],
+    KeySince: self.since ? @(self.since.timeIntervalSince1970) : NSNull.null,
   };
-}
-
-#pragma mark FBDebugDescribeable Implementation
-
-- (NSString *)description
-{
-  return self.shortDescription;
-}
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:
-    @"Batch Search: %@",
-    [FBCollectionInformation oneLineDescriptionFromDictionary:self.mapping]
-  ];
-}
-
-- (NSString *)debugDescription
-{
-  return self.shortDescription;
 }
 
 #pragma mark NSObject
@@ -280,17 +223,27 @@ static NSString *const KeyMapping = @"mapping";
     return NO;
   }
 
-  return self.options == object.options && [self.mapping isEqualToDictionary:object.mapping];
+  return self.options == object.options &&
+         [self.mapping isEqualToDictionary:object.mapping] &&
+         (self.since == object.since || [self.since isEqualToDate:object.since]);
 }
 
 - (NSUInteger)hash
 {
-  return (NSUInteger) self.options ^ self.mapping.hash;
+  return (NSUInteger) self.options ^ self.mapping.hash ^ self.since.hash;
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Batch Search: %@",
+    [FBCollectionInformation oneLineDescriptionFromDictionary:self.mapping]
+  ];
 }
 
 #pragma mark Public API
 
-- (FBBatchLogSearchResult *)search:(NSArray<FBDiagnostic *> *)diagnostics
+- (FBBatchLogSearchResult *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics
 {
   NSParameterAssert([FBCollectionInformation isArrayHeterogeneous:diagnostics withClass:FBDiagnostic.class]);
 
@@ -350,9 +303,58 @@ static NSString *const KeyMapping = @"mapping";
   return result;
 }
 
-+ (NSDictionary *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate options:(FBBatchLogSearchOptions)options
+- (FBFuture<FBBatchLogSearchResult *> *)searchOnTarget:(id<FBiOSTarget>)target
 {
-  return [[[self withMapping:@{@[] : @[predicate]} options:options error:nil] search:diagnostics] mapping];
+  // Only use the specialized logging on iOS.
+    if (target.deviceType.family != FBControlCoreProductFamilyiPhone && target.deviceType.family != FBControlCoreProductFamilyiPad) {
+    return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
+  }
+  // Only use specialized logging on iOS 11 or greater.
+  if ([target.osVersion.number compare:[NSDecimalNumber numberWithInt:11]] == NSOrderedAscending) {
+    return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
+  }
+  // Perform a special search using the log commands, if the search is relevant.
+  id<FBLogCommands> log = (id<FBLogCommands>) target;
+  if (![log conformsToProtocol:@protocol(FBLogCommands)]) {
+    return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
+  }
+  // Only perform if we only care about the syslog
+  if (![self.mapping.allKeys isEqualToArray:@[FBDiagnosticNameSyslog]]) {
+    return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
+  }
+  // Also, the search must represent a compilable predicate for the command.
+  NSArray<NSString *> *arguments = [self.class argumentsForLogCommand:self.mapping[FBDiagnosticNameSyslog] since:self.since error:nil];
+  if (!arguments) {
+    return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
+  }
+  return [[log
+    logLinesWithArguments:arguments]
+    onQueue:target.asyncQueue map:^(NSArray<NSString *> *lines) {
+      return [[FBBatchLogSearchResult alloc] initWithMapping:@{
+         FBDiagnosticNameSyslog: lines,
+      }];
+    }];
+}
+
++ (NSDictionary<FBDiagnosticName, NSArray<NSString *> *> *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate options:(FBBatchLogSearchOptions)options
+{
+  return [[[self
+    searchWithMapping:@{@"" : @[predicate]} options:options since:nil error:nil]
+    searchDiagnostics:diagnostics]
+    mapping];
+}
+
+#pragma mark Private
+
++ (NSDateFormatter *)logCommandDateFormatter
+{
+  static dispatch_once_t onceToken;
+  static NSDateFormatter *dateFormatter;
+  dispatch_once(&onceToken, ^{
+    dateFormatter = [[NSDateFormatter alloc] init];
+    dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss";
+  });
+  return dateFormatter;
 }
 
 + (NSArray<NSString *> *)search:(FBDiagnosticLogSearch *)search withOptions:(FBBatchLogSearchOptions)options
@@ -365,6 +367,24 @@ static NSString *const KeyMapping = @"mapping";
   } else {
     return lines ? search.matchingLines : search.allMatches;
   }
+}
+
++ (NSArray<NSString *> *)argumentsForLogCommand:(NSArray<FBLogSearchPredicate *> *)predicates since:(nullable NSDate *)since error:(NSError **)error
+{
+  NSString *compiled = [FBLogSearchPredicate logAgumentsFromPredicates:predicates error:error];
+  if (!compiled) {
+    return nil;
+  }
+  NSMutableArray<NSString *> *arguments = [NSMutableArray arrayWithObject:@"show"];
+  if (since) {
+    [arguments addObjectsFromArray:@[
+       @"--start", [FBBatchLogSearch.logCommandDateFormatter stringFromDate:since],
+    ]];
+  }
+  [arguments addObjectsFromArray:@[
+     @"--predicate", compiled,
+  ]];
+  return arguments;
 }
 
 @end

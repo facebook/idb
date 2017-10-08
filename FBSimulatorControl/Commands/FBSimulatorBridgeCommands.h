@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
@@ -17,16 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
  Interactions dependent on the existence of an FBSimulatorConnection on a booted Simulator.
  */
 @protocol FBSimulatorBridgeCommands
-
-/**
- Performs a Press on the Simulator's Screen with the given co-ordinates.
-
- @param x the X Coordinate.
- @param y the Y Coordinate.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)tap:(double)x y:(double)y error:(NSError **)error;
 
 /**
  Sets latitude and longitude of the Simulator.
@@ -44,15 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The implementation of FBSimulatorBridgeCommands
  */
-@interface FBSimulatorBridgeCommands : NSObject <FBSimulatorBridgeCommands>
-
-/**
- The Designated Intializer
-
- @param simulator the Simulator.
- @return a new Simulator Bridge Commands Instance.
- */
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
+@interface FBSimulatorBridgeCommands : NSObject <FBSimulatorBridgeCommands, FBiOSTargetCommand>
 
 @end
 

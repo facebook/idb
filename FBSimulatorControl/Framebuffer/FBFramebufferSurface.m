@@ -9,6 +9,7 @@
 
 #import "FBFramebufferSurface.h"
 
+#import <CoreSimulator/SimDeviceIO+Removed.h>
 #import <CoreSimulator/SimDeviceIOClient.h>
 
 #import <xpc/xpc.h>
@@ -28,6 +29,29 @@
 #import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
 #import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
 #import <SimulatorKit/SimDisplayRenderable-Protocol.h>
+
+#import "FBSimulatorError.h"
+
+static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
+{
+  // Return the Surface Immediately, if one is immediately available.
+  if (!unknown) {
+    return nil;
+  }
+  // If the object returns an
+  if (CFGetTypeID((__bridge CFTypeRef)(unknown)) == IOSurfaceGetTypeID()) {
+    return (__bridge IOSurfaceRef)(unknown);
+  }
+
+  // We need to convert the surface, treat it as an xpc_object_t
+  xpc_object_t xpcObject = unknown;
+  IOSurfaceRef surface = IOSurfaceLookupFromXPCObject(xpcObject);
+  if (!surface) {
+    return nil;
+  }
+  CFAutorelease(surface);
+  return surface;
+}
 
 @interface FBFramebufferSurface_IOClient_Forwarder : NSObject <SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDeviceIOPortConsumer>
 
@@ -53,14 +77,16 @@
   return self;
 }
 
-- (void)didChangeIOSurface:(nullable xpc_object_t)xpcSurface
+- (void)didChangeIOSurface:(nullable id)unknown
 {
-  if (!xpcSurface) {
+  IOSurfaceRef surface = extractSurfaceFromUnknown(unknown);
+  if (!surface) {
     [self.consumer didChangeIOSurface:NULL];
     return;
   }
-  IOSurfaceRef surface = IOSurfaceLookupFromXPCObject(xpcSurface);
+  // Ensure the Surface is retained as it is delivered asynchronously.
   id<FBFramebufferSurfaceConsumer> consumer = self.consumer;
+  CFRetain(surface);
   dispatch_async(self.consumerQueue, ^{
     [consumer didChangeIOSurface:surface];
     CFRelease(surface);
@@ -112,6 +138,7 @@
 @interface FBFramebufferSurface ()
 
 @property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferSurfaceConsumer>, id> *forwarders;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -121,7 +148,7 @@
 @property (nonatomic, strong, readonly) id<SimDeviceIOPortInterface> port;
 @property (nonatomic, strong, readonly) id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> surface;
 
-- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface;
+- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -130,7 +157,7 @@
 @property (nonatomic, strong, readonly) SimDeviceFramebufferService *framebufferService;
 @property (nonatomic, strong, readonly) dispatch_queue_t clientQueue;
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService;
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -138,7 +165,7 @@
 
 #pragma mark Initializers
 
-+ (nullable instancetype)mainScreenSurfaceForClient:(SimDeviceIOClient *)ioClient
++ (nullable instancetype)mainScreenSurfaceForClient:(SimDeviceIOClient *)ioClient logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   for (id<SimDeviceIOPortInterface> port in ioClient.ioPorts) {
     if (![port conformsToProtocol:@protocol(SimDeviceIOPortInterface)]) {
@@ -151,17 +178,19 @@
     if (![surface conformsToProtocol:@protocol(SimDisplayIOSurfaceRenderable)]) {
       continue;
     }
-    return [[FBFramebufferSurface_IOClient alloc] initWithIOClient:ioClient port:port surface:surface];
+    return [[FBFramebufferSurface_IOClient alloc] initWithIOClient:ioClient port:port surface:surface logger:logger];
   }
-  return nil;
+  return [[FBSimulatorError
+    describeFormat:@"Could not find the Main Screen Surface for IO Client %@", ioClient]
+    fail:error];
 }
 
-+ (instancetype)mainScreenSurfaceForFramebufferService:(SimDeviceFramebufferService *)framebufferService
++ (instancetype)mainScreenSurfaceForFramebufferService:(SimDeviceFramebufferService *)framebufferService logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBFramebufferSurface_FramebufferService alloc] initWithFramebufferService:framebufferService];
+  return [[FBFramebufferSurface_FramebufferService alloc] initWithFramebufferService:framebufferService logger:logger];
 }
 
-- (instancetype)initWithForwarders:(NSMapTable<id<FBFramebufferSurfaceConsumer>, id> *)forwarders
+- (instancetype)initWithForwarders:(NSMapTable<id<FBFramebufferSurfaceConsumer>, id> *)forwarders logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -169,16 +198,17 @@
   }
 
   _forwarders = forwarders;
+  _logger = logger;
 
   return self;
 }
 
-- (instancetype)init
+- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
 {
   NSMapTable<id<FBFramebufferSurfaceConsumer>, id> *forwarders = [NSMapTable
     mapTableWithKeyOptions:NSPointerFunctionsWeakMemory
     valueOptions:NSPointerFunctionsStrongMemory];
-  return [self initWithForwarders:forwarders];
+  return [self initWithForwarders:forwarders logger:logger];
 }
 
 #pragma mark Public Methods
@@ -207,9 +237,9 @@
 
 @implementation FBFramebufferSurface_IOClient
 
-- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface
+- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super init];
+  self = [super initWithLogger:logger];
   if (!self) {
     return nil;
   }
@@ -231,17 +261,25 @@
   forwarder = [[FBFramebufferSurface_IOClient_Forwarder alloc] initWithConsumer:consumer consumerQueue:queue];
   [self.forwarders setObject:forwarder forKey:consumer];
 
-  // Register the consumer.
-  [self.ioClient attachConsumer:forwarder toPort:self.port];
+  // Extract the IOSurface if one does not exist.
+  IOSurfaceRef surface = extractSurfaceFromUnknown(self.surface.ioSurface);
 
-  // Return the Surface Immediately, if one is immediately available.
-  xpc_object_t xpcSurface = self.surface.ioSurface;
-  if (!xpcSurface) {
-    return nil;
+  // Register the consumer.
+  if ([self.ioClient respondsToSelector:@selector(attachConsumer:withUUID:toPort:errorQueue:errorHandler:)]) {
+    [self.ioClient attachConsumer:forwarder withUUID:forwarder.consumerUUID toPort:self.port errorQueue:queue errorHandler:^(NSError *error){}];
+  } else if ([self.ioClient respondsToSelector:@selector(attachConsumer:toPort:)]) {
+    [self.ioClient attachConsumer:forwarder toPort:self.port];
+  } else {
+    [self.surface registerCallbackWithUUID:forwarder.consumerUUID ioSurfaceChangeCallback:^(id next) {
+      [forwarder didChangeIOSurface:next];
+    }];
+    [self.surface registerCallbackWithUUID:forwarder.consumerUUID damageRectanglesCallback:^(NSArray<NSValue *> *rects) {
+      for (NSValue *value in rects) {
+        [forwarder didReceiveDamageRect:value.rectValue];
+      }
+    }];
   }
-  // We need to convert the surface.
-  IOSurfaceRef surface = IOSurfaceLookupFromXPCObject(xpcSurface);
-  CFAutorelease(surface);
+
   return surface;
 }
 
@@ -251,7 +289,12 @@
   if (!forwarder) {
     return;
   }
-  [self.ioClient detachConsumer:forwarder fromPort:self.port];
+  if ([self.ioClient respondsToSelector:@selector(detachConsumer:fromPort:)]) {
+    [self.ioClient detachConsumer:forwarder fromPort:self.port];
+  } else {
+    [self.surface unregisterIOSurfaceChangeCallbackWithUUID:forwarder.consumerUUID];
+    [self.surface unregisterDamageRectanglesCallbackWithUUID:forwarder.consumerUUID];
+  }
 }
 
 - (CGRect)fullDamageRect
@@ -264,9 +307,9 @@
 
 @implementation FBFramebufferSurface_FramebufferService
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super init];
+  self = [super initWithLogger:logger];
   if (!self) {
     return nil;
   }
@@ -308,7 +351,7 @@
   if ([self.framebufferService respondsToSelector:@selector(invalidate)]) {
     // The call to this method has been dropped in Xcode 8.1, but exists in Xcode 8.0
     // Don't call it on Xcode 8.1
-    if ([FBControlCoreGlobalConfiguration.xcodeVersionNumber isLessThan:[NSDecimalNumber decimalNumberWithString:@"8.1"]]) {
+    if ([FBXcodeConfiguration.xcodeVersionNumber isLessThan:[NSDecimalNumber decimalNumberWithString:@"8.1"]]) {
       [self.framebufferService invalidate];
     }
   }

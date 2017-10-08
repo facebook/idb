@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBFuture.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @interface FBRunLoopSpinner : NSObject
@@ -79,7 +81,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @oaram timeout the Timeout in Seconds.
  @param untilTrue the condition to meet.
- @returns YES if the condition was met, NO if the timeout was reached first.
+ @return YES if the condition was met, NO if the timeout was reached first.
  */
 - (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilTrue:( BOOL (^)(void) )untilTrue;
 
@@ -88,7 +90,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @oaram timeout the Timeout in Seconds.
  @param untilExists the mapping to a value.
- @returns the return value of untilTrue, or nil if a timeout was reached.
+ @return the return value of untilTrue, or nil if a timeout was reached.
  */
 - (nullable id)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilExists:( id (^)(void) )untilExists;
 
@@ -100,6 +102,52 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if the group completed before the timeout, NO otherwise.
  */
 - (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout notifiedBy:(dispatch_group_t)group onQueue:(dispatch_queue_t)queue;
+
+/**
+ Spins the Run Loop until the future resolves, or times out.
+
+ @param future the future to resolve.
+ @param timeout the Timeout in Seconds.
+ @param didTimeout an outparam for flagging if the error represents a timeout.
+ @param error an error out for any future error, or timeout.
+ @return the Future result if successful, NO otherwise.
+ */
+- (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout didTimeout:(BOOL *)didTimeout error:(NSError **)error;
+
+/**
+ Spins the Run Loop until the future resolves, or times out.
+
+ @param future the future to resolve.
+ @param timeout the Timeout in Seconds.
+ @param error an error out for any future error, or timeout.
+ @return the Future result if successful, NO otherwise.
+ */
+- (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError **)error;
+
+@end
+
+/**
+ Terse Helpers for FBFuture awaiting.
+ */
+@interface FBFuture (NSRunLoop)
+
+/**
+ Await the Future with the Regular Timeout.
+
+ @param error as described in -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
+ @return the return value of -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
+ */
+- (nullable id)await:(NSError **)error;
+
+/**
+ Await the Future with the provided timeout.
+
+ @param timeout the timeout in seconds to wait.
+ @param error as described in -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
+ @return the return value of -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
+ */
+- (nullable id)awaitWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+
 
 @end
 

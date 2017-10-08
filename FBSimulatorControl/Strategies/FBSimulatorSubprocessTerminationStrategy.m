@@ -13,9 +13,7 @@
 
 #import "FBSimulator.h"
 #import "FBSimulator+Private.h"
-#import "FBSimulator+Helpers.h"
-#import "FBSimulatorLaunchCtl.h"
-#import "FBSimulatorHistory.h"
+#import "FBSimulatorLaunchCtlCommands.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"
@@ -57,20 +55,9 @@
       failBool:error];
   }
 
-  // Notify the eventSink of the process getting killed, before it is killed.
-  // This is done to prevent being marked as an unexpected termination when the
-  // detecting of the process getting killed kicks in.
-  // If there is no record of this process, no notification is sent.
-  FBProcessLaunchConfiguration *configuration = self.simulator.history.processLaunchConfigurations[process];
-  if ([configuration isKindOfClass:FBApplicationLaunchConfiguration.class]) {
-    [self.simulator.eventSink applicationDidTerminate:process expected:YES];
-  } else if ([configuration isKindOfClass:FBAgentLaunchConfiguration.class]) {
-    [self.simulator.eventSink agentDidTerminate:process expected:YES];
-  }
-
   // Get the Service Name and then stop using the Service Name.
   NSError *innerError = nil;
-  NSString *serviceName = [self.simulator.launchctl serviceNameForProcess:process error:&innerError];
+  NSString *serviceName = [self.simulator serviceNameForProcess:process error:&innerError];
   if (!serviceName) {
     return [[FBSimulatorError
       describeFormat:@"Could not Obtain the Service Name for %@", process.shortDescription]
@@ -78,7 +65,7 @@
   }
 
   [self.simulator.logger.debug logFormat:@"Stopping Service '%@'", serviceName];
-  if (![self.simulator.launchctl stopServiceWithName:serviceName error:&innerError]) {
+  if (![self.simulator stopServiceWithName:serviceName error:&innerError]) {
     return [[FBSimulatorError
       describeFormat:@"Failed to stop service '%@'", serviceName]
       failBool:error];

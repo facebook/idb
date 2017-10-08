@@ -28,23 +28,19 @@
     NSLog(@"Skipping running -[%@ %@] since Metal is not supported on this Hardware", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
     return;
   }
-  FBSimulatorBootConfiguration *launchConfiguration = self.simulatorLaunchConfiguration;
-  if (launchConfiguration.shouldUseDirectLaunch) {
-    NSLog(@"Skipping running -[%@ %@] since the Simulator will be launched directly", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-    return;
-  }
-  if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+  FBSimulatorBootConfiguration *bootConfiguration = self.bootConfiguration;
+  if (!FBXcodeConfiguration.isXcode8OrGreater) {
     NSLog(@"Skipping running -[%@ %@] since Xcode 8 or greater is required", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
     return;
   }
 
-  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration launchConfiguration:launchConfiguration];
-  [self assertSimulator:simulator launchesApplication:self.safariApplication withApplicationLaunchConfiguration:self.safariAppLaunch];
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration bootConfiguration:bootConfiguration];
+  [self assertSimulator:simulator launches:self.safariAppLaunch];
   NSError *error = nil;
   id<FBVideoRecordingSession> session = [simulator startRecordingToFile:nil error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(session);
-  [self assertSimulator:simulator launchesApplication:self.tableSearchApplication withApplicationLaunchConfiguration:self.tableSearchAppLaunch];
+  [self assertSimulator:simulator launches:self.tableSearchAppLaunch];
   [session terminate];
 }
 

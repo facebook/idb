@@ -61,7 +61,7 @@
   NSError *innerError = nil;
   FBSimulator *simulator = self.simulator;
 
-  if (![XCTestBootstrapFrameworkLoader loadPrivateFrameworks:simulator.logger error:&innerError]) {
+  if (![XCTestBootstrapFrameworkLoader.allDependentFrameworks loadPrivateFrameworks:simulator.logger error:&innerError]) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
@@ -92,6 +92,12 @@
       fail:error];
   }
   [simulator.eventSink testmanagerDidConnect:testManager];
+
+  FBFuture<FBTestManagerResult *> *execute = [testManager execute];
+  if (execute.error) {
+    return [FBSimulatorError failWithError:execute.error errorOut:error];
+  }
+
   return testManager;
 }
 

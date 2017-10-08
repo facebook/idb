@@ -9,15 +9,17 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBiOSTargetCommandForwarder.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBApplicationDescriptor;
 @class FBApplicationLaunchConfiguration;
+@class FBInstalledApplication;
 
 /**
  Defines an interface for interacting with iOS Applications.
  */
-@protocol FBApplicationCommands <NSObject>
+@protocol FBApplicationCommands <NSObject, FBiOSTargetCommand>
 
 /**
  Installs application at given path on the host.
@@ -33,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param bundleID the bundle id of the application to uninstall.
  @param error an error out for any error that occurs.
- @returns YES if the command succeeds, NO otherwise.
+ @return YES if the command succeeds, NO otherwise.
  */
 - (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
@@ -65,9 +67,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
- Fetches a list of the installed applications in json serializable representation.
+ Fetches a list of the Installed Applications.
+ The returned FBApplicationBundle object is fully JSON Serializable.
+
+ @param error an error out for any error that occurs
+ @return the Applications if successful, nil otherwise.
  */
-- (NSArray<FBApplicationDescriptor *> *)installedApplications;
+- (nullable NSArray<FBInstalledApplication *> *)installedApplicationsWithError:(NSError **)error;
 
 @end
 

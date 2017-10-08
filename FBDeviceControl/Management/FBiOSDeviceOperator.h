@@ -19,7 +19,7 @@
  A 'Device Operator' Implementation for providing the necessary functionality to XCTestBoostrap for Physical Devices.
  Uses the Xcode Frameworks DVTFoundation and IDEiOSSupportCore.ideplugin to control a DVTiOSDevice instance directly.
  */
-@interface FBiOSDeviceOperator : NSObject <FBDeviceOperator, FBApplicationCommands>
+@interface FBiOSDeviceOperator : NSObject <FBDeviceOperator>
 
 /**
  Creates a new Device Operator for the provided Device.

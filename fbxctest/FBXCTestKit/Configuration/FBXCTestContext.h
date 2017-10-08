@@ -12,8 +12,8 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
-@class FBXCTestLogger;
 @class FBXCTestConfiguration;
+@class FBXCTestLogger;
 @protocol FBXCTestReporter;
 
 /**
@@ -34,16 +34,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)contextWithReporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger;
 
-/**
- The Context for a Test Run.
- If a Simulator is required, the provided one will be used.
-
- @param reporter the reporter to report to.
- @param logger the logger to log with.
- @return a new context.
- */
-+ (instancetype)contextWithSimulator:(FBSimulator *)simulator reporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger;
-
 #pragma mark Properties
 
 /**
@@ -60,7 +50,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Obtains the Simulator for an iOS Test Run.
- 
+
  @param error an error out for any error that occurs.
  @param configuration the configuration to use.
  @return the Simulator if successful, nil otherwise.

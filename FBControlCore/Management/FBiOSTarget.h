@@ -15,6 +15,9 @@
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
+#import <FBControlCore/FBXCTestCommands.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 @class FBDeviceType;
 @class FBOSVersion;
@@ -47,12 +50,21 @@ typedef NS_OPTIONS(NSUInteger, FBiOSTargetType) {
   FBiOSTargetTypeAll = FBiOSTargetTypeSimulator | FBiOSTargetTypeDevice,
 };
 
-NS_ASSUME_NONNULL_BEGIN
+/**
+ String Representations of Simulator State.
+ */
+typedef NSString *FBSimulatorStateString NS_STRING_ENUM;
+extern FBSimulatorStateString const FBSimulatorStateStringCreating;
+extern FBSimulatorStateString const FBSimulatorStateStringShutdown;
+extern FBSimulatorStateString const FBSimulatorStateStringBooting;
+extern FBSimulatorStateString const FBSimulatorStateStringBooted;
+extern FBSimulatorStateString const FBSimulatorStateStringShuttingDown;
+extern FBSimulatorStateString const FBSimulatorStateStringUnknown;
 
 /**
  Common Properties of Devices & Simulators.
  */
-@protocol FBiOSTarget <NSObject, FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBBitmapStreamingCommands, FBVideoRecordingCommands>
+@protocol FBiOSTarget <NSObject, FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBBitmapStreamingCommands, FBVideoRecordingCommands, FBXCTestCommands>
 
 /**
  The Target's Logger.
@@ -118,10 +130,24 @@ NS_ASSUME_NONNULL_BEGIN
  Process Information about the Container Application of the iOS Target. Currently only applies to Simulators.
  */
 @property (nonatomic, copy, nullable, readonly) FBProcessInfo *containerApplication;
+
 /**
  Device operator used to control device. It provides API for XCTestBoostrap to interact with the device.
  */
 @property (nonatomic, nullable, strong, readonly) id<FBDeviceOperator> deviceOperator;
+
+/**
+ The Queue to serialize work on.
+ This is a serial queue that should act as a lock for other tasks that will mutate the state of the target.
+ Mutually Exclusive operations should use this queue.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
+
+/**
+ A queue for independent operations to execute on.
+ Examples of these operations are transforming an immutable data structure.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
 
 /**
  A Comparison Method for `sortedArrayUsingSelector:`
@@ -136,12 +162,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The canonical string representation of the state enum.
  */
-extern NSString *FBSimulatorStateStringFromState(FBSimulatorState state);
+extern FBSimulatorStateString FBSimulatorStateStringFromState(FBSimulatorState state);
 
 /**
  The canonical enum representation of the state string.
  */
-extern FBSimulatorState FBSimulatorStateFromStateString(NSString *stateString);
+extern FBSimulatorState FBSimulatorStateFromStateString(FBSimulatorStateString stateString);
 
 /**
  The canonical string representations of the target type Option Set.

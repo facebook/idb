@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Wraps the 'SimulatorBridge' Connection and Protocol
  */
-@interface FBSimulatorBridge : NSObject <FBDebugDescribeable, FBJSONSerializable>
+@interface FBSimulatorBridge : NSObject <FBJSONSerializable>
 
 #pragma mark Initializers
 
@@ -41,6 +41,13 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Interacting with the Simulator
 
 /**
+ The Acessibility Elements.
+
+ @return the Available Accessibility Elements.
+ */
+- (NSArray<NSDictionary<NSString *, id> *> *)accessibilityElements;
+
+/**
  Sets latitude and longitude of the Simulator.
  The behaviour of a directly-launched Simulator differs from Simulator.app slightly, in that the location isn't automatically set.
  Simulator.app will typically set a location from NSUserDefaults, so Applications will have a default location.
@@ -49,16 +56,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param longitude the longitude of the location.
  */
 - (void)setLocationWithLatitude:(double)latitude longitude:(double)longitude;
-
-/**
- Performs a Tap (Press) of any element that can be found at this location.
- Will fail if an element could not be found or tapped.
-
- @param x the X Coordinate of the Element to Tap.
- @param y the Y Coordinate of the Element to Tap.
- @param error an error out for any error that occurs.
- */
-- (BOOL)tapX:(double)x y:(double)y error:(NSError **)error;
 
 /**
  Launches an Application.

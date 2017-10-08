@@ -9,80 +9,68 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
 @class DTXConnection;
 @class DVTDevice;
 @class FBTestBundleResult;
 @class FBTestManagerContext;
 @class XCTestBootstrapError;
 
-@protocol FBControlCoreLogger;
 @protocol XCTestDriverInterface;
 @protocol XCTestManager_IDEInterface;
-@protocol FBDeviceOperator;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Strategy for Connecting.
  */
 @interface FBTestBundleConnection : NSObject
 
+#pragma mark Initializers
+
 /**
  Constructs a Test Bundle Connection.
 
  @param context the Context of the Test Manager.
- @param deviceOperator the device operator used to connect with device.
+ @param target the iOS Target.
  @param interface the interface to delegate to.
- @param queue the queue for asynchronous deliver.
+ @param requestQueue the queue for asynchronous deliver.
  @param logger the Logger to Log to.
  @return a new Bundle Connection instance.
  */
-+ (instancetype)connectionWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)connectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger;
+
+#pragma mark Lifecycle
 
 /**
- Synchonously Connects the to the Bundle
+ Asynchronously Connects the to the Bundle
 
- @param timeout the amount of time to wait for the connection to be established.
- @return a Result if unsuccessful, nil otherwise.
+ @return a Future that resolves when the Bundle Connection is established.
  */
-- (nullable FBTestBundleResult *)connectWithTimeout:(NSTimeInterval)timeout;
+- (FBFuture<FBTestBundleResult *> *)connect;
 
 /**
  Starts the Test Plan.
  Test Events will be delivered asynchronously to the interface.
 
- @return a Result if unsuccessful, nil otherwise.
+ @return a Future that resolves when the Test Plan has completed.
  */
-- (nullable FBTestBundleResult *)startTestPlan;
+- (FBFuture<FBTestBundleResult *> *)startTestPlan;
 
 /**
- Checks that a Result is available.
+ A future for the end of the test run.
 
- @return a Result if unsuccessful, nil otherwise.
+ @return a Future that resolves when the Test Run has completed.
  */
-- (nullable FBTestBundleResult *)checkForResult;
+- (FBFuture<FBTestBundleResult *> *)completeTestRun;
 
 /**
  Disconnects any active connection.
 
- @return a Result.
+ @return a Future that resolves when the connection has been disconnected.
  */
-- (FBTestBundleResult *)disconnect;
-
-/**
- Properties set through the Constructor.
- */
-@property (nonatomic, strong, readonly) FBTestManagerContext *context;
-@property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, weak, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) id<FBDeviceOperator> deviceOperator;
-
-/**
- Properties set from a connection.
- */
-@property (atomic, nullable, strong, readonly) id<XCTestDriverInterface> testBundleProxy;
-@property (atomic, nullable, strong, readonly) DTXConnection *testBundleConnection;
+- (FBFuture *)disconnect;
 
 @end
 

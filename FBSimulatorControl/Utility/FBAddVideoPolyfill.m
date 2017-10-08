@@ -11,10 +11,10 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulator+Helpers.h"
+#import "FBApplicationBundle+Simulator.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorHistory+Queries.h"
+#import "FBProcessLaunchConfiguration+Simulator.h"
 
 @interface FBAddVideoPolyfill ()
 
@@ -76,7 +76,7 @@
   NSString *joinedPaths = [videoPaths componentsJoinedByString:@":"];
 
   NSError *innerError = nil;
-  FBApplicationDescriptor *photosApp = [FBApplicationDescriptor systemApplicationNamed:@"MobileSlideShow" error:&innerError];
+  FBApplicationBundle *photosApp = [FBApplicationBundle systemApplicationNamed:@"MobileSlideShow" simulator:simulator error:&innerError];
   if (!photosApp) {
     return [[[FBSimulatorError
       describe:@"Could not get the MobileSlideShow App"]
@@ -104,7 +104,7 @@
     previousCount:dcimPaths.count
     error:error];
 
-  FBProcessInfo *photosAppProcess = simulator.history.lastLaunchedApplicationProcess;
+  FBProcessInfo *photosAppProcess = [simulator runningApplicationWithBundleID:@"com.apple.mobileslideshow" error:&innerError];
   if (![photosAppProcess.processName isEqualToString:@"MobileSlideshow"]) {
     return [[[FBSimulatorError
       describe:@"Couldn't find MobileSlideShow process after uploading video"]

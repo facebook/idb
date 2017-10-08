@@ -80,6 +80,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)checkRuntimeRequirementsReturningError:(NSError **)error;
 
 /**
+ Obtains all supported OS Versions.
+
+ @return an Array of OS Versions.
+ */
++ (NSArray<FBOSVersion *> *)supportedOSVersions;
+
+/**
  Obtains the supported OS Versions for a Device.
  Will not return OS Versions that cannot be used.
 

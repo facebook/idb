@@ -14,12 +14,10 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBApplicationLaunchStrategy.h"
-#import "FBSimulator+Helpers.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorLaunchCtl.h"
+#import "FBSimulatorLaunchCtlCommands.h"
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSubprocessTerminationStrategy.h"
 
@@ -31,9 +29,9 @@
 
 @implementation FBSimulatorApplicationCommands
 
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator
++ (instancetype)commandsWithTarget:(FBSimulator *)target
 {
-  return [[self alloc] initWithSimulator:simulator];
+  return [[self alloc] initWithSimulator:target];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator
@@ -53,7 +51,7 @@
 {
   NSURL *tempDirURL = nil;
 
-  NSString *appPath = [FBApplicationDescriptor findOrExtractApplicationAtPath:path extractPathOut:&tempDirURL error:error];
+  NSString *appPath = [FBApplicationBundle findOrExtractApplicationAtPath:path extractPathOut:&tempDirURL error:error];
   if (appPath == nil) {
     return NO;
   }
@@ -64,6 +62,51 @@
   }
   return installResult;
 }
+
+- (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  return [self.simulator installedApplicationWithBundleID:bundleID error:error] != nil;
+}
+
+- (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error
+{
+  return [[FBApplicationLaunchStrategy strategyWithSimulator:self.simulator] launchApplication:configuration error:error] != nil;
+}
+
+- (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  NSError *innerError = nil;
+  FBProcessInfo *process = [self.simulator runningApplicationWithBundleID:bundleID error:&innerError];
+  if (!process) {
+    return [[[[FBSimulatorError
+      describeFormat:@"Could not find a running application for '%@'", bundleID]
+      inSimulator:self.simulator]
+      causedBy:innerError]
+      failBool:error];
+  }
+  if (![[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:self.simulator] terminate:process error:&innerError]) {
+    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+  }
+
+  return YES;
+}
+
+- (nullable NSArray<FBInstalledApplication *> *)installedApplicationsWithError:(NSError **)error
+{
+  NSMutableArray<FBInstalledApplication *> *applications = [NSMutableArray array];
+  for (NSDictionary *appInfo in [[self.simulator.device installedAppsWithError:nil] allValues]) {
+    FBInstalledApplication *application = [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:nil];
+    if (!application) {
+      continue;
+    }
+    [applications addObject:application];
+  }
+  return [applications copy];
+}
+
+#pragma mark - FBSimulatorApplicationCommands
+
+#pragma mark Application Lifecycle
 
 - (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
@@ -97,157 +140,35 @@
   return YES;
 }
 
-- (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  return [self.simulator installedApplicationWithBundleID:bundleID error:error] != nil;
-}
-
-- (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error
-{
-  return [[FBApplicationLaunchStrategy strategyWithSimulator:self.simulator] launchApplication:configuration error:error] != nil;
-}
-
-- (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  NSError *innerError = nil;
-  FBProcessInfo *process = [self.simulator runningApplicationWithBundleID:bundleID error:&innerError];
-  if (!process) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Could not find a running application for '%@'", bundleID]
-      inSimulator:self.simulator]
-      causedBy:innerError]
-      failBool:error];
-  }
-  if (![[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:self.simulator] terminate:process error:&innerError]) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-  }
-
-  return YES;
-}
-
-- (NSArray<FBApplicationDescriptor *> *)installedApplications
-{
-  NSMutableArray<FBApplicationDescriptor *> *applications = [NSMutableArray array];
-  for (NSDictionary *appInfo in [[self.simulator.device installedAppsWithError:nil] allValues]) {
-    FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:appInfo[ApplicationPathKey] installTypeString:appInfo[ApplicationTypeKey] error:nil];
-    if (!application) {
-      continue;
-    }
-    [applications addObject:application];
-  }
-  return [applications copy];
-}
-
-- (BOOL)installExtractedApplicationWithPath:(NSString *)path error:(NSError **)error
-{
-  NSError *innerError = nil;
-
-  FBApplicationDescriptor *application = [FBApplicationDescriptor userApplicationWithPath:path error:&innerError];
-  if (!application) {
-    return [[[FBSimulatorError
-      describeFormat:@"Could not determine Application information for path %@", path]
-      causedBy:innerError]
-      failBool:error];
-  }
-
-  if ([self.simulator isSystemApplicationWithBundleID:application.bundleID error:nil]) {
-    return YES;
-  }
-
-  NSSet<NSString *> *binaryArchitectures = application.binary.architectures;
-  NSSet<NSString *> *supportedArchitectures = FBControlCoreConfigurationVariants.baseArchToCompatibleArch[self.simulator.deviceType.simulatorArchitecture];
-  if (![binaryArchitectures intersectsSet:supportedArchitectures]) {
-    return [[FBSimulatorError
-      describeFormat:
-        @"Simulator does not support any of the architectures (%@) of the executable at %@. Simulator Archs (%@)",
-        [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects],
-        application.binary.path,
-        [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects]]
-      failBool:error];
-  }
-
-  NSDictionary *options = @{
-    @"CFBundleIdentifier" : application.bundleID
-  };
-  NSURL *appURL = [NSURL fileURLWithPath:application.path];
-
-  if (![self.simulator.device installApplication:appURL withOptions:options error:&innerError]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to install Application %@ with options %@", application, options]
-      causedBy:innerError]
-      failBool:error];
-  }
-
-  return YES;
-}
-
-#pragma mark - FBSimulatorApplicationCommands
-
-#pragma mark Launching / Terminating Applications
-
 - (BOOL)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error
 {
   NSParameterAssert(appLaunch);
   return [[FBApplicationLaunchStrategy
     strategyWithSimulator:self.simulator]
-    launchOrRelaunchApplication:appLaunch error:error];
-}
-
-- (BOOL)terminateApplication:(FBApplicationDescriptor *)application error:(NSError **)error
-{
-  NSParameterAssert(application);
-  return [self killApplicationWithBundleID:application.bundleID error:error];
-}
-
-- (BOOL)relaunchLastLaunchedApplicationWithError:(NSError **)error
-{
-  return [[FBApplicationLaunchStrategy
-    strategyWithSimulator:self.simulator]
-    relaunchLastLaunchedApplicationWithError:error];
-}
-
-- (BOOL)terminateLastLaunchedApplicationWithError:(NSError **)error
-{
-  return [[FBApplicationLaunchStrategy
-    strategyWithSimulator:self.simulator]
-    terminateLastLaunchedApplicationWithError:error];
+    launchOrRelaunchApplication:appLaunch error:error] != nil;
 }
 
 #pragma mark Querying Application State
 
-- (nullable FBApplicationDescriptor *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (nullable FBInstalledApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   NSParameterAssert(bundleID);
 
-  NSError *innerError = nil;
-  NSDictionary *appInfo = [self appInfo:bundleID error:&innerError];
+  NSDictionary *appInfo = [self.simulator.device propertiesOfApplication:bundleID error:error];
   if (!appInfo) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
+    return nil;
   }
-  NSString *appPath = appInfo[ApplicationPathKey];
-  NSString *typeString = appInfo[ApplicationTypeKey];
-  FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:appPath installTypeString:typeString error:&innerError];
-  if (!application) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to get App Path of %@ at %@", bundleID, appPath]
-      inSimulator:self.simulator]
-      causedBy:innerError]
-      fail:error];
-  }
-  return application;
+  return [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:error];
 }
 
 - (BOOL)isSystemApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  NSParameterAssert(bundleID);
-
-  NSError *innerError = nil;
-  NSDictionary *appInfo = [self appInfo:bundleID error:&innerError];
-  if (!appInfo) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+  FBInstalledApplication *application = [self installedApplicationWithBundleID:bundleID error:error];
+  if (!application) {
+    return NO;
   }
 
-  return [appInfo[ApplicationTypeKey] isEqualToString:@"System"];
+  return application.installType == FBApplicationInstallTypeSystem;
 }
 
 - (nullable NSString *)homeDirectoryOfApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
@@ -279,12 +200,12 @@
   NSParameterAssert(bundleID);
 
   NSError *innerError = nil;
-  FBApplicationDescriptor *application = [self installedApplicationWithBundleID:bundleID error:&innerError];
+  FBInstalledApplication *application = [self installedApplicationWithBundleID:bundleID error:&innerError];
   if (!application) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
   pid_t processIdentifier = 0;
-  if (![self.simulator.launchctl serviceNameForBundleID:bundleID processIdentifierOut:&processIdentifier error:&innerError]) {
+  if (![self.simulator serviceNameForBundleID:bundleID processIdentifierOut:&processIdentifier error:&innerError]) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
   FBProcessInfo *processInfo = [self.simulator.processFetcher.processFetcher processInfoFor:processIdentifier];
@@ -298,20 +219,93 @@
 
 #pragma mark Private
 
-- (nullable NSDictionary<NSString *, id> *)appInfo:(NSString *)bundleID error:(NSError **)error
+static NSString *const KeyDataContainer = @"DataContainer";
+
++ (FBInstalledApplication *)installedApplicationFromInfo:(NSDictionary<NSString *, id> *)appInfo error:(NSError **)error
 {
-  NSError *innerError = nil;
-  NSDictionary *appInfo = [self.simulator.device propertiesOfApplication:bundleID error:&innerError];
-  if (!appInfo) {
-    NSDictionary *installedApps = [self.simulator.device installedAppsWithError:nil];
-    return [[[[[FBSimulatorError
-      describeFormat:@"Application with bundle ID '%@' is not installed", bundleID]
-      extraInfo:@"installed_apps" value:installedApps.allKeys]
-      inSimulator:self.simulator]
-      causedBy:innerError]
+  NSString *appName = appInfo[FBApplicationInstallInfoKeyBundleName];
+  if (![appName isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"Bundle Name %@ is not a String for %@ in %@", appName, FBApplicationInstallInfoKeyBundleName, appInfo]
       fail:error];
   }
-  return appInfo;
+  NSString *bundleIdentifier = appInfo[FBApplicationInstallInfoKeyBundleIdentifier];
+  if (![bundleIdentifier isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"Bundle Identifier %@ is not a String for %@ in %@", bundleIdentifier, FBApplicationInstallInfoKeyBundleIdentifier, appInfo]
+      fail:error];
+  }
+  NSString *appPath = appInfo[FBApplicationInstallInfoKeyPath];
+  if (![appPath isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"App Path %@ is not a String for %@ in %@", appPath, FBApplicationInstallInfoKeyPath, appInfo]
+      fail:error];
+  }
+  NSString *typeString = appInfo[FBApplicationInstallInfoKeyApplicationType];
+  if (![typeString isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"Install Type %@ is not a String for %@ in %@", typeString, FBApplicationInstallInfoKeyApplicationType, appInfo]
+      fail:error];
+  }
+  NSURL *dataContainer = appInfo[KeyDataContainer];
+  if (dataContainer && ![dataContainer isKindOfClass:NSURL.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"Data Container %@ is not a NSURL for %@ in %@", dataContainer, KeyDataContainer, appInfo]
+      fail:error];
+  }
+
+  FBApplicationBundle *bundle = [FBApplicationBundle applicationWithPath:appPath error:error];
+  if (!bundle) {
+    return nil;
+  }
+
+  return [FBInstalledApplication
+    installedApplicationWithBundle:bundle
+    installType:[FBInstalledApplication installTypeFromString:typeString]
+    dataContainer:dataContainer.path];
+}
+
+- (BOOL)installExtractedApplicationWithPath:(NSString *)path error:(NSError **)error
+{
+  NSError *innerError = nil;
+
+  FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:path error:&innerError];
+  if (!application) {
+    return [[[FBSimulatorError
+      describeFormat:@"Could not determine Application information for path %@", path]
+      causedBy:innerError]
+      failBool:error];
+  }
+
+  if ([self.simulator isSystemApplicationWithBundleID:application.bundleID error:nil]) {
+    return YES;
+  }
+
+  NSSet<NSString *> *binaryArchitectures = application.binary.architectures;
+  NSSet<NSString *> *supportedArchitectures = FBControlCoreConfigurationVariants.baseArchToCompatibleArch[self.simulator.deviceType.simulatorArchitecture];
+  if (![binaryArchitectures intersectsSet:supportedArchitectures]) {
+    return [[FBSimulatorError
+    describeFormat:
+      @"Simulator does not support any of the architectures (%@) of the executable at %@. Simulator Archs (%@)",
+      [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects],
+      application.binary.path,
+      [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects]]
+    failBool:error];
+  }
+
+  NSDictionary *options = @{
+                            @"CFBundleIdentifier" : application.bundleID
+                            };
+  NSURL *appURL = [NSURL fileURLWithPath:application.path];
+
+  if (![self.simulator.device installApplication:appURL withOptions:options error:&innerError]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Failed to install Application %@ with options %@", application, options]
+      causedBy:innerError]
+      failBool:error];
+  }
+
+  return YES;
 }
 
 @end

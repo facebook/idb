@@ -16,4 +16,9 @@
  */
 @interface XCTestBootstrapFrameworkLoader : FBControlCoreFrameworkLoader
 
+/**
+ All of the Frameworks for XCTestBootstrap.
+ */
+@property (nonatomic, strong, class, readonly) XCTestBootstrapFrameworkLoader *allDependentFrameworks;
+
 @end

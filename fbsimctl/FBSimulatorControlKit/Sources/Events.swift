@@ -52,9 +52,3 @@ extension EventName {
   static var waitingForDebugger = EventName(rawValue: "waiting_for_debugger")
   static var watchdogOverride = EventName(rawValue: "watchdog_override")
 }
-
-public enum EventType : String {
-  case started = "started"
-  case ended = "ended"
-  case discrete = "discrete"
-}

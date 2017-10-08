@@ -9,17 +9,20 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBApplicationDescriptor ;
+NS_ASSUME_NONNULL_BEGIN
+
+@class FBApplicationBundle;
 @class FBApplicationLaunchConfiguration;
 @class FBProcessInfo;
 @class FBSimulator;
-
-NS_ASSUME_NONNULL_BEGIN
+@class FBSimulatorApplicationOperation;
 
 /**
  A Strategy for Launching Applications.
  */
 @interface FBApplicationLaunchStrategy : NSObject
+
+#pragma mark Initializers
 
 /**
  Creates and returns a new Application Launch Strategy.
@@ -39,6 +42,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator;
 
+#pragma mark Public Methods
+
 /**
  Launches and returns the process info for the launched application.
 
@@ -46,16 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return a Process Info if the Application was launched, nil otherwise.
  */
-- (nullable FBProcessInfo *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error;
-
-/**
- Uninstalls an Application.
-
- @param bundleID the bundleID of the Application to uninstall.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)uninstallApplication:(NSString *)bundleID error:(NSError **)error;
+- (nullable FBSimulatorApplicationOperation *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error;
 
 /**
  Launches the Application with the given Configuration, or Re-Launches it.
@@ -65,29 +61,16 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error;
+- (nullable FBSimulatorApplicationOperation *)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error;
 
 /**
- Relaunches the last-known-launched Application:
- - If the Application is running, it will be killed first then launched.
- - If the Application has terminated, it will be launched.
- - If no known Application has been launched yet, the interaction will fail.
+ Uninstalls an Application.
 
+ @param bundleID the bundleID of the Application to uninstall.
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)relaunchLastLaunchedApplicationWithError:(NSError **)error;
-
-/**
- Terminates the last-launched Application:
- - If the Application is running, it will be killed first then launched.
- - If the Application has terminated, the call will fail.
- - If no known Application has been launched yet, the call will fail.
-
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)terminateLastLaunchedApplicationWithError:(NSError **)error;
+- (BOOL)uninstallApplication:(NSString *)bundleID error:(NSError **)error;
 
 @end
 

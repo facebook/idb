@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from typing import Any, List, Dict, Tuple
 from util import (
     FBSimctl,
     Simulator,
@@ -7,6 +8,7 @@ from util import (
     Defaults,
     Fixtures,
     Metal,
+    async_test,
     log,
     make_ipa,
 )
@@ -22,10 +24,10 @@ import unittest
 class FBSimctlTestCase(unittest.TestCase):
     def __init__(
         self,
-        methodName,
-        fbsimctl_path,
-        use_custom_set,
-    ):
+        methodName: str,
+        fbsimctl_path: str,
+        use_custom_set: bool,
+    ) -> None:
         super(FBSimctlTestCase, self).__init__(methodName)
         set_path = tempfile.mkdtemp() if use_custom_set else None
         self.methodName = methodName
@@ -34,36 +36,42 @@ class FBSimctlTestCase(unittest.TestCase):
         self.metal = Metal()
         self.tmpdir = tempfile.mkdtemp()
 
-    def tearDown(self):
+    @async_test
+    async def tearDown(self) -> None:
         action = 'delete' if self.use_custom_set else 'shutdown'
-        self.fbsimctl(['--simulators', action])
+        await self.fbsimctl(['--simulators', action])
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
-    def __str__(self):
+    def __str__(self) ->  str:
         return '{}: {}'.format(
             self.methodName,
             'Custom Set' if self.use_custom_set else 'Default Set',
         )
 
-    def assertEventSuccesful(self, arguments, event_name):
-        return self.assertEventsFromRun(
+    async def assertEventSuccesful(
+        self,
+        arguments: List[str],
+        event_name: str,
+    ) -> Dict:
+        events = await self.assertEventsFromRun(
             arguments=arguments,
             event_name=event_name,
             event_type='ended',
             min_count=1,
             max_count=1,
-        )[0]
+        )
+        return events[0]
 
-    def assertEventsFromRun(
+    async def assertEventsFromRun(
         self,
-        arguments,
-        event_name,
-        event_type,
-        min_count=1,
-        max_count=None,
-        timeout=Defaults.TIMEOUT,
-    ):
-        events = self.fbsimctl.run(arguments, timeout)
+        arguments: List[str],
+        event_name: str,
+        event_type: str,
+        min_count: int = 1,
+        max_count: int = None,
+        timeout: int = Defaults.TIMEOUT,
+    ) -> List[Dict]:
+        events = await self.fbsimctl.run(arguments, timeout)
         matching_events = events.matching(event_name, event_type)
         match_count = len(matching_events)
         if min_count is not None:
@@ -92,8 +100,12 @@ class FBSimctlTestCase(unittest.TestCase):
             )
         return matching_events
 
-    def assertListContainsOnly(self, expected_udids, query=[]):
-        events = self.fbsimctl.run(query + ['list'])
+    async def assertListContainsOnly(
+        self, 
+        expected_udids: List[str], 
+        query: List[str] = [],
+    ) -> List[Dict]:
+        events = await self.fbsimctl.run(query + ['list'])
         list_events = events.matching('list', 'discrete')
         list_udids = [
             event.get('subject').get('udid') for event in list_events
@@ -116,8 +128,19 @@ class FBSimctlTestCase(unittest.TestCase):
             )
         )
         return list_events
+    
+    async def assertCreatesSimulator(
+        self,
+        args: List[str],
+    ) -> Simulator:
+        args = ['create'] + args
+        event = await self.assertEventSuccesful(args, 'create')
+        return self.assertExtractSimulator(event)
 
-    def assertExtractSimulator(self, json_event):
+    def assertExtractSimulator(
+        self, 
+        json_event: Dict[str, Any],
+    ) -> Simulator:
         sim_json = json_event.get('subject')
         self.assertIsNotNone(
             sim_json,
@@ -127,42 +150,41 @@ class FBSimctlTestCase(unittest.TestCase):
         )
         return Simulator(sim_json)
 
-    def assertExtractAndKeyDiagnostics(self, json_events):
+    def assertExtractAndKeyDiagnostics(
+        self,
+        json_events: List[Dict],
+    ) -> Dict:
         return {
             event['subject']['short_name']: event['subject']
             for event
             in json_events
         }
 
-    def assertCreatesSimulator(self, args):
-        args = ['create'] + args
-        return self.assertExtractSimulator(
-            self.assertEventSuccesful(args, 'create')
-        )
+    @async_test
+    async def testList(self):
+        await self.fbsimctl(['list'])
 
-    def testList(self):
-        self.fbsimctl(['list'])
-
-    def testCommandThatDoesNotExist(self):
+    @async_test
+    async def testCommandThatDoesNotExist(self):
         with self.assertRaises(Exception):
-            self.fbsimctl(['foo'])
+            await self.fbsimctl(['foo'])
 
 
 class MultipleSimulatorTestCase(FBSimctlTestCase):
     def __init__(
         self,
-        methodName,
-        fbsimctl_path,
-
-    ):
+        methodName: str,
+        fbsimctl_path: str,
+    ) -> None:
         super(MultipleSimulatorTestCase, self).__init__(
             methodName=methodName,
             fbsimctl_path=fbsimctl_path,
             use_custom_set=True,
         )
 
-    def testConstructsMissingDefaults(self):
-        self.assertEventsFromRun(
+    @async_test
+    async def testConstructsMissingDefaults(self):
+        await self.assertEventsFromRun(
             arguments=['create', '--all-missing-defaults'],
             event_name='create',
             event_type='ended',
@@ -173,10 +195,10 @@ class MultipleSimulatorTestCase(FBSimctlTestCase):
 class WebserverSimulatorTestCase(FBSimctlTestCase):
     def __init__(
         self,
-        methodName,
-        fbsimctl_path,
-        port,
-    ):
+        methodName: str,
+        fbsimctl_path: str,
+        port: int,
+    ) -> None:
         super(WebserverSimulatorTestCase, self).__init__(
             methodName=methodName,
             fbsimctl_path=fbsimctl_path,
@@ -184,49 +206,54 @@ class WebserverSimulatorTestCase(FBSimctlTestCase):
         )
         self.port = port
 
-    def extractSimulatorSubjects(self, response):
+    def extractSimulatorSubjects(
+        self, 
+        response,
+    ) -> List[Simulator]:
         self.assertEqual(response['status'], 'success')
         return [
-            Simulator(event['subject']).get_udid()
+            Simulator(event['subject']).udid
             for event
             in response['subject']
         ]
 
-    @contextlib.contextmanager
     def launchWebserver(self):
-        arguments = [
-            '--simulators', 'listen', '--http', str(self.port),
-        ]
-        with self.fbsimctl.launch(arguments) as process:
-            process.wait_for_event('listen', 'started')
-            yield WebServer(self.port)
+        return WebServer(self.port, self.fbsimctl)
 
-    def testInstallsUserApplication(self):
-        simulator = self.assertCreatesSimulator(['iPhone 6'])
-        self.assertEventSuccesful([simulator.get_udid(), 'boot'], 'boot')
+    @async_test
+    async def testInstallsUserApplication(self):
+        simulator = await self.assertCreatesSimulator(['iPhone 6'])
+        await self.assertEventSuccesful([simulator.udid, 'boot'], 'boot')
         ipafile = make_ipa(self.tmpdir, Fixtures.APP_PATH)
-        with self.launchWebserver() as webserver, open(ipafile, 'rb') as ipa:
-            response = webserver.post_binary(
-                '{}/install'.format(simulator.get_udid()),
-                ipa,
-                os.path.getsize(ipafile),
-            )
-            self.assertEqual(response.get('status'), 'success')
-        events = self.fbsimctl.run([simulator.get_udid(), 'list_apps'])
+        async with self.launchWebserver() as webserver:
+            with open(ipafile, 'rb') as ipa:
+                response = webserver.post_binary(
+                    '{}/install'.format(simulator.udid),
+                    ipa,
+                    os.path.getsize(ipafile),
+                )
+                self.assertEqual(response.get('status'), 'success')
+        events = await self.fbsimctl.run([simulator.udid, 'list_apps'])
         event = events.matching('list_apps', 'discrete')[0]
-        bundle_ids = [entry.get('bundle_id') for entry in event.get('subject')]
+        bundle_ids = [
+            entry.get('bundle').get('bundle_id')
+            for entry
+            in event.get('subject')
+        ]
         return self.assertIn(Fixtures.APP_BUNDLE_ID, bundle_ids)
 
-    def testDiagnosticSearch(self):
-        with self.launchWebserver() as webserver:
+    @async_test
+    async def testDiagnosticSearch(self):
+        async with self.launchWebserver() as webserver:
             response = webserver.post('diagnose', {'type': 'all'})
             self.assertEqual(response['status'], 'success')
 
-    def testGetCoreSimulatorLog(self):
-        iphone6 = self.assertCreatesSimulator(['iPhone 6'])
-        with self.launchWebserver() as webserver:
+    @async_test
+    async def testGetCoreSimulatorLog(self):
+        iphone6 = await self.assertCreatesSimulator(['iPhone 6'])
+        async with self.launchWebserver() as webserver:
             response = webserver.get(
-                iphone6.get_udid() + '/diagnose/coresimulator',
+                iphone6.udid + '/diagnose/coresimulator',
             )
             self.assertEqual(response['status'], 'success')
             event = response['subject'][0]
@@ -236,53 +263,57 @@ class WebserverSimulatorTestCase(FBSimctlTestCase):
             self.assertEqual(diagnostic['short_name'], 'coresimulator')
             self.assertIsNotNone(diagnostic.get('contents'))
 
-    def testListSimulators(self):
-        iphone6 = self.assertCreatesSimulator(['iPhone 6'])
-        iphone6s = self.assertCreatesSimulator(['iPhone 6s'])
-        with self.launchWebserver() as webserver:
+    @async_test
+    async def testListSimulators(self):
+        iphone6 = await self.assertCreatesSimulator(['iPhone 6'])
+        iphone6s = await self.assertCreatesSimulator(['iPhone 6s'])
+        async with self.launchWebserver() as webserver:
             actual = self.extractSimulatorSubjects(
                 webserver.get('list'),
             )
             expected = [
-                iphone6.get_udid(),
-                iphone6s.get_udid(),
+                iphone6.udid,
+                iphone6s.udid,
             ]
             self.assertEqual(expected.sort(), actual.sort())
             actual = self.extractSimulatorSubjects(
-                webserver.get(iphone6.get_udid() + '/list'),
+                webserver.get(iphone6.udid + '/list'),
             )
-            expected = [iphone6.get_udid()]
+            expected = [iphone6.udid]
 
-    def testUploadsVideo(self):
-        simulator = self.assertCreatesSimulator(['iPhone 6'])
-        self.assertEventSuccesful([simulator.get_udid(), 'boot'], 'boot')
-        with open(Fixtures.VIDEO, 'rb') as f, self.launchWebserver() as webserver:
-            data = base64.b64encode(f.read()).decode()
-            webserver.post(simulator.get_udid() + '/upload', {
-                'short_name': 'video',
-                'file_type': 'mp4',
-                'data': data,
-            })
-        self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
+    @async_test
+    async def testUploadsVideo(self):
+        simulator = await self.assertCreatesSimulator(['iPhone 6'])
+        await self.assertEventSuccesful([simulator.udid, 'boot'], 'boot')
+        async with self.launchWebserver() as webserver:
+            with open(Fixtures.VIDEO, 'rb') as f:
+                data = base64.b64encode(f.read()).decode()
+                webserver.post(simulator.udid + '/upload', {
+                    'short_name': 'video',
+                    'file_type': 'mp4',
+                    'data': data,
+                })
+        await self.assertEventSuccesful([simulator.udid, 'shutdown'], 'shutdown')
 
-    def testScreenshot(self):
+    @async_test
+    async def testScreenshot(self):
         if self.metal.is_supported() is False:
             log.info('Metal not supported, skipping testScreenshot')
             return
-        simulator = self.assertCreatesSimulator(['iPhone 6'])
-        self.assertEventSuccesful([simulator.get_udid(), 'boot'], 'boot')
-        with self.launchWebserver() as webserver:
-            webserver.get_binary(simulator.get_udid() + '/screenshot.png')
-            webserver.get_binary(simulator.get_udid() + '/screenshot.jpeg')
+        simulator = await self.assertCreatesSimulator(['iPhone 6'])
+        await self.assertEventSuccesful([simulator.udid, 'boot'], 'boot')
+        async with self.launchWebserver() as webserver:
+            webserver.get_binary(simulator.udid + '/screenshot.png')
+            webserver.get_binary(simulator.udid + '/screenshot.jpeg')
 
 
 class SingleSimulatorTestCase(FBSimctlTestCase):
     def __init__(
         self,
-        methodName,
-        fbsimctl_path,
-        device_type,
-    ):
+        methodName: str,
+        fbsimctl_path: str,
+        device_type: str,
+    ) -> None:
         super(SingleSimulatorTestCase, self).__init__(
             methodName=methodName,
             fbsimctl_path=fbsimctl_path,
@@ -296,101 +327,108 @@ class SingleSimulatorTestCase(FBSimctlTestCase):
             super().__str__()
         )
 
-    def testCreateThenDelete(self):
-        self.assertListContainsOnly([])
-        simulator = self.assertCreatesSimulator([self.device_type])
-        self.assertListContainsOnly([simulator.get_udid()])
-        self.assertEventSuccesful([simulator.get_udid(), 'delete'], 'delete')
-        self.assertListContainsOnly([])
-
-    def testBootsViaSimulatorApp(self):
-        simulator = self.assertCreatesSimulator([self.device_type])
-        self.assertEventSuccesful([simulator.get_udid(), 'boot'], 'boot')
-        self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
-
-    def testBootsDirectly(self):
-        if self.metal.is_supported() is False:
-            log.info('Metal not supported, skipping testBootsDirectly')
-            return
-        simulator = self.assertCreatesSimulator([self.device_type])
-        self.assertEventSuccesful([simulator.get_udid(), 'boot', '--direct-launch'], 'boot')
-        self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
-
-    def testShutdownBootedSimulatorBeforeErasing(self):
-        simulator = self.assertCreatesSimulator([self.device_type])
-        self.assertEventSuccesful([simulator.get_udid(), 'boot'], 'boot')
-        self.assertListContainsOnly([simulator.get_udid()], ['--state=booted'])
-        self.assertEventSuccesful([simulator.get_udid(), 'erase'], 'erase')
-        self.assertListContainsOnly([simulator.get_udid()], ['--state=shutdown'])
-
-    def testLaunchesSystemApplication(self):
-        simulator = self.assertCreatesSimulator([self.device_type])
-        self.assertEventSuccesful([simulator.get_udid(), 'boot'], 'boot')
-        self.assertEventSuccesful([simulator.get_udid(), 'launch', 'com.apple.Preferences'], 'launch')
-        self.assertEventsFromRun([simulator.get_udid(), 'service_info', 'com.apple.Preferences'], 'service_info', 'discrete')
+    async def assertLaunchesSystemApplication(self) -> Tuple[Simulator, str]:
+        simulator = await self.assertCreatesSimulator([self.device_type])
+        await self.assertEventSuccesful([simulator.udid, 'boot'], 'boot')
+        await self.assertEventSuccesful([simulator.udid, 'launch', 'com.apple.Preferences'], 'launch')
+        await self.assertEventsFromRun([simulator.udid, 'service_info', 'com.apple.Preferences'], 'service_info', 'discrete')
         return (simulator, 'com.apple.Preferences')
 
-    def testLaunchesThenTerminatesSystemApplication(self):
-        (simulator, bundle_id) = self.testLaunchesSystemApplication()
-        self.assertEventSuccesful([simulator.get_udid(), 'terminate', bundle_id], 'terminate')
-
-    def testUploadsVideo(self):
-        simulator = self.assertCreatesSimulator([self.device_type])
-        self.assertEventSuccesful([simulator.get_udid(), 'boot'], 'boot')
-        self.assertEventSuccesful([simulator.get_udid(), 'upload', Fixtures.VIDEO], 'upload')
-        self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
-
-    def assertInstallsUserApplication(self, udid, path, bundle_id):
-        self.assertEventSuccesful([udid, 'boot'], 'boot')
-        self.assertEventSuccesful([udid, 'install', path], 'install')
-        events = self.fbsimctl.run([udid, 'list_apps'])
+    async def assertInstallsUserApplication(self, udid, path, bundle_id):
+        await self.assertEventSuccesful([udid, 'boot'], 'boot')
+        await self.assertEventSuccesful([udid, 'install', path], 'install')
+        events = await self.fbsimctl.run([udid, 'list_apps'])
         event = events.matching('list_apps', 'discrete')[0]
-        bundle_ids = [entry.get('bundle_id') for entry in event.get('subject')]
+        bundle_ids = [
+            entry.get('bundle').get('bundle_id')
+            for entry
+            in event.get('subject')
+        ]
         return self.assertIn(bundle_id, bundle_ids)
 
-    def testInstallsUserApplication(self):
-        simulator = self.assertCreatesSimulator([self.device_type])
-        self.assertInstallsUserApplication(
-            simulator.get_udid(),
+    @async_test
+    async def testCreateThenDelete(self):
+        await self.assertListContainsOnly([])
+        simulator = await self.assertCreatesSimulator([self.device_type])
+        await self.assertListContainsOnly([simulator.udid])
+        await self.assertEventSuccesful([simulator.udid, 'delete'], 'delete')
+        await self.assertListContainsOnly([])
+
+    @async_test
+    async def testBootsViaSimulatorApp(self):
+        simulator = await self.assertCreatesSimulator([self.device_type])
+        await self.assertEventSuccesful([simulator.udid, 'boot'], 'boot')
+        await self.assertEventSuccesful([simulator.udid, 'shutdown'], 'shutdown')
+
+    @async_test
+    async def testShutdownBootedSimulatorBeforeErasing(self):
+        simulator = await self.assertCreatesSimulator([self.device_type])
+        await self.assertEventSuccesful([simulator.udid, 'boot'], 'boot')
+        await self.assertListContainsOnly([simulator.udid], ['--state=booted'])
+        await self.assertEventSuccesful([simulator.udid, 'erase'], 'erase')
+        await self.assertListContainsOnly([simulator.udid], ['--state=shutdown'])
+
+    @async_test
+    async def testLaunchesSystemApplication(self):
+        await self.assertLaunchesSystemApplication()
+
+    @async_test
+    async def testLaunchesThenTerminatesSystemApplication(self):
+        (simulator, bundle_id) = await self.assertLaunchesSystemApplication()
+        await self.assertEventSuccesful([simulator.udid, 'terminate', bundle_id], 'terminate')
+
+    @async_test
+    async def testUploadsVideo(self):
+        simulator = await self.assertCreatesSimulator([self.device_type])
+        await self.assertEventSuccesful([simulator.udid, 'boot'], 'boot')
+        await self.assertEventSuccesful([simulator.udid, 'upload', Fixtures.VIDEO], 'upload')
+        await self.assertEventSuccesful([simulator.udid, 'shutdown'], 'shutdown')
+
+    @async_test
+    async def testInstallsUserApplication(self):
+        simulator = await self.assertCreatesSimulator([self.device_type])
+        await self.assertInstallsUserApplication(
+            simulator.udid,
             Fixtures.APP_PATH,
             Fixtures.APP_BUNDLE_ID,
         )
-        self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
+        await self.assertEventSuccesful([simulator.udid, 'shutdown'], 'shutdown')
 
-    def testInstallsIPA(self):
+    @async_test
+    async def testInstallsIPA(self):
         ipafile = make_ipa(self.tmpdir, Fixtures.APP_PATH)
-        simulator = self.assertCreatesSimulator([self.device_type])
-        self.assertInstallsUserApplication(
-            simulator.get_udid(),
+        simulator = await self.assertCreatesSimulator([self.device_type])
+        await self.assertInstallsUserApplication(
+            simulator.udid,
             ipafile,
             Fixtures.APP_BUNDLE_ID,
         )
-        self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
+        await self.assertEventSuccesful([simulator.udid, 'shutdown'], 'shutdown')
 
-    def testRecordsVideo(self):
+    @async_test
+    async def testRecordsVideo(self):
         if self.metal.is_supported() is False:
             log.info('Metal not supported, skipping testRecordsVideo')
             return
-        (simulator, _) = self.testLaunchesSystemApplication()
+        (simulator, _) = await self.assertLaunchesSystemApplication()
         arguments = [
-            simulator.get_udid(),
+            simulator.udid,
             'record', 'start',
             '--', 'listen',
             '--', 'record', 'stop',
         ]
         # Launch the process, terminate and confirm teardown is successful
-        with self.fbsimctl.launch(arguments) as process:
-            process.wait_for_event('listen', 'started')
-            process.terminate()
-            process.wait_for_event('listen', 'ended')
+        async with self.fbsimctl.launch(arguments) as process:
+            await process.wait_for_event('listen', 'started')
+            await process.terminate()
+            await process.wait_for_event('listen', 'ended')
         # Get the diagnostics
-        diagnose_events = self.assertExtractAndKeyDiagnostics(
-            self.assertEventsFromRun(
-                [simulator.get_udid(), 'diagnose'],
-                'diagnostic',
-                'discrete',
-            ),
+        events = await self.assertEventsFromRun(
+            [simulator.udid, 'diagnose'],
+            'diagnostic',
+            'discrete',
         )
+        diagnose_events = self.assertExtractAndKeyDiagnostics(events)
         # Confirm the video exists
         video_path = diagnose_events['video']['location']
         self.assertTrue(
@@ -477,8 +515,14 @@ class SuiteBuilder:
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.description = 'fbsimctl e2e test runner'
+    parser = argparse.ArgumentParser(
+        description='fbsimctl e2e test runner',
+    )
+    parser.add_argument(
+        '--fail-fast',
+        action='store_true',
+        help='Whether to fail fast',
+    )
     parser.add_argument(
         '--fbsimctl-path',
         default='executable-under-test/bin/fbsimctl',
@@ -495,7 +539,7 @@ if __name__ == '__main__':
         help='The iOS Device Type to run tests against. Multiple may be given.',
         default=[],
     )
-    arguments = parser.parse_args()
+    arguments: Any = parser.parse_args()
     arguments.device_type = list(set(arguments.device_type))
     if not len(arguments.device_type):
         arguments.device_type = ['iPhone 6']
@@ -508,7 +552,7 @@ if __name__ == '__main__':
     )
     runner = unittest.TextTestRunner(
         verbosity=2,
-        failfast=True,
+        failfast=arguments.fail_fast,
     )
     result = runner.run(suite_builder.build())
     parser.exit(

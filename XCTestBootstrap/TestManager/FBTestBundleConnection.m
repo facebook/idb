@@ -30,18 +30,14 @@
 
 static NSTimeInterval CrashCheckInterval = 0.5;
 
-/**
- An Enumeration of mutually exclusive states of the connection
- */
-typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
-  FBTestBundleConnectionStateNotConnected = 0,
-  FBTestBundleConnectionStateConnecting = 1,
-  FBTestBundleConnectionStateTestBundleReady = 2,
-  FBTestBundleConnectionStateAwaitingStartOfTestPlan = 3,
-  FBTestBundleConnectionStateRunningTestPlan = 4,
-  FBTestBundleConnectionStateEndedTestPlan = 5,
-  FBTestBundleConnectionStateResultAvailable = 6,
-};
+typedef NSString *FBTestBundleConnectionState NS_STRING_ENUM;
+static FBTestBundleConnectionState const FBTestBundleConnectionStateNotConnected = @"not connected";
+static FBTestBundleConnectionState const FBTestBundleConnectionStateConnecting = @"connecting";
+static FBTestBundleConnectionState const FBTestBundleConnectionStateTestBundleReady = @"bundle ready";
+static FBTestBundleConnectionState const FBTestBundleConnectionStateAwaitingStartOfTestPlan = @"awaiting start of test plan";
+static FBTestBundleConnectionState const FBTestBundleConnectionStateExecutingTestPlan = @"executing test plan";
+static FBTestBundleConnectionState const FBTestBundleConnectionStateEndedTestPlan = @"ended test plan";
+static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvailable = @"result available";
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -49,13 +45,24 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 
 @interface FBTestBundleConnection () <XCTestManager_IDEInterface>
 
-@property (atomic, assign, readwrite) FBTestBundleConnectionState state;
+@property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) FBTestManagerContext *context;
+@property (nonatomic, weak, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
+@property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
+@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
+
+@property (atomic, strong, readwrite) FBTestBundleConnectionState state;
 @property (atomic, strong, readwrite) FBTestBundleResult *result;
+
+@property (nonatomic, strong, nullable, readwrite) FBMutableFuture *connectFuture;
+@property (nonatomic, strong, nullable, readwrite) FBMutableFuture *testPlanFuture;
+@property (nonatomic, strong, nullable, readwrite) FBMutableFuture *disconnectFuture;
 
 @property (atomic, assign, readwrite) long long testBundleProtocolVersion;
 @property (atomic, nullable, strong, readwrite) id<XCTestDriverInterface> testBundleProxy;
 @property (atomic, nullable, strong, readwrite) DTXConnection *testBundleConnection;
 @property (atomic, nullable, strong, readwrite) NSDate *lastCrashCheckDate;
+@property (atomic, nullable, strong, readwrite) NSDate *applicationLaunchDate;
 
 @end
 
@@ -85,12 +92,12 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   return _clientProcessDisplayPath;
 }
 
-+ (instancetype)connectionWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)connectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithWithContext:context deviceOperator:deviceOperator interface:interface queue:queue logger:logger];
+  return [[self alloc] initWithWithContext:context target:target interface:interface requestQueue:requestQueue logger:logger];
 }
 
-- (instancetype)initWithWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -98,13 +105,18 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   }
 
   _context = context;
-  _deviceOperator = deviceOperator;
+  _target = target;
   _interface = interface;
-  _queue = queue;
-  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", deviceOperator.udid]];
+  _requestQueue = requestQueue;
+  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", target.udid]];
 
   _state = FBTestBundleConnectionStateNotConnected;
   _lastCrashCheckDate = NSDate.distantPast;
+  _applicationLaunchDate = NSDate.date;
+
+  _connectFuture = FBMutableFuture.new;
+  _testPlanFuture = FBMutableFuture.new;
+  _disconnectFuture = FBMutableFuture.new;
 
   return self;
 }
@@ -113,10 +125,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:
-    @"Test Bundle Connection '%@'",
-    [FBTestBundleConnection stateStringForState:self.state]
-  ];
+  return [NSString stringWithFormat: @"Test Bundle Connection '%@'", self.state];
 }
 
 #pragma mark Message Forwarding
@@ -142,62 +151,46 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 
 #pragma mark Public
 
-- (nullable FBTestBundleResult *)connectWithTimeout:(NSTimeInterval)timeout
+- (FBFuture<FBTestBundleResult *> *)connect
 {
-  NSAssert(NSThread.isMainThread, @"-[%@ %@] should be called from the main thread", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  // Fail-fast if the connection state is incorrect.
   if (self.state != FBTestBundleConnectionStateNotConnected) {
     XCTestBootstrapError *error = [XCTestBootstrapError
-      describeFormat:@"Cannot connect, state must be %@ but is %@", [FBTestBundleConnection stateStringForState:FBTestBundleConnectionStateNotConnected], [FBTestBundleConnection stateStringForState:self.state]];
-    return [self concludeWithResult:[FBTestBundleResult failedInError:error]];
+      describeFormat:@"Cannot connect, state must be %@ but is %@", FBTestBundleConnectionStateNotConnected, self.state];
+    [self concludeWithResult:[FBTestBundleResult failedInError:error]];
+    return self.connectFuture;
   }
 
-  [self connect];
-  BOOL waitSuccess = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
-    return self.state != FBTestBundleConnectionStateConnecting;
-  }];
-
-  if (!waitSuccess) {
-    XCTestBootstrapError *error = [[XCTestBootstrapError
-      describe:@"Timeout establishing connection"]
-      code:XCTestBootstrapErrorCodeStartupTimeout];
-    return [self concludeWithResult:[FBTestBundleResult failedInError:error]];
-  }
-  if (self.state == FBTestBundleConnectionStateResultAvailable) {
-    return self.result;
-  }
-  return nil;
+  [self doConnect];
+  return self.connectFuture;
 }
 
-- (nullable FBTestBundleResult *)startTestPlan
+- (FBFuture<FBTestBundleResult *> *)startTestPlan
 {
+  // Fail-fast if the connection state is incorrect.
   if (self.state != FBTestBundleConnectionStateTestBundleReady) {
     XCTestBootstrapError *error = [XCTestBootstrapError
-      describeFormat:@"State should be '%@' got '%@", [FBTestBundleConnection stateStringForState:FBTestBundleConnectionStateTestBundleReady], [FBTestBundleConnection stateStringForState:self.state]];
-    return [self concludeWithResult:[FBTestBundleResult failedInError:error]];
+      describeFormat:@"State should be '%@' got '%@", FBTestBundleConnectionStateTestBundleReady, self.state];
+    [self concludeWithResult:[FBTestBundleResult failedInError:error]];
+    return self.testPlanFuture;
   }
 
   [self.logger log:@"Bundle Connection scheduling start of Test Plan"];
   self.state = FBTestBundleConnectionStateAwaitingStartOfTestPlan;
-  dispatch_async(self.queue, ^{
+  dispatch_async(self.requestQueue, ^{
     [self.testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:@(FBProtocolVersion)];
   });
-  return nil;
+  return self.testPlanFuture;
 }
 
-- (nullable FBTestBundleResult *)checkForResult
+- (FBFuture<FBTestBundleResult *> *)completeTestRun
 {
-  if (self.result) {
-    return self.result;
-  }
-  if (self.shouldCheckForCrashedProcess) {
-    return [self checkForCrashedProcess];
-  }
-  return nil;
+  return self.testPlanFuture;
 }
 
-- (FBTestBundleResult *)disconnect
+- (FBFuture<FBTestBundleResult *> *)disconnect
 {
-  [self.logger logFormat:@"Disconnecting Test Bundle in state '%@'", [FBTestBundleConnection stateStringForState:self.state]];
+  [self.logger logFormat:@"Disconnecting Test Bundle in state '%@'", self.state];
 
   FBTestBundleResult *result = nil;
   if (self.state == FBTestBundleConnectionStateEndedTestPlan) {
@@ -211,18 +204,19 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   self.testBundleProxy = nil;
   self.testBundleProtocolVersion = 0;
 
-  return result;
+  return self.disconnectFuture;
 }
 
 #pragma mark Private
 
-- (void)connect
+- (void)doConnect
 {
   self.state = FBTestBundleConnectionStateConnecting;
   [self.logger log:@"Connecting Test Bundle"];
-  dispatch_async(self.queue, ^{
+
+  dispatch_async(self.requestQueue, ^{
     NSError *error;
-    DTXTransport *transport = [self.deviceOperator makeTransportForTestManagerServiceWithLogger:self.logger error:&error];
+    DTXTransport *transport = [self.target.deviceOperator makeTransportForTestManagerServiceWithLogger:self.logger error:&error];
     if (error || !transport) {
       XCTestBootstrapError *realError = [[XCTestBootstrapError
         describe:@"Failed to create transport"]
@@ -231,7 +225,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
       return;
     }
     DTXConnection *connection = [self setupTestBundleConnectionWithTransport:transport];
-    dispatch_async(dispatch_get_main_queue(), ^{
+    dispatch_async(self.target.workQueue, ^{
       [self sendStartSessionRequestWithConnection:connection];
     });
   });
@@ -251,7 +245,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
    peerInterface:@protocol(XCTestDriverInterface)
    handler:^(DTXProxyChannel *channel){
      [self.logger logFormat:@"Got proxy channel request from test bundle"];
-     [channel setExportedObject:self queue:dispatch_get_main_queue()];
+     [channel setExportedObject:self queue:self.target.workQueue];
      id<XCTestDriverInterface> interface = channel.remoteObjectProxy;
      self.testBundleProxy = interface;
    }];
@@ -267,7 +261,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   DTXProxyChannel *proxyChannel = [self.testBundleConnection
     makeProxyChannelWithRemoteInterface:@protocol(XCTestManager_DaemonConnectionInterface)
     exportedInterface:@protocol(XCTestManager_IDEInterface)];
-  [proxyChannel setExportedObject:self queue:dispatch_get_main_queue()];
+  [proxyChannel setExportedObject:self queue:self.target.workQueue];
   id<XCTestManager_DaemonConnectionInterface> remoteProxy = (id<XCTestManager_DaemonConnectionInterface>) proxyChannel.remoteObjectProxy;
 
   [self.logger logFormat:@"Starting test session with ID %@", self.context.sessionIdentifier.UUIDString];
@@ -309,8 +303,8 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 
 - (void)bundleDisconnectedWithState:(FBTestBundleConnectionState)state
 {
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [self.logger logFormat:@"Bundle Connection Disconnected in state '%@'", [FBTestBundleConnection stateStringForState:state]];
+  dispatch_async(self.target.workQueue, ^{
+    [self.logger logFormat:@"Bundle Connection Disconnected in state '%@'", state];
 
     if (self.result) {
       return;
@@ -324,7 +318,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
       return;
     }
     XCTestBootstrapError *error = [[XCTestBootstrapError
-      describeFormat:@"Lost connection to test process with state '%@'", [FBTestBundleConnection stateStringForState:state]]
+      describeFormat:@"Lost connection to test process with state '%@'", state]
       code:XCTestBootstrapErrorCodeLostConnection];
     [self concludeWithResult:[FBTestBundleResult failedInError:error]];
   });
@@ -332,11 +326,11 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 
 - (BOOL)shouldCheckForCrashedProcess
 {
-  if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+  if (!FBXcodeConfiguration.isXcode8OrGreater) {
     return NO;
   }
 
-  return [NSDate.date isGreaterThanOrEqualTo:[self.lastCrashCheckDate dateByAddingTimeInterval:CrashCheckInterval]];
+  return [NSDate.date compare:[self.lastCrashCheckDate dateByAddingTimeInterval:CrashCheckInterval]] != NSOrderedAscending;
 }
 
 - (nullable FBTestBundleResult *)checkForCrashedProcess
@@ -345,13 +339,16 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   self.lastCrashCheckDate = NSDate.date;
 
   NSError *innerError;
-  pid_t pid = [self.deviceOperator processIDWithBundleID:self.context.testRunnerBundleID error:&innerError];
+  pid_t pid = [self.target.deviceOperator processIDWithBundleID:self.context.testRunnerBundleID error:&innerError];
   if (pid >= 1) {
     return nil;
   }
   // It make some time for the diagnostic to appear.
   FBDiagnostic *diagnostic = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilExists:^ FBDiagnostic * {
-    return [self.deviceOperator attemptToFindCrashLogForProcess:self.context.testRunnerPID bundleID:self.context.testRunnerBundleID];
+    return [self.target.deviceOperator
+      attemptToFindCrashLogForProcess:self.context.testRunnerPID
+      bundleID:self.context.testRunnerBundleID
+      sinceDate:self.applicationLaunchDate];
   }];
   if (!diagnostic.hasLogContent) {
     XCTestBootstrapError *error = [[XCTestBootstrapError
@@ -368,6 +365,19 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   [self.logger logFormat:@"Test Completed with Result: %@", result];
   self.result = result;
   self.state = FBTestBundleConnectionStateResultAvailable;
+
+  // Fire the futures
+  NSError *error = result.error;
+  if (error) {
+    [self.connectFuture resolveWithError:error];
+    [self.testPlanFuture resolveWithError:error];
+    [self.disconnectFuture resolveWithError:error];
+  } else {
+    [self.connectFuture resolveWithResult:result];
+    [self.testPlanFuture resolveWithResult:result];
+    [self.disconnectFuture resolveWithResult:result];
+  }
+
   return result;
 }
 
@@ -377,25 +387,26 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 {
   if (self.state != FBTestBundleConnectionStateAwaitingStartOfTestPlan) {
     XCTestBootstrapError *error = [XCTestBootstrapError
-      describeFormat:@"Test Plan Started, but state is %@", [FBTestBundleConnection stateStringForState:self.state]];
+      describeFormat:@"Test Plan Started, but state is %@", self.state];
     [self concludeWithResult:[FBTestBundleResult failedInError:error]];
     return nil;
   }
   [self.logger logFormat:@"Test Plan Started"];
-  self.state = FBTestBundleConnectionStateRunningTestPlan;
+  self.state = FBTestBundleConnectionStateExecutingTestPlan;
   return [self.interface _XCT_didBeginExecutingTestPlan];
 }
 
 - (id)_XCT_didFinishExecutingTestPlan
 {
-  if (self.state != FBTestBundleConnectionStateRunningTestPlan) {
+  if (self.state != FBTestBundleConnectionStateExecutingTestPlan) {
     XCTestBootstrapError *error = [XCTestBootstrapError
-      describeFormat:@"Test Plan Ended, but state is %@", [FBTestBundleConnection stateStringForState:self.state]];
+      describeFormat:@"Test Plan Ended, but state is %@", self.state];
     [self concludeWithResult:[FBTestBundleResult failedInError:error]];
     return nil;
   }
   [self.logger logFormat:@"Test Plan Ended"];
   self.state = FBTestBundleConnectionStateEndedTestPlan;
+  [self.testPlanFuture resolveWithResult:FBTestBundleResult.success];
   return [self.interface _XCT_didFinishExecutingTestPlan];
 }
 
@@ -421,7 +432,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
     [self concludeWithResult:[FBTestBundleResult failedInError:error]];
     return nil;
   }
-  if (!self.deviceOperator.requiresTestDaemonMediationForTestHostConnection) {
+  if (!self.target.deviceOperator.requiresTestDaemonMediationForTestHostConnection) {
     XCTestBootstrapError *error = [[XCTestBootstrapError
       describe:@"Test Bundle Connection cannot handle a Device that doesn't require daemon mediation"]
       code:XCTestBootstrapErrorCodeStartupFailure];
@@ -431,6 +442,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 
   [self.logger logFormat:@"Test Bundle is Ready"];
   self.state = FBTestBundleConnectionStateTestBundleReady;
+  [self.connectFuture resolveWithResult:FBTestBundleResult.success];
   return [self.interface _XCT_testBundleReadyWithProtocolVersion:protocolVersion minimumVersion:minimumVersion];
 }
 
@@ -448,28 +460,6 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
    code:XCTestBootstrapErrorCodeStartupFailure];
   [self concludeWithResult:[FBTestBundleResult failedInError:trueError]];
   return nil;
-}
-
-+ (NSString *)stateStringForState:(FBTestBundleConnectionState)state
-{
-  switch (state) {
-    case FBTestBundleConnectionStateNotConnected:
-      return @"not connected";
-    case FBTestBundleConnectionStateConnecting:
-      return @"connecting";
-    case FBTestBundleConnectionStateTestBundleReady:
-      return @"bundle ready";
-    case FBTestBundleConnectionStateAwaitingStartOfTestPlan:
-      return @"awaiting start of test plan";
-    case FBTestBundleConnectionStateRunningTestPlan:
-      return @"running test plan";
-    case FBTestBundleConnectionStateEndedTestPlan:
-      return @"ended test plan";
-    case FBTestBundleConnectionStateResultAvailable:
-      return @"result available";
-    default:
-      return @"unknown";
-  }
 }
 
 @end

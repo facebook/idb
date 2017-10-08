@@ -53,8 +53,8 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Public Methods
 
 /**
- Obtains a Dictonary Describing the Attributes of the Stream. 
- 
+ Obtains a Dictonary Describing the Attributes of the Stream.
+
  @param error an error out for any error that occurs.
  @return the Attributes if successful, nil otherwise.
  */

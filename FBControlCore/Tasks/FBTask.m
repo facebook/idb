@@ -9,12 +9,13 @@
 
 #import "FBTask.h"
 
-#import "FBRunLoopSpinner.h"
-#import "FBTaskConfiguration.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 #import "FBFileConsumer.h"
+#import "FBFileWriter.h"
 #import "FBPipeReader.h"
+#import "FBRunLoopSpinner.h"
+#import "FBTaskConfiguration.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
@@ -22,59 +23,54 @@
 NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
-@interface FBTaskOutput : NSObject
+@protocol FBTaskOutput <NSObject>
 
-- (NSString *)contents;
+- (id)contents;
 - (id)attachWithError:(NSError **)error;
 - (void)teardownResources;
 
 @end
 
-@interface FBTaskOutput_File : FBTaskOutput
+@interface FBTaskOutput_File : NSObject <FBTaskOutput>
 
 @property (nonatomic, copy, nullable, readonly) NSString *filePath;
 @property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
 
 @end
 
-@interface FBTaskOutput_Consumer : FBTaskOutput
+@interface FBTaskOutput_Consumer : NSObject <FBTaskOutput>
 
 @property (nonatomic, strong, nullable, readwrite) FBPipeReader *reader;
-@property (nonatomic, strong, nullable, readwrite) FBAccumilatingFileConsumer *dataConsumer;
 @property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> consumer;
 
 @end
 
-@interface FBTaskConfiguration (FBTaskOutput)
+@interface FBTaskOutput_Logger : FBTaskOutput_Consumer
 
-- (FBTaskOutput *)createTaskOutput;
+@property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
 
 @end
 
-@implementation FBTaskOutput
+@interface FBTaskOutput_Data : FBTaskOutput_Consumer
 
-- (NSString *)contents
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
+@property (nonatomic, strong, readonly) FBAccumilatingFileConsumer *dataConsumer;
 
-- (id)attachWithError:(NSError **)error
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
+@end
 
-- (void)teardownResources
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-}
+@interface FBTaskOutput_String : FBTaskOutput_Data
+
+@end
+
+@interface FBTaskInput_Consumer : NSObject <FBTaskOutput, FBFileConsumer>
+
+@property (nonatomic, strong, nullable, readonly) NSPipe *pipe;
+@property (nonatomic, strong, nullable, readonly) id<FBFileConsumer> writer;
 
 @end
 
 @implementation FBTaskOutput_Consumer
 
-- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer dataConsumer:(FBAccumilatingFileConsumer *)dataConsumer
+- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer
 {
   self = [super init];
   if (!self) {
@@ -82,16 +78,13 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   }
 
   _consumer = consumer;
-  _dataConsumer = dataConsumer;
 
   return self;
 }
 
-- (NSString *)contents
+- (id)contents
 {
-  return [[[NSString alloc]
-    initWithData:self.dataConsumer.data encoding:NSUTF8StringEncoding]
-    stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+  return self.consumer;
 }
 
 - (id)attachWithError:(NSError **)error
@@ -113,6 +106,29 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 @end
 
+@implementation FBTaskOutput_Logger
+
+- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
+{
+  id<FBFileConsumer> consumer = [FBLineFileConsumer asynchronousReaderWithConsumer:^(NSString *line) {
+    [logger log:line];
+  }];
+  self = [super initWithConsumer:consumer];
+  if (!self) {
+    return nil;
+  }
+
+  _logger = logger;
+  return self;
+}
+
+- (id<FBControlCoreLogger>)contents
+{
+  return self.logger;
+}
+
+@end
+
 @implementation FBTaskOutput_File
 
 - (instancetype)initWithPath:(NSString *)filePath
@@ -128,9 +144,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 - (NSString *)contents
 {
-  @synchronized(self) {
-    return [NSString stringWithContentsOfFile:self.filePath usedEncoding:nil error:nil];
-  }
+  return self.filePath;
 }
 
 - (id)attachWithError:(NSError **)error
@@ -158,27 +172,105 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 @end
 
-@interface FBTaskProcess : NSObject
+@implementation FBTaskOutput_Data
+
+- (instancetype)initWithMutableData:(NSMutableData *)mutableData
+{
+  FBAccumilatingFileConsumer *consumer = [[FBAccumilatingFileConsumer alloc] initWithMutableData:mutableData];
+  self = [super initWithConsumer:consumer];
+  if (!self) {
+    return nil;
+  }
+
+  _dataConsumer = consumer;
+
+  return self;
+}
+
+- (NSData *)contents
+{
+  return self.dataConsumer.data;
+}
+
+@end
+
+@implementation FBTaskOutput_String
+
+- (NSString *)contents
+{
+  NSData *data = self.dataConsumer.data;
+  // Strip newline from the end of the buffer.
+  if (data.length) {
+    char lastByte = 0;
+    NSRange range = NSMakeRange(data.length - 1, 1);
+    [data getBytes:&lastByte range:range];
+    if (lastByte == '\n') {
+      data = [data subdataWithRange:NSMakeRange(0, data.length - 1)];
+    }
+  }
+  return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+}
+
+@end
+
+@implementation FBTaskInput_Consumer
+
+- (id)contents
+{
+  return self.pipe ? self : nil;
+}
+
+- (id)attachWithError:(NSError **)error
+{
+  NSPipe *pipe = [NSPipe pipe];
+  id<FBFileConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:error];
+  if (!writer) {
+    return nil;
+  }
+  _pipe = pipe;
+  _writer = writer;
+  return pipe;
+}
+
+- (void)teardownResources
+{
+  _pipe = nil;
+  _writer = nil;
+}
+
+- (void)consumeData:(NSData *)data
+{
+  [self.writer consumeData:data];
+}
+
+- (void)consumeEndOfFile
+{
+  [self.writer consumeEndOfFile];
+  [self teardownResources];
+}
+
+@end
+
+@protocol FBTaskProcess <NSObject>
 
 @property (nonatomic, assign, readonly) int terminationStatus;
 @property (nonatomic, assign, readonly) BOOL isRunning;
 
-- (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(FBTaskProcess *))terminationHandler;
+- (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(id<FBTaskProcess>))terminationHandler;
 - (void)mountStandardOut:(id)stdOut;
-- (void)mountStandardErr:(id)stdOut;
+- (void)mountStandardErr:(id)stdErr;
+- (void)mountStandardIn:(id)stdIn;
 - (void)terminate;
 
 @end
 
-@interface FBTaskProcess_NSTask : FBTaskProcess
+@interface FBTaskProcess_NSTask : NSObject <FBTaskProcess>
 
 @property (nonatomic, strong, readwrite) NSTask *task;
 
-- (instancetype)initWithTask:(NSTask *)task;
-
 @end
 
-@implementation FBTaskProcess
+@implementation FBTaskProcess_NSTask
 
 + (instancetype)fromConfiguration:(FBTaskConfiguration *)configuration
 {
@@ -186,45 +278,8 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   task.environment = configuration.environment;
   task.launchPath = configuration.launchPath;
   task.arguments = configuration.arguments;
-  return [[FBTaskProcess_NSTask alloc] initWithTask:task];
+  return [[self alloc] initWithTask:task];
 }
-
-- (BOOL)isRunning
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return NO;
-}
-
-- (int)terminationStatus
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return 0;
-}
-
-- (void)mountStandardOut:(id)stdOut
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-}
-
-- (void)mountStandardErr:(id)stdOut
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-}
-
-- (void)terminate
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-}
-
-- (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(FBTaskProcess *))terminationHandler
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return 0;
-}
-
-@end
-
-@implementation FBTaskProcess_NSTask
 
 - (instancetype)initWithTask:(NSTask *)task
 {
@@ -262,7 +317,12 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   self.task.standardError = stdErr;
 }
 
-- (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(FBTaskProcess *))terminationHandler
+- (void)mountStandardIn:(id)stdIn
+{
+  self.task.standardInput = stdIn;
+}
+
+- (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(id<FBTaskProcess>))terminationHandler
 {
   self.task.terminationHandler = ^(NSTask *_) {
     [self terminate];
@@ -285,15 +345,20 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 @property (nonatomic, copy, readonly) NSSet<NSNumber *> *acceptableStatusCodes;
 
-@property (nonatomic, strong, nullable, readwrite) FBTaskProcess *process;
-@property (nonatomic, strong, nullable, readwrite) FBTaskOutput *stdOutSlot;
-@property (nonatomic, strong, nullable, readwrite) FBTaskOutput *stdErrSlot;
+@property (nonatomic, strong, nullable, readwrite) id<FBTaskProcess> process;
+@property (nonatomic, strong, nullable, readwrite) id<FBTaskOutput> stdOutSlot;
+@property (nonatomic, strong, nullable, readwrite) id<FBTaskOutput> stdErrSlot;
+@property (nonatomic, strong, nullable, readwrite) id<FBTaskOutput> stdInSlot;
 @property (nonatomic, copy, nullable, readwrite) NSString *configurationDescription;
 
 @property (atomic, assign, readwrite) pid_t processIdentifier;
+@property (atomic, assign, readwrite) int exitCode;
 @property (atomic, assign, readwrite) BOOL completedTeardown;
 @property (atomic, copy, nullable, readwrite) NSString *emittedError;
+
 @property (atomic, copy, nullable, readwrite) void (^terminationHandler)(FBTask *);
+@property (atomic, strong, nullable, readwrite) dispatch_queue_t terminationQueue;
+
 
 @end
 
@@ -301,40 +366,48 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 #pragma mark Initializers
 
-+ (FBTaskOutput *)createTaskOutput:(id)output
++ (id<FBTaskOutput>)createTaskOutput:(id)output
 {
-  if ([output isKindOfClass:NSString.class]) {
-     return [[FBTaskOutput_File alloc] initWithPath:output];
+  if (!output) {
+    return nil;
   }
-  id<FBFileConsumer> consumer = nil;
-  NSMutableData *data = [NSMutableData data];
+  if ([output isKindOfClass:NSURL.class]) {
+     return [[FBTaskOutput_File alloc] initWithPath:[output path]];
+  }
   if ([output conformsToProtocol:@protocol(FBFileConsumer)]) {
-    consumer = output;
+    return [[FBTaskOutput_Consumer alloc] initWithConsumer:output];
   }
-  else if ([output conformsToProtocol:@protocol(FBControlCoreLogger)]) {
-    id<FBControlCoreLogger> logger = output;
-    consumer = [FBLineFileConsumer asynchronousReaderWithConsumer:^(NSString *line) {
-      [logger log:line];
-    }];
+  if ([output conformsToProtocol:@protocol(FBControlCoreLogger)]) {
+    return [[FBTaskOutput_Logger alloc] initWithLogger:output];
   }
-  else {
-    NSAssert([output isKindOfClass:NSMutableData.class], @"Unexpected output type %@", output);
-    data = output;
+  if ([output isKindOfClass:NSData.class]) {
+    return [[FBTaskOutput_Data alloc] initWithMutableData:NSMutableData.data];
   }
-  FBAccumilatingFileConsumer *dataConsumer = [[FBAccumilatingFileConsumer alloc] initWithMutableData:data];
-  consumer = consumer ? [FBCompositeFileConsumer consumerWithConsumers:@[consumer, dataConsumer]] : dataConsumer;
-  return [[FBTaskOutput_Consumer alloc] initWithConsumer:consumer dataConsumer:dataConsumer];
+  if ([output isKindOfClass:NSString.class]) {
+    return [[FBTaskOutput_String alloc] initWithMutableData:NSMutableData.data];
+  }
+  NSAssert(NO, @"Unexpected output type %@", output);
+  return nil;
+}
+
++ (id<FBTaskOutput>)createTaskInput:(BOOL)connectStdIn
+{
+  if (!connectStdIn) {
+    return nil;
+  }
+  return [FBTaskInput_Consumer new];
 }
 
 + (instancetype)taskWithConfiguration:(FBTaskConfiguration *)configuration
 {
-  FBTaskProcess *task = [FBTaskProcess fromConfiguration:configuration];
-  FBTaskOutput *stdOut = [self createTaskOutput:configuration.stdOut];
-  FBTaskOutput *stdErr = [self createTaskOutput:configuration.stdErr];
-  return [[self alloc] initWithProcess:task stdOut:stdOut stdErr:stdErr acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
+  id<FBTaskProcess> task = [FBTaskProcess_NSTask fromConfiguration:configuration];
+  id<FBTaskOutput> stdOut = [self createTaskOutput:configuration.stdOut];
+  id<FBTaskOutput> stdErr = [self createTaskOutput:configuration.stdErr];
+  id<FBTaskOutput> stdIn = [self createTaskInput:configuration.connectStdIn];
+  return [[self alloc] initWithProcess:task stdOut:stdOut stdErr:stdErr stdIn:stdIn acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
 }
 
-- (instancetype)initWithProcess:(FBTaskProcess *)process stdOut:(FBTaskOutput *)stdOut stdErr:(FBTaskOutput *)stdErr acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
+- (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(id<FBTaskOutput>)stdOut stdErr:(id<FBTaskOutput>)stdErr stdIn:(id<FBTaskOutput>)stdIn acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
 {
   self = [super init];
   if (!self) {
@@ -345,6 +418,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   _acceptableStatusCodes = acceptableStatusCodes;
   _stdOutSlot = stdOut;
   _stdErrSlot = stdErr;
+  _stdInSlot = stdIn;
   _configurationDescription = configurationDescription;
 
   return self;
@@ -357,7 +431,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   [self terminateWithErrorMessage:nil];
 }
 
-+ (FBTerminationHandleType)handleType
+- (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleTypeTask;
 }
@@ -368,17 +442,19 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 - (instancetype)startAsynchronously
 {
-  return [self launchWithTerminationHandler:nil];
+  return [self launchWithTerminationQueue:nil handler:nil];
 }
 
-- (instancetype)startAsynchronouslyWithTerminationHandler:(void (^)(FBTask *task))handler
+- (instancetype)startAsynchronouslyWithTerminationQueue:(dispatch_queue_t)terminationQueue handler:(void (^)(FBTask *task))handler
 {
-  return [self launchWithTerminationHandler:handler];
+  NSParameterAssert(terminationQueue);
+  NSParameterAssert(handler);
+  return [self launchWithTerminationQueue:terminationQueue handler:handler];
 }
 
 - (instancetype)startSynchronouslyWithTimeout:(NSTimeInterval)timeout
 {
-  [self launchWithTerminationHandler:nil];
+  [self launchWithTerminationQueue:nil handler:nil];
 
   NSError *error = nil;
   if (![self waitForCompletionWithTimeout:timeout error:&error]) {
@@ -406,14 +482,19 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 #pragma mark Accessors
 
-- (NSString *)stdOut
+- (nullable id)stdOut
 {
   return [self.stdOutSlot contents];
 }
 
-- (NSString *)stdErr
+- (nullable id)stdErr
 {
   return [self.stdErrSlot contents];
+}
+
+- (nullable id)stdIn
+{
+  return [self.stdInSlot contents];
 }
 
 - (nullable NSError *)error
@@ -422,14 +503,15 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
     return nil;
   }
 
-  FBControlCoreError *error = [[[[FBControlCoreError
+  FBControlCoreError *error = [[[[[FBControlCoreError
     describe:self.emittedError]
     inDomain:FBTaskErrorDomain]
     extraInfo:@"stdout" value:self.stdOut]
-    extraInfo:@"stderr" value:self.stdErr];
+    extraInfo:@"stderr" value:self.stdErr]
+    extraInfo:@"pid" value:@(self.processIdentifier)];
 
   if (!self.process.isRunning) {
-    [error extraInfo:@"exitcode" value:@(self.process.terminationStatus)];
+    [error extraInfo:@"exitcode" value:@(self.exitCode)];
   }
   return [error build];
 }
@@ -449,28 +531,45 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 #pragma mark Private
 
-- (instancetype)launchWithTerminationHandler:(void (^)(FBTask *task))handler
+- (instancetype)launchWithTerminationQueue:(dispatch_queue_t)queue handler:(void (^)(FBTask *task))handler
 {
   // Since the FBTask may not be returned by anyone and is asynchronous, it needs to be retained.
   // This Retain is matched by a release in -[FBTask completeTermination].
   CFRetain((__bridge CFTypeRef)(self));
 
+  self.terminationQueue = queue;
   self.terminationHandler = handler;
 
   NSError *error = nil;
-  id stdOut = [self.stdOutSlot attachWithError:&error];
-  if (!stdOut) {
-    return [self terminateWithErrorMessage:error.description];
+  id<FBTaskOutput> slot = self.stdOutSlot;
+  if (slot) {
+    id stdOut = [slot attachWithError:&error];
+    if (!stdOut) {
+      return [self terminateWithErrorMessage:error.description];
+    }
+    [self.process mountStandardOut:stdOut];
   }
-  [self.process mountStandardOut:stdOut];
 
-  id stdErr = [self.stdErrSlot attachWithError:&error];
-  if (!stdErr) {
-    return [self terminateWithErrorMessage:error.description];
+  slot = self.stdErrSlot;
+  if (slot) {
+    id stdErr = [slot attachWithError:&error];
+    if (!stdErr) {
+      return [self terminateWithErrorMessage:error.description];
+    }
+    [self.process mountStandardErr:stdErr];
   }
-  [self.process mountStandardErr:stdErr];
 
-  pid_t pid = [self.process launchWithError:&error terminationHandler:^(FBTaskProcess *_) {
+  slot = self.stdInSlot;
+  if (slot) {
+    id stdIn = [slot attachWithError:&error];
+    if (!stdIn) {
+      return [self terminateWithErrorMessage:error.description];
+    }
+    [self.process mountStandardIn:stdIn];
+  }
+
+  pid_t pid = [self.process launchWithError:&error terminationHandler:^(id<FBTaskProcess> process) {
+    self.exitCode = process.terminationStatus;
     [self terminateWithErrorMessage:nil];
   }];
   if (pid < 1) {
@@ -510,6 +609,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 {
   [self.stdOutSlot teardownResources];
   [self.stdErrSlot teardownResources];
+  [self.stdInSlot teardownResources];
 }
 
 - (void)completeTermination
@@ -526,9 +626,14 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   if (!terminationHandler) {
     return;
   }
-  dispatch_async(dispatch_get_main_queue(), ^{
+  dispatch_queue_t queue = self.terminationQueue;
+  if (!queue) {
+    return;
+  }
+  dispatch_async(queue, ^{
     terminationHandler(self);
   });
+  self.terminationQueue = nil;
   self.terminationHandler = nil;
 }
 
@@ -539,6 +644,13 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
     self.configurationDescription,
     self.hasTerminated
   ];
+}
+
+#pragma mark FBFuture
+
+- (BOOL)hasCompleted
+{
+  return self.hasTerminated;
 }
 
 @end

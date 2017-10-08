@@ -16,8 +16,10 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBCoreSimulatorNotifier.h"
+#import "FBSimulatorAgentOperation.h"
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorProcessFetcher.h"
+#import "FBSimulatorApplicationOperation.h"
 
 @interface FBSimulatorEventRelay ()
 
@@ -28,34 +30,33 @@
 @property (nonatomic, assign, readwrite) FBSimulatorState lastKnownState;
 @property (nonatomic, strong, readonly) NSMutableSet *knownLaunchedProcesses;
 
-@property (nonatomic, strong, readonly) id<FBSimulatorEventSink> sink;
-@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 @property (nonatomic, strong, readonly) SimDevice *simDevice;
+@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) id<FBSimulatorEventSink> sink;
 
-@property (nonatomic, strong, readonly) NSMutableDictionary *processTerminationNotifiers;
 @property (nonatomic, strong, readwrite) FBCoreSimulatorNotifier *stateChangeNotifier;
 
 @end
 
 @implementation FBSimulatorEventRelay
 
-- (instancetype)initWithSimDevice:(SimDevice *)simDevice launchdProcess:(nullable FBProcessInfo *)launchdProcess containerApplication:(nullable FBProcessInfo *)containerApplication processFetcher:(FBSimulatorProcessFetcher *)processFetcher sink:(id<FBSimulatorEventSink>)sink
+- (instancetype)initWithSimDevice:(SimDevice *)simDevice launchdProcess:(nullable FBProcessInfo *)launchdProcess containerApplication:(nullable FBProcessInfo *)containerApplication processFetcher:(FBSimulatorProcessFetcher *)processFetcher queue:(dispatch_queue_t)queue sink:(id<FBSimulatorEventSink>)sink
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _sink = sink;
   _simDevice = simDevice;
-  _processFetcher = processFetcher;
-
-  _processTerminationNotifiers = [NSMutableDictionary dictionary];
-  _knownLaunchedProcesses = [NSMutableSet set];
-  _lastKnownState = FBSimulatorStateUnknown;
-
   _launchdProcess = launchdProcess;
   _containerApplication = containerApplication;
+  _processFetcher = processFetcher;
+  _queue = queue;
+  _sink = sink;
+
+  _knownLaunchedProcesses = [NSMutableSet set];
+  _lastKnownState = FBSimulatorStateUnknown;
 
   [self registerSimulatorLifecycleHandlers];
   [self createNotifierForSimDevice:simDevice];
@@ -137,53 +138,48 @@
   [self.sink simulatorDidTerminate:launchdProcess expected:expected];
 }
 
-- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)agentDidLaunch:(FBSimulatorAgentOperation *)operation
 {
   // De-duplicate known-launched agents.
+  FBProcessInfo *agentProcess = operation.process;
   if ([self.knownLaunchedProcesses containsObject:agentProcess]) {
     return;
   }
 
   [self.knownLaunchedProcesses addObject:agentProcess];
-  [self createNotifierForProcess:agentProcess withHandler:^(FBSimulatorEventRelay *relay) {
-    [relay agentDidTerminate:agentProcess expected:NO];
-  }];
-  [self.sink agentDidLaunch:launchConfig didStart:agentProcess stdOut:stdOut stdErr:stdErr];
+  [self.sink agentDidLaunch:operation];
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
-  if (![self.knownLaunchedProcesses containsObject:agentProcess]) {
+  if (![self.knownLaunchedProcesses containsObject:operation.process]) {
     return;
   }
 
-  [self unregisterNotifierForProcess:agentProcess];
-  [self.sink agentDidTerminate:agentProcess expected:expected];
+  [self.sink agentDidTerminate:operation statLoc:statLoc];
 }
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
+- (void)applicationDidLaunch:(FBSimulatorApplicationOperation *)operation
 {
   // De-duplicate known-launched applications.
+  FBProcessInfo *applicationProcess = operation.process;
   if ([self.knownLaunchedProcesses containsObject:applicationProcess]) {
     return;
   }
 
   [self.knownLaunchedProcesses addObject:applicationProcess];
-  [self createNotifierForProcess:applicationProcess withHandler:^(FBSimulatorEventRelay *relay) {
-    [relay applicationDidTerminate:applicationProcess expected:NO];
-  }];
-  [self.sink applicationDidLaunch:launchConfig didStart:applicationProcess];
+  [self.sink applicationDidLaunch:operation];
 }
 
-- (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
+- (void)applicationDidTerminate:(FBSimulatorApplicationOperation *)operation expected:(BOOL)expected
 {
+  FBProcessInfo *applicationProcess = operation.process;
   if (![self.knownLaunchedProcesses containsObject:applicationProcess]) {
     return;
   }
 
   [self.knownLaunchedProcesses removeObject:applicationProcess];
-  [self unregisterNotifierForProcess:applicationProcess];
-  [self.sink applicationDidTerminate:applicationProcess expected:expected];
+  [self.sink applicationDidTerminate:operation expected:expected];
 }
 
 - (void)testmanagerDidConnect:(FBTestManager *)testManager
@@ -226,31 +222,8 @@
 
 #pragma mark Process Termination
 
-- (void)createNotifierForProcess:(FBProcessInfo *)process withHandler:( void(^)(FBSimulatorEventRelay *relay) )handler
-{
-  NSParameterAssert(self.processTerminationNotifiers[process] == nil);
-
-  __weak typeof(self) weakSelf = self;
-  FBDispatchSourceNotifier *notifier = [FBDispatchSourceNotifier processTerminationNotifierForProcessIdentifier:process.processIdentifier handler:^(FBDispatchSourceNotifier *_) {
-    handler(weakSelf);
-  }];
-  self.processTerminationNotifiers[process] = notifier;
-}
-
-- (void)unregisterNotifierForProcess:(FBProcessInfo *)process
-{
-  FBDispatchSourceNotifier *notifier = self.processTerminationNotifiers[process];
-  if (!notifier) {
-    return;
-  }
-  [notifier terminate];
-  [self.processTerminationNotifiers removeObjectForKey:process];
-}
-
 - (void)unregisterAllNotifiers
 {
-  [self.processTerminationNotifiers.allValues makeObjectsPerformSelector:@selector(terminate)];
-  [self.processTerminationNotifiers removeAllObjects];
   [self.stateChangeNotifier terminate];
   self.stateChangeNotifier = nil;
 }
@@ -260,7 +233,7 @@
 - (void)createNotifierForSimDevice:(SimDevice *)device
 {
   __weak typeof(self) weakSelf = self;
-  self.stateChangeNotifier = [FBCoreSimulatorNotifier notifierForSimDevice:device block:^(NSDictionary *info) {
+  self.stateChangeNotifier = [FBCoreSimulatorNotifier notifierForSimDevice:device queue:self.queue block:^(NSDictionary *info) {
     NSNumber *newStateNumber = info[@"new_state"];
     if (!newStateNumber) {
       return;

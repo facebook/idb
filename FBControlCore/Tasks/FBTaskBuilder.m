@@ -23,6 +23,7 @@
 @property (nonatomic, copy, readwrite) NSSet<NSNumber *> *acceptableStatusCodes;
 @property (nonatomic, strong, nullable, readwrite) id stdOut;
 @property (nonatomic, strong, nullable, readwrite) id stdErr;
+@property (nonatomic, assign, readwrite) BOOL connectStdIn;
 
 @end
 
@@ -39,8 +40,9 @@
   _arguments = @[];
   _environment = FBTaskBuilder.defaultEnvironmentForSubprocess;
   _acceptableStatusCodes = [NSSet setWithObject:@0];
-  _stdOut = [NSMutableData data];
-  _stdErr = [NSMutableData data];
+  _stdOut = [NSString string];
+  _stdErr = [NSString string];
+  _connectStdIn = NO;
 
   return self;
 }
@@ -89,29 +91,41 @@
   return [self withEnvironment:[dictionary copy]];
 }
 
-- (instancetype)withStdOutInMemory
+- (instancetype)withStdOutInMemoryAsData
 {
-  self.stdOut = [NSMutableData data];
+  self.stdOut = [NSData data];
   return self;
 }
 
-- (instancetype)withStdErrInMemory
+- (instancetype)withStdErrInMemoryAsData
 {
-  self.stdErr = [NSMutableData data];
+  self.stdErr = [NSData data];
+  return self;
+}
+
+- (instancetype)withStdOutInMemoryAsString
+{
+  self.stdOut = [NSString string];
+  return self;
+}
+
+- (instancetype)withStdErrInMemoryAsString
+{
+  self.stdErr = [NSString string];
   return self;
 }
 
 - (instancetype)withStdOutPath:(NSString *)stdOutPath
 {
   NSParameterAssert(stdOutPath);
-  self.stdOut = stdOutPath;
+  self.stdOut = [NSURL fileURLWithPath:stdOutPath];
   return self;
 }
 
 - (instancetype)withStdErrPath:(NSString *)stdErrPath
 {
   NSParameterAssert(stdErrPath);
-  self.stdErr = stdErrPath;
+  self.stdErr = [NSURL fileURLWithPath:stdErrPath];
   return self;
 }
 
@@ -161,6 +175,12 @@
   return self;
 }
 
+- (instancetype)withStdInConnected
+{
+  self.connectStdIn = YES;
+  return self;
+}
+
 - (instancetype)withAcceptableTerminationStatusCodes:(NSSet<NSNumber *> *)statusCodes
 {
   NSParameterAssert(statusCodes);
@@ -181,19 +201,11 @@
     environment:self.environment
     acceptableStatusCodes:self.acceptableStatusCodes
     stdOut:self.stdOut
-    stdErr:self.stdErr];
+    stdErr:self.stdErr
+    connectStdIn:self.connectStdIn];
 }
 
 #pragma mark - Private
-
-+ (NSError *)errorForDescription:(NSString *)description
-{
-  NSParameterAssert(description);
-  return [NSError
-    errorWithDomain:FBTaskErrorDomain
-    code:0
-    userInfo:@{NSLocalizedDescriptionKey : description}];
-}
 
 + (NSDictionary<NSString *, NSString *> *)defaultEnvironmentForSubprocess
 {
@@ -230,6 +242,31 @@
     *error = [task error];
   }
   return [task stdOut];
+}
+
+- (FBFuture<FBTask *> *)buildFuture
+{
+  pid_t processIdentifier = 0;
+  return [self buildFutureWithProcessIdentifierOut:&processIdentifier];
+}
+
+- (FBFuture<FBTask *> *)buildFutureWithProcessIdentifierOut:(pid_t *)processIdentifierOut
+{
+  FBMutableFuture *future = FBMutableFuture.future;
+  FBTask *task = [[self build]
+    startAsynchronouslyWithTerminationQueue:dispatch_queue_create("com.facebook.fbcontrolcore.task.future", DISPATCH_QUEUE_SERIAL)
+    handler:^(FBTask *completedTask) {
+      NSError *error = completedTask.error;
+      if (error) {
+        [future resolveWithError:error];
+        return;
+      }
+      [future resolveWithResult:completedTask];
+    }];
+  if (processIdentifierOut) {
+    *processIdentifierOut = task.processIdentifier;
+  }
+  return future;
 }
 
 @end

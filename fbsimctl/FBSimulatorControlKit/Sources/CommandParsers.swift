@@ -100,11 +100,11 @@ extension Parser {
     }
   }
 
-  public static var ofApplication: Parser<FBApplicationDescriptor> {
+  public static var ofApplication: Parser<FBApplicationBundle> {
     let desc = PrimitiveDesc(name: "application", desc: "Path to an application.")
-    return Parser<FBApplicationDescriptor>.single(desc) { token in
+    return Parser<FBApplicationBundle>.single(desc) { token in
       do {
-        return try FBApplicationDescriptor.userApplication(withPath: token)
+        return try FBApplicationBundle.application(withPath: token)
       } catch let error as NSError {
         throw ParseError.custom("Could not get an app \(token) \(error.description)")
       }
@@ -140,11 +140,11 @@ extension Parser {
     }
   }
 
-  public static var ofBundleIDOrApplicationDescriptor: Parser<(String, FBApplicationDescriptor?)> {
-    return Parser<(String, FBApplicationDescriptor?)>
+  public static var ofBundleIDOrApplicationDescriptor: Parser<(String, FBApplicationBundle?)> {
+    return Parser<(String, FBApplicationBundle?)>
       .alternative([
-        Parser.ofApplication.fmap { (app) -> (String, FBApplicationDescriptor?) in (app.bundleID, app) },
-        Parser.ofBundleID.fmap{ (bundleId) -> (String, FBApplicationDescriptor?) in (bundleId, nil) },
+        Parser.ofApplication.fmap { (app) -> (String, FBApplicationBundle?) in (app.bundleID, app) },
+        Parser.ofBundleID.fmap{ (bundleId) -> (String, FBApplicationBundle?) in (bundleId, nil) },
       ])
   }
 
@@ -500,6 +500,7 @@ extension Action : Parsable {
   public static var parser: Parser<Action> {
     return Parser
       .alternative([
+        self.accessibility,
         self.approveParser,
         self.bootParser,
         self.clearKeychainParser,
@@ -526,6 +527,7 @@ extension Action : Parsable {
         self.shutdownParser,
         self.streamParser,
         self.tapParser,
+        self.tailParser,
         self.terminateParser,
         self.uninstallParser,
         self.uploadParser,
@@ -533,6 +535,14 @@ extension Action : Parsable {
       ])
       .withExpandedDesc
       .sectionize("action", "Action", "")
+  }
+
+  static var accessibility: Parser<Action> {
+    return Parser
+      .ofString(
+        EventName.acessibilityFetch.rawValue,
+        Action.core(FBAccessibilityFetch())
+      )
   }
 
   static var approveParser: Parser<Action> {
@@ -549,7 +559,7 @@ extension Action : Parsable {
     return Parser<FBSimulatorBootConfiguration>
       .ofCommandWithArg(
         EventName.boot.rawValue,
-        FBSimulatorBootConfigurationParser.parser.fallback(FBSimulatorBootConfiguration.default())
+        FBSimulatorBootConfigurationParser.parser.fallback(FBSimulatorBootConfiguration.default)
       )
       .fmap(Action.boot)
       .sectionize("boot", "Action: Boot", "")
@@ -741,9 +751,8 @@ extension Action : Parsable {
         EventName.tap.rawValue,
         coordParser
       )
-      .fmap { (x, y) in
-        Action.tap(x, y)
-      }
+      .fmap(FBSimulatorHIDEvent.tapAt)
+      .fmap(Action.core)
   }
 
   static var serviceInfoParser: Parser<Action> {
@@ -777,6 +786,16 @@ extension Action : Parsable {
         FileOutput.parser
       )
       .fmap(Action.stream)
+  }
+
+  static var tailParser: Parser<Action> {
+    return Parser
+      .ofCommandWithArg(
+        EventName.logTail.rawValue,
+        FBProcessLaunchConfigurationParsers.argumentParser
+      )
+      .fmap(FBLogTailConfiguration.init)
+      .fmap(Action.core)
   }
 
   static var terminateParser: Parser<Action> {
@@ -1009,12 +1028,6 @@ struct FBSimulatorBootConfigurationParser {
         self.scaleParser.fmap(FBSimulatorBootConfiguration.withScale),
         self.localeParser.fmap { FBSimulatorBootConfiguration.withLocalizationOverride(FBLocalizationOverride.withLocale($0)) }
       ])
-      .fmap { configuration in
-        if configuration.options.contains(FBSimulatorBootOptions.enableDirectLaunch) && configuration.framebuffer == nil {
-          return configuration.withFramebuffer(FBFramebufferConfiguration.default())
-        }
-        return configuration
-      }
   }
 
   static var localeParser: Parser<Locale> {
@@ -1022,15 +1035,15 @@ struct FBSimulatorBootConfigurationParser {
       .ofFlagWithArg("locale", Parser<Locale>.ofLocale, "")
   }
 
-  static var scaleParser: Parser<FBSimulatorScale> {
-    let subparsers: [Parser<FBSimulatorScale>] = [
-      Parser<FBSimulatorScale>
+  static var scaleParser: Parser<FBScale> {
+    let subparsers: [Parser<FBScale>] = [
+      Parser<FBScale>
         .ofFlag("scale=25", .scale25, ""),
-      Parser<FBSimulatorScale>
+      Parser<FBScale>
         .ofFlag("scale=50", .scale50, ""),
-      Parser<FBSimulatorScale>
+      Parser<FBScale>
         .ofFlag("scale=75", .scale75, ""),
-      Parser<FBSimulatorScale>
+      Parser<FBScale>
         .ofFlag("scale=100", .scale100, "")
     ]
 
@@ -1055,7 +1068,7 @@ struct FBSimulatorBootConfigurationParser {
  applied to FBProcessLaunchConfiguration as it is a non-final class.
  */
 struct FBProcessLaunchConfigurationParsers {
-  static var appLaunchAndApplicationDescriptorParser: Parser<(FBApplicationLaunchConfiguration, FBApplicationDescriptor?)> {
+  static var appLaunchAndApplicationDescriptorParser: Parser<(FBApplicationLaunchConfiguration, FBApplicationBundle?)> {
     return Parser
       .ofFourSequenced(
         FBProcessOutputConfigurationParser.parser,

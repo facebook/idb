@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBApplicationDataPackage;
 @class FBProductBundle;
 @class FBTestBundle;
@@ -17,7 +19,19 @@
 /**
  A Configuration Value for the Test Runner.
  */
-@interface FBTestRunnerConfiguration : NSObject
+@interface FBTestRunnerConfiguration : NSObject <NSCopying>
+
+/**
+ The Designated Initializer
+
+ @param sessionIdentifier identifier used to run test.
+ @param hostApplication the test host.
+ @param ideInjectionFramework IDEBundleInjection.framework product bundle.
+ @param testBundle the test bundle.
+ @param testConfigurationPath path to test configuration that should be used to start tests.
+ @param frameworkSearchPath the search path for Frameworks.
+ */
++ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath;
 
 /**
  Test session identifier
@@ -32,74 +46,13 @@
 /**
   Launch arguments for test runner
  */
-@property (nonatomic, copy, readonly) NSArray *launchArguments;
+@property (nonatomic, copy, readonly) NSArray<NSString *> *launchArguments;
 
 /**
  Launch environment variables for test runner
  */
-@property (nonatomic, copy, readonly) NSDictionary *launchEnvironment;
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *launchEnvironment;
 
 @end
 
-/**
- Prepares configuration for test runner
- */
-@interface FBTestRunnerConfigurationBuilder : NSObject
-
-/**
- @return Prepared FBTestRunnerConfiguration
- */
-+ (instancetype)builder;
-
-/**
- @param frameworkSearchPath search pth to frameworks
- @return builder
- */
-- (instancetype)withFrameworkSearchPath:(NSString *)frameworkSearchPath;
-
-/**
- @required
-
- @param sessionIdentifier identifier used to run test
- @return builder
- */
-- (instancetype)withSessionIdentifer:(NSUUID *)sessionIdentifier;
-
-/**
- @required
-
- @param testRunnerApplication test runner application bundle
- @return builder
- */
-- (instancetype)withTestRunnerApplication:(FBProductBundle *)testRunnerApplication;
-
-/**
- @required
-
- @param testConfigurationPath path to test configuration that should be used to start tests
- @return builder
- */
-- (instancetype)withTestConfigurationPath:(NSString *)testConfigurationPath;
-
-/**
- @required
-
- @param IDEBundleInjectionFramework IDEBundleInjection.framework product bundle
- @return builder
- */
-- (instancetype)withIDEBundleInjectionFramework:(FBProductBundle *)IDEBundleInjectionFramework;
-
-/**
- @required
-
- @param webDriverAgentTestBundle test bundle
- @return builder
- */
-- (instancetype)withWebDriverAgentTestBundle:(FBTestBundle *)webDriverAgentTestBundle;
-
-/**
- @return Prepared FBTestRunnerConfiguration
- */
-- (FBTestRunnerConfiguration *)build;
-
-@end
+NS_ASSUME_NONNULL_END

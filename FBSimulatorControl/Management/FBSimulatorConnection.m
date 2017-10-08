@@ -9,7 +9,7 @@
 
 #import "FBSimulatorConnection.h"
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceType.h>
@@ -19,14 +19,12 @@
 
 #import "FBFramebuffer.h"
 #import "FBFramebufferConfiguration.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBridge.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHID.h"
-#import "FBSimulatorBootConfiguration+Helpers.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorProcessFetcher.h"
 #import "FBFramebufferConnectStrategy.h"
@@ -111,12 +109,13 @@
 
 - (nullable FBSimulatorHID *)connectToHID:(NSError **)error
 {
-  if (self.hid) {
-    return [self.hid connect:error] ? self.hid : nil;
+  if (!self.hid) {
+    self.hid = [FBSimulatorHID hidPortForSimulator:self.simulator error:error];
+    if (!self.hid) {
+      return nil;
+    }
   }
-  return [[FBSimulatorError
-    describe:@"Could not connect to HID, it must be provided on launch"]
-    fail:error];
+  return [self.hid connect:error] ? self.hid : nil;
 }
 
 - (BOOL)terminateWithTimeout:(NSTimeInterval)timeout

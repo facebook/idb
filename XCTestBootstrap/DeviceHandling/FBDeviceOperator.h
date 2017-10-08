@@ -57,7 +57,8 @@ NS_ASSUME_NONNULL_BEGIN
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return applicationBundle if application is installed, otherwise nil
  */
-- (nullable FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (nullable FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID
+                                                      error:(NSError *_Nullable *)error;
 
 /**
  Returns PID of application with given bundleID
@@ -74,9 +75,10 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param pid the Process ID of the potentially-crashed Application Process.
  @param bundleID the Bundle ID of the potentially-crashed Application Process.
+ @param date the date to search for logs since.
  @return a Crash Log Info for the provided Bundle ID, nil otherwise.
  */
-- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID;
+- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID sinceDate:(NSDate *)date;
 
 /**
  Removes apllication with given bundleID and it's data

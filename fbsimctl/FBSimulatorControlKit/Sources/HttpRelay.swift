@@ -47,8 +47,8 @@ enum ResponseKeys : String {
 
 private class HttpEventReporter : EventReporter {
   var events: [EventReporterSubject] = []
-  let interpreter: EventInterpreter = JSONEventInterpreter(pretty: false)
-  let writer: Writer = FileHandleWriter.nullWriter
+  let interpreter: EventInterpreter = FBEventInterpreter.jsonEventInterpreter(false)
+  let writer: Writer = FileHandleWriter.null
 
   fileprivate func report(_ subject: EventReporterSubject) {
     self.events.append(subject)
@@ -330,6 +330,13 @@ class HttpRelay : Relay {
     self.httpServer.stop()
   }
 
+  fileprivate static var approveRoute: Route { get {
+    return ActionRoute.post(.approval) { json in
+      let approval = try FBSettingsApproval.inflate(fromJSON: json.decode())
+      return Action.core(approval)
+    }
+  }}
+
   fileprivate static var clearKeychainRoute: Route { get {
     return ActionRoute.post(.clearKeychain) { json in
       let bundleID = try json.getValue("bundle_id").getString()
@@ -434,7 +441,8 @@ class HttpRelay : Relay {
     return ActionRoute.post(.tap) { json in
       let x = try json.getValue("x").getNumber().doubleValue
       let y = try json.getValue("y").getNumber().doubleValue
-      return Action.tap(x, y)
+      let event = FBSimulatorHIDEvent.tapAt(x: x, y: y)
+      return Action.core(event)
     }
   }}
 
@@ -468,6 +476,7 @@ class HttpRelay : Relay {
 
   fileprivate static var actionRoutes: [Route] { get {
     return [
+      self.approveRoute,
       self.clearKeychainRoute,
       self.configRoute,
       self.diagnosticQueryRoute,

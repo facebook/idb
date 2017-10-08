@@ -16,9 +16,6 @@
 #import <DTXConnectionServices/DTXChannel.h>
 #import <DTXConnectionServices/DTXMessage.h>
 
-#import <DVTFoundation/DVTDeviceManager.h>
-#import <DVTFoundation/DVTFuture.h>
-
 #import <IDEiOSSupportCore/DVTiOSDevice.h>
 
 #import <FBControlCore/FBControlCore.h>
@@ -32,8 +29,6 @@
 #import "FBAMDevice.h"
 #import "FBDeviceInflationStrategy.h"
 
-static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 2;
-
 @implementation FBDeviceSet
 
 @synthesize allDevices = _allDevices;
@@ -42,23 +37,7 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 2;
 
 + (void)initialize
 {
-  [FBDeviceControlFrameworkLoader initializeEssentialFrameworks];
-}
-
-- (void)primeDeviceManager
-{
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    // It seems that searching for a device that does not exist will cause all available devices/simulators etc. to be cached.
-    // There's probably a better way of fetching all the available devices, but this appears to work well enough.
-    // This means that all the cached available devices can then be found.
-    [FBDeviceControlFrameworkLoader initializeXCodeFrameworks];
-
-    DVTDeviceManager *deviceManager = [objc_lookUpClass("DVTDeviceManager") defaultDeviceManager];
-    [self.logger.debug logFormat:@"Quering device manager for %f seconds to cache devices", FBDeviceSetDeviceManagerTickleTime];
-    [deviceManager searchForDevicesWithType:nil options:@{@"id" : @"I_DONT_EXIST_AT_ALL"} timeout:FBDeviceSetDeviceManagerTickleTime error:nil];
-    [self.logger.debug log:@"Finished querying devices to cache them"];
-  });
+  [FBDeviceControlFrameworkLoader.essentialFrameworks loadPrivateFrameworksOrAbort];
 }
 
 + (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
@@ -124,22 +103,6 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 2;
 - (FBDeviceInflationStrategy *)inflationStrategy
 {
   return [FBDeviceInflationStrategy strategyForSet:self];
-}
-
-- (nullable DVTiOSDevice *)dvtDeviceWithUDID:(NSString *)udid
-{
-  [self primeDeviceManager];
-  NSDictionary<NSString *, DVTiOSDevice *> *dvtDevices = [FBDeviceSet keyDVTDevicesByUDID:[objc_lookUpClass("DVTiOSDevice") alliOSDevices]];
-  return dvtDevices[udid];
-}
-
-+ (NSDictionary<NSString *, DVTiOSDevice *> *)keyDVTDevicesByUDID:(NSArray<DVTiOSDevice *> *)devices
-{
-  NSMutableDictionary<NSString *, DVTiOSDevice *> *dictionary = [NSMutableDictionary dictionary];
-  for (DVTiOSDevice *device in devices) {
-    dictionary[device.identifier] = device;
-  }
-  return [dictionary copy];
 }
 
 + (NSDictionary<NSString *, FBAMDevice *> *)keyAMDevicesByUDID:(NSArray<FBAMDevice *> *)devices

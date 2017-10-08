@@ -9,14 +9,16 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBDiagnostic.h>
+#import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBJSONConversion.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 @class FBDiagnostic;
 @class FBLogSearchPredicate;
 
-NS_ASSUME_NONNULL_BEGIN
+@protocol FBiOSTarget;
 
 /**
  Options for the Log Search.
@@ -29,7 +31,7 @@ typedef NS_OPTIONS(NSUInteger, FBBatchLogSearchOptions) {
 /**
  Defines a model for the result of a batch search on diagnostics.
  */
-@interface FBBatchLogSearchResult : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
+@interface FBBatchLogSearchResult : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
 
 /**
  The Results as a Mapping:
@@ -53,7 +55,9 @@ typedef NS_OPTIONS(NSUInteger, FBBatchLogSearchOptions) {
  Diagnostics are defined in terms of thier short_name.
  Logs are defined in terms of Search Predicates.
  */
-@interface FBBatchLogSearch : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
+@interface FBBatchLogSearch : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+
+#pragma mark Initializers
 
 /**
  Constructs a Batch Log Search for the provided mapping of log names to predicates.
@@ -63,10 +67,13 @@ typedef NS_OPTIONS(NSUInteger, FBBatchLogSearchOptions) {
 
  @param mapping the mapping to search with.
  @param options the options to search with.
+ @param since the date to search from. If nil then the log will be searched from the beginning.
  @param error an error out for any error in the mapping format.
  @return an FBBatchLogSearch instance if the mapping is valid, nil otherwise.
  */
-+ (instancetype)withMapping:(NSDictionary<NSArray<FBDiagnosticName> *, NSArray<FBLogSearchPredicate *> *> *)mapping options:(FBBatchLogSearchOptions)options error:(NSError **)error;
++ (instancetype)searchWithMapping:(NSDictionary<FBDiagnosticName, NSArray<FBLogSearchPredicate *> *> *)mapping options:(FBBatchLogSearchOptions)options since:(nullable NSDate *)since error:(NSError **)error;
+
+#pragma mark Public Methods
 
 /**
  Runs the Reciever over an array of Diagnostics.
@@ -74,7 +81,15 @@ typedef NS_OPTIONS(NSUInteger, FBBatchLogSearchOptions) {
  @param diagnostics an NSArray of FBDiagnostics to search.
  @return a search result
  */
-- (FBBatchLogSearchResult *)search:(NSArray<FBDiagnostic *> *)diagnostics;
+- (FBBatchLogSearchResult *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics;
+
+/**
+ Runs the Reciever over an iOS Target.
+
+ @param target the target to search.
+ @return a search result, wrapped in a future.
+ */
+- (FBFuture<FBBatchLogSearchResult *> *)searchOnTarget:(id<FBiOSTarget>)target;
 
 /**
  Convenience method for searching an array of diagnostics with a single predicate.
@@ -85,6 +100,24 @@ typedef NS_OPTIONS(NSUInteger, FBBatchLogSearchOptions) {
  @return a NSDictionary specified by -[FBBatchLogSearchResult mapping].
  */
 + (NSDictionary<FBDiagnosticName, NSArray<NSString *> *> *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate options:(FBBatchLogSearchOptions)options;
+
+#pragma mark Properties
+
+/**
+ The Search Mapping.
+ Described in the Initializer.
+ */
+@property (nonatomic, copy, readonly) NSDictionary<FBDiagnosticName, NSArray<FBLogSearchPredicate *> *> *mapping;
+
+/**
+ Options for the Search.
+ */
+@property (nonatomic, assign, readonly) FBBatchLogSearchOptions options;
+
+/**
+ The start date to search from
+ */
+@property (nonatomic, strong, nullable, readonly) NSDate *since;
 
 @end
 

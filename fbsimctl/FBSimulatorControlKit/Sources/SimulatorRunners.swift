@@ -14,9 +14,9 @@ extension FileOutput {
   func makeWriter() throws -> FBFileWriter {
     switch self {
     case .path(let path):
-      return try FBFileWriter(forFilePath: path, blocking: true)
+      return try FBFileWriter.syncWriter(forFilePath: path)
     case .standardOut:
-      return FBFileWriter(fileHandle: FileHandle.standardOutput, blocking: true)
+      return FBFileWriter.syncWriter(with: FileHandle.standardOutput)
     }
   }
 }
@@ -69,10 +69,6 @@ struct SimulatorActionRunner : Runner {
     }
 
     switch action {
-    case .approve(let bundleIDs):
-      return iOSTargetRunner.simple(reporter, .approve, StringsSubject(bundleIDs)) {
-        try simulator.authorizeLocationSettings(bundleIDs)
-      }
     case .clearKeychain(let maybeBundleID):
       return iOSTargetRunner.simple(reporter, .clearKeychain, ControlCoreSubject(simulator)) {
         if let bundleID = maybeBundleID {
@@ -104,18 +100,11 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner.simple(reporter, .relaunch, ControlCoreSubject(appLaunch)) {
         try simulator.launchOrRelaunchApplication(appLaunch)
       }
-    case .search(let search):
-      return SearchRunner(reporter, search)
     case .serviceInfo(let identifier):
       return ServiceInfoRunner(reporter: reporter, identifier: identifier)
     case .shutdown:
       return iOSTargetRunner.simple(reporter, .shutdown, ControlCoreSubject(simulator)) {
         try simulator.set!.kill(simulator)
-      }
-    case .tap(let x, let y):
-      return iOSTargetRunner.simple(reporter, .tap, ControlCoreSubject(simulator)) {
-        let event = FBSimulatorHIDEvent.tapAt(x: x, y: y)
-        try event.perform(on: simulator.connect().connectToHID())
       }
     case .setLocation(let latitude, let longitude):
       return iOSTargetRunner.simple(reporter, .setLocation, ControlCoreSubject(simulator)) {
@@ -133,31 +122,13 @@ struct SimulatorActionRunner : Runner {
   }
 }
 
-private struct SearchRunner : Runner {
-  let reporter: SimulatorReporter
-  let search: FBBatchLogSearch
-
-  init(_ reporter: SimulatorReporter, _ search: FBBatchLogSearch) {
-    self.reporter = reporter
-    self.search = search
-  }
-
-  func run() -> CommandResult {
-    let simulator = self.reporter.simulator
-    let diagnostics = simulator.diagnostics.allDiagnostics()
-    let results = search.search(diagnostics)
-    self.reporter.report(.search, .discrete, ControlCoreSubject(results))
-    return .success(nil)
-  }
-}
-
 private struct ServiceInfoRunner : Runner {
   let reporter: SimulatorReporter
   let identifier: String
 
   func run() -> CommandResult {
     var pid: pid_t = 0
-    guard let _ = try? self.reporter.simulator.launchctl.serviceName(forBundleID: self.identifier, processIdentifierOut: &pid) else {
+    guard let _ = try? self.reporter.simulator.serviceName(forBundleID: self.identifier, processIdentifierOut: &pid) else {
       return .failure("Could not get service for name \(identifier)")
     }
     guard let processInfo = self.reporter.simulator.processFetcher.processFetcher.processInfo(for: pid) else {

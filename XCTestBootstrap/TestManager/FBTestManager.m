@@ -11,16 +11,17 @@
 
 #import "FBDeviceOperator.h"
 #import "FBTestManagerAPIMediator.h"
-#import "FBTestManagerProcessInteractionDelegate.h"
-#import "FBTestManagerProcessInteractionOperator.h"
 #import "FBTestManagerContext.h"
 #import "FBTestManagerResult.h"
 
 @interface FBTestManager ()
 
-@property (nonatomic, strong, readonly) FBTestManagerContext *context;
+@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
 @property (nonatomic, strong, readonly) FBTestManagerAPIMediator *mediator;
-@property (nonatomic, strong, readonly) FBTestManagerProcessInteractionOperator *processOperator;
+
+@property (nonatomic, strong, nullable, readonly) FBFuture<FBTestManagerResult *> *connectFuture;
+@property (nonatomic, strong, nullable, readonly) FBFuture<FBTestManagerResult *> *executeFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture *terminationFuture;
 
 @end
 
@@ -30,50 +31,53 @@
 
 + (instancetype)testManagerWithContext:(FBTestManagerContext *)context iosTarget:(id<FBiOSTarget>)iosTarget reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  FBTestManagerProcessInteractionOperator *processOperator = [FBTestManagerProcessInteractionOperator withIOSTarget:iosTarget];
   FBTestManagerAPIMediator *mediator = [FBTestManagerAPIMediator
     mediatorWithContext:context
-    deviceOperator:iosTarget.deviceOperator
-    processDelegate:processOperator
+    target:iosTarget
     reporter:reporter
     logger:logger];
 
-  return [[FBTestManager alloc] initWithContext:context mediator:mediator processOperator:processOperator];
+  return [[FBTestManager alloc] initWithTarget:iosTarget mediator:mediator];
 }
 
-- (instancetype)initWithContext:(FBTestManagerContext *)context mediator:(FBTestManagerAPIMediator *)mediator processOperator:(FBTestManagerProcessInteractionOperator *)processOperator
+- (instancetype)initWithTarget:(id<FBiOSTarget>)target mediator:(FBTestManagerAPIMediator *)mediator
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _target = target;
   _mediator = mediator;
-  _context = context;
-  _processOperator = processOperator;
+  _terminationFuture = [FBMutableFuture future];
 
   return self;
 }
 
 #pragma mark Public
 
-- (nullable FBTestManagerResult *)connectWithTimeout:(NSTimeInterval)timeout
+- (FBFuture<FBTestManagerResult *> *)connect
 {
-  FBTestManagerResult *result = [self.mediator connectToTestManagerDaemonAndBundleWithTimeout:timeout];
-  if (result) {
-    return result;
+  if (self.connectFuture) {
+    return self.connectFuture;
   }
-  return [self.mediator executeTestPlanWithTimeout:timeout];
+  _connectFuture = [self.mediator.connect
+    onQueue:self.target.workQueue notifyOfCancellation:^(FBFuture *_) {
+      [self terminate];
+    }];
+  return self.connectFuture;
 }
 
-- (FBTestManagerResult *)waitUntilTestingHasFinishedWithTimeout:(NSTimeInterval)timeout
+- (FBFuture<FBTestManagerResult *> *)execute
 {
-  return [self.mediator waitUntilTestRunnerAndTestManagerDaemonHaveFinishedExecutionWithTimeout:timeout];
-}
-
-- (FBTestManagerResult *)disconnect
-{
-  return [self.mediator disconnectTestRunnerAndTestManagerDaemon];
+  if (self.executeFuture) {
+    return self.executeFuture;
+  }
+  _executeFuture = [self.mediator.execute
+    onQueue:self.target.workQueue notifyOfCancellation:^(FBFuture *_) {
+      [self terminate];
+    }];
+  return self.executeFuture;
 }
 
 - (NSString *)description
@@ -83,19 +87,28 @@
 
 #pragma mark FBXCTestOperation
 
-+ (FBTerminationHandleType)handleType
+- (FBFuture<NSNull *> *)completed
+{
+  return [self.connect
+    onQueue:self.target.asyncQueue map:^(FBTestManagerResult *_) {
+      return NSNull.null;
+    }];
+}
+
+- (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleTypeTestOperation;
 }
 
 - (void)terminate
 {
-  [self disconnect];
+  [self.mediator disconnect];
+  [self.terminationFuture cancel];
 }
 
 - (BOOL)hasTerminated
 {
-  return [self.mediator checkForResult] != nil;
+  return self.terminationFuture.hasCompleted;
 }
 
 @end

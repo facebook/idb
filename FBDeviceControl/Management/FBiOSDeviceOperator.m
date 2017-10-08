@@ -31,10 +31,13 @@
 
 #import "FBDevice.h"
 #import "FBDevice+Private.h"
+#import "FBDeviceSet.h"
 #import "FBDeviceControlError.h"
 #import "FBAMDevice+Private.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
+
+#import <FBControlCore/FBControlCore.h>
 
 @protocol DVTApplication <NSObject>
 - (NSString *)installedPath;
@@ -43,18 +46,25 @@
 - (NSString *)executableName;
 @end
 
-static NSString *const ApplicationNameKey = @"CFBundleName";
-static NSString *const ApplicationIdentifierKey = @"CFBundleIdentifier";
-static NSString *const ApplicationTypeKey = @"ApplicationType";
-static NSString *const ApplicationPathKey = @"Path";
-
 @interface FBiOSDeviceOperator ()
 
 @property (nonatomic, strong, readonly) FBDevice *device;
 
+// The DVTDevice corresponding to the receiver.
+@property (nonatomic, nullable, strong, readonly) DVTiOSDevice *dvtDevice;
+
 @end
 
 @implementation FBiOSDeviceOperator
+
+@synthesize dvtDevice = _dvtDevice;
+- (DVTiOSDevice *)dvtDevice
+{
+  if (_dvtDevice == nil) {
+    _dvtDevice = [self dvtDeviceWithUDID:self.udid];
+  }
+  return _dvtDevice;
+}
 
 + (instancetype)forDevice:(FBDevice *)device
 {
@@ -94,9 +104,9 @@ static NSString *const ApplicationPathKey = @"Path";
 
 - (void)fetchApplications
 {
-  if (!self.device.dvtDevice.applications) {
+  if (!self.dvtDevice.applications) {
     [FBRunLoopSpinner spinUntilBlockFinished:^id{
-      DVTFuture *future = self.device.dvtDevice.token.fetchApplications;
+      DVTFuture *future = self.dvtDevice.token.fetchApplications;
       [future waitUntilFinished];
       return nil;
     }];
@@ -106,7 +116,7 @@ static NSString *const ApplicationPathKey = @"Path";
 - (id<DVTApplication>)installedApplicationWithBundleIdentifier:(NSString *)bundleID
 {
   [self fetchApplications];
-  return [self.device.dvtDevice installedApplicationWithBundleIdentifier:bundleID];
+  return [self.dvtDevice installedApplicationWithBundleIdentifier:bundleID];
 }
 
 - (FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error
@@ -130,7 +140,7 @@ static NSString *const ApplicationPathKey = @"Path";
 {
   __block NSError *innerError = nil;
   BOOL result = [[FBRunLoopSpinner spinUntilBlockFinished:^id{
-    return @([self.device.dvtDevice uploadApplicationDataWithPath:path forInstalledApplicationWithBundleIdentifier:bundleID error:&innerError]);
+    return @([self.dvtDevice uploadApplicationDataWithPath:path forInstalledApplicationWithBundleIdentifier:bundleID error:&innerError]);
   }] boolValue];
   *error = innerError;
   return result;
@@ -140,8 +150,8 @@ static NSString *const ApplicationPathKey = @"Path";
 {
   id returnObject =
   [FBRunLoopSpinner spinUntilBlockFinished:^id{
-    if ([self.device.dvtDevice installedApplicationWithBundleIdentifier:bundleIdentifier]) {
-      return [self.device.dvtDevice uninstallApplicationWithBundleIdentifierSync:bundleIdentifier];
+    if ([self.dvtDevice installedApplicationWithBundleIdentifier:bundleIdentifier]) {
+      return [self.dvtDevice uninstallApplicationWithBundleIdentifierSync:bundleIdentifier];
     }
     return nil;
   }];
@@ -154,6 +164,38 @@ static NSString *const ApplicationPathKey = @"Path";
   return YES;
 }
 
+#pragma mark - DVTDevice support
+
+- (nullable DVTiOSDevice *)dvtDeviceWithUDID:(NSString *)udid
+{
+  [self primeDVTDeviceManager];
+  NSDictionary<NSString *, DVTiOSDevice *> *dvtDevices = [[self class] keyDVTDevicesByUDID:[objc_lookUpClass("DVTiOSDevice") alliOSDevices]];
+  return dvtDevices[udid];
+}
+
++ (NSDictionary<NSString *, DVTiOSDevice *> *)keyDVTDevicesByUDID:(NSArray<DVTiOSDevice *> *)devices
+{
+  NSMutableDictionary<NSString *, DVTiOSDevice *> *dictionary = [NSMutableDictionary dictionary];
+  for (DVTiOSDevice *device in devices) {
+    dictionary[device.identifier] = device;
+  }
+  return [dictionary copy];
+}
+
+static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
+- (void)primeDVTDeviceManager
+{
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    // It seems that searching for a device that does not exist will cause all available devices/simulators etc. to be cached.
+    // There's probably a better way of fetching all the available devices, but this appears to work well enough.
+    // This means that all the cached available devices can then be found.
+    [FBDeviceControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworksOrAbort];
+
+    DVTDeviceManager *deviceManager = [objc_lookUpClass("DVTDeviceManager") defaultDeviceManager];
+    [deviceManager searchForDevicesWithType:nil options:@{@"id" : @"I_DONT_EXIST_AT_ALL"} timeout:FBiOSDeviceOperatorDVTDeviceManagerTickleTime error:nil];
+  });
+}
 
 #pragma mark - FBDeviceOperator protocol
 
@@ -193,7 +235,7 @@ static NSString *const ApplicationPathKey = @"Path";
 
 - (BOOL)requiresTestDaemonMediationForTestHostConnection
 {
-  return self.device.dvtDevice.requiresTestDaemonMediationForTestHostConnection;
+  return self.dvtDevice.requiresTestDaemonMediationForTestHostConnection;
 }
 
 - (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError **)error
@@ -202,7 +244,7 @@ static NSString *const ApplicationPathKey = @"Path";
            timeout:5 * 60]
           timeoutErrorMessage:@"Device was locked"]
          reminderMessage:@"Please unlock device!"]
-        spinUntilTrue:^BOOL{ return ![self.device.dvtDevice isPasscodeLocked]; } error:error])
+        spinUntilTrue:^BOOL{ return ![self.dvtDevice isPasscodeLocked]; } error:error])
   {
     return NO;
   }
@@ -211,7 +253,7 @@ static NSString *const ApplicationPathKey = @"Path";
            timeout:5 * 60]
           timeoutErrorMessage:@"Device did not become available"]
          reminderMessage:@"Waiting for device to become available!"]
-        spinUntilTrue:^BOOL{ return [self.device.dvtDevice isAvailable]; }])
+        spinUntilTrue:^BOOL{ return [self.dvtDevice isAvailable]; }])
   {
     return NO;
   }
@@ -220,7 +262,7 @@ static NSString *const ApplicationPathKey = @"Path";
            timeout:5 * 60]
           timeoutErrorMessage:@"Failed to gain access to device"]
          reminderMessage:@"Allow device access!"]
-        spinUntilTrue:^BOOL{ return [self.device.dvtDevice deviceReady]; } error:error])
+        spinUntilTrue:^BOOL{ return [self.dvtDevice deviceReady]; } error:error])
   {
     return NO;
   }
@@ -247,13 +289,13 @@ static NSString *const ApplicationPathKey = @"Path";
     return NO;
   }
 
-  if (!self.device.dvtDevice.supportsXPCServiceDebugging) {
+  if (!self.dvtDevice.supportsXPCServiceDebugging) {
     return [[FBDeviceControlError
       describe:@"Device does not support XPC service debugging"]
       failBool:error];
   }
 
-  if (!self.device.dvtDevice.serviceHubProcessControlChannel) {
+  if (!self.dvtDevice.serviceHubProcessControlChannel) {
     return [[FBDeviceControlError
       describe:@"Failed to create HUB control channel"]
       failBool:error];
@@ -263,7 +305,6 @@ static NSString *const ApplicationPathKey = @"Path";
 
 - (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  NSAssert(error, @"error is required for hub commands");
   return
   [[self executeHubProcessControlSelector:NSSelectorFromString(@"processIdentifierForBundleIdentifier:")
                                     error:error
@@ -271,14 +312,14 @@ static NSString *const ApplicationPathKey = @"Path";
    intValue];
 }
 
-- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID
+- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID sinceDate:(NSDate *)date
 {
   return nil;
 }
 
 - (NSString *)consoleString
 {
-  return [self.device.dvtDevice.token.deviceConsoleController consoleString];
+  return [self.dvtDevice.token.deviceConsoleController consoleString];
 }
 
 - (BOOL)observeProcessWithID:(NSInteger)processID error:(NSError **)error
@@ -301,127 +342,29 @@ static NSString *const ApplicationPathKey = @"Path";
 
 - (NSArray<NSDictionary<NSString *, id> *> *)installedApplicationsData
 {
-  [self fetchApplications];
-
   NSMutableArray *applications = [[NSMutableArray alloc] init];
 
-  for(NSObject *app in self.device.dvtDevice.applications) {
-    NSDictionary *dict = [app valueForKey:@"plist"];
-    if (!dict) {
-      continue;
-    }
-    [applications addObject:dict];
+  __block CFDictionaryRef cf_apps;
+
+  NSNumber *return_code = [self.device.amDevice handleWithBlockDeviceSession:^id(CFTypeRef device) {
+    return @(FBAMDeviceLookupApplications(device, 0, &cf_apps));
+  } error: nil];
+
+  NSDictionary *apps = CFBridgingRelease(cf_apps);
+
+  if (return_code == nil || [return_code intValue] != 0) {
+    return
+    [[FBDeviceControlError
+      describe:@"Failed to get list of applications"]
+     fail:nil];
   }
+
+  [applications addObjectsFromArray:[apps allValues]];
+
   return applications;
 }
 
 #pragma mark FBApplicationCommands Implementation
-
-- (id)handleWithAFCSession:(id(^)(void))operationBlock error:(NSError **)error
-{
-  __block NSError *innerError = nil;
-  id result = [self.device.amDevice handleWithBlockDeviceSession:^(CFTypeRef device) {
-    int afcConn;
-    int afcReturnCode = FBAMDeviceSecureStartService(device, CFSTR("com.apple.afc"), NULL, &afcConn);
-    if (afcReturnCode != 0) {
-      return [[FBDeviceControlError
-        describeFormat:@"Failed to start afc service with error code: %x", afcReturnCode]
-        fail:&innerError];
-    }
-    id operationResult = operationBlock();
-    close(afcConn);
-    return operationResult;
-  } error: error];
-  *error = innerError;
-  return result;
-}
-
-- (BOOL)transferAppURL:(NSURL *)app_url options:(NSDictionary *)options error:(NSError **)error
-{
-  id transferReturnCode = [self handleWithAFCSession:^id() {
-    return @(FBAMDeviceSecureTransferPath(0,
-                                          self.device.amDevice.amDevice,
-                                          (__bridge CFURLRef _Nonnull)(app_url),
-                                          (__bridge CFDictionaryRef _Nonnull)(options),
-                                          NULL,
-                                          0));
-  } error:error];
-
-  if (transferReturnCode == nil) {
-    return [[FBDeviceControlError
-             describe:@"Failed to transfer path"]
-            failBool:error];
-  }
-
-  if ([transferReturnCode intValue] != 0) {
-    return [[FBDeviceControlError
-             describeFormat:@"Failed to transfer path with error code: %x", [transferReturnCode intValue]]
-            failBool:error];
-  }
-  return YES;
-}
-
-- (BOOL)secureInstallApplication:(NSURL *)app_url options:(NSDictionary *)options error:(NSError **)error
-{
-  NSNumber *install_return_code = [self.device.amDevice handleWithBlockDeviceSession:^id(CFTypeRef device) {
-    return @(FBAMDeviceSecureInstallApplication(0, device, (__bridge CFURLRef _Nonnull)(app_url), (__bridge CFDictionaryRef _Nonnull)(options), NULL, 0));
-  } error: error];
-
-  if (install_return_code == nil) {
-    return
-    [[FBDeviceControlError
-      describe:@"Failed to install application"]
-     failBool:error];
-  }
-  if ([install_return_code intValue] != 0) {
-    return
-    [[FBDeviceControlError
-      describe:@"Failed to install application"]
-     failBool:error];
-  }
-  return YES;
-}
-
-- (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
-{
-  NSURL *app_url = [NSURL fileURLWithPath:path isDirectory:YES];
-  NSDictionary *options = @{@"PackageType" : @"Developer"};
-  NSError *inner_error = nil;
-  if (![self transferAppURL:app_url options:options error:&inner_error] ||
-      ![self secureInstallApplication:app_url options:options error:&inner_error])
-  {
-    return [[[FBDeviceControlError
-              describeFormat:@"Failed to install application with path %@", path]
-             causedBy:inner_error]
-            failBool:error];
-  }
-
-  return YES;
-}
-
-- (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  NSError *innerError = nil;
-  NSNumber *returnCode = [self.device.amDevice handleWithBlockDeviceSession:^id(CFTypeRef device) {
-    return @(FBAMDeviceSecureUninstallApplication(0, device, (__bridge CFStringRef _Nonnull)(bundleID), 0, NULL, 0));
-  } error: &innerError];
-
-  if (returnCode == nil) {
-    return
-    [[[FBDeviceControlError
-       describe:@"Failed to uninstall application"]
-      causedBy:innerError]
-     failBool:error];
-  }
-  if ([returnCode intValue] != 0) {
-    return
-    [[[FBDeviceControlError
-       describeFormat:@"Failed to uninstall application with error code %x", [returnCode intValue]]
-      causedBy:innerError]
-     failBool:error];
-  }
-  return YES;
-}
 
 - (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
@@ -458,20 +401,24 @@ static NSString *const ApplicationPathKey = @"Path";
   return [self killProcessWithID:PID error:error];
 }
 
-- (NSArray<FBApplicationDescriptor *> *)installedApplications
+- (nullable NSArray<FBInstalledApplication *> *)installedApplicationsWithError:(NSError **)error
 {
-  NSMutableArray<FBApplicationDescriptor *> *installedApplications = [[NSMutableArray alloc] init];
+  NSMutableArray<FBInstalledApplication *> *installedApplications = [[NSMutableArray alloc] init];
 
-  for(NSDictionary *app in [self installedApplicationsData]) {
+  for (NSDictionary *app in [self installedApplicationsData]) {
     if (app == nil) {
       continue;
     }
-    FBApplicationDescriptor *appData = [FBApplicationDescriptor
-      remoteApplicationWithName:app[ApplicationNameKey]
-      path:app[ApplicationPathKey]
-      bundleID:app[ApplicationIdentifierKey]];
+    FBApplicationBundle *bundle = [FBApplicationBundle
+      applicationWithName:[app valueForKey:FBApplicationInstallInfoKeyBundleName] ?: @""
+      path:[app valueForKey:FBApplicationInstallInfoKeyPath] ?: @""
+      bundleID:app[FBApplicationInstallInfoKeyBundleIdentifier]];
+    FBInstalledApplication *application = [FBInstalledApplication
+      installedApplicationWithBundle:bundle
+      installType:[FBInstalledApplication installTypeFromString:
+                   [app valueForKey:FBApplicationInstallInfoKeyApplicationType] ?: @""]];
 
-    [installedApplications addObject:appData];
+    [installedApplications addObject:application];
   }
 
   return [installedApplications copy];
@@ -479,9 +426,10 @@ static NSString *const ApplicationPathKey = @"Path";
 
 #pragma mark - Helpers
 
-- (id)executeHubProcessControlSelector:(SEL)aSelector error:(NSError **)error arguments:(id)arg, ...
+- (id)executeHubProcessControlSelector:(SEL)aSelector
+                                 error:(NSError *_Nullable *)error
+                             arguments:(id)arg, ...
 {
-  NSAssert(error, @"error is required for hub commands");
   va_list _arguments;
   va_start(_arguments, arg);
   va_list *arguments = &_arguments;
@@ -490,7 +438,7 @@ static NSString *const ApplicationPathKey = @"Path";
   id result = [FBRunLoopSpinner spinUntilBlockFinished:^id{
     __block id responseObject;
 
-    DTXChannel *channel = self.device.dvtDevice.serviceHubProcessControlChannel;
+    DTXChannel *channel = self.dvtDevice.serviceHubProcessControlChannel;
     DTXMessage *message = [[objc_lookUpClass("DTXMessage") alloc] initWithSelector:aSelector firstArg:arg remainingObjectArgs:(__bridge id)(*arguments)];
     [channel sendControlSync:message replyHandler:^(DTXMessage *responseMessage){
       if (responseMessage.errorStatus) {
@@ -502,7 +450,9 @@ static NSString *const ApplicationPathKey = @"Path";
     return responseObject;
   }];
   va_end(_arguments);
-  *error = innerError;
+  if (error) {
+    *error = innerError;
+  }
   return result;
 }
 

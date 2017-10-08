@@ -61,6 +61,22 @@
 - (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip;
 
 /**
+ Adds bundle ID of to the target application for UI tests.
+
+ @param targetApplicationBundleID bundle ID of to the target application
+ @return builder
+ */
+- (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID;
+
+/**
+ Adds path to the target application for UI tests.
+
+ @param targetApplicationPath path to the target application
+ @return builder
+ */
+- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath;
+
+/**
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return prepared test bundle if the operation succeeds, otherwise nil.
  */

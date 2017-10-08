@@ -30,32 +30,25 @@
   id IDEBundleInjectionMock = [OCMockObject mockForClass:FBProductBundle.class];
   [[[IDEBundleInjectionMock stub] andReturn:@"/whitehole/IDEBI.framework/rrr"] binaryPath];
 
-  return
-  [[[[[[[[FBTestRunnerConfigurationBuilder builder]
-         withSessionIdentifer:[NSUUID UUID]]
-        withFrameworkSearchPath:@"/Apple"]
-       withTestRunnerApplication:appBundleMock]
-      withTestConfigurationPath:@"/booo/magic.xctestconfiguration"]
-     withIDEBundleInjectionFramework:IDEBundleInjectionMock]
-    withWebDriverAgentTestBundle:testBundleMock]
-   build];
-}
-
-- (void)testEmptyBuild
-{
-  XCTAssertThrows([[FBTestRunnerConfigurationBuilder builder] build]);
+  return [FBTestRunnerConfiguration
+    configurationWithSessionIdentifier:NSUUID.UUID
+    hostApplication:appBundleMock
+    ideInjectionFramework:IDEBundleInjectionMock
+    testBundle:testBundleMock
+    testConfigurationPath:@"/booo/magic.xctestconfiguration"
+    frameworkSearchPath:@"/Apple"];
 }
 
 - (void)testLaunchArguments
 {
-  NSArray *expectedArguments = @[@"-NSTreatUnknownArgumentsAsOpen", @"NO", @"-ApplePersistenceIgnoreState", @"YES"];
-  XCTAssertEqualObjects(self.buildConfiguration.launchArguments, expectedArguments);
+  NSArray<NSString *> *expected = @[@"-NSTreatUnknownArgumentsAsOpen", @"NO", @"-ApplePersistenceIgnoreState", @"YES"];
+  XCTAssertEqualObjects(self.buildConfiguration.launchArguments, expected);
+  XCTAssertEqualObjects([[self.buildConfiguration copy] launchArguments], expected);
 }
 
 - (void)testLaunchEnvironment
 {
-  NSDictionary *expectedEnvironment =
-  @{
+  NSDictionary<NSString *, NSString *> *expected = @{
     @"AppTargetLocation" : @"/blackhole/pray.app/app",
     @"DYLD_INSERT_LIBRARIES" : @"/whitehole/IDEBI.framework/rrr",
     @"DYLD_FRAMEWORK_PATH" : @"/Apple",
@@ -67,7 +60,8 @@
     @"XCODE_DBG_XPC_EXCLUSIONS" : @"com.apple.dt.xctestSymbolicator",
     @"XCTestConfigurationFilePath" : @"/booo/magic.xctestconfiguration",
   };
-  XCTAssertEqualObjects(self.buildConfiguration.launchEnvironment, expectedEnvironment);
+  XCTAssertEqualObjects(self.buildConfiguration.launchEnvironment, expected);
+  XCTAssertEqualObjects([[self.buildConfiguration copy] launchEnvironment], expected);
 }
 
 @end

@@ -21,7 +21,6 @@
 #import "FBFramebuffer.h"
 #import "FBFramebufferConfiguration.h"
 #import "FBFramebufferSurface.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBridge.h"
@@ -58,7 +57,7 @@
   if (objc_getClass("SimDeviceIOClient")) {
     return [[FBFramebufferConnectStrategy_IOPortClient alloc] initWithConfiguration:configuration];
   }
-  if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+  if (FBXcodeConfiguration.isXcode8OrGreater) {
     return [[FBFramebufferConnectStrategy_Xcode8 alloc] initWithConfiguration:configuration];
   }
   return [[FBFramebufferConnectStrategy_Xcode7 alloc] initWithConfiguration:configuration];
@@ -88,9 +87,11 @@
 
 - (nullable FBFramebuffer *)connect:(FBSimulator *)simulator error:(NSError **)error
 {
-  FBFramebufferSurface *renderable = [FBFramebufferSurface mainScreenSurfaceForClient:(SimDeviceIOClient *)simulator.device.io];
-  FBFramebuffer *framebuffer = [FBFramebuffer framebufferWithRenderable:renderable configuration:self.configuration simulator:simulator];
-  return framebuffer;
+  FBFramebufferSurface *renderable = [FBFramebufferSurface mainScreenSurfaceForClient:(SimDeviceIOClient *)simulator.device.io logger:simulator.logger error:error];
+  if (!renderable) {
+    return nil;
+  }
+  return [FBFramebuffer framebufferWithRenderable:renderable configuration:self.configuration simulator:simulator];
 }
 
 @end
@@ -132,7 +133,7 @@
 {
   if (simulator.state != FBSimulatorStateShutdown) {
     return [[FBSimulatorError
-      describeFormat:@"Cannot connect Framebuffer unless shutdown, actual state %@", [FBSimulator stateStringFromSimulatorState:simulator.state]]
+      describeFormat:@"Cannot connect Framebuffer unless shutdown, actual state %@", simulator.stateString]
       failBool:error];
   }
   return YES;
@@ -186,7 +187,7 @@
 {
   if (simulator.state != FBSimulatorStateShutdown && simulator.state != FBSimulatorStateBooted) {
     return [[FBSimulatorError
-      describeFormat:@"Cannot connect Framebuffer unless shutdown or booted, actual state %@", [FBSimulator stateStringFromSimulatorState:simulator.state]]
+      describeFormat:@"Cannot connect Framebuffer unless shutdown or booted, actual state %@", simulator.stateString]
       failBool:error];
   }
   return YES;

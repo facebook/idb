@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)boot:(NSError **)error;
+- (BOOL)bootWithError:(NSError **)error;
 
 @end
 

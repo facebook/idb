@@ -17,10 +17,10 @@
 
 @implementation FBSimulatorControlFixtures
 
-+ (FBApplicationDescriptor *)tableSearchApplicationWithError:(NSError **)error
++ (FBApplicationBundle *)tableSearchApplicationWithError:(NSError **)error
 {
   NSString *path = [[NSBundle bundleForClass:self] pathForResource:@"TableSearch" ofType:@"app"];
-  return [FBApplicationDescriptor userApplicationWithPath:path error:error];
+  return [FBApplicationBundle applicationWithPath:path error:error];
 }
 
 + (NSString *)photo0Path
@@ -70,102 +70,56 @@
     withUITesting:NO];
 }
 
-- (FBApplicationDescriptor *)tableSearchApplication
+- (FBApplicationBundle *)tableSearchApplication
 {
   NSError *error = nil;
-  FBApplicationDescriptor *value = [FBSimulatorControlFixtures tableSearchApplicationWithError:&error];
+  FBApplicationBundle *value = [FBSimulatorControlFixtures tableSearchApplicationWithError:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(value);
   return value;
 }
 
-- (FBApplicationDescriptor *)safariApplication
-{
-  NSError *error = nil;
-  FBApplicationDescriptor *application = [FBApplicationDescriptor systemApplicationNamed:@"MobileSafari" error:&error];
-  XCTAssertNil(error);
-  XCTAssertNotNil(application, @"Could not fetch MobileSafari");
-  return application;
-}
+static NSString *const MobileSafariBundleName = @"MobileSafari";
+static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
 
 - (FBApplicationLaunchConfiguration *)tableSearchAppLaunch
 {
-  FBApplicationDescriptor *application = self.tableSearchApplication;
+  FBApplicationBundle *application = self.tableSearchApplication;
   if (!application) {
     return nil;
   }
-  return [FBApplicationLaunchConfiguration configurationWithApplication:application arguments:@[] environment:@{} waitForDebugger:NO output:FBProcessOutputConfiguration.outputToDevNull];
+  return [FBApplicationLaunchConfiguration
+    configurationWithApplication:application
+    arguments:@[]
+    environment:@{@"FROM" : @"FBSIMULATORCONTROL"}
+    waitForDebugger:NO
+    output:FBProcessOutputConfiguration.outputToDevNull];
 }
 
 - (FBApplicationLaunchConfiguration *)safariAppLaunch
 {
-  FBApplicationDescriptor *application = self.safariApplication;
-  if (!application) {
-    return nil;
-  }
-  return [FBApplicationLaunchConfiguration configurationWithApplication:application arguments:@[] environment:@{} waitForDebugger:NO output:FBProcessOutputConfiguration.outputToDevNull];
+  return [FBApplicationLaunchConfiguration
+    configurationWithBundleID:MobileSafariBundleIdentifier
+    bundleName:MobileSafariBundleName
+    arguments:@[]
+    environment:@{@"FROM" : @"FBSIMULATORCONTROL"}
+    waitForDebugger:NO
+    output:FBProcessOutputConfiguration.outputToDevNull];
 }
 
 - (FBAgentLaunchConfiguration *)agentLaunch1
 {
   return [FBAgentLaunchConfiguration
-    configurationWithBinary:self.safariApplication.binary
+    configurationWithBinary:[FBBinaryDescriptor binaryWithPath:NSProcessInfo.processInfo.arguments[0] error:nil]
     arguments:@[@"BINGBONG"]
     environment:@{@"FIB" : @"BLE"}
     output:FBProcessOutputConfiguration.outputToDevNull];
 }
 
-- (FBApplicationLaunchConfiguration *)appLaunch1
-{
-  return [FBApplicationLaunchConfiguration
-    configurationWithApplication:self.tableSearchApplication
-    arguments:@[@"LAUNCH1"]
-    environment:@{@"FOO" : @"BAR"}
-    waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull];
-}
-
-- (FBApplicationLaunchConfiguration *)appLaunch2
-{
-  return [FBApplicationLaunchConfiguration
-    configurationWithApplication:self.safariApplication
-    arguments:@[@"LAUNCH2"]
-    environment:@{@"BING" : @"BONG"}
-    waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull];
-}
-
-- (FBProcessInfo *)processInfo1
-{
-  return [[FBProcessInfo alloc]
-    initWithProcessIdentifier:42
-    launchPath:self.tableSearchApplication.binary.path
-    arguments:self.appLaunch1.arguments
-    environment:self.appLaunch1.environment];
-}
-
-- (FBProcessInfo *)processInfo2
-{
-  return [[FBProcessInfo alloc]
-    initWithProcessIdentifier:20
-    launchPath:self.safariApplication.binary.path
-    arguments:self.appLaunch2.arguments
-    environment:self.appLaunch2.environment];
-}
-
-- (FBProcessInfo *)processInfo2a
-{
-  return [[FBProcessInfo alloc]
-    initWithProcessIdentifier:30
-    launchPath:self.safariApplication.binary.path
-    arguments:self.appLaunch2.arguments
-    environment:self.appLaunch2.environment];
-}
-
 - (nullable NSString *)iOSUnitTestBundlePath
 {
   NSString *bundlePath = FBSimulatorControlFixtures.iOSUnitTestBundlePath;
-  if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+  if (!FBXcodeConfiguration.isXcode8OrGreater) {
     return bundlePath;
   }
   id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;

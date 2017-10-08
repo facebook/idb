@@ -20,7 +20,7 @@
 - (void)assertShutdownSimulatorAndTerminateSession:(FBSimulator *)simulator
 {
   NSError *error = nil;
-  BOOL success = [simulator shutdownSimulatorWithError:&error];
+  BOOL success = [simulator shutdownWithError:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
@@ -64,14 +64,12 @@
 
 #pragma mark Processes
 
-- (void)assertLastLaunchedApplicationIsRunning:(FBSimulator *)simulator
+- (void)assertSimulator:(FBSimulator *)simulator isRunningApplicationFromConfiguration:(FBApplicationLaunchConfiguration *)launchConfiguration
 {
-  FBProcessInfo *process = simulator.history.lastLaunchedApplicationProcess;
-  XCTAssertTrue(process.processIdentifier);
   NSError *error = nil;
-  BOOL isRunning = [simulator.launchctl processIsRunningOnSimulator:process error:nil];
-  XCTAssertTrue(isRunning);
+  FBProcessInfo *process = [simulator runningApplicationWithBundleID:launchConfiguration.bundleID error:&error];
   XCTAssertNil(error);
+  XCTAssertNotNil(process);
 }
 
 #pragma mark Private
@@ -105,10 +103,10 @@
 
 - (nullable FBSimulator *)assertObtainsBootedSimulator
 {
-  return [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration launchConfiguration:self.simulatorLaunchConfiguration];
+  return [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration bootConfiguration:self.bootConfiguration];
 }
 
-- (nullable FBSimulator *)assertObtainsBootedSimulatorWithInstalledApplication:(FBApplicationDescriptor *)application
+- (nullable FBSimulator *)assertObtainsBootedSimulatorWithInstalledApplication:(FBApplicationBundle *)application
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   if (!simulator) {
@@ -121,7 +119,7 @@
   return simulator;
 }
 
-- (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration launchConfiguration:(FBSimulatorBootConfiguration *)launchConfiguration
+- (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration bootConfiguration:(FBSimulatorBootConfiguration *)bootConfiguration
 {
   FBSimulator *simulator = [self assertObtainsSimulatorWithConfiguration:configuration];
   if (!simulator) {
@@ -130,56 +128,62 @@
   [self.assert consumeAllNotifications];
 
   NSError *error = nil;
-  BOOL success = [simulator bootSimulator:launchConfiguration error:&error];
+  BOOL success = [simulator boot:bootConfiguration error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  [self.assert bootingNotificationsFired:launchConfiguration];
+  [self.assert bootingNotificationsFired:bootConfiguration];
   [self.assert consumeAllNotifications];
   return simulator;
 }
 
-- (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator launchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
+- (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator installs:(FBApplicationBundle *)application
 {
   NSError *error = nil;
   BOOL success = [simulator installApplicationWithPath:application.path error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  success = [simulator launchApplication:applicationLaunchConfiguration error:&error];
+  return simulator;
+}
+
+- (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator launches:(FBApplicationLaunchConfiguration *)configuration
+{
+  NSError *error = nil;
+  BOOL success = [simulator launchApplication:configuration error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
-  [self assertLastLaunchedApplicationIsRunning:simulator];
+  [self assertSimulator:simulator isRunningApplicationFromConfiguration:configuration];
 
   [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidLaunch];
   [self.assert noNotificationsToConsume];
   [self assertSimulatorBooted:simulator];
 
-  success = [simulator launchApplication:applicationLaunchConfiguration error:&error];
+  success = [simulator launchApplication:configuration error:&error];
   XCTAssertFalse(success);
 
   return simulator;
 }
 
-- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration launches:(FBSimulatorBootConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration boots:(FBSimulatorBootConfiguration *)bootConfiguration thenLaunchesApplication:(FBApplicationLaunchConfiguration *)launchConfiguration
 {
-  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:simulatorConfiguration launchConfiguration:simulatorLaunchConfiguration];
-  return [self assertSimulator:simulator launchesApplication:application withApplicationLaunchConfiguration:applicationLaunchConfiguration];
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:simulatorConfiguration bootConfiguration:bootConfiguration];
+  return [self assertSimulator:simulator launches:launchConfiguration];
 }
 
-- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration relaunches:(FBSimulatorBootConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration boots:(FBSimulatorBootConfiguration *)bootConfiguration launchesThenRelaunchesApplication:(FBApplicationLaunchConfiguration *)launchConfiguration
 {
-  FBSimulator *simulator = [self assertSimulatorWithConfiguration:simulatorConfiguration launches:simulatorLaunchConfiguration thenLaunchesApplication:application  withApplicationLaunchConfiguration:applicationLaunchConfiguration];
-  FBProcessInfo *firstLaunch = simulator.history.lastLaunchedApplicationProcess;
+  FBSimulator *simulator = [self assertSimulatorWithConfiguration:simulatorConfiguration boots:bootConfiguration thenLaunchesApplication:launchConfiguration];
+  FBProcessInfo *firstLaunch = [simulator runningApplicationWithBundleID:launchConfiguration.bundleID error:nil];
 
   NSError *error = nil;
-  BOOL success = [simulator relaunchLastLaunchedApplicationWithError:&error];
+  BOOL success = [simulator launchOrRelaunchApplication:launchConfiguration error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
   [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate];
   [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidLaunch];
   [self.assert noNotificationsToConsume];
-  FBProcessInfo *secondLaunch = simulator.history.lastLaunchedApplicationProcess;
+  FBProcessInfo *secondLaunch = [simulator runningApplicationWithBundleID:launchConfiguration.bundleID error:nil];
 
   XCTAssertNotEqualObjects(firstLaunch, secondLaunch);
 
@@ -367,11 +371,11 @@
 + (NSArray<NSString *> *)expectedBootNotificationNamesForConfiguration:(FBSimulatorBootConfiguration *)configuration
 {
   NSMutableArray<NSString *> *notificationNames = [NSMutableArray array];
-  if (configuration.shouldConnectBridge) {
+  if ((configuration.options & FBSimulatorBootOptionsConnectBridge) != 0) {
     [notificationNames addObject:FBSimulatorNotificationNameConnectionDidConnect];
   }
   [notificationNames addObject:FBSimulatorNotificationNameDidLaunch];
-  if (!configuration.shouldUseDirectLaunch) {
+  if ((configuration.options & FBSimulatorBootOptionsEnableDirectLaunch) == 0) {
     [notificationNames addObject:FBSimulatorNotificationNameSimulatorApplicationDidLaunch];
   }
   return [notificationNames copy];
@@ -379,7 +383,7 @@
 
 + (NSArray<NSString *> *)expectedShutdownNotificationNamesForConfiguration:(FBSimulatorBootConfiguration *)configuration
 {
-  if (configuration.shouldUseDirectLaunch) {
+  if ((configuration.options & FBSimulatorBootOptionsEnableDirectLaunch) != 0) {
     return @[FBSimulatorNotificationNameDidTerminate, FBSimulatorNotificationNameConnectionDidDisconnect];
   }
   return @[FBSimulatorNotificationNameDidTerminate, FBSimulatorNotificationNameConnectionDidDisconnect, FBSimulatorNotificationNameSimulatorApplicationDidTerminate];

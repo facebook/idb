@@ -35,11 +35,10 @@ static const OSType FBVideoEncoderPixelFormat = kCVPixelFormatType_32ARGB;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, copy, readonly) NSString *videoPath;
 
-@property (nonatomic, strong, readonly) dispatch_queue_t mediaQueue;
 @property (nonatomic, strong, readonly) FBCapacityQueue *frameQueue;
 
 @property (nonatomic, assign, readwrite) FBVideoEncoderState state;
-@property (nonatomic, strong, readwrite) dispatch_group_t startWaitGroup;
+@property (nonatomic, strong, nullable, readwrite) FBMutableFuture *startedFuture;
 @property (nonatomic, strong, readwrite) FBFramebufferFrame *lastFrame;
 @property (nonatomic, assign, readwrite) CMTimebaseRef timebase;
 
@@ -81,13 +80,14 @@ static const OSType FBVideoEncoderPixelFormat = kCVPixelFormatType_32ARGB;
 
 #pragma mark Public Methods
 
-- (void)startRecording:(dispatch_group_t)group
+- (FBFuture<NSNull *> *)startRecording
 {
-  dispatch_group_async(group, self.mediaQueue, ^{
+  return [FBFuture onQueue:self.mediaQueue resolve:^ FBFuture * () {
     // Must be NotStarted to flick the First Frame wait switch.
     if (self.state != FBVideoEncoderStateNotStarted) {
-      [self.logger.info logFormat:@"Cannot start recording with state '%@'", [FBVideoEncoderBuiltIn stateStringForState:self.state]];
-      return;
+      return [[FBSimulatorError
+        describeFormat:@"Cannot start recording with state '%@'", [FBVideoEncoderBuiltIn stateStringForState:self.state]]
+        failFuture];
     }
 
     // Set the Waiting for Frame State, this will be used when a frame is ready.
@@ -99,33 +99,37 @@ static const OSType FBVideoEncoderPixelFormat = kCVPixelFormatType_32ARGB;
       FBFramebufferFrame *frame = self.lastFrame;
       [self.logger.debug logFormat:@"Ready for immedate start with source frame %@", frame];
       [self pushFrame:frame];
+      return [FBFuture futureWithResult:NSNull.null];
     }
-    // Otherwise the group should be notified when the frame arrives.
+    // Otherwise the future should be notified
     else {
       [self.logger.debug log:@"Waiting for first frame to arrive"];
-      dispatch_group_enter(group);
-      self.startWaitGroup = group;
+      FBMutableFuture *future = [FBMutableFuture future];
+      self.startedFuture = future;
+      return future;
     }
-  });
+  }];
 }
 
-- (void)stopRecording:(dispatch_group_t)group
+- (FBFuture<NSNull *> *)stopRecording
 {
-  dispatch_group_async(group, self.mediaQueue, ^{
+  return [FBFuture onQueue:self.mediaQueue resolve:^ FBFuture * () {
     // No video has been recorded, so the recorder can just switch off.
     if (self.state == FBVideoEncoderStateWaitingForFirstFrame) {
       self.state = FBVideoEncoderStateNotStarted;
-      return;
+      return [FBFuture futureWithResult:NSNull.null];
     }
     // If not running, this is an invalid state to call from.
     if (self.state != FBVideoEncoderStateRunning) {
-      [self.logger.info logFormat:@"Cannot stop recording with state '%@'", [FBVideoEncoderBuiltIn stateStringForState:self.state]];
-      return;
+      return [[FBSimulatorError
+        describeFormat:@"Cannot stop recording with state '%@'", [FBVideoEncoderBuiltIn stateStringForState:self.state]]
+        failFuture];
     }
     // Otherwise it is running and in need of stopping.
     [self.logger.debug log:@"Manually stopping recording"];
-    [self teardownWriterWithGroup:group];
-  });
+
+    return [self teardownWriter];
+  }];
 }
 
 #pragma mark FBFramebufferFrameSink Implementation
@@ -141,10 +145,13 @@ static const OSType FBVideoEncoderPixelFormat = kCVPixelFormatType_32ARGB;
 - (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   dispatch_group_enter(teardownGroup);
-  dispatch_barrier_async(self.mediaQueue, ^{
-    [self teardownWriterWithGroup:teardownGroup];
-    dispatch_group_leave(teardownGroup);
-  });
+  [[FBFuture
+    onQueue:self.mediaQueue resolve:^FBFuture *{
+      return [self teardownWriter];
+    }]
+    onQueue:self.mediaQueue notifyOfCompletion:^(FBFuture *_) {
+      dispatch_group_leave(teardownGroup);
+    }];
 }
 
 #pragma mark - Private
@@ -180,10 +187,8 @@ static const OSType FBVideoEncoderPixelFormat = kCVPixelFormatType_32ARGB;
     [self.logger.debug logFormat:@"Starting with Frame %@", frame];
 
     [self startRecordingToFileAtPath:self.videoPath frame:frame error:nil];
-    if (self.startWaitGroup) {
-      dispatch_group_leave(self.startWaitGroup);
-      self.startWaitGroup = nil;
-    }
+    [self.startedFuture resolveWithResult:NSNull.null];
+    self.startedFuture = nil;
     return;
   }
 
@@ -351,12 +356,12 @@ static const OSType FBVideoEncoderPixelFormat = kCVPixelFormatType_32ARGB;
   return YES;
 }
 
-- (void)teardownWriterWithGroup:(dispatch_group_t)teardownGroup
+- (FBFuture<FBVideoEncoderBuiltIn *> *)teardownWriter;
 {
   // Invalid to teardown when not running.
   if (self.state != FBVideoEncoderStateRunning) {
     [self.logger.info logFormat:@"Cannot stop recording with state '%@'", [FBVideoEncoderBuiltIn stateStringForState:self.state]];
-    return;
+    return [FBFuture futureWithResult:NSNull.null];
   }
 
   // Push last frame if one exists and the flag is set.
@@ -378,14 +383,14 @@ static const OSType FBVideoEncoderPixelFormat = kCVPixelFormatType_32ARGB;
 
   // Finish writing, making sure to update state on the media queue.
   [self.logger.info logFormat:@"Finishing Writing '%@'", self.writer.outputURL];
-  dispatch_group_enter(teardownGroup);
+  FBMutableFuture *future = FBMutableFuture.future;
   [self.writer finishWritingWithCompletionHandler:^{
-    [self.logger.info logFormat:@"Finished Writing '%@'", self.writer.outputURL];
-    dispatch_group_leave(teardownGroup);
-    dispatch_async(self.mediaQueue, ^{
+     dispatch_async(self.mediaQueue, ^{
       self.state = FBVideoEncoderStateNotStarted;
+       [future resolveWithResult:self];
     });
   }];
+  return future;
 }
 
 #pragma mark Pixel Buffers

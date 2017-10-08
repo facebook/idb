@@ -212,6 +212,43 @@
   XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 7u);
 }
 
+- (void)testiOSTestList
+{
+  NSError *error = nil;
+  if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
+    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
+    return;
+  }
+
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *testBundlePath = [self iOSUnitTestBundlePath];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath, @"-listTestsOnly" ];
+
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
+
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
+  BOOL success = [testRunner executeWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  XCTAssertTrue(self.reporter.printReportWasCalled);
+  NSArray<NSArray<NSString *> *> *expected = @[
+    @[@"iOSUnitTestFixtureTests", @"testHostProcessIsMobileSafari"],
+    @[@"iOSUnitTestFixtureTests", @"testHostProcessIsXctest"],
+    @[@"iOSUnitTestFixtureTests", @"testIsRunningInIOSApp"],
+    @[@"iOSUnitTestFixtureTests", @"testIsRunningInMacOSXApp"],
+    @[@"iOSUnitTestFixtureTests", @"testIsRunningOnIOS"],
+    @[@"iOSUnitTestFixtureTests", @"testIsRunningOnMacOSX"],
+    @[@"iOSUnitTestFixtureTests", @"testPossibleCrashingOfHostProcess"],
+    @[@"iOSUnitTestFixtureTests", @"testPossibleStallingOfHostProcess"],
+    @[@"iOSUnitTestFixtureTests", @"testWillAlwaysFail"],
+    @[@"iOSUnitTestFixtureTests", @"testWillAlwaysPass"],
+  ];
+  XCTAssertEqualObjects(expected, self.reporter.startedTests);
+}
+
 - (void)testMacOSXLogicTest
 {
   NSError *error = nil;

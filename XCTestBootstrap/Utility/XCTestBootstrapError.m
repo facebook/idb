@@ -15,6 +15,8 @@ const NSInteger XCTestBootstrapErrorCodeStartupFailure = 0x3;
 const NSInteger XCTestBootstrapErrorCodeLostConnection = 0x4;
 const NSInteger XCTestBootstrapErrorCodeStartupTimeout = 0x5;
 
+NSString *const XCTestBootstrapResultErrorKey = @"result";
+
 @implementation XCTestBootstrapError
 
 - (instancetype)init

@@ -23,6 +23,17 @@ NS_ASSUME_NONNULL_BEGIN
 extern FBDiagnosticName const FBDiagnosticNameVideo;
 
 /**
+ The Name of the iOS System Log.
+ */
+extern FBDiagnosticName const FBDiagnosticNameSyslog;
+
+/**
+ The Name of the Screenshot Log.
+ */
+extern FBDiagnosticName const FBDiagnosticNameScreenshot;
+
+
+/**
  A Base Class for Providing Diagnostics from a target.
  */
 @interface FBiOSTargetDiagnostics : NSObject

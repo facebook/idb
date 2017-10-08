@@ -42,7 +42,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
   }
 
   [FBControlCoreGlobalConfiguration.defaultLogger logFormat:@"Current Configuration => %@", FBControlCoreGlobalConfiguration.description];
-  [FBSimulatorControlFrameworkLoader loadPrivateFrameworksOrAbort];
+  [FBSimulatorControlFrameworkLoader.essentialFrameworks loadPrivateFrameworksOrAbort];
 }
 
 #pragma mark Property Overrides
@@ -116,7 +116,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
   return nil;
 }
 
-+ (FBSimulatorBootConfiguration *)defaultLaunchConfiguration
++ (FBSimulatorBootConfiguration *)defaultBootConfiguration
 {
   return [[FBSimulatorBootConfiguration
     withOptions:self.launchOptions]
@@ -130,8 +130,8 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
   self.continueAfterFailure = NO;
   self.managementOptions = FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart | FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
   self.allocationOptions = FBSimulatorAllocationOptionsReuse | FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsEraseOnAllocate;
-  self.simulatorConfiguration = [FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhone5];
-  self.simulatorLaunchConfiguration = FBSimulatorControlTestCase.defaultLaunchConfiguration;
+  self.simulatorConfiguration = [FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhoneSE];
+  self.bootConfiguration = FBSimulatorControlTestCase.defaultBootConfiguration;
   self.deviceSetPath = FBSimulatorControlTestCase.defaultDeviceSetPath;
 }
 

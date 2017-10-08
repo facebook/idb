@@ -17,21 +17,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface NSPredicate (FBControlCore)
 
 /**
- Returns a Predicate that matches against video file paths.
- */
-+ (NSPredicate *)predicateForVideoPaths;
-
-/**
- Returns a Predicate that matches against photo file paths.
- */
-+ (NSPredicate *)predicateForPhotoPaths;
-
-/**
- Returns a Predicate that matches against photo and video paths.
- */
-+ (NSPredicate *)predicateForMediaPaths;
-
-/**
  Returns a that will filter out null/NSNull values.
  */
 + (NSPredicate *)notNullPredicate;

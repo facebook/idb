@@ -9,10 +9,9 @@
 
 #import "FBControlCoreError.h"
 
+#import "FBFuture.h"
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"
-#import "FBProcessInfo.h"
-#import "FBProcessFetcher.h"
 
 NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
 
@@ -118,6 +117,12 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
   return nil;
 }
 
+- (FBFuture *)failFuture
+{
+  NSError *error = [self build];
+  return [FBFuture futureWithError:error];
+}
+
 - (instancetype)extraInfo:(NSString *)key value:(id)value
 {
   if (!key || !value) {
@@ -137,13 +142,6 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
 {
   self.describeRecursively = NO;
   return self;
-}
-
-- (instancetype)attachProcessInfoForIdentifier:(pid_t)processIdentifier processFetcher:(FBProcessFetcher *)processFetcher
-{
-  return [self
-    extraInfo:[NSString stringWithFormat:@"%d_process", processIdentifier]
-    value:[processFetcher processInfoFor:processIdentifier] ?: @"No Process Info"];
 }
 
 - (instancetype)logger:(id<FBControlCoreLogger>)logger
@@ -221,6 +219,15 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
   return [[self describe:description] build];
 }
 
++ (NSError *)errorForFormat:(NSString *)format, ...
+{
+  va_list args;
+  va_start(args, format);
+  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
+  va_end(args);
+  return [self errorForDescription:string];
+}
+
 + (id)failWithErrorMessage:(NSString *)errorMessage errorOut:(NSError **)errorOut
 {
   return [[self describe:errorMessage] fail:errorOut];
@@ -249,6 +256,11 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
 + (BOOL)failBoolWithError:(NSError *)failureCause description:(NSString *)description errorOut:(NSError **)errorOut
 {
   return [[[self causedBy:failureCause] describe:description] failBool:errorOut];
+}
+
++ (FBFuture *)failFutureWithError:(NSError *)error
+{
+  return [FBFuture futureWithError:error];
 }
 
 @end

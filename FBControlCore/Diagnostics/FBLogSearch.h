@@ -9,7 +9,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBJSONConversion.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -19,7 +18,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Predicate for finding substrings in text.
  */
-@interface FBLogSearchPredicate : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
+@interface FBLogSearchPredicate : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+
+#pragma mark Initializers
 
 /**
  A predicate that will match a line containing one of the substrings.
@@ -37,6 +38,17 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Log Search Predicate.
  */
 + (instancetype)regex:(NSString *)regex;
+
+#pragma mark Helpers
+
+/**
+ Constructs the argument to to be passed to the '--predicate' parameter in log(1) from a list of predicates.
+
+ @param predicates the predicates to compile.
+ @param error an error out for any error that occurs.
+ @return a String to be passed to '--predicate' if successful, nil if the expression could not be compiled.
+ */
++ (nullable NSString *)logAgumentsFromPredicates:(NSArray<FBLogSearchPredicate *> *)predicates error:(NSError **)error;
 
 @end
 

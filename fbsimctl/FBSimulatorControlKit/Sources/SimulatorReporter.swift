@@ -59,23 +59,23 @@ open class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
     self.reportValue(.terminate, .discrete, launchdProcess)
   }
 
-  open func agentDidLaunch(_ launchConfig: FBAgentLaunchConfiguration, didStart agentProcess: FBProcessInfo, stdOut: FileHandle, stdErr: FileHandle) {
-    self.reportValue(.launch, .discrete, agentProcess)
+  open func agentDidLaunch(_ operation: FBSimulatorAgentOperation) {
+    self.reportValue(.launch, .discrete, operation.process!)
   }
 
-  open func agentDidTerminate(_ agentProcess: FBProcessInfo, expected: Bool) {
-    self.reportValue(.terminate, .discrete, agentProcess)
+  open func agentDidTerminate(_ operation: FBSimulatorAgentOperation, statLoc: Int32) {
+    self.reportValue(.terminate, .discrete, operation.process!)
   }
 
-  open func applicationDidLaunch(_ launchConfig: FBApplicationLaunchConfiguration, didStart applicationProcess: FBProcessInfo) {
-    self.reportValue(.launch, .discrete, applicationProcess)
-    if launchConfig.waitForDebugger {
-      self.reporter.logInfo("Application launched. To debug, run lldb -p \(applicationProcess.processIdentifier).")
+  public func applicationDidLaunch(_ operation: FBSimulatorApplicationOperation) {
+    self.reportValue(.launch, .discrete, operation.process)
+    if operation.configuration.waitForDebugger {
+      self.reporter.logInfo("Application launched. To debug, run lldb -p \(operation.process.processIdentifier).")
     }
   }
 
-  open func applicationDidTerminate(_ applicationProcess: FBProcessInfo, expected: Bool) {
-    self.reportValue(.terminate, .discrete, applicationProcess)
+  open func applicationDidTerminate(_ operation: FBSimulatorApplicationOperation, expected: Bool) {
+    self.reportValue(.terminate, .discrete, operation.process)
   }
 
   open func diagnosticAvailable(_ log: FBDiagnostic) {
@@ -83,7 +83,7 @@ open class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
   }
 
   open func didChange(_ state: FBSimulatorState) {
-    self.reportValue(.stateChange, .discrete, state.description as NSString)
+    self.reportValue(.stateChange, .discrete, FBEventReporterSubject(string: state.description))
   }
 
   open func terminationHandleAvailable(_ terminationHandle: FBTerminationHandle) {

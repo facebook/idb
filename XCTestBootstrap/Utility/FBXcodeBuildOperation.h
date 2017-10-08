@@ -10,7 +10,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <XCTestBootstrap/FBXCTestCommands.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -56,6 +55,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return the reciever, for chaining.
  */
 - (BOOL)waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+
+/**
+ The xctest.xctestrun properties for a test launch.
+
+ @param testLaunch the test launch to base off.
+ @return the xctest.xctestrun properties.
+ */
++ (NSDictionary<NSString *, NSDictionary<NSString *, NSObject *> *> *)xctestRunProperties:(FBTestLaunchConfiguration *)testLaunch;
 
 @end
 

@@ -13,15 +13,18 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-/**
- The Action Type for an Agent Launch.
- */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeAgentLaunch;
+@class FBProcessOutput;
+@class FBSimulator;
 
 /**
  FBSimulatorControl extensions to FBAgentLaunchConfiguration.
  */
 @interface FBAgentLaunchConfiguration (Simulator) <FBiOSTargetAction>
+
+/**
+ Creates a Process Output for a Simulator.
+ */
+- (BOOL)createOutputForSimulator:(FBSimulator *)simulator stdOutOut:(FBProcessOutput *_Nullable * _Nullable)stdOutOut stdErrOut:(FBProcessOutput *_Nullable * _Nullable)stdErrOut error:(NSError **)error;
 
 @end
 

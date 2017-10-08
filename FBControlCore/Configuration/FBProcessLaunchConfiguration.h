@@ -12,16 +12,15 @@
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBDebugDescribeable.h>
 
-@class FBApplicationDescriptor;
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBBinaryDescriptor;
 @class FBProcessOutputConfiguration;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  An abstract value object for launching both agents and applications
  */
-@interface FBProcessLaunchConfiguration : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBDebugDescribeable>
+@interface FBProcessLaunchConfiguration : NSObject <NSCopying, FBJSONSerializable, FBDebugDescribeable>
 
 /**
  An NSArray<NSString *> of arguments to the process. Will not be nil.

@@ -21,38 +21,40 @@
 
 @implementation FBSimulatorLaunchTests
 
-- (FBSimulator *)testApplication:(FBApplicationDescriptor *)application launches:(FBApplicationLaunchConfiguration *)appLaunch
+- (FBSimulator *)doTestApplicationLaunches:(FBApplicationLaunchConfiguration *)appLaunch
 {
   return [self
     assertSimulatorWithConfiguration:self.simulatorConfiguration
-    launches:self.simulatorLaunchConfiguration
-    thenLaunchesApplication:application
-    withApplicationLaunchConfiguration:appLaunch];
+    boots:self.bootConfiguration
+    thenLaunchesApplication:appLaunch];
 }
 
-- (FBSimulator *)testApplication:(FBApplicationDescriptor *)application relaunches:(FBApplicationLaunchConfiguration *)appLaunch
+- (FBSimulator *)doTestApplicationRelaunches:(FBApplicationLaunchConfiguration *)appLaunch
 {
   return [self
     assertSimulatorWithConfiguration:self.simulatorConfiguration
-    relaunches:self.simulatorLaunchConfiguration
-    thenLaunchesApplication:application
-    withApplicationLaunchConfiguration:appLaunch];
+    boots:self.bootConfiguration
+    launchesThenRelaunchesApplication:appLaunch];
+}
+
+- (FBSimulator *)doTestApplication:(FBApplicationBundle *)application launches:(FBApplicationLaunchConfiguration *)appLaunch
+{
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration bootConfiguration:self.bootConfiguration];
+  [self assertSimulator:simulator installs:application];
+  return [self assertSimulator:simulator launches:appLaunch];
 }
 
 - (void)testLaunchesSingleSimulator:(FBSimulatorConfiguration *)configuration
 {
-  FBSimulatorBootConfiguration *launchConfiguration = self.simulatorLaunchConfiguration;
-  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:configuration launchConfiguration:self.simulatorLaunchConfiguration];
+  FBSimulatorBootConfiguration *bootConfiguration = self.bootConfiguration;
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:configuration bootConfiguration:self.bootConfiguration];
   if (!simulator) {
     return;
   }
 
   [self assertSimulatorBooted:simulator];
-  XCTAssertEqual(simulator.history.launchedAgentProcesses.count, 0u);
-  XCTAssertEqual(simulator.history.launchedApplicationProcesses.count, 0u);
-
   [self assertShutdownSimulatorAndTerminateSession:simulator];
-  [self.assert shutdownNotificationsFired:launchConfiguration];
+  [self.assert shutdownNotificationsFired:bootConfiguration];
 }
 
 - (void)testLaunchesiPhone
@@ -77,15 +79,15 @@
 
 - (void)testLaunchesPreviousiOSVersionAndAwaitsServices
 {
-  FBSimulatorBootOptions options = self.simulatorLaunchConfiguration.options | FBSimulatorBootOptionsAwaitServices;
-  self.simulatorLaunchConfiguration = [self.simulatorLaunchConfiguration withOptions:options];
+  FBSimulatorBootOptions options = self.bootConfiguration.options | FBSimulatorBootOptionsAwaitServices;
+  self.bootConfiguration = [self.bootConfiguration withOptions:options];
   [self testLaunchesSingleSimulator:[[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhone5] withOSNamed:FBOSVersionNameiOS_9_3]];
 }
 
 - (void)testLaunchesiOSVersion8AndAwaitsServices
 {
-  FBSimulatorBootOptions options = self.simulatorLaunchConfiguration.options | FBSimulatorBootOptionsAwaitServices;
-  self.simulatorLaunchConfiguration = [self.simulatorLaunchConfiguration withOptions:options];
+  FBSimulatorBootOptions options = self.bootConfiguration.options | FBSimulatorBootOptionsAwaitServices;
+  self.bootConfiguration = [self.bootConfiguration withOptions:options];
   [self testLaunchesSingleSimulator:[[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhone5] withOSNamed:FBOSVersionNameiOS_8_3]];
 }
 
@@ -110,20 +112,18 @@
   XCTAssertEqual(([[NSSet setWithArray:@[simulator1.udid, simulator2.udid, simulator3.udid]] count]), 3u);
 
   NSError *error = nil;
-  BOOL success = [simulator1 bootSimulator:self.simulatorLaunchConfiguration error:&error];
+  BOOL success = [simulator1 boot:self.bootConfiguration error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  success = [simulator2 bootSimulator:self.simulatorLaunchConfiguration error:&error];
+  success = [simulator2 boot:self.bootConfiguration error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  success = [simulator3 bootSimulator:self.simulatorLaunchConfiguration error:&error];
+  success = [simulator3 boot:self.bootConfiguration error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
   NSArray *simulators = @[simulator1, simulator2, simulator3];
   for (FBSimulator *simulator in simulators) {
-    XCTAssertEqual(simulator.history.launchedAgentProcesses.count, 0u);
-    XCTAssertEqual(simulator.history.launchedApplicationProcesses.count, 0u);
     [self assertSimulatorBooted:simulator];
   }
 
@@ -138,27 +138,22 @@
 
 - (void)testLaunchesSafariApplication
 {
-  [self testApplication:self.safariApplication launches:self.safariAppLaunch];
+  [self doTestApplicationLaunches:self.safariAppLaunch];
 }
 
 - (void)testRelaunchesSafariApplication
 {
-  [self testApplication:self.safariApplication relaunches:self.safariAppLaunch];
+  [self doTestApplicationRelaunches:self.safariAppLaunch];
 }
 
 - (void)testLaunchesSampleApplication
 {
-  [self testApplication:self.tableSearchApplication launches:self.tableSearchAppLaunch];
-}
-
-- (void)testRelaunchesSampleApplication
-{
-  [self testApplication:self.tableSearchApplication relaunches:self.tableSearchAppLaunch];
+  [self doTestApplication:self.tableSearchApplication launches:self.tableSearchAppLaunch];
 }
 
 - (void)testCanUninstallApplication
 {
-  FBApplicationDescriptor *application = self.tableSearchApplication;
+  FBApplicationBundle *application = self.tableSearchApplication;
   FBApplicationLaunchConfiguration *launch = self.tableSearchAppLaunch;
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:application];
 
@@ -167,7 +162,7 @@
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
-  [self assertLastLaunchedApplicationIsRunning:simulator];
+  [self assertSimulator:simulator isRunningApplicationFromConfiguration:launch];
 
   success = [simulator uninstallApplicationWithBundleID:application.bundleID error:&error];
   XCTAssertNil(error);

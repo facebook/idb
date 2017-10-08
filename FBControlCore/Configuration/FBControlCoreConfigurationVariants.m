@@ -13,6 +13,7 @@
 
 FBDeviceModel const FBDeviceModeliPhone4s = @"iPhone 4s";
 FBDeviceModel const FBDeviceModeliPhone5 = @"iPhone 5";
+FBDeviceModel const FBDeviceModeliPhone5c = @"iPhone 5c";
 FBDeviceModel const FBDeviceModeliPhone5s = @"iPhone 5s";
 FBDeviceModel const FBDeviceModeliPhone6 = @"iPhone 6";
 FBDeviceModel const FBDeviceModeliPhone6Plus = @"iPhone 6 Plus";
@@ -52,6 +53,7 @@ FBOSVersionName const FBOSVersionNameiOS_10_2 = @"iOS 10.2";
 FBOSVersionName const FBOSVersionNameiOS_10_2_1 = @"iOS 10.2.1";
 FBOSVersionName const FBOSVersionNameiOS_10_3 = @"iOS 10.3";
 FBOSVersionName const FBOSVersionNameiOS_11_0 = @"iOS 11.0";
+FBOSVersionName const FBOSVersionNameiOS_11_1 = @"iOS 11.1";
 FBOSVersionName const FBOSVersionNametvOS_9_0 = @"tvOS 9.0";
 FBOSVersionName const FBOSVersionNametvOS_9_1 = @"tvOS 9.1";
 FBOSVersionName const FBOSVersionNametvOS_9_2 = @"tvOS 9.2";
@@ -59,6 +61,7 @@ FBOSVersionName const FBOSVersionNametvOS_10_0 = @"tvOS 10.0";
 FBOSVersionName const FBOSVersionNametvOS_10_1 = @"tvOS 10.1";
 FBOSVersionName const FBOSVersionNametvOS_10_2 = @"tvOS 10.2";
 FBOSVersionName const FBOSVersionNametvOS_11_0 = @"tvOS 11.0";
+FBOSVersionName const FBOSVersionNametvOS_11_1 = @"tvOS 11.1";
 FBOSVersionName const FBOSVersionNamewatchOS_2_0 = @"watchOS 2.0";
 FBOSVersionName const FBOSVersionNamewatchOS_2_1 = @"watchOS 2.1";
 FBOSVersionName const FBOSVersionNamewatchOS_2_2 = @"watchOS 2.2";
@@ -66,6 +69,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_0 = @"watchOS 3.0";
 FBOSVersionName const FBOSVersionNamewatchOS_3_1 = @"watchOS 3.1";
 FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 FBOSVersionName const FBOSVersionNamewatchOS_4_0 = @"watchOS 4.0";
+FBOSVersionName const FBOSVersionNamewatchOS_4_1 = @"watchOS 4.1";
 
 @implementation FBDeviceType
 
@@ -110,33 +114,6 @@ FBOSVersionName const FBOSVersionNamewatchOS_4_0 = @"watchOS 4.0";
 - (NSString *)description
 {
   return [NSString stringWithFormat:@"Model '%@'", self.model];
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _model = [coder decodeObjectForKey:NSStringFromSelector(@selector(model))];
-  _productTypes = [coder decodeObjectForKey:NSStringFromSelector(@selector(productTypes))];
-  _deviceArchitecture = [coder decodeObjectForKey:NSStringFromSelector(@selector(deviceArchitecture))];
-  _simulatorArchitecture = [coder decodeObjectForKey:NSStringFromSelector(@selector(deviceArchitecture))];
-  _family = (FBControlCoreProductFamily) [[coder decodeObjectForKey:NSStringFromSelector(@selector(family))] unsignedIntegerValue];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.model forKey:NSStringFromSelector(@selector(model))];
-  [coder encodeObject:self.productTypes forKey:NSStringFromSelector(@selector(productTypes))];
-  [coder encodeObject:self.deviceArchitecture forKey:NSStringFromSelector(@selector(deviceArchitecture))];
-  [coder encodeObject:self.simulatorArchitecture forKey:NSStringFromSelector(@selector(simulatorArchitecture))];
-  [coder encodeObject:@(self.family) forKey:NSStringFromSelector(@selector(family))];
 }
 
 #pragma mark NSCopying
@@ -202,27 +179,6 @@ FBOSVersionName const FBOSVersionNamewatchOS_4_0 = @"watchOS 4.0";
   _families = families;
 
   return self;
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _name = [coder decodeObjectForKey:NSStringFromSelector(@selector(name))];
-  _families = [coder decodeObjectForKey:NSStringFromSelector(@selector(families))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.name forKey:NSStringFromSelector(@selector(name))];
-  [coder encodeObject:self.families forKey:NSStringFromSelector(@selector(families))];
 }
 
 #pragma mark NSObject
@@ -296,6 +252,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_4_0 = @"watchOS 4.0";
     deviceConfigurations = @[
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone4s productType:@"iPhone4,1" deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone5 productTypes:@[@"iPhone5,1", @"iPhone5,2"] deviceArchitecture:FBArchitectureArmv7s simulatorArchitecture:FBArchitectureI386],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone5c productTypes:@[@"iPhone5,3"] deviceArchitecture:FBArchitectureArmv7s simulatorArchitecture:FBArchitectureI386],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone5s productTypes:@[@"iPhone6,1", @"iPhone6,2"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone6 productType:@"iPhone7,2" deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone6Plus productType:@"iPhone7,1" deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
@@ -345,6 +302,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_4_0 = @"watchOS 4.0";
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_10_2_1],
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_10_3],
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_11_0],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_11_1],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_0],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_1],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_2],
@@ -352,6 +310,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_4_0 = @"watchOS 4.0";
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_10_1],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_10_2],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_11_0],
+      [FBOSVersion tvOSWithName:FBOSVersionNametvOS_11_1],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_2_0],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_2_1],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_2_2],
@@ -359,6 +318,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_4_0 = @"watchOS 4.0";
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_3_1],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_3_2],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_4_0],
+      [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_4_1],
     ];
   });
   return OSConfigurations;

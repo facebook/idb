@@ -39,9 +39,10 @@
 
 @property (nonatomic, copy, readonly) NSString *filePath;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
+@property (nonatomic, strong, readonly) dispatch_queue_t eventQueue;
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 
-- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink writeQueue:(dispatch_queue_t)writeQueue;
+- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink eventQueue:(dispatch_queue_t)eventQueue writeQueue:(dispatch_queue_t)writeQueue;
 
 @end
 
@@ -50,7 +51,7 @@
 @property (nonatomic, strong, readonly) FBFramebufferFrameGenerator *frameGenerator;
 @property (nonatomic, strong, readwrite) FBFramebufferFrame *lastFrame;
 
-- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink writeQueue:(dispatch_queue_t)writeQueue frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator;
+- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink eventQueue:(dispatch_queue_t)eventQueue writeQueue:(dispatch_queue_t)writeQueue frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator;
 
 @end
 
@@ -60,7 +61,7 @@
 @property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
 @property (nonatomic, strong, readwrite) NSUUID *consumerUUID;
 
-- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink writeQueue:(dispatch_queue_t)writeQueue surface:(FBFramebufferSurface *)surface;
+- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink eventQueue:(dispatch_queue_t)eventQueue writeQueue:(dispatch_queue_t)writeQueue surface:(FBFramebufferSurface *)surface;
 
 @end
 
@@ -73,18 +74,18 @@
   return dispatch_queue_create("com.facebook.FBSimulatorControl.framebuffer.image", DISPATCH_QUEUE_SERIAL);
 }
 
-+ (instancetype)imageWithFilePath:(NSString *)filePath frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)imageWithFilePath:(NSString *)filePath frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator eventQueue:(dispatch_queue_t)eventQueue eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  return [[FBSimulatorImage_FrameSink alloc] initWithFilePath:filePath eventSink:eventSink writeQueue:self.writeQueue frameGenerator:frameGenerator];
+  return [[FBSimulatorImage_FrameSink alloc] initWithFilePath:filePath eventSink:eventSink eventQueue:eventQueue writeQueue:self.writeQueue frameGenerator:frameGenerator];
 }
 
-+ (instancetype)imageWithFilePath:(NSString *)filePath surface:(FBFramebufferSurface *)surface eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)imageWithFilePath:(NSString *)filePath surface:(FBFramebufferSurface *)surface eventQueue:(dispatch_queue_t)eventQueue eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  return [[FBSimulatorImage_Surface alloc] initWithFilePath:filePath eventSink:eventSink writeQueue:self.writeQueue surface:surface];
+  return [[FBSimulatorImage_Surface alloc] initWithFilePath:filePath eventSink:eventSink eventQueue:eventQueue writeQueue:self.writeQueue surface:surface];
 }
 
 
-- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink writeQueue:(dispatch_queue_t)writeQueue
+- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink eventQueue:(dispatch_queue_t)eventQueue writeQueue:(dispatch_queue_t)writeQueue
 {
   self = [super init];
   if (!self) {
@@ -93,6 +94,7 @@
 
   _filePath = filePath;
   _eventSink = eventSink;
+  _eventQueue = eventQueue;
   _writeQueue = writeQueue;
 
   return self;
@@ -183,9 +185,9 @@
 
 @implementation FBSimulatorImage_FrameSink
 
-- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink writeQueue:(dispatch_queue_t)writeQueue frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator
+- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink eventQueue:(dispatch_queue_t)eventQueue writeQueue:(dispatch_queue_t)writeQueue frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator
 {
-  self = [super initWithFilePath:filePath eventSink:eventSink writeQueue:writeQueue];
+  self = [super initWithFilePath:filePath eventSink:eventSink eventQueue:eventQueue writeQueue:writeQueue];
   if (!self) {
     return nil;
   }
@@ -225,7 +227,7 @@
       build];
     diagnostic = [FBSimulatorImage_FrameSink appendImage:self.lastFrame.image toDiagnostic:diagnostic];
     id<FBSimulatorEventSink> eventSink = self.eventSink;
-    dispatch_async(dispatch_get_main_queue(), ^{
+    dispatch_async(self.eventQueue, ^{
       [eventSink diagnosticAvailable:diagnostic];
     });
   });
@@ -235,9 +237,9 @@
 
 @implementation FBSimulatorImage_Surface
 
-- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink writeQueue:(dispatch_queue_t)writeQueue surface:(FBFramebufferSurface *)surface
+- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink eventQueue:(dispatch_queue_t)eventQueue writeQueue:(dispatch_queue_t)writeQueue surface:(FBFramebufferSurface *)surface
 {
-  self = [super initWithFilePath:filePath eventSink:eventSink writeQueue:writeQueue];
+  self = [super initWithFilePath:filePath eventSink:eventSink eventQueue:eventQueue writeQueue:writeQueue];
   if (!self) {
     return nil;
   }

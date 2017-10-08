@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Bitmap Streaming Commands.
  */
-@protocol FBBitmapStreamingCommands
+@protocol FBBitmapStreamingCommands <NSObject, FBiOSTargetCommand>
 
 /**
  Creates a Bitmap Stream for a Simulator.

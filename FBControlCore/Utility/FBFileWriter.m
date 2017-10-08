@@ -13,7 +13,7 @@
 
 @interface FBFileWriter ()
 
-@property (nonatomic, strong, readonly) NSFileHandle *fileHandle;
+@property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
 
 - (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle;
 
@@ -31,27 +31,20 @@
 
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 
+@property (nonatomic, strong, readwrite) dispatch_io_t io;
+@property (nonatomic, assign, readwrite) int errorCode;
+
 - (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle writeQueue:(dispatch_queue_t)writeQueue;
+
+- (BOOL)startReadingWithError:(NSError **)error;
 
 @end
 
 @implementation FBFileWriter
 
-+ (instancetype)nullWriter
-{
-  return [[FBFileWriter_Null alloc] init];
-}
+#pragma mark Initializers
 
-+ (instancetype)writerWithFileHandle:(NSFileHandle *)fileHandle blocking:(BOOL)blocking
-{
-  if (blocking) {
-    return [[FBFileWriter_Sync alloc] initWithFileHandle:fileHandle];
-  }
-  dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.fbfilewriter", DISPATCH_QUEUE_SERIAL);
-  return [[FBFileWriter_Async alloc] initWithFileHandle:fileHandle writeQueue:queue];
-}
-
-+ (nullable instancetype)writerForFilePath:(NSString *)filePath blocking:(BOOL)blocking error:(NSError **)error
++ (nullable NSFileHandle *)fileHandleForPath:(NSString *)filePath error:(NSError **)error
 {
   if (![NSFileManager.defaultManager fileExistsAtPath:filePath]) {
     [[NSData data] writeToFile:filePath atomically:YES];
@@ -62,7 +55,45 @@
       describeFormat:@"A file handle for path %@ could not be opened", filePath]
       fail:error];
   }
-  return [FBFileWriter writerWithFileHandle:fileHandle blocking:blocking];
+  return fileHandle;
+}
+
++ (instancetype)nullWriter
+{
+  return [[FBFileWriter_Null alloc] init];
+}
+
++ (instancetype)syncWriterWithFileHandle:(NSFileHandle *)fileHandle
+{
+  return [[FBFileWriter_Sync alloc] initWithFileHandle:fileHandle];
+}
+
++ (instancetype)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle error:(NSError **)error
+{
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.fbfilewriter", DISPATCH_QUEUE_SERIAL);
+  FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileHandle:fileHandle writeQueue:queue];
+  if (![writer startReadingWithError:error]) {
+    return nil;
+  }
+  return writer;
+}
+
++ (nullable instancetype)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error
+{
+  NSFileHandle *fileHandle = [self fileHandleForPath:filePath error:error];
+  if (!fileHandle) {
+    return nil;
+  }
+  return [FBFileWriter syncWriterWithFileHandle:fileHandle];
+}
+
++ (nullable instancetype)asyncWriterForFilePath:(NSString *)filePath error:(NSError **)error
+{
+  NSFileHandle *fileHandle = [self fileHandleForPath:filePath error:error];
+  if (!fileHandle) {
+    return nil;
+  }
+  return [FBFileWriter asyncWriterWithFileHandle:fileHandle error:error];
 }
 
 - (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle
@@ -77,6 +108,8 @@
   return self;
 }
 
+#pragma mark Public Methods
+
 - (void)consumeData:(NSData *)data
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
@@ -84,7 +117,22 @@
 
 - (void)consumeEndOfFile
 {
+  [self consumeEndOfFileClosingFileHandle:YES];
+}
+
+#pragma mark Private
+
+- (void)consumeEndOfFileClosingFileHandle:(BOOL)close
+{
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+}
+
+#pragma mark NSObject
+
+- (void)dealloc
+{
+  // Cleans up resources, but don't force-close the file handle.
+  [self consumeEndOfFileClosingFileHandle:NO];
 }
 
 @end
@@ -96,7 +144,7 @@
   // do nothing
 }
 
-- (void)consumeEndOfFile
+- (void)consumeEndOfFileClosingFileHandle:(BOOL)close
 {
   // do nothing
 }
@@ -107,14 +155,15 @@
 
 - (void)consumeData:(NSData *)data
 {
-  NSFileHandle *fileHandle = self.fileHandle;
-  [fileHandle writeData:data];
+  [self.fileHandle writeData:data];
 }
 
-- (void)consumeEndOfFile
+- (void)consumeEndOfFileClosingFileHandle:(BOOL)close
 {
-  NSFileHandle *fileHandle = self.fileHandle;
-  [fileHandle closeFile];
+  if (close) {
+    [self.fileHandle closeFile];
+  }
+  self.fileHandle = nil;
 }
 
 @end
@@ -133,21 +182,59 @@
   return self;
 }
 
-#pragma mark FBFileConsumer Implementation
+#pragma mark Lifecycle
+
+- (BOOL)startReadingWithError:(NSError **)error
+{
+  NSParameterAssert(self.io == NULL);
+  NSFileHandle *fileHandle = self.fileHandle;
+
+  // If there is an error creating the IO Object, the errorCode will be delivered asynchronously.
+  self.io = dispatch_io_create(DISPATCH_IO_STREAM, fileHandle.fileDescriptor, self.writeQueue, ^(int errorCode) {
+    self.errorCode = errorCode;
+  });
+  if (!self.io) {
+    return [[FBControlCoreError
+      describeFormat:@"A IO Channel could not be created for fd %d", fileHandle.fileDescriptor]
+      failBool:error];
+  }
+
+  // Report partial results with as little as 1 byte read.
+  dispatch_io_set_low_water(self.io, 1);
+  return YES;
+}
 
 - (void)consumeData:(NSData *)data
 {
-  NSFileHandle *fileHandle = self.fileHandle;
-  dispatch_async(self.writeQueue, ^{
-    [fileHandle writeData:data];
+  if (!self.io) {
+    return;
+  }
+
+  dispatch_data_t dispatchData = dispatch_data_create(data.bytes, data.length, self.writeQueue, ^{
+    // Retain the data, so that it isn't released and the buffer freed before it is used in dispatch_io_write.
+    (void) data;
   });
+  dispatch_io_write(self.io, 0, dispatchData, self.writeQueue, ^(bool done, dispatch_data_t remainder, int error) {});
 }
 
-- (void)consumeEndOfFile
+- (void)consumeEndOfFileClosingFileHandle:(BOOL)close
 {
+  if (!self.io) {
+    return;
+  }
+
+  // Remove resources form self to be closed in the io barrier.
   NSFileHandle *fileHandle = self.fileHandle;
-  dispatch_async(self.writeQueue, ^{
-    [fileHandle closeFile];
+  self.fileHandle = nil;
+  dispatch_io_t io = self.io;
+  self.io = nil;
+
+  // Wait for all io operations to stop with a barrier, then close the io channel
+  dispatch_io_barrier(io, ^{
+    dispatch_io_close(io, DISPATCH_IO_STOP);
+    if (close) {
+      [fileHandle closeFile];
+    }
   });
 }
 

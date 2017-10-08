@@ -14,7 +14,7 @@ import FBDeviceControl
 extension Configuration {
   func buildSimulatorControl() throws -> FBSimulatorControl {
     let logger = FBControlCoreGlobalConfiguration.defaultLogger
-    try FBSimulatorControlFrameworkLoader.loadPrivateFrameworks(logger)
+    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
     let controlConfiguration = FBSimulatorControlConfiguration(deviceSetPath: self.deviceSetPath, options: self.managementOptions)
     return try FBSimulatorControl.withConfiguration(controlConfiguration, logger: logger)
   }
@@ -24,7 +24,7 @@ extension Configuration {
       return nil
     }
     let logger = FBControlCoreGlobalConfiguration.defaultLogger
-    try FBDeviceControlFrameworkLoader.loadEssentialFrameworks(logger)
+    try FBDeviceControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
     return try FBDeviceSet.defaultSet(with: logger)
   }
 }
@@ -241,7 +241,7 @@ struct ListenRunner : Runner, ActionPerformer {
   func makeBaseRelay() throws -> (ListenInterface, Relay, EventReporter, FBTerminationAwaitable?) {
     let (interface, query) = self.context.value
     let reporter = self.context.reporter
-    let interpreter = JSONEventInterpreter(pretty: false)
+    let interpreter = FBEventInterpreter.jsonEventInterpreter(false)
     var relays: [Relay] = []
     var awaitable: FBTerminationAwaitable? = nil
 
@@ -253,14 +253,14 @@ struct ListenRunner : Runner, ActionPerformer {
     }
     if interface.stdin {
       let target = try self.context.querySingleSimulator(query)
-      let bridge = ActionReaderDelegateBridge(interpreter: interpreter, reporter: reporter)
+      let bridge = FBReportingiOSActionReaderDelegate(delegate: ActionReaderDelegateBridge(), interpreter: interpreter)
       let reader = FBiOSActionReader.fileReader(for: target, delegate: bridge, read: FileHandle.standardInput, write: FileHandle.standardOutput)
       awaitable = reader
       relays.append(reader)
     }
     if let hidPort = interface.hid {
       let target = try self.context.querySingleSimulator(query)
-      let bridge = ActionReaderDelegateBridge(interpreter: interpreter, reporter: reporter)
+      let bridge = FBReportingiOSActionReaderDelegate(delegate: ActionReaderDelegateBridge(), interpreter: interpreter)
       let reader = FBiOSActionReader.socketReader(for: target, delegate: bridge, port: hidPort)
       awaitable = reader
       relays.append(reader)

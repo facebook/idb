@@ -26,6 +26,11 @@ extern const NSInteger XCTestBootstrapErrorCodeLostConnection;
 extern const NSInteger XCTestBootstrapErrorCodeStartupTimeout;
 
 /**
+ User Info Keys.
+ */
+extern NSString *const XCTestBootstrapResultErrorKey;
+
+/**
  XCTestBootstrap Errors construction.
  */
 @interface XCTestBootstrapError : FBControlCoreError
