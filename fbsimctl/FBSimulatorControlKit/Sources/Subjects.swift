@@ -116,41 +116,6 @@ struct iOSTargetSubject: EventReporterSubject {
   }}
 }
 
-struct iOSTargetWithSubject : EventReporterSubject {
-  let targetSubject: iOSTargetSubject
-  let eventName: EventName
-  let eventType: EventType
-  let subject: EventReporterSubject
-  let timestamp: Date
-
-  init(targetSubject: iOSTargetSubject, eventName: EventName, eventType: EventType, subject: EventReporterSubject) {
-    self.targetSubject = targetSubject
-    self.eventName = eventName
-    self.eventType = eventType
-    self.subject = subject
-    self.timestamp = Date()
-  }
-
-  var jsonDescription: JSON { get {
-    return JSON.dictionary([
-      JSONKeys.eventName.rawValue : JSON.string(self.eventName.rawValue),
-      JSONKeys.eventType.rawValue : JSON.string(self.eventType.rawValue),
-      JSONKeys.target.rawValue : self.targetSubject.jsonDescription,
-      JSONKeys.subject.rawValue : self.subject.jsonDescription,
-      JSONKeys.timestamp.rawValue : JSON.number(NSNumber(value: round(self.timestamp.timeIntervalSince1970) as Double)),
-    ])
-  }}
-
-  var description: String { get {
-    switch self.eventType {
-    case EventType.discrete:
-      return "\(self.targetSubject): \(self.eventName.rawValue): \(self.subject.description)"
-    default:
-      return ""
-    }
-  }}
-}
-
 struct CompositeSubject: EventReporterSubject {
   let array: [EventReporterSubject]
 

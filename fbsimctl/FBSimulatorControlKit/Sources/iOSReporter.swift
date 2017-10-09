@@ -23,13 +23,14 @@ public protocol iOSReporter : class {
  */
 extension iOSReporter {
   public func report(_ eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
-    let targetSubject = iOSTargetSubject(target: self.target, format: self.format)
-    self.reporter.report(iOSTargetWithSubject(
-      targetSubject: targetSubject,
-      eventName: eventName,
-      eventType: eventType,
-      subject: subject
-    ))
+    let subject = FBEventReporterSubject(
+      target: self.target,
+      format: self.format,
+      name: eventName,
+      type: eventType,
+      subject: EventReporterSubjectBridge(subject)
+    )
+    self.reporter.report(subject)
   }
 
   public func reportValue(_ eventName: EventName, _ eventType: EventType, _ value: ControlCoreValue) {
