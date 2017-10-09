@@ -38,6 +38,11 @@
       describeFormat:@"No Xcode Directory at: %@", directory]
       fail:error];
   }
+  if ([directory isEqualToString:@"/"] || [directory isEqualToString:@""]) {
+    return [[FBControlCoreError
+      describe:@"Xcode Directory is defined as the Root Filesystem. Run xcode-select(1) to set this to a valid Xcode install"]
+      fail:error];
+  }
   return directory;
 }
 

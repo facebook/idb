@@ -157,11 +157,11 @@
 
 + (nullable id)readValueForKey:(NSString *)key fromPlistAtPath:(NSString *)plistPath
 {
-  NSCAssert([NSFileManager.defaultManager fileExistsAtPath:plistPath], @"plist does not exist at path '%@'", plistPath);
+  NSAssert([NSFileManager.defaultManager fileExistsAtPath:plistPath], @"plist does not exist at path '%@'", plistPath);
   NSDictionary *infoPlist = [NSDictionary dictionaryWithContentsOfFile:plistPath];
-  NSCAssert(infoPlist, @"Could not read plist at '%@'", plistPath);
+  NSAssert(infoPlist, @"Could not read plist at '%@'", plistPath);
   id value = infoPlist[key];
-  NSCAssert(value, @"'%@' does not exist in plist '%@'", key, infoPlist.allKeys);
+  NSAssert(value, @"'%@' does not exist in plist '%@'", key, infoPlist.allKeys);
   return value;
 }
 
