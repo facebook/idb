@@ -540,7 +540,7 @@ extension Action : Parsable {
   static var accessibility: Parser<Action> {
     return Parser
       .ofString(
-        EventName.acessibilityFetch.rawValue,
+        EventName.accessibilityFetch.rawValue,
         Action.core(FBAccessibilityFetch())
       )
   }

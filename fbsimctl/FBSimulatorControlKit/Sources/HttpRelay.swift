@@ -331,7 +331,7 @@ class HttpRelay : Relay {
   }
 
   fileprivate static var approveRoute: Route { get {
-    return ActionRoute.post(.approval) { json in
+    return ActionRoute.post(.approve) { json in
       let approval = try FBSettingsApproval.inflate(fromJSON: json.decode())
       return Action.core(approval)
     }
@@ -366,7 +366,7 @@ class HttpRelay : Relay {
   }}
 
   fileprivate static var hidRoute: Route { get {
-    return ActionRoute.post(.HID) { json in
+    return ActionRoute.post(.hid) { json in
       let event = try FBSimulatorHIDEvent.inflate(fromJSON: json.decode())
       return Action.hid(event)
     }

@@ -224,7 +224,7 @@ extension FBiOSTargetAction {
     case FBiOSTargetActionType.testLaunch:
       return .launchXCTest
     default:
-      return actionType
+      return EventName(rawValue: actionType.rawValue)
     }
   }}
 
