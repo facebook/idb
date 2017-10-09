@@ -39,9 +39,9 @@ struct iOSActionProvider {
     case .core(let action):
       return iOSTargetRunner.core(reporter, action.eventName, target, action)
     case .listApps:
-      return iOSTargetRunner.simple(reporter, nil, ControlCoreSubject(target as! ControlCoreValue)) {
-        let applications = try target.installedApplications().map { $0.jsonSerializableRepresentation }
-        reporter.reporter.reportSimple(.listApps, .discrete, ControlCoreSubject(applications as NSArray))
+      return iOSTargetRunner.simple(reporter, nil, target.subject) {
+        let subjects = try target.installedApplications().map(FBEventReporterSubject.init)
+        reporter.reporter.reportSimple(.listApps, .discrete, FBEventReporterSubject(subjects: subjects))
       }
     case .record(let record):
       switch record {
@@ -57,7 +57,7 @@ struct iOSActionProvider {
     case .search(let search):
       return SearchRunner(target, reporter, search)
     case .stream(let configuration, let output):
-      return iOSTargetRunner.handled(reporter, .stream, ControlCoreSubject(configuration)) {
+      return iOSTargetRunner.handled(reporter, .stream, configuration.subject) {
         let stream = try target.createStream(with: configuration)
         try stream.startStreaming(output.makeWriter())
         return stream
@@ -93,7 +93,7 @@ struct iOSTargetRunner : Runner {
   }
 
   static func core(_ reporter: iOSReporter, _ name: EventName?, _ target: FBiOSTarget, _ action: FBiOSTargetAction) -> iOSTargetRunner {
-    return iOSTargetRunner(reporter: reporter, name: name, subject: ControlCoreSubject(action as! ControlCoreValue)) {
+    return iOSTargetRunner(reporter: reporter, name: name, subject: action.subject) {
       return try action.runAction(target: target, reporter: reporter.reporter)
     }
   }
@@ -147,7 +147,7 @@ private struct DiagnosticsRunner : Runner {
       return SimpleSubject(
         .diagnostic,
         .discrete,
-        ControlCoreSubject(diagnostic)
+        diagnostic.subject
       )
     }
     return .success(CompositeSubject(subjects))
@@ -183,11 +183,9 @@ private struct SearchRunner : Runner {
 
   func run() -> CommandResult {
     do {
-      let results = try RunLoop.current.awaitCompletion(
-        of: search.search(on: self.target) as! FBFuture<AnyObject>,
-        timeout: FBControlCoreGlobalConfiguration.regularTimeout
-      )
-      self.reporter.report(.search, .discrete, ControlCoreSubject(results as! ControlCoreValue))
+      let results = try search.search(on: self.target).await()
+      let subject = FBEventReporterSubject(name: .search, type: .discrete, subject: results.subject)
+      self.reporter.reporter.report(subject)
       return .success(nil)
     } catch  {
       return .failure("Failed to search with " + self.search.description)

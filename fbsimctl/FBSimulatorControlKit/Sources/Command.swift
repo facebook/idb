@@ -417,13 +417,13 @@ extension Action {
     case .config:
       return (.config, nil)
     case .core(let action):
-      return (action.eventName, ControlCoreSubject(action as! ControlCoreValue))
+      return (action.eventName, action.subject)
     case .create:
       return (.create, nil)
     case .delete:
       return (.delete, nil)
     case .diagnose(let query, _):
-      return (.diagnose, ControlCoreSubject(query))
+      return (.diagnose, query.subject)
     case .erase:
       return (.erase, nil)
     case .focus:
@@ -443,9 +443,9 @@ extension Action {
     case .record(let record):
       return (.record, record)
     case .relaunch(let appLaunch):
-      return (.relaunch, ControlCoreSubject(appLaunch))
+      return (.relaunch, appLaunch.subject)
     case .search(let search):
-      return (.search, ControlCoreSubject(search))
+      return (.search, search.subject)
     case .serviceInfo:
       return (.serviceInfo, nil)
     case .setLocation:

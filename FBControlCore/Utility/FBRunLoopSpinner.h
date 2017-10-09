@@ -129,7 +129,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Terse Helpers for FBFuture awaiting.
  */
-@interface FBFuture (NSRunLoop)
+@interface FBFuture<T> (NSRunLoop)
 
 /**
  Await the Future with the Regular Timeout.
@@ -137,7 +137,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error as described in -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
  @return the return value of -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
  */
-- (nullable id)await:(NSError **)error;
+- (nullable T)await:(NSError **)error;
 
 /**
  Await the Future with the provided timeout.
@@ -146,8 +146,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error as described in -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
  @return the return value of -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
  */
-- (nullable id)awaitWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
-
+- (nullable T)awaitWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
 
 @end
 

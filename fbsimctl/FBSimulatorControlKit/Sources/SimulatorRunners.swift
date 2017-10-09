@@ -70,26 +70,26 @@ struct SimulatorActionRunner : Runner {
 
     switch action {
     case .clearKeychain(let maybeBundleID):
-      return iOSTargetRunner.simple(reporter, .clearKeychain, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner.simple(reporter, .clearKeychain, simulator.subject) {
         if let bundleID = maybeBundleID {
           try simulator.killApplication(withBundleID: bundleID)
         }
         try simulator.clearKeychain()
       }
     case .delete:
-      return iOSTargetRunner.simple(reporter, .delete, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner.simple(reporter, .delete, simulator.subject) {
         try simulator.set!.delete(simulator)
       }
     case .erase:
-      return iOSTargetRunner.simple(reporter, .erase, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner.simple(reporter, .erase, simulator.subject) {
         try simulator.erase()
       }
     case .focus:
-      return iOSTargetRunner.simple(reporter, .focus, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner.simple(reporter, .focus, simulator.subject) {
         try simulator.focus()
       }
     case .keyboardOverride:
-      return iOSTargetRunner.simple(reporter, .keyboardOverride, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner.simple(reporter, .keyboardOverride, simulator.subject) {
         try simulator.setupKeyboard()
       }
     case .open(let url):
@@ -97,17 +97,17 @@ struct SimulatorActionRunner : Runner {
         try simulator.open(url)
       }
     case .relaunch(let appLaunch):
-      return iOSTargetRunner.simple(reporter, .relaunch, ControlCoreSubject(appLaunch)) {
+      return iOSTargetRunner.simple(reporter, .relaunch, appLaunch.subject) {
         try simulator.launchOrRelaunchApplication(appLaunch)
       }
     case .serviceInfo(let identifier):
       return ServiceInfoRunner(reporter: reporter, identifier: identifier)
     case .shutdown:
-      return iOSTargetRunner.simple(reporter, .shutdown, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner.simple(reporter, .shutdown, simulator.subject) {
         try simulator.set!.kill(simulator)
       }
     case .setLocation(let latitude, let longitude):
-      return iOSTargetRunner.simple(reporter, .setLocation, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner.simple(reporter, .setLocation, simulator.subject) {
         try simulator.setLocation(latitude, longitude: longitude)
       }
     case .upload(let diagnostics):
@@ -134,7 +134,7 @@ private struct ServiceInfoRunner : Runner {
     guard let processInfo = self.reporter.simulator.processFetcher.processFetcher.processInfo(for: pid) else {
       return .failure("Could not get process info for pid \(pid)")
     }
-    return .success(SimpleSubject(.serviceInfo, .discrete, ControlCoreSubject(processInfo)))
+    return .success(SimpleSubject(.serviceInfo, .discrete, processInfo.subject))
   }
 }
 
@@ -181,7 +181,7 @@ private struct UploadRunner : Runner {
         return CommandResult.failure("Could not write out diagnostic \(sourcePath) to path")
       }
       let destinationDiagnostic = FBDiagnosticBuilder().updatePath(destinationPath).build()
-      self.reporter.report(.upload, .discrete, ControlCoreSubject(destinationDiagnostic))
+      self.reporter.report(.upload, .discrete, destinationDiagnostic.subject)
     }
 
     return .success(nil)

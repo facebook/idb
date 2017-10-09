@@ -33,6 +33,6 @@ extension iOSReporter {
   }
 
   public func reportValue(_ eventName: EventName, _ eventType: EventType, _ value: ControlCoreValue) {
-    self.report(eventName, eventType, ControlCoreSubject(value))
+    self.report(eventName, eventType, value.subject)
   }
 }

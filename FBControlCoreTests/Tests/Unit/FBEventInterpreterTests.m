@@ -34,7 +34,7 @@
 
 @implementation FBEventInterpreterTests
 
-- (void)assertSubject:(FBEventReporterSubject *)subject hasJSONContents:(NSArray<NSDictionary<NSString *, id> *> *)contents
+- (void)assertSubject:(id<FBEventReporterSubject>)subject hasJSONContents:(NSArray<NSDictionary<NSString *, id> *> *)contents
 {
   id<FBEventInterpreter> interpreter = [FBEventInterpreter jsonEventInterpreter:NO];
   NSArray<NSString *> *lines = [[interpreter interpret:subject] componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
@@ -53,7 +53,7 @@
   }
 }
 
-- (void)assertSubject:(FBEventReporterSubject *)subject hasHumanReadableContents:(NSArray<NSString *> *)contents
+- (void)assertSubject:(id<FBEventReporterSubject>)subject hasHumanReadableContents:(NSArray<NSString *> *)contents
 {
   id<FBEventInterpreter> interpreter = [FBEventInterpreter humanReadableInterpreter];
   NSArray<NSString *> *lines = [[interpreter interpret:subject] componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
@@ -70,7 +70,7 @@
 - (void)testEventInterpretersOneByOne
 {
   id<FBEventReporterSubject> baseSubject = [FBEventReporterSubject subjectWithControlCoreValue:FBControlCoreValueDouble.new];
-  NSArray<FBEventReporterSubject *> *subjects = @[
+  NSArray<id<FBEventReporterSubject>> *subjects = @[
     [FBEventReporterSubject subjectWithName:FBEventNameLaunch type:FBEventTypeStarted subject:baseSubject],
     [FBEventReporterSubject subjectWithName:FBEventNameLaunch type:FBEventTypeEnded subject:baseSubject],
     [FBEventReporterSubject subjectWithName:FBEventNameLaunch type:FBEventTypeDiscrete subject:baseSubject],
@@ -86,7 +86,7 @@
     @"Foo | Bar",
   ];
   for (NSUInteger index = 0; index < subjects.count; index++) {
-    FBEventReporterSubject *subject = subjects[index];
+    id<FBEventReporterSubject> subject = subjects[index];
     NSArray<NSDictionary<NSString *, id> *> *expectedJSON = @[jsonContents[index]];
     NSArray<NSString *> *expectedHumanReadable = @[humanReadableContents[index]];
     [self assertSubject:subject hasJSONContents:expectedJSON];
@@ -123,7 +123,7 @@
 - (void)testEventInterpretersWithCompositeItem
 {
   id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithControlCoreValue:FBControlCoreValueDouble.new];
-  NSArray<FBEventReporterSubject *> *subSubjects = @[
+  NSArray<id<FBEventReporterSubject>> *subSubjects = @[
     [FBEventReporterSubject subjectWithName:FBEventNameLaunch type:FBEventTypeStarted subject:subject],
     [FBEventReporterSubject subjectWithName:FBEventNameLaunch type:FBEventTypeEnded subject:subject],
     [FBEventReporterSubject subjectWithName:FBEventNameLaunch type:FBEventTypeDiscrete subject:subject],

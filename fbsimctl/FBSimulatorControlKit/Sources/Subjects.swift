@@ -49,6 +49,12 @@ extension EventReporterSubject {
   }}
 }
 
+extension FBJSONSerializable {
+  var subject: FBEventReporterSubject { get {
+    return FBEventReporterSubject(value: self)
+  }}
+}
+
 extension EventReporterSubject  {
   public func append(_ other: EventReporterSubject) -> EventReporterSubject {
     let joined = self.subSubjects + other.subSubjects
@@ -93,25 +99,6 @@ struct SimpleSubject : EventReporterSubject {
 
   var description: String { get {
     return self.shortDescription
-  }}
-}
-
-struct ControlCoreSubject : EventReporterSubject {
-  let value: ControlCoreValue
-
-  init(_ value: ControlCoreValue) {
-    self.value = value
-  }
-
-  var jsonDescription: JSON { get {
-    guard let json = try? JSON.encode(self.value.jsonSerializableRepresentation as AnyObject) else {
-      return JSON.null
-    }
-    return json
-  }}
-
-  var description: String { get {
-    return self.value.description
   }}
 }
 
