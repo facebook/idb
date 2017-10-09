@@ -72,20 +72,6 @@ extension EventReporterSubject {
   }
 }
 
-struct iOSTargetSubject: EventReporterSubject {
-  let target: FBiOSTarget
-  let format: FBiOSTargetFormat
-
-  var jsonDescription: JSON { get {
-    let dictionary = self.format.extract(from: self.target)
-    return try! JSON.encode(dictionary as AnyObject)
-  }}
-
-  var description: String { get {
-    return self.format.format(self.target)
-  }}
-}
-
 struct CompositeSubject: EventReporterSubject {
   let array: [EventReporterSubject]
 

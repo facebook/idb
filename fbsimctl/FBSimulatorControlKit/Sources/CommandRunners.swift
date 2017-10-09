@@ -293,7 +293,7 @@ struct ListRunner : Runner {
   func run() -> CommandResult {
     let targets = self.context.query(self.context.value)
     let subjects: [EventReporterSubject] = targets.map { target in
-      FBEventReporterSubject.simple(.list, .discrete, iOSTargetSubject(target: target, format: self.context.format))
+      FBEventReporterSubject.simple(.list, .discrete, FBEventReporterSubject(target: target, format: self.context.format))
     }
     return .success(CompositeSubject(subjects))
   }
