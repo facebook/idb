@@ -134,7 +134,7 @@ private struct ServiceInfoRunner : Runner {
     guard let processInfo = self.reporter.simulator.processFetcher.processFetcher.processInfo(for: pid) else {
       return .failure("Could not get process info for pid \(pid)")
     }
-    return .success(SimpleSubject(.serviceInfo, .discrete, processInfo.subject))
+    return .success(FBEventReporterSubject.simple(.serviceInfo, .discrete, processInfo.subject))
   }
 }
 

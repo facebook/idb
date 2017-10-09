@@ -25,7 +25,7 @@ extension EventReporter {
   }
 
   func reportSimple(_ eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
-    self.report(SimpleSubject(eventName, eventType, subject))
+    self.report(FBEventReporterSubject.simple(eventName, eventType, subject))
   }
 
   func reportError(_ message: String) {

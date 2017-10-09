@@ -144,7 +144,7 @@ private struct DiagnosticsRunner : Runner {
     reporter.reportValue(.diagnose, .ended, query)
 
     let subjects: [EventReporterSubject] = diagnostics.map { diagnostic in
-      return SimpleSubject(
+      return FBEventReporterSubject.simple(
         .diagnostic,
         .discrete,
         diagnostic.subject

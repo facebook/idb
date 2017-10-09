@@ -18,6 +18,10 @@ extension FBEventReporterSubject : EventReporterSubject {
   public var jsonDescription: JSON { get {
     return try! JSON.encode(self.jsonSerializableRepresentation as AnyObject)
   }}
+
+  static func simple(_ eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) -> FBEventReporterSubject {
+    return FBEventReporterSubject(name: eventName, type: eventType, subject: EventReporterSubjectBridge(subject))
+  }
 }
 
 extension EventReporterSubject {
@@ -55,7 +59,7 @@ extension FBJSONSerializable {
   }}
 }
 
-extension EventReporterSubject  {
+extension EventReporterSubject {
   public func append(_ other: EventReporterSubject) -> EventReporterSubject {
     let joined = self.subSubjects + other.subSubjects
     guard let firstElement = joined.first else {
@@ -66,40 +70,6 @@ extension EventReporterSubject  {
     }
     return CompositeSubject(joined)
   }
-}
-
-struct SimpleSubject : EventReporterSubject {
-  let eventName: EventName
-  let eventType: EventType
-  let subject: EventReporterSubject
-
-  init(_ eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
-    self.eventName = eventName
-    self.eventType = eventType
-    self.subject = subject
-  }
-
-  var jsonDescription: JSON { get {
-    return JSON.dictionary([
-      JSONKeys.eventName.rawValue : JSON.string(self.eventName.rawValue),
-      JSONKeys.eventType.rawValue : JSON.string(self.eventType.rawValue),
-      JSONKeys.subject.rawValue : self.subject.jsonDescription,
-      JSONKeys.timestamp.rawValue : JSON.number(NSNumber(value: round(Date().timeIntervalSince1970) as Double)),
-    ])
-  }}
-
-  var shortDescription: String { get {
-    switch self.eventType {
-    case EventType.discrete:
-      return self.subject.description
-    default:
-      return "\(self.eventName.rawValue) \(self.eventType.rawValue): \(self.subject.description)"
-    }
-  }}
-
-  var description: String { get {
-    return self.shortDescription
-  }}
 }
 
 struct iOSTargetSubject: EventReporterSubject {

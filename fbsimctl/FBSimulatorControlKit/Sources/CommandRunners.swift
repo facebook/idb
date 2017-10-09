@@ -178,7 +178,7 @@ struct ActionRunner : Runner {
     switch action {
     case .config:
       let config = FBControlCoreGlobalConfiguration()
-      let subject = SimpleSubject(.config, .discrete, config.subject)
+      let subject = FBEventReporterSubject.simple(.config, .discrete, config.subject)
       return CommandResult.success(subject)
     case .list:
       let context = self.context.replace(query)
@@ -293,7 +293,7 @@ struct ListRunner : Runner {
   func run() -> CommandResult {
     let targets = self.context.query(self.context.value)
     let subjects: [EventReporterSubject] = targets.map { target in
-      SimpleSubject(.list, .discrete, iOSTargetSubject(target: target, format: self.context.format))
+      FBEventReporterSubject.simple(.list, .discrete, iOSTargetSubject(target: target, format: self.context.format))
     }
     return .success(CompositeSubject(subjects))
   }
@@ -305,7 +305,7 @@ struct ListDeviceSetsRunner : Runner {
   func run() -> CommandResult {
     let deviceSets = self.deviceSets
     let subjects: [EventReporterSubject] = deviceSets.map { deviceSet in
-      SimpleSubject(.listDeviceSets, .discrete, deviceSet)
+      FBEventReporterSubject.simple(.listDeviceSets, .discrete, deviceSet)
     }
     return .success(CompositeSubject(subjects))
   }
