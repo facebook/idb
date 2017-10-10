@@ -396,6 +396,10 @@ class HttpRelay : Relay {
     return ActionRoute.getConstant(.list, action: Action.list)
   }}
 
+  fileprivate static var listAppsRoute: Route { get {
+    return ActionRoute.getConstant(.listApps, action: Action.listApps)
+  }}
+
   fileprivate static var openRoute: Route { get {
     return ActionRoute.post(.open) { json in
       let urlString = try json.getValue("url").getString()
@@ -485,6 +489,7 @@ class HttpRelay : Relay {
       self.installRoute,
       self.launchRoute,
       self.listRoute,
+      self.listAppsRoute,
       self.openRoute,
       self.recordRoute,
       self.relaunchRoute,
