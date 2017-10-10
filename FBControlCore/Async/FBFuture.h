@@ -178,17 +178,17 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
 /**
  The Error if one is present.
  */
-@property (atomic, copy, nullable, readonly) NSError *error;
+@property (nonatomic, copy, nullable, readonly) NSError *error;
 
 /**
  The Result.
  */
-@property (atomic, copy, nullable, readonly) T result;
+@property (nonatomic, copy, nullable, readonly) T result;
 
 /**
  The State.
  */
-@property (atomic, assign, readonly) FBFutureState state;
+@property (nonatomic, assign, readonly) FBFutureState state;
 
 @end
 

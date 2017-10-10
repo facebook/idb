@@ -24,66 +24,67 @@
   self.queue = dispatch_queue_create("com.facebook.fbcontrolcore.tests.future", DISPATCH_QUEUE_CONCURRENT);
 }
 
-- (void)testResolvesWithObject
+- (void)testResolvesSynchronouslyWithObject
 {
-  FBMutableFuture<NSNumber *> *future = FBMutableFuture.future;
-  dispatch_async(self.queue, ^{
+  [self assertSynchronousResolutionWithBlock:^(FBMutableFuture *future) {
     [future resolveWithResult:@YES];
-  });
-
-  [self waitForExpectations:@[
-    [self keyValueObservingExpectationForObject:future keyPath:@"result" expectedValue:@YES],
-    [self keyValueObservingExpectationForObject:future keyPath:@"hasCompleted" expectedValue:@YES],
-    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateCompletedWithResult)],
-  ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  } expectedState:FBFutureStateCompletedWithResult expectedResult:@YES expectedError:nil];
 }
 
-- (void)testResolvesWithError
+- (void)testResolvesAsynchronouslyWithObject
 {
-  NSError *error = [NSError errorWithDomain:@"foo" code:0 userInfo:nil];
-  FBMutableFuture<NSNumber *> *future = FBMutableFuture.future;
-  dispatch_async(self.queue, ^{
-    [future resolveWithError:error];
-  });
+  [self waitForAsynchronousResolutionWithBlock:^(FBMutableFuture *future) {
+    [future resolveWithResult:@YES];
+  } expectedState:FBFutureStateCompletedWithResult expectationKeyPath:@"result" expectationValue:@YES];
+}
 
-  [self waitForExpectations:@[
-    [self keyValueObservingExpectationForObject:future keyPath:@"error" expectedValue:error],
-    [self keyValueObservingExpectationForObject:future keyPath:@"hasCompleted" expectedValue:@YES],
-    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateCompletedWithError)],
-  ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+- (void)testResolvesSynchronouslyWithError
+{
+  NSError *error = [NSError errorWithDomain:@"foo" code:2 userInfo:nil];
+  [self assertSynchronousResolutionWithBlock:^(FBMutableFuture *future) {
+    [future resolveWithError:error];
+  } expectedState:FBFutureStateCompletedWithError expectedResult:nil expectedError:error];
+}
+
+- (void)testResolvesAsynchronouslyWithError
+{
+  NSError *error = [NSError errorWithDomain:@"foo" code:2 userInfo:nil];
+  [self waitForAsynchronousResolutionWithBlock:^(FBMutableFuture *future) {
+    [future resolveWithError:error];
+  } expectedState:FBFutureStateCompletedWithError expectationKeyPath:@"error" expectationValue:error];
 }
 
 - (void)testEarlyCancellation
 {
-  FBMutableFuture<NSNumber *> *future = FBMutableFuture.future;
-  dispatch_async(self.queue, ^{
+  [self assertSynchronousResolutionWithBlock:^(FBMutableFuture *future) {
     [future cancel];
-  });
+  } expectedState:FBFutureStateCompletedWithCancellation expectedResult:nil expectedError:nil];
+}
 
-  [self waitForExpectations:@[
-    [self keyValueObservingExpectationForObject:future keyPath:@"hasCompleted" expectedValue:@YES],
-    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateCompletedWithCancellation)],
-  ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+- (void)testAsynchronousCancellation
+{
+  [self waitForAsynchronousResolutionWithBlock:^(FBMutableFuture *future) {
+    [future cancel];
+  } expectedState:FBFutureStateCompletedWithCancellation expectationKeyPath:nil expectationValue:nil];
 }
 
 - (void)testDiscardsAllResolutionsAfterTheFirst
 {
   FBMutableFuture<NSNumber *> *future = FBMutableFuture.future;
-  dispatch_async(self.queue, ^{
-    [future resolveWithResult:@YES];
-  });
 
-  [self waitForExpectations:@[
-    [self keyValueObservingExpectationForObject:future keyPath:@"result" expectedValue:@YES],
-    [self keyValueObservingExpectationForObject:future keyPath:@"hasCompleted" expectedValue:@YES],
-    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateCompletedWithResult)],
-  ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  [future resolveWithResult:@YES];
+
+  XCTAssertEqual(future.state, FBFutureStateCompletedWithResult);
+  XCTAssertEqual(future.hasCompleted, YES);
+  XCTAssertEqual(future.result, @YES);
+  XCTAssertEqual(future.error, nil);
 
   [future resolveWithError:[NSError errorWithDomain:@"foo" code:0 userInfo:nil]];
 
-  XCTAssertEqualObjects(future.result, @YES);
-  XCTAssertNil(future.error);
   XCTAssertEqual(future.state, FBFutureStateCompletedWithResult);
+  XCTAssertEqual(future.hasCompleted, YES);
+  XCTAssertEqual(future.result, @YES);
+  XCTAssertEqual(future.error, nil);
 }
 
 - (void)testCallbacks
@@ -513,6 +514,39 @@
   XCTAssertEqual(resultFuture.state, FBFutureStateCompletedWithResult);
   XCTAssertEqual(errorFuture.state, FBFutureStateCompletedWithError);
   XCTAssertEqual(cancelFuture.state, FBFutureStateCompletedWithCancellation);
+}
+
+#pragma mark - Helpers
+
+- (void)assertSynchronousResolutionWithBlock:(void (^)(FBMutableFuture *))resolveBlock expectedState:(FBFutureState)state expectedResult:(id)expectedResult expectedError:(NSError *)expectedError
+{
+  FBMutableFuture<NSNumber *> *future = FBMutableFuture.future;
+
+  resolveBlock(future);
+
+  XCTAssertEqual(future.state, state);
+  XCTAssertEqual(future.hasCompleted, YES);
+  XCTAssertEqual(future.result, expectedResult);
+  XCTAssertEqual(future.error, expectedError);
+}
+
+- (void)waitForAsynchronousResolutionWithBlock:(void (^)(FBMutableFuture *))resolveBlock expectedState:(FBFutureState)state expectationKeyPath:(NSString *)expectationKeyPath expectationValue:(id)expectationValue
+{
+  FBMutableFuture<NSNumber *> *future = FBMutableFuture.future;
+  NSArray *expectations = @[
+    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(state)],
+    [self keyValueObservingExpectationForObject:future keyPath:@"hasCompleted" expectedValue:@YES],
+  ];
+
+  if (expectationKeyPath != nil) {
+    expectations = [expectations arrayByAddingObject:[self keyValueObservingExpectationForObject:future keyPath:expectationKeyPath expectedValue:expectationValue]];
+  }
+
+  dispatch_async(self.queue, ^{
+    resolveBlock(future);
+  });
+
+  [self waitForExpectations:expectations timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
 @end

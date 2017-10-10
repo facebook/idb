@@ -58,8 +58,10 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
 
 @interface FBFuture ()
 
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) NSMutableArray<FBFuture_Handler *> *handlers;
+@property (nonatomic, copy, nullable, readwrite) NSError *error;
+@property (nonatomic, copy, nullable, readwrite) id result;
+@property (nonatomic, assign, readwrite) FBFutureState state;
 
 @end
 
@@ -90,8 +92,9 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
     if (!result) {
       NSCAssert(error, @"Error must be set on nil return");
       [future resolveWithError:error];
+    } else {
+      [future resolveWithResult:result];
     }
-    [future resolveWithResult:result];
   });
   return future;
 }
@@ -119,6 +122,7 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
     if (compositeFuture.hasCompleted) {
       return;
     }
+
     FBFutureState state = future.state;
     switch (state) {
       case FBFutureStateCompletedWithResult:
@@ -203,7 +207,6 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
 
   _state = FBFutureStateRunning;
   _handlers = [NSMutableArray array];
-  _queue = dispatch_queue_create("com.facebook.fbcontrolcore.future", DISPATCH_QUEUE_SERIAL);
 
   return self;
 }
@@ -224,16 +227,16 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
 
 - (instancetype)onQueue:(dispatch_queue_t)queue notifyOfCompletion:(void (^)(FBFuture *))handler
 {
-  dispatch_async(self.queue, ^{
-    if (self->_state != FBFutureStateRunning) {
+  @synchronized (self) {
+    if (self.state == FBFutureStateRunning) {
+      FBFuture_Handler *wrapper = [[FBFuture_Handler alloc] initWithQueue:queue handler:handler];
+      [self.handlers addObject:wrapper];
+    } else {
       dispatch_async(queue, ^{
         handler(self);
       });
-      return;
     }
-    FBFuture_Handler *wrapper = [[FBFuture_Handler alloc] initWithQueue:queue handler:handler];
-    [self.handlers addObject:wrapper];
-  });
+  }
   return self;
 }
 
@@ -333,6 +336,8 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
   }];
 }
 
+#pragma mark - Properties
+
 - (BOOL)hasCompleted
 {
   FBFutureState state = self.state;
@@ -341,92 +346,75 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
 
 - (NSError *)error
 {
-  __block NSError *error;
-  dispatch_sync(self.queue, ^{
-    error = self->_error;
-  });
-  return error;
+  @synchronized (self) {
+    return self->_error;
+  }
 }
 
 - (id)result
 {
-  __block id result;
-  dispatch_sync(self.queue, ^{
-    result = self->_result;
-  });
-  return result;
+  @synchronized (self) {
+    return self->_result;
+  }
 }
 
 - (FBFutureState)state
 {
-  __block FBFutureState state;
-  dispatch_sync(self.queue, ^{
-    state = self->_state;
-  });
-  return state;
+  @synchronized (self) {
+    return _state;
+  }
+}
+
+- (void)setError:(NSError *)error
+{
+  _error = error;
+}
+
+- (void)setState:(FBFutureState)state
+{
+  _state = state;
+}
+
+- (void)setResult:(id)result
+{
+  _result = result;
 }
 
 #pragma mark FBMutableFuture Implementation
 
-static NSString *KeyPathError = @"error";
-static NSString *KeyPathResult = @"result";
-static NSString *KeyPathState = @"state";
-static NSString *KeyPathHasCompleted = @"hasCompleted";
-
 - (instancetype)resolveWithResult:(id)result
 {
-  dispatch_async(self.queue, ^{
-    if (self->_state != FBFutureStateRunning) {
-      return;
+  @synchronized (self) {
+    if (self.state == FBFutureStateRunning) {
+      self.result = result;
+      self.state = FBFutureStateCompletedWithResult;
+      [self fireAllHandlers];
     }
+  }
 
-    [self willChangeValueForKey:KeyPathResult];
-    [self willChangeValueForKey:KeyPathState];
-    [self willChangeValueForKey:KeyPathHasCompleted];
-    self->_result = result;
-    self->_state = FBFutureStateCompletedWithResult;
-    [self didChangeValueForKey:KeyPathResult];
-    [self didChangeValueForKey:KeyPathState];
-    [self didChangeValueForKey:KeyPathHasCompleted];
-    [self fireAllHandlers];
-  });
   return self;
 }
 
 - (instancetype)resolveWithError:(NSError *)error
 {
-  dispatch_async(self.queue, ^{
-    if (self->_state != FBFutureStateRunning) {
-      return;
+  @synchronized (self) {
+    if (self.state == FBFutureStateRunning) {
+      self.error = error;
+      self.state = FBFutureStateCompletedWithError;
+      [self fireAllHandlers];
     }
-
-    [self willChangeValueForKey:KeyPathError];
-    [self willChangeValueForKey:KeyPathState];
-    [self willChangeValueForKey:KeyPathHasCompleted];
-    self->_error = error;
-    self->_state = FBFutureStateCompletedWithError;
-    [self didChangeValueForKey:KeyPathError];
-    [self didChangeValueForKey:KeyPathState];
-    [self didChangeValueForKey:KeyPathHasCompleted];
-    [self fireAllHandlers];
-  });
+  }
   return self;
 }
 
 - (instancetype)resolveAsCancelled
 {
-  dispatch_async(self.queue, ^{
-    if (self->_state != FBFutureStateRunning) {
-      return;
+  @synchronized (self) {
+    if (self.state == FBFutureStateRunning) {
+      self.state = FBFutureStateCompletedWithCancellation;
+      [self fireAllHandlers];
     }
-
-    [self willChangeValueForKey:KeyPathState];
-    [self willChangeValueForKey:KeyPathHasCompleted];
-    self->_state = FBFutureStateCompletedWithCancellation;
-    [self didChangeValueForKey:KeyPathState];
-    [self didChangeValueForKey:KeyPathHasCompleted];
-    [self fireAllHandlers];
-  });
+  }
   return self;
 }
 
@@ -461,9 +449,16 @@ static NSString *KeyPathHasCompleted = @"hasCompleted";
   if (future.hasCompleted) {
     resolve(future);
   } else {
-    [future onQueue:self.queue notifyOfCompletion:resolve];
+    [future onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0) notifyOfCompletion:resolve];
   }
   return self;
+}
+
+#pragma mark - KVO
+
++ (NSSet<NSString *> *)keyPathsForValuesAffectingHasCompleted
+{
+  return [NSSet setWithObjects:NSStringFromSelector(@selector(state)), nil];
 }
 
 @end
