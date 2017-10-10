@@ -1,11 +1,11 @@
 # FBSimulatorControl
-A Mac OS X library for managing, booting and interacting with multiple iOS Simulators simultaneously.
+A macOS library for managing, booting and interacting with multiple iOS Simulators simultaneously.
 
 [![Build Status](https://travis-ci.org/facebook/FBSimulatorControl.svg?branch=master)](https://travis-ci.org/facebook/FBSimulatorControl)
 
 ## Features
 - Enables 'Multisim' for iOS: Booting of multiple Simulators on the same host OS.
-- Runs independently of Xcode and `xcodebuild`. Uses the toolchain defined by `xcode-select`. 
+- Runs independently of Xcode and `xcodebuild`. Uses the toolchain defined by `xcode-select`.
 - Boots iPhone & iPad Simulators for iOS 8, 9 & 10.
 - Launches both 'Agent' and 'Application' processes, with Arguments and Environment.
 - Can boot Simulators via Xcode's `Simulator.app` or by launching 'Directly' in `CoreSimulator`.
@@ -20,7 +20,7 @@ A Mac OS X library for managing, booting and interacting with multiple iOS Simul
 - An API designed with Swift in mind.
 
 ## About
-The original use-case for `FBSimulatorControl` was to boot Simulators to run End-to-End tests with `WebDriverAgent`. As `FBSimulatorControl` is a Mac OS X framework, it can be linked to from inside any Mac OS Library, Application, or `xctest` target. There may be additional use-cases that you may find beyond UI Test Automation.
+The original use-case for `FBSimulatorControl` was to boot Simulators to run End-to-End tests with `WebDriverAgent`. As `FBSimulatorControl` is a macOS framework, it can be linked to from inside any macOS Library, Application, or `xctest` target. There may be additional use-cases that you may find beyond UI Test Automation.
 
 `FBSimulatorControl` works by linking with the private `DVTFoundation`, `CoreSimulator` and `DVTiPhoneSimulatorRemoteClient` frameworks that are present inside the Xcode bundle. Doing this allows  `FBSimulatorControl` to talk directly to the same APIs that Xcode and `simctl` do. This, combined with launching the Simulator binaries directly, means that multiple Simulators can be launched simultaneously. Test targets can be made that don't depend on any Application targets, or that launch multiple Application targets. This enables running against pre-built and archived Application binaries, rather than a binary that is built by a Test Target.
 
@@ -106,7 +106,7 @@ The `CoreSimulator` Framework that is used by the `Simulator.app` as well as Pla
 `CoreSimulator` itself is also capable of running multiple Simulators on the same host concurrently. You can see this for yourself by using the `simctl` commandline. Booting Simulators this way can be of somewhat limited utility without the output of the screen. `FBSimulatorControl` solves this problem in two different ways:
 
 ## Launching via `Simulator.app`
-`Simulator.app` is the Mac OS X Application bundle with Xcode that you are probably familiar with for viewing and interacting with a Simulator. This Mac Application is the part of the Xcode Toolchain that you will be used to.
+`Simulator.app` is the macOS Application bundle with Xcode that you are probably familiar with for viewing and interacting with a Simulator. This Mac Application is the part of the Xcode Toolchain that you will be used to.
 
 `FBSimulatorControl` can launch the Application Excutable directly, thereby allowing specific Simulators to be booted by UDID and Device Set. This can be done by overriding the `Simulator.app`s `NSUserDefaults` by [passing them as Arguments to the Application Process](https://www.bignerdranch.com/blog/by-your-command). Once the Simulator has booted, it can be interacted with via `CoreSimulator` with commands such as installing Apps and launch executables.
 

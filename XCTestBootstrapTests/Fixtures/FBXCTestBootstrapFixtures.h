@@ -21,7 +21,7 @@
 + (NSBundle *)iosUnitTestBundleFixture;
 
 /**
- An Mac OS X Unit Test Bundle.
+ An macOS Unit Test Bundle.
  */
 + (NSBundle *)macUnitTestBundleFixture;
 
