@@ -40,7 +40,7 @@ Once you build the `FBSimulatorControl.framework`, it can be linked like any oth
 ## Usage
 In order to support different Xcode versions and system environments, `FBSimulatorControl` weakly links against Xcode's Private Frameworks and load these Frameworks when they are needed. `FBSimulatorControl` will link against the version of Xcode that you have set with [`xcode-select`](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/xcode-select.1.html). The Xcode version can be overridden by setting the `DEVELOPER_DIR` environment variable in the process that links with `FBSimulatorControl`.
 
-Since the Frameworks upon which `FBSimulatorControl` depends are loaded laziliy, they must be loaded before using the Framework. Any of the `FBSimulatorControl` classes that have this runtime dependency will load these Private Frameworks when they are used for the first time.
+Since the Frameworks upon which `FBSimulatorControl` depends are loaded lazily, they must be loaded before using the Framework. Any of the `FBSimulatorControl` classes that have this runtime dependency will load these Private Frameworks when they are used for the first time.
 
 [The tests](FBSimulatorControlTests/Tests) should provide you with some basic guidance for using the API. `FBSimulatorControl` has an umbrella header that can be imported to give access to the entire API.
 
