@@ -16,6 +16,8 @@
 
 @implementation FBTestRunnerConfiguration
 
+static NSString *const kCustomJSBundleDownloadJSON = @"CUSTOM_JS_BUNDLE_DOWNLOAD_JSON";
+
 #pragma mark Initializers
 
 + (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath
@@ -32,7 +34,8 @@
     ideInjectionFramework:ideInjectionFramework
     testBundle:testBundle
     testConfigurationPath:testConfigurationPath
-    frameworkSearchPath:frameworkSearchPath];
+    frameworkSearchPath:frameworkSearchPath
+    customJSBundleDownloadJSON:NSProcessInfo.processInfo.environment[kCustomJSBundleDownloadJSON]];
 
   return [[self alloc] initWithSessionIdentifier:sessionIdentifier testRunner:hostApplication launchArguments:launchArguments launchEnvironment:launchEnvironment];
 }
@@ -69,7 +72,7 @@
   ];
 }
 
-+ (NSDictionary *)launchEnvironmentWithHostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath
++ (NSDictionary *)launchEnvironmentWithHostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath customJSBundleDownloadJSON:(NSString *)customJSBundleDownloadJSON
 {
   return @{
     @"AppTargetLocation" : hostApplication.binaryPath,
@@ -82,6 +85,7 @@
     @"XCInjectBundleInto" : hostApplication.binaryPath,
     @"XCODE_DBG_XPC_EXCLUSIONS" : @"com.apple.dt.xctestSymbolicator",
     @"XCTestConfigurationFilePath" : testConfigurationPath,
+    @"CustomJSBundleDownloadJSON": customJSBundleDownloadJSON ?: @"na",
   };
 }
 
