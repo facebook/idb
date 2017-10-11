@@ -22,6 +22,7 @@
 #import "FBDeviceXCTestCommands.h"
 #import "FBDeviceSet+Private.h"
 #import "FBAMDevice.h"
+#import "FBDeviceControlError.h"
 
 _Nullable CFArrayRef (*_Nonnull FBAMDCreateDeviceList)(void);
 int (*FBAMDeviceConnect)(CFTypeRef device);
@@ -195,18 +196,30 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 #pragma mark Forwarding
 
-+ (NSArray<Class> *)commandResponders
++ (NSMutableArray<Class> *)commandResponders
 {
   static dispatch_once_t onceToken;
-  static NSArray<Class> *commandClasses;
+  static NSMutableArray<Class> *commandClasses;
   dispatch_once(&onceToken, ^{
-    commandClasses = @[
+    commandClasses = [[NSMutableArray alloc] init];
+    [commandClasses addObjectsFromArray:@[
       FBDeviceApplicationCommands.class,
       FBDeviceVideoRecordingCommands.class,
       FBDeviceXCTestCommands.class,
-    ];
+    ]];
   });
   return commandClasses;
+}
+
++ (BOOL)addForwardingCommandClass:(Class)class error:(NSError **)error
+{
+  if (![class conformsToProtocol:@protocol(FBiOSTargetCommand)]){
+    return [[FBDeviceControlError
+             describe:@"Failed to add forwarding class. Class does not conform to FBiOSTargetCommand protocol."]
+            failBool:error];
+  }
+  [[self commandResponders] addObject:class];
+  return YES;
 }
 
 - (id)forwardingTargetForSelector:(SEL)selector
@@ -222,6 +235,18 @@ void (*FBAMDSetLogLevel)(int32_t level);
   }
   // Nothing left.
   return [super forwardingTargetForSelector:selector];
+}
+
+- (BOOL)conformsToProtocol:(Protocol *)protocol
+{
+  if ([super conformsToProtocol:protocol]) {
+    return YES;
+  }
+  if ([self.forwarder conformsToProtocol:protocol]) {
+    return  YES;
+  }
+
+  return NO;
 }
 
 @end

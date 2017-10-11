@@ -56,13 +56,18 @@
     if (![class instancesRespondToSelector:selector]) {
       continue;
     }
-    return self.memoizedCommands[NSStringFromClass(class)] ?: [self obtainCommandForClass:class];
+    return [self obtainCommandForClass:class];
   }
   return [super forwardingTargetForSelector:selector];
 }
 
 - (id)obtainCommandForClass:(Class)class
 {
+  NSString *key = NSStringFromClass(class);
+  if (self.memoizedCommands[key]){
+    return self.memoizedCommands[key];
+  }
+
   id instance = [self createCommandForClass:class];
   if (self.memoize) {
     self.memoizedCommands[NSStringFromClass(class)] = instance;
@@ -74,6 +79,20 @@
 {
   NSParameterAssert([class conformsToProtocol:@protocol(FBiOSTargetCommand)]);
   return [class commandsWithTarget:self.target];
+}
+
+- (BOOL)conformsToProtocol:(Protocol *)protocol
+{
+  if ([super conformsToProtocol:protocol]) {
+    return YES;
+  }
+  for (Class class in self.commandClasses) {
+    id command = [self obtainCommandForClass:class];
+    if ([command conformsToProtocol:protocol]) {
+      return YES;
+    }
+  }
+  return NO;
 }
 
 @end
