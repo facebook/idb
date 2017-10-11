@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Class that wraps DVTAbstractiOSDevice and it's device operator that can perform actions on it.
  */
-@interface FBDevice : NSObject <FBiOSTarget, FBXCTestCommands>
+@interface FBDevice : NSObject <FBiOSTarget>
 
 /**
  The Device Set to which the Device Belongs.
