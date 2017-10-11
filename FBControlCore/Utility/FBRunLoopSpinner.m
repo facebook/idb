@@ -178,7 +178,7 @@
 
 - (nullable id)await:(NSError **)error
 {
-  return [self awaitWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:error];
+  return [self awaitWithTimeout:DBL_MAX error:error];
 }
 
 - (nullable id)awaitWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
