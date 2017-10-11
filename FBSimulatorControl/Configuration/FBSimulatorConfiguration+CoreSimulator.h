@@ -58,13 +58,23 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)oldestAvailableOS;
 
 /**
- Creates and returns a FBSimulatorConfiguration object that matches the provided device.
+ Creates and returns a FBSimulatorConfiguration object that matches the provided SimDevice.
+ Will fail if the Device Type or OS Version are not known by FBControlCoreConfigurationVariants.
 
- @param device the Device to infer SimulatorConfiguration from.
+ @param simDevice the SimDevice to infer Simulator Configuration from.
  @param error any error that occurs in the inference of a configuration
- @return A FBSimulatorConfiguration object that matches the device.
+ @return A FBSimulatorConfiguration object that matches the device, or nil if the configuration was unknown.
  */
-+ (instancetype)inferSimulatorConfigurationFromDevice:(SimDevice *)device error:(NSError **)error;
++ (nullable instancetype)inferSimulatorConfigurationFromDevice:(SimDevice *)simDevice error:(NSError **)error;
+
+/**
+ Creates and returns a FBSimulatorConfiguration object that matches the provided SimDevice.
+ Will synthesize a configuration if the Device Type or OS Version are not known by FBControlCoreConfigurationVariants.
+
+ @param simDevice the SimDevice to infer a Simulator Configuration from.
+ @return A FBSimulatorConfiguration object that matches the device, providing a generic configuration where relevant.
+ */
++ (instancetype)inferSimulatorConfigurationFromDeviceSynthesizingMissing:(SimDevice *)simDevice;
 
 /**
  Confirms that the Runtime requirements for the reciever's configurations are met.

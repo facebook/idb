@@ -48,7 +48,7 @@
   return [self withOSNamed:os.name];
 }
 
-+ (instancetype)inferSimulatorConfigurationFromDevice:(SimDevice *)simDevice error:(NSError **)error;
++ (instancetype)inferSimulatorConfigurationFromDevice:(SimDevice *)simDevice error:(NSError **)error
 {
   FBOSVersionName osName = simDevice.runtime.name;
   FBOSVersion *osVersion = FBControlCoreConfigurationVariants.nameToOSVersion[osName];
@@ -64,6 +64,19 @@
       describeFormat:@"Could not obtain Device for for %@, perhaps it is unsupported by FBSimulatorControl", model]
       fail:error];
   }
+  return [[FBSimulatorConfiguration.defaultConfiguration
+    withOSNamed:osName]
+    withDeviceModel:model];
+}
+
++ (instancetype)inferSimulatorConfigurationFromDeviceSynthesizingMissing:(SimDevice *)simDevice
+{
+  FBSimulatorConfiguration *configuration = [self inferSimulatorConfigurationFromDevice:simDevice error:nil];
+  if (configuration) {
+    return configuration;
+  }
+  FBOSVersionName osName = simDevice.runtime.name;
+  FBDeviceModel model = simDevice.deviceType.name;
   return [[FBSimulatorConfiguration.defaultConfiguration
     withOSNamed:osName]
     withDeviceModel:model];

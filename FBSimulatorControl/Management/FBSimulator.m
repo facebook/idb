@@ -61,7 +61,7 @@
 {
   return [[[FBSimulator alloc]
     initWithDevice:device
-    configuration:configuration ?: [FBSimulatorConfiguration inferSimulatorConfigurationFromDevice:device error:nil]
+    configuration:configuration ?: [FBSimulatorConfiguration inferSimulatorConfigurationFromDeviceSynthesizingMissing:device]
     set:set
     processFetcher:set.processFetcher
     auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device configuration:configuration]
