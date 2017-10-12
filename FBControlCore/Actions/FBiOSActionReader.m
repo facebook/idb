@@ -205,6 +205,16 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   return self.writeBack;
 }
 
+- (id<FBEventInterpreter>)interpreter
+{
+  return self.delegate.interpreter;
+}
+
+- (id<FBFileConsumer>)consumer
+{
+  return self.delegate.consumer;
+}
+
 #pragma mark Forwarding
 
 - (id)forwardingTargetForSelector:(SEL)selector

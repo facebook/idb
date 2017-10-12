@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBEventReporter.h>
 #import <FBControlCore/FBiOSTargetAction.h>
 #import <FBControlCore/FBTerminationHandle.h>
 
@@ -99,7 +100,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeActionReader;
 /**
  The Delegate for the Action Reader.
  */
-@protocol FBiOSActionReaderDelegate <FBiOSTargetActionDelegate>
+@protocol FBiOSActionReaderDelegate <FBiOSTargetActionDelegate, FBEventReporter>
 
 /**
  Called when the Reader has finished reading.

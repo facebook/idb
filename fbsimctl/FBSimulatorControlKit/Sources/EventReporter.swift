@@ -12,14 +12,13 @@ import FBSimulatorControl
 import XCTestBootstrap
 
 public typealias EventInterpreter = FBEventInterpreterProtocol
+public typealias EventReporter = FBEventReporterProtocol
 
-public protocol EventReporter {
-  var interpreter: EventInterpreter { get }
-  var writer: Writer { get }
-  func report(_ subject: EventReporterSubject)
-}
+public  extension EventReporter {
+  public var writer: Writer { get {
+    return self.consumer
+  }}
 
-extension EventReporter {
   func reportSimpleBridge(_ eventName: EventName, _ eventType: EventType, _ value: ControlCoreValue) {
     self.reportSimple(eventName, eventType, value.subject)
   }
@@ -41,28 +40,9 @@ extension EventReporter {
   }
 }
 
-class WritingEventReporter : EventReporter {
-  public let writer: Writer
-  public let interpreter: EventInterpreter
-
-  init(writer: Writer, interpreter: EventInterpreter) {
-    self.writer = writer
-    self.interpreter = interpreter
-  }
-
-  public func report(_ subject: EventReporterSubject) {
-    for line in self.interpreter.interpretLines(EventReporterSubjectBridge(subject)) {
-      if line.count == 0 {
-        continue
-      }
-      self.writer.write(line)
-    }
-  }
-}
-
 public extension OutputOptions {
   public func createReporter(_ writer: Writer) -> EventReporter {
-    return WritingEventReporter(writer: writer, interpreter: self.createInterpreter())
+    return FBEventReporter.withInterpreter(self.createInterpreter(), consumer: writer)
   }
 
   private func createInterpreter() -> EventInterpreter {
@@ -98,7 +78,7 @@ public extension CLI {
     case .show(let help):
       return help.createReporter(writer)
     case .print:
-      return WritingEventReporter(writer: writer, interpreter: FBEventInterpreter.humanReadable())
+      return FBEventReporter.withInterpreter(FBEventInterpreter.humanReadable(), consumer: writer)
     }
   }
 }

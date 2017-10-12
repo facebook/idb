@@ -333,6 +333,18 @@
   [self.mutableHandles addObject:terminationHandle];
 }
 
+- (id<FBEventInterpreter>)interpreter
+{
+  NSAssert(NO, @"-[%@ %@] is not forwarded", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (id<FBFileConsumer>)consumer
+{
+  NSAssert(NO, @"-[%@ %@] is not forwarded", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
 @end
 
 #pragma clang diagnostic pop

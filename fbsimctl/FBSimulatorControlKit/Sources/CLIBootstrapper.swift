@@ -47,7 +47,7 @@ struct CLIRunner : Runner {
         self.reporter.reportError(message)
         return 1
       case .success(.some(let subject)):
-        self.reporter.report(subject)
+        self.reporter.report(EventReporterSubjectBridge(subject))
         fallthrough
       default:
         return 0

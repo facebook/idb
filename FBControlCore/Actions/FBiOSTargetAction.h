@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBEventReporter.h>
 #import <FBControlCore/FBJSONConversion.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -62,7 +63,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeTestLaunch;
 /**
  A Delegate that recieves information about the lifecycle of a Target Action.
  */
-@protocol FBiOSTargetActionDelegate <NSObject>
+@protocol FBiOSTargetActionDelegate <NSObject, FBEventReporter>
 
 /**
  A Termination Handle of an Asynchronous Operation has been generated.

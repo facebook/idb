@@ -45,17 +45,18 @@ enum ResponseKeys : String {
   case Subject = "subject"
 }
 
-private class HttpEventReporter : EventReporter {
-  var events: [EventReporterSubject] = []
+@objc private class HttpEventReporter : NSObject, EventReporter {
+  var events: [FBEventReporterSubjectProtocol] = []
   let interpreter: EventInterpreter = FBEventInterpreter.jsonEventInterpreter(false)
-  let writer: Writer = FileHandleWriter.null
+  let consumer: Writer = FileHandleWriter.null
 
-  fileprivate func report(_ subject: EventReporterSubject) {
+  func report(_ subject: FBEventReporterSubjectProtocol) {
     self.events.append(subject)
   }
 
   var jsonDescription: JSON { get {
-    return JSON.array(self.events.map { $0.jsonDescription })
+    let events: AnyObject = self.events.map { $0.jsonSerializableRepresentation } as AnyObject
+    return try! JSON.encode(events)
   }}
 
   static func errorResponse(_ errorMessage: String?) -> HttpResponse {

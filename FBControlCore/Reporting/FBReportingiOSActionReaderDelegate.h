@@ -8,20 +8,30 @@
  */
 
 #import <Foundation/Foundation.h>
+
 #import <FBControlCore/FBiOSActionReader.h>
 #import <FBControlCore/FBEventInterpreter.h>
 #import <FBControlCore/FBUploadBuffer.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBFileConsumer;
+
 /**
- * Takes in another FBiOSActionReaderDelegate and an FBEventInterpreter
- * Will return strings formatted by the given interpreter when possible
- * and pass through calls to the other delegate otherwise
+ An FBiOSActionReaderDelegate for interpreting events.
+ Returns strings formatted by the given interpreter when possible
+ and pass through calls to the other delegate otherwise
  */
 @interface FBReportingiOSActionReaderDelegate : NSObject <FBiOSActionReaderDelegate>
 
-- (instancetype)initWithDelegate:(id<FBiOSActionReaderDelegate>)delegate interpreter:(id<FBEventInterpreter>)interpreter;
+/**
+ The Designated Initializer.
+
+ @param delegate the delegate to forward to.
+ @param reporter the underlying event interpreter.
+ @return a new Delegate Instance.
+ */
+- (instancetype)initWithDelegate:(id<FBiOSActionReaderDelegate>)delegate reporter:(id<FBEventReporter>)reporter;
 
 @end
 

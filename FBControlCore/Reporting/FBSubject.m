@@ -72,6 +72,12 @@
   return [[FBSimpleSubject alloc] initWithName:name type:type subject:subject];
 }
 
++ (instancetype)subjectWithName:(FBEventName)name type:(FBEventType)type value:(id<FBJSONSerializable>)value
+{
+  id<FBEventReporterSubject> subject = [self subjectWithControlCoreValue:value];
+  return [self subjectWithName:name type:type subject:subject];
+}
+
 + (instancetype)subjectWithControlCoreValue:(id<FBJSONSerializable>)controlCoreValue
 {
   return [[FBControlCoreSubject alloc] initWithValue:controlCoreValue];

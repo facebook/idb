@@ -189,29 +189,13 @@ extension HttpRequest {
   }
 }
 
-@objc class AccumilatingActionDelegate : NSObject, FBiOSTargetActionDelegate {
-  var handle: FBTerminationHandle? = nil
-  let reporter: EventReporter
-
-  init(reporter: EventReporter) {
-    self.reporter = reporter
-    super.init()
-  }
-
-  func action(_ action: FBiOSTargetAction, target: FBiOSTarget, didGenerate terminationHandle: FBTerminationHandle) {
-    self.handle = terminationHandle
-  }
-
-  func obtainConsumer(for action: FBiOSTargetAction, target: FBiOSTarget) -> FBFileConsumer {
-    return self.reporter.writer
-  }
-}
-
 extension FBiOSTargetAction {
   func runAction(target: FBiOSTarget, reporter: EventReporter) throws -> FBTerminationHandle? {
-    let delegate = AccumilatingActionDelegate(reporter: reporter)
+    let reporter = FBEventReporter.withInterpreter(reporter.interpreter, consumer: reporter.writer)
+    let delegateBridge = ActionReaderDelegateBridge()
+    let delegate = FBReportingiOSActionReaderDelegate(delegate: delegateBridge, reporter: reporter)
     try self.run(with: target, delegate: delegate)
-    return delegate.handle
+    return delegateBridge.handles.first
   }
 
   public var eventName: EventName { get {

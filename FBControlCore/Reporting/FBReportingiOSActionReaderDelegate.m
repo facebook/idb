@@ -8,6 +8,9 @@
  */
 
 #import "FBReportingiOSActionReaderDelegate.h"
+
+#import "FBFileConsumer.h"
+#import "FBEventReporter.h"
 #import "FBSubject.h"
 #import "FBJSONEnums.h"
 
@@ -17,15 +20,15 @@
 
 @interface FBReportingiOSActionReaderDelegate ()
 
-@property (nonatomic, retain, readonly) id<FBiOSActionReaderDelegate> delegate;
-@property (nonatomic, retain, readonly) id<FBEventInterpreter> interpreter;
+@property (nonatomic, strong, readonly) id<FBiOSActionReaderDelegate> delegate;
+@property (nonatomic, strong, readonly) id<FBEventReporter> reporter;
 
 @end
 
 
 @implementation FBReportingiOSActionReaderDelegate
 
-- (instancetype)initWithDelegate:(id<FBiOSActionReaderDelegate>)delegate interpreter:(id<FBEventInterpreter>)interpreter
+- (instancetype)initWithDelegate:(id<FBiOSActionReaderDelegate>)delegate reporter:(id<FBEventReporter>)reporter
 {
   self = [super init];
 
@@ -34,7 +37,7 @@
   }
 
   _delegate = delegate;
-  _interpreter = interpreter;
+  _reporter = reporter;
 
   return self;
 }
@@ -118,6 +121,23 @@
     subject:[FBEventReporterSubject subjectWithString:error.localizedDescription]];
 
   return [self interpretSubject:subject];
+}
+
+#pragma mark FBEventReporter Implementation
+
+- (void)report:(id<FBEventReporterSubject>)subject
+{
+  [self.reporter report:subject];
+}
+
+- (id<FBEventInterpreter>)interpreter
+{
+  return self.reporter.interpreter;
+}
+
+- (id<FBFileConsumer>)consumer
+{
+  return self.reporter.consumer;
 }
 
 @end

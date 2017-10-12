@@ -52,6 +52,7 @@
 		AA08487B1F3F499800A4BA60 /* FBFuture.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0848791F3F499800A4BA60 /* FBFuture.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA08487C1F3F499800A4BA60 /* FBFuture.m in Sources */ = {isa = PBXBuildFile; fileRef = AA08487A1F3F499800A4BA60 /* FBFuture.m */; };
 		AA08487E1F3F49D600A4BA60 /* FBFutureTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA08487D1F3F49D600A4BA60 /* FBFutureTests.m */; };
+		AA0949F31F8F4A8A00841A73 /* FBEventReporterIntegrationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0949F21F8F4A8A00841A73 /* FBEventReporterIntegrationTests.m */; };
 		AA0DC7561CE3A29F0037A8A7 /* FBTestDaemonConnection.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0DC7541CE3A29F0037A8A7 /* FBTestDaemonConnection.h */; };
 		AA0DC7571CE3A29F0037A8A7 /* FBTestDaemonConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0DC7551CE3A29F0037A8A7 /* FBTestDaemonConnection.m */; };
 		AA0EB2831F16905400ABBD7E /* FBApplicationBundle+Simulator.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0EB2811F16905400ABBD7E /* FBApplicationBundle+Simulator.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -211,6 +212,8 @@
 		AA6062F31EE4B59900E2EFEE /* FBLogicTestRunStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA6062F11EE4B59900E2EFEE /* FBLogicTestRunStrategy.m */; };
 		AA63FD741D00A3D5000B3842 /* FBiOSTargetQuery.h in Headers */ = {isa = PBXBuildFile; fileRef = AA63FD721D00A3D5000B3842 /* FBiOSTargetQuery.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA63FD751D00A3D5000B3842 /* FBiOSTargetQuery.m in Sources */ = {isa = PBXBuildFile; fileRef = AA63FD731D00A3D5000B3842 /* FBiOSTargetQuery.m */; };
+		AA66FEDB1F83FFCB00047AA5 /* FBEventReporter.m in Sources */ = {isa = PBXBuildFile; fileRef = AA66FED91F83FFCB00047AA5 /* FBEventReporter.m */; };
+		AA66FEDC1F83FFD700047AA5 /* FBEventReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA66FEDA1F83FFCB00047AA5 /* FBEventReporter.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA682B1A1CEC9E8B009B6ECA /* FBDeviceSet.h in Headers */ = {isa = PBXBuildFile; fileRef = AA682B181CEC9E8B009B6ECA /* FBDeviceSet.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA682B1B1CEC9E8B009B6ECA /* FBDeviceSet.m in Sources */ = {isa = PBXBuildFile; fileRef = AA682B191CEC9E8B009B6ECA /* FBDeviceSet.m */; };
 		AA682B201CECD49B009B6ECA /* FBAMDevice.h in Headers */ = {isa = PBXBuildFile; fileRef = AA682B1E1CECD49B009B6ECA /* FBAMDevice.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -771,6 +774,7 @@
 		AA0848791F3F499800A4BA60 /* FBFuture.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBFuture.h; sourceTree = "<group>"; };
 		AA08487A1F3F499800A4BA60 /* FBFuture.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFuture.m; sourceTree = "<group>"; };
 		AA08487D1F3F49D600A4BA60 /* FBFutureTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFutureTests.m; sourceTree = "<group>"; };
+		AA0949F21F8F4A8A00841A73 /* FBEventReporterIntegrationTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBEventReporterIntegrationTests.m; sourceTree = "<group>"; };
 		AA0DC7541CE3A29F0037A8A7 /* FBTestDaemonConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestDaemonConnection.h; sourceTree = "<group>"; };
 		AA0DC7551CE3A29F0037A8A7 /* FBTestDaemonConnection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestDaemonConnection.m; sourceTree = "<group>"; };
 		AA0EB2811F16905400ABBD7E /* FBApplicationBundle+Simulator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FBApplicationBundle+Simulator.h"; sourceTree = "<group>"; };
@@ -1112,6 +1116,8 @@
 		AA633F8B1CFD788F00A59C5F /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		AA63FD721D00A3D5000B3842 /* FBiOSTargetQuery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetQuery.h; sourceTree = "<group>"; };
 		AA63FD731D00A3D5000B3842 /* FBiOSTargetQuery.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetQuery.m; sourceTree = "<group>"; };
+		AA66FED91F83FFCB00047AA5 /* FBEventReporter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = FBEventReporter.m; path = Reporting/FBEventReporter.m; sourceTree = "<group>"; };
+		AA66FEDA1F83FFCB00047AA5 /* FBEventReporter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = FBEventReporter.h; path = Reporting/FBEventReporter.h; sourceTree = "<group>"; };
 		AA682B181CEC9E8B009B6ECA /* FBDeviceSet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceSet.h; sourceTree = "<group>"; };
 		AA682B191CEC9E8B009B6ECA /* FBDeviceSet.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceSet.m; sourceTree = "<group>"; };
 		AA682B1D1CECB2EE009B6ECA /* FBDevice+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FBDevice+Private.h"; sourceTree = "<group>"; };
@@ -1758,6 +1764,7 @@
 		AA2076A51F0B7541001F180C /* Integration */ = {
 			isa = PBXGroup;
 			children = (
+				AA0949F21F8F4A8A00841A73 /* FBEventReporterIntegrationTests.m */,
 				AA2076D11F0B779B001F180C /* FBFileReaderTests.m */,
 				AA2076CF1F0B76AF001F180C /* FBFileWriterTests.m */,
 				AA2076A61F0B7541001F180C /* FBiOSActionReaderTests.m */,
@@ -2686,14 +2693,16 @@
 		D76C2AE11F13F2CA000EF13D /* Reporting */ = {
 			isa = PBXGroup;
 			children = (
-				D76C2AF81F13F8F3000EF13D /* FBReportingiOSActionReaderDelegate.h */,
-				D76C2AF91F13F8F3000EF13D /* FBReportingiOSActionReaderDelegate.m */,
 				D76C2AF21F13F783000EF13D /* FBEventInterpreter.h */,
 				D76C2AF31F13F783000EF13D /* FBEventInterpreter.m */,
-				D76C2AEC1F13F61E000EF13D /* FBSubject.h */,
-				D76C2AED1F13F61E000EF13D /* FBSubject.m */,
+				AA66FEDA1F83FFCB00047AA5 /* FBEventReporter.h */,
+				AA66FED91F83FFCB00047AA5 /* FBEventReporter.m */,
 				D76C2AE21F13F2E8000EF13D /* FBJSONEnums.h */,
 				D76C2AE31F13F2E8000EF13D /* FBJSONEnums.m */,
+				D76C2AF81F13F8F3000EF13D /* FBReportingiOSActionReaderDelegate.h */,
+				D76C2AF91F13F8F3000EF13D /* FBReportingiOSActionReaderDelegate.m */,
+				D76C2AEC1F13F61E000EF13D /* FBSubject.h */,
+				D76C2AED1F13F61E000EF13D /* FBSubject.m */,
 			);
 			name = Reporting;
 			sourceTree = "<group>";
@@ -3365,6 +3374,7 @@
 				AA58F8921D959593006F8D81 /* FBCodesignProvider.h in Headers */,
 				AA5CB9161E8A45200099F048 /* FBApplicationLaunchConfiguration.h in Headers */,
 				EEBD60801C9062E900298A07 /* FBControlCoreGlobalConfiguration.h in Headers */,
+				AA66FEDC1F83FFD700047AA5 /* FBEventReporter.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3903,6 +3913,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA63FD751D00A3D5000B3842 /* FBiOSTargetQuery.m in Sources */,
+				AA66FEDB1F83FFCB00047AA5 /* FBEventReporter.m in Sources */,
 				C0B32FCA1E4E459700A48CF4 /* FBArchitecture.m in Sources */,
 				AA5CB9171E8A45200099F048 /* FBApplicationLaunchConfiguration.m in Sources */,
 				AAEA3AA71C90BB62004F8409 /* FBLogSearch.m in Sources */,
@@ -4006,6 +4017,7 @@
 				AA8F5E1D1F272AB900FAAC0F /* FBXcodeDirectoryTests.m in Sources */,
 				AAE4D00A1F70FABF005EA6C3 /* FBSettingsApprovalTests.m in Sources */,
 				AA2076D81F0B7D03001F180C /* FBSocketIntegrationTests.m in Sources */,
+				AA0949F31F8F4A8A00841A73 /* FBEventReporterIntegrationTests.m in Sources */,
 				D76C2AF71F13F79C000EF13D /* FBEventInterpreterTests.m in Sources */,
 				AA2076BB1F0B7542001F180C /* FBControlCoreConfigurationVariantsTests.m in Sources */,
 				AA2076B91F0B7542001F180C /* FBTaskTests.m in Sources */,

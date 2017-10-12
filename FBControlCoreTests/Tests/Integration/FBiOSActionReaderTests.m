@@ -245,6 +245,21 @@ NS_ASSUME_NONNULL_BEGIN
   return nil;
 }
 
+- (void)report:(id<FBEventReporterSubject>)subject
+{
+
+}
+
+- (id<FBEventInterpreter>)interpreter
+{
+  return nil;
+}
+
+- (id<FBEventReporter>)reporter
+{
+  return nil;
+}
+
 @end
 
 @implementation FBiOSActionReaderFileTests
