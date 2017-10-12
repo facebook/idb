@@ -125,7 +125,7 @@ struct HelpRunner : Runner {
     if let error = self.help.error {
       return .failure(error.description)
     }
-    return .success(self.help.description)
+    return .success(FBEventReporterSubject(string: self.help.description))
   }
 }
 
@@ -178,7 +178,7 @@ struct ActionRunner : Runner {
     switch action {
     case .config:
       let config = FBControlCoreGlobalConfiguration()
-      let subject = FBEventReporterSubject.simple(.config, .discrete, config.subject)
+      let subject = FBEventReporterSubject(name: .config, type: .discrete, subject: config.subject)
       return CommandResult.success(subject)
     case .list:
       let context = self.context.replace(query)
@@ -226,10 +226,10 @@ struct ListenRunner : Runner, ActionPerformer {
     do {
       let (interface, baseRelay, reporter, awaitable) = try self.makeBaseRelay()
       let relay = SynchronousRelay(relay: baseRelay, reporter: reporter, awaitable: awaitable) {
-        reporter.reportSimple(.listen, .started, interface)
+        reporter.reportSimple(.listen, .started, ListenSubject(interface))
       }
       let result = RelayRunner(relay: relay).run()
-      reporter.reportSimple(.listen, .ended, interface)
+      reporter.reportSimple(.listen, .ended, ListenSubject(interface))
       return result
     } catch let error as CustomStringConvertible {
       return CommandResult.failure(error.description)
@@ -295,9 +295,9 @@ struct ListRunner : Runner {
   func run() -> CommandResult {
     let targets = self.context.query(self.context.value)
     let subjects: [EventReporterSubject] = targets.map { target in
-      FBEventReporterSubject.simple(.list, .discrete, FBEventReporterSubject(target: target, format: self.context.format))
+      FBEventReporterSubject(name: .list, type: .discrete, subject: FBEventReporterSubject(target: target, format: self.context.format))
     }
-    return .success(CompositeSubject(subjects))
+    return .success(FBEventReporterSubject(subjects: subjects))
   }
 }
 
@@ -307,9 +307,9 @@ struct ListDeviceSetsRunner : Runner {
   func run() -> CommandResult {
     let deviceSets = self.deviceSets
     let subjects: [EventReporterSubject] = deviceSets.map { deviceSet in
-      FBEventReporterSubject.simple(.listDeviceSets, .discrete, deviceSet)
+      FBEventReporterSubject(name: .listDeviceSets, type: .discrete, subject: FBEventReporterSubject(string: deviceSet))
     }
-    return .success(CompositeSubject(subjects))
+    return .success(FBEventReporterSubject(subjects: subjects))
   }
 
   fileprivate var deviceSets: [String] { get {

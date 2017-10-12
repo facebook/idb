@@ -9,19 +9,28 @@
 
 import Foundation
 
-struct SignalInfo : EventReporterSubject {
+@objc class SignalInfo: NSObject, EventReporterSubject {
   let signo: Int32
   let name: String
 
-  var jsonDescription: JSON { get {
-    return JSON.dictionary([
-      "signo" : JSON.number(NSNumber(value: self.signo as Int32)),
-      "name" : JSON.string(self.name),
-    ])
+  init(signo: Int32, name: String) {
+    self.signo = signo
+    self.name = name
+  }
+
+  var jsonSerializableRepresentation: Any { get {
+    return [
+      "signo" : NSNumber(value: self.signo as Int32),
+      "name" : self.name,
+    ]
   }}
 
-  var description: String { get {
+  override var description: String { get {
     return "\(self.name) \(self.signo)"
+  }}
+
+  var subSubjects: [FBEventReporterSubjectProtocol] { get {
+    return [self]
   }}
 }
 

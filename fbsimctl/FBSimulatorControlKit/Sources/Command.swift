@@ -28,6 +28,10 @@ public struct ListenInterface {
   let http: in_port_t?
   let hid: in_port_t?
   let handle: FBTerminationHandle?
+
+  var isEmptyListen: Bool { get {
+    return self.stdin == false && self.http == nil && self.hid == nil
+  }}
 }
 
 /**
@@ -231,67 +235,6 @@ extension FBTerminationHandleType {
   }}
 }
 
-extension ListenInterface : EventReporterSubject {
-  public var jsonDescription: JSON { get {
-    var httpValue = JSON.null
-    if let portNumber = self.http {
-      httpValue = JSON.number(NSNumber(integerLiteral: Int(portNumber)))
-    }
-    var hidValue = JSON.null
-    if let portNumber = self.hid {
-      hidValue = JSON.number(NSNumber(integerLiteral: Int(portNumber)))
-    }
-    var handleValue = JSON.null
-    if let handle = self.handle {
-      handleValue = JSON.string(handle.handleType.rawValue)
-    }
-
-    return JSON.dictionary([
-      "stdin" : JSON.bool(self.stdin),
-      "http" : httpValue,
-      "hid" : hidValue,
-      "handle" : handleValue,
-    ])
-  }}
-
-  public var description: String { get {
-    if let listenDescription = self.listenDescription {
-      return listenDescription
-    }
-    var description = "Http: "
-    if let httpPort = self.http {
-      description += httpPort.description
-    } else {
-      description += "No"
-    }
-    description += " Hid: "
-    if let hidPort = self.hid {
-      description += hidPort.description
-    } else {
-      description += "No"
-    }
-    description += " stdin: \(self.stdin)"
-    if let handle = self.handle {
-      description += " due to \(handle.handleType.rawValue)"
-    }
-    return description
-  }}
-
-  private var listenDescription: String? { get {
-    if !self.isEmptyListen {
-      return nil
-    }
-    guard  let handle = self.handle else {
-      return nil
-    }
-    return handle.handleType.listenDescription
-  }}
-
-  var isEmptyListen: Bool { get {
-    return self.stdin == false && self.http == nil && self.hid == nil
-  }}
-}
-
 extension IndividualCreationConfiguration : Equatable {}
 public func == (left: IndividualCreationConfiguration, right: IndividualCreationConfiguration) -> Bool {
   return left.os == right.os &&
@@ -413,7 +356,7 @@ extension Action {
   public var reportable: (EventName, EventReporterSubject?) { get {
     switch self {
     case .clearKeychain(let bundleID):
-      return (.clearKeychain, bundleID)
+      return (.clearKeychain, FBEventReporterSubject(string: bundleID ?? "none"))
     case .config:
       return (.config, nil)
     case .core(let action):
@@ -439,9 +382,9 @@ extension Action {
     case .listen:
       return (.listen, nil)
     case .open(let url):
-      return (.open, url.absoluteString)
+      return (.open, FBEventReporterSubject(string: url.absoluteString))
     case .record(let record):
-      return (.record, record)
+      return (.record, RecordSubject(record))
     case .relaunch(let appLaunch):
       return (.relaunch, appLaunch.subject)
     case .search(let search):
@@ -455,13 +398,13 @@ extension Action {
     case .stream:
       return (.stream, nil)
     case .terminate(let bundleID):
-      return (.terminate, bundleID)
+      return (.terminate, FBEventReporterSubject(string: bundleID))
     case .uninstall(let bundleID):
-      return (.uninstall, bundleID)
+      return (.uninstall, FBEventReporterSubject(string: bundleID))
     case .upload:
       return (.diagnose, nil)
     case .watchdogOverride(let bundleIDs, _):
-      return (.watchdogOverride, StringsSubject(bundleIDs))
+      return (.watchdogOverride, FBEventReporterSubject(strings: bundleIDs))
     }
   }}
 }

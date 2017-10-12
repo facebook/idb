@@ -46,11 +46,11 @@ struct iOSActionProvider {
     case .record(let record):
       switch record {
         case .start(let maybePath):
-          return iOSTargetRunner.handled(reporter, nil, record) {
+          return iOSTargetRunner.handled(reporter, nil, RecordSubject(record)) {
             return try target.startRecording(toFile: maybePath)
           }
         case .stop:
-          return iOSTargetRunner.simple(reporter, nil, record) {
+          return iOSTargetRunner.simple(reporter, nil, RecordSubject(record)) {
             try target.stopRecording()
           }
       }
@@ -144,13 +144,13 @@ private struct DiagnosticsRunner : Runner {
     reporter.reportValue(.diagnose, .ended, query)
 
     let subjects: [EventReporterSubject] = diagnostics.map { diagnostic in
-      return FBEventReporterSubject.simple(
-        .diagnostic,
-        .discrete,
-        diagnostic.subject
+      return FBEventReporterSubject(
+        name: .diagnostic,
+        type: .discrete,
+        subject: diagnostic.subject
       )
     }
-    return .success(CompositeSubject(subjects))
+    return .success(FBEventReporterSubject(subjects: subjects))
   }
 
   func fetchDiagnostics() -> [FBDiagnostic] {

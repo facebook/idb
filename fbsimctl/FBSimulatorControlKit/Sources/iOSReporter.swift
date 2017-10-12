@@ -28,7 +28,7 @@ extension iOSReporter {
       format: self.format,
       name: eventName,
       type: eventType,
-      subject: EventReporterSubjectBridge(subject)
+      subject: subject
     )
     self.reporter.report(subject)
   }

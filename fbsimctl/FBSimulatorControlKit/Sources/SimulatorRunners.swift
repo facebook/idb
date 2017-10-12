@@ -93,7 +93,7 @@ struct SimulatorActionRunner : Runner {
         try simulator.setupKeyboard()
       }
     case .open(let url):
-      return iOSTargetRunner.simple(reporter, .open, url.bridgedAbsoluteString) {
+      return iOSTargetRunner.simple(reporter, .open, FBEventReporterSubject(string: url.bridgedAbsoluteString)) {
         try simulator.open(url)
       }
     case .relaunch(let appLaunch):
@@ -113,7 +113,7 @@ struct SimulatorActionRunner : Runner {
     case .upload(let diagnostics):
       return UploadRunner(reporter, diagnostics)
     case .watchdogOverride(let bundleIDs, let timeout):
-      return iOSTargetRunner.simple(reporter, .watchdogOverride, StringsSubject(bundleIDs)) {
+      return iOSTargetRunner.simple(reporter, .watchdogOverride, FBEventReporterSubject(strings: bundleIDs)) {
         try simulator.overrideWatchDogTimer(forApplications: bundleIDs, withTimeout: timeout)
       }
     default:
@@ -134,7 +134,7 @@ private struct ServiceInfoRunner : Runner {
     guard let processInfo = self.reporter.simulator.processFetcher.processFetcher.processInfo(for: pid) else {
       return .failure("Could not get process info for pid \(pid)")
     }
-    return .success(FBEventReporterSubject.simple(.serviceInfo, .discrete, processInfo.subject))
+    return .success(FBEventReporterSubject(name: .serviceInfo, type: .discrete, subject: processInfo.subject))
   }
 }
 
@@ -163,7 +163,7 @@ private struct UploadRunner : Runner {
 
     if media.count > 0 {
       let paths = media.map { $0.1 }
-      let runner = iOSTargetRunner.simple(reporter, .upload, StringsSubject(paths)) {
+      let runner = iOSTargetRunner.simple(reporter, .upload, FBEventReporterSubject(strings: paths)) {
         try FBUploadMediaStrategy(simulator: self.reporter.simulator).uploadMedia(paths)
       }
       let result = runner.run()
