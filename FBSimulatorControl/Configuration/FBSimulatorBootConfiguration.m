@@ -251,7 +251,7 @@ static NSString *const BootOptionStringUseNSWorkspace = @"Use NSWorkspace";
 
 #pragma mark FBiOSTargetAction
 
-+ (FBiOSTargetActionType)actionType
+- (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeBoot;
 }

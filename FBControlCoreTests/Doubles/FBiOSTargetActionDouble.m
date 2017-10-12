@@ -24,7 +24,7 @@
   return self;
 }
 
-+ (FBiOSTargetActionType)actionType
+- (FBiOSTargetActionType)actionType
 {
   return @"test-double";
 }

@@ -106,7 +106,7 @@ static NSString *const KeySize = @"size";
 
 #pragma mark FBiOSTargetAction
 
-+ (FBiOSTargetActionType)actionType
+- (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeBinaryTransfer;
 }
@@ -219,7 +219,7 @@ static NSString *const KeyPath = @"path";
 
 #pragma mark FBiOSTargetAction
 
-+ (FBiOSTargetActionType)actionType
+- (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeUploadedBinary;
 }

@@ -15,7 +15,7 @@ FBiOSTargetActionType const FBiOSTargetActionTypeApplicationTest = FBXCTestTypeA
 
 @implementation FBApplicationTestConfiguration (Simulator)
 
-+ (FBiOSTargetActionType)actionType
+- (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeApplicationTest;
 }

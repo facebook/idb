@@ -619,7 +619,7 @@ static NSString *const DirectionUp = @"up";
 
 #pragma mark FBiOSTargetAction
 
-+ (FBiOSTargetActionType)actionType
+- (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeHID;
 }

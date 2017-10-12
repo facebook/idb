@@ -145,7 +145,7 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
 
 #pragma mark FBiOSTargetAction
 
-+ (FBiOSTargetActionType)actionType
+- (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeApplicationLaunch;
 }

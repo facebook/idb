@@ -21,7 +21,7 @@
 
 #pragma mark FBiOSTargetAction
 
-+ (FBiOSTargetActionType)actionType
+- (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeAgentLaunch;
 }

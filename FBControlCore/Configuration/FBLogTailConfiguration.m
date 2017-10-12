@@ -90,7 +90,7 @@ static NSString *const KeyArguments = @"arguments";
 
 #pragma mark FBiOSTargetAction
 
-+ (FBiOSTargetActionType)actionType
+- (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeLogTail;
 }

@@ -19,7 +19,7 @@ FBiOSTargetActionType const FBiOSTargetActionTypeAcessibilityFetch = @"accessibi
 
 #pragma mark FBiOSTargetAction
 
-+ (FBiOSTargetActionType)actionType
+- (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeAcessibilityFetch;
 }

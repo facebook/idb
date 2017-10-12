@@ -163,7 +163,7 @@ FBiOSTargetActionType const FBiOSTargetActionTypeApproval = @"approve";
 
 @implementation FBSettingsApproval (FBiOSTargetAction)
 
-+ (FBiOSTargetActionType)actionType
+- (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeApproval;
 }

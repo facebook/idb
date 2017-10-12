@@ -100,7 +100,7 @@ static NSString *const KeyCodesign = @"codesign";
 
 #pragma mark FBiOSTargetAction
 
-+ (FBiOSTargetActionType)actionType
+- (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeInstall;
 }

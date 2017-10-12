@@ -398,7 +398,7 @@ static NSString *const KeyResultBundlePath = @"resultBundlePath";
 
 #pragma mark FBiOSTargetAction
 
-+ (FBiOSTargetActionType)actionType
+- (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeTestLaunch;
 }

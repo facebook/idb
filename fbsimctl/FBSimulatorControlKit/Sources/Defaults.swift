@@ -121,7 +121,7 @@ extension Action {
       case .delete:
         return nil
       case .core(let action):
-        return type(of: action).actionType.defaultQuery
+        return action.actionType.defaultQuery
       case .list:
         fallthrough
       case .listen:

@@ -199,8 +199,7 @@ extension FBiOSTargetAction {
   }
 
   public var eventName: EventName { get {
-    let actionType = type(of: self).actionType
-    switch actionType {
+    switch self.actionType {
     case FBiOSTargetActionType.applicationLaunch:
       return .launch
     case FBiOSTargetActionType.agentLaunch:

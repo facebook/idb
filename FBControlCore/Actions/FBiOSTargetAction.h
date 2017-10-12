@@ -47,7 +47,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeTestLaunch;
 /**
  The Action Type of the Reciever.
  */
-@property (nonatomic, class, copy, readonly) FBiOSTargetActionType actionType;
+@property (nonatomic, copy, readonly) FBiOSTargetActionType actionType;
 
 /**
  Runs the Action.
