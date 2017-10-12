@@ -24,16 +24,6 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Application Lifecycle
 
 /**
- Uninstalls the given Application.
- Will always fail if the Application is a System Application.
-
- @param bundleID the Bundle ID of the application to uninstall.
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
- */
-- (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
-
-/**
  Launches the Application with the given Configuration, or Re-Launches it.
  A Relaunch is a kill of the currently launched application, followed by a launch.
 
