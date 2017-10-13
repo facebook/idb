@@ -335,7 +335,7 @@ class HttpRelay : Relay {
   fileprivate static var approveRoute: Route { get {
     return ActionRoute.post(.approve) { json in
       let approval = try FBSettingsApproval.inflate(fromJSON: json.decode())
-      return Action.core(approval)
+      return Action.coreFuture(approval)
     }
   }}
 

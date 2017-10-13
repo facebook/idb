@@ -105,7 +105,7 @@ public enum Action {
   case watchdogOverride([String], TimeInterval)
 
   static func approve(_ bundleIDs: [String]) -> Action {
-    return self.core(FBSettingsApproval(bundleIDs: bundleIDs, services: [.location]))
+    return self.coreFuture(FBSettingsApproval(bundleIDs: bundleIDs, services: [.location]))
   }
 
   static func boot(_ configuration: FBSimulatorBootConfiguration) -> Action {

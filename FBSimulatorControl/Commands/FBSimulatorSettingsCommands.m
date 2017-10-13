@@ -161,22 +161,24 @@ FBiOSTargetActionType const FBiOSTargetActionTypeApproval = @"approve";
 
 @end
 
-@implementation FBSettingsApproval (FBiOSTargetAction)
+@implementation FBSettingsApproval (FBiOSTargetFuture)
 
 - (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeApproval;
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBSimulatorSettingsCommands> commands = (id<FBSimulatorSettingsCommands>) target;
   if (![target conformsToProtocol:@protocol(FBSimulatorSettingsCommands)]) {
     return [[FBControlCoreError
       describeFormat:@"%@ does not conform to FBSimulatorSettingsCommands", target]
-      failBool:error];
+      failFuture];
   }
-  return [[commands grantAccess:[NSSet setWithArray:self.bundleIDs] toServices:[NSSet setWithArray:self.services]] await:error] != nil;
+  return [[commands
+    grantAccess:[NSSet setWithArray:self.bundleIDs] toServices:[NSSet setWithArray:self.services]]
+    mapReplace:self.actionType];
 }
 
 @end

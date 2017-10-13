@@ -88,7 +88,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeApproval;
 /**
  Bridges FBSettingsApproval to Simulators.
  */
-@interface FBSettingsApproval (FBiOSTargetAction) <FBiOSTargetAction>
+@interface FBSettingsApproval (FBiOSTargetFuture) <FBiOSTargetFuture>
 
 @end
 
