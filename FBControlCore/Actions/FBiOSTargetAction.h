@@ -11,10 +11,12 @@
 
 #import <FBControlCore/FBEventReporter.h>
 #import <FBControlCore/FBJSONConversion.h>
+#import <FBControlCore/FBFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBFileConsumer;
+@protocol FBEventReporter;
 @protocol FBiOSTarget;
 @protocol FBiOSTargetActionDelegate;
 @protocol FBTerminationHandle;
@@ -84,5 +86,32 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeTestLaunch;
 - (id<FBFileConsumer>)obtainConsumerForAction:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target;
 
 @end
+
+/**
+ A protocol that can be bridged to FBiOSTargetActionDelegate
+ */
+@protocol FBiOSTargetFuture <NSObject, FBJSONSerializable, FBJSONDeserializable>
+
+/**
+ The Action Type of the Reciever.
+ */
+@property (nonatomic, copy, readonly) FBiOSTargetActionType actionType;
+
+/**
+ Starts the action represented by the reciever.
+
+ @param target the target to run against.
+ @param consumer the consumer to report binary data to.
+ @param reporter the reporter to report structured data to.
+ @return a Future wrapping the action type.
+ */
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter;
+
+@end
+
+/**
+ Bridges an FBiOSTargetFuture to an FBiOSTargetAction
+ */
+extern id<FBiOSTargetAction> FBiOSTargetActionFromTargetFuture(id<FBiOSTargetFuture> targetFuture);
 
 NS_ASSUME_NONNULL_END

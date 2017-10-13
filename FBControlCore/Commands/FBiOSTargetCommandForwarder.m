@@ -9,6 +9,8 @@
 
 #import "FBiOSTargetCommandForwarder.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import <objc/runtime.h>
 
 #pragma clang diagnostic push

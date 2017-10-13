@@ -9,8 +9,37 @@
 
 #import <FBControlCore/FBiOSTargetAction.h>
 
+#import <objc/runtime.h>
+
+#import "FBRunLoopSpinner.h"
+
+
 FBiOSTargetActionType const FBiOSTargetActionTypeApplicationLaunch = @"applaunch";
 
 FBiOSTargetActionType const FBiOSTargetActionTypeAgentLaunch = @"agentlaunch";
 
 FBiOSTargetActionType const FBiOSTargetActionTypeTestLaunch = @"launch_xctest";
+
+static BOOL BridgedRun(id<FBiOSTargetFuture> targetFuture, SEL _cmd, id<FBiOSTarget> target, id<FBiOSTargetActionDelegate> delegate, NSError **error)
+{
+  id<FBFileConsumer> consumer = [delegate obtainConsumerForAction:(id<FBiOSTargetAction>)targetFuture target:target];
+  FBFuture *future = [targetFuture runWithTarget:target consumer:consumer reporter:delegate];
+  id result = [future await:error];
+  return result != nil;
+}
+
+id<FBiOSTargetAction> FBiOSTargetActionFromTargetFuture(id<FBiOSTargetFuture> targetFuture)
+{
+  // Return early if we already conform
+  Class class = targetFuture.class;
+  Protocol *protocol = @protocol(FBiOSTargetAction);
+  SEL selector = @selector(runWithTarget:delegate:error:);
+  if (class_conformsToProtocol(class, protocol)) {
+    return (id<FBiOSTargetAction>) targetFuture;
+  };
+  // Add the Method and Protocol conformance
+  const char *encoding = protocol_getMethodDescription(protocol, selector, YES, YES).types;
+  NSCParameterAssert(class_addMethod(class, selector, (IMP) BridgedRun, encoding));
+  NSCParameterAssert(class_addProtocol(class, protocol));
+  return (id<FBiOSTargetAction>) targetFuture;
+}

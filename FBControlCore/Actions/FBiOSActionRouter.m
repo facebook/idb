@@ -105,7 +105,16 @@ static NSString *const KeyUDID = @"udid";
       fail:error];
   }
 
-  return [actionClass inflateFromJSON:payload error:error];
+  id action = [actionClass inflateFromJSON:payload error:error];
+  if ([action conformsToProtocol:@protocol(FBiOSTargetAction)]) {
+    return action;
+  } else if ([action conformsToProtocol:@protocol(FBiOSTargetFuture)]) {
+    return FBiOSTargetActionFromTargetFuture(action);
+  } else {
+    return [[FBControlCoreError
+      describeFormat:@"%@ is not routable", action]
+      fail:error];
+  }
 }
 
 - (NSDictionary<NSString *, id> *)jsonFromAction:(id<FBiOSTargetAction>)action
