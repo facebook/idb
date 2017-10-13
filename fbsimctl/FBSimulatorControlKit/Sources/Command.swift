@@ -80,6 +80,7 @@ public enum Action {
   case clearKeychain(String?)
   case config
   case core(FBiOSTargetAction)
+  case coreFuture(FBiOSTargetFuture)
   case create(CreationSpecification)
   case delete
   case diagnose(FBDiagnosticQuery, DiagnosticFormat)
@@ -303,6 +304,8 @@ public func == (left: Action, right: Action) -> Bool {
     return true
   case (.core(let leftAction), .core(let rightAction)):
     return leftAction.isEqual(rightAction)
+  case let (.coreFuture(leftAction), .coreFuture(rightAction)):
+    return leftAction.isEqual(rightAction)
   case (.create(let leftSpecification), .create(let rightSpecification)):
     return leftSpecification == rightSpecification
   case (.delete, .delete):
@@ -360,6 +363,8 @@ extension Action {
     case .config:
       return (.config, nil)
     case .core(let action):
+      return (action.eventName, action.subject)
+    case .coreFuture(let action):
       return (action.eventName, action.subject)
     case .create:
       return (.create, nil)

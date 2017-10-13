@@ -189,6 +189,21 @@ extension HttpRequest {
   }
 }
 
+extension FBiOSTargetActionType {
+  public var eventName: EventName { get {
+    switch self {
+    case FBiOSTargetActionType.applicationLaunch:
+      return .launch
+    case FBiOSTargetActionType.agentLaunch:
+      return .launch
+    case FBiOSTargetActionType.testLaunch:
+      return .launchXCTest
+    default:
+      return EventName(rawValue: self.rawValue)
+    }
+  }}
+}
+
 extension FBiOSTargetAction {
   func runAction(target: FBiOSTarget, reporter: EventReporter) throws -> FBTerminationHandle? {
     let reporter = FBEventReporter.withInterpreter(reporter.interpreter, consumer: reporter.writer)
@@ -198,23 +213,20 @@ extension FBiOSTargetAction {
     return delegateBridge.handles.first
   }
 
-  public var eventName: EventName { get {
-    switch self.actionType {
-    case FBiOSTargetActionType.applicationLaunch:
-      return .launch
-    case FBiOSTargetActionType.agentLaunch:
-      return .launch
-    case FBiOSTargetActionType.testLaunch:
-      return .launchXCTest
-    default:
-      return EventName(rawValue: actionType.rawValue)
-    }
-  }}
-
   public func printable() -> String {
     let json = try! JSON.encode(FBiOSActionRouter.json(from: self) as AnyObject)
     return try! json.serializeToString(false)
   }
+
+  public var eventName: EventName { get {
+    return self.actionType.eventName
+  }}
+}
+
+extension FBiOSTargetFuture {
+  public var eventName: EventName { get {
+    return self.actionType.eventName
+  }}
 }
 
 extension FBProcessLaunchConfiguration : EnvironmentAdditive {}
