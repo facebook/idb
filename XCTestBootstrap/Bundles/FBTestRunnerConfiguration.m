@@ -16,8 +16,6 @@
 
 @implementation FBTestRunnerConfiguration
 
-static NSString *const kCustomJSBundleDownloadJSON = @"CUSTOM_JS_BUNDLE_DOWNLOAD_JSON";
-
 #pragma mark Initializers
 
 + (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath
@@ -34,8 +32,7 @@ static NSString *const kCustomJSBundleDownloadJSON = @"CUSTOM_JS_BUNDLE_DOWNLOAD
     ideInjectionFramework:ideInjectionFramework
     testBundle:testBundle
     testConfigurationPath:testConfigurationPath
-    frameworkSearchPath:frameworkSearchPath
-    customJSBundleDownloadJSON:NSProcessInfo.processInfo.environment[kCustomJSBundleDownloadJSON]];
+    frameworkSearchPath:frameworkSearchPath];
 
   return [[self alloc] initWithSessionIdentifier:sessionIdentifier testRunner:hostApplication launchArguments:launchArguments launchEnvironment:launchEnvironment];
 }
@@ -72,7 +69,7 @@ static NSString *const kCustomJSBundleDownloadJSON = @"CUSTOM_JS_BUNDLE_DOWNLOAD
   ];
 }
 
-+ (NSDictionary *)launchEnvironmentWithHostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath customJSBundleDownloadJSON:(NSString *)customJSBundleDownloadJSON
++ (NSDictionary *)launchEnvironmentWithHostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath
 {
   return @{
     @"AppTargetLocation" : hostApplication.binaryPath,
@@ -85,7 +82,6 @@ static NSString *const kCustomJSBundleDownloadJSON = @"CUSTOM_JS_BUNDLE_DOWNLOAD
     @"XCInjectBundleInto" : hostApplication.binaryPath,
     @"XCODE_DBG_XPC_EXCLUSIONS" : @"com.apple.dt.xctestSymbolicator",
     @"XCTestConfigurationFilePath" : testConfigurationPath,
-    @"CustomJSBundleDownloadJSON": customJSBundleDownloadJSON ?: @"na",
   };
 }
 
