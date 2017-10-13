@@ -8,17 +8,7 @@
  */
 
 import Foundation
-
-/**
- Runs an Action, yielding a result
- */
-protocol ActionPerformer {
-  var configuration: Configuration { get }
-  var query: FBiOSTargetQuery { get }
-
-  func runnerContext(_ reporter: EventReporter) -> iOSRunnerContext<()>
-  func perform(reporter: EventReporter, action: Action, queryOverride: FBiOSTargetQuery?) -> CommandResult
-}
+import FBControlCore
 
 /**
  Defines the Output of running a Command.
@@ -41,6 +31,25 @@ public struct CommandResult {
       handles: self.handles + second.handles
     )
   }
+}
+
+@objc class CommandResultBox : NSObject {
+  let value: CommandResult
+
+  init(value: CommandResult) {
+    self.value = value
+  }
+}
+
+/**
+ Runs an Action, yielding a result
+ */
+protocol ActionPerformer {
+  var configuration: Configuration { get }
+  var query: FBiOSTargetQuery { get }
+
+  func runnerContext(_ reporter: EventReporter) -> iOSRunnerContext<()>
+  func future(reporter: EventReporter, action: Action, queryOverride: FBiOSTargetQuery?) -> FBFuture<CommandResultBox>
 }
 
 /**

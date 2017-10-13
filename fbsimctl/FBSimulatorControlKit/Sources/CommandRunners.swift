@@ -282,10 +282,20 @@ struct ListenRunner : Runner, ActionPerformer {
     )
   }
 
-  func perform(reporter: EventReporter, action: Action, queryOverride: FBiOSTargetQuery?) -> CommandResult {
+  func future(reporter: EventReporter, action: Action, queryOverride: FBiOSTargetQuery?) -> FBFuture<CommandResultBox> {
     let query = queryOverride ?? self.query
     let context = self.runnerContext(reporter).replace((action, query))
-    return ActionRunner(context: context).run()
+
+    return FBFuture.onQueue(DispatchQueue.main, resolve: {
+      if case .coreFuture(let coreFuture) = action {
+        let futures = context.query(query).map { target in
+          return coreFuture.run(with: target, consumer: reporter.writer, reporter: reporter)
+        }
+        return FBFuture(futures: futures).mapReplace(CommandResultBox(value: CommandResult.success(nil)))
+      }
+      let result = ActionRunner(context: context).run()
+      return FBFuture(result: CommandResultBox(value: result))
+    })
   }
 }
 

@@ -93,19 +93,20 @@ enum ResponseKeys : String {
 extension ActionPerformer {
   func dispatchAction(_ action: Action, queryOverride: FBiOSTargetQuery?) -> HttpResponse {
     let reporter = HttpEventReporter()
-    var result: CommandResult? = nil
-    DispatchQueue.main.sync {
-      result = self.perform(reporter: reporter, action: action, queryOverride: queryOverride)
+    let future = self.future(reporter: reporter, action: action, queryOverride: queryOverride)
+    do {
+      let result = try future.await(withTimeout: FBControlCoreGlobalConfiguration.slowTimeout)
+      return reporter.interactionResultResponse(result.value)
+    } catch {
+      return reporter.interactionResultResponse(.failure("Timed Out Performing Action \(action)"))
     }
-
-    return reporter.interactionResultResponse(result!)
   }
 
   func runWithSingleSimulator<A>(_ query: FBiOSTargetQuery, action: (FBSimulator) throws -> A) throws -> A {
     let simulator = try self.runnerContext(HttpEventReporter()).querySingleSimulator(query)
     var result: A? = nil
     var error: Error? = nil
-    DispatchQueue.main.sync {
+    simulator.workQueue.sync {
       do {
         result = try action(simulator)
       } catch let caughtError {
