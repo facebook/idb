@@ -243,7 +243,7 @@ class FBSimctl:
                 f'Nonzero exit code {process.returncode} {stdout}'
             )
         events = [
-            json.loads(line) for line in str(stdout, 'utf-8').splitlines()
+            json.loads(line) for line in str(stdout, 'utf-8').splitlines() if len(line)
         ]
         return Events(events)
 

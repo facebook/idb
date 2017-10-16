@@ -215,11 +215,13 @@ struct ListenRunner : Runner, ActionPerformer {
   let context: iOSRunnerContext<(ListenInterface, FBiOSTargetQuery)>
   let configuration: Configuration
   let query: FBiOSTargetQuery
+  let workQueue: DispatchQueue
 
   init(context: iOSRunnerContext<(ListenInterface, FBiOSTargetQuery)>) {
     self.context = context
     self.configuration = context.configuration
     self.query = context.value.1
+    self.workQueue = DispatchQueue(label: "com.facebook.fbsimctl.listen.executor")
   }
 
   func run() -> CommandResult {
@@ -286,7 +288,7 @@ struct ListenRunner : Runner, ActionPerformer {
     let query = queryOverride ?? self.query
     let context = self.runnerContext(reporter).replace((action, query))
 
-    return FBFuture.onQueue(DispatchQueue.main, resolve: {
+    return FBFuture.onQueue(self.workQueue, resolve: {
       if case .coreFuture(let coreFuture) = action {
         let futures = context.query(query).map { target in
           return coreFuture.run(with: target, consumer: reporter.writer, reporter: reporter)
