@@ -88,7 +88,6 @@ public enum Action {
   case focus
   case keyboardOverride
   case list
-  case listApps
   case listDeviceSets
   case listen(ListenInterface)
   case open(URL)
@@ -131,6 +130,10 @@ public enum Action {
   static func launchXCTest(_ testLaunch: FBTestLaunchConfiguration) -> Action {
     return self.core(testLaunch.withUITesting(true))
   }
+
+  static var listApps: Action { get {
+    return self.coreFuture(FBListApplicationsConfiguration())
+  }}
 
   static func logTail(_ configuration: FBLogTailConfiguration) -> Action {
     return self.core(configuration)

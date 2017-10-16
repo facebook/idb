@@ -41,11 +41,6 @@ struct iOSActionProvider {
     case .coreFuture(let action):
       let future = action.run(with: target, consumer: reporter.reporter.writer, reporter: reporter.reporter)
       return FutureRunner(reporter, action.eventName, action.subject, future)
-    case .listApps:
-      return iOSTargetRunner.simple(reporter, nil, target.subject) {
-        let subjects = try target.installedApplications().map(FBEventReporterSubject.init)
-        reporter.reporter.reportSimple(.listApps, .discrete, FBEventReporterSubject(subjects: subjects))
-      }
     case .record(let record):
       switch record {
         case .start(let maybePath):
