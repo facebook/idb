@@ -10,6 +10,41 @@
 #import <XCTest/XCTest.h>
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBDeviceControl.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wprotocol"
+#pragma clang diagnostic ignored "-Wincomplete-implementation"
+
+@interface FBTestManagerTestReporterDouble : NSObject <FBTestManagerTestReporter>
+
+@property (nonatomic, assign, readwrite) BOOL testCaseDidStartForTestClassCalled;
+@property (nonatomic, assign, readwrite) BOOL testCaseDidFinishForTestClassCalled;
+
+@end
+
+@implementation FBTestManagerTestReporterDouble
+
+- (instancetype)init
+{
+  self.testCaseDidStartForTestClassCalled = NO;
+  self.testCaseDidFinishForTestClassCalled = NO;
+  return self;
+}
+
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
+{
+  self.testCaseDidStartForTestClassCalled = YES;
+}
+
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration
+{
+  self.testCaseDidFinishForTestClassCalled = YES;
+}
+
+@end
+
+#pragma clang diagnostic pop
 
 @interface FBDeviceXCTestCommandsTests : XCTestCase
 
@@ -50,6 +85,32 @@
                                                   newProperties:newProperties];
 
   XCTAssertEqualObjects(expectedProperties, realProperties);
+}
+
+- (void)testReportResults
+{
+  NSDictionary *results =
+  @{
+    @"TestableSummaries":@[@{
+      @"Tests":@[@{
+        @"Subtests": @[@{
+          @"Subtests":@[@{
+            @"TestIdentifier": @"ClassName",
+            @"Subtests":@[@{
+                @"TestStatus": @"Success",
+                @"TestIdentifier": @"testAAA()",
+                @"Duration": @1.2,
+            }]
+          }]
+        }]
+      }]
+    }]
+  };
+
+  FBTestManagerTestReporterDouble *reporter = [[FBTestManagerTestReporterDouble alloc] init];
+  [FBDeviceXCTestCommands reportResults:results reporter:reporter];
+  XCTAssertTrue(reporter.testCaseDidStartForTestClassCalled);
+  XCTAssertTrue(reporter.testCaseDidFinishForTestClassCalled);
 }
 
 @end
