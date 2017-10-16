@@ -60,6 +60,15 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
 + (FBFuture<T> *)futureWithError:(NSError *)error;
 
 /**
+ Constructs a Future that resolves successfully when the resolveWhen block returns YES.
+
+ @param queue to resolve on.
+ @param resolveWhen a block determining when the future should resolve.
+ @return a new Future that resolves when the resolution block returns YES.
+ */
++ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue resolveWhen:(BOOL (^)(void))resolveWhen;
+
+/**
  Resolve a future asynchronously, by value.
 
  @param queue to resolve on.
@@ -151,6 +160,14 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
  @return a mapped future
  */
 - (FBFuture *)onQueue:(dispatch_queue_t)queue map:(id (^)(T result))map;
+
+/**
+ Cancels the receiver if it doesn't resolve within the timeout.
+
+ @param timeout to use.
+ @return a new future.
+ */
+- (FBFuture *)timedOutIn:(NSTimeInterval)timeout;
 
 /**
  Replaces the value on a successful future.

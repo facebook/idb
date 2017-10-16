@@ -103,6 +103,11 @@ extern NSString *const FBControlCoreErrorDomain;
 + (NSError *)errorForDescription:(NSString *)description;
 
 /**
+ Construct a timeout error with the provided description.
+ */
++ (NSError *)timeoutErrorWithDescription:(NSString *)description;
+
+/**
  Construct an error from a format string.
  */
 + (NSError *)errorForFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);

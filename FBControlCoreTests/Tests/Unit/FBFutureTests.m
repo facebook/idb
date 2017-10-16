@@ -516,6 +516,36 @@
   XCTAssertEqual(cancelFuture.state, FBFutureStateCompletedWithCancellation);
 }
 
+- (void)testTimedOutIn
+{
+  FBFuture *future = [[FBFuture new] timedOutIn:0.1];
+
+  XCTAssertFalse(future.hasCompleted);
+  XCTAssertEqual(future.state, FBFutureStateRunning);
+  XCTAssertNil(future.result);
+  XCTAssertNil(future.error);
+
+  [self waitForExpectations:@[
+    [self keyValueObservingExpectationForObject:future keyPath:@"hasCompleted" expectedValue:@YES],
+    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateCompletedWithError)]
+  ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
+- (void)testResolveWhen
+{
+  __block NSInteger resolveCount = 2;
+  FBFuture<NSNull *> *future = [FBFuture onQueue:self.queue resolveWhen:^BOOL {
+    --resolveCount;
+    return resolveCount == 0;
+  }];
+
+  [self waitForExpectations:@[
+    [self keyValueObservingExpectationForObject:future keyPath:@"hasCompleted" expectedValue:@YES],
+    [self keyValueObservingExpectationForObject:future keyPath:@"result" expectedValue:@YES],
+    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateCompletedWithResult)]
+  ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
 #pragma mark - Helpers
 
 - (void)assertSynchronousResolutionWithBlock:(void (^)(FBMutableFuture *))resolveBlock expectedState:(FBFutureState)state expectedResult:(id)expectedResult expectedError:(NSError *)expectedError

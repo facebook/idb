@@ -32,6 +32,11 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
   return @"";
 }
 
+static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
+{
+  return dispatch_time(DISPATCH_TIME_NOW, (int64_t)(inDuration * NSEC_PER_SEC));
+}
+
 @interface FBFuture_Handler : NSObject
 
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
@@ -83,7 +88,7 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
   return [future resolveWithError:error];
 }
 
-+ (instancetype)onQueue:(dispatch_queue_t)queue resolveValue:( id(^)(NSError **) )resolve;
++ (instancetype)onQueue:(dispatch_queue_t)queue resolveValue:(id(^)(NSError **))resolve;
 {
   FBMutableFuture *future = [self new];
   dispatch_async(queue, ^{
@@ -107,6 +112,43 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
     [future resolveFromFuture:resolved];
   });
   return future;
+}
+
++ (FBFuture<NSNumber *> *)onQueue:(dispatch_queue_t)queue resolveWhen:(BOOL (^)(void))resolveWhen
+{
+  FBMutableFuture *future = FBMutableFuture.future;
+
+  dispatch_async(queue, ^{
+    const NSTimeInterval interval = 0.1;
+    const dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+
+    dispatch_source_set_timer(timer, FBFutureCreateDispatchTime(interval), (uint64_t)(interval * NSEC_PER_SEC), (uint64_t)(interval * NSEC_PER_SEC / 10));
+    dispatch_source_set_event_handler(timer, ^{
+      if (future.state != FBFutureStateRunning) {
+        dispatch_cancel(timer);
+      } else if (resolveWhen()) {
+        dispatch_cancel(timer);
+        [future resolveWithResult:@YES];
+      }
+    });
+
+    dispatch_resume(timer);
+  });
+
+  return future;
+}
+
+- (FBFuture *)timedOutIn:(NSTimeInterval)timeout
+{
+  NSParameterAssert(timeout > 0);
+
+  FBMutableFuture *timeoutFuture = [FBMutableFuture future];
+
+  dispatch_after(FBFutureCreateDispatchTime(timeout), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    [timeoutFuture resolveWithError:[FBControlCoreError timeoutErrorWithDescription:@"FBFuture"]];
+  });
+
+  return [FBFuture race:@[self, timeoutFuture]];
 }
 
 + (FBFuture *)futureWithFutures:(NSArray<FBFuture *> *)futures
