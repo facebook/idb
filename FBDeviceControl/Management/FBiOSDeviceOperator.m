@@ -104,13 +104,7 @@
 
 - (void)fetchApplications
 {
-  if (!self.dvtDevice.applications) {
-    [FBRunLoopSpinner spinUntilBlockFinished:^id{
-      DVTFuture *future = self.dvtDevice.token.fetchApplications;
-      [future waitUntilFinished];
-      return nil;
-    }];
-  }
+  [[self fetchApplicationsAsync] await:nil];
 }
 
 - (id<DVTApplication>)installedApplicationWithBundleIdentifier:(NSString *)bundleID
@@ -138,30 +132,20 @@
 
 - (BOOL)uploadApplicationDataAtPath:(NSString *)path bundleID:(NSString *)bundleID error:(NSError **)error
 {
-  __block NSError *innerError = nil;
-  BOOL result = [[FBRunLoopSpinner spinUntilBlockFinished:^id{
-    return @([self.dvtDevice uploadApplicationDataWithPath:path forInstalledApplicationWithBundleIdentifier:bundleID error:&innerError]);
-  }] boolValue];
-  *error = innerError;
-  return result;
+  return [[[self uploadApplicationDataAtPath:path bundleID:bundleID] await:error] boolValue];
+}
+
+- (FBFuture<NSNumber *> *)uploadApplicationDataAtPath:(NSString *)path bundleID:(NSString *)bundleID
+{
+  return [FBFuture onQueue:self.device.asyncQueue resolveValue:^id (NSError **error) {
+    BOOL result = [self.dvtDevice uploadApplicationDataWithPath:path forInstalledApplicationWithBundleIdentifier:bundleID error:error];
+    return result ? @(result) : nil;
+  }];
 }
 
 - (BOOL)cleanApplicationStateWithBundleIdentifier:(NSString *)bundleIdentifier error:(NSError **)error
 {
-  id returnObject =
-  [FBRunLoopSpinner spinUntilBlockFinished:^id{
-    if ([self.dvtDevice installedApplicationWithBundleIdentifier:bundleIdentifier]) {
-      return [self.dvtDevice uninstallApplicationWithBundleIdentifierSync:bundleIdentifier];
-    }
-    return nil;
-  }];
-  if ([returnObject isKindOfClass:NSError.class]) {
-    if (error != nil) {
-      *error = returnObject;
-    }
-    return NO;
-  }
-  return YES;
+  return [[self cleanApplicationStateWithBundleIdentifier:bundleIdentifier] await:error] != nil;
 }
 
 #pragma mark - DVTDevice support
@@ -454,6 +438,30 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
     *error = innerError;
   }
   return result;
+}
+
+- (FBFuture<NSNull *> *)fetchApplicationsAsync
+{
+  if (!self.dvtDevice.applications) {
+    return [FBFuture onQueue:self.device.asyncQueue resolveValue:^id (NSError **error) {
+      DVTFuture *future = [self.dvtDevice.token fetchApplications];
+      [future waitUntilFinished];
+      return NSNull.null;
+    }];
+  } else {
+    return [FBFuture futureWithResult:NSNull.null];
+  }
+}
+
+- (FBFuture<id> *)cleanApplicationStateWithBundleIdentifier:(NSString *)bundleIdentifier
+{
+  return [FBFuture onQueue:self.device.asyncQueue resolveValue:^id (NSError **error) {
+    if ([self.dvtDevice installedApplicationWithBundleIdentifier:bundleIdentifier]) {
+      return [self.dvtDevice uninstallApplicationWithBundleIdentifierSync:bundleIdentifier];
+    } else {
+      return @YES;
+    }
+  }];
 }
 
 @end

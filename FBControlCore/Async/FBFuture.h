@@ -57,7 +57,7 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
  @param error the error to wrap.
  @return a new Future.
  */
-+ (FBFuture *)futureWithError:(NSError *)error;
++ (FBFuture<T> *)futureWithError:(NSError *)error;
 
 /**
  Resolve a future asynchronously, by value.
