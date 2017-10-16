@@ -114,4 +114,12 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeTestLaunch;
  */
 extern id<FBiOSTargetAction> FBiOSTargetActionFromTargetFuture(id<FBiOSTargetFuture> targetFuture);
 
+/**
+ A base class for convenient FBiOSTargetAction implementations.
+ Most useful when there is an empty payload.
+ */
+@interface FBiOSTargetActionSimple : NSObject <FBJSONSerializable, FBJSONDeserializable, NSCopying>
+
+@end
+
 NS_ASSUME_NONNULL_END

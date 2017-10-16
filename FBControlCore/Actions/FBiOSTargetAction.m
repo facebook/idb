@@ -43,3 +43,41 @@ id<FBiOSTargetAction> FBiOSTargetActionFromTargetFuture(id<FBiOSTargetFuture> ta
   NSCParameterAssert(class_addProtocol(class, protocol));
   return (id<FBiOSTargetAction>) targetFuture;
 }
+
+@implementation FBiOSTargetActionSimple
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  return self;
+}
+
+#pragma mark JSON
+
+- (nonnull id)jsonSerializableRepresentation
+{
+  return @{};
+}
+
++ (instancetype)inflateFromJSON:(id)json error:(NSError **)error
+{
+  return [self new];
+}
+
+#pragma mark NSObject
+
+- (BOOL)isEqual:(FBiOSTargetActionSimple *)configuration
+{
+  if (![configuration isKindOfClass:self.class]) {
+    return NO;
+  }
+  return YES;
+}
+
+- (NSUInteger)hash
+{
+  return NSStringFromClass(self.class).hash;
+}
+
+@end

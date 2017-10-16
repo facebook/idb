@@ -50,6 +50,7 @@
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBJSONEnums.h>
 #import <FBControlCore/FBLineBuffer.h>
+#import <FBControlCore/FBListApplicationsConfiguration.h>
 #import <FBControlCore/FBLocalizationOverride.h>
 #import <FBControlCore/FBLogCommands.h>
 #import <FBControlCore/FBLogSearch.h>

@@ -9,6 +9,7 @@
 
 #import "FBiOSActionRouter.h"
 
+#import "FBListApplicationsConfiguration.h"
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBiOSTarget.h"
@@ -63,6 +64,7 @@
   return @[
     FBApplicationLaunchConfiguration.class,
     FBUploadHeader.class,
+    FBListApplicationsConfiguration.class,
   ];
 }
 

@@ -78,6 +78,16 @@
   return [self subjectWithName:name type:type subject:subject];
 }
 
++ (instancetype)subjectWithName:(FBEventName)name type:(FBEventType)type values:(NSArray<id<FBJSONSerializable>> *)values
+{
+  NSMutableArray<id<FBEventReporterSubject>> *subjects = [NSMutableArray array];
+  for (id<FBJSONSerializable> value in values) {
+    [subjects addObject:[FBEventReporterSubject subjectWithControlCoreValue:value]];
+  }
+  id<FBEventReporterSubject> subject = [FBEventReporterSubject compositeSubjectWithArray:subjects];
+  return [self subjectWithName:name type:type subject:subject];
+}
+
 + (instancetype)subjectWithControlCoreValue:(id<FBJSONSerializable>)controlCoreValue
 {
   return [[FBControlCoreSubject alloc] initWithValue:controlCoreValue];

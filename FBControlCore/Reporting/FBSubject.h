@@ -54,6 +54,16 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)subjectWithName:(FBEventName)name type:(FBEventType)type value:(id<FBJSONSerializable>)value NS_SWIFT_NAME(init(name:type:value:));
 
 /**
+ An FBEventReporterSubject containing an event name, event type and some values.
+
+ @param name the Event Name.
+ @param type the Event Type.
+ @param values the Serializable Values.
+ @return a Event Reporter Subject.
+ */
++ (instancetype)subjectWithName:(FBEventName)name type:(FBEventType)type values:(NSArray<id<FBJSONSerializable>> *)values NS_SWIFT_NAME(init(name:type:values:));
+
+/**
  An FBEventReporterSubject for a reportable value.
 
  @param controlCoreValue the ControlCoreValue, which will conform to (FBJSONSerializable & CustomStringConvertible)
