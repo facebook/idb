@@ -410,34 +410,32 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
 
 #pragma mark - Helpers
 
+- (FBFuture<id> *)hubControlFutureWithSelector:(SEL)selector arg:(id)arg, ...
+{
+  va_list arguments;
+  va_start(arguments, arg);
+
+  FBMutableFuture<id> *future = FBMutableFuture.future;
+  DTXChannel *channel = self.dvtDevice.serviceHubProcessControlChannel;
+  DTXMessage *message = [[objc_lookUpClass("DTXMessage") alloc] initWithSelector:selector firstArg:arg remainingObjectArgs:(__bridge id)arguments];
+  va_end(arguments);
+
+  [channel sendMessageAsync:message replyHandler:^(DTXMessage *responseMessage) {
+    if (responseMessage.errorStatus) {
+      [future resolveWithError:responseMessage.error];
+    } else {
+      [future resolveWithResult:responseMessage.object];
+    }
+  }];
+
+  return future;
+}
+
 - (id)executeHubProcessControlSelector:(SEL)aSelector
                                  error:(NSError *_Nullable *)error
                              arguments:(id)arg, ...
 {
-  va_list _arguments;
-  va_start(_arguments, arg);
-  va_list *arguments = &_arguments;
-
-  __block NSError *innerError = nil;
-  id result = [FBRunLoopSpinner spinUntilBlockFinished:^id{
-    __block id responseObject;
-
-    DTXChannel *channel = self.dvtDevice.serviceHubProcessControlChannel;
-    DTXMessage *message = [[objc_lookUpClass("DTXMessage") alloc] initWithSelector:aSelector firstArg:arg remainingObjectArgs:(__bridge id)(*arguments)];
-    [channel sendControlSync:message replyHandler:^(DTXMessage *responseMessage){
-      if (responseMessage.errorStatus) {
-        innerError = responseMessage.error;
-        return;
-      }
-      responseObject = responseMessage.object;
-    }];
-    return responseObject;
-  }];
-  va_end(_arguments);
-  if (error) {
-    *error = innerError;
-  }
-  return result;
+  return [[self hubControlFutureWithSelector:aSelector arg:arg] await:error];
 }
 
 - (FBFuture<NSNull *> *)fetchApplicationsAsync
