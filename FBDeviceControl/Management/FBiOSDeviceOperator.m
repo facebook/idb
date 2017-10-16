@@ -32,10 +32,11 @@
 #import "FBDevice.h"
 #import "FBDevice+Private.h"
 #import "FBDeviceSet.h"
-#import "FBDeviceControlError.h"
 #import "FBAMDevice+Private.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
+
+#import "FBiOSDeviceReadynessStrategy.h"
 
 #import <FBControlCore/FBControlCore.h>
 
@@ -224,67 +225,8 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
 
 - (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError **)error
 {
-  if (![[[[[FBRunLoopSpinner new]
-           timeout:5 * 60]
-          timeoutErrorMessage:@"Device was locked"]
-         reminderMessage:@"Please unlock device!"]
-        spinUntilTrue:^BOOL{ return ![self.dvtDevice isPasscodeLocked]; } error:error])
-  {
-    return NO;
-  }
-
-  if (![[[[[FBRunLoopSpinner new]
-           timeout:5 * 60]
-          timeoutErrorMessage:@"Device did not become available"]
-         reminderMessage:@"Waiting for device to become available!"]
-        spinUntilTrue:^BOOL{ return [self.dvtDevice isAvailable]; }])
-  {
-    return NO;
-  }
-
-  if (![[[[[FBRunLoopSpinner new]
-           timeout:5 * 60]
-          timeoutErrorMessage:@"Failed to gain access to device"]
-         reminderMessage:@"Allow device access!"]
-        spinUntilTrue:^BOOL{ return [self.dvtDevice deviceReady]; } error:error])
-  {
-    return NO;
-  }
-
-  __block NSUInteger preLaunchLogLength;
-  __block NSString *preLaunchConsoleString;
-  if (![[[[FBRunLoopSpinner new]
-          timeout:60]
-         timeoutErrorMessage:@"Failed to load device console entries"]
-        spinUntilTrue:^BOOL{
-          NSString *log = self.consoleString.copy;
-          if (log.length == 0) {
-            return NO;
-          }
-          // Waiting for console to load all entries
-          if (log.length != preLaunchLogLength) {
-            preLaunchLogLength = log.length;
-            return NO;
-          }
-          preLaunchConsoleString = log;
-          return YES;
-        } error:error])
-  {
-    return NO;
-  }
-
-  if (!self.dvtDevice.supportsXPCServiceDebugging) {
-    return [[FBDeviceControlError
-      describe:@"Device does not support XPC service debugging"]
-      failBool:error];
-  }
-
-  if (!self.dvtDevice.serviceHubProcessControlChannel) {
-    return [[FBDeviceControlError
-      describe:@"Failed to create HUB control channel"]
-      failBool:error];
-  }
-  return YES;
+  FBiOSDeviceReadynessStrategy *strategy = [FBiOSDeviceReadynessStrategy strategyWithDVTDevice:self.dvtDevice workQueue:self.device.workQueue];
+  return [[[strategy waitForDeviceReadyToDebug] timedOutIn:4 * 60] await:error] != nil;
 }
 
 - (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
