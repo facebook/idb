@@ -139,6 +139,7 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
       @"UseUITargetAppProvidedByTests" : @YES,
       @"IsUITestBundle" : @YES,
       @"CommandLineArguments": testLaunch.applicationLaunchConfiguration.arguments,
+      @"EnvironmentVariables": testLaunch.applicationLaunchConfiguration.environment,
       @"TestingEnvironmentVariables": @{
         @"DYLD_FRAMEWORK_PATH": @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
         @"DYLD_LIBRARY_PATH": @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
