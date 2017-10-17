@@ -323,8 +323,6 @@ public func == (left: Action, right: Action) -> Bool {
     return true
   case (.list, .list):
     return true
-  case (.listApps, .listApps):
-    return true
   case (.listDeviceSets, .listDeviceSets):
     return true
   case (.listen(let leftServer), .listen(let rightServer)):

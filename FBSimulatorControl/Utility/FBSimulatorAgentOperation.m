@@ -20,7 +20,6 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
 @interface FBSimulatorAgentOperation ()
 
 @property (nonatomic, weak, nullable, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *mutableFuture;
 
 @end
 
@@ -28,12 +27,12 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
 
 #pragma mark Initializers
 
-+ (instancetype)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr handler:(nullable FBAgentTerminationHandler)handler
++ (instancetype)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr completionFuture:(FBFuture<NSNumber *> *)completionFuture
 {
-  return [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr handler:handler];
+  return [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr completionFuture:completionFuture];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr handler:(nullable FBAgentTerminationHandler)handler
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr completionFuture:(FBFuture<NSNumber *> *)completionFuture
 {
   self = [super init];
   if (!self) {
@@ -44,18 +43,15 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
   _configuration = configuration;
   _stdOut = stdOut;
   _stdErr = stdErr;
-  _mutableFuture = FBMutableFuture.future;
+
   __weak typeof(self) weakSelf = self;
-  _handler = ^(int stat_loc) {
-    if (handler) {
-      handler(stat_loc);
+  _future = [completionFuture onQueue:simulator.workQueue notifyOfCompletion:^(FBFuture<NSNumber *> *future) {
+    __strong typeof(self) strongSelf = weakSelf;
+    if (future.result) {
+      [strongSelf processDidTerminate:future.result.intValue];
+      return;
     }
-    typeof(self) strongSelf = weakSelf;
-    [strongSelf performTeardown:stat_loc];
-  };
-  [_mutableFuture onQueue:simulator.workQueue notifyOfCancellation:^(FBFuture *_) {
-    typeof(self) strongSelf = weakSelf;
-    [strongSelf terminate];
+    [strongSelf processWasCancelled];
   }];
 
   return self;
@@ -77,14 +73,24 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
   return NO;
 }
 
-- (FBFuture<NSNumber *> *)future
-{
-  return self.mutableFuture;
-}
-
 #pragma mark Private
 
-- (void)performTeardown:(int)stat_loc
+- (void)processDidTerminate:(int)stat_loc
+{
+  [self performTeardown];
+  [self.simulator.eventSink agentDidTerminate:self statLoc:stat_loc];
+}
+
+- (void)processWasCancelled
+{
+  [self performTeardown];
+  // When cancelled, the process is still alive. Therefore, the process needs to be terminated to fulfill the cancellation contract.
+  [[FBProcessTerminationStrategy
+    strategyWithProcessFetcher:self.simulator.processFetcher.processFetcher logger:self.simulator.logger]
+    killProcess:self.process error:nil];
+}
+
+- (void)performTeardown
 {
   // Return early if nothing was actually launched.
   if (!self.process) {
@@ -95,11 +101,8 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
   CFRelease((__bridge CFTypeRef)(self));
 
   // Tear down the other resources.
-  _handler = nil;
-  [self.simulator.eventSink agentDidTerminate:self statLoc:stat_loc];
   [self.stdOut terminate];
   [self.stdErr terminate];
-  [self.mutableFuture resolveWithResult:@(stat_loc)];
 }
 
 #pragma mark FBTerminationAwaitable
@@ -111,17 +114,12 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
 
 - (BOOL)hasTerminated
 {
-  return self.handler == nil;
+  return self.future == nil;
 }
 
 - (void)terminate
 {
-  if (self.hasTerminated || self.process == nil) {
-    return;
-  }
-  [[FBProcessTerminationStrategy
-    strategyWithProcessFetcher:self.simulator.processFetcher.processFetcher logger:self.simulator.logger]
-    killProcess:self.process error:nil];
+  [self.future cancel];
 }
 
 @end

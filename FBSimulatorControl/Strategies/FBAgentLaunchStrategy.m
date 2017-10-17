@@ -23,6 +23,8 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"
 
+typedef void (^FBAgentTerminationHandler)(int stat_loc);
+
 @interface FBAgentLaunchStrategy ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
@@ -56,11 +58,6 @@
 
 - (nullable FBSimulatorAgentOperation *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
 {
-  return [self launchAgent:agentLaunch terminationHandler:NULL error:error];
-}
-
-- (nullable FBSimulatorAgentOperation *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch terminationHandler:(nullable FBAgentTerminationHandler)terminationHandler error:(NSError **)error
-{
   FBSimulator *simulator = self.simulator;
   FBProcessOutput *stdOut = nil;
   FBProcessOutput *stdErr = nil;
@@ -68,13 +65,19 @@
     return nil;
   }
 
+  // Use the Future for signalling when the process has terminated.
+  FBMutableFuture *future = [FBMutableFuture future];
+  FBAgentTerminationHandler handler = ^(int stat_loc){
+    [future resolveWithResult:@(stat_loc)];
+  };
+
   // Actually launch the process with the appropriate API.
   FBSimulatorAgentOperation *operation = [FBSimulatorAgentOperation
     operationWithSimulator:simulator
     configuration:agentLaunch
     stdOut:stdOut
     stdErr:stdErr
-    handler:terminationHandler];
+    completionFuture:future];
 
   // Create the container for the Agent Process.
   FBProcessInfo *process = [self
@@ -84,7 +87,7 @@
     waitForDebugger:NO
     stdOut:stdOut.fileHandle
     stdErr:stdErr.fileHandle
-    terminationHandler:operation.handler
+    terminationHandler:handler
     error:error];
   if (!process) {
     return nil;

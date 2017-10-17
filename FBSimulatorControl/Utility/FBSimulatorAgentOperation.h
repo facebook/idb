@@ -65,11 +65,6 @@ extern FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent;
  */
 @property (nonatomic, copy, nullable, readonly) FBProcessInfo *process;
 
-/**
- The Handler that to provide to the launch.
- */
-@property (nonatomic, copy, nullable, readonly) FBAgentTerminationHandler handler;
-
 @end
 
 /**
@@ -84,9 +79,9 @@ extern FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent;
  @param configuration the configuration the process was launched with.
  @param stdOut the Stdout output.
  @param stdErr the Stderr output.
- @param handler the handler continuation.
+ @param completionFuture a future that will fire when the process has terminated. The value is the exit code.
  */
-+ (instancetype)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr handler:(nullable FBAgentTerminationHandler)handler;
++ (instancetype)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr completionFuture:(FBFuture<NSNumber *> *)completionFuture;
 
 /**
  Called internally by the framework when the owning process has been launched.
