@@ -238,7 +238,7 @@
   return future;
 }
 
-- (FBFuture<FBSimulatorVideo *> *)stopRecording
+- (FBFuture<NSNull *> *)stopRecording
 {
   if (!self.encoder) {
     return [[FBSimulatorError

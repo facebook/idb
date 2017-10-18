@@ -33,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Path to XCTest bundle used for testing
  */
-@property (nonatomic, copy, readonly) NSString *testBundlePath;
+@property (nonatomic, copy, readonly, nullable) NSString *testBundlePath;
 
 /**
  Configuration used to launch test runner application.
@@ -63,7 +63,7 @@ NS_ASSUME_NONNULL_BEGIN
 /*
  Skip these tests. Format: "className/methodName"
  */
-@property (nonatomic, copy, readonly) NSSet<NSString *> *testsToSkip;
+@property (nonatomic, copy, readonly, nullable) NSSet<NSString *> *testsToSkip;
 
 /*
  Bundle ID of to the target application for UI tests

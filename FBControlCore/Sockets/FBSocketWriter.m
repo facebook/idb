@@ -178,6 +178,7 @@
   CFStreamError streamError;
   Boolean success = CFHostStartInfoResolution(host, kCFHostAddresses, &streamError);
   if (!success) {
+    CFRelease(host);
     [[FBControlCoreError
       describeFormat:@"Failed to start addressing for %@", hostName]
       fail:error];
@@ -186,6 +187,7 @@
 
   success = false;
   NSArray<NSData *> *addresses = (__bridge NSArray<NSData *> *)(CFHostGetAddressing(host, &success));
+  CFRelease(host);
   if (!success) {
     [[FBControlCoreError
       describeFormat:@"Could not get address for %@", hostName]

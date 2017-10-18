@@ -192,11 +192,10 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
 {
   [self.logger logFormat:@"Disconnecting Test Bundle in state '%@'", self.state];
 
-  FBTestBundleResult *result = nil;
   if (self.state == FBTestBundleConnectionStateEndedTestPlan) {
-    result = [self concludeWithResult:FBTestBundleResult.success];
+    [self concludeWithResult:FBTestBundleResult.success];
   } else {
-    result = [self concludeWithResult:FBTestBundleResult.clientRequestedDisconnect];
+    [self concludeWithResult:FBTestBundleResult.clientRequestedDisconnect];
   }
   [self.testBundleConnection suspend];
   [self.testBundleConnection cancel];

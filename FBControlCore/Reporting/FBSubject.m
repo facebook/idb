@@ -128,6 +128,7 @@
 
 - (id)jsonSerializableRepresentation
 {
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
 }
 
