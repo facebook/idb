@@ -15,6 +15,8 @@
 #import "FBApplicationBundle.h"
 #import "FBApplicationBundle+Install.h"
 #import "FBCodesignProvider.h"
+#import "FBRunLoopSpinner.h"
+#import "FBControlCoreGlobalConfiguration.h"
 
 FBiOSTargetActionType const FBiOSTargetActionTypeInstall = @"install";
 
@@ -107,19 +109,20 @@ static NSString *const KeyCodesign = @"codesign";
 
 - (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
 {
-  NSURL *extractPath = nil;
-  NSString *applicationPath = [FBApplicationBundle findOrExtractApplicationAtPath:self.applicationPath extractPathOut:&extractPath error:error];
-  if (![FBApplicationBundle findOrExtractApplicationAtPath:applicationPath extractPathOut:&extractPath error:error]) {
+  FBExtractedApplication *application = [[FBApplicationBundle
+    onQueue:target.asyncQueue findOrExtractApplicationAtPath:self.applicationPath]
+    awaitWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout error:error];
+  if (!application) {
     return NO;
   }
-  if (self.codesign && ![FBCodesignProvider.codeSignCommandWithAdHocIdentity recursivelySignBundleAtPath:applicationPath error:error]) {
+  if (self.codesign && ![FBCodesignProvider.codeSignCommandWithAdHocIdentity recursivelySignBundleAtPath:application.bundle.path error:error]) {
     return NO;
   }
-  if (![target installApplicationWithPath:applicationPath error:error]) {
+  if (![target installApplicationWithPath:application.bundle.path error:error]) {
     return NO;
   }
-  if (extractPath) {
-    [NSFileManager.defaultManager removeItemAtURL:extractPath error:nil];
+  if (application.extractedPath) {
+    [NSFileManager.defaultManager removeItemAtURL:application.extractedPath error:nil];
   }
   return YES;
 }

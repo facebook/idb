@@ -49,16 +49,16 @@
 
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
-  NSURL *tempDirURL = nil;
-
-  NSString *appPath = [FBApplicationBundle findOrExtractApplicationAtPath:path extractPathOut:&tempDirURL error:error];
-  if (appPath == nil) {
+  FBExtractedApplication *extractedApplication = [[FBApplicationBundle
+    onQueue:self.simulator.asyncQueue findOrExtractApplicationAtPath:path]
+    awaitWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout error:error];
+  if (!extractedApplication) {
     return NO;
   }
 
-  BOOL installResult = [self installExtractedApplicationWithPath:appPath error:error];
-  if (tempDirURL != nil) {
-    [NSFileManager.defaultManager removeItemAtURL:tempDirURL error:nil];
+  BOOL installResult = [self installExtractedApplicationWithPath:extractedApplication.bundle.path error:error];
+  if (extractedApplication.extractedPath) {
+    [NSFileManager.defaultManager removeItemAtURL:extractedApplication.extractedPath error:nil];
   }
   return installResult;
 }

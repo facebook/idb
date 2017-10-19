@@ -11,8 +11,20 @@
 
 #import <FBControlCore/FBBundleDescriptor.h>
 #import <FBControlCore/FBApplicationBundle.h>
+#import <FBControlCore/FBFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+/**
+ A value for an extracted application.
+ */
+@interface FBExtractedApplication : NSObject
+
+@property (nonatomic, copy, readonly) FBApplicationBundle *bundle;
+
+@property (nonatomic, copy, readonly) NSURL *extractedPath;
+
+@end
 
 /**
  A Bundle Descriptor specialized to Applications
@@ -23,14 +35,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Finds or Extracts an Application if it is determined to be an IPA.
- If the Path is a .app, it will be returned unchanged.
 
+ @param queue the queue to extract on.
  @param path the path of the .app or .ipa
- @param extractPathOut an outparam for the path where the Application is extracted.
- @param error any error that occurred in fetching the application.
- @return the path if successful, NO otherwise.
+ @return a future wrapping the extracted application.
  */
-+ (nullable NSString *)findOrExtractApplicationAtPath:(NSString *)path extractPathOut:(NSURL *_Nullable* _Nullable)extractPathOut error:(NSError **)error;
++ (FBFuture<FBExtractedApplication *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path;
 
 @end
 

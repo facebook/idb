@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBApplicationBundle.h"
+#import "FBApplicationBundle+Install.h"
 
 #import "FBBinaryDescriptor.h"
 #import "FBBinaryParser.h"
@@ -17,6 +17,23 @@
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBTask.h"
 #import "FBTaskBuilder.h"
+
+@implementation FBExtractedApplication
+
+- (instancetype)initWithBundle:(FBApplicationBundle *)bundle extractedPath:(NSURL *)extractedPath
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _bundle = bundle;
+  _extractedPath = extractedPath;
+
+  return self;
+}
+
+@end
 
 static BOOL deleteDirectory(NSURL *path)
 {
@@ -36,6 +53,28 @@ static BOOL isApplicationAtPath(NSString *path)
 }
 
 @implementation FBApplicationBundle (Install)
+
+#pragma mark Public
+
++ (FBFuture<FBExtractedApplication *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path
+{
+  return [FBFuture onQueue:queue resolve:^{
+    NSURL *extractedPath = nil;
+    NSError *error = nil;
+    NSString *appPath = [FBApplicationBundle findOrExtractApplicationAtPath:path extractPathOut:&extractedPath error:&error];
+    if (!appPath) {
+      return [FBFuture futureWithError:error];
+    }
+    FBApplicationBundle *bundle = [FBApplicationBundle applicationWithPath:appPath error:&error];
+    if (!bundle) {
+      return [FBFuture futureWithError:error];
+    }
+    FBExtractedApplication *application = [[FBExtractedApplication alloc] initWithBundle:bundle extractedPath:extractedPath];
+    return [FBFuture futureWithResult:application];
+  }];
+}
+
+#pragma mark Private
 
 // The Magic Header for Zip Files is two chars 'PK'. As a short this is as below.
 static short const ZipFileMagicHeader = 0x4b50;
