@@ -136,9 +136,9 @@
 - (void)testCodesigning
 {
   OCMockObject<FBCodesignProvider> *codesignerMock = [OCMockObject mockForProtocol:@protocol(FBCodesignProvider)];
-  [[[codesignerMock expect] andReturnValue:@YES] signBundleAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/Magic.xctest" error:[OCMArg anyObjectRef]];
-  [[[codesignerMock expect] andReturnValue:@YES] signBundleAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/XCTest.framework" error:[OCMArg anyObjectRef]];
-  [[[codesignerMock expect] andReturnValue:@YES] signBundleAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/IDEBundleInjection.framework" error:[OCMArg anyObjectRef]];
+  [[[codesignerMock expect] andReturn:[FBFuture futureWithResult:NSNull.null]] signBundleAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/Magic.xctest"];
+  [[[codesignerMock expect] andReturn:[FBFuture futureWithResult:NSNull.null]] signBundleAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/XCTest.framework"];
+  [[[codesignerMock expect] andReturn:[FBFuture futureWithResult:NSNull.null]] signBundleAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/IDEBundleInjection.framework"];
   [self buildSilentPackageWithCodeSigner:codesignerMock];
   [codesignerMock verify];
 }

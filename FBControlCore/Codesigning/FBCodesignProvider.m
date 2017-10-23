@@ -15,6 +15,12 @@
 
 static NSString *const CDHashPrefix = @"CDHash=";
 
+@interface FBCodesignProvider ()
+
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+
+@end
+
 @implementation FBCodesignProvider
 
 + (instancetype)codeSignCommandWithIdentityName:(NSString *)identityName
@@ -35,6 +41,8 @@ static NSString *const CDHashPrefix = @"CDHash=";
   }
 
   _identityName = identityName;
+  _queue = dispatch_queue_create("com.facebook.fbcontrolcore.codesign", DISPATCH_QUEUE_CONCURRENT);
+
   return self;
 }
 
@@ -45,17 +53,16 @@ static NSString *const CDHashPrefix = @"CDHash=";
   return [FBLogSearchPredicate substrings:@[CDHashPrefix]];
 }
 
-- (BOOL)signBundleAtPath:(NSString *)bundlePath error:(NSError **)error
+- (FBFuture<NSNull *> *)signBundleAtPath:(NSString *)bundlePath
 {
-  FBTask *task = [[FBTaskBuilder taskWithLaunchPath:@"/usr/bin/codesign" arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
-                      startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
-  if (task.error && error) {
-    *error = task.error;
-  }
-  return [task wasSuccessful];
+  return [[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
+    buildFuture]
+          mapReplace:NSNull.null];
 }
 
-- (BOOL)recursivelySignBundleAtPath:(NSString *)bundlePath error:(NSError **)error {
+- (FBFuture<NSNull *> *)recursivelySignBundleAtPath:(NSString *)bundlePath
+{
   NSMutableArray<NSString *> *pathsToSign = [NSMutableArray arrayWithObject:bundlePath];
   NSFileManager *fileManager = [NSFileManager defaultManager];
   NSString *frameworksPath = [bundlePath stringByAppendingString:@"/Frameworks/"];
@@ -64,47 +71,36 @@ static NSString *const CDHashPrefix = @"CDHash=";
     for (NSString *frameworkPath in [fileManager contentsOfDirectoryAtPath:frameworksPath error:&fileSystemError]) {
       [pathsToSign addObject:[frameworksPath stringByAppendingString:frameworkPath]];
     }
-
     if (fileSystemError) {
-      if (error) {
-        *error = fileSystemError;
-      }
-      return NO;
+      return [FBControlCoreError failFutureWithError:fileSystemError];
     }
   }
-
+  NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
   for (NSString *pathToSign in pathsToSign) {
-    if (![self signBundleAtPath:pathToSign error:error]) {
-      return NO;
-    }
+    [futures addObject:[self signBundleAtPath:pathToSign]];
   }
-  return YES;
+  return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
 }
 
-
-- (nullable NSString *)cdHashForBundleAtPath:(NSString *)bundlePath error:(NSError **)error
+- (FBFuture<NSString *> *)cdHashForBundleAtPath:(NSString *)bundlePath
 {
-  FBTask *task = [[FBTaskBuilder
-    taskWithLaunchPath:@"/usr/bin/codesign" arguments:@[@"-dvvvv", bundlePath]]
-    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout];
-  if (task.error) {
-    return [[[FBControlCoreError
-      describe:@"Could not execute codesign"]
-      causedBy:task.error]
-      fail:error];
-  }
-  NSString *output = task.stdErr;
-  NSString *cdHash = [[[FBLogSearch
-    withText:output predicate:FBCodesignProvider.logSearchPredicateForCDHash]
-    firstMatchingLine]
-    stringByReplacingOccurrencesOfString:CDHashPrefix withString:@""];
-  if (!cdHash) {
-    return [[[FBControlCoreError
-      describeFormat:@"Could not find '%@' in output: %@", CDHashPrefix, output]
-      causedBy:task.error]
-      fail:error];
-  }
-  return cdHash;
+  return [[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-dvvvv", bundlePath]]
+    buildFuture]
+    onQueue:self.queue fmap:^FBFuture *(FBTask *task) {
+      NSString *output = task.stdErr;
+      NSString *cdHash = [[[FBLogSearch
+        withText:output predicate:FBCodesignProvider.logSearchPredicateForCDHash]
+        firstMatchingLine]
+        stringByReplacingOccurrencesOfString:CDHashPrefix withString:@""];
+      if (!cdHash) {
+        return [[[FBControlCoreError
+          describeFormat:@"Could not find '%@' in output: %@", CDHashPrefix, output]
+          causedBy:task.error]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:cdHash];
+    }];
 }
 
 @end

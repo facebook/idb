@@ -53,11 +53,11 @@
     return bundlePath;
   }
   id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
-  if ([codesign cdHashForBundleAtPath:bundlePath error:nil]) {
+  if ([[codesign cdHashForBundleAtPath:bundlePath] await:nil]) {
     return bundlePath;
   }
   NSError *error = nil;
-  if ([codesign signBundleAtPath:bundlePath error:&error]) {
+  if ([[codesign signBundleAtPath:bundlePath] await:&error]) {
     return bundlePath;
   }
   XCTFail(@"Bundle at path %@ could not be codesigned: %@", bundlePath, error);

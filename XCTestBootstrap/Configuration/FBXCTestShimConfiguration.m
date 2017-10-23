@@ -58,7 +58,7 @@ static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIM
       return shimPath;
     }
     NSError *innerError = nil;
-    if (![codesign cdHashForBundleAtPath:shimPath error:&innerError]) {
+    if (![[codesign cdHashForBundleAtPath:shimPath] await:&innerError]) {
       return [[[FBXCTestError
         describeFormat:@"Shim at path %@ was required to be signed, but it was not", shimPath]
         causedBy:innerError]

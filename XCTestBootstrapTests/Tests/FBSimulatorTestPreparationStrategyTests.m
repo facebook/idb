@@ -85,7 +85,7 @@
   [[[deviceOperatorMock expect] andReturn:productBundle] applicationBundleWithBundleID:@"bundleId" error:[OCMArg anyObjectRef]];
 
   OCMockObject<FBCodesignProvider> *codesignMock = [OCMockObject mockForProtocol:@protocol(FBCodesignProvider)];
-  [[[codesignMock stub] andReturn:@"aaa1111"] cdHashForBundleAtPath:OCMArg.any error:OCMArg.anyObjectRef];
+  [[[codesignMock stub] andReturn:[FBFuture futureWithResult:@"aaa1111"]] cdHashForBundleAtPath:OCMArg.any];
 
   FBSimulatorTestPreparationStrategy *strategy = [FBSimulatorTestPreparationStrategy
     strategyWithTestLaunchConfiguration:self.defaultTestLaunch

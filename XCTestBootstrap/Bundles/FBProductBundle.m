@@ -117,7 +117,7 @@
   }
 
   NSError *innerError = nil;
-  if (self.codesignProvider && ![self.codesignProvider signBundleAtPath:targetBundlePath error:&innerError]) {
+  if (self.codesignProvider && ![[self.codesignProvider signBundleAtPath:targetBundlePath] await:&innerError]) {
     return [[[XCTestBootstrapError
       describeFormat:@"Failed to codesign %@", targetBundlePath]
       causedBy:innerError]

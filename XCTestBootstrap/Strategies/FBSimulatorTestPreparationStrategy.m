@@ -75,7 +75,7 @@
 
   // Check the bundle is codesigned (if required).
   NSError *innerError;
-  if (FBXcodeConfiguration.isXcode8OrGreater && ![self.codesign cdHashForBundleAtPath:self.testLaunchConfiguration.testBundlePath error:&innerError]) {
+  if (FBXcodeConfiguration.isXcode8OrGreater && ![[self.codesign cdHashForBundleAtPath:self.testLaunchConfiguration.testBundlePath] await:&innerError]) {
     return [[[XCTestBootstrapError
       describeFormat:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", self.testLaunchConfiguration.testBundlePath]
       causedBy:innerError]

@@ -115,7 +115,7 @@ static NSString *const KeyCodesign = @"codesign";
   if (!application) {
     return NO;
   }
-  if (self.codesign && ![FBCodesignProvider.codeSignCommandWithAdHocIdentity recursivelySignBundleAtPath:application.bundle.path error:error]) {
+  if (self.codesign && ![[FBCodesignProvider.codeSignCommandWithAdHocIdentity recursivelySignBundleAtPath:application.bundle.path] awaitWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout error:error]) {
     return NO;
   }
   if (![target installApplicationWithPath:application.bundle.path error:error]) {
