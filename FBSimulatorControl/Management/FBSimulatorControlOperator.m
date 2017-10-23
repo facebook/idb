@@ -47,7 +47,7 @@
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
   FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:path error:error];
-  if (![self.simulator installApplicationWithPath:application.path error:error]) {
+  if (![[self.simulator installApplicationWithPath:application.path] await:error]) {
     return NO;
   }
   return YES;

@@ -9,14 +9,14 @@
 
 #import "FBApplicationInstallConfiguration.h"
 
-#import "FBiOSTarget.h"
-#import "FBControlCoreError.h"
-#import "FBCollectionInformation.h"
-#import "FBApplicationBundle.h"
 #import "FBApplicationBundle+Install.h"
+#import "FBApplicationBundle.h"
 #import "FBCodesignProvider.h"
-#import "FBRunLoopSpinner.h"
+#import "FBCollectionInformation.h"
+#import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
+#import "FBRunLoopSpinner.h"
+#import "FBiOSTarget.h"
 
 FBiOSTargetActionType const FBiOSTargetActionTypeInstall = @"install";
 
@@ -107,24 +107,26 @@ static NSString *const KeyCodesign = @"codesign";
   return FBiOSTargetActionTypeInstall;
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
-  FBExtractedApplication *application = [[FBApplicationBundle
+  return [[[[FBApplicationBundle
     onQueue:target.asyncQueue findOrExtractApplicationAtPath:self.applicationPath]
-    awaitWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout error:error];
-  if (!application) {
-    return NO;
-  }
-  if (self.codesign && ![[FBCodesignProvider.codeSignCommandWithAdHocIdentity recursivelySignBundleAtPath:application.bundle.path] awaitWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout error:error]) {
-    return NO;
-  }
-  if (![target installApplicationWithPath:application.bundle.path error:error]) {
-    return NO;
-  }
-  if (application.extractedPath) {
-    [NSFileManager.defaultManager removeItemAtURL:application.extractedPath error:nil];
-  }
-  return YES;
+    onQueue:target.workQueue fmap:^FBFuture *(FBExtractedApplication *extractedApplication) {
+      if (self.codesign) {
+        return [[FBCodesignProvider.codeSignCommandWithAdHocIdentity
+          recursivelySignBundleAtPath:extractedApplication.bundle.path]
+          mapReplace:extractedApplication];
+      }
+      return [[target
+        installApplicationWithPath:extractedApplication.bundle.path]
+        mapReplace:extractedApplication];
+    }]
+    onQueue:target.workQueue notifyOfCompletion:^(FBFuture<FBExtractedApplication *> *future) {
+      if (future.result) {
+        [NSFileManager.defaultManager removeItemAtURL:future.result.extractedPath error:nil];
+      }
+    }]
+    mapReplace:self.actionType];
 }
 
 @end

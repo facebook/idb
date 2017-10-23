@@ -113,7 +113,7 @@
     return nil;
   }
   NSError *error = nil;
-  BOOL success = [simulator installApplicationWithPath:application.path error:&error];
+  BOOL success = [[simulator installApplicationWithPath:application.path] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
   return simulator;
@@ -139,7 +139,7 @@
 - (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator installs:(FBApplicationBundle *)application
 {
   NSError *error = nil;
-  BOOL success = [simulator installApplicationWithPath:application.path error:&error];
+  BOOL success = [[simulator installApplicationWithPath:application.path] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
   return simulator;

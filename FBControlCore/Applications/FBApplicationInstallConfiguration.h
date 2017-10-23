@@ -21,7 +21,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeInstall;
 /**
  A Configuration for installing Applications.
  */
-@interface FBApplicationInstallConfiguration : NSObject <FBiOSTargetAction, NSCopying>
+@interface FBApplicationInstallConfiguration : NSObject <NSCopying, FBiOSTargetFuture>
 
 /**
  The Designated Initializer.

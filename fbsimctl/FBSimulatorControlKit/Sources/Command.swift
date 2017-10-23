@@ -116,7 +116,7 @@ public enum Action {
   }
 
   static func install(_ path: String, _ codesign: Bool) -> Action {
-    return self.core(FBApplicationInstallConfiguration.applicationInstall(withPath: path, codesign: codesign))
+    return self.coreFuture(FBApplicationInstallConfiguration.applicationInstall(withPath: path, codesign: codesign))
   }
 
   static func launchApp(_ appLaunch: FBApplicationLaunchConfiguration) -> Action {

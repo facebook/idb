@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
+#import <FBControlCore/FBFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -25,10 +26,9 @@ NS_ASSUME_NONNULL_BEGIN
  Installs application at given path on the host.
 
  @param path the file path of the Application Bundle on the host.
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
+ @return A future that resolves when successful.
  */
-- (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error;
+- (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path;
 
 /**
  Uninstalls application with given bundle id.

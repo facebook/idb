@@ -75,7 +75,7 @@
         return NO;
       }
     }
-    if (![self.iosTarget installApplicationWithPath:path error:error]) {
+    if (![[self.iosTarget installApplicationWithPath:path] awaitWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout error:error]) {
       return NO;
     }
   }

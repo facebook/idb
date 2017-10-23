@@ -61,9 +61,9 @@
 
 #pragma mark Protocol Inheritance
 
-- (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
+- (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
 {
-  return NO;
+  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
 - (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleId error:(NSError **)error
@@ -105,6 +105,7 @@
 {
   return nil;
 }
+
 
 - (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBTestManagerTestReporter>)reporter error:(NSError **)error
 {

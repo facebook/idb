@@ -46,7 +46,7 @@
     return nil;
   }
   NSError *error = nil;
-  BOOL success = [simulator installApplicationWithPath:self.tableSearchApplication.path error:&error];
+  BOOL success = [[simulator installApplicationWithPath:self.tableSearchApplication.path] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
   return simulator;

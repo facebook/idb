@@ -47,20 +47,18 @@
 
 #pragma mark - FBApplicationCommands Implementation
 
-- (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
+- (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
 {
-  FBExtractedApplication *extractedApplication = [[FBApplicationBundle
+  return [[[FBApplicationBundle
     onQueue:self.simulator.asyncQueue findOrExtractApplicationAtPath:path]
-    awaitWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout error:error];
-  if (!extractedApplication) {
-    return NO;
-  }
-
-  BOOL installResult = [self installExtractedApplicationWithPath:extractedApplication.bundle.path error:error];
-  if (extractedApplication.extractedPath) {
-    [NSFileManager.defaultManager removeItemAtURL:extractedApplication.extractedPath error:nil];
-  }
-  return installResult;
+    onQueue:self.simulator.workQueue fmap:^FBFuture *(FBExtractedApplication *extractedApplication) {
+      return [[self installExtractedApplicationWithPath:extractedApplication.bundle.path] mapReplace:extractedApplication];
+    }]
+    onQueue:self.simulator.asyncQueue notifyOfCompletion:^(FBFuture<FBExtractedApplication *> *future) {
+      if (future.result.extractedPath) {
+        [NSFileManager.defaultManager removeItemAtURL:future.result.extractedPath error:nil];
+      }
+    }];
 }
 
 - (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
@@ -265,47 +263,46 @@ static NSString *const KeyDataContainer = @"DataContainer";
     dataContainer:dataContainer.path];
 }
 
-- (BOOL)installExtractedApplicationWithPath:(NSString *)path error:(NSError **)error
+- (FBFuture<NSNull *> *)installExtractedApplicationWithPath:(NSString *)path
 {
-  NSError *innerError = nil;
-
-  FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:path error:&innerError];
+  NSError *error = nil;
+  FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:path error:&error];
   if (!application) {
     return [[[FBSimulatorError
       describeFormat:@"Could not determine Application information for path %@", path]
-      causedBy:innerError]
-      failBool:error];
+      causedBy:error]
+      failFuture];
   }
 
-  if ([self.simulator isSystemApplicationWithBundleID:application.bundleID error:nil]) {
-    return YES;
+  if ([self.simulator isSystemApplicationWithBundleID:application.bundleID error:&error]) {
+    return [FBFuture futureWithError:error];
   }
 
   NSSet<NSString *> *binaryArchitectures = application.binary.architectures;
   NSSet<NSString *> *supportedArchitectures = FBControlCoreConfigurationVariants.baseArchToCompatibleArch[self.simulator.deviceType.simulatorArchitecture];
   if (![binaryArchitectures intersectsSet:supportedArchitectures]) {
     return [[FBSimulatorError
-    describeFormat:
-      @"Simulator does not support any of the architectures (%@) of the executable at %@. Simulator Archs (%@)",
-      [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects],
-      application.binary.path,
-      [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects]]
-    failBool:error];
+      describeFormat:
+        @"Simulator does not support any of the architectures (%@) of the executable at %@. Simulator Archs (%@)",
+        [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects],
+        application.binary.path,
+        [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects]]
+      failFuture];
   }
 
   NSDictionary *options = @{
-                            @"CFBundleIdentifier" : application.bundleID
-                            };
+    @"CFBundleIdentifier" : application.bundleID
+  };
   NSURL *appURL = [NSURL fileURLWithPath:application.path];
 
-  if (![self.simulator.device installApplication:appURL withOptions:options error:&innerError]) {
+  if (![self.simulator.device installApplication:appURL withOptions:options error:&error]) {
     return [[[FBSimulatorError
       describeFormat:@"Failed to install Application %@ with options %@", application, options]
-      causedBy:innerError]
-      failBool:error];
+      causedBy:error]
+      failFuture];
   }
 
-  return YES;
+  return [FBFuture futureWithResult:NSNull.null];
 }
 
 @end

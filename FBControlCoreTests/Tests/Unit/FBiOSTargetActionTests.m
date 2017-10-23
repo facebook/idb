@@ -21,7 +21,7 @@
 
 - (void)testValueSemantics
 {
-  NSArray<id<FBiOSTargetAction>> *overrides = @[
+  NSArray<id<FBiOSTargetFuture>> *overrides = @[
     [FBApplicationInstallConfiguration applicationInstallWithPath:@"/some.app" codesign:NO],
     [FBApplicationInstallConfiguration applicationInstallWithPath:@"/some.ipa" codesign:YES],
     [FBApplicationInstallConfiguration applicationInstallWithPath:@"/some.app" codesign:YES],

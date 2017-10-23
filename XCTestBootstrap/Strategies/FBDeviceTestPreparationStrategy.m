@@ -73,7 +73,7 @@
   }
 
   if (![iosTarget isApplicationInstalledWithBundleID:testRunner.bundleID error:&innerError]) {
-    if (![iosTarget installApplicationWithPath:testRunner.path error:&innerError]) {
+    if (![[iosTarget installApplicationWithPath:testRunner.path] awaitWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout error:&innerError]) {
       return
       [[[XCTestBootstrapError describe:@"Failed to install test runner app"]
         causedBy:innerError]
