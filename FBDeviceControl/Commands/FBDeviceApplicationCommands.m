@@ -47,86 +47,75 @@
   return self;
 }
 
-#pragma mark FBApplicationCommands Implementation
+#pragma mark Private
 
-- (id)handleWithAFCSession:(id(^)(void))operationBlock error:(NSError **)error
+- (FBFuture *)handleWithAFCSession:(id(^)(CFTypeRef device, NSError **))operationBlock
 {
-  __block NSError *innerError = nil;
-  id result = [self.device.amDevice handleWithBlockDeviceSession:^(CFTypeRef device) {
+  return [self.device.amDevice futureForDeviceOperation:^(CFTypeRef device, NSError **error) {
     int afcConn;
     int afcReturnCode = FBAMDeviceSecureStartService(device, CFSTR("com.apple.afc"), NULL, &afcConn);
     if (afcReturnCode != 0) {
       return [[FBDeviceControlError
         describeFormat:@"Failed to start afc service with error code: %x", afcReturnCode]
-        fail:&innerError];
+        fail:error];
     }
-    id operationResult = operationBlock();
+    id operationResult = operationBlock(device, error);
     close(afcConn);
     return operationResult;
-  } error: error];
-  *error = innerError;
-  return result;
+  }];
 }
 
-- (BOOL)transferAppURL:(NSURL *)app_url options:(NSDictionary *)options error:(NSError **)error
+- (FBFuture<NSNull *> *)transferAppURL:(NSURL *)appURL options:(NSDictionary *)options
 {
-  id transferReturnCode = [self handleWithAFCSession:^id() {
-    return @(FBAMDeviceSecureTransferPath(0,
-      self.device.amDevice.amDevice,
-      (__bridge CFURLRef _Nonnull)(app_url),
+  return [self handleWithAFCSession:^NSNull *(CFTypeRef device, NSError **error){
+    int transferReturnCode = FBAMDeviceSecureTransferPath(
+      0,
+      device,
+      (__bridge CFURLRef _Nonnull)(appURL),
       (__bridge CFDictionaryRef _Nonnull)(options),
       NULL,
-    0));
-  } error:error];
-
-  if (transferReturnCode == nil) {
-    return [[FBDeviceControlError
-      describe:@"Failed to transfer path"]
-      failBool:error];
-  }
-
-  if ([transferReturnCode intValue] != 0) {
-    return [[FBDeviceControlError
-      describeFormat:@"Failed to transfer path with error code: %x", [transferReturnCode intValue]]
-      failBool:error];
-  }
-  return YES;
+      0
+    );
+    if (transferReturnCode != 0) {
+      return [[FBDeviceControlError
+        describeFormat:@"Failed to transfer path with error code: %x", transferReturnCode]
+        fail:error];
+    }
+    return NSNull.null;
+  }];
 }
 
-- (BOOL)secureInstallApplication:(NSURL *)app_url options:(NSDictionary *)options error:(NSError **)error
+- (FBFuture<NSNull *> *)secureInstallApplication:(NSURL *)appURL options:(NSDictionary *)options
 {
-  NSNumber *install_return_code = [self.device.amDevice handleWithBlockDeviceSession:^id(CFTypeRef device) {
-    return @(FBAMDeviceSecureInstallApplication(0, device, (__bridge CFURLRef _Nonnull)(app_url), (__bridge CFDictionaryRef _Nonnull)(options), NULL, 0));
-  } error: error];
-
-  if (install_return_code == nil) {
-    return [[FBDeviceControlError
-      describe:@"Failed to install application"]
-      failBool:error];
-  }
-  if ([install_return_code intValue] != 0) {
-    return [[FBDeviceControlError
-      describe:@"Failed to install application"]
-      failBool:error];
-  }
-  return YES;
+  return [self handleWithAFCSession:^NSNull *(CFTypeRef device, NSError **error) {
+    int installReturnCode = FBAMDeviceSecureInstallApplication(
+      0,
+      device,
+      (__bridge CFURLRef _Nonnull)(appURL),
+      (__bridge CFDictionaryRef _Nonnull)(options),
+      NULL,
+      0
+    );
+    if (installReturnCode != 0) {
+      return [[FBDeviceControlError
+        describe:@"Failed to install application"]
+        fail:error];
+    }
+    return NSNull.null;
+  }];
 }
 
-- (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
+#pragma mark FBApplicationCommands Implementation
+
+- (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
 {
-  NSURL *app_url = [NSURL fileURLWithPath:path isDirectory:YES];
+  NSURL *appURL = [NSURL fileURLWithPath:path isDirectory:YES];
   NSDictionary *options = @{@"PackageType" : @"Developer"};
-  NSError *inner_error = nil;
-  if (![self transferAppURL:app_url options:options error:&inner_error] ||
-      ![self secureInstallApplication:app_url options:options error:&inner_error])
-  {
-    return [[[FBDeviceControlError
-      describeFormat:@"Failed to install application with path %@", path]
-      causedBy:inner_error]
-      failBool:error];
-  }
-
-  return YES;
+  return [[self
+    transferAppURL:appURL options:options]
+    onQueue:self.device.workQueue fmap:^FBFuture *(NSNull *_) {
+      return [self secureInstallApplication:appURL options:options];
+    }];
 }
 
 - (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
