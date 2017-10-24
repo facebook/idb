@@ -106,7 +106,7 @@
 
 #pragma mark Application Lifecycle
 
-- (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (FBFuture<NSNull *> *)uninstallApplicationWithBundleID:(NSString *)bundleID
 {
   NSParameterAssert(bundleID);
 
@@ -115,7 +115,7 @@
     return [[[FBSimulatorError
       describeFormat:@"Can't uninstall '%@' as it is a system Application", bundleID]
       inSimulator:self.simulator]
-      failBool:error];
+      failFuture];
   }
   NSError *innerError = nil;
   if (![self.simulator installedApplicationWithBundleID:bundleID error:&innerError]) {
@@ -123,7 +123,7 @@
       describeFormat:@"Can't uninstall '%@' as it isn't installed", bundleID]
       causedBy:innerError]
       inSimulator:self.simulator]
-      failBool:error];
+      failFuture];
   }
   // Kill the app if it's running
   [self killApplicationWithBundleID:bundleID error:nil];
@@ -133,9 +133,9 @@
       describeFormat:@"Failed to uninstall '%@'", bundleID]
       causedBy:innerError]
       inSimulator:self.simulator]
-      failBool:error];
+      failFuture];
   }
-  return YES;
+  return [FBFuture futureWithResult:NSNull.null];
 }
 
 - (BOOL)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error

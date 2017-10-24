@@ -71,7 +71,7 @@
   }
   if (path) {
     if ([self.iosTarget isApplicationInstalledWithBundleID:configuration.bundleID error:error]) {
-      if (![self.iosTarget uninstallApplicationWithBundleID:configuration.bundleID error:error]) {
+      if (![[self.iosTarget uninstallApplicationWithBundleID:configuration.bundleID] await:error]) {
         return NO;
       }
     }

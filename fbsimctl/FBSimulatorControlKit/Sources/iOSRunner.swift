@@ -33,9 +33,7 @@ struct iOSActionProvider {
     case .diagnose(let query, let format):
       return DiagnosticsRunner(reporter, query, query, format)
     case .uninstall(let appBundleID):
-      return iOSTargetRunner.simple(reporter, .uninstall, FBEventReporterSubject(string: appBundleID)) {
-        try target.uninstallApplication(withBundleID: appBundleID)
-      }
+      return FutureRunner(reporter, .uninstall, FBEventReporterSubject(string: appBundleID), target.uninstallApplication(withBundleID: appBundleID))
     case .core(let action):
       return iOSTargetRunner.core(reporter, action.eventName, target, action)
     case .coreFuture(let action):

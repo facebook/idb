@@ -164,7 +164,7 @@
 
   [self assertSimulator:simulator isRunningApplicationFromConfiguration:launch];
 
-  success = [simulator uninstallApplicationWithBundleID:application.bundleID error:&error];
+  success = [[simulator uninstallApplicationWithBundleID:application.bundleID] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }

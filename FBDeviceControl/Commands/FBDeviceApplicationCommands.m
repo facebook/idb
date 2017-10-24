@@ -118,26 +118,24 @@
     }];
 }
 
-- (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (FBFuture<id> *)uninstallApplicationWithBundleID:(NSString *)bundleID
 {
-  NSError *innerError = nil;
-  NSNumber *returnCode = [self.device.amDevice handleWithBlockDeviceSession:^id(CFTypeRef device) {
-    return @(FBAMDeviceSecureUninstallApplication(0, device, (__bridge CFStringRef _Nonnull)(bundleID), 0, NULL, 0));
-  } error: &innerError];
-
-  if (returnCode == nil) {
-    return [[[FBDeviceControlError
-      describe:@"Failed to uninstall application"]
-      causedBy:innerError]
-      failBool:error];
-  }
-  if ([returnCode intValue] != 0) {
-    return [[[FBDeviceControlError
-      describeFormat:@"Failed to uninstall application with error code %x", [returnCode intValue]]
-      causedBy:innerError]
-      failBool:error];
-  }
-  return YES;
+  return [self.device.amDevice futureForDeviceOperation:^id(CFTypeRef device, NSError **error) {
+    int returnCode = FBAMDeviceSecureUninstallApplication(
+      0,
+      device,
+      (__bridge CFStringRef _Nonnull)(bundleID),
+      0,
+      NULL,
+      0
+    );
+    if (returnCode != 0) {
+      return [[FBDeviceControlError
+        describeFormat:@"Failed to uninstall application with error code %x", returnCode]
+        fail:error];
+    }
+    return NSNull.null;
+  }];
 }
 
 #pragma mark Forwarding

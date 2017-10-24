@@ -34,10 +34,9 @@ NS_ASSUME_NONNULL_BEGIN
  Uninstalls application with given bundle id.
 
  @param bundleID the bundle id of the application to uninstall.
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise.
+ @return A future that resolves when successful.
  */
-- (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (FBFuture<NSNull *> *)uninstallApplicationWithBundleID:(NSString *)bundleID;
 
 /**
  Queries to see if an Application is installed on iOS.
