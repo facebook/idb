@@ -33,6 +33,8 @@ typedef struct afc_connection {
 
 @implementation FBAMDevice
 
+#pragma mark Initializers
+
 + (void)enableDebugLogging
 {
   FBAMDSetLogLevel(9);
@@ -88,37 +90,53 @@ typedef struct afc_connection {
   return self;
 }
 
-- (id)handleWithBlockDeviceSession:(id(^)(CFTypeRef device))operationBlock error:(NSError **)error
+#pragma mark Public Methods
+
+- (FBFuture *)futureForDeviceOperation:(id(^)(CFTypeRef, NSError **))block
 {
   if (FBAMDeviceConnect(_amDevice) != 0) {
-    return
-    [[FBDeviceControlError
+    return [[FBDeviceControlError
       describe:@"Failed to connect to device."]
-     fail:error];
+      failFuture];
   }
   if (FBAMDeviceIsPaired(_amDevice) != 1) {
-    return
-    [[FBDeviceControlError
+    FBAMDeviceDisconnect(_amDevice);
+    return [[FBDeviceControlError
       describe:@"Device is not paired"]
-     fail:error];
+      failFuture];
   }
   if (FBAMDeviceValidatePairing(_amDevice) != 0) {
-    return
-    [[FBDeviceControlError
+    FBAMDeviceDisconnect(_amDevice);
+    return [[FBDeviceControlError
       describe:@"Validate pairing failed"]
-     fail:error];
+      failFuture];
   }
-  id operationResult = nil;
-  if (FBAMDeviceStartSession(_amDevice) == 0) {
-    operationResult = operationBlock(_amDevice);
-    FBAMDeviceStopSession(_amDevice);
-  } else {
-    [[FBDeviceControlError
+  if (FBAMDeviceStartSession(_amDevice) != 0) {
+    FBAMDeviceDisconnect(_amDevice);
+    return [[FBDeviceControlError
       describe:@"Failed to start session with device."]
-     fail:error];
+      failFuture];
   }
-  FBAMDeviceDisconnect(_amDevice);
-  return operationResult;
+  NSError *error = nil;
+  id result = block(_amDevice, &error);
+  FBAMDeviceStopSession(_amDevice);
+  return result
+    ? [FBFuture futureWithResult:result]
+    : [FBFuture futureWithError:error];
+}
+
+- (id)handleWithBlockDeviceSession:(id(^)(CFTypeRef device))operationBlock error:(NSError **)error
+{
+  FBFuture<id> *future= [self futureForDeviceOperation:^(CFTypeRef amDevice, NSError **innerError) {
+    id result = operationBlock(amDevice);
+    if (!result) {
+      return [[FBDeviceControlError
+        describe:@"Device Operation Failed"]
+        fail:innerError];
+    }
+    return result;
+  }];
+  return [future await:error];
 }
 
 - (CFTypeRef)startService:(NSString *)service userInfo:(NSDictionary *)userInfo error:(NSError **)error

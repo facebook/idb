@@ -9,16 +9,20 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBDeviceType;
-@class FBOSVersion;
+#import <FBControlCore/FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+@class FBDeviceType;
+@class FBOSVersion;
 
 /**
  An Object Wrapper for AMDevice.
  AMDevice is a Core Foundation Type in the MobileDevice.framework.
  */
 @interface FBAMDevice : NSObject
+
+#pragma mark Initializers
 
 /**
  Loads AMDevice symbols required by this class to work properly.
@@ -35,6 +39,8 @@ NS_ASSUME_NONNULL_BEGIN
  Returns an Array of all the Available Devices.
  */
 + (NSArray<FBAMDevice *> *)allDevices;
+
+#pragma mark Properties
 
 /**
  The Unique Identifier of the Device.
@@ -75,6 +81,16 @@ NS_ASSUME_NONNULL_BEGIN
  The Architechture of the Device's CPU.
  */
 @property (nonatomic, nullable, copy, readonly) NSString *architecture;
+
+#pragma mark Public
+
+/**
+ Build a Future from an operation for performing on a device.
+
+ @param block the block to execute for the device.
+ @return a Future that resolves with the result of the block.
+ */
+- (FBFuture *)futureForDeviceOperation:(id(^)(CFTypeRef, NSError **))block;
 
 /**
  Starts test manager daemon service
