@@ -60,6 +60,15 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
 + (FBFuture<T> *)futureWithError:(NSError *)error;
 
 /**
+ Construct a Future that resolves with a delay.
+
+ @param delay the delay to resolve the future in.
+ @param future the future to resolve
+ @return the Future wrapped in a delay.
+ */
++ (FBFuture<T> *)futureWithDelay:(NSTimeInterval)delay future:(FBFuture<T> *)future;
+
+/**
  Constructs a Future that resolves successfully when the resolveWhen block returns YES.
 
  @param queue to resolve on.

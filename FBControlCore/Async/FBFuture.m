@@ -88,6 +88,15 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
   return [future resolveWithError:error];
 }
 
++ (FBFuture *)futureWithDelay:(NSTimeInterval)delay future:(FBFuture *)future
+{
+  FBMutableFuture *delayed = FBMutableFuture.future;
+  dispatch_after(FBFutureCreateDispatchTime(delay), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    [delayed resolveFromFuture:future];
+  });
+  return delayed;
+}
+
 + (instancetype)onQueue:(dispatch_queue_t)queue resolveValue:(id(^)(NSError **))resolve;
 {
   FBMutableFuture *future = [self new];
@@ -142,12 +151,8 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
 {
   NSParameterAssert(timeout > 0);
 
-  FBMutableFuture *timeoutFuture = [FBMutableFuture future];
-
-  dispatch_after(FBFutureCreateDispatchTime(timeout), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-    [timeoutFuture resolveWithError:[FBControlCoreError timeoutErrorWithDescription:@"FBFuture"]];
-  });
-
+  NSError *error = [FBControlCoreError timeoutErrorWithDescription:@"FBFuture"];
+  FBFuture *timeoutFuture = [FBFuture futureWithDelay:timeout future:[FBFuture futureWithError:error]];
   return [FBFuture race:@[self, timeoutFuture]];
 }
 
