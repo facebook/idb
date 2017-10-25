@@ -266,30 +266,6 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
   return (*error == nil);
 }
 
-- (NSArray<NSDictionary<NSString *, id> *> *)installedApplicationsData
-{
-  NSMutableArray *applications = [[NSMutableArray alloc] init];
-
-  __block CFDictionaryRef cf_apps;
-
-  NSNumber *return_code = [self.device.amDevice handleWithBlockDeviceSession:^id(CFTypeRef device) {
-    return @(FBAMDeviceLookupApplications(device, 0, &cf_apps));
-  } error: nil];
-
-  NSDictionary *apps = CFBridgingRelease(cf_apps);
-
-  if (return_code == nil || [return_code intValue] != 0) {
-    return
-    [[FBDeviceControlError
-      describe:@"Failed to get list of applications"]
-     fail:nil];
-  }
-
-  [applications addObjectsFromArray:[apps allValues]];
-
-  return applications;
-}
-
 #pragma mark FBApplicationCommands Implementation
 
 - (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
@@ -325,29 +301,6 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
     return NO;
   }
   return [self killProcessWithID:PID error:error];
-}
-
-- (nullable NSArray<FBInstalledApplication *> *)installedApplicationsWithError:(NSError **)error
-{
-  NSMutableArray<FBInstalledApplication *> *installedApplications = [[NSMutableArray alloc] init];
-
-  for (NSDictionary *app in [self installedApplicationsData]) {
-    if (app == nil) {
-      continue;
-    }
-    FBApplicationBundle *bundle = [FBApplicationBundle
-      applicationWithName:[app valueForKey:FBApplicationInstallInfoKeyBundleName] ?: @""
-      path:[app valueForKey:FBApplicationInstallInfoKeyPath] ?: @""
-      bundleID:app[FBApplicationInstallInfoKeyBundleIdentifier]];
-    FBInstalledApplication *application = [FBInstalledApplication
-      installedApplicationWithBundle:bundle
-      installType:[FBInstalledApplication installTypeFromString:
-                   [app valueForKey:FBApplicationInstallInfoKeyApplicationType] ?: @""]];
-
-    [installedApplications addObject:application];
-  }
-
-  return [installedApplications copy];
 }
 
 #pragma mark - Helpers

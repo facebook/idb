@@ -105,6 +105,21 @@
   }];
 }
 
+- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)installedApplicationsData
+{
+  return [self.device.amDevice futureForDeviceOperation:^NSArray<NSDictionary<NSString *, id> *> *(CFTypeRef device, NSError **error) {
+    CFDictionaryRef cf_apps;
+    int returnCode = FBAMDeviceLookupApplications(device, 0, &cf_apps);
+    if (returnCode != 0) {
+      return [[FBDeviceControlError
+        describe:@"Failed to get list of applications"]
+        fail:error];
+    }
+    NSDictionary *apps = CFBridgingRelease(cf_apps);
+    return [apps allValues];
+  }];
+}
+
 #pragma mark FBApplicationCommands Implementation
 
 - (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
@@ -136,6 +151,31 @@
     }
     return NSNull.null;
   }];
+}
+
+- (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications
+{
+  return [[self
+    installedApplicationsData]
+    onQueue:self.device.asyncQueue map:^(NSArray<NSDictionary<NSString *, id> *> *applicationData) {
+      NSMutableArray<FBInstalledApplication *> *installedApplications = [[NSMutableArray alloc] init];
+      for (NSDictionary *app in applicationData) {
+        if (app == nil) {
+          continue;
+        }
+        FBApplicationBundle *bundle = [FBApplicationBundle
+          applicationWithName:[app valueForKey:FBApplicationInstallInfoKeyBundleName] ?: @""
+          path:[app valueForKey:FBApplicationInstallInfoKeyPath] ?: @""
+          bundleID:app[FBApplicationInstallInfoKeyBundleIdentifier]];
+        FBApplicationInstallType installType = [FBInstalledApplication
+          installTypeFromString:[app valueForKey:FBApplicationInstallInfoKeyApplicationType] ?: @""];
+        FBInstalledApplication *application = [FBInstalledApplication
+          installedApplicationWithBundle:bundle
+          installType:installType];
+        [installedApplications addObject:application];
+      }
+      return [installedApplications copy];
+    }];
 }
 
 #pragma mark Forwarding

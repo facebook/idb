@@ -69,10 +69,9 @@ NS_ASSUME_NONNULL_BEGIN
  Fetches a list of the Installed Applications.
  The returned FBApplicationBundle object is fully JSON Serializable.
 
- @param error an error out for any error that occurs
- @return the Applications if successful, nil otherwise.
+ @return A future wrapping a List of Installed Applications.
  */
-- (nullable NSArray<FBInstalledApplication *> *)installedApplicationsWithError:(NSError **)error;
+- (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications;
 
 @end
 

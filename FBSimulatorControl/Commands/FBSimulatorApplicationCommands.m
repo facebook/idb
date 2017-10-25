@@ -89,7 +89,7 @@
   return YES;
 }
 
-- (nullable NSArray<FBInstalledApplication *> *)installedApplicationsWithError:(NSError **)error
+- (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications
 {
   NSMutableArray<FBInstalledApplication *> *applications = [NSMutableArray array];
   for (NSDictionary *appInfo in [[self.simulator.device installedAppsWithError:nil] allValues]) {
@@ -99,7 +99,7 @@
     }
     [applications addObject:application];
   }
-  return [applications copy];
+  return [FBFuture futureWithResult:[applications copy]];
 }
 
 #pragma mark - FBSimulatorApplicationCommands

@@ -33,14 +33,17 @@ FBiOSTargetActionType const FBiOSTargetActionTypeListApplications = @"list_apps"
       describeFormat:@"%@ does not support FBApplicationCommands", target]
       failFuture];
   }
-  NSError *error = nil;
-  NSArray<FBInstalledApplication *> *applications = [commands installedApplicationsWithError:&error];
-  if (!applications) {
-    return [FBControlCoreError failFutureWithError:error];
-  }
-  id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:FBEventNameListApps type:FBEventTypeDiscrete values:(NSArray<id<FBJSONSerializable>> *)applications];
-  [reporter report:subject];
-  return [FBFuture futureWithResult:self.actionType];
+  return [[[commands
+    installedApplications]
+    onQueue:target.workQueue notifyOfCompletion:^(FBFuture<NSArray<FBInstalledApplication *> *> *future) {
+      NSArray<id<FBJSONSerializable>> *values = (NSArray<id<FBJSONSerializable>> *) future.result;
+      if (!values) {
+        return;
+      }
+      id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:FBEventNameListApps type:FBEventTypeDiscrete values:values];
+      [reporter report:subject];
+    }]
+    mapReplace:self.actionType];
 }
 
 @end

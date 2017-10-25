@@ -42,7 +42,7 @@
 
 - (FBInstalledApplication *)installedAppWithBundleID:(NSString *)bundleID
 {
-  NSArray<FBInstalledApplication *> *apps = [self.iosTarget installedApplicationsWithError:nil];
+  NSArray<FBInstalledApplication *> *apps = [[self.iosTarget installedApplications] await:nil];
   if (!apps) {
     return nil;
   }

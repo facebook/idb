@@ -101,11 +101,10 @@
   return NO;
 }
 
-- (NSArray<FBInstalledApplication *> *)installedApplicationsWithError:(NSError **)error
+- (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications
 {
-  return nil;
+  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
-
 
 - (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBTestManagerTestReporter>)reporter error:(NSError **)error
 {
