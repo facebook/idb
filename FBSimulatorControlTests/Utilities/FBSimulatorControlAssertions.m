@@ -148,7 +148,7 @@
 - (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator launches:(FBApplicationLaunchConfiguration *)configuration
 {
   NSError *error = nil;
-  BOOL success = [simulator launchApplication:configuration error:&error];
+  BOOL success = [[simulator launchApplication:configuration] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
@@ -158,7 +158,7 @@
   [self.assert noNotificationsToConsume];
   [self assertSimulatorBooted:simulator];
 
-  success = [simulator launchApplication:configuration error:&error];
+  success = [[simulator launchApplication:configuration] await:&error] != nil;
   XCTAssertFalse(success);
 
   return simulator;

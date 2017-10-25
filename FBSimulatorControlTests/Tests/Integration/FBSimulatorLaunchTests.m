@@ -158,7 +158,7 @@
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:application];
 
   NSError *error = nil;
-  BOOL success = [simulator launchApplication:launch error:&error];
+  BOOL success = [[simulator launchApplication:launch] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

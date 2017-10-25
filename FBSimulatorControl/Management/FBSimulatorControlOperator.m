@@ -60,7 +60,7 @@
 
 - (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error
 {
-  return [self.simulator launchApplication:configuration error:error];
+  return [[self.simulator launchApplication:configuration] await:error] != nil;
 }
 
 #pragma mark - FBDeviceOperator protocol

@@ -49,7 +49,7 @@
   FBApplicationLaunchConfiguration *appLaunch = [configuration withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
 
   NSError *error = nil;
-  BOOL success = [simulator launchApplication:appLaunch error:&error];
+  BOOL success = [[simulator launchApplication:appLaunch] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
@@ -83,7 +83,7 @@
   FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch.injectingShimulator;
 
   NSError *error = nil;
-  BOOL success = [simulator launchApplication:appLaunch error:&error];
+  BOOL success = [[simulator launchApplication:appLaunch] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
@@ -107,7 +107,7 @@
   FBApplicationLaunchConfiguration *appLaunch = [[self.tableSearchAppLaunch withOutput:output] injectingShimulator];
 
   NSError *error = nil;
-  BOOL success = [simulator launchApplication:appLaunch error:&error];
+  BOOL success = [[simulator launchApplication:appLaunch] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

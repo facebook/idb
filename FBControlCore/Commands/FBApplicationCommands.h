@@ -51,10 +51,9 @@ NS_ASSUME_NONNULL_BEGIN
  Launches an Application with the provided Application Launch Configuration.
 
  @param configuration the Application Launch Configuration to use.
- @param error an error out for any error that occurs.
- @return YES if the operation succeeds, otherwise NO.
+ @return A future that resolves when successful.
  */
-- (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error;
+- (FBFuture<NSNull *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration;
 
 /**
  Kills application with given bundleID

@@ -63,7 +63,7 @@
   // Check if path points to installed app
   FBInstalledApplication *app = [self installedAppWithBundleID:configuration.bundleID];
   if (app && [app.bundle.path isEqualToString:path]) {
-    return [self.iosTarget launchApplication:configuration error:error];
+    return [[self.iosTarget launchApplication:configuration] await:error] != nil;
   }
 
   if (!path && ![self.iosTarget isApplicationInstalledWithBundleID:configuration.bundleID error:error]) {
@@ -79,7 +79,7 @@
       return NO;
     }
   }
-  if (![self.iosTarget launchApplication:configuration error:error]) {
+  if (![[self.iosTarget launchApplication:configuration] await:error]) {
     return NO;
   }
   return YES;

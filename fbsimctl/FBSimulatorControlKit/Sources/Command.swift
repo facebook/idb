@@ -120,7 +120,7 @@ public enum Action {
   }
 
   static func launchApp(_ appLaunch: FBApplicationLaunchConfiguration) -> Action {
-    return self.core(appLaunch)
+    return self.coreFuture(appLaunch)
   }
 
   static func launchAgent(_ agentLaunch: FBAgentLaunchConfiguration) -> Action {

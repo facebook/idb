@@ -92,7 +92,7 @@
     output:FBProcessOutputConfiguration.outputToDevNull]
     injectingShimulator];
 
-  if (![simulator launchApplication:appLaunch error:&innerError]) {
+  if (![[simulator launchApplication:appLaunch] await:&innerError]) {
     return [[[FBSimulatorError describe:@"Couldn't launch MobileSlideShow to upload videos"]
       causedBy:innerError]
       failBool:error];

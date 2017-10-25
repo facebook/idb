@@ -66,12 +66,12 @@
   return [self.simulator installedApplicationWithBundleID:bundleID error:error] != nil;
 }
 
-- (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error
+- (FBFuture<NSNull *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   return [[[FBApplicationLaunchStrategy
     strategyWithSimulator:self.simulator]
     launchApplication:configuration]
-    await:error] != nil;
+    mapReplace:NSNull.null];
 }
 
 - (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error

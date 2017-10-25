@@ -76,9 +76,9 @@
   return NO;
 }
 
-- (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error
+- (FBFuture<NSNull *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
-  return NO;
+  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
 - (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error

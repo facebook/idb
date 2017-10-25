@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Value object with the information required to launch an Application.
  */
-@interface FBApplicationLaunchConfiguration : FBProcessLaunchConfiguration <FBiOSTargetAction>
+@interface FBApplicationLaunchConfiguration : FBProcessLaunchConfiguration <FBiOSTargetFuture>
 
 /**
  Creates and returns a new Configuration with the provided parameters.

@@ -70,7 +70,7 @@
 
   OCMockObject<FBiOSTarget> *iosTargetMock = [OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)];
   [[[iosTargetMock stub] andReturn:deviceOperatorMock] deviceOperator];
-  [[[iosTargetMock expect] andReturnValue:@YES] launchApplication:launchConfiguration error:[OCMArg anyObjectRef]];
+  [(id<FBApplicationCommands>)[[iosTargetMock expect] andReturn:[FBFuture futureWithResult:@YES]] launchApplication:launchConfiguration];
 
   id testRunnerMock = [OCMockObject niceMockForClass:FBProductBundle.class];
   [[[testRunnerMock stub] andReturn:@"com.bundle"] bundleID];

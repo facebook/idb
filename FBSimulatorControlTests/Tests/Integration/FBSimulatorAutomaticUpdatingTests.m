@@ -74,7 +74,7 @@
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
   NSError *error = nil;
-  BOOL success = [simulator launchApplication:appLaunch error:&error];
+  BOOL success = [[simulator launchApplication:appLaunch] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
@@ -103,7 +103,7 @@
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
   NSError *error = nil;
-  BOOL success = [simulator launchApplication:appLaunch error:&error];
+  BOOL success = [[simulator launchApplication:appLaunch] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

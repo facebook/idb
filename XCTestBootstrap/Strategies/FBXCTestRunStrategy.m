@@ -69,7 +69,7 @@
       fail:error];
   }
 
-  if (![self.iosTarget launchApplication:[self prepareApplicationLaunchConfiguration:applicationLaunchConfiguration withTestRunnerConfiguration:testRunnerConfiguration] error:&innerError]) {
+  if (![[self.iosTarget launchApplication:[self prepareApplicationLaunchConfiguration:applicationLaunchConfiguration withTestRunnerConfiguration:testRunnerConfiguration]] await:&innerError]) {
     return [[[XCTestBootstrapError describe:@"Failed launch test runner"]
       causedBy:innerError]
       fail:error];

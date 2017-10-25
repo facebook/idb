@@ -143,16 +143,16 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
   return [representation mutableCopy];
 }
 
-#pragma mark FBiOSTargetAction
+#pragma mark FBiOSTargetFuture
 
 - (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeApplicationLaunch;
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
-  return [target launchApplication:self error:error];
+  return [[target launchApplication:self] mapReplace:self.actionType];
 }
 
 @end
