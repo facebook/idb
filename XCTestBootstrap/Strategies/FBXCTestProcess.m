@@ -68,7 +68,7 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
       }
       return [FBFuture futureWithResult:@(result.processIdentifier)];
     }];
-  FBFuture<NSNumber *> *timeoutFuture = [FBXCTestProcess timeoutFuture:timeout processIdentifier:processIdentifier];
+  FBFuture<NSNumber *> *timeoutFuture = [FBXCTestProcess timeoutFuture:timeout queue:self.executor.workQueue processIdentifier:processIdentifier];
 
   if (processIdentifierOut) {
     *processIdentifierOut = processIdentifier;
@@ -78,22 +78,22 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 
 #pragma mark Private
 
-+ (FBFuture<NSNumber *> *)timeoutFuture:(NSTimeInterval)timeout processIdentifier:(pid_t)processIdentifier
++ (FBFuture<NSNumber *> *)timeoutFuture:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue processIdentifier:(pid_t)processIdentifier
 {
-  FBMutableFuture *future = [FBMutableFuture future];
-  [NSTimer scheduledTimerWithTimeInterval:timeout repeats:NO block:^(NSTimer *_) {
-    NSError *error = [FBXCTestProcess timeoutErrorFor:processIdentifier];
-    [future resolveWithError:error];
-  }];
-  return future;
+  return [[FBFuture
+    futureWithDelay:timeout future:[FBFuture futureWithResult:NSNull.null]]
+    onQueue:queue fmap:^(id _) {
+      NSError *error = [FBXCTestProcess timeoutErrorWithTimeout:timeout processIdentifier:processIdentifier];
+      return [FBFuture futureWithError:error];
+    }];
 }
 
-+ (NSError *)timeoutErrorFor:(pid_t)processIdentifier
++ (NSError *)timeoutErrorWithTimeout:(NSTimeInterval)timeout processIdentifier:(pid_t)processIdentifier
 {
   // If the xctest process has stalled, we should sample it (if possible), then terminate it.
   NSString *sample = [FBXCTestProcess sampleStalledProcess:processIdentifier];
   return [[FBXCTestError
-    describeFormat:@"The xctest process stalled: %@", sample]
+    describeFormat:@"Waited %f seconds for process %d to terminate, but the xctest process stalled: %@", timeout, processIdentifier, sample]
     build];
 }
 
