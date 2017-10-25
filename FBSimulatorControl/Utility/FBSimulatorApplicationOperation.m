@@ -9,6 +9,7 @@
 
 #import "FBSimulatorApplicationOperation.h"
 
+#import "FBSimulator.h"
 #import "FBSimulatorEventSink.h"
 
 @interface FBSimulatorApplicationOperation ()
@@ -22,11 +23,16 @@
 
 #pragma mark Initializers
 
-+ (instancetype)operationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration process:(FBProcessInfo *)process
++ (FBFuture<FBSimulatorApplicationOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration launchFuture:(FBFuture<NSNumber *> *)launchFuture
 {
-  FBSimulatorApplicationOperation *operation = [[self alloc] initWithSimulator:simulator configuration:configuration process:process];
-  [operation createNotifier];
-  return operation;
+  return [[launchFuture
+    onQueue:simulator.workQueue fmap:^(NSNumber *processIdentifierNumber) {
+      FBProcessFetcher *fetcher = [FBProcessFetcher new];
+      return [fetcher onQueue:simulator.asyncQueue processInfoFor:processIdentifierNumber.intValue timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+    }]
+    onQueue:simulator.workQueue map:^(FBProcessInfo *process) {
+      return [[[self alloc] initWithSimulator:simulator configuration:configuration process:process] createNotifier:process.processIdentifier];
+    }];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration process:(FBProcessInfo *)process
@@ -38,23 +44,23 @@
 
   _simulator = simulator;
   _configuration = configuration;
-  _process = process;
 
   return self;
 }
 
-#pragma mark
+#pragma mark Private
 
-- (void)createNotifier
+- (instancetype)createNotifier:(pid_t)processIdentifier
 {
   __weak typeof(self) weakSelf = self;
   self.notifier = [FBDispatchSourceNotifier
-    processTerminationNotifierForProcessIdentifier:self.process.processIdentifier
+    processTerminationNotifierForProcessIdentifier:processIdentifier
     queue:self.simulator.workQueue
     handler:^(FBDispatchSourceNotifier *_) {
       [weakSelf.simulator.eventSink applicationDidTerminate:self expected:NO];
       weakSelf.notifier = nil;
   }];
+  return self;
 }
 
 @end

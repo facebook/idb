@@ -26,9 +26,10 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Initializer.
 
  @param configuration the configuration launched with.
- @param process launched Application process info.
+ @param launchFuture a future that resolves when the Application has finished launching.
+ @return a new Application Operation.
  */
-+ (instancetype)operationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration process:(FBProcessInfo *)process;
++ (FBFuture<FBSimulatorApplicationOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration launchFuture:(FBFuture<NSNumber *> *)launchFuture;
 
 /**
  The Configuration Launched with.

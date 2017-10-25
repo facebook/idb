@@ -74,7 +74,7 @@
 - (BOOL)postDarwinNotification:(id)arg1 error:(id *)arg2;
 - (BOOL)terminateApplicationWithID:(id)arg1 error:(id *)arg2;
 - (int)launchApplicationWithID:(id)arg1 options:(id)arg2 error:(id *)arg3;
-- (void)launchApplicationAsyncWithID:(id)arg1 options:(id)arg2 completionQueue:(id)arg3 completionHandler:(CDUnknownBlockType)arg4;
+- (void)launchApplicationAsyncWithID:(id)arg1 options:(id)arg2 completionQueue:(id)arg3 completionHandler:(void(^)(NSError *, pid_t))arg4;
 - (id)installedAppsWithError:(id *)arg1;
 - (id)propertiesOfApplication:(id)arg1 error:(id *)arg2;
 - (BOOL)applicationIsInstalled:(id)arg1 type:(id *)arg2 error:(id *)arg3;
@@ -179,7 +179,7 @@
 - (BOOL)_onBootstrapQueue_initializeDeviceIO:(id *)arg1;
 - (id)initDevice:(id)arg1 UDID:(id)arg2 deviceTypeIdentifier:(id)arg3 runtimeIdentifier:(id)arg4 state:(unsigned long long)arg5 initialDataPath:(id)arg6 deviceSet:(id)arg7;
 - (void)triggerCloudSyncWithCompletionHandler:(CDUnknownBlockType)arg1;
-- (void)launchApplicationAsyncWithID:(id)arg1 options:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;
+- (void)launchApplicationAsyncWithID:(id)arg1 options:(id)arg2 completionHandler:(void(^)(NSError *, pid_t))arg3;
 - (int)spawnWithPath:(id)arg1 options:(id)arg2 terminationHandler:(CoreSimulatorAgentTerminationHandler)arg3 error:(id *)arg4;
 - (void)spawnAsyncWithPath:(id)arg1 options:(id)arg2 terminationHandler:(CoreSimulatorAgentTerminationHandler)arg3 completionHandler:(CDUnknownBlockType)arg4;
 - (void)restoreContentsAndSettingsAsyncFromDevice:(id)arg1 completionHandler:(CDUnknownBlockType)arg2;

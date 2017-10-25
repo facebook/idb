@@ -69,7 +69,7 @@
 
 #pragma mark Public
 
-- (nullable FBSimulatorApplicationOperation *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error
+- (FBFuture<FBSimulatorApplicationOperation *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch
 {
   FBSimulator *simulator = self.simulator;
   NSError *innerError = nil;
@@ -79,7 +79,7 @@
       describeFormat:@"App %@ can't be launched as it isn't installed", appLaunch.bundleID]
       causedBy:innerError]
       inSimulator:simulator]
-      fail:error];
+      failFuture];
   }
 
   // This check confirms that if there's a currently running process for the given Bundle ID.
@@ -91,79 +91,67 @@
       describeFormat:@"App %@ can't be launched as is running (%@)", appLaunch.bundleID, process.shortDescription]
       causedBy:innerError]
       inSimulator:simulator]
-      fail:error];
+      failFuture];
   }
 
   // Make the stdout file.
+  NSError *error = nil;
   FBDiagnostic *stdOutDiagnostic = nil;
-  if (![appLaunch createStdOutDiagnosticForSimulator:simulator diagnosticOut:&stdOutDiagnostic error:error]) {
-    return nil;
+  if (![appLaunch createStdOutDiagnosticForSimulator:simulator diagnosticOut:&stdOutDiagnostic error:&error]) {
+    return [FBSimulatorError failFutureWithError:error];
   }
   // Make the stderr file.
   FBDiagnostic *stdErrDiagnostic = nil;
-  if (![appLaunch createStdErrDiagnosticForSimulator:simulator diagnosticOut:&stdErrDiagnostic error:error]) {
-    return nil;
+  if (![appLaunch createStdErrDiagnosticForSimulator:simulator diagnosticOut:&stdErrDiagnostic error:&error]) {
+    return [FBSimulatorError failFutureWithError:error];
   }
 
   // Actually launch the Application, getting the Process Info.
-  pid_t processIdentifier = [self launchApplication:appLaunch stdOutPath:stdOutDiagnostic.asPath stdErrPath:stdErrDiagnostic.asPath error:&innerError];
-  if (!processIdentifier) {
+  FBFuture<NSNumber *> *launchFuture = [self launchApplication:appLaunch stdOutPath:stdOutDiagnostic.asPath stdErrPath:stdErrDiagnostic.asPath];
+  if (launchFuture.error) {
     return [[[[FBSimulatorError
       describeFormat:@"Failed to launch application %@", appLaunch]
-      causedBy:innerError]
+      causedBy:launchFuture.error]
       inSimulator:simulator]
-      fail:error];
+      failFuture];
   }
 
-  process = [simulator.processFetcher.processFetcher processInfoFor:processIdentifier timeout:FBControlCoreGlobalConfiguration.regularTimeout];
-  if (!process) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Could not get Process Info for launched application process %d", processIdentifier]
-      causedBy:innerError]
-      inSimulator:simulator]
-      fail:error];
-  }
-  FBSimulatorApplicationOperation *operation = [FBSimulatorApplicationOperation operationWithSimulator:simulator configuration:appLaunch process:process];
-  [simulator.eventSink applicationDidLaunch:operation];
-
-  // Report the diagnostics to the event sink.
-  if (stdOutDiagnostic) {
-    [simulator.eventSink diagnosticAvailable:stdOutDiagnostic];
-  }
-  if (stdErrDiagnostic) {
-    [simulator.eventSink diagnosticAvailable:stdErrDiagnostic];
-  }
-
-  return operation;
+  // Make the Operation.
+  return [[FBSimulatorApplicationOperation
+    operationWithSimulator:simulator configuration:appLaunch launchFuture:launchFuture]
+    onQueue:self.simulator.workQueue notifyOfCompletion:^(FBFuture *resolved) {
+      if (!resolved.result) {
+        return;
+      }
+      // Report the diagnostics to the event sink.
+      if (stdOutDiagnostic) {
+        [simulator.eventSink diagnosticAvailable:stdOutDiagnostic];
+      }
+      if (stdErrDiagnostic) {
+        [simulator.eventSink diagnosticAvailable:stdErrDiagnostic];
+      }
+    }];
 }
 
-- (nullable FBSimulatorApplicationOperation *)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error
+- (FBFuture<FBSimulatorApplicationOperation *> *)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch
 {
   NSParameterAssert(appLaunch);
 
   // Kill the Application if it exists. Don't bother killing the process if it doesn't exist
   FBSimulator *simulator = self.simulator;
-  NSError *innerError = nil;
-  FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&innerError];
+  NSError *error = nil;
+  FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&error];
   if (process) {
-    if (![[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process error:error]) {
-      return [FBSimulatorError failWithError:innerError errorOut:error];
+    if (![[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process error:&error]) {
+      return [FBSimulatorError failFutureWithError:error];
     }
   }
 
-  // Perform the launch usin the launch config
-  FBSimulatorApplicationOperation *operation = [self launchApplication:appLaunch error:&innerError];
-  if (!operation) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to re-launch %@", appLaunch]
-      inSimulator:simulator]
-      causedBy:innerError]
-      fail:error];
-  }
-  return operation;
+  // Perform the launch itself.
+ return [self launchApplication:appLaunch];
 }
 
-- (pid_t)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath error:(NSError **)error
+- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return 0;
@@ -204,40 +192,48 @@
 
 @implementation FBApplicationLaunchStrategy_Bridge
 
-- (pid_t)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath error:(NSError **)error
+- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
   // The Bridge must be connected in order for the launch to work.
   NSError *innerError = nil;
   FBSimulator *simulator = self.simulator;
   FBSimulatorBridge *bridge = [[simulator connectWithError:&innerError] connectToBridge:&innerError];
   if (!bridge) {
-    [[[FBSimulatorError
+    return [[[FBSimulatorError
       describeFormat:@"Could not connect bridge to Simulator in order to launch application %@", appLaunch]
       causedBy:innerError]
-      failUInt:error];
-    return -1;
+      failFuture];
   }
 
   // Launch the Application.
-  return [bridge
-    launch:appLaunch
-    stdOutPath:stdErrPath
-    stdErrPath:stdOutPath
-    error:&innerError];
+  pid_t processIdentifier = [bridge launch:appLaunch stdOutPath:stdErrPath stdErrPath:stdOutPath error:&innerError];
+  if (processIdentifier < 2) {
+    return [FBFuture futureWithError:innerError];
+  }
+  return [FBFuture futureWithResult:@(processIdentifier)];
 }
 
 @end
 
 @implementation FBApplicationLaunchStrategy_CoreSimulator
 
-- (pid_t)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath error:(NSError **)error
+- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
   FBSimulator *simulator = self.simulator;
   NSDictionary<NSString *, id> *options = [appLaunch
     simDeviceLaunchOptionsWithStdOutPath:[self translateAbsolutePath:stdOutPath toPathRelativeTo:simulator.dataDirectory]
     stdErrPath:[self translateAbsolutePath:stdErrPath toPathRelativeTo:simulator.dataDirectory]
     waitForDebugger:appLaunch.waitForDebugger];
-  return [simulator.device launchApplicationWithID:appLaunch.bundleID options:options error:error];
+
+  FBMutableFuture<NSNumber *> *future = [FBMutableFuture future];
+  [simulator.device launchApplicationAsyncWithID:appLaunch.bundleID options:options completionQueue:simulator.workQueue completionHandler:^(NSError *error, pid_t pid){
+    if (error) {
+      [future resolveWithError:error];
+    } else {
+      [future resolveWithResult:@(pid)];
+    }
+  }];
+  return future;
 }
 
 - (NSString *)translateAbsolutePath:(NSString *)absolutePath toPathRelativeTo:(NSString *)referencePath

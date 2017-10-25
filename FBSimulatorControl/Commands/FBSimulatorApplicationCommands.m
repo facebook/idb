@@ -68,7 +68,10 @@
 
 - (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error
 {
-  return [[FBApplicationLaunchStrategy strategyWithSimulator:self.simulator] launchApplication:configuration error:error] != nil;
+  return [[[FBApplicationLaunchStrategy
+    strategyWithSimulator:self.simulator]
+    launchApplication:configuration]
+    await:error] != nil;
 }
 
 - (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
@@ -141,9 +144,10 @@
 - (BOOL)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error
 {
   NSParameterAssert(appLaunch);
-  return [[FBApplicationLaunchStrategy
+  return [[[FBApplicationLaunchStrategy
     strategyWithSimulator:self.simulator]
-    launchOrRelaunchApplication:appLaunch error:error] != nil;
+    launchOrRelaunchApplication:appLaunch]
+    await:error] != nil;
 }
 
 #pragma mark Querying Application State

@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationBundle;
@@ -48,20 +50,18 @@ NS_ASSUME_NONNULL_BEGIN
  Launches and returns the process info for the launched application.
 
  @param appLaunch the Application Configuration to Launch.
- @param error an error out for any error that occurs.
- @return a Process Info if the Application was launched, nil otherwise.
+ @return A Future that resolves with the launched Application.
  */
-- (nullable FBSimulatorApplicationOperation *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error;
+- (FBFuture<FBSimulatorApplicationOperation *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
 
 /**
  Launches the Application with the given Configuration, or Re-Launches it.
  A Relaunch is a kill of the currently launched application, followed by a launch.
 
  @param appLaunch the Application to Re-Launch.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A Future that resolves with the launched Application.
  */
-- (nullable FBSimulatorApplicationOperation *)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error;
+- (FBFuture<FBSimulatorApplicationOperation *> *)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
 
 /**
  Uninstalls an Application.
