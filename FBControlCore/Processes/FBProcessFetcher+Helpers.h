@@ -7,18 +7,26 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import <Foundation/Foundation.h>
+
 #import <FBControlCore/FBProcessFetcher.h>
+#import <FBControlCore/FBFuture.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 @class FBBinaryDescriptor;
 @class FBProcessInfo;
 @class NSRunningApplication;
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Higher-Level wrappers around FBProcessFetcher
  */
 @interface FBProcessFetcher (Helpers)
+
+/**
+ Obtains the Future Process.
+ */
+- (FBFuture<FBProcessInfo *> *)onQueue:(dispatch_queue_t)queue processInfoFor:(pid_t)processIdentifier timeout:(NSTimeInterval)timeout;
 
 /**
  A Query for obtaining all of the process information for a given processIdentifier, with a timeout.
@@ -27,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param timeout a timeout for finding the process information in.
  @return an FBProcessInfo object if a process with the given identifier could be found, nil otherwise.
  */
-- (FBProcessInfo *)processInfoFor:(pid_t)processIdentifier timeout:(NSTimeInterval)timeout;
+- (nullable FBProcessInfo *)processInfoFor:(pid_t)processIdentifier timeout:(NSTimeInterval)timeout;
 
 /**
  Queryies for the Process Info for a launchd job dictionary.
@@ -79,7 +87,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param processes the process to find the NSRunningApplication instances for.
  @return an NSArray<NSRunningApplication>. Any Applications that could not be found will be replaced with NSNull.null.
  */
-- (NSArray *)runningApplicationsForProcesses:(NSArray *)processes;
+- (NSArray<NSRunningApplication *> *)runningApplicationsForProcesses:(NSArray *)processes;
 
 /**
  Returns the NSRunningApplication for the provided FBProcessInfo *.

@@ -15,8 +15,23 @@
 #import "FBControlCoreError.h"
 #import "FBRunLoopSpinner.h"
 #import "FBBinaryDescriptor.h"
+#import "FBDispatchSourceNotifier.h"
 
 @implementation FBProcessFetcher (Helpers)
+
+- (FBFuture<FBProcessInfo *> *)onQueue:(dispatch_queue_t)queue processInfoFor:(pid_t)processIdentifier timeout:(NSTimeInterval)timeout
+{
+  FBMutableFuture<FBProcessInfo *> *future = [FBMutableFuture future];
+  dispatch_async(queue, ^{
+    FBProcessInfo *process = [self processInfoFor:processIdentifier timeout:timeout];
+    if (process) {
+      [future resolveWithResult:process];
+    } else {
+      [future resolveWithError:[[FBControlCoreError describeFormat:@"Could not obtain process info for %d after %f", processIdentifier, timeout] build]];
+    }
+  });
+  return future;
+}
 
 - (FBProcessInfo *)processInfoFor:(pid_t)processIdentifier timeout:(NSTimeInterval)timeout
 {
