@@ -56,9 +56,10 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the consumer to wrap.
  @param outputKind kind of output that is written.
  @param uuid a UUID to identify the current invocation.
+ @param filePathOut an optional outparam to indicate where the output file is written.
  @return a new consumer, which also logs to the log directory.
  */
-- (id<FBFileConsumer>)logConsumptionToFile:(id<FBFileConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid;
+- (id<FBFileConsumer>)logConsumptionToFile:(id<FBFileConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid filePathOut:(NSString *_Nullable*_Nullable)filePathOut;
 
 @end
 

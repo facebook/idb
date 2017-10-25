@@ -94,19 +94,27 @@
   // Consumes the test output. Separate Readers are used as consuming an EOF will invalidate the reader.
   NSUUID *uuid = [NSUUID UUID];
 
+  // Setup the stdout reader.
   id<FBFileConsumer> stdOutReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line){
     [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
-  stdOutReader = [logger logConsumptionToFile:stdOutReader outputKind:@"out" udid:uuid];
+  NSString *mirrorPath = nil;
+  stdOutReader = [logger logConsumptionToFile:stdOutReader outputKind:@"out" udid:uuid filePathOut:&mirrorPath];
+  [self.logger logFormat:@"Mirroring xctest stdout to %@", mirrorPath];
+
+  // Setup the stderr reader.
   id<FBFileConsumer> stdErrReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line){
     [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
-  stdErrReader = [logger logConsumptionToFile:stdErrReader outputKind:@"err" udid:uuid];
-  // Consumes the shim output.
+  stdErrReader = [logger logConsumptionToFile:stdErrReader outputKind:@"err" udid:uuid filePathOut:&mirrorPath];
+  [self.logger logFormat:@"Mirroring xctest stderr to %@", mirrorPath];
+
+  // Setup the reader of the shim
   id<FBFileConsumer> otestShimLineReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line){
     [reporter handleExternalEvent:line];
   }];
-  otestShimLineReader = [logger logConsumptionToFile:otestShimLineReader outputKind:@"shim" udid:uuid];
+  otestShimLineReader = [logger logConsumptionToFile:otestShimLineReader outputKind:@"shim" udid:uuid filePathOut:&mirrorPath];
+  [self.logger logFormat:@"Mirroring shim-fifo output to %@", mirrorPath];
 
   // Construct and start the process
   pid_t pid = 0;

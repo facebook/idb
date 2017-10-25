@@ -148,13 +148,16 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
     logDirectory:self.logDirectory];
 }
 
-- (id<FBFileConsumer>)logConsumptionToFile:(id<FBFileConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid
+- (id<FBFileConsumer>)logConsumptionToFile:(id<FBFileConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid filePathOut:(NSString **)filePathOut
 {
   NSString *fileName = [NSString stringWithFormat:@"%@.%@", uuid.UUIDString, outputKind];
   NSString *filePath = [self.logDirectory stringByAppendingPathComponent:fileName];
   NSError *error = nil;
   FBFileWriter *writer = [FBFileWriter asyncWriterForFilePath:filePath error:&error];
   NSAssert(writer, @"Could not make side-channel writer %@", error);
+  if (filePathOut) {
+    *filePathOut = filePath;
+  }
 
   return [FBCompositeFileConsumer consumerWithConsumers:@[
     consumer,
