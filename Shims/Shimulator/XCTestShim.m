@@ -848,6 +848,7 @@ static void assignOutputFiles(void)
     int stdoutHandle = dup(STDOUT_FILENO);
     __stdout = fdopen(stdoutHandle, "w");
   }
+  setvbuf(__stdout, NULL, _IONBF, 0);
 
   const char *stderrFileKey = "OTEST_SHIM_STDERR_FILE";
   if (getenv(stderrFileKey)) {
