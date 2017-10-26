@@ -57,7 +57,7 @@
 
   // Get the Service Name and then stop using the Service Name.
   NSError *innerError = nil;
-  NSString *serviceName = [self.simulator serviceNameForProcess:process error:&innerError];
+  NSString *serviceName = [[self.simulator serviceNameForProcess:process] await:&innerError];
   if (!serviceName) {
     return [[FBSimulatorError
       describeFormat:@"Could not Obtain the Service Name for %@", process.shortDescription]
@@ -65,7 +65,7 @@
   }
 
   [self.simulator.logger.debug logFormat:@"Stopping Service '%@'", serviceName];
-  if (![self.simulator stopServiceWithName:serviceName error:&innerError]) {
+  if (![[self.simulator stopServiceWithName:serviceName] await:&innerError]) {
     return [[FBSimulatorError
       describeFormat:@"Failed to stop service '%@'", serviceName]
       failBool:error];

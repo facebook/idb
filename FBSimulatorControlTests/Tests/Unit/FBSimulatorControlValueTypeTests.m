@@ -167,4 +167,15 @@
   [self assertJSONDeserialization:values];
 }
 
+- (void)testServiceInfo
+{
+  NSArray<FBServiceInfoConfiguration *> *values = @[
+    [FBServiceInfoConfiguration configurationWithServiceName:@"foo.bar.baz"],
+    [FBServiceInfoConfiguration configurationWithServiceName:@"boo.bar.baz"],
+  ];
+  [self assertEqualityOfCopy:values];
+  [self assertJSONSerialization:values];
+  [self assertJSONDeserialization:values];
+}
+
 @end

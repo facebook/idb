@@ -48,7 +48,7 @@
   NSArray<NSString *> *requiredServiceNames = self.requiredLaunchdServicesToVerifyBooted;
   __block NSDictionary<id, NSString *> *processIdentifiers = @{};
   BOOL didStartAllRequiredServices = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
-    NSDictionary<NSString *, id> *services = [self.simulator listServicesWithError:nil];
+    NSDictionary<NSString *, id> *services = [[self.simulator listServices] await:nil];
     if (!services) {
       return NO;
     }

@@ -206,14 +206,17 @@
   if (!application) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
-  pid_t processIdentifier = 0;
-  if (![self.simulator serviceNameForBundleID:bundleID processIdentifierOut:&processIdentifier error:&innerError]) {
+  NSNumber *processIdentifierNumber = [[[self.simulator
+    serviceNameAndProcessIdentifierForBundleID:bundleID]
+    await:error]
+    objectAtIndex:1];
+  if (!processIdentifierNumber) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
-  FBProcessInfo *processInfo = [self.simulator.processFetcher.processFetcher processInfoFor:processIdentifier];
+  FBProcessInfo *processInfo = [self.simulator.processFetcher.processFetcher processInfoFor:processIdentifierNumber.intValue];
   if (!processInfo) {
     return [[FBSimulatorError
-      describeFormat:@"Could not fetch process info for %@ %d", processInfo, processIdentifier]
+      describeFormat:@"Could not fetch process info for %@ %@", processInfo, processIdentifierNumber]
       fail:error];
   }
   return processInfo;

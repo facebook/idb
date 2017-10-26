@@ -222,17 +222,14 @@
 
 - (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  pid_t processIdentifier = 0;
-  NSString *serviceName = [self.simulator serviceNameForBundleID:bundleID processIdentifierOut:&processIdentifier error:error];
-  if (!serviceName) {
-    return -1;
+  NSNumber *processIdentifier = [[[self.simulator
+    serviceNameAndProcessIdentifierForBundleID:bundleID]
+    await:error]
+    objectAtIndex:1];
+  if (!processIdentifier) {
+    return 0;
   }
-  if (processIdentifier < 1) {
-    [[FBSimulatorError
-      describeFormat:@"Found the Process for %@ with service name %@ but the process was not alive", bundleID, serviceName]
-      fail:error];
-  }
-  return processIdentifier;
+  return processIdentifier.intValue;
 }
 
 - (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID sinceDate:(NSDate *)date

@@ -46,7 +46,7 @@ static NSString *const SecuritydServiceName = @"com.apple.securityd";
 {
   NSError *innerError = nil;
   if (self.simulator.state == FBSimulatorStateBooted) {
-    if (![self.simulator stopServiceWithName:SecuritydServiceName error:&innerError]) {
+    if (![[self.simulator stopServiceWithName:SecuritydServiceName] await:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
   }
@@ -54,7 +54,7 @@ static NSString *const SecuritydServiceName = @"com.apple.securityd";
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
   if (self.simulator.state == FBSimulatorStateBooted) {
-    if (![self.simulator startServiceWithName:SecuritydServiceName error:&innerError]) {
+    if (![[self.simulator startServiceWithName:SecuritydServiceName] await:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
   }

@@ -75,100 +75,103 @@
 
 #pragma mark Querying Services
 
-- (nullable NSString *)serviceNameForProcess:(FBProcessInfo *)process error:(NSError **)error
+- (FBFuture<NSString *> *)serviceNameForProcess:(FBProcessInfo *)process
 {
-  return [self serviceNameForSubstring:@(process.processIdentifier).stringValue processIdentifierOut:nil error:error];
+  return [[self
+    serviceNameAndProcessIdentifierForSubstring:@(process.processIdentifier).stringValue]
+    onQueue:self.simulator.asyncQueue map:^(NSArray<id> *tuple) {
+      return [tuple firstObject];
+    }];
 }
 
-- (nullable NSString *)serviceNameForBundleID:(NSString *)bundleID processIdentifierOut:(pid_t *)processIdentifierOut error:(NSError **)error
+- (FBFuture<NSArray<id> *> *)serviceNameAndProcessIdentifierForBundleID:(NSString *)bundleID
 {
-  return [self serviceNameForSubstring:bundleID processIdentifierOut:processIdentifierOut error:error];
+  return [self serviceNameAndProcessIdentifierForSubstring:bundleID];
 }
 
-- (BOOL)processIsRunningOnSimulator:(FBProcessInfo *)process error:(NSError **)error
+- (FBFuture<NSNumber *> *)processIsRunningOnSimulator:(FBProcessInfo *)process
 {
-  return [self serviceNameForProcess:process error:error] != nil;
+  return [[self
+    serviceNameForProcess:process]
+    onQueue:self.simulator.workQueue map:^NSNumber *(NSString *result) {
+      return @YES;
+    }];
 }
 
 #pragma mark Public
 
-- (nullable NSDictionary<NSString *, id> *)listServicesWithError:(NSError **)error
+- (FBFuture<NSDictionary<NSString *, id> *> *)listServices
 {
-  NSString *text = [self runWithArguments:@[@"list"] error:error];
-  if (!text) {
-    return nil;
-  }
+  return [[self
+    runWithArguments:@[@"list"]]
+    onQueue:self.simulator.asyncQueue fmap:^(NSString *text) {
+      NSArray<NSString *> *lines = [text componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
+      if (lines.count < 2) {
+        return [[FBSimulatorError
+          describeFormat:@"Insufficient number of lines from output '%@'", text]
+          failFuture];
+      }
+      lines = [lines subarrayWithRange:NSMakeRange(1, lines.count -1)];
 
-  NSArray<NSString *> *lines = [text componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
-  if (lines.count < 2) {
-    return [[FBSimulatorError
-      describeFormat:@"Insufficient number of lines from output '%@'", text]
-      fail:error];
-  }
-  lines = [lines subarrayWithRange:NSMakeRange(1, lines.count -1)];
-
-  NSMutableDictionary<NSString *, id> *services = [NSMutableDictionary dictionary];
-  for (NSString *line in lines) {
-    if (line.length == 0) {
-      continue;
-    }
-    pid_t processIdentifier = -1;
-    NSError *innerError = nil;
-    NSString *serviceName = [self.class extractServiceNameFromListLine:line processIdentifierOut:&processIdentifier error:&innerError];
-    if (!serviceName) {
-      return [FBSimulatorError failWithError:innerError errorOut:error];
-    }
-    services[serviceName] = processIdentifier > 0 ? @(processIdentifier) : NSNull.null;
-  }
-  return [services copy];
+      NSMutableDictionary<NSString *, id> *services = [NSMutableDictionary dictionary];
+      for (NSString *line in lines) {
+        if (line.length == 0) {
+          continue;
+        }
+        pid_t processIdentifier = -1;
+        NSError *error = nil;
+        NSString *serviceName = [FBSimulatorLaunchCtlCommands extractServiceNameFromListLine:line processIdentifierOut:&processIdentifier error:&error];
+        if (!serviceName) {
+          return [FBSimulatorError failFutureWithError:error];
+        }
+        services[serviceName] = processIdentifier > 0 ? @(processIdentifier) : NSNull.null;
+      }
+      return [FBFuture futureWithResult:[services copy]];
+    }];
 }
 
 #pragma mark Manipulating Services
 
-- (nullable NSString *)stopServiceWithName:(NSString *)serviceName error:(NSError **)error
+- (FBFuture<NSString *> *)stopServiceWithName:(NSString *)serviceName
 {
-  NSError *innerError = nil;
-  if (![self runWithArguments:@[@"stop", serviceName] error:&innerError]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to stop service '%@'", serviceName]
-      causedBy:innerError]
-      fail:error];
-  }
-  return serviceName;
+  return [[self
+    runWithArguments:@[@"stop", serviceName]]
+    rephraseFailure:@"Failed to stop service '%@'", serviceName];
 }
 
-- (nullable NSString *)startServiceWithName:(NSString *)serviceName error:(NSError **)error
+- (FBFuture<NSString *> *)startServiceWithName:(NSString *)serviceName
 {
-  NSError *innerError = nil;
-  if (![self runWithArguments:@[@"start", serviceName] error:&innerError]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to start service '%@'", serviceName]
-      causedBy:innerError]
-      fail:error];
-  }
-  return serviceName;
+  return [[self
+    runWithArguments:@[@"start", serviceName]]
+    rephraseFailure:@"Failed to start service '%@'", serviceName];
 }
 
 #pragma mark Private
 
-- (nullable NSString *)serviceNameForSubstring:(NSString *)substring processIdentifierOut:(pid_t *)processIdentifierOut error:(NSError **)error
+- (FBFuture<NSArray<id> *> *)serviceNameAndProcessIdentifierForSubstring:(NSString *)substring
 {
-  NSString *text = [self runWithArguments:@[@"list"] error:error];
-  if (!text) {
-    return nil;
-  }
-  FBLogSearchPredicate *predicate = [FBLogSearchPredicate substrings:@[substring]];
-  FBLogSearch *search = [FBLogSearch withText:text predicate:predicate];
-  NSString *line = search.firstMatchingLine;
-  if (!line) {
-    return [[FBSimulatorError
-      describeFormat:@"No Matching processes for %@", substring]
-      fail:error];
-  }
-  return [self.class extractServiceNameFromListLine:line processIdentifierOut:processIdentifierOut error:error];
+  return [[self
+    runWithArguments:@[@"list"]]
+    onQueue:self.simulator.workQueue fmap:^(NSString *text) {
+      FBLogSearchPredicate *predicate = [FBLogSearchPredicate substrings:@[substring]];
+      FBLogSearch *search = [FBLogSearch withText:text predicate:predicate];
+      NSString *line = search.firstMatchingLine;
+      if (!line) {
+        return [[FBSimulatorError
+          describeFormat:@"No Matching processes for %@", substring]
+          failFuture];
+      }
+      NSError *error = nil;
+      pid_t processIdentifier = 0;
+      NSString *serviceName = [FBSimulatorLaunchCtlCommands extractServiceNameFromListLine:line processIdentifierOut:&processIdentifier error:&error];
+      if (!serviceName) {
+        return [FBControlCoreError failFutureWithError:error];
+      }
+      return [FBFuture futureWithResult:@[serviceName, @(processIdentifier)]];
+    }];
 }
 
-+ (nullable NSString *)extractServiceNameFromListLine:(NSString *)line processIdentifierOut:(pid_t *)processIdentifierOut error:(NSError **)error
++ (NSString *)extractServiceNameFromListLine:(NSString *)line processIdentifierOut:(pid_t *)processIdentifierOut error:(NSError **)error
 {
   NSArray<NSString *> *words = [line componentsSeparatedByCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
   if (words.count != 3) {
@@ -198,7 +201,7 @@
   return serviceName;
 }
 
-- (NSString *)runWithArguments:(NSArray<NSString *> *)arguments error:(NSError **)error
+- (FBFuture<NSString *> *)runWithArguments:(NSArray<NSString *> *)arguments
 {
   // Construct a Launch Configuration for launchctl we'll use the 'list' command.
   FBAgentLaunchConfiguration *launchConfiguration = [FBAgentLaunchConfiguration
@@ -208,10 +211,7 @@
     output:FBProcessOutputConfiguration.outputToDevNull];
 
   // Spawn and get the output
-  return [[[FBAgentLaunchStrategy
-    strategyWithSimulator:self.simulator]
-    launchConsumingStdout:launchConfiguration]
-    await:error];
+  return [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchConsumingStdout:launchConfiguration];
 }
 
 @end

@@ -33,42 +33,37 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Finds the Service Name for a provided process.
  Will fail if there is no process matching the Process Info found.
-q
+
  @param process the process to obtain the name for.
- @param error an error for any error that occurs.
- @return the Service Name of the Stopped process, or nil if the process does not exist.
+ @return A Future, wrapping the Service Name.
  */
-- (nullable NSString *)serviceNameForProcess:(FBProcessInfo *)process error:(NSError **)error;
+- (FBFuture<NSString *> *)serviceNameForProcess:(FBProcessInfo *)process;
 
 /**
  Finds the Service Name for a given Application Bundle ID.
  Optionally provides the Process Identifier of this Application.
 
  @param bundleID the Bundle ID of the Application to fetch.
- @param processIdentifierOut an outparam for the pid of the Service. Will be set to -1 if there is no running process for the Service.
- @param error an error out for any error that occurs.
- @return a String for the Service Name, nil otherwise.
+ @return A Future, wrapping a tuple of String Service Name & NSNumber Process Identifier.
  */
-- (nullable NSString *)serviceNameForBundleID:(NSString *)bundleID processIdentifierOut:(pid_t *)processIdentifierOut error:(NSError **)error;
+- (FBFuture<NSArray<id> *> *)serviceNameAndProcessIdentifierForBundleID:(NSString *)bundleID;
 
 /**
- Consults the Simulator's launchctl to determine if the given process
+ Consults the Simulator's launchctl to determine if the given process.
 
  @param process the process to look for.
- @param error an error for any error that occurs.
- @return YES if the Process is running, NO otherwise.
+ @return A Future, YES if the process exists. NO otherwise.
  */
-- (BOOL)processIsRunningOnSimulator:(FBProcessInfo *)process error:(NSError **)error;
+- (FBFuture<NSNumber *> *)processIsRunningOnSimulator:(FBProcessInfo *)process;
 
 /**
  Returns the currently running launchctl services.
  Returns a Mapping of Service Name to Process Identifier.
  NSNull is used to represent services that do not have a Process Identifier.
 
- @param error an error out for any error that occurs.
- @return a Mapping of Service Name to Process identifier.
+ @return A Future, wrapping a Mapping of Service Name to Process identifier.
  */
-- (nullable NSDictionary<NSString *, id> *)listServicesWithError:(NSError **)error;
+- (FBFuture<NSDictionary<NSString *, id> *> *)listServices;
 
 #pragma mark Manipulating Services
 
@@ -76,19 +71,17 @@ q
  Stops the Provided Process, by Service Name.
 
  @param serviceName the name of the Process to Stop.
- @param error an error for any error that occurs.
- @return the Service Name of the Stopped process, or nil if the process does not exist.
+ @return A Future, wrapping the Service Name of the Stopped process, or nil if the process does not exist.
  */
-- (nullable NSString *)stopServiceWithName:(NSString *)serviceName error:(NSError **)error;
+- (FBFuture<NSString *> *)stopServiceWithName:(NSString *)serviceName;
 
 /**
  Starts the Provided Process, by Service Name.
 
  @param serviceName the name of the Process to Stop.
- @param error an error for any error that occurs.
- @return the Service Name of the Stopped process, or nil if the process does not exist.
+ @return A Future, wrapping the Service Name of the Stopped process, or nil if the process does not exist.
  */
-- (nullable NSString *)startServiceWithName:(NSString *)serviceName error:(NSError **)error;
+- (FBFuture<NSString *> *)startServiceWithName:(NSString *)serviceName;
 
 @end
 

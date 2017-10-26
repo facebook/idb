@@ -100,8 +100,6 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner.simple(reporter, .relaunch, appLaunch.subject) {
         try simulator.launchOrRelaunchApplication(appLaunch)
       }
-    case .serviceInfo(let identifier):
-      return ServiceInfoRunner(reporter: reporter, identifier: identifier)
     case .shutdown:
       return iOSTargetRunner.simple(reporter, .shutdown, simulator.subject) {
         try simulator.set!.kill(simulator)
@@ -119,22 +117,6 @@ struct SimulatorActionRunner : Runner {
     default:
       return CommandResultRunner.unimplementedActionRunner(action, target: simulator, format: context.format)
     }
-  }
-}
-
-private struct ServiceInfoRunner : Runner {
-  let reporter: SimulatorReporter
-  let identifier: String
-
-  func run() -> CommandResult {
-    var pid: pid_t = 0
-    guard let _ = try? self.reporter.simulator.serviceName(forBundleID: self.identifier, processIdentifierOut: &pid) else {
-      return .failure("Could not get service for name \(identifier)")
-    }
-    guard let processInfo = self.reporter.simulator.processFetcher.processFetcher.processInfo(for: pid) else {
-      return .failure("Could not get process info for pid \(pid)")
-    }
-    return .success(FBEventReporterSubject(name: .serviceInfo, type: .discrete, subject: processInfo.subject))
   }
 }
 

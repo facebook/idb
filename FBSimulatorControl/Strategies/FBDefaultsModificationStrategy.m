@@ -103,9 +103,10 @@
       describeFormat:@"Cannot amend a plist when the Simulator state is %@, should be %@ or %@", FBSimulatorStateStringFromState(state), FBSimulatorStateStringShutdown, FBSimulatorStateStringBooted]
       failBool:error];
   }
+
   // Stop the service, if booted.
   if (state == FBSimulatorStateBooted) {
-    if (![simulator stopServiceWithName:serviceName error:error]) {
+    if (![[simulator stopServiceWithName:serviceName] await:error]) {
       return NO;
     }
   }
@@ -116,7 +117,7 @@
   }
   // Re-start the Service if booted.
   if (state == FBSimulatorStateBooted) {
-    if (![simulator startServiceWithName:serviceName error:error]) {
+    if (![[simulator startServiceWithName:serviceName] await:error]) {
       return NO;
     }
   }
