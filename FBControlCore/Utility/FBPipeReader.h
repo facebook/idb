@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBFuture.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBFileConsumer;
@@ -18,6 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBPipeReader : NSObject
 
+#pragma mark Initializers
+
 /**
  A Pipe Reader with the writable end attached to the consumer.
 
@@ -25,6 +29,16 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Pipe Reader.
  */
 + (instancetype)pipeReaderWithConsumer:(id<FBFileConsumer>)consumer;
+
+#pragma mark Properties
+
+/**
+ The Pipe the consumer is attached to.
+ Users of the class may write to the writable end.
+ */
+@property (nonatomic, strong, readonly) NSPipe *pipe;
+
+#pragma mark Public Methods
 
 /**
  Starts the Consumption of the Pipe
@@ -35,18 +49,19 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)startReadingWithError:(NSError **)error;
 
 /**
+ Stops reading the Pipe.
+
+ @return a Future when all of the work has been drained.
+ */
+- (FBFuture<NSNull *> *)stopReading;
+
+/**
  Stops the Consumption of the Pipe.
 
  @param error an error out for any error that occurs.
  @return YES if the reading terminated normally, NO otherwise.
  */
 - (BOOL)stopReadingWithError:(NSError **)error;
-
-/**
- The Pipe the consumer is attached to.
- Users of the class may write to the writable end.
- */
-@property (nonatomic, strong, readonly) NSPipe *pipe;
 
 @end
 

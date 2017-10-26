@@ -3,6 +3,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFileConsumer.h>
+#import <FBControlCore/FBFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -10,6 +11,8 @@ NS_ASSUME_NONNULL_BEGIN
  Reads a file in the background, forwarding to a consumer.
  */
 @interface FBFileReader : NSObject
+
+#pragma mark Initializers
 
 /**
  Creates a File Reader from a File Handle.
@@ -29,6 +32,22 @@ NS_ASSUME_NONNULL_BEGIN
  @return a File Reader.
  */
 + (nullable instancetype)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileConsumer>)consumer error:(NSError **)error;
+
+#pragma mark Public Methods
+
+/**
+ Starts the Consumption of the File.
+
+ @return a Future that resolves when the channel is setup.
+ */
+- (FBFuture<NSNull *> *)startReading;
+
+/**
+ Stops Reading the file.
+
+ @return a Future that resolves when the consumption of the file has finished.
+ */
+- (FBFuture<NSNull *> *)stopReading;
 
 /**
  Starts the Consumption of the File.

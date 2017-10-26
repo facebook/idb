@@ -20,6 +20,8 @@
 
 @implementation FBPipeReader
 
+#pragma mark Initializers
+
 + (instancetype)pipeReaderWithConsumer:(id<FBFileConsumer>)consumer
 {
   NSPipe *pipe = [NSPipe pipe];
@@ -40,9 +42,16 @@
   return self;
 }
 
+#pragma mark Public Methods
+
 - (BOOL)startReadingWithError:(NSError **)error
 {
   return [self.reader startReadingWithError:error];
+}
+
+- (FBFuture<NSNull *> *)stopReading
+{
+  return self.reader.stopReading;
 }
 
 - (BOOL)stopReadingWithError:(NSError **)error
