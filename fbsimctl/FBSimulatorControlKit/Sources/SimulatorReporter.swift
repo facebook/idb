@@ -60,11 +60,11 @@ open class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
   }
 
   open func agentDidLaunch(_ operation: FBSimulatorAgentOperation) {
-    self.reportValue(.launch, .discrete, operation.process!)
+    self.reportValue(.launch, .discrete, operation.process)
   }
 
   open func agentDidTerminate(_ operation: FBSimulatorAgentOperation, statLoc: Int32) {
-    self.reportValue(.terminate, .discrete, operation.process!)
+    self.reportValue(.terminate, .discrete, operation.process)
   }
 
   public func applicationDidLaunch(_ operation: FBSimulatorApplicationOperation) {

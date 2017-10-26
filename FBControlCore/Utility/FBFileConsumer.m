@@ -243,3 +243,16 @@
 }
 
 @end
+
+@implementation FBNullFileConsumer
+
+- (void)consumeData:(NSData *)data
+{
+}
+
+- (void)consumeEndOfFile
+{
+
+}
+
+@end

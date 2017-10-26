@@ -85,7 +85,7 @@
 
   // Run the write, fail if the write fails.
   FBAgentLaunchStrategy *strategy = [FBAgentLaunchStrategy strategyWithSimulator:self.simulator];
-  if (![strategy launchConsumingStdout:configuration error:&innerError]) {
+  if (![[strategy launchAndNotifyOfCompletion:configuration] await:&innerError]) {
     return [[[FBSimulatorError
       describeFormat:@"Failed to write defaults for %@", domainOrPath ?: @"GLOBAL"]
       causedBy:innerError]

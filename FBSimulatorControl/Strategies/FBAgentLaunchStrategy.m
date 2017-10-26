@@ -56,50 +56,104 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
 #pragma mark Long-Running Processes
 
-- (nullable FBSimulatorAgentOperation *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
+- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch
 {
   FBSimulator *simulator = self.simulator;
   FBProcessOutput *stdOut = nil;
   FBProcessOutput *stdErr = nil;
-  if (![agentLaunch createOutputForSimulator:self.simulator stdOutOut:&stdOut stdErrOut:&stdErr error:error]) {
-    return nil;
+  NSError *error = nil;
+  if (![agentLaunch createOutputForSimulator:self.simulator stdOutOut:&stdOut stdErrOut:&stdErr error:&error]) {
+    return [FBSimulatorError failFutureWithError:error];
   }
 
-  // Use the Future for signalling when the process has terminated.
-  FBMutableFuture *future = [FBMutableFuture future];
-  FBAgentTerminationHandler handler = ^(int stat_loc){
-    [future resolveWithResult:@(stat_loc)];
-  };
-
-  // Actually launch the process with the appropriate API.
-  FBSimulatorAgentOperation *operation = [FBSimulatorAgentOperation
-    operationWithSimulator:simulator
-    configuration:agentLaunch
-    stdOut:stdOut
-    stdErr:stdErr
-    completionFuture:future];
-
-  // Create the container for the Agent Process.
-  FBProcessInfo *process = [self
+  // Launhch the Process
+  FBMutableFuture *terminationFuture = [FBMutableFuture future];
+  FBFuture<NSNumber *> *launchFuture = [self
     launchAgentWithLaunchPath:agentLaunch.agentBinary.path
     arguments:agentLaunch.arguments
     environment:agentLaunch.environment
     waitForDebugger:NO
     stdOut:stdOut.fileHandle
     stdErr:stdErr.fileHandle
-    terminationHandler:handler
-    error:error];
-  if (!process) {
-    return nil;
-  }
+    terminationFuture:terminationFuture];
 
-  [operation processDidLaunch:process];
-  [simulator.eventSink agentDidLaunch:operation];
-  return operation;
+  // Wrap in the container object
+  return [[FBSimulatorAgentOperation
+    operationWithSimulator:simulator
+    configuration:agentLaunch
+    stdOut:stdOut
+    stdErr:stdErr
+    launchFuture:launchFuture
+    terminationFuture:terminationFuture]
+    onQueue:self.simulator.workQueue notifyOfCompletion:^(FBFuture<FBSimulatorAgentOperation *> *future) {
+      FBSimulatorAgentOperation *operation = future.result;
+      if (!operation) {
+        return;
+      }
+      [simulator.eventSink agentDidLaunch:operation];
+    }];
 }
 
-- (nullable FBProcessInfo *)launchAgentWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr terminationHandler:(nullable FBAgentTerminationHandler)terminationHandler error:(NSError **)error
+#pragma mark Short-Running Processes
+
+- (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBAgentLaunchConfiguration *)agentLaunch
 {
+  return [self launchAndNotifyOfCompletion:agentLaunch consumer:[FBNullFileConsumer new]];
+}
+
+- (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBAgentLaunchConfiguration *)agentLaunch consumer:(id<FBFileConsumer>)consumer
+{
+  // Start reading the pipe
+  FBPipeReader *pipe = [FBPipeReader pipeReaderWithConsumer:consumer];
+  NSError *error = nil;
+  if (![pipe startReadingWithError:&error]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Could not start reading stdout of %@", agentLaunch]
+      causedBy:error]
+      failFuture];
+  }
+
+  // The Process launches and terminates synchronously
+  FBMutableFuture<NSNumber *> *terminationFuture = [FBMutableFuture future];
+  FBFuture<NSNumber *> *launchFuture = [self
+    launchAgentWithLaunchPath:agentLaunch.agentBinary.path
+    arguments:agentLaunch.arguments
+    environment:agentLaunch.environment
+    waitForDebugger:NO
+    stdOut:pipe.pipe.fileHandleForWriting
+    stdErr:nil
+    terminationFuture:terminationFuture];
+
+  return [[launchFuture
+    onQueue:self.simulator.workQueue chain:^FBFuture *(FBFuture *future) {
+      NSError *innerError = future.error;
+      if (innerError) {
+        return [FBFuture futureWithError:innerError];
+      }
+      return terminationFuture;
+    }]
+    onQueue:self.simulator.workQueue chain:^FBFuture<NSNumber *> *(FBFuture<NSNumber *> *innerFuture) {
+      return [[pipe
+        stopReading]
+        rephraseFailure:@"Could not stop reading stdout of %@", agentLaunch];
+  }];
+}
+
+- (FBFuture<NSString *> *)launchConsumingStdout:(FBAgentLaunchConfiguration *)agentLaunch
+{
+  FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
+  return [[self
+    launchAndNotifyOfCompletion:agentLaunch consumer:consumer]
+    onQueue:self.simulator.workQueue map:^(NSNumber *_) {
+      return [[NSString alloc] initWithData:consumer.data encoding:NSUTF8StringEncoding];
+    }];
+}
+
+#pragma mark Private
+
+- (FBFuture<NSNumber *> *)launchAgentWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr terminationFuture:(nullable FBMutableFuture<NSNumber *> *)terminationFuture
+{
+  // Get the Options
   NSDictionary<NSString *, id> *options = [FBAgentLaunchConfiguration
     simDeviceLaunchOptionsWithLaunchPath:launchPath
     arguments:arguments
@@ -108,115 +162,24 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
     stdOut:stdOut
     stdErr:stdErr];
 
-  NSError *innerError = nil;
-  FBProcessInfo *process = [self
-    spawnLongRunningWithPath:launchPath
-    options:options
-    terminationHandler:terminationHandler
-    error:&innerError];
-
-  if (!process) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to launch %@", launchPath]
-      causedBy:innerError]
-      inSimulator:self.simulator]
-      fail:error];
-  }
-  return process;
-}
-
-#pragma mark Short-Running Processes
-
-- (BOOL)launchAndWait:(FBAgentLaunchConfiguration *)agentLaunch consumer:(id<FBFileConsumer>)consumer error:(NSError **)error
-{
-  FBPipeReader *pipe = [FBPipeReader pipeReaderWithConsumer:consumer];
-  NSDictionary *options = [agentLaunch simDeviceLaunchOptionsWithStdOut:pipe.pipe.fileHandleForWriting stdErr:nil];
-
-  // Start reading the pipe
-  NSError *innerError = nil;
-  if (![pipe startReadingWithError:&innerError]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Could not start reading stdout of %@", agentLaunch]
-      causedBy:innerError]
-      failBool:error];
-  }
-
   // The Process launches and terminates synchronously
-  pid_t processIdentifier = [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator]
-    spawnShortRunningWithPath:agentLaunch.agentBinary.path
+  FBMutableFuture<NSNumber *> *launchFuture = [FBMutableFuture future];
+  [self.simulator.device
+    spawnAsyncWithPath:launchPath
     options:options
-    timeout:FBControlCoreGlobalConfiguration.fastTimeout
-    error:&innerError];
-
-  // Stop reading the pipe
-  if (![pipe stopReadingWithError:&innerError]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Could not stop reading stdout of %@", agentLaunch]
-      causedBy:innerError]
-      failBool:error];
-  }
-
-  // Fail on non-zero pid.
-  if (processIdentifier <= 0) {
-    return [[[FBSimulatorError
-      describeFormat:@"Running %@ %@ failed", agentLaunch.agentBinary.name, [FBCollectionInformation oneLineDescriptionFromArray:agentLaunch.arguments]]
-      causedBy:innerError]
-      failBool:error];
-  }
-  return YES;
-}
-
-- (nullable NSString *)launchConsumingStdout:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
-{
-  FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
-  if (![self launchAndWait:agentLaunch consumer:consumer error:error]) {
-    return nil;
-  }
-  return [[NSString alloc] initWithData:consumer.data encoding:NSUTF8StringEncoding];
-}
-
-#pragma mark Private
-
-- (nullable FBProcessInfo *)spawnLongRunningWithPath:(NSString *)launchPath options:(nullable NSDictionary<NSString *, id> *)options terminationHandler:(nullable FBAgentTerminationHandler)terminationHandler error:(NSError **)error
-{
-  return [self processInfoForProcessIdentifier:[self.simulator.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error] error:error];
-}
-
-- (pid_t)spawnShortRunningWithPath:(NSString *)launchPath options:(nullable NSDictionary<NSString *, id> *)options timeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  __block volatile uint32_t hasTerminated = 0;
-  FBAgentTerminationHandler terminationHandler = ^(int stat_loc) {
-    OSAtomicOr32Barrier(1, &hasTerminated);
-  };
-
-  pid_t processIdentifier = [self.simulator.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error];
-  if (processIdentifier <= 0) {
-    return processIdentifier;
-  }
-
-  BOOL successfulWait = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
-    return hasTerminated == 1;
+    terminationQueue:self.simulator.workQueue
+    terminationHandler:^(int stat_loc) {
+      [terminationFuture resolveWithResult:@(stat_loc)];
+    }
+    completionQueue:self.simulator.workQueue
+    completionHandler:^(NSError *innerError, pid_t processIdentifier){
+      if (innerError) {
+        [launchFuture resolveWithError:innerError];
+      } else {
+        [launchFuture resolveWithResult:@(processIdentifier)];
+      }
   }];
-  if (!successfulWait) {
-    return [[FBSimulatorError
-      describeFormat:@"Short Live process of pid %d of launch %@ with options %@ did not terminate in '%f' seconds", processIdentifier, launchPath, options, timeout]
-      failBool:error];
-  }
-
-  return processIdentifier;
-}
-
-- (FBProcessInfo *)processInfoForProcessIdentifier:(pid_t)processIdentifier error:(NSError **)error
-{
-  if (processIdentifier <= -1) {
-    return nil;
-  }
-
-  FBProcessInfo *processInfo = [self.processFetcher.processFetcher processInfoFor:processIdentifier timeout:FBControlCoreGlobalConfiguration.regularTimeout];
-  if (!processInfo) {
-    return [[FBSimulatorError describeFormat:@"Timed out waiting for process info for pid %d", processIdentifier] fail:error];
-  }
-  return processInfo;
+  return launchFuture;
 }
 
 @end

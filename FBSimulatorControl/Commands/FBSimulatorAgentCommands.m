@@ -48,7 +48,7 @@
 - (nullable FBSimulatorAgentOperation *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
 {
   NSParameterAssert(agentLaunch);
-  return [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchAgent:agentLaunch error:error];
+  return [[[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchAgent:agentLaunch] await:error];
 }
 
 @end

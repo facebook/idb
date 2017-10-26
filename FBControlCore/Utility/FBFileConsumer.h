@@ -141,4 +141,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ A consumer that does nothing with the data.
+ */
+@interface FBNullFileConsumer : NSObject <FBFileConsumer>
+
+@end
+
 NS_ASSUME_NONNULL_END

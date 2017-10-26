@@ -9,13 +9,13 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBAgentLaunchConfiguration;
-@class FBProcessInfo;
 @class FBSimulator;
 @class FBSimulatorAgentOperation;
-@protocol FBFileConsumer;
 
 /**
  A Strategy for Launching Agents on a Simulator.
@@ -35,34 +35,30 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Long-Running Processes
 
 /**
- Launches an agent with the given configuration.
+ Launches a long-running process with the given configuration.
 
  @param agentLaunch the agent to launch.
- @param error an error out for any error that occurs.
- @return an Agent Operation wrapper, nil on failure.
+ @return an Agent Launch Operation, wrapped in a future.
  */
-- (nullable FBSimulatorAgentOperation *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error;
+- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch;
 
 #pragma mark Short-Running Processes
 
 /**
- Launches an agent, consuming it's output with the consumer.
+ Launches a short-running process with the given configuration.
 
- @param agentLaunch the configuration for launching the process. The 'output' of the configuration will be ignored.
- @param consumer the consumer to consume with.
- @param error an error out for any error that occurs.
- @return the stdout of the launched process, nil on error.
+ @param agentLaunch the agent to launch.
+ @return the stat_loc exit of the process, wrapped in a Future.
  */
-- (BOOL)launchAndWait:(FBAgentLaunchConfiguration *)agentLaunch consumer:(id<FBFileConsumer>)consumer error:(NSError **)error;
+- (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBAgentLaunchConfiguration *)agentLaunch;
 
 /**
  Launches an agent, consuming it's output and returning it as a String.
 
  @param agentLaunch the configuration for launching the process. The 'output' of the configuration will be ignored.
- @param error an error out for any error that occurs.
- @return the stdout of the launched process, nil on error.
+ @return A future that wraps the stdout of the launched process.
  */
-- (nullable NSString *)launchConsumingStdout:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error;
+- (FBFuture<NSString *> *)launchConsumingStdout:(FBAgentLaunchConfiguration *)agentLaunch;
 
 @end
 

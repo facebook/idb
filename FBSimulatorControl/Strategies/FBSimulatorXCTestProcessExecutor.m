@@ -63,9 +63,11 @@
    environment:process.environment
    output:output];
 
-  FBSimulatorAgentOperation *operation = [[FBAgentLaunchStrategy
+  FBFuture<FBSimulatorAgentOperation *> *future = [[FBAgentLaunchStrategy
     strategyWithSimulator:self.simulator]
-    launchAgent:configuration error:&error];
+    launchAgent:configuration];
+
+  FBSimulatorAgentOperation *operation = [future await:&error];
   if (!operation) {
     return [FBFuture futureWithError:error];
   }

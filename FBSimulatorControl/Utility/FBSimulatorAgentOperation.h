@@ -45,7 +45,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent;
 @property (nonatomic, copy, readonly) FBAgentLaunchConfiguration *configuration;
 
 /**
- A future represnetation of this operation.
+ A future representation of the operation.
  The value of the future is the stat_loc value.
  */
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *future;
@@ -63,7 +63,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent;
 /**
  The Launched Process Info.
  */
-@property (nonatomic, copy, nullable, readonly) FBProcessInfo *process;
+@property (nonatomic, copy, readonly) FBProcessInfo *process;
 
 @end
 
@@ -79,17 +79,11 @@ extern FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent;
  @param configuration the configuration the process was launched with.
  @param stdOut the Stdout output.
  @param stdErr the Stderr output.
- @param completionFuture a future that will fire when the process has terminated. The value is the exit code.
+ @param launchFuture a future that will fire when the process has launched. The value is the process identifier.
+ @param terminationFuture a future that will fire when the process has terminated. The value is the exit code.
+ @return a Future that resolves when the process is launched.
  */
-+ (instancetype)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr completionFuture:(FBFuture<NSNumber *> *)completionFuture;
-
-/**
- Called internally by the framework when the owning process has been launched.
- This should never be called by consumers.
-
- @param process the process info of the launched process.
- */
-- (void)processDidLaunch:(FBProcessInfo *)process;
++ (FBFuture<FBSimulatorAgentOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture terminationFuture:(FBFuture<NSNumber *> *)terminationFuture;
 
 @end
 

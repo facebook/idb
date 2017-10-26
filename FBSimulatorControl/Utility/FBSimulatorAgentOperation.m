@@ -27,12 +27,19 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
 
 #pragma mark Initializers
 
-+ (instancetype)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr completionFuture:(FBFuture<NSNumber *> *)completionFuture
++ (FBFuture<FBSimulatorAgentOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture terminationFuture:(FBFuture<NSNumber *> *)terminationFuture
 {
-  return [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr completionFuture:completionFuture];
+  return [[launchFuture
+    onQueue:simulator.workQueue fmap:^(NSNumber *processIdentifierNumber) {
+      FBProcessFetcher *fetcher = [FBProcessFetcher new];
+      return [fetcher onQueue:simulator.asyncQueue processInfoFor:processIdentifierNumber.intValue timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+    }]
+    onQueue:simulator.workQueue map:^(FBProcessInfo *process) {
+      return [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr process:process terminationFuture:terminationFuture];
+    }];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr completionFuture:(FBFuture<NSNumber *> *)completionFuture
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr process:(FBProcessInfo *)process terminationFuture:(FBFuture<NSNumber *> *)terminationFuture
 {
   self = [super init];
   if (!self) {
@@ -43,26 +50,16 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
   _configuration = configuration;
   _stdOut = stdOut;
   _stdErr = stdErr;
-
-  __weak typeof(self) weakSelf = self;
-  _future = [completionFuture onQueue:simulator.workQueue notifyOfCompletion:^(FBFuture<NSNumber *> *future) {
-    __strong typeof(self) strongSelf = weakSelf;
+  _process = process;
+  _future = [terminationFuture onQueue:simulator.workQueue notifyOfCompletion:^(FBFuture<NSNumber *> *future) {
     if (future.result) {
-      [strongSelf processDidTerminate:future.result.intValue];
-      return;
+      [self processDidTerminate:future.result.intValue];
+    } else {
+      [self processWasCancelled];
     }
-    [strongSelf processWasCancelled];
   }];
 
   return self;
-}
-
-- (void)processDidLaunch:(FBProcessInfo *)process
-{
-  // In order to ensure that the reciever is alive as long as the process is spawned.
-  // We increase the retain count, until it is torn-down.
-  CFRetain((__bridge CFTypeRef)(self));
-  _process = process;
 }
 
 + (BOOL)isExpectedTerminationForStatLoc:(int)statLoc
@@ -96,9 +93,6 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
   if (!self.process) {
     return;
   }
-
-  // Match the retain in -[FBSimulatorAgentOperation processDidLaunch]
-  CFRelease((__bridge CFTypeRef)(self));
 
   // Tear down the other resources.
   [self.stdOut terminate];

@@ -126,7 +126,7 @@
 - (int)_spawnFromLaunchdWithPath:(id)arg1 options:(id)arg2 terminationQueue:(id)arg3 terminationHandler:(CDUnknownBlockType)arg4 error:(id *)arg5;
 - (int)_onBootstrapQueue_spawnWithPath:(id)arg1 options:(id)arg2 terminationQueue:(id)arg3 terminationHandler:(CDUnknownBlockType)arg4 error:(id *)arg5;
 - (int)spawnWithPath:(id)arg1 options:(id)arg2 terminationQueue:(id)arg3 terminationHandler:(CDUnknownBlockType)arg4 error:(id *)arg5;
-- (void)spawnAsyncWithPath:(id)arg1 options:(id)arg2 terminationQueue:(id)arg3 terminationHandler:(CDUnknownBlockType)arg4 completionQueue:(id)arg5 completionHandler:(CDUnknownBlockType)arg6;
+- (void)spawnAsyncWithPath:(id)arg1 options:(id)arg2 terminationQueue:(id)arg3 terminationHandler:(void (^)(int))arg4 completionQueue:(id)arg5 completionHandler:(void (^)(NSError *, pid_t))arg6;
 - (BOOL)unregisterService:(id)arg1 error:(id *)arg2;
 - (BOOL)_unregisterService:(id)arg1 error:(id *)arg2;
 - (BOOL)registerPort:(unsigned int)arg1 service:(id)arg2 error:(id *)arg3;

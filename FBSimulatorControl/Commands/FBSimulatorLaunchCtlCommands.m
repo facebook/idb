@@ -208,9 +208,10 @@
     output:FBProcessOutputConfiguration.outputToDevNull];
 
   // Spawn and get the output
-  return [[FBAgentLaunchStrategy
+  return [[[FBAgentLaunchStrategy
     strategyWithSimulator:self.simulator]
-    launchConsumingStdout:launchConfiguration error:error];
+    launchConsumingStdout:launchConfiguration]
+    await:error];
 }
 
 @end

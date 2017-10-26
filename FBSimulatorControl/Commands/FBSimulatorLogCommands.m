@@ -48,47 +48,59 @@
 
 - (nullable id<FBTerminationHandle>)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer error:(NSError **)error
 {
-  return [self runLogCommand:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer error:error];
+  return [[self
+    startLogCommand:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer]
+    await:error];
 }
 
 - (FBFuture<NSArray<NSString *> *> *)logLinesWithArguments:(NSArray<NSString *> *)arguments
 {
-  NSError *error = nil;
   FBAccumilatingFileConsumer *consumer = FBAccumilatingFileConsumer.new;
-  FBSimulatorAgentOperation *operation = [self runLogCommand:arguments consumer:consumer error:&error];
-  if (!operation) {
-    return [FBFuture futureWithError:error];
-  }
-  return [operation.future onQueue:self.simulator.asyncQueue fmap:^FBFuture<NSArray<NSString *> *> *(NSNumber *statLoc) {
-    // Check the exit code.
-    int value = statLoc.intValue;
-    int exitCode = WEXITSTATUS(value);
-    if (exitCode != 0) {
-      return [FBFuture futureWithError:[FBSimulatorError errorForFormat:@"log exited with code %d, arguments %@", exitCode, arguments]];
-    }
-    // Slice off the head of the output, this is the header.
-    NSArray<NSString *> *lines = consumer.lines;
-    if (lines.count < 2) {
-      return [FBFuture futureWithResult:@[]];
-    }
-    return [FBFuture futureWithResult:[lines subarrayWithRange:NSMakeRange(1, lines.count - 1)]];
+  return [[self
+    runLogCommandAndWait:arguments consumer:consumer]
+    onQueue:self.simulator.asyncQueue fmap:^(id<FBFileConsumer> _){
+      NSArray<NSString *> *lines = consumer.lines;
+      if (lines.count < 2) {
+        return [FBFuture futureWithResult:@[]];
+      }
+      return [FBFuture futureWithResult:[lines subarrayWithRange:NSMakeRange(1, lines.count - 1)]];
   }];
 }
 
 #pragma mark Private
 
-- (nullable FBSimulatorAgentOperation *)runLogCommand:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer error:(NSError **)error
+- (FBFuture<id<FBFileConsumer>> *)runLogCommandAndWait:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
 {
-  FBBinaryDescriptor *binary = [self logBinaryDescriptorWithError:error];
+  return [[[self
+    startLogCommand:arguments consumer:consumer]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorAgentOperation *operation) {
+      // Re-Map from Launch to Exit
+      return [operation future];
+    }]
+    onQueue:self.simulator.asyncQueue fmap:^(NSNumber *statLoc){
+      // Check the exit code.
+      int value = statLoc.intValue;
+      int exitCode = WEXITSTATUS(value);
+      if (exitCode != 0) {
+        return [FBFuture futureWithError:[FBSimulatorError errorForFormat:@"log exited with code %d, arguments %@", exitCode, arguments]];
+      }
+      return [FBFuture futureWithResult:consumer];
+  }];
+}
+
+- (FBFuture<FBSimulatorAgentOperation *> *)startLogCommand:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
+{
+  NSError *error = nil;
+  FBBinaryDescriptor *binary = [self logBinaryDescriptorWithError:&error];
   if (!binary) {
-    return nil;
+    return [FBSimulatorError failFutureWithError:error];
   }
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
     configurationWithStdOut:consumer
     stdErr:NSNull.null
-    error:error];
+    error:&error];
   if (!output) {
-    return nil;
+    return [FBSimulatorError failFutureWithError:error];
   }
 
   FBAgentLaunchConfiguration *configuration = [FBAgentLaunchConfiguration
@@ -99,7 +111,7 @@
 
   return [[FBAgentLaunchStrategy
     strategyWithSimulator:self.simulator]
-    launchAgent:configuration error:error];
+    launchAgent:configuration];
 }
 
 - (FBBinaryDescriptor *)logBinaryDescriptorWithError:(NSError **)error
