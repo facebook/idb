@@ -36,14 +36,6 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeApproval;
 - (FBFuture<NSNull *> *)overridingLocalization:(FBLocalizationOverride *)localizationOverride;
 
 /**
- Authorizes the Location Settings for the provided bundleIDs
-
- @param bundleIDs an NSArray<NSString> of bundle IDs to to authorize location settings for.
- @return A future that resolves when the setting change is complete.
- */
-- (FBFuture<NSNull *> *)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs;
-
-/**
  Overrides the default SpringBoard watchdog timer for the applications. You can use this to give your application more
  time to startup before being killed by SpringBoard. (SB's default is 20 seconds.)
 
