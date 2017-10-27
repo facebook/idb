@@ -202,9 +202,10 @@
 - (BOOL)terminateSubprocess:(FBProcessInfo *)process error:(NSError **)error
 {
   NSParameterAssert(process);
-    return [[FBSimulatorSubprocessTerminationStrategy
+    return [[[FBSimulatorSubprocessTerminationStrategy
       strategyWithSimulator:self.simulator]
-      terminate:process error:error];
+      terminate:process]
+      await:error] != nil;
 }
 
 @end

@@ -85,7 +85,7 @@
       causedBy:innerError]
       failBool:error];
   }
-  if (![[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:self.simulator] terminate:process error:&innerError]) {
+  if (![[[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:self.simulator] terminate:process] await:&innerError]) {
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
 

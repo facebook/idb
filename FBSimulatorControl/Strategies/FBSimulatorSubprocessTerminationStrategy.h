@@ -9,15 +9,19 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBProcessInfo;
-@class FBSimulator;
+#import <FBControlCore/FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+@class FBProcessInfo;
+@class FBSimulator;
 
 /**
  A Strategy for Terminating the Suprocesses of a Simulator.
  */
 @interface FBSimulatorSubprocessTerminationStrategy : NSObject
+
+#pragma mark Initializers
 
 /**
  Creates and Returns a Strategy for Terminating the Subprocesses of a Simulator's 'launchd_sim'
@@ -26,15 +30,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator;
 
+#pragma mark Public Methods
+
 /**
  Terminates a Process for a Simulator.
  Will fail if the Process does not belong to the Simulator.
 
  @param process the Process to terminate.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A future that resolves successfully if the process is terminated.
  */
-- (BOOL)terminate:(FBProcessInfo *)process error:(NSError **)error;
+- (FBFuture<NSNull *> *)terminate:(FBProcessInfo *)process;
 
 @end
 

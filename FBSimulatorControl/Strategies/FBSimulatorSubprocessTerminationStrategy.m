@@ -26,6 +26,8 @@
 
 @implementation FBSimulatorSubprocessTerminationStrategy
 
+#pragma mark Initializers
+
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator
 {
   return [[self alloc] initWithSimulator:simulator];
@@ -43,7 +45,9 @@
   return self;
 }
 
-- (BOOL)terminate:(FBProcessInfo *)process error:(NSError **)error
+#pragma mark Public Methods
+
+- (FBFuture<NSNull *> *)terminate:(FBProcessInfo *)process;
 {
   // Confirm that the process has the launchd_sim as a parent process.
   // The interaction should restrict itself to simulator processes so this is a guard
@@ -52,26 +56,18 @@
   if (parentProcessIdentifier != self.simulator.launchdProcess.processIdentifier) {
     return [[FBSimulatorError
       describeFormat:@"Parent of %@ is not the launchd_sim (%@) it has a pid %d", process.shortDescription, self.simulator.launchdProcess.shortDescription, parentProcessIdentifier]
-      failBool:error];
+      failFuture];
   }
 
   // Get the Service Name and then stop using the Service Name.
-  NSError *innerError = nil;
-  NSString *serviceName = [[self.simulator serviceNameForProcess:process] await:&innerError];
-  if (!serviceName) {
-    return [[FBSimulatorError
-      describeFormat:@"Could not Obtain the Service Name for %@", process.shortDescription]
-      failBool:error];
-  }
-
-  [self.simulator.logger.debug logFormat:@"Stopping Service '%@'", serviceName];
-  if (![[self.simulator stopServiceWithName:serviceName] await:&innerError]) {
-    return [[FBSimulatorError
-      describeFormat:@"Failed to stop service '%@'", serviceName]
-      failBool:error];
-  }
-  [self.simulator.logger.debug logFormat:@"Stopped Service '%@'", serviceName];
-  return YES;
+  return [[[self.simulator
+    serviceNameForProcess:process]
+    rephraseFailure:@"Could not Obtain the Service Name for %@", process.shortDescription]
+    onQueue:self.simulator.workQueue fmap:^FBFuture *(NSString *serviceName) {
+      return [[self.simulator
+        stopServiceWithName:serviceName]
+        rephraseFailure:@"Failed to stop service '%@'", serviceName];
+    }];
 }
 
 @end

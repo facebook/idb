@@ -141,14 +141,14 @@
   FBSimulator *simulator = self.simulator;
   NSError *error = nil;
   FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&error];
-  if (process) {
-    if (![[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process error:&error]) {
-      return [FBSimulatorError failFutureWithError:error];
-    }
-  }
+  FBFuture<NSNull *> *terminateFuture = process
+    ? [[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process]
+    : [FBFuture futureWithResult:NSNull.null];
 
-  // Perform the launch itself.
- return [self launchApplication:appLaunch];
+  return [terminateFuture
+    onQueue:self.simulator.workQueue fmap:^FBFuture *(NSNull *result) {
+      return [simulator launchApplication:appLaunch];
+    }];
 }
 
 - (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
