@@ -53,7 +53,7 @@
   return binary;
 }
 
-- (BOOL)modifyDefaultsInDomainOrPath:(NSString *)domainOrPath defaults:(NSDictionary<NSString *, id> *)defaults error:(NSError **)error
+- (FBFuture<NSNull *> *)modifyDefaultsInDomainOrPath:(NSString *)domainOrPath defaults:(NSDictionary<NSString *, id> *)defaults
 {
   NSError *innerError = nil;
   NSString *file = [self.simulator.auxillaryDirectory stringByAppendingPathComponent:@"temporary.plist"];
@@ -61,12 +61,12 @@
     return [[[FBSimulatorError
       describeFormat:@"Could not create intermediate directories for temporary plist %@", file]
       causedBy:innerError]
-      failBool:error];
+      failFuture];
   }
   if (![defaults writeToFile:file atomically:YES]) {
     return [[FBSimulatorError
       describeFormat:@"Failed to write out defaults to temporary file %@", file]
-      failBool:error];
+      failFuture];
   }
 
   // Build the arguments
@@ -84,60 +84,55 @@
     output:FBProcessOutputConfiguration.outputToDevNull];
 
   // Run the write, fail if the write fails.
-  FBAgentLaunchStrategy *strategy = [FBAgentLaunchStrategy strategyWithSimulator:self.simulator];
-  if (![[strategy launchAndNotifyOfCompletion:configuration] await:&innerError]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to write defaults for %@", domainOrPath ?: @"GLOBAL"]
-      causedBy:innerError]
-      failBool:error];
-  }
-  return YES;
+  return [[[FBAgentLaunchStrategy strategyWithSimulator:self.simulator]
+    launchAndNotifyOfCompletion:configuration]
+    mapReplace:NSNull.null];
 }
 
-- (BOOL)amendRelativeToPath:(NSString *)relativePath defaults:(NSDictionary<NSString *, id> *)defaults managingService:(NSString *)serviceName error:(NSError **)error
+- (FBFuture<NSNull *> *)amendRelativeToPath:(NSString *)relativePath defaults:(NSDictionary<NSString *, id> *)defaults managingService:(NSString *)serviceName
 {
   FBSimulator *simulator = self.simulator;
   FBSimulatorState state = simulator.state;
   if (state != FBSimulatorStateBooted && state != FBSimulatorStateShutdown) {
     return [[FBSimulatorError
       describeFormat:@"Cannot amend a plist when the Simulator state is %@, should be %@ or %@", FBSimulatorStateStringFromState(state), FBSimulatorStateStringShutdown, FBSimulatorStateStringBooted]
-      failBool:error];
+      failFuture];
   }
 
   // Stop the service, if booted.
-  if (state == FBSimulatorStateBooted) {
-    if (![[simulator stopServiceWithName:serviceName] await:error]) {
-      return NO;
-    }
-  }
-  // Perform the amend.
+  FBFuture<NSNull *> *stopFuture = state == FBSimulatorStateBooted
+    ? [simulator stopServiceWithName:serviceName]
+    : [FBFuture futureWithResult:NSNull.null];
+
+  // The path to amend.
   NSString *fullPath = [self.simulator.dataDirectory stringByAppendingPathComponent:relativePath];
-  if (![self modifyDefaultsInDomainOrPath:fullPath defaults:defaults error:error]) {
-    return NO;
-  }
-  // Re-start the Service if booted.
-  if (state == FBSimulatorStateBooted) {
-    if (![[simulator startServiceWithName:serviceName] await:error]) {
-      return NO;
-    }
-  }
-  return YES;
+
+  return  [[stopFuture
+    onQueue:self.simulator.workQueue fmap:^FBFuture *(NSNull *_) {
+      return [self modifyDefaultsInDomainOrPath:fullPath defaults:defaults];
+    }]
+    onQueue:self.simulator.workQueue fmap:^FBFuture<NSNull *> *(NSNull *_) {
+      // Re-start the Service if booted.
+      return state == FBSimulatorStateBooted
+        ? [simulator startServiceWithName:serviceName]
+        : [FBFuture futureWithResult:NSNull.null];
+    }];
 }
 
 @end
 
 @implementation FBLocalizationDefaultsModificationStrategy
 
-- (BOOL)overrideLocalization:(FBLocalizationOverride *)localizationOverride error:(NSError **)error
+- (FBFuture<NSNull *> *)overrideLocalization:(FBLocalizationOverride *)localizationOverride
 {
-  return [self modifyDefaultsInDomainOrPath:nil defaults:localizationOverride.defaultsDictionary error:error];
+  return [self modifyDefaultsInDomainOrPath:nil defaults:localizationOverride.defaultsDictionary];
 }
 
 @end
 
 @implementation FBLocationServicesModificationStrategy
 
-- (BOOL)approveLocationServicesForBundleIDs:(NSArray<NSString *> *)bundleIDs error:(NSError **)error
+- (FBFuture<NSNull *> *)approveLocationServicesForBundleIDs:(NSArray<NSString *> *)bundleIDs
 {
   NSParameterAssert(bundleIDs);
 
@@ -157,15 +152,14 @@
   return [self
     amendRelativeToPath:@"Library/Caches/locationd/clients.plist"
     defaults:[defaults copy]
-    managingService:@"locationd"
-    error:error];
+    managingService:@"locationd"];
 }
 
 @end
 
 @implementation FBWatchdogOverrideModificationStrategy
 
-- (BOOL)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs timeout:(NSTimeInterval)timeout error:(NSError **)error
+- (FBFuture<NSNull *> *)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs timeout:(NSTimeInterval)timeout
 {
   NSParameterAssert(bundleIDs);
   NSParameterAssert(timeout);
@@ -178,22 +172,21 @@
   return [self
     amendRelativeToPath:@"Library/Preferences/com.apple.springboard.plist"
     defaults:defaults
-    managingService:@"com.apple.SpringBoard"
-    error:error];
+    managingService:@"com.apple.SpringBoard"];
 }
 
 @end
 
 @implementation FBKeyboardSettingsModificationStrategy
 
-- (BOOL)setupKeyboardWithError:(NSError **)error
+- (FBFuture<NSNull *> *)setupKeyboard
 {
   NSDictionary<NSString *, NSString *> *defaults = @{
     @"KeyboardCapsLock" : @"0",
     @"KeyboardAutocapitalization" : @"0",
     @"KeyboardAutocorrection" : @"0",
   };
-  return [self modifyDefaultsInDomainOrPath:@"com.apple.Preferences" defaults:defaults error:error];
+  return [self modifyDefaultsInDomainOrPath:@"com.apple.Preferences" defaults:defaults];
 }
 
 @end

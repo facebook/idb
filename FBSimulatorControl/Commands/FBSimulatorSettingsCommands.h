@@ -31,37 +31,32 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeApproval;
  Overrides the Global Localization of the Simulator.
 
  @param localizationOverride the Localization Override to set.
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
+ @return A future that resolves when the setting change is complete.
  */
-- (BOOL)overridingLocalization:(FBLocalizationOverride *)localizationOverride error:(NSError **)error;
+- (FBFuture<NSNull *> *)overridingLocalization:(FBLocalizationOverride *)localizationOverride;
 
 /**
  Authorizes the Location Settings for the provided bundleIDs
 
  @param bundleIDs an NSArray<NSString> of bundle IDs to to authorize location settings for.
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
+ @return A future that resolves when the setting change is complete.
  */
-- (BOOL)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs error:(NSError **)error;
+- (FBFuture<NSNull *> *)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs;
 
 /**
  Overrides the default SpringBoard watchdog timer for the applications. You can use this to give your application more
  time to startup before being killed by SpringBoard. (SB's default is 20 seconds.)
 
  @param bundleIDs The bundle IDs of the applications to override.
- @param timeout The new startup timeout.
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
+ @return A future that resolves when the setting change is complete.
  */
-- (BOOL)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+- (FBFuture<NSNull *> *)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout;
 
 /**
  Grants access to the provided services.
 
  @param bundleIDs the bundle ids to provide access to.
- @param services the services to grant access to.
- @return a future that resolves when the access grant has been done.
+ @return A future that resolves when the setting change is complete.
  */
 - (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services;
 
@@ -71,10 +66,9 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeApproval;
  2) Disables Auto Capitalize
  3) Disables Auto Correction / QuickType
 
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
+ @return A future that resolves when the setting change is complete.
  */
-- (BOOL)setupKeyboardWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)setupKeyboard;
 
 @end
 

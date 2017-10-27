@@ -44,29 +44,29 @@ FBiOSTargetActionType const FBiOSTargetActionTypeApproval = @"approve";
   return self;
 }
 
-- (BOOL)overridingLocalization:(FBLocalizationOverride *)localizationOverride error:(NSError **)error
+- (FBFuture<NSNull *> *)overridingLocalization:(FBLocalizationOverride *)localizationOverride
 {
   if (!localizationOverride) {
-    return YES;
+    return [FBFuture futureWithResult:NSNull.null];
   }
 
   return [[FBLocalizationDefaultsModificationStrategy
     strategyWithSimulator:self.simulator]
-    overrideLocalization:localizationOverride error:error];
+    overrideLocalization:localizationOverride];
 }
 
-- (BOOL)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs error:(NSError **)error
+- (FBFuture<NSNull *> *)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs
 {
   return [[FBLocationServicesModificationStrategy
     strategyWithSimulator:self.simulator]
-    approveLocationServicesForBundleIDs:bundleIDs error:error];
+    approveLocationServicesForBundleIDs:bundleIDs];
 }
 
-- (BOOL)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout error:(NSError **)error
+- (FBFuture<NSNull *> *)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout
 {
   return [[FBWatchdogOverrideModificationStrategy
     strategyWithSimulator:self.simulator]
-    overrideWatchDogTimerForApplications:bundleIDs timeout:timeout error:error];
+    overrideWatchDogTimerForApplications:bundleIDs timeout:timeout];
 }
 
 - (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services
@@ -80,11 +80,7 @@ FBiOSTargetActionType const FBiOSTargetActionTypeApproval = @"approve";
     [futures addObject:[self modifyTCCDatabaseWithBundleIDs:bundleIDs toServices:services]];
   }
   if ([services containsObject:FBSettingsApprovalServiceLocation]) {
-    NSError *error = nil;
-    if (![self authorizeLocationSettings:bundleIDs.allObjects error:&error]) {
-      return [FBFuture futureWithError:error];
-    }
-    [futures addObject:[FBFuture futureWithResult:NSNull.null]];
+    [futures addObject:[self authorizeLocationSettings:bundleIDs.allObjects]];
   }
   // Don't wrap if there's only one future.
   if (futures.count == 0) {
@@ -93,11 +89,11 @@ FBiOSTargetActionType const FBiOSTargetActionTypeApproval = @"approve";
   return [FBFuture futureWithFutures:futures];
 }
 
-- (BOOL)setupKeyboardWithError:(NSError **)error
+- (FBFuture<NSNull *> *)setupKeyboard
 {
   return [[FBKeyboardSettingsModificationStrategy
     strategyWithSimulator:self.simulator]
-    setupKeyboardWithError:error];
+    setupKeyboard];
 }
 
 #pragma mark Private

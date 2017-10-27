@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBLocalizationOverride;
@@ -32,10 +34,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param domainOrPath the domain or path to modify.
  @param defaults key value pair of defaults to set.
- @param error an error out for any error that occurs.
- @return YES if succesful, NO otherwise.
+ @return a future that resolves when completed.
  */
-- (BOOL)modifyDefaultsInDomainOrPath:(nullable NSString *)domainOrPath defaults:(NSDictionary<NSString *, id> *)defaults error:(NSError **)error;
+- (FBFuture<NSNull *> *)modifyDefaultsInDomainOrPath:(nullable NSString *)domainOrPath defaults:(NSDictionary<NSString *, id> *)defaults;
 
 @end
 
@@ -48,10 +49,9 @@ NS_ASSUME_NONNULL_BEGIN
  Adds a Localization Override.
 
  @param localizationOverride the Localization Override to use.
- @param error an error out for any error that occurs.
- @return YES if succesful, NO otherwise.
+ @return a future that resolves when completed.
  */
-- (BOOL)overrideLocalization:(FBLocalizationOverride *)localizationOverride error:(NSError **)error;
+- (FBFuture<NSNull *> *)overrideLocalization:(FBLocalizationOverride *)localizationOverride;
 
 @end
 
@@ -64,10 +64,9 @@ NS_ASSUME_NONNULL_BEGIN
  Approves Location Services for Applications.
 
  @param bundleIDs an NSArray<NSString> of bundle IDs to to authorize location settings for.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return a future that resolves when completed.
  */
-- (BOOL)approveLocationServicesForBundleIDs:(NSArray<NSString *> *)bundleIDs error:(NSError **)error;
+- (FBFuture<NSNull *> *)approveLocationServicesForBundleIDs:(NSArray<NSString *> *)bundleIDs;
 
 @end
 
@@ -82,10 +81,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param bundleIDs The bundle IDs of the applications to override.
  @param timeout The new startup timeout.
- @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs timeout:(NSTimeInterval)timeout error:(NSError **)error;
+- (FBFuture<NSNull *> *)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs timeout:(NSTimeInterval)timeout;
 
 @end
 
@@ -100,10 +98,9 @@ NS_ASSUME_NONNULL_BEGIN
  2) Disables Auto Capitalize
  3) Disables Auto Correction / QuickType
 
- @param error an error out for any error that occurs.
  @return the reciever, for chaining.
  */
-- (BOOL)setupKeyboardWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)setupKeyboard;
 
 @end
 

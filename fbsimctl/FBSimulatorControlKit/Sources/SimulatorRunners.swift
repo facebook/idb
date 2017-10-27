@@ -89,9 +89,12 @@ struct SimulatorActionRunner : Runner {
         try simulator.focus()
       }
     case .keyboardOverride:
-      return iOSTargetRunner.simple(reporter, .keyboardOverride, simulator.subject) {
-        try simulator.setupKeyboard()
-      }
+      return iOSTargetRunner.future(
+        reporter,
+        .keyboardOverride,
+        simulator.subject,
+        simulator.setupKeyboard()
+      )
     case .open(let url):
       return iOSTargetRunner.simple(reporter, .open, FBEventReporterSubject(string: url.bridgedAbsoluteString)) {
         try simulator.open(url)
@@ -111,9 +114,12 @@ struct SimulatorActionRunner : Runner {
     case .upload(let diagnostics):
       return UploadRunner(reporter, diagnostics)
     case .watchdogOverride(let bundleIDs, let timeout):
-      return iOSTargetRunner.simple(reporter, .watchdogOverride, FBEventReporterSubject(strings: bundleIDs)) {
-        try simulator.overrideWatchDogTimer(forApplications: bundleIDs, withTimeout: timeout)
-      }
+      return FutureRunner(
+        reporter,
+        .watchdogOverride,
+        FBEventReporterSubject(strings: bundleIDs),
+        simulator.overrideWatchDogTimer(forApplications: bundleIDs, withTimeout: timeout)
+      )
     default:
       return CommandResultRunner.unimplementedActionRunner(action, target: simulator, format: context.format)
     }

@@ -121,6 +121,13 @@ struct iOSTargetRunner : Runner {
     }
   }
 
+  static func future<A : NSObjectProtocol>(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ future: FBFuture<A>) -> iOSTargetRunner {
+    return iOSTargetRunner(reporter: reporter, name: name, subject: subject) {
+      try future.await()
+      return nil
+    }
+  }
+
   static func core(_ reporter: iOSReporter, _ name: EventName?, _ target: FBiOSTarget, _ action: FBiOSTargetAction) -> iOSTargetRunner {
     return iOSTargetRunner(reporter: reporter, name: name, subject: action.subject) {
       return try action.runAction(target: target, reporter: reporter.reporter)
