@@ -26,10 +26,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param arguments the arguments for the log command.
  @param consumer the consumer to attach
- @param error an error out for any error that occurs.
- @return a Termination Handle if successful, nil otherwise.
+ @return a Future that will complete when the log command terminates. The result of the futures is the passed-in consumer. If the log process exits with a error exit code the future will error.
  */
-- (nullable id<FBTerminationHandle>)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer error:(NSError **)error;
+- (FBFuture<id<FBFileConsumer>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer;
 
 /**
  Runs the log command, returning the results as an array of strings.

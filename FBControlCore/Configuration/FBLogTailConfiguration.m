@@ -104,7 +104,10 @@ static NSString *const KeyArguments = @"arguments";
       describeFormat:@"%@ does not support FBLogCommands", target]
       failBool:error];
   }
-  id<FBTerminationHandle> handle = [commands tailLog:self.arguments consumer:consumer error:error];
+  id<FBTerminationAwaitable> handle = [FBTerminationAwaitableFuture
+    awaitableFromFuture:[commands tailLog:self.arguments consumer:consumer]
+    handleType:FBiOSTargetActionTypeLogTail
+    error:error];
   if (!handle) {
     return NO;
   }

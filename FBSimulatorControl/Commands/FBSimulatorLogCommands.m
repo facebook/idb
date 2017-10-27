@@ -46,11 +46,9 @@
 
 #pragma mark Public
 
-- (nullable id<FBTerminationHandle>)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer error:(NSError **)error
+- (FBFuture<id<FBFileConsumer>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
 {
-  return [[self
-    startLogCommand:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer]
-    await:error];
+  return [self runLogCommandAndWait:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer];
 }
 
 - (FBFuture<NSArray<NSString *> *> *)logLinesWithArguments:(NSArray<NSString *> *)arguments
