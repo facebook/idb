@@ -22,6 +22,9 @@ FBDeviceModel const FBDeviceModeliPhone6SPlus = @"iPhone 6s Plus";
 FBDeviceModel const FBDeviceModeliPhoneSE = @"iPhone SE";
 FBDeviceModel const FBDeviceModeliPhone7 = @"iPhone 7";
 FBDeviceModel const FBDeviceModeliPhone7Plus = @"iPhone 7 Plus";
+FBDeviceModel const FBDeviceModeliPhone8 = @"iPhone2017-A";
+FBDeviceModel const FBDeviceModeliPhone8Plus = @"iPhone2017-B";
+FBDeviceModel const FBDeviceModeliPhoneX = @"iPhone2017-C";
 FBDeviceModel const FBDeviceModeliPad2 = @"iPad 2";
 FBDeviceModel const FBDeviceModeliPadRetina = @"iPad Retina";
 FBDeviceModel const FBDeviceModeliPadAir = @"iPad Air";
@@ -261,6 +264,9 @@ FBOSVersionName const FBOSVersionNamewatchOS_4_1 = @"watchOS 4.1";
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneSE productType:@"iPhone8,4" deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone7 productTypes:@[@"iPhone9,1", @"iPhone9,2"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone7Plus productTypes:@[@"iPhone9,2", @"iPhone9,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone8 productTypes:@[@"iPhone10,1", @"iPhone10,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone8Plus productTypes:@[@"iPhone10,2", @"iPhone10,5"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneX productTypes:@[@"iPhone10,3", @"iPhone10,6"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
       [FBDeviceType iPadWithModel:FBDeviceModeliPad2 productTypes:@[@"iPad2,1", @"iPad2,2", @"iPad2,3", @"iPad2,4"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
       [FBDeviceType iPadWithModel:FBDeviceModeliPadRetina productTypes:@[@"iPad3,1", @"iPad3,2", @"iPad3,3", @"iPad3,4", @"iPad3,5", @"iPad3,6"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
       [FBDeviceType iPadWithModel:FBDeviceModeliPadAir productTypes:@[@"iPad4,1", @"iPad4,2", @"iPad4,3"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
