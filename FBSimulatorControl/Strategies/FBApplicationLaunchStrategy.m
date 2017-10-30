@@ -73,7 +73,7 @@
 {
   FBSimulator *simulator = self.simulator;
   NSError *innerError = nil;
-  FBInstalledApplication *application = [simulator installedApplicationWithBundleID:appLaunch.bundleID error:&innerError];
+  FBInstalledApplication *application = [[simulator installedApplicationWithBundleID:appLaunch.bundleID] await:&innerError];
   if (!application) {
     return [[[[FBSimulatorError
       describeFormat:@"App %@ can't be launched as it isn't installed", appLaunch.bundleID]
@@ -168,7 +168,7 @@
       failBool:error];
   }
   NSError *innerError = nil;
-  if (![simulator installedApplicationWithBundleID:bundleID error:&innerError]) {
+  if (![[simulator installedApplicationWithBundleID:bundleID] await:&innerError]) {
     return [[[[FBSimulatorError
       describeFormat:@"Can't uninstall '%@' as it isn't installed", bundleID]
       causedBy:innerError]

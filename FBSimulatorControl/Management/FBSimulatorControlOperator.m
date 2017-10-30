@@ -55,7 +55,7 @@
 
 - (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  return ([self.simulator installedApplicationWithBundleID:bundleID error:error] != nil);
+  return ([[self.simulator installedApplicationWithBundleID:bundleID] await:error] != nil);
 }
 
 - (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error
@@ -182,7 +182,7 @@
 
 - (FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  FBInstalledApplication *application = [self.simulator installedApplicationWithBundleID:bundleID error:error];
+  FBInstalledApplication *application = [[self.simulator installedApplicationWithBundleID:bundleID] await:error];
   if (!application) {
     return nil;
   }
@@ -197,7 +197,7 @@
 
 - (BOOL)launchApplicationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment waitForDebugger:(BOOL)waitForDebugger error:(NSError **)error
 {
-  FBInstalledApplication *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];
+  FBInstalledApplication *app = [[self.simulator installedApplicationWithBundleID:bundleID] await:error];
   if (!app) {
     return NO;
   }

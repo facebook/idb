@@ -80,7 +80,7 @@
 
 - (NSString *)dataContainerPathForBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  FBInstalledApplication *application = [self.simulator installedApplicationWithBundleID:bundleID error:error];
+  FBInstalledApplication *application = [[self.simulator installedApplicationWithBundleID:bundleID] await:error];
   if (!application) {
     return nil;
   }

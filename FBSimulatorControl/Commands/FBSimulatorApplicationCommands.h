@@ -38,10 +38,9 @@ NS_ASSUME_NONNULL_BEGIN
  Fetches the FBApplicationBundle instance by Bundle ID, on the Simulator.
 
  @param bundleID the Bundle ID to fetch an installed application for.
- @param error an error out for any error that occurs.
- @return a FBApplicationBundle instance if one could be obtained, nil otherwise.
+ @return a Future with the installed application.
  */
-- (nullable FBInstalledApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID;
 
 /**
  Determines whether a provided Bundle ID represents a System Application

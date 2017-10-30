@@ -63,7 +63,7 @@
 
 - (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  return [self.simulator installedApplicationWithBundleID:bundleID error:error] != nil;
+  return [[self.simulator installedApplicationWithBundleID:bundleID] await:error] != nil;
 }
 
 - (FBFuture<NSNull *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
@@ -117,7 +117,7 @@
       failFuture];
   }
   NSError *innerError = nil;
-  if (![self.simulator installedApplicationWithBundleID:bundleID error:&innerError]) {
+  if (![[self.simulator installedApplicationWithBundleID:bundleID] await:&innerError]) {
     return [[[[FBSimulatorError
       describeFormat:@"Can't uninstall '%@' as it isn't installed", bundleID]
       causedBy:innerError]
@@ -148,20 +148,25 @@
 
 #pragma mark Querying Application State
 
-- (nullable FBInstalledApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID
 {
   NSParameterAssert(bundleID);
 
-  NSDictionary *appInfo = [self.simulator.device propertiesOfApplication:bundleID error:error];
+  NSError *error = nil;
+  NSDictionary *appInfo = [self.simulator.device propertiesOfApplication:bundleID error:&error];
   if (!appInfo) {
-    return nil;
+    return [FBFuture futureWithError:error];
   }
-  return [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:error];
+  FBInstalledApplication *application = [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:&error];
+  if (!application) {
+    return [FBFuture futureWithError:error];
+  }
+  return [FBFuture futureWithResult:application];
 }
 
 - (BOOL)isSystemApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  FBInstalledApplication *application = [self installedApplicationWithBundleID:bundleID error:error];
+  FBInstalledApplication *application = [[self installedApplicationWithBundleID:bundleID] await:error];
   if (!application) {
     return NO;
   }
@@ -196,14 +201,11 @@
 - (FBFuture<FBProcessInfo *> *)runningApplicationWithBundleID:(NSString *)bundleID
 {
   NSParameterAssert(bundleID);
-
-  NSError *innerError = nil;
-  FBInstalledApplication *application = [self installedApplicationWithBundleID:bundleID error:&innerError];
-  if (!application) {
-    return [FBSimulatorError failFutureWithError:innerError];
-  }
-  return [[self.simulator
-    serviceNameAndProcessIdentifierForBundleID:bundleID]
+  return [[[self
+    installedApplicationWithBundleID:bundleID]
+    onQueue:self.simulator.workQueue fmap:^(FBInstalledApplication *_) {
+      return [self.simulator serviceNameAndProcessIdentifierForBundleID:bundleID];
+    }]
     onQueue:self.simulator.workQueue fmap:^(NSArray<id> *result) {
      NSNumber *processIdentifier = result[1];
      FBProcessInfo *processInfo = [self.simulator.processFetcher.processFetcher processInfoFor:processIdentifier.intValue];
