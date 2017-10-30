@@ -42,10 +42,9 @@ NS_ASSUME_NONNULL_BEGIN
  Queries to see if an Application is installed on iOS.
 
  @param bundleID The Bundle ID of the application.
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
+ @return A future that identifies if the application was installed.
  */
-- (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID;
 
 /**
  Launches an Application with the provided Application Launch Configuration.

@@ -74,7 +74,7 @@
   OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)];
   OCMockObject<FBiOSTarget> *iosTargetMock = [OCMockObject mockForProtocol:@protocol(FBiOSTarget)];
   [[[iosTargetMock stub] andReturn:deviceOperatorMock] deviceOperator];
-  [[[iosTargetMock expect] andReturnValue:@NO] isApplicationInstalledWithBundleID:[OCMArg any] error:[OCMArg anyObjectRef]];
+  [[[iosTargetMock expect] andReturn:[FBFuture futureWithResult:@NO]] isApplicationInstalledWithBundleID:[OCMArg any]];
   [[[iosTargetMock expect] andReturn:[FBFuture futureWithResult:NSNull.null]] installApplicationWithPath:@"/app"];
   [[[deviceOperatorMock expect] andReturn:@"/remote/app"] applicationPathForApplicationWithBundleID:[OCMArg any] error:[OCMArg anyObjectRef]];
   [[[deviceOperatorMock expect] andReturn:@"/remote/data"] containerPathForApplicationWithBundleID:[OCMArg any] error:[OCMArg anyObjectRef]];

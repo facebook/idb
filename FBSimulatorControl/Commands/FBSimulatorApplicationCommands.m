@@ -61,9 +61,13 @@
     }];
 }
 
-- (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
 {
-  return [[self.simulator installedApplicationWithBundleID:bundleID] await:error] != nil;
+  return [[self.simulator
+    installedApplicationWithBundleID:bundleID]
+    onQueue:self.simulator.asyncQueue chain:^FBFuture *(FBFuture *future) {
+      return [FBFuture futureWithResult:@(future.result != nil)];
+    }];
 }
 
 - (FBFuture<NSNull *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration

@@ -71,9 +71,9 @@
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
-- (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
 {
-  return NO;
+  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
 - (FBFuture<NSNull *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration

@@ -66,11 +66,11 @@
     return [[self.iosTarget launchApplication:configuration] await:error] != nil;
   }
 
-  if (!path && ![self.iosTarget isApplicationInstalledWithBundleID:configuration.bundleID error:error]) {
+  if (!path && ![[self.iosTarget isApplicationInstalledWithBundleID:configuration.bundleID] await:error]) {
     return NO;
   }
   if (path) {
-    if ([self.iosTarget isApplicationInstalledWithBundleID:configuration.bundleID error:error]) {
+    if ([[self.iosTarget isApplicationInstalledWithBundleID:configuration.bundleID] await:error]) {
       if (![[self.iosTarget uninstallApplicationWithBundleID:configuration.bundleID] await:error]) {
         return NO;
       }
