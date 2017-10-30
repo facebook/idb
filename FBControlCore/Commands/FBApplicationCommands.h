@@ -56,13 +56,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSNull *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration;
 
 /**
- Kills application with given bundleID
+ Kills application with the given bundle identifier.
 
  @param bundleID bundle ID of installed application
- @param error an error out for any error that occurs.
- @return YES if the operation succeeds, otherwise NO.
+ @return A future that resolves successfully if the bundle was running and is now killed.
  */
-- (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (FBFuture<NSNull *> *)killApplicationWithBundleID:(NSString *)bundleID;
 
 /**
  Fetches a list of the Installed Applications.

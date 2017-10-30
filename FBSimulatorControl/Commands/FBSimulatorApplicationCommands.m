@@ -74,7 +74,7 @@
     mapReplace:NSNull.null];
 }
 
-- (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (FBFuture<NSNull *> *)killApplicationWithBundleID:(NSString *)bundleID
 {
   NSError *innerError = nil;
   FBProcessInfo *process = [[self.simulator runningApplicationWithBundleID:bundleID] await:&innerError];
@@ -83,13 +83,9 @@
       describeFormat:@"Could not find a running application for '%@'", bundleID]
       inSimulator:self.simulator]
       causedBy:innerError]
-      failBool:error];
+      failFuture];
   }
-  if (![[[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:self.simulator] terminate:process] await:&innerError]) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-  }
-
-  return YES;
+  return [[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:self.simulator] terminate:process];
 }
 
 - (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications
@@ -129,7 +125,7 @@
       failFuture];
   }
   // Kill the app if it's running
-  [self killApplicationWithBundleID:bundleID error:nil];
+  [[self killApplicationWithBundleID:bundleID] await:nil];
   // Then uninstall for real.
   if (![self.simulator.device uninstallApplication:bundleID withOptions:nil error:&innerError]) {
     return [[[[FBSimulatorError

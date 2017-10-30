@@ -176,7 +176,7 @@
       failBool:error];
   }
   // Kill the app if it's running
-  [simulator killApplicationWithBundleID:bundleID error:nil];
+  [[simulator killApplicationWithBundleID:bundleID] await:nil];
   // Then uninstall for real.
   if (![simulator.device uninstallApplication:bundleID withOptions:nil error:&innerError]) {
     return [[[[FBSimulatorError

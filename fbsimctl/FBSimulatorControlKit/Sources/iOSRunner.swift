@@ -59,9 +59,7 @@ struct iOSActionProvider {
         return stream
       }
     case .terminate(let bundleID):
-      return iOSTargetRunner.simple(reporter, .terminate, FBEventReporterSubject(string: bundleID)) {
-        try target.killApplication(withBundleID: bundleID)
-      }
+      return FutureRunner(reporter, .terminate, FBEventReporterSubject(string: bundleID), target.killApplication(withBundleID: bundleID))
     default:
       return nil
     }

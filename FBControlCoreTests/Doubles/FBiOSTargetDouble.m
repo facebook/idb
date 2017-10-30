@@ -81,9 +81,9 @@
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
-- (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (FBFuture<NSNull *> *)killApplicationWithBundleID:(NSString *)bundleID
 {
-  return NO;
+  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
 - (nullable id<FBVideoRecordingSession>)startRecordingToFile:(NSString *)filePath error:(NSError **)error

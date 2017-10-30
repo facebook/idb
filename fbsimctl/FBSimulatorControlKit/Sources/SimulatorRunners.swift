@@ -72,7 +72,7 @@ struct SimulatorActionRunner : Runner {
     case .clearKeychain(let maybeBundleID):
       return iOSTargetRunner.simple(reporter, .clearKeychain, simulator.subject) {
         if let bundleID = maybeBundleID {
-          try simulator.killApplication(withBundleID: bundleID)
+          try simulator.killApplication(withBundleID: bundleID).await()
         }
         try simulator.clearKeychain()
       }

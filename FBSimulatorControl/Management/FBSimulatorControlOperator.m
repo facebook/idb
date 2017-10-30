@@ -217,7 +217,7 @@
 
 - (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  return [self.simulator killApplicationWithBundleID:bundleID error:error];
+  return [[self.simulator killApplicationWithBundleID:bundleID] await:error] != nil;
 }
 
 - (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
