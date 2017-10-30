@@ -104,7 +104,7 @@
     previousCount:dcimPaths.count
     error:error];
 
-  FBProcessInfo *photosAppProcess = [simulator runningApplicationWithBundleID:@"com.apple.mobileslideshow" error:&innerError];
+  FBProcessInfo *photosAppProcess = [[simulator runningApplicationWithBundleID:@"com.apple.mobileslideshow"] await:&innerError];
   if (![photosAppProcess.processName isEqualToString:@"MobileSlideshow"]) {
     return [[[FBSimulatorError
       describe:@"Couldn't find MobileSlideShow process after uploading video"]

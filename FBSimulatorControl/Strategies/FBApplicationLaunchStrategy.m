@@ -85,7 +85,7 @@
   // This check confirms that if there's a currently running process for the given Bundle ID.
   // Since the Background Modes of a Simulator can cause an Application to be launched independently of our usage of CoreSimulator,
   // it's possible that application processes will come to life before `launchApplication` is called, if it has been previously killed.
-  FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&innerError];
+  FBProcessInfo *process = [[simulator runningApplicationWithBundleID:appLaunch.bundleID] await:&innerError];
   if (process) {
     return [[[[FBSimulatorError
       describeFormat:@"App %@ can't be launched as is running (%@)", appLaunch.bundleID, process.shortDescription]
@@ -139,14 +139,14 @@
 
   // Kill the Application if it exists. Don't bother killing the process if it doesn't exist
   FBSimulator *simulator = self.simulator;
-  NSError *error = nil;
-  FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&error];
-  FBFuture<NSNull *> *terminateFuture = process
-    ? [[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process]
-    : [FBFuture futureWithResult:NSNull.null];
-
-  return [terminateFuture
-    onQueue:self.simulator.workQueue fmap:^FBFuture *(NSNull *result) {
+  return [[[simulator
+    runningApplicationWithBundleID:appLaunch.bundleID]
+    onQueue:self.simulator.workQueue fmap:^(FBProcessInfo *process) {
+      return process
+        ? [[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process]
+        : [FBFuture futureWithResult:NSNull.null];
+    }]
+    onQueue:simulator.workQueue fmap:^FBFuture *(NSNull *result) {
       return [simulator launchApplication:appLaunch];
     }];
 }

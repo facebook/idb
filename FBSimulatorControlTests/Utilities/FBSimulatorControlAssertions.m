@@ -67,7 +67,7 @@
 - (void)assertSimulator:(FBSimulator *)simulator isRunningApplicationFromConfiguration:(FBApplicationLaunchConfiguration *)launchConfiguration
 {
   NSError *error = nil;
-  FBProcessInfo *process = [simulator runningApplicationWithBundleID:launchConfiguration.bundleID error:&error];
+  FBProcessInfo *process = [[simulator runningApplicationWithBundleID:launchConfiguration.bundleID] await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(process);
 }
@@ -173,7 +173,7 @@
 - (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration boots:(FBSimulatorBootConfiguration *)bootConfiguration launchesThenRelaunchesApplication:(FBApplicationLaunchConfiguration *)launchConfiguration
 {
   FBSimulator *simulator = [self assertSimulatorWithConfiguration:simulatorConfiguration boots:bootConfiguration thenLaunchesApplication:launchConfiguration];
-  FBProcessInfo *firstLaunch = [simulator runningApplicationWithBundleID:launchConfiguration.bundleID error:nil];
+  FBProcessInfo *firstLaunch = [[simulator runningApplicationWithBundleID:launchConfiguration.bundleID] await:nil];
 
   NSError *error = nil;
   BOOL success = [simulator launchOrRelaunchApplication:launchConfiguration error:&error];
@@ -183,7 +183,7 @@
   [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate];
   [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidLaunch];
   [self.assert noNotificationsToConsume];
-  FBProcessInfo *secondLaunch = [simulator runningApplicationWithBundleID:launchConfiguration.bundleID error:nil];
+  FBProcessInfo *secondLaunch = [[simulator runningApplicationWithBundleID:launchConfiguration.bundleID] await:nil];
 
   XCTAssertNotEqualObjects(firstLaunch, secondLaunch);
 

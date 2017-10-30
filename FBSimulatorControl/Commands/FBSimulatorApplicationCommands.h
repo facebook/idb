@@ -66,10 +66,9 @@ NS_ASSUME_NONNULL_BEGIN
  Returns the Process Info for a Application by Bundle ID.
 
  @param bundleID the Bundle ID to fetch an installed application for.
- @param error an error out for any error that occurs.
- @return An FBProcessInfo for the Application if one is running, nil otherwise.
+ @return A future that resolves with the process info of the running application.
  */
-- (nullable FBProcessInfo *)runningApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (FBFuture<FBProcessInfo *> *)runningApplicationWithBundleID:(NSString *)bundleID;
 
 @end
 

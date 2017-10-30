@@ -77,7 +77,7 @@
 - (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   NSError *innerError = nil;
-  FBProcessInfo *process = [self.simulator runningApplicationWithBundleID:bundleID error:&innerError];
+  FBProcessInfo *process = [[self.simulator runningApplicationWithBundleID:bundleID] await:&innerError];
   if (!process) {
     return [[[[FBSimulatorError
       describeFormat:@"Could not find a running application for '%@'", bundleID]
@@ -185,7 +185,7 @@
   // There is a call to a function called container_create_or_lookup_path_for_current_user, which allows the HOME environment variable
   // to be set for any Application. This is likely the true path to the Application Container, not where the .app is installed.
   NSError *innerError = nil;
-  FBProcessInfo *runningApplication = [self runningApplicationWithBundleID:bundleID error:&innerError];
+  FBProcessInfo *runningApplication = [[self runningApplicationWithBundleID:bundleID] await:&innerError];
   if (!runningApplication) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
@@ -197,29 +197,27 @@
   return homeDirectory;
 }
 
-- (nullable FBProcessInfo *)runningApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (FBFuture<FBProcessInfo *> *)runningApplicationWithBundleID:(NSString *)bundleID
 {
   NSParameterAssert(bundleID);
 
   NSError *innerError = nil;
   FBInstalledApplication *application = [self installedApplicationWithBundleID:bundleID error:&innerError];
   if (!application) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
+    return [FBSimulatorError failFutureWithError:innerError];
   }
-  NSNumber *processIdentifierNumber = [[[self.simulator
+  return [[self.simulator
     serviceNameAndProcessIdentifierForBundleID:bundleID]
-    await:error]
-    objectAtIndex:1];
-  if (!processIdentifierNumber) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
-  }
-  FBProcessInfo *processInfo = [self.simulator.processFetcher.processFetcher processInfoFor:processIdentifierNumber.intValue];
-  if (!processInfo) {
-    return [[FBSimulatorError
-      describeFormat:@"Could not fetch process info for %@ %@", processInfo, processIdentifierNumber]
-      fail:error];
-  }
-  return processInfo;
+    onQueue:self.simulator.workQueue fmap:^(NSArray<id> *result) {
+     NSNumber *processIdentifier = result[1];
+     FBProcessInfo *processInfo = [self.simulator.processFetcher.processFetcher processInfoFor:processIdentifier.intValue];
+     if (!processInfo) {
+       return [[FBSimulatorError
+        describeFormat:@"Could not fetch process info for %@", processIdentifier]
+        failFuture];
+     }
+    return [FBFuture futureWithResult:processInfo];
+   }];
 }
 
 #pragma mark Private

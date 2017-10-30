@@ -78,7 +78,7 @@
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
-  FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&error];
+  FBProcessInfo *process = [[simulator runningApplicationWithBundleID:appLaunch.bundleID] await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(process);
   if (!process) {
@@ -91,7 +91,7 @@
 
   NSNotification *actual = [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate timeout:20];
   XCTAssertFalse([actual.userInfo[FBSimulatorNotificationUserInfoKeyExpectedTermination] boolValue]);
-  XCTAssertNil([simulator runningApplicationWithBundleID:appLaunch.bundleID error:&error]);
+  XCTAssertNil([[simulator runningApplicationWithBundleID:appLaunch.bundleID] await:&error]);
 }
 
 - (void)testNotifiedByExpectedApplicationTermination
@@ -107,7 +107,7 @@
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
-  FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&error];
+  FBProcessInfo *process = [[simulator runningApplicationWithBundleID:appLaunch.bundleID] await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(process);
   if (!process) {
@@ -122,7 +122,7 @@
 
   NSNotification *actual = [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate timeout:20];
   XCTAssertTrue([actual.userInfo[FBSimulatorNotificationUserInfoKeyExpectedTermination] boolValue]);
-  XCTAssertNil([simulator runningApplicationWithBundleID:appLaunch.bundleID error:&error]);
+  XCTAssertNil([[simulator runningApplicationWithBundleID:appLaunch.bundleID] await:&error]);
 }
 
 @end
