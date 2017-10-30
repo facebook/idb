@@ -176,7 +176,7 @@
   FBProcessInfo *firstLaunch = [[simulator runningApplicationWithBundleID:launchConfiguration.bundleID] await:nil];
 
   NSError *error = nil;
-  BOOL success = [simulator launchOrRelaunchApplication:launchConfiguration error:&error];
+  BOOL success = [[simulator launchOrRelaunchApplication:launchConfiguration] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

@@ -209,7 +209,7 @@
     waitForDebugger:waitForDebugger
     output:FBProcessOutputConfiguration.outputToDevNull];
 
-  if (![self.simulator launchOrRelaunchApplication:configuration error:error]) {
+  if (![[self.simulator launchOrRelaunchApplication:configuration] await:error]) {
     return NO;
   }
   return YES;

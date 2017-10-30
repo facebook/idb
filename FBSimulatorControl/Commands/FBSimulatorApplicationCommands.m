@@ -137,13 +137,13 @@
   return [FBFuture futureWithResult:NSNull.null];
 }
 
-- (BOOL)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error
+- (FBFuture<NSNull *> *)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch
 {
   NSParameterAssert(appLaunch);
   return [[[FBApplicationLaunchStrategy
     strategyWithSimulator:self.simulator]
     launchOrRelaunchApplication:appLaunch]
-    await:error] != nil;
+    mapReplace:NSNull.null];
 }
 
 #pragma mark Querying Application State

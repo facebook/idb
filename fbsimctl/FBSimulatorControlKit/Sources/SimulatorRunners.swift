@@ -100,9 +100,7 @@ struct SimulatorActionRunner : Runner {
         try simulator.open(url)
       }
     case .relaunch(let appLaunch):
-      return iOSTargetRunner.simple(reporter, .relaunch, appLaunch.subject) {
-        try simulator.launchOrRelaunchApplication(appLaunch)
-      }
+      return FutureRunner(reporter, .relaunch, appLaunch.subject, simulator.launchOrRelaunchApplication(appLaunch))
     case .shutdown:
       return iOSTargetRunner.simple(reporter, .shutdown, simulator.subject) {
         try simulator.set!.kill(simulator)

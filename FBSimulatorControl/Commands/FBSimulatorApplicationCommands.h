@@ -28,10 +28,9 @@ NS_ASSUME_NONNULL_BEGIN
  A Relaunch is a kill of the currently launched application, followed by a launch.
 
  @param appLaunch the Application Launch Configuration to Launch.
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
+ @return A Future that resolves when the application is relaunched.
  */
-- (BOOL)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error;
+- (FBFuture<NSNull *> *)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
 
 #pragma mark Querying Application State
 
