@@ -43,13 +43,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID;
 
 /**
- Determines the location of the Home Directory of an Application, it's chroot jail.
+ Determines the location of the Data Container of an Application, it's chroot jail.
 
  @param bundleID the Bundle ID of the Application to search for,.
- @param error an error out for any error that occurs.
- @return the Home Directory of the Application if one was found, nil otherwise.
+ @return a Future with the home directory.
  */
-- (nullable NSString *)homeDirectoryOfApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (FBFuture<NSString *> *)dataContainerOfApplicationWithBundleID:(NSString *)bundleID;
 
 /**
  Returns the Process Info for a Application by Bundle ID.

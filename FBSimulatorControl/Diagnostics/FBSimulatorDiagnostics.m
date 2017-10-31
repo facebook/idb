@@ -174,7 +174,7 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
 {
   NSString *directory = nil;
   if (bundleID) {
-    directory = [self.simulator homeDirectoryOfApplicationWithBundleID:bundleID error:nil];
+    directory = [[self.simulator dataContainerOfApplicationWithBundleID:bundleID] await:nil];
   }
   if (!directory && globalFallback) {
     directory = self.simulator.dataDirectory;
