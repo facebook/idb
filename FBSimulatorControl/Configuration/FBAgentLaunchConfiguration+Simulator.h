@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  FBSimulatorControl extensions to FBAgentLaunchConfiguration.
  */
-@interface FBAgentLaunchConfiguration (Simulator) <FBiOSTargetAction>
+@interface FBAgentLaunchConfiguration (Simulator) <FBiOSTargetFuture>
 
 /**
  Creates a Process Output for a Simulator.

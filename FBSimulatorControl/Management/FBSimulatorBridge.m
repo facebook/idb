@@ -81,7 +81,7 @@
     arguments:@[portName]
     environment:@{}
     output:FBProcessOutputConfiguration.outputToDevNull];
-  FBSimulatorAgentOperation *operation = [simulator launchAgent:config error:error];
+  FBSimulatorAgentOperation *operation = [[simulator launchAgent:config] await:error];
   if (!operation) {
     return nil;
   }

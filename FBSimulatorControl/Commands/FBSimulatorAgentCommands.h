@@ -26,10 +26,9 @@ NS_ASSUME_NONNULL_BEGIN
  Launches the provided Agent with the given Configuration.
 
  @param agentLaunch the Agent Launch Configuration to Launch.
- @param error an error out, for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
+ @return A future wrapping the Agent Operation.
  */
-- (nullable FBSimulatorAgentOperation *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error;
+- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch;
 
 @end
 

@@ -26,15 +26,15 @@
   return FBiOSTargetActionTypeAgentLaunch;
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error;
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   if (![target isKindOfClass:FBSimulator.class]) {
     return [[FBSimulatorError
       describeFormat:@"%@ cannot launch an agent", target]
-      failBool:error];
+      failFuture];
   }
   FBSimulator *simulator = (FBSimulator *) target;
-  return [simulator launchAgent:self error:error] != nil;
+  return [[simulator launchAgent:self] mapReplace:self.actionType];
 }
 
 #pragma mark Public

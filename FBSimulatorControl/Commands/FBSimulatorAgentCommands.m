@@ -29,6 +29,8 @@
 
 @implementation FBSimulatorAgentCommands
 
+#pragma mark Initializers
+
 + (instancetype)commandsWithTarget:(FBSimulator *)targets
 {
   return [[self alloc] initWithSimulator:targets];
@@ -45,10 +47,12 @@
   return self;
 }
 
-- (nullable FBSimulatorAgentOperation *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
+#pragma mark FBSimulatorAgentCommands Implementation
+
+- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch
 {
   NSParameterAssert(agentLaunch);
-  return [[[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchAgent:agentLaunch] await:error];
+  return [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchAgent:agentLaunch];
 }
 
 @end
