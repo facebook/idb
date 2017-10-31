@@ -27,9 +27,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param source the Source Path. May be a File or Directory.
  @param bundleID the Bundle Identifier of the Container.
  @param containerPath the sub-path within the container.
- @param error an error out for any error that occurs.
+ @return A future that resolves when successful.
  */
-- (BOOL)copyDataAtPath:(NSString *)source toContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath error:(NSError **)error;
+- (FBFuture<NSNull *> *)copyDataAtPath:(NSString *)source toContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath;
 
 /**
  Relocate Data inside the Application Data Container.
@@ -37,9 +37,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the Bundle Identifier of the Container.
  @param containerPath the sub-path within the to copy out.
  @param destinationPath the path to copy in to.
- @param error an error out for any error that occurs.
+ @return A future that resolves when successful.
  */
-- (BOOL)copyDataFromContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath toDestinationPath:(NSString *)destinationPath error:(NSError **)error;
+- (FBFuture<NSNull *> *)copyDataFromContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath toDestinationPath:(NSString *)destinationPath;
 
 @end
 

@@ -40,40 +40,46 @@
 
 #pragma mark FBApplicationDataCommands
 
-- (BOOL)copyDataAtPath:(NSString *)source toContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath error:(NSError **)error
+- (FBFuture<NSNull *> *)copyDataAtPath:(NSString *)source toContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath
 {
-  NSString *dataContainer = [self dataContainerPathForBundleID:bundleID error:error];
+  NSError *error = nil;
+  NSString *dataContainer = [self dataContainerPathForBundleID:bundleID error:&error];
   if (!dataContainer) {
-    return NO;
+    return [[[FBSimulatorError
+      describeFormat:@"Could obtain data container for bundle id %@", bundleID]
+      causedBy:error]
+      failFuture];
   }
   NSString *destinationPath = [[dataContainer
     stringByAppendingPathComponent:containerPath]
     stringByAppendingPathComponent:source.lastPathComponent];
-  NSError *innerError = nil;
-  if (![NSFileManager.defaultManager copyItemAtPath:source toPath:destinationPath error:&innerError]) {
-    return [[[FBSimulatorError
-     describeFormat:@"Could not copy from %@ to %@", source, destinationPath]
-     causedBy:innerError]
-     failBool:error];
-  }
-  return YES;
-}
-
-- (BOOL)copyDataFromContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath toDestinationPath:(NSString *)destinationPath error:(NSError **)error
-{
-  NSString *dataContainer = [self dataContainerPathForBundleID:bundleID error:error];
-  if (!dataContainer) {
-    return NO;
-  }
-  NSString *source = [dataContainer stringByAppendingPathComponent:containerPath];
-  NSError *innerError = nil;
-  if (![NSFileManager.defaultManager copyItemAtPath:source toPath:destinationPath error:&innerError]) {
+  if (![NSFileManager.defaultManager copyItemAtPath:source toPath:destinationPath error:&error]) {
     return [[[FBSimulatorError
       describeFormat:@"Could not copy from %@ to %@", source, destinationPath]
-      causedBy:innerError]
-      failBool:error];
+      causedBy:error]
+      failFuture];
   }
-  return YES;
+  return [FBFuture futureWithResult:NSNull.null];
+}
+
+- (FBFuture<NSNull *> *)copyDataFromContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath toDestinationPath:(NSString *)destinationPath
+{
+  NSError *error;
+  NSString *dataContainer = [self dataContainerPathForBundleID:bundleID error:&error];
+  if (!dataContainer) {
+    return [[[FBSimulatorError
+      describeFormat:@"Could obtain data container for bundle id %@", bundleID]
+      causedBy:error]
+      failFuture];
+  }
+  NSString *source = [dataContainer stringByAppendingPathComponent:containerPath];
+  if (![NSFileManager.defaultManager copyItemAtPath:source toPath:destinationPath error:&error]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Could not copy from %@ to %@", source, destinationPath]
+      causedBy:error]
+      failFuture];
+  }
+  return [FBFuture futureWithResult:NSNull.null];
 }
 
 #pragma mark Private
