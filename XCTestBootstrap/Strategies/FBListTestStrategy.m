@@ -128,15 +128,19 @@
     return [FBFuture futureWithError:future.error];
   }
 
+  // Create the Consumer
   NSError *error = nil;
   FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
   FBFileReader *reader = [FBFileReader readerWithFilePath:otestQueryOutputPath consumer:consumer error:&error];
-  if (![reader startReadingWithError:&error]) {
-    return [FBFuture futureWithError:error];
+  if (!reader) {
+    return [FBControlCoreError failFutureWithError:error];
   }
-  return [[future
-    onQueue:self.executor.workQueue notifyOfCompletion:^(FBFuture *_) {
-      [reader stopReadingWithError:nil];
+  return [[[[reader
+    startReading]
+    fmapReplace:future]
+    onQueue:self.executor.workQueue chain:^FBFuture *(FBFuture *replacement) {
+      // Close the File Handle
+      return [[reader stopReading] fmapReplace:replacement];
     }]
     onQueue:self.executor.workQueue fmap:^(NSNumber *_) {
       NSMutableArray<NSString *> *testNames = [NSMutableArray array];

@@ -364,6 +364,13 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
   }];
 }
 
+- (FBFuture *)fmapReplace:(FBFuture *)replacement
+{
+  return [self onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0) chain:^FBFuture *(FBFuture *_) {
+    return replacement;
+  }];
+}
+
 - (FBFuture *)rephraseFailure:(NSString *)format, ...
 {
   va_list args;

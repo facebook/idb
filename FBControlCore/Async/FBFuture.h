@@ -187,6 +187,14 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
 - (FBFuture *)mapReplace:(id)replacement;
 
 /**
+ Once the reciever has resolved, resolves with a second future.
+
+ @param replacement the replacement
+ @return a future with the replacement.
+ */
+- (FBFuture *)fmapReplace:(FBFuture *)replacement;
+
+/**
  Replaces the error message in the event of a failure.
 
  @param format the format string to re-phrase the failure message.

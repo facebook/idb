@@ -546,6 +546,20 @@
   ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
+- (void)testReplaceFuture
+{
+  FBMutableFuture<NSNumber *> *replacement = FBMutableFuture.future;
+  FBFuture<NSNumber *> *future = [FBFuture futureWithDelay:0.1 future:[[FBFuture futureWithResult:@NO] fmapReplace:replacement]];
+  dispatch_async(self.queue, ^{
+    [replacement resolveWithResult:@YES];
+  });
+
+  [self waitForExpectations:@[
+    [self keyValueObservingExpectationForObject:future keyPath:@"result" expectedValue:@YES],
+    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateCompletedWithResult)]
+  ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
 #pragma mark - Helpers
 
 - (void)assertSynchronousResolutionWithBlock:(void (^)(FBMutableFuture *))resolveBlock expectedState:(FBFutureState)state expectedResult:(id)expectedResult expectedError:(NSError *)expectedError
