@@ -142,27 +142,16 @@
       causedBy:error]
       failFuture];
   }
-  if (![otestShimReader startReadingWithError:&error]) {
-    [future cancel];
-    return [[[FBXCTestError
-      describeFormat:@"Failed to start reading fifo: %@", otestShimOutputPath]
-      causedBy:error]
-      failFuture];
-  }
 
-  return [future
+  return [[[[otestShimReader
+    startReading]
+    fmapReplace:future]
+    onQueue:self.executor.workQueue fmap:^(id _) {
+      return [otestShimReader stopReading];
+    }]
     onQueue:self.executor.workQueue map:^(id _) {
-      // Fail if we can't close.
-      NSError *innerError = nil;
-      if (![otestShimReader stopReadingWithError:&innerError]) {
-        return [[[FBXCTestError
-          describeFormat:@"Failed to stop reading fifo: %@", otestShimOutputPath]
-          causedBy:innerError]
-          failFuture];
-      }
       [reporter didFinishExecutingTestPlan];
-
-      return [FBFuture futureWithResult:NSNull.null];
+      return NSNull.null;
     }];
 }
 
