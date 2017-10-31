@@ -560,6 +560,17 @@
   ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
+- (void)testFallback
+{
+  NSError *error = [NSError errorWithDomain:@"foo" code:0 userInfo:nil];
+  FBFuture<NSNumber *> *future = [FBFuture futureWithDelay:0.1 future:[[FBFuture futureWithError:error] fallback:@YES]];
+
+  [self waitForExpectations:@[
+    [self keyValueObservingExpectationForObject:future keyPath:@"result" expectedValue:@YES],
+    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateCompletedWithResult)]
+  ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
 #pragma mark - Helpers
 
 - (void)assertSynchronousResolutionWithBlock:(void (^)(FBMutableFuture *))resolveBlock expectedState:(FBFutureState)state expectedResult:(id)expectedResult expectedError:(NSError *)expectedError
