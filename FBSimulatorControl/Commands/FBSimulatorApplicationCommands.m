@@ -113,32 +113,29 @@
 {
   NSParameterAssert(bundleID);
 
-  // Confirm the app is suitable to be uninstalled.
-  if ([self.simulator isSystemApplicationWithBundleID:bundleID error:nil]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Can't uninstall '%@' as it is a system Application", bundleID]
-      inSimulator:self.simulator]
-      failFuture];
-  }
-  NSError *innerError = nil;
-  if (![[self.simulator installedApplicationWithBundleID:bundleID] await:&innerError]) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Can't uninstall '%@' as it isn't installed", bundleID]
-      causedBy:innerError]
-      inSimulator:self.simulator]
-      failFuture];
-  }
-  // Kill the app if it's running
-  [[self killApplicationWithBundleID:bundleID] await:nil];
-  // Then uninstall for real.
-  if (![self.simulator.device uninstallApplication:bundleID withOptions:nil error:&innerError]) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to uninstall '%@'", bundleID]
-      causedBy:innerError]
-      inSimulator:self.simulator]
-      failFuture];
-  }
-  return [FBFuture futureWithResult:NSNull.null];
+  return [[[[self.simulator
+    installedApplicationWithBundleID:bundleID]
+    onQueue:self.simulator.asyncQueue fmap:^FBFuture *(FBInstalledApplication *installedApplication) {
+      if (installedApplication.installType == FBApplicationInstallTypeSystem) {
+        return [[FBSimulatorError
+          describeFormat:@"Can't uninstall '%@' as it is a system Application", installedApplication]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:installedApplication];
+    }]
+    onQueue:self.simulator.workQueue fmap:^(FBInstalledApplication *_) {
+      return [[self.simulator killApplicationWithBundleID:bundleID] fallback:NSNull.null];
+    }]
+    onQueue:self.simulator.workQueue fmap:^(id _) {
+      NSError *error = nil;
+      if (![self.simulator.device uninstallApplication:bundleID withOptions:nil error:&error]) {
+        return [[[FBSimulatorError
+          describeFormat:@"Failed to uninstall '%@'", bundleID]
+          causedBy:error]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
 }
 
 - (FBFuture<NSNull *> *)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch
@@ -166,16 +163,6 @@
     return [FBFuture futureWithError:error];
   }
   return [FBFuture futureWithResult:application];
-}
-
-- (BOOL)isSystemApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  FBInstalledApplication *application = [[self installedApplicationWithBundleID:bundleID] await:error];
-  if (!application) {
-    return NO;
-  }
-
-  return application.installType == FBApplicationInstallTypeSystem;
 }
 
 - (nullable NSString *)homeDirectoryOfApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
@@ -281,8 +268,11 @@ static NSString *const KeyDataContainer = @"DataContainer";
       failFuture];
   }
 
-  if ([self.simulator isSystemApplicationWithBundleID:application.bundleID error:&error]) {
-    return [FBFuture futureWithError:error];
+  FBInstalledApplication *installed = [[self.simulator installedApplicationWithBundleID:application.bundleID] await:nil];
+  if (installed && installed.installType == FBApplicationInstallTypeSystem) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot install app as it is a system app %@", installed]
+      failFuture];
   }
 
   NSSet<NSString *> *binaryArchitectures = application.binary.architectures;

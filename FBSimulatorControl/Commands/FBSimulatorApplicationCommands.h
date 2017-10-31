@@ -43,15 +43,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID;
 
 /**
- Determines whether a provided Bundle ID represents a System Application
-
- @param bundleID the Bundle ID to fetch an installed application for.
- @param error an error out for any error that occurs.
- @return YES if the Application with the provided is a System Application, NO otherwise.
- */
-- (BOOL)isSystemApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
-
-/**
  Determines the location of the Home Directory of an Application, it's chroot jail.
 
  @param bundleID the Bundle ID of the Application to search for,.

@@ -161,20 +161,15 @@
 {
   // Confirm the app is suitable to be uninstalled.
   FBSimulator *simulator = self.simulator;
-  if ([simulator isSystemApplicationWithBundleID:bundleID error:nil]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Can't uninstall '%@' as it is a system Application", bundleID]
-      inSimulator:simulator]
-      failBool:error];
-  }
   NSError *innerError = nil;
-  if (![[simulator installedApplicationWithBundleID:bundleID] await:&innerError]) {
-    return [[[[FBSimulatorError
+  FBInstalledApplication *application = [[simulator installedApplicationWithBundleID:bundleID] await:&innerError];
+  if (!application) {
+    return [[[FBSimulatorError
       describeFormat:@"Can't uninstall '%@' as it isn't installed", bundleID]
       causedBy:innerError]
-      inSimulator:simulator]
       failBool:error];
   }
+
   // Kill the app if it's running
   [[simulator killApplicationWithBundleID:bundleID] await:nil];
   // Then uninstall for real.
