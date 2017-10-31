@@ -41,6 +41,9 @@ extern FBDeviceModel const FBDeviceModeliPhone6SPlus;
 extern FBDeviceModel const FBDeviceModeliPhoneSE;
 extern FBDeviceModel const FBDeviceModeliPhone7;
 extern FBDeviceModel const FBDeviceModeliPhone7Plus;
+extern FBDeviceModel const FBDeviceModeliPhone8;
+extern FBDeviceModel const FBDeviceModeliPhone8Plus;
+extern FBDeviceModel const FBDeviceModeliPhoneX;
 extern FBDeviceModel const FBDeviceModeliPad2;
 extern FBDeviceModel const FBDeviceModeliPadRetina;
 extern FBDeviceModel const FBDeviceModeliPadAir;
@@ -48,11 +51,18 @@ extern FBDeviceModel const FBDeviceModeliPadAir2;
 extern FBDeviceModel const FBDeviceModeliPadPro;
 extern FBDeviceModel const FBDeviceModeliPadPro_9_7_Inch;
 extern FBDeviceModel const FBDeviceModeliPadPro_12_9_Inch;
-extern FBDeviceModel const FBDeviceModelAppleTV1080p;
+extern FBDeviceModel const FBDeviceModeliPadPro_9_7_Inch_2ndGeneration;
+extern FBDeviceModel const FBDeviceModeliPadPro_12_9_Inch_2ndGeneration;
+extern FBDeviceModel const FBDeviceModeliPadPro_10_5_Inch;
+extern FBDeviceModel const FBDeviceModelAppleTV;
+extern FBDeviceModel const FBDeviceModelAppleTV4K;
+extern FBDeviceModel const FBDeviceModelAppleTV4KAt1080p;
 extern FBDeviceModel const FBDeviceModelAppleWatch38mm;
 extern FBDeviceModel const FBDeviceModelAppleWatch42mm;
 extern FBDeviceModel const FBDeviceModelAppleWatchSeries2_38mm;
 extern FBDeviceModel const FBDeviceModelAppleWatchSeries2_42mm;
+extern FBDeviceModel const FBDeviceModelAppleWatchSeries3_38mm;
+extern FBDeviceModel const FBDeviceModelAppleWatchSeries3_42mm;
 
 /**
  OS Versions Name Enumeration.

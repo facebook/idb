@@ -56,8 +56,8 @@
 
 - (void)testTVOSConfiguration
 {
-  FBSimulatorConfiguration *configuration = [[FBSimulatorConfiguration withDeviceModel:FBDeviceModelAppleTV1080p] withOSNamed:FBOSVersionNametvOS_10_0];
-  XCTAssertEqualObjects(configuration.device.model, FBDeviceModelAppleTV1080p);
+  FBSimulatorConfiguration *configuration = [[FBSimulatorConfiguration withDeviceModel:FBDeviceModelAppleTV] withOSNamed:FBOSVersionNametvOS_10_0];
+  XCTAssertEqualObjects(configuration.device.model, FBDeviceModelAppleTV);
   XCTAssertEqualObjects(configuration.os.name, FBOSVersionNametvOS_10_0);
 }
 
