@@ -12,9 +12,11 @@
 #import <libkern/OSAtomic.h>
 #import <objc/runtime.h>
 
-#import "FBFuture.h"
+#import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
+#import "FBControlCoreLogger.h"
+#import "FBFuture.h"
 
 @interface FBRunLoopSpinner ()
 @property (nonatomic, copy) NSString *timeoutErrorMessage;
@@ -100,6 +102,19 @@
 
 @implementation NSRunLoop (FBControlCore)
 
+static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
+
++ (void)updateRunLoopIsAwaiting:(BOOL)spinning
+{
+  NSMutableDictionary *threadLocals = NSThread.currentThread.threadDictionary;
+  BOOL spinningRecursively = spinning && [threadLocals[KeyIsAwaiting] boolValue];
+  if (spinningRecursively) {
+    id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
+    [logger logFormat:@"Awaiting Future Recursively %@", [FBCollectionInformation oneLineDescriptionFromArray:NSThread.callStackSymbols]];
+  }
+  threadLocals[KeyIsAwaiting] = @(spinning);
+}
+
 - (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilTrue:( BOOL (^)(void) )untilTrue
 {
   NSDate *date = [NSDate dateWithTimeIntervalSinceNow:timeout];
@@ -142,9 +157,11 @@
 
 - (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout didTimeout:(BOOL *)didTimeout error:(NSError **)error
 {
+  [NSRunLoop updateRunLoopIsAwaiting:YES];
   BOOL completed = [self spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
     return future.hasCompleted;
   }];
+  [NSRunLoop updateRunLoopIsAwaiting:NO];
   if (!completed) {
     if (didTimeout) {
       *didTimeout = YES;
@@ -164,7 +181,6 @@
   }
   return future.result;
 }
-
 
 - (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError **)error
 {
