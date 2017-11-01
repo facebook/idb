@@ -80,16 +80,11 @@
 
 - (FBFuture<NSNull *> *)killApplicationWithBundleID:(NSString *)bundleID
 {
-  NSError *innerError = nil;
-  FBProcessInfo *process = [[self.simulator runningApplicationWithBundleID:bundleID] await:&innerError];
-  if (!process) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Could not find a running application for '%@'", bundleID]
-      inSimulator:self.simulator]
-      causedBy:innerError]
-      failFuture];
-  }
-  return [[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:self.simulator] terminate:process];
+  return [[self.simulator
+    runningApplicationWithBundleID:bundleID]
+    onQueue:self.simulator.workQueue map:^(FBProcessInfo *process) {
+      return [[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:self.simulator] terminate:process];
+    }];
 }
 
 - (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications
