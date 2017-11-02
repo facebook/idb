@@ -133,14 +133,16 @@
   return self;
 }
 
-- (BOOL)startRecordingWithError:(NSError **)error
+#pragma mark Public
+
+- (FBFuture<NSNull *> *)startRecording
 {
-  return [self.encoder startRecordingWithError:error];
+  return [self.encoder startRecording];
 }
 
-- (BOOL)stopRecordingWithError:(NSError **)error
+- (FBFuture<NSNull *> *)stopRecording
 {
-  return [self.encoder stopRecordingWithError:error];
+  return [self.encoder stopRecording];
 }
 
 #pragma mark FBTerminationHandle
@@ -152,7 +154,7 @@
 
 - (void)terminate
 {
-  [self.encoder stopRecordingWithError:nil];
+  [[self.encoder stopRecording] await:nil];
 }
 
 @end

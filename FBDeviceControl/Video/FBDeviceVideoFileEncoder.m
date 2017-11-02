@@ -19,6 +19,8 @@
 @property (nonatomic, strong, readonly) AVCaptureSession *session;
 @property (nonatomic, strong, readonly) AVCaptureMovieFileOutput *output;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finishFuture;
 @property (nonatomic, copy, readonly) NSString *filePath;
 
 @end
@@ -50,39 +52,41 @@
   _output = output;
   _filePath = filePath;
   _logger = logger;
+  _startFuture = FBMutableFuture.future;
+  _finishFuture = FBMutableFuture.future;
 
   return self;
 }
 
 #pragma mark Public Methods
 
-- (BOOL)startRecordingWithError:(NSError **)error
+- (FBFuture<NSNull *> *)startRecording
 {
   NSError *innerError = nil;
   if ([NSFileManager.defaultManager fileExistsAtPath:self.filePath] && ![NSFileManager.defaultManager removeItemAtPath:self.filePath error:&innerError]) {
     return [[[FBDeviceControlError
       describeFormat:@"Failed to remove existing device video at %@", self.filePath]
       causedBy:innerError]
-      failBool:error];
+      failFuture];
   }
   if (![NSFileManager.defaultManager createDirectoryAtPath:self.filePath.stringByDeletingLastPathComponent withIntermediateDirectories:YES attributes:nil error:&innerError]) {
     return [[[FBDeviceControlError
       describeFormat:@"Failed to remove create auxillary directory for device at %@", self.filePath]
       causedBy:innerError]
-      failBool:error];
+      failFuture];
   }
   NSURL *file = [NSURL fileURLWithPath:self.filePath];
   [self.session startRunning];
   [self.output startRecordingToOutputFileURL:file recordingDelegate:self];
   [self.logger logFormat:@"Started Video Session for Device Video at file %@", self.filePath];
-  return YES;
+  return self.startFuture;
 }
 
-- (BOOL)stopRecordingWithError:(NSError **)error
+- (FBFuture<NSNull *> *)stopRecording
 {
   [self.output stopRecording];
   [self.session stopRunning];
-  return YES;
+  return self.finishFuture;
 }
 
 #pragma mark Recording Delegate
@@ -90,6 +94,7 @@
 - (void)captureOutput:(AVCaptureFileOutput *)captureOutput didStartRecordingToOutputFileAtURL:(NSURL *)fileURL fromConnections:(NSArray *)connections
 {
   [self.logger logFormat:@"Did Start Recording at %@", self.filePath];
+  [self.startFuture resolveWithResult:NSNull.null];
 }
 
 - (void)captureOutput:(AVCaptureFileOutput *)captureOutput didPauseRecordingToOutputFileAtURL:(NSURL *)fileURL fromConnections:(NSArray *)connections
@@ -100,6 +105,7 @@
 - (void)captureOutput:(AVCaptureFileOutput *)captureOutput didFinishRecordingToOutputFileAtURL:(NSURL *)outputFileURL fromConnections:(NSArray *)connections error:(NSError *)error
 {
   [self.logger logFormat:@"Did Finish Recording at %@", self.filePath];
+  [self.finishFuture resolveWithResult:NSNull.null];
 }
 
 - (void)captureOutput:(AVCaptureFileOutput *)captureOutput didResumeRecordingToOutputFileAtURL:(NSURL *)fileURL fromConnections:(NSArray *)connections

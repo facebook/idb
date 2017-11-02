@@ -21,6 +21,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBDeviceVideo : NSObject <FBVideoRecordingSession>
 
+#pragma mark Initializers
+
 /**
  Obtains the AVCaptureSession for a Device.
 
@@ -39,21 +41,21 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable instancetype)videoForDevice:(FBDevice *)device filePath:(NSString *)filePath error:(NSError **)error;
 
+#pragma mark Public
+
 /**
  Starts Recording the Video for a Device.
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return a Future that resolves when recording has started.
  */
-- (BOOL)startRecordingWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)startRecording;
 
 /**
  Stops Recording the Video for a Device.
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return a Future that resolves when recording has stopped.
  */
-- (BOOL)stopRecordingWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)stopRecording;
 
 @end
 

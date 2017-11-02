@@ -61,7 +61,7 @@
   if (!self.video) {
     return [FBDeviceControlError failWithError:innerError errorOut:error];
   }
-  if (![self.video startRecordingWithError:error]) {
+  if (![[self.video startRecording] await:error]) {
     return nil;
   }
   return self.video;
@@ -74,7 +74,7 @@
       describeFormat:@"There was no existing video instance for %@", self.device]
       failBool:error];
   }
-  return [self.video stopRecordingWithError:error];
+  return [[self.video stopRecording] await:error] != nil;
 }
 
 #pragma mark FBBitmapStreamingCommands
