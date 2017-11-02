@@ -84,9 +84,27 @@
     }];
 }
 
-- (FBFuture<NSArray<id> *> *)serviceNameAndProcessIdentifierForBundleID:(NSString *)bundleID
+- (FBFuture<NSArray<id> *> *)serviceNameAndProcessIdentifierForSubstring:(NSString *)substring
 {
-  return [self serviceNameAndProcessIdentifierForSubstring:bundleID];
+  return [[self
+    runWithArguments:@[@"list"]]
+    onQueue:self.simulator.workQueue fmap:^(NSString *text) {
+      FBLogSearchPredicate *predicate = [FBLogSearchPredicate substrings:@[substring]];
+      FBLogSearch *search = [FBLogSearch withText:text predicate:predicate];
+      NSString *line = search.firstMatchingLine;
+      if (!line) {
+        return [[FBSimulatorError
+          describeFormat:@"No Matching processes for %@", substring]
+          failFuture];
+      }
+      NSError *error = nil;
+      pid_t processIdentifier = 0;
+      NSString *serviceName = [FBSimulatorLaunchCtlCommands extractServiceNameFromListLine:line processIdentifierOut:&processIdentifier error:&error];
+      if (!serviceName) {
+        return [FBControlCoreError failFutureWithError:error];
+      }
+      return [FBFuture futureWithResult:@[serviceName, @(processIdentifier)]];
+    }];
 }
 
 - (FBFuture<NSNumber *> *)processIsRunningOnSimulator:(FBProcessInfo *)process
@@ -147,29 +165,6 @@
 }
 
 #pragma mark Private
-
-- (FBFuture<NSArray<id> *> *)serviceNameAndProcessIdentifierForSubstring:(NSString *)substring
-{
-  return [[self
-    runWithArguments:@[@"list"]]
-    onQueue:self.simulator.workQueue fmap:^(NSString *text) {
-      FBLogSearchPredicate *predicate = [FBLogSearchPredicate substrings:@[substring]];
-      FBLogSearch *search = [FBLogSearch withText:text predicate:predicate];
-      NSString *line = search.firstMatchingLine;
-      if (!line) {
-        return [[FBSimulatorError
-          describeFormat:@"No Matching processes for %@", substring]
-          failFuture];
-      }
-      NSError *error = nil;
-      pid_t processIdentifier = 0;
-      NSString *serviceName = [FBSimulatorLaunchCtlCommands extractServiceNameFromListLine:line processIdentifierOut:&processIdentifier error:&error];
-      if (!serviceName) {
-        return [FBControlCoreError failFutureWithError:error];
-      }
-      return [FBFuture futureWithResult:@[serviceName, @(processIdentifier)]];
-    }];
-}
 
 + (NSString *)extractServiceNameFromListLine:(NSString *)line processIdentifierOut:(pid_t *)processIdentifierOut error:(NSError **)error
 {

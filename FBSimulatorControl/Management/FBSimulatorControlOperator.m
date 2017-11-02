@@ -223,7 +223,7 @@
 - (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   NSNumber *processIdentifier = [[[self.simulator
-    serviceNameAndProcessIdentifierForBundleID:bundleID]
+    serviceNameAndProcessIdentifierForSubstring:bundleID]
     await:error]
     objectAtIndex:1];
   if (!processIdentifier) {

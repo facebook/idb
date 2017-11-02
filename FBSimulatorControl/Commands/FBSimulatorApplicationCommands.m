@@ -180,7 +180,8 @@
   return [[[self
     installedApplicationWithBundleID:bundleID]
     onQueue:self.simulator.workQueue fmap:^(FBInstalledApplication *_) {
-      return [self.simulator serviceNameAndProcessIdentifierForBundleID:bundleID];
+      NSString *serviceName = [NSString stringWithFormat:@"UIKitApplication:%@", bundleID];
+      return [self.simulator serviceNameAndProcessIdentifierForSubstring:serviceName];
     }]
     onQueue:self.simulator.workQueue fmap:^(NSArray<id> *result) {
      NSNumber *processIdentifier = result[1];

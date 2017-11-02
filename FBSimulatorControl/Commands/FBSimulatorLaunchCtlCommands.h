@@ -40,13 +40,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSString *> *)serviceNameForProcess:(FBProcessInfo *)process;
 
 /**
- Finds the Service Name for a given Application Bundle ID.
- Optionally provides the Process Identifier of this Application.
+ Finds the Service Name for a given Service Name.
+ This will perform a substring match, so the first matching service will be returned.
 
- @param bundleID the Bundle ID of the Application to fetch.
+ @param serviceName a Substring of the Service to fetch.
  @return A Future, wrapping a tuple of String Service Name & NSNumber Process Identifier.
  */
-- (FBFuture<NSArray<id> *> *)serviceNameAndProcessIdentifierForBundleID:(NSString *)bundleID;
+- (FBFuture<NSArray<id> *> *)serviceNameAndProcessIdentifierForSubstring:(NSString *)serviceName;
 
 /**
  Consults the Simulator's launchctl to determine if the given process.

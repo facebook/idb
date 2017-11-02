@@ -103,7 +103,7 @@ static NSString *const KeyServiceName = @"service_name";
   }
   FBProcessFetcher *processFetcher = [[(FBSimulator *)target processFetcher] processFetcher];
   return [[[[commands
-    serviceNameAndProcessIdentifierForBundleID:self.serviceName]
+    serviceNameAndProcessIdentifierForSubstring:self.serviceName]
     onQueue:target.workQueue fmap:^(NSArray<id> *tuple) {
       NSNumber *processIdentifier = tuple[1];
       FBProcessInfo *processInfo = [processFetcher processInfoFor:processIdentifier.intValue];
