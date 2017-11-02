@@ -31,35 +31,6 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- Wraps FBFileConsumer Implementations with the ability to await EOF events.
- */
-@interface FBAwaitableFileDataConsumer : NSObject<FBFileConsumer>
-
-/**
- Creates an Awaitable File Data Consumer.
-
- @param consumer the underlying consumer
- @return a new Data Consumer.
- */
-+ (instancetype)consumerWithConsumer:(id<FBFileConsumer>)consumer;
-
-/**
- Await for the Consumer to finish consuming the input.
-
- @param timeout the timeout to wait in seconds.
- @param error an error out if the timeout is reached.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)awaitEndOfFileWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
-
-/**
- Whether the Consumer has consumed the EOF.
- */
-@property (atomic, assign, readonly) BOOL hasConsumedEOF;
-
-@end
-
-/**
  A Reader of Text Data, calling the callback when a full line is available.
  */
 @interface FBLineFileConsumer : NSObject <FBFileConsumer>

@@ -6,60 +6,6 @@
 #import "FBControlCoreError.h"
 #import "FBLineBuffer.h"
 
-@interface FBAwaitableFileDataConsumer ()
-
-@property (nonatomic, strong, readonly) id<FBFileConsumer> consumer;
-@property (atomic, assign, readwrite) BOOL hasConsumedEOF;
-
-@end
-
-@implementation FBAwaitableFileDataConsumer
-
-+ (instancetype)consumerWithConsumer:(id<FBFileConsumer>)consumer
-{
-  return [[self alloc] initWithConsumer:consumer];
-}
-
-- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _consumer = consumer;
-  _hasConsumedEOF = NO;
-
-  return self;
-}
-
-- (void)consumeData:(NSData *)data
-{
-  NSAssert(self.hasConsumedEOF == NO, @"Has already consumed End-of-File");
-  [self.consumer consumeData:data];
-}
-
-- (void)consumeEndOfFile
-{
-  NSAssert(self.hasConsumedEOF == NO, @"Has already consumed End-of-File");
-  self.hasConsumedEOF = YES;
-}
-
-- (BOOL)awaitEndOfFileWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  BOOL success = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
-    return self.hasConsumedEOF;
-  }];
-  if (!success) {
-    return [[FBControlCoreError
-      describeFormat:@"Timeout waiting %f seconds for EOF", timeout]
-      failBool:error];
-  }
-  return YES;
-}
-
-@end
-
 @interface FBLineFileConsumer ()
 
 @property (nonatomic, strong, nullable, readwrite) dispatch_queue_t queue;
