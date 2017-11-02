@@ -12,8 +12,14 @@
 #import <FBControlCore/FBDiagnostic.h>
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBJSONConversion.h>
+#import <FBControlCore/FBiOSTargetAction.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+/**
+ The Action Type for the HID.
+ */
+extern FBiOSTargetActionType const FBiOSTargetActionTypeSearch;
 
 @class FBDiagnostic;
 @class FBLogSearchPredicate;
@@ -55,7 +61,7 @@ typedef NS_OPTIONS(NSUInteger, FBBatchLogSearchOptions) {
  Diagnostics are defined in terms of thier short_name.
  Logs are defined in terms of Search Predicates.
  */
-@interface FBBatchLogSearch : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+@interface FBBatchLogSearch : NSObject <NSCopying, FBiOSTargetFuture>
 
 #pragma mark Initializers
 

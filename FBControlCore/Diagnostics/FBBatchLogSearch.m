@@ -12,15 +12,19 @@
 #import "FBCollectionInformation.h"
 #import "FBCollectionOperations.h"
 #import "FBConcurrentCollectionOperations.h"
+#import "FBControlCoreConfigurationVariants.h"
 #import "FBControlCoreError.h"
 #import "FBDiagnostic.h"
-#import "NSPredicate+FBControlCore.h"
+#import "FBEventReporter.h"
+#import "FBLogCommands.h"
 #import "FBLogSearch.h"
+#import "FBSubject.h"
 #import "FBiOSTarget.h"
 #import "FBiOSTargetDiagnostics.h"
-#import "FBLogCommands.h"
+#import "NSPredicate+FBControlCore.h"
 #import "NSRunLoop+FBControlCore.h"
-#import "FBControlCoreConfigurationVariants.h"
+
+FBiOSTargetActionType const FBiOSTargetActionTypeSearch = @"search";
 
 @implementation FBBatchLogSearchResult
 
@@ -342,6 +346,25 @@ static NSString *const KeySince = @"since";
     searchWithMapping:@{@"" : @[predicate]} options:options since:nil error:nil]
     searchDiagnostics:diagnostics]
     mapping];
+}
+
+#pragma mark FBiOSTargetFuture
+
+- (FBiOSTargetActionType)actionType
+{
+  return FBiOSTargetActionTypeSearch;
+}
+
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+{
+  FBiOSTargetActionType actionType = self.actionType;
+  return [[self
+    searchOnTarget:target]
+    onQueue:target.workQueue map:^FBFuture *(FBBatchLogSearchResult *result) {
+      id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:actionType type:FBEventTypeDiscrete value:result];
+      [reporter report:subject];
+      return [FBFuture futureWithResult:actionType];
+    }];
 }
 
 #pragma mark Private

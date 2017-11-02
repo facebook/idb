@@ -50,8 +50,6 @@ struct iOSActionProvider {
             try target.stopRecording().await()
           }
       }
-    case .search(let search):
-      return SearchRunner(target, reporter, search)
     case .stream(let configuration, let output):
       return iOSTargetRunner.handled(reporter, .stream, configuration.subject) {
         let stream = try target.createStream(with: configuration)
@@ -200,29 +198,6 @@ private struct DiagnosticsRunner : Runner {
       case .Path:
         return FBDiagnosticBuilder(diagnostic: diagnostic).writeOutToFile().build()
       }
-    }
-  }
-}
-
-private struct SearchRunner : Runner {
-  let target: FBiOSTarget
-  let reporter: iOSReporter
-  let search: FBBatchLogSearch
-
-  init(_ target: FBiOSTarget, _ reporter: iOSReporter, _ search: FBBatchLogSearch) {
-    self.target = target
-    self.reporter = reporter
-    self.search = search
-  }
-
-  func run() -> CommandResult {
-    do {
-      let results = try search.search(on: self.target).await()
-      let subject = FBEventReporterSubject(name: .search, type: .discrete, subject: results.subject)
-      self.reporter.reporter.report(subject)
-      return .success(nil)
-    } catch  {
-      return .failure("Failed to search with " + self.search.description)
     }
   }
 }

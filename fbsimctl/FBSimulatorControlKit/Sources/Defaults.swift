@@ -126,8 +126,6 @@ extension Action {
         fallthrough
       case .listen:
         fallthrough
-      case .search:
-        fallthrough
       case .diagnose:
         return FBiOSTargetQuery.allTargets()
       default:

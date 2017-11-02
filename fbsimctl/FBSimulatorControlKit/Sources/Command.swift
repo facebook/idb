@@ -93,7 +93,6 @@ public enum Action {
   case open(URL)
   case record(Record)
   case relaunch(FBApplicationLaunchConfiguration)
-  case search(FBBatchLogSearch)
   case setLocation(Double,Double)
   case shutdown
   case stream(FBBitmapStreamConfiguration, FileOutput)
@@ -136,6 +135,10 @@ public enum Action {
 
   static func logTail(_ configuration: FBLogTailConfiguration) -> Action {
     return self.core(configuration)
+  }
+
+  static func search(_ search: FBBatchLogSearch) -> Action {
+    return self.coreFuture(search)
   }
 
   static func serviceInfo(_ serviceName: String) -> Action {
@@ -336,8 +339,6 @@ public func == (left: Action, right: Action) -> Bool {
     return leftStart == rightStart
   case (.relaunch(let leftLaunch), .relaunch(let rightLaunch)):
     return leftLaunch == rightLaunch
-  case (.search(let leftSearch), .search(let rightSearch)):
-    return leftSearch == rightSearch
   case (.setLocation(let leftLat, let leftLon), .setLocation(let rightLat, let rightLon)):
     return leftLat == rightLat && leftLon == rightLon
   case (.shutdown, .shutdown):
@@ -394,8 +395,6 @@ extension Action {
       return (.record, RecordSubject(record))
     case .relaunch(let appLaunch):
       return (.relaunch, appLaunch.subject)
-    case .search(let search):
-      return (.search, search.subject)
     case .setLocation:
       return (.setLocation, nil)
     case .shutdown:
