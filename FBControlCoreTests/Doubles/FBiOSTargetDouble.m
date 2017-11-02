@@ -86,19 +86,19 @@
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
-- (nullable id<FBVideoRecordingSession>)startRecordingToFile:(NSString *)filePath error:(NSError **)error
+- (FBFuture<id<FBVideoRecordingSession>> *)startRecordingToFile:(nullable NSString *)filePath
 {
-  return nil;
+  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
+}
+
+- (FBFuture<NSNull *> *)stopRecording
+{
+  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
 - (nullable id<FBBitmapStream>)createStreamWithConfiguration:(FBBitmapStreamConfiguration *)configuration error:(NSError **)error
 {
   return nil;
-}
-
-- (BOOL)stopRecordingWithError:(NSError **)error
-{
-  return NO;
 }
 
 - (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications

@@ -9,8 +9,9 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBTerminationHandle.h>
+#import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
+#import <FBControlCore/FBTerminationHandle.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -38,18 +39,16 @@ extern FBTerminationHandleType const FBTerminationTypeHandleVideoRecording;
  Starts the Recording of Video to a File.
 
  @param filePath an optional filePath to write to. If not provided, a default file path will be used.
- @param error an error out for any error that occurs.
- @return the Video Recording session on success, nil otherwise.
+ @return A Future, wrapping the recording session.
  */
-- (nullable id<FBVideoRecordingSession>)startRecordingToFile:(nullable NSString *)filePath error:(NSError **)error;
+- (FBFuture<id<FBVideoRecordingSession>> *)startRecordingToFile:(nullable NSString *)filePath;
 
 /**
  Stops the Recording of Video.
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A Future, resolved when recording has stopped
  */
-- (BOOL)stopRecordingWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)stopRecording;
 
 @end
 

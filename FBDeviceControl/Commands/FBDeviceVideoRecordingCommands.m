@@ -46,35 +46,32 @@
 
 #pragma mark FBVideoRecordingCommands
 
-- (nullable id<FBVideoRecordingSession>)startRecordingToFile:(NSString *)filePath error:(NSError **)error
+- (FBFuture<id<FBVideoRecordingSession>> *)startRecordingToFile:(NSString *)filePath
 {
-  NSError *innerError = nil;
+  NSError *error = nil;
   if (self.video) {
     return [[FBDeviceControlError
       describe:@"Cannot create a new video recording session, one is already active"]
-      fail:error];
+      failFuture];
   }
 
   FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithDiagnostic:self.device.diagnostics.video];
   filePath = filePath ?: logBuilder.createPath;
-  self.video = [FBDeviceVideo videoForDevice:self.device filePath:filePath error:&innerError];
+  self.video = [FBDeviceVideo videoForDevice:self.device filePath:filePath error:&error];
   if (!self.video) {
-    return [FBDeviceControlError failWithError:innerError errorOut:error];
+    return [FBDeviceControlError failFutureWithError:error];
   }
-  if (![[self.video startRecording] await:error]) {
-    return nil;
-  }
-  return self.video;
+  return [[self.video startRecording] mapReplace:self.video];
 }
 
-- (BOOL)stopRecordingWithError:(NSError **)error
+- (FBFuture<NSNull *> *)stopRecording
 {
   if (!self.video) {
     return [[FBDeviceControlError
       describeFormat:@"There was no existing video instance for %@", self.device]
-      failBool:error];
+      failFuture];
   }
-  return [[self.video stopRecording] await:error] != nil;
+  return [self.video stopRecording];
 }
 
 #pragma mark FBBitmapStreamingCommands

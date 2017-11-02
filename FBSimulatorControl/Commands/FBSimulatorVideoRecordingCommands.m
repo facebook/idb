@@ -44,27 +44,26 @@ FBTerminationHandleType const FBTerminationTypeHandleVideoStreaming = @"VideoStr
 
 #pragma mark FBVideoRecordingCommands Implementation
 
-- (nullable id<FBVideoRecordingSession>)startRecordingToFile:(NSString *)filePath error:(NSError **)error
+- (FBFuture<id<FBVideoRecordingSession>> *)startRecordingToFile:(NSString *)filePath
 {
-  NSError *innerError = nil;
-  FBSimulatorVideo *video = [self obtainSimulatorVideoWithError:&innerError];
+  NSError *error = nil;
+  FBSimulatorVideo *video = [self obtainSimulatorVideoWithError:&error];
   if (!video) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
+    return [FBSimulatorError failFutureWithError:error];
   }
-  if (![[video startRecordingToFile:filePath] awaitWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:error]) {
-    return nil;
-  }
-  return video;
+  return [[video
+    startRecordingToFile:filePath]
+    mapReplace:video];
 }
 
-- (BOOL)stopRecordingWithError:(NSError **)error
+- (FBFuture<NSNull *> *)stopRecording
 {
-  NSError *innerError = nil;
-  FBSimulatorVideo *video = [self obtainSimulatorVideoWithError:&innerError];
+  NSError *error = nil;
+  FBSimulatorVideo *video = [self obtainSimulatorVideoWithError:&error];
   if (!video) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+    return [FBSimulatorError failFutureWithError:error];
   }
-  return [[video stopRecording] awaitWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:error] != nil;
+  return [video stopRecording];
 }
 
 #pragma mark FBSimulatorStreamingCommands

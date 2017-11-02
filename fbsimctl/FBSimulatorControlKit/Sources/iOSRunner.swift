@@ -43,11 +43,11 @@ struct iOSActionProvider {
       switch record {
         case .start(let maybePath):
           return iOSTargetRunner.handled(reporter, nil, RecordSubject(record)) {
-            return try target.startRecording(toFile: maybePath)
+            return try target.startRecording(toFile: maybePath).await()
           }
         case .stop:
           return iOSTargetRunner.simple(reporter, nil, RecordSubject(record)) {
-            try target.stopRecording()
+            try target.stopRecording().await()
           }
       }
     case .search(let search):
