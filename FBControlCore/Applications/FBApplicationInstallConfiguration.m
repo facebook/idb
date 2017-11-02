@@ -15,7 +15,7 @@
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
-#import "FBRunLoopSpinner.h"
+#import "NSRunLoop+FBControlCore.h"
 #import "FBiOSTarget.h"
 
 FBiOSTargetActionType const FBiOSTargetActionTypeInstall = @"install";

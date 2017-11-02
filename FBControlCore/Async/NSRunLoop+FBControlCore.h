@@ -13,64 +13,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface FBRunLoopSpinner : NSObject
-
-/**
- Dispatches block to background thread and Spins the Run Loop until `block` finishes.
- @param block the block to wait for to finish.
- @return object returned by `block`
- */
-+ (nullable id)spinUntilBlockFinished:(id (^)(void))block;
-
-/**
- Updates the message that is logged at an interval.
-
- @param reminderMessage the time interval between reminder messages.
- @return the reciever, for chaining.
- */
-- (instancetype)reminderMessage:(NSString *)reminderMessage;
-
-/**
- Updates the frequency with which the reciver logs the reminder message.
-
- @param reminderInterval the time interval between reminder messages.
- @return the reciever, for chaining.
- */
-- (instancetype)reminderInterval:(NSTimeInterval)reminderInterval;
-
-/**
- Updates the error message to print in the event of a timeout.
-
- @param timeoutErrorMessage the Error Message to print.
- @return the reciever, for chaining.
- */
-- (instancetype)timeoutErrorMessage:(NSString *)timeoutErrorMessage;
-
-/**
- Updates the timeout of the reciever.
-
- @param timeout the amount of time to wait before timing out.
- @return the reciever, for chaining.
- */
-- (instancetype)timeout:(NSTimeInterval)timeout;
-
-/**
- Spins the Run Loop until `untilTrue` returns YES or a timeout is reached.
- @param untilTrue the condition to meet.
- @return YES if the condition was met, NO if the timeout was reached first.
- */
-- (BOOL)spinUntilTrue:( BOOL (^)(void) )untilTrue;
-
-/**
- Spins the Run Loop until `untilTrue` returns YES or a timeout is reached.
- @param untilTrue the condition to meet.
- @param error to fill in case of timeout.
- @return YES if the condition was met, NO if the timeout was reached first.
- */
-- (BOOL)spinUntilTrue:( BOOL (^)(void) )untilTrue error:(NSError **)error;
-
-@end
-
 /**
  Conveniences to aid synchronous waiting on events, whilst not blocking other event sources.
  */

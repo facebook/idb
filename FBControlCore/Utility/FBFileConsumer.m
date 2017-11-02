@@ -2,7 +2,7 @@
 
 #import "FBFileConsumer.h"
 
-#import "FBRunLoopSpinner.h"
+#import "NSRunLoop+FBControlCore.h"
 #import "FBControlCoreError.h"
 #import "FBLineBuffer.h"
 

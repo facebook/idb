@@ -11,7 +11,7 @@
 
 #import <objc/runtime.h>
 
-#import "FBRunLoopSpinner.h"
+#import "NSRunLoop+FBControlCore.h"
 
 
 FBiOSTargetActionType const FBiOSTargetActionTypeApplicationLaunch = @"applaunch";

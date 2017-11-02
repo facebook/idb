@@ -19,7 +19,7 @@
 #import "FBiOSTarget.h"
 #import "FBiOSTargetDiagnostics.h"
 #import "FBLogCommands.h"
-#import "FBRunLoopSpinner.h"
+#import "NSRunLoop+FBControlCore.h"
 #import "FBControlCoreConfigurationVariants.h"
 
 @implementation FBBatchLogSearchResult

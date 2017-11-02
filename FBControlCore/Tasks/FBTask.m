@@ -14,7 +14,7 @@
 #import "FBFileConsumer.h"
 #import "FBFileWriter.h"
 #import "FBPipeReader.h"
-#import "FBRunLoopSpinner.h"
+#import "NSRunLoop+FBControlCore.h"
 #import "FBTaskConfiguration.h"
 
 #pragma clang diagnostic push

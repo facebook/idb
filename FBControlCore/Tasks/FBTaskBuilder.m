@@ -12,7 +12,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBTask.h"
-#import "FBRunLoopSpinner.h"
+#import "NSRunLoop+FBControlCore.h"
 #import "FBTaskConfiguration.h"
 
 @interface FBTaskBuilder ()
