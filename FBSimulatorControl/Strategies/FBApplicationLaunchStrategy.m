@@ -72,64 +72,46 @@
 - (FBFuture<FBSimulatorApplicationOperation *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch
 {
   FBSimulator *simulator = self.simulator;
-  NSError *innerError = nil;
-  FBInstalledApplication *application = [[simulator installedApplicationWithBundleID:appLaunch.bundleID] await:&innerError];
-  if (!application) {
-    return [[[[FBSimulatorError
-      describeFormat:@"App %@ can't be launched as it isn't installed", appLaunch.bundleID]
-      causedBy:innerError]
-      inSimulator:simulator]
-      failFuture];
-  }
-
-  // This check confirms that if there's a currently running process for the given Bundle ID.
-  // Since the Background Modes of a Simulator can cause an Application to be launched independently of our usage of CoreSimulator,
-  // it's possible that application processes will come to life before `launchApplication` is called, if it has been previously killed.
-  FBProcessInfo *process = [[simulator runningApplicationWithBundleID:appLaunch.bundleID] await:&innerError];
-  if (process) {
-    return [[[[FBSimulatorError
-      describeFormat:@"App %@ can't be launched as is running (%@)", appLaunch.bundleID, process.shortDescription]
-      causedBy:innerError]
-      inSimulator:simulator]
-      failFuture];
-  }
-
-  // Make the stdout file.
-  NSError *error = nil;
-  FBDiagnostic *stdOutDiagnostic = nil;
-  if (![appLaunch createStdOutDiagnosticForSimulator:simulator diagnosticOut:&stdOutDiagnostic error:&error]) {
-    return [FBSimulatorError failFutureWithError:error];
-  }
-  // Make the stderr file.
-  FBDiagnostic *stdErrDiagnostic = nil;
-  if (![appLaunch createStdErrDiagnosticForSimulator:simulator diagnosticOut:&stdErrDiagnostic error:&error]) {
-    return [FBSimulatorError failFutureWithError:error];
-  }
-
-  // Actually launch the Application, getting the Process Info.
-  FBFuture<NSNumber *> *launchFuture = [self launchApplication:appLaunch stdOutPath:stdOutDiagnostic.asPath stdErrPath:stdErrDiagnostic.asPath];
-  if (launchFuture.error) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to launch application %@", appLaunch]
-      causedBy:launchFuture.error]
-      inSimulator:simulator]
-      failFuture];
-  }
-
-  // Make the Operation.
-  return [[FBSimulatorApplicationOperation
-    operationWithSimulator:simulator configuration:appLaunch launchFuture:launchFuture]
-    onQueue:self.simulator.workQueue notifyOfCompletion:^(FBFuture *resolved) {
-      if (!resolved.result) {
-        return;
+  return [[[[simulator
+    installedApplicationWithBundleID:appLaunch.bundleID]
+    rephraseFailure:@"App %@ can't be launched as it isn't installed", appLaunch.bundleID]
+    onQueue:simulator.workQueue fmap:^(FBInstalledApplication *_) {
+      return [[simulator runningApplicationWithBundleID:appLaunch.bundleID]
+        onQueue:simulator.workQueue chain:^(FBFuture<FBProcessInfo *> *future){
+          FBProcessInfo *process = future.result;
+          if (process) {
+            return [[FBSimulatorError
+             describeFormat:@"App %@ can't be launched as is running (%@)", appLaunch.bundleID, process.shortDescription]
+             failFuture];
+          }
+          return [FBFuture futureWithResult:NSNull.null];
+        }];
+    }]
+    onQueue:simulator.workQueue fmap:^FBFuture<FBSimulatorApplicationOperation *> *(id _) {
+      NSError *error = nil;
+      FBDiagnostic *stdOutDiagnostic = nil;
+      if (![appLaunch createStdOutDiagnosticForSimulator:simulator diagnosticOut:&stdOutDiagnostic error:&error]) {
+        return [FBSimulatorError failFutureWithError:error];
       }
-      // Report the diagnostics to the event sink.
-      if (stdOutDiagnostic) {
-        [simulator.eventSink diagnosticAvailable:stdOutDiagnostic];
+      // Make the stderr file.
+      FBDiagnostic *stdErrDiagnostic = nil;
+      if (![appLaunch createStdErrDiagnosticForSimulator:simulator diagnosticOut:&stdErrDiagnostic error:&error]) {
+        return [FBSimulatorError failFutureWithError:error];
       }
-      if (stdErrDiagnostic) {
-        [simulator.eventSink diagnosticAvailable:stdErrDiagnostic];
-      }
+      FBFuture<NSNumber *> *launch = [self launchApplication:appLaunch stdOutPath:stdOutDiagnostic.asPath stdErrPath:stdErrDiagnostic.asPath];
+      return [[FBSimulatorApplicationOperation
+        operationWithSimulator:simulator configuration:appLaunch launchFuture:launch]
+        onQueue:simulator.workQueue notifyOfCompletion:^(FBFuture *future) {
+          if (future.state != FBFutureStateCompletedWithResult) {
+            return;
+          }
+          if (stdOutDiagnostic) {
+            [simulator.eventSink diagnosticAvailable:stdOutDiagnostic];
+          }
+          if (stdErrDiagnostic) {
+            [simulator.eventSink diagnosticAvailable:stdErrDiagnostic];
+          }
+        }];
     }];
 }
 
