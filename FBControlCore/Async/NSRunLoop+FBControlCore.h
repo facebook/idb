@@ -45,39 +45,18 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout notifiedBy:(dispatch_group_t)group onQueue:(dispatch_queue_t)queue;
 
-/**
- Spins the Run Loop until the future resolves, or times out.
-
- @param future the future to resolve.
- @param timeout the Timeout in Seconds.
- @param didTimeout an outparam for flagging if the error represents a timeout.
- @param error an error out for any future error, or timeout.
- @return the Future result if successful, NO otherwise.
- */
-- (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout didTimeout:(BOOL *)didTimeout error:(NSError **)error;
-
-/**
- Spins the Run Loop until the future resolves, or times out.
-
- @param future the future to resolve.
- @param timeout the Timeout in Seconds.
- @param error an error out for any future error, or timeout.
- @return the Future result if successful, NO otherwise.
- */
-- (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError **)error;
-
 @end
 
 /**
- Terse Helpers for FBFuture awaiting.
+ Helpers for awaiting the completion of an FBFuture from a Run Loop.
  */
 @interface FBFuture<T> (NSRunLoop)
 
 /**
- Await the Future with the Regular Timeout.
+ Await the Future, with no Timeout.
 
- @param error as described in -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
- @return the return value of -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
+ @param error an error outparam if the Future resolves with an error.
+ @return the the Future's result if successful, nil otherwise.
  */
 - (nullable T)await:(NSError **)error;
 
@@ -85,8 +64,8 @@ NS_ASSUME_NONNULL_BEGIN
  Await the Future with the provided timeout.
 
  @param timeout the timeout in seconds to wait.
- @param error as described in -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
- @return the return value of -[NSRunLoop awaitCompletionOfFuture:timeout:error:]
+ @param error an error outparam if the Future resolves with an error, or the Future is not resolved within the timeout.
+ @return the the Future's result if successful, nil otherwise.
  */
 - (nullable T)awaitWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
 

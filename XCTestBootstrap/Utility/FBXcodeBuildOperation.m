@@ -109,7 +109,7 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
 
 - (BOOL)waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  return [NSRunLoop.currentRunLoop awaitCompletionOfFuture:self.future timeout:timeout error:error] != nil;
+  return [self.future awaitWithTimeout:timeout error:error] != nil;
 }
 
 #pragma mark Public

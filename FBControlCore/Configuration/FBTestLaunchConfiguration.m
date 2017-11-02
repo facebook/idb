@@ -9,7 +9,11 @@
 
 #import "FBTestLaunchConfiguration.h"
 
-#import <FBControlCore/FBControlCore.h>
+#import "FBCollectionInformation.h"
+#import "FBCollectionOperations.h"
+#import "FBControlCoreError.h"
+#import "NSRunLoop+FBControlCore.h"
+#import "FBXCTestCommands.h"
 
 @implementation FBTestLaunchConfiguration
 
@@ -417,7 +421,7 @@ static NSString *const KeyResultBundlePath = @"resultBundlePath";
     return NO;
   }
   if (self.timeout > 0) {
-    if (![NSRunLoop.currentRunLoop awaitCompletionOfFuture:operation.completed timeout:self.timeout error:error]) {
+    if (![operation.completed awaitWithTimeout:self.timeout error:error]) {
       return NO;
     }
   }

@@ -235,7 +235,7 @@
   FBMutableFuture<NSNumber *> *future = FBMutableFuture.future;
 
   NSError *error = nil;
-  id value = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:future timeout:1 error:&error];
+  id value = [future awaitWithTimeout:1 error:&error];
   XCTAssertNil(value);
   XCTAssertNotNil(error);
 }
@@ -248,7 +248,7 @@
   });
 
   NSError *error = nil;
-  id value = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:future timeout:1 error:&error];
+  id value = [future awaitWithTimeout:1 error:&error];
   XCTAssertNil(error);
   XCTAssertEqualObjects(value, @YES);
 }
@@ -262,7 +262,7 @@
   });
 
   NSError *error = nil;
-  id value = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:future timeout:1 error:&error];
+  id value = [future awaitWithTimeout:1 error:&error];
   XCTAssertNil(value);
   XCTAssertEqualObjects(error, expected);
 }

@@ -83,7 +83,7 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
       causedBy:innerError]
       failBool:error];
   }
-  FBTestManagerResult *result = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:manager.execute timeout:ApplicationTestDefaultTimeout error:&innerError];
+  FBTestManagerResult *result = [manager.execute awaitWithTimeout:ApplicationTestDefaultTimeout error:&innerError];
   if (result.crashDiagnostic) {
     return [[FBXCTestError
       describeFormat:@"The Application Crashed during the Test Run\n%@", result.crashDiagnostic.asString]

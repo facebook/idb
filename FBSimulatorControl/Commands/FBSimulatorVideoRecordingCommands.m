@@ -51,7 +51,7 @@ FBTerminationHandleType const FBTerminationTypeHandleVideoStreaming = @"VideoStr
   if (!video) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
-  if (![NSRunLoop.currentRunLoop awaitCompletionOfFuture:[video startRecordingToFile:filePath] timeout:FBControlCoreGlobalConfiguration.regularTimeout error:error]) {
+  if (![[video startRecordingToFile:filePath] awaitWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:error]) {
     return nil;
   }
   return video;
@@ -64,7 +64,7 @@ FBTerminationHandleType const FBTerminationTypeHandleVideoStreaming = @"VideoStr
   if (!video) {
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
-  return [NSRunLoop.currentRunLoop awaitCompletionOfFuture:[video stopRecording] timeout:FBControlCoreGlobalConfiguration.regularTimeout error:error] != nil;
+  return [[video stopRecording] awaitWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:error] != nil;
 }
 
 #pragma mark FBSimulatorStreamingCommands

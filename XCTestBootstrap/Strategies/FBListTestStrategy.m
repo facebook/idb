@@ -52,7 +52,7 @@
 
   // Additional timeout added to base timeout to give time to catch a sample.
   NSTimeInterval timeout = self.strategy.configuration.testTimeout + 5;
-  NSArray<NSString *> *testNames = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:self.strategy.listTests timeout:timeout error:error];
+  NSArray<NSString *> *testNames = [self.strategy.listTests awaitWithTimeout:timeout error:error];
   if (!testNames) {
     return NO;
   }

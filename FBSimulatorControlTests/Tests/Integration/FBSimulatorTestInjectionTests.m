@@ -59,7 +59,7 @@
   XCTAssertNil(error);
   XCTAssertNotNil(future);
 
-  id result = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:future timeout:20 error:&error];
+  id result = [future awaitWithTimeout:20 error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(result);
 }

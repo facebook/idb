@@ -54,7 +54,7 @@
 {
   // Additional timeout added to base timeout to give time to catch a sample.
   NSTimeInterval timeout = self.configuration.testTimeout + 5;
-  return [NSRunLoop.currentRunLoop awaitCompletionOfFuture:self.testFuture timeout:timeout error:error] != nil;
+  return [self.testFuture awaitWithTimeout:timeout error:error] != nil;
 }
 
 - (FBFuture<NSNull *> *)testFuture
