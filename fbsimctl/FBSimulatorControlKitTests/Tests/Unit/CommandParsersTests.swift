@@ -200,12 +200,12 @@ let validActions: [([String], Action)] = [
   (["create", "iPhone 6s", "iOS 9.3"], .create(CreationSpecification.compoundConfiguration0)),
   (["create", "iPhone 6"], .create(CreationSpecification.iPhone6Configuration)),
   (["delete"], .delete),
-  (["diagnose", "--content", "--crashes-since", "200", "--system"], .diagnose(FBDiagnosticQuery.crashes(of: FBCrashLogInfoProcessType.system, since: Date(timeIntervalSince1970: 200)), DiagnosticFormat.Content)),
-  (["diagnose", "--content", "com.foo.bar", "foo.txt", "bar.txt"], .diagnose(FBDiagnosticQuery.files(inApplicationOfBundleID: "com.foo.bar", withFilenames: ["foo.txt", "bar.txt"]), DiagnosticFormat.Content)),
-  (["diagnose", "--crashes-since", "300", "--custom-agent"], .diagnose(FBDiagnosticQuery.crashes(of: FBCrashLogInfoProcessType.customAgent, since: Date(timeIntervalSince1970: 300)), DiagnosticFormat.CurrentFormat)),
-  (["diagnose", "--name", "log1", "--name", "log2"], .diagnose(FBDiagnosticQuery.named(["log1", "log2"]), DiagnosticFormat.CurrentFormat)),
-  (["diagnose", "--path", "--crashes-since", "100", "--application"], .diagnose(FBDiagnosticQuery.crashes(of: FBCrashLogInfoProcessType.application, since: Date(timeIntervalSince1970: 100)), DiagnosticFormat.Path)),
-  (["diagnose"], .diagnose(FBDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)),
+  (["diagnose", "--content", "--crashes-since", "200", "--system"], .diagnose(FBDiagnosticQuery.crashes(of: FBCrashLogInfoProcessType.system, since: Date(timeIntervalSince1970: 200)), DiagnosticFormat.content)),
+  (["diagnose", "--content", "com.foo.bar", "foo.txt", "bar.txt"], .diagnose(FBDiagnosticQuery.files(inApplicationOfBundleID: "com.foo.bar", withFilenames: ["foo.txt", "bar.txt"]), DiagnosticFormat.content)),
+  (["diagnose", "--crashes-since", "300", "--custom-agent"], .diagnose(FBDiagnosticQuery.crashes(of: FBCrashLogInfoProcessType.customAgent, since: Date(timeIntervalSince1970: 300)), DiagnosticFormat.current)),
+  (["diagnose", "--name", "log1", "--name", "log2"], .diagnose(FBDiagnosticQuery.named(["log1", "log2"]), DiagnosticFormat.current)),
+  (["diagnose", "--path", "--crashes-since", "100", "--application"], .diagnose(FBDiagnosticQuery.crashes(of: FBCrashLogInfoProcessType.application, since: Date(timeIntervalSince1970: 100)), DiagnosticFormat.path)),
+  (["diagnose"], .diagnose(FBDiagnosticQuery.all(), DiagnosticFormat.current)),
   (["erase"], .erase),
   (["focus"], .focus),
   (["install", Fixtures.application.path], .install(Fixtures.application.path, false)),
@@ -322,7 +322,7 @@ class CommandParserTests : XCTestCase {
     ]
     let launchConfiguration = FBSimulatorBootConfiguration.default
       .withOptions([.enableDirectLaunch, .awaitServices, .useNSWorkspace])
-    let diagnoseAction = Action.diagnose(FBDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)
+    let diagnoseAction = Action.diagnose(FBDiagnosticQuery.all(), DiagnosticFormat.current)
     let actions: [Action] = [.list, .create(CreationSpecification.iPhone6Configuration), .boot(launchConfiguration), .listen(ListenInterface(stdin: false, http: 8090, hid: nil, handle: nil)), .shutdown, diagnoseAction]
     self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }

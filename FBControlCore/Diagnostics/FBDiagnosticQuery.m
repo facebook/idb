@@ -16,10 +16,11 @@ FBDiagnosticQueryFormat FBDiagnosticQueryFormatCurrent = @"current-format";
 FBDiagnosticQueryFormat FBDiagnosticQueryFormatPath = @"path";
 FBDiagnosticQueryFormat FBDiagnosticQueryFormatContent = @"content";
 
-static NSString *const FBDiagnosticQueryTypeAll = @"all";
-static NSString *const FBDiagnosticQueryTypeAppFiles = @"app_files";
-static NSString *const FBDiagnosticQueryTypeCrashes = @"crashes";
-static NSString *const FBDiagnosticQueryTypeNamed = @"named";
+typedef NSString *FBDiagnosticQueryType NS_STRING_ENUM;
+FBDiagnosticQueryType FBDiagnosticQueryTypeAll = @"all";
+FBDiagnosticQueryType FBDiagnosticQueryTypeAppFiles = @"app_files";
+FBDiagnosticQueryType FBDiagnosticQueryTypeCrashes = @"crashes";
+FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
 
 @implementation FBDiagnosticQuery_All
 
@@ -346,7 +347,7 @@ static NSString *const FBDiagnosticQueryCrashesSystem = @"system";
   if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not a NSDictionary<NSString, id>", json] fail:error];
   }
-  NSString *type = json[@"type"];
+  FBDiagnosticQueryType type = json[@"type"];
   if ([type isEqualToString:FBDiagnosticQueryTypeAll]) {
     return [FBDiagnosticQuery_All new];
   }
