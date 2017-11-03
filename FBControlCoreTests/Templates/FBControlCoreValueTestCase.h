@@ -11,6 +11,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+@class FBXCTestConfiguration;
+
 /**
  A Template for Tests that Provide Value-Like Objects.
  */
@@ -30,5 +32,10 @@
  Asserts that values can be serialized and deserialized via json.
  */
 - (void)assertJSONDeserialization:(NSArray<id<FBJSONDeserializable>> *)values;
+
+/**
+ Asserts that configuration has correct semantics
+ */
+- (void)assertValueSemanticsOfConfiguration:(FBXCTestConfiguration *)configuration;
 
 @end

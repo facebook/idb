@@ -9,6 +9,8 @@
 
 #import "FBControlCoreValueTestCase.h"
 
+#import <FBXCTestKit/FBXCTestKit.h>
+
 @implementation FBControlCoreValueTestCase
 
 - (void)assertEqualityOfCopy:(NSArray<NSObject *> *)values
@@ -80,6 +82,13 @@
     }
     XCTFail(@"%@ is not json encodable", value);
   }
+}
+
+- (void)assertValueSemanticsOfConfiguration:(FBXCTestConfiguration *)configuration
+{
+  [self assertEqualityOfCopy:@[configuration]];
+  [self assertJSONSerialization:@[configuration]];
+  [self assertJSONDeserialization:@[configuration]];
 }
 
 @end
