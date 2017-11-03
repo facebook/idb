@@ -66,6 +66,7 @@ FBOSVersionName const FBOSVersionNameiOS_10_2_1 = @"iOS 10.2.1";
 FBOSVersionName const FBOSVersionNameiOS_10_3 = @"iOS 10.3";
 FBOSVersionName const FBOSVersionNameiOS_11_0 = @"iOS 11.0";
 FBOSVersionName const FBOSVersionNameiOS_11_1 = @"iOS 11.1";
+FBOSVersionName const FBOSVersionNameiOS_11_2 = @"iOS 11.2";
 FBOSVersionName const FBOSVersionNametvOS_9_0 = @"tvOS 9.0";
 FBOSVersionName const FBOSVersionNametvOS_9_1 = @"tvOS 9.1";
 FBOSVersionName const FBOSVersionNametvOS_9_2 = @"tvOS 9.2";
@@ -74,6 +75,7 @@ FBOSVersionName const FBOSVersionNametvOS_10_1 = @"tvOS 10.1";
 FBOSVersionName const FBOSVersionNametvOS_10_2 = @"tvOS 10.2";
 FBOSVersionName const FBOSVersionNametvOS_11_0 = @"tvOS 11.0";
 FBOSVersionName const FBOSVersionNametvOS_11_1 = @"tvOS 11.1";
+FBOSVersionName const FBOSVersionNametvOS_11_2 = @"tvOS 11.2";
 FBOSVersionName const FBOSVersionNamewatchOS_2_0 = @"watchOS 2.0";
 FBOSVersionName const FBOSVersionNamewatchOS_2_1 = @"watchOS 2.1";
 FBOSVersionName const FBOSVersionNamewatchOS_2_2 = @"watchOS 2.2";
@@ -82,6 +84,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_1 = @"watchOS 3.1";
 FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 FBOSVersionName const FBOSVersionNamewatchOS_4_0 = @"watchOS 4.0";
 FBOSVersionName const FBOSVersionNamewatchOS_4_1 = @"watchOS 4.1";
+FBOSVersionName const FBOSVersionNamewatchOS_4_2 = @"watchOS 4.2";
 
 @implementation FBDeviceType
 
@@ -325,6 +328,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_4_1 = @"watchOS 4.1";
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_10_3],
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_11_0],
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_11_1],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_11_2],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_0],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_1],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_2],
@@ -333,6 +337,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_4_1 = @"watchOS 4.1";
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_10_2],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_11_0],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_11_1],
+      [FBOSVersion tvOSWithName:FBOSVersionNametvOS_11_2],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_2_0],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_2_1],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_2_2],
@@ -341,6 +346,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_4_1 = @"watchOS 4.1";
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_3_2],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_4_0],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_4_1],
+      [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_4_2],
     ];
   });
   return OSConfigurations;
