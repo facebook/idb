@@ -12,6 +12,10 @@
 #import "FBDiagnostic.h"
 #import "FBControlCoreError.h"
 
+FBDiagnosticQueryFormat FBDiagnosticQueryFormatCurrent = @"current-format";
+FBDiagnosticQueryFormat FBDiagnosticQueryFormatPath = @"path";
+FBDiagnosticQueryFormat FBDiagnosticQueryFormatContent = @"content";
+
 static NSString *const FBDiagnosticQueryTypeAll = @"all";
 static NSString *const FBDiagnosticQueryTypeAppFiles = @"app_files";
 static NSString *const FBDiagnosticQueryTypeCrashes = @"crashes";

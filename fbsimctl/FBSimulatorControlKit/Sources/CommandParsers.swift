@@ -598,7 +598,7 @@ extension Action : Parsable {
       .ofCommandWithArg(
         EventName.diagnose.rawValue,
         Parser.ofTwoSequenced(
-          DiagnosticFormat.parser.fallback(DiagnosticFormat.CurrentFormat),
+          DiagnosticFormat.parser.fallback(DiagnosticFormat.current),
           FBDiagnosticQueryParser.parser
         )
       )
@@ -849,14 +849,14 @@ extension DiagnosticFormat : Parsable {
     return Parser
       .alternative([
         Parser<DiagnosticFormat>
-          .ofFlag(DiagnosticFormat.CurrentFormat.rawValue,
-                  DiagnosticFormat.CurrentFormat, ""),
+          .ofFlag(DiagnosticFormat.current.rawValue,
+                  DiagnosticFormat.current, ""),
         Parser<DiagnosticFormat>
-          .ofFlag(DiagnosticFormat.Path.rawValue,
-                  DiagnosticFormat.Path, ""),
+          .ofFlag(DiagnosticFormat.path.rawValue,
+                  DiagnosticFormat.path, ""),
         Parser<DiagnosticFormat>
-          .ofFlag(DiagnosticFormat.Content.rawValue,
-                  DiagnosticFormat.Content, ""),
+          .ofFlag(DiagnosticFormat.content.rawValue,
+                  DiagnosticFormat.content, ""),
       ])
   }
 }

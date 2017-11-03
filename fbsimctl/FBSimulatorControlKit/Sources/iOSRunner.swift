@@ -191,12 +191,14 @@ private struct DiagnosticsRunner : Runner {
 
     return diagnostics.perform(query).map { diagnostic in
       switch format {
-      case .CurrentFormat:
+      case .current:
         return diagnostic
-      case .Content:
+      case .content:
         return FBDiagnosticBuilder(diagnostic: diagnostic).readIntoMemory().build()
-      case .Path:
+      case .path:
         return FBDiagnosticBuilder(diagnostic: diagnostic).writeOutToFile().build()
+      default:
+        return diagnostic
       }
     }
   }

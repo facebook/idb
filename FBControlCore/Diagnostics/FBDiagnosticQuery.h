@@ -13,6 +13,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+typedef NSString *FBDiagnosticQueryFormat NS_STRING_ENUM;
+extern FBDiagnosticQueryFormat FBDiagnosticQueryFormatCurrent;
+extern FBDiagnosticQueryFormat FBDiagnosticQueryFormatPath;
+extern FBDiagnosticQueryFormat FBDiagnosticQueryFormatContent;
+
 @class FBSimulatorDiagnostics;
 
 /**

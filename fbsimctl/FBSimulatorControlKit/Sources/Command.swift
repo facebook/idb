@@ -54,11 +54,7 @@ public enum CreationSpecification {
 /**
   An Enumeration specifying the output format of diagnostics.
 */
-public enum DiagnosticFormat : String {
-  case CurrentFormat = "current-format"
-  case Path = "path"
-  case Content = "content"
-}
+public typealias DiagnosticFormat = FBDiagnosticQueryFormat
 
 /**
  An Enumeration for controlling recording.
