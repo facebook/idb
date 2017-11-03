@@ -9,9 +9,16 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
+#import <FBControlCore/FBiOSTargetAction.h>
+#import <FBControlCore/FBCrashLogInfo.h>
+#import <FBControlCore/NSPredicate+FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+/**
+ The Action Type for a Diagnostic Query.
+ */
+extern FBiOSTargetActionType const FBiOSTargetActionTypeDiagnosticQuery;
 
 typedef NSString *FBDiagnosticQueryFormat NS_STRING_ENUM;
 extern FBDiagnosticQueryFormat FBDiagnosticQueryFormatCurrent;
@@ -23,7 +30,7 @@ extern FBDiagnosticQueryFormat FBDiagnosticQueryFormatContent;
 /**
  A value object for describing which diagnostics to fetch.
  */
-@interface FBDiagnosticQuery : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+@interface FBDiagnosticQuery : NSObject <NSCopying, FBiOSTargetFuture>
 
 #pragma mark Initializers
 

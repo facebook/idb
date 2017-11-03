@@ -9,9 +9,15 @@
 
 #import "FBDiagnosticQuery.h"
 
-#import "FBDiagnostic.h"
-#import "FBControlCoreError.h"
 #import "FBCollectionInformation.h"
+#import "FBControlCoreError.h"
+#import "FBControlCoreError.h"
+#import "FBDiagnostic.h"
+#import "FBEventReporter.h"
+#import "FBiOSTargetDiagnostics.h"
+#import "FBSubject.h"
+
+FBiOSTargetActionType const FBiOSTargetActionTypeDiagnosticQuery = @"diagnose";
 
 FBDiagnosticQueryFormat FBDiagnosticQueryFormatCurrent = @"current-format";
 FBDiagnosticQueryFormat FBDiagnosticQueryFormatPath = @"path";
@@ -415,6 +421,42 @@ static NSString *KeyType = @"type";
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
+}
+
+#pragma mark FBiOSTargetFuture
+
+- (FBiOSTargetActionType)actionType
+{
+  return FBiOSTargetActionTypeDiagnosticQuery;
+}
+
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+{
+  id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:FBiOSTargetActionTypeDiagnosticQuery type:FBEventTypeStarted value:self];
+  [reporter report:subject];
+
+  subject = [FBDiagnosticQuery resolveDiagnostics:[target.diagnostics perform:self] format:self.format];
+  [reporter report:subject];
+
+  subject = [FBEventReporterSubject subjectWithName:FBiOSTargetActionTypeDiagnosticQuery type:FBEventTypeEnded value:self];
+  [reporter report:subject];
+
+  return [FBFuture futureWithResult:self.actionType];
+}
+
++ (id<FBEventReporterSubject>)resolveDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics format:(FBDiagnosticQueryFormat)format
+{
+  NSMutableArray<id<FBEventReporterSubject>> *subjects = [NSMutableArray array];
+  for (FBDiagnostic *diagnostic in diagnostics) {
+    FBDiagnostic *resolved = diagnostic;
+    if ([format isEqualToString:FBDiagnosticQueryFormatPath]) {
+      resolved = [[[FBDiagnosticBuilder builderWithDiagnostic:diagnostic] readIntoMemory] build];
+    } else if ([format isEqualToString:FBDiagnosticQueryFormatPath]) {
+      resolved = [[[FBDiagnosticBuilder builderWithDiagnostic:diagnostic] writeOutToFile] build];
+    }
+    [subjects addObject:[FBEventReporterSubject subjectWithName:FBEventNameDiagnose type:FBEventTypeDiscrete value:resolved]];
+  }
+  return [FBEventReporterSubject compositeSubjectWithArray:subjects];
 }
 
 @end

@@ -30,8 +30,6 @@ struct iOSActionProvider {
     let (action, target, reporter) = self.context.value
 
     switch action {
-    case .diagnose(let query):
-      return DiagnosticsRunner(reporter, query, query)
     case .uninstall(let appBundleID):
       return FutureRunner(reporter, .uninstall, FBEventReporterSubject(string: appBundleID), target.uninstallApplication(withBundleID: appBundleID))
     case .core(let action):
@@ -153,51 +151,6 @@ struct iOSTargetRunner : Runner {
       return .failure(error.description)
     } catch {
       return .failure("Unknown Error")
-    }
-  }
-}
-
-private struct DiagnosticsRunner : Runner {
-  let reporter: iOSReporter
-  let subject: ControlCoreValue
-  let query: FBDiagnosticQuery
-
-  init(_ reporter: iOSReporter, _ subject: ControlCoreValue, _ query: FBDiagnosticQuery) {
-    self.reporter = reporter
-    self.subject = subject
-    self.query = query
-  }
-
-  func run() -> CommandResult {
-    reporter.reportValue(.diagnose, .started, query)
-    let diagnostics = self.fetchDiagnostics()
-    reporter.reportValue(.diagnose, .ended, query)
-
-    let subjects: [EventReporterSubject] = diagnostics.map { diagnostic in
-      return FBEventReporterSubject(
-        name: .diagnostic,
-        type: .discrete,
-        subject: diagnostic.subject
-      )
-    }
-    return .success(FBEventReporterSubject(subjects: subjects))
-  }
-
-  func fetchDiagnostics() -> [FBDiagnostic] {
-    let diagnostics = self.reporter.target.diagnostics
-    let format = self.query.format
-
-    return diagnostics.perform(query).map { diagnostic in
-      switch format {
-      case .current:
-        return diagnostic
-      case .content:
-        return FBDiagnosticBuilder(diagnostic: diagnostic).readIntoMemory().build()
-      case .path:
-        return FBDiagnosticBuilder(diagnostic: diagnostic).writeOutToFile().build()
-      default:
-        return diagnostic
-      }
     }
   }
 }
