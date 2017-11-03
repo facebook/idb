@@ -79,7 +79,7 @@ public enum Action {
   case coreFuture(FBiOSTargetFuture)
   case create(CreationSpecification)
   case delete
-  case diagnose(FBDiagnosticQuery, DiagnosticFormat)
+  case diagnose(FBDiagnosticQuery)
   case erase
   case focus
   case keyboardOverride
@@ -315,8 +315,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftSpecification == rightSpecification
   case (.delete, .delete):
     return true
-  case (.diagnose(let leftQuery, let leftFormat), .diagnose(let rightQuery, let rightFormat)):
-    return leftQuery == rightQuery && leftFormat == rightFormat
+  case let (.diagnose(leftQuery), .diagnose(rightQuery)):
+    return leftQuery == rightQuery
   case (.erase, .erase):
     return true
   case (.focus, .focus):
@@ -369,7 +369,7 @@ extension Action {
       return (.create, nil)
     case .delete:
       return (.delete, nil)
-    case .diagnose(let query, _):
+    case .diagnose(let query):
       return (.diagnose, query.subject)
     case .erase:
       return (.erase, nil)

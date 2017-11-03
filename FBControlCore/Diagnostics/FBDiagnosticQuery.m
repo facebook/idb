@@ -11,6 +11,7 @@
 
 #import "FBDiagnostic.h"
 #import "FBControlCoreError.h"
+#import "FBCollectionInformation.h"
 
 FBDiagnosticQueryFormat FBDiagnosticQueryFormatCurrent = @"current-format";
 FBDiagnosticQueryFormat FBDiagnosticQueryFormatPath = @"path";
@@ -22,7 +23,20 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeAppFiles = @"app_files";
 FBDiagnosticQueryType FBDiagnosticQueryTypeCrashes = @"crashes";
 FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
 
+@interface FBDiagnosticQuery ()
+
+- (instancetype)initWithQueryFormat:(FBDiagnosticQueryFormat)format;
+
+@end
+
 @implementation FBDiagnosticQuery_All
+
+#pragma mark Initializers
+
+- (instancetype)withFormat:(FBDiagnosticQueryFormat)format
+{
+  return [[self.class alloc] initWithQueryFormat:format];
+}
 
 #pragma mark NSObject
 
@@ -31,16 +45,9 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
   return @"All Logs";
 }
 
-#pragma mark NSCopying
-
-- (instancetype)copyWithZone:(NSZone *)zone
-{
-  return self;
-}
-
 #pragma mark JSON
 
-+ (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
++ (instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json format:(FBDiagnosticQueryFormat)format error:(NSError **)error
 {
   return [FBDiagnosticQuery_All new];
 }
@@ -58,7 +65,7 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
 
 #pragma mark Initializers
 
-- (instancetype)initWithNames:(nonnull NSArray<NSString *> *)names
+- (instancetype)initWithQueryFormat:(FBDiagnosticQueryFormat)format names:(nonnull NSArray<NSString *> *)names
 {
   self = [super init];
   if (!self) {
@@ -67,6 +74,11 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
 
   _names = names;
   return self;
+}
+
+- (instancetype)withFormat:(FBDiagnosticQueryFormat)format
+{
+  return [[self.class alloc] initWithQueryFormat:format names:_names];
 }
 
 #pragma mark NSObject
@@ -89,22 +101,15 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
   ];
 }
 
-#pragma mark NSCopying
-
-- (instancetype)copyWithZone:(NSZone *)zone
-{
-  return [[self.class alloc] initWithNames:self.names];
-}
-
 #pragma mark JSON
 
-+ (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
++ (instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json format:(FBDiagnosticQueryFormat)format error:(NSError **)error
 {
   NSArray<NSString *> *names = json[@"names"];
   if (![FBCollectionInformation isArrayHeterogeneous:names withClass:NSString.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not a NSArray<NSString *> for 'names'", names] fail:error];
   }
-  return [[self alloc] initWithNames:names];
+  return [[self alloc] initWithQueryFormat:format names:names];
 }
 
 - (id)jsonSerializableRepresentation
@@ -121,7 +126,7 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
 
 #pragma mark Initializers
 
-- (instancetype)initWithBundleID:(nonnull NSString *)bundleID filenames:(nonnull NSArray<NSString *> *)filenames
+- (instancetype)initWithQueryFormat:(FBDiagnosticQueryFormat)format bundleID:(nonnull NSString *)bundleID filenames:(nonnull NSArray<NSString *> *)filenames
 {
   self = [super init];
   if (!self) {
@@ -132,6 +137,11 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
   _filenames = filenames;
 
   return self;
+}
+
+- (instancetype)withFormat:(FBDiagnosticQueryFormat)format
+{
+  return [[self.class alloc] initWithQueryFormat:format bundleID:_bundleID filenames:_filenames];
 }
 
 #pragma mark NSObject
@@ -155,16 +165,9 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
   ];
 }
 
-#pragma mark NSCopying
-
-- (instancetype)copyWithZone:(NSZone *)zone
-{
-  return [[self.class alloc] initWithBundleID:self.bundleID filenames:self.filenames];
-}
-
 #pragma mark JSON
 
-+ (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
++ (instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json format:(FBDiagnosticQueryFormat)format error:(NSError **)error
 {
   NSArray<NSString *> *filenames = json[@"filenames"];
   if (![FBCollectionInformation isArrayHeterogeneous:filenames withClass:NSString.class]) {
@@ -175,7 +178,7 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
     return [[FBControlCoreError describeFormat:@"%@ is not a String for 'bundle_id'", bundleID] fail:error];
   }
 
-  return [[self alloc] initWithBundleID:bundleID filenames:filenames];
+  return [[self alloc] initWithQueryFormat:format bundleID:bundleID filenames:filenames];
 }
 
 - (id)jsonSerializableRepresentation
@@ -193,7 +196,7 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
 
 #pragma mark Initializers
 
-- (instancetype)initWithProcessType:(FBCrashLogInfoProcessType)processType since:(nonnull NSDate *)date
+- (instancetype)initWithQueryFormat:(FBDiagnosticQueryFormat)format processType:(FBCrashLogInfoProcessType)processType since:(nonnull NSDate *)date
 {
   self = [super init];
   if (!self) {
@@ -204,6 +207,11 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
   _date = date;
 
   return self;
+}
+
+- (instancetype)withFormat:(FBDiagnosticQueryFormat)format
+{
+  return [[self.class alloc] initWithQueryFormat:format processType:_processType since:_date];
 }
 
 #pragma mark NSObject
@@ -227,16 +235,9 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
   ];
 }
 
-#pragma mark NSCopying
-
-- (instancetype)copyWithZone:(NSZone *)zone
-{
-  return [[self.class alloc] initWithProcessType:self.processType since:self.date];
-}
-
 #pragma mark JSON
 
-+ (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
++ (instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json format:(FBDiagnosticQueryFormat)format error:(NSError **)error
 {
   NSArray<NSString *> *typeStrings = json[@"process_types"];
   if (![FBCollectionInformation isArrayHeterogeneous:typeStrings withClass:NSString.class]) {
@@ -250,7 +251,7 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
   }
   NSDate *date = [NSDate dateWithTimeIntervalSince1970:timestamp.doubleValue];
 
-  return [[self alloc] initWithProcessType:processType since:date];
+  return [[self alloc] initWithQueryFormat:format processType:processType since:date];
 }
 
 - (id)jsonSerializableRepresentation
@@ -307,7 +308,7 @@ static NSString *const FBDiagnosticQueryCrashesSystem = @"system";
 
 + (nonnull instancetype)named:(nonnull NSArray<NSString *> *)names
 {
-  return [[FBDiagnosticQuery_Named alloc] initWithNames:names];
+  return [[FBDiagnosticQuery_Named alloc] initWithQueryFormat:FBDiagnosticQueryFormatCurrent names:names];
 }
 
 + (nonnull instancetype)all
@@ -317,12 +318,29 @@ static NSString *const FBDiagnosticQueryCrashesSystem = @"system";
 
 + (nonnull instancetype)filesInApplicationOfBundleID:(nonnull NSString *)bundleID withFilenames:(nonnull NSArray<NSString *> *)filenames
 {
-  return [[FBDiagnosticQuery_ApplicationLogs alloc] initWithBundleID:bundleID filenames:filenames];
+  return [[FBDiagnosticQuery_ApplicationLogs alloc] initWithQueryFormat:FBDiagnosticQueryFormatCurrent bundleID:bundleID filenames:filenames];
 }
 
 + (nonnull instancetype)crashesOfType:(FBCrashLogInfoProcessType)processType since:(nonnull NSDate *)date
 {
-  return [[FBDiagnosticQuery_Crashes alloc] initWithProcessType:processType since:date];
+  return [[FBDiagnosticQuery_Crashes alloc] initWithQueryFormat:FBDiagnosticQueryFormatCurrent processType:processType since:date];
+}
+
+- (instancetype)initWithQueryFormat:(FBDiagnosticQueryFormat)format
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _format = format;
+  return self;
+}
+
+- (instancetype)withFormat:(FBDiagnosticQueryFormat)format
+{
+  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
+  return nil;
 }
 
 #pragma mark NSObject
@@ -336,31 +354,61 @@ static NSString *const FBDiagnosticQueryCrashesSystem = @"system";
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
+  return self;
 }
 
 #pragma mark JSON
 
-+ (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
+static NSString *KeyFormat = @"format";
+static NSString *KeyType = @"type";
+
++ (NSSet<FBDiagnosticQueryFormat> *)validFormats
+{
+  static dispatch_once_t onceToken;
+  static NSSet<FBDiagnosticQueryFormat> *formats;
+  dispatch_once(&onceToken, ^{
+    formats = [NSSet setWithArray:@[FBDiagnosticQueryFormatCurrent, FBDiagnosticQueryFormatContent, FBDiagnosticQueryFormatPath]];
+  });
+  return formats;
+}
+
++ (instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
 {
   if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not a NSDictionary<NSString, id>", json] fail:error];
   }
-  FBDiagnosticQueryType type = json[@"type"];
+  FBDiagnosticQueryFormat format = json[KeyFormat] ?: FBDiagnosticQueryFormatCurrent;
+  if (![format isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ is not a String for %@", format, KeyFormat]
+      fail:error];
+  }
+  if (![self.validFormats containsObject:format]) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ is not one of %@", format, [FBCollectionInformation oneLineDescriptionFromArray:self.validFormats.allObjects]]
+      fail:error];
+  }
+
+  FBDiagnosticQueryType type = json[KeyType];
   if ([type isEqualToString:FBDiagnosticQueryTypeAll]) {
     return [FBDiagnosticQuery_All new];
   }
   if ([type isEqualToString:FBDiagnosticQueryTypeNamed] ) {
-    return [FBDiagnosticQuery_Named inflateFromJSON:json error:error];
+    return [FBDiagnosticQuery_Named inflateFromJSON:json format:format error:error];
   }
   if ([type isEqualToString:FBDiagnosticQueryTypeCrashes]) {
-    return [FBDiagnosticQuery_Crashes inflateFromJSON:json error:error];
+    return [FBDiagnosticQuery_Crashes inflateFromJSON:json format:format error:error];
   }
   if ([type isEqualToString:FBDiagnosticQueryTypeAppFiles]) {
-    return [FBDiagnosticQuery_ApplicationLogs inflateFromJSON:json error:error];
+    return [FBDiagnosticQuery_ApplicationLogs inflateFromJSON:json format:format error:error];
   }
   return [[FBControlCoreError describe:@"%@ is not a valid type"] fail:error];
+}
+
++ (instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json format:(FBDiagnosticQueryFormat)format error:(NSError **)error
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
 }
 
 - (id)jsonSerializableRepresentation

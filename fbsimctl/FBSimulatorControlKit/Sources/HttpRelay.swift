@@ -352,8 +352,9 @@ class HttpRelay : Relay {
 
   fileprivate static var diagnosticQueryRoute: Route { get {
     return ActionRoute.post(.diagnose) { json in
-      let query = try FBDiagnosticQuery.inflate(fromJSON: json.decode())
-      return Action.diagnose(query, DiagnosticFormat.content)
+      var query = try FBDiagnosticQuery.inflate(fromJSON: json.decode())
+      query = query.withFormat(DiagnosticFormat.content)
+      return Action.diagnose(query)
     }
   }}
 
@@ -362,8 +363,9 @@ class HttpRelay : Relay {
       guard let name = components.last else {
         throw ParseError.custom("No diagnostic name provided")
       }
-      let query = FBDiagnosticQuery.named([name])
-      return Action.diagnose(query, DiagnosticFormat.content)
+      var query = FBDiagnosticQuery.named([name])
+      query = query.withFormat(DiagnosticFormat.content)
+      return Action.diagnose(query)
     }
   }}
 

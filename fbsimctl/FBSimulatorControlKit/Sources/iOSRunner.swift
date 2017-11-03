@@ -30,8 +30,8 @@ struct iOSActionProvider {
     let (action, target, reporter) = self.context.value
 
     switch action {
-    case .diagnose(let query, let format):
-      return DiagnosticsRunner(reporter, query, query, format)
+    case .diagnose(let query):
+      return DiagnosticsRunner(reporter, query, query)
     case .uninstall(let appBundleID):
       return FutureRunner(reporter, .uninstall, FBEventReporterSubject(string: appBundleID), target.uninstallApplication(withBundleID: appBundleID))
     case .core(let action):
@@ -161,13 +161,11 @@ private struct DiagnosticsRunner : Runner {
   let reporter: iOSReporter
   let subject: ControlCoreValue
   let query: FBDiagnosticQuery
-  let format: DiagnosticFormat
 
-  init(_ reporter: iOSReporter, _ subject: ControlCoreValue, _ query: FBDiagnosticQuery, _ format: DiagnosticFormat) {
+  init(_ reporter: iOSReporter, _ subject: ControlCoreValue, _ query: FBDiagnosticQuery) {
     self.reporter = reporter
     self.subject = subject
     self.query = query
-    self.format = format
   }
 
   func run() -> CommandResult {
@@ -187,7 +185,7 @@ private struct DiagnosticsRunner : Runner {
 
   func fetchDiagnostics() -> [FBDiagnostic] {
     let diagnostics = self.reporter.target.diagnostics
-    let format = self.format
+    let format = self.query.format
 
     return diagnostics.perform(query).map { diagnostic in
       switch format {

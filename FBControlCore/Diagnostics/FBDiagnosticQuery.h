@@ -60,6 +60,21 @@ extern FBDiagnosticQueryFormat FBDiagnosticQueryFormatContent;
  */
 + (instancetype)crashesOfType:(FBCrashLogInfoProcessType)processType since:(NSDate *)date;
 
+/**
+ Derives a new Diagnostic Query, with the new format applied.
+
+ @param format the format to apply.
+ @return a new Diagnostic Query.
+ */
+- (instancetype)withFormat:(FBDiagnosticQueryFormat)format;
+
+#pragma mark Properties
+
+/**
+ The Output Format of a Query.
+ */
+@property (nonatomic, copy, readonly) FBDiagnosticQueryFormat format;
+
 @end
 
 @interface FBDiagnosticQuery_All : FBDiagnosticQuery

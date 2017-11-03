@@ -603,8 +603,9 @@ extension Action : Parsable {
         )
       )
       .fmap { (format, query) in
-        Action.diagnose(query, format)
+        query.withFormat(format)
       }
+      .fmap(Action.diagnose)
       .sectionize("diagnose", "Action: Diagnose", "")
   }
 
