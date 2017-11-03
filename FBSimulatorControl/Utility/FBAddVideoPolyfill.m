@@ -112,7 +112,7 @@
       failBool:error];
   }
 
-  if (![simulator terminateSubprocess:photosAppProcess error:nil]) {
+  if (![[simulator killApplicationWithBundleID:appLaunch.bundleID] await:nil]) {
     return [[[FBSimulatorError
       describe:@"Couldn't kill MobileSlideShow after uploading videos"]
       causedBy:innerError]

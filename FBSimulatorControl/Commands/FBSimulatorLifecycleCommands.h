@@ -152,17 +152,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)openURL:(NSURL *)url error:(NSError **)error;
 
-#pragma mark Subprocesses
-
-/**
- Terminates a Subprocess of the Simulator.
-
- @param process the process to terminate.
- @param error an error out for any error that occurs.
- @return the reciever, for chaining.
- */
-- (BOOL)terminateSubprocess:(FBProcessInfo *)process error:(NSError **)error;
-
 @end
 
 /**

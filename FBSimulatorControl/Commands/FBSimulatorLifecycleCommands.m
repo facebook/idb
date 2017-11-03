@@ -197,15 +197,4 @@
   return YES;
 }
 
-#pragma mark Subprocesses
-
-- (BOOL)terminateSubprocess:(FBProcessInfo *)process error:(NSError **)error
-{
-  NSParameterAssert(process);
-    return [[[FBSimulatorSubprocessTerminationStrategy
-      strategyWithSimulator:self.simulator]
-      terminate:process]
-      await:error] != nil;
-}
-
 @end
