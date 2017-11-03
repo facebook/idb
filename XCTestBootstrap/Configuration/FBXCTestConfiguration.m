@@ -21,7 +21,7 @@ FBXCTestType const FBXCTestTypeListTest = @"list-test";
 
 #pragma mark Initializers
 
-- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testFilter:(NSString *)testFilter
+- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout
 {
   self = [super init];
   if (!self) {
@@ -237,7 +237,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
 + (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json destination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  return [[self alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:nil testFilter:nil];
+  return [[self alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
 }
 
 #pragma mark NSCopying
@@ -255,7 +255,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
 + (instancetype)configurationWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout
 {
-  return [[FBListTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:nil testFilter:nil];
+  return [[FBListTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
 }
 
 #pragma mark Public
@@ -282,12 +282,12 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
 + (instancetype)configurationWithDestination:(FBXCTestDestination *)destination environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath
 {
-  return [[FBApplicationTestConfiguration alloc] initWithDestination:destination shims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testFilter:nil];
+  return [[FBApplicationTestConfiguration alloc] initWithDestination:destination shims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath];
 }
 
-- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testFilter:(NSString *)testFilter
+- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath
 {
-  self = [super initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testFilter:testFilter];
+  self = [super initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
   if (!self) {
     return nil;
   }
@@ -321,7 +321,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
       describeFormat:@"%@ is not a String for %@", runnerAppPath, KeyRunnerAppPath]
       fail:error];
   }
-  return [[FBApplicationTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testFilter:nil];
+  return [[FBApplicationTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath];
 }
 
 @end
@@ -332,12 +332,12 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
 + (instancetype)configurationWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(NSString *)testFilter
 {
-  return [[FBLogicTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:nil testFilter:testFilter];
+  return [[FBLogicTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout testFilter:testFilter];
 }
 
-- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testFilter:(NSString *)testFilter
+- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(NSString *)testFilter
 {
-  self = [super initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testFilter:testFilter];
+  self = [super initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
   if (!self) {
     return nil;
   }
@@ -371,7 +371,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
       describeFormat:@"%@ is not a String for %@", keyTestFilter, KeyTestFilter]
       fail:error];
   }
-  return [[FBLogicTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:nil testFilter:keyTestFilter];
+  return [[FBLogicTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout testFilter:keyTestFilter];
 }
 
 @end

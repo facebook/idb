@@ -22,10 +22,6 @@ FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
 
 + (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory timeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  Class configurationClass = [self testConfigurationClassForArguments:arguments error:error];
-  if (!configurationClass) {
-    return nil;
-  }
   FBXCTestDestination *destination = [self destinationWithArguments:arguments error:error];
   if (!destination) {
     return nil;
@@ -35,24 +31,40 @@ FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
   NSString *runnerAppPath = nil;
   NSString *testFilter = nil;
   BOOL waitForDebugger = NO;
-
   if (![FBXCTestConfiguration loadWithArguments:arguments shimsOut:&shims testBundlePathOut:&testBundlePath runnerAppPathOut:&runnerAppPath testFilterOut:&testFilter waitForDebuggerOut:&waitForDebugger error:error]) {
     return nil;
   }
-  return [[configurationClass alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testFilter:testFilter];
-}
-
-+ (Class)testConfigurationClassForArguments:(NSArray<NSString *> *)arguments error:(NSError **)error
-{
   NSSet<NSString *> *argumentSet = [NSSet setWithArray:arguments];
   if ([argumentSet containsObject:@"-listTestsOnly"]) {
-    return [FBListTestConfiguration class];
+    return [FBListTestConfiguration
+      configurationWithDestination:destination
+      shims:shims
+      environment:environment
+      workingDirectory:workingDirectory
+      testBundlePath:testBundlePath
+      waitForDebugger:waitForDebugger
+      timeout:timeout];
   }
   if ([argumentSet containsObject:@"-logicTest"]) {
-    return [FBLogicTestConfiguration class];
+    return [FBLogicTestConfiguration
+      configurationWithDestination:destination
+      shims:shims
+      environment:environment
+      workingDirectory:workingDirectory
+      testBundlePath:testBundlePath
+      waitForDebugger:waitForDebugger
+      timeout:timeout
+      testFilter:testFilter];
   }
   if ([argumentSet containsObject:@"-appTest"]) {
-    return [FBApplicationTestConfiguration class];
+    return [FBApplicationTestConfiguration
+      configurationWithDestination:destination
+      environment:environment
+      workingDirectory:workingDirectory
+      testBundlePath:testBundlePath
+      waitForDebugger:waitForDebugger
+      timeout:timeout
+      runnerAppPath:runnerAppPath];
   }
   return [[FBControlCoreError
     describeFormat:@"Could not determine test runner type from %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]]

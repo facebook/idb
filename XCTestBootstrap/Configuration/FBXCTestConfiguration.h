@@ -46,7 +46,7 @@ extern FBXCTestType const FBXCTestTypeListTest;
  The Default Initializer.
  This should not be called directly.
  */
-- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(nullable FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(nullable NSString *)runnerAppPath testFilter:(nullable NSString *)testFilter;
+- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(nullable FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout;
 
 /**
  The Destination Runtime to run against.
