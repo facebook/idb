@@ -214,9 +214,10 @@
   NSMutableArray<FBOSVersion *> *array = [NSMutableArray array];
   for (SimRuntime *runtime in runtimes) {
     FBOSVersion *os = FBControlCoreConfigurationVariants.nameToOSVersion[runtime.name];
-    if (os) {
-      [array addObject:os];
+    if (!os) {
+      os = [FBOSVersion genericWithName:runtime.name];
     }
+    [array addObject:os];
   }
   return [array copy];
 }

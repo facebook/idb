@@ -55,12 +55,13 @@
 
 + (instancetype)makeDefaultConfiguration
 {
-  FBDeviceType *device = FBControlCoreConfigurationVariants.nameToDevice[FBDeviceModeliPhone6];
+  FBDeviceModel model = FBDeviceModeliPhone6;
+  FBDeviceType *device = FBControlCoreConfigurationVariants.nameToDevice[model];
   FBOSVersion *os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
   NSAssert(
     os,
-    @"Could not obtain OS for Default Device '%@'. Supported OS Versions %@. All OS Versions",
-    device,
+    @"Could not obtain OS for model '%@'. Supported OS Versions for Model %@. All Available OS Versions %@",
+    model,
     [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorConfiguration supportedOSVersionsForDevice:device]],
     [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorConfiguration supportedOSVersions]]
   );
