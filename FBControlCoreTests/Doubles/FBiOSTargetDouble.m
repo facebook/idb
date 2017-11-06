@@ -76,7 +76,7 @@
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
-- (FBFuture<NSNull *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
+- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }

@@ -16,6 +16,7 @@
 #import "FBApplicationLaunchStrategy.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
+#import "FBSimulatorApplicationOperation.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorLaunchCtlCommands.h"
 #import "FBSimulatorProcessFetcher.h"
@@ -70,12 +71,14 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
+- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   return [[[FBApplicationLaunchStrategy
     strategyWithSimulator:self.simulator]
     launchApplication:configuration]
-    mapReplace:NSNull.null];
+    onQueue:self.simulator.workQueue map:^(FBSimulatorApplicationOperation *operation) {
+      return @(operation.process.processIdentifier);
+    }];
 }
 
 - (FBFuture<NSNull *> *)killApplicationWithBundleID:(NSString *)bundleID
