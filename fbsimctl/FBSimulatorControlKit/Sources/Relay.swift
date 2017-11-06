@@ -59,29 +59,20 @@ class SynchronousRelay : Relay {
   }
 
   func start() throws {
-    // Setup the Signal Handling first, so sending a Signal cannot race with starting the relay.
-    var signalled = false
-    let handler = SignalHandler { info in
-      self.reporter.reportSimple(.signalled, .discrete, info)
-      signalled = true
-    }
-    handler.register()
-
     // Start the Relay and notify consumers.
     try self.relay.start()
     self.started()
 
-    // Start the event loop.
-    let awaitable = self.awaitable
-    RunLoop.current.spinRunLoop(withTimeout: Double.greatestFiniteMagnitude, untilTrue: {
-      // Check the awaitable (if present)
-      if awaitable?.hasTerminated == true {
-        return true
-      }
-      // Or return the current signal status.
-      return signalled
-    })
-    handler.unregister()
+    var futures: [FBFuture<NSNull>] = []
+    if let completedFuture = self.awaitable?.completed {
+      futures.append(completedFuture)
+    }
+    let signalFuture: FBFuture<NSNull> = SignalHandler.future.onQueue(DispatchQueue.main, map: { info in
+      self.reporter.reportSimple(.signalled, .discrete, info)
+      return info
+    }) as! FBFuture<NSNull>
+    futures.append(signalFuture)
+    let _ = try FBFuture(futures: futures).await()
   }
 
   func stop() throws {

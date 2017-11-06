@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBFuture.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBFuture;
@@ -36,14 +38,14 @@ typedef NSString *FBTerminationHandleType NS_EXTENSIBLE_STRING_ENUM;
 @end
 
 /**
- A Termination Handle that can additionally expose whether it has been terminated or not.
+ A Termination Handle that can optionally be awaited for completions
  */
 @protocol FBTerminationAwaitable <FBTerminationHandle>
 
 /**
- YES if reciever has terminated, NO otherwise.
+ A Future that resolves when the operation has completed.
  */
-@property (nonatomic, assign, readonly) BOOL hasTerminated;
+@property (nonatomic, strong, readonly) FBFuture<NSNull *> *completed;
 
 @end
 

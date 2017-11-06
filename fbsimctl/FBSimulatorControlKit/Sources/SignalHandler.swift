@@ -67,4 +67,17 @@ class SignalHandler {
       source.cancel()
     }
   }
+
+  static var future: FBFuture<SignalInfo> { get {
+    // Setup the Signal Handling first, so sending a Signal cannot race with starting the relay.
+    let future: FBMutableFuture<SignalInfo> = FBMutableFuture()
+    let handler = SignalHandler { info in
+      future.resolve(withResult: info)
+    }
+    handler.register()
+    return future.onQueue(DispatchQueue.main, chain: { future in
+      handler.unregister()
+      return future
+    }) as! FBFuture<SignalInfo>
+  }}
 }

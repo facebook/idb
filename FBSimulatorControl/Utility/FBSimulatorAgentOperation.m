@@ -106,14 +106,14 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
   return FBTerminationHandleTypeSimulatorAgent;
 }
 
-- (BOOL)hasTerminated
-{
-  return self.future == nil;
-}
-
 - (void)terminate
 {
   [self.future cancel];
+}
+
+- (FBFuture<NSNull *> *)completed
+{
+  return [self.future mapReplace:NSNull.null];
 }
 
 @end

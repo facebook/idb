@@ -106,9 +106,4 @@
   [self.terminationFuture cancel];
 }
 
-- (BOOL)hasTerminated
-{
-  return self.terminationFuture.hasCompleted;
-}
-
 @end

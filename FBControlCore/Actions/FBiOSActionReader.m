@@ -251,6 +251,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 @property (nonatomic, strong, nullable, readwrite) id<FBiOSActionReaderDelegate> delegate;
 @property (nonatomic, strong, readonly) FBiOSActionRouter *router;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *completedFuture;
 
 - (instancetype)initWithDelegate:(id<FBiOSActionReaderDelegate>)delegate router:(FBiOSActionRouter *)router;
 
@@ -291,6 +292,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
   _delegate = delegate;
   _router = router;
+  _completedFuture = FBMutableFuture.future;
 
   return self;
 }
@@ -308,6 +310,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   // If delegate is nil, this is a no-op.
   [self.delegate readerDidFinishReading:self];
   self.delegate = nil;
+  [self.completedFuture resolveWithResult:NSNull.null];
   return YES;
 }
 
@@ -323,9 +326,9 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   [self stopListeningWithError:nil];
 }
 
-- (BOOL)hasTerminated
+- (FBFuture<NSNull *> *)completed
 {
-  return self.delegate == nil;
+  return self.completedFuture;
 }
 
 @end

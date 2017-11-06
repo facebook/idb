@@ -50,9 +50,9 @@
   [self.future cancel];
 }
 
-- (BOOL)hasTerminated
+- (FBFuture *)completed
 {
-  return self.future.hasCompleted;
+  return [[self future] mapReplace:NSNull.null];
 }
 
 @end

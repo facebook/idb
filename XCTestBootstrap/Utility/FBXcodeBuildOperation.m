@@ -100,11 +100,6 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
   [self.future cancel];
 }
 
-- (BOOL)hasTerminated
-{
-  return self.future.hasCompleted;
-}
-
 #pragma mark Public Methods
 
 - (BOOL)waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
