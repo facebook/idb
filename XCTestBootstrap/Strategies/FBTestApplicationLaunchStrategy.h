@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationLaunchConfiguration;
@@ -38,10 +40,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param configuration the configuration of the Application to launch.
  @param path the path of the application on the host filesystem.
- @param error error for error handling
- @return YES if the request was successful, otherwise NO.
+ @return A future that resolves when the application has been launched.
  */
-- (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path error:(NSError **)error;
+- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path;
 
 @end
 

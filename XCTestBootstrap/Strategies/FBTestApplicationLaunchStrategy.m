@@ -40,49 +40,62 @@
   return self;
 }
 
-- (FBInstalledApplication *)installedAppWithBundleID:(NSString *)bundleID
+#pragma mark Private
+
+- (FBFuture<FBInstalledApplication *> *)installedAppWithBundleID:(NSString *)bundleID
 {
-  NSArray<FBInstalledApplication *> *apps = [[self.iosTarget installedApplications] await:nil];
-  if (!apps) {
-    return nil;
-  }
+  return [[self.iosTarget
+    installedApplications]
+    onQueue:self.iosTarget.workQueue fmap:^(NSArray<FBInstalledApplication *> *apps) {
+      for (FBInstalledApplication *app in apps) {
+        if ([app.bundle.bundleID isEqualToString:bundleID]) {
+          return [FBFuture futureWithResult:app];
+        }
+      }
+      return [[FBControlCoreError
+        describeFormat:@"App with bundle ID %@ is not installed", bundleID]
+        failFuture];
+    }];
+}
 
-  for (FBInstalledApplication *app in apps) {
-    if ([app.bundle.bundleID isEqualToString:bundleID]) {
-      return app;
-    }
+- (FBFuture<NSNumber *> *)installAndLaunchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path
+{
+  if (!path) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not install App-Under-Test %@ as it is not installed and no path was provided", configuration]
+      failFuture];
   }
-
-  return nil;
+  FBFuture<NSNull *> *cleanState = [[self.iosTarget
+    isApplicationInstalledWithBundleID:configuration.bundleID]
+    onQueue:self.iosTarget.workQueue fmap:^FBFuture<NSNull *> *(NSNumber *isInstalled) {
+      if (!isInstalled.boolValue) {
+        return [FBFuture futureWithResult:NSNull.null];
+      }
+      return [self.iosTarget uninstallApplicationWithBundleID:configuration.bundleID];
+    }];
+  return [[cleanState
+    onQueue:self.iosTarget.workQueue fmap:^(NSNull *_) {
+      return [self.iosTarget installApplicationWithPath:path];
+    }]
+    onQueue:self.iosTarget.workQueue fmap:^(NSNull *_) {
+      return [self.iosTarget launchApplication:configuration];
+    }];
 }
 
 #pragma mark Public Methods
 
-- (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path error:(NSError **)error
+- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path
 {
   // Check if path points to installed app
-  FBInstalledApplication *app = [self installedAppWithBundleID:configuration.bundleID];
-  if (app && [app.bundle.path isEqualToString:path]) {
-    return [[self.iosTarget launchApplication:configuration] await:error] != nil;
-  }
-
-  if (!path && ![[self.iosTarget isApplicationInstalledWithBundleID:configuration.bundleID] await:error]) {
-    return NO;
-  }
-  if (path) {
-    if ([[self.iosTarget isApplicationInstalledWithBundleID:configuration.bundleID] await:error]) {
-      if (![[self.iosTarget uninstallApplicationWithBundleID:configuration.bundleID] await:error]) {
-        return NO;
+  return [[self
+    installedAppWithBundleID:configuration.bundleID]
+    onQueue:self.iosTarget.workQueue chain:^(FBFuture<FBInstalledApplication *> *future) {
+      FBInstalledApplication *app = future.result;
+      if (app && [app.bundle.path isEqualToString:path]) {
+        return [self.iosTarget launchApplication:configuration];
       }
-    }
-    if (![[self.iosTarget installApplicationWithPath:path] awaitWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout error:error]) {
-      return NO;
-    }
-  }
-  if (![[self.iosTarget launchApplication:configuration] await:error]) {
-    return NO;
-  }
-  return YES;
+      return [self installAndLaunchApplication:configuration atPath:path];
+    }];
 }
 
 @end

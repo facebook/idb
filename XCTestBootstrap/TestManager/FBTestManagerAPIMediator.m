@@ -168,7 +168,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 - (id)_XCT_launchProcessWithPath:(NSString *)path bundleID:(NSString *)bundleID arguments:(NSArray *)arguments environmentVariables:(NSDictionary *)environment
 {
   [self.logger logFormat:@"Test process requested process launch with bundleID %@", bundleID];
-  NSError *error;
   DTXRemoteInvocationReceipt *receipt = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
   FBApplicationLaunchConfiguration *launch = [FBApplicationLaunchConfiguration
     configurationWithBundleID:bundleID
@@ -177,15 +176,21 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
     environment:environment
     waitForDebugger:NO
     output:FBProcessOutputConfiguration.outputToDevNull];
+  id token = @(receipt.hash);
 
-  if (![[FBTestApplicationLaunchStrategy strategyWithTarget:self.target] launchApplication:launch atPath:path error:&error]) {
-    [receipt invokeCompletionWithReturnValue:nil error:error];
-  }
-  else {
-    id token = @(receipt.hash);
-    self.tokenToBundleIDMap[token] = bundleID;
-    [receipt invokeCompletionWithReturnValue:token error:nil];
-  }
+  [[[FBTestApplicationLaunchStrategy
+    strategyWithTarget:self.target]
+    launchApplication:launch atPath:path]
+    onQueue:self.target.workQueue notifyOfCompletion:^(FBFuture<NSNull *> *future) {
+      NSError *error = future.error;
+      if (error) {
+        [receipt invokeCompletionWithReturnValue:nil error:error];
+      } else {
+        self.tokenToBundleIDMap[token] = bundleID;
+        [receipt invokeCompletionWithReturnValue:token error:nil];
+      }
+    }];
+
   return receipt;
 }
 
