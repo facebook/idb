@@ -248,6 +248,27 @@ static NSString *const KeyDataContainer = @"DataContainer";
 
 - (FBFuture<NSNull *> *)installExtractedApplicationWithPath:(NSString *)path
 {
+  return [[self
+    confirmCompatibilityOfApplicationAtPath:path]
+    onQueue:self.simulator.workQueue fmap:^FBFuture *(FBApplicationBundle *application) {
+      NSDictionary *options = @{
+        @"CFBundleIdentifier": application.bundleID
+      };
+      NSURL *appURL = [NSURL fileURLWithPath:application.path];
+
+      NSError *error = nil;
+      if (![self.simulator.device installApplication:appURL withOptions:options error:&error]) {
+        return [[[FBSimulatorError
+          describeFormat:@"Failed to install Application %@ with options %@", application, options]
+          causedBy:error]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
+}
+
+- (FBFuture<FBApplicationBundle *> *)confirmCompatibilityOfApplicationAtPath:(NSString *)path
+{
   NSError *error = nil;
   FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:path error:&error];
   if (!application) {
@@ -257,38 +278,28 @@ static NSString *const KeyDataContainer = @"DataContainer";
       failFuture];
   }
 
-  FBInstalledApplication *installed = [[self.simulator installedApplicationWithBundleID:application.bundleID] await:nil];
-  if (installed && installed.installType == FBApplicationInstallTypeSystem) {
-    return [[FBSimulatorError
-      describeFormat:@"Cannot install app as it is a system app %@", installed]
-      failFuture];
-  }
-
-  NSSet<NSString *> *binaryArchitectures = application.binary.architectures;
-  NSSet<NSString *> *supportedArchitectures = FBControlCoreConfigurationVariants.baseArchToCompatibleArch[self.simulator.deviceType.simulatorArchitecture];
-  if (![binaryArchitectures intersectsSet:supportedArchitectures]) {
-    return [[FBSimulatorError
-      describeFormat:
-        @"Simulator does not support any of the architectures (%@) of the executable at %@. Simulator Archs (%@)",
-        [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects],
-        application.binary.path,
-        [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects]]
-      failFuture];
-  }
-
-  NSDictionary *options = @{
-    @"CFBundleIdentifier" : application.bundleID
-  };
-  NSURL *appURL = [NSURL fileURLWithPath:application.path];
-
-  if (![self.simulator.device installApplication:appURL withOptions:options error:&error]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to install Application %@ with options %@", application, options]
-      causedBy:error]
-      failFuture];
-  }
-
-  return [FBFuture futureWithResult:NSNull.null];
+  return [[self.simulator
+    installedApplicationWithBundleID:application.bundleID]
+    onQueue:self.simulator.workQueue chain:^FBFuture *(FBFuture<FBInstalledApplication *> *future) {
+      FBInstalledApplication *installed = future.result;
+      if (installed && installed.installType == FBApplicationInstallTypeSystem) {
+        return [[FBSimulatorError
+         describeFormat:@"Cannot install app as it is a system app %@", installed]
+         failFuture];
+      }
+      NSSet<NSString *> *binaryArchitectures = application.binary.architectures;
+      NSSet<NSString *> *supportedArchitectures = FBControlCoreConfigurationVariants.baseArchToCompatibleArch[self.simulator.deviceType.simulatorArchitecture];
+      if (![binaryArchitectures intersectsSet:supportedArchitectures]) {
+        return [[FBSimulatorError
+          describeFormat:
+            @"Simulator does not support any of the architectures (%@) of the executable at %@. Simulator Archs (%@)",
+            [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects],
+            application.binary.path,
+            [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects]]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:application];
+    }];
 }
 
 - (FBFuture<NSString *> *)fallbackDataContainerForBundleID:(NSString *)bundleID
