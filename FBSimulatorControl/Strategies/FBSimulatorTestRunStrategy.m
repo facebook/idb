@@ -30,6 +30,8 @@
 
 @implementation FBSimulatorTestRunStrategy
 
+#pragma mark Initializers
+
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBTestLaunchConfiguration *)configuration  workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter
 {
   NSParameterAssert(simulator);
@@ -52,24 +54,26 @@
   return self;
 }
 
-- (nullable FBTestManager *)connectAndStartWithError:(NSError **)error
+#pragma mark Public Methods
+
+- (FBFuture<FBTestManager *> *)connectAndStart
 {
   NSParameterAssert(self.configuration.applicationLaunchConfiguration);
   NSParameterAssert(self.configuration.testBundlePath);
   NSParameterAssert(self.workingDirectory);
 
-  NSError *innerError = nil;
+  NSError *error = nil;
   FBSimulator *simulator = self.simulator;
 
-  if (![XCTestBootstrapFrameworkLoader.allDependentFrameworks loadPrivateFrameworks:simulator.logger error:&innerError]) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
+  if (![XCTestBootstrapFrameworkLoader.allDependentFrameworks loadPrivateFrameworks:simulator.logger error:&error]) {
+    return [FBSimulatorError failFutureWithError:error];
   }
 
   if (simulator.state != FBSimulatorStateBooted) {
     return [[[FBSimulatorError
       describe:@"Simulator must be booted to run tests"]
       inSimulator:simulator]
-      fail:error];
+      failFuture];
   }
 
   FBSimulatorTestPreparationStrategy *testPrepareStrategy = [FBSimulatorTestPreparationStrategy
@@ -81,24 +85,16 @@
     reporter:self.reporter
     logger:simulator.logger];
 
-  FBTestManager *testManager = [testRunStrategy
-    startTestManagerWithApplicationLaunchConfiguration:self.configuration.applicationLaunchConfiguration
-    error:&innerError];
-
-  if (!testManager) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed start test manager"]
-      causedBy:innerError]
-      fail:error];
-  }
-  [simulator.eventSink testmanagerDidConnect:testManager];
-
-  FBFuture<FBTestManagerResult *> *execute = [testManager execute];
-  if (execute.error) {
-    return [FBSimulatorError failWithError:execute.error errorOut:error];
-  }
-
-  return testManager;
+  return [[testRunStrategy
+    startTestManagerWithApplicationLaunchConfiguration:self.configuration.applicationLaunchConfiguration]
+    onQueue:self.simulator.workQueue fmap:^(FBTestManager *testManager) {
+      [simulator.eventSink testmanagerDidConnect:testManager];
+      FBFuture<FBTestManagerResult *> *result = [testManager execute];
+      if (result.error) {
+        return [FBFuture futureWithError:result.error];
+      }
+      return [FBFuture futureWithResult:testManager];
+    }];
 }
 
 @end

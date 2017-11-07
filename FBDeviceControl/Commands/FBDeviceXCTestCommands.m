@@ -176,31 +176,33 @@
   [self reportTargetTests:testTargets reporter:reporter];
 }
 
-- (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter error:(NSError **)error
+#pragma mark FBXCTestCommands Implementation
+
+- (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter
 {
   // Return early and fail if there is already a test run for the device.
   // There should only ever be one test run per-device.
   if (self.operation) {
     return [[FBDeviceControlError
-             describeFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]
-            fail:error];
+      describeFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]
+      failFuture];
   }
   // Terminate the reparented xcodebuild invocations.
-  NSError *innerError = nil;
-  if (![FBXcodeBuildOperation terminateReparentedXcodeBuildProcessesForTarget:self.device processFetcher:self.processFetcher error:&innerError]) {
-    return [FBDeviceControlError failWithError:innerError errorOut:error];
+  NSError *error = nil;
+  if (![FBXcodeBuildOperation terminateReparentedXcodeBuildProcessesForTarget:self.device processFetcher:self.processFetcher error:&error]) {
+    return [FBDeviceControlError failFutureWithError:error];
   }
 
   // Create the .xctestrun file
-  NSString *filePath = [self createXCTestRunFileFromConfiguration:testLaunchConfiguration error:&innerError];
+  NSString *filePath = [self createXCTestRunFileFromConfiguration:testLaunchConfiguration error:&error];
   if (!filePath) {
-    return [FBDeviceControlError failWithError:innerError errorOut:error];
+    return [FBDeviceControlError failFutureWithError:error];
   }
 
   // Find the path to xcodebuild
-  NSString *xcodeBuildPath = [FBDeviceXCTestCommands xcodeBuildPathWithError:&innerError];
+  NSString *xcodeBuildPath = [FBDeviceXCTestCommands xcodeBuildPathWithError:&error];
   if (!xcodeBuildPath) {
-    return [FBDeviceControlError failWithError:innerError errorOut:error];
+    return [FBDeviceControlError failFutureWithError:error];
   }
 
   // Create the Task, wrap it and store it
@@ -218,12 +220,12 @@
     }];
   }
 
-  return _operation;
+  return [FBFuture futureWithResult:_operation];
 }
 
-- (NSArray<id<FBXCTestOperation>> *)testOperations
+- (NSArray<id<FBTerminationAwaitable>> *)testOperations
 {
-  id<FBXCTestOperation> operation = self.operation;
+  id<FBTerminationAwaitable> operation = self.operation;
   return operation ? @[operation] : @[];
 }
 

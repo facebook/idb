@@ -416,7 +416,7 @@ static NSString *const KeyResultBundlePath = @"resultBundlePath";
       failBool:error];
   }
 
-  id<FBXCTestOperation> operation = [commands startTestWithLaunchConfiguration:self reporter:nil error:error];
+  id<FBTerminationAwaitable> operation = [[commands startTestWithLaunchConfiguration:self reporter:nil] awaitWithTimeout:self.timeout error:error];
   if (!operation) {
     return NO;
   }

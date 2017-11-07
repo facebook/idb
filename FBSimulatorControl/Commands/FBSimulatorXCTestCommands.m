@@ -47,16 +47,16 @@
 
 #pragma mark Public
 
-- (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter error:(NSError **)error
+- (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter
 {
-  return [self startTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter workingDirectory:self.simulator.auxillaryDirectory error:error];
+  return [self startTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter workingDirectory:self.simulator.auxillaryDirectory];
 }
 
-- (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter workingDirectory:(nullable NSString *)workingDirectory error:(NSError **)error
+- (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter workingDirectory:(nullable NSString *)workingDirectory
 {
-  return [[FBSimulatorTestRunStrategy
+  return (FBFuture<id<FBTerminationAwaitable>> *) [[FBSimulatorTestRunStrategy
     strategyWithSimulator:self.simulator configuration:testLaunchConfiguration workingDirectory:workingDirectory reporter:reporter]
-    connectAndStartWithError:error];
+    connectAndStart];
 }
 
 - (BOOL)runApplicationTest:(FBApplicationTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter error:(NSError **)error
@@ -66,7 +66,7 @@
     executeWithError:error];
 }
 
-- (NSArray<id<FBXCTestOperation>> *)testOperations
+- (NSArray<id<FBTerminationAwaitable>> *)testOperations
 {
   return [self.simulator.resourceSink.testManagers copy];
 }
@@ -94,8 +94,6 @@
     logger:self.simulator.logger]
     listTests];
 }
-
-#pragma mark Private
 
 
 @end

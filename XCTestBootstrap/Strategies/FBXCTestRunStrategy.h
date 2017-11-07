@@ -9,20 +9,21 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCoreLogger.h>
+#import <FBControlCore/FBCOntrolCore.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationLaunchConfiguration;
 @class FBTestManager;
 @protocol FBXCTestPreparationStrategy;
-@protocol FBiOSTarget;
 @protocol FBTestManagerTestReporter;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  Strategy used to run an injected XCTest bundle in an Application and attach the 'testmanagerd' daemon to it.
  */
 @interface FBXCTestRunStrategy : NSObject
+
+#pragma mark Initializers
 
 /**
  Convenience constructor
@@ -35,14 +36,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)strategyWithIOSTarget:(id<FBiOSTarget>)iosTarget testPrepareStrategy:(id<FBXCTestPreparationStrategy>)testPrepareStrategy reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger;
 
+#pragma mark Public Methods.
+
 /**
  Starts testing session
 
  @param applicationLaunchConfiguration application launch configuration used to start test runner
- @param error If there is an error, upon return contains an NSError object that describes the problem.
- @return testManager if the operation succeeds, otherwise nil.
+ @return A future that resolves with the Test Manager
  */
-- (nullable FBTestManager *)startTestManagerWithApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration error:(NSError **)error;
+- (FBFuture<FBTestManager *> *)startTestManagerWithApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
 
 @end
 

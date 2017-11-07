@@ -9,14 +9,16 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBSimulator;
 @class FBSimulator;
 @class FBTestLaunchConfiguration;
 @class FBTestManager;
 @class FBTestManagerResult;
 @protocol FBTestManagerTestReporter;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Strategy that encompasses a Single Test Run on a Simulator.
@@ -41,10 +43,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Starts the Connection to the Test Host.
 
- @param error an error out for any error that occurs.
- @return the Test Manager that has connected if successful, nil otherwise.
+ @return A future that resolves with the Test Manager.
  */
-- (nullable FBTestManager *)connectAndStartWithError:(NSError **)error;
+- (FBFuture<FBTestManager *> *)connectAndStart;
 
 @end
 

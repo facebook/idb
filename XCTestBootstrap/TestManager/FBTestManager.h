@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Manages a connection with the 'testmanagerd' daemon.
  */
-@interface FBTestManager : NSObject <FBXCTestOperation>
+@interface FBTestManager : NSObject <FBTerminationAwaitable>
 
 /**
  Creates and returns a test manager with given paramenters.

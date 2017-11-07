@@ -55,11 +55,11 @@
 - (void)assertLaunchesTestWithConfiguration:(FBTestLaunchConfiguration *)testLaunch reporter:(id<FBTestManagerTestReporter>)reporter simulator:(FBSimulator *)simulator
 {
   NSError *error = nil;
-  FBFuture *future = [simulator startTestWithLaunchConfiguration:self.testLaunch reporter:reporter error:&error];
+  id<FBTerminationAwaitable> operation = [[simulator startTestWithLaunchConfiguration:self.testLaunch reporter:reporter] await:&error];
   XCTAssertNil(error);
-  XCTAssertNotNil(future);
+  XCTAssertNotNil(operation);
 
-  id result = [future awaitWithTimeout:20 error:&error];
+  id result = [operation.completed awaitWithTimeout:20 error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(result);
 }

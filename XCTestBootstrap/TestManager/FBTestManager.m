@@ -85,7 +85,7 @@
   return self.mediator.description;
 }
 
-#pragma mark FBXCTestOperation
+#pragma mark FBTerminationAwaitable
 
 - (FBFuture<NSNull *> *)completed
 {

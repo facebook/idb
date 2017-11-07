@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An Xcode Build Operation.
  */
-@interface FBXcodeBuildOperation : NSObject <FBXCTestOperation>
+@interface FBXcodeBuildOperation : NSObject <FBTerminationAwaitable>
 
 #pragma mark Initializers
 

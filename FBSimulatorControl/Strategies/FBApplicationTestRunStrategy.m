@@ -76,7 +76,7 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     reporter:[FBXCTestReporterAdapter adapterWithReporter:self.reporter]];
 
   NSError *innerError = nil;
-  FBTestManager *manager = [runner connectAndStartWithError:&innerError];
+  FBTestManager *manager = [[runner connectAndStart] await:&innerError];
   if (!manager) {
     return [[[FBXCTestError
       describe:@"Failed to connect to the Simulator's Test Manager"]
