@@ -44,6 +44,7 @@
 
   _simulator = simulator;
   _configuration = configuration;
+  _process = process;
 
   return self;
 }
