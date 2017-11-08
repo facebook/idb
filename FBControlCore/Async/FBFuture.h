@@ -203,6 +203,15 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
 - (FBFuture<T> *)fallback:(T)replacement;
 
 /**
+ Delays delivery of the completion of the reciever.
+ A chaining convenience over -[FBFuture futureWithDelay:future:]
+
+ @param delay the delay to resolve the future in.
+ @return a delayed future.
+ */
+- (FBFuture<T> *)delay:(NSTimeInterval)delay;
+
+/**
  Replaces the error message in the event of a failure.
 
  @param format the format string to re-phrase the failure message.

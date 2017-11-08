@@ -549,7 +549,7 @@
 - (void)testReplaceFuture
 {
   FBMutableFuture<NSNumber *> *replacement = FBMutableFuture.future;
-  FBFuture<NSNumber *> *future = [FBFuture futureWithDelay:0.1 future:[[FBFuture futureWithResult:@NO] fmapReplace:replacement]];
+  FBFuture<NSNumber *> *future = [[[FBFuture futureWithResult:@NO] fmapReplace:replacement] delay:0.1];
   dispatch_async(self.queue, ^{
     [replacement resolveWithResult:@YES];
   });
@@ -563,7 +563,7 @@
 - (void)testFallback
 {
   NSError *error = [NSError errorWithDomain:@"foo" code:0 userInfo:nil];
-  FBFuture<NSNumber *> *future = [FBFuture futureWithDelay:0.1 future:[[FBFuture futureWithError:error] fallback:@YES]];
+  FBFuture<NSNumber *> *future = [[[FBFuture futureWithError:error] fallback:@YES] delay:0.1];
 
   [self waitForExpectations:@[
     [self keyValueObservingExpectationForObject:future keyPath:@"result" expectedValue:@YES],

@@ -378,6 +378,11 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
   }];
 }
 
+- (FBFuture *)delay:(NSTimeInterval)delay
+{
+  return [FBFuture futureWithDelay:delay future:self];
+}
+
 - (FBFuture *)rephraseFailure:(NSString *)format, ...
 {
   va_list args;
