@@ -287,6 +287,7 @@
     return NO;
   }
 
+  /*
   __block NSUInteger preLaunchLogLength;
   __block NSString *preLaunchConsoleString;
   if (![[[[FBRunLoopSpinner new]
@@ -308,6 +309,7 @@
   {
     return NO;
   }
+   */
 
   if (!self.device.dvtDevice.supportsXPCServiceDebugging) {
     return [[FBDeviceControlError
