@@ -63,7 +63,7 @@
 
   [self.logger.info logFormat:@"Bootstrapping Test Runner with Configuration %@", [FBCollectionInformation oneLineJSONDescription:configuration]];
   FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:context];
-  if (![testRunner executeWithError:&error]) {
+  if (![[testRunner execute] await:&error]) {
     return [self printErrorMessage:error];
   }
 

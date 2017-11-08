@@ -42,10 +42,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param configuration the configuration to use
  @param reporter the reporter to report to.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A future that resolves when the Application Test has completed.
  */
-- (BOOL)runApplicationTest:(FBApplicationTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter error:(NSError **)error;
+- (FBFuture<NSNull *> *)runApplicationTest:(FBApplicationTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter;
 
 @end
 

@@ -50,59 +50,60 @@
 
 #pragma mark Public
 
-- (BOOL)executeWithError:(NSError **)error
+- (FBFuture<NSNull *> *)execute
 {
-  BOOL success = [self.configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class] ? [self runiOSTestWithError:error] : [self runMacTestWithError:error];
-  if (!success) {
-    return NO;
-  }
-  if (![self.context.reporter printReportWithError:error]) {
-    return NO;
-  }
-  return YES;
+  FBFuture<NSNull *> *future = [self.configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class] ? [self runiOSTest] : [self runMacTest];
+  return [future
+    onQueue:dispatch_get_main_queue() fmap:^(id _) {
+      NSError *error = nil;
+      if (![self.context.reporter printReportWithError:&error]) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
 }
 
 #pragma mark Private
 
-- (BOOL)runMacTestWithError:(NSError **)error
+- (FBFuture<NSNull *> *)runMacTest
 {
   if ([self.configuration isKindOfClass:FBApplicationTestConfiguration.class]) {
-    return [[FBXCTestError describe:@"Application tests are not supported on OS X."] failBool:error];
+    return [[FBXCTestError describe:@"Application tests are not supported on OS X."] failFuture];
   }
   dispatch_queue_t workQueue = dispatch_queue_create("com.facebook.xctestbootstrap.mactest", DISPATCH_QUEUE_SERIAL);
   id<FBXCTestProcessExecutor> executor = [FBMacXCTestProcessExecutor executorWithConfiguration:self.configuration workQueue:workQueue];
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
-    return [[[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] executeWithError:error];
+    return [[[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] execute];
   }
-  return [[FBLogicTestRunStrategy strategyWithExecutor:executor configuration:(FBLogicTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
+  return [[FBLogicTestRunStrategy strategyWithExecutor:executor configuration:(FBLogicTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] execute];
 }
 
-- (BOOL)runiOSTestWithError:(NSError **)error
+- (FBFuture<NSNull *> *)runiOSTest
 {
-  FBSimulator *simulator = [self.context simulatorForiOSTestRun:self.configuration error:error];
+  NSError *error = nil;
+  FBSimulator *simulator = [self.context simulatorForiOSTestRun:self.configuration error:&error];
   if (!simulator) {
-    return NO;
+    return [FBFuture futureWithError:error];
   }
 
-  BOOL testResult = [self runTestWithSimulator:simulator error:error];
-  [self.context finishedExecutionOnSimulator:simulator];
-  if (!testResult) {
-    return NO;
-  }
-
-  return YES;
+  return [[self
+    runTestWithSimulator:simulator]
+    onQueue:dispatch_get_main_queue() chain:^(FBFuture *future) {
+      [self.context finishedExecutionOnSimulator:simulator];
+      return future;
+    }];
 }
 
-- (BOOL)runTestWithSimulator:(FBSimulator *)simulator error:(NSError **)error
+- (FBFuture<NSNull *> *)runTestWithSimulator:(FBSimulator *)simulator
 {
   if ([self.configuration isKindOfClass:FBApplicationTestConfiguration.class]) {
-    return [[FBApplicationTestRunStrategy strategyWithSimulator:simulator configuration:(FBApplicationTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
+    return [[FBApplicationTestRunStrategy strategyWithSimulator:simulator configuration:(FBApplicationTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] execute];
   }
   id<FBXCTestProcessExecutor> executor = [FBSimulatorXCTestProcessExecutor executorWithSimulator:simulator configuration:self.configuration];
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
-    return [[[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] executeWithError:error];
+    return [[[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] execute];
   }
-  return [[FBLogicTestRunStrategy strategyWithExecutor:executor configuration:(FBLogicTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
+  return [[FBLogicTestRunStrategy strategyWithExecutor:executor configuration:(FBLogicTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] execute];
 }
 
 @end

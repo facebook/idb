@@ -20,22 +20,21 @@ FBiOSTargetActionType const FBiOSTargetActionTypeApplicationTest = FBXCTestTypeA
   return FBiOSTargetActionTypeApplicationTest;
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   FBSimulator *simulator = (FBSimulator *) target;
   if (![simulator isKindOfClass:FBSimulator.class]) {
     return [[FBXCTestError
       describeFormat:@"%@ is not a Simulator, so cannot run fbxctest", simulator]
-      failBool:error];
+      failFuture];
   }
-  id<FBFileConsumer> consumer = [delegate obtainConsumerForAction:self target:target];
-  FBJSONTestReporter *reporter = [[FBJSONTestReporter alloc]
+  FBJSONTestReporter *testReporter = [[FBJSONTestReporter alloc]
     initWithTestBundlePath:self.testBundlePath
     testType:self.testType
     logger:target.logger
     fileConsumer:consumer];
 
-  return [simulator runApplicationTest:self reporter:reporter error:error];
+  return [[simulator runApplicationTest:self reporter:testReporter] mapReplace:self.actionType];
 }
 
 @end

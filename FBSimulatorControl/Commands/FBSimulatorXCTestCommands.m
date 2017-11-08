@@ -59,11 +59,11 @@
     connectAndStart];
 }
 
-- (BOOL)runApplicationTest:(FBApplicationTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter error:(NSError **)error
+- (FBFuture<NSNull *> *)runApplicationTest:(FBApplicationTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter
 {
   return [[FBApplicationTestRunStrategy
     strategyWithSimulator:self.simulator configuration:configuration reporter:reporter logger:self.simulator.logger]
-    executeWithError:error];
+    execute];
 }
 
 - (NSArray<id<FBTerminationAwaitable>> *)testOperations

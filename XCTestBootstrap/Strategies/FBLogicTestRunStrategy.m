@@ -50,11 +50,10 @@
 
 #pragma mark Public
 
-- (BOOL)executeWithError:(NSError **)error
+- (FBFuture<NSNull *> *)execute
 {
-  // Additional timeout added to base timeout to give time to catch a sample.
   NSTimeInterval timeout = self.configuration.testTimeout + 5;
-  return [self.testFuture awaitWithTimeout:timeout error:error] != nil;
+  return [[self testFuture] timedOutIn:timeout];
 }
 
 - (FBFuture<NSNull *> *)testFuture

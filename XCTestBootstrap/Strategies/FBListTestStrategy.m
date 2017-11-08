@@ -46,26 +46,27 @@
 }
 
 
-- (BOOL)executeWithError:(NSError **)error
+- (FBFuture<NSNull *> *)execute
 {
   [self.reporter didBeginExecutingTestPlan];
 
   // Additional timeout added to base timeout to give time to catch a sample.
   NSTimeInterval timeout = self.strategy.configuration.testTimeout + 5;
-  NSArray<NSString *> *testNames = [self.strategy.listTests awaitWithTimeout:timeout error:error];
-  if (!testNames) {
-    return NO;
-  }
-  for (NSString *testName in testNames) {
-    NSRange slashRange = [testName rangeOfString:@"/"];
-    NSString *className = [testName substringToIndex:slashRange.location];
-    NSString *methodName = [testName substringFromIndex:slashRange.location + 1];
-    [self.reporter testCaseDidStartForTestClass:className method:methodName];
-    [self.reporter testCaseDidFinishForTestClass:className method:methodName withStatus:FBTestReportStatusPassed duration:0];
-  }
+  return [[[self.strategy
+    listTests]
+    timedOutIn:timeout]
+    onQueue:self.strategy.executor.workQueue map:^(NSArray<NSString *> *testNames) {
+      for (NSString *testName in testNames) {
+        NSRange slashRange = [testName rangeOfString:@"/"];
+        NSString *className = [testName substringToIndex:slashRange.location];
+        NSString *methodName = [testName substringFromIndex:slashRange.location + 1];
+        [self.reporter testCaseDidStartForTestClass:className method:methodName];
+        [self.reporter testCaseDidFinishForTestClass:className method:methodName withStatus:FBTestReportStatusPassed duration:0];
+      }
+      [self.reporter didFinishExecutingTestPlan];
 
-  [self.reporter didFinishExecutingTestPlan];
-  return YES;
+      return NSNull.null;
+    }];
 }
 
 @end

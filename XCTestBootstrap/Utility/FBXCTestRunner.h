@@ -19,10 +19,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Executes the Tests.
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return a Future that resolves when the test has finished.
  */
-- (BOOL)executeWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)execute;
 
 @end
 

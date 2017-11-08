@@ -23,7 +23,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeApplicationTest;
 /**
  Conforms an Application Test Configuration.
  */
-@interface FBApplicationTestConfiguration (Simulator) <FBiOSTargetAction>
+@interface FBApplicationTestConfiguration (Simulator) <FBiOSTargetFuture>
 
 @end
 

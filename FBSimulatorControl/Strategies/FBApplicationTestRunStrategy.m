@@ -49,13 +49,6 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
 
 #pragma mark FBXCTestRunner
 
-- (BOOL)executeWithError:(NSError **)error
-{
-  return [[[self execute] timedOutIn:ApplicationTestDefaultTimeout] await:error] != nil;
-}
-
-#pragma mark Private
-
 - (FBFuture<NSNull *> *)execute
 {
   NSError *error = nil;
@@ -65,12 +58,15 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     return [FBFuture futureWithError:error];
   }
 
-  return [[self.simulator
+  return [[[self.simulator
     installApplicationWithPath:testRunnerApp.path]
     onQueue:self.simulator.workQueue fmap:^(id _) {
       return [self startApplicationTest:testRunnerApp];
-    }];
+    }]
+    timedOutIn:ApplicationTestDefaultTimeout];
 }
+
+#pragma mark Private
 
 - (FBFuture<NSNull *> *)startApplicationTest:(FBApplicationBundle *)testRunnerApp
 {
