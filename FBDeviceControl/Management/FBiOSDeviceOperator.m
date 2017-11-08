@@ -229,13 +229,11 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
   return [[[strategy waitForDeviceReadyToDebug] timedOutIn:4 * 60] await:error] != nil;
 }
 
-- (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (FBFuture<id> *)processIDWithBundleID:(NSString *)bundleID
 {
-  return
-  [[self executeHubProcessControlSelector:NSSelectorFromString(@"processIdentifierForBundleIdentifier:")
-                                    error:error
-                                arguments:bundleID, nil]
-   intValue];
+  return [self
+    hubControlFutureWithSelector:NSSelectorFromString(@"processIdentifierForBundleIdentifier:")
+    arg:bundleID, nil];
 }
 
 - (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID sinceDate:(NSDate *)date
@@ -296,7 +294,7 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
 
 - (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  pid_t PID = [self processIDWithBundleID:bundleID error:error];
+  pid_t PID = [[self processIDWithBundleID:bundleID] await:error].intValue;
   if (PID < 1) {
     return NO;
   }

@@ -220,16 +220,19 @@
   return [[self.simulator killApplicationWithBundleID:bundleID] await:error] != nil;
 }
 
-- (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID
 {
-  NSNumber *processIdentifier = [[[self.simulator
+  return [[self.simulator
     serviceNameAndProcessIdentifierForSubstring:bundleID]
-    await:error]
-    objectAtIndex:1];
-  if (!processIdentifier) {
-    return 0;
-  }
-  return processIdentifier.intValue;
+    onQueue:self.simulator.asyncQueue fmap:^(NSArray<id> *result) {
+      NSNumber *processIdentifier = result[1];
+      if (processIdentifier.intValue < 1) {
+        return [[FBSimulatorError
+          describeFormat:@"Service %@ does not have a running process", result[0]]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:processIdentifier];
+    }];
 }
 
 - (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID sinceDate:(NSDate *)date

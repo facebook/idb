@@ -66,7 +66,7 @@
     output:FBProcessOutputConfiguration.outputToDevNull];
 
   OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)];
-  [[[deviceOperatorMock stub] andReturnValue:@13] processIDWithBundleID:[OCMArg any] error:[OCMArg anyObjectRef]];
+  [[[deviceOperatorMock stub] andReturn:[FBFuture futureWithResult:@13]] processIDWithBundleID:[OCMArg any]];
 
   OCMockObject<FBiOSTarget> *iosTargetMock = [OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)];
   [[[iosTargetMock stub] andReturn:deviceOperatorMock] deviceOperator];

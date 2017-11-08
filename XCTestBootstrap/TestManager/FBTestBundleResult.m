@@ -90,7 +90,7 @@
 - (NSError *)error
 {
   return [[[XCTestBootstrapError
-    describe:@"The Test Bundle Crashed during the Test Run"]
+    describeFormat:@"The Test Bundle Crashed during the Test Run %@", self.diagnostic.asString]
     extraInfo:XCTestBootstrapResultErrorKey value:self]
     build];
 }
@@ -143,7 +143,7 @@
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Bundle Connection Failed in error: %@", self.error];
+  return [NSString stringWithFormat:@"Bundle Connection Failed in error: %@", self.underlyingError];
 }
 
 @end

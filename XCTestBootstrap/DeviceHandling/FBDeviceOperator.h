@@ -63,11 +63,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Returns PID of application with given bundleID
 
- @param bundleID bundle ID of installed application
- @param error If there is an error, upon return contains an NSError object that describes the problem.
- @return PID of application, or 0 if not running
+ @param bundleID bundle ID of installed application.
+ @return A future wrapping the process id.
  */
-- (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID;
 
 /**
  Returns the Crash Log for a given bundle id.

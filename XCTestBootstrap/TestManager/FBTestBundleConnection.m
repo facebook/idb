@@ -28,7 +28,7 @@
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestBundleResult.h"
 
-static NSTimeInterval CrashCheckInterval = 0.5;
+static NSTimeInterval CrashCheckDelay = 0.5;  // It may take a little time for a crash log to appear, adds a delay before checking for it.
 
 typedef NSString *FBTestBundleConnectionState NS_STRING_ENUM;
 static FBTestBundleConnectionState const FBTestBundleConnectionStateNotConnected = @"not connected";
@@ -61,7 +61,6 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
 @property (atomic, assign, readwrite) long long testBundleProtocolVersion;
 @property (atomic, nullable, strong, readwrite) id<XCTestDriverInterface> testBundleProxy;
 @property (atomic, nullable, strong, readwrite) DTXConnection *testBundleConnection;
-@property (atomic, nullable, strong, readwrite) NSDate *lastCrashCheckDate;
 @property (atomic, nullable, strong, readwrite) NSDate *applicationLaunchDate;
 
 @end
@@ -111,7 +110,6 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
   _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", target.udid]];
 
   _state = FBTestBundleConnectionStateNotConnected;
-  _lastCrashCheckDate = NSDate.distantPast;
   _applicationLaunchDate = NSDate.date;
 
   _connectFuture = FBMutableFuture.new;
@@ -312,51 +310,44 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
       [self concludeWithResult:FBTestBundleResult.success];
       return;
     }
-
-    if ([self checkForCrashedProcess]) {
-      return;
-    }
-    XCTestBootstrapError *error = [[XCTestBootstrapError
-      describeFormat:@"Lost connection to test process with state '%@'", state]
-      code:XCTestBootstrapErrorCodeLostConnection];
-    [self concludeWithResult:[FBTestBundleResult failedInError:error]];
+    [[self
+      findCrashedProcessLog]
+      onQueue:self.target.workQueue notifyOfCompletion:^(FBFuture<FBDiagnostic *> *future) {
+        if (future.result) {
+          [self concludeWithResult:[FBTestBundleResult bundleCrashedDuringTestRun:future.result]];
+        } else {
+          XCTestBootstrapError *error = [[XCTestBootstrapError
+            describeFormat:@"Lost connection to test process with state '%@'", state]
+            code:XCTestBootstrapErrorCodeLostConnection];
+          [self concludeWithResult:[FBTestBundleResult failedInError:error]];
+        }
+      }];
   });
 }
 
-- (BOOL)shouldCheckForCrashedProcess
+- (FBFuture<FBDiagnostic *> *)findCrashedProcessLog
 {
-  if (!FBXcodeConfiguration.isXcode8OrGreater) {
-    return NO;
-  }
-
-  return [NSDate.date compare:[self.lastCrashCheckDate dateByAddingTimeInterval:CrashCheckInterval]] != NSOrderedAscending;
-}
-
-- (nullable FBTestBundleResult *)checkForCrashedProcess
-{
-  // Set the Crash Date Check.
-  self.lastCrashCheckDate = NSDate.date;
-
-  NSError *innerError;
-  pid_t pid = [self.target.deviceOperator processIDWithBundleID:self.context.testRunnerBundleID error:&innerError];
-  if (pid >= 1) {
-    return nil;
-  }
-  // It make some time for the diagnostic to appear.
-  FBDiagnostic *diagnostic = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilExists:^ FBDiagnostic * {
-    return [self.target.deviceOperator
-      attemptToFindCrashLogForProcess:self.context.testRunnerPID
-      bundleID:self.context.testRunnerBundleID
-      sinceDate:self.applicationLaunchDate];
-  }];
-  if (!diagnostic.hasLogContent) {
-    XCTestBootstrapError *error = [[XCTestBootstrapError
-      describe:@"Test Process likely crashed but a crash log could not be obtained"]
-      code:XCTestBootstrapErrorCodeLostConnection];
-    return [self concludeWithResult:[FBTestBundleResult failedInError:error]];
-  }
-  FBTestBundleResult *result = [FBTestBundleResult bundleCrashedDuringTestRun:diagnostic];
-  return [self concludeWithResult:result];
+  return [[[self.target.deviceOperator
+    processIDWithBundleID:self.context.testRunnerBundleID]
+    delay:CrashCheckDelay]
+    onQueue:self.target.workQueue chain:^FBFuture<FBTestBundleResult *> *(FBFuture<NSNumber *> *processIdentifierFuture) {
+      if (processIdentifierFuture.result) {
+        return [[FBControlCoreError
+          describeFormat:@"The Process for %@ is not crashed as it is running", processIdentifierFuture.result]
+          failFuture];
+      }
+      FBDiagnostic *diagnostic = [self.target.deviceOperator
+        attemptToFindCrashLogForProcess:self.context.testRunnerPID
+        bundleID:self.context.testRunnerBundleID
+        sinceDate:self.applicationLaunchDate];
+      if (!diagnostic.hasLogContent) {
+        return [[[XCTestBootstrapError
+          describe:@"Test Process likely crashed but a crash log could not be obtained"]
+          code:XCTestBootstrapErrorCodeLostConnection]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:diagnostic];
+    }];
 }
 
 - (FBTestBundleResult *)concludeWithResult:(FBTestBundleResult *)result
