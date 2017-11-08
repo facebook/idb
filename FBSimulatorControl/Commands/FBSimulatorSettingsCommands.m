@@ -129,6 +129,7 @@ FBiOSTargetActionType const FBiOSTargetActionTypeApproval = @"approve";
       FBSettingsApprovalServiceContacts: @"kTCCServiceAddressBook",
       FBSettingsApprovalServicePhotos: @"kTCCServicePhotos",
       FBSettingsApprovalServiceCamera: @"kTCCServiceCamera",
+      FBSettingsApprovalServiceMicrophone: @"kTCCServiceMicrophone",
     };
   });
   return mapping;
