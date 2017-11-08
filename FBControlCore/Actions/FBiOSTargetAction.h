@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBEventReporter;
 @protocol FBiOSTarget;
 @protocol FBiOSTargetActionDelegate;
-@protocol FBTerminationHandle;
+@protocol FBTerminationAwaitable;
 
 /**
  An extensible string enum representing an Action Type.
@@ -63,18 +63,26 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeTestLaunch;
 @end
 
 /**
- A Delegate that recieves information about the lifecycle of a Target Action.
+ A Delegate for notifying of a long-running operation.
  */
-@protocol FBiOSTargetActionDelegate <NSObject, FBEventReporter>
+@protocol FBiOSTargetActionAwaitableDelegate
 
 /**
  A Termination Handle of an Asynchronous Operation has been generated.
 
  @param action the action that the termination was generated for.
  @param target the target the handle was generated for.
- @param terminationHandle the generated termination handle.
+ @param awaitable the generated termination awaitable.
  */
-- (void)action:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target didGenerateTerminationHandle:(id<FBTerminationHandle>)terminationHandle;
+- (void)action:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target didGenerateAwaitable:(id<FBTerminationAwaitable>)awaitable;
+
+@end
+
+/**
+ A Delegate that recieves information about the lifecycle of a Target Action.
+ */
+@protocol FBiOSTargetActionDelegate <NSObject, FBEventReporter, FBiOSTargetActionAwaitableDelegate>
+
 
 /**
  Provide the File Consumer for a given Action & Target.

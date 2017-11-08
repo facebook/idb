@@ -425,7 +425,7 @@ static NSString *const KeyResultBundlePath = @"resultBundlePath";
       return NO;
     }
   }
-  [delegate action:self target:target didGenerateTerminationHandle:operation];
+  [delegate action:self target:target didGenerateAwaitable:operation];
   return YES;
 }
 

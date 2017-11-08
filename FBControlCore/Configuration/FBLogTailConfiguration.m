@@ -111,7 +111,7 @@ static NSString *const KeyArguments = @"arguments";
   if (!handle) {
     return NO;
   }
-  [delegate action:self target:target didGenerateTerminationHandle:handle];
+  [delegate action:self target:target didGenerateAwaitable:handle];
   return YES;
 }
 
