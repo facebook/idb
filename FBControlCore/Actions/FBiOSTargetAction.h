@@ -111,9 +111,10 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeTestLaunch;
  @param target the target to run against.
  @param consumer the consumer to report binary data to.
  @param reporter the reporter to report structured data to.
+ @param awaitableDelegate the delegate to report generated await-handles to.
  @return a Future wrapping the action type.
  */
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter;
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate;
 
 @end
 

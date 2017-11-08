@@ -291,7 +291,7 @@ struct ListenRunner : Runner, ActionPerformer {
     return FBFuture.onQueue(self.workQueue, resolve: {
       if case .coreFuture(let coreFuture) = action {
         let futures = context.query(query).map { target in
-          return coreFuture.run(with: target, consumer: reporter.writer, reporter: reporter)
+          return coreFuture.run(with: target, consumer: reporter.writer, reporter: reporter, awaitableDelegate: ActionReaderDelegateBridge())
         }
         return FBFuture(futures: futures).mapReplace(CommandResultBox(value: CommandResult.success(nil)))
       }

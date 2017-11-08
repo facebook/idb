@@ -25,7 +25,7 @@ FBiOSTargetActionType const FBiOSTargetActionTypeListApplications = @"list_apps"
   return FBiOSTargetActionTypeListApplications;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
 {
   id<FBApplicationCommands> commands = (id<FBApplicationCommands>) target;
   if (![target conformsToProtocol:@protocol(FBApplicationCommands)]) {

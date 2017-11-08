@@ -23,7 +23,7 @@ FBiOSTargetActionType const FBiOSTargetActionTypeTestLaunch = @"launch_xctest";
 static BOOL BridgedRun(id<FBiOSTargetFuture> targetFuture, SEL _cmd, id<FBiOSTarget> target, id<FBiOSTargetActionDelegate> delegate, NSError **error)
 {
   id<FBFileConsumer> consumer = [delegate obtainConsumerForAction:(id<FBiOSTargetAction>)targetFuture target:target];
-  FBFuture *future = [targetFuture runWithTarget:target consumer:consumer reporter:delegate];
+  FBFuture *future = [targetFuture runWithTarget:target consumer:consumer reporter:delegate awaitableDelegate:delegate];
   id result = [future await:error];
   return result != nil;
 }

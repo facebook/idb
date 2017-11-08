@@ -430,7 +430,7 @@ static NSString *KeyType = @"type";
   return FBiOSTargetActionTypeDiagnosticQuery;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
 {
   id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:FBiOSTargetActionTypeDiagnosticQuery type:FBEventTypeStarted value:self];
   [reporter report:subject];

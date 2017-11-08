@@ -165,7 +165,7 @@ FBiOSTargetActionType const FBiOSTargetActionTypeApproval = @"approve";
   return FBiOSTargetActionTypeApproval;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
 {
   id<FBSimulatorSettingsCommands> commands = (id<FBSimulatorSettingsCommands>) target;
   if (![target conformsToProtocol:@protocol(FBSimulatorSettingsCommands)]) {

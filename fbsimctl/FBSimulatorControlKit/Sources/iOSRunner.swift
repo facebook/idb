@@ -35,7 +35,8 @@ struct iOSActionProvider {
     case .core(let action):
       return iOSTargetRunner.core(reporter, action.eventName, target, action)
     case .coreFuture(let action):
-      let future = action.run(with: target, consumer: reporter.reporter.writer, reporter: reporter.reporter)
+      let awaitableDelegate = ActionReaderDelegateBridge()
+      let future = action.run(with: target, consumer: reporter.reporter.writer, reporter: reporter.reporter, awaitableDelegate: awaitableDelegate)
       return FutureRunner(reporter, action.eventName, action.subject, future)
     case .record(let record):
       switch record {
@@ -67,12 +68,14 @@ struct FutureRunner<T : AnyObject> : Runner {
   let name: EventName?
   let subject: EventReporterSubject
   let future: FBFuture<T>
+  let awaitableDelegate: ActionReaderDelegateBridge?
 
-  init(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ future: FBFuture<T>) {
+  init(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ future: FBFuture<T>, awaitableDelegate: ActionReaderDelegateBridge? = nil) {
     self.reporter = reporter
     self.name = name
     self.subject = subject
     self.future = future
+    self.awaitableDelegate = awaitableDelegate
   }
 
   func run() -> CommandResult {
@@ -84,7 +87,7 @@ struct FutureRunner<T : AnyObject> : Runner {
       if let name = self.name {
         self.reporter.report(name, .ended, self.subject)
       }
-      return CommandResult(outcome: .success(nil), handles: [])
+      return CommandResult(outcome: .success(nil), handles: self.awaitableDelegate?.handles ?? [])
     } catch let error as NSError {
       return .failure(error.description)
     } catch let error as JSONError {

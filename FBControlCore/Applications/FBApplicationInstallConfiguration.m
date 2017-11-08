@@ -107,7 +107,7 @@ static NSString *const KeyCodesign = @"codesign";
   return FBiOSTargetActionTypeInstall;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
 {
   return [[[[FBApplicationBundle
     onQueue:target.asyncQueue findOrExtractApplicationAtPath:self.applicationPath]

@@ -20,7 +20,7 @@ FBiOSTargetActionType const FBiOSTargetActionTypeApplicationTest = FBXCTestTypeA
   return FBiOSTargetActionTypeApplicationTest;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
 {
   FBSimulator *simulator = (FBSimulator *) target;
   if (![simulator isKindOfClass:FBSimulator.class]) {
