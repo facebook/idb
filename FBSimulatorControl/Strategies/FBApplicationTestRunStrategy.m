@@ -25,6 +25,8 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
 
 @implementation FBApplicationTestRunStrategy
 
+#pragma mark Initializers
+
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   return [[self alloc] initWithSimulator:simulator configuration:configuration reporter:reporter logger:logger];
@@ -45,19 +47,33 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
   return self;
 }
 
+#pragma mark FBXCTestRunner
+
 - (BOOL)executeWithError:(NSError **)error
 {
-  FBApplicationBundle *testRunnerApp = [FBApplicationBundle applicationWithPath:self.configuration.runnerAppPath error:error];
+  return [[[self execute] timedOutIn:ApplicationTestDefaultTimeout] await:error] != nil;
+}
+
+#pragma mark Private
+
+- (FBFuture<NSNull *> *)execute
+{
+  NSError *error = nil;
+  FBApplicationBundle *testRunnerApp = [FBApplicationBundle applicationWithPath:self.configuration.runnerAppPath error:&error];
   if (!testRunnerApp) {
-    [self.logger logFormat:@"Failed to open test runner application: %@", *error];
-    return NO;
+    [self.logger logFormat:@"Failed to open test runner application: %@", error];
+    return [FBFuture futureWithError:error];
   }
 
-  if (![[self.simulator installApplicationWithPath:testRunnerApp.path] await:error]) {
-    [self.logger logFormat:@"Failed to install test runner application: %@", *error];
-    return NO;
-  }
+  return [[self.simulator
+    installApplicationWithPath:testRunnerApp.path]
+    onQueue:self.simulator.workQueue fmap:^(id _) {
+      return [self startApplicationTest:testRunnerApp];
+    }];
+}
 
+- (FBFuture<NSNull *> *)startApplicationTest:(FBApplicationBundle *)testRunnerApp
+{
   FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
     configurationWithApplication:testRunnerApp
     arguments:@[]
@@ -75,26 +91,23 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]
     reporter:[FBXCTestReporterAdapter adapterWithReporter:self.reporter]];
 
-  NSError *innerError = nil;
-  FBTestManager *manager = [[runner connectAndStart] await:&innerError];
-  if (!manager) {
-    return [[[FBXCTestError
-      describe:@"Failed to connect to the Simulator's Test Manager"]
-      causedBy:innerError]
-      failBool:error];
-  }
-  FBTestManagerResult *result = [manager.execute awaitWithTimeout:ApplicationTestDefaultTimeout error:&innerError];
-  if (result.crashDiagnostic) {
-    return [[FBXCTestError
-      describeFormat:@"The Application Crashed during the Test Run\n%@", result.crashDiagnostic.asString]
-      failBool:error];
-  }
-  if (result.error) {
-    [self.logger logFormat:@"Failed to execute test bundle %@", result.error];
-    return [XCTestBootstrapError failBoolWithError:result.error errorOut:error];
-  }
-  return YES;
+  return [[[runner
+    connectAndStart]
+    onQueue:self.simulator.workQueue fmap:^(FBTestManager *manager) {
+      return [manager execute];
+    }]
+    onQueue:self.simulator.workQueue fmap:^(FBTestManagerResult *result) {
+      if (result.crashDiagnostic) {
+        return [[FBXCTestError
+          describeFormat:@"The Application Crashed during the Test Run\n%@", result.crashDiagnostic.asString]
+          failFuture];
+      }
+      if (result.error) {
+        [self.logger logFormat:@"Failed to execute test bundle %@", result.error];
+        return [FBFuture futureWithError:result.error];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
 }
-
 
 @end
