@@ -116,7 +116,7 @@
   }
 
   [self.assert consumeAllNotifications];
-  success = [[simulator killApplicationWithBundleID:appLaunch.bundleID] await:&error];
+  success = [[simulator killApplicationWithBundleID:appLaunch.bundleID] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

@@ -9,8 +9,6 @@
 
 #import "FBControlCoreValueTestCase.h"
 
-#import <FBXCTestKit/FBXCTestKit.h>
-
 @implementation FBControlCoreValueTestCase
 
 - (void)assertEqualityOfCopy:(NSArray<NSObject *> *)values
@@ -84,7 +82,7 @@
   }
 }
 
-- (void)assertValueSemanticsOfConfiguration:(FBXCTestConfiguration *)configuration
+- (void)assertValueSemanticsOfConfiguration:(id<NSObject, FBJSONSerializable, FBJSONDeserializable, NSCopying>)configuration
 {
   [self assertEqualityOfCopy:@[configuration]];
   [self assertJSONSerialization:@[configuration]];

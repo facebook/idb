@@ -36,6 +36,6 @@
 /**
  Asserts that configuration has correct semantics
  */
-- (void)assertValueSemanticsOfConfiguration:(FBXCTestConfiguration *)configuration;
+- (void)assertValueSemanticsOfConfiguration:(id<NSObject, FBJSONSerializable, FBJSONDeserializable, NSCopying>)configuration;
 
 @end
