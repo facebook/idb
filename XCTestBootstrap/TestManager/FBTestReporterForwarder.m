@@ -23,7 +23,7 @@
 @interface FBTestReporterForwarder ()
 
 @property (nonatomic, weak, readonly) FBTestManagerAPIMediator<XCTestManager_IDEInterface> *mediator;
-@property (nonatomic, weak, readonly) id<FBTestManagerTestReporter> reporter;
+@property (nonatomic, strong, readonly) id<FBTestManagerTestReporter> reporter;
 
 @end
 
