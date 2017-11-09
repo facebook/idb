@@ -120,12 +120,12 @@ extension Action {
     switch self {
       case .coreFuture(let future) where future.actionType == .diagnosticQuery:
         return FBiOSTargetQuery.allTargets()
+      case .list:
+        return FBiOSTargetQuery.allTargets()
       case .delete:
         return nil
       case .core(let action):
         return action.actionType.defaultQuery
-      case .list:
-        fallthrough
       case .listen:
         fallthrough
       default:
