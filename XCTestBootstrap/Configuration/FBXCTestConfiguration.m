@@ -16,6 +16,7 @@
 FBXCTestType const FBXCTestTypeApplicationTest = FBXCTestTypeApplicationTestValue;
 FBXCTestType const FBXCTestTypeLogicTest = @"logic-test";
 FBXCTestType const FBXCTestTypeListTest = @"list-test";
+FBXCTestType const FBXCTestTypeUITest = @"ui-test";
 
 @implementation FBXCTestConfiguration
 
@@ -116,6 +117,7 @@ NSString *const KeyDestination = @"destination";
 NSString *const KeyEnvironment = @"environment";
 NSString *const KeyListTestsOnly = @"list_only";
 NSString *const KeyRunnerAppPath = @"test_host_path";
+NSString *const KeyRunnerTargetPath = @"test_target_path";
 NSString *const KeyShims = @"shims";
 NSString *const KeyTestBundlePath = @"test_bundle_path";
 NSString *const KeyTestFilter = @"test_filter";
@@ -218,6 +220,8 @@ NSString *const KeyWorkingDirectory = @"working_directory";
     clusterClass = listTestsOnly.boolValue ? FBListTestConfiguration.class : FBLogicTestConfiguration.class;
   } else if ([testType isEqualToString:FBXCTestTypeApplicationTest]) {
     clusterClass = FBApplicationTestConfiguration.class;
+  } else if ([testType isEqualToString:FBXCTestTypeUITest]) {
+    clusterClass = FBUITestConfiguration.class;
   } else {
     return [[FBControlCoreError
       describeFormat:@"Test Type %@ is not a value Test Type for %@", testType, KeyTestType]
@@ -272,6 +276,64 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   NSMutableDictionary<NSString *, id> *json = [NSMutableDictionary dictionaryWithDictionary:[super jsonSerializableRepresentation]];
   json[KeyListTestsOnly] = @YES;
   return [json copy];
+}
+
+@end
+
+@implementation FBUITestConfiguration
+
+#pragma mark Initializers
+
++ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath
+{
+  return [[FBUITestConfiguration alloc] initWithDestination:destination shims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath];
+}
+
+- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath
+{
+  self = [super initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
+  if (!self) {
+    return nil;
+  }
+
+  _runnerAppPath = runnerAppPath;
+  _testTargetAppPath = testTargetAppPath;
+
+  return self;
+}
+
+#pragma mark Public
+
+- (NSString *)testType
+{
+  return FBXCTestTypeUITest;
+}
+
+#pragma mark JSON
+
+- (id)jsonSerializableRepresentation
+{
+  NSMutableDictionary<NSString *, id> *json = [NSMutableDictionary dictionaryWithDictionary:[super jsonSerializableRepresentation]];
+  json[KeyRunnerAppPath] = self.runnerAppPath;
+  json[KeyRunnerTargetPath] = self.testTargetAppPath;
+  return [json copy];
+}
+
++ (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json destination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  NSString *runnerAppPath = json[KeyRunnerAppPath];
+  if (![runnerAppPath isKindOfClass:NSString.class]) {
+    return [[FBXCTestError
+      describeFormat:@"%@ is not a String for %@", runnerAppPath, KeyRunnerAppPath]
+      fail:error];
+  }
+  NSString *testTargetAppPath = json[KeyRunnerTargetPath];
+  if (![testTargetAppPath isKindOfClass:NSString.class]) {
+    return [[FBXCTestError
+      describeFormat:@"%@ is not a String for %@", testTargetAppPath, KeyRunnerTargetPath]
+      fail:error];
+  }
+  return [[FBUITestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath];
 }
 
 @end

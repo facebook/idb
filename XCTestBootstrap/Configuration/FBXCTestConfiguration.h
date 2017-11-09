@@ -114,6 +114,28 @@ extern FBXCTestType const FBXCTestTypeListTest;
 @end
 
 /**
+ A Test Configuration, specialized in running of Tests.
+ */
+@interface FBUITestConfiguration : FBXCTestConfiguration
+
+/**
+ The Path to the Application Hosting the Test.
+ */
+@property (nonatomic, copy, readonly) NSString *runnerAppPath;
+
+/**
+ The Path to the test target Application.
+ */
+@property (nonatomic, copy, readonly) NSString *testTargetAppPath;
+
+/**
+ The Designated Initializer.
+ */
++ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath;
+
+@end
+
+/**
  A Test Configuration, specialized to running of Application Tests.
  */
 @interface FBApplicationTestConfiguration : FBXCTestConfiguration

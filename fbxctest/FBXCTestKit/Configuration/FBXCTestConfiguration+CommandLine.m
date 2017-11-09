@@ -30,8 +30,9 @@ FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
   NSString *testBundlePath = nil;
   NSString *runnerAppPath = nil;
   NSString *testFilter = nil;
+  NSString *testTargetPathOut = nil;
   BOOL waitForDebugger = NO;
-  if (![FBXCTestConfiguration loadWithArguments:arguments shimsOut:&shims testBundlePathOut:&testBundlePath runnerAppPathOut:&runnerAppPath testFilterOut:&testFilter waitForDebuggerOut:&waitForDebugger error:error]) {
+  if (![FBXCTestConfiguration loadWithArguments:arguments shimsOut:&shims testBundlePathOut:&testBundlePath runnerAppPathOut:&runnerAppPath testTargetPathOut:&testTargetPathOut testFilterOut:&testFilter waitForDebuggerOut:&waitForDebugger error:error]) {
     return nil;
   }
   NSSet<NSString *> *argumentSet = [NSSet setWithArray:arguments];
@@ -66,12 +67,23 @@ FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
       timeout:timeout
       runnerAppPath:runnerAppPath];
   }
+  if ([argumentSet containsObject:@"-uiTest"]) {
+    return [FBUITestConfiguration
+      configurationWithDestination:destination
+      environment:environment
+      workingDirectory:workingDirectory
+      testBundlePath:testBundlePath
+      waitForDebugger:waitForDebugger
+      timeout:timeout
+      runnerAppPath:runnerAppPath
+      testTargetAppPath:testTargetPathOut];
+  }
   return [[FBControlCoreError
     describeFormat:@"Could not determine test runner type from %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]]
     fail:error];
 }
 
-+ (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments shimsOut:(FBXCTestShimConfiguration **)shimsOut testBundlePathOut:(NSString **)testBundlePathOut runnerAppPathOut:(NSString **)runnerAppPathOut testFilterOut:(NSString **)testFilterOut waitForDebuggerOut:(BOOL *)waitForDebuggerOut error:(NSError **)error
++ (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments shimsOut:(FBXCTestShimConfiguration **)shimsOut testBundlePathOut:(NSString **)testBundlePathOut runnerAppPathOut:(NSString **)runnerAppPathOut testTargetPathOut:(NSString **)testTargetPathOut testFilterOut:(NSString **)testFilterOut waitForDebuggerOut:(BOOL *)waitForDebuggerOut error:(NSError **)error
 {
   NSUInteger nextArgument = 0;
   NSString *testFilter = nil;
@@ -124,6 +136,23 @@ FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
       }
       *testBundlePathOut = testBundlePath;
       *runnerAppPathOut = testRunnerAppPath;
+      shimsRequired = NO;
+    } else if ([argument isEqualToString:@"-uiTest"]) {
+      NSArray *components = [parameter componentsSeparatedByString:@":"];
+      if (components.count != 3) {
+        return [[FBXCTestError describeFormat:@"Test specifier should contain three colon separated components: %@", parameter] failBool:error];
+      }
+      NSString *testBundlePath = components[0];
+      NSString *testRunnerPath = [components[1] stringByDeletingLastPathComponent];
+      NSString *testTargetPath = [components[2] stringByDeletingLastPathComponent];
+      if (*testBundlePathOut != nil) {
+        return [[FBXCTestError
+          describe:@"Only a single -logicTest or -appTest argument expected"]
+          failBool:error];
+      }
+      *testBundlePathOut = testBundlePath;
+      *runnerAppPathOut = testRunnerPath;
+      *testTargetPathOut = testTargetPath;
       shimsRequired = NO;
     } else if ([argument isEqualToString:@"-only"]) {
       if (testFilter != nil) {

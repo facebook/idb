@@ -210,6 +210,7 @@
 			children = (
 				EE0E34371FAC7CD90052AA1A /* FBiOSApplicationTestConfigurationTests.m */,
 				EE0E34351FAC7CD90052AA1A /* FBiOSLogicTestConfigurationTests.m */,
+				EE0E343B1FAC7FCF0052AA1A /* FBiOSUITestConfigurationTests.m */,
 				EE0E34361FAC7CD90052AA1A /* FBOSXLogicTestConfigurationTests.m */,
 			);
 			path = Unit;
@@ -455,6 +456,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0639461D999081004B3D12 /* FBControlCoreValueTestCase.m in Sources */,
+				EE0E343C1FAC7FCF0052AA1A /* FBiOSUITestConfigurationTests.m in Sources */,
 				EE0E34391FAC7CD90052AA1A /* FBOSXLogicTestConfigurationTests.m in Sources */,
 				050D46231D6074090038F72D /* FBXCTestKitIntegrationTests.m in Sources */,
 				AAED07AE1E560655005060ED /* XCTestCase+FBXCTestKitTests.m in Sources */,
