@@ -25,6 +25,7 @@
     NSString *_targetApplicationPath;
     NSString *_targetApplicationBundleID;
     NSString *_productModuleName;
+    NSString *_automationFrameworkPath;
     BOOL _reportActivities;
     BOOL _testsMustRunOnMainThread;
 
@@ -40,6 +41,7 @@
 @property(copy) NSString *productModuleName; // @synthesize productModuleName=_productModuleName;
 @property(copy) NSString *targetApplicationBundleID; // @synthesize targetApplicationBundleID=_targetApplicationBundleID;
 @property(copy) NSString *targetApplicationPath; // @synthesize targetApplicationPath=_targetApplicationPath;
+@property(copy) NSString *automationFrameworkPath; // @synthesize automationFrameworkPath=_automationFrameworkPath;
 @property BOOL treatMissingBaselinesAsFailures; // @synthesize treatMissingBaselinesAsFailures=_treatMissingBaselinesAsFailures;
 @property BOOL disablePerformanceMetrics; // @synthesize disablePerformanceMetrics=_disablePerformanceMetrics;
 @property BOOL reportResultsToIDE; // @synthesize reportResultsToIDE=_reportResultsToIDE;

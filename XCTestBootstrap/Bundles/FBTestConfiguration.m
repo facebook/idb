@@ -17,7 +17,7 @@
 
 @implementation FBTestConfiguration
 
-+ (nullable instancetype)configurationWithFileManager:(id<FBFileManager>)fileManager sessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID savePath:(NSString *)savePath error:(NSError **)error
++ (nullable instancetype)configurationWithFileManager:(id<FBFileManager>)fileManager sessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID automationFrameworkPath:(nullable NSString *)automationFrameworkPath savePath:(NSString *)savePath error:(NSError **)error
 {
   XCTestConfiguration *testConfiguration = [objc_lookUpClass("XCTestConfiguration") new];
   testConfiguration.sessionIdentifier = sessionIdentifier;
@@ -32,6 +32,7 @@
   testConfiguration.testsToSkip = testsToSkip;
   testConfiguration.targetApplicationPath = targetApplicationPath;
   testConfiguration.targetApplicationBundleID = targetApplicationBundleID;
+  testConfiguration.automationFrameworkPath = automationFrameworkPath;
   NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
   if (![fileManager writeData:data toFile:savePath options:NSDataWritingAtomic error:error]) {
     return nil;

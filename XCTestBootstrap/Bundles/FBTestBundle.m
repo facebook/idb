@@ -28,6 +28,7 @@
 @property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
 @property (nonatomic, copy) NSString *targetApplicationBundleID;
 @property (nonatomic, copy) NSString *targetApplicationPath;
+@property (nonatomic, copy) NSString *automationFrameworkPath;
 @end
 
 @implementation FBTestBundleBuilder
@@ -68,6 +69,12 @@
   return self;
 }
 
+- (instancetype)withAutomationFrameworkPath:(NSString *)automationFrameworkPath
+{
+  self.automationFrameworkPath = automationFrameworkPath;
+  return self;
+}
+
 - (Class)productClass
 {
   return FBTestBundle.class;
@@ -92,6 +99,7 @@
       testsToSkip:self.testsToSkip
       targetApplicationPath:self.targetApplicationPath
       targetApplicationBundleID:self.targetApplicationBundleID
+      automationFrameworkPath:self.automationFrameworkPath
       savePath:[testBundle.path stringByAppendingPathComponent:testConfigurationFileName]
       error:&innerError];
 

@@ -77,6 +77,14 @@
 - (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath;
 
 /**
+ Adds path to automation framework.
+
+ @param automationFrameworkPath path to automation framework
+ @return builder
+ */
+- (instancetype)withAutomationFrameworkPath:(NSString *)automationFrameworkPath;
+
+/**
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return prepared test bundle if the operation succeeds, otherwise nil.
  */

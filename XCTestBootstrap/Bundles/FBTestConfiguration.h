@@ -30,10 +30,11 @@ NS_ASSUME_NONNULL_BEGIN
  @param testsToSkip the tests to skip.
  @param targetApplicationPath Target application path
  @param targetApplicationBundleID Target application bundle id
+ @param automationFrameworkPath Path to automation framework
  @param savePath the path to save the configuration to.
  @param error an error out for any error that occurs.
  */
-+ (nullable instancetype)configurationWithFileManager:(id<FBFileManager>)fileManager sessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID savePath:(NSString *)savePath error:(NSError **)error;
++ (nullable instancetype)configurationWithFileManager:(id<FBFileManager>)fileManager sessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID automationFrameworkPath:(nullable NSString *)automationFrameworkPath savePath:(NSString *)savePath error:(NSError **)error;
 
 /**
  Creates a Test Configuration.
@@ -69,6 +70,11 @@ NS_ASSUME_NONNULL_BEGIN
  Determines whether should initialize for UITesting
  */
 @property (nonatomic, assign, readonly) BOOL shouldInitializeForUITesting;
+
+/**
+ The path to automation framework
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *automationFramework;
 
 @end
 

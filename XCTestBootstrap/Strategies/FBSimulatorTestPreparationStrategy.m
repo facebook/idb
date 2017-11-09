@@ -82,9 +82,16 @@
       fail:error];
   }
 
+  NSString *automationFrameworkPath =
+  [FBXcodeConfiguration.developerDirectory
+   stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework"];
+  if (![self.fileManager fileExistsAtPath:automationFrameworkPath]) {
+    automationFrameworkPath = nil;
+  }
+
   // Prepare XCTest bundle
   NSUUID *sessionIdentifier = [NSUUID UUID];
-  FBTestBundle *testBundle = [[[[[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
+  FBTestBundle *testBundle = [[[[[[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
     withBundlePath:self.testLaunchConfiguration.testBundlePath]
     withUITesting:self.testLaunchConfiguration.shouldInitializeUITesting]
     withTestsToSkip:self.testLaunchConfiguration.testsToSkip]
@@ -93,6 +100,7 @@
     withSessionIdentifier:sessionIdentifier]
     withTargetApplicationPath:self.testLaunchConfiguration.targetApplicationPath]
     withTargetApplicationBundleID:self.testLaunchConfiguration.targetApplicationBundleID]
+    withAutomationFrameworkPath:automationFrameworkPath]
     buildWithError:&innerError];
   if (!testBundle) {
     return [[[XCTestBootstrapError
