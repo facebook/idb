@@ -42,9 +42,10 @@ extern const NSInteger FBProtocolMinimumVersion;
  @param target the target.
  @param reporter the (optional) delegate to report test progress too.
  @param logger the (optional) logger to events to.
+ @param testedApplicationAdditionalEnvironment Additional Environment Variables to pass to the application under test
  @return Prepared FBTestRunnerConfiguration
  */
-+ (instancetype)mediatorWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)mediatorWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
 
 #pragma mark Lifecycle
 

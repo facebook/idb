@@ -28,7 +28,7 @@
 
   self.applicationLaunchConfiguration = [FBApplicationLaunchConfiguration configurationWithBundleID:@"com.foo.Bar" bundleName:@"Bar" arguments:@[] environment:@{} waitForDebugger:NO output:FBProcessOutputConfiguration.outputToDevNull];
   self.testManagerMock = [OCMockObject niceMockForClass:FBTestManager.class];
-  [[[self.testManagerMock stub] andReturn:self.testManagerMock] testManagerWithContext:OCMArg.any iosTarget:OCMArg.any reporter:OCMArg.any logger:OCMArg.any];
+  [[[self.testManagerMock stub] andReturn:self.testManagerMock] testManagerWithContext:OCMArg.any iosTarget:OCMArg.any reporter:OCMArg.any logger:OCMArg.any testedApplicationAdditionalEnvironment:OCMArg.any];
   [[[[self.testManagerMock stub] ignoringNonObjectArgs] andReturn:[FBFuture futureWithResult:FBTestManagerResult.success]] connect];
 }
 

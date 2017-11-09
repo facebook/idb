@@ -18,7 +18,7 @@
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath
++ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
 {
   NSParameterAssert(sessionIdentifier);
   NSParameterAssert(hostApplication);
@@ -34,10 +34,10 @@
     testConfigurationPath:testConfigurationPath
     frameworkSearchPath:frameworkSearchPath];
 
-  return [[self alloc] initWithSessionIdentifier:sessionIdentifier testRunner:hostApplication launchArguments:launchArguments launchEnvironment:launchEnvironment];
+  return [[self alloc] initWithSessionIdentifier:sessionIdentifier testRunner:hostApplication launchArguments:launchArguments launchEnvironment:launchEnvironment testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
 }
 
-- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier testRunner:(FBProductBundle *)testRunner launchArguments:(NSArray<NSString *> *)launchArguments launchEnvironment:(NSDictionary<NSString *, NSString *> *)launchEnvironment
+- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier testRunner:(FBProductBundle *)testRunner launchArguments:(NSArray<NSString *> *)launchArguments launchEnvironment:(NSDictionary<NSString *, NSString *> *)launchEnvironment testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
 {
   self = [super init];
   if (!self) {
@@ -48,6 +48,7 @@
   _testRunner = testRunner;
   _launchArguments = launchArguments;
   _launchEnvironment = launchEnvironment;
+  _testedApplicationAdditionalEnvironment = testedApplicationAdditionalEnvironment;
 
   return self;
 }

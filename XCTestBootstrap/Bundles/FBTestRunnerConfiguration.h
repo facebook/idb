@@ -30,8 +30,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param testBundle the test bundle.
  @param testConfigurationPath path to test configuration that should be used to start tests.
  @param frameworkSearchPath the search path for Frameworks.
+ @param testedApplicationAdditionalEnvironment Launch environment variables added to test target application
  */
-+ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath;
++ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
 
 /**
  Test session identifier
@@ -52,6 +53,11 @@ NS_ASSUME_NONNULL_BEGIN
  Launch environment variables for test runner
  */
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *launchEnvironment;
+
+/**
+ Launch environment variables added to test target application
+ */
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
 
 @end
 

@@ -83,7 +83,8 @@
         testManagerWithContext:context
         iosTarget:self.iosTarget
         reporter:self.reporter
-        logger:self.logger];
+        logger:self.logger
+        testedApplicationAdditionalEnvironment:testRunnerConfiguration.testedApplicationAdditionalEnvironment];
 
       return [[testManager
         connect]

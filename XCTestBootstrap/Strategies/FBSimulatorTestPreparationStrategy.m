@@ -82,11 +82,17 @@
       fail:error];
   }
 
-  NSString *automationFrameworkPath =
-  [FBXcodeConfiguration.developerDirectory
-   stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework"];
-  if (![self.fileManager fileExistsAtPath:automationFrameworkPath]) {
+  NSString *osRuntimePath = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot/Developer"];
+  NSString *developerLibraryPath = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library"];
+
+  NSString *automationFrameworkPath = [osRuntimePath stringByAppendingPathComponent:@"Library/PrivateFrameworks/XCTAutomationSupport.framework"];
+  NSString *xctTargetBootstrapInjectPath = [osRuntimePath stringByAppendingPathComponent:@"usr/lib/libXCTTargetBootstrapInject.dylib"];
+  NSDictionary *testedApplicationAdditionalEnvironment = @{
+    @"DYLD_INSERT_LIBRARIES" : [osRuntimePath stringByAppendingPathComponent:@"usr/lib/libXCTTargetBootstrapInject.dylib"]
+  };
+  if (![self.fileManager fileExistsAtPath:automationFrameworkPath] && ![self.fileManager fileExistsAtPath:xctTargetBootstrapInjectPath]) {
     automationFrameworkPath = nil;
+    testedApplicationAdditionalEnvironment = nil;
   }
 
   // Prepare XCTest bundle
@@ -118,11 +124,7 @@
       fail:error];
   }
 
-  NSString *IDEBundleInjectionFrameworkPath = [FBXcodeConfiguration.developerDirectory
-    stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/IDEBundleInjection.framework"];
-
-  NSString *developerLibraryPath = [FBXcodeConfiguration.developerDirectory
-    stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library"];
+  NSString *IDEBundleInjectionFrameworkPath = [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks/IDEBundleInjection.framework"];
   NSArray<NSString *> *XCTestFrameworksPaths = @[
     [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"],
     [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks"],
@@ -144,7 +146,8 @@
     ideInjectionFramework:IDEBundleInjectionFramework
     testBundle:testBundle
     testConfigurationPath:testBundle.configuration.path
-    frameworkSearchPath:[XCTestFrameworksPaths componentsJoinedByString:@":"]];
+    frameworkSearchPath:[XCTestFrameworksPaths componentsJoinedByString:@":"]
+    testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
 }
 
 @end

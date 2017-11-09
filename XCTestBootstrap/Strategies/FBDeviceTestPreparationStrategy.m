@@ -153,7 +153,8 @@
    ideInjectionFramework:remoteIDEBundleInjectionFramework
    testBundle:testBundle
    testConfigurationPath:remoteTestConfigurationPath
-   frameworkSearchPath:dataPackage.bundlePathOnDevice];
+   frameworkSearchPath:dataPackage.bundlePathOnDevice
+   testedApplicationAdditionalEnvironment:nil];
 }
 
 @end

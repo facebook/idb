@@ -36,7 +36,8 @@
     ideInjectionFramework:IDEBundleInjectionMock
     testBundle:testBundleMock
     testConfigurationPath:@"/booo/magic.xctestconfiguration"
-    frameworkSearchPath:@"/Apple"];
+    frameworkSearchPath:@"/Apple"
+    testedApplicationAdditionalEnvironment:nil];
 }
 
 - (void)testLaunchArguments

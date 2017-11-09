@@ -29,13 +29,14 @@
 
 #pragma mark Initializers
 
-+ (instancetype)testManagerWithContext:(FBTestManagerContext *)context iosTarget:(id<FBiOSTarget>)iosTarget reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (instancetype)testManagerWithContext:(FBTestManagerContext *)context iosTarget:(id<FBiOSTarget>)iosTarget reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
 {
   FBTestManagerAPIMediator *mediator = [FBTestManagerAPIMediator
     mediatorWithContext:context
     target:iosTarget
     reporter:reporter
-    logger:logger];
+    logger:logger
+    testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
 
   return [[FBTestManager alloc] initWithTarget:iosTarget mediator:mediator];
 }
