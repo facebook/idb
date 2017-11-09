@@ -42,13 +42,33 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"MacUnitTestFixture" ofType:@"xctest"];
 }
 
++ (NSString *)iOSUITestAppTargetPath
+{
+  return [[[NSBundle bundleForClass:self] pathForResource:@"iOSAppFixture" ofType:@"app"]
+      stringByAppendingPathComponent:@"iOSAppFixture"];
+}
+
++ (NSString *)iOSUITestBundlePath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"iOSAppUITestFixture" ofType:@"xctest"];
+}
+
 @end
 
 @implementation XCTestCase (FBXCTestKitTests)
 
 - (nullable NSString *)iOSUnitTestBundlePath
 {
-  NSString *bundlePath = FBXCTestKitFixtures.iOSUnitTestBundlePath;
+  return [self signTestBundle:FBXCTestKitFixtures.iOSUnitTestBundlePath];
+}
+
+- (nullable NSString *)iOSUITestBundlePath
+{
+  return [self signTestBundle:FBXCTestKitFixtures.iOSUITestBundlePath];
+}
+
+- (nullable NSString *)signTestBundle:(NSString *)bundlePath;
+{
   if (!FBXcodeConfiguration.isXcode8OrGreater) {
     return bundlePath;
   }

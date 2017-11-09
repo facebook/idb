@@ -37,6 +37,9 @@
 		EE0E34381FAC7CD90052AA1A /* FBiOSLogicTestConfigurationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = EE0E34351FAC7CD90052AA1A /* FBiOSLogicTestConfigurationTests.m */; };
 		EE0E34391FAC7CD90052AA1A /* FBOSXLogicTestConfigurationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = EE0E34361FAC7CD90052AA1A /* FBOSXLogicTestConfigurationTests.m */; };
 		EE0E343A1FAC7CD90052AA1A /* FBiOSApplicationTestConfigurationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = EE0E34371FAC7CD90052AA1A /* FBiOSApplicationTestConfigurationTests.m */; };
+		EE0E343C1FAC7FCF0052AA1A /* FBiOSUITestConfigurationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = EE0E343B1FAC7FCF0052AA1A /* FBiOSUITestConfigurationTests.m */; };
+		EEFC63961FAC9A2500715F55 /* iOSAppUITestFixture.xctest in Resources */ = {isa = PBXBuildFile; fileRef = EEFC63941FAC9A2400715F55 /* iOSAppUITestFixture.xctest */; };
+		EEFC63971FAC9A2500715F55 /* iOSAppFixture.app in Resources */ = {isa = PBXBuildFile; fileRef = EEFC63951FAC9A2400715F55 /* iOSAppFixture.app */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -110,6 +113,9 @@
 		EE0E34351FAC7CD90052AA1A /* FBiOSLogicTestConfigurationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSLogicTestConfigurationTests.m; sourceTree = "<group>"; };
 		EE0E34361FAC7CD90052AA1A /* FBOSXLogicTestConfigurationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBOSXLogicTestConfigurationTests.m; sourceTree = "<group>"; };
 		EE0E34371FAC7CD90052AA1A /* FBiOSApplicationTestConfigurationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSApplicationTestConfigurationTests.m; sourceTree = "<group>"; };
+		EE0E343B1FAC7FCF0052AA1A /* FBiOSUITestConfigurationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSUITestConfigurationTests.m; sourceTree = "<group>"; };
+		EEFC63941FAC9A2400715F55 /* iOSAppUITestFixture.xctest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = iOSAppUITestFixture.xctest; path = ../../../Fixtures/Binaries/iOSAppUITestFixture.xctest; sourceTree = "<group>"; };
+		EEFC63951FAC9A2400715F55 /* iOSAppFixture.app */ = {isa = PBXFileReference; lastKnownFileType = wrapper.application; name = iOSAppFixture.app; path = ../../../Fixtures/Binaries/iOSAppFixture.app; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -188,11 +194,13 @@
 		050D46241D6074580038F72D /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
-				AAB44FF21D622B6C0059E922 /* TableSearch.app */,
 				050D46251D6074B60038F72D /* FBXCTestKitFixtures.h */,
 				050D46261D6074B60038F72D /* FBXCTestKitFixtures.m */,
+				EEFC63951FAC9A2400715F55 /* iOSAppFixture.app */,
+				EEFC63941FAC9A2400715F55 /* iOSAppUITestFixture.xctest */,
 				AAB44FF01D622B6C0059E922 /* iOSUnitTestFixture.xctest */,
 				AAB44FF11D622B6C0059E922 /* MacUnitTestFixture.xctest */,
+				AAB44FF21D622B6C0059E922 /* TableSearch.app */,
 			);
 			path = Fixtures;
 			sourceTree = "<group>";
@@ -419,10 +427,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EEFC63961FAC9A2500715F55 /* iOSAppUITestFixture.xctest in Resources */,
 				AAB44FF51D622B6C0059E922 /* TableSearch.app in Resources */,
 				AAB44FF31D622B6C0059E922 /* iOSUnitTestFixture.xctest in Resources */,
 				050D46071D6071A40038F72D /* FBXCTestKitTests.xcconfig in Resources */,
 				AAB44FF41D622B6C0059E922 /* MacUnitTestFixture.xctest in Resources */,
+				EEFC63971FAC9A2500715F55 /* iOSAppFixture.app in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
