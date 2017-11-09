@@ -246,59 +246,50 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
   return [self.dvtDevice.token.deviceConsoleController consoleString];
 }
 
-- (BOOL)observeProcessWithID:(NSInteger)processID error:(NSError **)error
+- (FBFuture<id> *)observeProcessWithID:(pid_t)processID
 {
-  NSAssert(error, @"error is required for hub commands");
-  [self executeHubProcessControlSelector:NSSelectorFromString(@"startObservingPid:")
-                                   error:error
-                               arguments:@(processID), nil];
-  return (*error == nil);
+  return [self
+    hubControlFutureWithSelector:NSSelectorFromString(@"startObservingPid:")
+    arg:@(processID), nil];
 }
 
-- (BOOL)killProcessWithID:(NSInteger)processID error:(NSError **)error
+- (FBFuture<id> *)killProcessWithID:(pid_t)processID
 {
-  NSAssert(error, @"error is required for hub commands");
-  [self executeHubProcessControlSelector:NSSelectorFromString(@"killPid:")
-                                   error:error
-                               arguments:@(processID), nil];
-  return (*error == nil);
+  return [self
+    hubControlFutureWithSelector:NSSelectorFromString(@"killPid:")
+    arg:@(processID), nil];
 }
 
 #pragma mark FBApplicationCommands Implementation
 
-- (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
 {
-  return [self installedApplicationWithBundleIdentifier:bundleID] != nil;
+  return [self installedApplicationWithBundleIdentifier:bundleID];
 }
 
-- (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error
+- (FBFuture<id> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
-  NSAssert(error, @"error is required for hub commands");
-  NSString *remotePath = [self applicationPathForApplicationWithBundleID:configuration.bundleID error:error];
+  NSError *error = nil;
+  NSString *remotePath = [self applicationPathForApplicationWithBundleID:configuration.bundleID error:&error];
+  if (!remotePath) {
+    return [FBFuture futureWithError:error];
+  }
   NSDictionary *options = @{@"StartSuspendedKey" : @NO};
-  SEL aSelector = NSSelectorFromString(@"launchSuspendedProcessWithDevicePath:bundleIdentifier:environment:arguments:options:");
-  NSNumber *PID =
-  [self executeHubProcessControlSelector:aSelector
-                                   error:error
-                               arguments:remotePath, configuration.bundleID, configuration.environment, configuration.arguments, options, nil];
-  if (!PID) {
-    return NO;
-  }
-  __block NSError *innerError = nil;
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [self observeProcessWithID:PID.integerValue error:&innerError];
-  });
-  *error = innerError;
-  return YES;
+  return [[self
+    hubControlFutureWithSelector:NSSelectorFromString(@"launchSuspendedProcessWithDevicePath:bundleIdentifier:environment:arguments:options:")
+    arg:remotePath, configuration.bundleID, configuration.environment, configuration.arguments, options, nil]
+    onQueue:dispatch_get_main_queue() fmap:^(NSNumber *processIdentifier) {
+      return [self observeProcessWithID:processIdentifier.intValue];
+    }];
 }
 
-- (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (FBFuture<NSNull *> *)killApplicationWithBundleID:(NSString *)bundleID
 {
-  pid_t PID = [[self processIDWithBundleID:bundleID] await:error].intValue;
-  if (PID < 1) {
-    return NO;
-  }
-  return [self killProcessWithID:PID error:error];
+  return [[self
+    processIDWithBundleID:bundleID]
+    onQueue:dispatch_get_main_queue() fmap:^FBFuture *(NSNumber *processIdentifier) {
+      return [self killProcessWithID:processIdentifier.intValue];
+    }];
 }
 
 #pragma mark - Helpers

@@ -221,7 +221,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Termination Handles.
  */
-@property (nonatomic, copy, readonly) NSArray<id<FBTerminationHandle>> *handles;
+@property (nonatomic, copy, readonly) NSArray<id<FBTerminationAwaitable>> *handles;
 
 @end
 

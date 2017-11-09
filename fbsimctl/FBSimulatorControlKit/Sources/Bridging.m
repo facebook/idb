@@ -306,7 +306,7 @@
 
 @interface ActionReaderDelegateBridge ()
 
-@property (nonatomic, strong, readonly) NSMutableArray<id<FBTerminationHandle>> *mutableHandles;
+@property (nonatomic, strong, readonly) NSMutableArray<id<FBTerminationAwaitable>> *mutableHandles;
 
 @end
 
@@ -328,9 +328,9 @@
   return [self.mutableHandles copy];
 }
 
-- (void)action:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target didGenerateTerminationHandle:(id<FBTerminationHandle>)terminationHandle
+- (void)action:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target didGenerateAwaitable:(id<FBTerminationAwaitable>)awaitable
 {
-  [self.mutableHandles addObject:terminationHandle];
+  [self.mutableHandles addObject:awaitable];
 }
 
 - (id<FBEventInterpreter>)interpreter

@@ -44,23 +44,19 @@
 
 #pragma mark - FBApplicationCommands
 
-- (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
+- (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
 {
-  FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:path error:error];
-  if (![[self.simulator installApplicationWithPath:application.path] await:error]) {
-    return NO;
-  }
-  return YES;
+  return [self.simulator installApplicationWithPath:path];
 }
 
-- (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
 {
-  return ([[self.simulator installedApplicationWithBundleID:bundleID] await:error] != nil);
+  return [self.simulator isApplicationInstalledWithBundleID:bundleID];
 }
 
-- (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error
+- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
-  return [[self.simulator launchApplication:configuration] await:error] != nil;
+    return [self.simulator launchApplication:configuration];
 }
 
 #pragma mark - FBDeviceOperator protocol
