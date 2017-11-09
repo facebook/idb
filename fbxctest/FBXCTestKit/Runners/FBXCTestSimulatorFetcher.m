@@ -59,9 +59,10 @@
       fail:error];
   }
 
-  return [configuration isKindOfClass:FBApplicationTestConfiguration.class]
-    ? [self fetchSimulatorForApplicationTests:destination error:error]
-    : [self fetchSimulatorForLogicTest:destination error:error];
+  if ([configuration isKindOfClass:FBApplicationTestConfiguration.class] || [configuration isKindOfClass:FBUITestConfiguration.class]) {
+    return [self fetchSimulatorForApplicationTests:destination error:error];
+  }
+  return [self fetchSimulatorForLogicTest:destination error:error];
 }
 
 - (nullable FBSimulator *)fetchSimulatorForLogicTest:(FBXCTestDestinationiPhoneSimulator *)destination error:(NSError **)error

@@ -599,6 +599,8 @@
 		EEBD60951C908F8500298A07 /* FBCollectionInformation.m in Sources */ = {isa = PBXBuildFile; fileRef = EEBD60931C908F8500298A07 /* FBCollectionInformation.m */; };
 		EEBD60971C908FA200298A07 /* FBJSONConversion.h in Headers */ = {isa = PBXBuildFile; fileRef = EEBD60961C908FA200298A07 /* FBJSONConversion.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EEF4497E1CE0A22200300C9F /* FBXCTestBootstrapFixtures.m in Sources */ = {isa = PBXBuildFile; fileRef = EEF4497C1CE0A22200300C9F /* FBXCTestBootstrapFixtures.m */; };
+		EEFC639A1FAC9FD000715F55 /* FBUITestRunStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = EEFC63981FAC9FCF00715F55 /* FBUITestRunStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EEFC639B1FAC9FD000715F55 /* FBUITestRunStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = EEFC63991FAC9FCF00715F55 /* FBUITestRunStrategy.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1573,6 +1575,8 @@
 		EEBD60961C908FA200298A07 /* FBJSONConversion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBJSONConversion.h; sourceTree = "<group>"; };
 		EEF4497B1CE0A22200300C9F /* FBXCTestBootstrapFixtures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestBootstrapFixtures.h; sourceTree = "<group>"; };
 		EEF4497C1CE0A22200300C9F /* FBXCTestBootstrapFixtures.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestBootstrapFixtures.m; sourceTree = "<group>"; };
+		EEFC63981FAC9FCF00715F55 /* FBUITestRunStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBUITestRunStrategy.h; sourceTree = "<group>"; };
+		EEFC63991FAC9FCF00715F55 /* FBUITestRunStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBUITestRunStrategy.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2221,8 +2225,6 @@
 				AAFE93B51CE4954500A50F76 /* FBSimulatorEraseStrategy.m */,
 				AA07B3431D531FEA007FB614 /* FBSimulatorInflationStrategy.h */,
 				AA07B3441D531FEA007FB614 /* FBSimulatorInflationStrategy.m */,
-				AA6062E41EE4A62900E2EFEE /* FBSimulatorXCTestProcessExecutor.h */,
-				AA6062E51EE4A62900E2EFEE /* FBSimulatorXCTestProcessExecutor.m */,
 				AAF7B0D71DDB1CD60079ED11 /* FBSimulatorShutdownStrategy.h */,
 				AAF7B0D81DDB1CD60079ED11 /* FBSimulatorShutdownStrategy.m */,
 				AAD287FF1D586D6C00981DFC /* FBSimulatorSubprocessTerminationStrategy.h */,
@@ -2231,6 +2233,10 @@
 				AA6A3B3A1CC1597000E016C4 /* FBSimulatorTerminationStrategy.m */,
 				AA83EB1B1D6F608400E5C864 /* FBSimulatorTestRunStrategy.h */,
 				AA83EB1C1D6F608400E5C864 /* FBSimulatorTestRunStrategy.m */,
+				AA6062E41EE4A62900E2EFEE /* FBSimulatorXCTestProcessExecutor.h */,
+				AA6062E51EE4A62900E2EFEE /* FBSimulatorXCTestProcessExecutor.m */,
+				EEFC63981FAC9FCF00715F55 /* FBUITestRunStrategy.h */,
+				EEFC63991FAC9FCF00715F55 /* FBUITestRunStrategy.m */,
 				AA5CB00A1E09B3E500F77765 /* FBUploadMediaStrategy.h */,
 				AA5CB00B1E09B3E500F77765 /* FBUploadMediaStrategy.m */,
 			);
@@ -3215,6 +3221,7 @@
 				AA6A9DF21E60237500C4F553 /* FBSimulatorControlOperator.h in Headers */,
 				AA1B5D911CF6DD800073A203 /* FBSimulatorDeletionStrategy.h in Headers */,
 				AA79A1CE1C7766ED00D5C685 /* FBSimulatorSet+Private.h in Headers */,
+				EEFC639A1FAC9FD000715F55 /* FBUITestRunStrategy.h in Headers */,
 				AA4242ED1C528338008ABD80 /* FBFramebuffer.h in Headers */,
 				AA95177F1C15F54600A89CAD /* FBSimulator.h in Headers */,
 				AA9517C21C15F60B00A89CAD /* FBCompositeSimulatorEventSink.h in Headers */,
@@ -3776,6 +3783,7 @@
 				AAFE93B71CE4954500A50F76 /* FBSimulatorEraseStrategy.m in Sources */,
 				AA8F5E211F28780600FAAC0F /* FBSimulatorBootVerificationStrategy.m in Sources */,
 				AAB207C11C2099A9007C7908 /* FBSimulatorLoggingEventSink.m in Sources */,
+				EEFC639B1FAC9FD000715F55 /* FBUITestRunStrategy.m in Sources */,
 				AA9517801C15F54600A89CAD /* FBSimulator.m in Sources */,
 				AA56445F1E5F6ED0006C1077 /* FBSimulatorKeychainCommands.m in Sources */,
 				AA07B3461D531FEA007FB614 /* FBSimulatorInflationStrategy.m in Sources */,

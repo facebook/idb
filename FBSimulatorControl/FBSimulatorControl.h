@@ -75,6 +75,7 @@
 #import <FBSimulatorControl/FBSimulatorXCTestCommands.h>
 #import <FBSimulatorControl/FBSimulatorXCTestProcessExecutor.h>
 #import <FBSimulatorControl/FBSurfaceImageGenerator.h>
+#import <FBSimulatorControl/FBUITestRunStrategy.h>
 #import <FBSimulatorControl/FBUploadMediaStrategy.h>
 #import <FBSimulatorControl/FBVideoEncoderBuiltIn.h>
 #import <FBSimulatorControl/FBVideoEncoderConfiguration.h>

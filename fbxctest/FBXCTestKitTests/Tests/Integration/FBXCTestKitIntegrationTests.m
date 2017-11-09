@@ -47,6 +47,35 @@
   return [FBXCTestContext contextWithReporter:self.reporter logger:self.logger];
 }
 
+- (void)testiOSUITestRun
+{
+  NSError *error;
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];
+  NSString *testTargetPath = [FBXCTestKitFixtures iOSUITestAppTargetPath];
+  NSString *testBundlePath = self.iOSUITestBundlePath;
+  NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@:%@", testBundlePath, applicationPath, testTargetPath];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-uiTest", appTestArgument ];
+
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
+
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
+  BOOL success = [[testRunner execute] await:&error] != nil;
+  XCTAssertTrue(success);
+  XCTAssertNil(error);
+
+  XCTAssertTrue(self.reporter.printReportWasCalled);
+
+  NSArray<NSArray<NSString *> *> *uiTestList = @[
+    @[@"iOSUITestFixtureUITests", @"testHelloWorld"],
+  ];
+  XCTAssertEqualObjects(self.reporter.startedTests, uiTestList);
+  XCTAssertEqualObjects(self.reporter.passedTests, uiTestList);
+  XCTAssertEqualObjects(self.reporter.failedTests, @[]);
+}
+
 - (void)testRunsiOSUnitTestInApplication
 {
   NSError *error;
