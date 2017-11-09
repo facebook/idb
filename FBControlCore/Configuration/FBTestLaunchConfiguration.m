@@ -243,7 +243,7 @@
          self.timeout == configuration.timeout &&
          self.shouldInitializeUITesting == configuration.shouldInitializeUITesting &&
          (self.xcTestRunProperties == configuration.xcTestRunProperties || [self.xcTestRunProperties isEqual:configuration.xcTestRunProperties]) &&
-         (self.resultBundlePath == configuration.resultBundlePath || [self.resultBundlePath isEqual:self.resultBundlePath]);
+         (self.resultBundlePath == configuration.resultBundlePath || [self.resultBundlePath isEqual:configuration.resultBundlePath]);
 }
 
 - (NSUInteger)hash
@@ -374,7 +374,7 @@ static NSString *const KeyResultBundlePath = @"resultBundlePath";
   }
   NSSet<NSString *> *testsToSkip = testsToSkipArray ? [NSSet setWithArray:testsToSkipArray] : nil;
   NSDictionary *xcTestRunProperties = [FBCollectionOperations nullableValueForDictionary:json key:KeyXcTestRunProperties];
-  if (xcTestRunProperties && ![xcTestRunProperties isKindOfClass:NSDictionary .class]) {
+  if (xcTestRunProperties && ![xcTestRunProperties isKindOfClass:NSDictionary.class]) {
     return [[FBControlCoreError
              describeFormat:@"%@ is not a Dictionary | Null for %@", xcTestRunProperties, KeyXcTestRunProperties]
             fail:error];
