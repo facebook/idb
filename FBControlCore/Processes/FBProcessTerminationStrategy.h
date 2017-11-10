@@ -43,19 +43,21 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param configuration the configuration to use in the strategy.
  @param processFetcher the Process Fetcher to use.
+ @param workQueue the queue to perform work on.
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
  */
-+ (instancetype)strategyWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)strategyWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBProcessFetcher *)processFetcher workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Creates and returns a Strategy strategyWith the default configuration.
 
  @param processFetcher the Process Fetcher to use.
+ @param workQueue the queue to perform work on.
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
  */
-+ (instancetype)strategyWithProcessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)strategyWithProcessFetcher:(FBProcessFetcher *)processFetcher workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Terminates a Process of the provided Process Info.

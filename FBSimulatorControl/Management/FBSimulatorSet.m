@@ -336,7 +336,7 @@
 
 - (FBCoreSimulatorTerminationStrategy *)coreSimulatorTerminationStrategy
 {
-  return [FBCoreSimulatorTerminationStrategy strategyWithProcessFetcher:self.processFetcher logger:self.logger];
+  return [FBCoreSimulatorTerminationStrategy strategyWithProcessFetcher:self.processFetcher workQueue:dispatch_get_main_queue() logger:self.logger];
 }
 
 - (FBSimulatorEraseStrategy *)eraseStrategy

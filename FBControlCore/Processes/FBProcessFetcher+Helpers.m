@@ -91,17 +91,11 @@
   return YES;
 }
 
-- (BOOL)waitForProcessToDie:(FBProcessInfo *)process timeout:(NSTimeInterval)timeout
+- (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForProcessToDie:(FBProcessInfo *)process
 {
-  return [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^ BOOL {
+  return [FBFuture onQueue:queue resolveWhen:^BOOL{
     FBProcessInfo *polledProcess = [self processInfoFor:process.processIdentifier];
-    if (!polledProcess) {
-      return YES;
-    }
-    if (![process isEqual:polledProcess]) {
-      return YES;
-    }
-    return NO;
+    return polledProcess == nil;
   }];
 }
 

@@ -47,7 +47,7 @@
 
 + (instancetype)strategyForSet:(FBSimulatorSet *)set
 {
-  FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:set.processFetcher.processFetcher logger:set.logger];
+  FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:set.processFetcher.processFetcher workQueue:dispatch_get_main_queue() logger:set.logger];
   return [[self alloc] initWithSet:set configuration:set.configuration processFetcher:set.processFetcher processTerminationStrategy:processTerminationStrategy logger:set.logger];
 }
 

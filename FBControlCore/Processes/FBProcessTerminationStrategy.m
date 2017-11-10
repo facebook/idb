@@ -10,6 +10,7 @@
 #import "FBProcessTerminationStrategy.h"
 
 #import <Cocoa/Cocoa.h>
+#import <FBControlCore/FBControlCore.h>
 
 #import "FBProcessFetcher.h"
 #import "FBProcessFetcher+Helpers.h"
@@ -29,8 +30,9 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 
 @interface FBProcessTerminationStrategy ()
 
-@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
 @property (nonatomic, assign, readonly) FBProcessTerminationStrategyConfiguration configuration;
+@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
+@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
@@ -81,20 +83,20 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 
 @implementation FBProcessTerminationStrategy
 
-+ (instancetype)strategyWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)strategyWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBProcessFetcher *)processFetcher workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
 {
   BOOL useWorkspaceKilling = (configuration.options & FBProcessTerminationStrategyOptionsUseNSRunningApplication) == FBProcessTerminationStrategyOptionsUseNSRunningApplication;
   return useWorkspaceKilling
-    ? [[FBProcessTerminationStrategy_WorkspaceQuit alloc] initWithConfiguration:configuration processFetcher:processFetcher logger:logger]
-    : [[FBProcessTerminationStrategy alloc] initWithConfiguration:configuration processFetcher:processFetcher logger:logger];
+    ? [[FBProcessTerminationStrategy_WorkspaceQuit alloc] initWithConfiguration:configuration processFetcher:processFetcher workQueue:workQueue logger:logger]
+    : [[FBProcessTerminationStrategy alloc] initWithConfiguration:configuration processFetcher:processFetcher workQueue:workQueue logger:logger];
 }
 
-+ (instancetype)strategyWithProcessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
++ (instancetype)strategyWithProcessFetcher:(FBProcessFetcher *)processFetcher workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger
 {
-  return [self strategyWithConfiguration:FBProcessTerminationStrategyConfigurationDefault processFetcher:processFetcher logger:logger];
+  return [self strategyWithConfiguration:FBProcessTerminationStrategyConfigurationDefault processFetcher:processFetcher workQueue:workQueue logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBProcessFetcher *)processFetcher workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger
 {
   NSParameterAssert(processFetcher);
   NSAssert(configuration.signo > 0 && configuration.signo < 32, @"Signal must be greater than 0 (SIGHUP) and less than 32 (SIGUSR2) was %d", configuration.signo);
@@ -104,8 +106,9 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
     return nil;
   }
 
-  _processFetcher = processFetcher;
   _configuration = configuration;
+  _processFetcher = processFetcher;
+  _workQueue = workQueue;
   _logger = logger;
 
   return self;
@@ -162,7 +165,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 
   // It may take some time for the process to have truly died, so wait for it to be so.
   [self.logger.debug logFormat:@"Waiting on %@ to dissappear from the process table", process.shortDescription];
-  if (![self.processFetcher waitForProcessToDie:process timeout:FBControlCoreGlobalConfiguration.fastTimeout]) {
+  if (![[self.processFetcher onQueue:self.workQueue waitForProcessToDie:process] awaitWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout error:&innerError]) {
     // If this is a SIGKILL and it's taken a while for the process to dissapear, perhaps the process isn't
     // well behaved when responding to other terminating signals.
     // There's nothing more than can be done with a SIGKILL.
@@ -179,7 +182,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
     FBProcessTerminationStrategyConfiguration configuration = self.configuration;
     configuration.signo = SIGKILL;
     [self.logger.debug logFormat:@"Backing off kill of %@ to SIGKILL", process.shortDescription];
-    if (![[FBProcessTerminationStrategy strategyWithConfiguration:configuration processFetcher:self.processFetcher logger:self.logger] killProcess:process error:&innerError]) {
+    if (![[self strategyWithConfiguration:configuration] killProcess:process error:&innerError]) {
       return [[[[[FBControlCoreError
         describeFormat:@"Attempted to SIGKILL %@ after failed kill with signo %d", process.shortDescription, self.configuration.signo]
         attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher]
@@ -202,6 +205,13 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
     }
   }
   return YES;
+}
+
+#pragma mark Private
+
+- (FBProcessTerminationStrategy *)strategyWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration
+{
+  return [FBProcessTerminationStrategy strategyWithConfiguration:configuration processFetcher:self.processFetcher workQueue:self.workQueue logger:self.logger];
 }
 
 @end

@@ -73,13 +73,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)processExists:(FBProcessInfo *)process error:(NSError **)error;
 
 /**
- Uses the reciever to poll for the termination of a process.
+ Uses the reciever to wait for the termination of a process.
 
- @param process the process that is expected to terminate.
- @param timeout a timeout to wait for the process to die in.
- @return YES if the process has died, NO otherwise.
+ @param queue the queue to poll on.
+ @param process the process to wait for.
+ @return a Future that resolves when the process dies.
  */
-- (BOOL)waitForProcessToDie:(FBProcessInfo *)process timeout:(NSTimeInterval)timeout;
+- (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForProcessToDie:(FBProcessInfo *)process;
 
 /**
  Returns an Array of NSRunningApplications for the provided array of FBProcessInfo.
