@@ -12,8 +12,9 @@
 #import "FBCollectionInformation.h"
 #import "FBCollectionOperations.h"
 #import "FBControlCoreError.h"
-#import "NSRunLoop+FBControlCore.h"
+#import "FBiOSTarget.h"
 #import "FBXCTestCommands.h"
+#import "NSRunLoop+FBControlCore.h"
 
 @implementation FBTestLaunchConfiguration
 
@@ -400,33 +401,31 @@ static NSString *const KeyResultBundlePath = @"resultBundlePath";
     resultBundlePath:resultBundlePath];
 }
 
-#pragma mark FBiOSTargetAction
+#pragma mark FBiOSTargetFuture
 
 - (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeTestLaunch;
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
 {
-  id<FBXCTestCommands> commands = (id<FBXCTestCommands> ) target;
+  id<FBXCTestCommands> commands = (id<FBXCTestCommands>) target;
   if (![commands conformsToProtocol:@protocol(FBXCTestCommands)]) {
     return [[FBControlCoreError
       describeFormat:@"%@ does not conform to %@", target, NSStringFromProtocol(@protocol(FBXCTestCommands))]
-      failBool:error];
+      failFuture];
   }
 
-  id<FBTerminationAwaitable> operation = [[commands startTestWithLaunchConfiguration:self reporter:nil] awaitWithTimeout:self.timeout error:error];
-  if (!operation) {
-    return NO;
-  }
-  if (self.timeout > 0) {
-    if (![operation.completed awaitWithTimeout:self.timeout error:error]) {
-      return NO;
-    }
-  }
-  [delegate action:self target:target didGenerateAwaitable:operation];
-  return YES;
+  FBiOSTargetActionType handleType = self.actionType;
+  FBFuture<FBiOSTargetActionType> *future = [[commands
+    startTestWithLaunchConfiguration:self reporter:nil]
+    onQueue:target.workQueue map:^(id<FBTerminationAwaitable> baseAwaitable) {
+      id<FBTerminationAwaitable> awaitable = FBTerminationAwaitableRenamed(baseAwaitable, handleType);
+      [awaitableDelegate action:(id<FBiOSTargetAction>)self target:target didGenerateAwaitable:awaitable];
+      return handleType;
+    }];
+  return self.timeout > 0 ? [future timedOutIn:self.timeout] : future;
 }
 
 @end

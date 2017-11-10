@@ -90,10 +90,11 @@
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [self.connect
-    onQueue:self.target.asyncQueue map:^(FBTestManagerResult *_) {
-      return NSNull.null;
-    }];
+  return [[self.connect
+    onQueue:self.target.workQueue fmap:^FBFuture *(FBTestManagerResult *_) {
+      return [self execute];
+    }]
+    mapReplace:NSNull.null];
 }
 
 - (FBTerminationHandleType)handleType

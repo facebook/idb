@@ -125,7 +125,7 @@ public enum Action {
   }
 
   static func launchXCTest(_ testLaunch: FBTestLaunchConfiguration) -> Action {
-    return self.core(testLaunch.withUITesting(true))
+    return self.coreFuture(testLaunch.withUITesting(true))
   }
 
   static var listApps: Action { get {
