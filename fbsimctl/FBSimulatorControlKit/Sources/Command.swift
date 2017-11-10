@@ -96,6 +96,10 @@ public enum Action {
   case upload([FBDiagnostic])
   case watchdogOverride([String], TimeInterval)
 
+  static var accessibility: Action { get {
+    return self.core(FBAccessibilityFetch())
+  }}
+
   static func approve(_ bundleIDs: [String]) -> Action {
     return self.coreFuture(FBSettingsApproval(bundleIDs: bundleIDs, services: [.location]))
   }

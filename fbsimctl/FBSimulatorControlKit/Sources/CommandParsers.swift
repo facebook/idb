@@ -500,7 +500,7 @@ extension Action : Parsable {
   public static var parser: Parser<Action> {
     return Parser
       .alternative([
-        self.accessibility,
+        self.accessibilityParser,
         self.approveParser,
         self.bootParser,
         self.clearKeychainParser,
@@ -537,11 +537,11 @@ extension Action : Parsable {
       .sectionize("action", "Action", "")
   }
 
-  static var accessibility: Parser<Action> {
+  static var accessibilityParser: Parser<Action> {
     return Parser
       .ofString(
         EventName.accessibilityFetch.rawValue,
-        Action.core(FBAccessibilityFetch())
+        Action.accessibility
       )
   }
 
