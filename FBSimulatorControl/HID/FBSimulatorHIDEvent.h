@@ -23,7 +23,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeHID;
 /**
  A Value representing a call to the HID System.
  */
-@interface FBSimulatorHIDEvent : NSObject <NSCopying, FBiOSTargetAction>
+@interface FBSimulatorHIDEvent : NSObject <NSCopying, FBiOSTargetFuture>
 
 /**
  A HID Event that is a touch-down followed by an immediate touch-up.

@@ -109,7 +109,7 @@ public enum Action {
   }
 
   static func hid(_ event: FBSimulatorHIDEvent) -> Action {
-    return self.core(event)
+    return self.coreFuture(event)
   }
 
   static func install(_ path: String, _ codesign: Bool) -> Action {

@@ -617,26 +617,31 @@ static NSString *const DirectionUp = @"up";
   }
 }
 
-#pragma mark FBiOSTargetAction
+#pragma mark FBiOSTargetFuture
 
 - (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeHID;
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error;
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
 {
   if (![target isKindOfClass:FBSimulator.class]) {
     return [[FBSimulatorError
       describeFormat:@"%@ is not a Simulator", target]
-      failBool:error];
+      failFuture];
   }
   FBSimulator *simulator = (FBSimulator *) target;
-  FBSimulatorHID *hid = [[simulator connectWithError:error] connectToHID:error];
-  if (!hid) {
-    return NO;
-  }
-  return [self performOnHID:hid error:error];
+  return [FBFuture onQueue:target.workQueue resolveValue:^FBiOSTargetActionType(NSError **error) {
+    FBSimulatorHID *hid = [[simulator connectWithError:error] connectToHID:error];
+    if (!hid) {
+      return nil;
+    }
+    if (![self performOnHID:hid error:error]) {
+      return nil;
+    }
+    return self.actionType;
+  }];
 }
 
 @end

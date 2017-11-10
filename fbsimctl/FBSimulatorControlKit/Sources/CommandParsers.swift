@@ -753,7 +753,7 @@ extension Action : Parsable {
         coordParser
       )
       .fmap(FBSimulatorHIDEvent.tapAt)
-      .fmap(Action.core)
+      .fmap(Action.hid)
   }
 
   static var serviceInfoParser: Parser<Action> {
