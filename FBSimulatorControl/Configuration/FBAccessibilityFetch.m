@@ -17,31 +17,31 @@ FBiOSTargetActionType const FBiOSTargetActionTypeAcessibilityFetch = @"accessibi
 
 @implementation FBAccessibilityFetch
 
-#pragma mark FBiOSTargetAction
+#pragma mark FBiOSTargetFuture
 
 - (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeAcessibilityFetch;
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
 {
   if (![target conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
     return [[FBControlCoreError
      describeFormat:@"%@ does not conform to FBSimulatorLifecycleCommands", target]
-     failBool:error];
+     failFuture];
   }
 
   id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
-  FBSimulatorBridge *bridge = [[commands connectWithError:error] connectToBridge:error];
+  NSError *error = nil;
+  FBSimulatorBridge *bridge = [[commands connectWithError:&error] connectToBridge:&error];
   if (!bridge) {
-    return NO;
+    return [FBFuture futureWithError:error];
   }
-  id<FBFileConsumer> consumer = [delegate obtainConsumerForAction:self target:target];
   NSArray *elements = [bridge accessibilityElements];
-  NSData *data = [NSJSONSerialization dataWithJSONObject:elements options:0 error:error];
+  NSData *data = [NSJSONSerialization dataWithJSONObject:elements options:0 error:&error];
   [consumer consumeData:data];
-  return YES;
+  return [FBFuture futureWithResult:self.actionType];
 }
 
 - (id)jsonSerializableRepresentation

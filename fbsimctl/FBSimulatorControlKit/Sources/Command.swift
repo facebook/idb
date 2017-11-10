@@ -97,7 +97,7 @@ public enum Action {
   case watchdogOverride([String], TimeInterval)
 
   static var accessibility: Action { get {
-    return self.core(FBAccessibilityFetch())
+    return self.coreFuture(FBAccessibilityFetch())
   }}
 
   static func approve(_ bundleIDs: [String]) -> Action {

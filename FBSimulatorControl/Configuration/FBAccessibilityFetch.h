@@ -20,7 +20,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeAcessibilityFetch;
 /**
  An action for fetching accessibility.
  */
-@interface FBAccessibilityFetch : NSObject <FBiOSTargetAction>
+@interface FBAccessibilityFetch : NSObject <FBiOSTargetFuture>
 
 @end
 
