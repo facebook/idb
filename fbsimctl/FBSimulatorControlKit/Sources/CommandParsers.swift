@@ -796,7 +796,7 @@ extension Action : Parsable {
         FBProcessLaunchConfigurationParsers.argumentParser
       )
       .fmap(FBLogTailConfiguration.init)
-      .fmap(Action.core)
+      .fmap(Action.logTail)
   }
 
   static var terminateParser: Parser<Action> {

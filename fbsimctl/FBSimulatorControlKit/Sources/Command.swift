@@ -133,7 +133,7 @@ public enum Action {
   }}
 
   static func logTail(_ configuration: FBLogTailConfiguration) -> Action {
-    return self.core(configuration)
+    return self.coreFuture(configuration)
   }
 
   static func search(_ search: FBBatchLogSearch) -> Action {

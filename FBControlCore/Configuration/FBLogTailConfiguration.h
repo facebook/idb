@@ -21,7 +21,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeLogTail;
 /**
  The configuration for tailing a log.
  */
-@interface FBLogTailConfiguration : NSObject <FBiOSTargetAction, NSCopying>
+@interface FBLogTailConfiguration : NSObject <FBiOSTargetFuture, NSCopying>
 
 /**
  The Designated Initializer.

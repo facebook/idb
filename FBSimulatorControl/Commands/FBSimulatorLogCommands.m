@@ -46,9 +46,9 @@
 
 #pragma mark Public
 
-- (FBFuture<id<FBFileConsumer>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
+- (FBFuture<id<FBTerminationAwaitable>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
 {
-  return [self runLogCommandAndWait:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer];
+  return (FBFuture<id<FBTerminationAwaitable>> *) [self startLogCommand:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer];
 }
 
 - (FBFuture<NSArray<NSString *> *> *)logLinesWithArguments:(NSArray<NSString *> *)arguments
@@ -56,7 +56,7 @@
   FBAccumilatingFileConsumer *consumer = FBAccumilatingFileConsumer.new;
   return [[self
     runLogCommandAndWait:arguments consumer:consumer]
-    onQueue:self.simulator.asyncQueue fmap:^(id<FBFileConsumer> _){
+    onQueue:self.simulator.asyncQueue fmap:^(id _){
       NSArray<NSString *> *lines = consumer.lines;
       if (lines.count < 2) {
         return [FBFuture futureWithResult:@[]];
@@ -67,7 +67,7 @@
 
 #pragma mark Private
 
-- (FBFuture<id<FBFileConsumer>> *)runLogCommandAndWait:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
+- (FBFuture<NSNull *> *)runLogCommandAndWait:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
 {
   return [[[self
     startLogCommand:arguments consumer:consumer]
@@ -82,7 +82,7 @@
       if (exitCode != 0) {
         return [FBFuture futureWithError:[FBSimulatorError errorForFormat:@"log exited with code %d, arguments %@", exitCode, arguments]];
       }
-      return [FBFuture futureWithResult:consumer];
+      return [FBFuture futureWithResult:NSNull.null];
   }];
 }
 

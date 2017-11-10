@@ -37,7 +37,7 @@ struct iOSActionProvider {
     case .coreFuture(let action):
       let awaitableDelegate = ActionReaderDelegateBridge()
       let future = action.run(with: target, consumer: reporter.reporter.writer, reporter: reporter.reporter, awaitableDelegate: awaitableDelegate)
-      return FutureRunner(reporter, action.eventName, action.subject, future)
+      return FutureRunner(reporter, action.eventName, action.subject, future, awaitableDelegate)
     case .record(let record):
       switch record {
         case .start(let maybePath):
@@ -70,7 +70,7 @@ struct FutureRunner<T : AnyObject> : Runner {
   let future: FBFuture<T>
   let awaitableDelegate: ActionReaderDelegateBridge?
 
-  init(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ future: FBFuture<T>, awaitableDelegate: ActionReaderDelegateBridge? = nil) {
+  init(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ future: FBFuture<T>, _ awaitableDelegate: ActionReaderDelegateBridge? = nil) {
     self.reporter = reporter
     self.name = name
     self.subject = subject

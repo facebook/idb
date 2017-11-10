@@ -113,7 +113,7 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
  @param futures the futures to compose.
  @return a new Future with the first future that resolves.
  */
-+ (FBFuture<T> *)race:(NSArray<FBFuture<T> *> *)futures;
++ (FBFuture<T> *)race:(NSArray<FBFuture<T> *> *)futures NS_SWIFT_NAME(init(race:));
 
 #pragma mark Public Methods
 

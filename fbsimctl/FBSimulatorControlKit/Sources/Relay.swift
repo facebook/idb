@@ -67,12 +67,12 @@ class SynchronousRelay : Relay {
     if let completedFuture = self.awaitable?.completed {
       futures.append(completedFuture)
     }
-    let signalFuture: FBFuture<NSNull> = SignalHandler.future.onQueue(DispatchQueue.main, map: { info in
+    let signalFuture = SignalHandler.future.onQueue(DispatchQueue.main, map: { info in
       self.reporter.reportSimple(.signalled, .discrete, info)
-      return info
+      return NSNull()
     }) as! FBFuture<NSNull>
     futures.append(signalFuture)
-    let _ = try FBFuture(futures: futures).await()
+    let _ = try FBFuture(race: futures).await()
   }
 
   func stop() throws {

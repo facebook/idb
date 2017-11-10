@@ -27,9 +27,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param arguments the arguments for the log command.
  @param consumer the consumer to attach
- @return a Future that will complete when the log command terminates. The result of the futures is the passed-in consumer. If the log process exits with a error exit code the future will error.
+ @return a Future that will complete when the log command has started successfully. The wrapped Awaitable can then be cancelled, or awaited until it is finished.
  */
-- (FBFuture<id<FBFileConsumer>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer;
+- (FBFuture<id<FBTerminationAwaitable>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer;
 
 /**
  Runs the log command, returning the results as an array of strings.

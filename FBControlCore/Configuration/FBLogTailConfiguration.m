@@ -88,31 +88,29 @@ static NSString *const KeyArguments = @"arguments";
   return self.arguments.hash ^ [NSStringFromClass(self.class) hash];
 }
 
-#pragma mark FBiOSTargetAction
+#pragma mark FBiOSTargetFuture
 
 - (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeLogTail;
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
 {
-  id<FBFileConsumer> consumer = [delegate obtainConsumerForAction:self target:target];
   id<FBLogCommands> commands = (id<FBLogCommands>) target;
   if (![target conformsToProtocol:@protocol(FBLogCommands)]) {
     return [[FBControlCoreError
       describeFormat:@"%@ does not support FBLogCommands", target]
-      failBool:error];
+      failFuture];
   }
-  id<FBTerminationAwaitable> handle = [FBTerminationAwaitableFuture
-    awaitableFromFuture:[commands tailLog:self.arguments consumer:consumer]
-    handleType:FBiOSTargetActionTypeLogTail
-    error:error];
-  if (!handle) {
-    return NO;
-  }
-  [delegate action:self target:target didGenerateAwaitable:handle];
-  return YES;
+  FBiOSTargetActionType actionType = self.actionType;
+  return [[commands
+    tailLog:self.arguments consumer:consumer]
+    onQueue:target.workQueue map:^(id<FBTerminationAwaitable> baseAwaitable) {
+      id<FBTerminationAwaitable> awaitable = FBTerminationAwaitableRenamed(baseAwaitable, actionType);
+      [awaitableDelegate action:(id<FBiOSTargetAction>)self target:target didGenerateAwaitable:awaitable];
+      return self.actionType;
+    }];
 }
 
 @end

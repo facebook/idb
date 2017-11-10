@@ -50,20 +50,13 @@ typedef NSString *FBTerminationHandleType NS_EXTENSIBLE_STRING_ENUM;
 @end
 
 /**
- Bridging existing types.
+ Re-Names an existing awaitable.
+ Useful when a lower-level awaitable should be hoisted to a higher-level naming.
+
+ @param awaitable the awaitable to wrap
+ @param handleType the handle to apply.
+ @return a new Termination Awaitable.
  */
-@interface FBTerminationAwaitableFuture : NSObject
-
-/**
- Bridge a Future to an Awaitable.
-
- @param future the future to bridge.
- @param handleType the handle to bridge
- @param error an error out if an error of the future is present
- @return a wrapping Termination Awaitable, nil if the future has errored
- */
-+ (nullable id<FBTerminationAwaitable>)awaitableFromFuture:(FBFuture *)future handleType:(FBTerminationHandleType)handleType error:(NSError **)error;
-
-@end
+extern id<FBTerminationAwaitable> FBTerminationAwaitableRenamed(id<FBTerminationAwaitable> awaitable, FBTerminationHandleType handleType);
 
 NS_ASSUME_NONNULL_END

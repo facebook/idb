@@ -11,48 +11,47 @@
 
 #import "FBFuture.h"
 
-@interface FBTerminationAwaitableFuture () <FBTerminationAwaitable>
+@interface FBTerminationAwaitable_Renamed : NSObject <FBTerminationAwaitable>
 
-@property (nonatomic, strong, readonly) FBFuture *future;
+@property (nonatomic, strong, readonly) id<FBTerminationAwaitable> awaitable;
 
 @end
 
-@implementation FBTerminationAwaitableFuture
+@implementation FBTerminationAwaitable_Renamed
 
 @synthesize handleType = _handleType;
 
-+ (nullable id<FBTerminationAwaitable>)awaitableFromFuture:(FBFuture *)future handleType:(FBTerminationHandleType)handleType error:(NSError **)error
-{
-  if (future.error) {
-    if (error) {
-      *error = future.error;
-    }
-    return nil;
-  }
-  return [[self alloc] initWithFuture:future handleType:handleType];
-}
-
-- (instancetype)initWithFuture:(FBFuture *)future handleType:(FBTerminationHandleType)handleType
+- (instancetype)initWithAwaitable:(id<FBTerminationAwaitable>)awaitable handleType:(FBTerminationHandleType)handleType
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _future = future;
+  _awaitable = awaitable;
   _handleType = handleType;
 
   return self;
 }
 
-- (void)terminate
+- (FBFuture<NSNull *> *)completed
 {
-  [self.future cancel];
+  return [self.awaitable completed];
 }
 
-- (FBFuture *)completed
+- (void)terminate
 {
-  return [[self future] mapReplace:NSNull.null];
+  return [self.awaitable terminate];
+}
+
+- (FBTerminationHandleType)handleType
+{
+  return _handleType;
 }
 
 @end
+
+id<FBTerminationAwaitable> FBTerminationAwaitableRenamed(id<FBTerminationAwaitable> awaitable, FBTerminationHandleType handleType)
+{
+  return [[FBTerminationAwaitable_Renamed alloc] initWithAwaitable:awaitable handleType:handleType];
+}
