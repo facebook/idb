@@ -118,7 +118,7 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
     if (![process.environment[XcodebuildEnvironmentTargetUDID] isEqualToString:udid]) {
       continue;
     }
-    if (![strategy killProcess:process error:error]) {
+    if (![[strategy killProcess:process] await:error]) {
       return NO;
     }
   }

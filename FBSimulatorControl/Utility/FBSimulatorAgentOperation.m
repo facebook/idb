@@ -84,7 +84,7 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
   // When cancelled, the process is still alive. Therefore, the process needs to be terminated to fulfill the cancellation contract.
   [[FBProcessTerminationStrategy
     strategyWithProcessFetcher:self.simulator.processFetcher.processFetcher workQueue:self.simulator.workQueue logger:self.simulator.logger]
-    killProcess:self.process error:nil];
+    killProcess:self.process];
 }
 
 - (void)performTeardown

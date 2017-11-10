@@ -59,7 +59,7 @@
   }
 
   [self.logger.debug logFormat:@"Killing Spurious CoreSimulatorServices %@", [FBCollectionInformation oneLineDescriptionFromArray:processes atKeyPath:@"debugDescription"]];
-  return [self.processTerminationStrategy killProcesses:processes error:error];
+  return [[self.processTerminationStrategy killProcesses:processes] await:error] != nil;
 }
 
 @end

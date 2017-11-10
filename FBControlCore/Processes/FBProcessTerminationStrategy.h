@@ -9,6 +9,10 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
 @protocol FBControlCoreLogger;
 @class FBProcessFetcher;
 @class FBProcessInfo;
@@ -31,12 +35,13 @@ typedef struct {
   FBProcessTerminationStrategyOptions options;
 } FBProcessTerminationStrategyConfiguration;
 
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Strategy that defines how to terminate Processes.
  */
 @interface FBProcessTerminationStrategy : NSObject
+
+#pragma mark Initializers
 
 /**
  Creates and returns a strategy for the given configuration.
@@ -59,23 +64,23 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)strategyWithProcessFetcher:(FBProcessFetcher *)processFetcher workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
 
+#pragma mark Public Methods
+
 /**
  Terminates a Process of the provided Process Info.
 
  @param process the process to terminate, must not be nil.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return a Future that resolves when the process was killed.
  */
-- (BOOL)killProcess:(FBProcessInfo *)process error:(NSError **)error;
+- (FBFuture<NSNull *> *)killProcess:(FBProcessInfo *)process;
 
 /**
- Terminates a number of Processes of the provided Process Info Array.
+ Terminates a number of Processes.
 
- @param processes an NSArray<FBProcessInfo> of processes to terminate.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @param processes an Array of FBProcessInfo of processes to terminate.
+ @return a Future that resolves when the all processes have been killed.
  */
-- (BOOL)killProcesses:(NSArray<FBProcessInfo *> *)processes error:(NSError **)error;
+- (FBFuture<NSNull *> *)killProcesses:(NSArray<FBProcessInfo *> *)processes;
 
 @end
 

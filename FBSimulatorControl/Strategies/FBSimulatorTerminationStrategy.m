@@ -127,7 +127,7 @@
     FBProcessInfo *simulatorProcess = simulator.containerApplication ?: [self.processFetcher simulatorApplicationProcessForSimDevice:simulator.device];
     if (simulatorProcess) {
       [self.logger.debug logFormat:@"Simulator %@ has a Simulator.app Process %@, terminating it now", simulator.shortDescription, simulatorProcess];
-      if (![self.processTerminationStrategy killProcess:simulatorProcess error:&innerError]) {
+      if (![[self.processTerminationStrategy killProcess:simulatorProcess] await:&innerError]) {
         return [[[[[FBSimulatorError
           describeFormat:@"Could not kill simulator process %@", simulatorProcess]
           inSimulator:simulator]
@@ -186,7 +186,7 @@
   NSArray *processes = [self.processFetcher.simulatorApplicationProcesses filteredArrayUsingPredicate:predicate];
   for (FBProcessInfo *process in processes) {
     NSParameterAssert(process.processIdentifier > 1);
-    if (![self.processTerminationStrategy killProcess:process error:error]) {
+    if (![[self.processTerminationStrategy killProcess:process] await:error]) {
       return NO;
     }
     // See comment in `killSimulators:withError:`
