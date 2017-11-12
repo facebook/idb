@@ -28,11 +28,11 @@
 
   NSArray<NSString *> *launchArguments = [self launchArguments];
   NSDictionary<NSString *, NSString *> *launchEnvironment = [self
-    launchEnvironmentWithHostApplication:hostApplication
-    ideInjectionFramework:ideInjectionFramework
-    testBundle:testBundle
-    testConfigurationPath:testConfigurationPath
-    frameworkSearchPath:frameworkSearchPath];
+                                                             launchEnvironmentWithHostApplication:hostApplication
+                                                             ideInjectionFramework:ideInjectionFramework
+                                                             testBundle:testBundle
+                                                             testConfigurationPath:testConfigurationPath
+                                                             frameworkSearchPath:frameworkSearchPath];
 
   return [[self alloc] initWithSessionIdentifier:sessionIdentifier testRunner:hostApplication launchArguments:launchArguments launchEnvironment:launchEnvironment testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
 }
@@ -65,25 +65,42 @@
 + (NSArray<NSString *> *)launchArguments
 {
   return @[
-    @"-NSTreatUnknownArgumentsAsOpen", @"NO",
-    @"-ApplePersistenceIgnoreState", @"YES"
-  ];
+           @"-NSTreatUnknownArgumentsAsOpen", @"NO",
+           @"-ApplePersistenceIgnoreState", @"YES"
+           ];
 }
 
 + (NSDictionary *)launchEnvironmentWithHostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath
 {
-  return @{
-    @"AppTargetLocation" : hostApplication.binaryPath,
-    @"DYLD_INSERT_LIBRARIES" : ideInjectionFramework.binaryPath,
-    @"DYLD_FRAMEWORK_PATH" : frameworkSearchPath ?: @"",
-    @"DYLD_LIBRARY_PATH" : frameworkSearchPath ?: @"",
-    @"OBJC_DISABLE_GC" : @"YES",
-    @"TestBundleLocation" : testBundle.path,
-    @"XCInjectBundle" : testBundle.path,
-    @"XCInjectBundleInto" : hostApplication.binaryPath,
-    @"XCODE_DBG_XPC_EXCLUSIONS" : @"com.apple.dt.xctestSymbolicator",
-    @"XCTestConfigurationFilePath" : testConfigurationPath,
-  };
+  NSDictionary *environmentVariables = @{
+                                         @"AppTargetLocation" : hostApplication.binaryPath,
+                                         @"DYLD_INSERT_LIBRARIES" : ideInjectionFramework.binaryPath,
+                                         @"DYLD_FRAMEWORK_PATH" : frameworkSearchPath ?: @"",
+                                         @"DYLD_LIBRARY_PATH" : frameworkSearchPath ?: @"",
+                                         @"OBJC_DISABLE_GC" : @"YES",
+                                         @"TestBundleLocation" : testBundle.path,
+                                         @"XCInjectBundle" : testBundle.path,
+                                         @"XCInjectBundleInto" : hostApplication.binaryPath,
+                                         @"XCODE_DBG_XPC_EXCLUSIONS" : @"com.apple.dt.xctestSymbolicator",
+                                         @"XCTestConfigurationFilePath" : testConfigurationPath,
+                                         };
+  return [self addAdditionalEnvironmentVariables:environmentVariables];
+}
+
++ (NSDictionary *)addAdditionalEnvironmentVariables:(NSDictionary *)currentEnvironmentVariables
+{
+  NSString *prefix = @"CUSTOM_";
+  NSPredicate *predicate = [NSPredicate predicateWithFormat:@"self BEGINSWITH %@", prefix];
+  NSArray *filter = [[NSProcessInfo.processInfo.environment allKeys] filteredArrayUsingPredicate:predicate];
+  NSDictionary *envVariableWtihPrefix = [NSProcessInfo.processInfo.environment dictionaryWithValuesForKeys:filter];
+
+  NSMutableDictionary *envs = [currentEnvironmentVariables mutableCopy];
+  for (NSString *key in envVariableWtihPrefix)
+  {
+    envs[[key substringFromIndex:[prefix length]]] = envVariableWtihPrefix[key];
+  }
+
+  return [NSDictionary dictionaryWithDictionary:envs];
 }
 
 @end
