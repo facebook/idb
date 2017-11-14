@@ -70,7 +70,7 @@
 
 - (BOOL)shutdownWithError:(NSError **)error
 {
-  return [self.simulator.set killSimulator:self.simulator error:error];
+  return [[self.simulator.set killSimulator:self.simulator] await:error] != nil;
 }
 
 #pragma mark Erase

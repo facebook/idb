@@ -9,16 +9,20 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBSimulator;
 @class FBSimulatorSet;
 @protocol FBControlCoreLogger;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  A class for terminating Simulators.
  */
 @interface FBSimulatorTerminationStrategy : NSObject
+
+#pragma mark Initializers
 
 /**
  Creates a FBSimulatorTerminationStrategy using the provided configuration.
@@ -28,6 +32,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)strategyForSet:(FBSimulatorSet *)set;
 
+#pragma mark Public Methods
+
 /**
  Kills the provided Simulators.
  This call ensures that all of the Simulators:
@@ -35,10 +41,9 @@ NS_ASSUME_NONNULL_BEGIN
  2) Have the appropriate SimDevice state at 'Shutdown'
 
  @param simulators the Simulators to Kill.
- @param error an error out if any error occured.
- @return an array of the Simulators that this were killed if successful, nil otherwise.
+ @return A future that wraps an array of the Simulators that were killed.
  */
-- (nullable NSArray<FBSimulator *> *)killSimulators:(NSArray<FBSimulator *> *)simulators error:(NSError **)error;
+- (FBFuture<NSArray<FBSimulator *> *> *)killSimulators:(NSArray<FBSimulator *> *)simulators;
 
 /**
  Kills all of the Simulators that are not launched by `FBSimulatorControl`.

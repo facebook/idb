@@ -61,7 +61,7 @@
 
   // Kill the Simulators before erasing them.
   NSError *innerError = nil;
-  if (![self.terminationStrategy killSimulators:simulators error:&innerError]) {
+  if (![[self.terminationStrategy killSimulators:simulators] await:&innerError]) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 

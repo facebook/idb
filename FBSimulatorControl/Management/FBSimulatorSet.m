@@ -97,7 +97,7 @@
   // Deletion requires killing, so don't duplicate killing.
   BOOL killOnStart = (configuration.options & FBSimulatorManagementOptionsKillAllOnFirstStart) == FBSimulatorManagementOptionsKillAllOnFirstStart;
   if (killOnStart && !deleteOnStart) {
-    if (![self killAllWithError:&innerError]) {
+    if (![[self killAll] await:&innerError]) {
       return [[[[FBSimulatorError
         describe:@"Failed to kill all simulators"]
         causedBy:innerError]
@@ -205,10 +205,10 @@
 
 #pragma mark Destructive Methods
 
-- (BOOL)killSimulator:(FBSimulator *)simulator error:(NSError **)error
+- (FBFuture<NSArray<FBSimulator *> *> *)killSimulator:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
-  return [self.simulatorTerminationStrategy killSimulators:@[simulator] error:error] != nil;
+  return [self.simulatorTerminationStrategy killSimulators:@[simulator]];
 }
 
 - (BOOL)eraseSimulator:(FBSimulator *)simulator error:(NSError **)error
@@ -223,10 +223,10 @@
   return [self.deletionStrategy deleteSimulators:@[simulator] error:error] != nil;
 }
 
-- (nullable NSArray<FBSimulator *> *)killAll:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
+- (FBFuture<NSArray<FBSimulator *> *> *)killAll:(NSArray<FBSimulator *> *)simulators
 {
   NSParameterAssert(simulators);
-  return [self.simulatorTerminationStrategy killSimulators:simulators error:error];
+  return [self.simulatorTerminationStrategy killSimulators:simulators];
 }
 
 - (nullable NSArray<FBSimulator *> *)eraseAll:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
@@ -241,9 +241,9 @@
   return [self.deletionStrategy deleteSimulators:simulators error:error];
 }
 
-- (nullable NSArray<FBSimulator *> *)killAllWithError:(NSError **)error
+- (FBFuture<NSArray<FBSimulator *> *> *)killAll
 {
-  return [self.simulatorTerminationStrategy killSimulators:self.allSimulators error:error];
+  return [self.simulatorTerminationStrategy killSimulators:self.allSimulators];
 }
 
 - (nullable NSArray<FBSimulator *> *)eraseAllWithError:(NSError **)error

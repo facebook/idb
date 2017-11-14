@@ -73,7 +73,7 @@
 
   // Killing is a pre-requesite for deleting/erasing
   NSError *innerError = nil;
-  if (![self.set killSimulator:simulator error:&innerError]) {
+  if (![[self.set killSimulator:simulator] await:&innerError]) {
     return [[[[[FBSimulatorError
       describe:@"Failed to Free Device in Killing Device"]
       causedBy:innerError]
@@ -194,7 +194,7 @@
   // Shutdown first.
   if (shutdown || erase) {
     [self.logger.debug logFormat:@"Shutting down Simulator %@", simulator.udid];
-    if (![self.set killSimulator:simulator error:&innerError]) {
+    if (![[self.set killSimulator:simulator] await:&innerError]) {
       return [[[[[FBSimulatorError
         describe:@"Failed to kill a Simulator when allocating it"]
         causedBy:innerError]

@@ -73,7 +73,7 @@
     // Kill the Simulators before deleting them.
     [self.logger logFormat:@"Killing Simulator, in preparation for deletion %@", simulator];
     NSError *innerError = nil;
-    if (![self.set killSimulator:simulator error:&innerError]) {
+    if (![[self.set killSimulator:simulator] await:&innerError]) {
       return [[[[[FBSimulatorError
         describe:@"Failed to kill simulator."]
         inSimulator:simulator]
@@ -90,7 +90,7 @@
         break;
       }
       // On Travis the deleteDevice operation sometimes fails:
-      //   Domain=NSCocoaErrorDomain Code=513 "“B4D-C0-F-F-E” couldn’t be removed because you don’t have permission to access it.
+      //   Domain=NSCocoaErrorDomain Code=513 "B4D-C0-F-F-E" couldn't be removed because you don't have permission to access it.
       // Inside the devicePath there's a device.plist which sometimes cannot be deleted. Probably some process still has an open
       // file handle to that file.
       BOOL shouldRetry = [innerError.domain isEqualToString:NSCocoaErrorDomain] && innerError.code == NSFileWriteNoPermissionError;

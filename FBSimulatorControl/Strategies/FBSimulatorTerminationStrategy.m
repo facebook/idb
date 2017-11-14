@@ -73,7 +73,7 @@
 
 #pragma mark Public Methods
 
-- (nullable NSArray<FBSimulator *> *)killSimulators:(NSArray<FBSimulator *> *)simulators error:(NSError **)error;
+- (FBFuture<NSArray<FBSimulator *> *> *)killSimulators:(NSArray<FBSimulator *> *)simulators
 {
   // Confirm that the Simulators belong to the set
   for (FBSimulator *simulator in simulators) {
@@ -81,7 +81,7 @@
       return [[[FBSimulatorError
         describeFormat:@"Simulator's set %@ is not %@, cannot delete", simulator.set, self]
         inSimulator:simulator]
-        fail:error];
+        failFuture];
     }
   }
 
@@ -112,7 +112,7 @@
         inSimulator:simulator]
         causedBy:innerError]
         logger:self.logger]
-        fail:error];
+        failFuture];
     }
 
     // Disconnect any Test Managers connected to the Simulator.
@@ -133,7 +133,7 @@
           inSimulator:simulator]
           causedBy:innerError]
           logger:self.logger]
-          fail:error];
+          failFuture];
       }
       [simulator.eventSink containerApplicationDidTerminate:simulatorProcess expected:YES];
     } else {
@@ -149,13 +149,13 @@
         inSimulator:simulator]
         causedBy:innerError]
         logger:self.logger]
-        fail:error];
+        failFuture];
     }
     if (launchdProcess) {
       [simulator.eventSink simulatorDidTerminate:launchdProcess expected:YES];
     }
   }
-  return simulators;
+  return [FBFuture futureWithResult:simulators];
 }
 
 - (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
