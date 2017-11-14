@@ -20,6 +20,7 @@
 #import "FBDeviceApplicationCommands.h"
 #import "FBDeviceVideoRecordingCommands.h"
 #import "FBDeviceXCTestCommands.h"
+#import "FBDeviceLogCommands.h"
 #import "FBDeviceSet+Private.h"
 #import "FBAMDevice.h"
 #import "FBDeviceControlError.h"
@@ -34,6 +35,7 @@ int (*FBAMDeviceStopSession)(CFTypeRef device);
 int (*FBAMDServiceConnectionGetSocket)(CFTypeRef connection);
 int (*FBAMDServiceConnectionInvalidate)(CFTypeRef connection);
 int (*FBAMDeviceSecureStartService)(CFTypeRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, void *handle);
+int (*FBAMDeviceStartService)(CFTypeRef device, CFStringRef service_name, void *handle, uint32_t *unknown);
 _Nullable CFStringRef (*_Nonnull FBAMDeviceGetName)(CFTypeRef device);
 _Nullable CFStringRef (*_Nonnull FBAMDeviceCopyValue)(CFTypeRef device, _Nullable CFStringRef domain, CFStringRef name);
 int (*FBAMDeviceSecureTransferPath)(int arg0, CFTypeRef arg1, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable arg4, int arg5);
@@ -206,6 +208,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
       FBDeviceApplicationCommands.class,
       FBDeviceVideoRecordingCommands.class,
       FBDeviceXCTestCommands.class,
+      FBDeviceLogCommands.class
     ]];
   });
   return commandClasses;

@@ -15,7 +15,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBFileConsumer;
-@protocol FBTerminationHandle;
+@protocol FBTerminationAwaitable;
 
 /**
  Commands for obtaining logs.
