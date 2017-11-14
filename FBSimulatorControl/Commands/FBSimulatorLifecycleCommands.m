@@ -68,9 +68,9 @@
     bootWithError:error];
 }
 
-- (BOOL)shutdownWithError:(NSError **)error
+- (FBFuture<NSNull *> *)shutdown
 {
-  return [[self.simulator.set killSimulator:self.simulator] await:error] != nil;
+  return [[self.simulator.set killSimulator:self.simulator] mapReplace:NSNull.null];
 }
 
 #pragma mark Erase

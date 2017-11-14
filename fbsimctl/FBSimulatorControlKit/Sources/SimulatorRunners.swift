@@ -101,13 +101,6 @@ struct SimulatorActionRunner : Runner {
       }
     case .relaunch(let appLaunch):
       return FutureRunner(reporter, .relaunch, appLaunch.subject, simulator.launchOrRelaunchApplication(appLaunch))
-    case .shutdown:
-      return FutureRunner(
-        reporter,
-        .shutdown,
-        simulator.subject,
-        simulator.set!.kill(simulator)
-      )
     case .setLocation(let latitude, let longitude):
       return iOSTargetRunner.simple(reporter, .setLocation, simulator.subject) {
         try simulator.setLocation(latitude, longitude: longitude)

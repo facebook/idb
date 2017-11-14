@@ -89,7 +89,6 @@ public enum Action {
   case record(Record)
   case relaunch(FBApplicationLaunchConfiguration)
   case setLocation(Double,Double)
-  case shutdown
   case stream(FBBitmapStreamConfiguration, FileOutput)
   case terminate(String)
   case uninstall(String)
@@ -147,6 +146,10 @@ public enum Action {
   static func serviceInfo(_ serviceName: String) -> Action {
     return self.coreFuture(FBServiceInfoConfiguration(serviceName: serviceName))
   }
+
+  static var shutdown: Action { get {
+    return self.coreFuture(FBShutdownConfiguration())
+  }}
 }
 
 /**
@@ -342,8 +345,6 @@ public func == (left: Action, right: Action) -> Bool {
     return leftLaunch == rightLaunch
   case (.setLocation(let leftLat, let leftLon), .setLocation(let rightLat, let rightLon)):
     return leftLat == rightLat && leftLon == rightLon
-  case (.shutdown, .shutdown):
-    return true
   case (.stream(let leftConfiguration, let leftOutput), .stream(let rightConfiguration, let rightOutput)):
     return leftConfiguration == rightConfiguration && leftOutput == rightOutput
   case (.terminate(let leftBundleID), .terminate(let rightBundleID)):
@@ -396,8 +397,6 @@ extension Action {
       return (.relaunch, appLaunch.subject)
     case .setLocation:
       return (.setLocation, nil)
-    case .shutdown:
-      return (.shutdown, nil)
     case .stream:
       return (.stream, nil)
     case .terminate(let bundleID):

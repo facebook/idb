@@ -20,7 +20,7 @@
 - (void)assertShutdownSimulatorAndTerminateSession:(FBSimulator *)simulator
 {
   NSError *error = nil;
-  BOOL success = [simulator shutdownWithError:&error];
+  BOOL success = [[simulator shutdown] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

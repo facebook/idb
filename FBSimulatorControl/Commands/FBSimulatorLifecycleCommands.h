@@ -50,10 +50,9 @@ NS_ASSUME_NONNULL_BEGIN
  Shuts the Simulator down.
  Will fail if the Simulator is not booted.
 
- @param error an error out for any error that occurs.
- @return the reciever, for chaining.
+ @return a Future that resolves when the Simulator has shutdown booted.
  */
-- (BOOL)shutdownWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)shutdown;
 
 #pragma mark Erase
 
