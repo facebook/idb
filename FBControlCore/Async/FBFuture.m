@@ -147,6 +147,34 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
   return future;
 }
 
++ (FBFuture<id> *)onQueue:(dispatch_queue_t)queue resolveUntil:(FBFuture<id> *(^)(void))resolveUntil
+{
+  FBMutableFuture *final = FBMutableFuture.future;
+
+  __block void (^resolveRecursive)(void);
+  void (^initialResolve)(void);
+  resolveRecursive = initialResolve = ^{
+    FBFuture<id> *future = resolveUntil();
+    [future onQueue:queue notifyOfCompletion:^(FBFuture<id> *resolved) {
+      switch (resolved.state) {
+        case FBFutureStateCompletedWithCancellation:
+          [final cancel];
+          return;
+        case FBFutureStateCompletedWithResult:
+          [final resolveWithResult:resolved.result];
+          return;
+        case FBFutureStateCompletedWithError:
+          resolveRecursive();
+          return;
+        default:
+          return;
+      }
+    }];
+  };
+  dispatch_async(queue, initialResolve);
+  return final;
+}
+
 - (FBFuture *)timedOutIn:(NSTimeInterval)timeout
 {
   NSParameterAssert(timeout > 0);

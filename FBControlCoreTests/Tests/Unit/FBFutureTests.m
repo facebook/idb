@@ -571,6 +571,59 @@
   ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
+- (void)testRepeatedResolution
+{
+  XCTestExpectation *completionCalled = [[XCTestExpectation alloc] initWithDescription:@"Resolved outer Completion"];
+  NSError *error = [NSError errorWithDomain:@"foo" code:2 userInfo:nil];
+  NSArray<FBFuture<NSNumber *> *> *futures = @[
+    [FBFuture futureWithError:error],
+    [FBFuture futureWithError:error],
+    [FBFuture futureWithError:error],
+    [FBFuture futureWithResult:@YES],
+  ];
+  __block NSUInteger index = 0;
+  FBFuture<NSNumber *> *future = [FBFuture onQueue:self.queue resolveUntil:^{
+    FBFuture<NSNumber *> *inner = futures[index];
+    index++;
+    return inner;
+  }];
+  [future onQueue:self.queue notifyOfCompletion:^(FBFuture<NSNumber *> *inner) {
+    [completionCalled fulfill];
+    XCTAssertEqualObjects(inner.result, @YES);
+  }];
+
+  [self waitForExpectations:@[completionCalled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  XCTAssertEqual(future.state, FBFutureStateCompletedWithResult);
+  XCTAssertEqualObjects(future.result, @YES);
+}
+
+- (void)testCancelledResolution
+{
+  XCTestExpectation *completionCalled = [[XCTestExpectation alloc] initWithDescription:@"Resolved outer Completion"];
+  NSError *error = [NSError errorWithDomain:@"foo" code:2 userInfo:nil];
+  FBFuture<NSNumber *> *cancelledFuture = [FBMutableFuture future];
+  [cancelledFuture cancel];
+  NSArray<FBFuture<NSNumber *> *> *futures = @[
+    [FBFuture futureWithError:error],
+    cancelledFuture,
+    [FBFuture futureWithError:error],
+    [FBFuture futureWithError:error],
+  ];
+  __block NSUInteger index = 0;
+  FBFuture<NSNumber *> *future = [FBFuture onQueue:self.queue resolveUntil:^{
+    FBFuture<NSNumber *> *inner = futures[index];
+    index++;
+    return inner;
+  }];
+  [future onQueue:self.queue notifyOfCompletion:^(FBFuture<NSNumber *> *inner) {
+    [completionCalled fulfill];
+    XCTAssertEqual(inner.state, FBFutureStateCompletedWithCancellation);
+  }];
+
+  [self waitForExpectations:@[completionCalled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
+}
+
 #pragma mark - Helpers
 
 - (void)assertSynchronousResolutionWithBlock:(void (^)(FBMutableFuture *))resolveBlock expectedState:(FBFutureState)state expectedResult:(id)expectedResult expectedError:(NSError *)expectedError

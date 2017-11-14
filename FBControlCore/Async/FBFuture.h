@@ -78,6 +78,16 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
 + (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue resolveWhen:(BOOL (^)(void))resolveWhen;
 
 /**
+ Constructs a Future that resolves successfully when the resolveUntil block resolves a Future that resolves a value.
+ Each resolution will occur one-after-another.
+
+ @param queue to resolve on.
+ @param resolveUntil a block that returns a future to resolve.
+ @return a new Future that resolves when the future returned by the block resolves a value.
+ */
++ (FBFuture<T> *)onQueue:(dispatch_queue_t)queue resolveUntil:(FBFuture<T> *(^)(void))resolveUntil;
+
+/**
  Resolve a future asynchronously, by value.
 
  @param queue to resolve on.
