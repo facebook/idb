@@ -225,13 +225,15 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
                                   code:0x2
                               userInfo:@{NSLocalizedDescriptionKey : @"Invalid or expired token: no matching operation was found."}];
     } else {
-      [[self.target killApplicationWithBundleID:bundleID] await:&error];
+        [[self.target killApplicationWithBundleID:bundleID]
+         onQueue:self.target.workQueue notifyOfCompletion:^(FBFuture<NSNull *> *future) {
+            [receipt invokeCompletionWithReturnValue:token error:future.error];
+        }];
     }
   }
   if (error) {
     [self.logger logFormat:@"Failed to kill process with token %@ dure to %@", token, error];
   }
-  [receipt invokeCompletionWithReturnValue:token error:error];
   return receipt;
 }
 
