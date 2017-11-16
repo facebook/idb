@@ -22,8 +22,6 @@ FBSimulatorNotificationName const FBSimulatorNotificationNameApplicationProcessD
 FBSimulatorNotificationName const FBSimulatorNotificationNameApplicationProcessDidTerminate = @"FBSimulatorNotificationNameApplicationProcessDidTerminate";
 FBSimulatorNotificationName const FBSimulatorNotificationNameAgentProcessDidLaunch = @"FBSimulatorNotificationNameAgentProcessDidLaunch";
 FBSimulatorNotificationName const FBSimulatorNotificationNameAgentProcessDidTerminate = @"FBSimulatorNotificationNameAgentProcessDidTerminate";
-FBSimulatorNotificationName const FBSimulatorNotificationNameTestManagerDidConnect = @"FBSimulatorNotificationNameTestManagerDidConnect";
-FBSimulatorNotificationName const FBSimulatorNotificationNameTestManagerDidDisconnect = @"FBSimulatorNotificationNameTestManagerDidDisconnect";
 FBSimulatorNotificationName const FBSimulatorNotificationNameGainedDiagnosticInformation = @"FBSimulatorNotificationNameGainedDiagnosticInformation";
 FBSimulatorNotificationName const FBSimulatorNotificationNameStateDidChange = @"FBSimulatorNotificationNameStateDidChange";
 
@@ -125,20 +123,6 @@ NSString *const FBSimulatorNotificationUserInfoKeyWaitingForDebugger = @"waiting
   [self materializeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate userInfo:@{
     FBSimulatorNotificationUserInfoKeyExpectedTermination : @(expected),
     FBSimulatorNotificationUserInfoKeyProcess : operation.process,
-  }];
-}
-
-- (void)testmanagerDidConnect:(FBTestManager *)testManager
-{
-  [self materializeNotification:FBSimulatorNotificationNameTestManagerDidConnect userInfo:@{
-    FBSimulatorNotificationUserInfoKeyTestManager : testManager
-  }];
-}
-
-- (void)testmanagerDidDisconnect:(FBTestManager *)testManager
-{
-  [self materializeNotification:FBSimulatorNotificationNameTestManagerDidDisconnect userInfo:@{
-    FBSimulatorNotificationUserInfoKeyTestManager : testManager
   }];
 }
 

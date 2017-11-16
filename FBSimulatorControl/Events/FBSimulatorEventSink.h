@@ -104,20 +104,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)applicationDidTerminate:(FBSimulatorApplicationOperation *)operation expected:(BOOL)expected;
 
 /**
- Event for connection of test manager daemon
-
- @param testManager connected test manager
- */
-- (void)testmanagerDidConnect:(FBTestManager *)testManager;
-
-/**
- Event for disconnection of test manager daemon
-
- @param testManager disconnected test manager
- */
-- (void)testmanagerDidDisconnect:(FBTestManager *)testManager;
-
-/**
  Event for the availablilty of a new log.
 
  @param diagnostic the diagnostic log.

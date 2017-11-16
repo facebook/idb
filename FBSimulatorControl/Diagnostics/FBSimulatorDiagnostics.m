@@ -257,14 +257,6 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
 
 }
 
-- (void)testmanagerDidConnect:(FBTestManager *)testManager
-{
-}
-
-- (void)testmanagerDidDisconnect:(FBTestManager *)testManager
-{
-}
-
 - (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
 {
   if (!diagnostic.shortName) {

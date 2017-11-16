@@ -69,16 +69,6 @@ extern FBSimulatorNotificationName const FBSimulatorNotificationNameAgentProcess
 extern FBSimulatorNotificationName const FBSimulatorNotificationNameAgentProcessDidTerminate;
 
 /**
- Notification that is fired when Test Manager Connects.
- */
-extern FBSimulatorNotificationName const FBSimulatorNotificationNameTestManagerDidConnect;
-
-/**
- Notification that is fired when Test Manager Disconnects.
- */
-extern FBSimulatorNotificationName const FBSimulatorNotificationNameTestManagerDidDisconnect;
-
-/**
  Notification that is fired when diagnostic information is gained.
  */
 extern FBSimulatorNotificationName const FBSimulatorNotificationNameGainedDiagnosticInformation;

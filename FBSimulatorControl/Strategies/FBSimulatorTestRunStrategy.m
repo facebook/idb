@@ -90,7 +90,6 @@
   return [[testRunStrategy
     startTestManagerWithApplicationLaunchConfiguration:self.configuration.applicationLaunchConfiguration]
     onQueue:self.simulator.workQueue fmap:^(FBTestManager *testManager) {
-      [simulator.eventSink testmanagerDidConnect:testManager];
       FBFuture<FBTestManagerResult *> *result = [testManager execute];
       if (result.error) {
         return [FBFuture futureWithError:result.error];

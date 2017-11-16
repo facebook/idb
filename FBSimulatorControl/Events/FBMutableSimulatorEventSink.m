@@ -61,16 +61,6 @@
   [self.eventSink applicationDidTerminate:operation expected:expected];
 }
 
-- (void)testmanagerDidConnect:(FBTestManager *)testManager
-{
-  [self.eventSink testmanagerDidConnect:testManager];
-}
-
-- (void)testmanagerDidDisconnect:(FBTestManager *)testManager
-{
-  [self.eventSink testmanagerDidDisconnect:testManager];
-}
-
 - (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
 {
   [self.eventSink diagnosticAvailable:diagnostic];

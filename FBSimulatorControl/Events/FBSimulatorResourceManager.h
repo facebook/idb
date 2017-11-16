@@ -18,11 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorResourceManager : NSObject <FBSimulatorEventSink>
 
-/**
- Set of connected test manager daemons
- */
-@property (nonatomic, copy, readonly, nonnull) NSSet<FBTestManager *> *testManagers;
-
 @end
 
 NS_ASSUME_NONNULL_END

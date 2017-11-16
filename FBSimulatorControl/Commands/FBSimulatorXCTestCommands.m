@@ -66,11 +66,6 @@
     execute];
 }
 
-- (NSArray<id<FBTerminationAwaitable>> *)testOperations
-{
-  return [self.simulator.resourceSink.testManagers copy];
-}
-
 - (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout
 {
   NSError *error = nil;

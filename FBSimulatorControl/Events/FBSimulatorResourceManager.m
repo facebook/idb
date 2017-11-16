@@ -13,7 +13,6 @@
 
 @interface FBSimulatorResourceManager ()
 
-@property (nonatomic, strong, readonly) NSMutableSet<FBTestManager *> *mutableTestManagers;
 @property (nonatomic, strong, readonly) NSMutableArray<id<FBTerminationHandle>> *simulatorTerminationHandles;
 
 @end
@@ -28,14 +27,8 @@
   }
 
   _simulatorTerminationHandles = [NSMutableArray array];
-  _mutableTestManagers = [NSMutableSet set];
 
   return self;
-}
-
-- (NSSet<FBTestManager *> *)testManagers
-{
-  return self.mutableTestManagers.copy;
 }
 
 #pragma mark FBSimulatorEventSink Implementation
@@ -89,16 +82,6 @@
 
 }
 
-- (void)testmanagerDidConnect:(FBTestManager *)testManager
-{
-  [self.mutableTestManagers addObject:testManager];
-}
-
-- (void)testmanagerDidDisconnect:(FBTestManager *)testManager
-{
-  [self.mutableTestManagers removeObject:testManager];
-}
-
 - (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
 {
 
@@ -120,7 +103,6 @@
 {
   [self.simulatorTerminationHandles makeObjectsPerformSelector:@selector(terminate)];
   [self.simulatorTerminationHandles removeAllObjects];
-  [self.mutableTestManagers removeAllObjects];
 }
 
 @end

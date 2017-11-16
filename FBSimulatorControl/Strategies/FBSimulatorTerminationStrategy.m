@@ -115,13 +115,6 @@
         failFuture];
     }
 
-    // Disconnect any Test Managers connected to the Simulator.
-    // If a TestManager Deallocates during the shutdown of a Simulator, the calling thread can deadlock.
-    for (FBTestManager *testManager in simulator.resourceSink.testManagers) {
-      [testManager terminate];
-      [simulator.eventSink testmanagerDidDisconnect:testManager];
-    }
-
     // Kill the Simulator.app Process first, see documentation in `-[FBSimDeviceWrapper shutdownWithError:]`.
     // This prevents 'Zombie' Simulator.app from existing.
     FBProcessInfo *simulatorProcess = simulator.containerApplication ?: [self.processFetcher simulatorApplicationProcessForSimDevice:simulator.device];

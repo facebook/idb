@@ -42,13 +42,6 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTestOperation;
 - (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 /**
- Calling -[FBXCTestCommands startTestWithLaunchConfiguration:error:] will start the execution of the test run.
- It will return a Test Operation which will resolve at some point in the future.
- This will return the test operations that are pending, so that they can be interrogated.
- */
-- (NSArray<id<FBTerminationAwaitable>> *)testOperations;
-
-/**
  Lists the testables for a provided test bundle.
 
  @param bundlePath the bundle path of the test bundle
