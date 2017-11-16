@@ -88,7 +88,7 @@
   NSString *automationFrameworkPath = [osRuntimePath stringByAppendingPathComponent:@"Library/PrivateFrameworks/XCTAutomationSupport.framework"];
   NSString *xctTargetBootstrapInjectPath = [osRuntimePath stringByAppendingPathComponent:@"usr/lib/libXCTTargetBootstrapInject.dylib"];
   NSDictionary *testedApplicationAdditionalEnvironment = @{
-    @"DYLD_INSERT_LIBRARIES" : [osRuntimePath stringByAppendingPathComponent:@"usr/lib/libXCTTargetBootstrapInject.dylib"]
+    @"DYLD_INSERT_LIBRARIES" : xctTargetBootstrapInjectPath
   };
   if (![self.fileManager fileExistsAtPath:automationFrameworkPath] && ![self.fileManager fileExistsAtPath:xctTargetBootstrapInjectPath]) {
     automationFrameworkPath = nil;
