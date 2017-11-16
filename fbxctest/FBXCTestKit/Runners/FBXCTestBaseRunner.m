@@ -97,7 +97,7 @@
 - (FBFuture<NSNull *> *)runTestWithSimulator:(FBSimulator *)simulator
 {
   if ([self.configuration isKindOfClass:FBUITestConfiguration.class]) {
-    return [[FBUITestRunStrategy strategyWithSimulator:simulator configuration:(FBUITestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] execute];
+    return [[FBUITestRunStrategy strategyWithSimulator:simulator configuration:(FBUITestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger testPreparationStrategyClass:FBSimulatorTestPreparationStrategy.class] execute];
   }
   id<FBXCTestProcessExecutor> executor = [FBSimulatorXCTestProcessExecutor executorWithSimulator:simulator configuration:self.configuration];
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {

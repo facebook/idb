@@ -9,13 +9,27 @@
 
 #import <Foundation/Foundation.h>
 
+@class FBTestLaunchConfiguration;
 @class FBTestRunnerConfiguration;
 @protocol FBiOSTarget;
+@protocol FBFileManager;
+@protocol FBCodesignProvider;
 
 /**
  A Protocol for preparing iOS for running an XCTest.
  */
 @protocol FBXCTestPreparationStrategy
+
+/**
+ Creates and returns a Strategy strategyWith given paramenters.
+ Will use default implementations of the File Manager and Codesign.
+
+ @param testLaunchConfiguration configuration used to launch test.
+ @param workingDirectory directory used to prepare all bundles.
+ @return A new FBSimulatorTestRunStrategy Instance.
+ */
++ (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
+                                   workingDirectory:(NSString *)workingDirectory;
 
 /**
  Prepares FBTestRunnerConfiguration

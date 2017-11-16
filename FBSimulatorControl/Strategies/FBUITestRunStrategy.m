@@ -20,17 +20,17 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
 @property (nonatomic, strong, readonly) FBUITestConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
-
+@property (nonatomic, strong, readonly) Class<FBXCTestPreparationStrategy> testPreparationStrategyClass;
 @end
 
 @implementation FBUITestRunStrategy
 
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass
 {
-  return [[self alloc] initWithSimulator:simulator configuration:configuration reporter:reporter logger:logger];
+  return [[self alloc] initWithSimulator:simulator configuration:configuration reporter:reporter logger:logger testPreparationStrategyClass:testPreparationStrategyClass];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass
 {
   self = [super init];
   if (!self) {
@@ -41,7 +41,7 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
   _configuration = configuration;
   _reporter = reporter;
   _logger = logger;
-
+  _testPreparationStrategyClass = testPreparationStrategyClass;
   return self;
 }
 
@@ -95,7 +95,7 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
      withUITesting:YES];
   }
 
-  FBSimulatorTestPreparationStrategy *testPreparationStrategy = [FBSimulatorTestPreparationStrategy
+  id<FBXCTestPreparationStrategy> testPreparationStrategy = [self.testPreparationStrategyClass
     strategyWithTestLaunchConfiguration:testLaunchConfiguration
     workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]];
 
@@ -124,6 +124,5 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
       return [FBFuture futureWithResult:NSNull.null];
     }];
 }
-
 
 @end

@@ -71,7 +71,7 @@
 - (FBFuture<NSNull *> *)runApplicationTest:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter
 {
   return [[FBUITestRunStrategy
-    strategyWithSimulator:self.simulator configuration:configuration reporter:reporter logger:self.simulator.logger]
+    strategyWithSimulator:self.simulator configuration:configuration reporter:reporter logger:self.simulator.logger testPreparationStrategyClass:FBSimulatorTestPreparationStrategy.class]
     execute];
 }
 

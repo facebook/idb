@@ -31,8 +31,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the the configuration to use.
  @param reporter the reporter to report to.
  @param logger the logger to use.
+ @param testPreparationStrategyClass class used to prepare for test execution
  */
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass;
 
 @end
 
