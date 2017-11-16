@@ -59,7 +59,7 @@
       fail:error];
   }
 
-  if ([configuration isKindOfClass:FBApplicationTestConfiguration.class] || [configuration isKindOfClass:FBUITestConfiguration.class]) {
+  if ([configuration isKindOfClass:FBUITestConfiguration.class]) {
     return [self fetchSimulatorForApplicationTests:destination error:error];
   }
   return [self fetchSimulatorForLogicTest:destination error:error];

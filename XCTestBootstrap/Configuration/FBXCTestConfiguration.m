@@ -219,7 +219,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   } else if ([testType isEqualToString:FBXCTestTypeLogicTest]) {
     clusterClass = listTestsOnly.boolValue ? FBListTestConfiguration.class : FBLogicTestConfiguration.class;
   } else if ([testType isEqualToString:FBXCTestTypeApplicationTest]) {
-    clusterClass = FBApplicationTestConfiguration.class;
+    clusterClass = FBUITestConfiguration.class;
   } else if ([testType isEqualToString:FBXCTestTypeUITest]) {
     clusterClass = FBUITestConfiguration.class;
   } else {
@@ -334,56 +334,6 @@ NSString *const KeyWorkingDirectory = @"working_directory";
       fail:error];
   }
   return [[FBUITestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath];
-}
-
-@end
-
-@implementation FBApplicationTestConfiguration
-
-#pragma mark Initializers
-
-+ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath
-{
-  return [[FBApplicationTestConfiguration alloc] initWithDestination:destination shims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath];
-}
-
-- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath
-{
-  self = [super initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
-  if (!self) {
-    return nil;
-  }
-
-  _runnerAppPath = runnerAppPath;
-
-  return self;
-}
-
-#pragma mark Public
-
-- (NSString *)testType
-{
-  return FBXCTestTypeApplicationTest;
-}
-
-#pragma mark JSON
-
-- (id)jsonSerializableRepresentation
-{
-  NSMutableDictionary<NSString *, id> *json = [NSMutableDictionary dictionaryWithDictionary:[super jsonSerializableRepresentation]];
-  json[KeyRunnerAppPath] = self.runnerAppPath;
-  return [json copy];
-}
-
-+ (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json destination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  NSString *runnerAppPath = json[KeyRunnerAppPath];
-  if (![runnerAppPath isKindOfClass:NSString.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a String for %@", runnerAppPath, KeyRunnerAppPath]
-      fail:error];
-  }
-  return [[FBApplicationTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath];
 }
 
 @end

@@ -11,13 +11,13 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBApplicationTestRunStrategy.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorResourceManager.h"
 #import "FBSimulatorTestRunStrategy.h"
 #import "FBSimulatorXCTestProcessExecutor.h"
+#import "FBUITestRunStrategy.h"
 
 @interface FBSimulatorXCTestCommands ()
 
@@ -68,9 +68,9 @@
     connectAndStart];
 }
 
-- (FBFuture<NSNull *> *)runApplicationTest:(FBApplicationTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter
+- (FBFuture<NSNull *> *)runApplicationTest:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter
 {
-  return [[FBApplicationTestRunStrategy
+  return [[FBUITestRunStrategy
     strategyWithSimulator:self.simulator configuration:configuration reporter:reporter logger:self.simulator.logger]
     execute];
 }

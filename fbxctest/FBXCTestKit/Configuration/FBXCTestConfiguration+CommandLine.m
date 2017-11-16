@@ -58,14 +58,15 @@ FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
       testFilter:testFilter];
   }
   if ([argumentSet containsObject:@"-appTest"]) {
-    return [FBApplicationTestConfiguration
+    return [FBUITestConfiguration
       configurationWithDestination:destination
       environment:environment
       workingDirectory:workingDirectory
       testBundlePath:testBundlePath
       waitForDebugger:waitForDebugger
       timeout:timeout
-      runnerAppPath:runnerAppPath];
+      runnerAppPath:runnerAppPath
+      testTargetAppPath:nil];
   }
   if ([argumentSet containsObject:@"-uiTest"]) {
     return [FBUITestConfiguration

@@ -67,9 +67,6 @@
 
 - (FBFuture<NSNull *> *)runMacTest
 {
-  if ([self.configuration isKindOfClass:FBApplicationTestConfiguration.class]) {
-    return [[FBXCTestError describe:@"Application tests are not supported on OS X."] failFuture];
-  }
   if ([self.configuration isKindOfClass:FBUITestConfiguration.class]) {
     return [[FBXCTestError describe:@"UITests are not supported on OS X."] failFuture];
   }
@@ -101,9 +98,6 @@
 {
   if ([self.configuration isKindOfClass:FBUITestConfiguration.class]) {
     return [[FBUITestRunStrategy strategyWithSimulator:simulator configuration:(FBUITestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] execute];
-  }
-  if ([self.configuration isKindOfClass:FBApplicationTestConfiguration.class]) {
-    return [[FBApplicationTestRunStrategy strategyWithSimulator:simulator configuration:(FBApplicationTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] execute];
   }
   id<FBXCTestProcessExecutor> executor = [FBSimulatorXCTestProcessExecutor executorWithSimulator:simulator configuration:self.configuration];
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {

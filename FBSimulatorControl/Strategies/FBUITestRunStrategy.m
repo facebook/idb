@@ -56,10 +56,13 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     return [FBFuture futureWithError:error];
   }
 
-  FBApplicationBundle *testTargetApp = [FBApplicationBundle applicationWithPath:self.configuration.testTargetAppPath error:&error];
-  if (!testTargetApp) {
-    [self.logger logFormat:@"Failed to open test target application: %@", error];
-    return [FBFuture futureWithError:error];
+  FBApplicationBundle *testTargetApp;
+  if (self.configuration.testTargetAppPath) {
+    testTargetApp = [FBApplicationBundle applicationWithPath:self.configuration.testTargetAppPath error:&error];
+    if (!testTargetApp) {
+      [self.logger logFormat:@"Failed to open test target application: %@", error];
+      return [FBFuture futureWithError:error];
+    }
   }
 
   return [[[self.simulator
@@ -81,12 +84,16 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     waitForDebugger:NO
     output:FBProcessOutputConfiguration.outputToDevNull];
 
-  FBTestLaunchConfiguration *testLaunchConfiguration = [[[[[FBTestLaunchConfiguration
+  FBTestLaunchConfiguration *testLaunchConfiguration = [[FBTestLaunchConfiguration
     configurationWithTestBundlePath:self.configuration.testBundlePath]
-    withApplicationLaunchConfiguration:appLaunch]
-    withTargetApplicationPath:testTargetApp.path]
-    withTargetApplicationBundleID:testTargetApp.bundleID]
-    withUITesting:YES];
+    withApplicationLaunchConfiguration:appLaunch];
+
+  if (testTargetApp) {
+    testLaunchConfiguration = [[[testLaunchConfiguration
+     withTargetApplicationPath:testTargetApp.path]
+     withTargetApplicationBundleID:testTargetApp.bundleID]
+     withUITesting:YES];
+  }
 
   FBSimulatorTestPreparationStrategy *testPreparationStrategy = [FBSimulatorTestPreparationStrategy
     strategyWithTestLaunchConfiguration:testLaunchConfiguration

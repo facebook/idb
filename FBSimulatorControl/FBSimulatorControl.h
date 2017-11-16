@@ -13,7 +13,6 @@
 #import <FBSimulatorControl/FBAgentLaunchStrategy.h>
 #import <FBSimulatorControl/FBApplicationBundle+Simulator.h>
 #import <FBSimulatorControl/FBApplicationLaunchStrategy.h>
-#import <FBSimulatorControl/FBApplicationTestRunStrategy.h>
 #import <FBSimulatorControl/FBCompositeSimulatorEventSink.h>
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
 #import <FBSimulatorControl/FBCoreSimulatorTerminationStrategy.h>

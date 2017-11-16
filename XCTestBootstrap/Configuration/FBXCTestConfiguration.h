@@ -126,29 +126,12 @@ extern FBXCTestType const FBXCTestTypeListTest;
 /**
  The Path to the test target Application.
  */
-@property (nonatomic, copy, readonly) NSString *testTargetAppPath;
+@property (nonatomic, copy, readonly, nullable) NSString *testTargetAppPath;
 
 /**
  The Designated Initializer.
  */
-+ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath;
-
-@end
-
-/**
- A Test Configuration, specialized to running of Application Tests.
- */
-@interface FBApplicationTestConfiguration : FBXCTestConfiguration
-
-/**
- The Path to the Application Hosting the Test.
- */
-@property (nonatomic, copy, readonly) NSString *runnerAppPath;
-
-/**
- The Designated Initializer.
- */
-+ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath;
++ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(nullable NSString *)testTargetAppPath;
 
 @end
 
