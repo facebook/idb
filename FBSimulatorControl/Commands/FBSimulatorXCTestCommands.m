@@ -47,15 +47,15 @@
 
 #pragma mark Public
 
-- (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter
+- (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  return [self startTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter workingDirectory:self.simulator.auxillaryDirectory];
+  return [self startTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter logger:logger workingDirectory:self.simulator.auxillaryDirectory];
 }
 
-- (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter workingDirectory:(nullable NSString *)workingDirectory
+- (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger workingDirectory:(nullable NSString *)workingDirectory
 {
   return (FBFuture<id<FBTerminationAwaitable>> *) [[FBSimulatorTestRunStrategy
-    strategyWithSimulator:self.simulator configuration:testLaunchConfiguration workingDirectory:workingDirectory reporter:reporter]
+    strategyWithSimulator:self.simulator configuration:testLaunchConfiguration workingDirectory:workingDirectory reporter:reporter logger:logger]
     connectAndStart];
 }
 

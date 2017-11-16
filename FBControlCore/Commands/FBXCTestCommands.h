@@ -15,6 +15,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBControlCoreLogger;
 @protocol FBTestManagerTestReporter;
 
 /**
@@ -35,9 +36,10 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTestOperation;
 
  @param testLaunchConfiguration the configuration used for the test launch.
  @param reporter the reporter to report to.
+ @param logger the logger to log to.
  @return a Future, wrapping a test operation.
  */
-- (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter;
+- (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Calling -[FBXCTestCommands startTestWithLaunchConfiguration:error:] will start the execution of the test run.

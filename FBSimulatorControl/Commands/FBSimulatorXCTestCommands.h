@@ -32,10 +32,11 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param testLaunchConfiguration configuration used to launch test.
  @param reporter the reporter to report to.
+ @param logger the logger to log to.
  @param workingDirectory xctest working directory.
  @return a Future, wrapping an in-flight Test Operation.
  */
-- (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter workingDirectory:(nullable NSString *)workingDirectory;
+- (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger workingDirectory:(nullable NSString *)workingDirectory;
 
 /**
  Runs the specified Application Test.

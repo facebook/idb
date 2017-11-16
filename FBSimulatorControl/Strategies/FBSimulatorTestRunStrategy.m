@@ -25,6 +25,7 @@
 @property (nonatomic, strong, nullable, readonly) FBTestLaunchConfiguration *configuration;
 @property (nonatomic, copy, nullable, readonly) NSString *workingDirectory;
 @property (nonatomic, strong, nullable, readonly) id<FBTestManagerTestReporter> reporter;
+@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -32,14 +33,14 @@
 
 #pragma mark Initializers
 
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBTestLaunchConfiguration *)configuration  workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBTestLaunchConfiguration *)configuration  workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   NSParameterAssert(simulator);
 
-  return [[self alloc] initWithConfiguration:configuration simulator:simulator workingDirectory:workingDirectory reporter:reporter];
+  return [[self alloc] initWithConfiguration:configuration simulator:simulator workingDirectory:workingDirectory reporter:reporter logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBTestLaunchConfiguration *)configuration simulator:(FBSimulator *)simulator workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter
+- (instancetype)initWithConfiguration:(FBTestLaunchConfiguration *)configuration simulator:(FBSimulator *)simulator workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -50,6 +51,7 @@
   _reporter = reporter;
   _workingDirectory = workingDirectory;
   _simulator = simulator;
+  _logger = logger;
 
   return self;
 }
@@ -83,7 +85,7 @@
     strategyWithIOSTarget:simulator
     testPrepareStrategy:testPrepareStrategy
     reporter:self.reporter
-    logger:simulator.logger];
+    logger:self.logger];
 
   return [[testRunStrategy
     startTestManagerWithApplicationLaunchConfiguration:self.configuration.applicationLaunchConfiguration]

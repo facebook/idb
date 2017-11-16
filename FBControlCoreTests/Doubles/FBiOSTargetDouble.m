@@ -106,7 +106,7 @@
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
-- (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter
+- (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
 {
   return nil;
 }

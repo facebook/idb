@@ -419,7 +419,7 @@ static NSString *const KeyResultBundlePath = @"resultBundlePath";
 
   FBiOSTargetActionType handleType = self.actionType;
   FBFuture<FBiOSTargetActionType> *future = [[commands
-    startTestWithLaunchConfiguration:self reporter:nil]
+    startTestWithLaunchConfiguration:self reporter:nil logger:target.logger]
     onQueue:target.workQueue map:^(id<FBTerminationAwaitable> baseAwaitable) {
       id<FBTerminationAwaitable> awaitable = FBTerminationAwaitableRenamed(baseAwaitable, handleType);
       [awaitableDelegate action:(id<FBiOSTargetAction>)self target:target didGenerateAwaitable:awaitable];
