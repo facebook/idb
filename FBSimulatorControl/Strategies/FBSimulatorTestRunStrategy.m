@@ -71,13 +71,6 @@
     return [FBSimulatorError failFutureWithError:error];
   }
 
-  if (simulator.state != FBSimulatorStateBooted) {
-    return [[[FBSimulatorError
-      describe:@"Simulator must be booted to run tests"]
-      inSimulator:simulator]
-      failFuture];
-  }
-
   FBSimulatorTestPreparationStrategy *testPrepareStrategy = [FBSimulatorTestPreparationStrategy
     strategyWithTestLaunchConfiguration:self.configuration
     workingDirectory:self.workingDirectory];

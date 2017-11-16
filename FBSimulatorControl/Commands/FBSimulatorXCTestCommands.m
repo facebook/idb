@@ -54,7 +54,13 @@
 
 - (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger workingDirectory:(nullable NSString *)workingDirectory
 {
-  return (FBFuture<id<FBTerminationAwaitable>> *) [[FBSimulatorTestRunStrategy
+  if (self.simulator.state != FBSimulatorStateBooted) {
+    return [[[FBSimulatorError
+      describe:@"Simulator must be booted to run tests"]
+      inSimulator:self.simulator]
+      failFuture];
+  }
+  return (FBFuture<id<FBTerminationAwaitable>> *)[[FBSimulatorTestRunStrategy
     strategyWithSimulator:self.simulator configuration:testLaunchConfiguration workingDirectory:workingDirectory reporter:reporter logger:logger]
     connectAndStart];
 }
