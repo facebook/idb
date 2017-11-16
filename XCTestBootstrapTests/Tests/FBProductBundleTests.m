@@ -20,7 +20,7 @@
 
 @implementation FBProductBundleTests
 
-- (void)testProductBundleLoadWithPath
+- (void)testProductBundleLoadWithPathOnIOS
 {
   NSError *error;
   NSBundle *bundle = [FBProductBundleTests iosUnitTestBundleFixture];
@@ -36,6 +36,24 @@
   XCTAssertEqualObjects(productBundle.bundleID, @"com.facebook.iOSUnitTestFixture");
   XCTAssertEqualObjects(productBundle.binaryName, @"iOSUnitTestFixture");
   XCTAssertEqualObjects(productBundle.binaryPath, [bundle.bundlePath stringByAppendingPathComponent:@"iOSUnitTestFixture"]);
+}
+
+- (void)testProductBundleLoadWithPathOnMacOSX
+{
+  NSError *error;
+  NSBundle *bundle = [FBProductBundleTests macUnitTestBundleFixture];
+  FBProductBundle *productBundle =
+  [[[FBProductBundleBuilder builder]
+    withBundlePath:bundle.bundlePath]
+   buildWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue([productBundle isKindOfClass:FBProductBundle.class]);
+  XCTAssertEqualObjects(productBundle.name, @"MacUnitTestFixture");
+  XCTAssertEqualObjects(productBundle.filename, @"MacUnitTestFixture.xctest");
+  XCTAssertEqualObjects(productBundle.path, bundle.bundlePath);
+  XCTAssertEqualObjects(productBundle.bundleID, @"com.facebook.MacUnitTestFixture");
+  XCTAssertEqualObjects(productBundle.binaryName, @"MacUnitTestFixture");
+  XCTAssertEqualObjects(productBundle.binaryPath, [bundle.bundlePath stringByAppendingPathComponent:@"Contents/MacOS/MacUnitTestFixture"]);
 }
 
 - (void)testNoBundlePath
@@ -56,6 +74,7 @@
   [[[fileManagerMock expect] andReturnValue:@YES] copyItemAtPath:bundle.bundlePath toPath:targetPath error:[OCMArg anyObjectRef]];
   [[[fileManagerMock expect] andReturn:plist] dictionaryWithPath:[bundle.bundlePath stringByAppendingPathComponent:@"Info.plist"]];
   [[[[fileManagerMock stub] andReturnValue:@YES] ignoringNonObjectArgs] createDirectoryAtPath:@"/Heaven" withIntermediateDirectories:NO attributes:[OCMArg any] error:[OCMArg anyObjectRef]];
+  [[[[fileManagerMock stub] andReturnValue:@YES] ignoringNonObjectArgs] fileExistsAtPath:@"/Heaven/iOSUnitTestFixture.xctest/exec"];
   [[[[fileManagerMock stub] andReturnValue:@NO] ignoringNonObjectArgs] fileExistsAtPath:[OCMArg any]];
 
   NSError *error;

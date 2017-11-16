@@ -129,17 +129,28 @@
     infoPlist = [self.fileManager dictionaryWithPath:[self.bundlePath stringByAppendingPathComponent:@"Contents/Info.plist"]];
   }
   if (!infoPlist) {
+    infoPlist = [self.fileManager dictionaryWithPath:[self.bundlePath stringByAppendingPathComponent:@"Resources/Info.plist"]];
+  }
+  if (!infoPlist) {
     return
     [[XCTestBootstrapError describeFormat:@"Failed to read Info.plist for bundle: %@", self.bundlePath]
      fail:error];
+  }
+  NSString *binaryName = self.binaryName ?: infoPlist[@"CFBundleExecutable"];
+  NSString *binaryPath = nil;
+  if (binaryName) {
+    binaryPath = [targetBundlePath stringByAppendingPathComponent:binaryName];
+    if (![self.fileManager fileExistsAtPath:binaryPath]) {
+      binaryPath = [[targetBundlePath stringByAppendingPathComponent:@"Contents/MacOS"] stringByAppendingPathComponent:binaryName];
+    }
   }
   FBProductBundle *bundleProduct = [self.productClass new];
   bundleProduct.path = targetBundlePath;
   bundleProduct.filename = targetBundlePath.lastPathComponent;
   bundleProduct.name = targetBundlePath.lastPathComponent.stringByDeletingPathExtension;
   bundleProduct.bundleID = self.bundleID ?: infoPlist[@"CFBundleIdentifier"];
-  bundleProduct.binaryName = self.binaryName ?: infoPlist[@"CFBundleExecutable"];
-  bundleProduct.binaryPath = (bundleProduct.binaryName ? [targetBundlePath stringByAppendingPathComponent:bundleProduct.binaryName] : nil);
+  bundleProduct.binaryName = binaryName;
+  bundleProduct.binaryPath = binaryPath;
   return bundleProduct;
 }
 
