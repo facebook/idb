@@ -7,29 +7,29 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBUITestRunStrategy.h"
+#import "FBTestRunStrategy.h"
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
 
-@interface FBUITestRunStrategy ()
+@interface FBTestRunStrategy ()
 
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
-@property (nonatomic, strong, readonly) FBUITestConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBTestManagerTestConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
 @property (nonatomic, strong, readonly) Class<FBXCTestPreparationStrategy> testPreparationStrategyClass;
 @end
 
-@implementation FBUITestRunStrategy
+@implementation FBTestRunStrategy
 
-+ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass
++ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBTestManagerTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass
 {
   return [[self alloc] initWithTarget:target configuration:configuration reporter:reporter logger:logger testPreparationStrategyClass:testPreparationStrategyClass];
 }
 
-- (instancetype)initWithTarget:(id<FBiOSTarget>)target configuration:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass
+- (instancetype)initWithTarget:(id<FBiOSTarget>)target configuration:(FBTestManagerTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass
 {
   self = [super init];
   if (!self) {
@@ -67,14 +67,14 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
   return [[[self.target
     installApplicationWithPath:testRunnerApp.path]
     onQueue:self.target.workQueue fmap:^(id _) {
-      return [self startUITestWithTestRunnerApp:testRunnerApp testTargetApp:testTargetApp];
+      return [self startTestWithTestRunnerApp:testRunnerApp testTargetApp:testTargetApp];
     }]
     timedOutIn:ApplicationTestDefaultTimeout];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)startUITestWithTestRunnerApp:(FBApplicationBundle *)testRunnerApp testTargetApp:(FBApplicationBundle *)testTargetApp
+- (FBFuture<NSNull *> *)startTestWithTestRunnerApp:(FBApplicationBundle *)testRunnerApp testTargetApp:(FBApplicationBundle *)testTargetApp
 {
   FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
     configurationWithApplication:testRunnerApp

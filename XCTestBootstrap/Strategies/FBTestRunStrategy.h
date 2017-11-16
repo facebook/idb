@@ -17,15 +17,15 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBXCTestReporter;
 
 @class FBSimulator;
-@class FBUITestConfiguration;
+@class FBTestManagerTestConfiguration;
 
 /**
- A Runner for UITests.
+ A Runner for test manager managed tests (UITests and Application tests).
  */
-@interface FBUITestRunStrategy : NSObject <FBXCTestRunner>
+@interface FBTestRunStrategy : NSObject <FBXCTestRunner>
 
 /**
- Create and return a new Strategy for UITests on iOS.
+ Create and return a new Strategy
 
  @param target the device target to use for hosting the Application.
  @param configuration the the configuration to use.
@@ -33,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @param testPreparationStrategyClass class used to prepare for test execution
  */
-+ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass;
++ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBTestManagerTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass;
 
 @end
 

@@ -43,12 +43,12 @@
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
-  XCTAssertTrue([configuration isKindOfClass:FBUITestConfiguration.class]);
+  XCTAssertTrue([configuration isKindOfClass:FBTestManagerTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
 
-  FBXCTestConfiguration *expected = [FBUITestConfiguration
+  FBXCTestConfiguration *expected = [FBTestManagerTestConfiguration
     configurationWithDestination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]
     environment:processEnvironment
     workingDirectory:workingDirectory
@@ -71,12 +71,12 @@
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
-  XCTAssertTrue([configuration isKindOfClass:FBUITestConfiguration.class]);
+  XCTAssertTrue([configuration isKindOfClass:FBTestManagerTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
 
-  FBXCTestConfiguration *expected = [FBUITestConfiguration
+  FBXCTestConfiguration *expected = [FBTestManagerTestConfiguration
     configurationWithDestination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]
     environment:processEnvironment
     workingDirectory:workingDirectory
@@ -99,12 +99,12 @@
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
-  XCTAssertTrue([configuration isKindOfClass:FBUITestConfiguration.class]);
+  XCTAssertTrue([configuration isKindOfClass:FBTestManagerTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
 
-  FBXCTestConfiguration *expected = [FBUITestConfiguration
+  FBXCTestConfiguration *expected = [FBTestManagerTestConfiguration
     configurationWithDestination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:nil version:nil]
     environment:processEnvironment
     workingDirectory:workingDirectory
@@ -137,7 +137,7 @@
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
 
-  FBXCTestConfiguration *expected = [FBUITestConfiguration
+  FBXCTestConfiguration *expected = [FBTestManagerTestConfiguration
     configurationWithDestination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:nil version:nil]
     environment:processEnvironment
     workingDirectory:workingDirectory

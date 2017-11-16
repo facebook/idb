@@ -219,9 +219,9 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   } else if ([testType isEqualToString:FBXCTestTypeLogicTest]) {
     clusterClass = listTestsOnly.boolValue ? FBListTestConfiguration.class : FBLogicTestConfiguration.class;
   } else if ([testType isEqualToString:FBXCTestTypeApplicationTest]) {
-    clusterClass = FBUITestConfiguration.class;
+    clusterClass = FBTestManagerTestConfiguration.class;
   } else if ([testType isEqualToString:FBXCTestTypeUITest]) {
-    clusterClass = FBUITestConfiguration.class;
+    clusterClass = FBTestManagerTestConfiguration.class;
   } else {
     return [[FBControlCoreError
       describeFormat:@"Test Type %@ is not a value Test Type for %@", testType, KeyTestType]
@@ -280,13 +280,13 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
 @end
 
-@implementation FBUITestConfiguration
+@implementation FBTestManagerTestConfiguration
 
 #pragma mark Initializers
 
 + (instancetype)configurationWithDestination:(FBXCTestDestination *)destination environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath
 {
-  return [[FBUITestConfiguration alloc] initWithDestination:destination shims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath];
+  return [[FBTestManagerTestConfiguration alloc] initWithDestination:destination shims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath];
 }
 
 - (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath
@@ -333,7 +333,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
       describeFormat:@"%@ is not a String for %@", testTargetAppPath, KeyRunnerTargetPath]
       fail:error];
   }
-  return [[FBUITestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath];
+  return [[FBTestManagerTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath];
 }
 
 @end

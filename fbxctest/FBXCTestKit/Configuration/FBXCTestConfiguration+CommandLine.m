@@ -58,7 +58,7 @@ FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
       testFilter:testFilter];
   }
   if ([argumentSet containsObject:@"-appTest"]) {
-    return [FBUITestConfiguration
+    return [FBTestManagerTestConfiguration
       configurationWithDestination:destination
       environment:environment
       workingDirectory:workingDirectory
@@ -69,7 +69,7 @@ FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
       testTargetAppPath:nil];
   }
   if ([argumentSet containsObject:@"-uiTest"]) {
-    return [FBUITestConfiguration
+    return [FBTestManagerTestConfiguration
       configurationWithDestination:destination
       environment:environment
       workingDirectory:workingDirectory

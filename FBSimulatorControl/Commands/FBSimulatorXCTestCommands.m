@@ -66,9 +66,9 @@
     connectAndStart];
 }
 
-- (FBFuture<NSNull *> *)runApplicationTest:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter
+- (FBFuture<NSNull *> *)runApplicationTest:(FBTestManagerTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter
 {
-  return [[FBUITestRunStrategy
+  return [[FBTestRunStrategy
     strategyWithTarget:self.simulator configuration:configuration reporter:reporter logger:self.simulator.logger testPreparationStrategyClass:FBSimulatorTestPreparationStrategy.class]
     execute];
 }

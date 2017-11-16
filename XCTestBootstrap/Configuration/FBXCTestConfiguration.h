@@ -116,7 +116,7 @@ extern FBXCTestType const FBXCTestTypeListTest;
 /**
  A Test Configuration, specialized in running of Tests.
  */
-@interface FBUITestConfiguration : FBXCTestConfiguration
+@interface FBTestManagerTestConfiguration : FBXCTestConfiguration
 
 /**
  The Path to the Application Hosting the Test.
