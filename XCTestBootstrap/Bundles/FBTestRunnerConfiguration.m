@@ -65,25 +65,25 @@
 + (NSArray<NSString *> *)launchArguments
 {
   return @[
-           @"-NSTreatUnknownArgumentsAsOpen", @"NO",
-           @"-ApplePersistenceIgnoreState", @"YES"
-           ];
+    @"-NSTreatUnknownArgumentsAsOpen", @"NO",
+    @"-ApplePersistenceIgnoreState", @"YES"
+  ];
 }
 
 + (NSDictionary *)launchEnvironmentWithHostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath
 {
   NSDictionary *environmentVariables = @{
-                                         @"AppTargetLocation" : hostApplication.binaryPath,
-                                         @"DYLD_INSERT_LIBRARIES" : ideInjectionFramework.binaryPath,
-                                         @"DYLD_FRAMEWORK_PATH" : frameworkSearchPath ?: @"",
-                                         @"DYLD_LIBRARY_PATH" : frameworkSearchPath ?: @"",
-                                         @"OBJC_DISABLE_GC" : @"YES",
-                                         @"TestBundleLocation" : testBundle.path,
-                                         @"XCInjectBundle" : testBundle.path,
-                                         @"XCInjectBundleInto" : hostApplication.binaryPath,
-                                         @"XCODE_DBG_XPC_EXCLUSIONS" : @"com.apple.dt.xctestSymbolicator",
-                                         @"XCTestConfigurationFilePath" : testConfigurationPath,
-                                         };
+    @"AppTargetLocation" : hostApplication.binaryPath,
+    @"DYLD_INSERT_LIBRARIES" : ideInjectionFramework.binaryPath,
+    @"DYLD_FRAMEWORK_PATH" : frameworkSearchPath ?: @"",
+    @"DYLD_LIBRARY_PATH" : frameworkSearchPath ?: @"",
+    @"OBJC_DISABLE_GC" : @"YES",
+    @"TestBundleLocation" : testBundle.path,
+    @"XCInjectBundle" : testBundle.path,
+    @"XCInjectBundleInto" : hostApplication.binaryPath,
+    @"XCODE_DBG_XPC_EXCLUSIONS" : @"com.apple.dt.xctestSymbolicator",
+    @"XCTestConfigurationFilePath" : testConfigurationPath,
+  };
   return [self addAdditionalEnvironmentVariables:environmentVariables];
 }
 
