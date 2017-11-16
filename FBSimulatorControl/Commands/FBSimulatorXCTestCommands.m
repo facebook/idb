@@ -61,7 +61,7 @@
       failFuture];
   }
   return (FBFuture<id<FBTerminationAwaitable>> *)[[FBSimulatorTestRunStrategy
-    strategyWithSimulator:self.simulator configuration:testLaunchConfiguration workingDirectory:workingDirectory reporter:reporter logger:logger]
+    strategyWithTarget:self.simulator configuration:testLaunchConfiguration workingDirectory:workingDirectory reporter:reporter logger:logger]
     connectAndStart];
 }
 

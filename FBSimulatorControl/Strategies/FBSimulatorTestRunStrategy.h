@@ -30,14 +30,14 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates and returns a new Test Run Strategy.
 
- @param simulator the Simulator to use.
+ @param target the Target to use.
  @param configuration the configuration to use.
  @param workingDirectory a directory which can be used for storage of temporary files.
  @param reporter the reporter to use.
  @param logger the logger to use.
  @return a new Test Run Strategy instance.
  */
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBTestLaunchConfiguration *)configuration  workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration  workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 

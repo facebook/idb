@@ -89,7 +89,7 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     withUITesting:YES];
 
   FBSimulatorTestRunStrategy *runner = [FBSimulatorTestRunStrategy
-    strategyWithSimulator:self.simulator
+    strategyWithTarget:self.simulator
     configuration:testLaunchConfiguration
     workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]
     reporter:[FBXCTestReporterAdapter adapterWithReporter:self.reporter]

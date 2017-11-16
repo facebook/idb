@@ -20,7 +20,7 @@
 
 @interface FBSimulatorTestRunStrategy ()
 
-@property (nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
 
 @property (nonatomic, strong, nullable, readonly) FBTestLaunchConfiguration *configuration;
 @property (nonatomic, copy, nullable, readonly) NSString *workingDirectory;
@@ -33,14 +33,14 @@
 
 #pragma mark Initializers
 
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBTestLaunchConfiguration *)configuration  workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration  workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  NSParameterAssert(simulator);
+  NSParameterAssert(target);
 
-  return [[self alloc] initWithConfiguration:configuration simulator:simulator workingDirectory:workingDirectory reporter:reporter logger:logger];
+  return [[self alloc] initWithConfiguration:configuration target:target workingDirectory:workingDirectory reporter:reporter logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBTestLaunchConfiguration *)configuration simulator:(FBSimulator *)simulator workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBTestLaunchConfiguration *)configuration target:(id<FBiOSTarget>)target workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -50,7 +50,7 @@
   _configuration = configuration;
   _reporter = reporter;
   _workingDirectory = workingDirectory;
-  _simulator = simulator;
+  _target = target;
   _logger = logger;
 
   return self;
@@ -65,9 +65,7 @@
   NSParameterAssert(self.workingDirectory);
 
   NSError *error = nil;
-  FBSimulator *simulator = self.simulator;
-
-  if (![XCTestBootstrapFrameworkLoader.allDependentFrameworks loadPrivateFrameworks:simulator.logger error:&error]) {
+  if (![XCTestBootstrapFrameworkLoader.allDependentFrameworks loadPrivateFrameworks:self.target.logger error:&error]) {
     return [FBSimulatorError failFutureWithError:error];
   }
 
@@ -75,14 +73,14 @@
     strategyWithTestLaunchConfiguration:self.configuration
     workingDirectory:self.workingDirectory];
   FBXCTestRunStrategy *testRunStrategy = [FBXCTestRunStrategy
-    strategyWithIOSTarget:simulator
+    strategyWithIOSTarget:self.target
     testPrepareStrategy:testPrepareStrategy
     reporter:self.reporter
     logger:self.logger];
 
   return [[testRunStrategy
     startTestManagerWithApplicationLaunchConfiguration:self.configuration.applicationLaunchConfiguration]
-    onQueue:self.simulator.workQueue fmap:^(FBTestManager *testManager) {
+    onQueue:self.target.workQueue fmap:^(FBTestManager *testManager) {
       FBFuture<FBTestManagerResult *> *result = [testManager execute];
       if (result.error) {
         return [FBFuture futureWithError:result.error];
