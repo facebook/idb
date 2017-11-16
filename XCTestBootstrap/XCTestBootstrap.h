@@ -9,7 +9,6 @@
 
 #import <XCTestBootstrap/FBApplicationDataPackage.h>
 #import <XCTestBootstrap/FBDeviceOperator.h>
-#import <XCTestBootstrap/FBDeviceTestPreparationStrategy.h>
 #import <XCTestBootstrap/FBJSONTestReporter.h>
 #import <XCTestBootstrap/FBListTestStrategy.h>
 #import <XCTestBootstrap/FBXCTestProcess.h>
