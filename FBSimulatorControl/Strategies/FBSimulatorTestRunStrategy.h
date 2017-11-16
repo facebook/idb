@@ -19,6 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBTestManager;
 @class FBTestManagerResult;
 @protocol FBTestManagerTestReporter;
+@protocol FBXCTestPreparationStrategy;
 
 /**
  A Strategy that encompasses a Single Test Run on a Simulator.
@@ -32,12 +33,12 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param target the Target to use.
  @param configuration the configuration to use.
- @param workingDirectory a directory which can be used for storage of temporary files.
  @param reporter the reporter to use.
  @param logger the logger to use.
+ @param testPreparationStrategy Test preparation strategy to use
  @return a new Test Run Strategy instance.
  */
-+ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration  workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategy:(id<FBXCTestPreparationStrategy>)testPreparationStrategy;
 
 #pragma mark Public Methods
 

@@ -60,8 +60,11 @@
       inSimulator:self.simulator]
       failFuture];
   }
+  FBSimulatorTestPreparationStrategy *testPreparationStrategy = [FBSimulatorTestPreparationStrategy
+    strategyWithTestLaunchConfiguration:testLaunchConfiguration
+    workingDirectory:workingDirectory];
   return (FBFuture<id<FBTerminationAwaitable>> *)[[FBSimulatorTestRunStrategy
-    strategyWithTarget:self.simulator configuration:testLaunchConfiguration workingDirectory:workingDirectory reporter:reporter logger:logger]
+    strategyWithTarget:self.simulator configuration:testLaunchConfiguration reporter:reporter logger:logger testPreparationStrategy:testPreparationStrategy]
     connectAndStart];
 }
 

@@ -23,9 +23,9 @@
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
 
 @property (nonatomic, strong, nullable, readonly) FBTestLaunchConfiguration *configuration;
-@property (nonatomic, copy, nullable, readonly) NSString *workingDirectory;
 @property (nonatomic, strong, nullable, readonly) id<FBTestManagerTestReporter> reporter;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, nullable, readonly) id<FBXCTestPreparationStrategy> testPreparationStrategy;
 
 @end
 
@@ -33,14 +33,14 @@
 
 #pragma mark Initializers
 
-+ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration  workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategy:(id<FBXCTestPreparationStrategy>)testPreparationStrategy
 {
   NSParameterAssert(target);
 
-  return [[self alloc] initWithConfiguration:configuration target:target workingDirectory:workingDirectory reporter:reporter logger:logger];
+  return [[self alloc] initWithConfiguration:configuration target:target reporter:reporter logger:logger testPreparationStrategy:testPreparationStrategy];
 }
 
-- (instancetype)initWithConfiguration:(FBTestLaunchConfiguration *)configuration target:(id<FBiOSTarget>)target workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBTestLaunchConfiguration *)configuration target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategy:(id<FBXCTestPreparationStrategy>)testPreparationStrategy
 {
   self = [super init];
   if (!self) {
@@ -49,9 +49,9 @@
 
   _configuration = configuration;
   _reporter = reporter;
-  _workingDirectory = workingDirectory;
   _target = target;
   _logger = logger;
+  _testPreparationStrategy = testPreparationStrategy;
 
   return self;
 }
@@ -62,19 +62,15 @@
 {
   NSParameterAssert(self.configuration.applicationLaunchConfiguration);
   NSParameterAssert(self.configuration.testBundlePath);
-  NSParameterAssert(self.workingDirectory);
 
   NSError *error = nil;
   if (![XCTestBootstrapFrameworkLoader.allDependentFrameworks loadPrivateFrameworks:self.target.logger error:&error]) {
     return [FBSimulatorError failFutureWithError:error];
   }
 
-  FBSimulatorTestPreparationStrategy *testPrepareStrategy = [FBSimulatorTestPreparationStrategy
-    strategyWithTestLaunchConfiguration:self.configuration
-    workingDirectory:self.workingDirectory];
   FBXCTestRunStrategy *testRunStrategy = [FBXCTestRunStrategy
     strategyWithIOSTarget:self.target
-    testPrepareStrategy:testPrepareStrategy
+    testPrepareStrategy:self.testPreparationStrategy
     reporter:self.reporter
     logger:self.logger];
 
