@@ -69,13 +69,11 @@
 #import <FBSimulatorControl/FBSimulatorShutdownStrategy.h>
 #import <FBSimulatorControl/FBSimulatorSubprocessTerminationStrategy.h>
 #import <FBSimulatorControl/FBSimulatorTerminationStrategy.h>
-#import <FBSimulatorControl/FBSimulatorTestRunStrategy.h>
 #import <FBSimulatorControl/FBSimulatorVideo.h>
 #import <FBSimulatorControl/FBSimulatorVideoRecordingCommands.h>
 #import <FBSimulatorControl/FBSimulatorXCTestCommands.h>
 #import <FBSimulatorControl/FBSimulatorXCTestProcessExecutor.h>
 #import <FBSimulatorControl/FBSurfaceImageGenerator.h>
-#import <FBSimulatorControl/FBUITestRunStrategy.h>
 #import <FBSimulatorControl/FBUploadMediaStrategy.h>
 #import <FBSimulatorControl/FBVideoEncoderBuiltIn.h>
 #import <FBSimulatorControl/FBVideoEncoderConfiguration.h>

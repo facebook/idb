@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Strategy that encompasses a Single Test Run on a Simulator.
  */
-@interface FBSimulatorTestRunStrategy : NSObject
+@interface FBManagedTestRunStrategy : NSObject
 
 #pragma mark Initializers
 

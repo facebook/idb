@@ -7,18 +7,12 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorTestRunStrategy.h"
+#import "FBManagedTestRunStrategy.h"
 
-#import <CoreSimulator/SimDevice.h>
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBSimulator+Private.h"
-#import "FBSimulatorControlOperator.h"
-#import "FBSimulatorError.h"
-#import "FBSimulatorResourceManager.h"
-
-@interface FBSimulatorTestRunStrategy ()
+@interface FBManagedTestRunStrategy ()
 
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
 
@@ -29,7 +23,7 @@
 
 @end
 
-@implementation FBSimulatorTestRunStrategy
+@implementation FBManagedTestRunStrategy
 
 #pragma mark Initializers
 
@@ -65,7 +59,7 @@
 
   NSError *error = nil;
   if (![XCTestBootstrapFrameworkLoader.allDependentFrameworks loadPrivateFrameworks:self.target.logger error:&error]) {
-    return [FBSimulatorError failFutureWithError:error];
+    return [XCTestBootstrapError failFutureWithError:error];
   }
 
   FBXCTestRunStrategy *testRunStrategy = [FBXCTestRunStrategy

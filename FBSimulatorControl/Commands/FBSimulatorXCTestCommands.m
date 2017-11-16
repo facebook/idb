@@ -15,9 +15,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorResourceManager.h"
-#import "FBSimulatorTestRunStrategy.h"
 #import "FBSimulatorXCTestProcessExecutor.h"
-#import "FBUITestRunStrategy.h"
 
 @interface FBSimulatorXCTestCommands ()
 
@@ -63,7 +61,7 @@
   FBSimulatorTestPreparationStrategy *testPreparationStrategy = [FBSimulatorTestPreparationStrategy
     strategyWithTestLaunchConfiguration:testLaunchConfiguration
     workingDirectory:workingDirectory];
-  return (FBFuture<id<FBTerminationAwaitable>> *)[[FBSimulatorTestRunStrategy
+  return (FBFuture<id<FBTerminationAwaitable>> *)[[FBManagedTestRunStrategy
     strategyWithTarget:self.simulator configuration:testLaunchConfiguration reporter:reporter logger:logger testPreparationStrategy:testPreparationStrategy]
     connectAndStart];
 }
