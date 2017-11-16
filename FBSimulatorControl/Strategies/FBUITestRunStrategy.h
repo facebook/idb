@@ -27,13 +27,13 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Create and return a new Strategy for UITests on iOS.
 
- @param simulator the Simulator to use for hosting the Application.
+ @param target the device target to use for hosting the Application.
  @param configuration the the configuration to use.
  @param reporter the reporter to report to.
  @param logger the logger to use.
  @param testPreparationStrategyClass class used to prepare for test execution
  */
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass;
++ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass;
 
 @end
 

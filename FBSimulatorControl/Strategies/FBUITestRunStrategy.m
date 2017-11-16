@@ -16,7 +16,7 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
 
 @interface FBUITestRunStrategy ()
 
-@property (nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
 @property (nonatomic, strong, readonly) FBUITestConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
@@ -25,19 +25,19 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
 
 @implementation FBUITestRunStrategy
 
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass
++ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass
 {
-  return [[self alloc] initWithSimulator:simulator configuration:configuration reporter:reporter logger:logger testPreparationStrategyClass:testPreparationStrategyClass];
+  return [[self alloc] initWithTarget:target configuration:configuration reporter:reporter logger:logger testPreparationStrategyClass:testPreparationStrategyClass];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass
+- (instancetype)initWithTarget:(id<FBiOSTarget>)target configuration:(FBUITestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _simulator = simulator;
+  _target = target;
   _configuration = configuration;
   _reporter = reporter;
   _logger = logger;
@@ -65,9 +65,9 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     }
   }
 
-  return [[[self.simulator
+  return [[[self.target
     installApplicationWithPath:testRunnerApp.path]
-    onQueue:self.simulator.workQueue fmap:^(id _) {
+    onQueue:self.target.workQueue fmap:^(id _) {
       return [self startUITestWithTestRunnerApp:testRunnerApp testTargetApp:testTargetApp];
     }]
     timedOutIn:ApplicationTestDefaultTimeout];
@@ -100,18 +100,18 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]];
 
   FBSimulatorTestRunStrategy *runner = [FBSimulatorTestRunStrategy
-    strategyWithTarget:self.simulator
+    strategyWithTarget:self.target
     configuration:testLaunchConfiguration
     reporter:[FBXCTestReporterAdapter adapterWithReporter:self.reporter]
-    logger:self.simulator.logger
+    logger:self.target.logger
     testPreparationStrategy:testPreparationStrategy];
 
   return [[[runner
     connectAndStart]
-    onQueue:self.simulator.workQueue fmap:^(FBTestManager *manager) {
+    onQueue:self.target.workQueue fmap:^(FBTestManager *manager) {
       return [manager execute];
     }]
-    onQueue:self.simulator.workQueue fmap:^(FBTestManagerResult *result) {
+    onQueue:self.target.workQueue fmap:^(FBTestManagerResult *result) {
       if (result.crashDiagnostic) {
         return [[FBXCTestError
           describeFormat:@"The Application Crashed during the Test Run\n%@", result.crashDiagnostic.asString]
