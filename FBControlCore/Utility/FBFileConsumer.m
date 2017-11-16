@@ -9,30 +9,43 @@
 @interface FBLineFileConsumer ()
 
 @property (nonatomic, strong, nullable, readwrite) dispatch_queue_t queue;
-@property (nonatomic, copy, nullable, readwrite) void (^consumer)(NSString *);
+@property (nonatomic, copy, nullable, readwrite) void (^consumer)(NSData *);
 @property (nonatomic, strong, readwrite) FBLineBuffer *buffer;
 
 @end
+
+typedef void (^dataBlock)(NSData *);
+static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
+  return ^(NSData *data){
+    NSString *line = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    consumer(line);
+  };
+}
 
 @implementation FBLineFileConsumer
 
 + (instancetype)synchronousReaderWithConsumer:(void (^)(NSString *))consumer
 {
-  return [[self alloc] initWithQueue:nil consumer:consumer];
+  return [[self alloc] initWithQueue:nil consumer:FBDataConsumerBlock(consumer)];
 }
 
 + (instancetype)asynchronousReaderWithConsumer:(void (^)(NSString *))consumer
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBControlCore.LineConsumer", DISPATCH_QUEUE_SERIAL);
-  return [[self alloc] initWithQueue:queue consumer:consumer];
+  return [[self alloc] initWithQueue:queue consumer:FBDataConsumerBlock(consumer)];
 }
 
 + (instancetype)asynchronousReaderWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSString *))consumer
 {
+  return [[self alloc] initWithQueue:queue consumer:FBDataConsumerBlock(consumer)];
+}
+
++ (instancetype)asynchronousReaderWithQueue:(dispatch_queue_t)queue dataConsumer:(void (^)(NSData *))consumer
+{
   return [[self alloc] initWithQueue:queue consumer:consumer];
 }
 
-- (instancetype)initWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSString *))consumer
+- (instancetype)initWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSData *))consumer
 {
   self = [super init];
   if (!self) {
@@ -70,17 +83,16 @@
 
 - (void)dispatchAvailableLines
 {
-  NSString *line = [self.buffer consumeLineString];
-  while (line != nil) {
-    void (^consumer)(NSString *) = self.consumer;
+  NSData *data;
+  void (^consumer)(NSData *) = self.consumer;
+  while ((data = [self.buffer consumeLineData])) {
     if (self.queue) {
       dispatch_async(self.queue, ^{
-        consumer(line);
+        consumer(data);
       });
     } else {
-      consumer(line);
+      consumer(data);
     }
-    line = [self.buffer consumeLineString];
   }
 }
 

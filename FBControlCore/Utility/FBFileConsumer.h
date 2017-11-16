@@ -63,6 +63,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)asynchronousReaderWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSString *))consumer;
 
+/**
+ Creates a Consumer of lines from a block.
+ Lines will be delivered as data asynchronously to the given queue.
+
+ @param queue the queue to call the consumer from.
+ @param consumer the block to call when a line has been consumed.
+ @return a new Line Reader.
+ */
++ (instancetype)asynchronousReaderWithQueue:(dispatch_queue_t)queue dataConsumer:(void (^)(NSData *_Nonnull))consumer;
+
 @end
 
 /**
