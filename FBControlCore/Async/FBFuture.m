@@ -186,7 +186,9 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
 
 + (FBFuture *)futureWithFutures:(NSArray<FBFuture *> *)futures
 {
-  NSParameterAssert(futures.count > 0);
+  if (futures.count == 0) {
+    return [FBFuture futureWithResult:@[]];
+  }
 
   FBMutableFuture *compositeFuture = [FBMutableFuture new];
   NSMutableArray *results = [[FBCollectionOperations arrayWithObject:NSNull.null count:futures.count] mutableCopy];

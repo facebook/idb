@@ -163,6 +163,14 @@
   XCTAssertEqualObjects(compositeFuture.result, (@[@0, @1, @2]));
 }
 
+- (void)testCompositeEmpty
+{
+  FBFuture<id> *compositeFuture = [FBFuture futureWithFutures:@[]];
+
+  XCTAssertEqual(compositeFuture.state, FBFutureStateCompletedWithResult);
+  XCTAssertEqualObjects(compositeFuture.result, (@[]));
+}
+
 - (void)testFmappedSuccess
 {
   XCTestExpectation *step1 = [[XCTestExpectation alloc] initWithDescription:@"fmap 1 is called"];
