@@ -24,6 +24,8 @@
 
 @implementation FBSimulatorXCTestProcessExecutor
 
+#pragma mark Initializers
+
 + (instancetype)executorWithSimulator:(FBSimulator *)simulator configuration:(FBXCTestConfiguration *)configuration
 {
   return [[self alloc] initWithSimulator:simulator configuration:configuration];
@@ -42,7 +44,9 @@
   return self;
 }
 
-- (FBFuture<FBXCTestProcessInfo *> *)startProcess:(FBXCTestProcess *)process processIdentifierOut:(pid_t *)processIdentifierOut
+#pragma mark Public
+
+- (FBFuture<FBXCTestProcessInfo *> *)startProcess:(FBXCTestProcess *)process
 {
   NSError *error = nil;
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
@@ -63,28 +67,11 @@
    environment:process.environment
    output:output];
 
-  FBFuture<FBSimulatorAgentOperation *> *future = [[FBAgentLaunchStrategy
+  return [[[FBAgentLaunchStrategy
     strategyWithSimulator:self.simulator]
-    launchAgent:configuration];
-
-  FBSimulatorAgentOperation *operation = [future await:&error];
-  if (!operation) {
-    return [FBFuture futureWithError:error];
-  }
-
-  pid_t processIdentifier = operation.process.processIdentifier;
-  if (processIdentifierOut) {
-    *processIdentifierOut = processIdentifier;
-  }
-
-  return [[operation future]
-    onQueue:self.simulator.asyncQueue map:^(NSNumber *statLocNumber) {
-      int stat_loc = statLocNumber.intValue;
-      if (WIFEXITED(stat_loc)) {
-        return [[FBXCTestProcessInfo alloc] initWithProcessIdentifier:processIdentifier exitCode:WEXITSTATUS(stat_loc)];
-      } else {
-        return [[FBXCTestProcessInfo alloc] initWithProcessIdentifier:processIdentifier exitCode:WTERMSIG(stat_loc)];
-      }
+    launchAgent:configuration]
+    onQueue:self.simulator.asyncQueue map:^(FBSimulatorAgentOperation *operation) {
+      return [FBSimulatorXCTestProcessExecutor operationToProcessInfo:operation queue:self.simulator.asyncQueue];
     }];
 }
 
@@ -101,6 +88,22 @@
 - (dispatch_queue_t)workQueue
 {
   return self.simulator.workQueue;
+}
+
+#pragma mark Private
+
++ (FBXCTestProcessInfo *)operationToProcessInfo:(FBSimulatorAgentOperation *)operation queue:(dispatch_queue_t)queue
+{
+  FBFuture<NSNumber *> *completion = [operation.future
+    onQueue:queue map:^(NSNumber *statLocNumber) {
+      int stat_loc = statLocNumber.intValue;
+      if (WIFEXITED(stat_loc)) {
+        return @(WEXITSTATUS(stat_loc));
+      } else {
+        return @(WTERMSIG(stat_loc));
+      }
+    }];
+  return [[FBXCTestProcessInfo alloc] initWithProcessIdentifier:operation.process.processIdentifier completion:completion];
 }
 
 @end

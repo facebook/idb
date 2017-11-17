@@ -43,28 +43,29 @@
   return self;
 }
 
-- (FBFuture<FBXCTestProcessInfo *> *)startProcess:(FBXCTestProcess *)process processIdentifierOut:(pid_t *)processIdentifierOut
+- (FBFuture<FBXCTestProcessInfo *> *)startProcess:(FBXCTestProcess *)process
 {
-  return [[[[[[[[FBTaskBuilder
+  __block pid_t processIdentifier = 0;
+  FBFuture<NSNumber *> *completion = [[[[[[[[FBTaskBuilder
     withLaunchPath:process.launchPath]
     withArguments:process.arguments]
     withEnvironment:process.environment]
     withStdOutConsumer:process.stdOutReader]
     withStdErrConsumer:process.stdErrReader]
     withAcceptableTerminationStatusCodes:[NSSet setWithArray:@[@0, @1]]]
-    buildFutureWithProcessIdentifierOut:processIdentifierOut]
+    buildFutureWithProcessIdentifierOut:&processIdentifier]
     onQueue:self.workQueue chain:^FBFuture<NSNull *> *(FBFuture<FBTask *> *future) {
       NSError *taskError = future.error;
       if (taskError) {
         NSNumber *exitCode = taskError.userInfo[@"exitcode"];
-        NSNumber *processIdentifier = taskError.userInfo[@"pid"];
-        FBXCTestProcessInfo *info = [[FBXCTestProcessInfo alloc] initWithProcessIdentifier:processIdentifier.intValue exitCode:exitCode.intValue];
-        return [FBFuture futureWithResult:info];
+        return [FBFuture futureWithResult:exitCode];
       }
       FBTask *task = future.result;
-      FBXCTestProcessInfo *info = [[FBXCTestProcessInfo alloc] initWithProcessIdentifier:task.processIdentifier exitCode:task.exitCode];
-      return [FBFuture futureWithResult:info];
+      return [FBFuture futureWithResult:@(task.exitCode)];
     }];
+
+  FBXCTestProcessInfo *info = [[FBXCTestProcessInfo alloc] initWithProcessIdentifier:processIdentifier completion:completion];
+  return [FBFuture futureWithResult:info];
 }
 
 - (NSString *)shimPath

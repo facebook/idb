@@ -18,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
 @class FBXCTestProcess;
+@class FBXCTestProcessInfo;
 
 /**
  A Platform-Agnostic wrapper responsible for managing an xctest process.
@@ -41,11 +42,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Starts the Process.
 
- @param processIdentifierOut an outparam for the launched process.
  @param timeout the timeout in seconds for the process to terminate.
- @return a Future that will resolve when the process terminates with the exit code returned.
+ @return a Future that will resolve when the process info when launched.
  */
-- (FBFuture<NSNumber *> *)start:(pid_t *)processIdentifierOut timeout:(NSTimeInterval)timeout;
+- (FBFuture<FBXCTestProcessInfo *> *)startWithTimeout:(NSTimeInterval)timeout;
 
 #pragma mark Properties
 

@@ -11,7 +11,7 @@
 
 @implementation FBXCTestProcessInfo
 
-- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier exitCode:(int)exitCode
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier completion:(FBFuture<NSNumber *> *)completion;
 {
   self = [super init];
   if (!self) {
@@ -19,7 +19,7 @@
   }
 
   _processIdentifier = processIdentifier;
-  _exitCode = exitCode;
+  _completion = completion;
 
   return self;
 }

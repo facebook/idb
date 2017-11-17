@@ -24,9 +24,9 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Initializer.
 
  @param processIdentifier the process identifier.
- @param exitCode the exit code.
+ @param completion a future that resolves with the exit code when completed.
  */
-- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier exitCode:(int)exitCode;
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier completion:(FBFuture<NSNumber *> *)completion;
 
 /**
  The Process Idenfifer of the Launched Process.
@@ -34,9 +34,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) pid_t processIdentifier;
 
 /**
- The Exit Code of the process.
+ The Completion Future, the value is the exit code.
  */
-@property (nonatomic, assign, readonly) int exitCode;
+@property (nonatomic, assign, readonly) FBFuture<NSNumber *> *completion;
 
 @end
 
@@ -49,10 +49,9 @@ NS_ASSUME_NONNULL_BEGIN
  Starts the xctest process.
 
  @param process the process to execute.
- @param processIdentifierOut an outparam for the process identifier.
  @return an FBXCTestProcessInfo identifying the process.
  */
-- (FBFuture<FBXCTestProcessInfo *> *)startProcess:(FBXCTestProcess *)process processIdentifierOut:(pid_t *)processIdentifierOut;
+- (FBFuture<FBXCTestProcessInfo *> *)startProcess:(FBXCTestProcess *)process;
 
 /**
  The path to the Shim dylib used for reporting test output.

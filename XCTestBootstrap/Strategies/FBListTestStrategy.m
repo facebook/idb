@@ -123,13 +123,17 @@
     executor:self.executor];
 
   // Start the process.
-  pid_t processIdentifier = 0;
-  FBFuture<NSNumber *> *future = [process start:&processIdentifier timeout:self.configuration.testTimeout];
-  if (future.error) {
-    return [FBFuture futureWithError:future.error];
-  }
+  return [[process
+    startWithTimeout:self.configuration.testTimeout]
+    onQueue:self.executor.workQueue fmap:^(FBXCTestProcessInfo *processInfo) {
+      return [FBListTestStrategy launchedProcess:processInfo otestQueryOutputPath:otestQueryOutputPath queue:self.executor.workQueue];
+    }];
+}
 
-  // Create the Consumer
+#pragma mark Private
+
++ (FBFuture<NSArray<NSString *> *> *)launchedProcess:(FBXCTestProcessInfo *)processInfo otestQueryOutputPath:(NSString *)otestQueryOutputPath queue:(dispatch_queue_t)queue
+{
   NSError *error = nil;
   FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
   FBFileReader *reader = [FBFileReader readerWithFilePath:otestQueryOutputPath consumer:consumer error:&error];
@@ -138,12 +142,12 @@
   }
   return [[[[reader
     startReading]
-    fmapReplace:future]
-    onQueue:self.executor.workQueue chain:^FBFuture *(FBFuture *replacement) {
+    fmapReplace:processInfo.completion]
+    onQueue:queue chain:^(FBFuture *replacement) {
       // Close the File Handle
       return [[reader stopReading] fmapReplace:replacement];
     }]
-    onQueue:self.executor.workQueue fmap:^(NSNumber *_) {
+    onQueue:queue fmap:^(NSNumber *_) {
       NSMutableArray<NSString *> *testNames = [NSMutableArray array];
       for (NSString *line in consumer.lines) {
         if (line.length == 0) {
@@ -159,7 +163,7 @@
         [testNames addObject:line];
       }
       return [FBFuture futureWithResult:[testNames copy]];
-    }];
+  }];
 }
 
 - (id<FBXCTestRunner>)wrapInReporter:(id<FBXCTestReporter>)reporter

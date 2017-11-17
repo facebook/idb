@@ -117,18 +117,24 @@
   [self.logger logFormat:@"Mirroring shim-fifo output to %@", mirrorPath];
 
   // Construct and start the process
-  pid_t pid = 0;
-  FBFuture<NSNumber *> *future = [[self
+  return [[[self
     testProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutReader:stdOutReader stdErrReader:stdErrReader]
-    start:&pid timeout:self.configuration.testTimeout];
-  if (future.error) {
-    return [XCTestBootstrapError failFutureWithError:future.error];
-  }
+    startWithTimeout:self.configuration.testTimeout]
+    onQueue:self.executor.workQueue fmap:^(FBXCTestProcessInfo *processInfo) {
+      return [self completeLaunchedProcess:processInfo otestShimOutputPath:otestShimOutputPath otestShimLineReader:otestShimLineReader];
+    }];
+}
+
+#pragma mark Private
+
+- (FBFuture<NSNull *> *)completeLaunchedProcess:(FBXCTestProcessInfo *)processInfo otestShimOutputPath:(NSString *)otestShimOutputPath otestShimLineReader:(id<FBFileConsumer>)otestShimLineReader
+{
+  id<FBLogicXCTestReporter> reporter = self.reporter;
   if (self.configuration.waitForDebugger) {
-    [reporter processWaitingForDebuggerWithProcessIdentifier:pid];
+    [reporter processWaitingForDebuggerWithProcessIdentifier:processInfo.processIdentifier];
     // If wait_for_debugger is passed, the child process receives SIGSTOP after immediately launch.
     // We wait until it receives SIGCONT from an attached debugger.
-    waitid(P_PID, (id_t)pid, NULL, WCONTINUED);
+    waitid(P_PID, (id_t)processInfo.processIdentifier, NULL, WCONTINUED);
     [reporter debuggerAttached];
   }
 
@@ -136,7 +142,7 @@
   NSError *error = nil;
   FBFileReader *otestShimReader = [FBFileReader readerWithFilePath:otestShimOutputPath consumer:otestShimLineReader error:&error];
   if (!otestShimReader) {
-    [future cancel];
+    [processInfo.completion cancel];
     return [[[FBXCTestError
       describeFormat:@"Failed to open fifo for reading: %@", otestShimOutputPath]
       causedBy:error]
@@ -145,7 +151,7 @@
 
   return [[[[otestShimReader
     startReading]
-    fmapReplace:future]
+    fmapReplace:processInfo.completion]
     onQueue:self.executor.workQueue fmap:^(id _) {
       return [otestShimReader stopReading];
     }]
@@ -154,8 +160,6 @@
       return NSNull.null;
     }];
 }
-
-#pragma mark Private
 
 - (FBXCTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader
 {

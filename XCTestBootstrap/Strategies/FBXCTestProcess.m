@@ -53,30 +53,32 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 
 #pragma mark Public
 
-- (FBFuture<NSNumber *> *)start:(pid_t *)processIdentifierOut timeout:(NSTimeInterval)timeout
+- (FBFuture<NSNumber *> *)startWithTimeout:(NSTimeInterval)timeout
 {
-  // Construct and launch the task.
-  NSDate *startDate = [NSDate.date dateByAddingTimeInterval:CrashLogStartDateFuzz];
-  pid_t processIdentifier = 0;
-
-  FBFuture<NSNull *> *base = [[self.executor
-    startProcess:self processIdentifierOut:&processIdentifier]
-    onQueue:self.executor.workQueue fmap:^(FBXCTestProcessInfo *result) {
-      NSError *exitError = [FBXCTestProcess abnormalExitErrorFor:result.processIdentifier exitCode:result.exitCode startDate:startDate];
-      if (exitError) {
-        return [FBFuture futureWithError:exitError];
-      }
-      return [FBFuture futureWithResult:@(result.processIdentifier)];
+  return [[self.executor
+    startProcess:self]
+    onQueue:self.executor.workQueue map:^(FBXCTestProcessInfo *processInfo) {
+      FBFuture<NSNumber *> *completion = [self decorateLaunchedWithErrorHandlingProcess:processInfo timeout:timeout];
+      return [[FBXCTestProcessInfo alloc] initWithProcessIdentifier:processInfo.processIdentifier completion:completion];
     }];
-  FBFuture<NSNumber *> *timeoutFuture = [FBXCTestProcess timeoutFuture:timeout queue:self.executor.workQueue processIdentifier:processIdentifier];
-
-  if (processIdentifierOut) {
-    *processIdentifierOut = processIdentifier;
-  }
-  return [FBFuture race:@[base, timeoutFuture]];
 }
 
 #pragma mark Private
+
+- (FBFuture<NSNumber *> *)decorateLaunchedWithErrorHandlingProcess:(FBXCTestProcessInfo *)processInfo timeout:(NSTimeInterval)timeout
+{
+  NSDate *startDate = [NSDate.date dateByAddingTimeInterval:CrashLogStartDateFuzz];
+  FBFuture<NSNumber *> *completionFuture = [processInfo.completion
+    onQueue:self.executor.workQueue fmap:^(NSNumber *exitCode) {
+      NSError *exitError = [FBXCTestProcess abnormalExitErrorFor:processInfo.processIdentifier exitCode:exitCode.intValue startDate:startDate];
+      if (exitError) {
+        return [FBFuture futureWithError:exitError];
+      }
+      return [FBFuture futureWithResult:exitCode];
+    }];
+  FBFuture<NSNumber *> *timeoutFuture = [FBXCTestProcess timeoutFuture:timeout queue:self.executor.workQueue processIdentifier:processInfo.processIdentifier];
+  return [FBFuture race:@[completionFuture, timeoutFuture]];
+}
 
 + (FBFuture<NSNumber *> *)timeoutFuture:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue processIdentifier:(pid_t)processIdentifier
 {
