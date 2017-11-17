@@ -70,12 +70,9 @@
   dispatch_queue_t workQueue = simulator.workQueue;
 
   // Killing is a pre-requesite for deleting/erasing
-  return [[[[[self.set
+  return [[[[self.set
     killSimulator:simulator]
     rephraseFailure:@"Failed to Free Device in Killing Device"]
-    onQueue:workQueue fmap:^(id _) {
-      return [self.set killSimulator:simulator];
-    }]
     onQueue:workQueue fmap:^(id _) {
       BOOL deleteOnFree = (options & FBSimulatorAllocationOptionsDeleteOnFree) == FBSimulatorAllocationOptionsDeleteOnFree;
       if (deleteOnFree) {
