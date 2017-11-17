@@ -43,31 +43,38 @@
 
 #pragma mark Public
 
-- (BOOL)verifySimulatorIsBooted:(NSError **)error
+- (FBFuture<NSNull *> *)verifySimulatorIsBooted
 {
+  FBSimulator *simulator = self.simulator;
   NSArray<NSString *> *requiredServiceNames = self.requiredLaunchdServicesToVerifyBooted;
-  __block NSDictionary<id, NSString *> *processIdentifiers = @{};
-  BOOL didStartAllRequiredServices = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
-    NSDictionary<NSString *, id> *services = [[self.simulator listServices] await:nil];
-    if (!services) {
-      return NO;
-    }
-    processIdentifiers = [NSDictionary dictionaryWithObjects:requiredServiceNames forKeys:[services objectsForKeys:requiredServiceNames notFoundMarker:NSNull.null]];
-    if (processIdentifiers[NSNull.null]) {
-      return NO;
-    }
-      return YES;
-  }];
-  if (!didStartAllRequiredServices) {
-    return [[[FBSimulatorError
-      describeFormat:@"Timed out waiting for service %@ to start", processIdentifiers[NSNull.null]]
-      inSimulator:self.simulator]
-      failBool:error];
-  }
-  return YES;
+
+  return [[simulator
+    resolveState:FBSimulatorStateBooted]
+    onQueue:simulator.workQueue fmap:^FBFuture *(NSNull *_) {
+      return [FBFuture onQueue:simulator.workQueue resolveUntil:^{
+        return [FBSimulatorBootVerificationStrategy onSimulator:simulator verifyServicesAreRunningNow:requiredServiceNames];
+      }];
+    }];
 }
 
 #pragma mark Private
+
++ (FBFuture<NSNull *> *)onSimulator:(FBSimulator *)simulator verifyServicesAreRunningNow:(NSArray<NSString *> *)requiredServiceNames
+{
+  return [[simulator
+    listServices]
+    onQueue:simulator.asyncQueue fmap:^(NSDictionary<NSString *, id> *services) {
+      NSDictionary<id, NSString *> *processIdentifiers = [NSDictionary
+        dictionaryWithObjects:requiredServiceNames
+        forKeys:[services objectsForKeys:requiredServiceNames notFoundMarker:NSNull.null]];
+      if (processIdentifiers[NSNull.null]) {
+        return [[FBSimulatorError
+          describeFormat:@"Service %@ has not started", processIdentifiers[NSNull.null]]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
+}
 
 /*
  A Set of launchd_sim service names that are used to determine whether relevant System daemons are available after booting.

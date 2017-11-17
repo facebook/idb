@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
@@ -35,14 +37,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Verifies that the Simulator is booted.
- This can be called as soon as a Simulator enters the 'Booted' state.
  It can also be called on a Simulator after it has been booted for some time
  as a means of verifying the Simulator is in a known-good state.
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return a Future that resolves when the Simulator is in a known-good state.
  */
-- (BOOL)verifySimulatorIsBooted:(NSError **)error;
+- (FBFuture<NSNull *> *)verifySimulatorIsBooted;
 
 @end
 

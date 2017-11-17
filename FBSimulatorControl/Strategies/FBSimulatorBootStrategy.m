@@ -642,7 +642,8 @@
   }
 
   // Now wait for the services.
-  if (![[FBSimulatorBootVerificationStrategy strategyWithSimulator:self.simulator] verifySimulatorIsBooted:error]) {
+  FBFuture<NSNull *> *servicesAreBooted = [[FBSimulatorBootVerificationStrategy strategyWithSimulator:self.simulator] verifySimulatorIsBooted];
+  if (![servicesAreBooted awaitWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout error:error]) {
     return nil;
   }
   return launchdProcess;
