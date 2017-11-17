@@ -75,30 +75,12 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark States
 
 /**
- Synchronously waits on the provided state.
+ Asynchronously waits on the provided state.
 
  @param state the state to wait on
- @return YES if the Simulator transitioned to the given state with the default timeout, NO otherwise
+ @return A future that resolves when it has transitioned to the given state.
  */
-- (BOOL)waitOnState:(FBSimulatorState)state;
-
-/**
- Synchronously waits on the provided state.
-
- @param state the state to wait on
- @param timeout timeout
- @return YES if the Simulator transitioned to the given state with the timeout, NO otherwise
- */
-- (BOOL)waitOnState:(FBSimulatorState)state timeout:(NSTimeInterval)timeout;
-
-/**
- A Synchronous wait, with a default timeout, producing a meaningful error message.
-
- @param state the state to wait on
- @param error an error out for a timeout error if one occurred
- @return YES if the Simulator transitioned to the given state with the timeout, NO otherwise
- */
-- (BOOL)waitOnState:(FBSimulatorState)state error:(NSError **)error;
+- (FBFuture<NSNull *> *)resolveState:(FBSimulatorState)state;
 
 #pragma mark Focus
 

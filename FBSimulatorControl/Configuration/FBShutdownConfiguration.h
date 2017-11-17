@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 extern FBiOSTargetActionType const FBiOSTargetActionTypeListShutdown;
 
 /**
- The Target Action Class for the Listing of Installed Applications.
+ The Target Action Class for Shutting down a Simulator.
  */
 @interface FBShutdownConfiguration : FBiOSTargetActionSimple <FBiOSTargetFuture>
 

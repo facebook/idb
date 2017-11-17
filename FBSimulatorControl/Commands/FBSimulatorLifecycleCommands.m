@@ -93,28 +93,12 @@
 
 #pragma mark States
 
-- (BOOL)waitOnState:(FBSimulatorState)state
-{
-  return [self waitOnState:state timeout:FBControlCoreGlobalConfiguration.regularTimeout];
-}
-
-- (BOOL)waitOnState:(FBSimulatorState)state timeout:(NSTimeInterval)timeout
+- (FBFuture<NSNull *> *)resolveState:(FBSimulatorState)state
 {
   FBSimulator *simulator = self.simulator;
-  return [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^ BOOL {
+  return [[FBFuture onQueue:simulator.workQueue resolveWhen:^ BOOL {
     return simulator.state == state;
-  }];
-}
-
-- (BOOL)waitOnState:(FBSimulatorState)state error:(NSError **)error
-{
-  if (![self waitOnState:state]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Simulator was not in expected %@ state, got %@", FBSimulatorStateStringFromState(self.simulator.state), self.simulator.stateString]
-      inSimulator:self.simulator]
-      failBool:error];
-  }
-  return YES;
+  }] mapReplace:NSNull.null];
 }
 
 #pragma mark Focus

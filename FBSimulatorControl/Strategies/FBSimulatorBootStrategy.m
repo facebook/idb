@@ -501,7 +501,7 @@
   }
 
   // Confirm that the Simulator is Booted.
-  if (![self.simulator waitOnState:FBSimulatorStateBooted]) {
+  if (![self.simulator resolveState:FBSimulatorStateBooted]) {
     return [[[FBSimulatorError
       describeFormat:@"Timed out waiting for device to be Booted, got %@", self.simulator.device.stateString]
       inSimulator:self.simulator]
