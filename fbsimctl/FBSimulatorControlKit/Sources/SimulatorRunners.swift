@@ -80,13 +80,6 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner.simple(reporter, .delete, simulator.subject) {
         try simulator.set!.delete(simulator)
       }
-    case .erase:
-      return FutureRunner(
-        reporter,
-        .erase,
-        simulator.subject,
-        simulator.erase()
-      )
     case .focus:
       return iOSTargetRunner.simple(reporter, .focus, simulator.subject) {
         try simulator.focus()

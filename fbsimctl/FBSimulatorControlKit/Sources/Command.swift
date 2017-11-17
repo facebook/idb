@@ -79,7 +79,6 @@ public enum Action {
   case coreFuture(FBiOSTargetFuture)
   case create(CreationSpecification)
   case delete
-  case erase
   case focus
   case keyboardOverride
   case list
@@ -110,6 +109,10 @@ public enum Action {
   static func diagnose(_ query: FBDiagnosticQuery) -> Action {
     return self.coreFuture(query)
   }
+
+  static var erase: Action { get {
+    return self.coreFuture(FBSimulatorEraseConfiguration())
+  }}
 
   static func hid(_ event: FBSimulatorHIDEvent) -> Action {
     return self.coreFuture(event)
@@ -325,8 +328,6 @@ public func == (left: Action, right: Action) -> Bool {
     return leftSpecification == rightSpecification
   case (.delete, .delete):
     return true
-  case (.erase, .erase):
-    return true
   case (.focus, .focus):
     return true
   case (.keyboardOverride, .keyboardOverride):
@@ -375,8 +376,6 @@ extension Action {
       return (.create, nil)
     case .delete:
       return (.delete, nil)
-    case .erase:
-      return (.erase, nil)
     case .focus:
       return (.focus, nil)
     case .keyboardOverride:
