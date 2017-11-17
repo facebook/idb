@@ -136,7 +136,7 @@
 
 #pragma mark Creation
 
-- (nullable FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
+- (FBFuture<FBSimulator *> *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration
 {
   FBDeviceModel model = configuration.device.model;
 
@@ -148,7 +148,7 @@
       describeFormat:@"Could not obtain a DeviceType for Configuration %@", configuration]
       causedBy:innerError]
       logger:self.logger]
-      fail:error];
+      failFuture];
   }
   SimRuntime *runtime = [configuration obtainRuntimeWithError:&innerError];
   if (!runtime) {
@@ -156,7 +156,7 @@
       describeFormat:@"Could not obtain a SimRuntime for Configuration %@", configuration]
       causedBy:innerError]
       logger:self.logger]
-      fail:error];
+      failFuture];
   }
 
   // First, create the device.
@@ -167,7 +167,7 @@
       describeFormat:@"Failed to create a simulator with the name %@, runtime %@, type %@", model, runtime, deviceType]
       causedBy:innerError]
       logger:self.logger]
-      fail:error];
+      failFuture];
   }
 
   // The SimDevice should now be in the DeviceSet and thus in the collection of Simulators.
@@ -176,23 +176,18 @@
     return [[[FBSimulatorError
       describeFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString]
       logger:self.logger]
-      fail:error];
+      failFuture];
   }
   simulator.configuration = configuration;
   [self.logger.debug logFormat:@"Created Simulator %@ for configuration %@", simulator.udid, configuration];
 
   // This step ensures that the Simulator is in a known-shutdown state after creation.
   // This prevents racing with any 'booting' interaction that occurs immediately after allocation.
-  if (![[[FBSimulatorShutdownStrategy strategyWithSimulator:simulator] shutdown] await:&innerError]) {
-    return [[[[[FBSimulatorError
-      describeFormat:@"Could not get newly-created simulator into a shutdown state"]
-      inSimulator:simulator]
-      causedBy:innerError]
-      logger:self.logger]
-      fail:error];
-  }
-
-  return simulator;
+  return [[[[FBSimulatorShutdownStrategy
+    strategyWithSimulator:simulator]
+    shutdown]
+    rephraseFailure:@"Could not get newly-created simulator into a shutdown state"]
+    mapReplace:simulator];
 }
 
 - (NSArray<FBSimulatorConfiguration *> *)configurationsForAbsentDefaultSimulators

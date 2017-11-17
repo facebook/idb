@@ -58,10 +58,9 @@ NS_ASSUME_NONNULL_BEGIN
  Creates and returns a FBSimulator fbased on a configuration.
 
  @param configuration the Configuration of the Device to Allocate. Must not be nil.
- @param error an error out for any error that occured.
- @return a FBSimulator if one could be allocated with the provided options, nil otherwise
+ @return a Future wrapping a created FBSimulator if one could be allocated with the provided options.
  */
-- (nullable FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error;
+- (FBFuture<FBSimulator *> *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration;
 
 /**
  Finds and creates the Configurations for the missing 'Default Simulators' in the reciever.

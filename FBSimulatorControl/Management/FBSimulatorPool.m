@@ -169,7 +169,7 @@
       logger:self.logger]
       fail:error];
   }
-  return [self.set createSimulatorWithConfiguration:configuration error:error];
+  return [[self.set createSimulatorWithConfiguration:configuration] await:error];
 }
 
 - (FBSimulator *)findUnallocatedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration

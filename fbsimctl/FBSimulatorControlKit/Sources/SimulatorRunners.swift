@@ -28,7 +28,7 @@ struct SimulatorCreationRunner : Runner {
     do {
       for configuration in self.configurations {
         self.context.reporter.reportSimpleBridge(.create, .started, configuration)
-        let simulator = try self.context.simulatorControl.set.createSimulator(with: configuration)
+        let simulator = try self.context.simulatorControl.set.createSimulator(with: configuration).await()
         self.context.defaults.updateLastQuery(FBiOSTargetQuery.udids([simulator.udid]))
         self.context.reporter.reportSimpleBridge(.create, .ended, simulator)
       }
