@@ -183,7 +183,7 @@
 
   // This step ensures that the Simulator is in a known-shutdown state after creation.
   // This prevents racing with any 'booting' interaction that occurs immediately after allocation.
-  if (![[FBSimulatorShutdownStrategy strategyWithSimulator:simulator] shutdownWithError:&innerError]) {
+  if (![[[FBSimulatorShutdownStrategy strategyWithSimulator:simulator] shutdown] await:&innerError]) {
     return [[[[[FBSimulatorError
       describeFormat:@"Could not get newly-created simulator into a shutdown state"]
       inSimulator:simulator]

@@ -26,6 +26,8 @@
 
 @implementation FBSimulatorShutdownStrategy
 
+#pragma mark Initializers
+
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator
 {
   return [[self alloc] initWithSimulator:simulator];
@@ -42,7 +44,9 @@
   return self;
 }
 
-- (BOOL)shutdownWithError:(NSError **)error
+#pragma mark Public Methdos
+
+- (FBFuture<NSNull *> *)shutdown
 {
   FBSimulator *simulator = self.simulator;
   id<FBControlCoreLogger> logger = self.simulator.logger;
@@ -54,72 +58,24 @@
       describe:@"Failed to prepare simulator for usage as it is in an unknown state"]
       inSimulator:simulator]
       logger:logger]
-      failBool:error];
+      failFuture];
   }
 
   // Calling shutdown when already shutdown should be avoided (if detected).
   if (simulator.state == FBSimulatorStateShutdown) {
     [logger.debug logFormat:@"Shutdown of %@ succeeded as it is already shutdown", simulator.udid];
-    return YES;
+    return [FBFuture futureWithResult:NSNull.null];
   }
 
   // Xcode 7 has a 'Creating' step that we should wait on before confirming the simulator is ready.
   // On many occasions this is the case as we wait for the Simulator to be usable.
-  NSError *innerError = nil;
   if (simulator.state == FBSimulatorStateCreating) {
-    // Await the Simulator to be shutdown.
-    [logger.debug logFormat:@"Simulator %@ is Creating, waiting for state to change to Shutdown", simulator.udid];
-    if (![[simulator resolveState:FBSimulatorStateShutdown] await:&innerError]) {
-
-      // Erase using the SimDevice directly to prevent infinite recursion.
-      [logger.debug logFormat:@"Simulator %@ is stuck in Creating: erasing now", simulator.udid];
-      if (![simulator.device eraseContentsAndSettingsWithError:&innerError]) {
-        return [[[[[FBSimulatorError
-          describe:@"Failed trying to prepare simulator for usage by erasing a stuck 'Creating' simulator %@"]
-          causedBy:innerError]
-          inSimulator:simulator]
-          logger:logger]
-          failBool:error];
-      }
-
-      // If a device has been erased, we should wait for it to actually be shutdown. Ff it can't be, fail
-      if (![[simulator resolveState:FBSimulatorStateShutdown] await:&innerError]) {
-        return [[[[[FBSimulatorError
-          describe:@"Failed trying to wait for a 'Creating' simulator to be shutdown after being erased"]
-          causedBy:innerError]
-          inSimulator:simulator]
-          logger:logger]
-          failBool:error];
-      }
-    }
-
-    [logger.debug logFormat:@"Simulator %@ has transitioned from Creating to Shutdown", simulator.udid];
-    return YES;
+    return [FBSimulatorShutdownStrategy transitionCreatingToShutdown:simulator];
   }
 
   // The error code for 'Unable to shutdown device in current state: Shutdown'
   // can be safely ignored since these codes confirm that the simulator is already shutdown.
-  [logger.debug logFormat:@"Shutting down Simulator %@", simulator.udid];
-  if (![simulator.device shutdownWithError:&innerError] && innerError.code != FBSimulatorShutdownStrategy.errorCodeForShutdownWhenShuttingDown) {
-    return [[[[[FBSimulatorError
-      describe:@"Simulator could not be shutdown"]
-      causedBy:innerError]
-      inSimulator:simulator]
-      logger:logger]
-      failBool:error];
-  }
-
-  [logger.debug logFormat:@"Confirming Simulator %@ is shutdown", simulator.udid];
-  if (![[simulator resolveState:FBSimulatorStateShutdown] await:&innerError]) {
-    return [[[[[FBSimulatorError
-      describe:@"Failed to wait for simulator preparation to shutdown device"]
-      causedBy:innerError]
-      inSimulator:simulator]
-      logger:logger]
-      failBool:error];
-  }
-  [logger.debug logFormat:@"Simulator %@ is now shutdown", simulator.udid];
-  return YES;
+  return [FBSimulatorShutdownStrategy shutdownSimulator:simulator];
 }
 
 + (NSInteger)errorCodeForShutdownWhenShuttingDown
@@ -131,6 +87,67 @@
     return 159;
   }
   return 146;
+}
+
++ (FBFuture<NSNull *> *)shutdownSimulator:(FBSimulator *)simulator
+{
+  FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
+  id<FBControlCoreLogger> logger = simulator.logger;
+  NSInteger errorCodeForShutdownWhenShuttingDown = FBSimulatorShutdownStrategy.errorCodeForShutdownWhenShuttingDown;
+
+  [logger.debug logFormat:@"Shutting down Simulator %@", simulator.udid];
+  [simulator.device
+    shutdownAsyncWithCompletionQueue:simulator.asyncQueue completionHandler:^(NSError *error){
+      if (error && error.code == errorCodeForShutdownWhenShuttingDown) {
+        [logger logFormat:@"Got Error Code %lu from shutdown, simulator is already shutdown", error.code];
+        [future resolveWithResult:NSNull.null];
+      } else if (error) {
+        [future resolveWithError:error];
+      } else {
+        [future resolveWithResult:NSNull.null];
+      }
+    }];
+  return [future
+    onQueue:simulator.workQueue fmap:^(id _){
+      return [simulator resolveState:FBSimulatorStateShutdown];
+    }];
+}
+
++ (FBFuture<NSNull *> *)transitionCreatingToShutdown:(FBSimulator *)simulator
+{
+  return [[[simulator
+    resolveState:FBSimulatorStateShutdown]
+    timedOutIn:FBControlCoreGlobalConfiguration.regularTimeout]
+    onQueue:simulator.workQueue chain:^FBFuture<NSNull *> *(FBFuture *future) {
+      if (future.result) {
+        return [FBFuture futureWithResult:NSNull.null];
+      }
+      return [FBSimulatorShutdownStrategy eraseSimulator:simulator];
+    }];
+}
+
++ (FBFuture<NSNull *> *)eraseSimulator:(FBSimulator *)simulator
+{
+  FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
+  id<FBControlCoreLogger> logger = simulator.logger;
+
+  [logger.debug logFormat:@"Erasing Simulator %@", simulator.udid];
+  [simulator.device
+    eraseContentsAndSettingsAsyncWithCompletionQueue:simulator.asyncQueue completionHandler:^(NSError *error) {
+      if (error) {
+        [future resolveWithError:error];
+      } else {
+        [future resolveWithResult:NSNull.null];
+      }
+    }];
+
+  return [future
+    onQueue:simulator.workQueue fmap:^(id _) {
+      return [[[simulator
+        resolveState:FBSimulatorStateShutdown]
+        timedOutIn:FBControlCoreGlobalConfiguration.regularTimeout]
+        rephraseFailure:@"Timed out waiting for Simulator to transition from Creating -> Shutdown"];
+    }];
 }
 
 @end

@@ -139,7 +139,7 @@
 - (void)restoreContentsAndSettingsAsyncFromDevice:(id)arg1 completionQueue:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;
 - (BOOL)_onBootstrapQueue_eraseContentsAndSettingsUsingInitialDataPath:(id)arg1 error:(id *)arg2;
 - (BOOL)eraseContentsAndSettingsWithError:(id *)arg1;
-- (void)eraseContentsAndSettingsAsyncWithCompletionQueue:(id)arg1 completionHandler:(CDUnknownBlockType)arg2;
+- (void)eraseContentsAndSettingsAsyncWithCompletionQueue:(id)arg1 completionHandler:(void (^)(NSError *))arg2;
 - (BOOL)_onBootstrapQueue_upgradeToRuntime:(id)arg1 error:(id *)arg2;
 - (BOOL)upgradeToRuntime:(id)arg1 error:(id *)arg2;
 - (void)upgradeAsyncToRuntime:(id)arg1 completionQueue:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;
@@ -149,7 +149,7 @@
 - (BOOL)_onBootstrapQueue_shutdownIOAndNotifyWithError:(id *)arg1;
 - (BOOL)_onBootstrapQueue_shutdownWithError:(id *)arg1;
 - (BOOL)shutdownWithError:(id *)arg1;
-- (void)shutdownAsyncWithCompletionQueue:(id)arg1 completionHandler:(CDUnknownBlockType)arg2;
+- (void)shutdownAsyncWithCompletionQueue:(id)arg1 completionHandler:(void(^)(NSError *))arg2;
 - (BOOL)_sendBridgeRequest:(CDUnknownBlockType)arg1 error:(id *)arg2;
 - (void)_onBootMonitorQueue_bootStatusTimerFired;
 - (BOOL)_onBootstrapQueue_bootWithOptions:(id)arg1 deathMonitorPort:(id)arg2 deathTriggerPort:(id)arg3 error:(id *)arg4;

@@ -104,6 +104,7 @@
     // Get some preconditions
     NSError *innerError = nil;
     FBProcessInfo *launchdProcess = simulator.launchdProcess ?: [self.processFetcher launchdProcessForSimDevice:simulator.device];
+    dispatch_queue_t workQueue = simulator.workQueue;
 
     // The Simulator Connection for this process should be tidied up first.
     if (![simulator disconnectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout logger:self.logger error:&innerError]) {
@@ -136,17 +137,15 @@
     // Shutdown will:
     // 1) Wait for a Simulator launched via Simulator.app to be in a consistent 'Shutdown' state.
     // 2) Shutdown a SimDevice that has been launched directly via. `-[SimDevice bootWithOptions:error]`.
-    if (![[FBSimulatorShutdownStrategy strategyWithSimulator:simulator] shutdownWithError:&innerError]) {
-      return [[[[[FBSimulatorError
-        describe:@"Could not shut down simulator after termination"]
-        inSimulator:simulator]
-        causedBy:innerError]
-        logger:self.logger]
-        failFuture];
-    }
-    if (launchdProcess) {
-      [simulator.eventSink simulatorDidTerminate:launchdProcess expected:YES];
-    }
+    return [[[FBSimulatorShutdownStrategy
+      strategyWithSimulator:simulator]
+      shutdown]
+      onQueue:workQueue map:^(id _) {
+        if (launchdProcess) {
+          [simulator.eventSink simulatorDidTerminate:launchdProcess expected:YES];
+        }
+        return simulator;
+      }];
   }
   return [FBFuture futureWithResult:simulators];
 }
