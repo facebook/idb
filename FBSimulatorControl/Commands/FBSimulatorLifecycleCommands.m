@@ -75,15 +75,19 @@
 
 #pragma mark Erase
 
-- (BOOL)freeFromPoolWithError:(NSError **)error
+- (FBFuture<NSNull *> *)freeFromPool
 {
   if (!self.simulator.pool) {
-    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot free from pool as there is no pool associated" errorOut:error];
+    return [[FBSimulatorError
+      describe:@"Cannot free from pool as there is no pool associated"]
+      failFuture];
   }
   if (!self.simulator.isAllocated) {
-    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot free from pool as this Simulator has not been allocated" errorOut:error];
+    return [[FBSimulatorError
+      describe:@"Cannot free from pool as this Simulator has not been allocated"]
+      failFuture];
   }
-  return [self.simulator.pool freeSimulator:self.simulator error:error];
+  return [self.simulator.pool freeSimulator:self.simulator];
 }
 
 - (FBFuture<NSNull *> *)erase

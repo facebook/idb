@@ -51,65 +51,56 @@
 
 #pragma mark - Public Methods
 
-- (nullable FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
+- (FBFuture<FBSimulator *> *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options
 {
-  NSError *innerError = nil;
-  FBSimulator *simulator = [self assertObtainsSimulatorWithConfiguration:configuration options:options error:&innerError];
-  if (!simulator) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
-  }
-
-  if (![self prepareSimulatorForUsage:simulator configuration:configuration options:options error:&innerError]) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
-  }
-
-  [self pushAllocation:simulator options:options];
-  return simulator;
+  return [[[self
+    obtainSimulatorWithConfiguration:configuration options:options]
+    onQueue:dispatch_get_main_queue() fmap:^(FBSimulator *simulator) {
+      return [self prepareSimulatorForUsage:simulator configuration:configuration options:options];
+    }]
+    onQueue:dispatch_get_main_queue() map:^(FBSimulator *simulator) {
+      [self pushAllocation:simulator options:options];
+      return simulator;
+    }];
 }
 
-- (BOOL)freeSimulator:(FBSimulator *)simulator error:(NSError **)error
+- (FBFuture<NSNull *> *)freeSimulator:(FBSimulator *)simulator
 {
   FBSimulatorAllocationOptions options = [self popAllocation:simulator];
+  dispatch_queue_t workQueue = simulator.workQueue;
 
   // Killing is a pre-requesite for deleting/erasing
-  NSError *innerError = nil;
-  if (![[self.set killSimulator:simulator] await:&innerError]) {
-    return [[[[[FBSimulatorError
-      describe:@"Failed to Free Device in Killing Device"]
-      causedBy:innerError]
-      inSimulator:simulator]
-      logger:self.logger]
-      failBool:error];
-  }
-
-  // When Deleting on Free, there's no point in erasing first, so return early.
-  BOOL deleteOnFree = (options & FBSimulatorAllocationOptionsDeleteOnFree) == FBSimulatorAllocationOptionsDeleteOnFree;
-  if (deleteOnFree) {
-    if (![[self.set deleteSimulator:simulator] await:&innerError]) {
-      return [[[[[FBSimulatorError
-        describe:@"Failed to Free Device in Deleting Device"]
-        causedBy:innerError]
-        inSimulator:simulator]
-        logger:self.logger]
-        failBool:error];
-    }
-    return YES;
-  }
-
-  BOOL eraseOnFree = (options & FBSimulatorAllocationOptionsEraseOnFree) == FBSimulatorAllocationOptionsEraseOnFree;
-  if (eraseOnFree) {
-    if (![[simulator erase] await:&innerError]) {
-      return [[[[[FBSimulatorError
-        describe:@"Failed to Free Device in Erasing Device"]
-        causedBy:innerError]
-        inSimulator:simulator]
-        logger:self.logger]
-        failBool:error];
-    }
-    return YES;
-  }
-
-  return YES;
+  return [[[[[self.set
+    killSimulator:simulator]
+    rephraseFailure:@"Failed to Free Device in Killing Device"]
+    onQueue:workQueue fmap:^(id _) {
+      return [self.set killSimulator:simulator];
+    }]
+    onQueue:workQueue fmap:^(id _) {
+      BOOL deleteOnFree = (options & FBSimulatorAllocationOptionsDeleteOnFree) == FBSimulatorAllocationOptionsDeleteOnFree;
+      if (deleteOnFree) {
+        return [[[self.set
+          deleteSimulator:simulator]
+          rephraseFailure:@"Failed to Free Device in Deleting Device"]
+          mapReplace:@YES];
+      }
+      return [FBFuture futureWithResult:@NO];
+    }]
+    onQueue:workQueue fmap:^(NSNumber *didDelete) {
+      // Return-Early if we deleted, no point in erasing.
+      if (didDelete.boolValue) {
+        return [FBFuture futureWithResult:NSNull.null];
+      }
+      // Otherwise check we should delete, then do it.
+      BOOL eraseOnFree = (options & FBSimulatorAllocationOptionsEraseOnFree) == FBSimulatorAllocationOptionsEraseOnFree;
+      if (eraseOnFree) {
+        return [[simulator
+          erase]
+          rephraseFailure:@"Failed to Free Device in Erasing Device"];
+      }
+      // Otherwise do-nothing
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
 }
 
 - (BOOL)simulatorIsAllocated:(FBSimulator *)simulator
@@ -142,7 +133,7 @@
 
 #pragma mark - Private
 
-- (FBSimulator *)assertObtainsSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options error:(NSError **)error
+- (FBFuture<FBSimulator *> *)obtainSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options
 {
   NSError *innerError = nil;
   if (![configuration checkRuntimeRequirementsReturningError:&innerError]) {
@@ -150,7 +141,7 @@
       describe:@"Current Runtime environment does not support Simulator Configuration"]
       causedBy:innerError]
       logger:self.logger]
-      fail:error];
+      failFuture];
   }
 
   BOOL reuse = (options & FBSimulatorAllocationOptionsReuse) == FBSimulatorAllocationOptionsReuse;
@@ -158,7 +149,7 @@
     FBSimulator *simulator = [self findUnallocatedSimulatorWithConfiguration:configuration];
     if (simulator) {
       [self.logger.debug logFormat:@"Found unallocated simulator %@ matching %@", simulator.udid, configuration];
-      return simulator;
+      return [FBFuture futureWithResult:simulator];
     }
   }
 
@@ -167,9 +158,9 @@
     return [[[FBSimulatorError
       describeFormat:@"Could not obtain a simulator as the options don't allow creation"]
       logger:self.logger]
-      fail:error];
+      failFuture];
   }
-  return [[self.set createSimulatorWithConfiguration:configuration] await:error];
+  return [self.set createSimulatorWithConfiguration:configuration];
 }
 
 - (FBSimulator *)findUnallocatedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration
@@ -181,10 +172,9 @@
   return [[self.set.allSimulators filteredArrayUsingPredicate:predicate] firstObject];
 }
 
-- (BOOL)prepareSimulatorForUsage:(FBSimulator *)simulator configuration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options error:(NSError **)error
+- (FBFuture<FBSimulator *> *)prepareSimulatorForUsage:(FBSimulator *)simulator configuration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options
 {
   [self.logger.debug logFormat:@"Preparing Simulator %@ for usage", simulator.udid];
-  NSError *innerError = nil;
 
   // In order to erase, the device *must* be shutdown first.
   BOOL shutdown = (options & FBSimulatorAllocationOptionsShutdownOnAllocate) == FBSimulatorAllocationOptionsShutdownOnAllocate;
@@ -192,36 +182,24 @@
   BOOL reuse = (options & FBSimulatorAllocationOptionsReuse) == FBSimulatorAllocationOptionsReuse;
 
   // Shutdown first.
-  if (shutdown || erase) {
-    [self.logger.debug logFormat:@"Shutting down Simulator %@", simulator.udid];
-    if (![[self.set killSimulator:simulator] await:&innerError]) {
-      return [[[[[FBSimulatorError
-        describe:@"Failed to kill a Simulator when allocating it"]
-        causedBy:innerError]
-        inSimulator:simulator]
-        logger:self.logger]
-        failBool:error];
-    }
-  }
+  FBFuture<NSNull *> *future = (shutdown || erase)
+    ? [[self.set killSimulator:simulator] rephraseFailure:@"Failed to kill a Simulator when allocating it"]
+    : [FBFuture futureWithResult:NSNull.null];
 
-  // Only erase if the simulator was allocated with reuse, otherwise it is a fresh Simulator that won't need erasing.
-  if (reuse && erase) {
-    [self.logger.debug logFormat:@"Erasing Simulator %@", simulator.udid];
-    if (![[simulator erase] await:&innerError]) {
-      return [[[[[FBSimulatorError
-        describe:@"Failed to erase a Simulator when allocating it"]
-        causedBy:innerError]
-        inSimulator:simulator]
-        logger:self.logger]
-        failBool:error];
-    }
-    [self.logger.debug logFormat:@"Shutting down Simulator after erase %@", simulator.udid];
-    if (![[[FBSimulatorShutdownStrategy strategyWithSimulator:simulator] shutdown] await:&innerError]) {
-      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-    }
-  }
-
-  return YES;
+  return [[future
+    onQueue:simulator.workQueue fmap:^(id _) {
+      if (reuse && erase) {
+        [self.logger.debug logFormat:@"Erasing Simulator %@", simulator.udid];
+        return [[[simulator
+          erase]
+          rephraseFailure:@"Failed to erase a Simulator when allocating it"]
+          onQueue:simulator.workQueue fmap:^(id __) {
+            return [simulator shutdown];
+          }];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
+    }]
+    mapReplace:simulator];
 }
 
 - (void)pushAllocation:(FBSimulator *)simulator options:(FBSimulatorAllocationOptions)options

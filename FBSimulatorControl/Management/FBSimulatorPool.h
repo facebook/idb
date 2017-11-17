@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
@@ -58,20 +60,18 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
 
  @param configuration the Configuration of the Device to Allocate. Must not be nil.
  @param options the options for the allocation/freeing of the Simulator.
- @param error an error out for any error that occured.
- @return a FBSimulator if one could be allocated with the provided options, nil otherwise
+ @return a Future that resovles with the FBSimulator if one could be allocated with the provided options.
  */
-- (nullable FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
+- (FBFuture<FBSimulator *> *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options;
 
 /**
  Marks a device that was previously returned from `allocateDeviceWithName:sdkVersion:error:` as free.
  Call this when multiple test runs, or simulators are to be re-used in a process.
 
  @param simulator the Simulator to Free.
- @param error an error out for any error that occured.
- @return YES if the freeing of the device was successful, NO otherwise.
+ @return A future that resolves when freed.
  */
-- (BOOL)freeSimulator:(FBSimulator *)simulator error:(NSError **)error;
+- (FBFuture<NSNull *> *)freeSimulator:(FBSimulator *)simulator;
 
 /**
  Marks a device that was previously returned from `allocateDeviceWithName:sdkVersion:error:` as free.

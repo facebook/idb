@@ -68,10 +68,10 @@
 - (nullable FBSimulator *)fetchSimulatorForLogicTest:(FBXCTestDestinationiPhoneSimulator *)destination error:(NSError **)error
 {
   FBSimulatorConfiguration *configuration = [FBXCTestSimulatorFetcher configurationForDestination:destination];
-  return [self.simulatorControl.pool
+  return [[self.simulatorControl.pool
     allocateSimulatorWithConfiguration:configuration
-    options:FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsDeleteOnFree
-    error:error];
+    options:FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsDeleteOnFree]
+    await:error];
 }
 
 - (nullable FBSimulator *)fetchSimulatorForApplicationTests:(FBXCTestDestinationiPhoneSimulator *)destination error:(NSError **)error
@@ -94,7 +94,7 @@
 
 - (BOOL)returnSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
-  if (![self.simulatorControl.pool freeSimulator:simulator error:error]) {
+  if (![[self.simulatorControl.pool freeSimulator:simulator] await:error]) {
     return NO;
   }
   return YES;

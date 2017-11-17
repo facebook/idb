@@ -24,7 +24,7 @@
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
-  [simulator.pool freeSimulator:simulator error:&error];
+  [[simulator.pool freeSimulator:simulator] await:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
   [self assertSimulatorShutdown:simulator];
@@ -90,7 +90,7 @@
     NSLog(@"Configuration %@ does not meet the runtime requirements with error %@", configuration, error);
     return nil;
   }
-  FBSimulator *simulator = [self.control.pool allocateSimulatorWithConfiguration:configuration options:self.allocationOptions error:&error];
+  FBSimulator *simulator = [[self.control.pool allocateSimulatorWithConfiguration:configuration options:self.allocationOptions] await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(simulator);
   return simulator;

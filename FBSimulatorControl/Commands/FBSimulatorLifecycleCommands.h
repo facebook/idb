@@ -56,12 +56,11 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Erase
 
 /**
- Calls `freeSimulator:error:` on this device's pool, with the reciever as the first argument.
+ Calls `freeSimulator` on this device's pool, with the reciever as the first argument.
 
- @param error an error out for any error that occured.
- @return YES if the freeing of the device was successful, NO otherwise.
+ @return A future that resolves when freed.
  */
-- (BOOL)freeFromPoolWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)freeFromPool;
 
 /**
  Erases the Simulator, with a descriptive message in the event of a failure.

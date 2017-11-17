@@ -121,7 +121,7 @@
 - (void)assertFreesSimulator:(FBSimulator *)simulator
 {
   NSError *error = nil;
-  BOOL success = [self.control.pool freeSimulator:simulator error:&error];
+  BOOL success = [[self.control.pool freeSimulator:simulator] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
   XCTAssertNil(simulator.pool);
