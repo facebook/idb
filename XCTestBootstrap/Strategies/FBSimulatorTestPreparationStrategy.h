@@ -11,6 +11,8 @@
 
 #import <XCTestBootstrap/FBXCTestPreparationStrategy.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBTestLaunchConfiguration;
 
 @protocol FBFileManager;
@@ -21,6 +23,8 @@
  It will copy the Test Bundle to a working directory and update with an appropriate xctestconfiguration.
  */
 @interface FBSimulatorTestPreparationStrategy : NSObject <FBXCTestPreparationStrategy>
+
+#pragma mark Initializers
 
 /**
  Creates and returns a Strategy strategyWith given paramenters.
@@ -37,3 +41,5 @@
                                            codesign:(id<FBCodesignProvider>)codesign;
 
 @end
+
+NS_ASSUME_NONNULL_END

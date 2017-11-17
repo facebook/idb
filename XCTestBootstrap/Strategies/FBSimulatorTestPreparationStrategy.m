@@ -29,6 +29,8 @@
 
 @implementation FBSimulatorTestPreparationStrategy
 
+#pragma mark Initializers
+
 + (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
                                    workingDirectory:(NSString *)workingDirectory
 {
@@ -64,9 +66,9 @@
   return self;
 }
 
-#pragma mark - FBTestPreparationStrategy protocol
+#pragma mark FBTestPreparationStrategy protocol
 
-- (FBTestRunnerConfiguration *)prepareTestWithIOSTarget:(id<FBiOSTarget>)iosTarget error:(NSError **)error
+- (FBFuture<FBTestRunnerConfiguration *> *)prepareTestWithIOSTarget:(id<FBiOSTarget>)iosTarget
 {
   NSAssert(iosTarget, @"iosTarget is needed to load bundles");
   NSAssert(self.workingDirectory, @"Working directory is needed to prepare bundles");
@@ -74,14 +76,21 @@
   NSAssert(self.testLaunchConfiguration.testBundlePath, @"Path to test bundle is needed to load bundles");
 
   // Check the bundle is codesigned (if required).
-  NSError *innerError;
-  if (FBXcodeConfiguration.isXcode8OrGreater && ![[self.codesign cdHashForBundleAtPath:self.testLaunchConfiguration.testBundlePath] await:&innerError]) {
-    return [[[XCTestBootstrapError
-      describeFormat:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", self.testLaunchConfiguration.testBundlePath]
-      causedBy:innerError]
-      fail:error];
+  if (FBXcodeConfiguration.isXcode8OrGreater) {
+    return [[[self.codesign
+      cdHashForBundleAtPath:self.testLaunchConfiguration.testBundlePath]
+      rephraseFailure:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", self.testLaunchConfiguration.testBundlePath]
+      onQueue:iosTarget.workQueue fmap:^(id _) {
+        return [self prepareTestWithIOSTargetAfterCheckingCodesignature:iosTarget];
+      }];
   }
+  return [self prepareTestWithIOSTargetAfterCheckingCodesignature:iosTarget];
+}
 
+#pragma mark Private
+
+- (FBFuture<FBTestRunnerConfiguration *> *)prepareTestWithIOSTargetAfterCheckingCodesignature:(id<FBiOSTarget>)iosTarget
+{
   NSString *osRuntimePath = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot/Developer"];
   NSString *developerLibraryPath = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library"];
 
@@ -96,6 +105,7 @@
   }
 
   // Prepare XCTest bundle
+  NSError *error;
   NSUUID *sessionIdentifier = [NSUUID UUID];
   FBTestBundle *testBundle = [[[[[[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
     withBundlePath:self.testLaunchConfiguration.testBundlePath]
@@ -107,21 +117,21 @@
     withTargetApplicationPath:self.testLaunchConfiguration.targetApplicationPath]
     withTargetApplicationBundleID:self.testLaunchConfiguration.targetApplicationBundleID]
     withAutomationFrameworkPath:automationFrameworkPath]
-    buildWithError:&innerError];
+    buildWithError:&error];
   if (!testBundle) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare test bundle"]
-      causedBy:innerError]
-      fail:error];
+      causedBy:error]
+      failFuture];
   }
 
   // Prepare test runner
-  FBProductBundle *application = [iosTarget.deviceOperator applicationBundleWithBundleID:self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID error:&innerError];
+  FBProductBundle *application = [iosTarget.deviceOperator applicationBundleWithBundleID:self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID error:&error];
   if (!application) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare test runner"]
-      causedBy:innerError]
-      fail:error];
+      causedBy:error]
+      failFuture];
   }
 
   NSString *IDEBundleInjectionFrameworkPath = [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks/IDEBundleInjection.framework"];
@@ -132,15 +142,15 @@
 
   FBProductBundle *IDEBundleInjectionFramework = [[[FBProductBundleBuilder builder]
     withBundlePath:IDEBundleInjectionFrameworkPath]
-    buildWithError:&innerError];
+    buildWithError:&error];
   if (!IDEBundleInjectionFramework) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare IDEBundleInjectionFramework"]
-      causedBy:innerError]
-      fail:error];
+      causedBy:error]
+      failFuture];
   }
 
-  return [FBTestRunnerConfiguration
+  FBTestRunnerConfiguration *configuration = [FBTestRunnerConfiguration
     configurationWithSessionIdentifier:sessionIdentifier
     hostApplication:application
     ideInjectionFramework:IDEBundleInjectionFramework
@@ -148,6 +158,7 @@
     testConfigurationPath:testBundle.configuration.path
     frameworkSearchPath:[XCTestFrameworksPaths componentsJoinedByString:@":"]
     testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
+  return [FBFuture futureWithResult:configuration];
 }
 
 @end

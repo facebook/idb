@@ -60,23 +60,28 @@
 {
   NSAssert(self.iosTarget, @"iOS Target is needed to perform meaningful test");
   NSAssert(self.prepareStrategy, @"Test preparation strategy is needed to perform meaningful test");
-  NSError *error;
-  FBTestRunnerConfiguration *testRunnerConfiguration = [self.prepareStrategy prepareTestWithIOSTarget:self.iosTarget error:&error];
-  if (!testRunnerConfiguration) {
-    return [[[XCTestBootstrapError
-      describe:@"Failed to prepare test runner configuration"]
-      causedBy:error]
-      failFuture];
-  }
 
-  return [[self.iosTarget
-    launchApplication:[self prepareApplicationLaunchConfiguration:applicationLaunchConfiguration withTestRunnerConfiguration:testRunnerConfiguration]]
-    onQueue:self.iosTarget.workQueue fmap:^FBFuture *(NSNumber *processIdentifier) {
+  return [[[self.prepareStrategy
+    prepareTestWithIOSTarget:self.iosTarget]
+    onQueue:self.iosTarget.workQueue fmap:^(FBTestRunnerConfiguration *runnerConfiguration) {
+      FBApplicationLaunchConfiguration *applicationConfiguration = [self
+        prepareApplicationLaunchConfiguration:applicationLaunchConfiguration
+        withTestRunnerConfiguration:runnerConfiguration];
+      return [[self.iosTarget
+        launchApplication:applicationConfiguration]
+        onQueue:self.iosTarget.workQueue map:^(NSNumber *processIdentifier) {
+          return @[processIdentifier, runnerConfiguration];
+        }];
+    }]
+    onQueue:self.iosTarget.workQueue fmap:^(NSArray<id> *tuple) {
+      NSNumber *processIdentifier = tuple[0];
+      FBTestRunnerConfiguration *runnerConfiguration = tuple[1];
+
       // Make the Context for the Test Manager.
       FBTestManagerContext *context = [FBTestManagerContext
         contextWithTestRunnerPID:processIdentifier.intValue
-        testRunnerBundleID:testRunnerConfiguration.testRunner.bundleID
-        sessionIdentifier:testRunnerConfiguration.sessionIdentifier];
+        testRunnerBundleID:runnerConfiguration.testRunner.bundleID
+        sessionIdentifier:runnerConfiguration.sessionIdentifier];
 
       // Attach to the XCTest Test Runner host Process.
       FBTestManager *testManager = [FBTestManager
@@ -84,7 +89,7 @@
         iosTarget:self.iosTarget
         reporter:self.reporter
         logger:self.logger
-        testedApplicationAdditionalEnvironment:testRunnerConfiguration.testedApplicationAdditionalEnvironment];
+        testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
 
       return [[testManager
         connect]

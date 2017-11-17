@@ -9,7 +9,10 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBTestLaunchConfiguration;
+#import <FBControlCore/FBControlCore.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBTestRunnerConfiguration;
 @protocol FBiOSTarget;
 @protocol FBFileManager;
@@ -35,9 +38,10 @@
  Prepares FBTestRunnerConfiguration
 
  @param iosTarget iOS target used to prepare test
- @param error If there is an error, upon return contains an NSError object that describes the problem.
- @return FBTestRunnerConfiguration configuration used to start test
+ @return A future that resolves with the a FBTestRunnerConfiguration configuration.
  */
-- (FBTestRunnerConfiguration *)prepareTestWithIOSTarget:(id<FBiOSTarget>)iosTarget error:(NSError **)error;
+- (FBFuture<FBTestRunnerConfiguration *> *)prepareTestWithIOSTarget:(id<FBiOSTarget>)iosTarget;
 
 @end
+
+NS_ASSUME_NONNULL_END
