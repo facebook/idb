@@ -27,6 +27,8 @@
 
 @implementation FBSimulatorEraseStrategy
 
+#pragma mark Initializers
+
 + (instancetype)strategyForSet:(FBSimulatorSet *)set;
 {
   return [[self alloc] initWithSet:set configuration:set.configuration processFetcher:set.processFetcher logger:set.logger];
@@ -47,7 +49,9 @@
   return self;
 }
 
-- (nullable NSArray<FBSimulator *> *)eraseSimulators:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
+#pragma mark Public
+
+- (FBFuture<NSArray<FBSimulator *> *> *)eraseSimulators:(NSArray<FBSimulator *> *)simulators
 {
   // Confirm that the Simulators belong to the Set.
   for (FBSimulator *simulator in simulators) {
@@ -55,28 +59,39 @@
       return [[[FBSimulatorError
         describeFormat:@"Simulator's set %@ is not %@, cannot erase", simulator.set, self]
         inSimulator:simulator]
-        fail:error];
+        failFuture];
     }
   }
 
-  // Kill the Simulators before erasing them.
-  NSError *innerError = nil;
-  if (![[self.terminationStrategy killSimulators:simulators] await:&innerError]) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
-  }
-
-  // Then Erase them.
-  for (FBSimulator *simulator in simulators) {
-    [self.logger logFormat:@"Erasing %@", simulator];
-    if (![simulator.device eraseContentsAndSettingsWithError:&innerError]) {
-      return [FBSimulatorError failWithError:innerError errorOut:error];
-    }
-    [self.logger logFormat:@"Erased %@", simulator];
-  }
-  return simulators;
+  return [[self.terminationStrategy
+    killSimulators:simulators]
+    onQueue:dispatch_get_main_queue() fmap:^(NSArray<FBSimulator *> *result) {
+      NSMutableArray<FBFuture<FBSimulator *> *> *futures = [NSMutableArray array];
+      for (FBSimulator *simulator in result) {
+        [futures addObject:[self eraseContentsAndSettings:simulator]];
+      }
+      return [FBFuture futureWithFutures:futures];
+    }];
 }
 
 #pragma mark Private
+
+- (FBFuture<FBSimulator *> *)eraseContentsAndSettings:(FBSimulator *)simulator
+{
+  [self.logger logFormat:@"Erasing %@", simulator];
+  FBMutableFuture<FBSimulator *> *future = FBMutableFuture.future;
+  [simulator.device
+    eraseContentsAndSettingsAsyncWithCompletionQueue:simulator.workQueue
+    completionHandler:^(NSError *error){
+      if (error) {
+        [future resolveWithError:error];
+      } else {
+        [self.logger logFormat:@"Erased %@", simulator];
+        [future resolveWithResult:simulator];
+      }
+    }];
+  return future;
+}
 
 - (FBSimulatorTerminationStrategy *)terminationStrategy
 {

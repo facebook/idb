@@ -139,7 +139,7 @@
 - (void)restoreContentsAndSettingsAsyncFromDevice:(id)arg1 completionQueue:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;
 - (BOOL)_onBootstrapQueue_eraseContentsAndSettingsUsingInitialDataPath:(id)arg1 error:(id *)arg2;
 - (BOOL)eraseContentsAndSettingsWithError:(id *)arg1;
-- (void)eraseContentsAndSettingsAsyncWithCompletionQueue:(id)arg1 completionHandler:(void (^)(NSError *))arg2;
+- (void)eraseContentsAndSettingsAsyncWithCompletionQueue:(dispatch_queue_t)arg1 completionHandler:(void(^)(NSError *))arg2;
 - (BOOL)_onBootstrapQueue_upgradeToRuntime:(id)arg1 error:(id *)arg2;
 - (BOOL)upgradeToRuntime:(id)arg1 error:(id *)arg2;
 - (void)upgradeAsyncToRuntime:(id)arg1 completionQueue:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;

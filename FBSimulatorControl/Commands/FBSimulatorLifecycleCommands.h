@@ -66,10 +66,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Erases the Simulator, with a descriptive message in the event of a failure.
 
- @param error a descriptive error for any error that occurred.
- @return YES if successful, NO otherwise.
+ @return a Future that resolves when the Simulator has been erased.
  */
-- (BOOL)eraseWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)erase;
 
 #pragma mark States
 

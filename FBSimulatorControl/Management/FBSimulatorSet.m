@@ -211,10 +211,10 @@
   return [self.simulatorTerminationStrategy killSimulators:@[simulator]];
 }
 
-- (BOOL)eraseSimulator:(FBSimulator *)simulator error:(NSError **)error
+- (FBFuture<NSArray<FBSimulator *> *> *)eraseSimulator:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
-  return [self.eraseStrategy eraseSimulators:@[simulator] error:error] != nil;
+  return [self.eraseStrategy eraseSimulators:@[simulator]];
 }
 
 - (BOOL)deleteSimulator:(FBSimulator *)simulator error:(NSError **)error
@@ -229,10 +229,10 @@
   return [self.simulatorTerminationStrategy killSimulators:simulators];
 }
 
-- (nullable NSArray<FBSimulator *> *)eraseAll:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
+- (FBFuture<NSArray<FBSimulator *> *> *)eraseAll:(NSArray<FBSimulator *> *)simulators
 {
   NSParameterAssert(simulators);
-  return [self.eraseStrategy eraseSimulators:simulators error:error];
+  return [self.eraseStrategy eraseSimulators:simulators];
 }
 
 - (nullable NSArray<NSString *> *)deleteAll:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
@@ -246,9 +246,9 @@
   return [self.simulatorTerminationStrategy killSimulators:self.allSimulators];
 }
 
-- (nullable NSArray<FBSimulator *> *)eraseAllWithError:(NSError **)error
+- (FBFuture<NSArray<FBSimulator *> *> *)eraseAll
 {
-  return [self.eraseStrategy eraseSimulators:self.allSimulators error:error];
+  return [self.eraseStrategy eraseSimulators:self.allSimulators];
 }
 
 - (nullable NSArray<NSString *> *)deleteAllWithError:(NSError **)error

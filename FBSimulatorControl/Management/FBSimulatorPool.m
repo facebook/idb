@@ -98,7 +98,7 @@
 
   BOOL eraseOnFree = (options & FBSimulatorAllocationOptionsEraseOnFree) == FBSimulatorAllocationOptionsEraseOnFree;
   if (eraseOnFree) {
-    if (![simulator eraseWithError:&innerError]) {
+    if (![[simulator erase] await:&innerError]) {
       return [[[[[FBSimulatorError
         describe:@"Failed to Free Device in Erasing Device"]
         causedBy:innerError]
@@ -207,7 +207,7 @@
   // Only erase if the simulator was allocated with reuse, otherwise it is a fresh Simulator that won't need erasing.
   if (reuse && erase) {
     [self.logger.debug logFormat:@"Erasing Simulator %@", simulator.udid];
-    if (![simulator eraseWithError:&innerError]) {
+    if (![[simulator erase] await:&innerError]) {
       return [[[[[FBSimulatorError
         describe:@"Failed to erase a Simulator when allocating it"]
         causedBy:innerError]

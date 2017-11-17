@@ -84,10 +84,9 @@ NS_ASSUME_NONNULL_BEGIN
  The Set to which the Simulator belongs must be the reciever.
 
  @param simulator the Simulator to erase. Must not be nil.
- @param error an error out for any error that occurs.
- @return YES if successful, nil otherwise.
+ @return A future wrapping the erased simulators.
  */
-- (BOOL)eraseSimulator:(FBSimulator *)simulator error:(NSError **)error;
+- (FBFuture<NSArray<FBSimulator *> *> *)eraseSimulator:(FBSimulator *)simulator;
 
 /**
  Deletes a Simulator in the Set.
@@ -113,10 +112,9 @@ NS_ASSUME_NONNULL_BEGIN
  The Set to which the Simulators belong must be the reciever.
 
  @param simulators the Simulators to erase. Must not be nil.
- @param error an error out for any error that occurs.
- @return an array of the Simulators passed to the reciever if successful, nil otherwise.
+ @return A future wrapping the erased simulators.
  */
-- (nullable NSArray<FBSimulator *> *)eraseAll:(NSArray<FBSimulator *> *)simulators error:(NSError **)error;
+- (FBFuture<NSArray<FBSimulator *> *> *)eraseAll:(NSArray<FBSimulator *> *)simulators;
 
 /**
  Erases all provided Simulators.
@@ -138,10 +136,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Kills all of the Simulators that belong to the reciever.
 
- @param error an error out if any error occured.
- @return an array of the Simulators that this were killed if successful, nil otherwise.
+ @return A future wrapping the erased simulators.
  */
-- (nullable NSArray<FBSimulator *> *)eraseAllWithError:(NSError **)error;
+- (FBFuture<NSArray<FBSimulator *> *> *)eraseAll;
 
 /**
  Delete all of the Simulators that belong to the reciever.

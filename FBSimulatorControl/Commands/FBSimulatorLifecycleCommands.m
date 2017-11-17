@@ -86,9 +86,9 @@
   return [self.simulator.pool freeSimulator:self.simulator error:error];
 }
 
-- (BOOL)eraseWithError:(NSError **)error
+- (FBFuture<NSNull *> *)erase
 {
-  return [self.simulator.set eraseSimulator:self.simulator error:error];
+  return [[self.simulator.set eraseSimulator:self.simulator] mapReplace:NSNull.null];
 }
 
 #pragma mark States
