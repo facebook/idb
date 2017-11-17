@@ -182,7 +182,7 @@
   }
 
   NSError *error = nil;
-  XCTAssertTrue([self.control.pool.set deleteAllWithError:&error]);
+  XCTAssertTrue([[self.control.pool.set deleteAll] await:&error]);
   XCTAssertNil(error);
 
   NSSet *uuidSet = [NSSet setWithArray:[self.control.pool.set.allSimulators valueForKey:@"udid"]];

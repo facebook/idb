@@ -51,7 +51,7 @@
 
 #pragma mark Public Methods
 
-- (nullable NSArray<NSString *> *)deleteSimulators:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
+- (FBFuture<NSArray<NSString *> *> *)deleteSimulators:(NSArray<FBSimulator *> *)simulators
 {
    // Confirm that the Simulators belong to the set
   for (FBSimulator *simulator in simulators) {
@@ -59,85 +59,93 @@
       return [[[FBSimulatorError
         describeFormat:@"Simulator's set %@ is not %@, cannot delete", simulator.set, self]
         inSimulator:simulator]
-        fail:error];
+        failFuture];
     }
   }
 
-  // Keep the UDIDs around for confirmation
-  NSSet *deletedDeviceUDIDs = [NSSet setWithArray:[simulators valueForKey:@"udid"]];
-
+  // Keep the UDIDs around for confirmation.
+  // Start the deletion
+  NSSet<NSString *> *deletedDeviceUDIDs = [NSSet setWithArray:[simulators valueForKey:@"udid"]];
+  NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];
   for (FBSimulator *simulator in simulators) {
-    // Get the Log Directory ahead of time as the Simulator will dissapear on deletion.
-    NSString *coreSimulatorLogsDirectory = simulator.simulatorDiagnostics.coreSimulatorLogsDirectory;
-
-    // Kill the Simulators before deleting them.
-    [self.logger logFormat:@"Killing Simulator, in preparation for deletion %@", simulator];
-    NSError *innerError = nil;
-    if (![[self.set killSimulator:simulator] await:&innerError]) {
-      return [[[[[FBSimulatorError
-        describe:@"Failed to kill simulator."]
-        inSimulator:simulator]
-        causedBy:innerError]
-        logger:self.logger]
-        fail:error];
-    }
-
-    // Then follow through with the actual deletion of the Simulator, which will remove it from the set.
-    [self.logger logFormat:@"Deleting Simulator %@", simulator];
-    NSUInteger retryDelete = 3;
-    do {
-      if ([self.set.deviceSet deleteDevice:simulator.device error:&innerError]) {
-        break;
-      }
-      // On Travis the deleteDevice operation sometimes fails:
-      //   Domain=NSCocoaErrorDomain Code=513 "B4D-C0-F-F-E" couldn't be removed because you don't have permission to access it.
-      // Inside the devicePath there's a device.plist which sometimes cannot be deleted. Probably some process still has an open
-      // file handle to that file.
-      BOOL shouldRetry = [innerError.domain isEqualToString:NSCocoaErrorDomain] && innerError.code == NSFileWriteNoPermissionError;
-      if (!shouldRetry) {
-        return [[[[[FBSimulatorError
-          describe:@"Failed to delete simulator."]
-          inSimulator:simulator]
-          causedBy:innerError]
-          logger:self.logger]
-          fail:error];
-      }
-    } while (--retryDelete > 0);
-    [self.logger logFormat:@"Simulator Deleted Successfully %@", simulator];
-
-    // The Logfiles now need disposing of. 'erasing' a Simulator will cull the logfiles,
-    // but deleting a Simulator will not. There's no sense in letting this directory accumilate files.
-    if ([NSFileManager.defaultManager fileExistsAtPath:coreSimulatorLogsDirectory]) {
-      [self.logger logFormat:@"Deleting Log Directory at %@", coreSimulatorLogsDirectory];
-      if (![NSFileManager.defaultManager removeItemAtPath:coreSimulatorLogsDirectory error:&innerError]) {
-        return [[[[FBSimulatorError
-          describeFormat:@"Failed to delete Simulator Log Directory %@.", coreSimulatorLogsDirectory]
-          causedBy:innerError]
-          logger:self.logger]
-          fail:error];
-      }
-      [self.logger logFormat:@"Deleted Log Directory at %@", coreSimulatorLogsDirectory];
-    }
+    [futures addObject:[self deleteSimulator:simulator]];
   }
 
+  return [[FBFuture
+    futureWithFutures:futures]
+    onQueue:dispatch_get_main_queue() fmap:^(id _) {
+      return [FBSimulatorDeletionStrategy confirmSimulatorsAreRemovedFromSet:self.set deletedDeviceUDIDs:deletedDeviceUDIDs];
+    }];
+}
+
+#pragma mark Private
+
++ (FBFuture<NSArray<NSString *> *> *)confirmSimulatorsAreRemovedFromSet:(FBSimulatorSet *)set deletedDeviceUDIDs:(NSSet<NSString *> *)deletedDeviceUDIDs
+{
   // Deleting the device from the set can still leave it around for a few seconds.
   // This could race with methods that may reallocate the newly-deleted device.
   // So we should wait for the device to no longer be present in the underlying set.
-  __block NSMutableSet *remainderSet = nil;
-  BOOL allRemovedFromSet = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout untilTrue:^ BOOL {
-    remainderSet = [NSMutableSet setWithSet:deletedDeviceUDIDs];
-    [remainderSet intersectSet:[NSSet setWithArray:[self.set.allSimulators valueForKey:@"udid"]]];
-    return remainderSet.count == 0;
-  }];
+  return [[[FBFuture
+    onQueue:dispatch_get_main_queue() resolveWhen:^BOOL{
+      NSMutableSet<NSString *> *remainderSet = [NSMutableSet setWithSet:deletedDeviceUDIDs];
+      [remainderSet intersectSet:[NSSet setWithArray:[set.allSimulators valueForKey:@"udid"]]];
+      return remainderSet.count == 0;
+    }]
+    timedOutIn:FBControlCoreGlobalConfiguration.regularTimeout]
+    rephraseFailure:@"Timed out waiting for Simulators to dissapear from set."];
+}
 
-  if (!allRemovedFromSet) {
-    return [[[FBSimulatorError
-      describeFormat:@"Timed out waiting for Simulators %@ to dissapear from set.", [FBCollectionInformation oneLineDescriptionFromArray:remainderSet.allObjects]]
-      logger:self.logger]
-      fail:error];
-  }
+- (FBFuture<NSString *> *)deleteSimulator:(FBSimulator *)simulator
+{
+  // Get the Log Directory ahead of time as the Simulator will dissapear on deletion.
+  NSString *coreSimulatorLogsDirectory = simulator.simulatorDiagnostics.coreSimulatorLogsDirectory;
+  dispatch_queue_t workQueue = simulator.workQueue;
+  NSString *udid = simulator.udid;
 
-  return deletedDeviceUDIDs.allObjects;
+  // Kill the Simulators before deleting them.
+  [self.logger logFormat:@"Killing Simulator, in preparation for deletion %@", simulator];
+  return [[self.set
+    killSimulator:simulator]
+    onQueue:workQueue fmap:^(NSArray<FBSimulator *> *result) {
+      // Then follow through with the actual deletion of the Simulator, which will remove it from the set.
+      NSError *innerError = nil;
+      [self.logger logFormat:@"Deleting Simulator %@", simulator];
+      NSUInteger retryDelete = 3;
+      do {
+        if ([self.set.deviceSet deleteDevice:simulator.device error:&innerError]) {
+          break;
+        }
+        // On Travis the deleteDevice operation sometimes fails:
+        //   Domain=NSCocoaErrorDomain Code=513 "B4D-C0-F-F-E" couldn't be removed because you don't have permission to access it.
+        // Inside the devicePath there's a device.plist which sometimes cannot be deleted. Probably some process still has an open
+        // file handle to that file.
+        BOOL shouldRetry = [innerError.domain isEqualToString:NSCocoaErrorDomain] && innerError.code == NSFileWriteNoPermissionError;
+        if (!shouldRetry) {
+          return [[[[[FBSimulatorError
+            describe:@"Failed to delete simulator."]
+            inSimulator:simulator]
+            causedBy:innerError]
+            logger:self.logger]
+            failFuture];
+        }
+      } while (--retryDelete > 0);
+      [self.logger logFormat:@"Simulator Deleted Successfully %@", simulator];
+
+      // The Logfiles now need disposing of. 'erasing' a Simulator will cull the logfiles,
+      // but deleting a Simulator will not. There's no sense in letting this directory accumilate files.
+      if ([NSFileManager.defaultManager fileExistsAtPath:coreSimulatorLogsDirectory]) {
+        [self.logger logFormat:@"Deleting Log Directory at %@", coreSimulatorLogsDirectory];
+        if (![NSFileManager.defaultManager removeItemAtPath:coreSimulatorLogsDirectory error:&innerError]) {
+          return [[[[FBSimulatorError
+            describeFormat:@"Failed to delete Simulator Log Directory %@.", coreSimulatorLogsDirectory]
+            causedBy:innerError]
+            logger:self.logger]
+            failFuture];
+        }
+        [self.logger logFormat:@"Deleted Log Directory at %@", coreSimulatorLogsDirectory];
+      }
+      return [FBFuture futureWithResult:udid];
+    }];
 }
 
 @end

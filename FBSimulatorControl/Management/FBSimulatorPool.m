@@ -85,7 +85,7 @@
   // When Deleting on Free, there's no point in erasing first, so return early.
   BOOL deleteOnFree = (options & FBSimulatorAllocationOptionsDeleteOnFree) == FBSimulatorAllocationOptionsDeleteOnFree;
   if (deleteOnFree) {
-    if (![self.set deleteSimulator:simulator error:&innerError]) {
+    if (![[self.set deleteSimulator:simulator] await:&innerError]) {
       return [[[[[FBSimulatorError
         describe:@"Failed to Free Device in Deleting Device"]
         causedBy:innerError]

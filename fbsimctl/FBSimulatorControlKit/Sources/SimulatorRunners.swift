@@ -77,9 +77,12 @@ struct SimulatorActionRunner : Runner {
         try simulator.clearKeychain()
       }
     case .delete:
-      return iOSTargetRunner.simple(reporter, .delete, simulator.subject) {
-        try simulator.set!.delete(simulator)
-      }
+      return FutureRunner(
+        reporter,
+        .delete,
+        simulator.subject,
+        simulator.set!.delete(simulator)
+      )
     case .focus:
       return iOSTargetRunner.simple(reporter, .focus, simulator.subject) {
         try simulator.focus()

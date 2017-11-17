@@ -85,7 +85,7 @@
 
   BOOL deleteOnStart = (configuration.options & FBSimulatorManagementOptionsDeleteAllOnFirstStart) == FBSimulatorManagementOptionsDeleteAllOnFirstStart;
   if (deleteOnStart) {
-    if (![self deleteAllWithError:&innerError]) {
+    if (![[self deleteAll] await:&innerError]) {
       return [[[[FBSimulatorError
         describe:@"Failed to delete all simulators"]
         causedBy:innerError]
@@ -217,10 +217,10 @@
   return [self.eraseStrategy eraseSimulators:@[simulator]];
 }
 
-- (BOOL)deleteSimulator:(FBSimulator *)simulator error:(NSError **)error
+- (FBFuture<NSArray<NSString *> *> *)deleteSimulator:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
-  return [self.deletionStrategy deleteSimulators:@[simulator] error:error] != nil;
+  return [self.deletionStrategy deleteSimulators:@[simulator]];
 }
 
 - (FBFuture<NSArray<FBSimulator *> *> *)killAll:(NSArray<FBSimulator *> *)simulators
@@ -235,10 +235,10 @@
   return [self.eraseStrategy eraseSimulators:simulators];
 }
 
-- (nullable NSArray<NSString *> *)deleteAll:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
+- (FBFuture<NSArray<NSString *> *> *)deleteAll:(NSArray<FBSimulator *> *)simulators;
 {
   NSParameterAssert(simulators);
-  return [self.deletionStrategy deleteSimulators:simulators error:error];
+  return [self.deletionStrategy deleteSimulators:simulators];
 }
 
 - (FBFuture<NSArray<FBSimulator *> *> *)killAll
@@ -251,9 +251,9 @@
   return [self.eraseStrategy eraseSimulators:self.allSimulators];
 }
 
-- (nullable NSArray<NSString *> *)deleteAllWithError:(NSError **)error
+- (FBFuture<NSArray<NSString *> *> *)deleteAll
 {
-  return [self deleteSimulators:self.allSimulators error:error];
+  return [self deleteAll:self.allSimulators];
 }
 
 #pragma mark FBDebugDescribeable Protocol
@@ -285,20 +285,6 @@
 - (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
 {
   return [self.simulatorTerminationStrategy killSpuriousSimulatorsWithError:error];
-}
-
-- (nullable NSArray<NSString *> *)deleteSimulators:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
-{
-  NSError *innerError = nil;
-  NSMutableArray *deletedSimulatorNames = [NSMutableArray array];
-  for (FBSimulator *simulator in simulators) {
-    NSString *simulatorName = simulator.name;
-    if (![self deleteSimulator:simulator error:&innerError]) {
-      return [FBSimulatorError failWithError:innerError errorOut:error];
-    }
-    [deletedSimulatorNames addObject:simulatorName];
-  }
-  return [deletedSimulatorNames copy];
 }
 
 + (NSDictionary<NSString *, FBSimulator *> *)keySimulatorsByUDID:(NSArray *)simulators

@@ -9,16 +9,19 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBSimulator;
-@class FBSimulatorSet;
-@protocol FBControlCoreLogger;
+#import <FBControlCore/FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+@class FBSimulator;
+@class FBSimulatorSet;
 
 /**
  A Strategy for Deleting Simulators.
  */
 @interface FBSimulatorDeletionStrategy : NSObject
+
+#pragma mark Initializers
 
 /**
  Creates a FBSimulatorEraseStrategy.
@@ -28,14 +31,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)strategyForSet:(FBSimulatorSet *)set;
 
+#pragma mark Public Methods
+
 /**
  Intelligently Deletes Simulators.
 
  @param simulators the Simulators to Delete.
- @param error an error out for any error that occurs.
- @return an Array of the UDIDs of all the deleted Simulators on success, nil otherwise.
+ @return a future wrapping the array of deleted simulator uuids.
  */
-- (nullable NSArray<NSString *> *)deleteSimulators:(NSArray<FBSimulator *> *)simulators error:(NSError **)error;
+- (FBFuture<NSArray<NSString *> *> *)deleteSimulators:(NSArray<FBSimulator *> *)simulators;
 
 @end
 
