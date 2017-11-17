@@ -9,15 +9,19 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBSimulator;
-@class FBSimulatorBootConfiguration;
+#import <FBControlCore/FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+@class FBSimulator;
+@class FBSimulatorBootConfiguration;
 
 /**
  A Strategy for Booting a Simulator's Bridge.
  */
 @interface FBSimulatorBootStrategy : NSObject
+
+#pragma mark Properties
 
 /**
  Creates and returns a new Strategy strategyWith the given configuration.
@@ -28,13 +32,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)strategyWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator;
 
+#pragma mark Public Methods
+
 /**
  Boots the Simulator.
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return a future that resolves when the Simulator is booted.
  */
-- (BOOL)bootWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)boot;
 
 @end
 

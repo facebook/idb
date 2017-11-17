@@ -63,9 +63,10 @@
 
 - (BOOL)boot:(FBSimulatorBootConfiguration *)configuration error:(NSError **)error
 {
-  return [[FBSimulatorBootStrategy
+  return [[[FBSimulatorBootStrategy
     strategyWithConfiguration:configuration simulator:self.simulator]
-    bootWithError:error];
+    boot]
+    await:error] != nil;
 }
 
 - (FBFuture<NSNull *> *)shutdown

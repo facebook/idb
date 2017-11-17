@@ -101,10 +101,9 @@
 
  @param arguments the SimulatorApp process arguments.
  @param environment the environment for the process.
- @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error;
+- (FBFuture<NSNull *> *)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment;
 
 @end
 
@@ -249,15 +248,15 @@
   return self;
 }
 
-- (FBSimulatorConnection *)performBootWithError:(NSError **)error
+- (FBFuture<FBSimulatorConnection *> *)performBoot
 {
   // Only Boot with CoreSimulator when told to do so. Return early if not.
   if (!self.shouldBootWithCoreSimulator) {
-    return [[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:nil hid:nil];
+    return [FBFuture futureWithResult:[[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:nil hid:nil]];
   }
 
   // Create the Framebuffer (if required to do so).
-  NSError *innerError = nil;
+  NSError *error = nil;
   FBFramebuffer *framebuffer = nil;
   if ([self.options shouldCreateFramebuffer:self.configuration]) {
     // If we require a Framebuffer, but don't have one provided, we should use the default one.
@@ -271,30 +270,30 @@
 
     framebuffer = [[FBFramebufferConnectStrategy
       strategyWithConfiguration:configuration]
-      connect:self.simulator error:&innerError];
+      connect:self.simulator error:&error];
     if (!framebuffer) {
-      return [FBSimulatorError failWithError:innerError errorOut:error];
+      return [FBSimulatorError failFutureWithError:error];
     }
   }
 
   // Create the HID Port
-  FBSimulatorHID *hid = [FBSimulatorHID hidPortForSimulator:self.simulator error:&innerError];
+  FBSimulatorHID *hid = [FBSimulatorHID hidPortForSimulator:self.simulator error:&error];
   if (!hid) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
+    return [FBSimulatorError failFutureWithError:error];
   }
 
   // Booting is simpler than the Simulator.app launch process since the caller calls CoreSimulator Framework directly.
   // Just pass in the options to ensure that the framebuffer service is registered when the Simulator is booted.
   NSDictionary<NSString *, id> *options = [self.options bootOptions:self.configuration];
-  if (![self.simulator.device bootWithOptions:options error:&innerError]) {
+  if (![self.simulator.device bootWithOptions:options error:&error]) {
     return [[[[FBSimulatorError
       describeFormat:@"Failed to boot Simulator with options %@", options]
       inSimulator:self.simulator]
-      causedBy:innerError]
-      fail:error];
+      causedBy:error]
+      failFuture];
   }
 
-  return [[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:framebuffer hid:hid];
+  return [FBFuture futureWithResult:[[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:framebuffer hid:hid]];
 }
 
 - (BOOL)shouldBootWithCoreSimulator
@@ -317,7 +316,7 @@
 
 @implementation FBSimulatorApplicationProcessLauncher_Task
 
-- (BOOL)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error
+- (FBFuture<NSNull *> *)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment;
 {
   // Construct and start the task.
   FBTask *task = [[[[[FBTaskBuilder
@@ -333,16 +332,16 @@
     return [[[FBSimulatorError
       describe:@"Failed to Launch Simulator Process"]
       causedBy:task.error]
-      failBool:error];
+      failFuture];
   }
-  return YES;
+  return [FBFuture futureWithResult:NSNull.null];
 }
 
 @end
 
 @implementation FBSimulatorApplicationProcessLauncher_Workspace
 
-- (BOOL)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error
+- (FBFuture<NSNull *> *)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment
 {
   // The NSWorkspace API allows for arguments & environment to be provided to the launched application
   // Additionally, multiple Apps of the same application can be launched with the NSWorkspaceLaunchNewInstance option.
@@ -352,20 +351,20 @@
     NSWorkspaceLaunchConfigurationEnvironment : environment,
   };
 
-  NSError *innerError = nil;
+  NSError *error = nil;
   NSRunningApplication *application = [NSWorkspace.sharedWorkspace
     launchApplicationAtURL:applicationURL
     options:NSWorkspaceLaunchDefault | NSWorkspaceLaunchNewInstance | NSWorkspaceLaunchWithoutActivation
     configuration:appLaunchConfiguration
-    error:&innerError];
+    error:&error];
 
   if (!application) {
     return [[[FBSimulatorError
       describeFormat:@"Failed to launch simulator application %@ with configuration %@", applicationURL, appLaunchConfiguration]
-      causedBy:innerError]
-      failBool:error];
+      causedBy:error]
+      failFuture];
   }
-  return YES;
+  return [FBFuture futureWithResult:NSNull.null];
 }
 
 @end
@@ -473,21 +472,21 @@
   return self;
 }
 
-- (BOOL)launchSimulatorApplicationWithError:(NSError **)error
+- (FBFuture<NSNull *> *)launchSimulatorApplication
 {
   // Return early if we shouldn't launch the Application
   if (![self.options shouldLaunchSimulatorApplication:self.configuration simulator:self.simulator]) {
-    return YES;
+    return [FBFuture futureWithResult:NSNull.null];
   }
 
   // Fetch the Boot Arguments & Environment
-  NSError *innerError = nil;
-  NSArray *arguments = [self.options xcodeSimulatorApplicationArguments:self.configuration simulator:self.simulator error:&innerError];
+  NSError *error = nil;
+  NSArray *arguments = [self.options xcodeSimulatorApplicationArguments:self.configuration simulator:self.simulator error:&error];
   if (!arguments) {
     return [[[FBSimulatorError
       describeFormat:@"Failed to create boot args for Configuration %@", self.configuration]
-      causedBy:innerError]
-      failBool:error];
+      causedBy:error]
+      failFuture];
   }
   // Add the UDID marker to the subprocess environment, so that it can be queried in any process.
   NSDictionary *environment = @{
@@ -496,29 +495,21 @@
   };
 
   // Launch the Simulator.app Process.
-  if (![self.launcher launchSimulatorProcessWithArguments:arguments environment:environment error:&innerError]) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-  }
-
-  // Confirm that the Simulator is Booted.
-  if (![self.simulator resolveState:FBSimulatorStateBooted]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Timed out waiting for device to be Booted, got %@", self.simulator.device.stateString]
-      inSimulator:self.simulator]
-      failBool:error];
-  }
-
-  // Expect the launch info for the process to exist.
-  FBProcessInfo *containerApplication = [self.simulator.processFetcher simulatorApplicationProcessForSimDevice:self.simulator.device];
-  if (!containerApplication) {
-    return [[[FBSimulatorError
-      describe:@"Could not obtain process info for container application"]
-      inSimulator:self.simulator]
-      failBool:error];
-  }
-  [self.simulator.eventSink containerApplicationDidLaunch:containerApplication];
-
-  return YES;
+  return [[[self.launcher
+    launchSimulatorProcessWithArguments:arguments environment:environment]
+    onQueue:self.simulator.workQueue fmap:^(NSNull *_) {
+      return [self.simulator resolveState:FBSimulatorStateBooted];
+    }]
+    onQueue:self.simulator.workQueue fmap:^(NSNull *_) {
+      FBProcessInfo *containerApplication = [self.simulator.processFetcher simulatorApplicationProcessForSimDevice:self.simulator.device];
+      if (!containerApplication) {
+        return [[FBSimulatorError
+          describe:@"Could not obtain process info for container application"]
+          failFuture];
+      }
+      [self.simulator.eventSink containerApplicationDidLaunch:containerApplication];
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
 }
 
 @end
@@ -575,56 +566,53 @@
   return self;
 }
 
-- (BOOL)bootWithError:(NSError **)error
+- (FBFuture<NSNull *> *)boot
 {
   // Return early depending on Simulator state.
   if (self.simulator.state == FBSimulatorStateBooted) {
-    return YES;
+    return [FBFuture futureWithResult:NSNull.null];
   }
   if (self.simulator.state != FBSimulatorStateShutdown) {
     return [[[FBSimulatorError
       describeFormat:@"Cannot Boot Simulator when in %@ state", self.simulator.stateString]
       inSimulator:self.simulator]
-      failBool:error];
+      failFuture];
   }
 
   // Boot via CoreSimulator.
-  FBSimulatorConnection *connection = [self.coreSimulatorStrategy performBootWithError:error];
-  if (!connection) {
-    return NO;
-  }
+  return [[[[[self.coreSimulatorStrategy
+    performBoot]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
+      return [[self.applicationStrategy launchSimulatorApplication] mapReplace:connection];
+    }]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
+      if (!self.configuration.shouldConnectBridge) {
+        return [FBFuture futureWithResult:connection];
+      }
+      NSError *error = nil;
+      FBSimulatorBridge *bridge = [connection connectToBridge:&error];
+      if (!bridge) {
+      return [FBSimulatorError failFutureWithError:error];
+      }
 
-  // Launch the SimulatorApp Application.
-  if (![self.applicationStrategy launchSimulatorApplicationWithError:error]) {
-    return NO;
-  }
+      // Set the Location to a default location, when launched directly.
+      // This is effectively done by Simulator.app by a NSUserDefault with for the 'LocationMode', even when the location is 'None'.
+      // If the Location is set on the Simulator, then CLLocationManager will behave in a consistent manner inside launched Applications.
+      [bridge setLocationWithLatitude:37.485023 longitude:-122.147911];
 
-  // Fail when the bridge could not be connected.
-  NSError *innerError = nil;
-  if (self.configuration.shouldConnectBridge) {
-    FBSimulatorBridge *bridge = [connection connectToBridge:&innerError];
-    if (!bridge) {
-      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-    }
-
-    // Set the Location to a default location, when launched directly.
-    // This is effectively done by Simulator.app by a NSUserDefault with for the 'LocationMode', even when the location is 'None'.
-    // If the Location is set on the Simulator, then CLLocationManager will behave in a consistent manner inside launched Applications.
-    [bridge setLocationWithLatitude:37.485023 longitude:-122.147911];
-  }
-
-  // Expect the launchd_sim process to be updated.
-  if (![self launchdSimPresentWithAllRequiredServices:&innerError]) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-  }
-
-  // Broadcast the availability of the new bridge.
-  [self.simulator.eventSink connectionDidConnect:connection];
-
-  return YES;
+      return [FBFuture futureWithResult:connection];
+    }]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
+      return [[self launchdSimPresentWithAllRequiredServices] mapReplace:connection];
+    }]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
+      // Broadcast the availability of the new bridge.
+      [self.simulator.eventSink connectionDidConnect:connection];
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
 }
 
-- (FBProcessInfo *)launchdSimPresentWithAllRequiredServices:(NSError **)error
+- (FBFuture<FBProcessInfo *> *)launchdSimPresentWithAllRequiredServices
 {
   FBSimulatorProcessFetcher *processFetcher = self.simulator.processFetcher;
   FBProcessInfo *launchdProcess = [processFetcher launchdProcessForSimDevice:self.simulator.device];
@@ -632,21 +620,20 @@
     return [[[FBSimulatorError
       describe:@"Could not obtain process info for launchd_sim process"]
       inSimulator:self.simulator]
-      fail:error];
+      failFuture];
   }
   [self.simulator.eventSink simulatorDidLaunch:launchdProcess];
 
   // Return early if we're not awaiting services.
   if ((self.configuration.options & FBSimulatorBootOptionsAwaitServices) != FBSimulatorBootOptionsAwaitServices) {
-    return launchdProcess;
+    return [FBFuture futureWithResult:launchdProcess];
   }
 
   // Now wait for the services.
-  FBFuture<NSNull *> *servicesAreBooted = [[FBSimulatorBootVerificationStrategy strategyWithSimulator:self.simulator] verifySimulatorIsBooted];
-  if (![servicesAreBooted awaitWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout error:error]) {
-    return nil;
-  }
-  return launchdProcess;
+  return [[[FBSimulatorBootVerificationStrategy
+    strategyWithSimulator:self.simulator]
+    verifySimulatorIsBooted]
+    mapReplace:launchdProcess];
 }
 
 @end
