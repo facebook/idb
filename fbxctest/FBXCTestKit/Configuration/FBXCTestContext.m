@@ -42,21 +42,24 @@
   return self;
 }
 
-- (nullable FBSimulator *)simulatorForiOSTestRun:(FBXCTestConfiguration *)configuration error:(NSError **)error
+#pragma mark Public
+
+- (FBFuture<FBSimulator *> *)simulatorForiOSTestRun:(FBXCTestConfiguration *)configuration
 {
   if (!self.simulatorFetcher) {
-    FBXCTestSimulatorFetcher *fetcher = [FBXCTestSimulatorFetcher fetcherWithWorkingDirectory:configuration.workingDirectory logger:self.logger error:error];
+    NSError *error = nil;
+    FBXCTestSimulatorFetcher *fetcher = [FBXCTestSimulatorFetcher fetcherWithWorkingDirectory:configuration.workingDirectory logger:self.logger error:&error];
     if (!fetcher) {
-      return nil;
+      return [FBFuture futureWithError:error];
     }
     self.simulatorFetcher = fetcher;
   }
-  return [self.simulatorFetcher fetchSimulatorForConfiguration:configuration error:error];
+  return [self.simulatorFetcher fetchSimulatorForConfiguration:configuration];
 }
 
-- (void)finishedExecutionOnSimulator:(FBSimulator *)simulator
+- (FBFuture<NSNull *> *)finishedExecutionOnSimulator:(FBSimulator *)simulator
 {
-  [self.simulatorFetcher returnSimulator:simulator error:nil];
+  return [self.simulatorFetcher returnSimulator:simulator];
 }
 
 @end

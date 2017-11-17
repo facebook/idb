@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
@@ -20,6 +22,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBXCTestSimulatorFetcher : NSObject
 
+#pragma mark Initializers
+
 /**
  Creates a Simulator Fetcher for the given configuration
 
@@ -30,23 +34,23 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable instancetype)fetcherWithWorkingDirectory:(NSString *)workingDirectory logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 
+#pragma mark Public Methods
+
 /**
  Gets a Simulator for the configuration provided in the constructor.
 
  @param configuration the configuration to fetch for.
- @param error an error out for any error that occurs.
- @return a Simulator if successful, nil otherwise.
+ @return a Future that resolves with the Simulator if successful, nil otherwise.
  */
-- (nullable FBSimulator *)fetchSimulatorForConfiguration:(FBXCTestConfiguration *)configuration error:(NSError **)error;
+- (FBFuture<FBSimulator *> *)fetchSimulatorForConfiguration:(FBXCTestConfiguration *)configuration;
 
 /**
  Return the Simulator after the Test Run is completed.
 
  @param simulator the Simulator to dispose of.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return a Future that resolves when successful
  */
-- (BOOL)returnSimulator:(FBSimulator *)simulator error:(NSError **)error;
+- (FBFuture<NSNull *> *)returnSimulator:(FBSimulator *)simulator;
 
 @end
 

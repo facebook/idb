@@ -81,17 +81,15 @@
 
 - (FBFuture<NSNull *> *)runiOSTest
 {
-  NSError *error = nil;
-  FBSimulator *simulator = [self.context simulatorForiOSTestRun:self.configuration error:&error];
-  if (!simulator) {
-    return [FBFuture futureWithError:error];
-  }
-
-  return [[self
-    runTestWithSimulator:simulator]
-    onQueue:dispatch_get_main_queue() chain:^(FBFuture *future) {
-      [self.context finishedExecutionOnSimulator:simulator];
-      return future;
+  return [[self.context
+    simulatorForiOSTestRun:self.configuration]
+    onQueue:dispatch_get_main_queue() fmap:^(FBSimulator *simulator) {
+      return [[self
+        runTestWithSimulator:simulator]
+        onQueue:dispatch_get_main_queue() chain:^(FBFuture *future) {
+          [self.context finishedExecutionOnSimulator:simulator];
+          return future;
+        }];
     }];
 }
 

@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
@@ -51,18 +53,18 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Obtains the Simulator for an iOS Test Run.
 
- @param error an error out for any error that occurs.
  @param configuration the configuration to use.
- @return the Simulator if successful, nil otherwise.
+ @return A future that wraps the Simulator;.
  */
-- (nullable FBSimulator *)simulatorForiOSTestRun:(FBXCTestConfiguration *)configuration error:(NSError **)error;
+- (FBFuture<FBSimulator *> *)simulatorForiOSTestRun:(FBXCTestConfiguration *)configuration;
 
 /**
  Causes the Simulator to be released from the test run.
 
  @param simulator the Simulator to release.
+ @return a future that resolves when the simulator has been freed.
  */
-- (void)finishedExecutionOnSimulator:(FBSimulator *)simulator;
+- (FBFuture<NSNull *> *)finishedExecutionOnSimulator:(FBSimulator *)simulator;
 
 @end
 

@@ -21,6 +21,8 @@
 
 @implementation FBXCTestSimulatorFetcher
 
+#pragma mark Initializers
+
 + (nullable instancetype)fetcherWithWorkingDirectory:(NSString *)workingDirectory logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSString *setPath = [workingDirectory stringByAppendingPathComponent:@"sim"];
@@ -50,54 +52,47 @@
   return self;
 }
 
-- (nullable FBSimulator *)fetchSimulatorForConfiguration:(FBXCTestConfiguration *)configuration error:(NSError **)error
+#pragma mark Public Methods
+
+- (FBFuture<FBSimulator *> *)fetchSimulatorForConfiguration:(FBXCTestConfiguration *)configuration
 {
   FBXCTestDestinationiPhoneSimulator *destination = (FBXCTestDestinationiPhoneSimulator *)configuration.destination;
   if (![destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]) {
     return [[FBXCTestError
       describeFormat:@"%@ is not a Simulator Destination", configuration.destination]
-      fail:error];
+      failFuture];
   }
 
   if ([configuration isKindOfClass:FBTestManagerTestConfiguration.class]) {
-    return [self fetchSimulatorForApplicationTests:destination error:error];
+    return [self fetchSimulatorForApplicationTest:destination];
   }
-  return [self fetchSimulatorForLogicTest:destination error:error];
+  return [self fetchSimulatorForLogicTest:destination];
 }
 
-- (nullable FBSimulator *)fetchSimulatorForLogicTest:(FBXCTestDestinationiPhoneSimulator *)destination error:(NSError **)error
+- (FBFuture<FBSimulator *> *)fetchSimulatorForLogicTest:(FBXCTestDestinationiPhoneSimulator *)destination
 {
   FBSimulatorConfiguration *configuration = [FBXCTestSimulatorFetcher configurationForDestination:destination];
-  return [[self.simulatorControl.pool
+  return [self.simulatorControl.pool
     allocateSimulatorWithConfiguration:configuration
-    options:FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsDeleteOnFree]
-    await:error];
+    options:FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsDeleteOnFree];
 }
 
-- (nullable FBSimulator *)fetchSimulatorForApplicationTests:(FBXCTestDestinationiPhoneSimulator *)destination error:(NSError **)error
+- (FBFuture<FBSimulator *> *)fetchSimulatorForApplicationTest:(FBXCTestDestinationiPhoneSimulator *)destination
 {
-  FBSimulator *simulator = [self fetchSimulatorForLogicTest:destination error:error];
-  if (!simulator) {
-    return nil;
-  }
-
   FBSimulatorBootConfiguration *bootConfiguration = [[FBSimulatorBootConfiguration
     defaultConfiguration]
     withOptions:FBSimulatorBootOptionsEnableDirectLaunch];
 
-  if (![[simulator bootWithConfiguration:bootConfiguration] await:error]) {
-    [self.logger logFormat:@"Failed to boot simulator: %@", *error];
-    return nil;
-  }
-  return simulator;
+  return [[self
+    fetchSimulatorForLogicTest:destination]
+    onQueue:dispatch_get_main_queue() fmap:^(FBSimulator *simulator) {
+      return [[simulator bootWithConfiguration:bootConfiguration] mapReplace:simulator];
+    }];
 }
 
-- (BOOL)returnSimulator:(FBSimulator *)simulator error:(NSError **)error
+- (FBFuture<NSNull *> *)returnSimulator:(FBSimulator *)simulator
 {
-  if (![[self.simulatorControl.pool freeSimulator:simulator] await:error]) {
-    return NO;
-  }
-  return YES;
+  return [self.simulatorControl.pool freeSimulator:simulator];
 }
 
 #pragma mark Private
