@@ -128,7 +128,7 @@
   [self.assert consumeAllNotifications];
 
   NSError *error = nil;
-  BOOL success = [simulator boot:bootConfiguration error:&error];
+  BOOL success = [[simulator bootWithConfiguration:bootConfiguration] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
   [self.assert bootingNotificationsFired:bootConfiguration];

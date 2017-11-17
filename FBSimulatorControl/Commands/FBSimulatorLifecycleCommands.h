@@ -32,19 +32,18 @@ NS_ASSUME_NONNULL_BEGIN
  Boots the Simulator with the default Simulator Launch Configuration.
  Will fail if the Simulator is currently booted.
 
- @param error an error out for any error that occurs.
- @return the reciever, for chaining.
+ @return a Future that resolves when the Simulator is booted.
  */
-- (BOOL)bootWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)boot;
 
 /**
  Boots the Simulator with the default Simulator Launch Configuration.
  Will fail if the Simulator is currently booted.
 
- @param error an error out for any error that occurs.
- @return the reciever, for chaining.
+ @param configuration the configuration to boot with.
+ @return a Future that resolves when the Simulator is booted.
  */
-- (BOOL)boot:(FBSimulatorBootConfiguration *)configuration error:(NSError **)error;
+- (FBFuture<NSNull *> *)bootWithConfiguration:(FBSimulatorBootConfiguration *)configuration;
 
 /**
  Shuts the Simulator down.

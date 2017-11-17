@@ -104,7 +104,7 @@ public enum Action {
   }
 
   static func boot(_ configuration: FBSimulatorBootConfiguration) -> Action {
-    return self.core(configuration)
+    return self.coreFuture(configuration)
   }
 
   static func diagnose(_ query: FBDiagnosticQuery) -> Action {

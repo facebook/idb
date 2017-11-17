@@ -33,7 +33,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeBoot;
 /**
  A Value Object for defining how to launch a Simulator.
  */
-@interface FBSimulatorBootConfiguration : NSObject <NSCopying, FBiOSTargetAction, FBDebugDescribeable>
+@interface FBSimulatorBootConfiguration : NSObject <NSCopying, FBiOSTargetFuture, FBDebugDescribeable>
 
 /**
  Options for how the Simulator should be launched.

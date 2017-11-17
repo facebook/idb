@@ -112,13 +112,13 @@
   XCTAssertEqual(([[NSSet setWithArray:@[simulator1.udid, simulator2.udid, simulator3.udid]] count]), 3u);
 
   NSError *error = nil;
-  BOOL success = [simulator1 boot:self.bootConfiguration error:&error];
+  BOOL success = [[simulator1 bootWithConfiguration:self.bootConfiguration] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  success = [simulator2 boot:self.bootConfiguration error:&error];
+  success = [[simulator2 bootWithConfiguration:self.bootConfiguration] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  success = [simulator3 boot:self.bootConfiguration error:&error];
+  success = [[simulator3 bootWithConfiguration:self.bootConfiguration] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

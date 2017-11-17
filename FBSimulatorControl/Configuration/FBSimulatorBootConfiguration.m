@@ -249,22 +249,22 @@ static NSString *const BootOptionStringUseNSWorkspace = @"Use NSWorkspace";
   return options;
 }
 
-#pragma mark FBiOSTargetAction
+#pragma mark FBiOSTargetFuture
 
 - (FBiOSTargetActionType)actionType
 {
   return FBiOSTargetActionTypeBoot;
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
+- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
 {
-  if (![target isKindOfClass:FBSimulator.class]) {
+  id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
+  if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
     return [[FBSimulatorError
       describeFormat:@"%@ cannot be booted", target]
-      failBool:error];
+      failFuture];
   }
-  FBSimulator *simulator = (FBSimulator *) target;
-  return [simulator boot:self error:error];
+  return [[commands bootWithConfiguration:self] mapReplace:self.actionType];
 }
 
 @end
