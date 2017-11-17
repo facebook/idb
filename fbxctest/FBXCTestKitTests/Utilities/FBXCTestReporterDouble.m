@@ -11,6 +11,7 @@
 
 @interface FBXCTestReporterDouble ()
 
+@property (nonatomic, copy, readonly) NSMutableArray<NSString *> *mutableStartedTestSuites;
 @property (nonatomic, copy, readonly) NSMutableArray<NSArray<NSString *> *> *mutableStartedTestCases;
 @property (nonatomic, copy, readonly) NSMutableArray<NSArray<NSString *> *> *mutablePassedTests;
 @property (nonatomic, copy, readonly) NSMutableArray<NSArray<NSString *> *> *mutableFailedTests;
@@ -30,6 +31,7 @@
     return nil;
   }
 
+  _mutableStartedTestSuites = [NSMutableArray array];
   _mutableStartedTestCases = [NSMutableArray array];
   _mutablePassedTests = [NSMutableArray array];
   _mutableFailedTests = [NSMutableArray array];
@@ -86,7 +88,7 @@
 
 - (void)testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime
 {
-
+  [self.mutableStartedTestSuites addObject:testSuite];
 }
 
 - (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line
@@ -120,6 +122,11 @@
 }
 
 #pragma mark Accessors
+
+- (NSArray<NSArray<NSString *> *> *)startedSuites
+{
+  return [self.mutableStartedTestSuites copy];
+}
 
 - (NSArray<NSArray<NSString *> *> *)startedTests
 {

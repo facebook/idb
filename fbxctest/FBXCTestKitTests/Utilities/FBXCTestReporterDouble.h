@@ -34,6 +34,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSArray<NSArray<NSString *> *> *failedTests;
 
 /**
+ An array of the started test suites.
+ */
+@property (nonatomic, copy, readonly) NSArray<NSString *> *startedSuites;
+
+/**
  Confirmation -[FBXCTestReporter printReportWithError:] was called.
  */
 @property (nonatomic, assign, readonly) BOOL printReportWasCalled;

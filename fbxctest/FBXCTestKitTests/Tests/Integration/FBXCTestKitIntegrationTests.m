@@ -175,10 +175,10 @@
   XCTAssertNil(error);
 
   XCTAssertTrue(self.reporter.printReportWasCalled);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 10u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 10u);
+  XCTAssertEqual(self.reporter.startedSuites.count, 1u);
+  XCTAssertEqual(self.reporter.startedTests.count, 10u);
+  XCTAssertEqual(self.reporter.passedTests.count, 5u);
+  XCTAssertEqual(self.reporter.failedTests.count, 5u);
 }
 
 - (void)testiOSLogicTestEndsOnCrashingTest
@@ -205,10 +205,10 @@
   XCTAssertTrue([error.description containsString:@"testPossibleCrashingOfHostProcess"]);
 
   XCTAssertFalse(self.reporter.printReportWasCalled);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 0u);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 7u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 6u);
+  XCTAssertEqual(self.reporter.startedSuites.count, 1u);
+  XCTAssertEqual(self.reporter.startedTests.count, 7u);
+  XCTAssertEqual(self.reporter.passedTests.count, 2u);
+  XCTAssertEqual(self.reporter.failedTests.count, 4u);
 }
 
 - (void)testiOSLogicTestEndsOnStallingTest
@@ -235,10 +235,10 @@
   XCTAssertTrue([error.description containsString:@"testPossibleStallingOfHostProcess"]);
 
   XCTAssertFalse(self.reporter.printReportWasCalled);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 0u);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 8u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 7u);
+  XCTAssertEqual(self.reporter.startedSuites.count, 1u);
+  XCTAssertEqual(self.reporter.startedTests.count, 8u);
+  XCTAssertEqual(self.reporter.passedTests.count, 3u);
+  XCTAssertEqual(self.reporter.failedTests.count, 4u);
 }
 
 - (void)testiOSTestList
@@ -300,10 +300,10 @@
   XCTAssertNil(error);
 
   XCTAssertTrue(self.reporter.printReportWasCalled);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 10u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 10u);
+  XCTAssertEqual(self.reporter.startedSuites.count, 1u);
+  XCTAssertEqual(self.reporter.startedTests.count, 10u);
+  XCTAssertEqual(self.reporter.passedTests.count, 6u);
+  XCTAssertEqual(self.reporter.failedTests.count, 4u);
 }
 
 - (void)testMacOSXLogicTestEndsOnCrashingTest
@@ -330,10 +330,10 @@
   XCTAssertTrue([error.description containsString:@"testPossibleCrashingOfHostProcess"]);
 
   XCTAssertFalse(self.reporter.printReportWasCalled);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 0u);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 7u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 6u);
+  XCTAssertEqual(self.reporter.startedSuites.count, 1u);
+  XCTAssertEqual(self.reporter.startedTests.count, 7u);
+  XCTAssertEqual(self.reporter.passedTests.count, 3u);
+  XCTAssertEqual(self.reporter.failedTests.count, 3u);
 }
 
 - (void)testMacOSXLogicTestEndsOnStallingTest
@@ -360,10 +360,10 @@
   XCTAssertTrue([error.description containsString:@"testPossibleStallingOfHostProcess"]);
 
   XCTAssertFalse(self.reporter.printReportWasCalled);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 0u);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 8u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 7u);
+  XCTAssertEqual(self.reporter.startedSuites.count, 1u);
+  XCTAssertEqual(self.reporter.startedTests.count, 8u);
+  XCTAssertEqual(self.reporter.passedTests.count, 4u);
+  XCTAssertEqual(self.reporter.failedTests.count, 3u);
 }
 
 - (void)testReportsMacOSXTestList
