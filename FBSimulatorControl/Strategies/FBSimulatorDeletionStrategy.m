@@ -104,41 +104,25 @@
 
   // Kill the Simulators before deleting them.
   [self.logger logFormat:@"Killing Simulator, in preparation for deletion %@", simulator];
-  return [[self.set
+  return [[[self.set
     killSimulator:simulator]
-    onQueue:workQueue fmap:^(NSArray<FBSimulator *> *result) {
+    onQueue:workQueue fmap:^(id _) {
       // Then follow through with the actual deletion of the Simulator, which will remove it from the set.
-      NSError *innerError = nil;
       [self.logger logFormat:@"Deleting Simulator %@", simulator];
-      NSUInteger retryDelete = 3;
-      do {
-        if ([self.set.deviceSet deleteDevice:simulator.device error:&innerError]) {
-          break;
-        }
-        // On Travis the deleteDevice operation sometimes fails:
-        //   Domain=NSCocoaErrorDomain Code=513 "B4D-C0-F-F-E" couldn't be removed because you don't have permission to access it.
-        // Inside the devicePath there's a device.plist which sometimes cannot be deleted. Probably some process still has an open
-        // file handle to that file.
-        BOOL shouldRetry = [innerError.domain isEqualToString:NSCocoaErrorDomain] && innerError.code == NSFileWriteNoPermissionError;
-        if (!shouldRetry) {
-          return [[[[[FBSimulatorError
-            describe:@"Failed to delete simulator."]
-            inSimulator:simulator]
-            causedBy:innerError]
-            logger:self.logger]
-            failFuture];
-        }
-      } while (--retryDelete > 0);
+      return [FBSimulatorDeletionStrategy onDeviceSet:self.set.deviceSet performDeletionOfDevice:simulator.device onQueue:simulator.asyncQueue];
+    }]
+    onQueue:workQueue fmap:^(id _) {
       [self.logger logFormat:@"Simulator Deleted Successfully %@", simulator];
 
       // The Logfiles now need disposing of. 'erasing' a Simulator will cull the logfiles,
       // but deleting a Simulator will not. There's no sense in letting this directory accumilate files.
       if ([NSFileManager.defaultManager fileExistsAtPath:coreSimulatorLogsDirectory]) {
         [self.logger logFormat:@"Deleting Log Directory at %@", coreSimulatorLogsDirectory];
-        if (![NSFileManager.defaultManager removeItemAtPath:coreSimulatorLogsDirectory error:&innerError]) {
+        NSError *error = nil;
+        if (![NSFileManager.defaultManager removeItemAtPath:coreSimulatorLogsDirectory error:&error]) {
           return [[[[FBSimulatorError
             describeFormat:@"Failed to delete Simulator Log Directory %@.", coreSimulatorLogsDirectory]
-            causedBy:innerError]
+            causedBy:error]
             logger:self.logger]
             failFuture];
         }
@@ -146,6 +130,19 @@
       }
       return [FBFuture futureWithResult:udid];
     }];
+}
+
++ (FBFuture<NSNull *> *)onDeviceSet:(SimDeviceSet *)deviceSet performDeletionOfDevice:(SimDevice *)device onQueue:(dispatch_queue_t)queue
+{
+  FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
+  [deviceSet deleteDeviceAsync:device completionQueue:queue completionHandler:^(NSError *error) {
+    if (error) {
+      [future resolveWithError:error];
+    } else {
+      [future resolveWithResult:NSNull.null];
+    }
+  }];
+  return future;
 }
 
 @end

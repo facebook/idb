@@ -62,10 +62,10 @@
 - (void)createDevicePairAsyncWithGizmo:(id)arg1 companion:(id)arg2 completionQueue:(id)arg3 completionHandler:(CDUnknownBlockType)arg4;
 - (BOOL)testDevicePairingBetweenGizmo:(id)arg1 companion:(id)arg2 error:(id *)arg3;
 - (BOOL)deleteDevice:(id)arg1 error:(id *)arg2;
-- (void)deleteDeviceAsync:(id)arg1 completionHandler:(CDUnknownBlockType)arg2;
+- (void)deleteDeviceAsync:(id)arg1 completionHandler:(void(^)(NSError *))arg2;
 - (id)cloneDevice:(id)arg1 name:(id)arg2 error:(id *)arg3;
 - (void)cloneDeviceAsync:(id)arg1 name:(id)arg2 completionQueue:(id)arg3 completionHandler:(CDUnknownBlockType)arg4;
-- (void)deleteDeviceAsync:(id)arg1 completionQueue:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;
+- (void)deleteDeviceAsync:(id)arg1 completionQueue:(id)arg2 completionHandler:(void(^)(NSError *))arg3;
 - (id)createDeviceWithType:(id)arg1 runtime:(id)arg2 name:(id)arg3 error:(id *)arg4;
 - (void)createDeviceAsyncWithType:(id)arg1 runtime:(id)arg2 name:(id)arg3 completionQueue:(id)arg4 completionHandler:(CDUnknownBlockType)arg5;
 - (void)createDeviceAsyncWithType:(id)arg1 runtime:(id)arg2 name:(id)arg3 completionHandler:(CDUnknownBlockType)arg4;
