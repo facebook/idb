@@ -109,7 +109,7 @@
   BOOL killSpuriousSimulators = (configuration.options & FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart) == FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart;
   if (killSpuriousSimulators && !deleteOnStart) {
     BOOL failOnSpuriousKillFail = (configuration.options & FBSimulatorManagementOptionsIgnoreSpuriousKillFail) != FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
-    if (![self.simulatorTerminationStrategy killSpuriousSimulatorsWithError:&innerError] && failOnSpuriousKillFail) {
+    if (![self  killSpuriousSimulatorsWithError:&innerError] && failOnSpuriousKillFail) {
       return [[[[FBSimulatorError
       describe:@"Failed to kill spurious simulators"]
       causedBy:innerError]
@@ -279,7 +279,7 @@
 
 - (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
 {
-  return [self.simulatorTerminationStrategy killSpuriousSimulatorsWithError:error];
+  return [[self.simulatorTerminationStrategy killSpuriousSimulators] await:error] != nil;
 }
 
 + (NSDictionary<NSString *, FBSimulator *> *)keySimulatorsByUDID:(NSArray *)simulators

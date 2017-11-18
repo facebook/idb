@@ -54,10 +54,9 @@ NS_ASSUME_NONNULL_BEGIN
  To make the runtime environment more predicatable, it is best to avoid using FBSimulatorControl in conjuction with tradition Simulator launching systems at the same time.
  This method will not kill Simulators that are launched by FBSimulatorControl in another, or the same process.
 
- @param error an error out if any error occured.
- @return an YES if successful, nil otherwise.
+ @return A future that resolves when the simulators are killed.
  */
-- (BOOL)killSpuriousSimulatorsWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)killSpuriousSimulators;
 
 @end
 

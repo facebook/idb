@@ -100,57 +100,14 @@
   // this will give a sufficient amount of time between killing Applications.
 
   [self.logger.debug logFormat:@"Killing %@", [FBCollectionInformation oneLineDescriptionFromArray:simulators atKeyPath:@"shortDescription"]];
+  NSMutableArray<FBFuture<FBSimulator *> *> *futures = [NSMutableArray array];
   for (FBSimulator *simulator in simulators) {
-    // Get some preconditions
-    NSError *innerError = nil;
-    FBProcessInfo *launchdProcess = simulator.launchdProcess ?: [self.processFetcher launchdProcessForSimDevice:simulator.device];
-    dispatch_queue_t workQueue = simulator.workQueue;
-
-    // The Simulator Connection for this process should be tidied up first.
-    if (![simulator disconnectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout logger:self.logger error:&innerError]) {
-      return [[[[[FBSimulatorError
-        describe:@"Could disconnect from Simulator"]
-        inSimulator:simulator]
-        causedBy:innerError]
-        logger:self.logger]
-        failFuture];
-    }
-
-    // Kill the Simulator.app Process first, see documentation in `-[FBSimDeviceWrapper shutdownWithError:]`.
-    // This prevents 'Zombie' Simulator.app from existing.
-    FBProcessInfo *simulatorProcess = simulator.containerApplication ?: [self.processFetcher simulatorApplicationProcessForSimDevice:simulator.device];
-    if (simulatorProcess) {
-      [self.logger.debug logFormat:@"Simulator %@ has a Simulator.app Process %@, terminating it now", simulator.shortDescription, simulatorProcess];
-      if (![[self.processTerminationStrategy killProcess:simulatorProcess] await:&innerError]) {
-        return [[[[[FBSimulatorError
-          describeFormat:@"Could not kill simulator process %@", simulatorProcess]
-          inSimulator:simulator]
-          causedBy:innerError]
-          logger:self.logger]
-          failFuture];
-      }
-      [simulator.eventSink containerApplicationDidTerminate:simulatorProcess expected:YES];
-    } else {
-      [self.logger.debug logFormat:@"Simulator %@ does not have a running Simulator.app Process", simulator.shortDescription];
-    }
-
-    // Shutdown will:
-    // 1) Wait for a Simulator launched via Simulator.app to be in a consistent 'Shutdown' state.
-    // 2) Shutdown a SimDevice that has been launched directly via. `-[SimDevice bootWithOptions:error]`.
-    return [[[FBSimulatorShutdownStrategy
-      strategyWithSimulator:simulator]
-      shutdown]
-      onQueue:workQueue map:^(id _) {
-        if (launchdProcess) {
-          [simulator.eventSink simulatorDidTerminate:launchdProcess expected:YES];
-        }
-        return simulator;
-      }];
+    [futures addObject:[self eraseSimulator:simulator]];
   }
-  return [FBFuture futureWithResult:simulators];
+  return [FBFuture futureWithFutures:futures];
 }
 
-- (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
+- (FBFuture<NSNull *> *)killSpuriousSimulators
 {
   NSPredicate *predicate = [NSCompoundPredicate notPredicateWithSubpredicate:
     [NSCompoundPredicate andPredicateWithSubpredicates:@[
@@ -159,32 +116,77 @@
     ]
   ]];
 
-  NSError *innerError = nil;
-  if (![self killSimulatorProcessesMatchingPredicate:predicate error:&innerError]) {
-    return [[[[FBSimulatorError
-      describe:@"Could not kill spurious simulators"]
-      causedBy:innerError]
-      logger:self.logger]
-      failBool:error];
-  }
-
-  return YES;
+  return [[self
+    killSimulatorProcessesMatchingPredicate:predicate]
+    rephraseFailure:@"Could not kill spurious simulators"];
 }
 
 #pragma mark Private
 
-- (BOOL)killSimulatorProcessesMatchingPredicate:(NSPredicate *)predicate error:(NSError **)error
+- (FBFuture<FBSimulator *> *)eraseSimulator:(FBSimulator *)simulator
 {
-  NSArray *processes = [self.processFetcher.simulatorApplicationProcesses filteredArrayUsingPredicate:predicate];
+  // Get some preconditions
+  NSError *error = nil;
+  FBProcessInfo *launchdProcess = simulator.launchdProcess ?: [self.processFetcher launchdProcessForSimDevice:simulator.device];
+  dispatch_queue_t workQueue = simulator.workQueue;
+
+  // The Simulator Connection for this process should be tidied up first.
+  if (![simulator disconnectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout logger:self.logger error:&error]) {
+    return [[[[[FBSimulatorError
+      describe:@"Could disconnect from Simulator"]
+      inSimulator:simulator]
+      causedBy:error]
+      logger:self.logger]
+      failFuture];
+  }
+
+  // Kill the Simulator.app Process first, see documentation in `-[FBSimDeviceWrapper shutdownWithError:]`.
+  // This prevents 'Zombie' Simulator.app from existing.
+  FBProcessInfo *simulatorProcess = simulator.containerApplication ?: [self.processFetcher simulatorApplicationProcessForSimDevice:simulator.device];
+  FBFuture<NSNull *> *simulatorAppProcessKillFuture = nil;
+  if (simulatorProcess) {
+    [self.logger.debug logFormat:@"Simulator %@ has a Simulator.app Process %@, terminating it now", simulator.shortDescription, simulatorProcess];
+    simulatorAppProcessKillFuture = [[self.processTerminationStrategy
+      killProcess:simulatorProcess]
+      onQueue:simulator.workQueue map:^(id _) {
+        [simulator.eventSink containerApplicationDidTerminate:simulatorProcess expected:YES];
+        return NSNull.null;
+      }];
+  } else {
+    [self.logger.debug logFormat:@"Simulator %@ does not have a running Simulator.app Process", simulator.shortDescription];
+    simulatorAppProcessKillFuture = [FBFuture futureWithResult:NSNull.null];
+  }
+
+  // Shutdown will:
+  // 1) Wait for a Simulator launched via Simulator.app to be in a consistent 'Shutdown' state.
+  // 2) Shutdown a SimDevice that has been launched directly via. `-[SimDevice bootWithOptions:error]`.
+  return [[simulatorAppProcessKillFuture
+    onQueue:workQueue fmap:^(id _) {
+      return [[FBSimulatorShutdownStrategy
+        strategyWithSimulator:simulator]
+        shutdown];
+    }]
+    onQueue:workQueue map:^(id _) {
+      if (launchdProcess) {
+        [simulator.eventSink simulatorDidTerminate:launchdProcess expected:YES];
+      }
+      return simulator;
+    }];
+}
+
+- (FBFuture<NSNull *> *)killSimulatorProcessesMatchingPredicate:(NSPredicate *)predicate
+{
+  NSArray<FBProcessInfo *> *processes = [self.processFetcher.simulatorApplicationProcesses filteredArrayUsingPredicate:predicate];
+  NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
+
   for (FBProcessInfo *process in processes) {
     NSParameterAssert(process.processIdentifier > 1);
-    if (![[self.processTerminationStrategy killProcess:process] await:error]) {
-      return NO;
-    }
-    // See comment in `killSimulators:withError:`
-    sleep(1);
+    FBFuture<NSNull *> *future = [[self.processTerminationStrategy
+      killProcess:process]
+      delay:1];
+    [futures addObject:future];
   }
-  return YES;
+  return [FBFuture futureWithFutures:futures];
 }
 
 @end
