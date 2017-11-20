@@ -16,7 +16,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorConnection.h"
 
-FBiOSTargetActionType const FBiOSTargetActionTypeHID = @"hid";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeHID = @"hid";
 
 static NSString *const KeyEventClass = @"class";
 static NSString *const KeyDirection = @"direction";
@@ -619,12 +619,12 @@ static NSString *const DirectionUp = @"up";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetActionType)actionType
+- (FBiOSTargetFutureType)actionType
 {
-  return FBiOSTargetActionTypeHID;
+  return FBiOSTargetFutureTypeHID;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
 {
   if (![target isKindOfClass:FBSimulator.class]) {
     return [[FBSimulatorError
@@ -632,7 +632,7 @@ static NSString *const DirectionUp = @"up";
       failFuture];
   }
   FBSimulator *simulator = (FBSimulator *) target;
-  return [FBFuture onQueue:target.workQueue resolveValue:^FBiOSTargetActionType(NSError **error) {
+  return [FBFuture onQueue:target.workQueue resolveValue:^FBiOSTargetFutureType(NSError **error) {
     FBSimulatorHID *hid = [[simulator connectWithError:error] connectToHID:error];
     if (!hid) {
       return nil;

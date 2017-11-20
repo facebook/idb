@@ -10,7 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBEventReporter.h>
-#import <FBControlCore/FBiOSTargetAction.h>
+#import <FBControlCore/FBiOSTargetFuture.h>
 #import <FBControlCore/FBTerminationHandle.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBiOSActionRouter;
 
 @protocol FBiOSTarget;
-@protocol FBiOSTargetAction;
+@protocol FBiOSTargetFuture;
 @protocol FBiOSActionReaderDelegate;
 
 /**
@@ -100,7 +100,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeActionReader;
 /**
  The Delegate for the Action Reader.
  */
-@protocol FBiOSActionReaderDelegate <FBiOSTargetActionDelegate, FBEventReporter>
+@protocol FBiOSActionReaderDelegate <FBiOSTargetFutureAwaitableDelegate, FBEventReporter>
 
 /**
  Called when the Reader has finished reading.
@@ -144,7 +144,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeActionReader;
  @param target the target
  @return the string to write back to the reader, if relevant.
  */
-- (nullable NSString *)reader:(FBiOSActionReader *)reader willStartPerformingAction:(id<FBiOSTargetAction>)action onTarget:(id<FBiOSTarget>)target;
+- (nullable NSString *)reader:(FBiOSActionReader *)reader willStartPerformingAction:(id<FBiOSTargetFuture>)action onTarget:(id<FBiOSTarget>)target;
 
 /**
  Called when the Reader has successfully performed an action
@@ -154,7 +154,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeActionReader;
  @param target the target
  @return the string to write back to the reader, if relevant.
 */
-- (nullable NSString *)reader:(FBiOSActionReader *)reader didProcessAction:(id<FBiOSTargetAction>)action onTarget:(id<FBiOSTarget>)target;
+- (nullable NSString *)reader:(FBiOSActionReader *)reader didProcessAction:(id<FBiOSTargetFuture>)action onTarget:(id<FBiOSTarget>)target;
 
 /**
  Called when the Reader has failed to perform an action
@@ -165,7 +165,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeActionReader;
  @param error the error.
  @return the string to write back to the reader, if relevant.
  */
-- (nullable NSString *)reader:(FBiOSActionReader *)reader didFailToProcessAction:(id<FBiOSTargetAction>)action onTarget:(id<FBiOSTarget>)target error:(NSError *)error;
+- (nullable NSString *)reader:(FBiOSActionReader *)reader didFailToProcessAction:(id<FBiOSTargetFuture>)action onTarget:(id<FBiOSTarget>)target error:(NSError *)error;
 
 @end
 

@@ -24,7 +24,7 @@
 #import "NSPredicate+FBControlCore.h"
 #import "NSRunLoop+FBControlCore.h"
 
-FBiOSTargetActionType const FBiOSTargetActionTypeSearch = @"search";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeSearch = @"search";
 
 @implementation FBBatchLogSearchResult
 
@@ -350,14 +350,14 @@ static NSString *const KeySince = @"since";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetActionType)actionType
+- (FBiOSTargetFutureType)actionType
 {
-  return FBiOSTargetActionTypeSearch;
+  return FBiOSTargetFutureTypeSearch;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
 {
-  FBiOSTargetActionType actionType = self.actionType;
+  FBiOSTargetFutureType actionType = self.actionType;
   return [[self
     searchOnTarget:target]
     onQueue:target.workQueue map:^FBFuture *(FBBatchLogSearchResult *result) {

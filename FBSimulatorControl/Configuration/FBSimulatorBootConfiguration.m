@@ -13,7 +13,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 
-FBiOSTargetActionType const FBiOSTargetActionTypeBoot = @"boot";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeBoot = @"boot";
 
 @implementation FBSimulatorBootConfiguration
 
@@ -251,12 +251,12 @@ static NSString *const BootOptionStringUseNSWorkspace = @"Use NSWorkspace";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetActionType)actionType
+- (FBiOSTargetFutureType)actionType
 {
-  return FBiOSTargetActionTypeBoot;
+  return FBiOSTargetFutureTypeBoot;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
 {
   id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
   if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {

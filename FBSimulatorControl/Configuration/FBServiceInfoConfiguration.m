@@ -14,7 +14,7 @@
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorLaunchCtlCommands.h"
 
-FBiOSTargetActionType const FBiOSTargetActionTypeServiceInfo = @"service_info";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeServiceInfo = @"service_info";
 
 @implementation FBServiceInfoConfiguration
 
@@ -88,12 +88,12 @@ static NSString *const KeyServiceName = @"service_name";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetActionType)actionType
+- (FBiOSTargetFutureType)actionType
 {
-  return FBiOSTargetActionTypeServiceInfo;
+  return FBiOSTargetFutureTypeServiceInfo;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
 {
   id<FBSimulatorLaunchCtlCommands> commands = (id<FBSimulatorLaunchCtlCommands>) target;
   if (![commands conformsToProtocol:@protocol(FBSimulatorLaunchCtlCommands)]) {
@@ -120,7 +120,7 @@ static NSString *const KeyServiceName = @"service_name";
        return;
       }
       id<FBEventReporterSubject> coreSubject = [FBEventReporterSubject subjectWithControlCoreValue:processInfo];
-      id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:FBiOSTargetActionTypeServiceInfo type:FBEventTypeDiscrete subject:coreSubject];
+      id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:FBiOSTargetFutureTypeServiceInfo type:FBEventTypeDiscrete subject:coreSubject];
       [reporter report:subject];
     }]
     mapReplace:self.actionType];

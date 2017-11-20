@@ -13,11 +13,11 @@
 
 #import "FBControlCoreValueTestCase.h"
 
-@interface FBiOSTargetActionTests : FBControlCoreValueTestCase
+@interface FBiOSTargetFutureTests : FBControlCoreValueTestCase
 
 @end
 
-@implementation FBiOSTargetActionTests
+@implementation FBiOSTargetFutureTests
 
 - (void)testValueSemantics
 {

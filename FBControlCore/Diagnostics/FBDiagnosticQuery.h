@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSTargetAction.h>
+#import <FBControlCore/FBiOSTargetFuture.h>
 #import <FBControlCore/FBCrashLogInfo.h>
 #import <FBControlCore/NSPredicate+FBControlCore.h>
 
@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Action Type for a Diagnostic Query.
  */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeDiagnosticQuery;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeDiagnosticQuery;
 
 typedef NSString *FBDiagnosticQueryFormat NS_STRING_ENUM;
 extern FBDiagnosticQueryFormat FBDiagnosticQueryFormatCurrent;

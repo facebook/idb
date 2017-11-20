@@ -28,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Action Type for a Boot.
  */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeBoot;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeBoot;
 
 /**
  A Value Object for defining how to launch a Simulator.

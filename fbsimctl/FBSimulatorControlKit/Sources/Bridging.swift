@@ -189,14 +189,14 @@ extension HttpRequest {
   }
 }
 
-extension FBiOSTargetActionType {
+extension FBiOSTargetFutureType {
   public var eventName: EventName { get {
     switch self {
-    case FBiOSTargetActionType.applicationLaunch:
+    case FBiOSTargetFutureType.applicationLaunch:
       return .launch
-    case FBiOSTargetActionType.agentLaunch:
+    case FBiOSTargetFutureType.agentLaunch:
       return .launch
-    case FBiOSTargetActionType.testLaunch:
+    case FBiOSTargetFutureType.testLaunch:
       return .launchXCTest
     default:
       return EventName(rawValue: self.rawValue)
@@ -210,8 +210,7 @@ extension FBiOSTargetFuture {
   }}
 
   public var printable: String { get {
-    let action = FBiOSTargetActionFromTargetFuture(self)
-    let json = try! JSON.encode(FBiOSActionRouter.json(from: action) as AnyObject)
+    let json = try! JSON.encode(FBiOSActionRouter.json(fromAction: self) as AnyObject)
     return try! json.serializeToString(false)
   }}
 }

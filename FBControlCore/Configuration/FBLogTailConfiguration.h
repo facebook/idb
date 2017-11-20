@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Action Type for a Log Tail.
  */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeLogTail;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail;
 
 /**
  The configuration for tailing a log.

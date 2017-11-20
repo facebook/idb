@@ -9,19 +9,19 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSTargetAction.h>
+#import <FBControlCore/FBiOSTargetFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Action Type for an Log Tail.
  */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeErase;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeErase;
 
 /**
- An FBiOSTargetAction for Erasing a Simulator.
+ An FBiOSTargetFuture for Erasing a Simulator.
  */
-@interface FBSimulatorEraseConfiguration : FBiOSTargetActionSimple <FBiOSTargetFuture>
+@interface FBSimulatorEraseConfiguration : FBiOSTargetFutureSimple <FBiOSTargetFuture>
 
 @end
 

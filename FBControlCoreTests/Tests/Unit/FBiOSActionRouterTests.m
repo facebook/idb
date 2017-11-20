@@ -12,7 +12,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBiOSTargetDouble.h"
-#import "FBiOSTargetActionDouble.h"
+#import "FBiOSTargetFutureDouble.h"
 
 @interface FBiOSActionRouterTests : XCTestCase
 
@@ -22,11 +22,11 @@
 
 @implementation FBiOSActionRouterTests
 
-+ (NSArray<id<FBiOSTargetAction>> *)actions
++ (NSArray<id<FBiOSTargetFuture>> *)actions
 {
   return @[
-    [[FBiOSTargetActionDouble alloc] initWithIdentifier:@"foo" succeed:NO],
-    [[FBiOSTargetActionDouble alloc] initWithIdentifier:@"bar" succeed:YES],
+    [[FBiOSTargetFutureDouble alloc] initWithIdentifier:@"foo" succeed:NO],
+    [[FBiOSTargetFutureDouble alloc] initWithIdentifier:@"bar" succeed:YES],
   ];
 }
 
@@ -39,15 +39,15 @@
 
 - (void)testCorrectlyDeflates
 {
-  NSArray<id<FBiOSTargetAction>> *actions = FBiOSActionRouterTests.actions;
+  NSArray<id<FBiOSTargetFuture>> *actions = FBiOSActionRouterTests.actions;
   NSSet<Class> *actionClasses = [NSSet setWithArray:[actions valueForKey:@"class"]];
   FBiOSActionRouter *router = [FBiOSActionRouter routerForTarget:self.target actionClasses:actionClasses.allObjects];
-  for (id<FBiOSTargetAction> action in actions) {
+  for (id<FBiOSTargetFuture> action in actions) {
     NSDictionary<NSString *, id> *json = [router jsonFromAction:action];
     XCTAssertEqualObjects(json[@"action"], [action.class actionType]);
     XCTAssertEqualObjects(json[@"udid"], self.target.udid);
     NSError *error = nil;
-    id<FBiOSTargetAction> deflated = [router actionFromJSON:json error:&error];
+    id<FBiOSTargetFuture> deflated = [router actionFromJSON:json error:&error];
     XCTAssertNil(error);
     XCTAssertEqualObjects(action, deflated);
   }

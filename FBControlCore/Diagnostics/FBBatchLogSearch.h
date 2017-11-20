@@ -12,14 +12,14 @@
 #import <FBControlCore/FBDiagnostic.h>
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBJSONConversion.h>
-#import <FBControlCore/FBiOSTargetAction.h>
+#import <FBControlCore/FBiOSTargetFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Action Type for the HID.
  */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeSearch;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeSearch;
 
 @class FBDiagnostic;
 @class FBLogSearchPredicate;

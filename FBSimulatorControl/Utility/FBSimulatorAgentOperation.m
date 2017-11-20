@@ -15,7 +15,7 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"
 
-FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
 
 @interface FBSimulatorAgentOperation ()
 
@@ -103,7 +103,7 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
 
 - (FBTerminationHandleType)handleType
 {
-  return FBTerminationHandleTypeSimulatorAgent;
+  return FBiOSTargetFutureTypeSimulatorAgent;
 }
 
 - (void)terminate

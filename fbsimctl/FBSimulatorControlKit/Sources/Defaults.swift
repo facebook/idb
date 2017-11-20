@@ -134,10 +134,10 @@ extension Action {
   }}
 }
 
-extension FBiOSTargetActionType {
+extension FBiOSTargetFutureType {
   var defaultQuery: FBiOSTargetQuery? { get {
     switch self {
-      case FBiOSTargetActionType.boot:
+      case FBiOSTargetFutureType.boot:
         return nil
       default:
         return FBiOSTargetQuery.state(.booted)

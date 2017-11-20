@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSTargetAction.h>
+#import <FBControlCore/FBiOSTargetFuture.h>
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
 

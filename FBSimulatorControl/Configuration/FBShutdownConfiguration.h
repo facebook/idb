@@ -16,12 +16,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Action Type for the Shutting Down.
  */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeListShutdown;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeListShutdown;
 
 /**
  The Target Action Class for Shutting down a Simulator.
  */
-@interface FBShutdownConfiguration : FBiOSTargetActionSimple <FBiOSTargetFuture>
+@interface FBShutdownConfiguration : FBiOSTargetFutureSimple <FBiOSTargetFuture>
 
 @end
 

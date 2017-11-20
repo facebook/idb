@@ -7,9 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBiOSTargetActionDouble.h"
+#import "FBiOSTargetFutureDouble.h"
 
-@implementation FBiOSTargetActionDouble
+@implementation FBiOSTargetFutureDouble
 
 - (instancetype)initWithIdentifier:(NSString *)identifier succeed:(BOOL)succeed
 {
@@ -24,7 +24,7 @@
   return self;
 }
 
-- (FBiOSTargetActionType)actionType
+- (FBiOSTargetFutureType)actionType
 {
   return @"test-double";
 }
@@ -46,7 +46,7 @@ static NSString *const KeySucceed = @"succeed";
       describeFormat:@"%@ is not a Number for %@", succeed, KeySucceed]
       fail:error];
   }
-  return [[FBiOSTargetActionDouble alloc] initWithIdentifier:identifier succeed:succeed.boolValue];
+  return [[FBiOSTargetFutureDouble alloc] initWithIdentifier:identifier succeed:succeed.boolValue];
 }
 
 - (id)jsonSerializableRepresentation
@@ -57,12 +57,17 @@ static NSString *const KeySucceed = @"succeed";
   };
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
 {
-  return self.succeed;
+  if (self.succeed) {
+    return [FBFuture futureWithResult:self.actionType];
+  } else {
+    NSError *error = [NSError errorWithDomain:@"" code:0 userInfo:nil];
+    return [FBFuture futureWithError:error];
+  }
 }
 
-- (BOOL)isEqual:(FBiOSTargetActionDouble *)object
+- (BOOL)isEqual:(FBiOSTargetFutureDouble *)object
 {
   if (![object isKindOfClass:self.class]) {
     return NO;

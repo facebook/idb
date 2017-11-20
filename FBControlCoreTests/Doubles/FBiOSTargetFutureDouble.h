@@ -11,7 +11,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@interface FBiOSTargetActionDouble : NSObject <FBiOSTargetAction>
+@interface FBiOSTargetFutureDouble : NSObject <FBiOSTargetFuture>
 
 @property (nonatomic, copy, readonly) NSString *identifier;
 @property (nonatomic, assign, readonly) BOOL succeed;

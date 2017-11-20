@@ -13,8 +13,8 @@
 #import "FBControlCoreError.h"
 #import "FBFileWriter.h"
 
-FBiOSTargetActionType const FBiOSTargetActionTypeBinaryTransfer = @"transfer";
-FBiOSTargetActionType const FBiOSTargetActionTypeUploadedBinary = @"uploaded";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeBinaryTransfer = @"transfer";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeUploadedBinary = @"uploaded";
 
 @implementation FBUploadHeader
 
@@ -104,16 +104,16 @@ static NSString *const KeySize = @"size";
   ];
 }
 
-#pragma mark FBiOSTargetAction
+#pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetActionType)actionType
+- (FBiOSTargetFutureType)actionType
 {
-  return FBiOSTargetActionTypeBinaryTransfer;
+  return FBiOSTargetFutureTypeBinaryTransfer;
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
 {
-  return NO;
+  return [FBFuture futureWithResult:self.actionType];
 }
 
 @end
@@ -217,16 +217,16 @@ static NSString *const KeyPath = @"path";
   };
 }
 
-#pragma mark FBiOSTargetAction
+#pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetActionType)actionType
+- (FBiOSTargetFutureType)actionType
 {
-  return FBiOSTargetActionTypeUploadedBinary;
+  return FBiOSTargetFutureTypeUploadedBinary;
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
 {
-  return NO;
+  return [FBFuture futureWithResult:self.actionType];
 }
 
 @end

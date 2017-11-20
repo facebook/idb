@@ -11,18 +11,18 @@
 
 #import "FBSimulatorLifecycleCommands.h"
 
-FBiOSTargetActionType const FBiOSTargetActionTypeListShutdown = @"shutdown";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeListShutdown = @"shutdown";
 
 @implementation FBShutdownConfiguration
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetActionType)actionType
+- (FBiOSTargetFutureType)actionType
 {
-  return FBiOSTargetActionTypeListShutdown;
+  return FBiOSTargetFutureTypeListShutdown;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
 {
   id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
   if (![target conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {

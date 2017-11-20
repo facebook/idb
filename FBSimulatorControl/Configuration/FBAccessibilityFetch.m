@@ -13,18 +13,18 @@
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorLifecycleCommands.h"
 
-FBiOSTargetActionType const FBiOSTargetActionTypeAcessibilityFetch = @"accessibility_fetch";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeAcessibilityFetch = @"accessibility_fetch";
 
 @implementation FBAccessibilityFetch
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetActionType)actionType
+- (FBiOSTargetFutureType)actionType
 {
-  return FBiOSTargetActionTypeAcessibilityFetch;
+  return FBiOSTargetFutureTypeAcessibilityFetch;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
 {
   if (![target conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
     return [[FBControlCoreError
@@ -63,7 +63,7 @@ FBiOSTargetActionType const FBiOSTargetActionTypeAcessibilityFetch = @"accessibi
 
 - (NSString *)description
 {
-  return FBiOSTargetActionTypeAcessibilityFetch;
+  return FBiOSTargetFutureTypeAcessibilityFetch;
 }
 
 - (BOOL)isEqual:(FBAccessibilityFetch *)object

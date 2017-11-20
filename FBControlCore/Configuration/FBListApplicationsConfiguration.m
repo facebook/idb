@@ -14,18 +14,18 @@
 #import "FBControlCoreError.h"
 #import "FBApplicationCommands.h"
 
-FBiOSTargetActionType const FBiOSTargetActionTypeListApplications = @"list_apps";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeListApplications = @"list_apps";
 
 @implementation FBListApplicationsConfiguration
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetActionType)actionType
+- (FBiOSTargetFutureType)actionType
 {
-  return FBiOSTargetActionTypeListApplications;
+  return FBiOSTargetFutureTypeListApplications;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
 {
   id<FBApplicationCommands> commands = (id<FBApplicationCommands>) target;
   if (![target conformsToProtocol:@protocol(FBApplicationCommands)]) {

@@ -9,19 +9,19 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSTargetAction.h>
+#import <FBControlCore/FBiOSTargetFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Action Type for the Listing of Installed Applications.
  */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeListApplications;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeListApplications;
 
 /**
  The Target Action Class for the Listing of Installed Applications.
  */
-@interface FBListApplicationsConfiguration : FBiOSTargetActionSimple <FBiOSTargetFuture>
+@interface FBListApplicationsConfiguration : FBiOSTargetFutureSimple <FBiOSTargetFuture>
 
 @end
 

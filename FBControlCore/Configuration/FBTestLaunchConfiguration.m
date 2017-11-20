@@ -403,12 +403,12 @@ static NSString *const KeyResultBundlePath = @"resultBundlePath";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetActionType)actionType
+- (FBiOSTargetFutureType)actionType
 {
-  return FBiOSTargetActionTypeTestLaunch;
+  return FBiOSTargetFutureTypeTestLaunch;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
 {
   id<FBXCTestCommands> commands = (id<FBXCTestCommands>) target;
   if (![commands conformsToProtocol:@protocol(FBXCTestCommands)]) {
@@ -417,12 +417,12 @@ static NSString *const KeyResultBundlePath = @"resultBundlePath";
       failFuture];
   }
 
-  FBiOSTargetActionType handleType = self.actionType;
-  FBFuture<FBiOSTargetActionType> *future = [[commands
+  FBiOSTargetFutureType handleType = self.actionType;
+  FBFuture<FBiOSTargetFutureType> *future = [[commands
     startTestWithLaunchConfiguration:self reporter:nil logger:target.logger]
     onQueue:target.workQueue map:^(id<FBTerminationAwaitable> baseAwaitable) {
       id<FBTerminationAwaitable> awaitable = FBTerminationAwaitableRenamed(baseAwaitable, handleType);
-      [awaitableDelegate action:(id<FBiOSTargetAction>)self target:target didGenerateAwaitable:awaitable];
+      [awaitableDelegate action:self target:target didGenerateAwaitable:awaitable];
       return handleType;
     }];
   return self.timeout > 0 ? [future timedOutIn:self.timeout] : future;

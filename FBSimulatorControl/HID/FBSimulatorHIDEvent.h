@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Action Type for the HID.
  */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeHID;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeHID;
 
 /**
  A Value representing a call to the HID System.

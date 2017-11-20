@@ -328,7 +328,7 @@
   return [self.mutableHandles copy];
 }
 
-- (void)action:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target didGenerateAwaitable:(id<FBTerminationAwaitable>)awaitable
+- (void)action:(id<FBiOSTargetFuture>)action target:(id<FBiOSTarget>)target didGenerateAwaitable:(id<FBTerminationAwaitable>)awaitable
 {
   [self.mutableHandles addObject:awaitable];
 }

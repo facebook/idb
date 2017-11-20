@@ -9,14 +9,14 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSTargetAction.h>
+#import <FBControlCore/FBiOSTargetFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Action Type for an Install
  */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeInstall;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeInstall;
 
 /**
  A Configuration for installing Applications.

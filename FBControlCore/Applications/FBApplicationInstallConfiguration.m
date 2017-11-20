@@ -18,7 +18,7 @@
 #import "NSRunLoop+FBControlCore.h"
 #import "FBiOSTarget.h"
 
-FBiOSTargetActionType const FBiOSTargetActionTypeInstall = @"install";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeInstall = @"install";
 
 @implementation FBApplicationInstallConfiguration
 
@@ -100,14 +100,14 @@ static NSString *const KeyCodesign = @"codesign";
   };
 }
 
-#pragma mark FBiOSTargetAction
+#pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetActionType)actionType
+- (FBiOSTargetFutureType)actionType
 {
-  return FBiOSTargetActionTypeInstall;
+  return FBiOSTargetFutureTypeInstall;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
 {
   return [[[[FBApplicationBundle
     onQueue:target.asyncQueue findOrExtractApplicationAtPath:self.applicationPath]

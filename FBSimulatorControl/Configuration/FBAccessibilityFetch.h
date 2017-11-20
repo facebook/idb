@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Action Type for an Agent Launch.
  */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeAcessibilityFetch;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeAcessibilityFetch;
 
 /**
  An action for fetching accessibility.

@@ -44,14 +44,14 @@
 
 #pragma mark Interpretation
 
-- (NSString *)interpretAction:(id<FBiOSTargetAction>)action eventType:(FBEventType)type
+- (NSString *)interpretAction:(id<FBiOSTargetFuture>)action eventType:(FBEventType)type
 {
   FBEventName eventName;
-  if ([[[action class] actionType] isEqualToString:FBiOSTargetActionTypeApplicationLaunch]) {
+  if ([[[action class] actionType] isEqualToString:FBiOSTargetFutureTypeApplicationLaunch]) {
     eventName = FBEventNameLaunch;
-  } else if ([[[action class] actionType] isEqualToString:FBiOSTargetActionTypeApplicationLaunch]) {
+  } else if ([[[action class] actionType] isEqualToString:FBiOSTargetFutureTypeApplicationLaunch]) {
     eventName = FBEventNameLaunch;
-  }else if ([[[action class] actionType] isEqualToString:FBiOSTargetActionTypeApplicationLaunch]) {
+  }else if ([[[action class] actionType] isEqualToString:FBiOSTargetFutureTypeApplicationLaunch]) {
     eventName = FBEventNameLaunchXCTest;
   } else {
     eventName = [[action class] actionType];
@@ -103,17 +103,17 @@
   return [self interpretAction:destination eventType:FBEventTypeEnded];
 }
 
-- (nullable NSString *)reader:(FBiOSActionReader *)reader willStartPerformingAction:(id<FBiOSTargetAction>)action onTarget:(id<FBiOSTarget>)target
+- (nullable NSString *)reader:(FBiOSActionReader *)reader willStartPerformingAction:(id<FBiOSTargetFuture>)action onTarget:(id<FBiOSTarget>)target
 {
   return [self interpretAction:action eventType:FBEventTypeStarted];
 }
 
-- (nullable NSString *)reader:(FBiOSActionReader *)reader didProcessAction:(id<FBiOSTargetAction>)action onTarget:(id<FBiOSTarget>)target
+- (nullable NSString *)reader:(FBiOSActionReader *)reader didProcessAction:(id<FBiOSTargetFuture>)action onTarget:(id<FBiOSTarget>)target
 {
   return [self interpretAction:action eventType:FBEventTypeEnded];
 }
 
-- (nullable NSString *)reader:(FBiOSActionReader *)reader didFailToProcessAction:(id<FBiOSTargetAction>)action onTarget:(id<FBiOSTarget>)target error:(NSError *)error
+- (nullable NSString *)reader:(FBiOSActionReader *)reader didFailToProcessAction:(id<FBiOSTargetFuture>)action onTarget:(id<FBiOSTarget>)target error:(NSError *)error
 {
   id<FBEventReporterSubject> subject = [FBEventReporterSubject
     subjectWithName:FBEventNameFailure

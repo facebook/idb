@@ -12,7 +12,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBiOSTargetDouble.h"
-#import "FBiOSTargetActionDouble.h"
+#import "FBiOSTargetFutureDouble.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -23,9 +23,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readwrite) FBiOSActionReader *reader;
 @property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> consumer;
 
-@property (nonatomic, strong, readwrite) NSMutableArray<id<FBiOSTargetAction>> *startedActions;
-@property (nonatomic, strong, readwrite) NSMutableArray<id<FBiOSTargetAction>> *finishedActions;
-@property (nonatomic, strong, readwrite) NSMutableArray<id<FBiOSTargetAction>> *failedActions;
+@property (nonatomic, strong, readwrite) NSMutableArray<id<FBiOSTargetFuture>> *startedActions;
+@property (nonatomic, strong, readwrite) NSMutableArray<id<FBiOSTargetFuture>> *finishedActions;
+@property (nonatomic, strong, readwrite) NSMutableArray<id<FBiOSTargetFuture>> *failedActions;
 @property (nonatomic, strong, readwrite) NSMutableArray<FBUploadedDestination *> *uploads;
 @property (nonatomic, strong, readwrite) NSMutableArray<NSString *> *badInput;
 
@@ -45,7 +45,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation FBiOSActionReaderTests
 
-- (NSData *)actionLine:(id<FBiOSTargetAction>)action
+- (NSData *)actionLine:(id<FBiOSTargetFuture>)action
 {
   NSMutableData *actionData = [[NSJSONSerialization dataWithJSONObject:[self.router jsonFromAction:action] options:0 error:nil] mutableCopy];
   [actionData appendData:[NSData dataWithBytes:"\n" length:1]];
@@ -55,7 +55,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setUp
 {
   [super setUp];
-  NSArray<Class> *actionClasses = [FBiOSActionRouter.defaultActionClasses arrayByAddingObject:FBiOSTargetActionDouble.class];
+  NSArray<Class> *actionClasses = [FBiOSActionRouter.defaultActionClasses arrayByAddingObject:FBiOSTargetFutureDouble.class];
   self.target = [FBiOSTargetDouble new];
   self.target.auxillaryDirectory = NSTemporaryDirectory();
   self.router = [FBiOSActionRouter routerForTarget:self.target actionClasses:actionClasses];
@@ -81,21 +81,21 @@ NS_ASSUME_NONNULL_BEGIN
   return [XCTestSuite testSuiteWithName:@"Ignoring Base Class"];
 }
 
-- (NSPredicate *)predicateForStarted:(id<FBiOSTargetAction>)action
+- (NSPredicate *)predicateForStarted:(id<FBiOSTargetFuture>)action
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBiOSActionReaderTests *tests, id __) {
     return [tests.startedActions containsObject:action];
   }];
 }
 
-- (NSPredicate *)predicateForFinished:(id<FBiOSTargetAction>)action
+- (NSPredicate *)predicateForFinished:(id<FBiOSTargetFuture>)action
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBiOSActionReaderTests *tests, id __) {
     return [tests.finishedActions containsObject:action];
   }];
 }
 
-- (NSPredicate *)predicateForFailed:(id<FBiOSTargetAction>)action
+- (NSPredicate *)predicateForFailed:(id<FBiOSTargetFuture>)action
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBiOSActionReaderTests *tests, id __) {
     return [tests.failedActions containsObject:action];
@@ -125,7 +125,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)testPassingAction
 {
-  FBiOSTargetActionDouble *inputAction = [[FBiOSTargetActionDouble alloc] initWithIdentifier:@"Foo" succeed:YES];
+  FBiOSTargetFutureDouble *inputAction = [[FBiOSTargetFutureDouble alloc] initWithIdentifier:@"Foo" succeed:YES];
   [self.consumer consumeData:[self actionLine:inputAction]];
 
   [self waitForPredicates:@[
@@ -136,7 +136,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)testFailingAction
 {
-  FBiOSTargetActionDouble *inputAction = [[FBiOSTargetActionDouble alloc] initWithIdentifier:@"Foo" succeed:NO];
+  FBiOSTargetFutureDouble *inputAction = [[FBiOSTargetFutureDouble alloc] initWithIdentifier:@"Foo" succeed:NO];
   [self.consumer consumeData:[self actionLine:inputAction]];
 
   [self waitForPredicates:@[
@@ -175,7 +175,7 @@ NS_ASSUME_NONNULL_BEGIN
 {
   NSData *transmit = [@"foo bar baz" dataUsingEncoding:NSUTF8StringEncoding];
   NSData *header = [self actionLine:[FBUploadHeader headerWithPathExtension:@"txt" size:transmit.length]];
-  FBiOSTargetActionDouble *inputAction = [[FBiOSTargetActionDouble alloc] initWithIdentifier:@"Foo" succeed:YES];
+  FBiOSTargetFutureDouble *inputAction = [[FBiOSTargetFutureDouble alloc] initWithIdentifier:@"Foo" succeed:YES];
 
   [self.consumer consumeData:header];
   [self.consumer consumeData:transmit];
@@ -196,12 +196,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark Delegate
 
-- (void)action:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target didGenerateAwaitable:(id<FBTerminationAwaitable>)awaitable
+- (void)action:(id<FBiOSTargetFuture>)action target:(id<FBiOSTarget>)target didGenerateAwaitable:(id<FBTerminationAwaitable>)awaitable
 {
 
 }
 
-- (id<FBFileConsumer>)obtainConsumerForAction:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target
+- (id<FBFileConsumer>)obtainConsumerForAction:(id<FBiOSTargetFuture>)action target:(id<FBiOSTarget>)target
 {
   return [FBFileWriter nullWriter];
 }
@@ -227,19 +227,19 @@ NS_ASSUME_NONNULL_BEGIN
   return nil;
 }
 
-- (nullable NSString *)reader:(FBiOSActionReader *)reader willStartPerformingAction:(id<FBiOSTargetAction>)action onTarget:(id<FBiOSTarget>)target
+- (nullable NSString *)reader:(FBiOSActionReader *)reader willStartPerformingAction:(id<FBiOSTargetFuture>)action onTarget:(id<FBiOSTarget>)target
 {
   [self.startedActions addObject:action];
   return nil;
 }
 
-- (nullable NSString *)reader:(FBiOSActionReader *)reader didProcessAction:(id<FBiOSTargetAction>)action onTarget:(id<FBiOSTarget>)target
+- (nullable NSString *)reader:(FBiOSActionReader *)reader didProcessAction:(id<FBiOSTargetFuture>)action onTarget:(id<FBiOSTarget>)target
 {
   [self.finishedActions addObject:action];
   return nil;
 }
 
-- (nullable NSString *)reader:(FBiOSActionReader *)reader didFailToProcessAction:(id<FBiOSTargetAction>)action onTarget:(id<FBiOSTarget>)target error:(NSError *)error
+- (nullable NSString *)reader:(FBiOSActionReader *)reader didFailToProcessAction:(id<FBiOSTargetFuture>)action onTarget:(id<FBiOSTarget>)target error:(NSError *)error
 {
   [self.failedActions addObject:action];
   return nil;

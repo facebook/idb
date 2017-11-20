@@ -13,7 +13,7 @@
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBiOSTarget.h"
-#import "FBiOSTargetAction.h"
+#import "FBiOSTargetFuture.h"
 #import "FBJSONConversion.h"
 #import "FBApplicationLaunchConfiguration.h"
 #import "FBUploadBuffer.h"
@@ -32,21 +32,21 @@
 
 + (instancetype)routerForTarget:(id<FBiOSTarget>)target actionClasses:(NSArray<Class> *)actionClasses
 {
-  NSDictionary<FBiOSTargetActionType, Class> *actionMapping = [self actionMappingForActionClasses:actionClasses];
+  NSDictionary<FBiOSTargetFutureType, Class> *actionMapping = [self actionMappingForActionClasses:actionClasses];
   return [[self alloc] initWithTarget:target actionMapping:actionMapping];
 }
 
-+ (NSDictionary<FBiOSTargetActionType, Class> *)actionMappingForActionClasses:(NSArray<Class> *)actionClasses
++ (NSDictionary<FBiOSTargetFutureType, Class> *)actionMappingForActionClasses:(NSArray<Class> *)actionClasses
 {
-  NSMutableDictionary<FBiOSTargetActionType, Class> *mapping = [NSMutableDictionary dictionary];
+  NSMutableDictionary<FBiOSTargetFutureType, Class> *mapping = [NSMutableDictionary dictionary];
   for (Class actionClass in actionClasses) {
-    FBiOSTargetActionType actionType = [actionClass actionType];
+    FBiOSTargetFutureType actionType = [actionClass actionType];
     mapping[actionType] = actionClass;
   }
   return [mapping copy];
 }
 
-- (instancetype)initWithTarget:(id<FBiOSTarget>)target actionMapping:(NSDictionary<FBiOSTargetActionType, Class> *)actionMapping
+- (instancetype)initWithTarget:(id<FBiOSTarget>)target actionMapping:(NSDictionary<FBiOSTargetFutureType, Class> *)actionMapping
 {
   self = [super init];
   if (!self) {
@@ -74,7 +74,7 @@ static NSString *const KeyActionType = @"action";
 static NSString *const KeyActionPayload = @"payload";
 static NSString *const KeyUDID = @"udid";
 
-- (nullable id<FBiOSTargetAction>)actionFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
+- (nullable id<FBiOSTargetFuture>)actionFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
 {
   if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
     return [[FBControlCoreError
@@ -82,7 +82,7 @@ static NSString *const KeyUDID = @"udid";
       fail:error];
   }
 
-  FBiOSTargetActionType actionType = json[KeyActionType];
+  FBiOSTargetFutureType actionType = json[KeyActionType];
   Class actionClass = self.actionMapping[actionType];
   if (!actionClass) {
     return [[FBControlCoreError
@@ -108,10 +108,8 @@ static NSString *const KeyUDID = @"udid";
   }
 
   id action = [actionClass inflateFromJSON:payload error:error];
-  if ([action conformsToProtocol:@protocol(FBiOSTargetAction)]) {
+  if ([action conformsToProtocol:@protocol(FBiOSTargetFuture)]) {
     return action;
-  } else if ([action conformsToProtocol:@protocol(FBiOSTargetFuture)]) {
-    return FBiOSTargetActionFromTargetFuture(action);
   } else {
     return [[FBControlCoreError
       describeFormat:@"%@ is not routable", action]
@@ -119,14 +117,14 @@ static NSString *const KeyUDID = @"udid";
   }
 }
 
-- (NSDictionary<NSString *, id> *)jsonFromAction:(id<FBiOSTargetAction>)action
+- (NSDictionary<NSString *, id> *)jsonFromAction:(id<FBiOSTargetFuture>)action
 {
   NSMutableDictionary<NSString *, id> *json = [[FBiOSActionRouter jsonFromAction:action] mutableCopy];
   json[KeyUDID] = self.target.udid;
   return [json copy];
 }
 
-+ (NSDictionary<NSString *, id> *)jsonFromAction:(id<FBiOSTargetAction>)action
++ (NSDictionary<NSString *, id> *)jsonFromAction:(id<FBiOSTargetFuture>)action
 {
   return @{
     KeyActionType: [action.class actionType],

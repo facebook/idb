@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSTargetAction.h>
+#import <FBControlCore/FBiOSTargetFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -18,13 +18,13 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Action Types for a Binary Transfer.
  */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeBinaryTransfer;
-extern FBiOSTargetActionType const FBiOSTargetActionTypeUploadedBinary;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeBinaryTransfer;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeUploadedBinary;
 
 /**
  An Action defining the transmission of binary data.
  */
-@interface FBUploadHeader : NSObject <FBiOSTargetAction, NSCopying>
+@interface FBUploadHeader : NSObject <FBiOSTargetFuture, NSCopying>
 
 /**
  The Designated Initializer.
@@ -50,7 +50,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeUploadedBinary;
 /**
  Describes the Location of an Uploaded Binary.
  */
-@interface FBUploadedDestination : NSObject <FBiOSTargetAction, NSCopying>
+@interface FBUploadedDestination : NSObject <FBiOSTargetFuture, NSCopying>
 
 /**
  The Designated Initializer

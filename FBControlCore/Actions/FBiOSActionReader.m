@@ -9,14 +9,15 @@
 
 #import "FBiOSActionReader.h"
 
-#import "FBUploadBuffer.h"
 #import "FBFileReader.h"
 #import "FBFileWriter.h"
 #import "FBiOSActionRouter.h"
 #import "FBiOSTarget.h"
-#import "FBiOSTargetAction.h"
+#import "FBiOSTargetFuture.h"
 #import "FBLineBuffer.h"
 #import "FBSocketReader.h"
+#import "FBUploadBuffer.h"
+#import "NSRunLoop+FBControlCore.h"
 
 FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_reader";
 
@@ -110,7 +111,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
     return;
   }
 
-  id<FBiOSTargetAction> action = [self.router actionFromJSON:json error:&error];
+  id<FBiOSTargetFuture> action = [self.router actionFromJSON:json error:&error];
   if (!action) {
     [self dispatchParseError:line error:error];
     return;
@@ -122,7 +123,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   [self dispatchAction:action];
 }
 
-- (void)dispatchAction:(id<FBiOSTargetAction>)action
+- (void)dispatchAction:(id<FBiOSTargetFuture>)action
 {
   FBiOSActionReader *reader = self.reader;
   id<FBiOSTarget> target = self.router.target;
@@ -138,7 +139,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   __block NSError *error = nil;
   __block BOOL success = NO;
   dispatch_sync(self.actionQueue, ^{
-    success = [action runWithTarget:target delegate:self error:&error];
+    success = [[action runWithTarget:target consumer:self.writeBack reporter:self.reporter awaitableDelegate:self] await:&error] != nil;
   });
 
   // Notify the delegate that the reader has finished, report the resultant string.
@@ -198,11 +199,9 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   [self.writeBack consumeData:data];
 }
 
-#pragma mark FBiOSActionReaderDelegate
-
-- (id<FBFileConsumer>)obtainConsumerForAction:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target
+- (id<FBEventReporter>)reporter
 {
-  return self.writeBack;
+  return [FBEventReporter reporterWithInterpreter:self.interpreter consumer:self.consumer];
 }
 
 - (id<FBEventInterpreter>)interpreter

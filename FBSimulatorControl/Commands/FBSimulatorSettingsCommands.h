@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Action Type for an Agent Launch.
  */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeApproval;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval;
 
 @class FBApplicationBundle;
 @class FBLocalizationOverride;

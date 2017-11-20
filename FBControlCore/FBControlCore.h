@@ -86,7 +86,7 @@
 #import <FBControlCore/FBiOSActionReader.h>
 #import <FBControlCore/FBiOSActionRouter.h>
 #import <FBControlCore/FBiOSTarget.h>
-#import <FBControlCore/FBiOSTargetAction.h>
+#import <FBControlCore/FBiOSTargetFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBiOSTargetDiagnostics.h>
 #import <FBControlCore/FBiOSTargetFormat.h>

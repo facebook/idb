@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSTargetAction.h>
+#import <FBControlCore/FBiOSTargetFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -56,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A mapping of Action Type to the Class responsible for using it.
  */
-@property (nonatomic, copy, readonly) NSDictionary<FBiOSTargetActionType, Class> *actionMapping;
+@property (nonatomic, copy, readonly) NSDictionary<FBiOSTargetFutureType, Class> *actionMapping;
 
 #pragma mark Serialization
 
@@ -67,7 +67,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return a Target Action if successful, nil otherwise.
  */
-- (nullable id<FBiOSTargetAction>)actionFromJSON:(id)json error:(NSError **)error;
+- (nullable id<FBiOSTargetFuture>)actionFromJSON:(id)json error:(NSError **)error;
 
 /**
  Deflate a Target Action to JSON, including the target.
@@ -75,7 +75,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param action the action to deflate.
  @return the Action JSON from the action.
  */
-- (NSDictionary<NSString *, id> *)jsonFromAction:(id<FBiOSTargetAction>)action;
+- (NSDictionary<NSString *, id> *)jsonFromAction:(id<FBiOSTargetFuture>)action;
 
 /**
  Deflate a Target Action to JSON, excluding  the target.
@@ -83,7 +83,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param action the action to deflate.
  @return the Action JSON from the action.
  */
-+ (NSDictionary<NSString *, id> *)jsonFromAction:(id<FBiOSTargetAction>)action;
++ (NSDictionary<NSString *, id> *)jsonFromAction:(id<FBiOSTargetFuture>)action;
 
 @end
 

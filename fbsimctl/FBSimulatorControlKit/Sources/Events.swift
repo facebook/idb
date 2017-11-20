@@ -14,9 +14,9 @@ import FBSimulatorControl
 public typealias EventName = FBEventName
 
 extension EventName {
-  static let boot = EventName(rawValue: FBiOSTargetActionType.boot.rawValue)
-  static let hid = EventName(rawValue: FBiOSTargetActionType.HID.rawValue)
-  static let approve = EventName(rawValue: FBiOSTargetActionType.approval.rawValue)
-  static let accessibilityFetch = EventName(rawValue: FBiOSTargetActionType.acessibilityFetch.rawValue)
-  static let logTail = EventName(rawValue: FBiOSTargetActionType.logTail.rawValue)
+  static let boot = EventName(rawValue: FBiOSTargetFutureType.boot.rawValue)
+  static let hid = EventName(rawValue: FBiOSTargetFutureType.HID.rawValue)
+  static let approve = EventName(rawValue: FBiOSTargetFutureType.approval.rawValue)
+  static let accessibilityFetch = EventName(rawValue: FBiOSTargetFutureType.acessibilityFetch.rawValue)
+  static let logTail = EventName(rawValue: FBiOSTargetFutureType.logTail.rawValue)
 }

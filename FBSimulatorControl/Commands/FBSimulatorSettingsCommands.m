@@ -18,7 +18,7 @@
 #import "FBSimulatorBootConfiguration.h"
 #import "FBDefaultsModificationStrategy.h"
 
-FBiOSTargetActionType const FBiOSTargetActionTypeApproval = @"approve";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
 
 @interface FBSimulatorSettingsCommands ()
 
@@ -160,12 +160,12 @@ FBiOSTargetActionType const FBiOSTargetActionTypeApproval = @"approve";
 
 @implementation FBSettingsApproval (FBiOSTargetFuture)
 
-- (FBiOSTargetActionType)actionType
+- (FBiOSTargetFutureType)actionType
 {
-  return FBiOSTargetActionTypeApproval;
+  return FBiOSTargetFutureTypeApproval;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
 {
   id<FBSimulatorSettingsCommands> commands = (id<FBSimulatorSettingsCommands>) target;
   if (![target conformsToProtocol:@protocol(FBSimulatorSettingsCommands)]) {

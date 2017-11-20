@@ -9,7 +9,7 @@
 
 #import "FBLogTailConfiguration.h"
 
-FBiOSTargetActionType const FBiOSTargetActionTypeLogTail = @"logtail";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
 
 @implementation FBLogTailConfiguration
 
@@ -90,12 +90,12 @@ static NSString *const KeyArguments = @"arguments";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetActionType)actionType
+- (FBiOSTargetFutureType)actionType
 {
-  return FBiOSTargetActionTypeLogTail;
+  return FBiOSTargetFutureTypeLogTail;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
 {
   id<FBLogCommands> commands = (id<FBLogCommands>) target;
   if (![target conformsToProtocol:@protocol(FBLogCommands)]) {
@@ -103,12 +103,12 @@ static NSString *const KeyArguments = @"arguments";
       describeFormat:@"%@ does not support FBLogCommands", target]
       failFuture];
   }
-  FBiOSTargetActionType actionType = self.actionType;
+  FBiOSTargetFutureType actionType = self.actionType;
   return [[commands
     tailLog:self.arguments consumer:consumer]
     onQueue:target.workQueue map:^(id<FBTerminationAwaitable> baseAwaitable) {
       id<FBTerminationAwaitable> awaitable = FBTerminationAwaitableRenamed(baseAwaitable, actionType);
-      [awaitableDelegate action:(id<FBiOSTargetAction>)self target:target didGenerateAwaitable:awaitable];
+      [awaitableDelegate action:self target:target didGenerateAwaitable:awaitable];
       return self.actionType;
     }];
 }

@@ -17,7 +17,7 @@
 #import "FBiOSTargetDiagnostics.h"
 #import "FBSubject.h"
 
-FBiOSTargetActionType const FBiOSTargetActionTypeDiagnosticQuery = @"diagnose";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeDiagnosticQuery = @"diagnose";
 
 FBDiagnosticQueryFormat FBDiagnosticQueryFormatCurrent = @"current-format";
 FBDiagnosticQueryFormat FBDiagnosticQueryFormatPath = @"path";
@@ -425,20 +425,20 @@ static NSString *KeyType = @"type";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetActionType)actionType
+- (FBiOSTargetFutureType)actionType
 {
-  return FBiOSTargetActionTypeDiagnosticQuery;
+  return FBiOSTargetFutureTypeDiagnosticQuery;
 }
 
-- (FBFuture<FBiOSTargetActionType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetActionAwaitableDelegate>)awaitableDelegate
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
 {
-  id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:FBiOSTargetActionTypeDiagnosticQuery type:FBEventTypeStarted value:self];
+  id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:FBiOSTargetFutureTypeDiagnosticQuery type:FBEventTypeStarted value:self];
   [reporter report:subject];
 
   subject = [FBDiagnosticQuery resolveDiagnostics:[target.diagnostics perform:self] format:self.format];
   [reporter report:subject];
 
-  subject = [FBEventReporterSubject subjectWithName:FBiOSTargetActionTypeDiagnosticQuery type:FBEventTypeEnded value:self];
+  subject = [FBEventReporterSubject subjectWithName:FBiOSTargetFutureTypeDiagnosticQuery type:FBEventTypeEnded value:self];
   [reporter report:subject];
 
   return [FBFuture futureWithResult:self.actionType];
