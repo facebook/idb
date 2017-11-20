@@ -206,7 +206,7 @@ extension FBiOSTargetFutureType {
 
 extension FBiOSTargetFuture {
   public var eventName: EventName { get {
-    return self.actionType.eventName
+    return type(of: self).futureType.eventName
   }}
 
   public var printable: String { get {

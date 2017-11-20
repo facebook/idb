@@ -26,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Termination Handle Type for an Action Reader.
  */
-extern FBTerminationHandleType const FBTerminationHandleTypeActionReader;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader;
 
 /**
  Routes an Actions for Sockets and Files.

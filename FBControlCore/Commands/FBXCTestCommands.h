@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Termination Handle Type.
  */
-extern FBTerminationHandleType const FBTerminationHandleTypeTestOperation;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestOperation;
 
 @class FBTestLaunchConfiguration;
 

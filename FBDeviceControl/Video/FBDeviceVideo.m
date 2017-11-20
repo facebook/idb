@@ -149,14 +149,9 @@
 
 #pragma mark FBTerminationHandle
 
-- (FBTerminationHandleType)handleType
+- (FBTerminationHandleType)futureType
 {
-  return FBTerminationTypeHandleVideoRecording;
-}
-
-- (void)terminate
-{
-  [self.completed cancel];
+  return FBiOSTargetFutureTypeVideoRecording;
 }
 
 - (FBFuture<NSNull *> *)completed

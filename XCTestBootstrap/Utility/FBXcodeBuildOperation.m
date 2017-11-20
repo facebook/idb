@@ -90,14 +90,9 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
     }];
 }
 
-- (FBTerminationHandleType)handleType
+- (FBiOSTargetFutureType)futureType
 {
-  return FBTerminationHandleTypeTestOperation;
-}
-
-- (void)terminate
-{
-  [self.future cancel];
+  return FBiOSTargetFutureTypeTestOperation;
 }
 
 #pragma mark Public Methods

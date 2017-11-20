@@ -15,20 +15,20 @@ import FBControlCore
  */
 public struct CommandResult {
   let outcome: CommandOutcome
-  let handles: [FBTerminationHandle]
+  let continuations: [FBiOSTargetContinuation]
 
   static func success(_ subject: EventReporterSubject?) -> CommandResult {
-    return CommandResult(outcome: .success(subject), handles: [])
+    return CommandResult(outcome: .success(subject), continuations: [])
   }
 
   static func failure(_ message: String) -> CommandResult {
-    return CommandResult(outcome: .failure(message), handles: [])
+    return CommandResult(outcome: .failure(message), continuations: [])
   }
 
   func append(_ second: CommandResult) -> CommandResult {
     return CommandResult(
       outcome: self.outcome.append(second.outcome),
-      handles: self.handles + second.handles
+      continuations: self.continuations + second.continuations
     )
   }
 }

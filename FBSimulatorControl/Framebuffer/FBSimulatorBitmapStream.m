@@ -247,14 +247,9 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark FBiOSTargetContinuation
 
-- (FBTerminationHandleType)handleType
+- (FBTerminationHandleType)futureType
 {
-  return FBTerminationHandleTypeVideoStreaming;
-}
-
-- (void)terminate
-{
-  [self.completed cancel];
+  return FBiOSTargetFutureTypeVideoStreaming;
 }
 
 - (FBFuture<NSNull *> *)completed

@@ -24,7 +24,7 @@
   return self;
 }
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return @"test-double";
 }
@@ -60,7 +60,7 @@ static NSString *const KeySucceed = @"succeed";
 - (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   if (self.succeed) {
-    return [FBFuture futureWithResult:FBiOSTargetContinuationDone(self.actionType)];
+    return [FBFuture futureWithResult:FBiOSTargetContinuationDone(self.class.futureType)];
   } else {
     NSError *error = [NSError errorWithDomain:@"" code:0 userInfo:nil];
     return [FBFuture futureWithError:error];

@@ -88,7 +88,7 @@ static NSString *const KeyServiceName = @"service_name";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeServiceInfo;
 }
@@ -123,7 +123,7 @@ static NSString *const KeyServiceName = @"service_name";
       id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:FBiOSTargetFutureTypeServiceInfo type:FBEventTypeDiscrete subject:coreSubject];
       [reporter report:subject];
     }]
-    mapReplace:FBiOSTargetContinuationDone(self.actionType)];
+    mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
 }
 
 @end

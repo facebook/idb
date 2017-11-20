@@ -41,7 +41,7 @@
   XCTAssertNil(error);
   XCTAssertNotNil(session);
   [self assertSimulator:simulator launches:self.tableSearchAppLaunch];
-  [session terminate];
+  [session.completed cancel];
 }
 
 @end

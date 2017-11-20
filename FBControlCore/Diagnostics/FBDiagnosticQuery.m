@@ -425,7 +425,7 @@ static NSString *KeyType = @"type";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeDiagnosticQuery;
 }
@@ -441,7 +441,7 @@ static NSString *KeyType = @"type";
   subject = [FBEventReporterSubject subjectWithName:FBiOSTargetFutureTypeDiagnosticQuery type:FBEventTypeEnded value:self];
   [reporter report:subject];
 
-  return [FBFuture futureWithResult:FBiOSTargetContinuationDone(self.actionType)];
+  return [FBFuture futureWithResult:FBiOSTargetContinuationDone(FBDiagnosticQuery.futureType)];
 }
 
 + (id<FBEventReporterSubject>)resolveDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics format:(FBDiagnosticQueryFormat)format

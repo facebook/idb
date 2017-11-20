@@ -17,7 +17,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeListShutdown = @"shutdown";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeListShutdown;
 }
@@ -30,7 +30,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeListShutdown = @"shutdown";
       describeFormat:@"%@ does not support FBSimulatorLifecycleCommands", target]
       failFuture];
   }
-  return [[commands shutdown] mapReplace:FBiOSTargetContinuationDone(self.actionType)];
+  return [[commands shutdown] mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
 }
 
 @end

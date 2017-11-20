@@ -40,14 +40,14 @@
 - (NSString *)interpretAction:(id<FBiOSTargetFuture>)action eventType:(FBEventType)type
 {
   FBEventName eventName;
-  if ([[[action class] actionType] isEqualToString:FBiOSTargetFutureTypeApplicationLaunch]) {
+  if ([[[action class] futureType] isEqualToString:FBiOSTargetFutureTypeApplicationLaunch]) {
     eventName = FBEventNameLaunch;
-  } else if ([[[action class] actionType] isEqualToString:FBiOSTargetFutureTypeApplicationLaunch]) {
+  } else if ([[[action class] futureType] isEqualToString:FBiOSTargetFutureTypeApplicationLaunch]) {
     eventName = FBEventNameLaunch;
-  }else if ([[[action class] actionType] isEqualToString:FBiOSTargetFutureTypeApplicationLaunch]) {
+  }else if ([[[action class] futureType] isEqualToString:FBiOSTargetFutureTypeApplicationLaunch]) {
     eventName = FBEventNameLaunchXCTest;
   } else {
-    eventName = [[action class] actionType];
+    eventName = [[action class] futureType];
   }
 
   id<FBEventReporterSubject> subject = [FBEventReporterSubject

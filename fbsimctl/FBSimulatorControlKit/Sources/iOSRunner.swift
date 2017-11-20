@@ -71,11 +71,11 @@ struct FutureRunner<T : AnyObject> : Runner {
       if let name = self.name {
         self.reporter.report(name, .ended, self.subject)
       }
-      var handles: [FBiOSTargetContinuation] = []
+      var continuations: [FBiOSTargetContinuation] = []
       if let continuation = value as? FBiOSTargetContinuation, continuation.completed != nil {
-        handles.append(continuation)
+        continuations.append(continuation)
       }
-      return CommandResult(outcome: .success(nil), handles: handles)
+      return CommandResult(outcome: .success(nil), continuations: continuations)
     } catch let error as NSError {
       return .failure(error.description)
     } catch let error as JSONError {
@@ -108,7 +108,7 @@ struct SimpleRunner : Runner {
       if let name = self.name {
         self.reporter.report(name, .ended, self.subject)
       }
-      return CommandResult(outcome: .success(nil), handles: [])
+      return CommandResult(outcome: .success(nil), continuations: [])
     } catch let error as NSError {
       return .failure(error.description)
     } catch let error as JSONError {

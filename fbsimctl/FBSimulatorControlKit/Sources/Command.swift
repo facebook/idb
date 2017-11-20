@@ -27,7 +27,7 @@ public struct ListenInterface {
   let stdin: Bool
   let http: in_port_t?
   let hid: in_port_t?
-  let handle: FBTerminationHandle?
+  let continuation: FBiOSTargetContinuation?
 
   var isEmptyListen: Bool { get {
     return self.stdin == false && self.http == nil && self.hid == nil
@@ -219,7 +219,7 @@ extension ListenInterface : Accumulator {
     self.stdin = false
     self.http = nil
     self.hid = nil
-    self.handle = nil
+    self.continuation = nil
   }
 
   public static var identity: ListenInterface { get {
@@ -231,21 +231,21 @@ extension ListenInterface : Accumulator {
       stdin: other.stdin ? other.stdin : self.stdin,
       http: other.http ?? self.http,
       hid: other.hid ?? self.hid,
-      handle: other.handle ?? self.handle
+      continuation: other.continuation ?? self.continuation
     )
   }
 }
 
-extension FBTerminationHandleType {
+extension FBiOSTargetFutureType {
   var listenDescription: String? { get {
     switch self {
-      case FBTerminationHandleType.typeHandleVideoRecording:
+      case FBiOSTargetFutureType.videoRecording:
         return "Recording Video"
-      case FBTerminationHandleType.videoStreaming:
+      case FBiOSTargetFutureType.videoStreaming:
         return "Streaming Video"
-      case FBTerminationHandleType.testOperation:
+      case FBiOSTargetFutureType.testOperation:
         return "Test Operation"
-      case FBTerminationHandleType.actionReader:
+      case FBiOSTargetFutureType.actionReader:
         return "Action Reader"
       default:
         return nil

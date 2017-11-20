@@ -39,8 +39,8 @@ struct CLIRunner : Runner {
     // Start the runner
     let result = self.run()
     // Now we're done. Terminate any remaining asynchronous work
-    for handle in result.handles {
-      handle.terminate()
+    for continuation in result.continuations {
+      continuation.completed?.cancel()
     }
     switch result.outcome {
       case .failure(let message):

@@ -403,7 +403,7 @@ static NSString *const KeyResultBundlePath = @"resultBundlePath";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeTestLaunch;
 }
@@ -417,11 +417,11 @@ static NSString *const KeyResultBundlePath = @"resultBundlePath";
       failFuture];
   }
 
-  FBiOSTargetFutureType handleType = self.actionType;
-  FBFuture<FBiOSTargetFutureType> *future = [[commands
+  FBiOSTargetFutureType futureType = self.class.futureType;
+  FBFuture<id<FBiOSTargetContinuation>> *future = [[commands
     startTestWithLaunchConfiguration:self reporter:nil logger:target.logger]
     onQueue:target.workQueue map:^(id<FBiOSTargetContinuation> baseAwaitable) {
-      return FBiOSTargetContinuationRenamed(baseAwaitable, handleType);
+      return FBiOSTargetContinuationRenamed(baseAwaitable, futureType);
     }];
   return self.timeout > 0 ? [future timedOutIn:self.timeout] : future;
 }

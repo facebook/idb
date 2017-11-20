@@ -350,20 +350,20 @@ static NSString *const KeySince = @"since";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeSearch;
 }
 
 - (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
-  FBiOSTargetFutureType actionType = self.actionType;
+  FBiOSTargetFutureType futureType = self.class.futureType;
   return [[self
     searchOnTarget:target]
     onQueue:target.workQueue map:^FBFuture *(FBBatchLogSearchResult *result) {
-      id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:actionType type:FBEventTypeDiscrete value:result];
+      id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:futureType type:FBEventTypeDiscrete value:result];
       [reporter report:subject];
-      return FBiOSTargetContinuationDone(self.actionType);
+      return FBiOSTargetContinuationDone(futureType);
     }];
 }
 

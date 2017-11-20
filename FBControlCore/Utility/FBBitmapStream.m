@@ -11,7 +11,7 @@
 
 #import "FBCollectionInformation.h"
 
-FBTerminationHandleType const FBTerminationHandleTypeVideoStreaming = @"VideoStreaming";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming = @"VideoStreaming";
 
 @implementation FBBitmapStreamAttributes
 

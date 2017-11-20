@@ -27,9 +27,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch = @"launch_xctest";
 
 @implementation FBiOSTargetContinuation_Renamed
 
-@synthesize handleType = _handleType;
+@synthesize futureType = _futureType;
 
-- (instancetype)initWithAwaitable:(id<FBiOSTargetContinuation>)continuation handleType:(FBTerminationHandleType)handleType
+- (instancetype)initWithAwaitable:(id<FBiOSTargetContinuation>)continuation futureType:(FBiOSTargetFutureType)futureType
 {
   self = [super init];
   if (!self) {
@@ -37,7 +37,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch = @"launch_xctest";
   }
 
   _continuation = continuation;
-  _handleType = handleType;
+  _futureType = futureType;
 
   return self;
 }
@@ -47,14 +47,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch = @"launch_xctest";
   return [self.continuation completed];
 }
 
-- (void)terminate
+- (FBiOSTargetFutureType)futureType
 {
-  return [self.continuation terminate];
-}
-
-- (FBTerminationHandleType)handleType
-{
-  return _handleType;
+  return _futureType;
 }
 
 @end
@@ -65,16 +60,16 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch = @"launch_xctest";
 
 @implementation FBiOSTargetContinuation_Done
 
-@synthesize handleType = _handleType;
+@synthesize futureType = _futureType;
 
-- (instancetype)initWithHandleType:(FBTerminationHandleType)handleType
+- (instancetype)initWithFutureType:(FBiOSTargetFutureType)futureType
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _handleType = handleType;
+  _futureType = futureType;
 
   return self;
 }
@@ -84,27 +79,22 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch = @"launch_xctest";
   return [FBFuture futureWithResult:NSNull.null];
 }
 
-- (void)terminate
+- (FBiOSTargetFutureType)futureType
 {
-  // do nothing
-}
-
-- (FBTerminationHandleType)handleType
-{
-  return _handleType;
+  return _futureType;
 }
 
 @end
 
 
-id<FBiOSTargetContinuation> FBiOSTargetContinuationRenamed(id<FBiOSTargetContinuation> continuation, FBTerminationHandleType handleType)
+id<FBiOSTargetContinuation> FBiOSTargetContinuationRenamed(id<FBiOSTargetContinuation> continuation, FBiOSTargetFutureType futureType)
 {
-  return [[FBiOSTargetContinuation_Renamed alloc] initWithAwaitable:continuation handleType:handleType];
+  return [[FBiOSTargetContinuation_Renamed alloc] initWithAwaitable:continuation futureType:futureType];
 }
 
 id<FBiOSTargetContinuation> FBiOSTargetContinuationDone(FBTerminationHandleType handleType)
 {
-  return [[FBiOSTargetContinuation_Done alloc] initWithHandleType:handleType];
+  return [[FBiOSTargetContinuation_Done alloc] initWithFutureType:handleType];
 }
 
 @implementation FBiOSTargetFutureSimple

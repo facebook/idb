@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Termination Handle Type for an Recording Operation.
  */
-extern FBTerminationHandleType const FBTerminationHandleTypeVideoStreaming;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming;
 
 /**
  A Value container for Stream Attributes.

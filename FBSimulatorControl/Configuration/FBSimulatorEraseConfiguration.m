@@ -15,7 +15,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeErase = @"erase";
 
 @implementation FBSimulatorEraseConfiguration
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeErase;
 }
@@ -28,7 +28,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeErase = @"erase";
       describeFormat:@"%@ does not conform to FBSimulatorLifecycleCommands", commands]
       failFuture];
   }
-  return [[commands erase] mapReplace:FBiOSTargetContinuationDone(self.actionType)];
+  return [[commands erase] mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
 }
 
 @end

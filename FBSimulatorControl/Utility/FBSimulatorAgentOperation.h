@@ -20,9 +20,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBProcessOutput;
 
 /**
- The Termination Handle Type for an Agent.
+ The Future Type for an Agent Launched on a Simulator.
  */
-extern FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent;
 
 /**
  An Operation for an Agent.

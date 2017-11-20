@@ -19,7 +19,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeAcessibilityFetch = @"accessibi
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeAcessibilityFetch;
 }
@@ -41,7 +41,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeAcessibilityFetch = @"accessibi
   NSArray *elements = [bridge accessibilityElements];
   NSData *data = [NSJSONSerialization dataWithJSONObject:elements options:0 error:&error];
   [consumer consumeData:data];
-  return [FBFuture futureWithResult:FBiOSTargetContinuationDone(self.actionType)];
+  return [FBFuture futureWithResult:FBiOSTargetContinuationDone(self.class.futureType)];
 }
 
 - (id)jsonSerializableRepresentation

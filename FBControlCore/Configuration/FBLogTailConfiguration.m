@@ -90,7 +90,7 @@ static NSString *const KeyArguments = @"arguments";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeLogTail;
 }
@@ -103,11 +103,11 @@ static NSString *const KeyArguments = @"arguments";
       describeFormat:@"%@ does not support FBLogCommands", target]
       failFuture];
   }
-  FBiOSTargetFutureType actionType = self.actionType;
+  FBiOSTargetFutureType futureType = self.class.futureType;
   return [[commands
     tailLog:self.arguments consumer:consumer]
     onQueue:target.workQueue map:^(id<FBiOSTargetContinuation> baseAwaitable) {
-      return FBiOSTargetContinuationRenamed(baseAwaitable, actionType);
+      return FBiOSTargetContinuationRenamed(baseAwaitable, futureType);
     }];
 }
 

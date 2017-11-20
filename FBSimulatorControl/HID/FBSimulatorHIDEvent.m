@@ -619,7 +619,7 @@ static NSString *const DirectionUp = @"up";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeHID;
 }
@@ -640,7 +640,7 @@ static NSString *const DirectionUp = @"up";
     if (![self performOnHID:hid error:error]) {
       return nil;
     }
-    return FBiOSTargetContinuationDone(self.actionType);
+    return FBiOSTargetContinuationDone(self.class.futureType);
   }];
 }
 

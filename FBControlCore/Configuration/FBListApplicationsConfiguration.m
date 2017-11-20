@@ -20,7 +20,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeListApplications = @"list_apps"
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeListApplications;
 }
@@ -38,7 +38,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeListApplications = @"list_apps"
     onQueue:target.workQueue map:^(NSArray<id<FBJSONSerializable>> *applications) {
       id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:FBEventNameListApps type:FBEventTypeDiscrete values:applications];
       [reporter report:subject];
-      return FBiOSTargetContinuationDone(self.actionType);
+      return FBiOSTargetContinuationDone(FBListApplicationsConfiguration.futureType);
     }];
 }
 

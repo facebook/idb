@@ -42,14 +42,9 @@
   return self.reader.completed;
 }
 
-- (FBiOSTargetFutureType)handleType
+- (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeLogTail;
-}
-
-- (void)terminate
-{
-  [self.reader.completed cancel];
 }
 
 @end

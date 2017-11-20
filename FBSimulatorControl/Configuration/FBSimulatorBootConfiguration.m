@@ -251,7 +251,7 @@ static NSString *const BootOptionStringUseNSWorkspace = @"Use NSWorkspace";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeBoot;
 }
@@ -264,7 +264,7 @@ static NSString *const BootOptionStringUseNSWorkspace = @"Use NSWorkspace";
       describeFormat:@"%@ cannot be booted", target]
       failFuture];
   }
-  return [[commands bootWithConfiguration:self] mapReplace:FBiOSTargetContinuationDone(self.actionType)];
+  return [[commands bootWithConfiguration:self] mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
 }
 
 @end

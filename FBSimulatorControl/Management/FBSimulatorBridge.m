@@ -147,7 +147,7 @@
   [[distantObject connectionForProxy] invalidate];
 
   // Dispose of the operation
-  [self.operation terminate];
+  [self.operation.completed cancel];
   self.operation = nil;
 }
 

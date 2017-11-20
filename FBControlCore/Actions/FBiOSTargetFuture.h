@@ -46,7 +46,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch;
  The Result of invoking an FBiOSTargetFuture.
  Represents the execution state of the underlying operation.
  */
-@protocol FBiOSTargetContinuation <FBTerminationHandle>
+@protocol FBiOSTargetContinuation <NSObject>
 
 /**
  A Optional Future that resolves when the operation started from the FBiOSTargetFuture has completed.
@@ -55,6 +55,11 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch;
  */
 @property (nonatomic, strong, nullable, readonly) FBFuture<NSNull *> *completed;
 
+/**
+ The Type of Termination Handle.
+ */
+@property (nonatomic, copy, readonly) FBiOSTargetFutureType futureType;
+
 @end
 
 /**
@@ -62,10 +67,10 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch;
  Useful when a lower-level continuation should be hoisted to a higher-level naming.
 
  @param continuation the continuation to wrap
- @param handleType the handle to apply.
+ @param futureType the Future Type.
  @return a new Termination Awaitable.
  */
-extern id<FBiOSTargetContinuation> FBiOSTargetContinuationRenamed(id<FBiOSTargetContinuation> continuation, FBTerminationHandleType handleType);
+extern id<FBiOSTargetContinuation> FBiOSTargetContinuationRenamed(id<FBiOSTargetContinuation> continuation, FBiOSTargetFutureType futureType);
 
 /**
  Makes a continuation that has nothing left to do.
@@ -83,7 +88,7 @@ extern id<FBiOSTargetContinuation> FBiOSTargetContinuationDone(FBTerminationHand
 /**
  The Action Type of the Reciever.
  */
-@property (nonatomic, copy, readonly) FBiOSTargetFutureType actionType;
+@property (nonatomic, copy, class, readonly) FBiOSTargetFutureType futureType;
 
 /**
  Starts the action represented by the reciever.

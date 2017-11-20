@@ -19,7 +19,7 @@
 #import "FBUploadBuffer.h"
 #import "NSRunLoop+FBControlCore.h"
 
-FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_reader";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader";
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -315,19 +315,16 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 #pragma mark FBiOSTargetContinuation
 
-- (FBTerminationHandleType)handleType
+- (FBiOSTargetFutureType)futureType
 {
-  return FBTerminationHandleTypeActionReader;
-}
-
-- (void)terminate
-{
-  [self stopListeningWithError:nil];
+  return FBiOSTargetFutureTypeActionReader;
 }
 
 - (FBFuture<NSNull *> *)completed
 {
-  return self.completedFuture;
+  return [self.completedFuture onQueue:dispatch_get_main_queue() notifyOfCancellation:^(id _) {
+    [self stopListeningWithError:nil];
+  }];
 }
 
 @end

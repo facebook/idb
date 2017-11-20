@@ -145,14 +145,14 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeApplicationLaunch;
 }
 
 - (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
-  return [[target launchApplication:self] mapReplace:FBiOSTargetContinuationDone(self.actionType)];
+  return [[target launchApplication:self] mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
 }
 
 @end

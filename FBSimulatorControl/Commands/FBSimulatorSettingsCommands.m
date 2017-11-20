@@ -160,7 +160,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
 
 @implementation FBSettingsApproval (FBiOSTargetFuture)
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeApproval;
 }
@@ -175,7 +175,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
   }
   return [[commands
     grantAccess:[NSSet setWithArray:self.bundleIDs] toServices:[NSSet setWithArray:self.services]]
-    mapReplace:FBiOSTargetContinuationDone(self.actionType)];
+    mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
 }
 
 @end

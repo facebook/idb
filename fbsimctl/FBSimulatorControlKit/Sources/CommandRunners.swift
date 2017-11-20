@@ -147,16 +147,16 @@ struct CommandRunner : Runner {
       }
     }
     // Some commands are asynchronous, therefore we need to add a listen
-    if let listenHandle = CommandRunner.shouldAddListen(command: command, result: result) {
-      let listenInterface = ListenInterface(stdin: false, http: nil, hid: nil, handle: listenHandle)
+    if let continuation = CommandRunner.shouldAddListen(command: command, result: result) {
+      let listenInterface = ListenInterface(stdin: false, http: nil, hid: nil, continuation: continuation)
       let runner = ListenRunner(context: self.context.replace((listenInterface, FBiOSTargetQuery.allTargets())))
       let _ = runner.run()
     }
     return result
   }
 
-  private static func shouldAddListen(command: Command, result: CommandResult) -> FBTerminationHandle? {
-    guard let handle = result.handles.first else {
+  private static func shouldAddListen(command: Command, result: CommandResult) -> FBiOSTargetContinuation? {
+    guard let continuation = result.continuations.first else {
       return nil
     }
     for action in command.actions {
@@ -164,7 +164,7 @@ struct CommandRunner : Runner {
         return nil
       }
     }
-    return handle
+    return continuation
   }
 }
 
@@ -248,7 +248,7 @@ struct ListenRunner : Runner, ActionPerformer {
     var continuation: FBiOSTargetContinuation? = nil
 
     if interface.isEmptyListen {
-      continuation = interface.handle as? FBiOSTargetContinuation
+      continuation = interface.continuation
     }
     if let httpPort = interface.http {
       relays.append(HttpRelay(portNumber: httpPort, performer: self))

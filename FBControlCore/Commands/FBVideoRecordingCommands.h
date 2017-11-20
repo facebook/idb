@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Termination Handle Type for an Recording Operation.
  */
-extern FBTerminationHandleType const FBTerminationTypeHandleVideoRecording;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoRecording;
 
 /**
  Defines an interface for Video Recording.

@@ -9,4 +9,4 @@
 
 #import "FBXCTestCommands.h"
 
-FBTerminationHandleType const FBTerminationHandleTypeTestOperation = @"TestOperation";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeTestOperation = @"TestOperation";

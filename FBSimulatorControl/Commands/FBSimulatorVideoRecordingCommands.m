@@ -16,8 +16,6 @@
 #import "FBFramebufferSurface.h"
 #import "FBSimulatorBitmapStream.h"
 
-FBTerminationHandleType const FBTerminationTypeHandleVideoStreaming = @"VideoStreaming";
-
 @interface FBSimulatorVideoRecordingCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;

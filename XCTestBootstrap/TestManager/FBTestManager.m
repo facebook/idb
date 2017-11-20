@@ -64,7 +64,7 @@
   }
   _connectFuture = [self.mediator.connect
     onQueue:self.target.workQueue notifyOfCancellation:^(FBFuture *_) {
-      [self terminate];
+      [self teardown];
     }];
   return self.connectFuture;
 }
@@ -76,7 +76,7 @@
   }
   _executeFuture = [self.mediator.execute
     onQueue:self.target.workQueue notifyOfCancellation:^(FBFuture *_) {
-      [self terminate];
+      [self teardown];
     }];
   return self.executeFuture;
 }
@@ -86,26 +86,31 @@
   return self.mediator.description;
 }
 
-#pragma mark FBiOSTargetContinuation
+#pragma mark Private
 
-- (FBFuture<NSNull *> *)completed
-{
-  return [[self.connect
-    onQueue:self.target.workQueue fmap:^FBFuture *(FBTestManagerResult *_) {
-      return [self execute];
-    }]
-    mapReplace:NSNull.null];
-}
-
-- (FBTerminationHandleType)handleType
-{
-  return FBTerminationHandleTypeTestOperation;
-}
-
-- (void)terminate
+- (void)teardown
 {
   [self.mediator disconnect];
   [self.terminationFuture cancel];
+}
+
+#pragma mark FBiOSTargetContinuation
+
+- (FBiOSTargetFutureType)futureType
+{
+  return FBiOSTargetFutureTypeTestOperation;
+}
+
+- (FBFuture<NSNull *> *)completed
+{
+  return [[[self.connect
+    onQueue:self.target.workQueue fmap:^FBFuture *(FBTestManagerResult *_) {
+      return [self execute];
+    }]
+    mapReplace:NSNull.null]
+    onQueue:self.target.workQueue notifyOfCancellation:^(id _) {
+      [self teardown];
+    }];
 }
 
 @end

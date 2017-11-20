@@ -21,7 +21,7 @@
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeAgentLaunch;
 }
@@ -34,7 +34,7 @@
       failFuture];
   }
   FBSimulator *simulator = (FBSimulator *) target;
-  return [[simulator launchAgent:self] mapReplace:FBiOSTargetContinuationDone(self.actionType)];
+  return [[simulator launchAgent:self] mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
 }
 
 #pragma mark Public

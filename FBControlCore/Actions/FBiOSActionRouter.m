@@ -40,7 +40,8 @@
 {
   NSMutableDictionary<FBiOSTargetFutureType, Class> *mapping = [NSMutableDictionary dictionary];
   for (Class actionClass in actionClasses) {
-    FBiOSTargetFutureType actionType = [actionClass actionType];
+    NSAssert(([actionClass conformsToProtocol:@protocol(FBiOSTargetFuture)]), @"%@ is not an action class", actionClass);
+    FBiOSTargetFutureType actionType = [actionClass futureType];
     mapping[actionType] = actionClass;
   }
   return [mapping copy];
@@ -127,7 +128,7 @@ static NSString *const KeyUDID = @"udid";
 + (NSDictionary<NSString *, id> *)jsonFromAction:(id<FBiOSTargetFuture>)action
 {
   return @{
-    KeyActionType: [action.class actionType],
+    KeyActionType: [action.class futureType],
     KeyActionPayload: action.jsonSerializableRepresentation,
   };
 }

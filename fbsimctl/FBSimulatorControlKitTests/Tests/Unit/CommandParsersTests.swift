@@ -226,12 +226,12 @@ let validActions: [([String], Action)] = [
   (["list"], .list),
   (["list_apps"], .listApps),
   (["list_device_sets"], .listDeviceSets),
-  (["listen", "--stdin"], .listen(ListenInterface(stdin: true, http: nil, hid: nil, handle: nil))),
-  (["listen", "--http", "43"], .listen(ListenInterface(stdin: false, http: 43, hid: nil, handle: nil))),
-  (["listen", "--socket", "44"], .listen(ListenInterface(stdin: false, http: nil, hid: 44, handle: nil))),
-  (["listen", "--http", "43", "--stdin"], .listen(ListenInterface(stdin: true, http: 43, hid: nil, handle: nil))),
-  (["listen", "--http", "43", "--socket", "44"], .listen(ListenInterface(stdin: false, http: 43, hid: 44, handle: nil))),
-  (["listen"], .listen(ListenInterface(stdin: false, http: nil, hid: nil, handle: nil))),
+  (["listen", "--stdin"], .listen(ListenInterface(stdin: true, http: nil, hid: nil, continuation: nil))),
+  (["listen", "--http", "43"], .listen(ListenInterface(stdin: false, http: 43, hid: nil, continuation: nil))),
+  (["listen", "--socket", "44"], .listen(ListenInterface(stdin: false, http: nil, hid: 44, continuation: nil))),
+  (["listen", "--http", "43", "--stdin"], .listen(ListenInterface(stdin: true, http: 43, hid: nil, continuation: nil))),
+  (["listen", "--http", "43", "--socket", "44"], .listen(ListenInterface(stdin: false, http: 43, hid: 44, continuation: nil))),
+  (["listen"], .listen(ListenInterface(stdin: false, http: nil, hid: nil, continuation: nil))),
   (["logtail"], .logTail(FBLogTailConfiguration(arguments: []))),
   (["logtail", "some", "--other", "args"], .logTail(FBLogTailConfiguration(arguments: ["some", "--other", "args"]))),
   (["open", "aoo://bar/baz"], .open(URL(string: "aoo://bar/baz")!)),
@@ -312,7 +312,7 @@ class CommandParserTests : XCTestCase {
     let compoundComponents = [
       ["list"], ["boot"], ["listen", "--http", "1000"], ["shutdown"],
     ]
-    let actions: [Action] = [.list, .boot(FBSimulatorBootConfiguration.default), .listen(ListenInterface(stdin: false, http: 1000, hid: nil, handle: nil)), .shutdown]
+    let actions: [Action] = [.list, .boot(FBSimulatorBootConfiguration.default), .listen(ListenInterface(stdin: false, http: 1000, hid: nil, continuation: nil)), .shutdown]
     self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 
@@ -323,7 +323,7 @@ class CommandParserTests : XCTestCase {
     let launchConfiguration = FBSimulatorBootConfiguration.default
       .withOptions([.enableDirectLaunch, .awaitServices, .useNSWorkspace])
     let diagnoseAction = Action.diagnose(FBDiagnosticQuery.all())
-    let actions: [Action] = [.list, .create(CreationSpecification.iPhone6Configuration), .boot(launchConfiguration), .listen(ListenInterface(stdin: false, http: 8090, hid: nil, handle: nil)), .shutdown, diagnoseAction]
+    let actions: [Action] = [.list, .create(CreationSpecification.iPhone6Configuration), .boot(launchConfiguration), .listen(ListenInterface(stdin: false, http: 8090, hid: nil, continuation: nil)), .shutdown, diagnoseAction]
     self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 

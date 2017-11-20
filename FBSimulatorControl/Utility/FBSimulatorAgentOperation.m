@@ -101,14 +101,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
 
 #pragma mark FBiOSTargetContinuation
 
-- (FBTerminationHandleType)handleType
+- (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeSimulatorAgent;
-}
-
-- (void)terminate
-{
-  [self.future cancel];
 }
 
 - (FBFuture<NSNull *> *)completed

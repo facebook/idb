@@ -151,8 +151,6 @@
   XCTAssertEqualObjects(compositeFuture.result, expected);
 }
 
-- (v)
-
 - (void)testCompositeImmediateValue
 {
   FBFuture<NSArray<NSNumber *> *> *compositeFuture = [FBFuture futureWithFutures:@[

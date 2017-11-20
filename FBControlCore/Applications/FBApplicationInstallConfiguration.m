@@ -102,7 +102,7 @@ static NSString *const KeyCodesign = @"codesign";
 
 #pragma mark FBiOSTargetFuture
 
-- (FBiOSTargetFutureType)actionType
++ (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeInstall;
 }
@@ -126,7 +126,7 @@ static NSString *const KeyCodesign = @"codesign";
         [NSFileManager.defaultManager removeItemAtURL:future.result.extractedPath error:nil];
       }
     }]
-    mapReplace:FBiOSTargetContinuationDone(self.actionType)];
+    mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
 }
 
 @end

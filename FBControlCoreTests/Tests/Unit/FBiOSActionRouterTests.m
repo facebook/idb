@@ -44,7 +44,7 @@
   FBiOSActionRouter *router = [FBiOSActionRouter routerForTarget:self.target actionClasses:actionClasses.allObjects];
   for (id<FBiOSTargetFuture> action in actions) {
     NSDictionary<NSString *, id> *json = [router jsonFromAction:action];
-    XCTAssertEqualObjects(json[@"action"], [action.class actionType]);
+    XCTAssertEqualObjects(json[@"action"], [action.class futureType]);
     XCTAssertEqualObjects(json[@"udid"], self.target.udid);
     NSError *error = nil;
     id<FBiOSTargetFuture> deflated = [router actionFromJSON:json error:&error];

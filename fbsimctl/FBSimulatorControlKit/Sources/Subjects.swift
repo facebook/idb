@@ -82,7 +82,7 @@ extension FBJSONSerializable {
   var jsonSerializableRepresentation: Any { get {
     var json: [String : Any] = [
       "stdin" : NSNumber(value: self.interface.stdin),
-      "handle" : self.interface.handle?.handleType.rawValue ?? NSNull(),
+      "handle" : self.interface.continuation?.futureType.rawValue ?? NSNull(),
     ]
     if let http = self.interface.http {
       json["http"] = NSNumber(value: http)
@@ -114,8 +114,8 @@ extension FBJSONSerializable {
       description += "No"
     }
     description += " stdin: \(self.interface.stdin)"
-    if let handle = self.interface.handle {
-      description += " due to \(handle.handleType.rawValue)"
+    if let continuation = self.interface.continuation {
+      description += " due to \(continuation.futureType.rawValue)"
     }
     return description
   }}
@@ -124,10 +124,10 @@ extension FBJSONSerializable {
     if !self.interface.isEmptyListen {
       return nil
     }
-    guard  let handle = self.interface.handle else {
+    guard let continuation = self.interface.continuation else {
       return nil
     }
-    return handle.handleType.listenDescription
+    return continuation.futureType.listenDescription
   }}
 
   var subSubjects: [FBEventReporterSubjectProtocol] { get {

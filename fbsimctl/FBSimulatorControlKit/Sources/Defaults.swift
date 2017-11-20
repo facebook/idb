@@ -118,12 +118,12 @@ extension Action {
     // Depending on what state the simulator is expected to be in.
     // Descructive of machine-killing actions shouldn't have defaults.
     switch self {
-      case .coreFuture(let future) where future.actionType == .diagnosticQuery:
+      case .coreFuture(let future) where type(of: future).futureType == .diagnosticQuery:
         return FBiOSTargetQuery.allTargets()
       case .list:
         return FBiOSTargetQuery.allTargets()
-      case .coreFuture(let action):
-        return action.actionType.defaultQuery
+      case .coreFuture(let future):
+        return type(of: future).futureType.defaultQuery
       case .delete:
         return nil
       case .listen:

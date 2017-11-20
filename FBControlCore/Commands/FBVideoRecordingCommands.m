@@ -9,4 +9,4 @@
 
 #import "FBVideoRecordingCommands.h"
 
-FBTerminationHandleType const FBTerminationTypeHandleVideoRecording = @"VideoRecording";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoRecording = @"VideoRecording";
