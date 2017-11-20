@@ -54,13 +54,13 @@ extension EnvironmentAdditive {
 public extension Action {
   func appendEnvironment(_ environment: [String : String]) -> Action {
     switch self {
-    case .core(var action):
-      if let additive = action as? EnvironmentAdditive & FBiOSTargetAction {
+    case .coreFuture(var action):
+      if let additive = action as? EnvironmentAdditive & FBiOSTargetFuture {
         action = additive.withEnvironmentAdditions(
           FBProcessLaunchConfiguration.subprocessEnvironment(environment)
         )
       }
-      return .core(action)
+      return .coreFuture(action)
     default:
       return self
     }

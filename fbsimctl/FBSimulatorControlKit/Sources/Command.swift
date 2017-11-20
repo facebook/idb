@@ -75,7 +75,6 @@ public enum FileOutput {
 public enum Action {
   case clearKeychain(String?)
   case config
-  case core(FBiOSTargetAction)
   case coreFuture(FBiOSTargetFuture)
   case create(CreationSpecification)
   case delete
@@ -320,8 +319,6 @@ public func == (left: Action, right: Action) -> Bool {
     return leftBundleID == rightBundleID
   case (.config, .config):
     return true
-  case (.core(let leftAction), .core(let rightAction)):
-    return leftAction.isEqual(rightAction)
   case let (.coreFuture(leftAction), .coreFuture(rightAction)):
     return leftAction.isEqual(rightAction)
   case (.create(let leftSpecification), .create(let rightSpecification)):
@@ -368,8 +365,6 @@ extension Action {
       return (.clearKeychain, FBEventReporterSubject(string: bundleID ?? "none"))
     case .config:
       return (.config, nil)
-    case .core(let action):
-      return (action.eventName, action.subject)
     case .coreFuture(let action):
       return (action.eventName, action.subject)
     case .create:

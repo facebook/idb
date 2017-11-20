@@ -61,8 +61,8 @@ struct PrintRunner : Runner {
 
   func run() -> CommandResult {
     switch self.action {
-    case .core(let action):
-      let output = action.printable()
+    case .coreFuture(let action):
+      let output = action.printable
       self.writer.write(output)
       return .success(nil)
     default:

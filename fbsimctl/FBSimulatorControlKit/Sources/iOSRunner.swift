@@ -32,8 +32,6 @@ struct iOSActionProvider {
     switch action {
     case .uninstall(let appBundleID):
       return FutureRunner(reporter, .uninstall, FBEventReporterSubject(string: appBundleID), target.uninstallApplication(withBundleID: appBundleID))
-    case .core(let action):
-      return iOSTargetRunner.core(reporter, action.eventName, target, action)
     case .coreFuture(let action):
       let awaitableDelegate = ActionReaderDelegateBridge()
       let future = action.run(with: target, consumer: reporter.reporter.writer, reporter: reporter.reporter, awaitableDelegate: awaitableDelegate)
@@ -115,19 +113,6 @@ struct iOSTargetRunner : Runner {
     return iOSTargetRunner(reporter: reporter, name: name, subject: subject) {
       try action()
       return nil
-    }
-  }
-
-  static func future<A : NSObjectProtocol>(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ future: FBFuture<A>) -> iOSTargetRunner {
-    return iOSTargetRunner(reporter: reporter, name: name, subject: subject) {
-      try future.await()
-      return nil
-    }
-  }
-
-  static func core(_ reporter: iOSReporter, _ name: EventName?, _ target: FBiOSTarget, _ action: FBiOSTargetAction) -> iOSTargetRunner {
-    return iOSTargetRunner(reporter: reporter, name: name, subject: action.subject) {
-      return try action.runAction(target: target, reporter: reporter.reporter)
     }
   }
 

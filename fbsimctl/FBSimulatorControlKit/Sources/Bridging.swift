@@ -204,28 +204,15 @@ extension FBiOSTargetActionType {
   }}
 }
 
-extension FBiOSTargetAction {
-  func runAction(target: FBiOSTarget, reporter: EventReporter) throws -> FBTerminationHandle? {
-    let reporter = FBEventReporter.withInterpreter(reporter.interpreter, consumer: reporter.writer)
-    let delegateBridge = ActionReaderDelegateBridge()
-    let delegate = FBReportingiOSActionReaderDelegate(delegate: delegateBridge, reporter: reporter)
-    try self.run(with: target, delegate: delegate)
-    return delegateBridge.handles.first
-  }
-
-  public func printable() -> String {
-    let json = try! JSON.encode(FBiOSActionRouter.json(from: self) as AnyObject)
-    return try! json.serializeToString(false)
-  }
-
-  public var eventName: EventName { get {
-    return self.actionType.eventName
-  }}
-}
-
 extension FBiOSTargetFuture {
   public var eventName: EventName { get {
     return self.actionType.eventName
+  }}
+
+  public var printable: String { get {
+    let action = FBiOSTargetActionFromTargetFuture(self)
+    let json = try! JSON.encode(FBiOSActionRouter.json(from: action) as AnyObject)
+    return try! json.serializeToString(false)
   }}
 }
 

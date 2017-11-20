@@ -122,10 +122,10 @@ extension Action {
         return FBiOSTargetQuery.allTargets()
       case .list:
         return FBiOSTargetQuery.allTargets()
+      case .coreFuture(let action):
+        return action.actionType.defaultQuery
       case .delete:
         return nil
-      case .core(let action):
-        return action.actionType.defaultQuery
       case .listen:
         fallthrough
       default:

@@ -88,7 +88,7 @@ struct SimulatorActionRunner : Runner {
         try simulator.focus()
       }
     case .keyboardOverride:
-      return iOSTargetRunner.future(
+      return FutureRunner(
         reporter,
         .keyboardOverride,
         simulator.subject,
