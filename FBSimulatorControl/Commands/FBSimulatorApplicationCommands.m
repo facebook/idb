@@ -83,6 +83,9 @@
 
 - (FBFuture<NSNull *> *)killApplicationWithBundleID:(NSString *)bundleID
 {
+  if (!bundleID) {
+    return [[FBSimulatorError describe:@"Bundle ID was not provided"] failFuture];
+  }
   return [[self.simulator
     runningApplicationWithBundleID:bundleID]
     onQueue:self.simulator.workQueue map:^(FBProcessInfo *process) {
