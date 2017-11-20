@@ -63,6 +63,25 @@
   ];
 }
 
+- (BOOL)isEqual:(FBTestManagerResultSummary *)object
+{
+  if (![object isKindOfClass:[self class]]) {
+    return NO;
+  }
+
+  if (object == self) {
+    return YES;
+  }
+
+  return (self.runCount == object.runCount &&
+          self.failureCount == object.failureCount &&
+          self.unexpected == object.unexpected &&
+          self.testDuration == object.testDuration &&
+          self.totalDuration == object.totalDuration &&
+          [self.testSuite isEqualToString:object.testSuite] &&
+          [self.finishTime isEqualToDate:object.finishTime]);
+}
+
 + (FBTestReportStatus)statusForStatusString:(NSString *)statusString
 {
   if ([statusString isEqualToString:@"passed"]) {

@@ -10,6 +10,7 @@
 #import <XCTest/XCTest.h>
 #import <XCTestBootstrap/FBLogicReporterAdapter.h>
 #import <XCTestBootstrap/FBXCTestReporter.h>
+#import <XCTestBootstrap/FBTestManagerResultSummary.h>
 #import <OCMock/OCMock.h>
 
 @interface FBLogicReporterAdapterTests : XCTestCase
@@ -31,6 +32,19 @@ static NSDictionary *testEventDict() {
            @"className": @"OmniClass",
            @"methodName": @"theMethod:toRule:themAll:"
          };
+}
+
+static FBTestManagerResultSummary *summaryFromDictionary(NSDictionary *JSONEvent) {
+  NSDate *finishDate = [NSDate dateWithTimeIntervalSince1970:[JSONEvent[@"timestamp"] doubleValue]];
+  NSInteger unexpected = [JSONEvent[@"unexpectedExceptionCount"] integerValue];
+  return [[FBTestManagerResultSummary alloc]
+          initWithTestSuite:JSONEvent[@"suite"]
+          finishTime:finishDate
+          runCount:[JSONEvent[@"testCaseCount"] integerValue]
+          failureCount:[JSONEvent[@"totalFailureCount"] integerValue]
+          unexpected:unexpected
+          testDuration:[JSONEvent[@"testDuration"] doubleValue]
+          totalDuration:[JSONEvent[@"totalDuration"] doubleValue]];
 }
 
 @implementation FBLogicReporterAdapterTests
@@ -103,6 +117,27 @@ static NSDictionary *testEventDict() {
   [[mock expect] testCaseDidFinishForTestClass:event[@"className"] method:event[@"methodName"] withStatus:FBTestReportStatusPassed duration:duration];
 
   NSData *data = [NSJSONSerialization dataWithJSONObject:event options:0 error:NULL];
+  [self.adapter handleEventJSONData:data];
+  [mock verify];
+}
+
+- (void)test_LogicReporter_testSuiteDidEnd
+{
+  OCMockObject *mock = self.reporterMock;
+  NSDictionary *dict = @{
+                         @"event": @"end-test-suite",
+                         @"suite": @"Toplevel Test Suite",
+                         @"testCaseCount": @10,
+                         @"testDuration": @"0.148857057094574",
+                         @"timestamp": @"1510917478.156559",
+                         @"totalDuration": @"0.1503260135650635",
+                         @"totalFailureCount": @4,
+                         @"unexpectedExceptionCount": @0
+                         };
+
+  FBTestManagerResultSummary *expectedSummary = summaryFromDictionary(dict);
+  [[mock expect] finishedWithSummary:expectedSummary];
+  NSData *data = [NSJSONSerialization dataWithJSONObject:dict options:0 error:NULL];
   [self.adapter handleEventJSONData:data];
   [mock verify];
 }

@@ -99,6 +99,18 @@
       status = FBTestReportStatusUnknown;
     }
     [reporter testCaseDidFinishForTestClass:testClass method:testName withStatus:status duration:duration];
+  } else if ([eventName isEqualToString:@"end-test-suite"]) {
+    NSDate *finishDate = [NSDate dateWithTimeIntervalSince1970:[JSONEvent[@"timestamp"] doubleValue]];
+    NSInteger unexpected = [JSONEvent[@"unexpectedExceptionCount"] integerValue];
+    FBTestManagerResultSummary *summary = [[FBTestManagerResultSummary alloc]
+                                           initWithTestSuite:JSONEvent[@"suite"]
+                                           finishTime:finishDate
+                                           runCount:[JSONEvent[@"testCaseCount"] integerValue]
+                                           failureCount:[JSONEvent[@"totalFailureCount"] integerValue]
+                                           unexpected:unexpected
+                                           testDuration:[JSONEvent[@"testDuration"] doubleValue]
+                                           totalDuration:[JSONEvent[@"totalDuration"] doubleValue]];
+    [reporter finishedWithSummary:summary];
   } else {
     [self.logger logFormat:@"[%@] Unhandled event JSON: %@", NSStringFromClass(self.class), JSONEvent];
   }
