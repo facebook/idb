@@ -430,7 +430,7 @@ static NSString *KeyType = @"type";
   return FBiOSTargetFutureTypeDiagnosticQuery;
 }
 
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:FBiOSTargetFutureTypeDiagnosticQuery type:FBEventTypeStarted value:self];
   [reporter report:subject];
@@ -441,7 +441,7 @@ static NSString *KeyType = @"type";
   subject = [FBEventReporterSubject subjectWithName:FBiOSTargetFutureTypeDiagnosticQuery type:FBEventTypeEnded value:self];
   [reporter report:subject];
 
-  return [FBFuture futureWithResult:self.actionType];
+  return [FBFuture futureWithResult:FBiOSTargetContinuationDone(self.actionType)];
 }
 
 + (id<FBEventReporterSubject>)resolveDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics format:(FBDiagnosticQueryFormat)format

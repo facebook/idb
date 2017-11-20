@@ -8,7 +8,7 @@
 
 @property (nonatomic, strong, readonly) id<FBFileConsumer> consumer;
 @property (nonatomic, strong, readonly) dispatch_queue_t readQueue;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *terminationFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *stoppedFuture;
 
 @property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
 @property (nonatomic, strong, nullable, readwrite) dispatch_io_t io;
@@ -43,7 +43,7 @@
   _fileHandle = fileHandle;
   _consumer = consumer;
   _readQueue = dispatch_queue_create("com.facebook.fbxctest.multifilereader", DISPATCH_QUEUE_SERIAL);
-  _terminationFuture = [FBMutableFuture.future onQueue:_readQueue notifyOfCompletion:^(FBFuture *_) {
+  _stoppedFuture = [FBMutableFuture.future onQueue:_readQueue notifyOfCompletion:^(FBFuture *_) {
     [consumer consumeEndOfFile];
   }];
 
@@ -63,7 +63,7 @@
   // Get locals to be captured by the read, rather than self.
   NSFileHandle *fileHandle = self.fileHandle;
   id<FBFileConsumer> consumer = self.consumer;
-  FBMutableFuture<NSNull *> *doneFuture = self.terminationFuture;
+  FBMutableFuture<NSNull *> *doneFuture = self.stoppedFuture;
 
   // If there is an error creating the IO Object, the errorCode will be delivered asynchronously.
   self.io = dispatch_io_create(DISPATCH_IO_STREAM, fileHandle.fileDescriptor, self.readQueue, ^(int errorCode) {
@@ -108,7 +108,14 @@
   self.fileHandle = nil;
   self.io = nil;
 
-  return self.terminationFuture;
+  return self.stoppedFuture;
+}
+
+- (FBFuture<NSNull *> *)completed
+{
+  return [self.stoppedFuture onQueue:self.readQueue notifyOfCancellation:^(id _) {
+    [self stopReading];
+  }];
 }
 
 - (BOOL)startReadingWithError:(NSError **)error

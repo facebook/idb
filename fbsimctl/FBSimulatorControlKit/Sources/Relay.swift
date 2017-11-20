@@ -48,13 +48,13 @@ class CompositeRelay : Relay {
 class SynchronousRelay : Relay {
   let relay: Relay
   let reporter: EventReporter
-  let awaitable: FBTerminationAwaitable?
+  let continuation: FBiOSTargetContinuation?
   let started: () -> Void
 
-  init(relay: Relay, reporter: EventReporter, awaitable: FBTerminationAwaitable?, started: @escaping () -> Void) {
+  init(relay: Relay, reporter: EventReporter, continuation: FBiOSTargetContinuation?, started: @escaping () -> Void) {
     self.relay = relay
     self.reporter = reporter
-    self.awaitable = awaitable
+    self.continuation = continuation
     self.started = started
   }
 
@@ -64,7 +64,7 @@ class SynchronousRelay : Relay {
     self.started()
 
     var futures: [FBFuture<NSNull>] = []
-    if let completedFuture = self.awaitable?.completed {
+    if let completedFuture = self.continuation?.completed {
       futures.append(completedFuture)
     }
     let signalFuture = SignalHandler.future.onQueue(DispatchQueue.main, map: { info in

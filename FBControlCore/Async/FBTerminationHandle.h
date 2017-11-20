@@ -13,8 +13,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBFuture;
-
 /**
  Extensible Diagnostic Name Enumeration.
  */
@@ -36,27 +34,5 @@ typedef NSString *FBTerminationHandleType NS_EXTENSIBLE_STRING_ENUM;
 @property (nonatomic, copy, readonly) FBTerminationHandleType handleType;
 
 @end
-
-/**
- A Termination Handle that can optionally be awaited for completions
- */
-@protocol FBTerminationAwaitable <FBTerminationHandle>
-
-/**
- A Future that resolves when the operation has completed.
- */
-@property (nonatomic, strong, readonly) FBFuture<NSNull *> *completed;
-
-@end
-
-/**
- Re-Names an existing awaitable.
- Useful when a lower-level awaitable should be hoisted to a higher-level naming.
-
- @param awaitable the awaitable to wrap
- @param handleType the handle to apply.
- @return a new Termination Awaitable.
- */
-extern id<FBTerminationAwaitable> FBTerminationAwaitableRenamed(id<FBTerminationAwaitable> awaitable, FBTerminationHandleType handleType);
 
 NS_ASSUME_NONNULL_END

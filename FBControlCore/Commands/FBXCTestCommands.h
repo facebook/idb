@@ -39,8 +39,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTestOperation;
  @param logger the logger to log to.
  @return a Future, wrapping a test operation.
  */
-- (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
-
+- (FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 /**
  Lists the testables for a provided test bundle.
 

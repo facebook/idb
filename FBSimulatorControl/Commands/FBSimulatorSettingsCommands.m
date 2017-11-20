@@ -165,7 +165,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
   return FBiOSTargetFutureTypeApproval;
 }
 
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBSimulatorSettingsCommands> commands = (id<FBSimulatorSettingsCommands>) target;
   if (![target conformsToProtocol:@protocol(FBSimulatorSettingsCommands)]) {
@@ -175,7 +175,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
   }
   return [[commands
     grantAccess:[NSSet setWithArray:self.bundleIDs] toServices:[NSSet setWithArray:self.services]]
-    mapReplace:self.actionType];
+    mapReplace:FBiOSTargetContinuationDone(self.actionType)];
 }
 
 @end

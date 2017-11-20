@@ -8,28 +8,21 @@
  */
 
 #import "FBDeviceLogCommands.h"
+
 #import "FBDevice+Private.h"
 #import "FBAMDevice+Private.h"
 #import "FBDeviceControlError.h"
 
-FBTerminationHandleType const FBTerminationHandleTypeLogTail = @"logtail";
-
-@interface FBFileReader ()
-
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *terminationFuture;
-
-@end
-
-@interface FBDeviceLogTerminationAwaitable: NSObject <FBTerminationAwaitable>
+@interface FBDeviceLogTerminationContinuation : NSObject <FBiOSTargetContinuation>
 
 - (instancetype)initWithReader:(FBFileReader *)reader consumer:(id<FBFileConsumer>)consumer;
 
-@property (nonatomic, strong) FBFileReader *reader;
-@property (nonatomic, strong) id<FBFileConsumer> consumer;
+@property (nonatomic, strong, readonly) FBFileReader *reader;
+@property (nonatomic, strong, readonly) id<FBFileConsumer> consumer;
 
 @end
 
-@implementation FBDeviceLogTerminationAwaitable
+@implementation FBDeviceLogTerminationContinuation
 
 - (instancetype)initWithReader:(FBFileReader *)reader consumer:(id<FBFileConsumer>)consumer
 {
@@ -46,17 +39,17 @@ FBTerminationHandleType const FBTerminationHandleTypeLogTail = @"logtail";
 
 - (FBFuture<NSNull *> *)completed
 {
-  return self.reader.terminationFuture;
+  return self.reader.completed;
 }
 
-- (FBTerminationHandleType)handleType
+- (FBiOSTargetFutureType)handleType
 {
-  return FBTerminationHandleTypeLogTail;
+  return FBiOSTargetFutureTypeLogTail;
 }
 
 - (void)terminate
 {
-  [self.reader stopReading];
+  [self.reader.completed cancel];
 }
 
 @end
@@ -68,6 +61,13 @@ FBTerminationHandleType const FBTerminationHandleTypeLogTail = @"logtail";
 @end
 
 @implementation FBDeviceLogCommands
+
+#pragma mark Initializers
+
++ (instancetype)commandsWithTarget:(FBDevice *)target
+{
+  return [[self alloc] initWithDevice:target];
+}
 
 - (instancetype)initWithDevice:(FBDevice *)device
 {
@@ -81,18 +81,14 @@ FBTerminationHandleType const FBTerminationHandleTypeLogTail = @"logtail";
   return self;
 }
 
-
-+ (instancetype)commandsWithTarget:(FBDevice *)target
-{
-  return [[self alloc] initWithDevice:target];
-}
+#pragma mark FBLogCommands Implementation
 
 - (FBFuture<NSArray<NSString *> *> *)logLinesWithArguments:(NSArray<NSString *> *)arguments
 {
   return [[FBDeviceControlError describeFormat:@"%@ is unimplemented", NSStringFromSelector(_cmd)] failFuture];
 }
 
-- (FBFuture<id<FBTerminationAwaitable>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
+- (FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
 {
   if (arguments.count == 0) {
     [self.device.logger logFormat:@"[FBDeviceLogCommands] Unsupported arguments: %@", arguments];
@@ -114,7 +110,7 @@ FBTerminationHandleType const FBTerminationHandleTypeLogTail = @"logtail";
     FBFileReader *reader = [FBFileReader readerWithFileHandle:handle consumer:consumer];
     return [[reader startReading] mapReplace:reader];
   }] onQueue:queue map:^(FBFileReader *reader) {
-    return [[FBDeviceLogTerminationAwaitable alloc] initWithReader:reader  consumer:consumer];
+    return [[FBDeviceLogTerminationContinuation alloc] initWithReader:reader  consumer:consumer];
   }];
 }
 

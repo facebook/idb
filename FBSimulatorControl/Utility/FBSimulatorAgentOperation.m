@@ -99,7 +99,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
   [self.stdErr terminate];
 }
 
-#pragma mark FBTerminationAwaitable
+#pragma mark FBiOSTargetContinuation
 
 - (FBTerminationHandleType)handleType
 {

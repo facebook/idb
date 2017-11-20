@@ -14,13 +14,8 @@
 #import "FBSubject.h"
 #import "FBJSONEnums.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wprotocol"
-#pragma clang diagnostic ignored "-Wincomplete-implementation"
-
 @interface FBReportingiOSActionReaderDelegate ()
 
-@property (nonatomic, strong, readonly) id<FBiOSActionReaderDelegate> delegate;
 @property (nonatomic, strong, readonly) id<FBEventReporter> reporter;
 
 @end
@@ -28,15 +23,13 @@
 
 @implementation FBReportingiOSActionReaderDelegate
 
-- (instancetype)initWithDelegate:(id<FBiOSActionReaderDelegate>)delegate reporter:(id<FBEventReporter>)reporter
+- (instancetype)initWithReporter:(id<FBEventReporter>)reporter
 {
   self = [super init];
-
   if (!self) {
     return nil;
   }
 
-  _delegate = delegate;
   _reporter = reporter;
 
   return self;
@@ -67,17 +60,6 @@
 - (NSString *)interpretSubject:(FBEventReporterSubject *)subject
 {
   return [self.interpreter interpret:subject];
-}
-
-#pragma mark Forwarding
-
-- (id)forwardingTargetForSelector:(SEL)aSelector
-{
-  if ([self.delegate respondsToSelector:aSelector]) {
-    return self.delegate;
-  }
-
-  return [super forwardingTargetForSelector:aSelector];
 }
 
 #pragma mark FBiOSActionReaderDelegate methods
@@ -123,6 +105,11 @@
   return [self interpretSubject:subject];
 }
 
+- (void)readerDidFinishReading:(FBiOSActionReader *)reader
+{
+
+}
+
 #pragma mark FBEventReporter Implementation
 
 - (void)report:(id<FBEventReporterSubject>)subject
@@ -141,5 +128,3 @@
 }
 
 @end
-
-#pragma clang diagnostic pop

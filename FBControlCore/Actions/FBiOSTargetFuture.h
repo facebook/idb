@@ -12,6 +12,7 @@
 #import <FBControlCore/FBEventReporter.h>
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBFuture.h>
+#import <FBControlCore/FBTerminationHandle.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -19,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBEventReporter;
 @protocol FBiOSTarget;
 @protocol FBiOSTargetFutureDelegate;
-@protocol FBTerminationAwaitable;
+@protocol FBiOSTargetContinuation;
 
 /**
  An extensible string enum representing an Action Type.
@@ -41,7 +42,38 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeAgentLaunch;
  */
 extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch;
 
-@protocol FBiOSTargetFutureAwaitableDelegate;
+/**
+ The Result of invoking an FBiOSTargetFuture.
+ Represents the execution state of the underlying operation.
+ */
+@protocol FBiOSTargetContinuation <FBTerminationHandle>
+
+/**
+ A Optional Future that resolves when the operation started from the FBiOSTargetFuture has completed.
+ For any FBiOSTargetFuture that performs ongoing work, this will be non-nil.
+ For any FBiOSTargetFuture that has finished it's work when resolved, this will be nil.
+ */
+@property (nonatomic, strong, nullable, readonly) FBFuture<NSNull *> *completed;
+
+@end
+
+/**
+ Re-Names an existing continuation.
+ Useful when a lower-level continuation should be hoisted to a higher-level naming.
+
+ @param continuation the continuation to wrap
+ @param handleType the handle to apply.
+ @return a new Termination Awaitable.
+ */
+extern id<FBiOSTargetContinuation> FBiOSTargetContinuationRenamed(id<FBiOSTargetContinuation> continuation, FBTerminationHandleType handleType);
+
+/**
+ Makes a continuation that has nothing left to do.
+
+ @param handleType the handle of the continuation
+ @return a new Termination Awaitable.
+ */
+extern id<FBiOSTargetContinuation> FBiOSTargetContinuationDone(FBTerminationHandleType handleType);
 
 /**
  A protocol that can be bridged to FBiOSTargetFutureDelegate
@@ -59,26 +91,9 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch;
  @param target the target to run against.
  @param consumer the consumer to report binary data to.
  @param reporter the reporter to report structured data to.
- @param awaitableDelegate the delegate to report generated await-handles to.
  @return a Future wrapping the action type.
  */
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate;
-
-@end
-
-/**
- A Delegate for notifying of a long-running operation.
- */
-@protocol FBiOSTargetFutureAwaitableDelegate
-
-/**
- A Termination Handle of an Asynchronous Operation has been generated.
-
- @param action the action that the termination was generated for.
- @param target the target the handle was generated for.
- @param awaitable the generated termination awaitable.
- */
-- (void)action:(id<FBiOSTargetFuture>)action target:(id<FBiOSTarget>)target didGenerateAwaitable:(id<FBTerminationAwaitable>)awaitable;
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter;
 
 @end
 

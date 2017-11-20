@@ -18,20 +18,17 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBFileConsumer;
 
 /**
- An FBiOSActionReaderDelegate for interpreting events.
- Returns strings formatted by the given interpreter when possible
- and pass through calls to the other delegate otherwise
+ An FBiOSActionReaderDelegate that reports events.
  */
 @interface FBReportingiOSActionReaderDelegate : NSObject <FBiOSActionReaderDelegate>
 
 /**
  The Designated Initializer.
 
- @param delegate the delegate to forward to.
  @param reporter the underlying event interpreter.
  @return a new Delegate Instance.
  */
-- (instancetype)initWithDelegate:(id<FBiOSActionReaderDelegate>)delegate reporter:(id<FBEventReporter>)reporter;
+- (instancetype)initWithReporter:(id<FBEventReporter>)reporter;
 
 @end
 

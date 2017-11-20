@@ -31,7 +31,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeActionReader;
 /**
  Routes an Actions for Sockets and Files.
  */
-@interface FBiOSActionReader : NSObject <FBTerminationAwaitable>
+@interface FBiOSActionReader : NSObject <FBiOSTargetContinuation>
 
 /**
  Initializes an Action Reader for a target, on a socket.
@@ -100,7 +100,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeActionReader;
 /**
  The Delegate for the Action Reader.
  */
-@protocol FBiOSActionReaderDelegate <FBiOSTargetFutureAwaitableDelegate, FBEventReporter>
+@protocol FBiOSActionReaderDelegate <FBEventReporter>
 
 /**
  Called when the Reader has finished reading.

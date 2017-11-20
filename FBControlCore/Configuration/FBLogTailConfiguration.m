@@ -95,7 +95,7 @@ static NSString *const KeyArguments = @"arguments";
   return FBiOSTargetFutureTypeLogTail;
 }
 
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBLogCommands> commands = (id<FBLogCommands>) target;
   if (![target conformsToProtocol:@protocol(FBLogCommands)]) {
@@ -106,10 +106,8 @@ static NSString *const KeyArguments = @"arguments";
   FBiOSTargetFutureType actionType = self.actionType;
   return [[commands
     tailLog:self.arguments consumer:consumer]
-    onQueue:target.workQueue map:^(id<FBTerminationAwaitable> baseAwaitable) {
-      id<FBTerminationAwaitable> awaitable = FBTerminationAwaitableRenamed(baseAwaitable, actionType);
-      [awaitableDelegate action:self target:target didGenerateAwaitable:awaitable];
-      return self.actionType;
+    onQueue:target.workQueue map:^(id<FBiOSTargetContinuation> baseAwaitable) {
+      return FBiOSTargetContinuationRenamed(baseAwaitable, actionType);
     }];
 }
 

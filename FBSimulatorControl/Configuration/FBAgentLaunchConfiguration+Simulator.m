@@ -26,7 +26,7 @@
   return FBiOSTargetFutureTypeAgentLaunch;
 }
 
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   if (![target isKindOfClass:FBSimulator.class]) {
     return [[FBSimulatorError
@@ -34,7 +34,7 @@
       failFuture];
   }
   FBSimulator *simulator = (FBSimulator *) target;
-  return [[simulator launchAgent:self] mapReplace:self.actionType];
+  return [[simulator launchAgent:self] mapReplace:FBiOSTargetContinuationDone(self.actionType)];
 }
 
 #pragma mark Public

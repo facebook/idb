@@ -107,7 +107,7 @@ static NSString *const KeyCodesign = @"codesign";
   return FBiOSTargetFutureTypeInstall;
 }
 
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   return [[[[FBApplicationBundle
     onQueue:target.asyncQueue findOrExtractApplicationAtPath:self.applicationPath]
@@ -126,7 +126,7 @@ static NSString *const KeyCodesign = @"codesign";
         [NSFileManager.defaultManager removeItemAtURL:future.result.extractedPath error:nil];
       }
     }]
-    mapReplace:self.actionType];
+    mapReplace:FBiOSTargetContinuationDone(self.actionType)];
 }
 
 @end

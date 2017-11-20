@@ -12,6 +12,7 @@
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBFileWriter.h"
+#import "FBTerminationHandle.h"
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeBinaryTransfer = @"transfer";
 FBiOSTargetFutureType const FBiOSTargetFutureTypeUploadedBinary = @"uploaded";
@@ -111,9 +112,9 @@ static NSString *const KeySize = @"size";
   return FBiOSTargetFutureTypeBinaryTransfer;
 }
 
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
-  return [FBFuture futureWithResult:self.actionType];
+  return [FBFuture futureWithResult:FBiOSTargetContinuationDone(self.actionType)];
 }
 
 @end
@@ -224,9 +225,9 @@ static NSString *const KeyPath = @"path";
   return FBiOSTargetFutureTypeUploadedBinary;
 }
 
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
-  return [FBFuture futureWithResult:self.actionType];
+  return [FBFuture futureWithResult:FBiOSTargetContinuationDone(self.actionType)];
 }
 
 @end

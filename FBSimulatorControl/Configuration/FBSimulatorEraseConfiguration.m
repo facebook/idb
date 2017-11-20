@@ -20,7 +20,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeErase = @"erase";
   return FBiOSTargetFutureTypeErase;
 }
 
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
   if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
@@ -28,7 +28,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeErase = @"erase";
       describeFormat:@"%@ does not conform to FBSimulatorLifecycleCommands", commands]
       failFuture];
   }
-  return [[commands erase] mapReplace:self.actionType];
+  return [[commands erase] mapReplace:FBiOSTargetContinuationDone(self.actionType)];
 }
 
 @end

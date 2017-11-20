@@ -196,7 +196,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark Delegate
 
-- (void)action:(id<FBiOSTargetFuture>)action target:(id<FBiOSTarget>)target didGenerateAwaitable:(id<FBTerminationAwaitable>)awaitable
+- (void)action:(id<FBiOSTargetFuture>)action target:(id<FBiOSTarget>)target didGenerateAwaitable:(id<FBiOSTargetContinuation>)continuation
 {
 
 }

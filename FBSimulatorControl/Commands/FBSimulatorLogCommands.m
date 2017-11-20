@@ -46,9 +46,9 @@
 
 #pragma mark Public
 
-- (FBFuture<id<FBTerminationAwaitable>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
+- (FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
 {
-  return (FBFuture<id<FBTerminationAwaitable>> *) [self startLogCommand:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer];
+  return (FBFuture<id<FBiOSTargetContinuation>> *) [self startLogCommand:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer];
 }
 
 - (FBFuture<NSArray<NSString *> *> *)logLinesWithArguments:(NSArray<NSString *> *)arguments

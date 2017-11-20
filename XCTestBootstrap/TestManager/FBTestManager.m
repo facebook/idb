@@ -86,7 +86,7 @@
   return self.mediator.description;
 }
 
-#pragma mark FBTerminationAwaitable
+#pragma mark FBiOSTargetContinuation
 
 - (FBFuture<NSNull *> *)completed
 {

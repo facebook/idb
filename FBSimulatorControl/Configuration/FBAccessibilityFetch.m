@@ -24,7 +24,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeAcessibilityFetch = @"accessibi
   return FBiOSTargetFutureTypeAcessibilityFetch;
 }
 
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   if (![target conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
     return [[FBControlCoreError
@@ -41,7 +41,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeAcessibilityFetch = @"accessibi
   NSArray *elements = [bridge accessibilityElements];
   NSData *data = [NSJSONSerialization dataWithJSONObject:elements options:0 error:&error];
   [consumer consumeData:data];
-  return [FBFuture futureWithResult:self.actionType];
+  return [FBFuture futureWithResult:FBiOSTargetContinuationDone(self.actionType)];
 }
 
 - (id)jsonSerializableRepresentation

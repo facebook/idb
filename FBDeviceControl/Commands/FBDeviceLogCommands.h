@@ -11,11 +11,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-/**
- The Termination Handle Type for a log tail.
- */
-extern FBTerminationHandleType const FBTerminationHandleTypeLogTail;
-
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBDevice;

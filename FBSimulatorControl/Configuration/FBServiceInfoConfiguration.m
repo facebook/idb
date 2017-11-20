@@ -93,7 +93,7 @@ static NSString *const KeyServiceName = @"service_name";
   return FBiOSTargetFutureTypeServiceInfo;
 }
 
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBSimulatorLaunchCtlCommands> commands = (id<FBSimulatorLaunchCtlCommands>) target;
   if (![commands conformsToProtocol:@protocol(FBSimulatorLaunchCtlCommands)]) {
@@ -123,7 +123,7 @@ static NSString *const KeyServiceName = @"service_name";
       id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:FBiOSTargetFutureTypeServiceInfo type:FBEventTypeDiscrete subject:coreSubject];
       [reporter report:subject];
     }]
-    mapReplace:self.actionType];
+    mapReplace:FBiOSTargetContinuationDone(self.actionType)];
 }
 
 @end

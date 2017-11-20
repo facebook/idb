@@ -150,9 +150,9 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
   return FBiOSTargetFutureTypeApplicationLaunch;
 }
 
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
-  return [[target launchApplication:self] mapReplace:self.actionType];
+  return [[target launchApplication:self] mapReplace:FBiOSTargetContinuationDone(self.actionType)];
 }
 
 @end

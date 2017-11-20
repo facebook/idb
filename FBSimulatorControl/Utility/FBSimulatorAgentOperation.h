@@ -29,7 +29,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent;
  This class is explicitly a reference type as it retains the File Handles that are used by the Agent Process.
  The lifecycle of the process is managed internally and this class should not be instantiated directly by consumers.
  */
-@interface FBSimulatorAgentOperation : NSObject <FBTerminationAwaitable>
+@interface FBSimulatorAgentOperation : NSObject <FBiOSTargetContinuation>
 
 /**
  Extracts termination information for the provided process.

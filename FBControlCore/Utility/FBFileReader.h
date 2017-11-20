@@ -50,6 +50,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSNull *> *)stopReading;
 
 /**
+ A future that resolves when the reading has stopped.
+
+ @return a Future that resolves when the consumption of the file has finished.
+ */
+- (FBFuture<NSNull *> *)completed;
+
+/**
  Starts the Consumption of the File.
 
  @param error an error out for any error that occurs.

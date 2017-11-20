@@ -11,11 +11,11 @@
 
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
+#import <FBControlCore/FBiOSTargetFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBFileConsumer;
-@protocol FBTerminationAwaitable;
 
 /**
  Commands for obtaining logs.
@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the consumer to attach
  @return a Future that will complete when the log command has started successfully. The wrapped Awaitable can then be cancelled, or awaited until it is finished.
  */
-- (FBFuture<id<FBTerminationAwaitable>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer;
+- (FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer;
 
 /**
  Runs the log command, returning the results as an array of strings.

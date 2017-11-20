@@ -76,7 +76,7 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
   return self;
 }
 
-#pragma mark FBTerminationAwaitable
+#pragma mark FBiOSTargetContinuation
 
 - (FBFuture<NSNull *> *)completed
 {

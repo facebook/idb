@@ -408,7 +408,7 @@ static NSString *const KeyResultBundlePath = @"resultBundlePath";
   return FBiOSTargetFutureTypeTestLaunch;
 }
 
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBXCTestCommands> commands = (id<FBXCTestCommands>) target;
   if (![commands conformsToProtocol:@protocol(FBXCTestCommands)]) {
@@ -420,10 +420,8 @@ static NSString *const KeyResultBundlePath = @"resultBundlePath";
   FBiOSTargetFutureType handleType = self.actionType;
   FBFuture<FBiOSTargetFutureType> *future = [[commands
     startTestWithLaunchConfiguration:self reporter:nil logger:target.logger]
-    onQueue:target.workQueue map:^(id<FBTerminationAwaitable> baseAwaitable) {
-      id<FBTerminationAwaitable> awaitable = FBTerminationAwaitableRenamed(baseAwaitable, handleType);
-      [awaitableDelegate action:self target:target didGenerateAwaitable:awaitable];
-      return handleType;
+    onQueue:target.workQueue map:^(id<FBiOSTargetContinuation> baseAwaitable) {
+      return FBiOSTargetContinuationRenamed(baseAwaitable, handleType);
     }];
   return self.timeout > 0 ? [future timedOutIn:self.timeout] : future;
 }

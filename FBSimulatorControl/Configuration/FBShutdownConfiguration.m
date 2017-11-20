@@ -22,7 +22,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeListShutdown = @"shutdown";
   return FBiOSTargetFutureTypeListShutdown;
 }
 
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
   if (![target conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
@@ -30,7 +30,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeListShutdown = @"shutdown";
       describeFormat:@"%@ does not support FBSimulatorLifecycleCommands", target]
       failFuture];
   }
-  return [[commands shutdown] mapReplace:self.actionType];
+  return [[commands shutdown] mapReplace:FBiOSTargetContinuationDone(self.actionType)];
 }
 
 @end

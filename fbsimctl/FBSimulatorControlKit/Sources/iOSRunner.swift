@@ -33,9 +33,8 @@ struct iOSActionProvider {
     case .uninstall(let appBundleID):
       return FutureRunner(reporter, .uninstall, FBEventReporterSubject(string: appBundleID), target.uninstallApplication(withBundleID: appBundleID))
     case .coreFuture(let action):
-      let awaitableDelegate = ActionReaderDelegateBridge()
-      let future = action.run(with: target, consumer: reporter.reporter.writer, reporter: reporter.reporter, awaitableDelegate: awaitableDelegate)
-      return FutureRunner(reporter, action.eventName, action.subject, future, awaitableDelegate)
+      let future = action.run(with: target, consumer: reporter.reporter.writer, reporter: reporter.reporter)
+      return FutureRunner(reporter, action.eventName, action.subject, future)
     case .record(let record):
       switch record {
         case .start(let maybePath):
@@ -66,14 +65,12 @@ struct FutureRunner<T : AnyObject> : Runner {
   let name: EventName?
   let subject: EventReporterSubject
   let future: FBFuture<T>
-  let awaitableDelegate: ActionReaderDelegateBridge?
 
-  init(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ future: FBFuture<T>, _ awaitableDelegate: ActionReaderDelegateBridge? = nil) {
+  init(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ future: FBFuture<T>) {
     self.reporter = reporter
     self.name = name
     self.subject = subject
     self.future = future
-    self.awaitableDelegate = awaitableDelegate
   }
 
   func run() -> CommandResult {
@@ -81,11 +78,15 @@ struct FutureRunner<T : AnyObject> : Runner {
       if let name = self.name {
         self.reporter.report(name, .started, self.subject)
       }
-      _ = try self.future.await()
+      let value = try self.future.await()
       if let name = self.name {
         self.reporter.report(name, .ended, self.subject)
       }
-      return CommandResult(outcome: .success(nil), handles: self.awaitableDelegate?.handles ?? [])
+      var handles: [FBiOSTargetContinuation] = []
+      if let continuation = value as? FBiOSTargetContinuation, continuation.completed != nil {
+        handles.append(continuation)
+      }
+      return CommandResult(outcome: .success(nil), handles: handles)
     } catch let error as NSError {
       return .failure(error.description)
     } catch let error as JSONError {

@@ -13,12 +13,99 @@
 
 #import "NSRunLoop+FBControlCore.h"
 
-
 FBiOSTargetFutureType const FBiOSTargetFutureTypeApplicationLaunch = @"applaunch";
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeAgentLaunch = @"agentlaunch";
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch = @"launch_xctest";
+
+@interface FBiOSTargetContinuation_Renamed : NSObject <FBiOSTargetContinuation>
+
+@property (nonatomic, strong, readonly) id<FBiOSTargetContinuation> continuation;
+
+@end
+
+@implementation FBiOSTargetContinuation_Renamed
+
+@synthesize handleType = _handleType;
+
+- (instancetype)initWithAwaitable:(id<FBiOSTargetContinuation>)continuation handleType:(FBTerminationHandleType)handleType
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _continuation = continuation;
+  _handleType = handleType;
+
+  return self;
+}
+
+- (FBFuture<NSNull *> *)completed
+{
+  return [self.continuation completed];
+}
+
+- (void)terminate
+{
+  return [self.continuation terminate];
+}
+
+- (FBTerminationHandleType)handleType
+{
+  return _handleType;
+}
+
+@end
+
+@interface FBiOSTargetContinuation_Done : NSObject <FBiOSTargetContinuation>
+
+@end
+
+@implementation FBiOSTargetContinuation_Done
+
+@synthesize handleType = _handleType;
+
+- (instancetype)initWithHandleType:(FBTerminationHandleType)handleType
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _handleType = handleType;
+
+  return self;
+}
+
+- (FBFuture<NSNull *> *)completed
+{
+  return [FBFuture futureWithResult:NSNull.null];
+}
+
+- (void)terminate
+{
+  // do nothing
+}
+
+- (FBTerminationHandleType)handleType
+{
+  return _handleType;
+}
+
+@end
+
+
+id<FBiOSTargetContinuation> FBiOSTargetContinuationRenamed(id<FBiOSTargetContinuation> continuation, FBTerminationHandleType handleType)
+{
+  return [[FBiOSTargetContinuation_Renamed alloc] initWithAwaitable:continuation handleType:handleType];
+}
+
+id<FBiOSTargetContinuation> FBiOSTargetContinuationDone(FBTerminationHandleType handleType)
+{
+  return [[FBiOSTargetContinuation_Done alloc] initWithHandleType:handleType];
+}
 
 @implementation FBiOSTargetFutureSimple
 

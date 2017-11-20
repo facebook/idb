@@ -139,7 +139,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   __block NSError *error = nil;
   __block BOOL success = NO;
   dispatch_sync(self.actionQueue, ^{
-    success = [[action runWithTarget:target consumer:self.writeBack reporter:self.reporter awaitableDelegate:self] await:&error] != nil;
+    success = [[action runWithTarget:target consumer:self.writeBack reporter:self.reporter] await:&error] != nil;
   });
 
   // Notify the delegate that the reader has finished, report the resultant string.
@@ -313,7 +313,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   return YES;
 }
 
-#pragma mark FBTerminationAwaitable
+#pragma mark FBiOSTargetContinuation
 
 - (FBTerminationHandleType)handleType
 {

@@ -178,7 +178,7 @@
 
 #pragma mark FBXCTestCommands Implementation
 
-- (FBFuture<id<FBTerminationAwaitable>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
+- (FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
 {
   // Return early and fail if there is already a test run for the device.
   // There should only ever be one test run per-device.
@@ -223,9 +223,9 @@
   return [FBFuture futureWithResult:_operation];
 }
 
-- (NSArray<id<FBTerminationAwaitable>> *)testOperations
+- (NSArray<id<FBiOSTargetContinuation>> *)testOperations
 {
-  id<FBTerminationAwaitable> operation = self.operation;
+  id<FBiOSTargetContinuation> operation = self.operation;
   return operation ? @[operation] : @[];
 }
 

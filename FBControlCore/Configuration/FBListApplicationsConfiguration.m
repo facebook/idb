@@ -25,7 +25,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeListApplications = @"list_apps"
   return FBiOSTargetFutureTypeListApplications;
 }
 
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter awaitableDelegate:(id<FBiOSTargetFutureAwaitableDelegate>)awaitableDelegate
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBApplicationCommands> commands = (id<FBApplicationCommands>) target;
   if (![target conformsToProtocol:@protocol(FBApplicationCommands)]) {
@@ -38,7 +38,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeListApplications = @"list_apps"
     onQueue:target.workQueue map:^(NSArray<id<FBJSONSerializable>> *applications) {
       id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:FBEventNameListApps type:FBEventTypeDiscrete values:applications];
       [reporter report:subject];
-      return self.actionType;
+      return FBiOSTargetContinuationDone(self.actionType);
     }];
 }
 

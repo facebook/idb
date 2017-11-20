@@ -213,16 +213,4 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-/**
- A Delegate Bridge that accumulates termination handles.
- */
-@interface ActionReaderDelegateBridge : NSObject <FBiOSActionReaderDelegate>
-
-/**
- The Termination Handles.
- */
-@property (nonatomic, copy, readonly) NSArray<id<FBTerminationAwaitable>> *handles;
-
-@end
-
 NS_ASSUME_NONNULL_END
