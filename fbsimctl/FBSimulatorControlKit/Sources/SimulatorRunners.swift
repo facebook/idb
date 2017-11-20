@@ -82,7 +82,7 @@ struct SimulatorActionRunner : Runner {
 
     switch action {
     case .clearKeychain(let maybeBundleID):
-      return iOSTargetRunner.simple(reporter, .clearKeychain, simulator.subject) {
+      return SimpleRunner(reporter, .clearKeychain, simulator.subject) {
         if let bundleID = maybeBundleID {
           try simulator.killApplication(withBundleID: bundleID).await()
         }
@@ -96,7 +96,7 @@ struct SimulatorActionRunner : Runner {
         simulator.set!.delete(simulator)
       )
     case .focus:
-      return iOSTargetRunner.simple(reporter, .focus, simulator.subject) {
+      return SimpleRunner(reporter, .focus, simulator.subject) {
         try simulator.focus()
       }
     case .keyboardOverride:
@@ -107,13 +107,13 @@ struct SimulatorActionRunner : Runner {
         simulator.setupKeyboard()
       )
     case .open(let url):
-      return iOSTargetRunner.simple(reporter, .open, FBEventReporterSubject(string: url.bridgedAbsoluteString)) {
+      return SimpleRunner(reporter, .open, FBEventReporterSubject(string: url.bridgedAbsoluteString)) {
         try simulator.open(url)
       }
     case .relaunch(let appLaunch):
       return FutureRunner(reporter, .relaunch, appLaunch.subject, simulator.launchOrRelaunchApplication(appLaunch))
     case .setLocation(let latitude, let longitude):
-      return iOSTargetRunner.simple(reporter, .setLocation, simulator.subject) {
+      return SimpleRunner(reporter, .setLocation, simulator.subject) {
         try simulator.setLocation(latitude, longitude: longitude)
       }
     case .upload(let diagnostics):
@@ -156,7 +156,7 @@ private struct UploadRunner : Runner {
 
     if media.count > 0 {
       let paths = media.map { $0.1 }
-      let runner = iOSTargetRunner.simple(reporter, .upload, FBEventReporterSubject(strings: paths)) {
+      let runner = SimpleRunner(reporter, .upload, FBEventReporterSubject(strings: paths)) {
         try FBUploadMediaStrategy(simulator: self.reporter.simulator).uploadMedia(paths)
       }
       let result = runner.run()

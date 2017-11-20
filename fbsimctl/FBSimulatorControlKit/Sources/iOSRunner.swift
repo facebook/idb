@@ -86,28 +86,17 @@ struct FutureRunner<T : AnyObject> : Runner {
   }
 }
 
-struct iOSTargetRunner : Runner {
+struct SimpleRunner : Runner {
   let reporter: iOSReporter
   let name: EventName?
   let subject: EventReporterSubject
-  let action: () throws -> FBTerminationHandle?
+  let action: () throws -> Void
 
-  private init(reporter: iOSReporter, name: EventName?, subject: EventReporterSubject, action: @escaping () throws -> FBTerminationHandle?) {
+  init(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: @escaping () throws -> Void) {
     self.reporter = reporter
     self.name = name
     self.subject = subject
     self.action = action
-  }
-
-  static func simple(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: @escaping () throws -> Void) -> iOSTargetRunner {
-    return iOSTargetRunner(reporter: reporter, name: name, subject: subject) {
-      try action()
-      return nil
-    }
-  }
-
-  static func handled(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: @escaping () throws -> FBTerminationHandle?) -> iOSTargetRunner {
-    return iOSTargetRunner(reporter: reporter, name: name, subject: subject, action: action)
   }
 
   func run() -> CommandResult {
@@ -115,14 +104,11 @@ struct iOSTargetRunner : Runner {
       if let name = self.name {
         self.reporter.report(name, .started, self.subject)
       }
-      var handles: [FBTerminationHandle] = []
-      if let handle = try self.action() {
-        handles = [handle]
-      }
+      try self.action()
       if let name = self.name {
         self.reporter.report(name, .ended, self.subject)
       }
-      return CommandResult(outcome: .success(nil), handles: handles)
+      return CommandResult(outcome: .success(nil), handles: [])
     } catch let error as NSError {
       return .failure(error.description)
     } catch let error as JSONError {
