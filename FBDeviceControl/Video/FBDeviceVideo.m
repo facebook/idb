@@ -25,6 +25,7 @@
 @interface FBDeviceVideo ()
 
 @property (nonatomic, strong, readonly) FBDeviceVideoFileEncoder *encoder;
+@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 
 @end
 
@@ -118,10 +119,10 @@
   if (!encoder) {
     return [FBDeviceControlError failWithError:innerError errorOut:error];
   }
-  return [[FBDeviceVideo alloc] initWithEncoder:encoder];
+  return [[FBDeviceVideo alloc] initWithEncoder:encoder workQueue:device.workQueue];
 }
 
-- (instancetype)initWithEncoder:(FBDeviceVideoFileEncoder *)encoder
+- (instancetype)initWithEncoder:(FBDeviceVideoFileEncoder *)encoder workQueue:(dispatch_queue_t)workQueue
 {
   self = [super init];
   if (!self) {
@@ -129,6 +130,7 @@
   }
 
   _encoder = encoder;
+  _workQueue = workQueue;
 
   return self;
 }
@@ -154,7 +156,17 @@
 
 - (void)terminate
 {
-  [[self.encoder stopRecording] await:nil];
+  [self.completed cancel];
+}
+
+- (FBFuture<NSNull *> *)completed
+{
+  FBDeviceVideoFileEncoder *encoder = self.encoder;
+  return [[encoder
+    stopRecording]
+    onQueue:self.workQueue notifyOfCancellation:^(id _) {
+      [encoder stopRecording];
+    }];
 }
 
 @end

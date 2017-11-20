@@ -27,6 +27,7 @@
 @property (nonatomic, strong, readonly) FBVideoEncoderConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *completedFuture;
 
 @property (nonatomic, strong, readwrite) id encoder;
 
@@ -72,6 +73,7 @@
   _configuration = configuration;
   _logger = logger;
   _eventSink = eventSink;
+  _completedFuture = [FBMutableFuture future];
 
   return self;
 }
@@ -102,9 +104,14 @@
   return FBTerminationTypeHandleVideoRecording;
 }
 
+- (FBFuture<NSNull *> *)completed
+{
+  return self.completedFuture;
+}
+
 - (void)terminate
 {
-  [self stopRecording];
+  [self.completed cancel];
 }
 
 #pragma mark Private
@@ -175,7 +182,9 @@
   [self.frameGenerator detachSink:self.encoder];
   FBFuture *future = [self.encoder stopRecording];
   self.encoder = nil;
-  return future;
+  return [future onQueue:[self.encoder mediaQueue] notifyOfCompletion:^(id _) {
+    [self.completedFuture resolveWithResult:NSNull.null];
+  }];
 }
 
 #pragma mark FBFramebufferFrameSink Implementation
@@ -249,7 +258,9 @@
   // Stop and release the encoder
   FBFuture *future = [self.encoder stopRecording];
   self.encoder = nil;
-  return future;
+  return [future onQueue:[self.encoder mediaQueue] notifyOfCompletion:^(id _) {
+    [self.completedFuture resolveWithResult:NSNull.null];
+  }];
 }
 
 @end

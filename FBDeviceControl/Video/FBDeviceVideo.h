@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Class for obtaining Video Configuration for a Device.
  */
-@interface FBDeviceVideo : NSObject <FBVideoRecordingSession>
+@interface FBDeviceVideo : NSObject <FBiOSTargetContinuation>
 
 #pragma mark Initializers
 

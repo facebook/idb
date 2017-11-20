@@ -35,17 +35,10 @@ struct iOSActionProvider {
     case .coreFuture(let action):
       let future = action.run(with: target, consumer: reporter.reporter.writer, reporter: reporter.reporter)
       return FutureRunner(reporter, action.eventName, action.subject, future)
-    case .record(let record):
-      switch record {
-        case .start(let maybePath):
-          return iOSTargetRunner.handled(reporter, nil, RecordSubject(record)) {
-            return try target.startRecording(toFile: maybePath).await()
-          }
-        case .stop:
-          return iOSTargetRunner.simple(reporter, nil, RecordSubject(record)) {
-            try target.stopRecording().await()
-          }
-      }
+    case .record(.start(let filePath)):
+      return FutureRunner(reporter, nil, RecordSubject(.start(filePath)), target.startRecording(toFile: filePath))
+    case .record(.stop):
+      return FutureRunner(reporter, nil, RecordSubject(.stop), target.stopRecording())
     case .stream(let configuration, let output):
       return iOSTargetRunner.handled(reporter, .stream, configuration.subject) {
         let stream = try target.createStream(with: configuration)

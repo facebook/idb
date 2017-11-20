@@ -49,6 +49,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)stopRecording;
 
+/**
+ A Future that resolves when the recording has completed.
+
+ @return A future that resolves when encoding has stopped.
+ */
+- (FBFuture<NSNull *> *)completed;
+
 @end
 
 NS_ASSUME_NONNULL_END

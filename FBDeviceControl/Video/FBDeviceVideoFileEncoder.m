@@ -89,6 +89,11 @@
   return self.finishFuture;
 }
 
+- (FBFuture<NSNull *> *)completed
+{
+  return self.finishFuture;
+}
+
 #pragma mark Recording Delegate
 
 - (void)captureOutput:(AVCaptureFileOutput *)captureOutput didStartRecordingToOutputFileAtURL:(NSURL *)fileURL fromConnections:(NSArray *)connections

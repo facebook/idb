@@ -11,7 +11,7 @@
 
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
-#import <FBControlCore/FBTerminationHandle.h>
+#import <FBControlCore/FBiOSTargetFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -24,13 +24,6 @@ NS_ASSUME_NONNULL_BEGIN
 extern FBTerminationHandleType const FBTerminationTypeHandleVideoRecording;
 
 /**
- Defines an async Video Recording Operation, suitable for being stopped.
- */
-@protocol FBVideoRecordingSession <NSObject, FBTerminationHandle>
-
-@end
-
-/**
  Defines an interface for Video Recording.
  */
 @protocol FBVideoRecordingCommands <NSObject, FBiOSTargetCommand>
@@ -41,7 +34,7 @@ extern FBTerminationHandleType const FBTerminationTypeHandleVideoRecording;
  @param filePath an optional filePath to write to. If not provided, a default file path will be used.
  @return A Future, wrapping the recording session.
  */
-- (FBFuture<id<FBVideoRecordingSession>> *)startRecordingToFile:(nullable NSString *)filePath;
+- (FBFuture<id<FBiOSTargetContinuation>> *)startRecordingToFile:(nullable NSString *)filePath;
 
 /**
  Stops the Recording of Video.

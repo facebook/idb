@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Controls the Recording of a Simulator's Framebuffer to a Video.
  */
-@interface FBSimulatorVideo : NSObject <FBVideoRecordingSession>
+@interface FBSimulatorVideo : NSObject <FBiOSTargetContinuation>
 
 /**
  The Initializer for a Frame Generator.
