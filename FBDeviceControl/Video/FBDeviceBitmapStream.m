@@ -51,6 +51,9 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 @property (nonatomic, strong, readonly) AVCaptureSession *session;
 @property (nonatomic, strong, readonly) AVCaptureVideoDataOutput *output;
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *stopFuture;
+
 @property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> consumer;
 @property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, id> *pixelBufferAttributes;
 
@@ -95,6 +98,8 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   _output = output;
   _writeQueue = writeQueue;
   _logger = logger;
+  _startFuture = FBMutableFuture.future;
+  _stopFuture = FBMutableFuture.future;
 
   return self;
 }
@@ -112,28 +117,29 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   return [[FBBitmapStreamAttributes alloc] initWithAttributes:attributes];
 }
 
-- (BOOL)startStreaming:(id<FBFileConsumer>)consumer error:(NSError **)error
+- (FBFuture<NSNull *> *)startStreaming:(id<FBFileConsumer>)consumer
 {
   if (self.consumer) {
     return [[FBDeviceControlError
       describe:@"Cannot start streaming, a consumer is already attached"]
-      failBool:error];
+      failFuture];
   }
   self.consumer = consumer;
   [self.output setSampleBufferDelegate:self queue:self.writeQueue];
   [self.session startRunning];
-  return YES;
+  return self.startFuture;
 }
 
-- (BOOL)stopStreamingWithError:(NSError **)error
+- (FBFuture<NSNull *> *)stopStreaming
 {
   if (!self.consumer) {
     return [[FBDeviceControlError
       describe:@"Cannot stop streaming, no consumer attached"]
-      failBool:error];
+      failFuture];
   }
   [self.session stopRunning];
-  return YES;
+  [self.stopFuture resolveWithResult:NSNull.null];
+  return self.stopFuture;
 }
 
 + (NSDictionary<NSString *, id> *)videoSettingsForEncoding:(FBBitmapStreamEncoding)encoding
@@ -151,7 +157,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   if (!self.consumer) {
     return;
   }
-
+  [self.startFuture resolveWithResult:NSNull.null];
   [self consumeSampleBuffer:sampleBuffer];
 }
 
@@ -167,7 +173,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
 }
 
-#pragma mark FBTerminationHandle
+#pragma mark FBiOSTargetContinuation
 
 - (FBTerminationHandleType)handleType
 {
@@ -176,7 +182,14 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 - (void)terminate
 {
-  [self stopStreamingWithError:nil];
+  [self.completed cancel];
+}
+
+- (FBFuture<NSNull *> *)completed
+{
+  return [self.stopFuture onQueue:self.writeQueue notifyOfCancellation:^(id _) {
+    [self stopStreaming];
+  }];
 }
 
 @end

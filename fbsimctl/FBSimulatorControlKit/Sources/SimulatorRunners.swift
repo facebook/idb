@@ -21,6 +21,18 @@ extension FileOutput {
   }
 }
 
+extension FBBitmapStreamingCommands {
+  func startStreaming(configuration: FBBitmapStreamConfiguration, output: FileOutput) -> FBFuture<FBiOSTargetContinuation> {
+    do {
+      let writer = try output.makeWriter()
+      let stream = try self.createStream(with: configuration)
+      return stream.startStreaming(writer).mapReplace(stream) as! FBFuture<FBiOSTargetContinuation>
+    } catch let error {
+      return FBFuture(error: error)
+    }
+  }
+}
+
 struct SimulatorCreationRunner : Runner {
   let context: iOSRunnerContext<CreationSpecification>
 

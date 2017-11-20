@@ -49,34 +49,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)eagerStreamWithSurface:(FBFramebufferSurface *)surface framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger;
 
-
-#pragma mark Public Methods
-
-/**
- Obtains a Dictonary Describing the Attributes of the Stream.
-
- @param error an error out for any error that occurs.
- @return the Attributes if successful, nil otherwise.
- */
-- (nullable FBBitmapStreamAttributes *)streamAttributesWithError:(NSError **)error;
-
-/**
- Starts the Streaming, to a File Consumer.
-
- @param consumer the consumer to consume the bytes. to.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise,
- */
-- (BOOL)startStreaming:(id<FBFileConsumer>)consumer error:(NSError **)error;
-
-/**
- Stops the Streaming.
-
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise,
- */
-- (BOOL)stopStreamingWithError:(NSError **)error;
-
 @end
 
 NS_ASSUME_NONNULL_END

@@ -66,6 +66,8 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 @property (nonatomic, weak, readonly) FBFramebufferSurface *surface;
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *stopFuture;
 
 @property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> consumer;
 @property (nonatomic, assign, nullable, readwrite) CVPixelBufferRef pixelBuffer;
@@ -103,6 +105,8 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   _surface = surface;
   _writeQueue = writeQueue;
   _logger = logger;
+  _startFuture = FBMutableFuture.future;
+  _stopFuture = FBMutableFuture.future;
 
   return self;
 }
@@ -121,32 +125,33 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   return [[FBBitmapStreamAttributes alloc] initWithAttributes:attributes];
 }
 
-- (BOOL)startStreaming:(id<FBFileConsumer>)consumer error:(NSError **)error
+- (FBFuture<NSNull *> *)startStreaming:(id<FBFileConsumer>)consumer
 {
   if (self.consumer) {
     return [[FBSimulatorError
       describe:@"Cannot start streaming, a consumer is already attached"]
-      failBool:error];
+      failFuture];
   }
   self.consumer = consumer;
   [self attachConsumerIfNeeded];
-  return YES;
+  return self.startFuture;
 }
 
-- (BOOL)stopStreamingWithError:(NSError **)error
+- (FBFuture<NSNull *> *)stopStreaming
 {
   if (!self.consumer) {
     return [[FBSimulatorError
       describe:@"Cannot stop streaming, no consumer attached"]
-      failBool:error];
+      failFuture];
   }
   if (![self.surface.attachedConsumers containsObject:self]) {
     return [[FBSimulatorError
       describe:@"Cannot stop streaming, is not attached to a surface"]
-      failBool:error];
+      failFuture];
   }
   [self.surface detachConsumer:self];
-  return YES;
+  [self.stopFuture resolveWithResult:NSNull.null];
+  return self.stopFuture;
 }
 
 #pragma mark Private
@@ -214,6 +219,9 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   self.pixelBuffer = buffer;
   self.pixelBufferAttributes = attributes;
 
+  // Signal that we've started
+  [self.startFuture resolveWithResult:NSNull.null];
+
   return YES;
 }
 
@@ -237,7 +245,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
 }
 
-#pragma mark FBTerminationHandle
+#pragma mark FBiOSTargetContinuation
 
 - (FBTerminationHandleType)handleType
 {
@@ -246,7 +254,14 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 - (void)terminate
 {
-  [self stopStreamingWithError:nil];
+  [self.completed cancel];
+}
+
+- (FBFuture<NSNull *> *)completed
+{
+  return [self.stopFuture onQueue:self.writeQueue notifyOfCancellation:^(id _) {
+    [self stopStreaming];
+  }];
 }
 
 @end

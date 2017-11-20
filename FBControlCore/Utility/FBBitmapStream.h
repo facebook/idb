@@ -10,7 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBJSONConversion.h>
-#import <FBControlCore/FBTerminationHandle.h>
+#import <FBControlCore/FBiOSTargetFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -41,7 +41,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeVideoStreaming;
 /**
  Streams Bitmaps to a File Sink
  */
-@protocol FBBitmapStream <FBTerminationHandle>
+@protocol FBBitmapStream <FBiOSTargetContinuation>
 
 #pragma mark Public Methods
 
@@ -56,19 +56,17 @@ extern FBTerminationHandleType const FBTerminationHandleTypeVideoStreaming;
 /**
  Starts the Streaming, to a File Consumer.
 
- @param consumer the consumer to consume the bytes. to.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise,
+ @param consumer the consumer to consume the bytes to.
+ @return A future that resolves when the streaming has started.
  */
-- (BOOL)startStreaming:(id<FBFileConsumer>)consumer error:(NSError **)error;
+- (FBFuture<NSNull *> *)startStreaming:(id<FBFileConsumer>)consumer;
 
 /**
  Stops the Streaming.
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise,
+ @return A future that resolves when the streaming has stopped.
  */
-- (BOOL)stopStreamingWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)stopStreaming;
 
 @end
 

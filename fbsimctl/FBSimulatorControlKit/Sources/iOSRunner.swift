@@ -40,11 +40,7 @@ struct iOSActionProvider {
     case .record(.stop):
       return FutureRunner(reporter, nil, RecordSubject(.stop), target.stopRecording())
     case .stream(let configuration, let output):
-      return iOSTargetRunner.handled(reporter, .stream, configuration.subject) {
-        let stream = try target.createStream(with: configuration)
-        try stream.startStreaming(output.makeWriter())
-        return stream
-      }
+      return FutureRunner(reporter, .stream, configuration.subject, target.startStreaming(configuration: configuration, output: output))
     case .terminate(let bundleID):
       return FutureRunner(reporter, .terminate, FBEventReporterSubject(string: bundleID), target.killApplication(withBundleID: bundleID))
     default:
