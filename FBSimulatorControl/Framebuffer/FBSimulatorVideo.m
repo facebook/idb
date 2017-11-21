@@ -252,8 +252,9 @@
 
   // Stop and release the encoder
   FBFuture *future = [self.encoder stopRecording];
+  dispatch_queue_t queue = [self.encoder mediaQueue];
   self.encoder = nil;
-  return [future onQueue:[self.encoder mediaQueue] notifyOfCompletion:^(id _) {
+  return [future onQueue:queue notifyOfCompletion:^(id _) {
     [self.completedFuture resolveWithResult:NSNull.null];
   }];
 }

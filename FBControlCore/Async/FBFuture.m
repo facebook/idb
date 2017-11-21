@@ -304,6 +304,9 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
 
 - (instancetype)onQueue:(dispatch_queue_t)queue notifyOfCompletion:(void (^)(FBFuture *))handler
 {
+  NSParameterAssert(queue);
+  NSParameterAssert(handler);
+
   @synchronized (self) {
     if (self.state == FBFutureStateRunning) {
       FBFuture_Handler *wrapper = [[FBFuture_Handler alloc] initWithQueue:queue handler:handler];
