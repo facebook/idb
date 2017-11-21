@@ -80,6 +80,9 @@
 
 + (NSInteger)errorCodeForShutdownWhenShuttingDown
 {
+  if (FBXcodeConfiguration.isXcode9OrGreater) {
+    return 164;
+  }
   if (FBXcodeConfiguration.isXcode8OrGreater) {
     return 163;
   }
