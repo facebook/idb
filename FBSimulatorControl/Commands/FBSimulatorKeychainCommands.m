@@ -42,23 +42,23 @@ static NSString *const SecuritydServiceName = @"com.apple.securityd";
 
 #pragma mark Public
 
-- (BOOL)clearKeychainWithError:(NSError **)error
+- (FBFuture<NSNull *> *)clearKeychain
 {
-  NSError *innerError = nil;
+  FBFuture<NSNull *> *stopServiceFuture = [FBFuture futureWithResult:NSNull.null];
   if (self.simulator.state == FBSimulatorStateBooted) {
-    if (![[self.simulator stopServiceWithName:SecuritydServiceName] await:&innerError]) {
-      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-    }
+    stopServiceFuture = [[self.simulator stopServiceWithName:SecuritydServiceName] mapReplace:NSNull.null];
   }
-  if (![self removeKeychainDirectory:&innerError]) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-  }
-  if (self.simulator.state == FBSimulatorStateBooted) {
-    if (![[self.simulator startServiceWithName:SecuritydServiceName] await:&innerError]) {
-      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-    }
-  }
-  return YES;
+  return [stopServiceFuture
+    onQueue:self.simulator.workQueue fmap:^(id _) {
+      NSError *error = nil;
+      if (![self removeKeychainDirectory:&error]) {
+        return [FBFuture futureWithError:error];
+      }
+      if (self.simulator.state == FBSimulatorStateBooted) {
+        return [[self.simulator startServiceWithName:SecuritydServiceName] mapReplace:NSNull.null];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
 }
 
 #pragma mark Private

@@ -82,12 +82,17 @@ struct SimulatorActionRunner : Runner {
 
     switch action {
     case .clearKeychain(let maybeBundleID):
-      return SimpleRunner(reporter, .clearKeychain, simulator.subject) {
-        if let bundleID = maybeBundleID {
-          try simulator.killApplication(withBundleID: bundleID).await()
-        }
-        try simulator.clearKeychain()
+      var futures: [FBFuture<NSNull>] = []
+      if let bundleID = maybeBundleID {
+        futures.append(simulator.killApplication(withBundleID: bundleID))
       }
+      futures.append(simulator.clearKeychain())
+      return FutureRunner(
+        reporter,
+        .clearKeychain,
+        simulator.subject,
+        FBFuture(futures: futures)
+      )
     case .delete:
       return FutureRunner(
         reporter,

@@ -20,10 +20,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Cleans the keychain of the Simulator.
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A future that resolves when the keychain has been cleared.
  */
-- (BOOL)clearKeychainWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)clearKeychain;
 
 @end
 
