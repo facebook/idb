@@ -63,15 +63,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<FBSimulatorApplicationOperation *> *)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
 
-/**
- Uninstalls an Application.
-
- @param bundleID the bundleID of the Application to uninstall.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)uninstallApplication:(NSString *)bundleID error:(NSError **)error;
-
 @end
 
 NS_ASSUME_NONNULL_END

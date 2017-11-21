@@ -139,32 +139,6 @@
   return 0;
 }
 
-- (BOOL)uninstallApplication:(NSString *)bundleID error:(NSError **)error
-{
-  // Confirm the app is suitable to be uninstalled.
-  FBSimulator *simulator = self.simulator;
-  NSError *innerError = nil;
-  FBInstalledApplication *application = [[simulator installedApplicationWithBundleID:bundleID] await:&innerError];
-  if (!application) {
-    return [[[FBSimulatorError
-      describeFormat:@"Can't uninstall '%@' as it isn't installed", bundleID]
-      causedBy:innerError]
-      failBool:error];
-  }
-
-  // Kill the app if it's running
-  [[simulator killApplicationWithBundleID:bundleID] await:nil];
-  // Then uninstall for real.
-  if (![simulator.device uninstallApplication:bundleID withOptions:nil error:&innerError]) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to uninstall '%@'", bundleID]
-      causedBy:innerError]
-      inSimulator:simulator]
-      failBool:error];
-  }
-  return YES;
-}
-
 @end
 
 @implementation FBApplicationLaunchStrategy_Bridge
