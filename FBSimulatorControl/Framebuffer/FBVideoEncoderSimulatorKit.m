@@ -27,6 +27,7 @@
 @property (nonatomic, strong, readonly) SimDisplayVideoWriter *writer;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finishedWritingFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startedWritingFuture;
 
 @end
 
@@ -53,6 +54,7 @@
   _logger = logger;
   _mediaQueue = mediaQueue;
   _finishedWritingFuture = [FBMutableFuture future];
+  _startedWritingFuture = [FBMutableFuture future];
   _writer = [self createVideoWriterForURL:fileURL mediaQueue:mediaQueue];
 
   return self;
@@ -91,8 +93,8 @@
 
 - (FBFuture<NSNull *> *)startRecording
 {
-  return [FBFuture onQueue:self.mediaQueue resolveValue:^(NSError **error) {
-    return [self startRecordingNowWithError:nil] ? NSNull.null : nil;
+  return [FBFuture onQueue:self.mediaQueue resolve:^{
+    return [self startRecordingNow];
   }];
 }
 
@@ -105,12 +107,21 @@
 
 #pragma mark Private
 
-- (BOOL)startRecordingNowWithError:(NSError **)error
+- (FBFuture<NSNull *> *)startRecordingNow
 {
   // Don't hit an assertion because we write twice.
   if (self.writer.startedWriting) {
-    return YES;
+    return [[FBSimulatorError
+      describeFormat:@"Cannot start recording, the writer has started writing."]
+      failFuture];
   }
+  // Don't start twice.
+  if (self.startedWritingFuture.hasCompleted) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot start recording, we requested to start writing once."]
+      failFuture];
+  }
+
   // Start for real. -[SimDisplayVideoWriter startWriting]
   // must be called before sending a surface and damage rect.
   [self.logger log:@"Start Writing in Video Writer"];
@@ -123,7 +134,8 @@
     });
   }
 
-  return YES;
+  // Return the future that we've wrapped.
+  return self.startedWritingFuture;
 }
 
 - (FBFuture<NSNull *> *)stopRecordingNow
@@ -131,7 +143,13 @@
   // Don't hit an assertion because we're not started.
   if (!self.writer.startedWriting) {
     return [[FBSimulatorError
-      describeFormat:@"Cannot stop recording, the writer has not started writing"]
+      describeFormat:@"Cannot stop recording, the writer has not started writing."]
+      failFuture];
+  }
+  // If we've resolved already, we've called stop twice.
+  if (self.finishedWritingFuture.hasCompleted) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot stop recording, we've requested to stop recording once."]
       failFuture];
   }
 
@@ -142,7 +160,6 @@
   // Now there are no more incoming rects, tear down the video encoding.
   [self.logger log:@"Finishing Writing in Video Writer"];
   [self.writer finishWriting];
-
 
   // Return the future that we've wrapped.
   return self.finishedWritingFuture;
@@ -158,6 +175,7 @@
     return;
   }
   [self.logger logFormat:@"IOSurface for Encoder %@ changed to %@", self, surface];
+  [self.startedWritingFuture resolveWithResult:NSNull.null];
   if (FBXcodeConfiguration.isXcode9OrGreater) {
     [self.writer didChangeIOSurface:(__bridge id) surface];
   } else {
