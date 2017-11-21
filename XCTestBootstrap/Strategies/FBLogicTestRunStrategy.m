@@ -20,7 +20,7 @@
 
 @property (nonatomic, strong, readonly) id<FBXCTestProcessExecutor> executor;
 @property (nonatomic, strong, readonly) FBLogicTestConfiguration *configuration;
-@property (nonatomic, strong, readonly) id<FBLogicXCTestReporter> reporter;
+@property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
@@ -29,12 +29,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)strategyWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBLogicXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (instancetype)strategyWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   return [[FBLogicTestRunStrategy alloc] initWithExecutor:executor configuration:configuration reporter:reporter logger:logger];
 }
 
-- (instancetype)initWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBLogicXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -59,7 +59,7 @@
 
 - (FBFuture<NSNull *> *)testFuture
 {
-  id<FBLogicXCTestReporter> reporter = self.reporter;
+  id<FBXCTestReporter> reporter = self.reporter;
   FBXCTestLogger *logger = self.logger;
 
   [reporter didBeginExecutingTestPlan];
@@ -110,8 +110,8 @@
   [self.logger logFormat:@"Mirroring xctest stderr to %@", mirrorPath];
 
   // Setup the reader of the shim
-  id<FBFileConsumer> otestShimLineReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue dataConsumer:^(NSData *data) {
-    [reporter handleEventJSONData:data];
+  id<FBFileConsumer> otestShimLineReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line) {
+    [reporter handleExternalEvent:line];
   }];
   otestShimLineReader = [logger logConsumptionToFile:otestShimLineReader outputKind:@"shim" udid:uuid filePathOut:&mirrorPath];
   [self.logger logFormat:@"Mirroring shim-fifo output to %@", mirrorPath];
@@ -129,7 +129,7 @@
 
 - (FBFuture<NSNull *> *)completeLaunchedProcess:(FBXCTestProcessInfo *)processInfo otestShimOutputPath:(NSString *)otestShimOutputPath otestShimLineReader:(id<FBFileConsumer>)otestShimLineReader
 {
-  id<FBLogicXCTestReporter> reporter = self.reporter;
+  id<FBXCTestReporter> reporter = self.reporter;
   if (self.configuration.waitForDebugger) {
     [reporter processWaitingForDebuggerWithProcessIdentifier:processInfo.processIdentifier];
     // If wait_for_debugger is passed, the child process receives SIGSTOP after immediately launch.
