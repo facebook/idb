@@ -34,7 +34,7 @@
 {
   FBApplicationBundle *application = self.tableSearchApplication;
   XCTAssertEqualObjects(application.bundleID, @"com.example.apple-samplecode.TableSearch");
-  XCTAssertEqualObjects(application.binary.architectures, [NSSet setWithArray:@[@"i386"]]);
+  XCTAssertEqualObjects(application.binary.architectures, ([NSSet setWithArray:@[@"i386", @"x86_64"]]));
 }
 
 @end

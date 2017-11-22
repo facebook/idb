@@ -62,11 +62,19 @@
 
 @implementation XCTestCase (FBSimulatorControlFixtures)
 
-- (FBTestLaunchConfiguration *)testLaunch
+- (FBTestLaunchConfiguration *)testLaunchTableSearch
 {
   return [[[FBTestLaunchConfiguration
     configurationWithTestBundlePath:self.iOSUnitTestBundlePath]
     withApplicationLaunchConfiguration:self.tableSearchAppLaunch]
+    withUITesting:NO];
+}
+
+- (FBTestLaunchConfiguration *)testLaunchSafari
+{
+  return [[[FBTestLaunchConfiguration
+    configurationWithTestBundlePath:self.iOSUnitTestBundlePath]
+    withApplicationLaunchConfiguration:self.safariAppLaunch]
     withUITesting:NO];
 }
 

@@ -196,16 +196,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark Delegate
 
-- (void)action:(id<FBiOSTargetFuture>)action target:(id<FBiOSTarget>)target didGenerateAwaitable:(id<FBiOSTargetContinuation>)continuation
-{
-
-}
-
-- (id<FBFileConsumer>)obtainConsumerForAction:(id<FBiOSTargetFuture>)action target:(id<FBiOSTarget>)target
-{
-  return [FBFileWriter nullWriter];
-}
-
 - (void)readerDidFinishReading:(FBiOSActionReader *)reader
 {
 }

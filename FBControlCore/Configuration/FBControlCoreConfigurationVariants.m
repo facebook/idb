@@ -43,8 +43,8 @@ FBDeviceModel const FBDeviceModelAppleWatch38mm = @"Apple Watch - 38mm";
 FBDeviceModel const FBDeviceModelAppleWatch42mm = @"Apple Watch - 42mm";
 FBDeviceModel const FBDeviceModelAppleWatchSeries2_38mm = @"Apple Watch Series 2 - 38mm";
 FBDeviceModel const FBDeviceModelAppleWatchSeries2_42mm = @"Apple Watch Series 2 - 42mm";
-FBDeviceModel const FBDeviceModelAppleWatchSeries3_38mm = @"Watch2017 - 38mm";
-FBDeviceModel const FBDeviceModelAppleWatchSeries3_42mm = @"Watch2017 - 42mm";
+FBDeviceModel const FBDeviceModelAppleWatchSeries3_38mm = @"Apple Watch Series 3 - 38mm";
+FBDeviceModel const FBDeviceModelAppleWatchSeries3_42mm = @"Apple Watch Series 3 - 42mm";
 
 
 FBOSVersionName const FBOSVersionNameiOS_7_1 = @"iOS 7.1";

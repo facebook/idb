@@ -30,7 +30,6 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 @implementation FBSimulatorControlTestCase
 
 @synthesize control = _control;
-@synthesize assert = _assert;
 
 + (void)initialize
 {
@@ -59,15 +58,8 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
     XCTAssertNil(error);
     XCTAssertNotNil(control);
     _control = control;
-    _assert = [FBSimulatorControlNotificationAssertions withTestCase:self pool:control.pool];
   }
   return _control;
-}
-
-- (FBSimulatorControlNotificationAssertions *)assert
-{
-  XCTAssertNotNil(_assert, @"-[FBSimulatorControlTestCase control] should be called before -[FBSimulatorControlTestCase assert]");
-  return _assert;
 }
 
 #pragma mark Configuration
@@ -139,7 +131,6 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 {
   [[self.control.pool.set killAll] await:nil];
   _control = nil;
-  _assert = nil;
 }
 
 @end

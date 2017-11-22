@@ -55,7 +55,7 @@
 - (void)assertLaunchesTestWithConfiguration:(FBTestLaunchConfiguration *)testLaunch reporter:(id<FBTestManagerTestReporter>)reporter simulator:(FBSimulator *)simulator
 {
   NSError *error = nil;
-  id<FBiOSTargetContinuation> operation = [[simulator startTestWithLaunchConfiguration:self.testLaunch reporter:reporter logger:simulator.logger] await:&error];
+  id<FBiOSTargetContinuation> operation = [[simulator startTestWithLaunchConfiguration:testLaunch reporter:reporter logger:simulator.logger] await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(operation);
 
@@ -67,23 +67,7 @@
 - (void)testInjectsApplicationTestIntoSampleApp
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithTableSearch];
-  [self assertLaunchesTestWithConfiguration:self.testLaunch reporter:self simulator:simulator];
-  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
-              failed:@[@"testHostProcessIsMobileSafari", @"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
-}
-
-- (void)testInjectsApplicationTestIntoSampleAppOnIOS81Simulator
-{
-  if (FBXcodeConfiguration.isXcode8OrGreater) {
-    NSLog(@"Skipping running -[%@ %@] since Xcode 7 or smaller is required", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-    return;
-  }
-  self.simulatorConfiguration = [[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhone5] withOSNamed:FBOSVersionNameiOS_8_1];
-  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithTableSearch];
-  if (!simulator) {
-    return;
-  }
-  [self assertLaunchesTestWithConfiguration:self.testLaunch reporter:self simulator:simulator];
+  [self assertLaunchesTestWithConfiguration:self.testLaunchTableSearch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
               failed:@[@"testHostProcessIsMobileSafari", @"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
 }
@@ -91,7 +75,7 @@
 - (void)testInjectsApplicationTestIntoSafari
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  [self assertLaunchesTestWithConfiguration:self.testLaunch reporter:self simulator:simulator];
+  [self assertLaunchesTestWithConfiguration:self.testLaunchSafari reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
               failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
 }
@@ -103,7 +87,7 @@
   NSString *stdOutPath = [path stringByAppendingPathComponent:@"stdout.log"];
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration configurationWithStdOut:stdOutPath stdErr:stdErrPath error:nil];
   FBApplicationLaunchConfiguration *applicationLaunchConfiguration = [self.safariAppLaunch withOutput:output];
-  FBTestLaunchConfiguration *testLaunch = [self.testLaunch withApplicationLaunchConfiguration:applicationLaunchConfiguration];
+  FBTestLaunchConfiguration *testLaunch = [self.testLaunchSafari withApplicationLaunchConfiguration:applicationLaunchConfiguration];
 
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
@@ -128,7 +112,7 @@
       [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString]];
   FBTestManagerTestReporterJUnit *reporter = [FBTestManagerTestReporterJUnit withOutputFileURL:outputFileURL];
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
-  [self assertLaunchesTestWithConfiguration:self.testLaunch reporter:reporter simulator:simulator];
+  [self assertLaunchesTestWithConfiguration:self.testLaunchTableSearch reporter:reporter simulator:simulator];
 
   NSURL *fixtureFileURL = [NSURL fileURLWithPath:[FBSimulatorControlFixtures JUnitXMLResult0Path]];
   NSString *expected = [self stringWithContentsOfJUnitResult:fixtureFileURL];
@@ -140,7 +124,7 @@
 - (void)testInjectsApplicationTestWithTestsToRun
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  FBTestLaunchConfiguration *testLaunch = [[self.testLaunch
+  FBTestLaunchConfiguration *testLaunch = [[self.testLaunchSafari
     withTestsToRun:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]]
     withApplicationLaunchConfiguration:self.safariAppLaunch];
 
@@ -152,7 +136,7 @@
 - (void)testInjectsApplicationTestWithTestsToSkip
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  FBTestLaunchConfiguration *testLaunch = [[self.testLaunch
+  FBTestLaunchConfiguration *testLaunch = [[self.testLaunchSafari
     withTestsToSkip:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]]
     withApplicationLaunchConfiguration:self.safariAppLaunch];
 

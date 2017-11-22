@@ -35,13 +35,15 @@
   }
 
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration bootConfiguration:bootConfiguration];
-  [self assertSimulator:simulator launches:self.safariAppLaunch];
+
   NSError *error = nil;
-  id<FBiOSTargetContinuation> session = [[simulator startRecordingToFile:nil] await:&error];
+  id success = [[simulator startRecordingToFile:nil] await:&error];
   XCTAssertNil(error);
-  XCTAssertNotNil(session);
-  [self assertSimulator:simulator launches:self.tableSearchAppLaunch];
-  [session.completed cancel];
+  XCTAssertNotNil(success);
+
+  success = [[simulator stopRecording] await:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(success);
 }
 
 @end

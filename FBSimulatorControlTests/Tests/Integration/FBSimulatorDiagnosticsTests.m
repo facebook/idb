@@ -79,25 +79,6 @@
     return;
   }
 
-  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
-  FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch.injectingShimulator;
-
-  NSError *error = nil;
-  BOOL success = [[simulator launchApplication:appLaunch] await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-
-  [self assertFindsNeedle:@"Shimulator" fromHaystackBlock:^ NSString * {
-    return [[simulator.simulatorDiagnostics.stdOutErrDiagnostics firstObject] asString];
-  }];
-}
-
-- (void)testLaunchedApplicationLogsWithCustomLogFilePath
-{
-  if (FBSimulatorControlTestCase.isRunningOnTravis) {
-    return;
-  }
-
   NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
   NSString *stdErrPath = [path stringByAppendingPathComponent:@"stderr.log"];
   NSString *stdOutPath = [path stringByAppendingPathComponent:@"stdout.log"];

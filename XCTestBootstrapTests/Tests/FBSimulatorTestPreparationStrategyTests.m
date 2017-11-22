@@ -23,38 +23,6 @@
   return [path rangeOfString:@"\\/heaven\\/testBundle\\/testBundle-(.*)\\.xctestconfiguration" options:NSRegularExpressionSearch].location != NSNotFound;
 }
 
-- (void)testStrategyWithMissingWorkingDirectory
-{
-  FBSimulatorTestPreparationStrategy *strategy =
-  [FBSimulatorTestPreparationStrategy strategyWithTestLaunchConfiguration:self.defaultTestLaunch
-                                                         workingDirectory:nil
-                                                              fileManager:nil
-                                                                 codesign:nil];
-  XCTAssertThrows([strategy prepareTestWithIOSTarget:[OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)]]);
-}
-
-- (void)testStrategyWithMissingTestBundlePath
-{
-  FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration new] withApplicationLaunchConfiguration:self.defaultAppLaunch];
-  FBSimulatorTestPreparationStrategy *strategy =
-  [FBSimulatorTestPreparationStrategy strategyWithTestLaunchConfiguration:testLaunch
-                                                         workingDirectory:@""
-                                                              fileManager:nil
-                                                                 codesign:nil];
-  XCTAssertThrows([strategy prepareTestWithIOSTarget:[OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)]]);
-}
-
-- (void)testStrategyWithMissingApplicationPath
-{
-  FBTestLaunchConfiguration *testLaunch = [FBTestLaunchConfiguration configurationWithTestBundlePath:@""];
-  FBSimulatorTestPreparationStrategy *strategy =
-  [FBSimulatorTestPreparationStrategy strategyWithTestLaunchConfiguration:testLaunch
-                                                         workingDirectory:@""
-                                                              fileManager:nil
-                                                                 codesign:nil];
-  XCTAssertThrows([strategy prepareTestWithIOSTarget:[OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)]]);
-}
-
 - (void)testSimulatorPreparation
 {
   id xctConfigArg = [OCMArg checkWithBlock:^ BOOL (NSString *path){
@@ -81,6 +49,7 @@
   XCTAssertNil(error);
 
   OCMockObject<FBiOSTarget> *iosTargetMock = [OCMockObject mockForProtocol:@protocol(FBiOSTarget)];
+  [[[iosTargetMock stub] andReturn:dispatch_get_main_queue()] workQueue];
   OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject mockForProtocol:@protocol(FBDeviceOperator)];
   [[[iosTargetMock stub] andReturn:deviceOperatorMock] deviceOperator];
   [[[deviceOperatorMock expect] andReturn:productBundle] applicationBundleWithBundleID:@"bundleId" error:[OCMArg anyObjectRef]];
@@ -93,7 +62,7 @@
     workingDirectory:@"/heaven"
     fileManager:fileManagerMock
     codesign:codesignMock];
-  FBTestRunnerConfiguration *configuration = [strategy prepareTestWithIOSTarget:iosTargetMock];
+  FBTestRunnerConfiguration *configuration = [[strategy prepareTestWithIOSTarget:iosTargetMock] await:nil];
 
   NSDictionary *env = configuration.launchEnvironment;
   XCTAssertNotNil(configuration);

@@ -12,6 +12,7 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <Carbon/Carbon.h>
 
+#import "FBSimulatorControlTestCase.h"
 #import "FBSimulatorControlFixtures.h"
 #import "FBControlCoreValueTestCase.h"
 
@@ -53,8 +54,8 @@
 {
   NSArray<FBSimulatorConfiguration *> *values = @[
     FBSimulatorConfiguration.defaultConfiguration,
-    [FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhone5],
-    [[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPad2] withOSNamed:FBOSVersionNameiOS_8_3],
+    [FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel],
+    [[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPadModel] withOSNamed:FBOSVersionNameiOS_8_3],
   ];
   [self assertEqualityOfCopy:values];
 

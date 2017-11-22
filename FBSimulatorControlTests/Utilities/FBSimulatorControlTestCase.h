@@ -28,6 +28,12 @@ extern NSString *const FBSimulatorControlTestsLaunchTypeSimulatorApp;
 extern NSString *const FBSimulatorControlTestsLaunchTypeDirect;
 
 /**
+ The default models for integration tests.
+ */
+#define SimulatorControlTestsDefaultiPhoneModel FBDeviceModeliPhone6S
+#define SimulatorControlTestsDefaultiPadModel FBDeviceModeliPadAir
+
+/**
  A Test Case that boostraps a FBSimulatorControl instance.
  Should be overridden to provide Integration tests for Simulators.
  */
@@ -62,11 +68,6 @@ extern NSString *const FBSimulatorControlTestsLaunchTypeDirect;
  The Simulator Control instance that is lazily created from the defaults
  */
 @property (nonatomic, strong, readonly) FBSimulatorControl *control;
-
-/**
- The FBSimulatorControlAssertions instance
- */
-@property (nonatomic, strong, readonly) FBSimulatorControlNotificationAssertions *assert;
 
 /**
  Some tests are flakier on travis, this is a temporary way of disabling them until they are improved.

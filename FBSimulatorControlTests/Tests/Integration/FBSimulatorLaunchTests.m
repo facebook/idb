@@ -46,7 +46,6 @@
 
 - (void)testLaunchesSingleSimulator:(FBSimulatorConfiguration *)configuration
 {
-  FBSimulatorBootConfiguration *bootConfiguration = self.bootConfiguration;
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:configuration bootConfiguration:self.bootConfiguration];
   if (!simulator) {
     return;
@@ -54,17 +53,16 @@
 
   [self assertSimulatorBooted:simulator];
   [self assertShutdownSimulatorAndTerminateSession:simulator];
-  [self.assert shutdownNotificationsFired:bootConfiguration];
 }
 
 - (void)testLaunchesiPhone
 {
-  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhone5]];
+  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel]];
 }
 
 - (void)testLaunchesiPad
 {
-  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPadAir]];
+  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPadModel]];
 }
 
 - (void)testLaunchesWatch
@@ -77,33 +75,19 @@
   [self testLaunchesSingleSimulator:[FBSimulatorConfiguration withDeviceModel:FBDeviceModelAppleTV]];
 }
 
-- (void)testLaunchesPreviousiOSVersionAndAwaitsServices
-{
-  FBSimulatorBootOptions options = self.bootConfiguration.options | FBSimulatorBootOptionsAwaitServices;
-  self.bootConfiguration = [self.bootConfiguration withOptions:options];
-  [self testLaunchesSingleSimulator:[[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhone5] withOSNamed:FBOSVersionNameiOS_9_3]];
-}
-
-- (void)testLaunchesiOSVersion8AndAwaitsServices
-{
-  FBSimulatorBootOptions options = self.bootConfiguration.options | FBSimulatorBootOptionsAwaitServices;
-  self.bootConfiguration = [self.bootConfiguration withOptions:options];
-  [self testLaunchesSingleSimulator:[[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhone5] withOSNamed:FBOSVersionNameiOS_8_3]];
-}
-
 - (void)testLaunchesMultipleSimulators
 {
   // Simulator Pool management is single threaded since it relies on unsynchronised mutable state
   // Create the sessions in sequence, then boot them in paralell.
-  FBSimulator *simulator1 = [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhone5]];
+  FBSimulator *simulator1 = [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel]];
   if (!simulator1) {
     return;
   }
-  FBSimulator *simulator2 = [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhone5]];
+  FBSimulator *simulator2 = [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel]];
   if (!simulator2) {
     return;
   }
-  FBSimulator *simulator3 = [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPadAir]];
+  FBSimulator *simulator3 = [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPadModel]];
   if (!simulator3) {
     return;
   }

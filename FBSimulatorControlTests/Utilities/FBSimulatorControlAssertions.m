@@ -125,14 +125,11 @@
   if (!simulator) {
     return nil;
   }
-  [self.assert consumeAllNotifications];
 
   NSError *error = nil;
   BOOL success = [[simulator bootWithConfiguration:bootConfiguration] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  [self.assert bootingNotificationsFired:bootConfiguration];
-  [self.assert consumeAllNotifications];
   return simulator;
 }
 
@@ -154,8 +151,6 @@
 
   [self assertSimulator:simulator isRunningApplicationFromConfiguration:configuration];
 
-  [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidLaunch];
-  [self.assert noNotificationsToConsume];
   [self assertSimulatorBooted:simulator];
 
   success = [[simulator launchApplication:configuration] await:&error] != nil;
@@ -180,213 +175,10 @@
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
-  [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate];
-  [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidLaunch];
-  [self.assert noNotificationsToConsume];
   FBProcessInfo *secondLaunch = [[simulator runningApplicationWithBundleID:launchConfiguration.bundleID] await:nil];
-
   XCTAssertNotEqualObjects(firstLaunch, secondLaunch);
 
   return simulator;
-}
-
-@end
-
-@interface FBSimulatorControlNotificationAssertions ()
-
-@property (nonatomic, strong, readonly) NSMutableArray *notificationsRecieved;
-@property (nonatomic, weak, readonly) XCTestCase *testCase;
-@property (nonatomic, weak, readonly) FBSimulatorPool *pool;
-
-@end
-
-@implementation FBSimulatorControlNotificationAssertions
-
-+ (instancetype)withTestCase:(XCTestCase *)testCase pool:(FBSimulatorPool *)pool
-{
-  return [[self alloc] initWithTestCase:testCase pool:pool];
-}
-
-- (instancetype)initWithTestCase:(XCTestCase *)testCase  pool:(FBSimulatorPool *)pool
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _pool = pool;
-  _testCase = testCase;
-  _notificationsRecieved = [NSMutableArray array];
-  [self registerNotificationObservers];
-
-  return self;
-}
-
-- (void)registerNotificationObservers
-{
-  NSArray *notificationNames = @[
-    FBSimulatorNotificationNameDidLaunch,
-    FBSimulatorNotificationNameDidTerminate,
-    FBSimulatorNotificationNameConnectionDidConnect,
-    FBSimulatorNotificationNameConnectionDidDisconnect,
-    FBSimulatorNotificationNameSimulatorApplicationDidLaunch,
-    FBSimulatorNotificationNameSimulatorApplicationDidTerminate,
-    FBSimulatorNotificationNameApplicationProcessDidLaunch,
-    FBSimulatorNotificationNameApplicationProcessDidTerminate,
-    FBSimulatorNotificationNameAgentProcessDidLaunch,
-    FBSimulatorNotificationNameAgentProcessDidTerminate,
-  ];
-  for (NSString *notificationName in notificationNames) {
-    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(simulatorNotificationRecieved:) name:notificationName object:nil];
-  }
-}
-
-- (void)tearDown
-{
-  [NSNotificationCenter.defaultCenter removeObserver:self];
-  [self.notificationsRecieved removeAllObjects];
-}
-
-- (void)dealloc
-{
-  [self tearDown];
-}
-
-#pragma mark Notifications
-
-- (void)simulatorNotificationRecieved:(NSNotification *)notification
-{
-  FBSimulator *simulator = notification.object;
-  if (simulator.pool != self.pool) {
-    return;
-  }
-  [self.notificationsRecieved addObject:notification];
-}
-
-- (NSNotification *)consumeNotification:(NSString *)notificationName
-{
-  if (self.notificationsRecieved.count == 0) {
-    [self failOnLine:__LINE__ withFormat:@"There was no notification to recieve for %@", notificationName];
-    return nil;
-  }
-  NSNotification *actual = self.notificationsRecieved.firstObject;
-  [self failIfFalse:[notificationName isEqualToString:actual.name] line:__LINE__ withFormat:@"Expected Notification %@ to be sent but got %@", notificationName, [self.notificationsRecieved valueForKey:@"name"]];
-  [self.notificationsRecieved removeObjectAtIndex:0];
-  return actual;
-}
-
-- (NSNotification *)consumeNotification:(NSString *)notificationName timeout:(NSTimeInterval)timeout
-{
-  NSNotification *actual = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilExists:^ NSString * {
-    if (self.notificationsRecieved == 0) {
-      return nil;
-    }
-    return self.notificationsRecieved.firstObject;
-  }];
-
-  if (!actual) {
-    [self failOnLine:__LINE__ withFormat:@"There were notifications recieved before timing out when waiting for %@", notificationName];
-    return nil;
-  }
-
-  [self failIfFalse:[notificationName isEqualToString:actual.name] line:__LINE__ withFormat:@"Expected Notification %@ to be sent but got %@", notificationName, [self.notificationsRecieved valueForKey:@"name"]];
-  [self.notificationsRecieved removeObjectAtIndex:0];
-  return actual;
-}
-
-- (NSArray *)consumeNotifications:(NSArray *)notificationNames
-{
-  if (notificationNames.count > self.notificationsRecieved.count) {
-    [self failOnLine:__LINE__ withFormat:@"Expected to be able to consume %@ but there were only %d notifications to consume", notificationNames, self.notificationsRecieved.count];
-    return nil;
-  }
-
-  NSRange sliceRange = NSMakeRange(0, notificationNames.count);
-
-  NSArray *toConsumeSlice = [[[self.notificationsRecieved valueForKey:@"name"] subarrayWithRange:sliceRange] sortedArrayUsingSelector:@selector(compare:)];
-  notificationNames = [notificationNames sortedArrayUsingSelector:@selector(compare:)];
-  if (![toConsumeSlice isEqualToArray:notificationNames]) {
-    [self failOnLine:__LINE__ withFormat:@"Expected notifications named %@ but got %@", notificationNames, toConsumeSlice];
-  }
-
-  NSArray *actual = [self.notificationsRecieved subarrayWithRange:sliceRange];
-  [self.notificationsRecieved removeObjectsInRange:sliceRange];
-  return actual;
-}
-
-- (void)consumeAllNotifications
-{
-  // Spin run loop to filter out any pending notifications.
-  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^{
-    return NO;
-  }];
-  [self.notificationsRecieved removeAllObjects];
-}
-
-- (void)noNotificationsToConsume
-{
-  // Spin run loop to filter out any pending notifications.
-  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^{
-    return NO;
-  }];
-  [self failIfFalse:(self.notificationsRecieved.count == 0) line:__LINE__ withFormat:@"Expected no notifications but got %@", [self.notificationsRecieved valueForKey:@"name"]];
-}
-
-- (void)bootingNotificationsFired:(FBSimulatorBootConfiguration *)launchConfiguration
-{
-  [self consumeNotifications:[FBSimulatorControlNotificationAssertions expectedBootNotificationNamesForConfiguration:launchConfiguration]];
-}
-
-- (void)shutdownNotificationsFired:(FBSimulatorBootConfiguration *)launchConfiguration
-{
-  [self consumeNotifications:[FBSimulatorControlNotificationAssertions expectedShutdownNotificationNamesForConfiguration:launchConfiguration]];
-}
-
-#pragma mark Helpers
-
-- (void)failIfFalse:(BOOL)value line:(NSUInteger)line withFormat:(NSString *)format, ...
-{
-  if (value) {
-    return;
-  }
-
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
-  [self.testCase recordFailureWithDescription:string inFile:@(__FILE__) atLine:line expected:YES];
-}
-
-- (void)failOnLine:(NSUInteger)line withFormat:(NSString *)format, ...
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
-  [self.testCase recordFailureWithDescription:string inFile:@(__FILE__) atLine:line expected:YES];
-}
-
-+ (NSArray<NSString *> *)expectedBootNotificationNamesForConfiguration:(FBSimulatorBootConfiguration *)configuration
-{
-  NSMutableArray<NSString *> *notificationNames = [NSMutableArray array];
-  if ((configuration.options & FBSimulatorBootOptionsConnectBridge) != 0) {
-    [notificationNames addObject:FBSimulatorNotificationNameConnectionDidConnect];
-  }
-  [notificationNames addObject:FBSimulatorNotificationNameDidLaunch];
-  if ((configuration.options & FBSimulatorBootOptionsEnableDirectLaunch) == 0) {
-    [notificationNames addObject:FBSimulatorNotificationNameSimulatorApplicationDidLaunch];
-  }
-  return [notificationNames copy];
-}
-
-+ (NSArray<NSString *> *)expectedShutdownNotificationNamesForConfiguration:(FBSimulatorBootConfiguration *)configuration
-{
-  if ((configuration.options & FBSimulatorBootOptionsEnableDirectLaunch) != 0) {
-    return @[FBSimulatorNotificationNameDidTerminate, FBSimulatorNotificationNameConnectionDidDisconnect];
-  }
-  return @[FBSimulatorNotificationNameDidTerminate, FBSimulatorNotificationNameConnectionDidDisconnect, FBSimulatorNotificationNameSimulatorApplicationDidTerminate];
 }
 
 @end
