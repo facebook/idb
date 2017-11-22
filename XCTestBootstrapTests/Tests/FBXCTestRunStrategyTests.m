@@ -49,7 +49,7 @@
 - (void)testCallToTestPreparationStep
 {
   OCMockObject<FBXCTestPreparationStrategy> *prepareTestMock = [OCMockObject mockForProtocol:@protocol(FBXCTestPreparationStrategy)];
-  [[prepareTestMock expect] prepareTestWithIOSTarget:[OCMArg any] error:[OCMArg anyObjectRef]];
+  [[prepareTestMock expect] prepareTestWithIOSTarget:[OCMArg any]];
   FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithIOSTarget:[OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)] testPrepareStrategy:prepareTestMock reporter:nil logger:nil];
   XCTAssertNoThrow([[strategy startTestManagerWithApplicationLaunchConfiguration:self.applicationLaunchConfiguration] await:nil]);
   [prepareTestMock verify];
@@ -82,7 +82,7 @@
   [[[testConfigurationMock stub] andReturn:testRunnerMock] testRunner];
 
   id prepareTestMock = [OCMockObject niceMockForProtocol:@protocol(FBXCTestPreparationStrategy)];
-  [[[prepareTestMock stub] andReturn:testConfigurationMock] prepareTestWithIOSTarget:[OCMArg any] error:[OCMArg anyObjectRef]];
+  [[[prepareTestMock stub] andReturn:testConfigurationMock] prepareTestWithIOSTarget:[OCMArg any]];
 
   FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithIOSTarget:iosTargetMock testPrepareStrategy:prepareTestMock reporter:nil logger:nil];
   XCTAssertTrue([[strategy startTestManagerWithApplicationLaunchConfiguration:[self.applicationLaunchConfiguration withEnvironment:@{@"A" : @"B"}]] await:nil]);

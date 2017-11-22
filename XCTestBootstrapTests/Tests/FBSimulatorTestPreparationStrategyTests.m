@@ -30,7 +30,7 @@
                                                          workingDirectory:nil
                                                               fileManager:nil
                                                                  codesign:nil];
-  XCTAssertThrows([strategy prepareTestWithIOSTarget:[OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)] error:nil]);
+  XCTAssertThrows([strategy prepareTestWithIOSTarget:[OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)]]);
 }
 
 - (void)testStrategyWithMissingTestBundlePath
@@ -41,7 +41,7 @@
                                                          workingDirectory:@""
                                                               fileManager:nil
                                                                  codesign:nil];
-  XCTAssertThrows([strategy prepareTestWithIOSTarget:[OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)] error:nil]);
+  XCTAssertThrows([strategy prepareTestWithIOSTarget:[OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)]]);
 }
 
 - (void)testStrategyWithMissingApplicationPath
@@ -52,7 +52,7 @@
                                                          workingDirectory:@""
                                                               fileManager:nil
                                                                  codesign:nil];
-  XCTAssertThrows([strategy prepareTestWithIOSTarget:[OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)] error:nil]);
+  XCTAssertThrows([strategy prepareTestWithIOSTarget:[OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)]]);
 }
 
 - (void)testSimulatorPreparation
@@ -93,7 +93,7 @@
     workingDirectory:@"/heaven"
     fileManager:fileManagerMock
     codesign:codesignMock];
-  FBTestRunnerConfiguration *configuration = [strategy prepareTestWithIOSTarget:iosTargetMock error:nil];
+  FBTestRunnerConfiguration *configuration = [strategy prepareTestWithIOSTarget:iosTargetMock];
 
   NSDictionary *env = configuration.launchEnvironment;
   XCTAssertNotNil(configuration);
