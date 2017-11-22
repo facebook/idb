@@ -86,8 +86,8 @@
       return [[self
         runTestWithSimulator:simulator]
         onQueue:dispatch_get_main_queue() chain:^(FBFuture *future) {
-          [self.context finishedExecutionOnSimulator:simulator];
-          return future;
+          // Propogate the original result, but wait on the Simulator teardown as-well
+          return [[self.context finishedExecutionOnSimulator:simulator] fmapReplace:future];
         }];
     }];
 }
