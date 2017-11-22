@@ -25,9 +25,10 @@
 
 @property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
 @property (nonatomic, strong, readonly) SimDisplayVideoWriter *writer;
+@property (nonatomic, strong, readonly) SimVideoFile *videoFile;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finishedWritingFuture;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startedWritingFuture;
+@property (nonatomic, strong, readonly) FBFuture<NSNull *> *finishedWriting;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startedWriting;
 
 @end
 
@@ -40,10 +41,39 @@
   NSURL *fileURL = [NSURL fileURLWithPath:videoPath];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbsimulatorcontrol.videoencoder.simulatorkit", DISPATCH_QUEUE_SERIAL);
   logger = [logger onQueue:queue];
-  return [[self alloc] initWithRenderable:surface fileURL:fileURL mediaQueue:queue logger:logger];
+
+  FBMutableFuture<NSNull *> *finishedWriting = [FBMutableFuture future];
+  SimDisplayVideoWriter *writer = [FBVideoEncoderSimulatorKit createVideoWriterForURL:fileURL mediaQueue:queue finishedWriting:finishedWriting];
+
+  return [[self alloc] initWithRenderable:surface fileURL:fileURL mediaQueue:queue writer:writer finishedWriting:finishedWriting logger:logger];
 }
 
-- (instancetype)initWithRenderable:(FBFramebufferSurface *)surface fileURL:(NSURL *)fileURL mediaQueue:(dispatch_queue_t)mediaQueue logger:(nullable id<FBControlCoreLogger>)logger
++ (SimDisplayVideoWriter *)createVideoWriterForURL:(NSURL *)url mediaQueue:(dispatch_queue_t)mediaQueue finishedWriting:(FBMutableFuture<NSNull *> *)finishedWriting
+{
+  Class class = objc_getClass("SimDisplayVideoWriter");
+
+  // When we don't get a callback from the VideoWriter, assume that the finishedWriting call is synchronous.
+  // This means that the future that is returned from the public API will return the pre-finished future.
+  if ([class respondsToSelector:@selector(videoWriterForURL:fileType:)]) {
+    [finishedWriting resolveWithResult:NSNull.null];
+    return [class videoWriterForURL:url fileType:@"mp4"];
+  }
+  // Resolve the Future when writing has finished.
+  return [class videoWriterForURL:url fileType:@"mp4" completionQueue:mediaQueue completionHandler:^(NSError *error){
+    // We usually get an "error", but still handle the no-error case.
+    if (!error) {
+      [finishedWriting resolveWithResult:NSNull.null];
+    // Represents that the IO operation has been cancelled upon finishing writing
+    } else if (error.code == ECANCELED) {
+      [finishedWriting resolveWithResult:NSNull.null];
+    // Some other error means that something bad happened.
+    } else {
+      [finishedWriting resolveWithError:error];
+    }
+  }];
+}
+
+- (instancetype)initWithRenderable:(FBFramebufferSurface *)surface fileURL:(NSURL *)fileURL mediaQueue:(dispatch_queue_t)mediaQueue writer:(SimDisplayVideoWriter *)writer finishedWriting:(FBFuture<NSNull *> *)finishedWriting logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -53,28 +83,12 @@
   _surface = surface;
   _logger = logger;
   _mediaQueue = mediaQueue;
-  _finishedWritingFuture = [FBMutableFuture future];
-  _startedWritingFuture = [FBMutableFuture future];
-  _writer = [self createVideoWriterForURL:fileURL mediaQueue:mediaQueue];
+  _writer = writer;
+  _finishedWriting = finishedWriting;
+  _startedWriting = [FBMutableFuture future];
+  _videoFile = _writer.videoFile;
 
   return self;
-}
-
-- (SimDisplayVideoWriter *)createVideoWriterForURL:(NSURL *)url mediaQueue:(dispatch_queue_t)mediaQueue
-{
-  Class class = objc_getClass("SimDisplayVideoWriter");
-  FBMutableFuture<NSNull *> *future = self.finishedWritingFuture;
-
-  // When we don't get a callback from the VideoWriter, assume that the finishedWriting call is synchronous.
-  // This means that the future that is returned from the public API will return the pre-finished future.
-  if ([class respondsToSelector:@selector(videoWriterForURL:fileType:)]) {
-    [self.finishedWritingFuture resolveWithResult:NSNull.null];
-    return [class videoWriterForURL:url fileType:@"mp4"];
-  }
-  // Resolve the Future when writing has finished.
-  return [class videoWriterForURL:url fileType:@"mp4" completionQueue:mediaQueue completionHandler:^{
-    [future resolveWithResult:NSNull.null];
-  }];
 }
 
 #pragma mark NSObject
@@ -116,7 +130,7 @@
       failFuture];
   }
   // Don't start twice.
-  if (self.startedWritingFuture.hasCompleted) {
+  if (self.startedWriting.hasCompleted) {
     return [[FBSimulatorError
       describeFormat:@"Cannot start recording, we requested to start writing once."]
       failFuture];
@@ -135,7 +149,7 @@
   }
 
   // Return the future that we've wrapped.
-  return self.startedWritingFuture;
+  return self.startedWriting;
 }
 
 - (FBFuture<NSNull *> *)stopRecordingNow
@@ -147,7 +161,7 @@
       failFuture];
   }
   // If we've resolved already, we've called stop twice.
-  if (self.finishedWritingFuture.hasCompleted) {
+  if (self.finishedWriting.hasCompleted) {
     return [[FBSimulatorError
       describeFormat:@"Cannot stop recording, we've requested to stop recording once."]
       failFuture];
@@ -162,7 +176,7 @@
   [self.writer finishWriting];
 
   // Return the future that we've wrapped.
-  return self.finishedWritingFuture;
+  return self.finishedWriting;
 }
 
 #pragma mark FBFramebufferConsumable
@@ -175,7 +189,7 @@
     return;
   }
   [self.logger logFormat:@"IOSurface for Encoder %@ changed to %@", self, surface];
-  [self.startedWritingFuture resolveWithResult:NSNull.null];
+  [self.startedWriting resolveWithResult:NSNull.null];
   if (FBXcodeConfiguration.isXcode9OrGreater) {
     [self.writer didChangeIOSurface:(__bridge id) surface];
   } else {
