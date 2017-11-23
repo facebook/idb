@@ -11,11 +11,18 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@interface FBFileReaderTests : XCTestCase
+@interface FBFileReaderTests : XCTestCase <FBFileConsumer>
+
+@property (atomic, assign, readwrite) BOOL didRecieveEOF;
 
 @end
 
 @implementation FBFileReaderTests
+
+- (void)setUp
+{
+  self.didRecieveEOF = NO;
+}
 
 - (void)testConsumesData
 {
@@ -44,6 +51,33 @@
   success = [[writer stopReading] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
+}
+
+- (void)testConsumesEOFAfterStoppedReading
+{
+  // Setup
+  NSPipe *pipe = NSPipe.pipe;
+  FBFileReader *writer = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:self];
+
+  // Start reading
+  NSError *error = nil;
+  BOOL success = [[writer startReading] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  // Write some data.
+  NSData *expected = [@"Foo Bar Baz" dataUsingEncoding:NSUTF8StringEncoding];
+  [pipe.fileHandleForWriting writeData:expected];
+
+  // Stop reading, we may recieve the consumeEndOfFile on a different queue
+  // This is fine as this call will block until the call has happened.
+  // Also the assignment is atomic.
+  success = [[writer stopReading] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  // Confirm we got an eof
+  XCTAssertTrue(self.didRecieveEOF);
 }
 
 - (void)testCanStopReadingBeforeEOFResolvesWhenPipeCloses
@@ -76,6 +110,18 @@
 
   // Write EOF
   [pipe.fileHandleForWriting closeFile];
+}
+
+#pragma mark FBFileConsumer Implementation
+
+- (void)consumeData:(NSData *)data
+{
+
+}
+
+- (void)consumeEndOfFile
+{
+  self.didRecieveEOF = YES;
 }
 
 @end

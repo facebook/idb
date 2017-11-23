@@ -8,7 +8,8 @@
 
 @property (nonatomic, strong, readonly) id<FBFileConsumer> consumer;
 @property (nonatomic, strong, readonly) dispatch_queue_t readQueue;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *stoppedFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *readingHasEnded;
+@property (nonatomic, strong, readonly) FBFuture<NSNull *> *stopped;
 
 @property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
 @property (nonatomic, strong, nullable, readwrite) dispatch_io_t io;
@@ -43,8 +44,10 @@
   _fileHandle = fileHandle;
   _consumer = consumer;
   _readQueue = dispatch_queue_create("com.facebook.fbxctest.multifilereader", DISPATCH_QUEUE_SERIAL);
-  _stoppedFuture = [FBMutableFuture.future onQueue:_readQueue notifyOfCompletion:^(FBFuture *_) {
+  _readingHasEnded = FBMutableFuture.future;
+  _stopped = [_readingHasEnded onQueue:_readQueue chain:^(FBFuture *future) {
     [consumer consumeEndOfFile];
+    return future;
   }];
 
   return self;
@@ -63,15 +66,15 @@
   // Get locals to be captured by the read, rather than self.
   NSFileHandle *fileHandle = self.fileHandle;
   id<FBFileConsumer> consumer = self.consumer;
-  FBMutableFuture<NSNull *> *doneFuture = self.stoppedFuture;
+  FBMutableFuture<NSNull *> *readingHasEnded = self.readingHasEnded;
 
   // If there is an error creating the IO Object, the errorCode will be delivered asynchronously.
   self.io = dispatch_io_create(DISPATCH_IO_STREAM, fileHandle.fileDescriptor, self.readQueue, ^(int errorCode) {
     if (errorCode == 0) {
-      [doneFuture resolveWithResult:NSNull.null];
+      [readingHasEnded resolveWithResult:NSNull.null];
     } else {
       NSError *error = [[FBControlCoreError describeFormat:@"IO Channel closed with error code %d", errorCode] build];
-      [doneFuture resolveWithError:error];
+      [readingHasEnded resolveWithError:error];
     }
   });
   if (!self.io) {
@@ -108,12 +111,12 @@
   self.fileHandle = nil;
   self.io = nil;
 
-  return self.stoppedFuture;
+  return self.stopped;
 }
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [self.stoppedFuture onQueue:self.readQueue notifyOfCancellation:^(id _) {
+  return [self.stopped onQueue:self.readQueue notifyOfCancellation:^(id _) {
     [self stopReading];
   }];
 }
