@@ -11,6 +11,7 @@
 @property (nonatomic, strong, nullable, readwrite) dispatch_queue_t queue;
 @property (nonatomic, copy, nullable, readwrite) void (^consumer)(NSData *);
 @property (nonatomic, strong, readwrite) FBLineBuffer *buffer;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *eofHasBeenReceivedFuture;
 
 @end
 
@@ -23,6 +24,8 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 }
 
 @implementation FBLineFileConsumer
+
+#pragma mark Initializers
 
 + (instancetype)synchronousReaderWithConsumer:(void (^)(NSString *))consumer
 {
@@ -55,9 +58,12 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   _queue = queue;
   _consumer = consumer;
   _buffer = [FBLineBuffer new];
+  _eofHasBeenReceivedFuture = FBMutableFuture.future;
 
   return self;
 }
+
+#pragma mark FBFileConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -96,11 +102,21 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   }
 }
 
+#pragma mark Public
+
+- (FBFuture<NSNull *> *)eofHasBeenReceived
+{
+  return self.eofHasBeenReceivedFuture;
+}
+
+#pragma mark Private
+
 - (void)tearDown
 {
   self.consumer = nil;
   self.queue = nil;
   self.buffer = nil;
+  [self.eofHasBeenReceivedFuture resolveWithResult:NSNull.null];
 }
 
 @end
@@ -109,10 +125,13 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 
 @property (nonatomic, strong, nullable, readonly) NSMutableData *mutableData;
 @property (nonatomic, copy, nullable, readonly) NSData *finalData;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *eofHasBeenReceivedFuture;
 
 @end
 
 @implementation FBAccumilatingFileConsumer
+
+#pragma mark Initializers
 
 - (instancetype)init
 {
@@ -127,8 +146,12 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   }
 
   _mutableData = mutableData;
+  _eofHasBeenReceivedFuture = FBMutableFuture.future;
+
   return self;
 }
+
+#pragma mark FBFileConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -144,8 +167,11 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   @synchronized (self) {
     _finalData = [self.mutableData copy];
     _mutableData = nil;
+    [self.eofHasBeenReceivedFuture resolveWithResult:NSNull.null];
   }
 }
+
+#pragma mark Public
 
 - (NSData *)data
 {
@@ -158,6 +184,11 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 {
   NSString *output = [[NSString alloc] initWithData:self.data encoding:NSUTF8StringEncoding];
   return [output componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
+}
+
+- (FBFuture<NSNull *> *)eofHasBeenReceived
+{
+  return self.eofHasBeenReceivedFuture;
 }
 
 @end

@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBFuture.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -73,6 +75,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)asynchronousReaderWithQueue:(dispatch_queue_t)queue dataConsumer:(void (^)(NSData *_Nonnull))consumer;
 
+/**
+ A Future that resolves when an EOF has been recieved.
+ This is helpful for ensuring that all consumer lines have been drained.
+ */
+@property (nonatomic, strong, readonly) FBFuture<NSNull *> *eofHasBeenReceived;
+
 @end
 
 /**
@@ -104,6 +112,12 @@ NS_ASSUME_NONNULL_BEGIN
  Obtains a copy of the current output data.
  */
 @property (atomic, copy, readonly) NSArray<NSString *> *lines;
+
+/**
+ A Future that resolves when an EOF has been recieved.
+ This is helpful for ensuring that all consumer lines have been drained.
+ */
+@property (nonatomic, strong, readonly) FBFuture<NSNull *> *eofHasBeenReceived;
 
 @end
 
