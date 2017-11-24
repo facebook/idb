@@ -12,7 +12,6 @@
 #import <FBControlCore/FBEventReporter.h>
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBFuture.h>
-#import <FBControlCore/FBTerminationHandle.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -56,7 +55,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch;
 @property (nonatomic, strong, nullable, readonly) FBFuture<NSNull *> *completed;
 
 /**
- The Type of Termination Handle.
+ The Type of the Future, used for identifying kinds of the reciever.
  */
 @property (nonatomic, copy, readonly) FBiOSTargetFutureType futureType;
 
@@ -68,17 +67,17 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch;
 
  @param continuation the continuation to wrap
  @param futureType the Future Type.
- @return a new Termination Awaitable.
+ @return a new Contiunation
  */
 extern id<FBiOSTargetContinuation> FBiOSTargetContinuationRenamed(id<FBiOSTargetContinuation> continuation, FBiOSTargetFutureType futureType);
 
 /**
  Makes a continuation that has nothing left to do.
 
- @param handleType the handle of the continuation
- @return a new Termination Awaitable.
+ @param futureType the Future Type.
+ @return a new Contiunation.
  */
-extern id<FBiOSTargetContinuation> FBiOSTargetContinuationDone(FBTerminationHandleType handleType);
+extern id<FBiOSTargetContinuation> FBiOSTargetContinuationDone(FBiOSTargetFutureType futureType);
 
 /**
  A protocol that can be bridged to FBiOSTargetFutureDelegate

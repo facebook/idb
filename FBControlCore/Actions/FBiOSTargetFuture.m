@@ -92,9 +92,9 @@ id<FBiOSTargetContinuation> FBiOSTargetContinuationRenamed(id<FBiOSTargetContinu
   return [[FBiOSTargetContinuation_Renamed alloc] initWithAwaitable:continuation futureType:futureType];
 }
 
-id<FBiOSTargetContinuation> FBiOSTargetContinuationDone(FBTerminationHandleType handleType)
+id<FBiOSTargetContinuation> FBiOSTargetContinuationDone(FBiOSTargetFutureType futureType)
 {
-  return [[FBiOSTargetContinuation_Done alloc] initWithFutureType:handleType];
+  return [[FBiOSTargetContinuation_Done alloc] initWithFutureType:futureType];
 }
 
 @implementation FBiOSTargetFutureSimple

@@ -247,7 +247,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark FBiOSTargetContinuation
 
-- (FBTerminationHandleType)futureType
+- (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeVideoStreaming;
 }

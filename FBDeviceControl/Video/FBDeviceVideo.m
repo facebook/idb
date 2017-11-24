@@ -147,9 +147,9 @@
   return [self.encoder stopRecording];
 }
 
-#pragma mark FBTerminationHandle
+#pragma mark FBiOSTargetContinuation
 
-- (FBTerminationHandleType)futureType
+- (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeVideoRecording;
 }

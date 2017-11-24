@@ -12,7 +12,6 @@
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBFileWriter.h"
-#import "FBTerminationHandle.h"
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeBinaryTransfer = @"transfer";
 FBiOSTargetFutureType const FBiOSTargetFutureTypeUploadedBinary = @"uploaded";

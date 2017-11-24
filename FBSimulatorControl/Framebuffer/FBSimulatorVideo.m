@@ -97,9 +97,9 @@
   return FBVideoEncoderSimulatorKit.isSupported;
 }
 
-#pragma mark FBTerminationHandle
+#pragma mark FBiOSTargetContinuation
 
-- (FBTerminationHandleType)futureType
+- (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeVideoRecording;
 }
