@@ -110,10 +110,11 @@
   [self.logger logFormat:@"Mirroring xctest stderr to %@", mirrorPath];
 
   // Setup the reader of the shim
-  id<FBFileConsumer> otestShimLineReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line) {
+  FBLineFileConsumer *otestShimLineReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line) {
     [reporter handleExternalEvent:line];
   }];
-  otestShimLineReader = [logger logConsumptionToFile:otestShimLineReader outputKind:@"shim" udid:uuid filePathOut:&mirrorPath];
+  // Mirror the output
+  id<FBFileConsumer> otestShimConsumer = [logger logConsumptionToFile:otestShimLineReader outputKind:@"shim" udid:uuid filePathOut:&mirrorPath];
   [self.logger logFormat:@"Mirroring shim-fifo output to %@", mirrorPath];
 
   // Construct and start the process
@@ -121,13 +122,17 @@
     testProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutReader:stdOutReader stdErrReader:stdErrReader]
     startWithTimeout:self.configuration.testTimeout]
     onQueue:self.executor.workQueue fmap:^(FBXCTestProcessInfo *processInfo) {
-      return [self completeLaunchedProcess:processInfo otestShimOutputPath:otestShimOutputPath otestShimLineReader:otestShimLineReader];
+      return [self
+        completeLaunchedProcess:processInfo
+        otestShimOutputPath:otestShimOutputPath
+        otestShimConsumer:otestShimConsumer
+        otestShimLineReader:otestShimLineReader];
     }];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)completeLaunchedProcess:(FBXCTestProcessInfo *)processInfo otestShimOutputPath:(NSString *)otestShimOutputPath otestShimLineReader:(id<FBFileConsumer>)otestShimLineReader
+- (FBFuture<NSNull *> *)completeLaunchedProcess:(FBXCTestProcessInfo *)processInfo otestShimOutputPath:(NSString *)otestShimOutputPath otestShimConsumer:(id<FBFileConsumer>)otestShimConsumer otestShimLineReader:(FBLineFileConsumer *)otestShimLineReader
 {
   id<FBXCTestReporter> reporter = self.reporter;
   if (self.configuration.waitForDebugger) {
@@ -140,7 +145,7 @@
 
   // Create a reader of the otest-shim path and start reading it.
   NSError *error = nil;
-  FBFileReader *otestShimReader = [FBFileReader readerWithFilePath:otestShimOutputPath consumer:otestShimLineReader error:&error];
+  FBFileReader *otestShimReader = [FBFileReader readerWithFilePath:otestShimOutputPath consumer:otestShimConsumer error:&error];
   if (!otestShimReader) {
     [processInfo.completion cancel];
     return [[[FBXCTestError
@@ -153,7 +158,11 @@
     startReading]
     fmapReplace:processInfo.completion]
     onQueue:self.executor.workQueue fmap:^(id _) {
-      return [otestShimReader stopReading];
+      // Close and wait
+      return [FBFuture futureWithFutures:@[
+        [otestShimReader stopReading],
+        [otestShimLineReader eofHasBeenReceived],
+      ]];
     }]
     onQueue:self.executor.workQueue map:^(id _) {
       [reporter didFinishExecutingTestPlan];
