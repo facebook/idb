@@ -144,8 +144,12 @@
     startReading]
     fmapReplace:processInfo.completion]
     onQueue:queue chain:^(FBFuture *replacement) {
-      // Close the File Handle
-      return [[reader stopReading] fmapReplace:replacement];
+      // Close and wait
+      FBFuture<NSArray<NSNull *> *> *future = [FBFuture futureWithFutures:@[
+        [reader stopReading],
+        [consumer eofHasBeenReceived],
+      ]];
+      return [future fmapReplace:replacement];
     }]
     onQueue:queue fmap:^(NSNumber *_) {
       NSMutableArray<NSString *> *testNames = [NSMutableArray array];
