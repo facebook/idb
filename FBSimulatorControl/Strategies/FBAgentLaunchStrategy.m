@@ -66,7 +66,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
     return [FBSimulatorError failFutureWithError:error];
   }
 
-  // Launhch the Process
+  // Launch the Process
   FBMutableFuture *terminationFuture = [FBMutableFuture future];
   FBFuture<NSNumber *> *launchFuture = [self
     launchAgentWithLaunchPath:agentLaunch.agentBinary.path
