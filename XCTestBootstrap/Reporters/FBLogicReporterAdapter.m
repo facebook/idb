@@ -98,7 +98,14 @@
     } else {
       status = FBTestReportStatusUnknown;
     }
-    [reporter testCaseDidFinishForTestClass:testClass method:testName withStatus:status duration:duration];
+
+    if (status != FBTestReportStatusUnknown) {
+      [reporter testCaseDidFinishForTestClass:testClass method:testName withStatus:status duration:duration];
+    } else {
+      //We don't know how to handle it, but an upstream reporter might.
+      NSString *stringEvent = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+      [reporter handleExternalEvent:stringEvent];
+    }
   } else if ([eventName isEqualToString:@"end-test-suite"]) {
     NSDate *finishDate = [NSDate dateWithTimeIntervalSince1970:[JSONEvent[@"timestamp"] doubleValue]];
     NSInteger unexpected = [JSONEvent[@"unexpectedExceptionCount"] integerValue];
@@ -113,6 +120,9 @@
     [reporter finishedWithSummary:summary];
   } else {
     [self.logger logFormat:@"[%@] Unhandled event JSON: %@", NSStringFromClass(self.class), JSONEvent];
+    //We don't know how to handle it, but an upstream reporter might.
+    NSString *stringEvent = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    [reporter handleExternalEvent:stringEvent];
   }
 }
 
