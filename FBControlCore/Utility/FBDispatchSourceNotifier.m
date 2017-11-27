@@ -32,7 +32,7 @@ FBTerminationHandleType const FBTerminationHandleTypeDispatchSource = @"Dispatch
     0,
     queue
   );
-  dispatch_source_set_timer(dispatchSource, DISPATCH_TIME_NOW, timeInterval, 0);
+  dispatch_source_set_timer(dispatchSource, dispatch_time(DISPATCH_TIME_NOW, timeInterval), timeInterval, 0);
   return [[self alloc] initWithDispatchSource:dispatchSource handler:handler];
 }
 
