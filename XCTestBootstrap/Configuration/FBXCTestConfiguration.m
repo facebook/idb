@@ -306,7 +306,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
 - (NSString *)testType
 {
-  return FBXCTestTypeUITest;
+  return _testTargetAppPath != nil ? FBXCTestTypeUITest : FBXCTestTypeApplicationTest;
 }
 
 #pragma mark JSON
@@ -328,7 +328,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
       fail:error];
   }
   NSString *testTargetAppPath = json[KeyRunnerTargetPath];
-  if (![testTargetAppPath isKindOfClass:NSString.class]) {
+  if (testTargetAppPath != nil && ![testTargetAppPath isKindOfClass:NSString.class]) {
     return [[FBXCTestError
       describeFormat:@"%@ is not a String for %@", testTargetAppPath, KeyRunnerTargetPath]
       fail:error];
