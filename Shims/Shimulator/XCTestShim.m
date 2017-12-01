@@ -299,7 +299,7 @@ static void PrintJSON(id JSONObject)
 #pragma mark - XCToolLog function declarations
 
 static void XCToolLog_testSuiteDidStart(NSString *testDescription);
-static void XCToolLog_testSuiteDidStop(NSDictionary *json);
+static void XCToolLog_testSuiteDidStop(NSString *testSuiteName, XCTestSuiteRun *testRun);
 static void XCToolLog_testCaseDidStart(NSString *fullTestName);
 static void XCToolLog_testCaseDidStop(NSString *fullTestName, NSNumber *unexpectedExceptionCount, NSNumber *failureCount, NSNumber *totalDuration);
 static void XCToolLog_testCaseDidFail(NSDictionary *exceptionInfo);
@@ -308,23 +308,21 @@ static void XCToolLog_testCaseDidFail(NSDictionary *exceptionInfo);
 
 static void XCTestLog_testSuiteDidStart(id self, SEL sel, XCTestSuiteRun *run)
 {
-  NSString *testDescription = [[run test] name];
-  XCToolLog_testSuiteDidStart(testDescription);
+  XCToolLog_testSuiteDidStart(kReporter_TestSuite_TopLevelSuiteName);
 }
 
 static void XCTestLog_testSuiteWillStart(id self, SEL sel, XCTestSuite *suite)
 {
-  id (*msgsend)(id, SEL) = (void *) objc_msgSend;
-  XCTestLog_testSuiteDidStart(self, sel, msgsend(suite, @selector(testRun)));
+  XCToolLog_testSuiteDidStart(suite.name);
 }
 
-static void XCToolLog_testSuiteDidStart(NSString *testDescription)
+static void XCToolLog_testSuiteDidStart(NSString *name)
 {
-  if (__testSuiteDepth == 0) {
+  if (__testSuiteDepth > 0) {
     dispatch_sync(EventQueue(), ^{
       PrintJSON(EventDictionaryWithNameAndContent(
         kReporter_Events_BeginTestSuite,
-        @{kReporter_BeginTestSuite_SuiteKey : kReporter_TestSuite_TopLevelSuiteName}
+        @{kReporter_BeginTestSuite_SuiteKey : name}
       ));
     });
   }
@@ -334,28 +332,29 @@ static void XCToolLog_testSuiteDidStart(NSString *testDescription)
 #pragma mark - testSuiteDidStop
 static void XCTestLog_testSuiteDidStop(id self, SEL sel, XCTestSuiteRun *run)
 {
-  XCToolLog_testSuiteDidStop(EventDictionaryWithNameAndContent(
-    kReporter_Events_EndTestSuite, @{
-      kReporter_EndTestSuite_SuiteKey : kReporter_TestSuite_TopLevelSuiteName,
-      kReporter_EndTestSuite_TestCaseCountKey : @([run testCaseCount]),
-      kReporter_EndTestSuite_TotalFailureCountKey : @([run totalFailureCount]),
-      kReporter_EndTestSuite_UnexpectedExceptionCountKey : @([run unexpectedExceptionCount]),
-      kReporter_EndTestSuite_TestDurationKey: @([run testDuration]),
-      kReporter_EndTestSuite_TotalDurationKey : @([run totalDuration]),
-  }));
+  XCToolLog_testSuiteDidStop(kReporter_TestSuite_TopLevelSuiteName, run);
 }
 
 static void XCTestLog_testSuiteDidFinish(id self, SEL sel, XCTestSuite *suite)
 {
-  id (*msgsend)(id, SEL) = (void *) objc_msgSend;
-  XCTestLog_testSuiteDidStop(self, sel, msgsend(suite, @selector(testRun)));
+  XCToolLog_testSuiteDidStop(suite.name, (id)suite.testRun);
 }
 
-static void XCToolLog_testSuiteDidStop(NSDictionary *json)
+static void XCToolLog_testSuiteDidStop(NSString *testSuiteName, XCTestSuiteRun *run)
 {
   __testSuiteDepth--;
 
-  if (__testSuiteDepth == 0) {
+  if (__testSuiteDepth > 0) {
+    NSDictionary *content =
+      @{
+        kReporter_EndTestSuite_SuiteKey : testSuiteName,
+        kReporter_EndTestSuite_TestCaseCountKey : @([run testCaseCount]),
+        kReporter_EndTestSuite_TotalFailureCountKey : @([run totalFailureCount]),
+        kReporter_EndTestSuite_UnexpectedExceptionCountKey : @([run unexpectedExceptionCount]),
+        kReporter_EndTestSuite_TestDurationKey: @([run testDuration]),
+        kReporter_EndTestSuite_TotalDurationKey : @([run totalDuration]),
+      };
+    NSDictionary *json = EventDictionaryWithNameAndContent(kReporter_Events_EndTestSuite, content);
     dispatch_sync(EventQueue(), ^{
       PrintJSON(json);
     });
