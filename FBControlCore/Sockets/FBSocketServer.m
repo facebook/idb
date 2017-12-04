@@ -22,6 +22,8 @@
 
 @implementation FBSocketServer
 
+#pragma mark Initializers
+
 + (instancetype)socketServerOnPort:(in_port_t)port delegate:(id<FBSocketServerDelegate>)delegate
 {
   return [[self alloc] initWithPort:port delegate:delegate];
@@ -40,38 +42,42 @@
   return self;
 }
 
-- (BOOL)startListeningWithError:(NSError **)error
+#pragma mark Public
+
+- (FBFuture<NSNull *> *)startListening
 {
   if (self.acceptSource) {
     return [[FBControlCoreError
       describe:@"Cannot start listening, socket is already listening"]
-      failBool:error];
+      failFuture];
   }
-  return [self createSocketWithPort:self.port error:error];
+  return [self createSocketWithPort:self.port];
 }
 
-- (BOOL)stopListeningWithError:(NSError **)error
+- (FBFuture<NSNull *> *)stopListening
 {
   if (!self.acceptSource) {
     return [[FBControlCoreError
       describe:@"Cannot stop listening, there is no active socket"]
-      failBool:error];
+      failFuture];
   }
   dispatch_source_cancel(self.acceptSource);
   self.acceptSource = nil;
   [self.socketHandle closeFile];
   self.socketHandle = nil;
-  return YES;
+  return [FBFuture futureWithResult:NSNull.null];
 }
 
-- (BOOL)createSocketWithPort:(in_port_t)port error:(NSError **)error
+#pragma mark Private
+
+- (FBFuture<NSNull *> *)createSocketWithPort:(in_port_t)port
 {
   // Get the Socket, set some options
   int socketHandle = socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP);
   if (socket <= 0) {
     return [[FBControlCoreError
       describeFormat:@"Failed to create a socket with errno %d", errno]
-      failBool:error];
+      failFuture];
   }
   int flagTrue = 1;
   setsockopt(socketHandle, SOL_SOCKET, SO_REUSEADDR, &flagTrue, sizeof(flagTrue));
@@ -87,7 +93,7 @@
   if (result != 0) {
     return [[FBControlCoreError
       describeFormat:@"Failed to bind the socket with errno %d", errno]
-      failBool:error];
+      failFuture];
   }
 
   // Start Listening
@@ -95,7 +101,7 @@
   if (result != 0) {
     return [[FBControlCoreError
       describeFormat:@"Failed to listen on the socket with errno %d", errno]
-      failBool:error];
+      failFuture];
   }
 
   // Prepare the Accept Source
@@ -120,7 +126,7 @@
   getsockname(socketHandle, (struct sockaddr*)(&address), &addresslen);
   _port = ntohs(address.sin6_port);
 
-  return YES;
+  return [FBFuture futureWithResult:NSNull.null];
 }
 
 - (BOOL)accept:(int)socketHandle error:(NSError **)error

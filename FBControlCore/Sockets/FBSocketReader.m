@@ -124,14 +124,14 @@
 
 #pragma mark Public
 
-- (BOOL)startListeningWithError:(NSError **)error
+- (FBFuture<NSNull *> *)startListening
 {
-  return [self.server startListeningWithError:error];
+  return [self.server startListening];
 }
 
-- (BOOL)stopListeningWithError:(NSError **)error
+- (FBFuture<NSNull *> *)stopListening
 {
-  return [self.server stopListeningWithError:error];
+  return [self.server stopListening];
 }
 
 #pragma mark FBSocketServerDelegate

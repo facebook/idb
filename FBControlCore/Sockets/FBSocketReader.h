@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFileConsumer.h>
+#import <FBControlCore/FBFuture.h>
 
 #import <sys/socket.h>
 #import <netinet/in.h>
@@ -24,6 +25,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSocketReader : NSObject
 
+#pragma mark Initializers
+
 /**
  Creates and returns a socket reader for the provided port and consumer.
 
@@ -33,21 +36,21 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)socketReaderOnPort:(in_port_t)port delegate:(id<FBSocketReaderDelegate>)delegate;
 
+#pragma mark Public
+
 /**
  Create and Listen to the socket.
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A future when the socket listening has started.
  */
-- (BOOL)startListeningWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)startListening;
 
 /**
- Stop listening to the socket
+ Stop listening to the socket.
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A future when the socket listening has started.
  */
-- (BOOL)stopListeningWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)stopListening;
 
 @end
 

@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBEventReporter.h>
+#import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetFuture.h>
 #import <FBControlCore/FBTerminationHandle.h>
 
@@ -32,6 +33,8 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader;
  Routes an Actions for Sockets and Files.
  */
 @interface FBiOSActionReader : NSObject <FBiOSTargetContinuation>
+
+#pragma mark Initializers
 
 /**
  Initializes an Action Reader for a target, on a socket.
@@ -79,21 +82,21 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader;
  */
 + (instancetype)fileReaderForRouter:(FBiOSActionRouter *)router delegate:(id<FBiOSActionReaderDelegate>)delegate readHandle:(NSFileHandle *)readHandle writeHandle:(NSFileHandle *)writeHandle;
 
+#pragma mark Public Methods
+
 /**
  Create and Listen to the socket.
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A future that starts when listening has started.
  */
-- (BOOL)startListeningWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)startListening;
 
 /**
  Stop listening to the socket
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A future that starts when listening has started.
  */
-- (BOOL)stopListeningWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)stopListening;
 
 @end
 

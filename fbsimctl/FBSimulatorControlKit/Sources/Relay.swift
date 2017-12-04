@@ -85,10 +85,10 @@ class SynchronousRelay : Relay {
  */
 extension FBiOSActionReader : Relay {
   func start() throws {
-    try self.startListening()
+    try self.startListening().await()
   }
 
   func stop() throws {
-    try self.stopListening()
+    try self.stopListening().await()
   }
 }

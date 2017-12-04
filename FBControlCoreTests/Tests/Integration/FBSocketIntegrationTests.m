@@ -105,7 +105,7 @@
   FBSocketReaderDelegate_Double *delegate = [FBSocketReaderDelegate_Double new];
   FBSocketReader *reader = [FBSocketReader socketReaderOnPort:portNumber delegate:delegate];
   NSError *error = nil;
-  BOOL success = [reader startListeningWithError:&error];
+  BOOL success = [[reader startListening] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

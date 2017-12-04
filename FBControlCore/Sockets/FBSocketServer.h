@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBFuture.h>
+
 #import <sys/socket.h>
 #import <netinet/in.h>
 
@@ -21,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSocketServer : NSObject
 
-@property (nonatomic, assign, readonly) in_port_t port;
+#pragma mark Initializers
 
 /**
  Creates and returns a socket reader for the provided port and consumer.
@@ -32,21 +34,28 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)socketServerOnPort:(in_port_t)port delegate:(id<FBSocketServerDelegate>)delegate;
 
+#pragma mark Properties
+
+/**
+ The Port the Server is Bound on
+ */
+@property (nonatomic, assign, readonly) in_port_t port;
+
+#pragma mark Public Methods
+
 /**
  Create and Listen to the socket.
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A future that resolves when listening has started.
  */
-- (BOOL)startListeningWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)startListening;
 
 /**
  Stop listening to the socket
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A future that resolves when listening has ended.
  */
-- (BOOL)stopListeningWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)stopListening;
 
 @end
 

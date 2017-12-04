@@ -71,7 +71,7 @@ NS_ASSUME_NONNULL_BEGIN
   [super tearDown];
 
   NSError *error;
-  BOOL success = [self.reader stopListeningWithError:&error];
+  BOOL success = [[self.reader stopListening] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }
@@ -263,7 +263,7 @@ NS_ASSUME_NONNULL_BEGIN
   self.consumer = [FBFileWriter syncWriterWithFileHandle:self.pipe.fileHandleForWriting];
 
   NSError *error;
-  BOOL success = [self.reader startListeningWithError:&error];
+  BOOL success = [[self.reader startListening] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }
@@ -285,7 +285,7 @@ NS_ASSUME_NONNULL_BEGIN
   self.writer = [FBSocketWriter writerForHost:@"localhost" port:FBiOSActionReaderSocketTests.readerPort consumer:self];
 
   NSError *error;
-  BOOL success = [self.reader startListeningWithError:&error];
+  BOOL success = [[self.reader startListening] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

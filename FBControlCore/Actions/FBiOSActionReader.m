@@ -9,6 +9,7 @@
 
 #import "FBiOSActionReader.h"
 
+#import "FBControlCoreError.h"
 #import "FBFileReader.h"
 #import "FBFileWriter.h"
 #import "FBiOSActionRouter.h"
@@ -298,19 +299,19 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
 
 #pragma mark Public Methods
 
-- (BOOL)startListeningWithError:(NSError **)error
+- (FBFuture<NSNull *> *)startListening
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return NO;
+  return nil;
 }
 
-- (BOOL)stopListeningWithError:(NSError **)error
+- (FBFuture<NSNull *> *)stopListening
 {
   // If delegate is nil, this is a no-op.
   [self.delegate readerDidFinishReading:self];
   self.delegate = nil;
   [self.completedFuture resolveWithResult:NSNull.null];
-  return YES;
+  return self.completedFuture;
 }
 
 #pragma mark FBiOSTargetContinuation
@@ -323,7 +324,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
 - (FBFuture<NSNull *> *)completed
 {
   return [self.completedFuture onQueue:dispatch_get_main_queue() notifyOfCancellation:^(id _) {
-    [self stopListeningWithError:nil];
+    [self stopListening];
   }];
 }
 
@@ -347,16 +348,26 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
 
 #pragma mark Public Methods
 
-- (BOOL)startListeningWithError:(NSError **)error
+- (FBFuture<NSNull *> *)startListening
 {
-  return [self.reader startListeningWithError:error];
+  if (!self.reader) {
+    return [[FBControlCoreError
+      describe:@"Cannot start listening when it's been stopped already"]
+      failFuture];
+  }
+  return [self.reader startListening];
 }
 
-- (BOOL)stopListeningWithError:(NSError **)error
+- (FBFuture<NSNull *> *)stopListening
 {
-  BOOL result = [self.reader stopListeningWithError:error] && [super stopListeningWithError:error];
+  if (!self.reader) {
+    return [[FBControlCoreError
+      describe:@"Cannot stop listening, there is no active reader"]
+      failFuture];
+  }
+  FBFuture<NSNull *> *future = [FBFuture futureWithFutures:@[[self.reader stopListening], [super stopListening]]];
   self.reader = nil;
-  return result;
+  return future;
 }
 
 #pragma mark FBSocketReaderDelegate Implementation
@@ -388,17 +399,27 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
 
 #pragma mark Public Methods
 
-- (BOOL)startListeningWithError:(NSError **)error
+- (FBFuture<NSNull *> *)startListening
 {
-  return [self.reader startReadingWithError:error];
+  if (!self.reader) {
+    return [[FBControlCoreError
+      describe:@"Cannot start listening when it's been stopped already"]
+      failFuture];
+  }
+  return [self.reader startReading];
 }
 
-- (BOOL)stopListeningWithError:(NSError **)error
+- (FBFuture<NSNull *> *)stopListening
 {
-  BOOL result = [self.reader stopReadingWithError:error] && [super stopListeningWithError:error];
+  if (!self.reader || !self.writer) {
+    return [[FBControlCoreError
+      describe:@"Cannot stop listening when it's been stopped already"]
+      failFuture];
+  }
+  FBFuture<NSNull *> *future = [FBFuture futureWithFutures:@[[self.reader stopReading], [super stopListening]]];
   self.reader = nil;
   self.writer = nil;
-  return result;
+  return future;
 }
 
 #pragma mark FBFileConsumer
@@ -410,7 +431,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
 
 - (void)consumeEndOfFile
 {
-  [self stopListeningWithError:nil];
+  [self stopListening];
   [self.mediator consumeEndOfFile];
 }
 
