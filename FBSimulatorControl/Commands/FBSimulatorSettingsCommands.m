@@ -89,6 +89,51 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
   return [FBFuture futureWithFutures:futures];
 }
 
+- (FBFuture<NSNull *> *)updateContacts:(NSString *)databaseDirectory
+{
+  // Get and confirm the destination directory exists.
+  NSString *destinationDirectory = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/AddressBook"];
+  if (![NSFileManager.defaultManager fileExistsAtPath:destinationDirectory]) {
+    return [[FBSimulatorError
+      describeFormat:@"Expected Address Book path to exist at %@ but it was not there", destinationDirectory]
+      failFuture];
+  }
+
+  // Get the file paths inside this directory
+  NSError *error = nil;
+  NSArray<NSString *> *addressBookDBPaths = [NSFileManager.defaultManager contentsOfDirectoryAtPath:databaseDirectory error:&error];
+  if (!addressBookDBPaths) {
+    return [[FBSimulatorError
+      describeFormat:@"Failed to get contents of source directory at %@", addressBookDBPaths]
+      failFuture];
+  }
+
+  // Fail if nothing is provided
+  if (!addressBookDBPaths.count) {
+    return [[FBSimulatorError
+      describe:@"Could not update Address Book DBs when no databases are provided"]
+      failFuture];
+  }
+
+  // Update the databases.
+  NSSet<NSString *> *permissableDatabaseFilepaths = FBSimulatorSettingsCommands.permissableAddressBookDBFilenames;
+  for (NSString *sourceFilename in addressBookDBPaths) {
+    if (![permissableDatabaseFilepaths containsObject:sourceFilename]) {
+      continue;
+    }
+    NSString *sourceFilePath = [databaseDirectory stringByAppendingPathComponent:sourceFilename];
+    NSString *destinationFilePath = [destinationDirectory stringByAppendingPathComponent:sourceFilePath.lastPathComponent];
+    if ([NSFileManager.defaultManager fileExistsAtPath:destinationFilePath] && ! [NSFileManager.defaultManager removeItemAtPath:destinationFilePath error:&error]) {
+      return [FBFuture futureWithError:error];
+    }
+    if (![NSFileManager.defaultManager copyItemAtPath:sourceFilePath toPath:destinationFilePath error:&error]) {
+      return [FBFuture futureWithError:error];
+    }
+  }
+
+  return [FBFuture futureWithResult:NSNull.null];
+}
+
 - (FBFuture<NSNull *> *)setupKeyboard
 {
   return [[FBKeyboardSettingsModificationStrategy
@@ -110,12 +155,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
     filePath,
     [NSString stringWithFormat:@"INSERT or REPLACE INTO access VALUES %@", [FBSimulatorSettingsCommands buildRowsForBundleIDs:bundleIDs services:services]],
   ];
-  return [[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/sqlite3" arguments:arguments]
-    buildFuture]
-    onQueue:self.simulator.asyncQueue map:^(FBTask *_) {
-      return NSNull.null;
-    }];
+  return [FBSimulatorSettingsCommands runSqliteCommandWithArguments:arguments];
 }
 
 #pragma mark Private
@@ -133,6 +173,23 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
     };
   });
   return mapping;
+}
+
++ (NSSet<NSString *> *)permissableAddressBookDBFilenames
+{
+  static dispatch_once_t onceToken;
+  static NSSet<NSString *> *filenames;
+  dispatch_once(&onceToken, ^{
+    filenames = [NSSet setWithArray:@[
+      @"AddressBook.sqlitedb",
+      @"AddressBook.sqlitedb-shm",
+      @"AddressBook.sqlitedb-wal",
+      @"AddressBookImages.sqlitedb",
+      @"AddressBookImages.sqlitedb-shm",
+      @"AddressBookImages.sqlitedb-wal",
+    ]];
+  });
+  return filenames;
 }
 
 + (NSSet<FBSettingsApprovalService> *)filteredTCCApprovals:(NSSet<FBSettingsApprovalService> *)approvals
@@ -154,6 +211,14 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
     }
   }
   return [tuples componentsJoinedByString:@", "];
+}
+
++ (FBFuture<NSNull *> *)runSqliteCommandWithArguments:(NSArray<NSString *> *)arguments
+{
+  return [[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/sqlite3" arguments:arguments]
+    buildFuture]
+    mapReplace:NSNull.null];
 }
 
 @end

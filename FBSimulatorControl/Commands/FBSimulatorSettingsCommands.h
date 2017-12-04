@@ -53,6 +53,15 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval;
 - (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services;
 
 /**
+ Updates the contacts on the target, using the provided local databases.
+ Takes local paths to AddressBook Databases. These replace the existing databases for the Address Book.
+ Only sqlitedb paths should be provided, journaling files will be ignored.
+
+ @param databaseDirectory the directory containing AddressBook.sqlitedb and AddressBookImages.sqlitedb paths.
+ */
+- (FBFuture<NSNull *> *)updateContacts:(NSString *)databaseDirectory;
+
+/**
  Prepares the Simulator Keyboard, prior to launch.
  1) Disables Caps Lock
  2) Disables Auto Capitalize
