@@ -179,4 +179,15 @@
   [self assertJSONDeserialization:values];
 }
 
+- (void)testContactsUpdate
+{
+  NSArray<FBContactsUpdateConfiguration *> *values = @[
+    [FBContactsUpdateConfiguration configurationWithDatabaseFilePaths:@[]],
+    [FBContactsUpdateConfiguration configurationWithDatabaseFilePaths:@[@"Something.sqlitedb"]],
+  ];
+  [self assertEqualityOfCopy:values];
+  [self assertJSONSerialization:values];
+  [self assertJSONDeserialization:values];
+}
+
 @end

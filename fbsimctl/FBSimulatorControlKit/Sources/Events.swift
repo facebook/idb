@@ -14,6 +14,7 @@ import FBSimulatorControl
 public typealias EventName = FBEventName
 
 extension EventName {
+  static let contactsUpdate = EventName(rawValue: FBiOSTargetFutureType.contactsUpdate.rawValue)
   static let boot = EventName(rawValue: FBiOSTargetFutureType.boot.rawValue)
   static let hid = EventName(rawValue: FBiOSTargetFutureType.HID.rawValue)
   static let approve = EventName(rawValue: FBiOSTargetFutureType.approval.rawValue)

@@ -505,6 +505,7 @@ extension Action : Parsable {
         self.bootParser,
         self.clearKeychainParser,
         self.configParser,
+        self.contactsUpdate,
         self.createParser,
         self.deleteParser,
         self.diagnoseParser,
@@ -577,6 +578,14 @@ extension Action : Parsable {
 
   static var configParser: Parser<Action> {
     return Parser.ofString(EventName.config.rawValue, Action.config)
+  }
+
+  static var contactsUpdate: Parser<Action> {
+    return Parser
+      .ofCommandWithArg(
+        EventName.contactsUpdate.rawValue,
+        Parser<Any>.ofExistingDirectory.fmap(Action.contactsUpdate)
+    )
   }
 
   static var createParser: Parser<Action> {

@@ -194,6 +194,7 @@ let validActions: [([String], Action)] = [
   (["boot"], .boot(FBSimulatorBootConfiguration.default)),
   (["clear_keychain", "com.foo.bar"], .clearKeychain("com.foo.bar")),
   (["clear_keychain"], .clearKeychain(nil)),
+  (["contacts_update", "/tmp"], .contactsUpdate("/tmp")),
   (["config"], .config),
   (["create", "--all-missing-defaults"], .create(CreationSpecification.allMissingDefaults)),
   (["create", "iOS 9.0"], .create(CreationSpecification.iOS9CreationSpecification)),

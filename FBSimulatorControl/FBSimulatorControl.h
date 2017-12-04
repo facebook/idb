@@ -27,6 +27,7 @@
 #import <FBSimulatorControl/FBShutdownConfiguration.h>
 #import <FBSimulatorControl/FBSimulator+Private.h>
 #import <FBSimulatorControl/FBSimulator.h>
+#import <FBSimulatorControl/FBContactsUpdateConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorAgentCommands.h>
 #import <FBSimulatorControl/FBSimulatorAgentOperation.h>
 #import <FBSimulatorControl/FBSimulatorApplicationCommands.h>

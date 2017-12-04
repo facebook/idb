@@ -105,6 +105,10 @@ public enum Action {
     return self.coreFuture(configuration)
   }
 
+  static func contactsUpdate(_ databaseDirectory: String) -> Action {
+    return self.coreFuture(FBContactsUpdateConfiguration(databaseDirectory: databaseDirectory))
+  }
+
   static func diagnose(_ query: FBDiagnosticQuery) -> Action {
     return self.coreFuture(query)
   }
