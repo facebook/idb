@@ -63,6 +63,7 @@ class SynchronousRelay : Relay {
     try self.relay.start()
     self.started()
 
+    // Construct the futures, whichever completes first will cause the await to break.
     var futures: [FBFuture<NSNull>] = []
     if let completedFuture = self.continuation?.completed {
       futures.append(completedFuture)
@@ -73,6 +74,11 @@ class SynchronousRelay : Relay {
     }) as! FBFuture<NSNull>
     futures.append(signalFuture)
     let _ = try FBFuture(race: futures).await()
+
+    // If there's an async cancellation, we can ensure that we wait for it to finish.
+    if let completedFuture = self.continuation?.completed, completedFuture.state == .completedWithCancellation {
+      let _ = try completedFuture.cancel().await()
+    }
   }
 
   func stop() throws {
