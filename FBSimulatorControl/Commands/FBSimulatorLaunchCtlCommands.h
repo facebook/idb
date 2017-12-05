@@ -43,10 +43,19 @@ NS_ASSUME_NONNULL_BEGIN
  Finds the Service Name for a given Service Name.
  This will perform a substring match, so the first matching service will be returned.
 
- @param serviceName a Substring of the Service to fetch.
+ @param substring a Substring of the Service to fetch.
+ @return A Future, wrapping a mapping of Service Name to Process Identifier.
+ */
+- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)serviceNamesAndProcessIdentifiersForSubstring:(NSString *)substring;
+
+/**
+ Finds the Service Name for a given Service Name.
+ This will perform a substring match, so the first matching service will be returned.
+
+ @param substring a Substring of the Service to fetch.
  @return A Future, wrapping a tuple of String Service Name & NSNumber Process Identifier.
  */
-- (FBFuture<NSArray<id> *> *)serviceNameAndProcessIdentifierForSubstring:(NSString *)serviceName;
+- (FBFuture<NSArray<id> *> *)serviceNameAndProcessIdentifierForSubstring:(NSString *)substring;
 
 /**
  Consults the Simulator's launchctl to determine if the given process.
