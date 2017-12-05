@@ -182,8 +182,8 @@
 - (void)testContactsUpdate
 {
   NSArray<FBContactsUpdateConfiguration *> *values = @[
-    [FBContactsUpdateConfiguration configurationWithDatabaseFilePaths:@[]],
-    [FBContactsUpdateConfiguration configurationWithDatabaseFilePaths:@[@"Something.sqlitedb"]],
+    [FBContactsUpdateConfiguration configurationWithDatabaseDirectory:@"/tmp"],
+    [FBContactsUpdateConfiguration configurationWithDatabaseDirectory:@"/foo/bar"],
   ];
   [self assertEqualityOfCopy:values];
   [self assertJSONSerialization:values];

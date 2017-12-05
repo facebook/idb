@@ -22,21 +22,6 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 };
 
 /**
- A String Mirror of the State.
- */
-typedef NSString *FBFutureStateString NS_STRING_ENUM;
-
-extern FBFutureStateString const FBFutureStateStringRunning;
-extern FBFutureStateString const FBFutureStateStringCompletedWithResult;
-extern FBFutureStateString const FBFutureStateStringCompletedWithError;
-extern FBFutureStateString const FBFutureStateStringWithCancellation;
-
-/**
- Make a State String from the State.
- */
-FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
-
-/**
  A Future Operation
  */
 @interface FBFuture <T : id> : NSObject

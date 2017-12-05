@@ -12,24 +12,29 @@
 #import "FBCollectionOperations.h"
 #import "FBControlCore.h"
 
+/**
+ A String Mirror of the State.
+ */
+typedef NSString *FBFutureStateString NS_STRING_ENUM;
 FBFutureStateString const FBFutureStateStringRunning = @"running";
-FBFutureStateString const FBFutureStateStringCompletedWithResult = @"completed_with_result";
-FBFutureStateString const FBFutureStateStringCompletedWithError = @"completed_with_error";
-FBFutureStateString const FBFutureStateStringCompletedWithCancellation = @"completed_with_cancellation";
+FBFutureStateString const FBFutureStateStringDone = @"done";
+FBFutureStateString const FBFutureStateStringFailed = @"error";
+FBFutureStateString const FBFutureStateStringCancelled = @"cancelled";
 
-FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
+static FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
 {
   switch (state) {
     case FBFutureStateRunning:
       return FBFutureStateStringRunning;
     case FBFutureStateCompletedWithResult:
-      return FBFutureStateStringCompletedWithResult;
+      return FBFutureStateStringDone;
     case FBFutureStateCompletedWithError:
-      return FBFutureStateStringCompletedWithError;
+      return FBFutureStateStringFailed;
     case FBFutureStateCompletedWithCancellation:
-      return FBFutureStateStringCompletedWithCancellation;
+      return FBFutureStateStringCancelled;
+    default:
+      return @"";
   }
-  return @"";
 }
 
 static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
