@@ -323,8 +323,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [self.completedFuture onQueue:dispatch_get_main_queue() notifyOfCancellation:^(id _) {
-    [self stopListening];
+  return [self.completedFuture onQueue:dispatch_get_main_queue() respondToCancellation:^{
+    return [self stopListening];
   }];
 }
 

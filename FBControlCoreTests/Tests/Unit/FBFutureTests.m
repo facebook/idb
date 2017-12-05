@@ -316,10 +316,9 @@
 - (void)testChainValueThenCancel
 {
   XCTestExpectation *completion = [[XCTestExpectation alloc] initWithDescription:@"Completion is called"];
-  XCTestExpectation *cancellation = [[XCTestExpectation alloc] initWithDescription:@"Cancellation is called"];
 
   FBMutableFuture<NSNumber *> *baseFuture = FBMutableFuture.future;
-  FBFuture<NSNumber *> *chainFuture = [[[[baseFuture
+  FBFuture<NSNumber *> *chainFuture = [[[baseFuture
     onQueue:self.queue chain:^(FBFuture *future) {
       XCTFail(@"Chain Should Not be called for cancelled future");
       return [FBFuture futureWithResult:@2];
@@ -331,27 +330,22 @@
     onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
       XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
       [completion fulfill];
-    }]
-    onQueue:self.queue notifyOfCancellation:^(FBFuture *future) {
-      XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
-      [cancellation fulfill];
     }];
   dispatch_async(self.queue, ^{
     [baseFuture cancel];
   });
 
-  [self waitForExpectations:@[completion, cancellation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  [self waitForExpectations:@[completion] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
   XCTAssertEqual(chainFuture.state, FBFutureStateCompletedWithCancellation);
 }
 
 - (void)testChainedCancellation
 {
   XCTestExpectation *chain = [[XCTestExpectation alloc] initWithDescription:@"chain is called"];
-  XCTestExpectation *cancellation = [[XCTestExpectation alloc] initWithDescription:@"Cancellation is called"];
   XCTestExpectation *completion = [[XCTestExpectation alloc] initWithDescription:@"Completion is called"];
 
   FBMutableFuture<NSNumber *> *baseFuture = FBMutableFuture.future;
-  FBFuture<NSNumber *> *chainFuture = [[[[baseFuture
+  FBFuture<NSNumber *> *chainFuture = [[[baseFuture
     onQueue:self.queue chain:^(FBFuture *_) {
       [chain fulfill];
       FBMutableFuture *future = FBMutableFuture.future;
@@ -365,16 +359,12 @@
     onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
       XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
       [completion fulfill];
-    }]
-    onQueue:self.queue notifyOfCancellation:^(FBFuture *future) {
-      XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
-      [cancellation fulfill];
     }];
   dispatch_async(self.queue, ^{
     [baseFuture resolveWithResult:@0];
   });
 
-  [self waitForExpectations:@[chain, completion, cancellation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  [self waitForExpectations:@[chain, completion] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
   XCTAssertEqual(chainFuture.state, FBFutureStateCompletedWithCancellation);
 }
 
@@ -386,12 +376,14 @@
 
   FBFuture<NSNumber *> *lateFuture1 = [[FBMutableFuture
     future]
-    onQueue:self.queue notifyOfCancellation:^(FBFuture *_) {
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
+      XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
       [late1Cancelled fulfill];
     }];
   FBFuture<NSNumber *> *lateFuture2 = [[FBMutableFuture
     future]
-    onQueue:self.queue notifyOfCancellation:^(FBFuture *_) {
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
+      XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
       [late2Cancelled fulfill];
     }];
   FBFuture<NSNumber *> *raceFuture = [[FBFuture
@@ -422,17 +414,20 @@
 
   FBFuture<NSNumber *> *cancelFuture1 = [[FBMutableFuture
     future]
-    onQueue:self.queue notifyOfCancellation:^(FBFuture *_) {
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
+      XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
       [cancel1Called fulfill];
     }];
   FBFuture<NSNumber *> *cancelFuture2 = [[FBMutableFuture
     future]
-    onQueue:self.queue notifyOfCancellation:^(FBFuture *_) {
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
+      XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
       [cancel2Called fulfill];
     }];
   FBFuture<NSNumber *> *cancelFuture3 = [[FBMutableFuture
     future]
-    onQueue:self.queue notifyOfCancellation:^(FBFuture *_) {
+      onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
+        XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
       [cancel3Called fulfill];
     }];
 
@@ -630,6 +625,67 @@
 
   [self waitForExpectations:@[completionCalled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
   XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
+}
+
+- (void)testAsynchronousCancellationPropogates
+{
+  XCTestExpectation *respondCalled = [[XCTestExpectation alloc] initWithDescription:@"Resolved Responding to Cancellation"];
+  XCTestExpectation *cancellationCallbackCalled = [[XCTestExpectation alloc] initWithDescription:@"Resolved Cancellation finished"];
+  FBFuture<NSNumber *> *future = [[FBMutableFuture
+    future]
+    onQueue:self.queue respondToCancellation:^{
+      [respondCalled fulfill];
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
+
+  [[future
+    cancel]
+    onQueue:self.queue notifyOfCompletion:^(id _) {
+      [cancellationCallbackCalled fulfill];
+    }];
+
+  [self waitForExpectations:@[respondCalled, cancellationCallbackCalled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  XCTAssertEqual(future.state, FBFutureStateCompletedWithCancellation);
+}
+
+- (void)testCallingCancelTwiceReturnsTheSameCancellationFuture
+{
+  XCTestExpectation *respondCalled = [[XCTestExpectation alloc] initWithDescription:@"Resolved Responding to Cancellation"];
+
+  FBFuture<NSNumber *> *future = [[FBMutableFuture
+    future]
+    onQueue:self.queue respondToCancellation:^{
+      [respondCalled fulfill];
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
+
+  FBFuture<NSNull *> *cancelledFirstTime = [future cancel];
+  FBFuture<NSNull *> *cancelledSecondTime = [future cancel];
+  XCTAssertEqual(cancelledFirstTime, cancelledSecondTime);
+}
+
+- (void)testInstallingCancellationHandlerTwiceWillOnlyCallFirstCancellationHandler
+{
+  XCTestExpectation *firstCancelCalled = [[XCTestExpectation alloc] initWithDescription:@"Resolved Responding to Cancellation"];
+  XCTestExpectation *completionCalled = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+
+  FBFuture<NSNumber *> *future = [[[[FBMutableFuture
+    future]
+    onQueue:self.queue respondToCancellation:^{
+      [firstCancelCalled fulfill];
+      return [FBFuture futureWithResult:NSNull.null];
+    }]
+    onQueue:self.queue respondToCancellation:^{
+      XCTFail(@"Second Cancellation should not have been called");
+      return [FBFuture futureWithResult:NSNull.null];
+    }]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture<NSNull *> *completionFuture) {
+      XCTAssertEqual(completionFuture.state, FBFutureStateCompletedWithCancellation);
+      [completionCalled fulfill];
+    }];
+
+  [future cancel];
+  [self waitForExpectations:@[firstCancelCalled, completionCalled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
 #pragma mark - Helpers

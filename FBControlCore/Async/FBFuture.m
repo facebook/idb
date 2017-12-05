@@ -61,12 +61,39 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
 
 @end
 
+@interface FBFuture_Cancellation : NSObject
+
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) FBFuture<NSNull *> *(^handler)(void);
+
+@end
+
+@implementation FBFuture_Cancellation
+
+- (instancetype)initWithQueue:(dispatch_queue_t)queue handler:(FBFuture<NSNull *> *(^)(void))handler
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _queue = queue;
+  _handler = handler;
+
+  return self;
+}
+
+@end
+
 @interface FBFuture ()
 
-@property (nonatomic, strong, readonly) NSMutableArray<FBFuture_Handler *> *handlers;
 @property (nonatomic, copy, nullable, readwrite) NSError *error;
 @property (nonatomic, copy, nullable, readwrite) id result;
 @property (nonatomic, assign, readwrite) FBFutureState state;
+
+@property (nonatomic, strong, readonly) NSMutableArray<FBFuture_Handler *> *handlers;
+@property (nonatomic, strong, nullable, readwrite) FBFuture_Cancellation *cancelResponder;
+@property (nonatomic, strong, nullable, readwrite) FBFuture<NSNull *> *resolvedCancellation;
 
 @end
 
@@ -213,7 +240,7 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
         [compositeFuture resolveWithError:future.error];
         return;
       case FBFutureStateCompletedWithCancellation:
-        [compositeFuture resolveAsCancelled];
+        [compositeFuture cancel];
         return;
       default:
         NSCAssert(NO, @"Unexpected state in callback %@", FBFutureStateStringFromState(state));
@@ -297,9 +324,29 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
 
 #pragma mark FBFuture
 
-- (instancetype)cancel
+- (FBFuture<NSNull *> *)cancel
 {
-  return [self resolveAsCancelled];
+  @synchronized (self) {
+    if (self.resolvedCancellation) {
+      return self.resolvedCancellation;
+    }
+    if (self.state != FBFutureStateRunning) {
+      return [FBFuture futureWithResult:NSNull.null];
+    }
+  }
+  [self resolveAsCancelled];
+  @synchronized (self) {
+    FBFuture_Cancellation *cancelResponder = self.cancelResponder;
+    self.cancelResponder = nil;
+    if (cancelResponder) {
+      FBFuture<NSNull *> *resolvedCancellation = [FBFuture onQueue:cancelResponder.queue resolve:cancelResponder.handler];
+      self.resolvedCancellation = resolvedCancellation;
+      return resolvedCancellation;
+    } else {
+      return [FBFuture futureWithResult:NSNull.null];
+    }
+  }
+  return [[self resolveAsCancelled] mapReplace:NSNull.null];
 }
 
 - (instancetype)onQueue:(dispatch_queue_t)queue notifyOfCompletion:(void (^)(FBFuture *))handler
@@ -320,14 +367,18 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
   return self;
 }
 
-- (instancetype)onQueue:(dispatch_queue_t)queue notifyOfCancellation:(void (^)(FBFuture *))handler
+- (instancetype)onQueue:(dispatch_queue_t)queue respondToCancellation:(FBFuture<NSNull *> *(^)(void))handler
 {
-  return [self onQueue:queue notifyOfCompletion:^(FBFuture *future) {
-    if (future.state != FBFutureStateCompletedWithCancellation) {
-      return;
+  NSParameterAssert(queue);
+  NSParameterAssert(handler);
+
+  @synchronized(self) {
+    if (self.cancelResponder) {
+      return self;
     }
-    handler(future);
-  }];
+    _cancelResponder = [[FBFuture_Cancellation alloc] initWithQueue:queue handler:handler];
+    return self;
+  }
 }
 
 - (FBFuture *)onQueue:(dispatch_queue_t)queue chain:(FBFuture *(^)(FBFuture *))chain

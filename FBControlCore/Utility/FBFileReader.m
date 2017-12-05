@@ -116,8 +116,8 @@
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [self.stopped onQueue:self.readQueue notifyOfCancellation:^(id _) {
-    [self stopReading];
+  return [self.stopped onQueue:self.readQueue respondToCancellation:^{
+    return [self stopReading];
   }];
 }
 

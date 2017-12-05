@@ -106,7 +106,9 @@
 
 - (FBFuture<NSNull *> *)completed
 {
-  return self.completedFuture;
+  return [self.completedFuture onQueue:dispatch_get_main_queue() respondToCancellation:^{
+    return [self stopRecording];
+  }];
 }
 
 #pragma mark Private

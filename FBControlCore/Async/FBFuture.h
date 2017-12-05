@@ -129,10 +129,14 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
 
 /**
  Cancels the asynchronous operation.
+ This will always start the process of cancellation.
+ Some cancellation is immediate, however there are some cases where cancellation is asynchronous.
+ In these cases the future returned will not be resolved immediately.
+ If you wish to wait for the cancellation to have been fully resolved, await the returned futures.
 
- @return the Reciever, for chaining.
+ @return a Future that resolves when the future is cancelled.
  */
-- (instancetype)cancel;
+- (FBFuture<NSNull *> *)cancel;
 
 /**
  Notifies of Completion.
@@ -144,13 +148,14 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
 - (instancetype)onQueue:(dispatch_queue_t)queue notifyOfCompletion:(void (^)(FBFuture *))handler;
 
 /**
- Notifies of Cancellation.
+ Respond to a cancellation request.
+ This provides the opportunity to provide asynchronous cancellation.
 
  @param queue the queue to notify on.
- @param handler the block to invoke.
+ @param handler the block to invoke if cancelled.
  @return the Reciever, for chaining.
  */
-- (instancetype)onQueue:(dispatch_queue_t)queue notifyOfCancellation:(void (^)(FBFuture *))handler;
+- (instancetype)onQueue:(dispatch_queue_t)queue respondToCancellation:(FBFuture<NSNull *> *(^)(void))handler;
 
 /**
  Chain Futures based on any non-cancellation resolution of the reciever.

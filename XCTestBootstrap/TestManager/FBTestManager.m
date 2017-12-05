@@ -63,8 +63,8 @@
     return self.connectFuture;
   }
   _connectFuture = [self.mediator.connect
-    onQueue:self.target.workQueue notifyOfCancellation:^(FBFuture *_) {
-      [self teardown];
+    onQueue:self.target.workQueue respondToCancellation:^{
+      return [self teardown];
     }];
   return self.connectFuture;
 }
@@ -75,8 +75,8 @@
     return self.executeFuture;
   }
   _executeFuture = [self.mediator.execute
-    onQueue:self.target.workQueue notifyOfCancellation:^(FBFuture *_) {
-      [self teardown];
+    onQueue:self.target.workQueue respondToCancellation:^{
+      return [self teardown];
     }];
   return self.executeFuture;
 }
@@ -88,10 +88,10 @@
 
 #pragma mark Private
 
-- (void)teardown
+- (FBFuture<NSNull *> *)teardown
 {
   [self.mediator disconnect];
-  [self.terminationFuture cancel];
+  return [self.terminationFuture cancel];
 }
 
 #pragma mark FBiOSTargetContinuation
@@ -108,8 +108,8 @@
       return [self execute];
     }]
     mapReplace:NSNull.null]
-    onQueue:self.target.workQueue notifyOfCancellation:^(id _) {
-      [self teardown];
+    onQueue:self.target.workQueue respondToCancellation:^{
+      return [self teardown];
     }];
 }
 

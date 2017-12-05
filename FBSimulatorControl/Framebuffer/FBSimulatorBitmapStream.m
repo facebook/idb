@@ -254,8 +254,8 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [self.stopFuture onQueue:self.writeQueue notifyOfCancellation:^(id _) {
-    [self stopStreaming];
+  return [self.stopFuture onQueue:self.writeQueue respondToCancellation:^{
+    return [self stopStreaming];
   }];
 }
 
