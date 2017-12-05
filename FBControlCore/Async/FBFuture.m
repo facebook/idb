@@ -26,11 +26,11 @@ static FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
   switch (state) {
     case FBFutureStateRunning:
       return FBFutureStateStringRunning;
-    case FBFutureStateCompletedWithResult:
+    case FBFutureStateDone:
       return FBFutureStateStringDone;
-    case FBFutureStateCompletedWithError:
+    case FBFutureStateFailed:
       return FBFutureStateStringFailed;
-    case FBFutureStateCompletedWithCancellation:
+    case FBFutureStateCancelled:
       return FBFutureStateStringCancelled;
     default:
       return @"";
@@ -189,13 +189,13 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
     FBFuture<id> *future = resolveUntil();
     [future onQueue:queue notifyOfCompletion:^(FBFuture<id> *resolved) {
       switch (resolved.state) {
-        case FBFutureStateCompletedWithCancellation:
+        case FBFutureStateCancelled:
           [final cancel];
           return;
-        case FBFutureStateCompletedWithResult:
+        case FBFutureStateDone:
           [final resolveWithResult:resolved.result];
           return;
-        case FBFutureStateCompletedWithError:
+        case FBFutureStateFailed:
           resolveRecursive();
           return;
         default:
@@ -234,17 +234,17 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
 
     FBFutureState state = future.state;
     switch (state) {
-      case FBFutureStateCompletedWithResult:
+      case FBFutureStateDone:
         results[index] = future.result;
         remaining--;
         if (remaining == 0) {
           [compositeFuture resolveWithResult:[results copy]];
         }
         return;
-      case FBFutureStateCompletedWithError:
+      case FBFutureStateFailed:
         [compositeFuture resolveWithError:future.error];
         return;
-      case FBFutureStateCompletedWithCancellation:
+      case FBFutureStateCancelled:
         [compositeFuture cancel];
         return;
       default:
@@ -390,7 +390,7 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
 {
   FBMutableFuture *chained = FBMutableFuture.future;
   [self onQueue:queue notifyOfCompletion:^(FBFuture *future) {
-    if (future.state == FBFutureStateCompletedWithCancellation) {
+    if (future.state == FBFutureStateCancelled) {
       [chained cancel];
       return;
     }
@@ -398,13 +398,13 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
     [next onQueue:queue notifyOfCompletion:^(FBFuture *final) {
       FBFutureState state = final.state;
       switch (state) {
-        case FBFutureStateCompletedWithError:
+        case FBFutureStateFailed:
           [chained resolveWithError:final.error];
           break;
-        case FBFutureStateCompletedWithResult:
+        case FBFutureStateDone:
           [chained resolveWithResult:final.result];
           break;
-        case FBFutureStateCompletedWithCancellation:
+        case FBFutureStateCancelled:
           [chained cancel];
           break;
         default:
@@ -423,7 +423,7 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
       [chained resolveWithError:future.error];
       return;
     }
-    if (future.state == FBFutureStateCompletedWithCancellation) {
+    if (future.state == FBFutureStateCancelled) {
       [chained cancel];
       return;
     }
@@ -542,7 +542,7 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
   @synchronized (self) {
     if (self.state == FBFutureStateRunning) {
       self.result = result;
-      self.state = FBFutureStateCompletedWithResult;
+      self.state = FBFutureStateDone;
       [self fireAllHandlers];
     }
   }
@@ -555,7 +555,7 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
   @synchronized (self) {
     if (self.state == FBFutureStateRunning) {
       self.error = error;
-      self.state = FBFutureStateCompletedWithError;
+      self.state = FBFutureStateFailed;
       [self fireAllHandlers];
     }
   }
@@ -566,7 +566,7 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
 {
   @synchronized (self) {
     if (self.state == FBFutureStateRunning) {
-      self.state = FBFutureStateCompletedWithCancellation;
+      self.state = FBFutureStateCancelled;
       [self fireAllHandlers];
     }
   }
@@ -588,13 +588,13 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
   void (^resolve)(FBFuture *future) = ^(FBFuture *resolvedFuture){
     FBFutureState state = resolvedFuture.state;
     switch (state) {
-      case FBFutureStateCompletedWithError:
+      case FBFutureStateFailed:
         [self resolveWithError:resolvedFuture.error];
         return;
-      case FBFutureStateCompletedWithResult:
+      case FBFutureStateDone:
         [self resolveWithResult:resolvedFuture.result];
         return;
-      case FBFutureStateCompletedWithCancellation:
+      case FBFutureStateCancelled:
         [self cancel];
         return;
       default:

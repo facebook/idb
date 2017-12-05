@@ -76,7 +76,7 @@ class SynchronousRelay : Relay {
     let _ = try FBFuture(race: futures).await()
 
     // If there's an async cancellation, we can ensure that we wait for it to finish.
-    if let completedFuture = self.continuation?.completed, completedFuture.state == .completedWithCancellation {
+    if let completedFuture = self.continuation?.completed, completedFuture.state == .cancelled {
       let _ = try completedFuture.cancel().await()
     }
   }

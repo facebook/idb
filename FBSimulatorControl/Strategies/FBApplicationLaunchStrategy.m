@@ -102,7 +102,7 @@
       return [[FBSimulatorApplicationOperation
         operationWithSimulator:simulator configuration:appLaunch launchFuture:launch]
         onQueue:simulator.workQueue notifyOfCompletion:^(FBFuture *future) {
-          if (future.state != FBFutureStateCompletedWithResult) {
+          if (future.state != FBFutureStateDone) {
             return;
           }
           if (stdOutDiagnostic) {

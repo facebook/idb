@@ -15,10 +15,10 @@ NS_ASSUME_NONNULL_BEGIN
  A State for the Future.
  */
 typedef NS_ENUM(NSUInteger, FBFutureState) {
-  FBFutureStateRunning,
-  FBFutureStateCompletedWithResult,
-  FBFutureStateCompletedWithError,
-  FBFutureStateCompletedWithCancellation,
+  FBFutureStateRunning,  /* The Future hasn't resolved yet */
+  FBFutureStateDone,  /* The Future has resolved successfully */
+  FBFutureStateFailed,  /* The Future has resolved in error */
+  FBFutureStateCancelled,  /* The Future has been cancelled */
 };
 
 /**
