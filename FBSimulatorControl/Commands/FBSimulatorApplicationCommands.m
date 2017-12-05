@@ -180,6 +180,28 @@
     }];
 }
 
+- (FBFuture<NSDictionary<NSString *, FBProcessInfo *> *> *)runningApplications
+{
+  return [[self.simulator
+    serviceNamesAndProcessIdentifiersForSubstring:@"UIKitApplication"]
+    onQueue:self.simulator.asyncQueue map:^(NSDictionary<NSString *, NSNumber *> *serviceNameToProcessIdentifier) {
+      NSMutableDictionary<NSString *, FBProcessInfo *> *mapping = [NSMutableDictionary dictionary];
+      for (NSString *serviceName in serviceNameToProcessIdentifier.allKeys) {
+        NSString *bundleName = [FBSimulatorLaunchCtlCommands extractApplicationBundleIdentifierFromServiceName:serviceName];
+        if (!bundleName) {
+          continue;
+        }
+        NSNumber *processIdentifier = serviceNameToProcessIdentifier[serviceName];
+        FBProcessInfo *processInfo = [self.simulator.processFetcher.processFetcher processInfoFor:processIdentifier.intValue];
+        if (!processInfo) {
+          continue;
+        }
+        mapping[bundleName] = processInfo;
+      }
+      return mapping;
+    }];
+}
+
 - (FBFuture<FBProcessInfo *> *)runningApplicationWithBundleID:(NSString *)bundleID
 {
   NSParameterAssert(bundleID);

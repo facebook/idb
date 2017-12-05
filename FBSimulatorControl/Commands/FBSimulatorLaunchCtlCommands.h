@@ -99,6 +99,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorLaunchCtlCommands : NSObject <FBSimulatorLaunchCtlCommands>
 
+#pragma mark Helpers
+
+/**
+ Extracts the Bundle Identifier from a Service Name.
+
+ @param serviceName the service name to extract from
+ @return the Bundle ID, if found.
+ */
++ (nullable NSString *)extractApplicationBundleIdentifierFromServiceName:(NSString *)serviceName;
+
 @end
 
 NS_ASSUME_NONNULL_END

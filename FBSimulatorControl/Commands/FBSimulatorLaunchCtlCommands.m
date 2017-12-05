@@ -135,8 +135,6 @@
     }];
 }
 
-#pragma mark Public
-
 - (FBFuture<NSDictionary<NSString *, id> *> *)listServices
 {
   return [[self
@@ -183,7 +181,32 @@
     rephraseFailure:@"Failed to start service '%@'", serviceName];
 }
 
+#pragma mark Helpers
+
++ (nullable NSString *)extractApplicationBundleIdentifierFromServiceName:(NSString *)serviceName
+{
+  NSRegularExpression *regex = self.regularExpressionForServiceNameToBundleID;
+  NSTextCheckingResult *result = [regex firstMatchInString:serviceName options:0 range:NSMakeRange(0, serviceName.length)];
+  if (!result) {
+    return nil;
+  }
+  NSRange range = [result rangeAtIndex:1];
+  return [serviceName substringWithRange:range];
+}
+
 #pragma mark Private
+
++ (NSRegularExpression *)regularExpressionForServiceNameToBundleID
+{
+  static dispatch_once_t onceToken;
+  static NSRegularExpression *regex;
+  dispatch_once(&onceToken, ^{
+    NSError *error = nil;
+    regex = [NSRegularExpression regularExpressionWithPattern:@"UIKitApplication:([^\\[]*).*" options:NSRegularExpressionDotMatchesLineSeparators error:&error];
+    NSCAssert(regex, @"Should be able to compile regex %@", error);
+  });
+  return regex;
+}
 
 + (NSString *)extractServiceNameFromListLine:(NSString *)line processIdentifierOut:(pid_t *)processIdentifierOut error:(NSError **)error
 {
