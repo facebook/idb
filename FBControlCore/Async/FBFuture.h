@@ -229,17 +229,17 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 /**
  The Error if one is present.
  */
-@property (nonatomic, copy, nullable, readonly) NSError *error;
+@property (atomic, copy, nullable, readonly) NSError *error;
 
 /**
  The Result.
  */
-@property (nonatomic, copy, nullable, readonly) T result;
+@property (atomic, copy, nullable, readonly) T result;
 
 /**
  The State.
  */
-@property (nonatomic, assign, readonly) FBFutureState state;
+@property (atomic, assign, readonly) FBFutureState state;
 
 @end
 

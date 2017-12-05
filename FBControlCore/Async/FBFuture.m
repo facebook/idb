@@ -92,10 +92,6 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
 
 @interface FBFuture ()
 
-@property (nonatomic, copy, nullable, readwrite) NSError *error;
-@property (nonatomic, copy, nullable, readwrite) id result;
-@property (nonatomic, assign, readwrite) FBFutureState state;
-
 @property (nonatomic, strong, readonly) NSMutableArray<FBFuture_Handler *> *handlers;
 @property (nonatomic, strong, nullable, readwrite) FBFuture_Cancellation *cancelResponder;
 @property (nonatomic, strong, nullable, readwrite) FBFuture<NSNull *> *resolvedCancellation;
