@@ -71,9 +71,4 @@
   [self.eventSink didChangeState:state];
 }
 
-- (void)terminationHandleAvailable:(id<FBTerminationHandle>)terminationHandle
-{
-  [self.eventSink terminationHandleAvailable:terminationHandle];
-}
-
 @end

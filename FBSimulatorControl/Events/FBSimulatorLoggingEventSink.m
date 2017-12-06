@@ -104,9 +104,4 @@
   [self.logger logFormat:@"Did Change State => %@", FBSimulatorStateStringFromState(state)];
 }
 
-- (void)terminationHandleAvailable:(id<FBTerminationHandle>)terminationHandle
-{
-
-}
-
 @end

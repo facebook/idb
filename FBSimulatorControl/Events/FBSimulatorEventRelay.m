@@ -203,11 +203,6 @@
   [self.sink didChangeState:state];
 }
 
-- (void)terminationHandleAvailable:(id<FBTerminationHandle>)terminationHandle
-{
-  [self.sink terminationHandleAvailable:terminationHandle];
-}
-
 #pragma mark Private
 
 #pragma mark Process Termination

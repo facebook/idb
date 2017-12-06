@@ -140,11 +140,6 @@ NSString *const FBSimulatorNotificationUserInfoKeyWaitingForDebugger = @"waiting
   }];
 }
 
-- (void)terminationHandleAvailable:(id<FBTerminationHandle>)terminationHandle
-{
-
-}
-
 #pragma mark Private
 
 - (void)materializeNotification:(FBSimulatorNotificationName)notificationName userInfo:(NSDictionary *)userInfo

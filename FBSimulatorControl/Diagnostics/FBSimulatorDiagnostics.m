@@ -270,11 +270,6 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
 
 }
 
-- (void)terminationHandleAvailable:(id<FBTerminationHandle>)terminationHandle
-{
-
-}
-
 #pragma mark Paths
 
 + (NSString *)storageDirectoryForSimulator:(FBSimulator *)simulator

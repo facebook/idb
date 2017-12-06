@@ -15,7 +15,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBMutableSimulatorEventSink;
 @class FBSimulatorEventRelay;
 @class FBSimulatorProcessFetcher;
-@class FBSimulatorResourceManager;
 @class FBiOSTargetCommandForwarder;
 
 @protocol FBControlCoreLogger;
@@ -24,7 +23,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, readonly) FBSimulatorEventRelay *eventRelay;
 @property (nonatomic, strong, readonly, nullable) FBMutableSimulatorEventSink *mutableSink;
-@property (nonatomic, strong, readonly) FBSimulatorResourceManager *resourceSink;
 @property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 @property (nonatomic, strong, readonly) FBiOSTargetCommandForwarder *forwarder;
 

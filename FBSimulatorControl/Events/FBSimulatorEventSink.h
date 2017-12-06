@@ -19,7 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulatorAgentOperation;
 @class FBSimulatorConnection;
 @class FBTestManager;
-@protocol FBTerminationHandle;
 @protocol FBJSONSerializable;
 
 /**
@@ -116,13 +115,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param state the changed state.
  */
 - (void)didChangeState:(FBSimulatorState)state;
-
-/**
- Event for the availibility of new Termination Handle.
-
- @param terminationHandle the Termination Handle that is required to be called on Simulator teardown.
- */
-- (void)terminationHandleAvailable:(id<FBTerminationHandle>)terminationHandle;
 
 @end
 

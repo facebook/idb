@@ -14,7 +14,6 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorResourceManager.h"
 #import "FBSimulatorXCTestProcessExecutor.h"
 
 @interface FBSimulatorXCTestCommands ()

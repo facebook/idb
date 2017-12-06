@@ -38,7 +38,6 @@
 #import "FBSimulatorLoggingEventSink.h"
 #import "FBSimulatorNotificationEventSink.h"
 #import "FBSimulatorPool.h"
-#import "FBSimulatorResourceManager.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorSettingsCommands.h"
 #import "FBSimulatorVideoRecordingCommands.h"
@@ -93,15 +92,13 @@
   FBSimulatorLoggingEventSink *loggingSink = [FBSimulatorLoggingEventSink withSimulator:self logger:self.logger];
   FBMutableSimulatorEventSink *mutableSink = [FBMutableSimulatorEventSink new];
   FBSimulatorDiagnostics *diagnosticsSink = [FBSimulatorDiagnostics withSimulator:self];
-  FBSimulatorResourceManager *resourceSink = [FBSimulatorResourceManager new];
 
-  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[notificationSink, loggingSink, diagnosticsSink, mutableSink, resourceSink]];
+  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[notificationSink, loggingSink, diagnosticsSink, mutableSink]];
   FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithSimDevice:self.device launchdProcess:launchdSimProcess containerApplication:containerApplicationProcess processFetcher:self.processFetcher queue:self.workQueue sink:compositeSink];
 
   _eventRelay = relay;
   _mutableSink = mutableSink;
   _simulatorDiagnostics = diagnosticsSink;
-  _resourceSink = resourceSink;
 
   return self;
 }

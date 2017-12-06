@@ -118,11 +118,4 @@
   }
 }
 
-- (void)terminationHandleAvailable:(id<FBTerminationHandle>)terminationHandle
-{
-  for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink terminationHandleAvailable:terminationHandle];
-  }
-}
-
 @end
