@@ -336,6 +336,61 @@
   XCTAssertEqual(self.reporter.failedTests.count, 3u);
 }
 
+- (void)testMacOSXApplicationTest
+{
+  NSError *error;
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *applicationPath = [FBXCTestKitFixtures macCommonAppPath];
+  NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
+
+  NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
+  NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-appTest", appTestArgument ];
+
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
+
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
+  BOOL success = [[testRunner execute] await:&error] != nil;
+  XCTAssertTrue(success);
+  XCTAssertNil(error);
+
+  XCTAssertTrue(self.reporter.printReportWasCalled);
+  XCTAssertEqual(self.reporter.startedSuites.count, 3u);
+  XCTAssertEqual(self.reporter.startedTests.count, 10u);
+  XCTAssertEqual(self.reporter.passedTests.count, 6u);
+  XCTAssertEqual(self.reporter.failedTests.count, 4u);
+}
+
+- (void)testMacOSXUITest
+{
+  NSError *error;
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *applicationPath = [FBXCTestKitFixtures macCommonAppPath];
+  NSString *testBundlePath = [FBXCTestKitFixtures macUITestBundlePath];
+  NSString *testTargetPath = [FBXCTestKitFixtures macUITestAppTargetPath];
+  NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@:%@", testBundlePath, applicationPath, testTargetPath];
+  NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-uiTest", appTestArgument ];
+
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
+
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
+  BOOL success = [[testRunner execute] await:&error] != nil;
+  XCTAssertTrue(success);
+  XCTAssertNil(error);
+
+  XCTAssertTrue(self.reporter.printReportWasCalled);
+
+  NSArray<NSArray<NSString *> *> *uiTestList = @[
+    @[@"MacUITestFixtureUITests", @"testHelloWorld"],
+  ];
+  XCTAssertEqualObjects(self.reporter.startedTests, uiTestList);
+  XCTAssertEqualObjects(self.reporter.passedTests, uiTestList);
+  XCTAssertEqualObjects(self.reporter.failedTests, @[]);
+}
+
 - (void)testMacOSXLogicTestEndsOnStallingTest
 {
   NSError *error = nil;

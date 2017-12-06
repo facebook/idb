@@ -538,6 +538,10 @@
 		EE1277611C9338D700DE52A1 /* FBTestManager.m in Sources */ = {isa = PBXBuildFile; fileRef = EE12775B1C9338D700DE52A1 /* FBTestManager.m */; };
 		EE1277621C9338D700DE52A1 /* FBTestManagerAPIMediator.h in Headers */ = {isa = PBXBuildFile; fileRef = EE12775C1C9338D700DE52A1 /* FBTestManagerAPIMediator.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EE1277641C9338D700DE52A1 /* FBTestManagerAPIMediator.m in Sources */ = {isa = PBXBuildFile; fileRef = EE12775E1C9338D700DE52A1 /* FBTestManagerAPIMediator.m */; };
+		EE2586F01FB06D9C00E7526E /* FBMacDevice.m in Sources */ = {isa = PBXBuildFile; fileRef = EE2586EE1FB06D9C00E7526E /* FBMacDevice.m */; };
+		EE2586F11FB06D9C00E7526E /* FBMacDevice.h in Headers */ = {isa = PBXBuildFile; fileRef = EE2586EF1FB06D9C00E7526E /* FBMacDevice.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE2586FD1FB072F700E7526E /* FBMacTestPreparationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = EE2586FB1FB072F700E7526E /* FBMacTestPreparationStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE2586FE1FB072F700E7526E /* FBMacTestPreparationStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = EE2586FC1FB072F700E7526E /* FBMacTestPreparationStrategy.m */; };
 		EE2EC7AC1CAC3F97009A7BB1 /* FBWeakFramework.h in Headers */ = {isa = PBXBuildFile; fileRef = EE2EC7AA1CAC3F97009A7BB1 /* FBWeakFramework.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EE2EC7AD1CAC3F97009A7BB1 /* FBWeakFramework.m in Sources */ = {isa = PBXBuildFile; fileRef = EE2EC7AB1CAC3F97009A7BB1 /* FBWeakFramework.m */; };
 		EE2EC7B01CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.h in Headers */ = {isa = PBXBuildFile; fileRef = EE2EC7AE1CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1461,6 +1465,10 @@
 		EE12775B1C9338D700DE52A1 /* FBTestManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManager.m; sourceTree = "<group>"; };
 		EE12775C1C9338D700DE52A1 /* FBTestManagerAPIMediator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerAPIMediator.h; sourceTree = "<group>"; };
 		EE12775E1C9338D700DE52A1 /* FBTestManagerAPIMediator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerAPIMediator.m; sourceTree = "<group>"; };
+		EE2586EE1FB06D9C00E7526E /* FBMacDevice.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBMacDevice.m; sourceTree = "<group>"; };
+		EE2586EF1FB06D9C00E7526E /* FBMacDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBMacDevice.h; sourceTree = "<group>"; };
+		EE2586FB1FB072F700E7526E /* FBMacTestPreparationStrategy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBMacTestPreparationStrategy.h; sourceTree = "<group>"; };
+		EE2586FC1FB072F700E7526E /* FBMacTestPreparationStrategy.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBMacTestPreparationStrategy.m; sourceTree = "<group>"; };
 		EE2EC7AA1CAC3F97009A7BB1 /* FBWeakFramework.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBWeakFramework.h; sourceTree = "<group>"; };
 		EE2EC7AB1CAC3F97009A7BB1 /* FBWeakFramework.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBWeakFramework.m; sourceTree = "<group>"; };
 		EE2EC7AE1CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBWeakFramework+ApplePrivateFrameworks.h"; sourceTree = "<group>"; };
@@ -2797,12 +2805,24 @@
 			path = TestManager;
 			sourceTree = "<group>";
 		};
+		EE2586F61FB0727000E7526E /* MacStrategies */ = {
+			isa = PBXGroup;
+			children = (
+				EE2586EF1FB06D9C00E7526E /* FBMacDevice.h */,
+				EE2586EE1FB06D9C00E7526E /* FBMacDevice.m */,
+				EE2586FB1FB072F700E7526E /* FBMacTestPreparationStrategy.h */,
+				EE2586FC1FB072F700E7526E /* FBMacTestPreparationStrategy.m */,
+			);
+			path = MacStrategies;
+			sourceTree = "<group>";
+		};
 		EE4F0D311C91B7DA00608E89 /* XCTestBootstrap */ = {
 			isa = PBXGroup;
 			children = (
 				EE4F0D491C91B82700608E89 /* Bundles */,
 				AAE5A0901EDF96CB00A1A811 /* Configuration */,
 				EE4F0D5C1C91B82700608E89 /* DeviceHandling */,
+				EE2586F61FB0727000E7526E /* MacStrategies */,
 				AAE5A0831EDF90DB00A1A811 /* Reporters */,
 				EE4F0D5E1C91B82700608E89 /* Strategies */,
 				EE1277591C9338D700DE52A1 /* TestManager */,
@@ -3300,6 +3320,7 @@
 				EE4F0D761C91B82700608E89 /* FBProductBundle+Private.h in Headers */,
 				EE4F0D8D1C91B82700608E89 /* XCTestBootstrapError.h in Headers */,
 				AA6062F21EE4B59900E2EFEE /* FBLogicTestRunStrategy.h in Headers */,
+				EE2586F11FB06D9C00E7526E /* FBMacDevice.h in Headers */,
 				AAE5A08E1EDF926100A1A811 /* FBXCTestReporterAdapter.h in Headers */,
 				EE1277601C9338D700DE52A1 /* FBTestManager.h in Headers */,
 				AAEA64751CDB31C600194B6B /* FBTestManagerTestReporter.h in Headers */,
@@ -3327,6 +3348,7 @@
 				AA83EB211D7023F200E5C864 /* FBTestDaemonResult.h in Headers */,
 				AA7FA7AA1CDCF26E00614A61 /* FBTestManagerResultSummary.h in Headers */,
 				2F8294D31FBC798C0011E722 /* FBLogicXCTestReporter.h in Headers */,
+				EE2586FD1FB072F700E7526E /* FBMacTestPreparationStrategy.h in Headers */,
 				AA6062EE1EE4A96D00E2EFEE /* FBMacXCTestProcessExecutor.h in Headers */,
 				AA6062EA1EE4A6B100E2EFEE /* FBXCTestProcess.h in Headers */,
 			);
@@ -3930,9 +3952,11 @@
 				3E1499451D4C574F005A5C8F /* FBTestManagerTestReporterTestSuite.m in Sources */,
 				AA9738BB1EE11BED002802F1 /* FBXCTestConfiguration.m in Sources */,
 				AA12D5451CE1086300CCD944 /* FBTestReporterForwarder.m in Sources */,
+				EE2586FE1FB072F700E7526E /* FBMacTestPreparationStrategy.m in Sources */,
 				AAE5A0821EDF8C9C00A1A811 /* FBXCTestLogger.m in Sources */,
 				AA6062F31EE4B59900E2EFEE /* FBLogicTestRunStrategy.m in Sources */,
 				EE4F0D881C91B82700608E89 /* FBXCTestRunStrategy.m in Sources */,
+				EE2586F01FB06D9C00E7526E /* FBMacDevice.m in Sources */,
 				EE4F0D7A1C91B82700608E89 /* FBTestBundle.m in Sources */,
 				AA0DC7571CE3A29F0037A8A7 /* FBTestDaemonConnection.m in Sources */,
 				05E1E34F1E3DBA87004F67B8 /* FBTestManagerJUnitGenerator.m in Sources */,
