@@ -21,14 +21,15 @@
 #import <objc/runtime.h>
 
 #import "FBCoreSimulatorTerminationStrategy.h"
+#import "FBSimulatorContainerApplicationLifecycleStrategy.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorEraseStrategy.h"
-#import "FBSimulatorShutdownStrategy.h"
-#import "FBSimulatorDeletionStrategy.h"
-#import "FBSimulatorTerminationStrategy.h"
 #import "FBSimulatorControlFrameworkLoader.h"
+#import "FBSimulatorDeletionStrategy.h"
+#import "FBSimulatorEraseStrategy.h"
 #import "FBSimulatorInflationStrategy.h"
+#import "FBSimulatorShutdownStrategy.h"
+#import "FBSimulatorTerminationStrategy.h"
 
 @implementation FBSimulatorSet
 
@@ -65,6 +66,7 @@
   _allSimulators = @[];
   _processFetcher = [FBSimulatorProcessFetcher fetcherWithProcessFetcher:[FBProcessFetcher new]];
   _inflationStrategy = [FBSimulatorInflationStrategy strategyForSet:self];
+  _containerApplicationStrategy = [FBSimulatorContainerApplicationLifecycleStrategy strategyForSet:self];
 
   return self;
 }

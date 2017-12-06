@@ -58,7 +58,6 @@
   _knownLaunchedProcesses = [NSMutableSet set];
   _lastKnownState = FBSimulatorStateUnknown;
 
-  [self registerSimulatorLifecycleHandlers];
   [self createNotifierForSimDevice:simDevice];
 
   return self;
@@ -67,7 +66,6 @@
 - (void)dealloc
 {
   [self unregisterAllNotifiers];
-  [self unregisterSimulatorLifecycleHandlers];
 }
 
 #pragma mark FBSimulatorEventSink Protocol Implementation
@@ -252,56 +250,6 @@
 
   // Notify of Simulator Termination.
   [self simulatorDidTerminate:self.launchdProcess expected:NO];
-}
-
-#pragma mark Simulator Application Launch/Termination
-
-- (void)registerSimulatorLifecycleHandlers
-{
-  [NSWorkspace.sharedWorkspace.notificationCenter addObserver:self selector:@selector(workspaceApplicationDidLaunch:) name:NSWorkspaceDidLaunchApplicationNotification object:nil];
-  [NSWorkspace.sharedWorkspace.notificationCenter addObserver:self selector:@selector(workspaceApplicationDidTerminate:) name:NSWorkspaceDidTerminateApplicationNotification object:nil];
-}
-
-- (void)unregisterSimulatorLifecycleHandlers
-{
-  [NSWorkspace.sharedWorkspace.notificationCenter removeObserver:self name:NSWorkspaceDidLaunchApplicationNotification object:nil];
-  [NSWorkspace.sharedWorkspace.notificationCenter removeObserver:self name:NSWorkspaceDidTerminateApplicationNotification object:nil];
-}
-
-- (void)workspaceApplicationDidLaunch:(NSNotification *)notification
-{
-  // Don't fetch Container Application info if we already have it
-  if (self.containerApplication) {
-    return;
-  }
-
-  // The Application must contain the FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID key in the environment
-  // This Environment Variable exists to allow interested parties to know the UDID of the Launched Simulator,
-  // without having to inspect the Simulator Application's launchd_sim first.
-  NSRunningApplication *launchedApplication = notification.userInfo[NSWorkspaceApplicationKey];
-  FBProcessInfo *simulatorProcess = [self.processFetcher.processFetcher processInfoFor:launchedApplication.processIdentifier];
-  if (![simulatorProcess.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID] isEqual:self.simDevice.UDID.UUIDString]) {
-    return;
-  }
-
-  [self containerApplicationDidLaunch:simulatorProcess];
-}
-
-- (void)workspaceApplicationDidTerminate:(NSNotification *)notification
-{
-  // Don't look at the application if we know if we don't consider the Simulator launched.
-  if (!self.containerApplication) {
-    return;
-  }
-
-  // See if the terminated application is the same as the launch info.
-  NSRunningApplication *terminatedApplication = notification.userInfo[NSWorkspaceApplicationKey];
-  if (terminatedApplication.processIdentifier != self.containerApplication.processIdentifier) {
-    return;
-  }
-
-  // Notify of Simulator Termination.
-  [self containerApplicationDidTerminate:self.containerApplication expected:NO];
 }
 
 @end

@@ -9,6 +9,7 @@
 
 #import <FBSimulatorControl/FBSimulatorSet.h>
 
+@class FBSimulatorContainerApplicationLifecycleStrategy;
 @class FBSimulatorInflationStrategy;
 
 @interface FBSimulatorSet ()
@@ -16,5 +17,6 @@
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logger;
 
 @property (nonatomic, strong, readonly) FBSimulatorInflationStrategy *inflationStrategy;
+@property (nonatomic, strong, readonly) FBSimulatorContainerApplicationLifecycleStrategy *containerApplicationStrategy;
 
 @end
