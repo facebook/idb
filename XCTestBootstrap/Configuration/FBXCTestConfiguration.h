@@ -19,6 +19,11 @@ NS_ASSUME_NONNULL_BEGIN
 typedef NSString *FBXCTestType NS_STRING_ENUM;
 
 /**
+ An UITest.
+ */
+extern FBXCTestType const FBXCTestTypeUITest;
+
+/**
  An Application Test.
  */
 #define FBXCTestTypeApplicationTestValue @"application-test"

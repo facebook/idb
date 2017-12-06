@@ -129,7 +129,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       }
       NSString *testBundlePath = [parameter substringToIndex:colonRange.location];
       NSString *testRunnerPath = [parameter substringFromIndex:colonRange.location + 1];
-      NSString *testRunnerAppPath = [testRunnerPath stringByDeletingLastPathComponent];
+      NSString *testRunnerAppPath = [self extractBundlePathFromString:testRunnerPath];
 
       if (*testBundlePathOut != nil) {
         return [[FBXCTestError
@@ -145,8 +145,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
         return [[FBXCTestError describeFormat:@"Test specifier should contain three colon separated components: %@", parameter] failBool:error];
       }
       NSString *testBundlePath = components[0];
-      NSString *testRunnerPath = [components[1] stringByDeletingLastPathComponent];
-      NSString *testTargetPath = [components[2] stringByDeletingLastPathComponent];
+      NSString *testRunnerPath = [self extractBundlePathFromString:components[1]];
+      NSString *testTargetPath = [self extractBundlePathFromString:components[2]];
+
       if (*testBundlePathOut != nil) {
         return [[FBXCTestError
           describe:@"Only a single -logicTest or -appTest argument expected"]
@@ -276,6 +277,14 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
     }
   }
   return YES;
+}
+
++ (NSString *)extractBundlePathFromString:(NSString *)path
+{
+  while (![path hasSuffix:@"app"] && path.length != 0) {
+    path = path.stringByDeletingLastPathComponent;
+  }
+  return path;
 }
 
 @end
