@@ -72,7 +72,7 @@
 - (FBFuture<FBSimulatorApplicationOperation *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch
 {
   FBSimulator *simulator = self.simulator;
-  return [[[[simulator
+  return [[[[[simulator
     installedApplicationWithBundleID:appLaunch.bundleID]
     rephraseFailure:@"App %@ can't be launched as it isn't installed", appLaunch.bundleID]
     onQueue:simulator.workQueue fmap:^(FBInstalledApplication *_) {
@@ -88,16 +88,19 @@
         }];
     }]
     onQueue:simulator.workQueue fmap:^FBFuture<FBSimulatorApplicationOperation *> *(id _) {
-      NSError *error = nil;
-      FBDiagnostic *stdOutDiagnostic = nil;
-      if (![appLaunch createStdOutDiagnosticForSimulator:simulator diagnosticOut:&stdOutDiagnostic error:&error]) {
-        return [FBSimulatorError failFutureWithError:error];
-      }
-      // Make the stderr file.
-      FBDiagnostic *stdErrDiagnostic = nil;
-      if (![appLaunch createStdErrDiagnosticForSimulator:simulator diagnosticOut:&stdErrDiagnostic error:&error]) {
-        return [FBSimulatorError failFutureWithError:error];
-      }
+      return [FBFuture futureWithFutures:@[
+        [appLaunch createStdOutDiagnosticForSimulator:simulator],
+        [appLaunch createStdErrDiagnosticForSimulator:simulator],
+      ]];
+    }]
+    onQueue:simulator.workQueue fmap:^FBFuture<FBSimulatorApplicationOperation *> *(NSArray<id> *diagnostics) {
+      // Extract the diagnostics
+      FBDiagnostic *stdOutDiagnostic = diagnostics[0];
+      stdOutDiagnostic = [stdOutDiagnostic isKindOfClass:FBDiagnostic.class] ? stdOutDiagnostic : nil;
+      FBDiagnostic *stdErrDiagnostic = diagnostics[1];
+      stdErrDiagnostic = [stdErrDiagnostic isKindOfClass:FBDiagnostic.class] ? stdErrDiagnostic : nil;
+
+      // Launch the Application
       FBFuture<NSNumber *> *launch = [self launchApplication:appLaunch stdOutPath:stdOutDiagnostic.asPath stdErrPath:stdErrDiagnostic.asPath];
       return [[FBSimulatorApplicationOperation
         operationWithSimulator:simulator configuration:appLaunch launchFuture:launch]

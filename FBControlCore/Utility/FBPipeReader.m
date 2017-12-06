@@ -44,19 +44,14 @@
 
 #pragma mark Public Methods
 
-- (BOOL)startReadingWithError:(NSError **)error
+- (FBFuture<NSNull *> *)startReading;
 {
-  return [self.reader startReadingWithError:error];
+  return [self.reader startReading];
 }
 
 - (FBFuture<NSNull *> *)stopReading
 {
   return self.reader.stopReading;
-}
-
-- (BOOL)stopReadingWithError:(NSError **)error
-{
-  return [self.reader stopReadingWithError:error];
 }
 
 @end

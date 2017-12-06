@@ -75,23 +75,23 @@
   return options;
 }
 
-- (BOOL)createStdOutDiagnosticForSimulator:(FBSimulator *)simulator diagnosticOut:(FBDiagnostic **)diagnosticOut error:(NSError **)error
+- (FBFuture<id> *)createStdOutDiagnosticForSimulator:(FBSimulator *)simulator
 {
-  return [self createDiagnosticForSelector:@selector(stdOut) simulator:simulator diagnosticOut:diagnosticOut error:error];
+  return [self createDiagnosticForSelector:@selector(stdOut) simulator:simulator];
 }
 
-- (BOOL)createStdErrDiagnosticForSimulator:(FBSimulator *)simulator diagnosticOut:(FBDiagnostic **)diagnosticOut error:(NSError **)error
+- (FBFuture<id> *)createStdErrDiagnosticForSimulator:(FBSimulator *)simulator
 {
-  return [self createDiagnosticForSelector:@selector(stdErr) simulator:simulator diagnosticOut:diagnosticOut error:error];
+  return [self createDiagnosticForSelector:@selector(stdErr) simulator:simulator];
 }
 
 #pragma mark Private
 
-- (BOOL)createDiagnosticForSelector:(SEL)selector simulator:(FBSimulator *)simulator diagnosticOut:(FBDiagnostic **)diagnosticOut error:(NSError **)error
+- (FBFuture<id> *)createDiagnosticForSelector:(SEL)selector simulator:(FBSimulator *)simulator
 {
   NSString *output = [self.output performSelector:selector];
   if (![output isKindOfClass:NSString.class]) {
-    return YES;
+    return [FBFuture futureWithResult:NSNull.null];
   }
 
   SEL diagnosticSelector = NSSelectorFromString([NSString stringWithFormat:@"%@:", NSStringFromSelector(selector)]);
@@ -105,16 +105,12 @@
   if (![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {
     return [[FBSimulatorError
       describeFormat:@"Could not create '%@' at path '%@' for config '%@'", NSStringFromSelector(selector), path, self]
-      failBool:error];
+      failFuture];
   }
 
   [builder updatePath:path];
 
-  if (diagnosticOut) {
-    *diagnosticOut = [builder build];
-  }
-
-  return YES;
+  return [FBFuture futureWithResult:[builder build]];
 }
 
 @end

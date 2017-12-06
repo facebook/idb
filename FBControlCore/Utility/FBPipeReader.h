@@ -43,10 +43,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Starts the Consumption of the Pipe
 
- @param error an error out for any error that occurs.
- @return YES if the reading started normally, NO otherwise.
+ @return a Future that starts when reading has started.
  */
-- (BOOL)startReadingWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)startReading;
 
 /**
  Stops reading the Pipe.
@@ -54,14 +53,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Future when all of the work has been drained.
  */
 - (FBFuture<NSNull *> *)stopReading;
-
-/**
- Stops the Consumption of the Pipe.
-
- @param error an error out for any error that occurs.
- @return YES if the reading terminated normally, NO otherwise.
- */
-- (BOOL)stopReadingWithError:(NSError **)error;
 
 @end
 

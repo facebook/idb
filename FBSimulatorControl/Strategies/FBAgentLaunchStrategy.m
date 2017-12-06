@@ -59,12 +59,20 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 - (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch
 {
   FBSimulator *simulator = self.simulator;
-  FBProcessOutput *stdOut = nil;
-  FBProcessOutput *stdErr = nil;
-  NSError *error = nil;
-  if (![agentLaunch createOutputForSimulator:self.simulator stdOutOut:&stdOut stdErrOut:&stdErr error:&error]) {
-    return [FBSimulatorError failFutureWithError:error];
-  }
+  return [[agentLaunch
+    createOutputForSimulator:simulator]
+    onQueue:simulator.workQueue fmap:^(NSArray<id> *result) {
+      FBProcessOutput *stdOut = result[0];
+      stdOut = [stdOut isKindOfClass:FBProcessOutput.class] ? stdOut : nil;
+      FBProcessOutput *stdErr = result[1];
+      stdErr = [stdErr isKindOfClass:FBProcessOutput.class] ? stdErr : nil;
+      return [self launchAgent:agentLaunch stdOut:stdOut stdErr:stdErr];
+    }];
+}
+
+- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch stdOut:(FBProcessOutput *)stdOut stdErr:(FBProcessOutput *)stdErr
+{
+  FBSimulator *simulator = self.simulator;
 
   // Launch the Process
   FBMutableFuture *terminationFuture = [FBMutableFuture future];
@@ -105,38 +113,34 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 {
   // Start reading the pipe
   FBPipeReader *pipe = [FBPipeReader pipeReaderWithConsumer:consumer];
-  NSError *error = nil;
-  if (![pipe startReadingWithError:&error]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Could not start reading stdout of %@", agentLaunch]
-      causedBy:error]
-      failFuture];
-  }
+  return [[pipe
+    startReading]
+    onQueue:self.simulator.workQueue fmap:^(id _) {
+      // The Process launches and terminates synchronously
+      FBMutableFuture<NSNumber *> *terminationFuture = [FBMutableFuture future];
+      FBFuture<NSNumber *> *launchFuture = [self
+        launchAgentWithLaunchPath:agentLaunch.agentBinary.path
+        arguments:agentLaunch.arguments
+        environment:agentLaunch.environment
+        waitForDebugger:NO
+        stdOut:pipe.pipe.fileHandleForWriting
+        stdErr:nil
+        terminationFuture:terminationFuture];
 
-  // The Process launches and terminates synchronously
-  FBMutableFuture<NSNumber *> *terminationFuture = [FBMutableFuture future];
-  FBFuture<NSNumber *> *launchFuture = [self
-    launchAgentWithLaunchPath:agentLaunch.agentBinary.path
-    arguments:agentLaunch.arguments
-    environment:agentLaunch.environment
-    waitForDebugger:NO
-    stdOut:pipe.pipe.fileHandleForWriting
-    stdErr:nil
-    terminationFuture:terminationFuture];
-
-  return [[launchFuture
-    onQueue:self.simulator.workQueue chain:^FBFuture *(FBFuture *future) {
-      NSError *innerError = future.error;
-      if (innerError) {
-        return [FBFuture futureWithError:innerError];
-      }
-      return terminationFuture;
-    }]
-    onQueue:self.simulator.workQueue chain:^FBFuture<NSNumber *> *(FBFuture<NSNumber *> *innerFuture) {
-      return [[pipe
-        stopReading]
-        rephraseFailure:@"Could not stop reading stdout of %@", agentLaunch];
-  }];
+      return [[launchFuture
+        onQueue:self.simulator.workQueue chain:^FBFuture *(FBFuture *future) {
+          NSError *innerError = future.error;
+          if (innerError) {
+            return [FBFuture futureWithError:innerError];
+          }
+          return terminationFuture;
+        }]
+        onQueue:self.simulator.workQueue chain:^FBFuture<NSNumber *> *(FBFuture<NSNumber *> *innerFuture) {
+          return [[pipe
+            stopReading]
+            rephraseFailure:@"Could not stop reading stdout of %@", agentLaunch];
+        }];
+    }];
 }
 
 - (FBFuture<NSString *> *)launchConsumingStdout:(FBAgentLaunchConfiguration *)agentLaunch

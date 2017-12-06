@@ -51,32 +51,25 @@ NS_ASSUME_NONNULL_BEGIN
  Creates a FBDiagnostic for the location of the stdout, if applicable.
 
  @param simulator the simulator to create the diagnostic for.
- @param diagnosticOut an outparam for the diagnostic.
- @param error an error out for any error that occurs.
- @return a diagnostic if applicable, nil otherwise.
+ @return a Future that wraps a diagnostic, if one was created.
  */
-- (BOOL)createStdOutDiagnosticForSimulator:(FBSimulator *)simulator diagnosticOut:(FBDiagnostic *_Nullable * _Nullable)diagnosticOut error:(NSError **)error;
+- (FBFuture<id> *)createStdOutDiagnosticForSimulator:(FBSimulator *)simulator;
 
 /**
  Creates a FBDiagnostic for the location of the stderr, if applicable.
 
  @param simulator the simulator to create the diagnostic for.
- @param diagnosticOut an outparam for the diagnostic.
- @param error an error out for any error that occurs.
- @return a diagnostic if applicable, nil otherwise.
+ @return a Future that wraps a diagnostic, if one was created.
  */
-- (BOOL)createStdErrDiagnosticForSimulator:(FBSimulator *)simulator diagnosticOut:(FBDiagnostic *_Nullable* _Nullable)diagnosticOut error:(NSError **)error;
+- (FBFuture<id> *)createStdErrDiagnosticForSimulator:(FBSimulator *)simulator;
 
 /**
  Creates a FBDiagnostic for the location of the selector, if applicable.
 
- @param selector the selector to apply.
  @param simulator the simulator to create the diagnostic for.
- @param diagnosticOut an outparam for the diagnostic.
- @param error an error out for any error that occurs.
- @return a diagnostic if applicable, nil otherwise.
+ @return a Future that wraps a diagnostic, if one was created.
  */
-- (BOOL)createDiagnosticForSelector:(SEL)selector simulator:(FBSimulator *)simulator diagnosticOut:(FBDiagnostic *_Nullable*_Nullable)diagnosticOut error:(NSError **)error;
+- (FBFuture<id> *)createDiagnosticForSelector:(SEL)selector simulator:(FBSimulator *)simulator;
 
 /**
  A Name used to distinguish between Launch Configurations.

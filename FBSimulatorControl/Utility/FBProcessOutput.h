@@ -10,30 +10,37 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <FBControlCore/FBFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Termination Handle Type for Process Output.
  */
-extern FBTerminationHandleType const FBTerminationHandleTypeProcessOutput;
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
 
 /**
  Wraps the output of a Process.
  */
-@interface FBProcessOutput : NSObject <FBTerminationHandle>
+@interface FBProcessOutput : NSObject <FBiOSTargetContinuation>
+
+#pragma mark Initializers
 
 /**
  An Output Container for a File Handle.
 
  @param fileHandle the File Handle.
+ @param diagnostic the backing diagnostic.
+ @return a Process Output instance.
  */
 + (instancetype)outputForFileHandle:(NSFileHandle *)fileHandle diagnostic:(FBDiagnostic *)diagnostic;
 
 /**
  An Output Container for a File Consumer.
  */
-+ (nullable instancetype)outputWithConsumer:(id<FBFileConsumer>)consumer error:(NSError **)error;
++ (FBFuture<FBProcessOutput *> *)outputWithConsumer:(id<FBFileConsumer>)consumer;
+
+#pragma mark Properties
 
 /**
  The File Handle.

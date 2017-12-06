@@ -91,7 +91,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 {
   NSAssert(self.reader == nil, @"Cannot attach when already attached to a reader");
   self.reader = [FBPipeReader pipeReaderWithConsumer:self.consumer];
-  if (![self.reader startReadingWithError:error]) {
+  if (![[self.reader startReading] await:nil]) {
     self.reader = nil;
     return nil;
   }
@@ -100,7 +100,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 - (void)teardownResources
 {
-  [self.reader stopReadingWithError:nil];
+  [[self.reader stopReading] await:nil];
   self.reader = nil;
 }
 

@@ -39,58 +39,39 @@
 
 #pragma mark Public
 
-- (BOOL)createOutputForSimulator:(FBSimulator *)simulator stdOutOut:(FBProcessOutput **)stdOutOut stdErrOut:(FBProcessOutput **)stdErrOut error:(NSError **)error
+- (FBFuture<NSArray<id> *> *)createOutputForSimulator:(FBSimulator *)simulator
 {
-  FBProcessOutput *stdOut = nil;
-  FBProcessOutput *stdErr = nil;
-  if (![self createOutputForSimulator:simulator outputOut:&stdOut selector:@selector(stdOut) error:error]) {
-    return NO;
-  }
-  if (stdOutOut && stdOut) {
-    *stdOutOut = stdOut;
-  }
-  if (![self createOutputForSimulator:simulator outputOut:&stdErr selector:@selector(stdErr) error:error]) {
-    return NO;
-  }
-  if (stdErrOut && stdErr) {
-    *stdErrOut = stdErr;
-  }
-  return YES;
+  return [FBFuture futureWithFutures:@[
+    [self createOutputForSimulator:simulator selector:@selector(stdOut)],
+    [self createOutputForSimulator:simulator selector:@selector(stdErr)],
+  ]];
 }
 
 #pragma mark Private
 
-- (BOOL)createOutputForSimulator:(FBSimulator *)simulator outputOut:(FBProcessOutput **)outputOut selector:(SEL)selector error:(NSError **)error
+- (FBFuture<id> *)createOutputForSimulator:(FBSimulator *)simulator selector:(SEL)selector
 {
-  FBDiagnostic *diagnostic = nil;
-  if (![self createDiagnosticForSelector:selector simulator:simulator diagnosticOut:&diagnostic error:error]) {
-    return NO;
-  }
-  if (diagnostic) {
-    NSString *path = diagnostic.asPath;
-    NSFileHandle *handle = [NSFileHandle fileHandleForWritingAtPath:path];
-    if (!handle) {
-      return [[FBSimulatorError
-        describeFormat:@"Could not file handle for %@ at path '%@' for config '%@'", NSStringFromSelector(selector), path, self]
-        failBool:error];
-    }
-    if (outputOut) {
-      *outputOut = [FBProcessOutput outputForFileHandle:handle diagnostic:diagnostic];
-    }
-    return YES;
-  }
-  id<FBFileConsumer> consumer = [self.output performSelector:selector];
-  if (![consumer conformsToProtocol:@protocol(FBFileConsumer)]) {
-    return YES;
-  }
-  FBProcessOutput *output = [FBProcessOutput outputWithConsumer:consumer error:error];
-  if (!output) {
-    return NO;
-  }
-  if (outputOut) {
-    *outputOut = output;
-  }
-  return YES;
+  return [[self
+    createDiagnosticForSelector:selector simulator:simulator]
+    onQueue:simulator.workQueue fmap:^FBFuture *(id maybeDiagnostic) {
+      if ([maybeDiagnostic isKindOfClass:FBDiagnostic.class]) {
+        FBDiagnostic *diagnostic = maybeDiagnostic;
+        NSString *path = diagnostic.asPath;
+        NSFileHandle *handle = [NSFileHandle fileHandleForWritingAtPath:path];
+        if (!handle) {
+          return [[FBSimulatorError
+            describeFormat:@"Could not file handle for %@ at path '%@' for config '%@'", NSStringFromSelector(selector), path, self]
+            failFuture];
+        }
+        FBProcessOutput *output = [FBProcessOutput outputForFileHandle:handle diagnostic:diagnostic];
+        return [FBFuture futureWithResult:output];
+      }
+      id<FBFileConsumer> consumer = [self.output performSelector:selector];
+      if (![consumer conformsToProtocol:@protocol(FBFileConsumer)]) {
+        return [FBFuture futureWithResult:NSNull.null];
+      }
+      return [FBProcessOutput outputWithConsumer:consumer];
+    }];
 }
 
 @end

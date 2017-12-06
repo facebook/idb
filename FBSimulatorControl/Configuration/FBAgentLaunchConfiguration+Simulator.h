@@ -23,8 +23,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Creates a Process Output for a Simulator.
+
+ @param simulator the simulator to create the output for.
+ @return a Future that wraps an Array of the outputs.
  */
-- (BOOL)createOutputForSimulator:(FBSimulator *)simulator stdOutOut:(FBProcessOutput *_Nullable * _Nullable)stdOutOut stdErrOut:(FBProcessOutput *_Nullable * _Nullable)stdErrOut error:(NSError **)error;
+- (FBFuture<NSArray<id> *> *)createOutputForSimulator:(FBSimulator *)simulator;
 
 @end
 

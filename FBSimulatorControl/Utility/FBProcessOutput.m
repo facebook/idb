@@ -9,7 +9,7 @@
 
 #import "FBProcessOutput.h"
 
-FBTerminationHandleType const FBTerminationHandleTypeProcessOutput = @"process_output";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_output";
 
 @interface FBProcessOutput_FileHandle : FBProcessOutput
 
@@ -34,13 +34,14 @@ FBTerminationHandleType const FBTerminationHandleTypeProcessOutput = @"process_o
   return [[FBProcessOutput_FileHandle alloc] initWithFileHandle:fileHandle diagnostic:diagnostic];
 }
 
-+ (nullable instancetype)outputWithConsumer:(id<FBFileConsumer>)consumer error:(NSError **)error
++ (FBFuture<FBProcessOutput *> *)outputWithConsumer:(id<FBFileConsumer>)consumer
 {
   FBPipeReader *reader = [FBPipeReader pipeReaderWithConsumer:consumer];
-  if (![reader startReadingWithError:error]) {
-    return nil;
-  }
-  return [[FBProcessOutput_Consumer alloc] initWithReader:reader];
+  return [[reader
+    startReading]
+    onQueue:dispatch_get_main_queue() map:^(id _) {
+      return [[FBProcessOutput_Consumer alloc] initWithReader:reader];
+    }];
 }
 
 #pragma mark Public Properties
@@ -56,15 +57,16 @@ FBTerminationHandleType const FBTerminationHandleTypeProcessOutput = @"process_o
   return nil;
 }
 
-#pragma mark FBTerminationHandle
+#pragma mark FBiOSTargetContinuation
 
-- (void)terminate
+- (FBiOSTargetFutureType)futureType
 {
+  return FBiOSTargetFutureTypeProcessOutput;
 }
 
-- (FBTerminationHandleType)handleType
+- (FBFuture<NSNull *> *)completed
 {
-  return FBTerminationHandleTypeProcessOutput;
+  return nil;
 }
 
 @end
@@ -89,14 +91,17 @@ FBTerminationHandleType const FBTerminationHandleTypeProcessOutput = @"process_o
   return self;
 }
 
-#pragma mark Public Properties
+#pragma mark FBiOSTargetContinuation
 
-
-#pragma mark FBTerminationHandle
-
-- (void)terminate
+- (FBFuture<NSNull *> *)completed
 {
-  [self.fileHandle closeFile];
+  NSFileHandle *fileHandle = self.fileHandle;
+  return [[FBFuture
+    futureWithResult:NSNull.null]
+    onQueue:dispatch_get_main_queue() respondToCancellation:^{
+      [fileHandle closeFile];
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
 }
 
 @end
@@ -124,11 +129,16 @@ FBTerminationHandleType const FBTerminationHandleTypeProcessOutput = @"process_o
   return self.reader.pipe.fileHandleForWriting;
 }
 
-#pragma mark FBTerminationHandle
+#pragma mark FBiOSTargetContinuation
 
-- (void)terminate
+- (FBFuture<NSNull *> *)completed
 {
-  [self.reader stopReadingWithError:nil];
+  FBPipeReader *reader = self.reader;
+  return [[FBFuture
+    futureWithResult:NSNull.null]
+    onQueue:dispatch_get_main_queue() respondToCancellation:^{
+      return [reader stopReading];
+    }];
 }
 
 @end

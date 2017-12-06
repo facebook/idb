@@ -311,6 +311,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (XCTestSuite *)defaultTestSuite
 {
+  // Don't run the socket tests on travis
+  if (NSProcessInfo.processInfo.environment[@"TRAVIS"]) {
+    return [XCTestSuite testSuiteWithName:NSStringFromClass(self.class)];
+  }
   return [XCTestSuite testSuiteForTestCaseClass:self.class];
 }
 

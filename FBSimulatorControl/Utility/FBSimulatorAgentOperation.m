@@ -95,8 +95,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
   }
 
   // Tear down the other resources.
-  [self.stdOut terminate];
-  [self.stdErr terminate];
+  [self.stdOut.completed cancel];
+  [self.stdErr.completed cancel];
 }
 
 #pragma mark FBiOSTargetContinuation
