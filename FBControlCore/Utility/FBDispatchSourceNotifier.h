@@ -9,19 +9,14 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBTerminationHandle.h>
-
 NS_ASSUME_NONNULL_BEGIN
-
-/**
- The Termination Handle type for a Dispatch Source.
- */
-extern FBTerminationHandleType const FBTerminationHandleTypeDispatchSource;
 
 /**
  A class for wrapping `dispatch_source` with some conveniences.
  */
-@interface FBDispatchSourceNotifier : NSObject <FBTerminationHandle>
+@interface FBDispatchSourceNotifier : NSObject
+
+#pragma mark Constructors
 
 /**
  Creates and returns an `FBDispatchSourceNotifier` that will call the `handler` when the provided `processIdentifier` quits
@@ -40,6 +35,15 @@ extern FBTerminationHandleType const FBTerminationHandleTypeDispatchSource;
  @param handler the handler to call when the process exits
  */
 + (instancetype)timerNotifierNotifierWithTimeInterval:(uint64_t)timeInterval queue:(dispatch_queue_t)queue handler:(void (^)(FBDispatchSourceNotifier *))handler;
+
+#pragma mark Public Methods
+
+/**
+ Stops the Notifier.
+ */
+- (void)terminate;
+
+#pragma mark Properties
 
 /**
  The Wrapped Dispatch Source.

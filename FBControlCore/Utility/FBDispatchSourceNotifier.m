@@ -9,9 +9,9 @@
 
 #import "FBDispatchSourceNotifier.h"
 
-FBTerminationHandleType const FBTerminationHandleTypeDispatchSource = @"DispatchSource";
-
 @implementation FBDispatchSourceNotifier
+
+#pragma mark Initializers
 
 + (instancetype)processTerminationNotifierForProcessIdentifier:(pid_t)processIdentifier queue:(dispatch_queue_t)queue handler:(void (^)(FBDispatchSourceNotifier *))handler
 {
@@ -53,17 +53,14 @@ FBTerminationHandleType const FBTerminationHandleTypeDispatchSource = @"Dispatch
   return self;
 }
 
+#pragma mark Public
+
 - (void)terminate
 {
   if (self.dispatchSource) {
     dispatch_source_cancel(self.dispatchSource);
     _dispatchSource = nil;
   }
-}
-
-- (FBTerminationHandleType)handleType
-{
-  return FBTerminationHandleTypeDispatchSource;
 }
 
 - (void)dealloc

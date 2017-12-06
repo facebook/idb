@@ -21,7 +21,6 @@
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
 
 NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
-FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 @protocol FBTaskOutput <NSObject>
 
@@ -424,19 +423,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   return self;
 }
 
-#pragma mark - FBTerminationHandle Protocol
-
-- (void)terminate
-{
-  [self terminateWithErrorMessage:nil];
-}
-
-- (FBTerminationHandleType)handleType
-{
-  return FBTerminationHandleTypeTask;
-}
-
-#pragma mark - FBTask Protocl
+#pragma mark - FBTask Protocol
 
 #pragma mark Starting
 
@@ -514,6 +501,11 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
     [error extraInfo:@"exitcode" value:@(self.exitCode)];
   }
   return [error build];
+}
+
+- (void)terminate
+{
+  [self terminateWithErrorMessage:nil];
 }
 
 - (BOOL)hasTerminated

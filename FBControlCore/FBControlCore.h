@@ -74,7 +74,6 @@
 #import <FBControlCore/FBSubstringUtilities.h>
 #import <FBControlCore/FBTask.h>
 #import <FBControlCore/FBTaskBuilder.h>
-#import <FBControlCore/FBTerminationHandle.h>
 #import <FBControlCore/FBTestLaunchConfiguration.h>
 #import <FBControlCore/FBUploadBuffer.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>

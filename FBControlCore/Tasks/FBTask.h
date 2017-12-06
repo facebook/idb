@@ -9,7 +9,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBTerminationHandle.h>
 #import <FBControlCore/FBFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -23,14 +22,9 @@ NS_ASSUME_NONNULL_BEGIN
 extern NSString *const FBTaskErrorDomain;
 
 /**
- The Termination Handle Type for a Task.
- */
-extern FBTerminationHandleType const FBTerminationHandleTypeTask;
-
-/**
  Programmatic interface to a Task.
  */
-@interface FBTask : NSObject <FBTerminationHandle>
+@interface FBTask : NSObject
 
 #pragma mark Initializers
 
@@ -116,6 +110,11 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTask;
  Returns the Error associated with the task (if any). May be called from any thread.
  */
 - (nullable NSError *)error;
+
+/**
+ Cancels the Task.
+ */
+- (void)terminate;
 
 /**
  Returns YES if the task has terminated, NO otherwise.

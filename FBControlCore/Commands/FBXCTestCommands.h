@@ -11,10 +11,10 @@
 
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBTestLaunchConfiguration.h>
-#import <FBControlCore/FBTerminationHandle.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBTestLaunchConfiguration;
 @protocol FBControlCoreLogger;
 @protocol FBTestManagerTestReporter;
 
@@ -22,8 +22,6 @@ NS_ASSUME_NONNULL_BEGIN
  The Termination Handle Type.
  */
 extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestOperation;
-
-@class FBTestLaunchConfiguration;
 
 /**
  Commands to perform on an iOS Target, related to XCTest.
@@ -40,6 +38,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestOperation;
  @return a Future, wrapping a test operation.
  */
 - (FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
+
 /**
  Lists the testables for a provided test bundle.
 
