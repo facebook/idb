@@ -49,6 +49,27 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSString *)macUnitTestBundlePath;
 
 /**
+ An Mac UITest XCTest Target.
+
+ @return path to the UITest Bundle.
+ */
++ (NSString *)macUITestBundlePath;
+
+/**
+ An Mac Application used for hosting tests
+
+ @return path to the Application.
+ */
++ (NSString *)macCommonAppPath;
+
+/**
+ A build of Application used by macUITestBundlePath.
+
+ @return path to the Application.
+ */
++ (NSString *)macUITestAppTargetPath;
+
+/**
  A build of Application used by iOSUITestBundlePath.
 
  @return path to the Application.

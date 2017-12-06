@@ -47,7 +47,7 @@
 
 - (void)testHostProcessIsMobileSafari
 {
-  XCTAssertTrue([NSProcessInfo.processInfo.processName isEqualToString:@"MobileSafari"]);
+  XCTAssertTrue([NSProcessInfo.processInfo.processName isEqualToString:@"MacCommonApp"]);
 }
 
 - (void)testPossibleCrashingOfHostProcess

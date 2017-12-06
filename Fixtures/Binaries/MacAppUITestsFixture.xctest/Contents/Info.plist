@@ -5,21 +5,19 @@
 	<key>BuildMachineOSBuild</key>
 	<string>17B48</string>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
+	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>MacUnitTestFixture</string>
+	<string>MacAppUITestsFixture</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.facebook.MacUnitTestFixture</string>
+	<string>com.facebook.MacUITestFixtureUITests</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>MacUnitTestFixture</string>
+	<string>MacAppUITestsFixture</string>
 	<key>CFBundlePackageType</key>
 	<string>BNDL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>MacOSX</string>

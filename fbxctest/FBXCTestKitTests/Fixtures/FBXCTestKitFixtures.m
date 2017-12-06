@@ -42,6 +42,21 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"MacUnitTestFixture" ofType:@"xctest"];
 }
 
++ (NSString *)macUITestBundlePath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"MacAppUITestsFixture" ofType:@"xctest"];
+}
+
++ (NSString *)macCommonAppPath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"MacCommonApp" ofType:@"app"];
+}
+
++ (NSString *)macUITestAppTargetPath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"MacAppFixture" ofType:@"app"];
+}
+
 + (NSString *)iOSUITestAppTargetPath
 {
   return [[[NSBundle bundleForClass:self] pathForResource:@"iOSAppFixture" ofType:@"app"]

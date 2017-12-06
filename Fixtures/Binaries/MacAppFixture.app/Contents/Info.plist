@@ -5,21 +5,19 @@
 	<key>BuildMachineOSBuild</key>
 	<string>17B48</string>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
+	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>MacUnitTestFixture</string>
+	<string>MacAppFixture</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.facebook.MacUnitTestFixture</string>
+	<string>com.facebook.MacUITestFixture</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>MacUnitTestFixture</string>
+	<string>MacAppFixture</string>
 	<key>CFBundlePackageType</key>
-	<string>BNDL</string>
+	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>MacOSX</string>
@@ -40,5 +38,13 @@
 	<string>0910</string>
 	<key>DTXcodeBuild</key>
 	<string>9B55</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.12</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2017 Facebook. All rights reserved.</string>
+	<key>NSMainNibFile</key>
+	<string>MainMenu</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
 </dict>
 </plist>
