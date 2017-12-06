@@ -111,7 +111,7 @@
 
   id<FBSocketConsumer> consumer = [[FBSocketConsumer_Double alloc] initWithSend:data];
   FBSocketWriter *writer = [FBSocketWriter writerForHost:@"localhost" port:portNumber consumer:consumer];
-  success = [writer startWritingWithError:&error];
+  success = [[writer startWriting] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

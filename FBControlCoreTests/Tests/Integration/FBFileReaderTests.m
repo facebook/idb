@@ -89,7 +89,7 @@
 
   // Start reading
   NSError *error = nil;
-  BOOL success = [writer startReadingWithError:&error];
+  BOOL success = [[writer startReading] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

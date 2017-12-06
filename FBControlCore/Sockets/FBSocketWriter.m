@@ -41,21 +41,25 @@
 
 #pragma mark Lifecycle
 
-- (BOOL)startWritingWithError:(NSError **)error
+- (FBFuture<NSNull *> *)startWriting
 {
-  _writer = [FBFileWriter asyncWriterWithFileHandle:self.fileHandle error:error];
+  NSError *error = nil;
+  _writer = [FBFileWriter asyncWriterWithFileHandle:self.fileHandle error:&error];
   if (!_writer) {
     [self tearDown];
-    return NO;
+    return [FBFuture futureWithError:error];
   }
   _reader = [FBFileReader readerWithFileHandle:self.fileHandle consumer:self];
-  if (![self.reader startReadingWithError:error]) {
-    [self tearDown];
-    return NO;
-  }
-  [self.consumer writeBackAvailable:self];
-
-  return YES;
+  return [[_reader
+    startReading]
+    onQueue:dispatch_get_main_queue() chain:^(FBFuture<NSNull *> *future) {
+      if (future.result) {
+        [self.consumer writeBackAvailable:self];
+      } else {
+        [self tearDown];
+      }
+      return future;
+    }];
 }
 
 #pragma mark FBFileConsuemr
@@ -116,18 +120,19 @@
 
 #pragma mark Public Methods
 
-- (BOOL)startWritingWithError:(NSError **)error
+- (FBFuture<NSNull *> *)startWriting
 {
   if (self.connection) {
     return [[FBControlCoreError
       describeFormat:@"There is an existing connection for %@ %d", self.host, self.port]
-      failBool:error];
+      failFuture];
   }
 
   // Resolve the address
-  struct sockaddr_in6 address = [FBSocketWriter addressForHostname:self.host port:self.port error:error];
+  NSError *error = nil;
+  struct sockaddr_in6 address = [FBSocketWriter addressForHostname:self.host port:self.port error:&error];
   if (address.sin6_port == 0) {
-    return NO;
+    return [FBFuture futureWithError:error];
   }
 
   // Create a socket
@@ -135,7 +140,7 @@
   if (socketHandle < 0) {
     return [[FBControlCoreError
       describeFormat:@"Failed to create a socket for %@:%d", self.host, self.port]
-      failBool:error];
+      failFuture];
   }
 
   // Listen to the socket
@@ -143,30 +148,28 @@
   if (code < 0) {
     return [[FBControlCoreError
       describeFormat:@"Failed to listen to  socket for %@:%d error %d", self.host, self.port, errno]
-      failBool:error];
+      failFuture];
   }
-  self.connection = [self createConnectionForSocket:socketHandle error:error];
-  if (!self.connection) {
-    return NO;
-  }
-  return YES;
+  return [[self
+    createConnectionForSocket:socketHandle]
+    onQueue:dispatch_get_main_queue() map:^(FBSocketWriter_Connection *connection) {
+      self.connection = connection;
+      return NSNull.null;
+    }];
 }
 
-- (BOOL)stopWritingWithError:(NSError **)error
+- (FBFuture<NSNull *> *)stopWriting
 {
-  return YES;
+  return [FBFuture futureWithResult:NSNull.null];
 }
 
 #pragma mark Private Methods
 
-- (FBSocketWriter_Connection *)createConnectionForSocket:(int)socket error:(NSError **)error
+- (FBFuture<FBSocketWriter_Connection *> *)createConnectionForSocket:(int)socket
 {
   NSFileHandle *handle = [[NSFileHandle alloc] initWithFileDescriptor:socket closeOnDealloc:YES];
   FBSocketWriter_Connection *connection = [[FBSocketWriter_Connection alloc] initWithConsumer:self.consumer fileHandle:handle];
-  if (![connection startWritingWithError:error]) {
-    return nil;
-  }
-  return connection;
+  return [[connection startWriting] mapReplace:connection];
 }
 
 + (struct sockaddr_in6)addressForHostname:(NSString *)hostName port:(in_port_t)port error:(NSError **)error

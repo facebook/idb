@@ -109,18 +109,15 @@
 
 - (void)testCreateStdErrDiagnosticForSimulator
 {
-  NSError *error;
-  FBDiagnostic *stdErrDiagnostic = nil;
-  FBDiagnostic *stdOutDiagnostic = nil;
-
   FBSimulator *simulator = [self assertObtainsSimulator];
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration defaultOutputToFile];
   FBApplicationLaunchConfiguration *appLaunch = [self.tableSearchAppLaunch withOutput:output];
 
-  [appLaunch createStdErrDiagnosticForSimulator:simulator diagnosticOut:&stdErrDiagnostic error:&error];
+  NSError *error = nil;
+  FBDiagnostic *stdErrDiagnostic = [[appLaunch createStdErrDiagnosticForSimulator:simulator] await:&error];
   XCTAssertNil(error);
 
-  [appLaunch createStdOutDiagnosticForSimulator:simulator diagnosticOut:&stdOutDiagnostic error:&error];
+  FBDiagnostic *stdOutDiagnostic = [[appLaunch createStdOutDiagnosticForSimulator:simulator] await:&error];
   XCTAssertNil(error);
 
   XCTAssertNotNil(stdErrDiagnostic.asPath);

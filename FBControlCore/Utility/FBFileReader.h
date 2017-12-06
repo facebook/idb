@@ -56,22 +56,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)completed;
 
-/**
- Starts the Consumption of the File.
-
- @param error an error out for any error that occurs.
- @return YES if the reading started normally, NO otherwise.
- */
-- (BOOL)startReadingWithError:(NSError **)error;
-
-/**
- Stops Reading the file.
-
- @param error an error out for any error that occurs.
- @return YES if the reading terminated normally, NO otherwise.
- */
-- (BOOL)stopReadingWithError:(NSError **)error;
-
 @end
 
 NS_ASSUME_NONNULL_END

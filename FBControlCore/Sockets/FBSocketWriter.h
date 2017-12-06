@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBFuture.h>
+
 #import <sys/socket.h>
 #import <netinet/in.h>
 
@@ -38,18 +40,16 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Start writing to the socket.
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A future that resolves when writing has started.
  */
-- (BOOL)startWritingWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)startWriting;
 
 /**
  Stop writing to the socket.
 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A future that resolves when writing has started.
  */
-- (BOOL)stopWritingWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)stopWriting;
 
 @end
 

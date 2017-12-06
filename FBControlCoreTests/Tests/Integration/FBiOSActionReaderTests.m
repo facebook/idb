@@ -289,7 +289,7 @@ NS_ASSUME_NONNULL_BEGIN
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
-  success = [self.writer startWritingWithError:&error];
+  success = [[self.writer startWriting] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }
@@ -299,7 +299,7 @@ NS_ASSUME_NONNULL_BEGIN
   [super tearDown];
 
   NSError *error;
-  BOOL success = [self.writer stopWritingWithError:&error];
+  BOOL success = [[self.writer stopWriting] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }

@@ -121,22 +121,4 @@
   }];
 }
 
-- (BOOL)startReadingWithError:(NSError **)error
-{
-  FBFuture *future = [self startReading];
-  if (future.error) {
-    return [FBControlCoreError failBoolWithError:future.error errorOut:error];
-  }
-  return YES;
-}
-
-- (BOOL)stopReadingWithError:(NSError **)error
-{
-  FBFuture *future = [self stopReading];
-  if (future.error) {
-    return [FBControlCoreError failBoolWithError:future.error errorOut:error];
-  }
-  return YES;
-}
-
 @end

@@ -47,21 +47,25 @@
   return self;
 }
 
-- (BOOL)startConsumingWithError:(NSError **)error
+- (FBFuture<NSNull *> *)startConsuming
 {
-  _writer = [FBFileWriter asyncWriterWithFileHandle:self.fileHandle error:error];
+  NSError *error = nil;
+  _writer = [FBFileWriter asyncWriterWithFileHandle:self.fileHandle error:&error];
   if (!_writer) {
     [self teardown];
-    return NO;
+    return [FBFuture futureWithError:error];
   }
   _reader = [FBFileReader readerWithFileHandle:self.fileHandle consumer:self];
-
-  if (![self.reader startReadingWithError:error]) {
-    [self teardown];
-    return NO;
-  }
-  [self.consumer writeBackAvailable:self.writer];
-  return YES;
+  return [[_reader
+    startReading]
+    onQueue:dispatch_get_main_queue() chain:^(FBFuture<NSNull *> *future) {
+      if (future.result) {
+        [self.consumer writeBackAvailable:self.writer];
+      } else {
+        [self teardown];
+      }
+      return future;
+    }];
 }
 
 - (void)teardown
@@ -147,8 +151,7 @@
     [weakSelf.connections removeObjectForKey:@(fileHandle.fileDescriptor)];
   }];
   // Bail early if the connection could not be consumed
-  NSError *error = nil;
-  if (![connection startConsumingWithError:&error]) {
+  if (![[connection startConsuming] await:nil]) {
     return;
   }
   // Retain the connection, it will be released in the completion.
