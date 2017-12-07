@@ -56,7 +56,8 @@
     waitForDebugger:NO
     timeout:0
     runnerAppPath:FBXCTestKitFixtures.tableSearchApplicationPath
-    testTargetAppPath:FBXCTestKitFixtures.iOSUITestAppTargetPath];
+    testTargetAppPath:FBXCTestKitFixtures.iOSUITestAppTargetPath
+    testFilter:nil];
   XCTAssertEqualObjects(configuration, expected);
 }
 
@@ -84,7 +85,8 @@
     waitForDebugger:NO
     timeout:0
     runnerAppPath:FBXCTestKitFixtures.tableSearchApplicationPath
-    testTargetAppPath:FBXCTestKitFixtures.iOSUITestAppTargetPath];
+    testTargetAppPath:FBXCTestKitFixtures.iOSUITestAppTargetPath
+    testFilter:nil];
   XCTAssertEqualObjects(configuration, expected);
 }
 
@@ -112,7 +114,8 @@
     waitForDebugger:NO
     timeout:0
     runnerAppPath:FBXCTestKitFixtures.tableSearchApplicationPath
-    testTargetAppPath:FBXCTestKitFixtures.iOSUITestAppTargetPath];
+    testTargetAppPath:FBXCTestKitFixtures.iOSUITestAppTargetPath
+    testFilter:nil];
   XCTAssertEqualObjects(configuration, expected);
 }
 
@@ -145,7 +148,8 @@
     waitForDebugger:NO
     timeout:0
     runnerAppPath:FBXCTestKitFixtures.tableSearchApplicationPath
-    testTargetAppPath:FBXCTestKitFixtures.iOSUITestAppTargetPath];
+    testTargetAppPath:FBXCTestKitFixtures.iOSUITestAppTargetPath
+    testFilter:nil];
   XCTAssertEqualObjects(configuration, expected);
 }
 

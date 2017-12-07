@@ -67,7 +67,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       waitForDebugger:waitForDebugger
       timeout:timeout
       runnerAppPath:runnerAppPath
-      testTargetAppPath:nil];
+      testTargetAppPath:nil
+      testFilter:testFilter];
   }
   if ([argumentSet containsObject:@"-uiTest"]) {
     return [FBTestManagerTestConfiguration
@@ -78,7 +79,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       waitForDebugger:waitForDebugger
       timeout:timeout
       runnerAppPath:runnerAppPath
-      testTargetAppPath:testTargetPathOut];
+      testTargetAppPath:testTargetPathOut
+      testFilter:nil];
   }
   return [[FBControlCoreError
     describeFormat:@"Could not determine test runner type from %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]]

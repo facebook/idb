@@ -17,6 +17,8 @@
 		050D46231D6074090038F72D /* FBXCTestKitIntegrationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D46221D6074090038F72D /* FBXCTestKitIntegrationTests.m */; };
 		050D46271D6074B60038F72D /* FBXCTestKitFixtures.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D46261D6074B60038F72D /* FBXCTestKitFixtures.m */; };
 		050D463C1D608AA40038F72D /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 050D463B1D608AA40038F72D /* FBSimulatorControl.framework */; };
+		8B354F441FD6F6630017BE5B /* iOSAppFixtureAppTests.xctest in Resources */ = {isa = PBXBuildFile; fileRef = 8B354F431FD6F6620017BE5B /* iOSAppFixtureAppTests.xctest */; };
+		8B92AE821FD674A40044E955 /* FBiOSApplicationTestConfigurationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B92AE811FD674A40044E955 /* FBiOSApplicationTestConfigurationTests.m */; };
 		AA0639461D999081004B3D12 /* FBControlCoreValueTestCase.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0639451D999081004B3D12 /* FBControlCoreValueTestCase.m */; };
 		AA24FFB81D4A6DEA00B429CD /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = AA24FFAE1D4A6DEA00B429CD /* main.m */; };
 		AA2CEBB01D65C57F0051962D /* FBXCTestSimulatorFetcher.h in Headers */ = {isa = PBXBuildFile; fileRef = AA2CEBAE1D65C57F0051962D /* FBXCTestSimulatorFetcher.h */; };
@@ -89,6 +91,8 @@
 		050D46261D6074B60038F72D /* FBXCTestKitFixtures.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestKitFixtures.m; sourceTree = "<group>"; };
 		050D463B1D608AA40038F72D /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FBSimulatorControl.framework; path = "../../../Library/Developer/Xcode/DerivedData/fbxctest-ggloazodethqmqakznelmdxzqbcu/Build/Products/Debug/FBSimulatorControl.framework"; sourceTree = "<group>"; };
 		3E0DE0BB1D5D6ECB00A2083E /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FBSimulatorControl.framework; path = ../build/Debug/FBSimulatorControl.framework; sourceTree = "<group>"; };
+		8B354F431FD6F6620017BE5B /* iOSAppFixtureAppTests.xctest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = iOSAppFixtureAppTests.xctest; path = ../../../Fixtures/Binaries/iOSAppFixtureAppTests.xctest; sourceTree = "<group>"; };
+		8B92AE811FD674A40044E955 /* FBiOSApplicationTestConfigurationTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBiOSApplicationTestConfigurationTests.m; sourceTree = "<group>"; };
 		AA0639441D999081004B3D12 /* FBControlCoreValueTestCase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBControlCoreValueTestCase.h; sourceTree = "<group>"; };
 		AA0639451D999081004B3D12 /* FBControlCoreValueTestCase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBControlCoreValueTestCase.m; sourceTree = "<group>"; };
 		AA24FF981D4A6D8500B429CD /* fbxctest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fbxctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -203,6 +207,7 @@
 				050D46251D6074B60038F72D /* FBXCTestKitFixtures.h */,
 				050D46261D6074B60038F72D /* FBXCTestKitFixtures.m */,
 				EEFC63951FAC9A2400715F55 /* iOSAppFixture.app */,
+				8B354F431FD6F6620017BE5B /* iOSAppFixtureAppTests.xctest */,
 				EEFC63941FAC9A2400715F55 /* iOSAppUITestFixture.xctest */,
 				AAB44FF01D622B6C0059E922 /* iOSUnitTestFixture.xctest */,
 				EE737DBD1FACD076005DF1F3 /* MacAppFixture.app */,
@@ -221,6 +226,7 @@
 				EE0E343B1FAC7FCF0052AA1A /* FBiOSUITestConfigurationTests.m */,
 				EE0E34361FAC7CD90052AA1A /* FBOSXLogicTestConfigurationTests.m */,
 				EE737DC21FACD127005DF1F3 /* FBOSXUITestConfigurationTests.m */,
+				8B92AE811FD674A40044E955 /* FBiOSApplicationTestConfigurationTests.m */,
 			);
 			path = Unit;
 			sourceTree = "<group>";
@@ -446,6 +452,7 @@
 				EE737DBF1FACD077005DF1F3 /* MacCommonApp.app in Resources */,
 				EEFC63971FAC9A2500715F55 /* iOSAppFixture.app in Resources */,
 				EE737DC11FACD077005DF1F3 /* MacAppUITestsFixture.xctest in Resources */,
+				8B354F441FD6F6630017BE5B /* iOSAppFixtureAppTests.xctest in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -475,6 +482,7 @@
 				AAED07AE1E560655005060ED /* XCTestCase+FBXCTestKitTests.m in Sources */,
 				EE0E34381FAC7CD90052AA1A /* FBiOSLogicTestConfigurationTests.m in Sources */,
 				AAB44FFD1D6236970059E922 /* FBXCTestReporterDouble.m in Sources */,
+				8B92AE821FD674A40044E955 /* FBiOSApplicationTestConfigurationTests.m in Sources */,
 				050D46271D6074B60038F72D /* FBXCTestKitFixtures.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

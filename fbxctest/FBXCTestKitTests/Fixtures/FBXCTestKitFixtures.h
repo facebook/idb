@@ -83,6 +83,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (NSString *)iOSUITestBundlePath;
 
+/**
+ An iOS App Test XCTest Target.
+
+ @return path to the App Test Bundle.
+ */
++ (NSString *)iOSAppTestBundlePath;
+
 @end
 
 /**
@@ -105,6 +112,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return path to the UITest Bundle.
  */
 - (nullable NSString *)iOSUITestBundlePath;
+
+/**
+ An iOS AppTest XCTest Target.
+ Will check that the bundle is codesigned, and sign it if is not.
+
+ @return path to the AppTest Bundle.
+ */
+- (nullable NSString *)iOSAppTestBundlePath;
 
 @end
 

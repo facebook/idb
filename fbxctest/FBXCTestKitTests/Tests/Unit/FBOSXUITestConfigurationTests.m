@@ -71,6 +71,7 @@
     timeout:0
     runnerAppPath:FBXCTestKitFixtures.macCommonAppPath
     testTargetAppPath:FBXCTestKitFixtures.macUITestAppTargetPath
+    testFilter:nil
   ];
   XCTAssertEqualObjects(configuration, expected);
 }
@@ -106,6 +107,7 @@
     timeout:0
     runnerAppPath:FBXCTestKitFixtures.macCommonAppPath
     testTargetAppPath:FBXCTestKitFixtures.macUITestAppTargetPath
+    testFilter:nil
   ];
   XCTAssertEqualObjects(configuration, expected);
 }
@@ -141,7 +143,8 @@
     waitForDebugger:NO
     timeout:0
     runnerAppPath:FBXCTestKitFixtures.macCommonAppPath
-    testTargetAppPath:nil];
+    testTargetAppPath:nil
+    testFilter:nil];
   XCTAssertEqualObjects(configuration, expected);
 }
 
@@ -175,7 +178,8 @@
     waitForDebugger:NO
     timeout:0
     runnerAppPath:FBXCTestKitFixtures.macCommonAppPath
-    testTargetAppPath:nil];
+    testTargetAppPath:nil
+    testFilter:nil];
   XCTAssertEqualObjects(configuration, expected);
 }
 

@@ -68,6 +68,11 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"iOSAppUITestFixture" ofType:@"xctest"];
 }
 
++ (NSString *)iOSAppTestBundlePath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"iOSAppFixtureAppTests" ofType:@"xctest"];
+}
+
 @end
 
 @implementation XCTestCase (FBXCTestKitTests)
@@ -80,6 +85,11 @@
 - (nullable NSString *)iOSUITestBundlePath
 {
   return [self signTestBundle:FBXCTestKitFixtures.iOSUITestBundlePath];
+}
+
+- (nullable NSString *)iOSAppTestBundlePath
+{
+  return [self signTestBundle:FBXCTestKitFixtures.iOSAppTestBundlePath];
 }
 
 - (nullable NSString *)signTestBundle:(NSString *)bundlePath;

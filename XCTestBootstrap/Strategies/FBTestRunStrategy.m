@@ -94,6 +94,11 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
      withUITesting:YES];
   }
 
+  if (self.configuration.testFilter != nil) {
+    NSSet<NSString *> *testsToRun = [NSSet setWithObject:self.configuration.testFilter];
+    testLaunchConfiguration = [testLaunchConfiguration withTestsToRun:testsToRun];
+  }
+
   id<FBXCTestPreparationStrategy> testPreparationStrategy = [self.testPreparationStrategyClass
     strategyWithTestLaunchConfiguration:testLaunchConfiguration
     workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]];

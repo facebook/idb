@@ -153,6 +153,31 @@
   XCTAssertTrue([error.description containsString:@"testPossibleCrashingOfHostProcess"]);
 }
 
+- (void)testRunAppTestWithFilter
+{
+  NSError *error;
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *applicationPath = [FBXCTestKitFixtures iOSUITestAppTargetPath];
+  NSString *testBundlePath = [self iOSAppTestBundlePath];
+  NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
+  NSString *shortTestFilter = @"iOSAppFixtureAppTests/testWillAlwaysPass";
+  NSString *testFilter = [NSString stringWithFormat:@"%@:%@", testBundlePath, shortTestFilter];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument, @"-only", testFilter];
+
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
+
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
+  BOOL success = [[testRunner execute] await:&error] != nil;
+  XCTAssertTrue(success);
+  XCTAssertNil(error);
+
+  XCTAssertTrue(self.reporter.printReportWasCalled);
+  NSArray<NSArray<NSString *> *> *expected = @[@[@"iOSAppFixtureAppTests", @"testWillAlwaysPass"]];
+  XCTAssertEqualObjects(expected, self.reporter.startedTests);
+}
+
 - (void)testRunsiOSLogicTestsWithoutApplication
 {
   NSError *error = nil;
