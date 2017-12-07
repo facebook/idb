@@ -89,6 +89,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = AA017F451BD7776B00F45E9D /* Build configuration list for PBXNativeTarget "Shimulator" */;
 			buildPhases = (
+				2F430FD31FD829C200B2B8B6 /* Don't allow ARM binaries */,
 				AA017F3D1BD7776B00F45E9D /* Sources */,
 				AA017F3E1BD7776B00F45E9D /* Frameworks */,
 				AA017F3F1BD7776B00F45E9D /* Headers */,
@@ -153,6 +154,23 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		2F430FD31FD829C200B2B8B6 /* Don't allow ARM binaries */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 12;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Don't allow ARM binaries";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [[ \"${ARCHS}\" == *\"arm\"* ]];then\necho \"error: This will build an ARM binary, you (probably) don't want this (${ARCHS})\"\necho \"error: Tip: Perform a Run with Release configuration and use the resulting binary\"\nexit 1\nfi";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		AA017F3D1BD7776B00F45E9D /* Sources */ = {
