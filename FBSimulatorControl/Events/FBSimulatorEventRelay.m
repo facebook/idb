@@ -35,8 +35,6 @@
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> sink;
 
-@property (nonatomic, strong, readwrite) FBCoreSimulatorNotifier *stateChangeNotifier;
-
 @end
 
 @implementation FBSimulatorEventRelay
@@ -58,14 +56,7 @@
   _knownLaunchedProcesses = [NSMutableSet set];
   _lastKnownState = FBSimulatorStateUnknown;
 
-  [self createNotifierForSimDevice:simDevice];
-
   return self;
-}
-
-- (void)dealloc
-{
-  [self unregisterAllNotifiers];
 }
 
 #pragma mark FBSimulatorEventSink Protocol Implementation
@@ -199,30 +190,6 @@
 
   self.lastKnownState = state;
   [self.sink didChangeState:state];
-}
-
-#pragma mark Private
-
-#pragma mark Process Termination
-
-- (void)unregisterAllNotifiers
-{
-  [self.stateChangeNotifier terminate];
-  self.stateChangeNotifier = nil;
-}
-
-#pragma mark State Notifier
-
-- (void)createNotifierForSimDevice:(SimDevice *)device
-{
-  __weak typeof(self) weakSelf = self;
-  self.stateChangeNotifier = [FBCoreSimulatorNotifier notifierForSimDevice:device queue:self.queue block:^(NSDictionary *info) {
-    NSNumber *newStateNumber = info[@"new_state"];
-    if (!newStateNumber) {
-      return;
-    }
-    [weakSelf didChangeState:newStateNumber.unsignedIntegerValue];
-  }];
 }
 
 #pragma mark Updating Launch Info from CoreSimulator Notifications

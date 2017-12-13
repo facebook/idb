@@ -11,6 +11,7 @@
 
 @class FBSimulatorContainerApplicationLifecycleStrategy;
 @class FBSimulatorInflationStrategy;
+@class FBSimulatorNotificationUpdateStrategy;
 
 @interface FBSimulatorSet ()
 
@@ -18,5 +19,7 @@
 
 @property (nonatomic, strong, readonly) FBSimulatorInflationStrategy *inflationStrategy;
 @property (nonatomic, strong, readonly) FBSimulatorContainerApplicationLifecycleStrategy *containerApplicationStrategy;
+@property (nonatomic, strong, readonly) FBSimulatorNotificationUpdateStrategy *notificationUpdateStrategy;
+
 
 @end

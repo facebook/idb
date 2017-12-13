@@ -20,6 +20,7 @@
 
 #import <objc/runtime.h>
 
+#import "FBCoreSimulatorNotifier.h"
 #import "FBCoreSimulatorTerminationStrategy.h"
 #import "FBSimulatorContainerApplicationLifecycleStrategy.h"
 #import "FBSimulatorControl.h"
@@ -30,6 +31,7 @@
 #import "FBSimulatorInflationStrategy.h"
 #import "FBSimulatorShutdownStrategy.h"
 #import "FBSimulatorTerminationStrategy.h"
+#import "FBSimulatorNotificationUpdateStrategy.h"
 
 @implementation FBSimulatorSet
 
@@ -67,6 +69,7 @@
   _processFetcher = [FBSimulatorProcessFetcher fetcherWithProcessFetcher:[FBProcessFetcher new]];
   _inflationStrategy = [FBSimulatorInflationStrategy strategyForSet:self];
   _containerApplicationStrategy = [FBSimulatorContainerApplicationLifecycleStrategy strategyForSet:self];
+  _notificationUpdateStrategy = [FBSimulatorNotificationUpdateStrategy strategyWithSet:self];
 
   return self;
 }
