@@ -95,13 +95,6 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
   return FBiOSTargetFutureTypeTestOperation;
 }
 
-#pragma mark Public Methods
-
-- (BOOL)waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  return [self.future awaitWithTimeout:timeout error:error] != nil;
-}
-
 #pragma mark Public
 
 + (BOOL)terminateReparentedXcodeBuildProcessesForTarget:(id<FBiOSTarget>)target processFetcher:(FBProcessFetcher *)processFetcher error:(NSError **)error

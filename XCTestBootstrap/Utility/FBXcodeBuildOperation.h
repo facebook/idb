@@ -48,15 +48,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (BOOL)terminateReparentedXcodeBuildProcessesForTarget:(id<FBiOSTarget>)target processFetcher:(FBProcessFetcher *)processFetcher error:(NSError **)error;
 
 /**
- Runs the reciever, returning when the Task has completed or when the timeout is hit.
- If the timeout is reached, the process will not be automatically terminated.
-
- @param timeout the the maximum time to evaluate the task.
- @return the reciever, for chaining.
- */
-- (BOOL)waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
-
-/**
  The xctest.xctestrun properties for a test launch.
 
  @param testLaunch the test launch to base off.
