@@ -22,17 +22,18 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorEventRelay : NSObject <FBSimulatorEventSink>
 
+#pragma mark Initializers
+
 /**
  The Designated Initializer.
 
- @param simDevice the SimDevice to relay events for.
  @param launchdProcess the Simulator's `launchd_sim` process, if booted.
  @param containerApplication the Simulator's 'Container Application' process, if applicable.
- @param processFetcher the Process Query for obtaining process information.
- @param queue the queue that events are serialized on.
  @param sink the sink to forward to.
  */
-- (instancetype)initWithSimDevice:(SimDevice *)simDevice launchdProcess:(nullable FBProcessInfo *)launchdProcess containerApplication:(nullable FBProcessInfo *)containerApplication processFetcher:(FBSimulatorProcessFetcher *)processFetcher queue:(dispatch_queue_t)queue sink:(id<FBSimulatorEventSink>)sink;
+- (instancetype)initWithLaunchdProcess:(nullable FBProcessInfo *)launchdProcess containerApplication:(nullable FBProcessInfo *)containerApplication sink:(id<FBSimulatorEventSink>)sink;
+
+#pragma mark Properties
 
 /**
  The Simulator's `launchd_sim` process, if booted.

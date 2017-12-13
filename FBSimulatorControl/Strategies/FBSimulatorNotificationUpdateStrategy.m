@@ -15,6 +15,7 @@
 #import "FBCoreSimulatorNotifier.h"
 #import "FBSimulator.h"
 #import "FBSimulatorEventSink.h"
+#import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSet.h"
 
 @interface FBSimulatorNotificationUpdateStrategy ()
@@ -78,7 +79,47 @@
   if (simulators.count != 1) {
     return;
   }
-  [simulators.firstObject.eventSink didChangeState:state];
+  FBSimulator *simulator = simulators.firstObject;
+  [simulator.eventSink didChangeState:state];
+
+  // Update State in response to boot/shutdown
+  if (state == FBSimulatorStateBooted) {
+    [self fetchLaunchdSimInfoFromBootOfSimulator:simulator];
+  }
+  if (state == FBSimulatorStateShutdown || state == FBSimulatorStateShuttingDown) {
+    [self discardLaunchdSimInfoFromShutdownOfSimulator:simulator];
+  }
+}
+
+- (void)fetchLaunchdSimInfoFromBootOfSimulator:(FBSimulator *)simulator
+{
+  // We already have launchd_sim info, don't bother fetching.
+  if (simulator.launchdProcess) {
+    return;
+  }
+
+  FBProcessInfo *launchdSim = [self.processFetcher launchdProcessForSimDevice:simulator.device];
+  if (!launchdSim) {
+    return;
+  }
+  [simulator.eventSink simulatorDidLaunch:launchdSim];
+}
+
+- (void)discardLaunchdSimInfoFromShutdownOfSimulator:(FBSimulator *)simulator
+{
+  // Don't look at the application if we know if we don't consider the Simulator boot.
+  FBProcessInfo *launchdProcess = simulator.launchdProcess;
+  if (!launchdProcess) {
+    return;
+  }
+
+  // Notify of Simulator Termination.
+  [simulator.eventSink simulatorDidTerminate:launchdProcess expected:NO];
+}
+
+- (FBSimulatorProcessFetcher *)processFetcher
+{
+  return self.set.processFetcher;
 }
 
 @end

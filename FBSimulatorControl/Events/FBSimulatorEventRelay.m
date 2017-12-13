@@ -11,8 +11,6 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import <CoreSimulator/SimDevice.h>
-
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBCoreSimulatorNotifier.h"
@@ -29,28 +27,21 @@
 
 @property (nonatomic, assign, readwrite) FBSimulatorState lastKnownState;
 @property (nonatomic, strong, readonly) NSMutableSet *knownLaunchedProcesses;
-
-@property (nonatomic, strong, readonly) SimDevice *simDevice;
-@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> sink;
 
 @end
 
 @implementation FBSimulatorEventRelay
 
-- (instancetype)initWithSimDevice:(SimDevice *)simDevice launchdProcess:(nullable FBProcessInfo *)launchdProcess containerApplication:(nullable FBProcessInfo *)containerApplication processFetcher:(FBSimulatorProcessFetcher *)processFetcher queue:(dispatch_queue_t)queue sink:(id<FBSimulatorEventSink>)sink
+- (instancetype)initWithLaunchdProcess:(nullable FBProcessInfo *)launchdProcess containerApplication:(nullable FBProcessInfo *)containerApplication sink:(id<FBSimulatorEventSink>)sink
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _simDevice = simDevice;
   _launchdProcess = launchdProcess;
   _containerApplication = containerApplication;
-  _processFetcher = processFetcher;
-  _queue = queue;
   _sink = sink;
 
   _knownLaunchedProcesses = [NSMutableSet set];
@@ -181,42 +172,9 @@
   if (state == self.lastKnownState) {
     return;
   }
-  if (state == FBSimulatorStateBooted) {
-    [self fetchLaunchdSimInfoFromBoot];
-  }
-  if (state == FBSimulatorStateShutdown || state == FBSimulatorStateShuttingDown) {
-    [self discardLaunchdSimInfoFromBoot];
-  }
 
   self.lastKnownState = state;
   [self.sink didChangeState:state];
-}
-
-#pragma mark Updating Launch Info from CoreSimulator Notifications
-
-- (void)fetchLaunchdSimInfoFromBoot
-{
-  // We already have launchd_sim info, don't bother fetching.
-  if (self.launchdProcess) {
-    return;
-  }
-
-  FBProcessInfo *launchdSim = [self.processFetcher launchdProcessForSimDevice:self.simDevice];
-  if (!launchdSim) {
-    return;
-  }
-  [self simulatorDidLaunch:launchdSim];
-}
-
-- (void)discardLaunchdSimInfoFromBoot
-{
-  // Don't look at the application if we know if we don't consider the Simulator boot.
-  if (!self.launchdProcess) {
-    return;
-  }
-
-  // Notify of Simulator Termination.
-  [self simulatorDidTerminate:self.launchdProcess expected:NO];
 }
 
 @end
