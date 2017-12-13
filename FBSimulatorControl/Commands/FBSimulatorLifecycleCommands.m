@@ -22,7 +22,7 @@
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorEventRelay.h"
+#import "FBSimulatorMutableState.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSubprocessTerminationStrategy.h"
@@ -124,8 +124,8 @@
 - (nullable FBSimulatorConnection *)connectWithError:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
-  if (simulator.eventRelay.connection) {
-    return simulator.eventRelay.connection;
+  if (simulator.mutableState.connection) {
+    return simulator.mutableState.connection;
   }
   if (simulator.state != FBSimulatorStateBooted) {
     return [[[FBSimulatorError
@@ -142,7 +142,7 @@
 - (BOOL)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
-  FBSimulatorConnection *connection = simulator.eventRelay.connection;
+  FBSimulatorConnection *connection = simulator.mutableState.connection;
   if (!connection) {
     [logger.debug logFormat:@"Simulator %@ does not have an active connection", simulator.shortDescription];
     return YES;

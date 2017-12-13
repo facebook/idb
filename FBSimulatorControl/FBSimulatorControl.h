@@ -49,7 +49,7 @@
 #import <FBSimulatorControl/FBSimulatorDiagnostics.h>
 #import <FBSimulatorControl/FBSimulatorEraseConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorError.h>
-#import <FBSimulatorControl/FBSimulatorEventRelay.h>
+#import <FBSimulatorControl/FBSimulatorMutableState.h>
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 #import <FBSimulatorControl/FBSimulatorHID.h>
 #import <FBSimulatorControl/FBSimulatorHIDEvent.h>

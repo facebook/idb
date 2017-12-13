@@ -7,20 +7,17 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <FBSimulatorControl/FBSimulatorEventSink.h>
+#import <Foundation/Foundation.h>
 
-@class FBSimulatorProcessFetcher;
+#import <FBSimulatorControl/FBSimulatorEventSink.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- Automatically subscribes to event sources that create Simulator Events passively.
- The results of these event sources are translated into events for the relayed sink.
-
- Since passive events can duplicate those generate by FBSimulatorControl callers,
- this class also de-duplicates events.
+ An Event Sink that stores recieved events as state.
+ Then forwards these events to the provided sink, so that events are de-duplicated.
  */
-@interface FBSimulatorEventRelay : NSObject <FBSimulatorEventSink>
+@interface FBSimulatorMutableState : NSObject <FBSimulatorEventSink>
 
 #pragma mark Initializers
 

@@ -30,7 +30,7 @@
 #import "FBSimulatorControlOperator.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorEventRelay.h"
+#import "FBSimulatorMutableState.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHIDEvent.h"
 #import "FBSimulatorLifecycleCommands.h"
@@ -94,9 +94,9 @@
   FBSimulatorDiagnostics *diagnosticsSink = [FBSimulatorDiagnostics withSimulator:self];
 
   FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[notificationSink, loggingSink, diagnosticsSink, mutableSink]];
-  FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithLaunchdProcess:launchdSimProcess containerApplication:containerApplicationProcess sink:compositeSink];
+  FBSimulatorMutableState *mutableState = [[FBSimulatorMutableState alloc] initWithLaunchdProcess:launchdSimProcess containerApplication:containerApplicationProcess sink:compositeSink];
 
-  _eventRelay = relay;
+  _mutableState = mutableState;
   _mutableSink = mutableSink;
   _simulatorDiagnostics = diagnosticsSink;
 
@@ -218,22 +218,22 @@
 
 - (FBProcessInfo *)launchdProcess
 {
-  return self.eventRelay.launchdProcess;
+  return self.mutableState.launchdProcess;
 }
 
 - (FBSimulatorConnection *)connection
 {
-  return self.eventRelay.connection;
+  return self.mutableState.connection;
 }
 
 - (FBProcessInfo *)containerApplication
 {
-  return self.eventRelay.containerApplication;
+  return self.mutableState.containerApplication;
 }
 
 - (id<FBSimulatorEventSink>)eventSink
 {
-  return self.eventRelay;
+  return self.mutableState;
 }
 
 - (id<FBSimulatorEventSink>)userEventSink

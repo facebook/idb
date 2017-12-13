@@ -7,31 +7,27 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorEventRelay.h"
-
-#import <Cocoa/Cocoa.h>
+#import "FBSimulatorMutableState.h"
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBCoreSimulatorNotifier.h"
 #import "FBSimulatorAgentOperation.h"
 #import "FBSimulatorConnection.h"
-#import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorApplicationOperation.h"
 
-@interface FBSimulatorEventRelay ()
+@interface FBSimulatorMutableState ()
 
 @property (nonatomic, copy, readwrite) FBProcessInfo *launchdProcess;
 @property (nonatomic, copy, readwrite) FBProcessInfo *containerApplication;
 @property (nonatomic, strong, readwrite) FBSimulatorConnection *connection;
 
 @property (nonatomic, assign, readwrite) FBSimulatorState lastKnownState;
-@property (nonatomic, strong, readonly) NSMutableSet *knownLaunchedProcesses;
+@property (nonatomic, strong, readonly) NSMutableSet<FBProcessInfo *> *knownLaunchedProcesses;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> sink;
 
 @end
 
-@implementation FBSimulatorEventRelay
+@implementation FBSimulatorMutableState
 
 - (instancetype)initWithLaunchdProcess:(nullable FBProcessInfo *)launchdProcess containerApplication:(nullable FBProcessInfo *)containerApplication sink:(id<FBSimulatorEventSink>)sink
 {
