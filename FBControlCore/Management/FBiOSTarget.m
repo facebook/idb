@@ -66,6 +66,9 @@ NSArray<NSString *> *FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType target
   if ((targetType & FBiOSTargetTypeSimulator) == FBiOSTargetTypeSimulator) {
     [strings addObject:@"Simulator"];
   }
+  if ((targetType & FBiOSTargetTypeLocalMac) == FBiOSTargetTypeLocalMac) {
+    [strings addObject:@"Mac"];
+  }
   return [strings copy];
 }
 
@@ -79,6 +82,9 @@ extern FBiOSTargetType FBiOSTargetTypeFromTargetTypeStrings(NSArray<NSString *> 
     }
     if ([targetTypeString isEqualToString:@"device"]) {
       targetType = targetType | FBiOSTargetTypeDevice;
+    }
+    if ([targetTypeString isEqualToString:@"mac"]) {
+      targetType = targetType | FBiOSTargetTypeLocalMac;
     }
   }
 
