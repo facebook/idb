@@ -76,9 +76,10 @@
   if (targetType & FBiOSTargetTypeSimulator) {
     [format appendString:@" OR SELF MATCHES '^[[:xdigit:]]{8}-([[:xdigit:]]{4}-){3}[[:xdigit:]]{12}$'"];
   }
-  NSPredicate *predicate = [NSPredicate predicateWithFormat:format];
-
-  return predicate;
+  if (targetType & FBiOSTargetTypeLocalMac) {
+    [format appendString:@" OR SELF MATCHES '^[[:alnum:]]{12}$'"];
+  }
+  return [NSPredicate predicateWithFormat:format];
 }
 
 + (NSPredicate *)devices:(NSArray<FBDeviceModel> *)deviceConfigurations

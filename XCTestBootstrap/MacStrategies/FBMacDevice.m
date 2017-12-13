@@ -13,6 +13,8 @@
 #import <DTXConnectionServices/DTXSocketTransport.h>
 #import <FBControlCore/FBControlCore.h>
 #import <objc/runtime.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <IOKit/IOKitLib.h>
 
 #import "FBProductBundle.h"
 #import "XCTestBootstrapError.h"
@@ -40,7 +42,8 @@
     _bundleIDToRunningTask = @{}.mutableCopy;
     _launchdProcess = [[FBProcessInfo alloc] initWithProcessIdentifier:1 launchPath:@"/sbin/launchd" arguments:@[] environment:@{}];
     _requiresTestDaemonMediationForTestHostConnection = YES;
-    _shortDescription = _name = _udid = @"Local MacOSX host";
+    _shortDescription = _name = @"Local MacOSX host";
+    _udid = [FBMacDevice resolveDeviceUDID];
     _state = FBSimulatorStateBooted;
     _targetType = FBiOSTargetTypeLocalMac;
     _workQueue = dispatch_get_main_queue();
@@ -88,6 +91,22 @@
   return [FBFuture futureWithResult:[NSNull null]];
 }
 
+
++ (NSString *)resolveDeviceUDID
+{
+  io_service_t platformExpert = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("IOPlatformExpertDevice"));
+  if (!platformExpert) {
+    return nil;
+  }
+  CFTypeRef serialNumberAsCFString =
+    IORegistryEntryCreateCFProperty(
+      platformExpert,
+      CFSTR(kIOPlatformSerialNumberKey),
+      kCFAllocatorDefault,
+      0);
+  IOObjectRelease(platformExpert);
+  return (NSString *)CFBridgingRelease(serialNumberAsCFString);
+}
 
 #pragma mark - FBDeviceOperator
 @synthesize requiresTestDaemonMediationForTestHostConnection = _requiresTestDaemonMediationForTestHostConnection;
