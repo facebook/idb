@@ -226,14 +226,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (FBTask *)taskWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments;
 
 /**
- Executes the receiver.
-
- @param error an error out for any error that occurs.
- @return The stdout of the process if successful, nil otherwise.
- */
-- (nullable NSString *)executeReturningError:(NSError **)error;
-
-/**
  Builds the Task, wrapping it in a future.
 
  @return a Future, encapsulating the task on completion.

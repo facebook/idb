@@ -235,15 +235,6 @@
   return [[self withLaunchPath:launchPath arguments:arguments] build];
 }
 
-- (nullable NSString *)executeReturningError:(NSError **)error
-{
-  FBTask *task = [[self build] startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
-  if (error) {
-    *error = [task error];
-  }
-  return [task stdOut];
-}
-
 - (FBFuture<FBTask *> *)buildFuture
 {
   pid_t processIdentifier = 0;
