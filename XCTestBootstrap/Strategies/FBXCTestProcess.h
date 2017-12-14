@@ -16,9 +16,9 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBFileConsumer;
 @protocol FBXCTestProcessExecutor;
 
+@class FBLaunchedProcess;
 @class FBSimulator;
 @class FBXCTestProcess;
-@class FBXCTestProcessInfo;
 
 /**
  A Platform-Agnostic wrapper responsible for managing an xctest process.
@@ -45,7 +45,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param timeout the timeout in seconds for the process to terminate.
  @return a Future that will resolve when the process info when launched.
  */
-- (FBFuture<FBXCTestProcessInfo *> *)startWithTimeout:(NSTimeInterval)timeout;
+- (FBFuture<id<FBLaunchedProcess>> *)startWithTimeout:(NSTimeInterval)timeout;
 
 #pragma mark Properties
 

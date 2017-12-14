@@ -46,7 +46,7 @@
 
 #pragma mark Public
 
-- (FBFuture<FBXCTestProcessInfo *> *)startProcess:(FBXCTestProcess *)process
+- (FBFuture<id<FBLaunchedProcess>> *)startProcess:(FBXCTestProcess *)process
 {
   NSError *error = nil;
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
@@ -92,9 +92,9 @@
 
 #pragma mark Private
 
-+ (FBXCTestProcessInfo *)operationToProcessInfo:(FBSimulatorAgentOperation *)operation queue:(dispatch_queue_t)queue
++ (FBLaunchedProcess *)operationToProcessInfo:(FBSimulatorAgentOperation *)operation queue:(dispatch_queue_t)queue
 {
-  FBFuture<NSNumber *> *completion = [operation.future
+  FBFuture<NSNumber *> *exitCode = [operation.future
     onQueue:queue map:^(NSNumber *statLocNumber) {
       int stat_loc = statLocNumber.intValue;
       if (WIFEXITED(stat_loc)) {
@@ -103,7 +103,7 @@
         return @(WTERMSIG(stat_loc));
       }
     }];
-  return [[FBXCTestProcessInfo alloc] initWithProcessIdentifier:operation.process.processIdentifier completion:completion];
+  return [[FBLaunchedProcess alloc] initWithProcessIdentifier:operation.process.processIdentifier exitCode:exitCode];
 }
 
 @end

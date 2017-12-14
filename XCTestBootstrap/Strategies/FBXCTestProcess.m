@@ -57,18 +57,18 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 {
   return [[self.executor
     startProcess:self]
-    onQueue:self.executor.workQueue map:^(FBXCTestProcessInfo *processInfo) {
-      FBFuture<NSNumber *> *completion = [self decorateLaunchedWithErrorHandlingProcess:processInfo timeout:timeout];
-      return [[FBXCTestProcessInfo alloc] initWithProcessIdentifier:processInfo.processIdentifier completion:completion];
+    onQueue:self.executor.workQueue map:^(FBLaunchedProcess *processInfo) {
+      FBFuture<NSNumber *> *exitCode = [self decorateLaunchedWithErrorHandlingProcess:processInfo timeout:timeout];
+      return [[FBLaunchedProcess alloc] initWithProcessIdentifier:processInfo.processIdentifier exitCode:exitCode];
     }];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSNumber *> *)decorateLaunchedWithErrorHandlingProcess:(FBXCTestProcessInfo *)processInfo timeout:(NSTimeInterval)timeout
+- (FBFuture<NSNumber *> *)decorateLaunchedWithErrorHandlingProcess:(FBLaunchedProcess *)processInfo timeout:(NSTimeInterval)timeout
 {
   NSDate *startDate = [NSDate.date dateByAddingTimeInterval:CrashLogStartDateFuzz];
-  FBFuture<NSNumber *> *completionFuture = [processInfo.completion
+  FBFuture<NSNumber *> *completionFuture = [processInfo.exitCode
     onQueue:self.executor.workQueue fmap:^(NSNumber *exitCode) {
       NSError *exitError = [FBXCTestProcess abnormalExitErrorFor:processInfo.processIdentifier exitCode:exitCode.intValue startDate:startDate];
       if (exitError) {

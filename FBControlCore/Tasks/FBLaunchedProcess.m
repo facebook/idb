@@ -7,11 +7,14 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBXCTestProcessExecutor.h"
+#import "FBLaunchedProcess.h"
 
-@implementation FBXCTestProcessInfo
+@implementation FBLaunchedProcess
 
-- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier completion:(FBFuture<NSNumber *> *)completion;
+@synthesize processIdentifier = _processIdentifier;
+@synthesize exitCode = _exitCode;
+
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier exitCode:(FBFuture<NSNumber *> *)exitCode
 {
   self = [super init];
   if (!self) {
@@ -19,7 +22,7 @@
   }
 
   _processIdentifier = processIdentifier;
-  _completion = completion;
+  _exitCode = exitCode;
 
   return self;
 }

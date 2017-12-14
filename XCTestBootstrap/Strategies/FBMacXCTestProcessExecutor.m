@@ -43,10 +43,10 @@
   return self;
 }
 
-- (FBFuture<FBXCTestProcessInfo *> *)startProcess:(FBXCTestProcess *)process
+- (FBFuture<id<FBLaunchedProcess>> *)startProcess:(FBXCTestProcess *)process
 {
   __block pid_t processIdentifier = 0;
-  FBFuture<NSNumber *> *completion = [[[[[[[[FBTaskBuilder
+  FBFuture<NSNumber *> *completed = [[[[[[[[FBTaskBuilder
     withLaunchPath:process.launchPath]
     withArguments:process.arguments]
     withEnvironment:process.environment]
@@ -64,7 +64,7 @@
       return [FBFuture futureWithResult:@(task.exitCode)];
     }];
 
-  FBXCTestProcessInfo *info = [[FBXCTestProcessInfo alloc] initWithProcessIdentifier:processIdentifier completion:completion];
+  FBLaunchedProcess *info = [[FBLaunchedProcess alloc] initWithProcessIdentifier:processIdentifier exitCode:completed];
   return [FBFuture futureWithResult:info];
 }
 

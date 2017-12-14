@@ -125,14 +125,14 @@
   // Start the process.
   return [[process
     startWithTimeout:self.configuration.testTimeout]
-    onQueue:self.executor.workQueue fmap:^(FBXCTestProcessInfo *processInfo) {
+    onQueue:self.executor.workQueue fmap:^(FBLaunchedProcess *processInfo) {
       return [FBListTestStrategy launchedProcess:processInfo otestQueryOutputPath:otestQueryOutputPath queue:self.executor.workQueue];
     }];
 }
 
 #pragma mark Private
 
-+ (FBFuture<NSArray<NSString *> *> *)launchedProcess:(FBXCTestProcessInfo *)processInfo otestQueryOutputPath:(NSString *)otestQueryOutputPath queue:(dispatch_queue_t)queue
++ (FBFuture<NSArray<NSString *> *> *)launchedProcess:(FBLaunchedProcess *)processInfo otestQueryOutputPath:(NSString *)otestQueryOutputPath queue:(dispatch_queue_t)queue
 {
   NSError *error = nil;
   FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
@@ -142,7 +142,7 @@
   }
   return [[[[reader
     startReading]
-    fmapReplace:processInfo.completion]
+    fmapReplace:processInfo.exitCode]
     onQueue:queue chain:^(FBFuture *replacement) {
       // Close and wait
       FBFuture<NSArray<NSNull *> *> *future = [FBFuture futureWithFutures:@[

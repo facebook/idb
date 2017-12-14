@@ -121,7 +121,7 @@
   return [[[self
     testProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutReader:stdOutReader stdErrReader:stdErrReader]
     startWithTimeout:self.configuration.testTimeout]
-    onQueue:self.executor.workQueue fmap:^(FBXCTestProcessInfo *processInfo) {
+    onQueue:self.executor.workQueue fmap:^(FBLaunchedProcess *processInfo) {
       return [self
         completeLaunchedProcess:processInfo
         otestShimOutputPath:otestShimOutputPath
@@ -132,7 +132,7 @@
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)completeLaunchedProcess:(FBXCTestProcessInfo *)processInfo otestShimOutputPath:(NSString *)otestShimOutputPath otestShimConsumer:(id<FBFileConsumer>)otestShimConsumer otestShimLineReader:(FBLineFileConsumer *)otestShimLineReader
+- (FBFuture<NSNull *> *)completeLaunchedProcess:(FBLaunchedProcess *)processInfo otestShimOutputPath:(NSString *)otestShimOutputPath otestShimConsumer:(id<FBFileConsumer>)otestShimConsumer otestShimLineReader:(FBLineFileConsumer *)otestShimLineReader
 {
   id<FBLogicXCTestReporter> reporter = self.reporter;
   if (self.configuration.waitForDebugger) {
@@ -147,7 +147,7 @@
   NSError *error = nil;
   FBFileReader *otestShimReader = [FBFileReader readerWithFilePath:otestShimOutputPath consumer:otestShimConsumer error:&error];
   if (!otestShimReader) {
-    [processInfo.completion cancel];
+    [processInfo.exitCode cancel];
     return [[[FBXCTestError
       describeFormat:@"Failed to open fifo for reading: %@", otestShimOutputPath]
       causedBy:error]
@@ -156,7 +156,7 @@
 
   return [[[[otestShimReader
     startReading]
-    fmapReplace:processInfo.completion]
+    fmapReplace:processInfo.exitCode]
     onQueue:self.executor.workQueue fmap:^(id _) {
       // Close and wait
       return [FBFuture futureWithFutures:@[
