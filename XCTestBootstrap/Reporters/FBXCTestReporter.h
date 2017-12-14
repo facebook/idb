@@ -125,6 +125,18 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)testCase:(NSString *)testClass method:(NSString *)method didFinishActivity:(FBActivityRecord *)activity;
 
+/**
+ Called when a test case has finished
+
+ @note This will be called instead of testCaseDidFinishForTestClass:method:withStatus:duration:logs: if implemented
+ @param testClass the test class that has finished.
+ @param method the test method that has finished.
+ @param status the status of the finish of the test case.
+ @param duration the duration of the test case.
+ @param logs the logs from the test case.
+ */
+- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(nullable NSArray *)logs;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -55,6 +55,7 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
   NSMutableDictionary<NSString *, NSString *> *environment = [NSProcessInfo.processInfo.environment mutableCopy];
   environment[XcodebuildEnvironmentTargetUDID] = target.udid;
 
+  [target.logger logFormat:@"Running test with xcodebuild %@", [arguments componentsJoinedByString:@" "]];
   return [[[[[FBTaskBuilder
     withLaunchPath:xcodeBuildPath arguments:arguments]
     withEnvironment:environment]

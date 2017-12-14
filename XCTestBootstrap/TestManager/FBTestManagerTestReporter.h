@@ -119,4 +119,17 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  */
 - (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator  testCase:(NSString *)testClass method:(NSString *)method didFinishActivity:(FBActivityRecord *)activity;
 
+/**
+ Called when a Test Case has completed.
+
+ @note This will be called instead of testManagerMediator:testCaseDidFinishForTestClass:method:withStatus:duration:logs: if implemented
+ @param mediator the test mediator.
+ @param testClass the Test Class.
+ @param method the Test Method.
+ @param status the status of the test case.
+ @param duration the duration of the test case.
+ @param logs the logs for the test case.
+ */
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(nullable NSArray *)logs;
+
 @end
