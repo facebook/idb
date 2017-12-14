@@ -200,13 +200,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBTask *)build;
 
-/**
- Build a Task Configuration.
-
- @return a Task Configuration.
- */
-- (FBTaskConfiguration *)buildConfiguration;
-
 @end
 
 /**

@@ -193,6 +193,8 @@
   return [FBTask taskWithConfiguration:self.buildConfiguration];
 }
 
+#pragma mark - Private
+
 - (FBTaskConfiguration *)buildConfiguration
 {
   return [[FBTaskConfiguration alloc]
@@ -204,8 +206,6 @@
     stdErr:self.stdErr
     connectStdIn:self.connectStdIn];
 }
-
-#pragma mark - Private
 
 + (NSDictionary<NSString *, NSString *> *)defaultEnvironmentForSubprocess
 {
