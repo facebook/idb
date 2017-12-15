@@ -74,6 +74,7 @@
 #import <FBControlCore/FBProcessTerminationStrategy.h>
 #import <FBControlCore/FBReportingiOSActionReaderDelegate.h>
 #import <FBControlCore/FBScale.h>
+#import <FBControlCore/FBScreenshotCommands.h>
 #import <FBControlCore/FBServiceManagement.h>
 #import <FBControlCore/FBSettingsApproval.h>
 #import <FBControlCore/FBSocketReader.h>
@@ -93,3 +94,4 @@
 #import <FBControlCore/FBXCTestCommands.h>
 #import <FBControlCore/NSPredicate+FBControlCore.h>
 #import <FBControlCore/NSRunLoop+FBControlCore.h>
+

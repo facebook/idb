@@ -38,6 +38,7 @@
 #import "FBSimulatorLoggingEventSink.h"
 #import "FBSimulatorNotificationEventSink.h"
 #import "FBSimulatorPool.h"
+#import "FBSimulatorScreenshotCommands.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorSettingsCommands.h"
 #import "FBSimulatorVideoRecordingCommands.h"
@@ -298,6 +299,7 @@
   static NSArray<Class> *commandClasses;
   dispatch_once(&onceToken, ^{
     commandClasses = @[
+      FBSimulatorScreenshotCommands.class,
       FBSimulatorAgentCommands.class,
       FBSimulatorApplicationCommands.class,
       FBSimulatorApplicationDataCommands.class,
