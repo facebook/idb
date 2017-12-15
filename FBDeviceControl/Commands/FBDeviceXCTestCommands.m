@@ -326,7 +326,7 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
 }
 
 // This replicates the stdout from xcodebuild, but without all the garbage that xcodebuild outputs
-+ (void)addTestLogsFromActivitySummary:(NSDictionary *)activitySummary logs:(NSMutableArray<NSString *> *)logs testStartTimeInterval:(double)testStartTimeInterval indent:(int)indent
++ (void)addTestLogsFromActivitySummary:(NSDictionary *)activitySummary logs:(NSMutableArray<NSString *> *)logs testStartTimeInterval:(double)testStartTimeInterval indent:(NSUInteger)indent
 {
 
   NSAssert([activitySummary isKindOfClass:NSDictionary.class], @"activitySummary not a NSDictionary");

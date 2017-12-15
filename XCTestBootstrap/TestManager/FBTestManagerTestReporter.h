@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBActivityRecord;
 @class FBTestManagerAPIMediator;
 @class FBTestManagerResultSummary;
@@ -32,7 +34,7 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
 
  @param mediator the mediator starting the Test Plan.
  */
-- (void)testManagerMediatorDidBeginExecutingTestPlan:(FBTestManagerAPIMediator *)mediator;
+- (void)testManagerMediatorDidBeginExecutingTestPlan:(nullable FBTestManagerAPIMediator *)mediator;
 
 /**
  Called when a Test Suite starts.
@@ -41,7 +43,7 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param testSuite the Test Suite.
  @param startTime the Suite Start time.
  */
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime;
+- (void)testManagerMediator:(nullable FBTestManagerAPIMediator *)mediator testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime;
 
 /**
  Called when a Test Case has completed.
@@ -52,7 +54,7 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param status the status of the test case.
  @param duration the duration of the test case.
  */
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration;
+- (void)testManagerMediator:(nullable FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration;
 
 /**
  Called when a Test Case fails
@@ -63,7 +65,7 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param file the file name.
  @param line the line number.
  */
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line;
+- (void)testManagerMediator:(nullable FBTestManagerAPIMediator *)mediator testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(nullable NSString *)file line:(NSUInteger)line;
 
 /**
  Called when a Test Bundle is ready.
@@ -72,7 +74,7 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param protocolVersion ???
  @param minimumVersion ???
  */
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testBundleReadyWithProtocolVersion:(NSInteger)protocolVersion minimumVersion:(NSInteger)minimumVersion;
+- (void)testManagerMediator:(nullable FBTestManagerAPIMediator *)mediator testBundleReadyWithProtocolVersion:(NSInteger)protocolVersion minimumVersion:(NSInteger)minimumVersion;
 
 /**
  Called when a Test Bundle is ready.
@@ -81,7 +83,7 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param testClass the Test Class.
  @param method the Test Method.
  */
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method;
+- (void)testManagerMediator:(nullable FBTestManagerAPIMediator *)mediator testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method;
 
 /**
  Called when a Test Suite has Finished.
@@ -89,14 +91,14 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param mediator the test mediator.
  @param summary the Test Result Summary.
  */
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator finishedWithSummary:(FBTestManagerResultSummary *)summary;
+- (void)testManagerMediator:(nullable FBTestManagerAPIMediator *)mediator finishedWithSummary:(FBTestManagerResultSummary *)summary;
 
 /**
  Called when the Mediator finished it's 'Test Plan'.
 
  @param mediator the test mediator.
  */
-- (void)testManagerMediatorDidFinishExecutingTestPlan:(FBTestManagerAPIMediator *)mediator;
+- (void)testManagerMediatorDidFinishExecutingTestPlan:(nullable FBTestManagerAPIMediator *)mediator;
 
 @optional
 /**
@@ -107,7 +109,7 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param method the current test method
  @param activity information about the activity
  */
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator  testCase:(NSString *)testClass method:(NSString *)method willStartActivity:(FBActivityRecord *)activity;
+- (void)testManagerMediator:(nullable FBTestManagerAPIMediator *)mediator  testCase:(NSString *)testClass method:(NSString *)method willStartActivity:(FBActivityRecord *)activity;
 
 /**
  Called when a activity has finished
@@ -117,7 +119,7 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param method the current test method
  @param activity information about the activity
  */
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator  testCase:(NSString *)testClass method:(NSString *)method didFinishActivity:(FBActivityRecord *)activity;
+- (void)testManagerMediator:(nullable FBTestManagerAPIMediator *)mediator  testCase:(NSString *)testClass method:(NSString *)method didFinishActivity:(FBActivityRecord *)activity;
 
 /**
  Called when a Test Case has completed.
@@ -130,6 +132,8 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param duration the duration of the test case.
  @param logs the logs for the test case.
  */
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(nullable NSArray *)logs;
+- (void)testManagerMediator:(nullable FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(nullable NSArray *)logs;
 
 @end
+
+NS_ASSUME_NONNULL_END
