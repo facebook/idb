@@ -164,6 +164,9 @@ struct CommandRunner : Runner {
         return nil
       }
     }
+    if let completed = continuation.completed, completed.state != .running {
+      return nil
+    }
     return continuation
   }
 }
