@@ -265,11 +265,7 @@ struct ActionRoute : Route {
 }
 
 struct ScreenshotRoute : Route {
-  enum Format : String {
-    case jpeg = "jpeg"
-    case png = "png"
-  }
-  let format: ScreenshotRoute.Format
+  let format: FBScreenshotFormat
 
   var method: HttpMethod { get {
     return HttpMethod.GET
@@ -286,11 +282,7 @@ struct ScreenshotRoute : Route {
         throw QueryError.NoneProvided
       }
       let imageData: Data = try performer.runWithSingleSimulator(query) { simulator in
-        let image = try simulator.connect().connectToFramebuffer().image
-        switch (format) {
-        case .jpeg: return try image.jpegImageData()
-        case .png: return try image.pngImageData()
-        }
+        return try simulator.takeScreenshot(format).await() as Data
       }
       return HttpResponse(statusCode: 200, body: imageData, contentType: "image/" + self.format.rawValue)
     }
@@ -510,8 +502,8 @@ class HttpRelay : Relay {
       self.terminateRoute,
       self.uninstallRoute,
       self.uploadRoute,
-      ScreenshotRoute(format: ScreenshotRoute.Format.png),
-      ScreenshotRoute(format: ScreenshotRoute.Format.jpeg),
+      ScreenshotRoute(format: FBScreenshotFormat.PNG),
+      ScreenshotRoute(format: FBScreenshotFormat.JPEG),
     ]
   }}
 }
