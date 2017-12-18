@@ -119,10 +119,12 @@
   FBSimulator *simulator = self.simulator;
   return [[[simulator
     runningApplicationWithBundleID:appLaunch.bundleID]
-    onQueue:self.simulator.workQueue fmap:^(FBProcessInfo *process) {
-      return process
-        ? [[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process]
-        : [FBFuture futureWithResult:NSNull.null];
+    onQueue:self.simulator.workQueue chain:^FBFuture<NSNull *> *(FBFuture<FBProcessInfo *> *future) {
+      FBProcessInfo *process = future.result;
+      if (process) {
+        return [[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
     }]
     onQueue:simulator.workQueue fmap:^FBFuture *(NSNull *result) {
       return [simulator launchApplication:appLaunch];
