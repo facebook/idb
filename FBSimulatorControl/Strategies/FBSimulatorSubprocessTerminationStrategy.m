@@ -9,6 +9,8 @@
 
 #import "FBSimulatorSubprocessTerminationStrategy.h"
 
+#import <CoreSimulator/SimDevice.h>
+
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulator.h"
@@ -47,7 +49,7 @@
 
 #pragma mark Public Methods
 
-- (FBFuture<NSNull *> *)terminate:(FBProcessInfo *)process;
+- (FBFuture<NSNull *> *)terminate:(FBProcessInfo *)process
 {
   // Confirm that the process has the launchd_sim as a parent process.
   // The interaction should restrict itself to simulator processes so this is a guard
@@ -64,10 +66,29 @@
     serviceNameForProcess:process]
     rephraseFailure:@"Could not Obtain the Service Name for %@", process.shortDescription]
     onQueue:self.simulator.workQueue fmap:^FBFuture *(NSString *serviceName) {
-      return [[self.simulator
-        stopServiceWithName:serviceName]
-        rephraseFailure:@"Failed to stop service '%@'", serviceName];
+      // If the service represents an Application, use the SimDevice API.
+      // Otherwise fallback to the Simulator's launchctl.
+      NSString *applicationBundleID = [FBSimulatorLaunchCtlCommands extractApplicationBundleIdentifierFromServiceName:serviceName];
+      if (applicationBundleID) {
+        return [self terminateApplication:applicationBundleID];
+      } else {
+        return [[self.simulator
+          stopServiceWithName:serviceName]
+          rephraseFailure:@"Failed to stop service '%@'", serviceName];
+      }
     }];
+}
+
+#pragma mark Private
+
+- (FBFuture<NSNull *> *)terminateApplication:(NSString *)bundleID
+{
+  SimDevice *device = self.simulator.device;
+  NSError *error = nil;
+  if (![device terminateApplicationWithID:bundleID error:&error]) {
+    return [FBFuture futureWithError:error];
+  }
+  return [FBFuture futureWithResult:NSNull.null];
 }
 
 @end

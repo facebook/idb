@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulator;
 
 /**
- A Strategy for Terminating the Suprocesses of a Simulator.
+ A Strategy for Terminating the Suprocesses of a Simulator, whether they be Applications or regular spawned processes.
  */
 @interface FBSimulatorSubprocessTerminationStrategy : NSObject
 
@@ -35,6 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Terminates a Process for a Simulator.
  Will fail if the Process does not belong to the Simulator.
+ Uses the highest-level API available for doing-so.
 
  @param process the Process to terminate.
  @return A future that resolves successfully if the process is terminated.
