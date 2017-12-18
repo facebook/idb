@@ -44,6 +44,8 @@
 
 @implementation FBApplicationLaunchStrategy
 
+#pragma mark Initializers
+
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator useBridge:(BOOL)useBridge;
 {
   Class strategyClass = useBridge ? FBApplicationLaunchStrategy_CoreSimulator.class : FBApplicationLaunchStrategy_CoreSimulator.class;
@@ -75,17 +77,8 @@
   return [[[[[simulator
     installedApplicationWithBundleID:appLaunch.bundleID]
     rephraseFailure:@"App %@ can't be launched as it isn't installed", appLaunch.bundleID]
-    onQueue:simulator.workQueue fmap:^(FBInstalledApplication *_) {
-      return [[simulator runningApplicationWithBundleID:appLaunch.bundleID]
-        onQueue:simulator.workQueue chain:^(FBFuture<FBProcessInfo *> *future){
-          FBProcessInfo *process = future.result;
-          if (process) {
-            return [[FBSimulatorError
-             describeFormat:@"App %@ can't be launched as is running (%@)", appLaunch.bundleID, process.shortDescription]
-             failFuture];
-          }
-          return [FBFuture futureWithResult:NSNull.null];
-        }];
+    onQueue:simulator.workQueue fmap:^(id _) {
+      return [self confirmApplicationIsNotRunning:appLaunch.bundleID];
     }]
     onQueue:simulator.workQueue fmap:^FBFuture<FBSimulatorApplicationOperation *> *(id _) {
       return [FBFuture futureWithFutures:@[
@@ -136,10 +129,27 @@
     }];
 }
 
+#pragma mark Private
+
 - (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return 0;
+}
+
+- (FBFuture<NSNull *> *)confirmApplicationIsNotRunning:(NSString *)bundleID
+{
+  return [[self.simulator
+    runningApplicationWithBundleID:bundleID]
+    onQueue:self.simulator.workQueue chain:^(FBFuture<FBProcessInfo *> *future){
+      FBProcessInfo *process = future.result;
+      if (process) {
+        return [[FBSimulatorError
+          describeFormat:@"App %@ can't be launched as is running (%@)", bundleID, process.shortDescription]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
 }
 
 @end
