@@ -31,6 +31,25 @@ typedef struct afc_connection {
   unsigned int context;           /* 40 */
 } __attribute__ ((packed)) afc_connection;
 
+_Nullable CFArrayRef (*_Nonnull FBAMDCreateDeviceList)(void);
+int (*FBAMDeviceConnect)(CFTypeRef device);
+int (*FBAMDeviceDisconnect)(CFTypeRef device);
+int (*FBAMDeviceIsPaired)(CFTypeRef device);
+int (*FBAMDeviceValidatePairing)(CFTypeRef device);
+int (*FBAMDeviceStartSession)(CFTypeRef device);
+int (*FBAMDeviceStopSession)(CFTypeRef device);
+int (*FBAMDServiceConnectionGetSocket)(CFTypeRef connection);
+int (*FBAMDServiceConnectionInvalidate)(CFTypeRef connection);
+int (*FBAMDeviceSecureStartService)(CFTypeRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, void *handle);
+int (*FBAMDeviceStartService)(CFTypeRef device, CFStringRef service_name, void *handle, uint32_t *unknown);
+_Nullable CFStringRef (*_Nonnull FBAMDeviceGetName)(CFTypeRef device);
+_Nullable CFStringRef (*_Nonnull FBAMDeviceCopyValue)(CFTypeRef device, _Nullable CFStringRef domain, CFStringRef name);
+int (*FBAMDeviceSecureTransferPath)(int arg0, CFTypeRef arg1, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable arg4, int arg5);
+int (*FBAMDeviceSecureInstallApplication)(int arg0, CFTypeRef arg1, CFURLRef arg2, CFDictionaryRef arg3,  void *_Nullable arg4, int arg5);
+int (*FBAMDeviceSecureUninstallApplication)(int arg0, CFTypeRef arg1, CFStringRef arg2, int arg3, void *_Nullable arg4, int arg5);
+int (*FBAMDeviceLookupApplications)(CFTypeRef arg0, int arg1, CFDictionaryRef *arg2);
+void (*FBAMDSetLogLevel)(int32_t level);
+
 @implementation FBAMDevice
 
 #pragma mark Initializers
