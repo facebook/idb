@@ -137,6 +137,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(nullable NSArray *)logs;
 
+/**
+ Called when the test plan fails for some global issue not specific to any one test
+
+ @param message the failure message.
+ */
+- (void)testPlanDidFailWithMessage:(nonnull NSString *) message;
+
 @end
 
 NS_ASSUME_NONNULL_END

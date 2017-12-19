@@ -208,7 +208,6 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
 
 + (void)reportResults:(NSDictionary<NSString *, NSArray *> *)results reporter:(id<FBTestManagerTestReporter>)reporter
 {
-  NSAssert(results, @"results is nil");
   NSAssert([results isKindOfClass:NSDictionary.class], @"Test results not a NSDictionary");
   NSArray<NSDictionary *> *testTargets = results[@"TestableSummaries"];
 
@@ -252,8 +251,14 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
       if (testLaunchConfiguration.resultBundlePath) {
         NSString *testSummariesPath = [testLaunchConfiguration.resultBundlePath stringByAppendingPathComponent:@"TestSummaries.plist"];
         NSDictionary<NSString *, NSArray *> *results = [NSDictionary dictionaryWithContentsOfFile:testSummariesPath];
-        [self.class reportResults:results reporter:reporter];
-        [logger logFormat:@"ResultBundlePath: %@", testLaunchConfiguration.resultBundlePath];
+        if (results) {
+          [self.class reportResults:results reporter:reporter];
+          [logger logFormat:@"ResultBundlePath: %@", testLaunchConfiguration.resultBundlePath];
+        }
+        else {
+          NSString *errorMessage = [NSString stringWithFormat:@"No test results were produced for Configuration:\n\n%@", testLaunchConfiguration];
+          [reporter testManagerMediator:nil testPlanDidFailWithMessage:errorMessage];
+        }
       }
       [reporter testManagerMediatorDidFinishExecutingTestPlan:nil];
       self->_operation = nil;

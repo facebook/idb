@@ -257,7 +257,7 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"FBTestLaunchConfiguration TestBundlePath %@ | AppConfig %@ | HostPath %@ | UITesting %d | TestsToRun %@ | TestsToSkip %@ | Target application path %@ | Target application bundle id %@ xcTestRunProperties %@ | ResutltBundlePath %@",
+    @"FBTestLaunchConfiguration TestBundlePath %@ | AppConfig %@ | HostPath %@ | UITesting %d | TestsToRun %@ | TestsToSkip %@ | Target application path %@ | Target application bundle id %@ xcTestRunProperties %@ | ResultBundlePath %@",
     self.testBundlePath,
     self.applicationLaunchConfiguration,
     self.testHostPath,

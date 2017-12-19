@@ -134,6 +134,13 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  */
 - (void)testManagerMediator:(nullable FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(nullable NSArray *)logs;
 
+/**
+ Called when the test plan fails for some global issue not specific to any one test
+
+ @param message the failure message.
+ */
+- (void)testManagerMediator:(nullable FBTestManagerAPIMediator *)mediator testPlanDidFailWithMessage:(nonnull NSString *) message;
+
 @end
 
 NS_ASSUME_NONNULL_END

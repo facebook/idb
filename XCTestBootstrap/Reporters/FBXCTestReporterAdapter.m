@@ -37,6 +37,12 @@
 {
   [_reporter testSuite:testSuite didStartAt:startTime];
 }
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testPlanDidFailWithMessage:(NSString *)message
+{
+  if ([_reporter respondsToSelector:@selector(testPlanDidFailWithMessage:)]) {
+    [_reporter testPlanDidFailWithMessage:message];
+  }
+}
 
 - (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
 {
