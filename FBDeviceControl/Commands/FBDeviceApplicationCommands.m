@@ -135,6 +135,11 @@
 
 - (FBFuture<id> *)uninstallApplicationWithBundleID:(NSString *)bundleID
 {
+  // It may be better to investigate if FBAMDeviceSecureUninstallApplication
+  // outputs some error message when the bundle id doesn't exist
+  // Currently it returns 0 as if it had succeded
+  // In case that's not possible, we should look into querying if
+  // the app is installed first (FBAMDeviceLookupApplications)
   return [self.device.amDevice futureForDeviceOperation:^id(CFTypeRef device, NSError **error) {
     int returnCode = FBAMDeviceSecureUninstallApplication(
       0,
