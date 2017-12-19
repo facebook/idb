@@ -41,6 +41,27 @@
   return _value;
 }
 
++ (NSMutableDictionary<NSString *, FBProductBundle *> *)fetchInstalledApplications
+{
+  NSMutableDictionary<NSString *, FBProductBundle *> *mapping = @{}.mutableCopy;
+  NSArray<NSString *> *content = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:self.applicationInstallDirectory error:nil];
+  for (NSString *fileOrDirectory in content) {
+    if (![fileOrDirectory.pathExtension isEqualToString:@"app"]) {
+      continue;
+    }
+    NSString *path = [FBMacDevice.applicationInstallDirectory stringByAppendingPathComponent:fileOrDirectory];
+    FBProductBundle *product =
+    [[[FBProductBundleBuilder builder]
+      withBundlePath:path]
+     buildWithError:nil];
+    if (product) {
+      mapping[product.bundleID] = product;
+    }
+  }
+  return mapping;
+}
+
+
 - (instancetype)init
 {
   self = [super init];
@@ -48,7 +69,7 @@
     _architecture = FBArchitectureX86_64;
     _asyncQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
     _auxillaryDirectory = NSTemporaryDirectory();
-    _bundleIDToProductMap = @{}.mutableCopy;
+    _bundleIDToProductMap = [FBMacDevice fetchInstalledApplications];
     _bundleIDToRunningTask = @{}.mutableCopy;
     _launchdProcess = [[FBProcessInfo alloc] initWithProcessIdentifier:1 launchPath:@"/sbin/launchd" arguments:@[] environment:@{}];
     _requiresTestDaemonMediationForTestHostConnection = YES;
