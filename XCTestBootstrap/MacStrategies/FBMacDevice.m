@@ -31,6 +31,16 @@
 
 @implementation FBMacDevice
 
++ (NSString *)applicationInstallDirectory
+{
+  static dispatch_once_t onceToken;
+  static NSString *_value;
+  dispatch_once(&onceToken, ^{
+    _value = NSSearchPathForDirectoriesInDomains(NSApplicationDirectory, NSUserDomainMask, YES).lastObject;
+  });
+  return _value;
+}
+
 - (instancetype)init
 {
   self = [super init];
@@ -107,6 +117,7 @@
   IOObjectRelease(platformExpert);
   return (NSString *)CFBridgingRelease(serialNumberAsCFString);
 }
+
 
 #pragma mark - FBDeviceOperator
 @synthesize requiresTestDaemonMediationForTestHostConnection = _requiresTestDaemonMediationForTestHostConnection;
@@ -256,9 +267,25 @@
 - (nonnull FBFuture<NSNull *> *)installApplicationWithPath:(nonnull NSString *)path
 {
   NSError *error;
+  NSFileManager *fm = [NSFileManager defaultManager];
+  if (![fm fileExistsAtPath:FBMacDevice.applicationInstallDirectory]) {
+    if (![fm createDirectoryAtPath:FBMacDevice.applicationInstallDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
+      return [FBFuture futureWithResult:error];
+    }
+  }
+
+  NSString *dest = [FBMacDevice.applicationInstallDirectory stringByAppendingPathComponent:path.lastPathComponent];
+  if ([fm fileExistsAtPath:dest]) {
+    if (![fm removeItemAtPath:dest error:&error]) {
+      return [FBFuture futureWithResult:error];
+    }
+  }
+  if (![fm copyItemAtPath:path toPath:dest error:&error]) {
+    return [FBFuture futureWithResult:error];
+  }
   FBProductBundle *product =
   [[[FBProductBundleBuilder builder]
-    withBundlePath:path]
+    withBundlePath:dest]
    buildWithError:&error];
   if (error) {
     return [FBFuture futureWithResult:error];
@@ -269,9 +296,14 @@
 
 - (nonnull FBFuture<NSNull *> *)uninstallApplicationWithBundleID:(nonnull NSString *)bundleID
 {
-  if (!self.bundleIDToProductMap[bundleID]) {
+  FBProductBundle *product = self.bundleIDToProductMap[bundleID];
+  if (!product) {
     NSError *error = [XCTestBootstrapError errorForFormat:@"Application with bundleID (%@) was not installed by XCTestBootstrap", bundleID];
     return [FBFuture futureWithError:error];
+  }
+  NSError *error;
+  if (![[NSFileManager defaultManager] removeItemAtPath:product.path error:&error]) {
+    return [FBFuture futureWithResult:error];
   }
   [self.bundleIDToProductMap removeObjectForKey:bundleID];
   return [FBFuture futureWithResult:[NSNull null]];
