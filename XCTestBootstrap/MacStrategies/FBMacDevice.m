@@ -17,6 +17,8 @@
 #include <IOKit/IOKitLib.h>
 
 #import "FBProductBundle.h"
+#import "FBMacTestPreparationStrategy.h"
+#import "FBManagedTestRunStrategy.h"
 #import "XCTestBootstrapError.h"
 
 @protocol XCTestManager_XPCControl <NSObject>
@@ -27,6 +29,8 @@
 @property (nonatomic, strong) NSMutableDictionary<NSString *, FBProductBundle *> *bundleIDToProductMap;
 @property (nonatomic, strong) NSMutableDictionary<NSString *, FBTask *> *bundleIDToRunningTask;
 @property (nonatomic, strong) NSXPCConnection *connection;
+@property (nonatomic, copy) NSString *workingDirectory;
+
 @end
 
 @implementation FBMacDevice
@@ -78,6 +82,7 @@
     _state = FBSimulatorStateBooted;
     _targetType = FBiOSTargetTypeLocalMac;
     _workQueue = dispatch_get_main_queue();
+    _workingDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
   }
   return self;
 }
@@ -378,6 +383,22 @@
   return [FBFuture futureWithResult:@(task.processIdentifier)];
 }
 
+- (nonnull FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
+{
+  FBMacTestPreparationStrategy *testPreparationStrategy =
+    [FBMacTestPreparationStrategy
+     strategyWithTestLaunchConfiguration:testLaunchConfiguration
+     workingDirectory:self.workingDirectory];
+  return (FBFuture<id<FBiOSTargetContinuation>> *)
+    [[FBManagedTestRunStrategy
+      strategyWithTarget:self
+      configuration:testLaunchConfiguration
+      reporter:reporter
+      logger:logger
+      testPreparationStrategy:testPreparationStrategy]
+    connectAndStart];
+}
+
 - (NSComparisonResult)compare:(nonnull id<FBiOSTarget>)target
 {
   return NSOrderedSame; // There should be only one
@@ -412,12 +433,6 @@
 - (nonnull FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(nonnull NSString *)bundlePath timeout:(NSTimeInterval)timeout
 {
   NSAssert(nil, @"listTestsForBundleAtPath:timeout: is not yet supported");
-  return nil;
-}
-
-- (nonnull FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
-{
-  NSAssert(nil, @"startTestWithLaunchConfiguration:reporter:logger: is not yet supported");
   return nil;
 }
 
