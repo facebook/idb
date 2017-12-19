@@ -282,7 +282,11 @@
   NSMutableArray *result = [NSMutableArray array];
   for (NSString *bundleID in self.bundleIDToProductMap) {
     FBProductBundle *productBundle = self.bundleIDToProductMap[bundleID];
-    FBApplicationBundle *bundle = [FBApplicationBundle applicationWithPath:productBundle.path error:nil]; // TODO handle error
+    NSError *error;
+    FBApplicationBundle *bundle = [FBApplicationBundle applicationWithPath:productBundle.path error:&error];
+    if (!bundle) {
+      return [FBFuture futureWithError:error];
+    }
     [result addObject: [FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeMac]];
   }
   return [FBFuture futureWithResult:result];
