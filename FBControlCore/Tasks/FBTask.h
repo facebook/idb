@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFuture.h>
+#import <FBControlCore/FBLaunchedProcess.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -24,7 +25,7 @@ extern NSString *const FBTaskErrorDomain;
 /**
  Programmatic interface to a Task.
  */
-@interface FBTask : NSObject
+@interface FBTask : NSObject <FBLaunchedProcess>
 
 #pragma mark Initializers
 
@@ -77,14 +78,15 @@ extern NSString *const FBTaskErrorDomain;
 #pragma mark Accessors
 
 /**
+ A future that resolves with the exit code when the process has finished.
+ Any errors will be propogated in this future.
+ */
+- (FBFuture<NSNumber *> *)completed;
+
+/**
  Returns the Process Identifier of the Launched Process.
  */
 - (pid_t)processIdentifier;
-
-/**
- Returns the Exit Code of the Process, wrapped in a Future.
- */
-- (FBFuture<NSNumber *> *)exitCode;
 
 /**
  Returns a copy of the current state of stdout. May be called from any thread.

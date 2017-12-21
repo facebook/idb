@@ -273,6 +273,14 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
  */
 - (instancetype)resolveWithError:(NSError *)error;
 
+/**
+ Resolve the reciever upon the completion of another future.
+
+ @param future the future to resolve from.
+ @return the reciever, for chaining.
+ */
+- (instancetype)resolveFromFuture:(FBFuture *)future;
+
 @end
 
 NS_ASSUME_NONNULL_END

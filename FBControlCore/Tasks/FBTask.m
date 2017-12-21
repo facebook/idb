@@ -352,10 +352,11 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 @property (nonatomic, strong, nullable, readwrite) id<FBTaskOutput> stdInSlot;
 @property (nonatomic, strong, nullable, readwrite) FBLaunchedProcess *launchedProcess;
 
-@property (nonatomic, copy, nullable, readwrite) NSString *configurationDescription;
+@property (nonatomic, copy, readwrite) NSString *configurationDescription;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *terminationStatusFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture *errorFuture;
 
 @property (atomic, assign, readwrite) BOOL completedTeardown;
-@property (atomic, copy, nullable, readwrite) NSString *emittedError;
 
 @property (atomic, copy, nullable, readwrite) void (^terminationHandler)(FBTask *);
 @property (atomic, strong, nullable, readwrite) dispatch_queue_t terminationQueue;
@@ -424,6 +425,9 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   _queue = queue;
   _configurationDescription = configurationDescription;
 
+  _terminationStatusFuture = [FBMutableFuture future];
+  _errorFuture = [FBMutableFuture future];
+
   return self;
 }
 
@@ -473,16 +477,28 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 #pragma mark Accessors
 
+- (FBFuture<NSNumber *> *)completed
+{
+  FBFuture<NSNumber *> *completed = [FBFuture race:@[
+    self.terminationStatusFuture,
+    self.errorFuture,
+  ]];
+  return [completed onQueue:self.queue respondToCancellation:^FBFuture<NSNull *> *{
+    [self terminate];
+    return [FBFuture futureWithResult:NSNull.null];
+  }];
+}
+
+- (FBFuture<NSNumber *> *)exitCode
+{
+  return self.terminationStatusFuture;
+}
+
 - (pid_t)processIdentifier
 {
   @synchronized(self) {
     return self.launchedProcess ? self.launchedProcess.processIdentifier : -1;
   }
-}
-
-- (FBFuture<NSNumber *> *)exitCode
-{
-  return self.launchedProcess.exitCode;
 }
 
 - (nullable id)stdOut
@@ -502,21 +518,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 - (nullable NSError *)error
 {
-  if (!self.emittedError) {
-    return nil;
-  }
-
-  FBControlCoreError *error = [[[[[FBControlCoreError
-    describe:self.emittedError]
-    inDomain:FBTaskErrorDomain]
-    extraInfo:@"stdout" value:self.stdOut]
-    extraInfo:@"stderr" value:self.stdErr]
-    extraInfo:@"pid" value:@(self.processIdentifier)];
-
-  if (self.exitCode.state == FBFutureStateDone) {
-    [error extraInfo:@"exitcode" value:self.exitCode.result];
-  }
-  return [error build];
+  return self.errorFuture.error;
 }
 
 - (void)terminate
@@ -533,7 +535,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 {
   @synchronized(self)
   {
-    return self.hasTerminated && self.emittedError == nil;
+    return self.hasTerminated && self.errorFuture.error == nil;
   }
 }
 
@@ -578,6 +580,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
   self.launchedProcess = [self.process launch];
   [self.launchedProcess.exitCode onQueue:self.queue notifyOfCompletion:^(FBFuture<NSNumber *> *future) {
+    [self.terminationStatusFuture resolveFromFuture:future];
     [self terminateWithErrorMessage:future.error.localizedDescription];
   }];
 
@@ -587,8 +590,8 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 - (instancetype)terminateWithErrorMessage:(nullable NSString *)errorMessage
 {
   @synchronized(self) {
-    if (!self.emittedError) {
-      self.emittedError = errorMessage;
+    if (errorMessage) {
+      [self.errorFuture resolveWithError:[self errorForMessage:errorMessage]];
     }
     if (self.completedTeardown) {
       return self;
@@ -619,8 +622,9 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 - (void)completeTermination
 {
   NSAssert(self.process.isRunning == NO, @"Process should be terminated before calling completeTermination");
-  if (self.emittedError == nil && [self.acceptableStatusCodes containsObject:@(self.process.terminationStatus)] == NO) {
-    self.emittedError = [NSString stringWithFormat:@"Returned non-zero status code %d", self.process.terminationStatus];
+  if ([self.acceptableStatusCodes containsObject:@(self.process.terminationStatus)] == NO) {
+    NSError *error = [self errorForMessage:[NSString stringWithFormat:@"Returned non-zero status code %d", self.process.terminationStatus]];
+    [self.errorFuture resolveWithError:error];
   }
 
   // Matches the release in -[FBTask launchWithTerminationHandler:].
@@ -641,6 +645,23 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   self.terminationHandler = nil;
 }
 
+- (NSError *)errorForMessage:(NSString *)errorMessage
+{
+  FBControlCoreError *error = [[[[[FBControlCoreError
+    describe:errorMessage]
+    inDomain:FBTaskErrorDomain]
+    extraInfo:@"stdout" value:self.stdOut]
+    extraInfo:@"stderr" value:self.stdErr]
+    extraInfo:@"pid" value:@(self.processIdentifier)];
+
+  if (self.exitCode.state == FBFutureStateDone) {
+    [error extraInfo:@"exitcode" value:self.exitCode.result];
+  }
+  return [error build];
+}
+
+#pragma mark NSObject
+
 - (NSString *)description
 {
   return [NSString
@@ -648,13 +669,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
     self.configurationDescription,
     self.hasTerminated
   ];
-}
-
-#pragma mark FBFuture
-
-- (BOOL)hasCompleted
-{
-  return self.hasTerminated;
 }
 
 @end

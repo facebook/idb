@@ -569,16 +569,6 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
   return self;
 }
 
-- (void)fireAllHandlers
-{
-  for (FBFuture_Handler *handler in self.handlers) {
-    dispatch_async(handler.queue, ^{
-      handler.handler(self);
-    });
-  }
-  [self.handlers removeAllObjects];
-}
-
 - (instancetype)resolveFromFuture:(FBFuture *)future
 {
   void (^resolve)(FBFuture *future) = ^(FBFuture *resolvedFuture){
@@ -605,6 +595,16 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
   return self;
 }
 
+- (void)fireAllHandlers
+{
+  for (FBFuture_Handler *handler in self.handlers) {
+    dispatch_async(handler.queue, ^{
+      handler.handler(self);
+    });
+  }
+  [self.handlers removeAllObjects];
+}
+
 #pragma mark - KVO
 
 + (NSSet<NSString *> *)keyPathsForValuesAffectingHasCompleted
@@ -624,6 +624,11 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
 - (instancetype)resolveWithResult:(id)result
 {
   return [super resolveWithResult:result];
+}
+
+- (instancetype)resolveFromFuture:(FBFuture *)future
+{
+  return [super resolveFromFuture:future];
 }
 
 + (FBMutableFuture *)future
