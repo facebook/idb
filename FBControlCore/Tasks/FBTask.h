@@ -82,9 +82,9 @@ extern NSString *const FBTaskErrorDomain;
 - (pid_t)processIdentifier;
 
 /**
- Returns the Exit Code of the Process
+ Returns the Exit Code of the Process, wrapped in a Future.
  */
-- (int)exitCode;
+- (FBFuture<NSNumber *> *)exitCode;
 
 /**
  Returns a copy of the current state of stdout. May be called from any thread.

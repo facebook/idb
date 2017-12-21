@@ -54,14 +54,14 @@
     withStdErrConsumer:process.stdErrReader]
     withAcceptableTerminationStatusCodes:[NSSet setWithArray:@[@0, @1]]]
     buildFutureWithProcessIdentifierOut:&processIdentifier]
-    onQueue:self.workQueue chain:^FBFuture<NSNull *> *(FBFuture<FBTask *> *future) {
+    onQueue:self.workQueue chain:^FBFuture<NSNumber *> *(FBFuture<FBTask *> *future) {
       NSError *taskError = future.error;
       if (taskError) {
         NSNumber *exitCode = taskError.userInfo[@"exitcode"];
         return [FBFuture futureWithResult:exitCode];
       }
       FBTask *task = future.result;
-      return [FBFuture futureWithResult:@(task.exitCode)];
+      return task.exitCode;
     }];
 
   FBLaunchedProcess *info = [[FBLaunchedProcess alloc] initWithProcessIdentifier:processIdentifier exitCode:completed];

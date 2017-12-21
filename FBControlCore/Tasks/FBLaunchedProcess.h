@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A future that resolves with the exit code upon termination
  */
-@property (nonatomic, assign, readonly) FBFuture<NSNumber *> *exitCode;
+@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *exitCode;
 
 @end
 

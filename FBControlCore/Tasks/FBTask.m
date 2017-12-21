@@ -16,6 +16,7 @@
 #import "FBPipeReader.h"
 #import "NSRunLoop+FBControlCore.h"
 #import "FBTaskConfiguration.h"
+#import "FBLaunchedProcess.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
@@ -255,7 +256,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 @property (nonatomic, assign, readonly) int terminationStatus;
 @property (nonatomic, assign, readonly) BOOL isRunning;
 
-- (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(id<FBTaskProcess>))terminationHandler;
+- (FBLaunchedProcess *)launch;
 - (void)mountStandardOut:(id)stdOut;
 - (void)mountStandardErr:(id)stdErr;
 - (void)mountStandardIn:(id)stdIn;
@@ -321,14 +322,14 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   self.task.standardInput = stdIn;
 }
 
-- (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(id<FBTaskProcess>))terminationHandler
+- (FBLaunchedProcess *)launch
 {
-  self.task.terminationHandler = ^(NSTask *_) {
-    [self terminate];
-    terminationHandler(self);
+  FBMutableFuture<NSNumber *> *exitCode = [FBMutableFuture future];
+  self.task.terminationHandler = ^(NSTask *task) {
+    [exitCode resolveWithResult:@(task.terminationStatus)];
   };
   [self.task launch];
-  return self.task.processIdentifier;
+  return [[FBLaunchedProcess alloc] initWithProcessIdentifier:self.task.processIdentifier exitCode:exitCode];
 }
 
 - (void)terminate
@@ -342,16 +343,17 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @interface FBTask ()
 
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, copy, readonly) NSSet<NSNumber *> *acceptableStatusCodes;
 
 @property (nonatomic, strong, nullable, readwrite) id<FBTaskProcess> process;
 @property (nonatomic, strong, nullable, readwrite) id<FBTaskOutput> stdOutSlot;
 @property (nonatomic, strong, nullable, readwrite) id<FBTaskOutput> stdErrSlot;
 @property (nonatomic, strong, nullable, readwrite) id<FBTaskOutput> stdInSlot;
+@property (nonatomic, strong, nullable, readwrite) FBLaunchedProcess *launchedProcess;
+
 @property (nonatomic, copy, nullable, readwrite) NSString *configurationDescription;
 
-@property (atomic, assign, readwrite) pid_t processIdentifier;
-@property (atomic, assign, readwrite) int exitCode;
 @property (atomic, assign, readwrite) BOOL completedTeardown;
 @property (atomic, copy, nullable, readwrite) NSString *emittedError;
 
@@ -403,10 +405,11 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   id<FBTaskOutput> stdOut = [self createTaskOutput:configuration.stdOut];
   id<FBTaskOutput> stdErr = [self createTaskOutput:configuration.stdErr];
   id<FBTaskOutput> stdIn = [self createTaskInput:configuration.connectStdIn];
-  return [[self alloc] initWithProcess:task stdOut:stdOut stdErr:stdErr stdIn:stdIn acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
+  return [[self alloc] initWithProcess:task stdOut:stdOut stdErr:stdErr stdIn:stdIn queue:queue acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
 }
 
-- (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(id<FBTaskOutput>)stdOut stdErr:(id<FBTaskOutput>)stdErr stdIn:(id<FBTaskOutput>)stdIn acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
+- (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(id<FBTaskOutput>)stdOut stdErr:(id<FBTaskOutput>)stdErr stdIn:(id<FBTaskOutput>)stdIn queue:(dispatch_queue_t)queue acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
 {
   self = [super init];
   if (!self) {
@@ -418,6 +421,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   _stdOutSlot = stdOut;
   _stdErrSlot = stdErr;
   _stdInSlot = stdIn;
+  _queue = queue;
   _configurationDescription = configurationDescription;
 
   return self;
@@ -469,6 +473,18 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 #pragma mark Accessors
 
+- (pid_t)processIdentifier
+{
+  @synchronized(self) {
+    return self.launchedProcess ? self.launchedProcess.processIdentifier : -1;
+  }
+}
+
+- (FBFuture<NSNumber *> *)exitCode
+{
+  return self.launchedProcess.exitCode;
+}
+
 - (nullable id)stdOut
 {
   return [self.stdOutSlot contents];
@@ -497,8 +513,8 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
     extraInfo:@"stderr" value:self.stdErr]
     extraInfo:@"pid" value:@(self.processIdentifier)];
 
-  if (!self.process.isRunning) {
-    [error extraInfo:@"exitcode" value:@(self.exitCode)];
+  if (self.exitCode.state == FBFutureStateDone) {
+    [error extraInfo:@"exitcode" value:self.exitCode.result];
   }
   return [error build];
 }
@@ -560,14 +576,10 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
     [self.process mountStandardIn:stdIn];
   }
 
-  pid_t pid = [self.process launchWithError:&error terminationHandler:^(id<FBTaskProcess> process) {
-    self.exitCode = process.terminationStatus;
-    [self terminateWithErrorMessage:nil];
+  self.launchedProcess = [self.process launch];
+  [self.launchedProcess.exitCode onQueue:self.queue notifyOfCompletion:^(FBFuture<NSNumber *> *future) {
+    [self terminateWithErrorMessage:future.error.localizedDescription];
   }];
-  if (pid < 1) {
-    return [self terminateWithErrorMessage:error.description];
-  }
-  self.processIdentifier = pid;
 
   return self;
 }
