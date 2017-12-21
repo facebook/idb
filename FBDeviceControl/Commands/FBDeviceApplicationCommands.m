@@ -183,6 +183,12 @@
     }];
 }
 
+- (FBFuture<NSDictionary<NSString *, FBProcessInfo *> *> *)runningApplications
+{
+  // TODO: This is unimplemented, yet. Adding "empty" implementation so that it will not crash on selector forwarding
+  return [FBFuture futureWithResult:@{}];
+}
+
 #pragma mark Forwarding
 
 + (BOOL)isSelectorFromProtocolImplementation:(SEL)selector

@@ -16,6 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationLaunchConfiguration;
 @class FBInstalledApplication;
+@class FBProcessInfo;
 
 /**
  Defines an interface for interacting with iOS Applications.
@@ -69,6 +70,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return A future wrapping a List of Installed Applications.
  */
 - (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications;
+
+/**
+ Returns the running Applications on the target.
+ The returned mapping is a mapping of Bundle ID to Process Info.
+
+ @return A future wrapping a Mapping of Running Applications.
+ */
+- (FBFuture<NSDictionary<NSString *, FBProcessInfo *> *> *)runningApplications;
 
 @end
 

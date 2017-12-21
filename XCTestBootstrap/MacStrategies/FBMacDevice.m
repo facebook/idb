@@ -383,6 +383,17 @@
   return [FBFuture futureWithResult:@(task.processIdentifier)];
 }
 
+- (nonnull FBFuture<NSDictionary<NSString *,FBProcessInfo *> *> *)runningApplications
+{
+  NSMutableDictionary<NSString *, FBProcessInfo *> *runningProcesses = @{}.mutableCopy;
+  FBProcessFetcher *fetcher = [FBProcessFetcher new];
+  for (NSString *bundleId in self.bundleIDToRunningTask.allKeys) {
+    FBTask *task = self.bundleIDToRunningTask[bundleId];
+    runningProcesses[bundleId] = [fetcher processInfoFor:task.processIdentifier];
+  }
+  return [FBFuture futureWithResult:runningProcesses];
+}
+
 - (nonnull FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
 {
   FBMacTestPreparationStrategy *testPreparationStrategy =
