@@ -61,8 +61,11 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 + (void)loadFBAMDeviceSymbols
 {
-  void *handle = dlopen("/System/Library/PrivateFrameworks/MobileDevice.framework/Versions/A/MobileDevice", RTLD_LAZY);
-  NSCAssert(handle, @"MobileDevice could not be opened");
+  NSBundle *bundle = [NSBundle bundleWithIdentifier:@"com.apple.mobiledevice"];
+  NSCAssert(bundle.loaded, @"MobileDevice is not loaded");
+  NSString *path = [bundle.bundlePath stringByAppendingPathComponent:@"Versions/Current/MobileDevice"];
+  void *handle = dlopen(path.UTF8String, RTLD_LAZY);
+  NSCAssert(handle, @"MobileDevice dlopen handle from %@ could not be obtained", path);
   FBAMDSetLogLevel = (void(*)(int32_t))FBGetSymbolFromHandle(handle, "AMDSetLogLevel");
   FBAMDeviceConnect = (int(*)(CFTypeRef device))FBGetSymbolFromHandle(handle, "AMDeviceConnect");
   FBAMDeviceDisconnect = (int(*)(CFTypeRef device))FBGetSymbolFromHandle(handle, "AMDeviceDisconnect");
@@ -82,6 +85,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
   FBAMDeviceSecureUninstallApplication = (int(*)(int, CFTypeRef, CFStringRef, int, void *, int))FBGetSymbolFromHandle(handle, "AMDeviceSecureUninstallApplication");
   FBAMDeviceLookupApplications = (int(*)(CFTypeRef, int, CFDictionaryRef*))FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");
 }
+
 + (NSArray<FBAMDevice *> *)allDevices
 {
   NSMutableArray<FBAMDevice *> *devices = [NSMutableArray array];
