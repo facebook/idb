@@ -230,11 +230,6 @@
 
 @implementation FBTaskBuilder (Convenience)
 
-+ (FBTask *)taskWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments;
-{
-  return [[self withLaunchPath:launchPath arguments:arguments] build];
-}
-
 - (FBFuture<FBTask *> *)buildFuture
 {
   FBTask *task = [[self build] startAsynchronously];

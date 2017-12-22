@@ -208,17 +208,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBTaskBuilder (Convenience)
 
 /**
- Creates a Task for execution.
- When the task is launched it will be retained until the task has terminated.
- Terminate must be called to free up resources.
-
- @param launchPath the Executable Path to launch.
- @param arguments the arguments to send to the launched tasks.
- @return a Task ready to be started.
- */
-+ (FBTask *)taskWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments;
-
-/**
  Builds the Task, wrapping it in a future.
  The future will resolve when the task has finished executing.
  Cancelling the future will cancel the task.
