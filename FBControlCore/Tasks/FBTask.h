@@ -40,15 +40,6 @@ extern NSString *const FBTaskErrorDomain;
 #pragma mark Starting a Task
 
 /**
- Runs the reciever, returning when the Task has completed or when the timeout is hit.
- If the timeout is reached, the process will be terminated.
-
- @param timeout the the maximum time to evaluate the task.
- @return the reciever, for chaining.
- */
-- (instancetype)startSynchronouslyWithTimeout:(NSTimeInterval)timeout;
-
-/**
  Asynchronously launches the task, returning immediately after the Task has launched.
 
  @Param terminationQueue the queue to call the termination handler on.
@@ -63,17 +54,6 @@ extern NSString *const FBTaskErrorDomain;
  @return the reciever, for chaining.
  */
 - (instancetype)startAsynchronously;
-
-#pragma mark Awaiting Completion
-
-/**
- Runs the reciever, returning when the Task has completed or when the timeout is hit.
- If the timeout is reached, the process will not be automatically terminated.
-
- @param timeout the the maximum time to evaluate the task.
- @return the reciever, for chaining.
- */
-- (BOOL)waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
 
 #pragma mark Accessors
 

@@ -24,8 +24,8 @@
 - (NSString *)xcodePathWithError:(NSError **)error
 {
   FBTask *task = [[FBTaskBuilder
-    taskWithLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
-    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout];
+    withLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
+    runSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout];
   NSString *directory = [task stdOut];
   if (!directory) {
     return [[FBControlCoreError

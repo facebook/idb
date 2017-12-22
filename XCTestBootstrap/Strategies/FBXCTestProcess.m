@@ -137,10 +137,9 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 
 + (nullable NSString *)sampleStalledProcess:(pid_t)processIdentifier
 {
-  return [[[[FBTaskBuilder
+  return [[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/sample" arguments:@[@(processIdentifier).stringValue, @"1"]]
-    build]
-    startSynchronouslyWithTimeout:5]
+    runSynchronouslyWithTimeout:5]
     stdOut];
 }
 

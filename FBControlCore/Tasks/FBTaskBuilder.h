@@ -233,6 +233,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<FBTask *> *)buildFutureWithProcessIdentifierOut:(pid_t *)processIdentifierOut;
 
+/**
+ Builds and Starts the Task, waiting with the given timeout.
+
+ @param timeout the timeout in seconds to wait for the task to terminate.
+ @return a Task that resolves when the task has completed or the timeout has been reached.
+ */
+- (FBTask *)runSynchronouslyWithTimeout:(NSTimeInterval)timeout;
+
 @end
 
 NS_ASSUME_NONNULL_END

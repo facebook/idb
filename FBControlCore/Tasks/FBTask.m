@@ -447,34 +447,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   return [self launchWithTerminationQueue:terminationQueue handler:handler];
 }
 
-- (instancetype)startSynchronouslyWithTimeout:(NSTimeInterval)timeout
-{
-  [self launchWithTerminationQueue:nil handler:nil];
-
-  NSError *error = nil;
-  if (![self waitForCompletionWithTimeout:timeout error:&error]) {
-    return [self terminateWithErrorMessage:error.description];
-  }
-  return [self terminateWithErrorMessage:nil];
-}
-
-#pragma mark Awaiting Completion
-
-- (BOOL)waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
-{
-  BOOL completed = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^ BOOL {
-    return !self.process.isRunning;
-  }];
-
-  if (!completed) {
-    return [[FBControlCoreError
-      describeFormat:@"Launched process '%@' took longer than %f seconds to terminate", self, timeout]
-      failBool:error];
-  }
-  [self terminateWithErrorMessage:nil];
-  return YES;
-}
-
 #pragma mark Accessors
 
 - (FBFuture<NSNumber *> *)completed

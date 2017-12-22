@@ -125,11 +125,11 @@ static short const ZipFileMagicHeader = 0x4b50;
       causedBy:innerError]
       fail:error];
   }
-  FBTask *task = [[[[[FBTaskBuilder withLaunchPath:@"/usr/bin/unzip"]
+  FBTask *task = [[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/unzip"]
     withArguments:@[@"-o", @"-d", [tempDirURL path], path]]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
-    build]
-    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout];
+    runSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout];
 
   if (task.error) {
     return [[[FBControlCoreError
