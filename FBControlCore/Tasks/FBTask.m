@@ -358,9 +358,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @property (atomic, assign, readwrite) BOOL completedTeardown;
 
-@property (atomic, copy, nullable, readwrite) void (^terminationHandler)(FBTask *);
-@property (atomic, strong, nullable, readwrite) dispatch_queue_t terminationQueue;
-
 
 @end
 
@@ -437,14 +434,16 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 - (instancetype)startAsynchronously
 {
-  return [self launchWithTerminationQueue:nil handler:nil];
+  return [self launchTask];
 }
 
 - (instancetype)startAsynchronouslyWithTerminationQueue:(dispatch_queue_t)terminationQueue handler:(void (^)(FBTask *task))handler
 {
-  NSParameterAssert(terminationQueue);
-  NSParameterAssert(handler);
-  return [self launchWithTerminationQueue:terminationQueue handler:handler];
+  [self launchTask];
+  [self.completed onQueue:terminationQueue notifyOfCompletion:^(FBFuture *_) {
+    handler(self);
+  }];
+  return self;
 }
 
 #pragma mark Accessors
@@ -513,14 +512,11 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 #pragma mark Private
 
-- (instancetype)launchWithTerminationQueue:(dispatch_queue_t)queue handler:(void (^)(FBTask *task))handler
+- (instancetype)launchTask;
 {
   // Since the FBTask may not be returned by anyone and is asynchronous, it needs to be retained.
   // This Retain is matched by a release in -[FBTask completeTermination].
   CFRetain((__bridge CFTypeRef)(self));
-
-  self.terminationQueue = queue;
-  self.terminationHandler = handler;
 
   NSError *error = nil;
   id<FBTaskOutput> slot = self.stdOutSlot;
@@ -601,20 +597,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
   // Matches the release in -[FBTask launchWithTerminationHandler:].
   CFRelease((__bridge CFTypeRef)(self));
-
-  void (^terminationHandler)(FBTask *) = self.terminationHandler;
-  if (!terminationHandler) {
-    return;
-  }
-  dispatch_queue_t queue = self.terminationQueue;
-  if (!queue) {
-    return;
-  }
-  dispatch_async(queue, ^{
-    terminationHandler(self);
-  });
-  self.terminationQueue = nil;
-  self.terminationHandler = nil;
 }
 
 - (NSError *)errorForMessage:(NSString *)errorMessage
