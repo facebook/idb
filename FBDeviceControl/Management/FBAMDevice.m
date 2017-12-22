@@ -88,11 +88,12 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 + (NSArray<FBAMDevice *> *)allDevices
 {
+  dispatch_queue_t workQueue = dispatch_get_main_queue();
   NSMutableArray<FBAMDevice *> *devices = [NSMutableArray array];
   CFArrayRef array = FBAMDCreateDeviceList();
   for (NSInteger index = 0; index < CFArrayGetCount(array); index++) {
     CFTypeRef value = CFArrayGetValueAtIndex(array, index);
-    FBAMDevice *device = [[FBAMDevice alloc] initWithAMDevice:value];
+    FBAMDevice *device = [[FBAMDevice alloc] initWithAMDevice:value workQueue:workQueue];
     if (![device cacheAllValues]) {
       continue;
     }
@@ -102,7 +103,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
   return [devices copy];
 }
 
-- (instancetype)initWithAMDevice:(CFTypeRef)amDevice
+- (instancetype)initWithAMDevice:(CFTypeRef)amDevice workQueue:(dispatch_queue_t)workQueue
 {
   self = [super init];
   if (!self) {
@@ -110,6 +111,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
   }
 
   _amDevice = CFRetain(amDevice);
+  _workQueue = workQueue;
 
   return self;
 }
@@ -118,40 +120,41 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 - (FBFuture *)futureForDeviceOperation:(id(^)(CFTypeRef, NSError **))block
 {
-  if (FBAMDeviceConnect(_amDevice) != 0) {
-    return [[FBDeviceControlError
-      describe:@"Failed to connect to device."]
-      failFuture];
-  }
-  if (FBAMDeviceIsPaired(_amDevice) != 1) {
-    FBAMDeviceDisconnect(_amDevice);
-    return [[FBDeviceControlError
-      describe:@"Device is not paired"]
-      failFuture];
-  }
-  if (FBAMDeviceValidatePairing(_amDevice) != 0) {
-    FBAMDeviceDisconnect(_amDevice);
-    return [[FBDeviceControlError
-      describe:@"Validate pairing failed"]
-      failFuture];
-  }
-  if (FBAMDeviceStartSession(_amDevice) != 0) {
-    FBAMDeviceDisconnect(_amDevice);
-    return [[FBDeviceControlError
-      describe:@"Failed to start session with device."]
-      failFuture];
-  }
-  NSError *error = nil;
-  id result = block(_amDevice, &error);
-  FBAMDeviceStopSession(_amDevice);
-  return result
-    ? [FBFuture futureWithResult:result]
-    : [FBFuture futureWithError:error];
+  CFTypeRef amDevice = self.amDevice;
+  return [FBFuture onQueue:self.workQueue resolve:^{
+    if (FBAMDeviceConnect(amDevice) != 0) {
+      return [[FBDeviceControlError
+        describe:@"Failed to connect to device."]
+        failFuture];
+    }
+    if (FBAMDeviceIsPaired(amDevice) != 1) {
+      FBAMDeviceDisconnect(amDevice);
+      return [[FBDeviceControlError
+        describe:@"Device is not paired"]
+        failFuture];
+    }
+    if (FBAMDeviceValidatePairing(amDevice) != 0) {
+      FBAMDeviceDisconnect(amDevice);
+      return [[FBDeviceControlError
+        describe:@"Validate pairing failed"]
+        failFuture];
+    }
+    if (FBAMDeviceStartSession(amDevice) != 0) {
+      FBAMDeviceDisconnect(amDevice);
+      return [[FBDeviceControlError
+        describe:@"Failed to start session with device."]
+        failFuture];
+    }
+    NSError *error = nil;
+    id result = block(amDevice, &error);
+    FBAMDeviceStopSession(amDevice);
+    return result ? [FBFuture futureWithResult:result] : [FBFuture futureWithError:error];
+  }];
 }
 
 - (id)handleWithBlockDeviceSession:(id(^)(CFTypeRef device))operationBlock error:(NSError **)error
 {
-  FBFuture<id> *future= [self futureForDeviceOperation:^(CFTypeRef amDevice, NSError **innerError) {
+  FBFuture<id> *future = [self futureForDeviceOperation:^(CFTypeRef amDevice, NSError **innerError) {
     id result = operationBlock(amDevice);
     if (!result) {
       return [[FBDeviceControlError

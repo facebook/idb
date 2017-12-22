@@ -40,6 +40,7 @@ extern void (*FBAMDSetLogLevel)(int32_t level);
 @interface FBAMDevice ()
 
 @property (nonatomic, assign, readonly) CFTypeRef amDevice;
+@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 
 - (id)handleWithBlockDeviceSession:(id(^)(CFTypeRef device))operationBlock error:(NSError **)error;
 - (CFTypeRef)startService:(NSString *)service userInfo:(NSDictionary *)userInfo error:(NSError **)error;
