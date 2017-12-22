@@ -220,18 +220,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Builds the Task, wrapping it in a future.
+ The future will resolve when the task has finished executing.
+ Cancelling the future will cancel the task.
 
  @return a Future, encapsulating the task on completion.
  */
 - (FBFuture<FBTask *> *)buildFuture;
-
-/**
- Builds the Task, wrapping it in a future.
-
- @param processIdentifierOut the process identifier of the launched process.
- @return a Future, encapsulating the task on completion.
- */
-- (FBFuture<FBTask *> *)buildFutureWithProcessIdentifierOut:(pid_t *)processIdentifierOut;
 
 /**
  Builds and Starts the Task, waiting with the given timeout.

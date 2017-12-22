@@ -237,12 +237,6 @@
 
 - (FBFuture<FBTask *> *)buildFuture
 {
-  pid_t processIdentifier = 0;
-  return [self buildFutureWithProcessIdentifierOut:&processIdentifier];
-}
-
-- (FBFuture<FBTask *> *)buildFutureWithProcessIdentifierOut:(pid_t *)processIdentifierOut
-{
   FBTask *task = [[self build] startAsynchronously];
   return [[task completed] mapReplace:task];
 }

@@ -45,27 +45,16 @@
 
 - (FBFuture<id<FBLaunchedProcess>> *)startProcess:(FBXCTestProcess *)process
 {
-  __block pid_t processIdentifier = 0;
-  FBFuture<NSNumber *> *completed = [[[[[[[[FBTaskBuilder
+  FBTask *task = [[[[[[[FBTaskBuilder
     withLaunchPath:process.launchPath]
     withArguments:process.arguments]
     withEnvironment:process.environment]
     withStdOutConsumer:process.stdOutReader]
     withStdErrConsumer:process.stdErrReader]
-    withAcceptableTerminationStatusCodes:[NSSet setWithArray:@[@0, @1]]]
-    buildFutureWithProcessIdentifierOut:&processIdentifier]
-    onQueue:self.workQueue chain:^FBFuture<NSNumber *> *(FBFuture<FBTask *> *future) {
-      NSError *taskError = future.error;
-      if (taskError) {
-        NSNumber *exitCode = taskError.userInfo[@"exitcode"];
-        return [FBFuture futureWithResult:exitCode];
-      }
-      FBTask *task = future.result;
-      return task.exitCode;
-    }];
+    build]
+    startAsynchronously];
 
-  FBLaunchedProcess *info = [[FBLaunchedProcess alloc] initWithProcessIdentifier:processIdentifier exitCode:completed];
-  return [FBFuture futureWithResult:info];
+  return [FBFuture futureWithResult:task];
 }
 
 - (NSString *)shimPath
