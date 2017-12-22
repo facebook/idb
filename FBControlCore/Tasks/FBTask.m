@@ -492,11 +492,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   return self.errorFuture.error;
 }
 
-- (void)terminate
-{
-  [self terminateWithErrorMessage:nil];
-}
-
 - (BOOL)hasTerminated
 {
   return self.completedTeardown;
@@ -511,6 +506,11 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 }
 
 #pragma mark Private
+
+- (void)terminate
+{
+  [self terminateWithErrorMessage:nil];
+}
 
 - (instancetype)launchTask;
 {

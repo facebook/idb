@@ -94,11 +94,6 @@ extern NSString *const FBTaskErrorDomain;
 - (nullable NSError *)error;
 
 /**
- Cancels the Task.
- */
-- (void)terminate;
-
-/**
  Returns YES if the task has terminated, NO otherwise.
  */
 - (BOOL)hasTerminated;
