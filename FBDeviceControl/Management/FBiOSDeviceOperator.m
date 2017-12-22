@@ -203,7 +203,7 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
       causedBy:innerError]
      fail:error];
   }
-  int socket = FBAMDServiceConnectionGetSocket(connection);
+  int socket = FB_AMDServiceConnectionGetSocket(connection);
   if (socket <= 0) {
     return
     [[[FBDeviceControlError
@@ -214,7 +214,7 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
   return
   [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket disconnectAction:^{
     [logger log:@"Disconnected from test manager daemon socket"];
-    FBAMDServiceConnectionInvalidate(connection);
+    FB_AMDServiceConnectionInvalidate(connection);
   }];
 }
 

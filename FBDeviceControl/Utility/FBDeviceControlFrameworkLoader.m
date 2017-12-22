@@ -183,7 +183,7 @@
   }
   BOOL result = [super loadPrivateFrameworks:logger error:error];
   if (result) {
-    [FBAMDevice loadFBAMDeviceSymbols];
+    [FBAMDevice loadMobileDeviceSymbols];
   }
   if (result && FBControlCoreGlobalConfiguration.debugLoggingEnabled) {
     [FBAMDevice enableDebugLogging];

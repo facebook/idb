@@ -53,7 +53,7 @@
 {
   return [self.device.amDevice futureForDeviceOperation:^(CFTypeRef device, NSError **error) {
     int afcConn;
-    int afcReturnCode = FBAMDeviceSecureStartService(device, CFSTR("com.apple.afc"), NULL, &afcConn);
+    int afcReturnCode = FB_AMDeviceSecureStartService(device, CFSTR("com.apple.afc"), NULL, &afcConn);
     if (afcReturnCode != 0) {
       return [[FBDeviceControlError
         describeFormat:@"Failed to start afc service with error code: %x", afcReturnCode]
@@ -68,7 +68,7 @@
 - (FBFuture<NSNull *> *)transferAppURL:(NSURL *)appURL options:(NSDictionary *)options
 {
   return [self handleWithAFCSession:^NSNull *(CFTypeRef device, NSError **error){
-    int transferReturnCode = FBAMDeviceSecureTransferPath(
+    int transferReturnCode = FB_AMDeviceSecureTransferPath(
       0,
       device,
       (__bridge CFURLRef _Nonnull)(appURL),
@@ -88,7 +88,7 @@
 - (FBFuture<NSNull *> *)secureInstallApplication:(NSURL *)appURL options:(NSDictionary *)options
 {
   return [self handleWithAFCSession:^NSNull *(CFTypeRef device, NSError **error) {
-    int installReturnCode = FBAMDeviceSecureInstallApplication(
+    int installReturnCode = FB_AMDeviceSecureInstallApplication(
       0,
       device,
       (__bridge CFURLRef _Nonnull)(appURL),
@@ -109,7 +109,7 @@
 {
   return [self.device.amDevice futureForDeviceOperation:^NSArray<NSDictionary<NSString *, id> *> *(CFTypeRef device, NSError **error) {
     CFDictionaryRef cf_apps;
-    int returnCode = FBAMDeviceLookupApplications(device, 0, &cf_apps);
+    int returnCode = FB_AMDeviceLookupApplications(device, 0, &cf_apps);
     if (returnCode != 0) {
       return [[FBDeviceControlError
         describe:@"Failed to get list of applications"]
@@ -135,13 +135,13 @@
 
 - (FBFuture<id> *)uninstallApplicationWithBundleID:(NSString *)bundleID
 {
-  // It may be better to investigate if FBAMDeviceSecureUninstallApplication
+  // It may be better to investigate if FB_AMDeviceSecureUninstallApplication
   // outputs some error message when the bundle id doesn't exist
   // Currently it returns 0 as if it had succeded
   // In case that's not possible, we should look into querying if
-  // the app is installed first (FBAMDeviceLookupApplications)
+  // the app is installed first (FB_AMDeviceLookupApplications)
   return [self.device.amDevice futureForDeviceOperation:^id(CFTypeRef device, NSError **error) {
-    int returnCode = FBAMDeviceSecureUninstallApplication(
+    int returnCode = FB_AMDeviceSecureUninstallApplication(
       0,
       device,
       (__bridge CFStringRef _Nonnull)(bundleID),

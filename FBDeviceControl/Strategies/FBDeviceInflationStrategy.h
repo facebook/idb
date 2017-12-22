@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Strategy for Inflating FBDevice instances.
  Ensures that FBDeviceSet can maintain the same references to FBDevice instances over time.
- The FBAMDevice instances represent the 'Truth' in terms of attached devices.
+ The FB_AMDevice instances represent the 'Truth' in terms of attached devices.
  The FBDevice instances should reflect this.
  */
 @interface FBDeviceInflationStrategy : NSObject
@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
  Creates the Array of Simulators matching the Array of SimDevices passed in.
  Will Create and Remove SimDevice instances so as to make the Simulators and wrapped SimDevices consistent.
 
- @param amDevices the existing FBAMDevice Instances.
+ @param amDevices the existing FB_AMDevice Instances.
  @param devices the existing FBDevice instances, if any.
  @return an array of FBDevice instances matching the SimDevices.
  */

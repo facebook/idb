@@ -28,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  Loads AMDevice symbols required by this class to work properly.
  Should be called before any other call to this class is made.
  */
-+ (void)loadFBAMDeviceSymbols;
++ (void)loadMobileDeviceSymbols;
 
 /**
  Turns on asl debug logs for all AMDevice services

@@ -94,7 +94,7 @@
     NSString *name = @"com.apple.syslog_relay";
     CFTypeRef handle = 0;
     uint32_t unused;
-    mach_error_t result = FBAMDeviceStartService(device, (__bridge CFStringRef)(name), &handle, &unused);
+    mach_error_t result = FB_AMDeviceStartService(device, (__bridge CFStringRef)(name), &handle, &unused);
     if (result != 0) {
       return [FBFuture futureWithError:[FBDeviceControlError errorForFormat:@"Error when starting service %@: %d", name, result]];
     }
