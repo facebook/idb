@@ -57,8 +57,8 @@ static NSString *const CDHashPrefix = @"CDHash=";
 {
   return [[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
-    buildFuture]
-          mapReplace:NSNull.null];
+    runFuture]
+    mapReplace:NSNull.null];
 }
 
 - (FBFuture<NSNull *> *)recursivelySignBundleAtPath:(NSString *)bundlePath
@@ -86,7 +86,7 @@ static NSString *const CDHashPrefix = @"CDHash=";
 {
   return [[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-dvvvv", bundlePath]]
-    buildFuture]
+    runFuture]
     onQueue:self.queue fmap:^FBFuture *(FBTask *task) {
       NSString *output = task.stdErr;
       NSString *cdHash = [[[FBLogSearch

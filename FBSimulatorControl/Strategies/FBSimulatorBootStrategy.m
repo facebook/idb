@@ -319,13 +319,11 @@
 - (FBFuture<NSNull *> *)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment;
 {
   // Construct and start the task.
-  FBTask *task = [[[[[FBTaskBuilder
+  FBTask *task = [[[[FBTaskBuilder
     withLaunchPath:FBApplicationBundle.xcodeSimulator.binary.path]
     withArguments:arguments]
     withEnvironmentAdditions:environment]
-    build]
-    startAsynchronously];
-
+    run];
 
   // Expect no immediate error.
   if (task.error) {

@@ -194,11 +194,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)withAcceptableTerminationStatusCodes:(NSSet<NSNumber *> *)statusCodes;
 
 /**
- Builds the Task
+ Builds and Starts the Task
 
  @return a FBTask.
  */
-- (FBTask *)build;
+- (FBTask *)run;
 
 @end
 
@@ -208,13 +208,13 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBTaskBuilder (Convenience)
 
 /**
- Builds the Task, wrapping it in a future.
+ Builds and Starts Task, wrapping it in a future.
  The future will resolve when the task has finished executing.
  Cancelling the future will cancel the task.
 
  @return a Future, encapsulating the task on completion.
  */
-- (FBFuture<FBTask *> *)buildFuture;
+- (FBFuture<FBTask *> *)runFuture;
 
 /**
  Builds and Starts the Task, waiting with the given timeout.

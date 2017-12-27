@@ -377,8 +377,7 @@
     withLaunchPath:product.binaryPath]
     withArguments:configuration.arguments]
     withEnvironment:configuration.environment]
-    build];
-  [task startAsynchronously];
+    run];
   self.bundleIDToRunningTask[product.bundleID] = task;
   return [FBFuture futureWithResult:@(task.processIdentifier)];
 }

@@ -188,9 +188,9 @@
   return self;
 }
 
-- (FBTask *)build
+- (FBTask *)run;
 {
-  return [FBTask taskWithConfiguration:self.buildConfiguration];
+  return [FBTask startTaskWithConfiguration:self.buildConfiguration];
 }
 
 #pragma mark - Private
@@ -230,15 +230,15 @@
 
 @implementation FBTaskBuilder (Convenience)
 
-- (FBFuture<FBTask *> *)buildFuture
+- (FBFuture<FBTask *> *)runFuture
 {
-  FBTask *task = [[self build] startAsynchronously];
+  FBTask *task = [self run];
   return [[task completed] mapReplace:task];
 }
 
 - (FBTask *)runSynchronouslyWithTimeout:(NSTimeInterval)timeout
 {
-  FBTask *task = [[self build] startAsynchronously];
+  FBTask *task = [self run];
   FBFuture<NSNumber *> *future = [task completed];
   NSError *error = nil;
   [future awaitWithTimeout:timeout error:&error];

@@ -126,10 +126,9 @@
 
 - (void)testUpdatesStateWithAsynchronousTermination
 {
-  FBTask *task = [[[FBTaskBuilder
+  FBTask *task = [[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1"]]
-    build]
-    startAsynchronously];
+    run];
 
   XCTestExpectation *expectation = [self keyValueObservingExpectationForObject:task keyPath:@"completedTeardown" expectedValue:@YES];
   [self waitForExpectations:@[expectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
@@ -137,10 +136,9 @@
 
 - (void)testAwaitingTerminationOfShortLivedProcess
 {
-  FBTask *task = [[[FBTaskBuilder
+  FBTask *task = [[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"0"]]
-    build]
-    startAsynchronously];
+    run];
 
   XCTAssertNotNil([task.completed awaitWithTimeout:1 error:nil]);
   XCTAssertTrue(task.hasTerminated);
@@ -153,8 +151,8 @@
   XCTestExpectation *expectation = [[XCTestExpectation alloc] initWithDescription:@"Termination Handler Called"];
   [[[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1"]]
-    build]
-    startAsynchronouslyWithTerminationQueue:dispatch_get_main_queue() handler:^(FBTask *_) {
+    runFuture]
+    onQueue:dispatch_get_main_queue() notifyOfCompletion:^(id _) {
       [expectation fulfill];
     }];
 
@@ -165,12 +163,13 @@
 {
   XCTestExpectation *expectation = [[XCTestExpectation alloc] initWithDescription:@"Termination Handler Called"];
   expectation.inverted = YES;
-  FBTask *task = [[[FBTaskBuilder
+  FBTask *task = [[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000"]]
-    build]
-    startAsynchronouslyWithTerminationQueue:dispatch_get_main_queue() handler:^(FBTask *_) {
-      [expectation fulfill];
-    }];
+    run];
+
+  [task.completed onQueue:dispatch_get_main_queue() notifyOfCompletion:^(id _) {
+    [expectation fulfill];
+  }];
 
   NSError *error = nil;
   BOOL waitSuccess = [task.completed awaitWithTimeout:2 error:&error] != nil;
@@ -194,13 +193,12 @@
 {
   NSData *expected = [@"FOO BAR BAZ" dataUsingEncoding:NSUTF8StringEncoding];
 
-  FBTask *task = [[[[[[FBTaskBuilder
+  FBTask *task = [[[[[FBTaskBuilder
     withLaunchPath:@"/bin/cat" arguments:@[]]
     withStdInConnected]
     withStdOutInMemoryAsData]
     withStdErrToDevNull]
-    build]
-    startAsynchronously];
+    run];
 
   XCTAssertTrue([task.stdIn conformsToProtocol:@protocol(FBFileConsumer)]);
   [task.stdIn consumeData:expected];

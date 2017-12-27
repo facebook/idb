@@ -358,6 +358,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @property (atomic, assign, readwrite) BOOL completedTeardown;
 
+- (instancetype)launchTask;
 
 @end
 
@@ -397,14 +398,16 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   return [FBTaskInput_Consumer new];
 }
 
-+ (instancetype)taskWithConfiguration:(FBTaskConfiguration *)configuration
++ (instancetype)startTaskWithConfiguration:(FBTaskConfiguration *)configuration
 {
-  id<FBTaskProcess> task = [FBTaskProcess_NSTask fromConfiguration:configuration];
+  id<FBTaskProcess> process = [FBTaskProcess_NSTask fromConfiguration:configuration];
   id<FBTaskOutput> stdOut = [self createTaskOutput:configuration.stdOut];
   id<FBTaskOutput> stdErr = [self createTaskOutput:configuration.stdErr];
   id<FBTaskOutput> stdIn = [self createTaskInput:configuration.connectStdIn];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
-  return [[self alloc] initWithProcess:task stdOut:stdOut stdErr:stdErr stdIn:stdIn queue:queue acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
+  FBTask *task = [[self alloc] initWithProcess:process stdOut:stdOut stdErr:stdErr stdIn:stdIn queue:queue acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
+  [task launchTask];
+  return task;
 }
 
 - (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(id<FBTaskOutput>)stdOut stdErr:(id<FBTaskOutput>)stdErr stdIn:(id<FBTaskOutput>)stdIn queue:(dispatch_queue_t)queue acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
@@ -425,24 +428,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   _terminationStatusFuture = [FBMutableFuture future];
   _errorFuture = [FBMutableFuture future];
 
-  return self;
-}
-
-#pragma mark - FBTask Protocol
-
-#pragma mark Starting
-
-- (instancetype)startAsynchronously
-{
-  return [self launchTask];
-}
-
-- (instancetype)startAsynchronouslyWithTerminationQueue:(dispatch_queue_t)terminationQueue handler:(void (^)(FBTask *task))handler
-{
-  [self launchTask];
-  [self.completed onQueue:terminationQueue notifyOfCompletion:^(FBFuture *_) {
-    handler(self);
-  }];
   return self;
 }
 
@@ -512,7 +497,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   [self terminateWithErrorMessage:nil];
 }
 
-- (instancetype)launchTask;
+- (instancetype)launchTask
 {
   // Since the FBTask may not be returned by anyone and is asynchronous, it needs to be retained.
   // This Retain is matched by a release in -[FBTask completeTermination].

@@ -30,30 +30,12 @@ extern NSString *const FBTaskErrorDomain;
 #pragma mark Initializers
 
 /**
- Creates a Task with the provided configuration.
+ Creates a Task with the provided configuration and starts it.
 
  @param configuration the configuration to use
  @return a task.
  */
-+ (instancetype)taskWithConfiguration:(FBTaskConfiguration *)configuration;
-
-#pragma mark Starting a Task
-
-/**
- Asynchronously launches the task, returning immediately after the Task has launched.
-
- @Param terminationQueue the queue to call the termination handler on.
- @param handler the handler to call when the Task has terminated.
- @return the reciever, for chaining.
- */
-- (instancetype)startAsynchronouslyWithTerminationQueue:(dispatch_queue_t)terminationQueue handler:(void (^)(FBTask *task))handler;
-
-/**
- Asynchronously launches the task, returning immediately after the Task has launched.
-
- @return the reciever, for chaining.
- */
-- (instancetype)startAsynchronously;
++ (instancetype)startTaskWithConfiguration:(FBTaskConfiguration *)configuration;
 
 #pragma mark Accessors
 

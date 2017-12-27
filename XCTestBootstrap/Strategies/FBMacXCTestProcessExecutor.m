@@ -45,14 +45,13 @@
 
 - (FBFuture<id<FBLaunchedProcess>> *)startProcess:(FBXCTestProcess *)process
 {
-  FBTask *task = [[[[[[[FBTaskBuilder
+  FBTask *task = [[[[[[FBTaskBuilder
     withLaunchPath:process.launchPath]
     withArguments:process.arguments]
     withEnvironment:process.environment]
     withStdOutConsumer:process.stdOutReader]
     withStdErrConsumer:process.stdErrReader]
-    build]
-    startAsynchronously];
+    run];
 
   return [FBFuture futureWithResult:task];
 }
