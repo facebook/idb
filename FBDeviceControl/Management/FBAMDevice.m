@@ -127,19 +127,8 @@ void (*FB_AMDSetLogLevel)(int32_t level);
         describe:@"Failed to connect to device."]
         failFuture];
     }
-    if (FB_AMDeviceIsPaired(amDevice) != 1) {
-      FB_AMDeviceDisconnect(amDevice);
-      return [[FBDeviceControlError
-        describe:@"Device is not paired"]
-        failFuture];
-    }
-    if (FB_AMDeviceValidatePairing(amDevice) != 0) {
-      FB_AMDeviceDisconnect(amDevice);
-      return [[FBDeviceControlError
-        describe:@"Validate pairing failed"]
-        failFuture];
-    }
-    if (FB_AMDeviceStartSession(amDevice) != 0) {
+    int startSession = FB_AMDeviceStartSession(amDevice);
+    if (startSession != 0) {
       FB_AMDeviceDisconnect(amDevice);
       return [[FBDeviceControlError
         describe:@"Failed to start session with device."]
