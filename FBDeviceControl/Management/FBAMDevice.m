@@ -150,6 +150,7 @@ void (*FB_AMDSetLogLevel)(int32_t level);
     NSError *error = nil;
     id result = block(amDevice, &error);
     FB_AMDeviceStopSession(amDevice);
+    FB_AMDeviceDisconnect(amDevice);
     return result ? [FBFuture futureWithResult:result] : [FBFuture futureWithError:error];
   }];
 }
