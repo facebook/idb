@@ -42,7 +42,7 @@ int (*FB_AMDeviceStartSession)(AMDeviceRef device);
 int (*FB_AMDeviceStopSession)(AMDeviceRef device);
 
 // Getting Properties of a Device.
-_Nullable CFStringRef (*_Nonnull FB_AMDeviceGetName)(AMDeviceRef device);
+_Nullable CFStringRef (*_Nonnull FB_AMDeviceCopyDeviceIdentifier)(AMDeviceRef device);
 _Nullable CFStringRef (*_Nonnull FB_AMDeviceCopyValue)(AMDeviceRef device, _Nullable CFStringRef domain, CFStringRef name);
 
 // Getting a full Device List
@@ -57,10 +57,6 @@ int (*FB_AMDeviceSecureTransferPath)(int arg0, AMDeviceRef device, CFURLRef arg2
 int (*FB_AMDeviceSecureInstallApplication)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable arg4, int arg5);
 int (*FB_AMDeviceSecureUninstallApplication)(int arg0, AMDeviceRef device, CFStringRef arg2, int arg3, void *_Nullable arg4, int arg5);
 int (*FB_AMDeviceLookupApplications)(AMDeviceRef device, int arg1, CFDictionaryRef _Nonnull * _Nonnull arg2);
-
-// Getting Properties of a Device.
-_Nullable CFStringRef (*_Nonnull FB_AMDeviceGetName)(AMDeviceRef device);
-_Nullable CFStringRef (*_Nonnull FB_AMDeviceCopyValue)(AMDeviceRef device, _Nullable CFStringRef domain, CFStringRef name);
 
 // Debugging
 void (*FB_AMDSetLogLevel)(int32_t level);
@@ -87,7 +83,7 @@ void (*FB_AMDSetLogLevel)(int32_t level);
   FB_AMDeviceConnect = FBGetSymbolFromHandle(handle, "AMDeviceConnect");
   FB_AMDeviceCopyValue = FBGetSymbolFromHandle(handle, "AMDeviceCopyValue");
   FB_AMDeviceDisconnect = FBGetSymbolFromHandle(handle, "AMDeviceDisconnect");
-  FB_AMDeviceGetName = FBGetSymbolFromHandle(handle, "AMDeviceGetName");
+  FB_AMDeviceCopyDeviceIdentifier = FBGetSymbolFromHandle(handle, "AMDeviceCopyDeviceIdentifier");
   FB_AMDeviceIsPaired = FBGetSymbolFromHandle(handle, "AMDeviceIsPaired");
   FB_AMDeviceLookupApplications = FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");
   FB_AMDeviceSecureInstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureInstallApplication");
@@ -205,12 +201,12 @@ void (*FB_AMDSetLogLevel)(int32_t level);
 - (BOOL)cacheAllValues
 {
   return [[self handleWithBlockDeviceSession:^(AMDeviceRef device) {
-    self->_udid = (__bridge NSString *)(FB_AMDeviceGetName(device));
-    self->_deviceName = (__bridge NSString *)(FB_AMDeviceCopyValue(device, NULL, CFSTR("DeviceName")));
-    self->_modelName = (__bridge NSString *)(FB_AMDeviceCopyValue(device, NULL, CFSTR("DeviceClass")));
-    self->_systemVersion = (__bridge NSString *)(FB_AMDeviceCopyValue(device, NULL, CFSTR("ProductVersion")));
-    self->_productType = (__bridge NSString *)(FB_AMDeviceCopyValue(device, NULL, CFSTR("ProductType")));
-    self->_architecture = (__bridge NSString *)(FB_AMDeviceCopyValue(device, NULL, CFSTR("CPUArchitecture")));
+    self->_udid = CFBridgingRelease(FB_AMDeviceCopyDeviceIdentifier(device));
+    self->_deviceName = CFBridgingRelease(FB_AMDeviceCopyValue(device, NULL, CFSTR("DeviceName")));
+    self->_modelName = CFBridgingRelease(FB_AMDeviceCopyValue(device, NULL, CFSTR("DeviceClass")));
+    self->_systemVersion = CFBridgingRelease(FB_AMDeviceCopyValue(device, NULL, CFSTR("ProductVersion")));
+    self->_productType = CFBridgingRelease(FB_AMDeviceCopyValue(device, NULL, CFSTR("ProductType")));
+    self->_architecture = CFBridgingRelease(FB_AMDeviceCopyValue(device, NULL, CFSTR("CPUArchitecture")));
 
     NSString *osVersion = [FBAMDevice osVersionForDevice:device];
     self->_deviceConfiguration = FBControlCoreConfigurationVariants.productTypeToDevice[self->_productType];
@@ -234,8 +230,8 @@ void (*FB_AMDSetLogLevel)(int32_t level);
 
 + (NSString *)osVersionForDevice:(AMDeviceRef)amDevice
 {
-  NSString *deviceClass = (__bridge NSString *)(FB_AMDeviceCopyValue(amDevice, NULL, CFSTR("DeviceClass")));
-  NSString *productVersion = (__bridge NSString *)(FB_AMDeviceCopyValue(amDevice, NULL, CFSTR("ProductVersion")));
+  NSString *deviceClass = CFBridgingRelease(FB_AMDeviceCopyValue(amDevice, NULL, CFSTR("DeviceClass")));
+  NSString *productVersion = CFBridgingRelease(FB_AMDeviceCopyValue(amDevice, NULL, CFSTR("ProductVersion")));
   NSDictionary<NSString *, NSString *> *deviceClassOSPrefixMapping = @{
     @"iPhone" : @"iOS",
     @"iPad" : @"iOS",
