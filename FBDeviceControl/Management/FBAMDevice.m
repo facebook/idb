@@ -16,6 +16,8 @@
 
 #import "FBDeviceControlError.h"
 
+#pragma mark - AMDevice API
+
 typedef struct afc_connection {
   unsigned int handle;            /* 0 */
   unsigned int unknown0;          /* 4 */
@@ -31,24 +33,39 @@ typedef struct afc_connection {
   unsigned int context;           /* 40 */
 } __attribute__ ((packed)) afc_connection;
 
+// Managing Connections & Sessions.
+int (*FB_AMDeviceConnect)(AMDeviceRef device);
+int (*FB_AMDeviceDisconnect)(AMDeviceRef device);
+int (*FB_AMDeviceIsPaired)(AMDeviceRef device);
+int (*FB_AMDeviceValidatePairing)(AMDeviceRef device);
+int (*FB_AMDeviceStartSession)(AMDeviceRef device);
+int (*FB_AMDeviceStopSession)(AMDeviceRef device);
+
+// Getting Properties of a Device.
+_Nullable CFStringRef (*_Nonnull FB_AMDeviceGetName)(AMDeviceRef device);
+_Nullable CFStringRef (*_Nonnull FB_AMDeviceCopyValue)(AMDeviceRef device, _Nullable CFStringRef domain, CFStringRef name);
+
+// Getting a full Device List
 _Nullable CFArrayRef (*_Nonnull FB_AMDCreateDeviceList)(void);
-int (*FB_AMDeviceConnect)(CFTypeRef device);
-int (*FB_AMDeviceDisconnect)(CFTypeRef device);
-int (*FB_AMDeviceIsPaired)(CFTypeRef device);
-int (*FB_AMDeviceValidatePairing)(CFTypeRef device);
-int (*FB_AMDeviceStartSession)(CFTypeRef device);
-int (*FB_AMDeviceStopSession)(CFTypeRef device);
+
+// Using Connections.
 int (*FB_AMDServiceConnectionGetSocket)(CFTypeRef connection);
 int (*FB_AMDServiceConnectionInvalidate)(CFTypeRef connection);
-int (*FB_AMDeviceSecureStartService)(CFTypeRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, void *handle);
-int (*FB_AMDeviceStartService)(CFTypeRef device, CFStringRef service_name, void *handle, uint32_t *unknown);
-_Nullable CFStringRef (*_Nonnull FB_AMDeviceGetName)(CFTypeRef device);
-_Nullable CFStringRef (*_Nonnull FB_AMDeviceCopyValue)(CFTypeRef device, _Nullable CFStringRef domain, CFStringRef name);
-int (*FB_AMDeviceSecureTransferPath)(int arg0, CFTypeRef arg1, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable arg4, int arg5);
-int (*FB_AMDeviceSecureInstallApplication)(int arg0, CFTypeRef arg1, CFURLRef arg2, CFDictionaryRef arg3,  void *_Nullable arg4, int arg5);
-int (*FB_AMDeviceSecureUninstallApplication)(int arg0, CFTypeRef arg1, CFStringRef arg2, int arg3, void *_Nullable arg4, int arg5);
-int (*FB_AMDeviceLookupApplications)(CFTypeRef arg0, int arg1, CFDictionaryRef *arg2);
+int (*FB_AMDeviceSecureStartService)(AMDeviceRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, void *handle);
+int (*FB_AMDeviceStartService)(AMDeviceRef device, CFStringRef service_name, void *handle, uint32_t *unknown);
+int (*FB_AMDeviceSecureTransferPath)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable arg4, int arg5);
+int (*FB_AMDeviceSecureInstallApplication)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable arg4, int arg5);
+int (*FB_AMDeviceSecureUninstallApplication)(int arg0, AMDeviceRef device, CFStringRef arg2, int arg3, void *_Nullable arg4, int arg5);
+int (*FB_AMDeviceLookupApplications)(AMDeviceRef device, int arg1, CFDictionaryRef _Nonnull * _Nonnull arg2);
+
+// Getting Properties of a Device.
+_Nullable CFStringRef (*_Nonnull FB_AMDeviceGetName)(AMDeviceRef device);
+_Nullable CFStringRef (*_Nonnull FB_AMDeviceCopyValue)(AMDeviceRef device, _Nullable CFStringRef domain, CFStringRef name);
+
+// Debugging
 void (*FB_AMDSetLogLevel)(int32_t level);
+
+#pragma mark - FBAMDevice Implementation
 
 @implementation FBAMDevice
 
@@ -66,24 +83,24 @@ void (*FB_AMDSetLogLevel)(int32_t level);
   NSString *path = [bundle.bundlePath stringByAppendingPathComponent:@"Versions/Current/MobileDevice"];
   void *handle = dlopen(path.UTF8String, RTLD_LAZY);
   NSCAssert(handle, @"MobileDevice dlopen handle from %@ could not be obtained", path);
-  FB_AMDSetLogLevel = (void(*)(int32_t))FBGetSymbolFromHandle(handle, "AMDSetLogLevel");
-  FB_AMDeviceConnect = (int(*)(CFTypeRef device))FBGetSymbolFromHandle(handle, "AMDeviceConnect");
-  FB_AMDeviceDisconnect = (int(*)(CFTypeRef device))FBGetSymbolFromHandle(handle, "AMDeviceDisconnect");
-  FB_AMDeviceIsPaired = (int(*)(CFTypeRef device))FBGetSymbolFromHandle(handle, "AMDeviceIsPaired");
-  FB_AMDeviceValidatePairing = (int(*)(CFTypeRef device))FBGetSymbolFromHandle(handle, "AMDeviceValidatePairing");
-  FB_AMDeviceStartSession = (int(*)(CFTypeRef device))FBGetSymbolFromHandle(handle, "AMDeviceStartSession");
-  FB_AMDeviceStopSession =  (int(*)(CFTypeRef device))FBGetSymbolFromHandle(handle, "AMDeviceStopSession");
-  FB_AMDServiceConnectionGetSocket = (int(*)(CFTypeRef))FBGetSymbolFromHandle(handle, "AMDServiceConnectionGetSocket");
-  FB_AMDServiceConnectionInvalidate = (int(*)(CFTypeRef))FBGetSymbolFromHandle(handle, "AMDServiceConnectionInvalidate");
-  FB_AMDeviceSecureStartService = (int(*)(CFTypeRef, CFStringRef, CFDictionaryRef, void *))FBGetSymbolFromHandle(handle, "AMDeviceSecureStartService");
-  FB_AMDeviceStartService = (int(*)(CFTypeRef, CFStringRef, void *, uint32_t *))FBGetSymbolFromHandle(handle, "AMDeviceStartService");
-  FB_AMDCreateDeviceList = (CFArrayRef(*)(void))FBGetSymbolFromHandle(handle, "AMDCreateDeviceList");
-  FB_AMDeviceGetName = (CFStringRef(*)(CFTypeRef))FBGetSymbolFromHandle(handle, "AMDeviceGetName");
-  FB_AMDeviceCopyValue = (CFStringRef(*)(CFTypeRef, CFStringRef, CFStringRef))FBGetSymbolFromHandle(handle, "AMDeviceCopyValue");
-  FB_AMDeviceSecureTransferPath = (int(*)(int, CFTypeRef, CFURLRef, CFDictionaryRef, void *, int))FBGetSymbolFromHandle(handle, "AMDeviceSecureTransferPath");
-  FB_AMDeviceSecureInstallApplication = (int(*)(int, CFTypeRef, CFURLRef, CFDictionaryRef, void *, int))FBGetSymbolFromHandle(handle, "AMDeviceSecureInstallApplication");
-  FB_AMDeviceSecureUninstallApplication = (int(*)(int, CFTypeRef, CFStringRef, int, void *, int))FBGetSymbolFromHandle(handle, "AMDeviceSecureUninstallApplication");
-  FB_AMDeviceLookupApplications = (int(*)(CFTypeRef, int, CFDictionaryRef*))FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");
+  FB_AMDCreateDeviceList = FBGetSymbolFromHandle(handle, "AMDCreateDeviceList");
+  FB_AMDeviceConnect = FBGetSymbolFromHandle(handle, "AMDeviceConnect");
+  FB_AMDeviceCopyValue = FBGetSymbolFromHandle(handle, "AMDeviceCopyValue");
+  FB_AMDeviceDisconnect = FBGetSymbolFromHandle(handle, "AMDeviceDisconnect");
+  FB_AMDeviceGetName = FBGetSymbolFromHandle(handle, "AMDeviceGetName");
+  FB_AMDeviceIsPaired = FBGetSymbolFromHandle(handle, "AMDeviceIsPaired");
+  FB_AMDeviceLookupApplications = FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");
+  FB_AMDeviceSecureInstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureInstallApplication");
+  FB_AMDeviceSecureStartService = FBGetSymbolFromHandle(handle, "AMDeviceSecureStartService");
+  FB_AMDeviceSecureTransferPath = FBGetSymbolFromHandle(handle, "AMDeviceSecureTransferPath");
+  FB_AMDeviceSecureUninstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureUninstallApplication");
+  FB_AMDeviceStartService = FBGetSymbolFromHandle(handle, "AMDeviceStartService");
+  FB_AMDeviceStartSession = FBGetSymbolFromHandle(handle, "AMDeviceStartSession");
+  FB_AMDeviceStopSession = FBGetSymbolFromHandle(handle, "AMDeviceStopSession");
+  FB_AMDeviceValidatePairing = FBGetSymbolFromHandle(handle, "AMDeviceValidatePairing");
+  FB_AMDServiceConnectionGetSocket = FBGetSymbolFromHandle(handle, "AMDServiceConnectionGetSocket");
+  FB_AMDServiceConnectionInvalidate = FBGetSymbolFromHandle(handle, "AMDServiceConnectionInvalidate");
+  FB_AMDSetLogLevel = FBGetSymbolFromHandle(handle, "AMDSetLogLevel");
 }
 
 + (NSArray<FBAMDevice *> *)allDevices
@@ -103,7 +120,7 @@ void (*FB_AMDSetLogLevel)(int32_t level);
   return [devices copy];
 }
 
-- (instancetype)initWithAMDevice:(CFTypeRef)amDevice workQueue:(dispatch_queue_t)workQueue
+- (instancetype)initWithAMDevice:(AMDeviceRef)amDevice workQueue:(dispatch_queue_t)workQueue
 {
   self = [super init];
   if (!self) {
@@ -118,7 +135,7 @@ void (*FB_AMDSetLogLevel)(int32_t level);
 
 #pragma mark Public Methods
 
-- (FBFuture *)futureForDeviceOperation:(id(^)(CFTypeRef, NSError **))block
+- (FBFuture *)futureForDeviceOperation:(id(^)(AMDeviceRef, NSError **))block
 {
   CFTypeRef amDevice = self.amDevice;
   return [FBFuture onQueue:self.workQueue resolve:^{
@@ -141,9 +158,9 @@ void (*FB_AMDSetLogLevel)(int32_t level);
   }];
 }
 
-- (id)handleWithBlockDeviceSession:(id(^)(CFTypeRef device))operationBlock error:(NSError **)error
+- (id)handleWithBlockDeviceSession:(id(^)(AMDeviceRef))operationBlock error:(NSError **)error
 {
-  FBFuture<id> *future = [self futureForDeviceOperation:^(CFTypeRef amDevice, NSError **innerError) {
+  FBFuture<id> *future = [self futureForDeviceOperation:^(AMDeviceRef amDevice, NSError **innerError) {
     id result = operationBlock(amDevice);
     if (!result) {
       return [[FBDeviceControlError
@@ -157,7 +174,7 @@ void (*FB_AMDSetLogLevel)(int32_t level);
 
 - (CFTypeRef)startService:(NSString *)service userInfo:(NSDictionary *)userInfo error:(NSError **)error
 {
-  return (__bridge CFTypeRef _Nonnull)([self handleWithBlockDeviceSession:^id(CFTypeRef device) {
+  return (__bridge CFTypeRef _Nonnull)([self handleWithBlockDeviceSession:^(AMDeviceRef device) {
     CFTypeRef test_apple_afc_conn;
     FB_AMDeviceSecureStartService(
       device,
@@ -187,8 +204,7 @@ void (*FB_AMDSetLogLevel)(int32_t level);
 
 - (BOOL)cacheAllValues
 {
-  return
-  [[self handleWithBlockDeviceSession:^id(CFTypeRef device) {
+  return [[self handleWithBlockDeviceSession:^(AMDeviceRef device) {
     self->_udid = (__bridge NSString *)(FB_AMDeviceGetName(device));
     self->_deviceName = (__bridge NSString *)(FB_AMDeviceCopyValue(device, NULL, CFSTR("DeviceName")));
     self->_modelName = (__bridge NSString *)(FB_AMDeviceCopyValue(device, NULL, CFSTR("DeviceClass")));
@@ -216,7 +232,7 @@ void (*FB_AMDSetLogLevel)(int32_t level);
 
 #pragma mark Private
 
-+ (NSString *)osVersionForDevice:(CFTypeRef)amDevice
++ (NSString *)osVersionForDevice:(AMDeviceRef)amDevice
 {
   NSString *deviceClass = (__bridge NSString *)(FB_AMDeviceCopyValue(amDevice, NULL, CFSTR("DeviceClass")));
   NSString *productVersion = (__bridge NSString *)(FB_AMDeviceCopyValue(amDevice, NULL, CFSTR("ProductVersion")));

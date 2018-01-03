@@ -11,38 +11,73 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-// Getting a full Device List
-extern _Nullable CFArrayRef (*_Nonnull FB_AMDCreateDeviceList)(void);
+#pragma mark - AMDevice API
 
-// Managing a Connection to a Device
-extern int (*FB_AMDeviceConnect)(CFTypeRef device);
-extern int (*FB_AMDeviceDisconnect)(CFTypeRef device);
-extern int (*FB_AMDeviceIsPaired)(CFTypeRef device);
-extern int (*FB_AMDeviceValidatePairing)(CFTypeRef device);
-extern int (*FB_AMDeviceStartSession)(CFTypeRef device);
-extern int (*FB_AMDeviceStopSession)(CFTypeRef device);
+/**
+ An Alias for where AMDevices are used in the AMDevice APIs.
+ */
+typedef CFTypeRef AMDeviceRef;
+
+// Using Connections
 extern int (*FB_AMDServiceConnectionGetSocket)(CFTypeRef connection);
 extern int (*FB_AMDServiceConnectionInvalidate)(CFTypeRef connection);
-extern int (*FB_AMDeviceSecureStartService)(CFTypeRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, void *handle);
-extern int (*FB_AMDeviceStartService)(CFTypeRef device, CFStringRef service_name, void *handle, uint32_t *unknown);
-extern int (*FB_AMDeviceSecureTransferPath)(int arg0, CFTypeRef arg1, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable arg4, int arg5);
-extern int (*FB_AMDeviceSecureInstallApplication)(int arg0, CFTypeRef arg1, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable arg4, int arg5);
-extern int (*FB_AMDeviceSecureUninstallApplication)(int arg0, CFTypeRef arg1, CFStringRef arg2, int arg3, void *_Nullable arg4, int arg5);
-extern int (*FB_AMDeviceLookupApplications)(CFTypeRef arg0, int arg1, CFDictionaryRef _Nonnull * _Nonnull arg2);
+extern int (*FB_AMDeviceSecureStartService)(AMDeviceRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, void *handle);
+extern int (*FB_AMDeviceStartService)(AMDeviceRef device, CFStringRef service_name, void *handle, uint32_t *unknown);
+extern int (*FB_AMDeviceSecureTransferPath)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable arg4, int arg5);
+extern int (*FB_AMDeviceSecureInstallApplication)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable arg4, int arg5);
+extern int (*FB_AMDeviceSecureUninstallApplication)(int arg0, AMDeviceRef device, CFStringRef arg2, int arg3, void *_Nullable arg4, int arg5);
+extern int (*FB_AMDeviceLookupApplications)(AMDeviceRef device, int arg1, CFDictionaryRef _Nonnull * _Nonnull arg2);
 
-// Getting Properties of a Device.
-extern _Nullable CFStringRef (*_Nonnull FB_AMDeviceGetName)(CFTypeRef device);
-extern _Nullable CFStringRef (*_Nonnull FB_AMDeviceCopyValue)(CFTypeRef device, _Nullable CFStringRef domain, CFStringRef name);
-
-// Debugging
-extern void (*FB_AMDSetLogLevel)(int32_t level);
+#pragma mark - AMDevice Class Private
 
 @interface FBAMDevice ()
 
-@property (nonatomic, assign, readonly) CFTypeRef amDevice;
+#pragma mark Properties
+
+/**
+ The AMDevice Reference.
+ */
+@property (nonatomic, assign, readonly) AMDeviceRef amDevice;
+
+/**
+ The Queue on which work should be performed.
+ */
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 
-- (id)handleWithBlockDeviceSession:(id(^)(CFTypeRef device))operationBlock error:(NSError **)error;
+#pragma mark Private Methods
+
+/**
+ Build a Future from an operation for performing on a device.
+
+ @param block the block to execute for the device.
+ @return a Future that resolves with the result of the block.
+ */
+- (FBFuture *)futureForDeviceOperation:(id(^)(AMDeviceRef, NSError **))block;
+
+/**
+ Starts test manager daemon service
+
+ @return AMDServiceConnection if the operation succeeds, otherwise NULL.
+ */
+- (CFTypeRef)startTestManagerServiceWithError:(NSError **)error;
+
+/**
+ Performs the Operation Block for the AMDeviceRef, failing if the value returned in the operationBlock is nil.
+
+ @param operationBlock the block to perform.
+ @param error an error out if the operationBlock returns nil.
+ @return the value from the operationBlock.
+ */
+- (id)handleWithBlockDeviceSession:(id(^)(AMDeviceRef device))operationBlock error:(NSError **)error;
+
+/**
+ Starts a Service on the AMDevice.
+
+ @param service the service name
+ @param userInfo the userInfo for the service.
+ @param error an error out for any error that occurs.
+ @reutrn a CFType wrapping the connection.
+ */
 - (CFTypeRef)startService:(NSString *)service userInfo:(NSDictionary *)userInfo error:(NSError **)error;
 
 @end

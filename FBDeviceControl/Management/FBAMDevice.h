@@ -82,23 +82,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, nullable, copy, readonly) NSString *architecture;
 
-#pragma mark Public
-
-/**
- Build a Future from an operation for performing on a device.
-
- @param block the block to execute for the device.
- @return a Future that resolves with the result of the block.
- */
-- (FBFuture *)futureForDeviceOperation:(id(^)(CFTypeRef, NSError **))block;
-
-/**
- Starts test manager daemon service
-
- @return AMDServiceConnection if the operation succeeds, otherwise NULL.
- */
-- (CFTypeRef)startTestManagerServiceWithError:(NSError **)error;
-
 @end
 
 NS_ASSUME_NONNULL_END
