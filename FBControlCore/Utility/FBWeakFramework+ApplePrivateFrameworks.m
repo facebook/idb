@@ -118,4 +118,9 @@
   return [FBWeakFramework frameworkWithPath:@"/System/Library/PrivateFrameworks/MobileDevice.framework" requiredClassNames:@[]];
 }
 
++ (instancetype)DeviceLink
+{
+  return [FBWeakFramework frameworkWithPath:@"/System/Library/PrivateFrameworks/DeviceLink.framework" requiredClassNames:@[]];
+}
+
 @end

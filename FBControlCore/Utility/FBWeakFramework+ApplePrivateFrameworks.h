@@ -46,6 +46,7 @@ NS_ASSUME_NONNULL_BEGIN
  System Private Frameworks
  */
 + (instancetype)MobileDevice;
++ (instancetype)DeviceLink;
 
 @end
 
