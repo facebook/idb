@@ -42,6 +42,7 @@
   dispatch_once(&onceToken, ^{
     loader = [FBDeviceControlFrameworkLoader_Essential loaderWithName:@"FBDeviceControl" frameworks:@[
       FBWeakFramework.MobileDevice,
+      FBWeakFramework.DeviceLink,
     ]];
   });
   return loader;
