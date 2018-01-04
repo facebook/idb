@@ -60,6 +60,7 @@ int (*FB_AMDeviceLookupApplications)(AMDeviceRef device, int arg1, CFDictionaryR
 
 // Debugging
 void (*FB_AMDSetLogLevel)(int32_t level);
+_Nullable CFStringRef (*FB_AMDCopyErrorText)(int status);
 
 #pragma mark - FBAMDevice Implementation
 
@@ -79,11 +80,12 @@ void (*FB_AMDSetLogLevel)(int32_t level);
   NSString *path = [bundle.bundlePath stringByAppendingPathComponent:@"Versions/Current/MobileDevice"];
   void *handle = dlopen(path.UTF8String, RTLD_LAZY);
   NSCAssert(handle, @"MobileDevice dlopen handle from %@ could not be obtained", path);
+  FB_AMDCopyErrorText = FBGetSymbolFromHandle(handle, "AMDCopyErrorText");
   FB_AMDCreateDeviceList = FBGetSymbolFromHandle(handle, "AMDCreateDeviceList");
   FB_AMDeviceConnect = FBGetSymbolFromHandle(handle, "AMDeviceConnect");
+  FB_AMDeviceCopyDeviceIdentifier = FBGetSymbolFromHandle(handle, "AMDeviceCopyDeviceIdentifier");
   FB_AMDeviceCopyValue = FBGetSymbolFromHandle(handle, "AMDeviceCopyValue");
   FB_AMDeviceDisconnect = FBGetSymbolFromHandle(handle, "AMDeviceDisconnect");
-  FB_AMDeviceCopyDeviceIdentifier = FBGetSymbolFromHandle(handle, "AMDeviceCopyDeviceIdentifier");
   FB_AMDeviceIsPaired = FBGetSymbolFromHandle(handle, "AMDeviceIsPaired");
   FB_AMDeviceLookupApplications = FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");
   FB_AMDeviceSecureInstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureInstallApplication");
@@ -135,16 +137,19 @@ void (*FB_AMDSetLogLevel)(int32_t level);
 {
   CFTypeRef amDevice = self.amDevice;
   return [FBFuture onQueue:self.workQueue resolve:^{
-    if (FB_AMDeviceConnect(amDevice) != 0) {
+    int status = FB_AMDeviceConnect(amDevice);
+    if (status != 0) {
+      NSString *errorDescription = CFBridgingRelease(FB_AMDCopyErrorText(status));
       return [[FBDeviceControlError
-        describe:@"Failed to connect to device."]
+        describeFormat:@"Failed to connect to device. (%@)", errorDescription]
         failFuture];
     }
-    int startSession = FB_AMDeviceStartSession(amDevice);
-    if (startSession != 0) {
+    status = FB_AMDeviceStartSession(amDevice);
+    if (status != 0) {
       FB_AMDeviceDisconnect(amDevice);
+      NSString *errorDescription = CFBridgingRelease(FB_AMDCopyErrorText(status));
       return [[FBDeviceControlError
-        describe:@"Failed to start session with device."]
+        describeFormat:@"Failed to start session with device. (%@)", errorDescription]
         failFuture];
     }
     NSError *error = nil;
