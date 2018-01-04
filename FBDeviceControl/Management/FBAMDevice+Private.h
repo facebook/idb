@@ -56,10 +56,8 @@ extern int (*FB_AMDeviceLookupApplications)(AMDeviceRef device, int arg1, CFDict
 
 /**
  Starts test manager daemon service
-
- @return AMDServiceConnection if the operation succeeds, otherwise NULL.
  */
-- (CFTypeRef)startTestManagerServiceWithError:(NSError **)error;
+- (FBFuture<NSValue *> *)startTestManagerService;
 
 /**
  Performs the Operation Block for the AMDeviceRef, failing if the value returned in the operationBlock is nil.
@@ -75,10 +73,9 @@ extern int (*FB_AMDeviceLookupApplications)(AMDeviceRef device, int arg1, CFDict
 
  @param service the service name
  @param userInfo the userInfo for the service.
- @param error an error out for any error that occurs.
- @reutrn a CFType wrapping the connection.
+ @return a CFType wrapping the connection.
  */
-- (CFTypeRef)startService:(NSString *)service userInfo:(NSDictionary *)userInfo error:(NSError **)error;
+- (FBFuture<NSValue *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo;
 
 @end
 

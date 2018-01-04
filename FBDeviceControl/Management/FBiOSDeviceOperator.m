@@ -187,34 +187,31 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
 - (DTXTransport *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   if ([NSThread isMainThread]) {
-    return
-    [[[FBDeviceControlError
-       describe:@"'makeTransportForTestManagerService' method may block and should not be called on the main thread"]
+    return [[[FBDeviceControlError
+      describe:@"'makeTransportForTestManagerService' method may block and should not be called on the main thread"]
       logger:logger]
-     fail:error];
+      fail:error];
   }
   NSError *innerError;
-  CFTypeRef connection = [self.device.amDevice startTestManagerServiceWithError:&innerError];
-  if (!connection) {
-    return
-    [[[[FBDeviceControlError
-        describe:@"Failed to start test manager daemon service."]
-       logger:logger]
-      causedBy:innerError]
-     fail:error];
-  }
-  int socket = FB_AMDServiceConnectionGetSocket(connection);
-  if (socket <= 0) {
-    return
-    [[[FBDeviceControlError
-       describe:@"Invalid socket returned from AMDServiceConnectionGetSocket"]
+  NSValue *connectionValue = [[self.device.amDevice startTestManagerService] await:&innerError];
+  if (!connectionValue) {
+    return [[[[FBDeviceControlError
+      describe:@"Failed to start test manager daemon service."]
       logger:logger]
-     fail:error];
+      causedBy:innerError]
+      fail:error];
+  }
+  int socket = FB_AMDServiceConnectionGetSocket(connectionValue.pointerValue);
+  if (socket <= 0) {
+    return [[[FBDeviceControlError
+      describe:@"Invalid socket returned from AMDServiceConnectionGetSocket"]
+      logger:logger]
+      fail:error];
   }
   return
   [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket disconnectAction:^{
     [logger log:@"Disconnected from test manager daemon socket"];
-    FB_AMDServiceConnectionInvalidate(connection);
+    FB_AMDServiceConnectionInvalidate(connectionValue.pointerValue);
   }];
 }
 

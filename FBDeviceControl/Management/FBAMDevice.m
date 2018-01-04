@@ -174,27 +174,33 @@ _Nullable CFStringRef (*FB_AMDCopyErrorText)(int status);
   return [future await:error];
 }
 
-- (CFTypeRef)startService:(NSString *)service userInfo:(NSDictionary *)userInfo error:(NSError **)error
+- (FBFuture<NSValue *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo
 {
-  return (__bridge CFTypeRef _Nonnull)([self handleWithBlockDeviceSession:^(AMDeviceRef device) {
-    CFTypeRef test_apple_afc_conn;
-    FB_AMDeviceSecureStartService(
+  return [self futureForDeviceOperation:^ NSValue * (AMDeviceRef device, NSError **error) {
+    afc_connection afcConnection;
+    int status = FB_AMDeviceSecureStartService(
       device,
-      (__bridge CFStringRef _Nonnull)(service),
-      (__bridge CFDictionaryRef _Nonnull)(userInfo),
-      &test_apple_afc_conn
+      (__bridge CFStringRef)(service),
+      (__bridge CFDictionaryRef)(userInfo),
+      &afcConnection
     );
-    return (__bridge id)(test_apple_afc_conn);
-  } error:error]);
+    if (status != 0) {
+      NSString *errorDescription = CFBridgingRelease(FB_AMDCopyErrorText(status));
+      return [[FBDeviceControlError
+        describeFormat:@"Start Service Failed with %d %@", status, errorDescription]
+        fail:error];
+    }
+    return [NSValue valueWithPointer:&afcConnection];
+  }];
 }
 
-- (CFTypeRef)startTestManagerServiceWithError:(NSError **)error
+- (FBFuture<NSValue *> *)startTestManagerService
 {
   NSDictionary *userInfo = @{
     @"CloseOnInvalidate" : @1,
     @"InvalidateOnDetach" : @1
   };
-  return [self startService:@"com.apple.testmanagerd.lockdown" userInfo:userInfo error:error];
+  return [self startService:@"com.apple.testmanagerd.lockdown" userInfo:userInfo];
 }
 
 - (void)dealloc
