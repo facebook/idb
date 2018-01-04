@@ -135,43 +135,9 @@ _Nullable CFStringRef (*FB_AMDCopyErrorText)(int status);
 
 - (FBFuture *)futureForDeviceOperation:(id(^)(AMDeviceRef, NSError **))block
 {
-  CFTypeRef amDevice = self.amDevice;
-  return [FBFuture onQueue:self.workQueue resolve:^{
-    int status = FB_AMDeviceConnect(amDevice);
-    if (status != 0) {
-      NSString *errorDescription = CFBridgingRelease(FB_AMDCopyErrorText(status));
-      return [[FBDeviceControlError
-        describeFormat:@"Failed to connect to device. (%@)", errorDescription]
-        failFuture];
-    }
-    status = FB_AMDeviceStartSession(amDevice);
-    if (status != 0) {
-      FB_AMDeviceDisconnect(amDevice);
-      NSString *errorDescription = CFBridgingRelease(FB_AMDCopyErrorText(status));
-      return [[FBDeviceControlError
-        describeFormat:@"Failed to start session with device. (%@)", errorDescription]
-        failFuture];
-    }
-    NSError *error = nil;
-    id result = block(amDevice, &error);
-    FB_AMDeviceStopSession(amDevice);
-    FB_AMDeviceDisconnect(amDevice);
-    return result ? [FBFuture futureWithResult:result] : [FBFuture futureWithError:error];
+  return [FBFuture onQueue:self.workQueue resolveValue:^(NSError **error) {
+    return [self performOnConnectedDevice:block error:error];
   }];
-}
-
-- (id)handleWithBlockDeviceSession:(id(^)(AMDeviceRef))operationBlock error:(NSError **)error
-{
-  FBFuture<id> *future = [self futureForDeviceOperation:^(AMDeviceRef amDevice, NSError **innerError) {
-    id result = operationBlock(amDevice);
-    if (!result) {
-      return [[FBDeviceControlError
-        describe:@"Device Operation Failed"]
-        fail:innerError];
-    }
-    return result;
-  }];
-  return [future await:error];
 }
 
 - (FBFuture<NSValue *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo
@@ -212,7 +178,7 @@ _Nullable CFStringRef (*FB_AMDCopyErrorText)(int status);
 
 - (BOOL)cacheAllValues
 {
-  return [[self handleWithBlockDeviceSession:^(AMDeviceRef device) {
+  return [self performOnConnectedDevice:^(AMDeviceRef device, NSError **erro) {
     self->_udid = CFBridgingRelease(FB_AMDeviceCopyDeviceIdentifier(device));
     self->_deviceName = CFBridgingRelease(FB_AMDeviceCopyValue(device, NULL, CFSTR("DeviceName")));
     self->_modelName = CFBridgingRelease(FB_AMDeviceCopyValue(device, NULL, CFSTR("DeviceClass")));
@@ -224,7 +190,7 @@ _Nullable CFStringRef (*FB_AMDCopyErrorText)(int status);
     self->_deviceConfiguration = FBControlCoreConfigurationVariants.productTypeToDevice[self->_productType];
     self->_osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[osVersion] ?: [FBOSVersion genericWithName:osVersion];
     return @YES;
-  } error:nil] boolValue];
+  } error:nil] != nil;
 }
 
 #pragma mark NSObject
@@ -253,6 +219,29 @@ _Nullable CFStringRef (*FB_AMDCopyErrorText)(int status);
     return productVersion;
   }
   return [NSString stringWithFormat:@"%@ %@", osPrefix, productVersion];
+}
+
+- (id)performOnConnectedDevice:(id(^)(AMDeviceRef, NSError **))block error:(NSError **)error
+{
+  AMDeviceRef amDevice = self.amDevice;
+  int status = FB_AMDeviceConnect(amDevice);
+  if (status != 0) {
+    NSString *errorDecription = CFBridgingRelease(FB_AMDCopyErrorText(status));
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to connect to device. (%@)", errorDecription]
+      failFuture];
+  }
+  status = FB_AMDeviceStartSession(amDevice);
+  if (status != 0) {
+    FB_AMDeviceDisconnect(amDevice);
+    NSString *errorDecription = CFBridgingRelease(FB_AMDCopyErrorText(status));
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to start session with device. (%@)", errorDecription]
+      failFuture];
+  }
+  id result = block(amDevice, error);
+  FB_AMDeviceStopSession(amDevice);
+  return result;
 }
 
 @end

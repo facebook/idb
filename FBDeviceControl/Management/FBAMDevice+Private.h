@@ -60,15 +60,6 @@ extern int (*FB_AMDeviceLookupApplications)(AMDeviceRef device, int arg1, CFDict
 - (FBFuture<NSValue *> *)startTestManagerService;
 
 /**
- Performs the Operation Block for the AMDeviceRef, failing if the value returned in the operationBlock is nil.
-
- @param operationBlock the block to perform.
- @param error an error out if the operationBlock returns nil.
- @return the value from the operationBlock.
- */
-- (id)handleWithBlockDeviceSession:(id(^)(AMDeviceRef device))operationBlock error:(NSError **)error;
-
-/**
  Starts a Service on the AMDevice.
 
  @param service the service name
