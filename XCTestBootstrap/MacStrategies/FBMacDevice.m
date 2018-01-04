@@ -458,4 +458,9 @@
   return nil;
 }
 
+- (nonnull FBFuture<NSData *> *)takeScreenshot:(nonnull FBScreenshotFormat)format {
+  NSAssert(nil, @"takeScreenshot: is not yet supported");
+  return nil;
+}
+
 @end

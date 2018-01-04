@@ -131,4 +131,8 @@
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
+- (nonnull FBFuture<NSData *> *)takeScreenshot:(nonnull FBScreenshotFormat)format {
+  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
+}
+
 @end

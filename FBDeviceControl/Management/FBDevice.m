@@ -16,14 +16,15 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBiOSDeviceOperator.h"
+#import "FBAMDevice.h"
 #import "FBDeviceApplicationCommands.h"
+#import "FBDeviceControlError.h"
+#import "FBDeviceLogCommands.h"
+#import "FBDeviceScreenshotCommands.h"
+#import "FBDeviceSet+Private.h"
 #import "FBDeviceVideoRecordingCommands.h"
 #import "FBDeviceXCTestCommands.h"
-#import "FBDeviceLogCommands.h"
-#import "FBDeviceSet+Private.h"
-#import "FBAMDevice.h"
-#import "FBDeviceControlError.h"
+#import "FBiOSDeviceOperator.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -187,9 +188,10 @@
     commandClasses = [[NSMutableArray alloc] init];
     [commandClasses addObjectsFromArray:@[
       FBDeviceApplicationCommands.class,
+      FBDeviceLogCommands.class,
+      FBDeviceScreenshotCommands.class,
       FBDeviceVideoRecordingCommands.class,
       FBDeviceXCTestCommands.class,
-      FBDeviceLogCommands.class
     ]];
   });
   return commandClasses;
@@ -199,8 +201,8 @@
 {
   if (![class conformsToProtocol:@protocol(FBiOSTargetCommand)]){
     return [[FBDeviceControlError
-             describe:@"Failed to add forwarding class. Class does not conform to FBiOSTargetCommand protocol."]
-            failBool:error];
+      describe:@"Failed to add forwarding class. Class does not conform to FBiOSTargetCommand protocol."]
+      failBool:error];
   }
   [[self commandResponders] addObject:class];
   return YES;

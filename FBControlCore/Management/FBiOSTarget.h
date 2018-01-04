@@ -10,11 +10,12 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBApplicationCommands.h>
-#import <FBControlCore/FBLogCommands.h>
 #import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBBitmapStreamingCommands.h>
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBJSONConversion.h>
+#import <FBControlCore/FBLogCommands.h>
+#import <FBControlCore/FBScreenshotCommands.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
 #import <FBControlCore/FBXCTestCommands.h>
 
@@ -66,7 +67,7 @@ extern FBSimulatorStateString const FBSimulatorStateStringUnknown;
 /**
  Common Properties of Devices & Simulators.
  */
-@protocol FBiOSTarget <NSObject, FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBBitmapStreamingCommands, FBVideoRecordingCommands, FBXCTestCommands, FBLogCommands>
+@protocol FBiOSTarget <NSObject, FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBBitmapStreamingCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands>
 
 /**
  The Target's Logger.
