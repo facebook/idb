@@ -253,9 +253,11 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 #pragma mark Initializers
 
-+ (void)enableDebugLogging
++ (void)setDefaultLogLevel:(int)level logFilePath:(NSString *)logFilePath
 {
-  FB_AMDSetLogLevel(9);
+  NSNumber *levelNumber = @(level);
+  CFPreferencesSetAppValue(CFSTR("LogLevel"), (__bridge CFPropertyListRef _Nullable)(levelNumber), CFSTR("com.apple.MobileDevice"));
+  CFPreferencesSetAppValue(CFSTR("LogFile"), (__bridge CFPropertyListRef _Nullable)(logFilePath), CFSTR("com.apple.MobileDevice"));
 }
 
 + (void)loadMobileDeviceSymbols

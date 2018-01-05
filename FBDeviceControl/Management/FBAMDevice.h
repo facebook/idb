@@ -31,9 +31,14 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)loadMobileDeviceSymbols;
 
 /**
- Turns on asl debug logs for all AMDevice services
+ Sets the Default Log Level and File Path for MobileDevice.framework.
+ Must be called before any MobileDevice APIs are called, as these values are read during Framework initialization.
+ Logging goes via asl instead of os_log, so logging to a file path may be unpredicatable.
+
+ @param level the Log Level to use.
+ @param logFilePath the file path to log to.
  */
-+ (void)enableDebugLogging;
++ (void)setDefaultLogLevel:(int)level logFilePath:(NSString *)logFilePath;
 
 /**
  Returns an Array of all the Available Devices.

@@ -187,7 +187,7 @@
     [FBAMDevice loadMobileDeviceSymbols];
   }
   if (result && FBControlCoreGlobalConfiguration.debugLoggingEnabled) {
-    [FBAMDevice enableDebugLogging];
+    [FBAMDevice setDefaultLogLevel:9 logFilePath:@"/tmp/FBDeviceControl_MobileDevice.txt"];
   }
   return result;
 }
