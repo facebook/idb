@@ -9,7 +9,7 @@
 
 //#import <mach/mach.h>
 
-#pragma pack(4)
+#pragma pack(push, 4)
 
 /**
  Annotation of the mach_msg_header_t with offsets
@@ -23,4 +23,4 @@ typedef struct {
   int msgh_id; // 0x14
 } MachMessageHeader;
 
-#pragma pack()
+#pragma pack(pop)
