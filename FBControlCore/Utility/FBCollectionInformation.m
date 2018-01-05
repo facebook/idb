@@ -30,12 +30,12 @@
 
 + (NSString *)oneLineDescriptionFromDictionary:(NSDictionary *)dictionary
 {
-  NSMutableString *string = [NSMutableString stringWithString:@"{"];
+  NSMutableArray<NSString *> *pieces = [NSMutableArray array];
   for (NSString *key in dictionary.allKeys) {
-    [string appendFormat:@"%@ => %@, ", key, dictionary[key]];
+    NSString *piece = [NSString stringWithFormat:@"%@ => %@", key, dictionary[key]];
+    [pieces addObject:piece];
   }
-  [string appendString:@"}"];
-  return string;
+  return [NSString stringWithFormat:@"{%@}", [pieces componentsJoinedByString:@", "]];
 }
 
 + (BOOL)isArrayHeterogeneous:(NSArray *)array withClass:(Class)cls
