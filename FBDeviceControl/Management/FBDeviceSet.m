@@ -25,8 +25,10 @@
 #import <objc/runtime.h>
 
 #import "FBDeviceControlFrameworkLoader.h"
+#import "FBDevice.h"
 #import "FBDevice+Private.h"
 #import "FBAMDevice.h"
+#import "FBAMDevice+Private.h"
 #import "FBDeviceInflationStrategy.h"
 
 @implementation FBDeviceSet
@@ -59,8 +61,15 @@
 
   _logger = logger;
   _allDevices = @[];
+  [self recalculateAllDevices];
+  [self subscribeToDeviceNotifications];
 
   return self;
+}
+
+- (void)dealloc
+{
+  [self unsubscribeFromDeviceNotifications];
 }
 
 #pragma mark Querying
@@ -79,16 +88,6 @@
   return [[self query:query] firstObject];
 }
 
-#pragma mark Properties
-
-- (NSArray<FBDevice *> *)allDevices
-{
-  _allDevices = [[self.inflationStrategy
-    inflateFromDevices:FBAMDevice.allDevices existingDevices:_allDevices]
-    sortedArrayUsingSelector:@selector(compare:)];
-  return _allDevices;
-}
-
 #pragma mark Predicates
 
 + (NSPredicate *)predicateDeviceWithUDID:(NSString *)udid
@@ -105,13 +104,33 @@
   return [FBDeviceInflationStrategy strategyForSet:self];
 }
 
-+ (NSDictionary<NSString *, FBAMDevice *> *)keyAMDevicesByUDID:(NSArray<FBAMDevice *> *)devices
+- (void)subscribeToDeviceNotifications
 {
-  NSMutableDictionary<NSString *, FBAMDevice *> *dictionary = [NSMutableDictionary dictionary];
-  for (FBAMDevice *device in devices) {
-    dictionary[device.udid] = device;
-  }
-  return [dictionary copy];
+  [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(deviceAttachedNotification:) name:FBAMDeviceNotificationNameDeviceAttached object:nil];
+  [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(deviceDetachedNotification:) name:FBAMDeviceNotificationNameDeviceDetached object:nil];
+}
+
+- (void)unsubscribeFromDeviceNotifications
+{
+  [NSNotificationCenter.defaultCenter removeObserver:self name:FBAMDeviceNotificationNameDeviceAttached object:nil];
+  [NSNotificationCenter.defaultCenter removeObserver:self name:FBAMDeviceNotificationNameDeviceDetached object:nil];
+}
+
+- (void)deviceAttachedNotification:(NSNotification *)notification
+{
+  [self recalculateAllDevices];
+}
+
+- (void)deviceDetachedNotification:(NSNotification *)notification
+{
+  [self recalculateAllDevices];
+}
+
+- (void)recalculateAllDevices
+{
+  _allDevices = [[self.inflationStrategy
+    inflateFromDevices:FBAMDevice.allDevices existingDevices:_allDevices]
+    sortedArrayUsingSelector:@selector(compare:)];
 }
 
 @end

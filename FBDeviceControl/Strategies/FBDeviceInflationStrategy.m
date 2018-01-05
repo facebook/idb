@@ -24,6 +24,8 @@
 
 @implementation FBDeviceInflationStrategy
 
+#pragma mark Initializers
+
 + (instancetype)strategyForSet:(FBDeviceSet *)set
 {
   return [[self alloc] initWithSet:set];
@@ -39,6 +41,8 @@
   _set = set;
   return self;
 }
+
+#pragma mark Public Methods
 
 - (NSArray<FBDevice *> *)inflateFromDevices:(NSArray<FBAMDevice *> *)amDevices existingDevices:(NSArray<FBDevice *> *)devices
 {
