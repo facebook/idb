@@ -11,6 +11,18 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+#pragma mark - Notifications
+
+/**
+ Notification for the Attachment of a Device.
+ */
+extern NSNotificationName const FBAMDeviceNotificationNameDeviceAttached;
+
+/**
+ Notification for the Detachment of a Device.
+ */
+extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
+
 #pragma mark - AMDevice API
 
 /**
@@ -36,8 +48,9 @@ extern int (*FB_AMDeviceLookupApplications)(AMDeviceRef device, int arg1, CFDict
 
 /**
  The AMDevice Reference.
+ May dissapear if the AMDevice is no longer valid.
  */
-@property (nonatomic, assign, readonly) AMDeviceRef amDevice;
+@property (nonatomic, assign, readwrite) AMDeviceRef amDevice;
 
 /**
  The Queue on which work should be performed.
@@ -45,6 +58,14 @@ extern int (*FB_AMDeviceLookupApplications)(AMDeviceRef device, int arg1, CFDict
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 
 #pragma mark Private Methods
+
+/**
+ The Designated Initializer
+
+ @param udid the UDID of the AMDevice
+ @param workQueue the queue to perform work on.
+ */
+- (instancetype)initWithUDID:(NSString *)udid workQueue:(dispatch_queue_t)workQueue;
 
 /**
  Build a Future from an operation for performing on a device.
