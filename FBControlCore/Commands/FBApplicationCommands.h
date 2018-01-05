@@ -72,6 +72,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications;
 
 /**
+ Fetches the FBInstalledApplication instance by Bundle ID.
+
+ @param bundleID the Bundle ID to fetch an installed application for.
+ @return a Future with the installed application.
+ */
+- (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID;
+
+/**
  Returns the running Applications on the target.
  The returned mapping is a mapping of Bundle ID to Process Info.
 

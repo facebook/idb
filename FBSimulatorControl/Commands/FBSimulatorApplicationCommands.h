@@ -35,14 +35,6 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Querying Application State
 
 /**
- Fetches the FBApplicationBundle instance by Bundle ID, on the Simulator.
-
- @param bundleID the Bundle ID to fetch an installed application for.
- @return a Future with the installed application.
- */
-- (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID;
-
-/**
  Determines the location of the Data Container of an Application, it's chroot jail.
 
  @param bundleID the Bundle ID of the Application to search for,.

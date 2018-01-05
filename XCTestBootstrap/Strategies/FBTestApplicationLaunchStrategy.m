@@ -44,18 +44,7 @@
 
 - (FBFuture<FBInstalledApplication *> *)installedAppWithBundleID:(NSString *)bundleID
 {
-  return [[self.iosTarget
-    installedApplications]
-    onQueue:self.iosTarget.workQueue fmap:^(NSArray<FBInstalledApplication *> *apps) {
-      for (FBInstalledApplication *app in apps) {
-        if ([app.bundle.bundleID isEqualToString:bundleID]) {
-          return [FBFuture futureWithResult:app];
-        }
-      }
-      return [[FBControlCoreError
-        describeFormat:@"App with bundle ID %@ is not installed", bundleID]
-        failFuture];
-    }];
+  return [self.iosTarget installedApplicationWithBundleID:bundleID];
 }
 
 - (FBFuture<NSNumber *> *)installAndLaunchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path

@@ -345,9 +345,21 @@
     if (!bundle) {
       return [FBFuture futureWithError:error];
     }
-    [result addObject: [FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeMac]];
+    [result addObject:[FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeMac]];
   }
   return [FBFuture futureWithResult:result];
+}
+
+- (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID
+{
+  FBProductBundle *productBundle = self.bundleIDToProductMap[bundleID];
+  NSError *error;
+  FBApplicationBundle *bundle = [FBApplicationBundle applicationWithPath:productBundle.path error:&error];
+  if (!bundle) {
+    return [FBFuture futureWithError:error];
+  }
+  FBInstalledApplication *installedApp = [FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeMac];
+  return [FBFuture futureWithResult:installedApp];
 }
 
 - (nonnull FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(nonnull NSString *)bundleID

@@ -31,6 +31,24 @@
 
 #pragma mark Initializers
 
++ (FBInstalledApplication *)installedApplicationFromDictionary:(NSDictionary<NSString *, id> *)app
+{
+  NSString *bundleName = app[FBApplicationInstallInfoKeyBundleName] ?: @"";
+  NSString *path = app[FBApplicationInstallInfoKeyPath] ?: @"";
+  NSString *bundleID = app[FBApplicationInstallInfoKeyBundleIdentifier];
+  FBApplicationBundle *bundle = [FBApplicationBundle
+                                 applicationWithName:bundleName
+                                 path:path
+                                 bundleID:bundleID];
+
+  NSString *installTypeString = app[FBApplicationInstallInfoKeyApplicationType] ?: @"";
+  FBApplicationInstallType installType = [FBInstalledApplication installTypeFromString:installTypeString];
+  FBInstalledApplication *application = [FBInstalledApplication
+                                         installedApplicationWithBundle:bundle
+                                         installType:installType];
+  return application;
+}
+
 + (instancetype)commandsWithTarget:(FBDevice *)target
 {
   return [[self alloc] initWithDevice:target];
@@ -105,18 +123,18 @@
   }];
 }
 
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)installedApplicationsData
+- (FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)installedApplicationsData
 {
-  return [self.device.amDevice futureForDeviceOperation:^NSArray<NSDictionary<NSString *, id> *> *(CFTypeRef device, NSError **error) {
+  return [self.device.amDevice futureForDeviceOperation:^NSDictionary<NSString *, NSDictionary<NSString *, id> *> *(CFTypeRef device, NSError **error) {
     CFDictionaryRef cf_apps;
-    int returnCode = FB_AMDeviceLookupApplications(device, 0, &cf_apps);
+    int returnCode = FB_AMDeviceLookupApplications(device, NULL, &cf_apps);
     if (returnCode != 0) {
       return [[FBDeviceControlError
         describe:@"Failed to get list of applications"]
         fail:error];
     }
     NSDictionary *apps = CFBridgingRelease(cf_apps);
-    return [apps allValues];
+    return apps;
   }];
 }
 
@@ -162,25 +180,32 @@
 {
   return [[self
     installedApplicationsData]
-    onQueue:self.device.asyncQueue map:^(NSArray<NSDictionary<NSString *, id> *> *applicationData) {
-      NSMutableArray<FBInstalledApplication *> *installedApplications = [[NSMutableArray alloc] init];
-      for (NSDictionary *app in applicationData) {
+    onQueue:self.device.asyncQueue map:^(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *applicationData) {
+      NSMutableArray<FBInstalledApplication *> *installedApplications = [[NSMutableArray alloc] initWithCapacity:applicationData.count];
+      NSEnumerator *objectEnumerator = [applicationData objectEnumerator];
+      for (NSDictionary *app in objectEnumerator) {
         if (app == nil) {
           continue;
         }
-        FBApplicationBundle *bundle = [FBApplicationBundle
-          applicationWithName:[app valueForKey:FBApplicationInstallInfoKeyBundleName] ?: @""
-          path:[app valueForKey:FBApplicationInstallInfoKeyPath] ?: @""
-          bundleID:app[FBApplicationInstallInfoKeyBundleIdentifier]];
-        FBApplicationInstallType installType = [FBInstalledApplication
-          installTypeFromString:[app valueForKey:FBApplicationInstallInfoKeyApplicationType] ?: @""];
-        FBInstalledApplication *application = [FBInstalledApplication
-          installedApplicationWithBundle:bundle
-          installType:installType];
+        FBInstalledApplication *application = [FBDeviceApplicationCommands installedApplicationFromDictionary:app];
         [installedApplications addObject:application];
       }
-      return [installedApplications copy];
+      return installedApplications;
     }];
+}
+
+- (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID
+{
+  return [[self
+   installedApplicationsData]
+   onQueue:self.device.asyncQueue fmap:^FBFuture *(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *applicationData) {
+     NSDictionary <NSString *, id> *app = applicationData[bundleID];
+     if (!app) {
+       return [[FBDeviceControlError describeFormat:@"Application with bundle ID: %@ is not installed", bundleID] failFuture];
+     }
+     FBInstalledApplication *application = [FBDeviceApplicationCommands installedApplicationFromDictionary:app];
+     return [FBFuture futureWithResult:application];
+   }];
 }
 
 - (FBFuture<NSDictionary<NSString *, FBProcessInfo *> *> *)runningApplications
