@@ -75,7 +75,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)socketServer:(FBSocketServer *)server clientConnected:(struct in6_addr)address handle:(NSFileHandle *)fileHandle;
 
 /**
- The Queue to call the delegate on.
+ The Queue on which the Delegate will be called.
+ This may be a serial or a concurrent queue.
  */
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 

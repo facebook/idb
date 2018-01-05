@@ -104,14 +104,18 @@
       failFuture];
   }
 
-  // Prepare the Accept Source
-  dispatch_queue_t acceptQueue = self.delegate.queue;
+  // Prepare the Accept Source.
+  // Since the Client Queue may be concurrent, we should construct a serial queue to serialize the accept() calls
+  // The accept() will update internal state so calls *must* be serialized.
+  dispatch_queue_t clientQueue = self.delegate.queue;
+  NSString *acceptQueueName = [NSString stringWithFormat:@"%s.accept", dispatch_queue_get_label(clientQueue)];
+  dispatch_queue_t acceptQueue = dispatch_queue_create(acceptQueueName.UTF8String, DISPATCH_QUEUE_SERIAL);
   self.acceptSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_READ, (uintptr_t) socketHandle, 0, acceptQueue);
   __weak typeof(self) weakSelf = self;
 
   // Dispatch read events from the accept source.
   dispatch_source_set_event_handler(self.acceptSource, ^{
-    [weakSelf accept:socketHandle error:nil];
+    [weakSelf accept:socketHandle clientQueue:clientQueue error:nil];
   });
   dispatch_source_set_cancel_handler(self.acceptSource, ^{
     close(socketHandle);
@@ -129,7 +133,7 @@
   return [FBFuture futureWithResult:NSNull.null];
 }
 
-- (BOOL)accept:(int)socketHandle error:(NSError **)error
+- (BOOL)accept:(int)socketHandle clientQueue:(dispatch_queue_t)clientQueue error:(NSError **)error
 {
   // Accept the Connnection.
   struct sockaddr_in6 address;
@@ -141,9 +145,11 @@
       failBool:error];
   }
 
-  // Notify the Delegate.
-  NSFileHandle *fileHandle = [[NSFileHandle alloc] initWithFileDescriptor:acceptHandle closeOnDealloc:YES];
-  [self.delegate socketServer:self clientConnected:address.sin6_addr handle:fileHandle];
+  // Notify the Delegate the queue it wished to be notified on.
+  dispatch_async(clientQueue, ^{
+    NSFileHandle *fileHandle = [[NSFileHandle alloc] initWithFileDescriptor:acceptHandle closeOnDealloc:YES];
+    [self.delegate socketServer:self clientConnected:address.sin6_addr handle:fileHandle];
+  });
   return YES;
 }
 
