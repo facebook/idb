@@ -71,7 +71,7 @@ struct iOSRunnerContext<A> {
     }
   }
 
-  func querySingleSimulator(_ query: FBiOSTargetQuery) throws -> FBSimulator {
+  func querySingleTarget(_ query: FBiOSTargetQuery) throws -> FBiOSTarget {
     let targets = self.query(query)
     if targets.count > 1 {
       throw QueryError.TooManyMatches(targets, 1)
@@ -79,12 +79,7 @@ struct iOSRunnerContext<A> {
     guard let target = targets.first else {
       throw QueryError.NoMatches
     }
-    guard let simulator = target as? FBSimulator else {
-      let expected = FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType.simulator).first!
-      let actual = FBiOSTargetTypeStringsFromTargetType(target.targetType).first!
-      throw QueryError.WrongTarget(expected, actual)
-    }
-    return simulator
+    return target
   }
 }
 
@@ -257,14 +252,14 @@ struct ListenRunner : Runner, ActionPerformer {
       relays.append(HttpRelay(portNumber: httpPort, performer: self))
     }
     if interface.stdin {
-      let target = try self.context.querySingleSimulator(query)
+      let target = try self.context.querySingleTarget(query)
       let delegate = FBReportingiOSActionReaderDelegate(reporter: FBEventReporter.withInterpreter(interpreter, consumer: reporter.writer))
       let reader = FBiOSActionReader.fileReader(for: target, delegate: delegate, read: FileHandle.standardInput, write: FileHandle.standardOutput)
       continuation = reader
       relays.append(reader)
     }
     if let hidPort = interface.hid {
-      let target = try self.context.querySingleSimulator(query)
+      let target = try self.context.querySingleTarget(query)
       let delegate = FBReportingiOSActionReaderDelegate(reporter: FBEventReporter.withInterpreter(interpreter, consumer: reporter.writer))
       let reader = FBiOSActionReader.socketReader(for: target, delegate: delegate, port: hidPort)
       continuation = reader

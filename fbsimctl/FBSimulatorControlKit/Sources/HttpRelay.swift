@@ -102,21 +102,12 @@ extension ActionPerformer {
     }
   }
 
-  func runWithSingleSimulator<A>(_ query: FBiOSTargetQuery, action: (FBSimulator) throws -> A) throws -> A {
-    let simulator = try self.runnerContext(HttpEventReporter()).querySingleSimulator(query)
-    var result: A? = nil
-    var error: Error? = nil
-    simulator.workQueue.sync {
-      do {
-        result = try action(simulator)
-      } catch let caughtError {
-        error = caughtError
-      }
+  func futureWithSingleTarget<A>(_ query: FBiOSTargetQuery, action: (FBiOSTarget) -> FBFuture<A>) throws -> FBFuture<A> {
+    let target = try self.runnerContext(HttpEventReporter()).querySingleTarget(query)
+    let future = target.workQueue.sync {
+      return action(target)
     }
-    if let error = error {
-      throw error
-    }
-    return result!
+    return future
   }
 }
 
@@ -281,10 +272,11 @@ struct ScreenshotRoute : Route {
       guard let query = try SimpleResponseHandler.extractQueryFromPath(request) else {
         throw QueryError.NoneProvided
       }
-      let imageData: Data = try performer.runWithSingleSimulator(query) { simulator in
-        return try simulator.takeScreenshot(format).await() as Data
+      let imageFuture: FBFuture<NSData> = try performer.futureWithSingleTarget(query) { target in
+        return target.takeScreenshot(format)
       }
-      return HttpResponse(statusCode: 200, body: imageData, contentType: "image/" + self.format.rawValue)
+      let imageData = try imageFuture.await()
+      return HttpResponse(statusCode: 200, body: imageData as Data, contentType: "image/" + self.format.rawValue)
     }
   }
 }
