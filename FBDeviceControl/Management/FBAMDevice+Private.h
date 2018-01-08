@@ -40,6 +40,9 @@ extern int (*FB_AMDeviceSecureInstallApplication)(int arg0, AMDeviceRef device, 
 extern int (*FB_AMDeviceSecureUninstallApplication)(int arg0, AMDeviceRef device, CFStringRef arg2, int arg3, void *_Nullable callback, void *_Nullable context);
 extern int (*FB_AMDeviceLookupApplications)(AMDeviceRef device, int arg1, CFDictionaryRef _Nonnull * _Nonnull arg2);
 
+// Debugging
+extern _Nullable CFStringRef (*FB_AMDCopyErrorText)(int status);
+
 #pragma mark - AMDevice Class Private
 
 @interface FBAMDevice ()

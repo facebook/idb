@@ -115,8 +115,9 @@
       0
     );
     if (installReturnCode != 0) {
+      NSString *errorMessage = CFBridgingRelease(FB_AMDCopyErrorText(installReturnCode));
       return [[FBDeviceControlError
-        describe:@"Failed to install application"]
+        describeFormat:@"Failed to install application (%@)", errorMessage]
         fail:error];
     }
     return NSNull.null;
