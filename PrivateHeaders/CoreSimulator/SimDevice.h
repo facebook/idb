@@ -13,7 +13,7 @@
 #import <CoreSimulator/SimDeviceNotifier-Protocol.h>
 #import <CoreSimulator/CoreSimulator+BlockDefines.h>
 
-@class NSArray, NSDate, NSDictionary, NSMachPort, NSMutableArray, NSMutableDictionary, NSString, NSUUID, SimDeviceBootInfo, SimDeviceNotificationManager, SimDevicePasteboard, SimDeviceSet, SimDeviceType, SimRuntime;
+@class NSArray, NSDate, NSDictionary, NSMachPort, NSMutableArray, NSMutableDictionary, NSString, NSUUID, SimDeviceBootInfo, SimDeviceNotificationManager, SimDevicePasteboard, SimDeviceSet, SimDeviceType, SimRuntime, SimDeviceBootInfo;
 @protocol OS_dispatch_queue, OS_dispatch_source, SimDeviceIOProtocol;
 
 @interface SimDevice : NSObject <SimDeviceNotifier>
@@ -110,7 +110,7 @@
 - (void)handleXPCNotification:(NSDictionary *)arg1;
 @property (nonatomic, copy, readonly) NSString *runtimeIdentifier;
 @property (nonatomic, copy, readonly) NSString *name;
-- (id)bootStatus;
+- (SimDeviceBootInfo *)bootStatus;
 @property (readonly, nonatomic) unsigned long long state;
 - (id)stateString;
 - (BOOL)unregisterNotificationHandler:(unsigned long long)arg1 error:(id *)arg2;

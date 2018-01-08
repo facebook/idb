@@ -7,16 +7,22 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <objc/NSObject.h>
+#import <Foundation/Foundation.h>
 
-#import <CoreSimulator/NSSecureCoding-Protocol.h>
+typedef NS_ENUM(NSUInteger, SimDeviceBootInfoStatus) {
+  SimDeviceBootInfoStatusBooting = 0,
+  SimDeviceBootInfoStatusWaitingOnBackboard = 1,
+  SimDeviceBootInfoStatusWaitingOnDataMigration = 2,
+  SimDeviceBootInfoStatusWaitingOnSystemApp = 4,
+  SimDeviceBootInfoStatusBooted = 4294967295,
+};
 
 @class NSDictionary, NSString;
 
-@interface SimDeviceBootInfo : NSObject <NSSecureCoding>
+@interface SimDeviceBootInfo : NSObject
 {
     BOOL _isTerminalStatus;
-    unsigned int _status;
+    SimDeviceBootInfoStatus _status;
     double _bootElapsedTime;
     NSDictionary *_info;
 }
@@ -25,8 +31,7 @@
 @property (nonatomic, copy) NSDictionary *info;
 @property (nonatomic, assign) BOOL isTerminalStatus;
 @property (nonatomic, assign) double bootElapsedTime;
-@property (nonatomic, assign) unsigned int status;
-- (void).cxx_destruct;
+@property (nonatomic, assign) SimDeviceBootInfoStatus status;
 @property (readonly, nonatomic) double migrationElapsedTime;
 @property (nonatomic, copy, readonly) NSString *migrationPhaseDescription;
 - (void)encodeWithCoder:(id)arg1;

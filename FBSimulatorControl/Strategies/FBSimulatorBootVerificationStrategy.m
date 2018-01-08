@@ -9,6 +9,9 @@
 
 #import "FBSimulatorBootVerificationStrategy.h"
 
+#import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceBootInfo.h>
+
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulator.h"
@@ -20,13 +23,33 @@
 
 @end
 
+@interface FBSimulatorBootVerificationStrategy_LaunchCtlServices : FBSimulatorBootVerificationStrategy
+
+@property (nonatomic, copy, readonly) NSArray<NSString *> *requiredServiceNames;
+
+- (instancetype)initWithSimulator:(FBSimulator *)simulator requiredServiceNames:(NSArray<NSString *> *)requiredServiceNames;
+
++ (NSArray<NSString *> *)requiredLaunchdServicesToVerifyBooted:(FBSimulator *)simulator;
+
+@end
+
+@interface FBSimulatorBootVerificationStrategy_SimDeviceBootInfo : FBSimulatorBootVerificationStrategy
+
+@end
+
+
 @implementation FBSimulatorBootVerificationStrategy
 
 #pragma mark Initializers
 
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator
 {
-  return [[self alloc] initWithSimulator:simulator];
+  if ([simulator.device respondsToSelector:@selector(bootStatus)]) {
+    return [[FBSimulatorBootVerificationStrategy_SimDeviceBootInfo alloc] initWithSimulator:simulator];
+  } else {
+    NSArray<NSString *> *requiredServiceNames = [FBSimulatorBootVerificationStrategy_LaunchCtlServices requiredLaunchdServicesToVerifyBooted:simulator];
+    return [[FBSimulatorBootVerificationStrategy_LaunchCtlServices alloc] initWithSimulator:simulator requiredServiceNames:requiredServiceNames];
+  }
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator
@@ -43,30 +66,73 @@
 
 #pragma mark Public
 
+static NSTimeInterval BootVerificationWaitInterval = 0.5;
+
 - (FBFuture<NSNull *> *)verifySimulatorIsBooted
 {
   FBSimulator *simulator = self.simulator;
-  NSArray<NSString *> *requiredServiceNames = self.requiredLaunchdServicesToVerifyBooted;
 
   return [[simulator
     resolveState:FBSimulatorStateBooted]
     onQueue:simulator.workQueue fmap:^FBFuture *(NSNull *_) {
       return [FBFuture onQueue:simulator.workQueue resolveUntil:^{
-        return [FBSimulatorBootVerificationStrategy onSimulator:simulator verifyServicesAreRunningNow:requiredServiceNames];
+        return [[self performBootVerification] delay:BootVerificationWaitInterval];
       }];
     }];
 }
 
 #pragma mark Private
 
-+ (FBFuture<NSNull *> *)onSimulator:(FBSimulator *)simulator verifyServicesAreRunningNow:(NSArray<NSString *> *)requiredServiceNames
+- (FBFuture<NSNull *> *)performBootVerification
+ {
+   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+   return nil;
+ }
+
+@end
+
+@implementation FBSimulatorBootVerificationStrategy_SimDeviceBootInfo
+
+- (FBFuture<NSNull *> *)performBootVerification
 {
-  return [[simulator
+  SimDeviceBootInfo *bootInfo = self.simulator.device.bootStatus;
+  if (!bootInfo) {
+    return [[FBSimulatorError
+      describeFormat:@"No bootStatus for %@", self.simulator]
+      failFuture];
+  }
+  if (bootInfo.status != SimDeviceBootInfoStatusBooted) {
+    return [[FBSimulatorError
+      describeFormat:@"Not booted status is %@", bootInfo]
+      failFuture];
+  }
+  return [FBFuture futureWithResult:NSNull.null];
+}
+
+@end
+
+@implementation FBSimulatorBootVerificationStrategy_LaunchCtlServices
+
+- (instancetype)initWithSimulator:(FBSimulator *)simulator requiredServiceNames:(NSArray<NSString *> *)requiredServiceNames
+{
+  self = [super initWithSimulator:simulator];
+  if (!self) {
+    return nil;
+  }
+
+  _requiredServiceNames = requiredServiceNames;
+
+  return self;
+}
+
+- (FBFuture<NSNull *> *)performBootVerification
+{
+  return [[self.simulator
     listServices]
-    onQueue:simulator.asyncQueue fmap:^(NSDictionary<NSString *, id> *services) {
+    onQueue:self.simulator.asyncQueue fmap:^(NSDictionary<NSString *, id> *services) {
       NSDictionary<id, NSString *> *processIdentifiers = [NSDictionary
-        dictionaryWithObjects:requiredServiceNames
-        forKeys:[services objectsForKeys:requiredServiceNames notFoundMarker:NSNull.null]];
+        dictionaryWithObjects:self.requiredServiceNames
+        forKeys:[services objectsForKeys:self.requiredServiceNames notFoundMarker:NSNull.null]];
       if (processIdentifiers[NSNull.null]) {
         return [[FBSimulatorError
           describeFormat:@"Service %@ has not started", processIdentifiers[NSNull.null]]
@@ -85,9 +151,9 @@
 
  @return the required Service Names.
  */
-- (NSArray<NSString *> *)requiredLaunchdServicesToVerifyBooted
++ (NSArray<NSString *> *)requiredLaunchdServicesToVerifyBooted:(FBSimulator *)simulator
 {
-  FBControlCoreProductFamily family = self.simulator.productFamily;
+  FBControlCoreProductFamily family = simulator.productFamily;
   if (family == FBControlCoreProductFamilyiPhone || family == FBControlCoreProductFamilyiPad) {
     if (FBXcodeConfiguration.isXcode9OrGreater) {
       return @[
