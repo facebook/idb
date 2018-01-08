@@ -55,7 +55,8 @@
     testBundlePath:self.iOSUnitTestBundlePath
     waitForDebugger:NO
     timeout:0
-    testFilter:nil];
+    testFilter:nil
+    mirroring:FBLogicTestMirrorFileLogs];
   XCTAssertEqualObjects(configuration, expected);
 }
 
@@ -90,7 +91,8 @@
     testBundlePath:self.iOSUnitTestBundlePath
     waitForDebugger:NO
     timeout:0
-    testFilter:nil];
+    testFilter:nil
+    mirroring:FBLogicTestMirrorFileLogs];
   XCTAssertEqualObjects(configuration, expected);
 
 }
@@ -126,7 +128,8 @@
     testBundlePath:self.iOSUnitTestBundlePath
     waitForDebugger:NO
     timeout:0
-    testFilter:nil];
+    testFilter:nil
+    mirroring:FBLogicTestMirrorFileLogs];
   XCTAssertEqualObjects(configuration, expected);
 }
 

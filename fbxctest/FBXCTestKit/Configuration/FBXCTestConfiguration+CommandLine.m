@@ -56,7 +56,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       testBundlePath:testBundlePath
       waitForDebugger:waitForDebugger
       timeout:timeout
-      testFilter:testFilter];
+      testFilter:testFilter
+      mirroring:FBLogicTestMirrorFileLogs];
   }
   if ([argumentSet containsObject:@"-appTest"]) {
     return [FBTestManagerTestConfiguration

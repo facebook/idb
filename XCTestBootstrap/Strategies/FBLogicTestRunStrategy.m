@@ -60,7 +60,10 @@
 - (FBFuture<NSNull *> *)testFuture
 {
   id<FBLogicXCTestReporter> reporter = self.reporter;
-  FBXCTestLogger *logger = self.logger;
+  BOOL mirrorToFiles = (self.configuration.mirroring & FBLogicTestMirrorFileLogs) != 0;
+  BOOL mirrorToLogger = (self.configuration.mirroring & FBLogicTestMirrorLogger) != 0;
+  id<FBControlCoreLogger> logger = self.logger;
+  FBXCTestLogger *mirrorLogger = [FBXCTestLogger defaultLoggerInDefaultDirectory];
 
   [reporter didBeginExecutingTestPlan];
 
@@ -97,25 +100,45 @@
   // Setup the stdout reader.
   id<FBFileConsumer> stdOutReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line){
     [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
+    if (mirrorToLogger) {
+      [mirrorLogger logFormat:@"[Test Output] %@", line];
+    }
   }];
-  NSString *mirrorPath = nil;
-  stdOutReader = [logger logConsumptionToFile:stdOutReader outputKind:@"out" udid:uuid filePathOut:&mirrorPath];
-  [self.logger logFormat:@"Mirroring xctest stdout to %@", mirrorPath];
+  if (mirrorToFiles) {
+    NSString *mirrorPath = nil;
+    stdOutReader = [mirrorLogger logConsumptionToFile:stdOutReader outputKind:@"out" udid:uuid filePathOut:&mirrorPath];
+    [logger logFormat:@"Mirroring xctest stdout to %@", mirrorPath];
+  }
 
   // Setup the stderr reader.
   id<FBFileConsumer> stdErrReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line){
     [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
+    if (mirrorToLogger) {
+      [mirrorLogger logFormat:@"[Test Output(err)] %@", line];
+    }
   }];
-  stdErrReader = [logger logConsumptionToFile:stdErrReader outputKind:@"err" udid:uuid filePathOut:&mirrorPath];
-  [self.logger logFormat:@"Mirroring xctest stderr to %@", mirrorPath];
+  if (mirrorToFiles) {
+    NSString *mirrorPath = nil;
+    stdErrReader = [mirrorLogger logConsumptionToFile:stdErrReader outputKind:@"err" udid:uuid filePathOut:&mirrorPath];
+    [logger logFormat:@"Mirroring xctest stderr to %@", mirrorPath];
+  }
 
   // Setup the reader of the shim
   FBLineFileConsumer *otestShimLineReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue dataConsumer:^(NSData *line) {
     [reporter handleEventJSONData:line];
+    if (mirrorToLogger) {
+      NSString *stringLine = [[NSString alloc] initWithData:line encoding:NSUTF8StringEncoding];
+      [mirrorLogger logFormat:@"[Shim StdOut] %@", stringLine];
+    }
   }];
-  // Mirror the output
-  id<FBFileConsumer> otestShimConsumer = [logger logConsumptionToFile:otestShimLineReader outputKind:@"shim" udid:uuid filePathOut:&mirrorPath];
-  [self.logger logFormat:@"Mirroring shim-fifo output to %@", mirrorPath];
+
+  id<FBFileConsumer> otestShimConsumer = otestShimLineReader;
+  if (mirrorToFiles) {
+    // Mirror the output
+    NSString *mirrorPath = nil;
+    otestShimConsumer = [mirrorLogger logConsumptionToFile:otestShimLineReader outputKind:@"shim" udid:uuid filePathOut:&mirrorPath];
+    [logger logFormat:@"Mirroring shim-fifo output to %@", mirrorPath];
+  }
 
   // Construct and start the process
   return [[[self

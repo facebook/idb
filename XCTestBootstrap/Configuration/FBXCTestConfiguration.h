@@ -146,6 +146,15 @@ extern FBXCTestType const FBXCTestTypeListTest;
 
 @end
 
+typedef NS_OPTIONS(NSUInteger, FBLogicTestMirrorLogs) {
+    /* Does not mirror logs */
+    FBLogicTestMirrorNoLogs = 0,
+    /* Mirrors logs to files */
+    FBLogicTestMirrorFileLogs = 1 << 0,
+    /* Mirrors logs to logger */
+    FBLogicTestMirrorLogger = 1 << 1,
+};
+
 /**
  A Test Configuration, specialized to the running of Logic Tests.
  */
@@ -157,9 +166,14 @@ extern FBXCTestType const FBXCTestTypeListTest;
 @property (nonatomic, copy, nullable, readonly) NSString *testFilter;
 
 /**
+ How the logic test logs will be mirrored
+ */
+@property (nonatomic, readonly) FBLogicTestMirrorLogs mirroring;
+
+/**
  The Designated Initializer.
  */
-+ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(nullable NSString *)testFilter;
++ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(nullable NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring;
 
 @end
 

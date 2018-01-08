@@ -121,6 +121,7 @@ NSString *const KeyRunnerTargetPath = @"test_target_path";
 NSString *const KeyShims = @"shims";
 NSString *const KeyTestBundlePath = @"test_bundle_path";
 NSString *const KeyTestFilter = @"test_filter";
+NSString *const KeyTestMirror = @"test_mirror";
 NSString *const KeyTestTimeout = @"test_timeout";
 NSString *const KeyTestType = @"test_type";
 NSString *const KeyWaitForDebugger = @"wait_for_debugger";
@@ -350,12 +351,12 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(NSString *)testFilter
++ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring
 {
-  return [[FBLogicTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout testFilter:testFilter];
+  return [[FBLogicTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout testFilter:testFilter  mirroring:mirroring];
 }
 
-- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(NSString *)testFilter
+- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring
 {
   self = [super initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
   if (!self) {
@@ -363,6 +364,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   }
 
   _testFilter = testFilter;
+  _mirroring = mirroring;
 
   return self;
 }
@@ -391,7 +393,13 @@ NSString *const KeyWorkingDirectory = @"working_directory";
       describeFormat:@"%@ is not a String for %@", keyTestFilter, KeyTestFilter]
       fail:error];
   }
-  return [[FBLogicTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout testFilter:keyTestFilter];
+  NSNumber *mirrorOpts = [FBCollectionOperations nullableValueForDictionary:json key:KeyTestMirror];
+  if (mirrorOpts && ![mirrorOpts isKindOfClass:NSNumber.class]) {
+    return [[FBXCTestError
+             describeFormat:@"%@ is not a Number for %@", keyTestFilter, KeyTestFilter]
+            fail:error];
+  }
+  return [[FBLogicTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout testFilter:keyTestFilter mirroring:mirrorOpts.unsignedIntegerValue];
 }
 
 @end
