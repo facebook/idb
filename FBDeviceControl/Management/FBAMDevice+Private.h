@@ -38,10 +38,10 @@ extern int (*FB_AMDeviceStartService)(AMDeviceRef device, CFStringRef service_na
 extern int (*FB_AMDeviceSecureTransferPath)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable callback, void *_Nullable context);
 extern int (*FB_AMDeviceSecureInstallApplication)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable callback, void *_Nullable context);
 extern int (*FB_AMDeviceSecureUninstallApplication)(int arg0, AMDeviceRef device, CFStringRef arg2, int arg3, void *_Nullable callback, void *_Nullable context);
-extern int (*FB_AMDeviceLookupApplications)(AMDeviceRef device, int arg1, CFDictionaryRef _Nonnull * _Nonnull arg2);
+extern int (*FB_AMDeviceLookupApplications)(AMDeviceRef device, CFDictionaryRef _Nullable options, CFDictionaryRef _Nonnull * _Nonnull attributesOut);
 
 // Debugging
-extern _Nullable CFStringRef (*FB_AMDCopyErrorText)(int status);
+extern _Nullable CFStringRef (* _Nonnull FB_AMDCopyErrorText)(int status);
 
 #pragma mark - AMDevice Class Private
 
