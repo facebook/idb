@@ -29,7 +29,7 @@
     withLaunchPath:@"/usr/bin/base64" arguments:@[@"-i", filePath]]
     runSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
-  XCTAssertTrue(task.hasTerminated);
+  XCTAssertTrue(task.completed.hasCompleted);
   XCTAssertNil(task.error);
   XCTAssertEqualObjects(task.stdOut, expected);
   XCTAssertGreaterThan(task.processIdentifier, 1);
@@ -45,7 +45,7 @@
     withLaunchPath:@"/usr/bin/strings" arguments:@[binaryPath]]
     runSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
-  XCTAssertTrue(task.hasTerminated);
+  XCTAssertTrue(task.completed.hasCompleted);
   XCTAssertNil(task.error);
   XCTAssertTrue([task.stdOut containsString:NSStringFromSelector(_cmd)]);
   XCTAssertGreaterThan(task.processIdentifier, 1);
@@ -60,7 +60,7 @@
     withLaunchPath:@"/bin/ls" arguments:@[@"-1", resourcesPath]]
     runSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
-  XCTAssertTrue(task.hasTerminated);
+  XCTAssertTrue(task.completed.hasCompleted);
   XCTAssertNil(task.error);
   XCTAssertGreaterThan(task.processIdentifier, 1);
 
@@ -86,7 +86,7 @@
     runSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
   XCTAssertTrue([task.stdOut conformsToProtocol:@protocol(FBFileConsumer)]);
-  XCTAssertTrue(task.hasTerminated);
+  XCTAssertTrue(task.completed.hasCompleted);
   XCTAssertNil(task.error);
   XCTAssertGreaterThan(task.processIdentifier, 1);
 
@@ -141,8 +141,7 @@
     run];
 
   XCTAssertNotNil([task.completed awaitWithTimeout:1 error:nil]);
-  XCTAssertTrue(task.hasTerminated);
-  XCTAssertTrue(task.wasSuccessful);
+  XCTAssertTrue(task.completed.hasCompleted);
   XCTAssertNil(task.error);
 }
 
@@ -175,7 +174,7 @@
   BOOL waitSuccess = [task.completed awaitWithTimeout:2 error:&error] != nil;
   XCTAssertFalse(waitSuccess);
   XCTAssertNotNil(error);
-  XCTAssertFalse(task.hasTerminated);
+  XCTAssertFalse(task.completed.hasCompleted);
 
   [self waitForExpectations:@[expectation] timeout:2];
 }
@@ -185,7 +184,7 @@
   FBTask *task = [[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000"]]
     runSynchronouslyWithTimeout:1];
-  XCTAssertTrue(task.hasTerminated);
+  XCTAssertTrue(task.completed.hasCompleted);
   XCTAssertNotNil(task.error);
 }
 

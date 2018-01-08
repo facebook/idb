@@ -477,19 +477,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   return self.errorFuture.error;
 }
 
-- (BOOL)hasTerminated
-{
-  return self.completedTeardown;
-}
-
-- (BOOL)wasSuccessful
-{
-  @synchronized(self)
-  {
-    return self.hasTerminated && self.errorFuture.error == nil;
-  }
-}
-
 #pragma mark Private
 
 - (void)terminate
@@ -604,9 +591,9 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 - (NSString *)description
 {
   return [NSString
-    stringWithFormat:@"%@ | Has Terminated %d",
+    stringWithFormat:@"%@ | State %@",
     self.configurationDescription,
-    self.hasTerminated
+    self.completed
   ];
 }
 
