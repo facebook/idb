@@ -21,6 +21,8 @@
 
 @implementation FBSimulatorApplicationOperation
 
+@synthesize completed = _completed;
+
 #pragma mark Initializers
 
 + (FBFuture<FBSimulatorApplicationOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration launchFuture:(FBFuture<NSNumber *> *)launchFuture
@@ -31,11 +33,12 @@
       return [fetcher onQueue:simulator.asyncQueue processInfoFor:processIdentifierNumber.intValue timeout:FBControlCoreGlobalConfiguration.fastTimeout];
     }]
     onQueue:simulator.workQueue map:^(FBProcessInfo *process) {
-      return [[[self alloc] initWithSimulator:simulator configuration:configuration process:process] createNotifier:process.processIdentifier];
+      FBFuture<NSNull *> *terminationFuture = [FBSimulatorApplicationOperation terminationFutureForSimulator:simulator processIdentifier:process.processIdentifier];
+      return [[self alloc] initWithSimulator:simulator configuration:configuration process:process terminationFuture:terminationFuture];
     }];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration process:(FBProcessInfo *)process
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration process:(FBProcessInfo *)process terminationFuture:(FBFuture<NSNull *> *)terminationFuture
 {
   self = [super init];
   if (!self) {
@@ -45,23 +48,40 @@
   _simulator = simulator;
   _configuration = configuration;
   _process = process;
+  _completed = [terminationFuture
+    onQueue:simulator.workQueue
+    notifyOfCompletion:^(FBFuture *future) {
+      [simulator.eventSink applicationDidTerminate:self expected:NO];
+    }];
 
   return self;
 }
 
-#pragma mark Private
+#pragma mark Helpers
 
-- (instancetype)createNotifier:(pid_t)processIdentifier
++ (FBFuture<NSNull *> *)terminationFutureForSimulator:(FBSimulator *)simulator processIdentifier:(pid_t)processIdentifier
 {
-  __weak typeof(self) weakSelf = self;
-  self.notifier = [FBDispatchSourceNotifier
+  FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
+  FBDispatchSourceNotifier *notifier = nil;
+  notifier = [FBDispatchSourceNotifier
     processTerminationNotifierForProcessIdentifier:processIdentifier
-    queue:self.simulator.workQueue
+    queue:simulator.asyncQueue
     handler:^(FBDispatchSourceNotifier *_) {
-      [weakSelf.simulator.eventSink applicationDidTerminate:self expected:NO];
-      weakSelf.notifier = nil;
+      [future resolveWithResult:NSNull.null];
   }];
-  return self;
+  return [future
+    onQueue:simulator.workQueue
+    respondToCancellation:^{
+      [notifier terminate];
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
+}
+
+#pragma mark FBiOSTargetContinuation
+
+- (FBiOSTargetFutureType)futureType
+{
+  return FBiOSTargetFutureTypeApplicationLaunch;
 }
 
 @end

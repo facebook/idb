@@ -20,16 +20,20 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An Operation for an Application.
  */
-@interface FBSimulatorApplicationOperation : NSObject
+@interface FBSimulatorApplicationOperation : NSObject <FBiOSTargetContinuation>
+
+#pragma mark Helper Methods
 
 /**
- The Designated Initializer.
+ Uses DISPATCH_PROC_EXIT to determine that the process has been terminated.
 
- @param configuration the configuration launched with.
- @param launchFuture a future that resolves when the Application has finished launching.
- @return a new Application Operation.
+ @param simulator the Simulator that launched the process.
+ @param processIdentifier the process identifier to monitor.
+ @return a Future that resolves when the process has exited. Exit status is unknown.
  */
-+ (FBFuture<FBSimulatorApplicationOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration launchFuture:(FBFuture<NSNumber *> *)launchFuture;
++ (FBFuture<NSNull *> *)terminationFutureForSimulator:(FBSimulator *)simulator processIdentifier:(pid_t)processIdentifier;
+
+#pragma mark Properties
 
 /**
  The Configuration Launched with.
@@ -40,6 +44,23 @@ NS_ASSUME_NONNULL_BEGIN
  The Launched Process Info.
  */
 @property (nonatomic, copy, readonly) FBProcessInfo *process;
+
+@end
+
+/**
+ Private methods that should not be called by consumers.
+ */
+@interface FBSimulatorApplicationOperation (Private)
+
+/**
+ The Designated Initializer.
+
+ @param simulator the Simulator that launched the Application.
+ @param configuration the configuration with which the application was launched.
+ @param launchFuture a future that resolves when the Application has finished launching.
+ @return a new Application Operation.
+ */
++ (FBFuture<FBSimulatorApplicationOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration launchFuture:(FBFuture<NSNumber *> *)launchFuture;
 
 @end
 

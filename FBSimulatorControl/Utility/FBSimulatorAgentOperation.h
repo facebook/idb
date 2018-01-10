@@ -31,6 +31,8 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent;
  */
 @interface FBSimulatorAgentOperation : NSObject <FBiOSTargetContinuation>
 
+#pragma mark Helper Methods
+
 /**
  Extracts termination information for the provided process.
 
@@ -38,6 +40,8 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent;
  @return YES if the termination is expected. NO otherwise.
  */
 + (BOOL)isExpectedTerminationForStatLoc:(int)statLoc;
+
+#pragma mark Properties
 
 /**
  The Configuration Launched with.
