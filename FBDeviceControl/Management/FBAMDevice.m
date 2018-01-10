@@ -425,7 +425,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
     NSString *errorDecription = CFBridgingRelease(FB_AMDCopyErrorText(status));
     return [[FBDeviceControlError
       describeFormat:@"Failed to connect to device. (%@)", errorDecription]
-      failFuture];
+      fail:error];
   }
   status = FB_AMDeviceStartSession(amDevice);
   if (status != 0) {
@@ -433,7 +433,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
     NSString *errorDecription = CFBridgingRelease(FB_AMDCopyErrorText(status));
     return [[FBDeviceControlError
       describeFormat:@"Failed to start session with device. (%@)", errorDecription]
-      failFuture];
+      fail:error];
   }
   id result = block(amDevice, error);
   FB_AMDeviceStopSession(amDevice);
