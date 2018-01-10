@@ -437,6 +437,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   }
   id result = block(amDevice, error);
   FB_AMDeviceStopSession(amDevice);
+  FB_AMDeviceDisconnect(amDevice);
   return result;
 }
 
