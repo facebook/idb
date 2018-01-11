@@ -19,7 +19,6 @@
 #import "FBSimulatorAgentOperation.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
-#import "FBProcessOutput.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"
 

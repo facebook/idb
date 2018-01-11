@@ -23,7 +23,6 @@
 #import <FBSimulatorControl/FBFramebufferSurface.h>
 #import <FBSimulatorControl/FBMutableSimulatorEventSink.h>
 #import <FBSimulatorControl/FBProcessLaunchConfiguration+Simulator.h>
-#import <FBSimulatorControl/FBProcessOutput.h>
 #import <FBSimulatorControl/FBServiceInfoConfiguration.h>
 #import <FBSimulatorControl/FBShutdownConfiguration.h>
 #import <FBSimulatorControl/FBSimulator+Private.h>

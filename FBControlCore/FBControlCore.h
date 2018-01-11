@@ -70,6 +70,7 @@
 #import <FBControlCore/FBProcessFetcher.h>
 #import <FBControlCore/FBProcessInfo.h>
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
+#import <FBControlCore/FBProcessOutput.h>
 #import <FBControlCore/FBProcessOutputConfiguration.h>
 #import <FBControlCore/FBProcessTerminationStrategy.h>
 #import <FBControlCore/FBReportingiOSActionReaderDelegate.h>
@@ -94,4 +95,3 @@
 #import <FBControlCore/FBXCTestCommands.h>
 #import <FBControlCore/NSPredicate+FBControlCore.h>
 #import <FBControlCore/NSRunLoop+FBControlCore.h>
-

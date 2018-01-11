@@ -11,7 +11,6 @@
 
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
-#import "FBProcessOutput.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"
 

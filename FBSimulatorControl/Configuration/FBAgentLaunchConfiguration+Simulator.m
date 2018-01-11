@@ -10,7 +10,6 @@
 #import "FBAgentLaunchConfiguration+Simulator.h"
 
 #import "FBSimulator.h"
-#import "FBProcessOutput.h"
 #import "FBSimulatorError.h"
 #import "FBProcessLaunchConfiguration+Simulator.h"
 
