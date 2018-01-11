@@ -75,7 +75,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
   FBSimulator *simulator = self.simulator;
 
   // Launch the Process
-  FBMutableFuture *terminationFuture = [FBMutableFuture future];
+  FBMutableFuture *processStatusFuture = [FBMutableFuture future];
   FBFuture<NSNumber *> *launchFuture = [self
     launchAgentWithLaunchPath:agentLaunch.agentBinary.path
     arguments:agentLaunch.arguments
@@ -83,7 +83,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
     waitForDebugger:NO
     stdOut:stdOut.fileHandle
     stdErr:stdErr.fileHandle
-    terminationFuture:terminationFuture];
+    processStatusFuture:processStatusFuture];
 
   // Wrap in the container object
   return [[FBSimulatorAgentOperation
@@ -92,7 +92,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
     stdOut:stdOut
     stdErr:stdErr
     launchFuture:launchFuture
-    terminationFuture:terminationFuture]
+    processStatusFuture:processStatusFuture]
     onQueue:self.simulator.workQueue notifyOfCompletion:^(FBFuture<FBSimulatorAgentOperation *> *future) {
       FBSimulatorAgentOperation *operation = future.result;
       if (!operation) {
@@ -117,7 +117,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
     startReading]
     onQueue:self.simulator.workQueue fmap:^(id _) {
       // The Process launches and terminates synchronously
-      FBMutableFuture<NSNumber *> *terminationFuture = [FBMutableFuture future];
+      FBMutableFuture<NSNumber *> *processStatusFuture = FBMutableFuture.future;
       FBFuture<NSNumber *> *launchFuture = [self
         launchAgentWithLaunchPath:agentLaunch.agentBinary.path
         arguments:agentLaunch.arguments
@@ -125,7 +125,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
         waitForDebugger:NO
         stdOut:pipe.pipe.fileHandleForWriting
         stdErr:nil
-        terminationFuture:terminationFuture];
+        processStatusFuture:processStatusFuture];
 
       return [[launchFuture
         onQueue:self.simulator.workQueue chain:^FBFuture *(FBFuture *future) {
@@ -133,7 +133,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
           if (innerError) {
             return [FBFuture futureWithError:innerError];
           }
-          return terminationFuture;
+          return processStatusFuture;
         }]
         onQueue:self.simulator.workQueue chain:^FBFuture<NSNumber *> *(FBFuture<NSNumber *> *innerFuture) {
           return [[pipe
@@ -155,7 +155,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
 #pragma mark Private
 
-- (FBFuture<NSNumber *> *)launchAgentWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr terminationFuture:(nullable FBMutableFuture<NSNumber *> *)terminationFuture
+- (FBFuture<NSNumber *> *)launchAgentWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr processStatusFuture:(nullable FBMutableFuture<NSNumber *> *)processStatusFuture
 {
   // Get the Options
   NSDictionary<NSString *, id> *options = [FBAgentLaunchConfiguration
@@ -173,7 +173,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
     options:options
     terminationQueue:self.simulator.workQueue
     terminationHandler:^(int stat_loc) {
-      [terminationFuture resolveWithResult:@(stat_loc)];
+      [processStatusFuture resolveWithResult:@(stat_loc)];
     }
     completionQueue:self.simulator.workQueue
     completionHandler:^(NSError *innerError, pid_t processIdentifier){

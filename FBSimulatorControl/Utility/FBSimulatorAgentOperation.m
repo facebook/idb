@@ -25,9 +25,11 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
 
 @implementation FBSimulatorAgentOperation
 
+@synthesize exitCode = _exitCode;
+
 #pragma mark Initializers
 
-+ (FBFuture<FBSimulatorAgentOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture terminationFuture:(FBFuture<NSNumber *> *)terminationFuture
++ (FBFuture<FBSimulatorAgentOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
 {
   return [[launchFuture
     onQueue:simulator.workQueue fmap:^(NSNumber *processIdentifierNumber) {
@@ -35,11 +37,11 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
       return [fetcher onQueue:simulator.asyncQueue processInfoFor:processIdentifierNumber.intValue timeout:FBControlCoreGlobalConfiguration.fastTimeout];
     }]
     onQueue:simulator.workQueue map:^(FBProcessInfo *process) {
-      return [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr process:process terminationFuture:terminationFuture];
+      return [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr process:process processStatusFuture:processStatusFuture];
     }];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr process:(FBProcessInfo *)process terminationFuture:(FBFuture<NSNumber *> *)terminationFuture
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr process:(FBProcessInfo *)process processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
 {
   self = [super init];
   if (!self) {
@@ -51,13 +53,25 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
   _stdOut = stdOut;
   _stdErr = stdErr;
   _process = process;
-  _future = [terminationFuture onQueue:simulator.workQueue notifyOfCompletion:^(FBFuture<NSNumber *> *future) {
-    if (future.result) {
-      [self processDidTerminate:future.result.intValue];
-    } else {
-      [self processWasCancelled];
-    }
+  _processStatus = [processStatusFuture
+    onQueue:simulator.workQueue
+    notifyOfCompletion:^(FBFuture<NSNumber *> *future) {
+      if (future.result) {
+        [self processDidTerminate:future.result.intValue];
+      } else {
+        [self processWasCancelled];
+      }
   }];
+  _exitCode = [processStatusFuture
+    onQueue:simulator.asyncQueue
+    map:^(NSNumber *statLocNumber) {
+      int stat_loc = statLocNumber.intValue;
+      if (WIFEXITED(stat_loc)) {
+        return @(WEXITSTATUS(stat_loc));
+      } else {
+        return @(WTERMSIG(stat_loc));
+      }
+    }];
 
   return self;
 }
@@ -108,7 +122,14 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [self.future mapReplace:NSNull.null];
+  return [self.exitCode mapReplace:NSNull.null];
+}
+
+#pragma mark FBLaunchedProcess
+
+- (pid_t)processIdentifier
+{
+  return self.process.processIdentifier;
 }
 
 @end

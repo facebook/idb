@@ -46,7 +46,7 @@
 
 #pragma mark Public
 
-- (FBFuture<id<FBLaunchedProcess>> *)startProcess:(FBXCTestProcess *)process
+- (FBFuture<FBSimulatorAgentOperation *> *)startProcess:(FBXCTestProcess *)process
 {
   NSError *error = nil;
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
@@ -67,12 +67,9 @@
    environment:process.environment
    output:output];
 
-  return [[[FBAgentLaunchStrategy
+  return [[FBAgentLaunchStrategy
     strategyWithSimulator:self.simulator]
-    launchAgent:configuration]
-    onQueue:self.simulator.asyncQueue map:^(FBSimulatorAgentOperation *operation) {
-      return [FBSimulatorXCTestProcessExecutor operationToProcessInfo:operation queue:self.simulator.asyncQueue];
-    }];
+    launchAgent:configuration];
 }
 
 - (NSString *)shimPath
@@ -91,19 +88,5 @@
 }
 
 #pragma mark Private
-
-+ (FBLaunchedProcess *)operationToProcessInfo:(FBSimulatorAgentOperation *)operation queue:(dispatch_queue_t)queue
-{
-  FBFuture<NSNumber *> *exitCode = [operation.future
-    onQueue:queue map:^(NSNumber *statLocNumber) {
-      int stat_loc = statLocNumber.intValue;
-      if (WIFEXITED(stat_loc)) {
-        return @(WEXITSTATUS(stat_loc));
-      } else {
-        return @(WTERMSIG(stat_loc));
-      }
-    }];
-  return [[FBLaunchedProcess alloc] initWithProcessIdentifier:operation.process.processIdentifier exitCode:exitCode];
-}
 
 @end

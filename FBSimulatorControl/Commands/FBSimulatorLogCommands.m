@@ -73,7 +73,7 @@
     startLogCommand:arguments consumer:consumer]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorAgentOperation *operation) {
       // Re-Map from Launch to Exit
-      return [operation future];
+      return [operation processStatus];
     }]
     onQueue:self.simulator.asyncQueue fmap:^(NSNumber *statLoc){
       // Check the exit code.
