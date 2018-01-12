@@ -161,6 +161,18 @@
   return YES;
 }
 
+#pragma mark Bridge
+
+- (FBFuture<FBSimulatorBridge *> *)connectToBridge
+{
+  NSError *error = nil;
+  FBSimulatorConnection *connection = [self connectWithError:&error];
+  if (!connection) {
+    return [FBFuture futureWithError:error];
+  }
+  return [connection connectToBridge];
+}
+
 #pragma mark Framebuffer
 
 - (nullable FBFramebuffer *)framebufferWithError:(NSError **)error

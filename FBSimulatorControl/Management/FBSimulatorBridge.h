@@ -25,13 +25,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Creates and Returns a SimulatorBridge for the attaching to the provided Simulator.
- Fails if the connection could not established.
+ The future will fail if the connection could not established.
 
  @param simulator the Simulator to attach to.
- @param error an error out for any error that occurs.
- @return a FBSimulatorBridge object on success, nil otherwise.
+ @return a FBSimulatorBridge wrapped in a Future.
  */
-+ (nullable instancetype)bridgeForSimulator:(FBSimulator *)simulator error:(NSError **)error;
++ (FBFuture<FBSimulatorBridge *> *)bridgeForSimulator:(FBSimulator *)simulator;
 
 /**
  Should be called when the connection to the remote bridge should be disconnected.

@@ -51,12 +51,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)terminateWithTimeout:(NSTimeInterval)timeout;
 
 /**
- Connects to the SimulatorBridge.
+ Connects to the FBSimulatorBridge.
 
- @param error an error out for any error that occurs.
- @return the Bridge Instance if successful, nil otherwise.
+ @return a Future wrapping the Bridge Instance if successful, nil otherwise.
  */
-- (nullable FBSimulatorBridge *)connectToBridge:(NSError **)error;
+- (FBFuture<FBSimulatorBridge *> *)connectToBridge;
 
 /**
  Connects to the Framebuffer.

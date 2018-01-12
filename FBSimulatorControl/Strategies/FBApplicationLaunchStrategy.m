@@ -161,22 +161,18 @@
 - (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
   // The Bridge must be connected in order for the launch to work.
-  NSError *innerError = nil;
   FBSimulator *simulator = self.simulator;
-  FBSimulatorBridge *bridge = [[simulator connectWithError:&innerError] connectToBridge:&innerError];
-  if (!bridge) {
-    return [[[FBSimulatorError
-      describeFormat:@"Could not connect bridge to Simulator in order to launch application %@", appLaunch]
-      causedBy:innerError]
-      failFuture];
-  }
-
-  // Launch the Application.
-  pid_t processIdentifier = [bridge launch:appLaunch stdOutPath:stdErrPath stdErrPath:stdOutPath error:&innerError];
-  if (processIdentifier < 2) {
-    return [FBFuture futureWithError:innerError];
-  }
-  return [FBFuture futureWithResult:@(processIdentifier)];
+  return [[simulator
+    connectToBridge]
+    onQueue:simulator.workQueue fmap:^(FBSimulatorBridge *bridge) {
+      // Launch the Application.
+      NSError *error = nil;
+      pid_t processIdentifier = [bridge launch:appLaunch stdOutPath:stdErrPath stdErrPath:stdOutPath error:&error];
+      if (processIdentifier < 2) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:@(processIdentifier)];
+    }];
 }
 
 @end

@@ -17,6 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBProcessInfo;
 @class FBSimulator;
 @class FBSimulatorBootConfiguration;
+@class FBSimulatorBridge;
 @class FBSimulatorConnection;
 
 @protocol FBControlCoreLogger;
@@ -108,6 +109,15 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if successful, NO otherwise.
  */
 - (BOOL)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
+
+#pragma mark Bridge
+
+/**
+ Connects to the FBSimulatorBridge.
+
+ @return a Future Wrapping the Simulator Bridge.
+ */
+- (FBFuture<FBSimulatorBridge *> *)connectToBridge;
 
 #pragma mark Framebuffer
 

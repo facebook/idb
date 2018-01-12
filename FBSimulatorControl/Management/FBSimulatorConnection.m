@@ -85,14 +85,18 @@
 
 #pragma mark Lifecycle
 
-- (nullable FBSimulatorBridge *)connectToBridge:(NSError **)error
+- (FBFuture<FBSimulatorBridge *> *)connectToBridge
 {
   if (self.bridge) {
-    return self.bridge;
+    return [FBFuture futureWithResult:self.bridge];
   }
 
-  self.bridge = [FBSimulatorBridge bridgeForSimulator:self.simulator error:error];
-  return self.bridge;
+  return [[FBSimulatorBridge
+    bridgeForSimulator:self.simulator]
+    onQueue:self.simulator.workQueue map:^(FBSimulatorBridge *bridge) {
+      self.bridge = bridge;
+      return bridge;
+    }];
 }
 
 - (nullable FBFramebuffer *)connectToFramebuffer:(NSError **)error

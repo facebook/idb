@@ -587,18 +587,17 @@
       if (!self.configuration.shouldConnectBridge) {
         return [FBFuture futureWithResult:connection];
       }
-      NSError *error = nil;
-      FBSimulatorBridge *bridge = [connection connectToBridge:&error];
-      if (!bridge) {
-      return [FBSimulatorError failFutureWithError:error];
-      }
+      return [[connection
+        connectToBridge]
+        onQueue:self.simulator.workQueue map:^(FBSimulatorBridge *bridge) {
+          // Set the Location to a default location, when launched directly.
+          // This is effectively done by Simulator.app by a NSUserDefault with for the 'LocationMode', even when the location is 'None'.
+          // If the Location is set on the Simulator, then CLLocationManager will behave in a consistent manner inside launched Applications.
+          [bridge setLocationWithLatitude:37.485023 longitude:-122.147911];
 
-      // Set the Location to a default location, when launched directly.
-      // This is effectively done by Simulator.app by a NSUserDefault with for the 'LocationMode', even when the location is 'None'.
-      // If the Location is set on the Simulator, then CLLocationManager will behave in a consistent manner inside launched Applications.
-      [bridge setLocationWithLatitude:37.485023 longitude:-122.147911];
-
-      return [FBFuture futureWithResult:connection];
+          // Match the return type of the return-early case.
+          return connection;
+        }];
     }]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
       return [[self launchdSimPresentWithAllRequiredServices] mapReplace:connection];

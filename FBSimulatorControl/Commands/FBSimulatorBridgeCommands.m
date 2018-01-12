@@ -44,7 +44,7 @@
 
 - (BOOL)setLocation:(double)latitude longitude:(double)longitude error:(NSError **)error
 {
-  FBSimulatorBridge *bridge = [[self.simulator connectWithError:error] connectToBridge:error];
+  FBSimulatorBridge *bridge = [[[self.simulator connectWithError:error] connectToBridge] await:error];
   if (!bridge) {
     return NO;
   }
