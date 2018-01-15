@@ -38,14 +38,13 @@
 @property (nonatomic, assign, readwrite) mach_port_t registrationPort;
 @property (nonatomic, assign, readwrite) mach_port_t replyPort;
 
-- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize registrationPort:(mach_port_t)registrationPort;
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize queue:(dispatch_queue_t)queue registrationPort:(mach_port_t)registrationPort;
 
 @end
 
 @interface FBSimulatorHID_SimulatorKit : FBSimulatorHID
 
 @property (nonatomic, strong, nullable, readonly) SimDeviceLegacyClient *client;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 - (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize queue:(dispatch_queue_t)queue client:(SimDeviceLegacyClient *)client;
 
@@ -56,6 +55,11 @@
 #pragma mark Initializers
 
 static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHIDClient";
+
++ (dispatch_queue_t)workQueue
+{
+  return dispatch_queue_create("com.facebook.fbsimulatorcontrol.hid", DISPATCH_QUEUE_SERIAL);
+}
 
 + (instancetype)hidPortForSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
@@ -77,8 +81,7 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
       fail:error];
   }
   CGSize mainScreenSize = simulator.device.deviceType.mainScreenSize;
-  dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbsimulatorcontrol.hid", DISPATCH_QUEUE_SERIAL);
-  return [[FBSimulatorHID_SimulatorKit alloc] initWithIndigo:FBSimulatorIndigoHID.defaultHID mainScreenSize:mainScreenSize queue:queue client:client];
+  return [[FBSimulatorHID_SimulatorKit alloc] initWithIndigo:FBSimulatorIndigoHID.defaultHID mainScreenSize:mainScreenSize queue:self.workQueue client:client];
 }
 
 + (instancetype)reimplementedHidPortForSimulator:(FBSimulator *)simulator error:(NSError **)error
@@ -121,10 +124,10 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   }
 
   CGSize mainScreenSize = simulator.device.deviceType.mainScreenSize;
-  return [[FBSimulatorHID_Reimplemented alloc] initWithIndigo:FBSimulatorIndigoHID.reimplemented mainScreenSize:mainScreenSize registrationPort:registrationPort];
+  return [[FBSimulatorHID_Reimplemented alloc] initWithIndigo:FBSimulatorIndigoHID.reimplemented mainScreenSize:mainScreenSize queue:self.workQueue registrationPort:registrationPort];
 }
 
-- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -133,6 +136,7 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
   _indigo = indigo;
   _mainScreenSize = mainScreenSize;
+  _queue = queue;
 
   return self;
 }
@@ -202,9 +206,9 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 #pragma mark Initializers
 
-- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize registrationPort:(mach_port_t)registrationPort
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize queue:(dispatch_queue_t)queue registrationPort:(mach_port_t)registrationPort
 {
-  self = [super initWithIndigo:indigo mainScreenSize:mainScreenSize];
+  self = [super initWithIndigo:indigo mainScreenSize:mainScreenSize queue:queue];
   if (!self) {
     return nil;
   }
@@ -327,13 +331,12 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 - (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize queue:(dispatch_queue_t)queue client:(SimDeviceLegacyClient *)client
 {
-  self = [super initWithIndigo:indigo mainScreenSize:mainScreenSize];
+  self = [super initWithIndigo:indigo mainScreenSize:mainScreenSize queue:queue];
   if (!self) {
     return nil;
   }
 
   _client = client;
-  _queue = queue;
 
   return self;
 }

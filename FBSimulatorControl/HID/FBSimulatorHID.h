@@ -87,6 +87,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)sendTouchWithType:(FBSimulatorHIDDirection)type x:(double)x y:(double)y error:(NSError **)error;
 
+#pragma mark Properties
+
+/**
+ The Queue on which messages are sent to the HID Server.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+
 @end
 
 NS_ASSUME_NONNULL_END
