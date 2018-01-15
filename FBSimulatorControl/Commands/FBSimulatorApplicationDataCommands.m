@@ -46,7 +46,7 @@
   NSString *dataContainer = [self dataContainerPathForBundleID:bundleID error:&error];
   if (!dataContainer) {
     return [[[FBSimulatorError
-      describeFormat:@"Could obtain data container for bundle id %@", bundleID]
+      describeFormat:@"Couldn't obtain data container for bundle id %@", bundleID]
       causedBy:error]
       failFuture];
   }
@@ -68,7 +68,7 @@
   NSString *dataContainer = [self dataContainerPathForBundleID:bundleID error:&error];
   if (!dataContainer) {
     return [[[FBSimulatorError
-      describeFormat:@"Could obtain data container for bundle id %@", bundleID]
+      describeFormat:@"Couldn't obtain data container for bundle id %@", bundleID]
       causedBy:error]
       failFuture];
   }
