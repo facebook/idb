@@ -50,8 +50,8 @@
 {
   NSError *error = nil;
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
-    configurationWithStdOut:process.stdOutReader
-    stdErr:process.stdErrReader
+    configurationWithStdOut:process.stdOutConsumer
+    stdErr:process.stdErrConsumer
     error:&error];
   if (!output) {
     return [FBFuture futureWithError:error];

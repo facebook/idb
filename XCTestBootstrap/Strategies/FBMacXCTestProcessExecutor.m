@@ -49,8 +49,8 @@
     withLaunchPath:process.launchPath]
     withArguments:process.arguments]
     withEnvironment:process.environment]
-    withStdOutConsumer:process.stdOutReader]
-    withStdErrConsumer:process.stdErrReader]
+    withStdOutConsumer:process.stdOutConsumer]
+    withStdErrConsumer:process.stdErrConsumer]
     run];
 
   return [FBFuture futureWithResult:task];

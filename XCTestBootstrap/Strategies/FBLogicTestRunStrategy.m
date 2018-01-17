@@ -98,7 +98,7 @@
   NSUUID *uuid = [NSUUID UUID];
 
   // Setup the stdout reader.
-  id<FBFileConsumer> stdOutReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line){
+  id<FBFileConsumer> stdOutConsumer = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line){
     [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
     if (mirrorToLogger) {
       [mirrorLogger logFormat:@"[Test Output] %@", line];
@@ -106,12 +106,12 @@
   }];
   if (mirrorToFiles) {
     NSString *mirrorPath = nil;
-    stdOutReader = [mirrorLogger logConsumptionToFile:stdOutReader outputKind:@"out" udid:uuid filePathOut:&mirrorPath];
+    stdOutConsumer = [mirrorLogger logConsumptionToFile:stdOutConsumer outputKind:@"out" udid:uuid filePathOut:&mirrorPath];
     [logger logFormat:@"Mirroring xctest stdout to %@", mirrorPath];
   }
 
   // Setup the stderr reader.
-  id<FBFileConsumer> stdErrReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line){
+  id<FBFileConsumer> stdErrConsumer = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line){
     [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
     if (mirrorToLogger) {
       [mirrorLogger logFormat:@"[Test Output(err)] %@", line];
@@ -119,7 +119,7 @@
   }];
   if (mirrorToFiles) {
     NSString *mirrorPath = nil;
-    stdErrReader = [mirrorLogger logConsumptionToFile:stdErrReader outputKind:@"err" udid:uuid filePathOut:&mirrorPath];
+    stdErrConsumer = [mirrorLogger logConsumptionToFile:stdErrConsumer outputKind:@"err" udid:uuid filePathOut:&mirrorPath];
     [logger logFormat:@"Mirroring xctest stderr to %@", mirrorPath];
   }
 
@@ -142,7 +142,7 @@
 
   // Construct and start the process
   return [[[self
-    testProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutReader:stdOutReader stdErrReader:stdErrReader]
+    testProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutConsumer:stdOutConsumer stdErrConsumer:stdErrConsumer]
     startWithTimeout:self.configuration.testTimeout]
     onQueue:self.executor.workQueue fmap:^(FBLaunchedProcess *processInfo) {
       return [self
@@ -193,15 +193,15 @@
     }];
 }
 
-- (FBXCTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader
+- (FBXCTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer
 {
   return [FBXCTestProcess
     processWithLaunchPath:launchPath
     arguments:arguments
     environment:[self.configuration buildEnvironmentWithEntries:environment]
     waitForDebugger:self.configuration.waitForDebugger
-    stdOutReader:stdOutReader
-    stdErrReader:stdErrReader
+    stdOutConsumer:stdOutConsumer
+    stdErrConsumer:stdErrConsumer
     executor:self.executor];
 }
 

@@ -118,8 +118,8 @@
     arguments:arguments
     environment:environment
     waitForDebugger:NO
-    stdOutReader:FBFileWriter.nullWriter
-    stdErrReader:FBFileWriter.nullWriter
+    stdOutConsumer:FBNullFileConsumer.new
+    stdErrConsumer:FBNullFileConsumer.new
     executor:self.executor];
 
   // Start the process.

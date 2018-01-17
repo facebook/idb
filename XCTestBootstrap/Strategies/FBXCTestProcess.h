@@ -32,12 +32,12 @@ NS_ASSUME_NONNULL_BEGIN
  @param launchPath the Launch Path of the executable
  @param arguments the Arguments to the executable.
  @param environment the Environment Variables to set.
- @param stdOutReader the Reader of the Stdout.
- @param stdErrReader the Reader of the Stderr.
+ @param stdOutConsumer the Consumer of the launched xctest process stdout.
+ @param stdErrConsumer the Consumer of the launched xctest process stderr.
  @param executor the executor for running the test process.
  @return a new xctest process.
  */
-+ (instancetype)processWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader executor:(id<FBXCTestProcessExecutor>)executor;
++ (instancetype)processWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor;
 
 /**
  Starts the Process.
@@ -70,14 +70,14 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) BOOL waitForDebugger;
 
 /**
- The reader of stdout.
+ The consumer of stdout.
  */
-@property (nonatomic, strong, readonly) id<FBFileConsumer> stdOutReader;
+@property (nonatomic, strong, readonly) id<FBFileConsumer> stdOutConsumer;
 
 /**
- The reader of stderr.
+ The consumer of stderr.
  */
-@property (nonatomic, strong, readonly) id<FBFileConsumer> stdErrReader;
+@property (nonatomic, strong, readonly) id<FBFileConsumer> stdErrConsumer;
 
 @end
 
