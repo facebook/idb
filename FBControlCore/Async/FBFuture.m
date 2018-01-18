@@ -119,7 +119,7 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
 + (FBFuture *)futureWithDelay:(NSTimeInterval)delay future:(FBFuture *)future
 {
   FBMutableFuture *delayed = FBMutableFuture.future;
-  dispatch_after(FBFutureCreateDispatchTime(delay), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+  dispatch_after(FBFutureCreateDispatchTime(delay), FBFuture.internalQueue, ^{
     [delayed resolveFromFuture:future];
   });
   return delayed;
@@ -452,21 +452,21 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
 
 - (FBFuture *)mapReplace:(id)replacement
 {
-  return [self onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0) map:^(id _) {
+  return [self onQueue:FBFuture.internalQueue map:^(id _) {
     return replacement;
   }];
 }
 
 - (FBFuture *)fmapReplace:(FBFuture *)replacement
 {
-  return [self onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0) chain:^FBFuture *(FBFuture *_) {
+  return [self onQueue:FBFuture.internalQueue chain:^FBFuture *(FBFuture *_) {
     return replacement;
   }];
 }
 
 - (FBFuture *)fallback:(id)replacement
 {
-  return [self onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0) chain:^(FBFuture *future) {
+  return [self onQueue:FBFuture.internalQueue chain:^(FBFuture *future) {
     return future.error ? [FBFuture futureWithResult:replacement] : future;
   }];
 }
@@ -483,7 +483,7 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
   NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
   va_end(args);
 
-  return [self onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0) chain:^(FBFuture *future) {
+  return [self onQueue:FBFuture.internalQueue chain:^(FBFuture *future) {
     NSError *error = future.error;
     if (!error) {
       return future;
@@ -598,10 +598,12 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
   if (future.hasCompleted) {
     resolve(future);
   } else {
-    [future onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0) notifyOfCompletion:resolve];
+    [future onQueue:FBFuture.internalQueue notifyOfCompletion:resolve];
   }
   return self;
 }
+
+#pragma mark Private
 
 - (void)fireAllHandlers
 {
@@ -613,7 +615,12 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
   [self.handlers removeAllObjects];
 }
 
-#pragma mark - KVO
++ (dispatch_queue_t)internalQueue
+{
+  return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+}
+
+#pragma mark KVO
 
 + (NSSet<NSString *> *)keyPathsForValuesAffectingHasCompleted
 {
