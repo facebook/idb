@@ -85,13 +85,14 @@
   // Deleting the device from the set can still leave it around for a few seconds.
   // This could race with methods that may reallocate the newly-deleted device.
   // So we should wait for the device to no longer be present in the underlying set.
-  return [[FBFuture
+  return [[[FBFuture
     onQueue:dispatch_get_main_queue() resolveWhen:^BOOL{
       NSMutableSet<NSString *> *remainderSet = [NSMutableSet setWithSet:deletedDeviceUDIDs];
       [remainderSet intersectSet:[NSSet setWithArray:[set.allSimulators valueForKey:@"udid"]]];
       return remainderSet.count == 0;
     }]
-    timeout:FBControlCoreGlobalConfiguration.regularTimeout waitingFor:@"Simulator to be removed from set"];
+    timeout:FBControlCoreGlobalConfiguration.regularTimeout waitingFor:@"Simulator to be removed from set"]
+    mapReplace:deletedDeviceUDIDs.allObjects];
 }
 
 - (FBFuture<NSString *> *)deleteSimulator:(FBSimulator *)simulator

@@ -218,7 +218,7 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
  @param format the format string to re-phrase the failure message.
  @return a future with the replacement.
  */
-- (FBFuture *)rephraseFailure:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+- (FBFuture<T> *)rephraseFailure:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
 
 #pragma mark Properties
 

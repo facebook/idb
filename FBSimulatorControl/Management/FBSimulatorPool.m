@@ -83,7 +83,7 @@
       }
       return [FBFuture futureWithResult:@NO];
     }]
-    onQueue:workQueue fmap:^(NSNumber *didDelete) {
+    onQueue:workQueue fmap:^ FBFuture<NSNull *> * (NSNumber *didDelete) {
       // Return-Early if we deleted, no point in erasing.
       if (didDelete.boolValue) {
         return [FBFuture futureWithResult:NSNull.null];
