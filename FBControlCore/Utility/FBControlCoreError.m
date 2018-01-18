@@ -225,11 +225,6 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
   return [[self describe:description] build];
 }
 
-+ (NSError *)timeoutErrorWithDescription:(NSString *)description
-{
-  return [[self describeFormat:@"%@ timed out", description] build];
-}
-
 + (NSError *)errorForFormat:(NSString *)format, ...
 {
   va_list args;

@@ -137,7 +137,7 @@ static NSTimeInterval const CrashLogWaitTime = 20;
       }
       return [FBFuture futureWithResult:crashInfo];
     }]
-    timedOutIn:CrashLogWaitTime];
+    timeout:CrashLogWaitTime waitingFor:@"Crash logs for terminated process %d to appear", processIdentifier];
 }
 
 @end

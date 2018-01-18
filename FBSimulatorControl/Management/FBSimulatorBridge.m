@@ -108,7 +108,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
     resolveUntil:^{
       return [self bridgeForSimulator:simulator portName:portName];
     }]
-    timedOutIn:timeout];
+    timeout:timeout waitingFor:@"Bridge Port to exist"];
 }
 
 + (FBFuture<SimulatorBridge *> *)bridgeForSimulator:(FBSimulator *)simulator portName:(NSString *)portName

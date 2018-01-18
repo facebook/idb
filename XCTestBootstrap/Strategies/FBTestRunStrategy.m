@@ -69,7 +69,7 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     onQueue:self.target.workQueue fmap:^(id _) {
       return [self startTestWithTestRunnerApp:testRunnerApp testTargetApp:testTargetApp];
     }]
-    timedOutIn:ApplicationTestDefaultTimeout];
+    timeout:ApplicationTestDefaultTimeout waitingFor:@"Test Execution to start"];
 }
 
 #pragma mark Private

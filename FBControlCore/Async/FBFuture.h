@@ -173,10 +173,11 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 /**
  Cancels the receiver if it doesn't resolve within the timeout.
 
- @param timeout to use.
- @return a new future.
+ @param timeout the amount of time to time out the receiver in
+ @param format the description of the timeout
+ @return the current future with a timeout applied.
  */
-- (FBFuture *)timedOutIn:(NSTimeInterval)timeout;
+- (FBFuture *)timeout:(NSTimeInterval)timeout waitingFor:(NSString *)format, ... NS_FORMAT_FUNCTION(2,3);
 
 /**
  Replaces the value on a successful future.

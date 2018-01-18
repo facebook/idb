@@ -223,7 +223,10 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
 - (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError **)error
 {
   FBiOSDeviceReadynessStrategy *strategy = [FBiOSDeviceReadynessStrategy strategyWithDVTDevice:self.dvtDevice workQueue:self.device.workQueue];
-  return [[[strategy waitForDeviceReadyToDebug] timedOutIn:4 * 60] await:error] != nil;
+  return [[[strategy
+    waitForDeviceReadyToDebug]
+    timeout:(4 * 60) waitingFor:@"Device %@ to be ready for debugging", self.device]
+    await:error] != nil;
 }
 
 - (FBFuture<id> *)processIDWithBundleID:(NSString *)bundleID

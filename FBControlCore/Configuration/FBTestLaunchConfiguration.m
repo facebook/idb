@@ -423,7 +423,9 @@ static NSString *const KeyResultBundlePath = @"resultBundlePath";
     onQueue:target.workQueue map:^(id<FBiOSTargetContinuation> baseAwaitable) {
       return FBiOSTargetContinuationRenamed(baseAwaitable, futureType);
     }];
-  return self.timeout > 0 ? [future timedOutIn:self.timeout] : future;
+  return self.timeout > 0
+    ? [future timeout:self.timeout waitingFor:@"Test Execution to complete"]
+    : future;
 }
 
 @end

@@ -203,12 +203,20 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
   return final;
 }
 
-- (FBFuture *)timedOutIn:(NSTimeInterval)timeout
+- (instancetype)timeout:(NSTimeInterval)timeout waitingFor:(NSString *)format, ...
 {
   NSParameterAssert(timeout > 0);
 
-  NSError *error = [FBControlCoreError timeoutErrorWithDescription:@"FBFuture"];
-  FBFuture *timeoutFuture = [FBFuture futureWithDelay:timeout future:[FBFuture futureWithError:error]];
+  va_list args;
+  va_start(args, format);
+  NSString *description = [[NSString alloc] initWithFormat:format arguments:args];
+  va_end(args);
+
+  FBFuture *timeoutFuture = [[[[FBControlCoreError
+    describeFormat:@"Timed out after %f seconds waiting for %@", timeout, description]
+    noLogging]
+    failFuture]
+    delay:timeout];
   return [FBFuture race:@[self, timeoutFuture]];
 }
 

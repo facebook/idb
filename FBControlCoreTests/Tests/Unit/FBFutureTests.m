@@ -521,7 +521,7 @@
 
 - (void)testTimedOutIn
 {
-  FBFuture *future = [[FBFuture new] timedOutIn:0.1];
+  FBFuture *future = [[FBFuture new] timeout:0.1 waitingFor:@"Some Condition"];
 
   XCTAssertFalse(future.hasCompleted);
   XCTAssertEqual(future.state, FBFutureStateRunning);

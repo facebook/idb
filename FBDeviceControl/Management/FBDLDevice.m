@@ -453,10 +453,9 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
   if (device) {
     return [FBFuture futureWithResult:device];
   }
-  return [[[FBDLDevice
+  return [[FBDLDevice
     oneshotDeviceAttachedNotificationForUDID:udid]
-    timedOutIn:timeout]
-    rephraseFailure:@"Timed out waiting %f seconds for the device %@ to appear", timeout, udid];
+    timeout:timeout waitingFor:@"the device %@ to appear", udid];
 }
 
 - (instancetype)initWithDLDevice:(DLDevice *)dlDevice manager:(FBDLDeviceManager *)manager logger:(id<FBControlCoreLogger>)logger

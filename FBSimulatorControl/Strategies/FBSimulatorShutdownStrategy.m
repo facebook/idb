@@ -120,7 +120,7 @@
 {
   return [[[simulator
     resolveState:FBSimulatorStateShutdown]
-    timedOutIn:FBControlCoreGlobalConfiguration.regularTimeout]
+    timeout:FBControlCoreGlobalConfiguration.regularTimeout waitingFor:@"Simulator to resolve state %@", FBSimulatorStateStringShutdown]
     onQueue:simulator.workQueue chain:^FBFuture<NSNull *> *(FBFuture *future) {
       if (future.result) {
         return [FBFuture futureWithResult:NSNull.null];
@@ -146,10 +146,9 @@
 
   return [future
     onQueue:simulator.workQueue fmap:^(id _) {
-      return [[[simulator
+      return [[simulator
         resolveState:FBSimulatorStateShutdown]
-        timedOutIn:FBControlCoreGlobalConfiguration.regularTimeout]
-        rephraseFailure:@"Timed out waiting for Simulator to transition from Creating -> Shutdown"];
+        timeout:FBControlCoreGlobalConfiguration.regularTimeout waitingFor:@"Timed out waiting for Simulator to transition from Creating -> Shutdown"];
     }];
 }
 

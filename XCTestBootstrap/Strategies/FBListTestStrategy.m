@@ -54,7 +54,7 @@
   NSTimeInterval timeout = self.strategy.configuration.testTimeout + 5;
   return [[[self.strategy
     listTests]
-    timedOutIn:timeout]
+    timeout:timeout waitingFor:@"Listing of Tests to complete"]
     onQueue:self.strategy.executor.workQueue map:^(NSArray<NSString *> *testNames) {
       for (NSString *testName in testNames) {
         NSRange slashRange = [testName rangeOfString:@"/"];
