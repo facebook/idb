@@ -118,8 +118,8 @@
     arguments:arguments
     environment:environment
     waitForDebugger:NO
-    stdOutConsumer:FBNullFileConsumer.new
-    stdErrConsumer:FBNullFileConsumer.new
+    stdOutConsumer:[FBLoggingFileConsumer consumerWithLogger:self.logger]
+    stdErrConsumer:[FBLoggingFileConsumer consumerWithLogger:self.logger]
     executor:self.executor];
 
   // Start the process.

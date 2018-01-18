@@ -2,9 +2,10 @@
 
 #import "FBFileConsumer.h"
 
-#import "NSRunLoop+FBControlCore.h"
 #import "FBControlCoreError.h"
+#import "FBControlCoreLogger.h"
 #import "FBLineBuffer.h"
+#import "NSRunLoop+FBControlCore.h"
 
 @interface FBLineFileConsumer ()
 
@@ -214,6 +215,11 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 
 - (void)consumeData:(NSData *)data
 {
+  NSString *string = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+  if (!string) {
+    return;
+  }
+  [self.logger log:string];
 }
 
 - (void)consumeEndOfFile

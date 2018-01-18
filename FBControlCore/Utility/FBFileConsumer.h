@@ -75,7 +75,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the block to call when a line has been consumed.
  @return a new Line Reader.
  */
-+ (instancetype)asynchronousReaderWithQueue:(dispatch_queue_t)queue dataConsumer:(void (^)(NSData *_Nonnull))consumer;
++ (instancetype)asynchronousReaderWithQueue:(dispatch_queue_t)queue dataConsumer:(void (^)(NSData *))consumer;
 
 /**
  A Future that resolves when an EOF has been recieved.

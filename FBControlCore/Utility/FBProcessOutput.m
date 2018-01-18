@@ -292,9 +292,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
 {
-  id<FBFileConsumer> consumer = [FBLineFileConsumer asynchronousReaderWithConsumer:^(NSString *line) {
-    [logger log:line];
-  }];
+  id<FBFileConsumer> consumer = [FBLoggingFileConsumer consumerWithLogger:logger];
   self = [super initWithConsumer:consumer];
   if (!self) {
     return nil;
