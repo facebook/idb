@@ -18,9 +18,6 @@
 #import "FBTaskConfiguration.h"
 #import "NSRunLoop+FBControlCore.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Warc-retain-cycles"
-
 NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @protocol FBTaskProcess <NSObject>
@@ -370,5 +367,3 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 }
 
 @end
-
-#pragma clang diagnostic pop
