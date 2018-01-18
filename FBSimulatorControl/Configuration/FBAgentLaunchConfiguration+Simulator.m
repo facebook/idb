@@ -38,7 +38,7 @@
 
 #pragma mark Public
 
-- (FBFuture<NSArray<id> *> *)createOutputForSimulator:(FBSimulator *)simulator
+- (FBFuture<NSArray<FBProcessOutput *> *> *)createOutputForSimulator:(FBSimulator *)simulator
 {
   return [FBFuture futureWithFutures:@[
     [self createOutputForSimulator:simulator selector:@selector(stdOut)],
@@ -48,7 +48,7 @@
 
 #pragma mark Private
 
-- (FBFuture<id> *)createOutputForSimulator:(FBSimulator *)simulator selector:(SEL)selector
+- (FBFuture<FBProcessOutput *> *)createOutputForSimulator:(FBSimulator *)simulator selector:(SEL)selector
 {
   return [[self
     createDiagnosticForSelector:selector simulator:simulator]
@@ -62,14 +62,13 @@
             describeFormat:@"Could not file handle for %@ at path '%@' for config '%@'", NSStringFromSelector(selector), path, self]
             failFuture];
         }
-        FBProcessOutput *output = [FBProcessOutput outputForFileHandle:handle diagnostic:diagnostic];
-        return [FBFuture futureWithResult:output];
+        return [FBFuture futureWithResult:[FBProcessOutput outputForFileHandle:handle diagnostic:diagnostic]];
       }
       id<FBFileConsumer> consumer = [self.output performSelector:selector];
       if (![consumer conformsToProtocol:@protocol(FBFileConsumer)]) {
-        return [FBFuture futureWithResult:NSNull.null];
+        return [FBFuture futureWithResult:FBProcessOutput.outputForNullDevice];
       }
-      return [FBProcessOutput outputWithConsumer:consumer];
+      return [FBFuture futureWithResult:[FBProcessOutput outputForFileConsumer:consumer]];
     }];
 }
 

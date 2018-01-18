@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the simulator to create the output for.
  @return a Future that wraps an Array of the outputs.
  */
-- (FBFuture<NSArray<id> *> *)createOutputForSimulator:(FBSimulator *)simulator;
+- (FBFuture<NSArray<FBProcessOutput *> *> *)createOutputForSimulator:(FBSimulator *)simulator;
 
 @end
 

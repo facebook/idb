@@ -60,11 +60,9 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
   FBSimulator *simulator = self.simulator;
   return [[agentLaunch
     createOutputForSimulator:simulator]
-    onQueue:simulator.workQueue fmap:^(NSArray<id> *result) {
-      FBProcessOutput *stdOut = result[0];
-      stdOut = [stdOut isKindOfClass:FBProcessOutput.class] ? stdOut : nil;
-      FBProcessOutput *stdErr = result[1];
-      stdErr = [stdErr isKindOfClass:FBProcessOutput.class] ? stdErr : nil;
+    onQueue:simulator.workQueue fmap:^(NSArray<FBProcessOutput *> *outputs) {
+      FBProcessOutput *stdOut = outputs[0];
+      FBProcessOutput *stdErr = outputs[1];
       return [self launchAgent:agentLaunch stdOut:stdOut stdErr:stdErr];
     }];
 }
@@ -73,31 +71,39 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 {
   FBSimulator *simulator = self.simulator;
 
-  // Launch the Process
-  FBMutableFuture *processStatusFuture = [FBMutableFuture future];
-  FBFuture<NSNumber *> *launchFuture = [self
-    launchAgentWithLaunchPath:agentLaunch.agentBinary.path
-    arguments:agentLaunch.arguments
-    environment:agentLaunch.environment
-    waitForDebugger:NO
-    stdOut:stdOut.fileHandle
-    stdErr:stdErr.fileHandle
-    processStatusFuture:processStatusFuture];
+  return [[FBFuture
+    futureWithFutures:@[[stdOut attachToFileHandle], [stdErr attachToFileHandle]]]
+    onQueue:simulator.workQueue fmap:^(NSArray<NSFileHandle *> *fileHandles) {
+      // Extract the File Handles
+      NSFileHandle *stdOutHandle = fileHandles[0];
+      NSFileHandle *stdErrHandle = fileHandles[1];
 
-  // Wrap in the container object
-  return [[FBSimulatorAgentOperation
-    operationWithSimulator:simulator
-    configuration:agentLaunch
-    stdOut:stdOut
-    stdErr:stdErr
-    launchFuture:launchFuture
-    processStatusFuture:processStatusFuture]
-    onQueue:self.simulator.workQueue notifyOfCompletion:^(FBFuture<FBSimulatorAgentOperation *> *future) {
-      FBSimulatorAgentOperation *operation = future.result;
-      if (!operation) {
-        return;
-      }
-      [simulator.eventSink agentDidLaunch:operation];
+      // Launch the Process
+      FBMutableFuture *processStatusFuture = [FBMutableFuture future];
+      FBFuture<NSNumber *> *launchFuture = [self
+        launchAgentWithLaunchPath:agentLaunch.agentBinary.path
+        arguments:agentLaunch.arguments
+        environment:agentLaunch.environment
+        waitForDebugger:NO
+        stdOut:stdOutHandle
+        stdErr:stdErrHandle
+        processStatusFuture:processStatusFuture];
+
+      // Wrap in the container object
+      return [[FBSimulatorAgentOperation
+        operationWithSimulator:simulator
+        configuration:agentLaunch
+        stdOut:stdOut
+        stdErr:stdErr
+        launchFuture:launchFuture
+        processStatusFuture:processStatusFuture]
+        onQueue:self.simulator.workQueue notifyOfCompletion:^(FBFuture<FBSimulatorAgentOperation *> *future) {
+          FBSimulatorAgentOperation *operation = future.result;
+          if (!operation) {
+            return;
+          }
+          [simulator.eventSink agentDidLaunch:operation];
+        }];
     }];
 }
 

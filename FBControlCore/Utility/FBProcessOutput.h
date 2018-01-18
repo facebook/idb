@@ -20,11 +20,19 @@ NS_ASSUME_NONNULL_BEGIN
 extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
 
 /**
- Wraps the output of a Process.
+ A container object for the output of a process.
+ There are many different kinds of output.
  */
-@interface FBProcessOutput : NSObject <FBiOSTargetContinuation>
+@interface FBProcessOutput<WrappedType> : NSObject <FBiOSTargetContinuation>
 
 #pragma mark Initializers
+
+/**
+ An Output Container for /dev/nul
+
+ @return a Process Output instance.
+ */
++ (FBProcessOutput<NSNull *> *)outputForNullDevice;
 
 /**
  An Output Container for a File Handle.
@@ -33,24 +41,86 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
  @param diagnostic the backing diagnostic.
  @return a Process Output instance.
  */
-+ (instancetype)outputForFileHandle:(NSFileHandle *)fileHandle diagnostic:(FBDiagnostic *)diagnostic;
++ (FBProcessOutput<FBDiagnostic *> *)outputForFileHandle:(NSFileHandle *)fileHandle diagnostic:(FBDiagnostic *)diagnostic;
 
 /**
- An Output Container for a File Consumer.
+ An Output Container for a File Path.
+
+ @param filePath the File Path to write to.
+ @return a Process Output instance.
  */
-+ (FBFuture<FBProcessOutput *> *)outputWithConsumer:(id<FBFileConsumer>)consumer;
++ (FBProcessOutput<NSString *> *)outputForFilePath:(NSString *)filePath;
+
+/**
+ An Output Container that passes to File Consumer
+
+ @param fileConsumer the file consumer to write to.
+ @return a Process Output instance.
+ */
++ (FBProcessOutput<id<FBFileConsumer>> *)outputForFileConsumer:(id<FBFileConsumer>)fileConsumer;
+
+/**
+ An Output Container that connects a File Consumer to a Pipe.
+ The 'contents' field will contain an opaque consumer that can be written to.
+
+ @return a Process Output instance.
+ */
++ (FBProcessOutput<id<FBFileConsumer>> *)inputProducingConsumer;
+
+/**
+ An Output Container that writes to a logger
+
+ @param logger the logger to log to.
+ @return a Process Output instance.
+ */
++ (FBProcessOutput<id<FBControlCoreLogger>> *)outputForLogger:(id<FBControlCoreLogger>)logger;
+
+/**
+ An Output Container that accumilates data in memory
+
+ @param data the mutable data to append to.
+ @return a Process Output instance.
+ */
++ (FBProcessOutput<NSMutableData *> *)outputToMutableData:(NSMutableData *)data;
+
+/**
+ An Output Container that accumilates data in memory, exposing it as a string.
+
+ @param data the mutable data to append to.
+ @return a Process Output instance.
+ */
++ (FBProcessOutput<NSString *> *)outputToStringBackedByMutableData:(NSMutableData *)data;
+
+#pragma mark Public
+
+/**
+ Attaches to the output, returning a NSFileHandle for writing to.
+
+ @return A Future wrapping the File Handle.
+ */
+- (FBFuture<NSFileHandle *> *)attachToFileHandle;
+
+/**
+ Attaches to the output, returning a NSPipe or NSFileHandle for writing to.
+ This method will prefer returning a NSPipe since this is more affordant for the NSTask API.
+
+ @return A Future wrapping the Pipe or File Handle.
+ */
+- (FBFuture<id> *)attachToPipeOrFileHandle;
+
+/**
+ Tears down the output.
+
+ @return A Future that resolves when teardown has completed.
+ */
+- (FBFuture<NSNull *> *)detach;
 
 #pragma mark Properties
 
 /**
  The File Handle.
  */
-@property (nonatomic, strong, readonly) NSFileHandle *fileHandle;
-
-/**
- The Diagnostic.
- */
-@property (nonatomic, strong, nullable, readonly) FBDiagnostic *diagnostic;
+@property (nonatomic, strong, readonly) WrappedType contents;
 
 @end
 

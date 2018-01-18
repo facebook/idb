@@ -13,243 +13,16 @@
 #import "FBControlCoreLogger.h"
 #import "FBFileConsumer.h"
 #import "FBFileWriter.h"
-#import "FBPipeReader.h"
-#import "NSRunLoop+FBControlCore.h"
-#import "FBTaskConfiguration.h"
 #import "FBLaunchedProcess.h"
+#import "FBPipeReader.h"
+#import "FBProcessOutput.h"
+#import "FBTaskConfiguration.h"
+#import "NSRunLoop+FBControlCore.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
 
 NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
-
-@protocol FBTaskOutput <NSObject>
-
-- (id)contents;
-- (id)attachWithError:(NSError **)error;
-- (void)teardownResources;
-
-@end
-
-@interface FBTaskOutput_File : NSObject <FBTaskOutput>
-
-@property (nonatomic, copy, nullable, readonly) NSString *filePath;
-@property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
-
-@end
-
-@interface FBTaskOutput_Consumer : NSObject <FBTaskOutput>
-
-@property (nonatomic, strong, nullable, readwrite) FBPipeReader *reader;
-@property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> consumer;
-
-@end
-
-@interface FBTaskOutput_Logger : FBTaskOutput_Consumer
-
-@property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
-
-@end
-
-@interface FBTaskOutput_Data : FBTaskOutput_Consumer
-
-@property (nonatomic, strong, readonly) FBAccumilatingFileConsumer *dataConsumer;
-
-@end
-
-@interface FBTaskOutput_String : FBTaskOutput_Data
-
-@end
-
-@interface FBTaskInput_Consumer : NSObject <FBTaskOutput, FBFileConsumer>
-
-@property (nonatomic, strong, nullable, readonly) NSPipe *pipe;
-@property (nonatomic, strong, nullable, readonly) id<FBFileConsumer> writer;
-
-@end
-
-@implementation FBTaskOutput_Consumer
-
-- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _consumer = consumer;
-
-  return self;
-}
-
-- (id)contents
-{
-  return self.consumer;
-}
-
-- (id)attachWithError:(NSError **)error
-{
-  NSAssert(self.reader == nil, @"Cannot attach when already attached to a reader");
-  self.reader = [FBPipeReader pipeReaderWithConsumer:self.consumer];
-  if (![[self.reader startReading] await:nil]) {
-    self.reader = nil;
-    return nil;
-  }
-  return self.reader.pipe;
-}
-
-- (void)teardownResources
-{
-  [[self.reader stopReading] await:nil];
-  self.reader = nil;
-}
-
-@end
-
-@implementation FBTaskOutput_Logger
-
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
-{
-  id<FBFileConsumer> consumer = [FBLineFileConsumer asynchronousReaderWithConsumer:^(NSString *line) {
-    [logger log:line];
-  }];
-  self = [super initWithConsumer:consumer];
-  if (!self) {
-    return nil;
-  }
-
-  _logger = logger;
-  return self;
-}
-
-- (id<FBControlCoreLogger>)contents
-{
-  return self.logger;
-}
-
-@end
-
-@implementation FBTaskOutput_File
-
-- (instancetype)initWithPath:(NSString *)filePath
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _filePath = filePath;
-  return self;
-}
-
-- (NSString *)contents
-{
-  return self.filePath;
-}
-
-- (id)attachWithError:(NSError **)error
-{
-  NSAssert(self.fileHandle == nil, @"Cannot attach when already attached to file %@", self.fileHandle);
-  if (!self.filePath) {
-    self.fileHandle = NSFileHandle.fileHandleWithNullDevice;
-    return self.fileHandle;
-  }
-
-  if (![NSFileManager.defaultManager createFileAtPath:self.filePath contents:nil attributes:nil]) {
-    return [[FBControlCoreError
-      describeFormat:@"Could not create file for writing at %@", self.filePath]
-      fail:error];
-  }
-  self.fileHandle = [NSFileHandle fileHandleForWritingAtPath:self.filePath];
-  return self.fileHandle;
-}
-
-- (void)teardownResources
-{
-  [self.fileHandle closeFile];
-  self.fileHandle = nil;
-}
-
-@end
-
-@implementation FBTaskOutput_Data
-
-- (instancetype)initWithMutableData:(NSMutableData *)mutableData
-{
-  FBAccumilatingFileConsumer *consumer = [[FBAccumilatingFileConsumer alloc] initWithMutableData:mutableData];
-  self = [super initWithConsumer:consumer];
-  if (!self) {
-    return nil;
-  }
-
-  _dataConsumer = consumer;
-
-  return self;
-}
-
-- (NSData *)contents
-{
-  return self.dataConsumer.data;
-}
-
-@end
-
-@implementation FBTaskOutput_String
-
-- (NSString *)contents
-{
-  NSData *data = self.dataConsumer.data;
-  // Strip newline from the end of the buffer.
-  if (data.length) {
-    char lastByte = 0;
-    NSRange range = NSMakeRange(data.length - 1, 1);
-    [data getBytes:&lastByte range:range];
-    if (lastByte == '\n') {
-      data = [data subdataWithRange:NSMakeRange(0, data.length - 1)];
-    }
-  }
-  return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-}
-
-@end
-
-@implementation FBTaskInput_Consumer
-
-- (id)contents
-{
-  return self.pipe ? self : nil;
-}
-
-- (id)attachWithError:(NSError **)error
-{
-  NSPipe *pipe = [NSPipe pipe];
-  id<FBFileConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:error];
-  if (!writer) {
-    return nil;
-  }
-  _pipe = pipe;
-  _writer = writer;
-  return pipe;
-}
-
-- (void)teardownResources
-{
-  _pipe = nil;
-  _writer = nil;
-}
-
-- (void)consumeData:(NSData *)data
-{
-  [self.writer consumeData:data];
-}
-
-- (void)consumeEndOfFile
-{
-  [self.writer consumeEndOfFile];
-  [self teardownResources];
-}
-
-@end
 
 @protocol FBTaskProcess <NSObject>
 
@@ -347,9 +120,9 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 @property (nonatomic, copy, readonly) NSSet<NSNumber *> *acceptableStatusCodes;
 
 @property (nonatomic, strong, nullable, readwrite) id<FBTaskProcess> process;
-@property (nonatomic, strong, nullable, readwrite) id<FBTaskOutput> stdOutSlot;
-@property (nonatomic, strong, nullable, readwrite) id<FBTaskOutput> stdErrSlot;
-@property (nonatomic, strong, nullable, readwrite) id<FBTaskOutput> stdInSlot;
+@property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdOutSlot;
+@property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdErrSlot;
+@property (nonatomic, strong, nullable, readwrite) FBProcessOutput<id<FBFileConsumer>> *stdInSlot;
 @property (nonatomic, strong, nullable, readwrite) FBLaunchedProcess *launchedProcess;
 
 @property (nonatomic, copy, readwrite) NSString *configurationDescription;
@@ -366,51 +139,51 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 #pragma mark Initializers
 
-+ (id<FBTaskOutput>)createTaskOutput:(id)output
++ (FBProcessOutput *)createTaskOutput:(id)output
 {
   if (!output) {
     return nil;
   }
   if ([output isKindOfClass:NSURL.class]) {
-     return [[FBTaskOutput_File alloc] initWithPath:[output path]];
+    return [FBProcessOutput outputForFilePath:[output path]];
   }
   if ([output conformsToProtocol:@protocol(FBFileConsumer)]) {
-    return [[FBTaskOutput_Consumer alloc] initWithConsumer:output];
+    return [FBProcessOutput outputForFileConsumer:output];
   }
   if ([output conformsToProtocol:@protocol(FBControlCoreLogger)]) {
-    return [[FBTaskOutput_Logger alloc] initWithLogger:output];
+    return [FBProcessOutput outputForLogger:output];
   }
   if ([output isKindOfClass:NSData.class]) {
-    return [[FBTaskOutput_Data alloc] initWithMutableData:NSMutableData.data];
+    return [FBProcessOutput outputToMutableData:NSMutableData.data];
   }
   if ([output isKindOfClass:NSString.class]) {
-    return [[FBTaskOutput_String alloc] initWithMutableData:NSMutableData.data];
+    return [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   }
   NSAssert(NO, @"Unexpected output type %@", output);
   return nil;
 }
 
-+ (id<FBTaskOutput>)createTaskInput:(BOOL)connectStdIn
++ (FBProcessOutput<id<FBFileConsumer>> *)createTaskInput:(BOOL)connectStdIn
 {
   if (!connectStdIn) {
     return nil;
   }
-  return [FBTaskInput_Consumer new];
+  return FBProcessOutput.inputProducingConsumer;
 }
 
 + (instancetype)startTaskWithConfiguration:(FBTaskConfiguration *)configuration
 {
   id<FBTaskProcess> process = [FBTaskProcess_NSTask fromConfiguration:configuration];
-  id<FBTaskOutput> stdOut = [self createTaskOutput:configuration.stdOut];
-  id<FBTaskOutput> stdErr = [self createTaskOutput:configuration.stdErr];
-  id<FBTaskOutput> stdIn = [self createTaskInput:configuration.connectStdIn];
+  FBProcessOutput *stdOut = [self createTaskOutput:configuration.stdOut];
+  FBProcessOutput *stdErr = [self createTaskOutput:configuration.stdErr];
+  FBProcessOutput<id<FBFileConsumer>> *stdIn = [self createTaskInput:configuration.connectStdIn];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
   FBTask *task = [[self alloc] initWithProcess:process stdOut:stdOut stdErr:stdErr stdIn:stdIn queue:queue acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
   [task launchTask];
   return task;
 }
 
-- (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(id<FBTaskOutput>)stdOut stdErr:(id<FBTaskOutput>)stdErr stdIn:(id<FBTaskOutput>)stdIn queue:(dispatch_queue_t)queue acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
+- (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(FBProcessOutput *)stdOut stdErr:(FBProcessOutput *)stdErr stdIn:(FBProcessOutput<id<FBFileConsumer>> *)stdIn queue:(dispatch_queue_t)queue acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
 {
   self = [super init];
   if (!self) {
@@ -491,9 +264,9 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   CFRetain((__bridge CFTypeRef)(self));
 
   NSError *error = nil;
-  id<FBTaskOutput> slot = self.stdOutSlot;
+  FBProcessOutput *slot = self.stdOutSlot;
   if (slot) {
-    id stdOut = [slot attachWithError:&error];
+    id stdOut = [[slot attachToPipeOrFileHandle] await:&error];
     if (!stdOut) {
       return [self terminateWithErrorMessage:error.description];
     }
@@ -502,7 +275,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
   slot = self.stdErrSlot;
   if (slot) {
-    id stdErr = [slot attachWithError:&error];
+    id stdErr = [[slot attachToPipeOrFileHandle] await:&error];
     if (!stdErr) {
       return [self terminateWithErrorMessage:error.description];
     }
@@ -511,7 +284,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
   slot = self.stdInSlot;
   if (slot) {
-    id stdIn = [slot attachWithError:&error];
+    id stdIn = [[slot attachToPipeOrFileHandle] await:&error];
     if (!stdIn) {
       return [self terminateWithErrorMessage:error.description];
     }
@@ -554,9 +327,9 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 - (void)teardownResources
 {
-  [self.stdOutSlot teardownResources];
-  [self.stdErrSlot teardownResources];
-  [self.stdInSlot teardownResources];
+  [self.stdOutSlot detach];
+  [self.stdErrSlot detach];
+  [self.stdInSlot detach];
 }
 
 - (void)completeTermination

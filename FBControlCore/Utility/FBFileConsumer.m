@@ -193,6 +193,37 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 
 @end
 
+@implementation FBLoggingFileConsumer
+
++ (instancetype)consumerWithLogger:(id<FBControlCoreLogger>)logger
+{
+  return [[self alloc] initWithLogger:logger];
+}
+
+- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _logger = logger;
+
+  return self;
+}
+
+- (void)consumeData:(NSData *)data
+{
+}
+
+- (void)consumeEndOfFile
+{
+
+}
+
+
+@end
+
 @interface FBCompositeFileConsumer ()
 
 @property (nonatomic, copy, readonly) NSArray<id<FBFileConsumer>> *consumers;

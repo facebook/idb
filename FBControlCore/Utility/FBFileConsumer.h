@@ -13,6 +13,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBControlCoreLogger;
+
 /**
  A Consumer of a File's Data.
  */
@@ -118,6 +120,23 @@ NS_ASSUME_NONNULL_BEGIN
  This is helpful for ensuring that all consumer lines have been drained.
  */
 @property (nonatomic, strong, readonly) FBFuture<NSNull *> *eofHasBeenReceived;
+
+@end
+
+/**
+ A consumer that does nothing with the data.
+ */
+@interface FBLoggingFileConsumer : NSObject <FBFileConsumer>
+
+/**
+ The Designated Initializer
+ */
++ (instancetype)consumerWithLogger:(id<FBControlCoreLogger>)logger;
+
+/**
+ The wrapped logger.
+ */
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
