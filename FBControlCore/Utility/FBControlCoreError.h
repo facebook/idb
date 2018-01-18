@@ -73,6 +73,15 @@ extern NSString *const FBControlCoreErrorDomain;
 - (instancetype)logger:(id<FBControlCoreLogger>)logger;
 
 /**
+ Prevents automatic logging of the error.
+ This is important for errors that are expected or otherwise handled.
+ In particular is useful for tight-loops that generate errors, but should not be logged on every iteration.
+
+ @return the reciever, for chaining.
+ */
+- (instancetype)noLogging;
+
+/**
  Updates the Error Domain of the reciever.
 
  @param domain the error domain to update with.
