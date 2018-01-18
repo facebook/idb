@@ -41,6 +41,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)copyDataFromContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath toDestinationPath:(NSString *)destinationPath;
 
+/**
+ Create Directory inside the Application Data Container.
+
+ @param directoryPath the path to the directory to be created.
+ @param bundleID the Bundle Identifier of the Container.
+ @return A future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath inContainerOfApplication:(NSString *)bundleID;
+
 @end
 
 NS_ASSUME_NONNULL_END

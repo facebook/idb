@@ -82,6 +82,29 @@
   return [FBFuture futureWithResult:NSNull.null];
 }
 
+- (nonnull FBFuture<NSNull *> *)createDirectory:(nonnull NSString *)directoryPath inContainerOfApplication:(nonnull NSString *)bundleID
+{
+  NSError *error;
+  NSString *dataContainer = [self dataContainerPathForBundleID:bundleID error:&error];
+  if (!dataContainer) {
+    return [[[FBSimulatorError
+              describeFormat:@"Couldn't obtain data container for bundle id %@", bundleID]
+             causedBy:error]
+            failFuture];
+  }
+  NSString *fullPath = [dataContainer stringByAppendingPathComponent:directoryPath];
+  if (![NSFileManager.defaultManager createDirectoryAtPath:fullPath
+                               withIntermediateDirectories:YES
+                                                attributes:nil error:&error]) {
+    return [[[FBSimulatorError
+              describeFormat:@"Could not create directory %@ in container %@", directoryPath, dataContainer]
+             causedBy:error]
+            failFuture];
+  }
+  return [FBFuture futureWithResult:NSNull.null];
+}
+
+
 #pragma mark Private
 
 - (NSString *)dataContainerPathForBundleID:(NSString *)bundleID error:(NSError **)error
