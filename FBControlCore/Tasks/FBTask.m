@@ -14,7 +14,6 @@
 #import "FBFileConsumer.h"
 #import "FBFileWriter.h"
 #import "FBLaunchedProcess.h"
-#import "FBPipeReader.h"
 #import "FBProcessOutput.h"
 #import "FBTaskConfiguration.h"
 #import "NSRunLoop+FBControlCore.h"

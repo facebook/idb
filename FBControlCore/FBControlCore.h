@@ -65,7 +65,6 @@
 #import <FBControlCore/FBLogCommands.h>
 #import <FBControlCore/FBLogSearch.h>
 #import <FBControlCore/FBLogTailConfiguration.h>
-#import <FBControlCore/FBPipeReader.h>
 #import <FBControlCore/FBProcessFetcher+Helpers.h>
 #import <FBControlCore/FBProcessFetcher.h>
 #import <FBControlCore/FBProcessInfo.h>

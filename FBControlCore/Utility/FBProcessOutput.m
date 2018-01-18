@@ -31,7 +31,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 @interface FBProcessOutput_Consumer : FBProcessOutput
 
-@property (nonatomic, strong, nullable, readwrite) FBPipeReader *reader;
+@property (nonatomic, strong, nullable, readwrite) NSPipe *pipe;
+@property (nonatomic, strong, nullable, readwrite) FBFileReader *reader;
 @property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> consumer;
 
 - (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer;
@@ -244,16 +245,17 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSPipe *> *)attachToPipeOrFileHandle
 {
-  if (self.reader) {
+  if (self.pipe) {
     return [[FBControlCoreError
       describeFormat:@"Cannot attach when already attached to %@", self.reader]
       failFuture];
   }
 
-  self.reader = [FBPipeReader pipeReaderWithConsumer:self.consumer];
+  self.pipe = NSPipe.pipe;
+  self.reader = [FBFileReader readerWithFileHandle:self.pipe.fileHandleForReading consumer:self.consumer];
   return [[self.reader
     startReading]
-    mapReplace:self.reader.pipe];
+    mapReplace:self.pipe];
 }
 
 - (id<FBFileConsumer>)contents
@@ -265,25 +267,17 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSNull *> *)completed
 {
-  FBPipeReader *reader = self.reader;
-  return [[FBFuture
-    futureWithResult:NSNull.null]
-    onQueue:FBProcessOutput.workQueue respondToCancellation:^{
-      return [reader stopReading];
-    }];
+  return self.reader.completed;
 }
-
 
 - (FBFuture<NSNull *> *)detach
 {
-  FBPipeReader *reader = self.reader;
-  if (!reader) {
-    return [[FBControlCoreError
-      describe:@"Cannot Detach there is no active reader"]
-      failFuture];
-  }
-  self.reader = nil;
-  return [self.reader stopReading];
+  return [self.reader.stopReading
+    onQueue:FBProcessOutput.workQueue chain:^(FBFuture *future) {
+      self.reader = nil;
+      self.pipe = nil;
+      return future;
+    }];
 }
 
 @end
