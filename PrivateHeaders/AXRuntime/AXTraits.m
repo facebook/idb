@@ -9,6 +9,16 @@
 
 #import "AXTraits.h"
 
+inline BOOL AXBitmaskContainsAllTraits(uint64_t bitmask, uint64_t traits)
+{
+  return (bitmask & traits) == traits;
+}
+
+inline BOOL AXBitmaskContainsAnyOfTraits(uint64_t bitmask, uint64_t traits)
+{
+  return (bitmask & traits) != 0;
+}
+
 NSSet<NSString *> *AXExtractTraits(uint64_t traitBitmask)
 {
   if (!traitBitmask) {
@@ -18,7 +28,7 @@ NSSet<NSString *> *AXExtractTraits(uint64_t traitBitmask)
   NSMutableSet<NSString *> *extractedTraits = [NSMutableSet set];
   [AXTraitToNameMap() enumerateKeysAndObjectsUsingBlock:^(NSNumber *traitNumber, NSString *name, BOOL *stop) {
     uint64_t trait = traitNumber.unsignedLongLongValue;
-    if ((trait & bitmask) == trait) {
+    if (AXBitmaskContainsAllTraits(bitmask, trait)) {
       bitmask -= trait;
       [extractedTraits addObject:name];
     }
@@ -27,6 +37,20 @@ NSSet<NSString *> *AXExtractTraits(uint64_t traitBitmask)
     [extractedTraits addObject:@"Unknown"];
   }
   return extractedTraits;
+}
+
+NSString *AXExtractTypeFromTraits(uint64_t traits)
+{
+  if (AXBitmaskContainsAnyOfTraits(traits, AXTraitButton | AXTraitLaunchIcon | AXTraitKeyboardKey | AXTraitBackButton | AXTraitTabButton | AXTraitDeleteKey | AXTraitPopupButton | AXTraitToggle)) {
+    return @"Button";
+  }
+  if (AXBitmaskContainsAnyOfTraits(traits, AXTraitTextOperationsAvailable | AXTraitTextEntry | AXTraitSearchField | AXTraitSecureTextField)) {
+    return @"TextEntry";
+  }
+  if (AXBitmaskContainsAnyOfTraits(traits, AXTraitStaticText)) {
+    return @"Text";
+  }
+  return @"Unknown";
 }
 
 #define FBTraitMapEntry(T) @(T): [@#T substringFromIndex:@"AXTrait".length]

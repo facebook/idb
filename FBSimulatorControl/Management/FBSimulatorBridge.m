@@ -26,6 +26,7 @@
 static NSString *const KeyAXTraits = @"AXTraits";
 
 static NSString *const KeyTraits = @"traits";
+static NSString *const KeyType = @"type";
 
 @interface FBSimulatorBridge ()
 
@@ -238,7 +239,9 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
     for (NSString *key in oldItem.allKeys) {
       id value = oldItem[key];
       if ([key isEqualToString:KeyAXTraits]) {
-        item[KeyTraits] = AXExtractTraits([(NSNumber *)value unsignedIntegerValue]).allObjects;
+        uint64_t bitmask = [(NSNumber *)value unsignedIntegerValue];
+        item[KeyTraits] = AXExtractTraits(bitmask).allObjects;
+        item[KeyType] = AXExtractTypeFromTraits(bitmask);
       }
       else if ([value isKindOfClass:NSString.class] || [value isKindOfClass:NSNumber.class]) {
         item[key] = oldItem[key];
