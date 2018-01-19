@@ -112,6 +112,26 @@
   return [FBFuture futureWithResult:NSNull.null];
 }
 
+- (FBFuture<NSNull *> *)movePath:(NSString *)originPath toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID
+{
+  NSError *error;
+  NSString *dataContainer = [self dataContainerPathForBundleID:bundleID error:&error];
+  if (!dataContainer) {
+    return [[[FBSimulatorError
+              describeFormat:@"Couldn't obtain data container for bundle id %@", bundleID]
+              causedBy:error]
+              failFuture];
+  }
+  originPath = [dataContainer stringByAppendingPathComponent:originPath];
+  destinationPath = [dataContainer stringByAppendingPathComponent:destinationPath];
+  if (![NSFileManager.defaultManager moveItemAtPath:originPath toPath:destinationPath error:&error]) {
+    return [[[FBSimulatorError
+              describeFormat:@"Could not remove item at %@ to %@", originPath, destinationPath]
+              causedBy:error]
+              failFuture];
+  }
+  return [FBFuture futureWithResult:NSNull.null];
+}
 
 #pragma mark Private
 

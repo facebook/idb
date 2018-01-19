@@ -62,6 +62,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath inContainerOfApplication:(NSString *)bundleID;
 
+/**
+ Move data within the container to a different path
+ @param originPath relative path to the container where data resides
+ @param destinationPath relative path where the data will be moved to
+ @param bundleID the Bundle Identifier of the Container.
+ @return A future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)movePath:(NSString *)originPath toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID;
+
 @end
 
 NS_ASSUME_NONNULL_END
