@@ -33,9 +33,9 @@ extern NSString *const FBTaskErrorDomain;
  Creates a Task with the provided configuration and starts it.
 
  @param configuration the configuration to use
- @return a task.
+ @return a future that resolves when the task has been started.
  */
-+ (instancetype)startTaskWithConfiguration:(FBTaskConfiguration *)configuration;
++ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBTaskConfiguration *)configuration;
 
 #pragma mark Accessors
 

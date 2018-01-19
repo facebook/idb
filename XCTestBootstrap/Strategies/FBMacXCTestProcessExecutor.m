@@ -43,17 +43,15 @@
   return self;
 }
 
-- (FBFuture<id<FBLaunchedProcess>> *)startProcess:(FBXCTestProcess *)process
+- (FBFuture<FBTask *> *)startProcess:(FBXCTestProcess *)process
 {
-  FBTask *task = [[[[[[FBTaskBuilder
+  return [[[[[[FBTaskBuilder
     withLaunchPath:process.launchPath]
     withArguments:process.arguments]
     withEnvironment:process.environment]
     withStdOutConsumer:process.stdOutConsumer]
     withStdErrConsumer:process.stdErrConsumer]
-    run];
-
-  return [FBFuture futureWithResult:task];
+    start];
 }
 
 - (NSString *)shimPath

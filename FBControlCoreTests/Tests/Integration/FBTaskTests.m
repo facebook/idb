@@ -90,6 +90,7 @@
   XCTAssertNil(task.error);
   XCTAssertGreaterThan(task.processIdentifier, 1);
 
+  [[[FBFuture futureWithResult:NSNull.null] delay:2] await:nil];
   XCTAssertEqual(lines.count, 8u);
   XCTAssertEqualObjects(lines[0], @"0   CoreFoundation                      0x0138ba14 __exceptionPreprocess + 180");
 }
@@ -128,7 +129,7 @@
 {
   FBTask *task = [[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1"]]
-    run];
+    startSynchronously];
 
   XCTestExpectation *expectation = [self keyValueObservingExpectationForObject:task keyPath:@"completedTeardown" expectedValue:@YES];
   [self waitForExpectations:@[expectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
@@ -138,7 +139,7 @@
 {
   FBTask *task = [[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"0"]]
-    run];
+    startSynchronously];
 
   XCTAssertNotNil([task.completed awaitWithTimeout:1 error:nil]);
   XCTAssertTrue(task.completed.hasCompleted);
@@ -164,7 +165,7 @@
   expectation.inverted = YES;
   FBTask *task = [[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000"]]
-    run];
+    startSynchronously];
 
   [task.completed onQueue:dispatch_get_main_queue() notifyOfCompletion:^(id _) {
     [expectation fulfill];
@@ -197,7 +198,7 @@
     withStdInConnected]
     withStdOutInMemoryAsData]
     withStdErrToDevNull]
-    run];
+    startSynchronously];
 
   XCTAssertTrue([task.stdIn conformsToProtocol:@protocol(FBFileConsumer)]);
   [task.stdIn consumeData:expected];

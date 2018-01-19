@@ -194,11 +194,18 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)withAcceptableTerminationStatusCodes:(NSSet<NSNumber *> *)statusCodes;
 
 /**
- Builds and Starts the Task
+ Builds and Starts the Task.
 
  @return a FBTask.
  */
-- (FBTask *)run;
+- (FBFuture<FBTask *> *)start;
+
+/**
+ Builds and Starts the Task, synchronously.
+
+ @return a FBTask.
+ */
+- (FBTask *)startSynchronously;
 
 @end
 

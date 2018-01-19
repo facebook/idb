@@ -323,7 +323,7 @@
     withLaunchPath:FBApplicationBundle.xcodeSimulator.binary.path]
     withArguments:arguments]
     withEnvironmentAdditions:environment]
-    run];
+    startSynchronously];
 
   // Expect no immediate error.
   if (task.error) {

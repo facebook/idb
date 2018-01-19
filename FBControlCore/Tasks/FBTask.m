@@ -127,8 +127,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @property (atomic, assign, readwrite) BOOL completedTeardown;
 
-- (instancetype)launchTask;
-
 @end
 
 @implementation FBTask
@@ -167,7 +165,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   return FBProcessOutput.inputProducingConsumer;
 }
 
-+ (instancetype)startTaskWithConfiguration:(FBTaskConfiguration *)configuration
++ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBTaskConfiguration *)configuration
 {
   id<FBTaskProcess> process = [FBTaskProcess_NSTask fromConfiguration:configuration];
   FBProcessOutput *stdOut = [self createTaskOutput:configuration.stdOut];
@@ -175,8 +173,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   FBProcessOutput<id<FBFileConsumer>> *stdIn = [self createTaskInput:configuration.connectStdIn];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
   FBTask *task = [[self alloc] initWithProcess:process stdOut:stdOut stdErr:stdErr stdIn:stdIn queue:queue acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
-  [task launchTask];
-  return task;
+  return [task launchTask];
 }
 
 - (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(FBProcessOutput *)stdOut stdErr:(FBProcessOutput *)stdErr stdIn:(FBProcessOutput<id<FBFileConsumer>> *)stdIn queue:(dispatch_queue_t)queue acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
@@ -248,52 +245,45 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 #pragma mark Private
 
+- (FBFuture<FBTask *> *)launchTask
+{
+  return [[FBFuture
+    futureWithFutures:@[
+      [self.stdInSlot attachToPipeOrFileHandle] ?: [FBFuture futureWithResult:NSNull.null],
+      [self.stdOutSlot attachToPipeOrFileHandle] ?: [FBFuture futureWithResult:NSNull.null],
+      [self.stdErrSlot attachToPipeOrFileHandle] ?: [FBFuture futureWithResult:NSNull.null],
+    ]]
+    onQueue:self.queue map:^(NSArray<id> *pipes) {
+      // Since the FBTask may not be returned by anyone and is asynchronous, it needs to be retained.
+      // This Retain is matched by a release in -[FBTask completeTermination].
+      CFRetain((__bridge CFTypeRef)(self));
+
+      id stdIn = pipes[0];
+      if ([stdIn isKindOfClass:NSFileHandle.class] || [stdIn isKindOfClass:NSPipe.class]) {
+        [self.process mountStandardIn:stdIn];
+      }
+      id stdOut = pipes[1];
+      if ([stdOut isKindOfClass:NSFileHandle.class] || [stdOut isKindOfClass:NSPipe.class]) {
+        [self.process mountStandardOut:stdOut];
+      }
+      id stdErr = pipes[2];
+      if ([stdErr isKindOfClass:NSFileHandle.class] || [stdErr isKindOfClass:NSPipe.class]) {
+        [self.process mountStandardErr:stdErr];
+      }
+
+      self.launchedProcess = [self.process launch];
+      [self.launchedProcess.exitCode onQueue:self.queue notifyOfCompletion:^(FBFuture<NSNumber *> *future) {
+        [self.terminationStatusFuture resolveFromFuture:future];
+        [self terminateWithErrorMessage:future.error.localizedDescription];
+      }];
+
+      return self;
+    }];
+}
+
 - (void)terminate
 {
   [self terminateWithErrorMessage:nil];
-}
-
-- (instancetype)launchTask
-{
-  // Since the FBTask may not be returned by anyone and is asynchronous, it needs to be retained.
-  // This Retain is matched by a release in -[FBTask completeTermination].
-  CFRetain((__bridge CFTypeRef)(self));
-
-  NSError *error = nil;
-  FBProcessOutput *slot = self.stdOutSlot;
-  if (slot) {
-    id stdOut = [[slot attachToPipeOrFileHandle] await:&error];
-    if (!stdOut) {
-      return [self terminateWithErrorMessage:error.description];
-    }
-    [self.process mountStandardOut:stdOut];
-  }
-
-  slot = self.stdErrSlot;
-  if (slot) {
-    id stdErr = [[slot attachToPipeOrFileHandle] await:&error];
-    if (!stdErr) {
-      return [self terminateWithErrorMessage:error.description];
-    }
-    [self.process mountStandardErr:stdErr];
-  }
-
-  slot = self.stdInSlot;
-  if (slot) {
-    id stdIn = [[slot attachToPipeOrFileHandle] await:&error];
-    if (!stdIn) {
-      return [self terminateWithErrorMessage:error.description];
-    }
-    [self.process mountStandardIn:stdIn];
-  }
-
-  self.launchedProcess = [self.process launch];
-  [self.launchedProcess.exitCode onQueue:self.queue notifyOfCompletion:^(FBFuture<NSNumber *> *future) {
-    [self.terminationStatusFuture resolveFromFuture:future];
-    [self terminateWithErrorMessage:future.error.localizedDescription];
-  }];
-
-  return self;
 }
 
 - (instancetype)terminateWithErrorMessage:(nullable NSString *)errorMessage
