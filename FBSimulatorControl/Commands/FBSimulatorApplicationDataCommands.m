@@ -42,22 +42,30 @@
 
 - (FBFuture<NSNull *> *)copyDataAtPath:(NSString *)source toContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath
 {
-  NSError *error = nil;
+  NSURL *url = [NSURL fileURLWithPath:source];
+  return [self copyItemsAtURLs:@[url] toContainerPath:containerPath inBundleID:bundleID];
+}
+
+- (FBFuture<NSNull *> *)copyItemsAtURLs:(NSArray<NSURL *> *)paths toContainerPath:(NSString *)containerPath inBundleID:(NSString *)bundleID
+{
+  NSError *error;
   NSString *dataContainer = [self dataContainerPathForBundleID:bundleID error:&error];
   if (!dataContainer) {
     return [[[FBSimulatorError
-      describeFormat:@"Couldn't obtain data container for bundle id %@", bundleID]
-      causedBy:error]
-      failFuture];
+              describeFormat:@"Couldn't obtain data container for bundle id %@", bundleID]
+              causedBy:error]
+              failFuture];
   }
-  NSString *destinationPath = [[dataContainer
-    stringByAppendingPathComponent:containerPath]
-    stringByAppendingPathComponent:source.lastPathComponent];
-  if (![NSFileManager.defaultManager copyItemAtPath:source toPath:destinationPath error:&error]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Could not copy from %@ to %@", source, destinationPath]
-      causedBy:error]
-      failFuture];
+  NSURL *basePathURL =  [NSURL fileURLWithPathComponents:@[dataContainer, containerPath]];
+  NSFileManager *fileManager = NSFileManager.defaultManager;
+  for (NSURL *url in paths) {
+    NSURL *destURL = [basePathURL URLByAppendingPathComponent:url.lastPathComponent];
+    if (![fileManager copyItemAtURL:url toURL:destURL error:&error]) {
+      return [[[FBSimulatorError
+                describeFormat:@"Could not copy from %@ to %@", url, destURL]
+                causedBy:error]
+                failFuture];
+    }
   }
   return [FBFuture futureWithResult:NSNull.null];
 }

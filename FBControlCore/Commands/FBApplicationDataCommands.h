@@ -32,6 +32,18 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSNull *> *)copyDataAtPath:(NSString *)source toContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath;
 
 /**
+ Copy items to the Application Data Container.
+
+ @param paths Array of source paths. May be Files and/or Directories.
+ @param containerPath the destination path within the container.
+ @param bundleID the Bundle Identifier of the Container.
+ @return A future that resolves when successful.
+
+ @note Performs a recursive copy
+ */
+- (FBFuture<NSNull *> *)copyItemsAtURLs:(NSArray<NSURL *> *)paths toContainerPath:(NSString *)containerPath inBundleID:(NSString *)bundleID;
+
+/**
  Relocate Data inside the Application Data Container.
 
  @param bundleID the Bundle Identifier of the Container.
