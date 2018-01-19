@@ -343,10 +343,8 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
       return [FBFuture futureWithResult:NSNull.null];
     }
   }
-  [self resolveAsCancelled];
+  FBFuture_Cancellation *cancelResponder = [self resolveAsCancelled];
   @synchronized (self) {
-    FBFuture_Cancellation *cancelResponder = self.cancelResponder;
-    self.cancelResponder = nil;
     if (cancelResponder) {
       FBFuture<NSNull *> *resolvedCancellation = [FBFuture onQueue:cancelResponder.queue resolve:cancelResponder.handler];
       self.resolvedCancellation = resolvedCancellation;
@@ -355,7 +353,6 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
       return [FBFuture futureWithResult:NSNull.null];
     }
   }
-  return [[self resolveAsCancelled] mapReplace:NSNull.null];
 }
 
 - (instancetype)onQueue:(dispatch_queue_t)queue notifyOfCompletion:(void (^)(FBFuture *))handler
@@ -548,6 +545,7 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
       self.result = result;
       self.state = FBFutureStateDone;
       [self fireAllHandlers];
+      self.cancelResponder = nil;
     }
   }
 
@@ -561,17 +559,7 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
       self.error = error;
       self.state = FBFutureStateFailed;
       [self fireAllHandlers];
-    }
-  }
-  return self;
-}
-
-- (instancetype)resolveAsCancelled
-{
-  @synchronized (self) {
-    if (self.state == FBFutureStateRunning) {
-      self.state = FBFutureStateCancelled;
-      [self fireAllHandlers];
+      self.cancelResponder = nil;
     }
   }
   return self;
@@ -604,6 +592,19 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
 }
 
 #pragma mark Private
+
+- (FBFuture_Cancellation *)resolveAsCancelled
+{
+  @synchronized (self) {
+    if (self.state == FBFutureStateRunning) {
+      self.state = FBFutureStateCancelled;
+      [self fireAllHandlers];
+    }
+    FBFuture_Cancellation *cancelResponder = self.cancelResponder;
+    self.cancelResponder = nil;
+    return cancelResponder;
+  }
+}
 
 - (void)fireAllHandlers
 {
