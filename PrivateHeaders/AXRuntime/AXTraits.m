@@ -9,6 +9,26 @@
 
 #import "AXTraits.h"
 
+NSSet<NSString *> *AXExtractTraits(uint64_t traitBitmask)
+{
+  if (!traitBitmask) {
+    return [NSSet setWithObject:@"None"];
+  }
+  __block uint64_t bitmask = traitBitmask;
+  NSMutableSet<NSString *> *extractedTraits = [NSMutableSet set];
+  [AXTraitToNameMap() enumerateKeysAndObjectsUsingBlock:^(NSNumber *traitNumber, NSString *name, BOOL *stop) {
+    uint64_t trait = traitNumber.unsignedLongLongValue;
+    if ((trait & bitmask) == trait) {
+      bitmask -= trait;
+      [extractedTraits addObject:name];
+    }
+  }];
+  if (bitmask) {
+    [extractedTraits addObject:@"Unknown"];
+  }
+  return extractedTraits;
+}
+
 #define FBTraitMapEntry(T) @(T): [@#T substringFromIndex:@"AXTrait".length]
 NSDictionary<NSNumber *, NSString *> *AXTraitToNameMap(void)
 {

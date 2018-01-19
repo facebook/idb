@@ -11,6 +11,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <AXRuntime/AXTraits.h>
+
 #import <CoreSimulator/SimDevice.h>
 
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>
@@ -20,6 +22,10 @@
 #import "FBApplicationBundle+Simulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorAgentOperation.h"
+
+static NSString *const KeyAXTraits = @"AXTraits";
+
+static NSString *const KeyTraits = @"traits";
 
 @interface FBSimulatorBridge ()
 
@@ -231,7 +237,10 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
     NSMutableDictionary<NSString *, id> *item = [NSMutableDictionary dictionary];
     for (NSString *key in oldItem.allKeys) {
       id value = oldItem[key];
-      if ([value isKindOfClass:NSString.class] || [value isKindOfClass:NSNumber.class]) {
+      if ([key isEqualToString:KeyAXTraits]) {
+        item[KeyTraits] = AXExtractTraits([(NSNumber *)value unsignedIntegerValue]).allObjects;
+      }
+      else if ([value isKindOfClass:NSString.class] || [value isKindOfClass:NSNumber.class]) {
         item[key] = oldItem[key];
       } else if ([value isKindOfClass:NSValue.class]) {
         item[key] = NSStringFromRect([value rectValue]);

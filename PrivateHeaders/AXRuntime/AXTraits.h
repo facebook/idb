@@ -12,6 +12,9 @@
 /*! Returns mapping from bitmask values to names as strings */
 NSDictionary<NSNumber *, NSString *> *AXTraitToNameMap(void);
 
+/*! Returns extracted set of trait names from given traitBitmask */
+NSSet<NSString *> *AXExtractTraits(uint64_t traitBitmask);
+
 /*
  Values were extracted from _kAXButtonTrait like statics in
    .../Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/Library/
