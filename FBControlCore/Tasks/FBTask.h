@@ -43,24 +43,25 @@ extern NSString *const FBTaskErrorDomain;
  A future that resolves with the exit code when the process has finished.
  Any errors will be propogated in this future.
  */
-- (FBFuture<NSNumber *> *)completed;
+@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *completed;
 
 /**
  Returns the Process Identifier of the Launched Process.
  */
-- (pid_t)processIdentifier;
+@property (nonatomic, assign, readonly) pid_t processIdentifier;
 
 /**
- Returns a copy of the current state of stdout. May be called from any thread.
+ Returns the stdout of the task.
+ May be called from any thread.
  The types of these values are defined in FBTaskConfiguration.
  */
-- (nullable id)stdOut;
+@property (nonatomic, strong, nullable, readonly) id stdOut;
 
 /**
  Returns the stdout of the process:
  The types of these values are defined in FBTaskConfiguration.
  */
-- (nullable id)stdErr;
+@property (nonatomic, strong, nullable, readonly) id stdErr;
 
 /**
  Returns a consumer for the stdin.
@@ -68,12 +69,12 @@ extern NSString *const FBTaskErrorDomain;
  - The Task is Configured to do so.
  - The Task is running.
  */
-- (nullable id<FBFileConsumer>)stdIn;
+@property (nonatomic, strong, nullable, readonly) id<FBFileConsumer> stdIn;
 
 /**
  Returns the Error associated with the task (if any). May be called from any thread.
  */
-- (nullable NSError *)error;
+@property (nonatomic, strong, nullable, readonly) NSError *error;
 
 @end
 
