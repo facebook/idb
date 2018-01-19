@@ -217,7 +217,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
 {
   return [[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/sqlite3" arguments:arguments]
-    runFuture]
+    runUntilCompletion]
     mapReplace:NSNull.null];
 }
 

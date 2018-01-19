@@ -129,7 +129,7 @@ static short const ZipFileMagicHeader = 0x4b50;
     withLaunchPath:@"/usr/bin/unzip"]
     withArguments:@[@"-o", @"-d", [tempDirURL path], path]]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
-    runSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout];
+    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout];
 
   if (task.error) {
     return [[[FBControlCoreError

@@ -230,13 +230,13 @@
 
 @implementation FBTaskBuilder (Convenience)
 
-- (FBFuture<FBTask *> *)runFuture
+- (FBFuture<FBTask *> *)runUntilCompletion
 {
   FBTask *task = [self run];
   return [[task completed] mapReplace:task];
 }
 
-- (FBTask *)runSynchronouslyWithTimeout:(NSTimeInterval)timeout
+- (FBTask *)runSynchronouslyUntilCompletionWithTimeout:(NSTimeInterval)timeout
 {
   FBTask *task = [self run];
   FBFuture<NSNumber *> *future = [task completed];

@@ -214,7 +214,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future, encapsulating the task on completion.
  */
-- (FBFuture<FBTask *> *)runFuture;
+- (FBFuture<FBTask *> *)runUntilCompletion;
 
 /**
  Builds and Starts the Task, waiting with the given timeout.
@@ -222,7 +222,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param timeout the timeout in seconds to wait for the task to terminate.
  @return a Task that resolves when the task has completed or the timeout has been reached.
  */
-- (FBTask *)runSynchronouslyWithTimeout:(NSTimeInterval)timeout;
+- (FBTask *)runSynchronouslyUntilCompletionWithTimeout:(NSTimeInterval)timeout;
 
 @end
 

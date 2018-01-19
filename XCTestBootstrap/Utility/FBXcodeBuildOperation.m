@@ -61,7 +61,7 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
     withEnvironment:environment]
     withStdOutToLogger:target.logger]
     withStdErrToLogger:target.logger]
-    runFuture];
+    runUntilCompletion];
 }
 
 - (instancetype)initWithFuture:(FBFuture<FBTask *> *)future asyncQueue:(dispatch_queue_t)asyncQueue

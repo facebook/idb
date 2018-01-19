@@ -25,7 +25,7 @@
 {
   FBTask *task = [[FBTaskBuilder
     withLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
-    runSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout];
+    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout];
   NSString *directory = [task stdOut];
   if (!directory) {
     return [[FBControlCoreError

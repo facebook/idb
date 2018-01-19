@@ -93,7 +93,7 @@ static NSTimeInterval const CrashLogWaitTime = 20;
 {
   return [[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/sample" arguments:@[@(processIdentifier).stringValue, @"1"]]
-    runFuture]
+    runUntilCompletion]
     onQueue:queue fmap:^(FBTask *task) {
       return [[FBXCTestError
         describeFormat:@"Waited %f seconds for process %d to terminate, but the xctest process stalled: %@", timeout, processIdentifier, task.stdOut]
