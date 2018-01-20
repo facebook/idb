@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import <FBControlCore/FBAccessibilityTraits.h>
 #import <FBControlCore/FBAgentLaunchConfiguration.h>
 #import <FBControlCore/FBApplicationBundle+Install.h>
 #import <FBControlCore/FBApplicationBundle.h>

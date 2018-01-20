@@ -27,7 +27,7 @@
 
   FBTask *task = [[FBTaskBuilder
     withLaunchPath:@"/usr/bin/base64" arguments:@[@"-i", filePath]]
-    runUntilCompletionSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
   XCTAssertTrue(task.completed.hasCompleted);
   XCTAssertNil(task.error);
@@ -43,7 +43,7 @@
 
   FBTask *task = [[FBTaskBuilder
     withLaunchPath:@"/usr/bin/strings" arguments:@[binaryPath]]
-    runUntilCompletionSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
   XCTAssertTrue(task.completed.hasCompleted);
   XCTAssertNil(task.error);
@@ -58,7 +58,7 @@
 
   FBTask *task = [[FBTaskBuilder
     withLaunchPath:@"/bin/ls" arguments:@[@"-1", resourcesPath]]
-    runUntilCompletionSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
   XCTAssertTrue(task.completed.hasCompleted);
   XCTAssertNil(task.error);
@@ -83,7 +83,7 @@
     withStdOutLineReader:^(NSString *line) {
       [lines addObject:line];
     }]
-    runUntilCompletionSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
   XCTAssertTrue([task.stdOut conformsToProtocol:@protocol(FBFileConsumer)]);
   XCTAssertTrue(task.completed.hasCompleted);
@@ -103,7 +103,7 @@
     withLaunchPath:@"/usr/bin/file" arguments:@[bundlePath]]
     withStdErrToLogger:[FBControlCoreLoggerDouble new]]
     withStdOutToLogger:[FBControlCoreLoggerDouble new]]
-    runUntilCompletionSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
   XCTAssertNil(task.error);
   XCTAssertTrue([task.stdOut isKindOfClass:FBControlCoreLoggerDouble.class]);
@@ -118,7 +118,7 @@
     withLaunchPath:@"/usr/bin/file" arguments:@[bundlePath]]
     withStdOutToDevNull]
     withStdErrToDevNull]
-    runUntilCompletionSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
   XCTAssertNil(task.error);
   XCTAssertNil(task.stdOut);
@@ -184,7 +184,7 @@
 {
   FBTask *task = [[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000"]]
-    runUntilCompletionSynchronouslyWithTimeout:1];
+    runSynchronouslyUntilCompletionWithTimeout:1];
   XCTAssertTrue(task.completed.hasCompleted);
   XCTAssertNotNil(task.error);
 }

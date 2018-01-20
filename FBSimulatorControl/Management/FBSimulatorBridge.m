@@ -11,8 +11,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import <AXRuntime/AXTraits.h>
-
 #import <CoreSimulator/SimDevice.h>
 
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>

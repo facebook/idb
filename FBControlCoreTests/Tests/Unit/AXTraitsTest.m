@@ -8,7 +8,9 @@
  */
 
 #import <XCTest/XCTest.h>
+
 #import <AXRuntime/AXTraits.h>
+#import <FBControlCore/FBControlCore.h>
 
 @interface AXTraitsTest : XCTestCase
 @end

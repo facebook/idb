@@ -7,7 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "AXTraits.h"
+#import "FBAccessibilityTraits.h"
+
+#import <AXRuntime/AXTraits.h>
 
 inline BOOL AXBitmaskContainsAllTraits(uint64_t bitmask, uint64_t traits)
 {
