@@ -600,7 +600,7 @@
         }];
     }]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
-      return [[self launchdSimPresentWithAllRequiredServices] mapReplace:connection];
+      return [[self verifySimulatorIsBooted] mapReplace:connection];
     }]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
       // Broadcast the availability of the new bridge.
@@ -609,7 +609,7 @@
     }];
 }
 
-- (FBFuture<FBProcessInfo *> *)launchdSimPresentWithAllRequiredServices
+- (FBFuture<FBProcessInfo *> *)verifySimulatorIsBooted
 {
   FBSimulatorProcessFetcher *processFetcher = self.simulator.processFetcher;
   FBProcessInfo *launchdProcess = [processFetcher launchdProcessForSimDevice:self.simulator.device];
