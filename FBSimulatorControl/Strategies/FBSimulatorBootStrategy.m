@@ -284,16 +284,11 @@
 
   // Booting is simpler than the Simulator.app launch process since the caller calls CoreSimulator Framework directly.
   // Just pass in the options to ensure that the framebuffer service is registered when the Simulator is booted.
-  NSDictionary<NSString *, id> *options = [self.options bootOptions:self.configuration];
-  if (![self.simulator.device bootWithOptions:options error:&error]) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to boot Simulator with options %@", options]
-      inSimulator:self.simulator]
-      causedBy:error]
-      failFuture];
-  }
-
-  return [FBFuture futureWithResult:[[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:framebuffer hid:hid]];
+  return [[self
+    bootSimulatorWithOptions:[self.options bootOptions:self.configuration]]
+    onQueue:self.simulator.workQueue map:^(id _) {
+      return [[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:framebuffer hid:hid];
+    }];
 }
 
 - (BOOL)shouldBootWithCoreSimulator
@@ -304,6 +299,19 @@
   }
   // Otherwise obey the direct launch config.
   return self.configuration.shouldUseDirectLaunch;
+}
+
+- (FBFuture<NSNull *> *)bootSimulatorWithOptions:(NSDictionary<NSString *, id> *)options
+{
+  FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
+  [self.simulator.device bootAsyncWithOptions:options completionQueue:self.simulator.workQueue completionHandler:^(NSError *error){
+    if (error) {
+      [future resolveWithError:error];
+    } else {
+      [future resolveWithResult:NSNull.null];
+    }
+  }];
+  return future;
 }
 
 @end
@@ -318,21 +326,13 @@
 
 - (FBFuture<NSNull *> *)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment;
 {
-  // Construct and start the task.
-  FBTask *task = [[[[FBTaskBuilder
+  return [[[[[[FBTaskBuilder
     withLaunchPath:FBApplicationBundle.xcodeSimulator.binary.path]
     withArguments:arguments]
     withEnvironmentAdditions:environment]
-    startSynchronously];
-
-  // Expect no immediate error.
-  if (task.error) {
-    return [[[FBSimulatorError
-      describe:@"Failed to Launch Simulator Process"]
-      causedBy:task.error]
-      failFuture];
-  }
-  return [FBFuture futureWithResult:NSNull.null];
+    start]
+    rephraseFailure:@"Failed to Launch Simulator Process %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]]
+    mapReplace:NSNull.null];
 }
 
 @end

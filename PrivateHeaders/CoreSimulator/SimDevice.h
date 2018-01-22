@@ -155,7 +155,7 @@
 - (BOOL)_onBootstrapQueue_bootWithOptions:(id)arg1 deathMonitorPort:(id)arg2 deathTriggerPort:(id)arg3 error:(id *)arg4;
 - (BOOL)_onBootstrapQueue_bootWithOptions:(id)arg1 error:(id *)arg2;
 - (BOOL)bootWithOptions:(id)arg1 error:(id *)arg2;
-- (void)bootAsyncWithOptions:(id)arg1 completionQueue:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;
+- (void)bootAsyncWithOptions:(id)arg1 completionQueue:(id)arg2 completionHandler:(void(^)(NSError *))arg3;
 - (void)launchdDeathHandlerWithDeathPort:(id)arg1;
 - (BOOL)startLaunchdWithDeathPort:(id)arg1 deathHandler:(CDUnknownBlockType)arg2 error:(id *)arg3;
 - (void)registerPortsWithLaunchd;
