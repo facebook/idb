@@ -204,18 +204,6 @@
   return bundle;
 }
 
-- (nullable NSString *)applicationPathForApplicationWithBundleID:(nonnull NSString *)bundleID error:(NSError *_Nullable __autoreleasing * _Nullable)error
-{
-  FBProductBundle *bundle = self.bundleIDToProductMap[bundleID];
-  if (!bundle) {
-    if (error) {
-      *error = [XCTestBootstrapError errorForFormat:@"Application with bundleID (%@) was installed by XCTestBootstrap", bundleID];
-    }
-    return nil;
-  }
-  return bundle.path;
-}
-
 - (nonnull FBFuture<NSNumber *> *)processIDWithBundleID:(nonnull NSString *)bundleID
 {
   FBTask *task = self.bundleIDToRunningTask[bundleID];
@@ -240,30 +228,11 @@
   return nil;
 }
 
-- (BOOL)cleanApplicationStateWithBundleIdentifier:(nonnull NSString *)bundleID error:(NSError *_Nullable __autoreleasing * _Nullable)error
-{
-  NSAssert(nil, @"cleanApplicationStateWithBundleIdentifier:error: is not yet supported");
-  return NO;
-}
-
 - (nonnull NSString *)consoleString
 {
   NSAssert(nil, @"consoleString is not yet supported");
   return nil;
 }
-
-- (nonnull NSString *)containerPathForApplicationWithBundleID:(nonnull NSString *)bundleID error:(NSError *_Nullable __autoreleasing * _Nullable)error
-{
-  NSAssert(nil, @"containerPathForApplicationWithBundleID:error: is not yet supported");
-  return nil;
-}
-
-- (BOOL)uploadApplicationDataAtPath:(nonnull NSString *)path bundleID:(nonnull NSString *)bundleID error:(NSError *_Nullable __autoreleasing * _Nullable)error
-{
-  NSAssert(nil, @"uploadApplicationDataAtPath:bundleID:error: is not yet supported");
-  return NO;
-}
-
 
 #pragma mark - FBiOSTarget
 @synthesize architecture = _architecture;

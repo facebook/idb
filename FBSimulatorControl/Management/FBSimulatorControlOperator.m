@@ -238,30 +238,6 @@
 
 #pragma mark - Unsupported FBDeviceOperator protocol method
 
-- (BOOL)cleanApplicationStateWithBundleIdentifier:(NSString *)bundleID error:(NSError **)error
-{
-  NSAssert(nil, @"cleanApplicationStateWithBundleIdentifier is not yet supported");
-  return NO;
-}
-
-- (NSString *)applicationPathForApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  NSAssert(nil, @"applicationPathForApplicationWithBundleID is not yet supported");
-  return nil;
-}
-
-- (BOOL)uploadApplicationDataAtPath:(NSString *)path bundleID:(NSString *)bundleID error:(NSError **)error
-{
-  NSAssert(nil, @"uploadApplicationDataAtPath is not yet supported");
-  return NO;
-}
-
-- (NSString *)containerPathForApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  NSAssert(nil, @"containerPathForApplicationWithBundleID is not yet supported");
-  return nil;
-}
-
 - (NSString *)consoleString
 {
   NSAssert(nil, @"consoleString is not yet supported");
