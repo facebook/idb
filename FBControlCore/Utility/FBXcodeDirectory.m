@@ -16,34 +16,42 @@
 
 @implementation FBXcodeDirectory
 
+#pragma mark Initializers
+
 + (NSString *)xcodeSelectFromCommandLine
 {
   return [self new];
 }
 
-- (NSString *)xcodePathWithError:(NSError **)error
+#pragma mark Public Methods
+
+- (FBFuture<NSString *> *)xcodePath
 {
-  FBTask *task = [[FBTaskBuilder
+  return [[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
-    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout];
-  NSString *directory = [task stdOut];
-  if (!directory) {
-    return [[FBControlCoreError
-      describeFormat:@"Xcode Path could not be determined from `xcode-select`: %@", task.error]
-      fail:error];
-  }
-  directory = [directory stringByResolvingSymlinksInPath];
-  if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
-    return [[FBControlCoreError
-      describeFormat:@"No Xcode Directory at: %@", directory]
-      fail:error];
-  }
-  if ([directory isEqualToString:@"/"] || [directory isEqualToString:@""]) {
-    return [[FBControlCoreError
-      describe:@"Xcode Directory is defined as the Root Filesystem. Run xcode-select(1) to set this to a valid Xcode install"]
-      fail:error];
-  }
-  return directory;
+    runUntilCompletion]
+    onQueue:dispatch_get_main_queue() fmap:^(FBTask *task) {
+      NSString *directory = [task stdOut];
+      if (!directory) {
+        return [[FBControlCoreError
+          describeFormat:@"Xcode Path could not be determined from `xcode-select`: %@", directory]
+          failFuture];
+      }
+      directory = [directory stringByResolvingSymlinksInPath];
+      if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
+        return [[FBControlCoreError
+          describeFormat:@"No Xcode Directory at: %@", directory]
+          failFuture];
+      }
+      if ([directory isEqualToString:@"/"] || [directory isEqualToString:@""]) {
+        return [[FBControlCoreError
+          describe:@"Xcode Directory is defined as the Root Filesystem. Run xcode-select(1) to set this to a valid Xcode install"]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:directory];
+    }];
 }
+
+
 
 @end

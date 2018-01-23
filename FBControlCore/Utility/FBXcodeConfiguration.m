@@ -13,6 +13,7 @@
 
 #import "FBTaskBuilder.h"
 #import "FBXcodeDirectory.h"
+#import "NSRunLoop+FBControlCore.h"
 
 @implementation FBXcodeConfiguration
 
@@ -150,7 +151,7 @@
 + (NSString *)findXcodeDeveloperDirectoryOrAssert
 {
   NSError *error = nil;
-  NSString *directory = [FBXcodeDirectory.xcodeSelectFromCommandLine xcodePathWithError:&error];
+  NSString *directory = [FBXcodeDirectory.xcodeSelectFromCommandLine.xcodePath await:&error];
   NSAssert(directory, error.description);
   return directory;
 }
