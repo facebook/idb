@@ -51,7 +51,7 @@
 - (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
 {
   return [[[FBApplicationBundle
-    onQueue:self.simulator.asyncQueue findOrExtractApplicationAtPath:path]
+    onQueue:self.simulator.asyncQueue findOrExtractApplicationAtPath:path logger:self.simulator.logger]
     onQueue:self.simulator.workQueue fmap:^FBFuture *(FBExtractedApplication *extractedApplication) {
       return [[self installExtractedApplicationWithPath:extractedApplication.bundle.path] mapReplace:extractedApplication];
     }]

@@ -110,7 +110,7 @@ static NSString *const KeyCodesign = @"codesign";
 - (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   return [[[[FBApplicationBundle
-    onQueue:target.asyncQueue findOrExtractApplicationAtPath:self.applicationPath]
+    onQueue:target.asyncQueue findOrExtractApplicationAtPath:self.applicationPath logger:target.logger]
     onQueue:target.workQueue fmap:^FBFuture *(FBExtractedApplication *extractedApplication) {
       if (self.codesign) {
         return [[FBCodesignProvider.codeSignCommandWithAdHocIdentity

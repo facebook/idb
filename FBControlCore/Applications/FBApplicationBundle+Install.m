@@ -15,6 +15,7 @@
 #import "FBControlCoreError.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
+#import "FBControlCoreLogger.h"
 #import "FBTask.h"
 #import "FBTaskBuilder.h"
 
@@ -56,21 +57,21 @@ static BOOL isApplicationAtPath(NSString *path)
 
 #pragma mark Public
 
-+ (FBFuture<FBExtractedApplication *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path
++ (FBFuture<FBExtractedApplication *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path logger:(id<FBControlCoreLogger>)logger;
 {
-  return [FBFuture onQueue:queue resolve:^{
-    NSURL *extractedPath = nil;
-    NSError *error = nil;
-    NSString *appPath = [FBApplicationBundle findOrExtractApplicationAtPath:path extractPathOut:&extractedPath error:&error];
-    if (!appPath) {
-      return [FBFuture futureWithError:error];
-    }
-    FBApplicationBundle *bundle = [FBApplicationBundle applicationWithPath:appPath error:&error];
-    if (!bundle) {
-      return [FBFuture futureWithError:error];
-    }
-    FBExtractedApplication *application = [[FBExtractedApplication alloc] initWithBundle:bundle extractedPath:extractedPath];
-    return [FBFuture futureWithResult:application];
+  NSURL *extractPath = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString] isDirectory:YES];
+  return [[FBFuture
+    onQueue:queue resolve:^{
+      return [FBApplicationBundle findOrExtractApplicationAtPath:path extractPath:extractPath queue:queue logger:logger];
+    }]
+    onQueue:queue fmap:^(NSString *appPath) {
+      NSError *error = nil;
+      FBApplicationBundle *bundle = [FBApplicationBundle applicationWithPath:appPath error:&error];
+      if (!bundle) {
+        return [FBFuture futureWithError:error];
+      }
+      FBExtractedApplication *application = [[FBExtractedApplication alloc] initWithBundle:bundle extractedPath:extractPath];
+      return [FBFuture futureWithResult:application];
   }];
 }
 
@@ -99,64 +100,61 @@ static short const ZipFileMagicHeader = 0x4b50;
   return magic == ZipFileMagicHeader;
 }
 
-+ (nullable NSString *)findOrExtractApplicationAtPath:(NSString *)path extractPathOut:(NSURL **)extractPathOut error:(NSError **)error
++ (FBFuture<NSString *> *)findOrExtractApplicationAtPath:(NSString *)path extractPath:(NSURL *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   // If it's an App, we don't need to do anything, just return early.
   if (isApplicationAtPath(path)) {
-    return path;
+    return [FBFuture futureWithResult:path];
   }
   // The other case is that this is an IPA, check it is before extacting.
-  if (![FBApplicationBundle isIPAAtPath:path error:error]) {
-    return [[FBControlCoreError
+  NSError *error = nil;
+  if (![FBApplicationBundle isIPAAtPath:path error:&error]) {
+    return [[[FBControlCoreError
       describeFormat:@"File at path %@ is neither an IPA not a .app", path]
-      fail:error];
+      causedBy:error]
+      failFuture];
   }
-
-  NSString *tempDirPath = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
-  NSURL *tempDirURL = [NSURL fileURLWithPath:tempDirPath isDirectory:YES];
-  if (extractPathOut) {
-    *extractPathOut = tempDirURL;
-  }
-
-  NSError *innerError = nil;
-  if (![[NSFileManager defaultManager] createDirectoryAtURL:tempDirURL withIntermediateDirectories:YES attributes:nil error:&innerError]) {
+  // Create the path to extract into, if it doesn't exist yet.
+  if (![NSFileManager.defaultManager createDirectoryAtURL:extractPath withIntermediateDirectories:YES attributes:nil error:&error]) {
     return [[[FBControlCoreError
-      describe:@"Could not create temporary directory for IPA extraction"]
-      causedBy:innerError]
-      fail:error];
+      describeFormat:@"Could not create temporary directory for IPA extraction %@", extractPath]
+      causedBy:error]
+      failFuture];
   }
-  FBTask *task = [[[[FBTaskBuilder
+  // Run the unzip command.
+  return [[[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/unzip"]
-    withArguments:@[@"-o", @"-d", [tempDirURL path], path]]
+    withArguments:@[@"-o", @"-d", extractPath.path, path]]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
-    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout];
+    withStdErrToLogger:logger.debug]
+    withStdOutToLogger:logger.debug]
+    runUntilCompletion]
+    onQueue:queue fmap:^(FBTask *task) {
+      return [FBApplicationBundle findAppPathFromDirectory:extractPath];
+    }];
+}
 
-  if (task.error) {
-    return [[[FBControlCoreError
-      describeFormat:@"Could not unzip IPA at %@.", path]
-      causedBy:task.error]
-      fail:error];
-  }
-
++ (FBFuture<NSString *> *)findAppPathFromDirectory:(NSURL *)directory
+{
   NSDirectoryEnumerator *directoryEnumerator = [NSFileManager.defaultManager
-    enumeratorAtURL:tempDirURL
+    enumeratorAtURL:directory
     includingPropertiesForKeys:@[NSURLIsDirectoryKey]
     options:0
     errorHandler:nil];
   NSSet *applicationURLs = [NSSet set];
   for (NSURL *fileURL in directoryEnumerator) {
-    if (isApplicationAtPath([fileURL path])) {
+    if (isApplicationAtPath(fileURL.path)){
       applicationURLs = [applicationURLs setByAddingObject:fileURL];
       [directoryEnumerator skipDescendants];
     }
   }
-  if ([applicationURLs count] != 1) {
-    deleteDirectory(tempDirURL);
+  if (applicationURLs.count != 1) {
+    deleteDirectory(directory);
     return [[FBControlCoreError
-      describeFormat:@"Expected only one Application in IPA, found %lu", [applicationURLs count]]
-      fail:error];
+      describeFormat:@"Expected only one Application in IPA, found %lu", applicationURLs.count]
+      failFuture];
   }
-  return [[applicationURLs anyObject] path];
+  return [FBFuture futureWithResult:[applicationURLs.allObjects.firstObject path]];
 }
 
 @end
