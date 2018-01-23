@@ -15,15 +15,43 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ A Protocol that wraps the standard stream stdout, stderr, stdin
+ */
+@protocol FBStandardStream <NSObject>
+
+/**
+ Attaches to the output, returning a NSFileHandle for writing to.
+
+ @return A Future wrapping the File Handle.
+ */
+- (FBFuture<NSFileHandle *> *)attachToFileHandle;
+
+/**
+ Attaches to the output, returning a NSPipe or NSFileHandle for writing to.
+ This method will prefer returning a NSPipe since this is more affordant for the NSTask API.
+
+ @return A Future wrapping the Pipe or File Handle.
+ */
+- (FBFuture<id> *)attachToPipeOrFileHandle;
+
+/**
+ Tears down the output.
+
+ @return A Future that resolves when teardown has completed.
+ */
+- (FBFuture<NSNull *> *)detach;
+
+@end
+
+/**
  The Termination Handle Type for Process Output.
  */
 extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
 
 /**
  A container object for the output of a process.
- There are many different kinds of output.
  */
-@interface FBProcessOutput<WrappedType> : NSObject <FBiOSTargetContinuation>
+@interface FBProcessOutput<WrappedType> : NSObject <FBiOSTargetContinuation, FBStandardStream>
 
 #pragma mark Initializers
 
@@ -60,14 +88,6 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
 + (FBProcessOutput<id<FBFileConsumer>> *)outputForFileConsumer:(id<FBFileConsumer>)fileConsumer;
 
 /**
- An Output Container that connects a File Consumer to a Pipe.
- The 'contents' field will contain an opaque consumer that can be written to.
-
- @return a Process Output instance.
- */
-+ (FBProcessOutput<id<FBFileConsumer>> *)inputProducingConsumer;
-
-/**
  An Output Container that writes to a logger
 
  @param logger the logger to log to.
@@ -91,29 +111,29 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
  */
 + (FBProcessOutput<NSString *> *)outputToStringBackedByMutableData:(NSMutableData *)data;
 
-#pragma mark Public
+#pragma mark Properties
 
 /**
- Attaches to the output, returning a NSFileHandle for writing to.
-
- @return A Future wrapping the File Handle.
+ The File Handle.
  */
-- (FBFuture<NSFileHandle *> *)attachToFileHandle;
+@property (nonatomic, strong, readonly) WrappedType contents;
+
+@end
 
 /**
- Attaches to the output, returning a NSPipe or NSFileHandle for writing to.
- This method will prefer returning a NSPipe since this is more affordant for the NSTask API.
-
- @return A Future wrapping the Pipe or File Handle.
+ A container object for the input of a process.
  */
-- (FBFuture<id> *)attachToPipeOrFileHandle;
+@interface FBProcessInput<WrappedType> : NSObject <FBStandardStream>
+
+#pragma mark Initializers
 
 /**
- Tears down the output.
+ An Output Container that connects a File Consumer to a Pipe.
+ The 'contents' field will contain an opaque consumer that can be written to.
 
- @return A Future that resolves when teardown has completed.
+ @return a Process Output instance.
  */
-- (FBFuture<NSNull *> *)detach;
++ (FBProcessInput<id<FBFileConsumer>> *)inputProducingConsumer;
 
 #pragma mark Properties
 

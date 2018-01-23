@@ -70,7 +70,7 @@
 #import <FBControlCore/FBProcessFetcher.h>
 #import <FBControlCore/FBProcessInfo.h>
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
-#import <FBControlCore/FBProcessOutput.h>
+#import <FBControlCore/FBProcessStream.h>
 #import <FBControlCore/FBProcessOutputConfiguration.h>
 #import <FBControlCore/FBProcessTerminationStrategy.h>
 #import <FBControlCore/FBReportingiOSActionReaderDelegate.h>

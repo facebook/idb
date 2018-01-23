@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBProcessOutput.h"
+#import "FBProcessStream.h"
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_output";
 
@@ -59,7 +59,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 @end
 
-@interface FBProcessOutput_Input : FBProcessOutput <FBFileConsumer>
+@interface FBProcessInput () <FBFileConsumer>
 
 @property (nonatomic, strong, nullable, readonly) NSPipe *pipe;
 @property (nonatomic, strong, nullable, readonly) id<FBFileConsumer> writer;
@@ -95,11 +95,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return [[FBProcessOutput_Consumer alloc] initWithConsumer:fileConsumer];
 }
 
-+ (FBProcessOutput<id<FBFileConsumer>> *)inputProducingConsumer
-{
-  return [[FBProcessOutput_Input alloc] init];
-}
-
 + (FBProcessOutput<id<FBControlCoreLogger>> *)outputForLogger:(id<FBControlCoreLogger>)logger
 {
   return [[FBProcessOutput_Logger alloc] initWithLogger:logger];
@@ -115,7 +110,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return [[FBProcessOutput_String alloc] initWithMutableData:data];
 }
 
-#pragma mark Public
+#pragma mark FBStandardStream
 
 - (FBFuture<NSFileHandle *> *)attachToFileHandle
 {
@@ -172,7 +167,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return self;
 }
 
-#pragma mark Public
+#pragma mark FBStandardStream
 
 - (FBFuture<NSFileHandle *> *)attachToFileHandle
 {
@@ -232,7 +227,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return self;
 }
 
-#pragma mark Public
+#pragma mark FBStandardStream
 
 - (FBFuture<NSFileHandle *> *)attachToFileHandle
 {
@@ -318,7 +313,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return self;
 }
 
-#pragma mark Public
+#pragma mark FBStandardStream
 
 - (FBFuture<NSFileHandle *> *)attachToFileHandle
 {
@@ -408,9 +403,16 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 @end
 
-@implementation FBProcessOutput_Input
+@implementation FBProcessInput
 
-#pragma mark Public
+#pragma mark Initializers
+
++ (FBProcessInput<id<FBFileConsumer>> *)inputProducingConsumer
+{
+  return [[FBProcessInput alloc] init];
+}
+
+#pragma mark FBStandardStream
 
 - (FBFuture<NSFileHandle *> *)attachToFileHandle
 {
@@ -463,7 +465,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return self;
 }
 
-#pragma mark FBFileConsumer Implementation
+#pragma mark FBStandardStream
 
 - (void)consumeData:(NSData *)data
 {

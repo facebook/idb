@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBProcessOutput.h>
+#import <FBControlCore/FBProcessStream.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a Task Configuration with the provided parameters.
  */
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr stdIn:(nullable FBProcessOutput<id<FBFileConsumer>> *)stdIn;
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr stdIn:(nullable FBProcessInput *)stdIn;
 
 /**
  The Launch Path of the Process to launch.
@@ -54,9 +54,9 @@ The FBProcessOutput for stdout.
 @property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdErr;
 
 /**
- The FBProcessOutput for stdin.
+ The FBProcessInput for stdin.
  */
-@property (nonatomic, strong, nullable, readonly) FBProcessOutput<id<FBFileConsumer>> *stdIn;
+@property (nonatomic, strong, nullable, readonly) FBProcessInput *stdIn;
 
 @end
 

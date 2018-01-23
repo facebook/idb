@@ -14,7 +14,7 @@
 #import "FBFileConsumer.h"
 #import "FBFileWriter.h"
 #import "FBLaunchedProcess.h"
-#import "FBProcessOutput.h"
+#import "FBProcessStream.h"
 #import "FBTaskConfiguration.h"
 #import "NSRunLoop+FBControlCore.h"
 
@@ -118,7 +118,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 @property (nonatomic, strong, nullable, readwrite) id<FBTaskProcess> process;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdOutSlot;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdErrSlot;
-@property (nonatomic, strong, nullable, readwrite) FBProcessOutput<id<FBFileConsumer>> *stdInSlot;
+@property (nonatomic, strong, nullable, readwrite) FBProcessInput *stdInSlot;
 @property (nonatomic, strong, nullable, readwrite) FBLaunchedProcess *launchedProcess;
 
 @property (nonatomic, copy, readwrite) NSString *configurationDescription;
@@ -141,7 +141,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   return [task launchTask];
 }
 
-- (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(FBProcessOutput *)stdOut stdErr:(FBProcessOutput *)stdErr stdIn:(FBProcessOutput<id<FBFileConsumer>> *)stdIn queue:(dispatch_queue_t)queue acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
+- (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(FBProcessOutput *)stdOut stdErr:(FBProcessOutput *)stdErr stdIn:(FBProcessInput *)stdIn queue:(dispatch_queue_t)queue acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
 {
   self = [super init];
   if (!self) {

@@ -14,7 +14,7 @@
 #import "FBFileConsumer.h"
 #import "FBTask.h"
 #import "FBTaskConfiguration.h"
-#import "FBProcessOutput.h"
+#import "FBProcessStream.h"
 
 @interface FBTaskBuilder ()
 
@@ -24,7 +24,7 @@
 @property (nonatomic, copy, readwrite) NSSet<NSNumber *> *acceptableStatusCodes;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdOut;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdErr;
-@property (nonatomic, strong, nullable, readwrite) FBProcessOutput<id<FBFileConsumer>> *stdIn;
+@property (nonatomic, strong, nullable, readwrite) FBProcessInput *stdIn;
 
 @end
 
@@ -178,7 +178,7 @@
 
 - (instancetype)withStdInConnected
 {
-  self.stdIn = [FBProcessOutput inputProducingConsumer];
+  self.stdIn = [FBProcessInput inputProducingConsumer];
   return self;
 }
 
