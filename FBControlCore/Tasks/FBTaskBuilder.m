@@ -11,9 +11,10 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBFileConsumer.h"
 #import "FBTask.h"
-#import "NSRunLoop+FBControlCore.h"
 #import "FBTaskConfiguration.h"
+#import "FBProcessOutput.h"
 
 @interface FBTaskBuilder ()
 
@@ -21,9 +22,9 @@
 @property (nonatomic, copy, readwrite) NSArray<NSString *> *arguments;
 @property (nonatomic, copy, readwrite) NSDictionary<NSString *, NSString *> *environment;
 @property (nonatomic, copy, readwrite) NSSet<NSNumber *> *acceptableStatusCodes;
-@property (nonatomic, strong, nullable, readwrite) id stdOut;
-@property (nonatomic, strong, nullable, readwrite) id stdErr;
-@property (nonatomic, assign, readwrite) BOOL connectStdIn;
+@property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdOut;
+@property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdErr;
+@property (nonatomic, strong, nullable, readwrite) FBProcessOutput<id<FBFileConsumer>> *stdIn;
 
 @end
 
@@ -40,9 +41,9 @@
   _arguments = @[];
   _environment = FBTaskBuilder.defaultEnvironmentForSubprocess;
   _acceptableStatusCodes = [NSSet setWithObject:@0];
-  _stdOut = [NSString string];
-  _stdErr = [NSString string];
-  _connectStdIn = NO;
+  _stdOut = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
+  _stdErr = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
+  _stdIn = nil;
 
   return self;
 }
@@ -93,39 +94,39 @@
 
 - (instancetype)withStdOutInMemoryAsData
 {
-  self.stdOut = [NSData data];
+  self.stdOut = [FBProcessOutput outputToMutableData:NSMutableData.data];
   return self;
 }
 
 - (instancetype)withStdErrInMemoryAsData
 {
-  self.stdErr = [NSData data];
+  self.stdErr = [FBProcessOutput outputToMutableData:NSMutableData.data];
   return self;
 }
 
 - (instancetype)withStdOutInMemoryAsString
 {
-  self.stdOut = [NSString string];
+  self.stdOut = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   return self;
 }
 
 - (instancetype)withStdErrInMemoryAsString
 {
-  self.stdErr = [NSString string];
+  self.stdErr = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   return self;
 }
 
 - (instancetype)withStdOutPath:(NSString *)stdOutPath
 {
   NSParameterAssert(stdOutPath);
-  self.stdOut = [NSURL fileURLWithPath:stdOutPath];
+  self.stdOut = [FBProcessOutput outputForFilePath:stdOutPath];
   return self;
 }
 
 - (instancetype)withStdErrPath:(NSString *)stdErrPath
 {
   NSParameterAssert(stdErrPath);
-  self.stdErr = [NSURL fileURLWithPath:stdErrPath];
+  self.stdErr = [FBProcessOutput outputForFilePath:stdErrPath];
   return self;
 }
 
@@ -143,13 +144,13 @@
 
 - (instancetype)withStdOutConsumer:(id<FBFileConsumer>)consumer
 {
-  self.stdOut = consumer;
+  self.stdOut = [FBProcessOutput outputForFileConsumer:consumer];
   return self;
 }
 
 - (instancetype)withStdErrConsumer:(id<FBFileConsumer>)consumer
 {
-  self.stdErr = consumer;
+  self.stdErr = [FBProcessOutput outputForFileConsumer:consumer];
   return self;
 }
 
@@ -165,19 +166,19 @@
 
 - (instancetype)withStdOutToLogger:(id<FBControlCoreLogger>)logger
 {
-  self.stdOut = logger;
+  self.stdOut = [FBProcessOutput outputForLogger:logger];
   return self;
 }
 
 - (instancetype)withStdErrToLogger:(id<FBControlCoreLogger>)logger
 {
-  self.stdErr = logger;
+  self.stdErr = [FBProcessOutput outputForLogger:logger];
   return self;
 }
 
 - (instancetype)withStdInConnected
 {
-  self.connectStdIn = YES;
+  self.stdIn = [FBProcessOutput inputProducingConsumer];
   return self;
 }
 
@@ -213,7 +214,7 @@
     acceptableStatusCodes:self.acceptableStatusCodes
     stdOut:self.stdOut
     stdErr:self.stdErr
-    connectStdIn:self.connectStdIn];
+    stdIn:self.stdIn];
 }
 
 + (NSDictionary<NSString *, NSString *> *)defaultEnvironmentForSubprocess

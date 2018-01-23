@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBProcessOutput.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -19,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a Task Configuration with the provided parameters.
  */
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes stdOut:(nullable id)stdOut stdErr:(nullable id)stdErr connectStdIn:(BOOL)connectStdIn;
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr stdIn:(nullable FBProcessOutput<id<FBFileConsumer>> *)stdIn;
 
 /**
  The Launch Path of the Process to launch.
@@ -42,30 +44,19 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSSet<NSNumber *> *acceptableStatusCodes;
 
 /**
- Where to write stdout to:
- - If nil, then stdout will be written to /dev/null
- - If is a NSData, stdout will be written to an immutable thread-safe NSData.
- - If is a NSString, stdout will be written to an immutable thread-safe NSString.
- - If is a NSURL representing a file path, then stdout will be written to the file path.
- - If is a FBFileConsumer then stdout data will be forwarded to it.
+The FBProcessOutput for stdout.
  */
-@property (nonatomic, strong, nullable, readonly) id stdOut;
+@property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdOut;
 
 /**
- Where to write stderr to:
- - If nil, then stderr will be written to /dev/null
- - If is a NSData, stderr will be written to an immutable thread-safe NSData.
- - If is a NSString, stderr will be written to an immutable thread-safe NSString.
- - If is a NSURL representing a file path, then stderr will be written to the file path.
- - If is a FBFileConsumer then stderr data will be forwarded to it.
+ The FBProcessOutput for stderr.
  */
-@property (nonatomic, strong, nullable, readonly) id stdErr;
+@property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdErr;
 
 /**
- Where to get stdin from:
- - If is a FBFileConsumer then input data will be forwarded.
+ The FBProcessOutput for stdin.
  */
-@property (nonatomic, assign, readonly) BOOL connectStdIn;
+@property (nonatomic, strong, nullable, readonly) FBProcessOutput<id<FBFileConsumer>> *stdIn;
 
 @end
 

@@ -13,7 +13,7 @@
 
 @implementation FBTaskConfiguration
 
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes stdOut:(nullable id)stdOut stdErr:(nullable id)stdErr connectStdIn:(BOOL)connectStdIn
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes stdOut:(FBProcessOutput *)stdOut stdErr:(FBProcessOutput *)stdErr stdIn:(FBProcessOutput<id<FBFileConsumer>> *)stdIn
 {
   self = [super init];
   if (!self) {
@@ -26,7 +26,7 @@
   _acceptableStatusCodes = acceptableStatusCodes;
   _stdOut = stdOut;
   _stdErr = stdErr;
-  _connectStdIn = connectStdIn;
+  _stdIn = stdIn;
 
   return self;
 }

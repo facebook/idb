@@ -133,46 +133,11 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 #pragma mark Initializers
 
-+ (FBProcessOutput *)createTaskOutput:(id)output
-{
-  if (!output) {
-    return nil;
-  }
-  if ([output isKindOfClass:NSURL.class]) {
-    return [FBProcessOutput outputForFilePath:[output path]];
-  }
-  if ([output conformsToProtocol:@protocol(FBFileConsumer)]) {
-    return [FBProcessOutput outputForFileConsumer:output];
-  }
-  if ([output conformsToProtocol:@protocol(FBControlCoreLogger)]) {
-    return [FBProcessOutput outputForLogger:output];
-  }
-  if ([output isKindOfClass:NSData.class]) {
-    return [FBProcessOutput outputToMutableData:NSMutableData.data];
-  }
-  if ([output isKindOfClass:NSString.class]) {
-    return [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
-  }
-  NSAssert(NO, @"Unexpected output type %@", output);
-  return nil;
-}
-
-+ (FBProcessOutput<id<FBFileConsumer>> *)createTaskInput:(BOOL)connectStdIn
-{
-  if (!connectStdIn) {
-    return nil;
-  }
-  return FBProcessOutput.inputProducingConsumer;
-}
-
 + (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBTaskConfiguration *)configuration
 {
   id<FBTaskProcess> process = [FBTaskProcess_NSTask fromConfiguration:configuration];
-  FBProcessOutput *stdOut = [self createTaskOutput:configuration.stdOut];
-  FBProcessOutput *stdErr = [self createTaskOutput:configuration.stdErr];
-  FBProcessOutput<id<FBFileConsumer>> *stdIn = [self createTaskInput:configuration.connectStdIn];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
-  FBTask *task = [[self alloc] initWithProcess:process stdOut:stdOut stdErr:stdErr stdIn:stdIn queue:queue acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
+  FBTask *task = [[self alloc] initWithProcess:process stdOut:configuration.stdOut stdErr:configuration.stdErr stdIn:configuration.stdIn queue:queue acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
   return [task launchTask];
 }
 
