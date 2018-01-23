@@ -241,11 +241,6 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
   return nil;
 }
 
-- (NSString *)consoleString
-{
-  return [self.dvtDevice.token.deviceConsoleController consoleString];
-}
-
 - (FBFuture<id> *)observeProcessWithID:(pid_t)processID
 {
   return [self

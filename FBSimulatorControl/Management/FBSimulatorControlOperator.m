@@ -236,12 +236,4 @@
   return [[self.simulator.simulatorDiagnostics subprocessCrashesAfterDate:date processsIdentifier:pid processType:FBCrashLogInfoProcessTypeApplication] firstObject];
 }
 
-#pragma mark - Unsupported FBDeviceOperator protocol method
-
-- (NSString *)consoleString
-{
-  NSAssert(nil, @"consoleString is not yet supported");
-  return nil;
-}
-
 @end

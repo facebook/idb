@@ -79,11 +79,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID sinceDate:(NSDate *)date;
 
-/**
- @return Console entries on device
- */
-- (NSString *)consoleString;
-
 @end
 
 NS_ASSUME_NONNULL_END
