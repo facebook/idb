@@ -277,16 +277,15 @@
   }
 
   // Create the HID Port
-  FBSimulatorHID *hid = [FBSimulatorHID hidPortForSimulator:self.simulator error:&error];
-  if (!hid) {
-    return [FBSimulatorError failFutureWithError:error];
-  }
-
-  // Booting is simpler than the Simulator.app launch process since the caller calls CoreSimulator Framework directly.
-  // Just pass in the options to ensure that the framebuffer service is registered when the Simulator is booted.
-  return [[self
-    bootSimulatorWithOptions:[self.options bootOptions:self.configuration]]
-    onQueue:self.simulator.workQueue map:^(id _) {
+  return [[[FBSimulatorHID
+    hidForSimulator:self.simulator]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorHID *hid) {
+      // Booting is simpler than the Simulator.app launch process since the caller calls CoreSimulator Framework directly.
+      // Just pass in the options to ensure that the framebuffer service is registered when the Simulator is booted.
+      return [[self bootSimulatorWithOptions:[self.options bootOptions:self.configuration]] mapReplace:hid];
+    }]
+    onQueue:self.simulator.workQueue map:^(FBSimulatorHID *hid) {
+      // Combine everything into the connection.
       return [[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:framebuffer hid:hid];
     }];
 }

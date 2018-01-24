@@ -25,7 +25,7 @@
 }
 
 - (id)init;
-- (void)sendWithMessage:(IndigoMessage *)arg1 freeWhenDone:(BOOL)arg2 completionQueue:(id)arg3 completion:(id)arg4;
+- (void)sendWithMessage:(IndigoMessage *)arg1 freeWhenDone:(BOOL)arg2 completionQueue:(dispatch_queue_t)arg3 completion:(void (^)(NSError *))arg4;
 - (void)sendWithMessage:(IndigoMessage *)arg1;
 - (void)resetHIDSession;
 - (void)dealloc;

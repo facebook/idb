@@ -111,15 +111,17 @@
   return self.framebuffer;
 }
 
-- (nullable FBSimulatorHID *)connectToHID:(NSError **)error
+- (FBFuture<FBSimulatorHID *> *)connectToHID
 {
-  if (!self.hid) {
-    self.hid = [FBSimulatorHID hidPortForSimulator:self.simulator error:error];
-    if (!self.hid) {
-      return nil;
-    }
+  if (self.hid) {
+    return [FBFuture futureWithResult:self.hid];
   }
-  return [self.hid connect:error] ? self.hid : nil;
+  return [[FBSimulatorHID
+    hidForSimulator:self.simulator]
+    onQueue:self.simulator.workQueue map:^(FBSimulatorHID *hid) {
+      self.hid = hid;
+      return hid;
+    }];
 }
 
 - (BOOL)terminateWithTimeout:(NSTimeInterval)timeout

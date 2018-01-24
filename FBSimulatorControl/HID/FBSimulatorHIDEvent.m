@@ -110,14 +110,23 @@ static NSString *const KeyEvents = @"events";
   return [eventsJSON copy];
 }
 
-- (BOOL)performOnHID:(FBSimulatorHID *)hid error:(NSError **)error
+- (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
 {
-  for (FBSimulatorHIDEvent *event in self.events) {
-    if (![event performOnHID:hid error:error]) {
-      return NO;
-    }
+  return [self performEvents:self.events onHid:hid];
+}
+
+- (FBFuture<NSNull *> *)performEvents:(NSArray<FBSimulatorHIDEvent *> *)events onHid:(FBSimulatorHID *)hid
+{
+  if (events.count == 0) {
+    return [FBFuture futureWithResult:NSNull.null];
   }
-  return YES;
+  FBSimulatorHIDEvent *event = events.firstObject;
+  NSArray<FBSimulatorHIDEvent *> *next = events.count == 1 ? @[] : [events subarrayWithRange:NSMakeRange(1, events.count - 1)];
+  return [[event
+    performOnHID:hid]
+    onQueue:dispatch_get_main_queue() fmap:^(id _){
+      return [self performEvents:next onHid:hid];
+    }];
 }
 
 - (NSString *)description
@@ -215,9 +224,9 @@ static NSString *const KeyY = @"y";
   };
 }
 
-- (BOOL)performOnHID:(FBSimulatorHID *)hid error:(NSError **)error
+- (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
 {
-  return [hid sendTouchWithType:self.direction x:self.x y:self.y error:error];
+  return [hid sendTouchWithType:self.direction x:self.x y:self.y];
 }
 
 - (NSString *)description
@@ -321,9 +330,9 @@ static NSString *const ButtonSiri = @"siri";
     KeyEventClass: EventClassStringButton,
   };
 }
-- (BOOL)performOnHID:(FBSimulatorHID *)hid error:(NSError **)error
+- (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
 {
-  return [hid sendButtonEventWithDirection:self.type button:self.button error:error];
+  return [hid sendButtonEventWithDirection:self.type button:self.button];
 }
 
 - (NSString *)description
@@ -453,9 +462,10 @@ static NSString *const KeyKeycode = @"keycode";
     KeyEventClass: EventClassStringKeyboard,
   };
 }
-- (BOOL)performOnHID:(FBSimulatorHID *)hid error:(NSError **)error
+
+- (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
 {
-  return [hid sendKeyboardEventWithDirection:self.direction keyCode:self.keyCode error:error];
+  return [hid sendKeyboardEventWithDirection:self.direction keyCode:self.keyCode];
 }
 
 - (NSString *)description
@@ -483,6 +493,8 @@ static NSString *const KeyKeycode = @"keycode";
 @end
 
 @implementation FBSimulatorHIDEvent
+
+#pragma mark Initializers
 
 + (instancetype)eventWithEvents:(NSArray<FBSimulatorHIDEvent *> *)events
 {
@@ -543,6 +555,8 @@ static NSString *const KeyKeycode = @"keycode";
   ]];
 }
 
+#pragma mark JSON
+
 + (instancetype)inflateFromJSON:(id)json error:(NSError **)error
 {
   if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
@@ -579,17 +593,23 @@ static NSString *const KeyKeycode = @"keycode";
   return nil;
 }
 
-- (BOOL)performOnHID:(FBSimulatorHID *)hid error:(NSError **)error
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return NO;
-}
+#pragma mark NSCopying
 
 - (id)copyWithZone:(NSZone *)zone
 {
   // All values are immutable.
   return self;
 }
+
+#pragma mark Public Methods
+
+- (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+#pragma mark Private Methods
 
 static NSString *const DirectionDown = @"down";
 static NSString *const DirectionUp = @"up";
@@ -632,16 +652,17 @@ static NSString *const DirectionUp = @"up";
       failFuture];
   }
   FBSimulator *simulator = (FBSimulator *) target;
-  return [FBFuture onQueue:target.workQueue resolveValue:^ id<FBiOSTargetContinuation> (NSError **error) {
-    FBSimulatorHID *hid = [[simulator connectWithError:error] connectToHID:error];
-    if (!hid) {
-      return nil;
-    }
-    if (![self performOnHID:hid error:error]) {
-      return nil;
-    }
-    return FBiOSTargetContinuationDone(self.class.futureType);
-  }];
+  return [[[[FBFuture
+    onQueue:target.workQueue resolveValue:^ FBSimulatorConnection * (NSError **error) {
+      return [simulator connectWithError:error];
+    }]
+    onQueue:target.workQueue fmap:^(FBSimulatorConnection *connection) {
+      return [connection connectToHID];
+    }]
+    onQueue:target.workQueue fmap:^(FBSimulatorHID *hid) {
+      return [self performOnHID:hid];
+    }]
+    mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
 }
 
 @end

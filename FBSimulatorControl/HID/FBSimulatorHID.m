@@ -61,16 +61,16 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   return dispatch_queue_create("com.facebook.fbsimulatorcontrol.hid", DISPATCH_QUEUE_SERIAL);
 }
 
-+ (instancetype)hidPortForSimulator:(FBSimulator *)simulator error:(NSError **)error
++ (FBFuture<FBSimulatorHID *> *)hidForSimulator:(FBSimulator *)simulator
 {
   Class clientClass = objc_lookUpClass(SimulatorHIDClientClassName);
   if (clientClass) {
-    return [self simulatorKitHidPortForSimulator:simulator clientClass:clientClass error:error];
+    return [self simulatorKitHidPortForSimulator:simulator clientClass:clientClass];
   }
-  return [self reimplementedHidPortForSimulator:simulator error:error];
+  return [self reimplementedHidPortForSimulator:simulator];
 }
 
-+ (instancetype)simulatorKitHidPortForSimulator:(FBSimulator *)simulator clientClass:(Class)clientClass error:(NSError **)error
++ (FBFuture<FBSimulatorHID *> *)simulatorKitHidPortForSimulator:(FBSimulator *)simulator clientClass:(Class)clientClass
 {
   NSError *innerError = nil;
   SimDeviceLegacyClient *client = [[clientClass alloc] initWithDevice:simulator.device error:&innerError];
@@ -78,53 +78,67 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
     return [[[FBSimulatorError
       describeFormat:@"Could not create instance of %@", NSStringFromClass(clientClass)]
       causedBy:innerError]
-      fail:error];
+      failFuture];
   }
   CGSize mainScreenSize = simulator.device.deviceType.mainScreenSize;
-  return [[FBSimulatorHID_SimulatorKit alloc] initWithIndigo:FBSimulatorIndigoHID.defaultHID mainScreenSize:mainScreenSize queue:self.workQueue client:client];
+  FBSimulatorHID *hid = [[FBSimulatorHID_SimulatorKit alloc] initWithIndigo:FBSimulatorIndigoHID.defaultHID mainScreenSize:mainScreenSize queue:self.workQueue client:client];
+  return [FBFuture futureWithResult:hid];
 }
 
-+ (instancetype)reimplementedHidPortForSimulator:(FBSimulator *)simulator error:(NSError **)error
++ (FBFuture<FBSimulatorHID *> *)reimplementedHidPortForSimulator:(FBSimulator *)simulator
 {
   // We have to create this before boot, return early if this isn't true.
   if (simulator.state != FBSimulatorStateShutdown) {
     return [[FBSimulatorError
      describeFormat:@"Simulator must be shut down to create a HID port is %@", simulator.stateString]
-     fail:error];
-  }
-
-  // As with the 'PurpleFBServer', a 'IndigoHIDRegistrationPort' is needed in order for the synthesis of touch events to work appropriately.
-  // If this is not set you will see the following logger message in the System log upon booting the simulator
-  // 'backboardd[10667]: BKHID: Unable to open Indigo HID system'
-  // The dissasembly for backboardd shows that this will happen when the call to 'IndigoHIDSystemSpawnLoopback' fails.
-  // Simulator.app creates a Mach Port for the 'IndigoHIDRegistrationPort' and therefore succeeds in the above call.
-  // As with 'PurpleFBServer' this can be registered with 'register-head-services'
-  // The first step is to create the mach port
-  NSError *innerError = nil;
-  mach_port_t registrationPort = 0;
-  mach_port_t machTask = mach_task_self();
-  kern_return_t result = mach_port_allocate(machTask, MACH_PORT_RIGHT_RECEIVE, &registrationPort);
-  if (result != KERN_SUCCESS) {
-    return [[FBSimulatorError
-      describeFormat:@"Failed to create a Mach Port for IndigoHIDRegistrationPort with code %d", result]
-      fail:error];
-  }
-  result = mach_port_insert_right(machTask, registrationPort, registrationPort, MACH_MSG_TYPE_MAKE_SEND);
-  if (result != KERN_SUCCESS) {
-    return [[FBSimulatorError
-      describeFormat:@"Failed to 'insert_right' the mach port with code %d", result]
-      fail:error];
-  }
-  // Then register it as the 'IndigoHIDRegistrationPort'
-  if (![simulator.device registerPort:registrationPort service:@"IndigoHIDRegistrationPort" error:&innerError]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to register %d as the IndigoHIDRegistrationPort", registrationPort]
-      causedBy:innerError]
-      fail:error];
+     failFuture];
   }
 
   CGSize mainScreenSize = simulator.device.deviceType.mainScreenSize;
-  return [[FBSimulatorHID_Reimplemented alloc] initWithIndigo:FBSimulatorIndigoHID.reimplemented mainScreenSize:mainScreenSize queue:self.workQueue registrationPort:registrationPort];
+  dispatch_queue_t queue = self.workQueue;
+
+  return [[self
+    onQueue:queue registrationPortForSimulator:simulator]
+    onQueue:queue map:^(NSNumber *registrationPortNumber) {
+      mach_port_t registrationPort = registrationPortNumber.unsignedIntValue;
+      return [[FBSimulatorHID_Reimplemented alloc] initWithIndigo:FBSimulatorIndigoHID.reimplemented mainScreenSize:mainScreenSize queue:queue registrationPort:registrationPort];
+    }];
+}
+
++ (FBFuture<NSNumber *> *)onQueue:(dispatch_queue_t)queue registrationPortForSimulator:(FBSimulator *)simulator
+{
+  return [FBFuture onQueue:queue resolve:^{
+    // As with the 'PurpleFBServer', a 'IndigoHIDRegistrationPort' is needed in order for the synthesis of touch events to work appropriately.
+    // If this is not set you will see the following logger message in the System log upon booting the simulator
+    // 'backboardd[10667]: BKHID: Unable to open Indigo HID system'
+    // The dissasembly for backboardd shows that this will happen when the call to 'IndigoHIDSystemSpawnLoopback' fails.
+    // Simulator.app creates a Mach Port for the 'IndigoHIDRegistrationPort' and therefore succeeds in the above call.
+    // As with 'PurpleFBServer' this can be registered with 'register-head-services'
+    // The first step is to create the mach port
+    NSError *innerError = nil;
+    mach_port_t registrationPort = 0;
+    mach_port_t machTask = mach_task_self();
+    kern_return_t result = mach_port_allocate(machTask, MACH_PORT_RIGHT_RECEIVE, &registrationPort);
+    if (result != KERN_SUCCESS) {
+      return [[FBSimulatorError
+        describeFormat:@"Failed to create a Mach Port for IndigoHIDRegistrationPort with code %d", result]
+        failFuture];
+    }
+    result = mach_port_insert_right(machTask, registrationPort, registrationPort, MACH_MSG_TYPE_MAKE_SEND);
+    if (result != KERN_SUCCESS) {
+      return [[FBSimulatorError
+        describeFormat:@"Failed to 'insert_right' the mach port with code %d", result]
+        failFuture];
+    }
+    // Then register it as the 'IndigoHIDRegistrationPort'
+    if (![simulator.device registerPort:registrationPort service:@"IndigoHIDRegistrationPort" error:&innerError]) {
+      return [[[FBSimulatorError
+        describeFormat:@"Failed to register %d as the IndigoHIDRegistrationPort", registrationPort]
+        causedBy:innerError]
+        failFuture];
+    }
+    return [FBFuture futureWithResult:@(result)];
+  }];
 }
 
 - (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize queue:(dispatch_queue_t)queue
@@ -143,10 +157,10 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 #pragma mark Lifecycle
 
-- (BOOL)connect:(NSError **)error
+- (FBFuture<NSNull *> *)connect
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return NO;
+  return nil;
 }
 
 - (void)disconnect
@@ -177,27 +191,34 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 #pragma mark HID Manipulation
 
-- (BOOL)sendKeyboardEventWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode error:(NSError **)error
+- (FBFuture<NSNull *> *)sendKeyboardEventWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode
 {
-  return [self sendIndigoMessageData:[self.indigo keyboardWithDirection:direction keyCode:keycode] error:error];
+  return [self sendIndigoMessageDataOnWorkQueue:[self.indigo keyboardWithDirection:direction keyCode:keycode]];
 }
 
-- (BOOL)sendButtonEventWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button error:(NSError **)error
+- (FBFuture<NSNull *> *)sendButtonEventWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button
 {
-  return [self sendIndigoMessageData:[self.indigo buttonWithDirection:direction button:button] error:error];
+  return [self sendIndigoMessageDataOnWorkQueue:[self.indigo buttonWithDirection:direction button:button]];
 }
 
-- (BOOL)sendTouchWithType:(FBSimulatorHIDDirection)type x:(double)x y:(double)y error:(NSError **)error
+- (FBFuture<NSNull *> *)sendTouchWithType:(FBSimulatorHIDDirection)type x:(double)x y:(double)y
 {
-  return [self sendIndigoMessageData:[self.indigo touchScreenSize:self.mainScreenSize direction:type x:x y:y] error:error];
+  return [self sendIndigoMessageDataOnWorkQueue:[self.indigo touchScreenSize:self.mainScreenSize direction:type x:x y:y]];
 }
 
 #pragma mark Private
 
-- (BOOL)sendIndigoMessageData:(NSData *)data error:(NSError **)error
+- (FBFuture<NSNull *> *)sendIndigoMessageDataOnWorkQueue:(NSData *)data
+{
+  return [FBFuture onQueue:self.queue resolve:^{
+    return [self sendIndigoMessageData:data];
+  }];
+}
+
+- (FBFuture<NSNull *> *)sendIndigoMessageData:(NSData *)data
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return NO;
+  return nil;
 }
 
 @end
@@ -244,37 +265,39 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 #pragma mark Lifecycle
 
-- (BOOL)connect:(NSError **)error
+- (FBFuture<NSNull *> *)connect
 {
   if (self.registrationPort == 0) {
     return [[FBSimulatorError
       describe:@"Cannot connect when there is no registration port"]
-      failBool:error];
+      failFuture];
   }
   if (self.replyPort != 0) {
-    return YES;
+    return [FBFuture futureWithResult:NSNull.null];
   }
 
-  // Attempt to perform the handshake.
-  mach_msg_size_t size = 0x400;
-  mach_msg_timeout_t timeout = ((unsigned int) FBControlCoreGlobalConfiguration.regularTimeout) * 1000;
-  mach_msg_header_t *handshakeHeader = calloc(1, sizeof(mach_msg_header_t));
-  handshakeHeader->msgh_bits = 0;
-  handshakeHeader->msgh_size = size;
-  handshakeHeader->msgh_remote_port = 0;
-  handshakeHeader->msgh_local_port = self.registrationPort;
+  return [FBFuture onQueue:self.queue resolve:^{
+    // Attempt to perform the handshake.
+    mach_msg_size_t size = 0x400;
+    mach_msg_timeout_t timeout = ((unsigned int) FBControlCoreGlobalConfiguration.regularTimeout) * 1000;
+    mach_msg_header_t *handshakeHeader = calloc(1, sizeof(mach_msg_header_t));
+    handshakeHeader->msgh_bits = 0;
+    handshakeHeader->msgh_size = size;
+    handshakeHeader->msgh_remote_port = 0;
+    handshakeHeader->msgh_local_port = self.registrationPort;
 
-  kern_return_t result = mach_msg(handshakeHeader, MACH_RCV_LARGE | MACH_RCV_MSG, 0x0, size, self.registrationPort, timeout, 0x0);
-  if (result != KERN_SUCCESS) {
+    kern_return_t result = mach_msg(handshakeHeader, MACH_RCV_LARGE | MACH_RCV_MSG, 0x0, size, self.registrationPort, timeout, 0x0);
+    if (result != KERN_SUCCESS) {
+      free(handshakeHeader);
+      return [[FBSimulatorError
+        describeFormat:@"Failed to get the Indigo Reply Port %d", result]
+        failFuture];
+    }
+    // We have the registration port, so we can now set it.
+    self.replyPort = handshakeHeader->msgh_remote_port;
     free(handshakeHeader);
-    return [[FBSimulatorError
-      describeFormat:@"Failed to get the Indigo Reply Port %d", result]
-      failBool:error];
-  }
-  // We have the registration port, so we can now set it.
-  self.replyPort = handshakeHeader->msgh_remote_port;
-  free(handshakeHeader);
-  return YES;
+    return [FBFuture futureWithResult:NSNull.null];
+  }];
 }
 
 - (void)disconnect
@@ -294,12 +317,12 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 #pragma mark Private
 
-- (BOOL)sendIndigoMessageData:(NSData *)data error:(NSError **)error
+- (FBFuture<NSNull *> *)sendIndigoMessageData:(NSData *)data
 {
   if (self.replyPort == 0) {
     return [[FBSimulatorError
       describe:@"The Reply Port has not been obtained yet. Call -connect: first"]
-      failBool:error];
+      failFuture];
   }
 
   // Extract the message
@@ -318,9 +341,9 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   if (result != ERR_SUCCESS) {
     return [[FBSimulatorError
       describeFormat:@"The mach_msg_send failed with error %d", result]
-      failBool:error];
+      failFuture];
   }
-  return YES;
+  return [FBFuture futureWithResult:NSNull.null];
 }
 
 @end
@@ -357,9 +380,14 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 #pragma mark Lifecycle
 
-- (BOOL)connect:(NSError **)error
+- (FBFuture<NSNull *> *)connect
 {
-  return YES;
+  if (!self.client) {
+    return [[FBSimulatorError
+      describe:@"Cannot Connect, HID client has already been disposed of"]
+      failFuture];
+  }
+  return [FBFuture futureWithResult:NSNull.null];
 }
 
 - (void)disconnect
@@ -369,16 +397,25 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 #pragma mark Private
 
-- (BOOL)sendIndigoMessageData:(NSData *)data error:(NSError **)error
+- (FBFuture<NSNull *> *)sendIndigoMessageData:(NSData *)data
 {
   // The event is delivered asynchronously.
   // Therefore copy the message and let the client manage the lifecycle of it.
+  // The free of the buffer is performed by the client and the NSData will free when it falls out of scope.
   size_t size = (mach_msg_size_t) data.length;
   IndigoMessage *message = malloc(size);
   memcpy(message, data.bytes, size);
 
-  [self.client sendWithMessage:message freeWhenDone:YES completionQueue:self.queue completion:^(id _){}];
-  return YES;
+  // Resolve the future when done and pass this back to the caller.
+  FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
+  [self.client sendWithMessage:message freeWhenDone:YES completionQueue:self.queue completion:^(NSError *error){
+    if (error) {
+      [future resolveWithError:error];
+    } else {
+      [future resolveWithResult:NSNull.null];
+    }
+  }];
+  return future;
 }
 
 @end

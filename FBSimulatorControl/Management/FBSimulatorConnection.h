@@ -68,10 +68,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Connects to the FBSimulatorHID.
 
- @param error an error out for any error that occurs.
  @return the HID instance if successful, nil otherwise.
  */
-- (nullable FBSimulatorHID *)connectToHID:(NSError **)error;
+- (FBFuture<FBSimulatorHID *> *)connectToHID;
 
 @end
 

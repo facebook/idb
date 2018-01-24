@@ -25,6 +25,8 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeHID;
  */
 @interface FBSimulatorHIDEvent : NSObject <NSCopying, FBiOSTargetFuture>
 
+#pragma mark Initializers
+
 /**
  A HID Event that is a touch-down followed by an immediate touch-up.
 
@@ -50,14 +52,15 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeHID;
  */
 + (instancetype)shortKeyPress:(unsigned int)keyCode;
 
+#pragma mark Public Methods
+
 /**
  Materializes the event, performing it on the hid object.
 
  @param hid the hid to perform on.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return A future that resolves when the event has been sent.
  */
-- (BOOL)performOnHID:(FBSimulatorHID *)hid error:(NSError **)error;
+- (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid;
 
 @end
 
