@@ -59,10 +59,22 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 @end
 
-@interface FBProcessInput () <FBFileConsumer>
+@interface FBProcessInput ()
 
 @property (nonatomic, strong, nullable, readonly) NSPipe *pipe;
 @property (nonatomic, strong, nullable, readonly) id<FBFileConsumer> writer;
+
+@end
+
+@interface FBProcessInput_Consumer : FBProcessInput <FBFileConsumer>
+
+@end
+
+@interface FBProcessInput_Data : FBProcessInput
+
+- (instancetype)initWithData:(NSData *)data;
+
+@property (nonatomic, strong, readonly) NSData *data;
 
 @end
 
@@ -409,7 +421,12 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 + (FBProcessInput<id<FBFileConsumer>> *)inputProducingConsumer
 {
-  return [[FBProcessInput alloc] init];
+  return [[FBProcessInput_Consumer alloc] init];
+}
+
++ (FBProcessInput<NSData *> *)inputFromData:(NSData *)data
+{
+  return [[FBProcessInput_Data alloc] initWithData:data];
 }
 
 #pragma mark FBStandardStream
@@ -462,8 +479,13 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (id<FBFileConsumer>)contents
 {
-  return self;
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
 }
+
+@end
+
+@implementation FBProcessInput_Consumer
 
 #pragma mark FBStandardStream
 
@@ -476,6 +498,45 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 {
   [self.writer consumeEndOfFile];
   [self detach];
+}
+
+- (id<FBFileConsumer>)contents
+{
+  return self;
+}
+
+@end
+
+@implementation FBProcessInput_Data
+
+- (instancetype)initWithData:(NSData *)data
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _data = data;
+
+  return self;
+}
+
+#pragma mark FBStandardStream
+
+- (FBFuture<NSPipe *> *)attachToPipeOrFileHandle
+{
+  return [[super
+    attachToPipeOrFileHandle]
+    onQueue:FBProcessOutput.workQueue map:^(NSPipe *pipe) {
+      [self.writer consumeData:self.data];
+      [self.writer consumeEndOfFile];
+      return pipe;
+    }];
+}
+
+- (NSData *)contents
+{
+  return self.data;
 }
 
 @end

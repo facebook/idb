@@ -135,6 +135,14 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
  */
 + (FBProcessInput<id<FBFileConsumer>> *)inputProducingConsumer;
 
+/**
+ An Input container that connects data to the iput.
+
+ @param data the data to send.
+ @return a Process Input instance.
+ */
++ (FBProcessInput<NSData *> *)inputFromData:(NSData *)data;
+
 #pragma mark Properties
 
 /**

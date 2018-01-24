@@ -212,4 +212,23 @@
   XCTAssertEqualObjects(expected, task.stdOut);
 }
 
+- (void)testInputFromData
+{
+  NSData *expected = [@"FOO BAR BAZ" dataUsingEncoding:NSUTF8StringEncoding];
+
+  FBTask *task = [[[[[FBTaskBuilder
+    withLaunchPath:@"/bin/cat" arguments:@[]]
+    withStdInFromData:expected]
+    withStdOutInMemoryAsData]
+    withStdErrToDevNull]
+    startSynchronously];
+
+  NSError *error = nil;
+  BOOL waitSuccess = [task.completed awaitWithTimeout:2 error:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(waitSuccess);
+
+  XCTAssertEqualObjects(expected, task.stdOut);
+}
+
 @end

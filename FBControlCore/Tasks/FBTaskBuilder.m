@@ -182,6 +182,12 @@
   return self;
 }
 
+- (instancetype)withStdInFromData:(NSData *)data
+{
+  self.stdIn = [FBProcessInput inputFromData:data];
+  return self;
+}
+
 - (instancetype)withAcceptableTerminationStatusCodes:(NSSet<NSNumber *> *)statusCodes
 {
   NSParameterAssert(statusCodes);

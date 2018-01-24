@@ -14,7 +14,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBFileConsumer;
 @class FBTaskConfiguration;
 
 /**
@@ -53,23 +52,23 @@ extern NSString *const FBTaskErrorDomain;
 /**
  Returns the stdout of the task.
  May be called from any thread.
- The types of these values are defined in FBTaskConfiguration.
+ The valid types for these values are the wrapped types in FBProcessOutput.
  */
 @property (nonatomic, strong, nullable, readonly) id stdOut;
 
 /**
- Returns the stdout of the process:
- The types of these values are defined in FBTaskConfiguration.
+ Returns the stdout of the task.
+ May be called from any thread.
+ The valid types for these values are the wrapped types in FBProcessOutput.
  */
 @property (nonatomic, strong, nullable, readonly) id stdErr;
 
 /**
- Returns a consumer for the stdin.
- This will only exist if:
- - The Task is Configured to do so.
- - The Task is running.
+ Returns the stdin of the task.
+ May be called from any thread.
+ The valid types for these values are the wrapped types in FBProcessInput.
  */
-@property (nonatomic, strong, nullable, readonly) id<FBFileConsumer> stdIn;
+@property (nonatomic, strong, nullable, readonly) id stdIn;
 
 /**
  Returns the Error associated with the task (if any). May be called from any thread.

@@ -186,6 +186,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)withStdInConnected;
 
 /**
+ Creates a File Consumer for stdin.
+
+ @param data the data to send.
+ @return the reciver, for chaining.
+ */
+- (instancetype)withStdInFromData:(NSData *)data;
+
+/**
  The Set of Return Codes that are considered non-erroneous.
 
  @param statusCodes the non-erroneous stats codes.
