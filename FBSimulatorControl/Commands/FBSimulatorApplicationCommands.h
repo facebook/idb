@@ -38,6 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
  Determines the location of the Data Container of an Application, it's chroot jail.
 
  @param bundleID the Bundle ID of the Application to search for,.
+ @note returns absolute path
  @return a Future with the home directory.
  */
 - (FBFuture<NSString *> *)dataContainerOfApplicationWithBundleID:(NSString *)bundleID;

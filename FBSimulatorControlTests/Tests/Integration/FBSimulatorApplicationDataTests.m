@@ -45,4 +45,13 @@
   XCTAssertTrue(success);
 }
 
+- (void)testDataContainerPath
+{
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  NSError *error;
+  BOOL success = [[simulator dataContainerOfApplicationWithBundleID:self.safariAppLaunch.bundleID] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+}
+
 @end
