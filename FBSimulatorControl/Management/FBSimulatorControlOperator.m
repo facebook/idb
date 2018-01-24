@@ -25,21 +25,28 @@
 #import "FBSimulatorError.h"
 
 @interface FBSimulatorControlOperator ()
-@property (nonatomic, strong) FBSimulator *simulator;
+
+@property (nonatomic, strong, readonly) FBSimulator *simulator;
+
 @end
 
 @implementation FBSimulatorControlOperator
 
 + (instancetype)operatorWithSimulator:(FBSimulator *)simulator
 {
-  FBSimulatorControlOperator *operator = [self.class new];
-  operator.simulator = simulator;
-  return operator;
+  return [[FBSimulatorControlOperator alloc] initWithSimulator:simulator];
 }
 
-- (NSString *)udid
+- (instancetype)initWithSimulator:(FBSimulator *)simulator
 {
-  return self.simulator.udid;
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _simulator = simulator;
+
+  return self;
 }
 
 #pragma mark - FBApplicationCommands

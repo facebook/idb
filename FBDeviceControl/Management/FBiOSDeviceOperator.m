@@ -57,10 +57,11 @@
 @implementation FBiOSDeviceOperator
 
 @synthesize dvtDevice = _dvtDevice;
+
 - (DVTiOSDevice *)dvtDevice
 {
   if (_dvtDevice == nil) {
-    _dvtDevice = [self dvtDeviceWithUDID:self.udid];
+    _dvtDevice = [self dvtDeviceWithUDID:self.device.udid];
   }
   return _dvtDevice;
 }
@@ -80,11 +81,6 @@
   _device = device;
 
   return self;
-}
-
-- (NSString *)udid
-{
-  return self.device.udid;
 }
 
 #pragma mark - Device specific operations

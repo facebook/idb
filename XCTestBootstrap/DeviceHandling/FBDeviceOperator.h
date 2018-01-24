@@ -29,11 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) BOOL requiresTestDaemonMediationForTestHostConnection;
 
 /**
- The Unique Device Identifier of the iOS Target.
- */
-@property (nonatomic, copy, readonly) NSString *udid;
-
-/**
  Starts test manager daemon and creates DTXTransport connection with it
 
  @param logger the Logger to Log to.
