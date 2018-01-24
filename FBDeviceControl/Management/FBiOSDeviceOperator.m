@@ -36,8 +36,6 @@
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
 
-#import "FBiOSDeviceReadynessStrategy.h"
-
 #import <FBControlCore/FBControlCore.h>
 
 @protocol DVTApplication <NSObject>
@@ -218,15 +216,6 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
 - (BOOL)requiresTestDaemonMediationForTestHostConnection
 {
   return self.dvtDevice.requiresTestDaemonMediationForTestHostConnection;
-}
-
-- (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError **)error
-{
-  FBiOSDeviceReadynessStrategy *strategy = [FBiOSDeviceReadynessStrategy strategyWithDVTDevice:self.dvtDevice workQueue:self.device.workQueue];
-  return [[[strategy
-    waitForDeviceReadyToDebug]
-    timeout:(4 * 60) waitingFor:@"Device %@ to be ready for debugging", self.device]
-    await:error] != nil;
 }
 
 - (FBFuture<id> *)processIDWithBundleID:(NSString *)bundleID

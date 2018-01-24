@@ -43,14 +43,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable DTXTransport *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
- Waits for device to become ready. (eg. unlocked, loaded, available console data)
-
- @param error If there is an error, upon return contains an NSError object that describes the problem.
- @return YES if the operation succeeds, otherwise NO.
- */
-- (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError **)error;
-
-/**
  Queries application with given bundleID
 
  @param bundleID bundle ID of queried application

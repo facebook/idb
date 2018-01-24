@@ -214,12 +214,6 @@
   return [FBFuture futureWithResult:@(self.bundleIDToRunningTask[bundleID].processIdentifier)];
 }
 
-- (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError *_Nullable __autoreleasing * _Nullable)error
-{
-  return YES;
-}
-
-
 #pragma mark Not supported
 
 - (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(nonnull NSString *)bundleID sinceDate:(nonnull NSDate *)date

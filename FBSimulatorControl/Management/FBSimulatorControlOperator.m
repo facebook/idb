@@ -171,11 +171,6 @@
   return YES;
 }
 
-- (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError **)error
-{
-  return YES;
-}
-
 - (FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   FBInstalledApplication *application = [[self.simulator installedApplicationWithBundleID:bundleID] await:error];
