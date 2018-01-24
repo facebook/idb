@@ -71,6 +71,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)movePath:(NSString *)originPath toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID;
 
+/**
+ Remove path within the container
+
+ @param path relative path to the container where data resides
+ @param bundleID the Bundle Identifier of the Container.
+ @return A future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)removePath:(NSString *)path inContainerOfApplication:(NSString *)bundleID;
+
 @end
 
 NS_ASSUME_NONNULL_END
