@@ -80,6 +80,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)removePath:(NSString *)path inContainerOfApplication:(NSString *)bundleID;
 
+/**
+ List directory within the container
+ @param path relative path to the container
+ @param bundleID the Bundle Identifier of the Container.
+ @return A future containing the list of entries that resolves when successful.
+ */
+- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path inContainerOfApplication:(NSString *)bundleID;
+
 @end
 
 NS_ASSUME_NONNULL_END

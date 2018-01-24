@@ -128,6 +128,19 @@
   }];
 }
 
+- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path inContainerOfApplication:(NSString *)bundleID
+{
+  return [[self dataContainerPathForBundleID:bundleID] onQueue:self.simulator.asyncQueue map:^(NSString *dataContainer) {
+    NSString *fullPath = [dataContainer stringByAppendingPathComponent:path];
+    NSError *error;
+    NSArray<NSString *> *contents = [NSFileManager.defaultManager contentsOfDirectoryAtPath:fullPath error:&error];
+    if (!contents) {
+      return [FBFuture futureWithError:error];
+    }
+    return [FBFuture futureWithResult:contents];
+  }];
+}
+
 #pragma mark Private
 
 /**
