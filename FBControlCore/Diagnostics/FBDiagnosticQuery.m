@@ -449,7 +449,7 @@ static NSString *KeyType = @"type";
   NSMutableArray<id<FBEventReporterSubject>> *subjects = [NSMutableArray array];
   for (FBDiagnostic *diagnostic in diagnostics) {
     FBDiagnostic *resolved = diagnostic;
-    if ([format isEqualToString:FBDiagnosticQueryFormatPath]) {
+    if ([format isEqualToString:FBDiagnosticQueryFormatContent]) {
       resolved = [[[FBDiagnosticBuilder builderWithDiagnostic:diagnostic] readIntoMemory] build];
     } else if ([format isEqualToString:FBDiagnosticQueryFormatPath]) {
       resolved = [[[FBDiagnosticBuilder builderWithDiagnostic:diagnostic] writeOutToFile] build];
