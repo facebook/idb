@@ -29,8 +29,7 @@
     withLaunchPath:@"/usr/bin/base64" arguments:@[@"-i", filePath]]
     runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
-  XCTAssertTrue(task.completed.hasCompleted);
-  XCTAssertNil(task.error);
+  XCTAssertEqual(task.completed.state, FBFutureStateDone);
   XCTAssertEqualObjects(task.stdOut, expected);
   XCTAssertGreaterThan(task.processIdentifier, 1);
 }
@@ -45,8 +44,7 @@
     withLaunchPath:@"/usr/bin/strings" arguments:@[binaryPath]]
     runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
-  XCTAssertTrue(task.completed.hasCompleted);
-  XCTAssertNil(task.error);
+  XCTAssertEqual(task.completed.state, FBFutureStateDone);
   XCTAssertTrue([task.stdOut containsString:NSStringFromSelector(_cmd)]);
   XCTAssertGreaterThan(task.processIdentifier, 1);
 }
@@ -60,8 +58,7 @@
     withLaunchPath:@"/bin/ls" arguments:@[@"-1", resourcesPath]]
     runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
-  XCTAssertTrue(task.completed.hasCompleted);
-  XCTAssertNil(task.error);
+  XCTAssertEqual(task.completed.state, FBFutureStateDone);
   XCTAssertGreaterThan(task.processIdentifier, 1);
 
   NSArray<NSString *> *fileNames = [task.stdOut componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
@@ -85,9 +82,8 @@
     }]
     runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
+  XCTAssertEqual(task.completed.state, FBFutureStateDone);
   XCTAssertTrue([task.stdOut conformsToProtocol:@protocol(FBFileConsumer)]);
-  XCTAssertTrue(task.completed.hasCompleted);
-  XCTAssertNil(task.error);
   XCTAssertGreaterThan(task.processIdentifier, 1);
 
   [[[FBFuture futureWithResult:NSNull.null] delay:2] await:nil];
@@ -105,7 +101,7 @@
     withStdOutToLogger:[FBControlCoreLoggerDouble new]]
     runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
-  XCTAssertNil(task.error);
+  XCTAssertEqual(task.completed.state, FBFutureStateDone);
   XCTAssertTrue([task.stdOut isKindOfClass:FBControlCoreLoggerDouble.class]);
   XCTAssertTrue([task.stdErr isKindOfClass:FBControlCoreLoggerDouble.class]);
 }
@@ -120,7 +116,7 @@
     withStdErrToDevNull]
     runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
-  XCTAssertNil(task.error);
+  XCTAssertEqual(task.completed.state, FBFutureStateDone);
   XCTAssertNil(task.stdOut);
   XCTAssertNil(task.stdErr);
 }
@@ -142,8 +138,7 @@
     startSynchronously];
 
   XCTAssertNotNil([task.completed awaitWithTimeout:1 error:nil]);
-  XCTAssertTrue(task.completed.hasCompleted);
-  XCTAssertNil(task.error);
+  XCTAssertEqual(task.completed.state, FBFutureStateDone);
 }
 
 - (void)testCallsHandlerWithAsynchronousTermination
@@ -180,13 +175,13 @@
   [self waitForExpectations:@[expectation] timeout:2];
 }
 
-- (void)testWaitingSynchronouslyDoesTerminateStalledTask
+- (void)testWaitingSynchronouslyDoesCancelStalledTask
 {
   FBTask *task = [[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000"]]
     runSynchronouslyUntilCompletionWithTimeout:1];
-  XCTAssertTrue(task.completed.hasCompleted);
-  XCTAssertNotNil(task.error);
+
+  XCTAssertEqual(task.completed.state, FBFutureStateCancelled);
 }
 
 - (void)testInputReading

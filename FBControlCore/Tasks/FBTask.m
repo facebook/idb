@@ -206,21 +206,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   return [self.stdInSlot contents];
 }
 
-- (nullable NSError *)error
-{
-  FBFutureState state = self.completed.state;
-  switch (state) {
-    case FBFutureStateFailed:
-      return self.completed.error;
-    case FBFutureStateCancelled:
-      return [[FBControlCoreError
-        describeFormat:@"Execution of task %@ was cancelled", self.description]
-        build];
-    default:
-      return nil;
-  }
-}
-
 #pragma mark Private
 
 - (FBFuture<FBTask *> *)launchTask

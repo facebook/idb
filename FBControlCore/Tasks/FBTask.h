@@ -70,11 +70,6 @@ extern NSString *const FBTaskErrorDomain;
  */
 @property (nonatomic, strong, nullable, readonly) id stdIn;
 
-/**
- Returns the Error associated with the task (if any). May be called from any thread.
- */
-@property (nonatomic, strong, nullable, readonly) NSError *error;
-
 @end
 
 NS_ASSUME_NONNULL_END

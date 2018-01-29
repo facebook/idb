@@ -87,16 +87,15 @@ static NSString *const CDHashPrefix = @"CDHash=";
   return [[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-dvvvv", bundlePath]]
     runUntilCompletion]
-    onQueue:self.queue fmap:^FBFuture *(FBTask *task) {
+    onQueue:self.queue fmap:^(FBTask *task) {
       NSString *output = task.stdErr;
       NSString *cdHash = [[[FBLogSearch
         withText:output predicate:FBCodesignProvider.logSearchPredicateForCDHash]
         firstMatchingLine]
         stringByReplacingOccurrencesOfString:CDHashPrefix withString:@""];
       if (!cdHash) {
-        return [[[FBControlCoreError
+        return [[FBControlCoreError
           describeFormat:@"Could not find '%@' in output: %@", CDHashPrefix, output]
-          causedBy:task.error]
           failFuture];
       }
       return [FBFuture futureWithResult:cdHash];

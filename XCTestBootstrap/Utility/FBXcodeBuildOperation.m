@@ -81,14 +81,7 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [self.future
-    onQueue:self.asyncQueue fmap:^(FBTask *task) {
-      NSError *error = task.error;
-      if (error) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:NSNull.null];
-    }];
+  return [self.future mapReplace:NSNull.null];
 }
 
 - (FBiOSTargetFutureType)futureType
