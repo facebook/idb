@@ -84,4 +84,11 @@
   return FBiOSTargetFutureTypeApplicationLaunch;
 }
 
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Application Operation %@ | State %@", self.process, self.completed];
+}
+
 @end

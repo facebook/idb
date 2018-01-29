@@ -27,4 +27,9 @@
   return self;
 }
 
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Process %d | State %@", self.processIdentifier, self.exitCode];
+}
+
 @end

@@ -131,4 +131,11 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
   return self.process.processIdentifier;
 }
 
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Agent Operation %@ | State %@", self.process, self.processStatus];
+}
+
 @end
