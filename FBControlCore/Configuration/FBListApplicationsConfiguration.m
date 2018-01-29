@@ -10,7 +10,7 @@
 #import "FBListApplicationsConfiguration.h"
 
 #import "FBiOSTarget.h"
-#import "FBSubject.h"
+#import "FBEventReporterSubject.h"
 #import "FBControlCoreError.h"
 #import "FBApplicationCommands.h"
 

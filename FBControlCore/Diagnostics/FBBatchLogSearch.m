@@ -18,7 +18,7 @@
 #import "FBEventReporter.h"
 #import "FBLogCommands.h"
 #import "FBLogSearch.h"
-#import "FBSubject.h"
+#import "FBEventReporterSubject.h"
 #import "FBiOSTarget.h"
 #import "FBiOSTargetDiagnostics.h"
 #import "NSPredicate+FBControlCore.h"

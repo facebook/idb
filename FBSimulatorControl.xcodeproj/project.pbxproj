@@ -525,10 +525,10 @@
 		C0B32FC91E4E459700A48CF4 /* FBArchitecture.h in Headers */ = {isa = PBXBuildFile; fileRef = C0B32FC71E4E459700A48CF4 /* FBArchitecture.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		C0B32FCA1E4E459700A48CF4 /* FBArchitecture.m in Sources */ = {isa = PBXBuildFile; fileRef = C0B32FC81E4E459700A48CF4 /* FBArchitecture.m */; };
 		D76C2ADA1F0E7A8A000EF13D /* FBiOSTargetFuture.m in Sources */ = {isa = PBXBuildFile; fileRef = D76C2AD91F0E7A8A000EF13D /* FBiOSTargetFuture.m */; };
-		D76C2AE41F13F2E8000EF13D /* FBJSONEnums.h in Headers */ = {isa = PBXBuildFile; fileRef = D76C2AE21F13F2E8000EF13D /* FBJSONEnums.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D76C2AE51F13F2E8000EF13D /* FBJSONEnums.m in Sources */ = {isa = PBXBuildFile; fileRef = D76C2AE31F13F2E8000EF13D /* FBJSONEnums.m */; };
-		D76C2AEE1F13F61E000EF13D /* FBSubject.h in Headers */ = {isa = PBXBuildFile; fileRef = D76C2AEC1F13F61E000EF13D /* FBSubject.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D76C2AEF1F13F61E000EF13D /* FBSubject.m in Sources */ = {isa = PBXBuildFile; fileRef = D76C2AED1F13F61E000EF13D /* FBSubject.m */; };
+		D76C2AE41F13F2E8000EF13D /* FBEventConstants.h in Headers */ = {isa = PBXBuildFile; fileRef = D76C2AE21F13F2E8000EF13D /* FBEventConstants.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D76C2AE51F13F2E8000EF13D /* FBEventConstants.m in Sources */ = {isa = PBXBuildFile; fileRef = D76C2AE31F13F2E8000EF13D /* FBEventConstants.m */; };
+		D76C2AEE1F13F61E000EF13D /* FBEventReporterSubject.h in Headers */ = {isa = PBXBuildFile; fileRef = D76C2AEC1F13F61E000EF13D /* FBEventReporterSubject.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D76C2AEF1F13F61E000EF13D /* FBEventReporterSubject.m in Sources */ = {isa = PBXBuildFile; fileRef = D76C2AED1F13F61E000EF13D /* FBEventReporterSubject.m */; };
 		D76C2AF11F13F62D000EF13D /* FBSubjectTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D76C2AF01F13F62D000EF13D /* FBSubjectTests.m */; };
 		D76C2AF41F13F783000EF13D /* FBEventInterpreter.h in Headers */ = {isa = PBXBuildFile; fileRef = D76C2AF21F13F783000EF13D /* FBEventInterpreter.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D76C2AF51F13F783000EF13D /* FBEventInterpreter.m in Sources */ = {isa = PBXBuildFile; fileRef = D76C2AF31F13F783000EF13D /* FBEventInterpreter.m */; };
@@ -1465,10 +1465,10 @@
 		C0B32FC71E4E459700A48CF4 /* FBArchitecture.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBArchitecture.h; sourceTree = "<group>"; };
 		C0B32FC81E4E459700A48CF4 /* FBArchitecture.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBArchitecture.m; sourceTree = "<group>"; };
 		D76C2AD91F0E7A8A000EF13D /* FBiOSTargetFuture.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetFuture.m; sourceTree = "<group>"; };
-		D76C2AE21F13F2E8000EF13D /* FBJSONEnums.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FBJSONEnums.h; path = Reporting/FBJSONEnums.h; sourceTree = "<group>"; };
-		D76C2AE31F13F2E8000EF13D /* FBJSONEnums.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = FBJSONEnums.m; path = Reporting/FBJSONEnums.m; sourceTree = "<group>"; };
-		D76C2AEC1F13F61E000EF13D /* FBSubject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FBSubject.h; path = Reporting/FBSubject.h; sourceTree = "<group>"; };
-		D76C2AED1F13F61E000EF13D /* FBSubject.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = FBSubject.m; path = Reporting/FBSubject.m; sourceTree = "<group>"; };
+		D76C2AE21F13F2E8000EF13D /* FBEventConstants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FBEventConstants.h; path = Reporting/FBEventConstants.h; sourceTree = "<group>"; };
+		D76C2AE31F13F2E8000EF13D /* FBEventConstants.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = FBEventConstants.m; path = Reporting/FBEventConstants.m; sourceTree = "<group>"; };
+		D76C2AEC1F13F61E000EF13D /* FBEventReporterSubject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FBEventReporterSubject.h; path = Reporting/FBEventReporterSubject.h; sourceTree = "<group>"; };
+		D76C2AED1F13F61E000EF13D /* FBEventReporterSubject.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = FBEventReporterSubject.m; path = Reporting/FBEventReporterSubject.m; sourceTree = "<group>"; };
 		D76C2AF01F13F62D000EF13D /* FBSubjectTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSubjectTests.m; sourceTree = "<group>"; };
 		D76C2AF21F13F783000EF13D /* FBEventInterpreter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FBEventInterpreter.h; path = Reporting/FBEventInterpreter.h; sourceTree = "<group>"; };
 		D76C2AF31F13F783000EF13D /* FBEventInterpreter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = FBEventInterpreter.m; path = Reporting/FBEventInterpreter.m; sourceTree = "<group>"; };
@@ -2776,12 +2776,12 @@
 				D76C2AF31F13F783000EF13D /* FBEventInterpreter.m */,
 				AA66FEDA1F83FFCB00047AA5 /* FBEventReporter.h */,
 				AA66FED91F83FFCB00047AA5 /* FBEventReporter.m */,
-				D76C2AE21F13F2E8000EF13D /* FBJSONEnums.h */,
-				D76C2AE31F13F2E8000EF13D /* FBJSONEnums.m */,
+				D76C2AE21F13F2E8000EF13D /* FBEventConstants.h */,
+				D76C2AE31F13F2E8000EF13D /* FBEventConstants.m */,
 				D76C2AF81F13F8F3000EF13D /* FBReportingiOSActionReaderDelegate.h */,
 				D76C2AF91F13F8F3000EF13D /* FBReportingiOSActionReaderDelegate.m */,
-				D76C2AEC1F13F61E000EF13D /* FBSubject.h */,
-				D76C2AED1F13F61E000EF13D /* FBSubject.m */,
+				D76C2AEC1F13F61E000EF13D /* FBEventReporterSubject.h */,
+				D76C2AED1F13F61E000EF13D /* FBEventReporterSubject.m */,
 			);
 			name = Reporting;
 			sourceTree = "<group>";
@@ -3481,10 +3481,10 @@
 				D76F950D1F56D6700003D341 /* FBTestLaunchConfiguration.h in Headers */,
 				D76F95091F56D65C0003D341 /* FBXCTestCommands.h in Headers */,
 				AAB123821DB4B16900F20555 /* FBDispatchSourceNotifier.h in Headers */,
-				D76C2AEE1F13F61E000EF13D /* FBSubject.h in Headers */,
+				D76C2AEE1F13F61E000EF13D /* FBEventReporterSubject.h in Headers */,
 				D76C2AFA1F13F8F3000EF13D /* FBReportingiOSActionReaderDelegate.h in Headers */,
 				D76C2AF41F13F783000EF13D /* FBEventInterpreter.h in Headers */,
-				D76C2AE41F13F2E8000EF13D /* FBJSONEnums.h in Headers */,
+				D76C2AE41F13F2E8000EF13D /* FBEventConstants.h in Headers */,
 				AA7728AE1E5238A6008FCF7C /* FBFileWriter.h in Headers */,
 				AA58F8921D959593006F8D81 /* FBCodesignProvider.h in Headers */,
 				AAC5C66F1FD71F1800A735BF /* FBLaunchedProcess.h in Headers */,
@@ -4078,7 +4078,7 @@
 				AAC706F61EFD2E4100BF8303 /* FBScale.m in Sources */,
 				AACC503D1EAA230F0034A987 /* FBBitmapStreamConfiguration.m in Sources */,
 				AA6F98EC1D2B9C8E00464B0F /* FBBinaryDescriptor.m in Sources */,
-				D76C2AE51F13F2E8000EF13D /* FBJSONEnums.m in Sources */,
+				D76C2AE51F13F2E8000EF13D /* FBEventConstants.m in Sources */,
 				AA8E937F1E96267A0002F614 /* FBiOSActionRouter.m in Sources */,
 				EE2EC7AD1CAC3F97009A7BB1 /* FBWeakFramework.m in Sources */,
 				D76F950E1F56D6700003D341 /* FBTestLaunchConfiguration.m in Sources */,
@@ -4108,7 +4108,7 @@
 				AA5B3DDC1FE3B4B800B77376 /* FBScreenshotCommands.m in Sources */,
 				AA2942811D00AB0800880984 /* FBiOSTarget.m in Sources */,
 				AA84EFFF1C9FE162000CDA41 /* NSPredicate+FBControlCore.m in Sources */,
-				D76C2AEF1F13F61E000EF13D /* FBSubject.m in Sources */,
+				D76C2AEF1F13F61E000EF13D /* FBEventReporterSubject.m in Sources */,
 				AA14B5601DF8017900085855 /* FBiOSTargetDiagnostics.m in Sources */,
 				EEBD60951C908F8500298A07 /* FBCollectionInformation.m in Sources */,
 				AAF026F11F25ED1A0091FDAB /* FBSocketServer.m in Sources */,

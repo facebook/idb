@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 #import <FBControlCore/FBJSONConversion.h>
-#import <FBControlCore/FBJSONEnums.h>
+#import <FBControlCore/FBEventConstants.h>
 #import <FBControlCore/FBiOSTargetFormat.h>
 #import <FBControlCore/FBiOSTarget.h>
 #import <asl.h>

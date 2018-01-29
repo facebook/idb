@@ -39,8 +39,10 @@
 #import <FBControlCore/FBDiagnostic.h>
 #import <FBControlCore/FBDiagnosticQuery.h>
 #import <FBControlCore/FBDispatchSourceNotifier.h>
+#import <FBControlCore/FBEventConstants.h>
 #import <FBControlCore/FBEventInterpreter.h>
 #import <FBControlCore/FBEventReporter.h>
+#import <FBControlCore/FBEventReporterSubject.h>
 #import <FBControlCore/FBFileConsumer.h>
 #import <FBControlCore/FBFileFinder.h>
 #import <FBControlCore/FBFileManager.h>
@@ -58,7 +60,6 @@
 #import <FBControlCore/FBiOSTargetPredicates.h>
 #import <FBControlCore/FBiOSTargetQuery.h>
 #import <FBControlCore/FBJSONConversion.h>
-#import <FBControlCore/FBJSONEnums.h>
 #import <FBControlCore/FBLaunchedProcess.h>
 #import <FBControlCore/FBLineBuffer.h>
 #import <FBControlCore/FBListApplicationsConfiguration.h>
@@ -70,8 +71,8 @@
 #import <FBControlCore/FBProcessFetcher.h>
 #import <FBControlCore/FBProcessInfo.h>
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
-#import <FBControlCore/FBProcessStream.h>
 #import <FBControlCore/FBProcessOutputConfiguration.h>
+#import <FBControlCore/FBProcessStream.h>
 #import <FBControlCore/FBProcessTerminationStrategy.h>
 #import <FBControlCore/FBReportingiOSActionReaderDelegate.h>
 #import <FBControlCore/FBScale.h>
@@ -81,7 +82,6 @@
 #import <FBControlCore/FBSocketReader.h>
 #import <FBControlCore/FBSocketServer.h>
 #import <FBControlCore/FBSocketWriter.h>
-#import <FBControlCore/FBSubject.h>
 #import <FBControlCore/FBSubstringUtilities.h>
 #import <FBControlCore/FBTask.h>
 #import <FBControlCore/FBTaskBuilder.h>

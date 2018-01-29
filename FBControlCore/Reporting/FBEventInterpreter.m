@@ -10,8 +10,8 @@
 #import "FBEventInterpreter.h"
 
 #import "FBCollectionInformation.h"
-#import "FBSubject.h"
-#import "FBJSONEnums.h"
+#import "FBEventReporterSubject.h"
+#import "FBEventConstants.h"
 
 @interface FBJSONEventInterpreter : FBEventInterpreter
 

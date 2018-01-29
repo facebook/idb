@@ -9,7 +9,7 @@
 
 #import "FBEventReporter.h"
 
-#import "FBSubject.h"
+#import "FBEventReporterSubject.h"
 #import "FBEventInterpreter.h"
 #import "FBFileConsumer.h"
 

@@ -15,7 +15,7 @@
 #import "FBDiagnostic.h"
 #import "FBEventReporter.h"
 #import "FBiOSTargetDiagnostics.h"
-#import "FBSubject.h"
+#import "FBEventReporterSubject.h"
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeDiagnosticQuery = @"diagnose";
 

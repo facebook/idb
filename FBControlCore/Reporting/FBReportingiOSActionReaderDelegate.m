@@ -11,8 +11,8 @@
 
 #import "FBFileConsumer.h"
 #import "FBEventReporter.h"
-#import "FBSubject.h"
-#import "FBJSONEnums.h"
+#import "FBEventReporterSubject.h"
+#import "FBEventConstants.h"
 
 @interface FBReportingiOSActionReaderDelegate ()
 
