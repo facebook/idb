@@ -99,29 +99,16 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
       failFuture];
   }
 
-  // Get the file paths inside this directory
+  // Obtain the relevant file paths
   NSError *error = nil;
-  NSArray<NSString *> *addressBookDBPaths = [NSFileManager.defaultManager contentsOfDirectoryAtPath:databaseDirectory error:&error];
-  if (!addressBookDBPaths) {
-    return [[FBSimulatorError
-      describeFormat:@"Failed to get contents of source directory at %@", addressBookDBPaths]
-      failFuture];
+  NSArray<NSString *> *sourceFilePaths = [FBSimulatorSettingsCommands contactsDatabaseFilePathsFromContainingDirectory:databaseDirectory error:&error];
+  if (!sourceFilePaths) {
+    return [FBFuture futureWithError:error];
   }
 
-  // Fail if nothing is provided
-  if (!addressBookDBPaths.count) {
-    return [[FBSimulatorError
-      describe:@"Could not update Address Book DBs when no databases are provided"]
-      failFuture];
-  }
 
-  // Update the databases.
-  NSSet<NSString *> *permissableDatabaseFilepaths = FBSimulatorSettingsCommands.permissableAddressBookDBFilenames;
-  for (NSString *sourceFilename in addressBookDBPaths) {
-    if (![permissableDatabaseFilepaths containsObject:sourceFilename]) {
-      continue;
-    }
-    NSString *sourceFilePath = [databaseDirectory stringByAppendingPathComponent:sourceFilename];
+  // Perform the copies
+  for (NSString *sourceFilePath in sourceFilePaths) {
     NSString *destinationFilePath = [destinationDirectory stringByAppendingPathComponent:sourceFilePath.lastPathComponent];
     if ([NSFileManager.defaultManager fileExistsAtPath:destinationFilePath] && ! [NSFileManager.defaultManager removeItemAtPath:destinationFilePath error:&error]) {
       return [FBFuture futureWithError:error];
@@ -175,7 +162,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
   return mapping;
 }
 
-+ (NSSet<NSString *> *)permissableAddressBookDBFilenames
++ (NSSet<NSString *> *)permissibleAddressBookDBFilenames
 {
   static dispatch_once_t onceToken;
   static NSSet<NSString *> *filenames;
@@ -219,6 +206,30 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
     withLaunchPath:@"/usr/bin/sqlite3" arguments:arguments]
     runUntilCompletion]
     mapReplace:NSNull.null];
+}
+
++ (NSArray<NSString *> *)contactsDatabaseFilePathsFromContainingDirectory:(NSString *)databaseDirectory error:(NSError **)error
+{
+  NSMutableArray<NSString *> *filePaths = [NSMutableArray array];
+  NSDirectoryEnumerator *enumerator = [NSFileManager.defaultManager enumeratorAtPath:databaseDirectory];
+  NSSet<NSString *> *permissibleDatabaseFilepaths = FBSimulatorSettingsCommands.permissibleAddressBookDBFilenames;
+
+  for (NSString *path in enumerator) {
+    if (![permissibleDatabaseFilepaths containsObject:path.lastPathComponent]) {
+      continue;
+    }
+    NSString *fullPath = [databaseDirectory stringByAppendingPathComponent:path];
+    [filePaths addObject:fullPath];
+  }
+
+  // Fail if nothing is provided
+  if (!filePaths.count) {
+    return [[FBSimulatorError
+      describe:@"Could not update Address Book DBs when no databases are provided"]
+      fail:error];
+  }
+
+  return [filePaths copy];
 }
 
 @end
