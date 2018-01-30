@@ -13,6 +13,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBMacDevice;
 @class FBXCTestConfiguration;
 
 /**
@@ -23,11 +24,11 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer.
 
- @param configuration the configuration to wrap.
- @param workQueue a queue to synchronize work on.
+ @param macDevice the mac device instance.
+ @param configuration a queue to synchronize work on.
  @return a new FBXCTestProcessExecutor.
  */
-+ (instancetype)executorWithConfiguration:(FBXCTestConfiguration *)configuration workQueue:(dispatch_queue_t)workQueue;
++ (instancetype)executorWithMacDevice:(FBMacDevice *)macDevice configuration:(FBXCTestConfiguration *)configuration;
 
 @end
 

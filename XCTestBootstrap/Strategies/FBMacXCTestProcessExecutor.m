@@ -11,37 +11,41 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBMacDevice.h"
 #import "FBXCTestConfiguration.h"
-#import "FBXCTestShimConfiguration.h"
 #import "FBXCTestProcess.h"
+#import "FBXCTestShimConfiguration.h"
 
 @interface FBMacXCTestProcessExecutor ()
 
+@property (nonatomic, strong, readonly) FBMacDevice *macDevice;
 @property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
 
 @end
 
 @implementation FBMacXCTestProcessExecutor
 
-@synthesize workQueue = _workQueue;
+#pragma mark Initializers
 
-+ (instancetype)executorWithConfiguration:(FBXCTestConfiguration *)configuration workQueue:(dispatch_queue_t)workQueue
++ (instancetype)executorWithMacDevice:(FBMacDevice *)macDevice configuration:(FBXCTestConfiguration *)configuration
 {
-  return [[self alloc] initWithConfiguration:configuration workQueue:workQueue];
+  return [[self alloc] initWithMacDevice:macDevice configuration:configuration];
 }
 
-- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration workQueue:(dispatch_queue_t)workQueue
+- (instancetype)initWithMacDevice:(FBMacDevice *)macDevice configuration:(FBXCTestConfiguration *)configuration
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _macDevice = macDevice;
   _configuration = configuration;
-  _workQueue = workQueue;
 
   return self;
 }
+
+#pragma mark FBXCTestProcessExecutor Implementation
 
 - (FBFuture<FBTask *> *)startProcess:(FBXCTestProcess *)process
 {
@@ -62,6 +66,11 @@
 - (NSString *)queryShimPath
 {
   return self.configuration.shims.macOSQueryShimPath;
+}
+
+- (dispatch_queue_t)workQueue
+{
+  return self.macDevice.workQueue;
 }
 
 @end

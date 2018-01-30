@@ -67,15 +67,15 @@
 
 - (FBFuture<NSNull *> *)runMacTest
 {
-  dispatch_queue_t workQueue = dispatch_queue_create("com.facebook.xctestbootstrap.mactest", DISPATCH_QUEUE_SERIAL);
+  FBMacDevice *device = [[FBMacDevice alloc] initWithLogger:self.context.logger];
+
   if ([self.configuration isKindOfClass:FBTestManagerTestConfiguration.class]) {
-    FBMacDevice *device = [[FBMacDevice alloc] initWithLogger:self.context.logger];
-    return [[[FBTestRunStrategy strategyWithTarget:device configuration:(FBTestManagerTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger testPreparationStrategyClass:FBMacTestPreparationStrategy.class] execute] onQueue:workQueue chain:^FBFuture *_Nonnull(FBFuture *_Nonnull future) {
+    return [[[FBTestRunStrategy strategyWithTarget:device configuration:(FBTestManagerTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger testPreparationStrategyClass:FBMacTestPreparationStrategy.class] execute] onQueue:device.workQueue chain:^(FBFuture *future) {
       return [[device restorePrimaryDeviceState] fmapReplace:future];
     }];
   }
 
-  id<FBXCTestProcessExecutor> executor = [FBMacXCTestProcessExecutor executorWithConfiguration:self.configuration workQueue:workQueue];
+  id<FBXCTestProcessExecutor> executor = [FBMacXCTestProcessExecutor executorWithMacDevice:device configuration:self.configuration];
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
     return [[[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] execute];
   }
