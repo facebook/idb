@@ -20,21 +20,32 @@
 
 #pragma mark Initializers
 
++ (dispatch_queue_t)createQueue
+{
+  return dispatch_queue_create("com.facebook.fbxctest.multifilereader", DISPATCH_QUEUE_SERIAL);
+}
+
 + (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer
 {
-  return [[self alloc] initWithFileHandle:fileHandle consumer:consumer];
+  return [[self alloc] initWithFileHandle:fileHandle consumer:consumer queue:self.createQueue];
 }
 
-+ (nullable instancetype)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileConsumer>)consumer error:(NSError **)error
++ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileConsumer>)consumer
 {
-  NSFileHandle *handle = [NSFileHandle fileHandleForReadingAtPath:filePath];
-  if (!handle) {
-    return [[FBControlCoreError describeFormat:@"Failed to open file for reading: %@", filePath] fail:error];
-  }
-  return [self readerWithFileHandle:handle consumer:consumer];
+  dispatch_queue_t queue = self.createQueue;
+  return [FBFuture onQueue:queue resolveValue:^(NSError **error) {
+    int fileDescriptor = open(filePath.UTF8String, O_RDONLY);
+    if (fileDescriptor == -1) {
+      return [[FBControlCoreError
+        describeFormat:@"open of %@ returned an error %d", filePath, errno]
+        fail:error];
+    }
+    NSFileHandle *fileHandle = [[NSFileHandle alloc] initWithFileDescriptor:fileDescriptor closeOnDealloc:YES];
+    return [[self alloc] initWithFileHandle:fileHandle consumer:consumer queue:queue];
+  }];
 }
 
-- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer
+- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -44,7 +55,7 @@
 
   _fileHandle = fileHandle;
   _consumer = consumer;
-  _readQueue = dispatch_queue_create("com.facebook.fbxctest.multifilereader", DISPATCH_QUEUE_SERIAL);
+  _readQueue = queue;
   _readingHasEnded = FBMutableFuture.future;
   _stopped = [_readingHasEnded onQueue:_readQueue chain:^(FBFuture *future) {
     [consumer consumeEndOfFile];

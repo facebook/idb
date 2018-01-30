@@ -134,24 +134,16 @@
 
 + (FBFuture<NSArray<NSString *> *> *)launchedProcess:(FBLaunchedProcess *)processInfo otestQueryOutputPath:(NSString *)otestQueryOutputPath queue:(dispatch_queue_t)queue
 {
-  NSError *error = nil;
   FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
-  FBFileReader *reader = [FBFileReader readerWithFilePath:otestQueryOutputPath consumer:consumer error:&error];
-  if (!reader) {
-    return [FBControlCoreError failFutureWithError:error];
-  }
-  return [[[[reader
-    startReading]
-    fmapReplace:processInfo.exitCode]
-    onQueue:queue chain:^(FBFuture *replacement) {
-      // Close and wait
-      FBFuture<NSArray<NSNull *> *> *future = [FBFuture futureWithFutures:@[
-        [reader stopReading],
-        [consumer eofHasBeenReceived],
-      ]];
-      return [future fmapReplace:replacement];
+  return [[[[FBFileReader
+    readerWithFilePath:otestQueryOutputPath consumer:consumer]
+    onQueue:queue fmap:^(FBFileReader *reader) {
+      return [[reader startReading] mapReplace:reader];
     }]
-    onQueue:queue fmap:^(NSNumber *_) {
+    onQueue:queue fmap:^(FBFileReader *reader) {
+      return [FBListTestStrategy onQueue:queue confirmExit:processInfo closingReader:reader consumer:consumer];
+    }]
+    onQueue:queue fmap:^(id _) {
       NSMutableArray<NSString *> *testNames = [NSMutableArray array];
       for (NSString *line in consumer.lines) {
         if (line.length == 0) {
@@ -167,6 +159,21 @@
         [testNames addObject:line];
       }
       return [FBFuture futureWithResult:[testNames copy]];
+  }];
+}
+
++ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue confirmExit:(FBLaunchedProcess *)process closingReader:(FBFileReader *)reader consumer:(FBAccumilatingFileConsumer *)consumer
+{
+  return [process.exitCode onQueue:queue fmap:^(NSNumber *exitCode) {
+    if (exitCode.intValue != 0) {
+      return [[XCTestBootstrapError
+        describeFormat:@"Process %d Exited with non-zero %@", process.processIdentifier, exitCode]
+        failFuture];
+    }
+    return [FBFuture futureWithFutures:@[
+      [reader stopReading],
+      [consumer eofHasBeenReceived],
+    ]];
   }];
 }
 

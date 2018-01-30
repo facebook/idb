@@ -112,6 +112,72 @@
   [pipe.fileHandleForWriting closeFile];
 }
 
+- (void)testReadsFromFilePath
+{
+  // Read some data.
+  NSError *error = nil;
+  FBFileReader *reader = [[FBFileReader readerWithFilePath:@"/dev/urandom" consumer:self] await:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(reader);
+
+  // Start reading
+  BOOL success = [[reader startReading] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  // Stop Reading
+  error = nil;
+  success = [[reader stopReading] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+}
+
+- (void)testReadingTwiceFails
+{
+  // Read some data.
+  NSError *error = nil;
+  FBFileReader *reader = [[FBFileReader readerWithFilePath:@"/dev/urandom" consumer:self] await:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(reader);
+
+  // Start reading.
+  BOOL success = [[reader startReading] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  // Fail when starting again.
+  error = nil;
+  success = [[reader startReading] await:&error] != nil;
+  XCTAssertNotNil(error);
+  XCTAssertFalse(success);
+}
+
+- (void)testStoppingTwiceFails
+{
+  // Read some data.
+  NSError *error = nil;
+  FBFileReader *reader = [[FBFileReader readerWithFilePath:@"/dev/urandom" consumer:self] await:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(reader);
+
+  // Start reading
+  BOOL success = [[reader startReading] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  // Stop Reading
+  error = nil;
+  success = [[reader stopReading] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  // Stop Reading
+  error = nil;
+  success = [[reader stopReading] await:&error] != nil;
+  XCTAssertNotNil(error);
+  XCTAssertFalse(success);
+}
+
 #pragma mark FBFileConsumer Implementation
 
 - (void)consumeData:(NSData *)data

@@ -28,10 +28,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param filePath the File Path to read from.
  @param consumer the consumer to forward to.
- @param error an error out for any error that occurs.
- @return a File Reader.
+ @return a File Reader, that is available when the underlying file handle has been opened.
  */
-+ (nullable instancetype)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileConsumer>)consumer error:(NSError **)error;
++ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileConsumer>)consumer;
 
 #pragma mark Public Methods
 

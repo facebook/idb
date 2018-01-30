@@ -124,7 +124,7 @@
   }
 
   // Setup the reader of the shim
-  FBLineFileConsumer *otestShimLineReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue dataConsumer:^(NSData *line) {
+  FBLineFileConsumer *otestShimLineConsumer = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue dataConsumer:^(NSData *line) {
     [reporter handleEventJSONData:line];
     if (mirrorToLogger) {
       NSString *stringLine = [[NSString alloc] initWithData:line encoding:NSUTF8StringEncoding];
@@ -132,11 +132,11 @@
     }
   }];
 
-  id<FBFileConsumer> otestShimConsumer = otestShimLineReader;
+  id<FBFileConsumer> otestShimConsumer = otestShimLineConsumer;
   if (mirrorToFiles) {
     // Mirror the output
     NSString *mirrorPath = nil;
-    otestShimConsumer = [mirrorLogger logConsumptionToFile:otestShimLineReader outputKind:@"shim" udid:uuid filePathOut:&mirrorPath];
+    otestShimConsumer = [mirrorLogger logConsumptionToFile:otestShimLineConsumer outputKind:@"shim" udid:uuid filePathOut:&mirrorPath];
     [logger logFormat:@"Mirroring shim-fifo output to %@", mirrorPath];
   }
 
@@ -149,13 +149,13 @@
         completeLaunchedProcess:processInfo
         otestShimOutputPath:otestShimOutputPath
         otestShimConsumer:otestShimConsumer
-        otestShimLineReader:otestShimLineReader];
+        otestShimLineConsumer:otestShimLineConsumer];
     }];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)completeLaunchedProcess:(FBLaunchedProcess *)processInfo otestShimOutputPath:(NSString *)otestShimOutputPath otestShimConsumer:(id<FBFileConsumer>)otestShimConsumer otestShimLineReader:(FBLineFileConsumer *)otestShimLineReader
+- (FBFuture<NSNull *> *)completeLaunchedProcess:(FBLaunchedProcess *)processInfo otestShimOutputPath:(NSString *)otestShimOutputPath otestShimConsumer:(id<FBFileConsumer>)otestShimConsumer otestShimLineConsumer:(FBLineFileConsumer *)otestShimLineConsumer
 {
   id<FBLogicXCTestReporter> reporter = self.reporter;
   if (self.configuration.waitForDebugger) {
@@ -165,32 +165,30 @@
     waitid(P_PID, (id_t)processInfo.processIdentifier, NULL, WCONTINUED);
     [reporter debuggerAttached];
   }
+  dispatch_queue_t queue = self.executor.workQueue;
 
-  // Create a reader of the otest-shim path and start reading it.
-  NSError *error = nil;
-  FBFileReader *otestShimReader = [FBFileReader readerWithFilePath:otestShimOutputPath consumer:otestShimConsumer error:&error];
-  if (!otestShimReader) {
-    [processInfo.exitCode cancel];
-    return [[[FBXCTestError
-      describeFormat:@"Failed to open fifo for reading: %@", otestShimOutputPath]
-      causedBy:error]
-      failFuture];
-  }
-
-  return [[[[otestShimReader
-    startReading]
-    fmapReplace:processInfo.exitCode]
-    onQueue:self.executor.workQueue fmap:^(id _) {
-      // Close and wait
-      return [FBFuture futureWithFutures:@[
-        [otestShimReader stopReading],
-        [otestShimLineReader eofHasBeenReceived],
-      ]];
+  return [[[[FBFileReader
+    readerWithFilePath:otestShimOutputPath consumer:otestShimConsumer]
+    onQueue:queue fmap:^(FBFileReader *reader) {
+      return [[reader startReading] mapReplace:reader];
     }]
-    onQueue:self.executor.workQueue map:^(id _) {
+    onQueue:queue fmap:^(FBFileReader *reader) {
+      return [FBLogicTestRunStrategy onQueue:queue waitForExit:processInfo closingReader:reader consumer:otestShimLineConsumer];
+    }]
+    onQueue:queue map:^(id _) {
       [reporter didFinishExecutingTestPlan];
       return NSNull.null;
     }];
+}
+
++ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForExit:(FBLaunchedProcess *)process closingReader:(FBFileReader *)reader consumer:(FBLineFileConsumer *)consumer
+{
+  return [process.exitCode onQueue:queue fmap:^(NSNumber *exitCode) {
+    return [FBFuture futureWithFutures:@[
+      [reader stopReading],
+      [consumer eofHasBeenReceived],
+    ]];
+  }];
 }
 
 - (FBXCTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer
