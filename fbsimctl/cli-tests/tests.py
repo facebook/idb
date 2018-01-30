@@ -436,6 +436,17 @@ class SingleSimulatorTestCase(FBSimctlTestCase):
             'Video at path {} should exist'.format(video_path),
         )
 
+    @async_test
+    async def testDiagnosticPaths(self):
+        simulator = await self.assertCreatesSimulator([self.device_type])
+        events = await self.fbsimctl.run([simulator.udid, 'diagnose', '--path'])
+        diagnostic_names = [
+            event['subject']['short_name']
+            for event
+            in events.matching('diagnostic', 'discrete')
+        ]
+        self.assertIn('coresimulator', diagnostic_names)
+
 
 class SuiteBuilder:
     def __init__(self, fbsimctl_path, device_types, name_filter=None):

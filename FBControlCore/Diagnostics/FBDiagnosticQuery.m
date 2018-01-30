@@ -438,7 +438,7 @@ static NSString *KeyType = @"type";
   subject = [FBDiagnosticQuery resolveDiagnostics:[target.diagnostics perform:self] format:self.format];
   [reporter report:subject];
 
-  subject = [FBEventReporterSubject subjectWithName:FBiOSTargetFutureTypeDiagnosticQuery type:FBEventTypeEnded value:self];
+  subject = [FBEventReporterSubject subjectWithName:FBiOSTargetFutureTypeDiagnosticQuery type:FBEventTypeEnded value:self ];
   [reporter report:subject];
 
   return [FBFuture futureWithResult:FBiOSTargetContinuationDone(FBDiagnosticQuery.futureType)];
@@ -454,7 +454,7 @@ static NSString *KeyType = @"type";
     } else if ([format isEqualToString:FBDiagnosticQueryFormatPath]) {
       resolved = [[[FBDiagnosticBuilder builderWithDiagnostic:diagnostic] writeOutToFile] build];
     }
-    [subjects addObject:[FBEventReporterSubject subjectWithName:FBEventNameDiagnose type:FBEventTypeDiscrete value:resolved]];
+    [subjects addObject:[FBEventReporterSubject subjectWithName:FBEventNameDiagnostic type:FBEventTypeDiscrete value:resolved]];
   }
   return [FBEventReporterSubject compositeSubjectWithArray:subjects];
 }
