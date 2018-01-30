@@ -40,6 +40,7 @@
   if (!self) {
     return nil;
   }
+  __weak typeof(self) weakSelf = self;
 
   _fileHandle = fileHandle;
   _consumer = consumer;
@@ -47,6 +48,7 @@
   _readingHasEnded = FBMutableFuture.future;
   _stopped = [_readingHasEnded onQueue:_readQueue chain:^(FBFuture *future) {
     [consumer consumeEndOfFile];
+    weakSelf.fileHandle = nil;
     return future;
   }];
 
@@ -108,7 +110,6 @@
 
   // Return the future after dispatching to the main queue.
   dispatch_io_close(self.io, DISPATCH_IO_STOP);
-  self.fileHandle = nil;
   self.io = nil;
 
   return self.stopped;
