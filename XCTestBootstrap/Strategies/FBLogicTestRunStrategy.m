@@ -158,17 +158,13 @@
 - (FBFuture<NSNull *> *)completeLaunchedProcess:(FBLaunchedProcess *)processInfo otestShimOutputPath:(NSString *)otestShimOutputPath otestShimConsumer:(id<FBFileConsumer>)otestShimConsumer otestShimLineConsumer:(FBLineFileConsumer *)otestShimLineConsumer
 {
   id<FBLogicXCTestReporter> reporter = self.reporter;
-  if (self.configuration.waitForDebugger) {
-    [reporter processWaitingForDebuggerWithProcessIdentifier:processInfo.processIdentifier];
-    // If wait_for_debugger is passed, the child process receives SIGSTOP after immediately launch.
-    // We wait until it receives SIGCONT from an attached debugger.
-    waitid(P_PID, (id_t)processInfo.processIdentifier, NULL, WCONTINUED);
-    [reporter debuggerAttached];
-  }
   dispatch_queue_t queue = self.executor.workQueue;
 
-  return [[[[FBFileReader
-    readerWithFilePath:otestShimOutputPath consumer:otestShimConsumer]
+  return [[[[[FBLogicTestRunStrategy
+    fromQueue:queue waitForDebuggerToBeAttached:self.configuration.waitForDebugger forProcessIdentifier:processInfo.processIdentifier reporter:reporter]
+    onQueue:queue fmap:^(id _) {
+      return [FBFileReader readerWithFilePath:otestShimOutputPath consumer:otestShimConsumer];
+    }]
     onQueue:queue fmap:^(FBFileReader *reader) {
       return [[reader startReading] mapReplace:reader];
     }]
@@ -189,6 +185,30 @@
       [consumer eofHasBeenReceived],
     ]];
   }];
+}
+
++ (FBFuture<NSNull *> *)fromQueue:(dispatch_queue_t)queue waitForDebuggerToBeAttached:(BOOL)waitFor forProcessIdentifier:(pid_t)processIdentifier reporter:(id<FBLogicXCTestReporter>)reporter
+{
+  if (!waitFor) {
+    return [FBFuture futureWithResult:NSNull.null];
+  }
+
+  // Report from the current queue, but wait in a special queue.
+  dispatch_queue_t waitQueue = dispatch_queue_create("com.facebook.xctestbootstrap.debugger_wait", DISPATCH_QUEUE_SERIAL);
+  [reporter processWaitingForDebuggerWithProcessIdentifier:processIdentifier];
+  return [[FBFuture
+    onQueue:waitQueue resolve:^{
+      // If wait_for_debugger is passed, the child process receives SIGSTOP after immediately launch.
+      // We wait until it receives SIGCONT from an attached debugger.
+      waitid(P_PID, (id_t)processIdentifier, NULL, WCONTINUED);
+      [reporter debuggerAttached];
+
+      return [FBFuture futureWithResult:NSNull.null];
+    }]
+    onQueue:queue map:^(id _) {
+      [reporter debuggerAttached];
+      return NSNull.null;
+    }];
 }
 
 - (FBXCTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer
