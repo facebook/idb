@@ -94,7 +94,7 @@
 
 - (FBFuture<NSArray<NSString *> *> *)listTests
 {
-  NSString *xctestPath = self.configuration.destination.xctestPath;
+  NSString *xctestPath = self.executor.xctestPath;
   NSString *otestQueryPath = self.executor.queryShimPath;
   NSString *otestQueryOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"query-output-pipe"];
   [NSFileManager.defaultManager removeItemAtPath:otestQueryOutputPath error:nil];

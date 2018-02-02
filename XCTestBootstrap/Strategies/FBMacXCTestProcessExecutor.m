@@ -58,6 +58,12 @@
     start];
 }
 
+- (NSString *)xctestPath
+{
+  return [FBXcodeConfiguration.developerDirectory
+    stringByAppendingPathComponent:@"usr/bin/xctest"];
+}
+
 - (NSString *)shimPath
 {
   return self.configuration.shims.macOSTestShimPath;

@@ -18,11 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBXCTestDestination : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
 
-/**
- The Path to the xctest executable.
- */
-@property (nonatomic, copy, readonly) NSString *xctestPath;
-
 @end
 
 /**

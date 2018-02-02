@@ -67,12 +67,6 @@ static NSString *KeyPlatformMacOS = @"macos";
 
 @implementation FBXCTestDestinationMacOSX
 
-- (NSString *)xctestPath
-{
-  return [FBXcodeConfiguration.developerDirectory
-    stringByAppendingPathComponent:@"usr/bin/xctest"];
-}
-
 #pragma mark NSObject
 
 - (BOOL)isEqual:(FBXCTestDestinationiPhoneSimulator *)object
@@ -117,11 +111,6 @@ static NSString *KeyPlatformMacOS = @"macos";
   return self;
 }
 
-- (NSString *)xctestPath
-{
-  return [FBXcodeConfiguration.developerDirectory
-    stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
-}
 #pragma mark NSObject
 
 - (BOOL)isEqual:(FBXCTestDestinationiPhoneSimulator *)object

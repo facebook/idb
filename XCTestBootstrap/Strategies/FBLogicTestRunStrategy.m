@@ -67,7 +67,7 @@
 
   [reporter didBeginExecutingTestPlan];
 
-  NSString *xctestPath = self.configuration.destination.xctestPath;
+  NSString *xctestPath = self.executor.xctestPath;
   NSString *shimPath = self.executor.shimPath;
 
   // The fifo is used by the shim to report events from within the xctest framework.

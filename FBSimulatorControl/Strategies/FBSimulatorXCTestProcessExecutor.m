@@ -72,6 +72,12 @@
     launchAgent:configuration];
 }
 
+- (NSString *)xctestPath
+{
+  return [FBXcodeConfiguration.developerDirectory
+    stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
+}
+
 - (NSString *)shimPath
 {
   return self.configuration.shims.iOSSimulatorTestShimPath;

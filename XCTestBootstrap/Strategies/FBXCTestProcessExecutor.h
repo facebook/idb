@@ -20,6 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @protocol FBXCTestProcessExecutor <NSObject>
 
+#pragma mark Methods
+
 /**
  Starts the xctest process.
 
@@ -27,6 +29,13 @@ NS_ASSUME_NONNULL_BEGIN
  @return an FBLaunchedProcess identifying the process.
  */
 - (FBFuture<id<FBLaunchedProcess>> *)startProcess:(FBXCTestProcess *)process;
+
+#pragma mark Properties
+
+/**
+ The Path to the xctest executable.
+ */
+@property (nonatomic, copy, readonly) NSString *xctestPath;
 
 /**
  The path to the Shim dylib used for reporting test output.
