@@ -56,7 +56,7 @@
 + (instancetype)makeDefaultConfiguration
 {
   FBDeviceModel model = FBDeviceModeliPhone6;
-  FBDeviceType *device = FBControlCoreConfigurationVariants.nameToDevice[model];
+  FBDeviceType *device = FBiOSTargetConfiguration.nameToDevice[model];
   FBOSVersion *os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
   NSAssert(
     os,
@@ -158,7 +158,7 @@
 
 - (instancetype)withDeviceModel:(FBDeviceModel)model
 {
-  FBDeviceType *device = FBControlCoreConfigurationVariants.nameToDevice[model];
+  FBDeviceType *device = FBiOSTargetConfiguration.nameToDevice[model];
   device = device ?: [FBDeviceType genericWithName:model];
   return [self withDevice:device];
 }
@@ -183,7 +183,7 @@
 
 - (instancetype)withOSNamed:(FBOSVersionName)osName
 {
-  FBOSVersion *os = FBControlCoreConfigurationVariants.nameToOSVersion[osName];
+  FBOSVersion *os = FBiOSTargetConfiguration.nameToOSVersion[osName];
   os = os ?: [FBOSVersion genericWithName:osName];
   return [self withOS:os];
 }

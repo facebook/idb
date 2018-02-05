@@ -59,7 +59,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Creates and returns a FBSimulatorConfiguration object that matches the provided SimDevice.
- Will fail if the Device Type or OS Version are not known by FBControlCoreConfigurationVariants.
+ Will fail if the Device Type or OS Version are not known by FBiOSTargetConfiguration.
 
  @param simDevice the SimDevice to infer Simulator Configuration from.
  @param error any error that occurs in the inference of a configuration
@@ -69,7 +69,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Creates and returns a FBSimulatorConfiguration object that matches the provided SimDevice.
- Will synthesize a configuration if the Device Type or OS Version are not known by FBControlCoreConfigurationVariants.
+ Will synthesize a configuration if the Device Type or OS Version are not known by FBiOSTargetConfiguration.
 
  @param simDevice the SimDevice to infer a Simulator Configuration from.
  @return A FBSimulatorConfiguration object that matches the device, providing a generic configuration where relevant.

@@ -383,8 +383,8 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
     self->_architecture = CFBridgingRelease(FB_AMDeviceCopyValue(device, NULL, CFSTR("CPUArchitecture")));
 
     NSString *osVersion = [FBAMDevice osVersionForDevice:device];
-    self->_deviceConfiguration = FBControlCoreConfigurationVariants.productTypeToDevice[self->_productType];
-    self->_osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[osVersion] ?: [FBOSVersion genericWithName:osVersion];
+    self->_deviceConfiguration = FBiOSTargetConfiguration.productTypeToDevice[self->_productType];
+    self->_osConfiguration = FBiOSTargetConfiguration.nameToOSVersion[osVersion] ?: [FBOSVersion genericWithName:osVersion];
     return @YES;
   } error:nil] != nil;
 }

@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCoreConfigurationVariants.h>
+#import <FBControlCore/FBiOSTargetConfiguration.h>
 #import <FBControlCore/FBiOSTarget.h>
 
 NS_ASSUME_NONNULL_BEGIN

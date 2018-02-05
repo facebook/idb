@@ -12,7 +12,7 @@
 #import "FBiOSTarget.h"
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
-#import "FBControlCoreConfigurationVariants.h"
+#import "FBiOSTargetConfiguration.h"
 #import "FBProcessInfo.h"
 
 FBiOSTargetFormatKey const FBiOSTargetFormatUDID = @"udid";

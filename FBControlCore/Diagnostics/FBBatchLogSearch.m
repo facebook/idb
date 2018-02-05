@@ -12,7 +12,7 @@
 #import "FBCollectionInformation.h"
 #import "FBCollectionOperations.h"
 #import "FBConcurrentCollectionOperations.h"
-#import "FBControlCoreConfigurationVariants.h"
+#import "FBiOSTargetConfiguration.h"
 #import "FBControlCoreError.h"
 #import "FBDiagnostic.h"
 #import "FBEventReporter.h"

@@ -172,7 +172,7 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_4_2;
 /**
  Mappings of Variants.
  */
-@interface FBControlCoreConfigurationVariants : NSObject
+@interface FBiOSTargetConfiguration : NSObject
 
 /**
  Maps Device Names to Devices.

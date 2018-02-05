@@ -9,7 +9,7 @@
 
 #import "FBiOSTarget.h"
 
-#import "FBControlCoreConfigurationVariants.h"
+#import "FBiOSTargetConfiguration.h"
 
 FBSimulatorStateString const FBSimulatorStateStringCreating = @"Creating";
 FBSimulatorStateString const FBSimulatorStateStringShutdown = @"Shutdown";

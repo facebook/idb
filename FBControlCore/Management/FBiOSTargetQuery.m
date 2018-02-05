@@ -12,7 +12,7 @@
 #import "FBiOSTarget.h"
 #import "FBControlCoreError.h"
 #import "FBCollectionInformation.h"
-#import "FBControlCoreConfigurationVariants.h"
+#import "FBiOSTargetConfiguration.h"
 #import "FBiOSTargetPredicates.h"
 
 static NSString *const KeyNames = @"names";
@@ -409,7 +409,7 @@ static NSString *const KeyRange = @"range";
 {
   NSMutableArray<FBOSVersionName> *osVersions = [NSMutableArray array];
   for (NSString *string in strings) {
-    FBOSVersion *osVersion = FBControlCoreConfigurationVariants.nameToOSVersion[string];
+    FBOSVersion *osVersion = FBiOSTargetConfiguration.nameToOSVersion[string];
     if (!osVersion) {
       continue;
     }
@@ -422,7 +422,7 @@ static NSString *const KeyRange = @"range";
 {
   NSMutableArray<FBDeviceModel> *devices = [NSMutableArray array];
   for (NSString *string in strings) {
-    FBDeviceType *device = FBControlCoreConfigurationVariants.nameToDevice[string];
+    FBDeviceType *device = FBiOSTargetConfiguration.nameToDevice[string];
     if (!device) {
       continue;
     }

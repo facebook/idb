@@ -29,7 +29,7 @@
 #import <FBControlCore/FBCollectionInformation.h>
 #import <FBControlCore/FBCollectionOperations.h>
 #import <FBControlCore/FBConcurrentCollectionOperations.h>
-#import <FBControlCore/FBControlCoreConfigurationVariants.h>
+#import <FBControlCore/FBiOSTargetConfiguration.h>
 #import <FBControlCore/FBControlCoreError.h>
 #import <FBControlCore/FBControlCoreFrameworkLoader.h>
 #import <FBControlCore/FBControlCoreGlobalConfiguration.h>

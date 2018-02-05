@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBControlCoreConfigurationVariants.h"
+#import "FBiOSTargetConfiguration.h"
 
 #import "FBArchitecture.h"
 
@@ -255,7 +255,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_4_2 = @"watchOS 4.2";
 
 @end
 
-@implementation FBControlCoreConfigurationVariants
+@implementation FBiOSTargetConfiguration
 
 #pragma mark Lookup Tables
 

@@ -11,7 +11,7 @@
 
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBJSONConversion.h>
-#import <FBControlCore/FBControlCoreConfigurationVariants.h>
+#import <FBControlCore/FBiOSTargetConfiguration.h>
 #import <FBControlCore/FBArchitecture.h>
 
 NS_ASSUME_NONNULL_BEGIN

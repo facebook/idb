@@ -13,31 +13,31 @@
 
 #import "FBControlCoreValueTestCase.h"
 
-@interface FBControlCoreConfigurationVariantsTests : FBControlCoreValueTestCase
+@interface FBiOSTargetConfigurationTests : FBControlCoreValueTestCase
 
 @end
 
-@implementation FBControlCoreConfigurationVariantsTests
+@implementation FBiOSTargetConfigurationTests
 
 + (NSArray<FBDeviceType *> *)deviceTypeConfigurations
 {
-  return [FBControlCoreConfigurationVariants.nameToDevice allValues];
+  return [FBiOSTargetConfiguration.nameToDevice allValues];
 }
 
 + (NSArray<FBOSVersion *> *)osVersionConfigurations
 {
-  return [FBControlCoreConfigurationVariants.nameToOSVersion allValues];
+  return [FBiOSTargetConfiguration.nameToOSVersion allValues];
 }
 
 - (void)testDeviceTypes
 {
-  NSArray<FBDeviceType *> *configurations = FBControlCoreConfigurationVariantsTests.deviceTypeConfigurations;
+  NSArray<FBDeviceType *> *configurations = FBiOSTargetConfigurationTests.deviceTypeConfigurations;
   [self assertEqualityOfCopy:configurations];
 }
 
 - (void)testOSVersions
 {
-  NSArray<FBOSVersion *> *configurations = FBControlCoreConfigurationVariantsTests.osVersionConfigurations;
+  NSArray<FBOSVersion *> *configurations = FBiOSTargetConfigurationTests.osVersionConfigurations;
   [self assertEqualityOfCopy:configurations];
 }
 
