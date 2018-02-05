@@ -12,6 +12,9 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+#import "FBXCTestCommandLine.h"
+#import "FBXCTestDestination.h"
+
 @interface FBXCTestSimulatorFetcher ()
 
 @property (nonatomic, strong, readonly) FBSimulatorControl *simulatorControl;
@@ -54,16 +57,16 @@
 
 #pragma mark Public Methods
 
-- (FBFuture<FBSimulator *> *)fetchSimulatorForConfiguration:(FBXCTestConfiguration *)configuration
+- (FBFuture<FBSimulator *> *)fetchSimulatorForCommandLine:(FBXCTestCommandLine *)commandLine
 {
-  FBXCTestDestinationiPhoneSimulator *destination = (FBXCTestDestinationiPhoneSimulator *)configuration.destination;
+  FBXCTestDestinationiPhoneSimulator *destination = (FBXCTestDestinationiPhoneSimulator *) commandLine.destination;
   if (![destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]) {
     return [[FBXCTestError
-      describeFormat:@"%@ is not a Simulator Destination", configuration.destination]
+      describeFormat:@"%@ is not a Simulator Destination", destination]
       failFuture];
   }
 
-  if ([configuration isKindOfClass:FBTestManagerTestConfiguration.class]) {
+  if ([commandLine.configuration isKindOfClass:FBTestManagerTestConfiguration.class]) {
     return [self fetchSimulatorForApplicationTest:destination];
   }
   return [self fetchSimulatorForLogicTest:destination];

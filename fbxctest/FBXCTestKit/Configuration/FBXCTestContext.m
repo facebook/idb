@@ -12,6 +12,7 @@
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBXCTestSimulatorFetcher.h"
+#import "FBXCTestCommandLine.h"
 
 @interface FBXCTestContext ()
 
@@ -44,17 +45,17 @@
 
 #pragma mark Public
 
-- (FBFuture<FBSimulator *> *)simulatorForiOSTestRun:(FBXCTestConfiguration *)configuration
+- (FBFuture<FBSimulator *> *)simulatorForCommandLine:(FBXCTestCommandLine *)commmandLine
 {
   if (!self.simulatorFetcher) {
     NSError *error = nil;
-    FBXCTestSimulatorFetcher *fetcher = [FBXCTestSimulatorFetcher fetcherWithWorkingDirectory:configuration.workingDirectory logger:self.logger error:&error];
+    FBXCTestSimulatorFetcher *fetcher = [FBXCTestSimulatorFetcher fetcherWithWorkingDirectory:commmandLine.configuration.workingDirectory logger:self.logger error:&error];
     if (!fetcher) {
       return [FBFuture futureWithError:error];
     }
     self.simulatorFetcher = fetcher;
   }
-  return [self.simulatorFetcher fetchSimulatorForConfiguration:configuration];
+  return [self.simulatorFetcher fetchSimulatorForCommandLine:commmandLine];
 }
 
 - (FBFuture<NSNull *> *)finishedExecutionOnSimulator:(FBSimulator *)simulator

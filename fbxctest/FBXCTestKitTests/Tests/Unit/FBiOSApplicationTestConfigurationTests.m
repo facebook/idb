@@ -41,13 +41,14 @@
                                      @"-only", testFilter];
 
   NSError *error;
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory error:&error];
-
+  FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
-  XCTAssertNotNil(configuration);
+  XCTAssertNotNil(commandLine);
+
+  FBXCTestConfiguration *configuration = commandLine.configuration;
   XCTAssertTrue([configuration isKindOfClass:FBTestManagerTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
-  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
+  XCTAssertTrue([commandLine.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
   XCTAssertEqual(configuration.waitForDebugger, NO);
   XCTAssertEqual(configuration.testType, FBXCTestTypeApplicationTest);
 

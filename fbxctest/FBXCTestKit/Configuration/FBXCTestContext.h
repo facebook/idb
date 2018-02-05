@@ -14,7 +14,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
-@class FBXCTestConfiguration;
+@class FBXCTestCommandLine;
 @class FBXCTestLogger;
 @protocol FBXCTestReporter;
 
@@ -53,10 +53,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Obtains the Simulator for an iOS Test Run.
 
- @param configuration the configuration to use.
+ @param commmandLine the configuration to use.
  @return A future that wraps the Simulator;.
  */
-- (FBFuture<FBSimulator *> *)simulatorForiOSTestRun:(FBXCTestConfiguration *)configuration;
+- (FBFuture<FBSimulator *> *)simulatorForCommandLine:(FBXCTestCommandLine *)commmandLine;
 
 /**
  Causes the Simulator to be released from the test run.

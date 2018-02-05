@@ -14,7 +14,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
-@class FBXCTestConfiguration;
+@class FBXCTestCommandLine;
 @protocol FBControlCoreLogger;
 
 /**
@@ -39,10 +39,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Gets a Simulator for the configuration provided in the constructor.
 
- @param configuration the configuration to fetch for.
+ @param commandLine the configuration to fetch for.
  @return a Future that resolves with the Simulator if successful, nil otherwise.
  */
-- (FBFuture<FBSimulator *> *)fetchSimulatorForConfiguration:(FBXCTestConfiguration *)configuration;
+- (FBFuture<FBSimulator *> *)fetchSimulatorForCommandLine:(FBXCTestCommandLine *)commandLine;
 
 /**
  Return the Simulator after the Test Run is completed.

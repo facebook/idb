@@ -37,27 +37,29 @@
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath];
 
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory error:&error];
-
+  FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
-  XCTAssertNotNil(configuration);
+  XCTAssertNotNil(commandLine);
+  FBXCTestConfiguration *configuration = commandLine.configuration;
+
   XCTAssertNotNil(configuration.shims);
   XCTAssertTrue([configuration isKindOfClass:FBLogicTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
-  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
+  XCTAssertTrue([commandLine.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
 
-  FBXCTestConfiguration *expected = [FBLogicTestConfiguration
-    configurationWithDestination:[[FBXCTestDestinationMacOSX alloc] init]
-    shims:configuration.shims
-    environment:processEnvironment
-    workingDirectory:workingDirectory
-    testBundlePath:testBundlePath
-    waitForDebugger:NO
-    timeout:0
-    testFilter:nil
-    mirroring:FBLogicTestMirrorFileLogs];
-  XCTAssertEqualObjects(configuration, expected);
+  FBXCTestCommandLine *expected = [FBXCTestCommandLine
+    commandLineWithConfiguration:[FBLogicTestConfiguration
+      configurationWithShims:configuration.shims
+      environment:processEnvironment
+      workingDirectory:workingDirectory
+      testBundlePath:testBundlePath
+      waitForDebugger:NO
+      timeout:0
+      testFilter:nil
+      mirroring:FBLogicTestMirrorFileLogs]
+    destination:[[FBXCTestDestinationMacOSX alloc] init]];
+  XCTAssertEqualObjects(commandLine, expected);
 }
 
 - (void)testMacLogicTestsIgnoresDestination
@@ -73,26 +75,28 @@
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath];
 
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory error:&error];
-
+  FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
-  XCTAssertNotNil(configuration);
+  XCTAssertNotNil(commandLine);
+  FBXCTestConfiguration *configuration = commandLine.configuration;
+
   XCTAssertNotNil(configuration.shims);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
-  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
+  XCTAssertTrue([commandLine.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
 
-  FBXCTestConfiguration *expected = [FBLogicTestConfiguration
-    configurationWithDestination:[[FBXCTestDestinationMacOSX alloc] init]
-    shims:configuration.shims
-    environment:processEnvironment
-    workingDirectory:workingDirectory
-    testBundlePath:testBundlePath
-    waitForDebugger:NO
-    timeout:0
-    testFilter:nil
-    mirroring:FBLogicTestMirrorFileLogs];
-  XCTAssertEqualObjects(configuration, expected);
+  FBXCTestCommandLine *expected = [FBXCTestCommandLine
+    commandLineWithConfiguration:[FBLogicTestConfiguration
+      configurationWithShims:configuration.shims
+      environment:processEnvironment
+      workingDirectory:workingDirectory
+      testBundlePath:testBundlePath
+      waitForDebugger:NO
+      timeout:0
+      testFilter:nil
+      mirroring:FBLogicTestMirrorFileLogs]
+    destination:[[FBXCTestDestinationMacOSX alloc] init]];
+  XCTAssertEqualObjects(commandLine, expected);
 }
 
 - (void)testMacTestList
@@ -107,23 +111,25 @@
   NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath, @"-listTestsOnly" ];
 
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
-
+  FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
-  XCTAssertNotNil(configuration);
+  XCTAssertNotNil(commandLine);
+  FBXCTestConfiguration *configuration = commandLine.configuration;
+
   XCTAssertNotNil(configuration.shims);
-  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
+  XCTAssertTrue([commandLine.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
 
-  FBXCTestConfiguration *expected = [FBListTestConfiguration
-    configurationWithDestination:[[FBXCTestDestinationMacOSX alloc] init]
-    shims:configuration.shims
-    environment:@{}
-    workingDirectory:workingDirectory
-    testBundlePath:testBundlePath
-    waitForDebugger:NO
-    timeout:0];
-  XCTAssertEqualObjects(configuration, expected);
+  FBXCTestCommandLine *expected = [FBXCTestCommandLine
+    commandLineWithConfiguration:[FBListTestConfiguration
+      configurationWithShims:configuration.shims
+      environment:@{}
+      workingDirectory:workingDirectory
+      testBundlePath:testBundlePath
+      waitForDebugger:NO
+      timeout:0]
+    destination:[[FBXCTestDestinationMacOSX alloc] init]];
+  XCTAssertEqualObjects(commandLine, expected);
 }
 
 - (void)testMacTestListIgnoresDestination
@@ -138,23 +144,25 @@
   NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath, @"-listTestsOnly" ];
 
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
-
+  FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
-  XCTAssertNotNil(configuration);
+  XCTAssertNotNil(commandLine);
+  FBXCTestConfiguration *configuration = commandLine.configuration;
+
   XCTAssertNotNil(configuration.shims);
-  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
+  XCTAssertTrue([commandLine.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
 
-  FBXCTestConfiguration *expected = [FBListTestConfiguration
-    configurationWithDestination:[[FBXCTestDestinationMacOSX alloc] init]
-    shims:configuration.shims
-    environment:@{}
-    workingDirectory:workingDirectory
-    testBundlePath:testBundlePath
-    waitForDebugger:NO
-    timeout:0];
-  XCTAssertEqualObjects(configuration, expected);
+  FBXCTestCommandLine *expected = [FBXCTestCommandLine
+    commandLineWithConfiguration:[FBListTestConfiguration
+      configurationWithShims:configuration.shims
+      environment:@{}
+      workingDirectory:workingDirectory
+      testBundlePath:testBundlePath
+      waitForDebugger:NO
+      timeout:0]
+    destination:[[FBXCTestDestinationMacOSX alloc] init]];
+  XCTAssertEqualObjects(commandLine, expected);
 }
 
 @end

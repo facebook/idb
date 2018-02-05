@@ -7,21 +7,45 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBXCTestConfiguration+CommandLine.h"
+#import "FBXCTestCommandLine.h"
 
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+#import "FBXCTestDestination.h"
+
 FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
 
-@implementation FBXCTestConfiguration (CommandLine)
+@implementation FBXCTestCommandLine
 
-+ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory error:(NSError **)error
+#pragma mark Initializers
+
++ (instancetype)commandLineWithConfiguration:(FBXCTestConfiguration *)configuration destination:(FBXCTestDestination *)destination
 {
-  return [self configurationFromArguments:arguments processUnderTestEnvironment:environment workingDirectory:workingDirectory timeout:0 error:nil];
+  return [[self alloc] initWithConfiguration:configuration destination:destination];
 }
 
-+ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory timeout:(NSTimeInterval)timeout error:(NSError **)error
+- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration destination:(FBXCTestDestination *)destination
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _configuration = configuration;
+  _destination = destination;
+
+  return self;
+}
+
+#pragma mark Parsing
+
++ (nullable instancetype)commandLineFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory error:(NSError **)error
+{
+  return [self commandLineFromArguments:arguments processUnderTestEnvironment:environment workingDirectory:workingDirectory timeout:0 error:nil];
+}
+
++ (nullable instancetype)commandLineFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory timeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   FBXCTestDestination *destination = [self destinationWithArguments:arguments error:error];
   if (!destination) {
@@ -33,24 +57,22 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
   NSString *testFilter = nil;
   NSString *testTargetPathOut = nil;
   BOOL waitForDebugger = NO;
-  if (![FBXCTestConfiguration loadWithArguments:arguments shimsOut:&shims testBundlePathOut:&testBundlePath runnerAppPathOut:&runnerAppPath testTargetPathOut:&testTargetPathOut testFilterOut:&testFilter waitForDebuggerOut:&waitForDebugger error:error]) {
+  if (![FBXCTestCommandLine loadWithArguments:arguments shimsOut:&shims testBundlePathOut:&testBundlePath runnerAppPathOut:&runnerAppPath testTargetPathOut:&testTargetPathOut testFilterOut:&testFilter waitForDebuggerOut:&waitForDebugger error:error]) {
     return nil;
   }
   NSSet<NSString *> *argumentSet = [NSSet setWithArray:arguments];
+  FBXCTestConfiguration *configuration = nil;
   if ([argumentSet containsObject:@"-listTestsOnly"]) {
-    return [FBListTestConfiguration
-      configurationWithDestination:destination
-      shims:shims
+    configuration = [FBListTestConfiguration
+      configurationWithShims:shims
       environment:environment
       workingDirectory:workingDirectory
       testBundlePath:testBundlePath
       waitForDebugger:waitForDebugger
       timeout:timeout];
-  }
-  if ([argumentSet containsObject:@"-logicTest"]) {
-    return [FBLogicTestConfiguration
-      configurationWithDestination:destination
-      shims:shims
+  } else if ([argumentSet containsObject:@"-logicTest"]) {
+    configuration = [FBLogicTestConfiguration
+      configurationWithShims:shims
       environment:environment
       workingDirectory:workingDirectory
       testBundlePath:testBundlePath
@@ -58,11 +80,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       timeout:timeout
       testFilter:testFilter
       mirroring:FBLogicTestMirrorFileLogs];
-  }
-  if ([argumentSet containsObject:@"-appTest"]) {
-    return [FBTestManagerTestConfiguration
-      configurationWithDestination:destination
-      environment:environment
+  } else if ([argumentSet containsObject:@"-appTest"]) {
+    configuration = [FBTestManagerTestConfiguration
+      configurationWithEnvironment:environment
       workingDirectory:workingDirectory
       testBundlePath:testBundlePath
       waitForDebugger:waitForDebugger
@@ -70,11 +90,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       runnerAppPath:runnerAppPath
       testTargetAppPath:nil
       testFilter:testFilter];
-  }
-  if ([argumentSet containsObject:@"-uiTest"]) {
-    return [FBTestManagerTestConfiguration
-      configurationWithDestination:destination
-      environment:environment
+  } else if ([argumentSet containsObject:@"-uiTest"]) {
+    configuration = [FBTestManagerTestConfiguration
+      configurationWithEnvironment:environment
       workingDirectory:workingDirectory
       testBundlePath:testBundlePath
       waitForDebugger:waitForDebugger
@@ -83,9 +101,12 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       testTargetAppPath:testTargetPathOut
       testFilter:nil];
   }
-  return [[FBControlCoreError
-    describeFormat:@"Could not determine test runner type from %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]]
-    fail:error];
+  if (!configuration) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not determine test runner type from %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]]
+      fail:error];
+  }
+  return [[FBXCTestCommandLine alloc] initWithConfiguration:configuration destination:destination];
 }
 
 + (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments shimsOut:(FBXCTestShimConfiguration **)shimsOut testBundlePathOut:(NSString **)testBundlePathOut runnerAppPathOut:(NSString **)runnerAppPathOut testTargetPathOut:(NSString **)testTargetPathOut testFilterOut:(NSString **)testFilterOut waitForDebuggerOut:(BOOL *)waitForDebuggerOut error:(NSError **)error
@@ -288,6 +309,21 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
     path = path.stringByDeletingLastPathComponent;
   }
   return path;
+}
+
+#pragma mark NSObject
+
+- (BOOL)isEqual:(FBXCTestCommandLine *)object
+{
+  if (![object isKindOfClass:self.class]) {
+    return NO;
+  }
+  return [object.configuration isEqual:self.configuration] && [object.destination isEqual:self.destination];
+}
+
+- (NSUInteger)hash
+{
+  return self.configuration.hash ^ self.destination.hash;
 }
 
 @end

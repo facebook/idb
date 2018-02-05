@@ -49,20 +49,20 @@
   arguments = [arguments subarrayWithRange:NSMakeRange(1, [arguments count] - 1)];
   [self.logger.debug logFormat:@"fbxctest arguments: %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
   [self.logger.debug logFormat:@"xcode configuration: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:FBXcodeConfiguration.new.jsonSerializableRepresentation]];
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration
-    configurationFromArguments:arguments
+  FBXCTestCommandLine *commandLine = [FBXCTestCommandLine
+    commandLineFromArguments:arguments
     processUnderTestEnvironment:@{}
     workingDirectory:workingDirectory
     error:&error];
-  if (!configuration) {
+  if (!commandLine) {
     return [self printErrorMessage:error];
   }
   FBFileWriter *stdOutFileWriter = [FBFileWriter syncWriterWithFileHandle:NSFileHandle.fileHandleWithStandardOutput];
-  FBJSONTestReporter *reporter = [[FBJSONTestReporter alloc] initWithTestBundlePath:configuration.testBundlePath testType:configuration.testType logger:self.logger fileConsumer:stdOutFileWriter];
+  FBJSONTestReporter *reporter = [[FBJSONTestReporter alloc] initWithTestBundlePath:commandLine.configuration.testBundlePath testType:commandLine.configuration.testType logger:self.logger fileConsumer:stdOutFileWriter];
   FBXCTestContext *context = [FBXCTestContext contextWithReporter:reporter logger:self.logger];
 
-  [self.logger.info logFormat:@"Bootstrapping Test Runner with Configuration %@", [FBCollectionInformation oneLineJSONDescription:configuration]];
-  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:context];
+  [self.logger.info logFormat:@"Bootstrapping Test Runner with Configuration %@", [FBCollectionInformation oneLineJSONDescription:commandLine.configuration]];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithCommandLine:commandLine context:context];
   if (![[testRunner execute] await:&error]) {
     return [self printErrorMessage:error];
   }

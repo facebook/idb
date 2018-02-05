@@ -79,10 +79,8 @@
   if (!shims) {
     return [FBFuture futureWithError:error];
   }
-  FBXCTestDestination *destination = [[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:self.simulator.deviceType.model version:self.simulator.osVersion.name];
   FBListTestConfiguration *configuration = [FBListTestConfiguration
-    configurationWithDestination:destination
-    shims:shims
+    configurationWithShims:shims
     environment:@{}
     workingDirectory:self.simulator.auxillaryDirectory
     testBundlePath:bundlePath

@@ -13,7 +13,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBXCTestConfiguration;
+@class FBXCTestCommandLine;
 @class FBXCTestContext;
 
 /**
@@ -26,10 +26,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer
 
- @param configuration the test configuration.
+ @param commandLine the configuration from the commandline.
  @param context the context to run with.
  */
-+ (instancetype)testRunnerWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context;
++ (instancetype)testRunnerWithCommandLine:(FBXCTestCommandLine *)commandLine context:(FBXCTestContext *)context;
 
 @end
 

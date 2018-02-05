@@ -18,10 +18,12 @@
 
 #import "FBXCTestSimulatorFetcher.h"
 #import "FBXCTestContext.h"
+#import "FBXCTestCommandLine.h"
+#import "FBXCTestDestination.h"
 
 @interface FBXCTestBaseRunner ()
 
-@property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBXCTestCommandLine *commandLine;
 @property (nonatomic, strong, readonly) FBXCTestContext *context;
 
 @end
@@ -30,19 +32,19 @@
 
 #pragma mark Initializers
 
-+ (instancetype)testRunnerWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context
++ (instancetype)testRunnerWithCommandLine:(FBXCTestCommandLine *)commandLine context:(FBXCTestContext *)context
 {
-  return [[self alloc] initWithConfiguration:configuration context:context];
+  return [[self alloc] initWithCommandLine:commandLine context:context];
 }
 
-- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context
+- (instancetype)initWithCommandLine:(FBXCTestCommandLine *)commandLine context:(FBXCTestContext *)context
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _configuration = configuration;
+  _commandLine = commandLine;
   _context = context;
 
   return self;
@@ -52,7 +54,7 @@
 
 - (FBFuture<NSNull *> *)execute
 {
-  FBFuture<NSNull *> *future = [self.configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class] ? [self runiOSTest] : [self runMacTest];
+  FBFuture<NSNull *> *future = [self.commandLine.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class] ? [self runiOSTest] : [self runMacTest];
   return [future
     onQueue:dispatch_get_main_queue() fmap:^(id _) {
       NSError *error = nil;
@@ -64,6 +66,11 @@
 }
 
 #pragma mark Private
+
+- (FBXCTestConfiguration *)configuration
+{
+  return self.commandLine.configuration;
+}
 
 - (FBFuture<NSNull *> *)runMacTest
 {
@@ -86,7 +93,7 @@
 - (FBFuture<NSNull *> *)runiOSTest
 {
   return [[self.context
-    simulatorForiOSTestRun:self.configuration]
+    simulatorForCommandLine:self.commandLine]
     onQueue:dispatch_get_main_queue() fmap:^(FBSimulator *simulator) {
       return [[self
         runTestWithSimulator:simulator]
