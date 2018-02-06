@@ -160,6 +160,12 @@
   return self.configuration.os;
 }
 
+- (FBiOSTargetScreenInfo *)screenInfo
+{
+  SimDeviceType *deviceType = self.device.deviceType;
+  return [[FBiOSTargetScreenInfo alloc] initWithWidthPixels:(NSUInteger)deviceType.mainScreenSize.width heightPixels:(NSUInteger)deviceType.mainScreenSize.height scale:deviceType.mainScreenScale];
+}
+
 - (FBiOSTargetDiagnostics *)diagnostics
 {
   return self.simulatorDiagnostics;

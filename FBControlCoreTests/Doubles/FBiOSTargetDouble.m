@@ -14,6 +14,7 @@
 @synthesize architecture;
 @synthesize deviceOperator;
 @synthesize logger;
+@synthesize screenInfo;
 
 + (instancetype)commandsWithTarget:(id<FBiOSTarget>)target
 {

@@ -86,6 +86,47 @@ FBOSVersionName const FBOSVersionNamewatchOS_4_0 = @"watchOS 4.0";
 FBOSVersionName const FBOSVersionNamewatchOS_4_1 = @"watchOS 4.1";
 FBOSVersionName const FBOSVersionNamewatchOS_4_2 = @"watchOS 4.2";
 
+@implementation FBiOSTargetScreenInfo
+
+- (instancetype)initWithWidthPixels:(NSUInteger)widthPixels heightPixels:(NSUInteger)heightPixels scale:(float)scale
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _widthPixels = widthPixels;
+  _heightPixels = heightPixels;
+  _scale = scale;
+
+  return self;
+}
+
+- (BOOL)isEqual:(FBiOSTargetScreenInfo *)object
+{
+  if (![object isKindOfClass:FBiOSTargetScreenInfo.class]) {
+    return NO;
+  }
+  return self.widthPixels == object.widthPixels && self.heightPixels == object.heightPixels && self.scale == object.scale;
+}
+
+- (NSUInteger)hash
+{
+  return self.widthPixels ^ self.heightPixels ^ (NSUInteger) self.scale;
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+  return self;
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Screen Pixels %lu,%lu | Scale %fX", self.widthPixels, self.heightPixels, self.scale];
+}
+
+@end
+
 @implementation FBDeviceType
 
 #pragma mark Initializers

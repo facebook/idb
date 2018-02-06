@@ -26,6 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBProcessInfo;
 @class FBiOSActionRouter;
 @class FBiOSTargetDiagnostics;
+@class FBiOSTargetScreenInfo;
 @protocol FBDeviceOperator;
 @protocol FBControlCoreLogger;
 
@@ -123,6 +124,11 @@ extern FBSimulatorStateString const FBSimulatorStateStringUnknown;
  The OS Version of the Target.
  */
 @property (nonatomic, copy, readonly) FBOSVersion *osVersion;
+
+/**
+ The Screen Info for the Target.
+ */
+@property (nonatomic, copy, nullable, readonly) FBiOSTargetScreenInfo *screenInfo;
 
 /**
  Process Information about the launchd process of the iOS Target. Currently only applies to Simulators.

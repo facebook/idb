@@ -29,6 +29,14 @@
   return [FBiOSTargetConfiguration.nameToOSVersion allValues];
 }
 
++ (NSArray<FBiOSTargetScreenInfo *> *)screenConfigurations
+{
+  return @[
+    [[FBiOSTargetScreenInfo alloc] initWithWidthPixels:320 heightPixels:480 scale:1],
+    [[FBiOSTargetScreenInfo alloc] initWithWidthPixels:640 heightPixels:960 scale:2],
+  ];
+}
+
 - (void)testDeviceTypes
 {
   NSArray<FBDeviceType *> *configurations = FBiOSTargetConfigurationTests.deviceTypeConfigurations;
@@ -38,6 +46,12 @@
 - (void)testOSVersions
 {
   NSArray<FBOSVersion *> *configurations = FBiOSTargetConfigurationTests.osVersionConfigurations;
+  [self assertEqualityOfCopy:configurations];
+}
+
+- (void)testScreenSizes
+{
+  NSArray<FBiOSTargetScreenInfo *> *configurations = FBiOSTargetConfigurationTests.screenConfigurations;
   [self assertEqualityOfCopy:configurations];
 }
 

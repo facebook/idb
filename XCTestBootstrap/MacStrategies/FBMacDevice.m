@@ -83,6 +83,7 @@
     _targetType = FBiOSTargetTypeLocalMac;
     _workQueue = dispatch_get_main_queue();
     _workingDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
+    _screenInfo = nil;
   }
   return self;
 }
@@ -240,6 +241,7 @@
 @synthesize state = _state;
 @synthesize targetType = _targetType;
 @synthesize workQueue = _workQueue;
+@synthesize screenInfo = _screenInfo;
 
 // Not used or set
 @synthesize actionClasses;

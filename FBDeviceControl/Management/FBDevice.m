@@ -178,6 +178,11 @@
   return self.amDevice.systemVersion;
 }
 
+- (FBiOSTargetScreenInfo *)screenInfo
+{
+  return nil;
+}
+
 #pragma mark Forwarding
 
 + (NSMutableArray<Class> *)commandResponders

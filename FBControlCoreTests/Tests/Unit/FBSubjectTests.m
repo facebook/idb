@@ -8,7 +8,7 @@
  */
 
 #import <XCTest/XCTest.h>
-#import <FBControlCore/FBSubject.h>
+#import <FBControlCore/FBControlCore.h>
 #import <asl.h>
 
 @interface FBSubjectTests : XCTestCase

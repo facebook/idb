@@ -107,6 +107,35 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_4_0;
 extern FBOSVersionName const FBOSVersionNamewatchOS_4_1;
 extern FBOSVersionName const FBOSVersionNamewatchOS_4_2;
 
+#pragma mark Screen
+
+/**
+ Information about the Screen.
+ */
+@interface FBiOSTargetScreenInfo : NSObject <NSCopying>
+
+/**
+ The Width of the Screen in Pixels.
+ */
+@property (nonatomic, assign, readonly) NSUInteger widthPixels;
+
+/**
+ The Height of the Screen in Pixels.
+ */
+@property (nonatomic, assign, readonly) NSUInteger heightPixels;
+
+/**
+ The Scale of the Screen.
+ */
+@property (nonatomic, assign, readonly) float scale;
+
+/**
+ The Designated Initializer.
+ */
+- (instancetype)initWithWidthPixels:(NSUInteger)widthPixels heightPixels:(NSUInteger)heightPixels scale:(float)scale;
+
+@end
+
 #pragma mark Devices
 
 @interface FBDeviceType : NSObject <NSCopying>
