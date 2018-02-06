@@ -82,9 +82,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 #pragma mark Initializers
 
-+ (dispatch_queue_t)workQueue
++ (dispatch_queue_t)createWorkQueue
 {
-  return dispatch_get_main_queue();
+  return dispatch_queue_create("com.facebook.fbcontrolcore.process_stream", DISPATCH_QUEUE_SERIAL);
 }
 
 + (FBProcessOutput<NSNull *> *)outputForNullDevice
@@ -216,7 +216,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 {
   return [[FBFuture
     futureWithResult:NSNull.null]
-    onQueue:FBProcessOutput.workQueue respondToCancellation:^{
+    onQueue:FBProcessOutput.createWorkQueue respondToCancellation:^{
       return [self detach];
     }];
 }
@@ -245,7 +245,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 {
   return [[self
     attachToPipeOrFileHandle]
-    onQueue:FBProcessOutput.workQueue map:^(NSPipe *pipe) {
+    onQueue:FBProcessOutput.createWorkQueue map:^(NSPipe *pipe) {
       return pipe.fileHandleForWriting;
     }];
 }
@@ -280,7 +280,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 - (FBFuture<NSNull *> *)detach
 {
   return [self.reader.stopReading
-    onQueue:FBProcessOutput.workQueue chain:^(FBFuture *future) {
+    onQueue:FBProcessOutput.createWorkQueue chain:^(FBFuture *future) {
       self.reader = nil;
       self.pipe = nil;
       return future;
@@ -435,7 +435,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 {
   return [[self
     attachToPipeOrFileHandle]
-    onQueue:FBProcessOutput.workQueue map:^(NSPipe *pipe) {
+    onQueue:FBProcessOutput.createWorkQueue map:^(NSPipe *pipe) {
       return pipe.fileHandleForReading;
     }];
 }
@@ -527,7 +527,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 {
   return [[super
     attachToPipeOrFileHandle]
-    onQueue:FBProcessOutput.workQueue map:^(NSPipe *pipe) {
+    onQueue:FBProcessOutput.createWorkQueue map:^(NSPipe *pipe) {
       [self.writer consumeData:self.data];
       [self.writer consumeEndOfFile];
       return pipe;
