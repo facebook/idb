@@ -81,42 +81,18 @@
 
     [reporter testCaseDidStartForTestClass:testClass method:testName];
   } else if ([eventName isEqualToString:@"end-test"]) {
-    NSString *testClass = JSONEvent[@"className"];
-    NSString *testName = JSONEvent[@"methodName"];
-    NSString *result = JSONEvent[@"result"];
-    NSTimeInterval duration = [JSONEvent[@"totalDuration"] doubleValue];
-    FBTestReportStatus status;
-    if ([result isEqualToString:@"success"]) {
-      status = FBTestReportStatusPassed;
-    } else if ([result isEqualToString:@"failure"]) {
-      NSDictionary *exception = [JSONEvent[@"exceptions"] lastObject];
-      NSString *message = exception[@"reason"];
-      NSString *file = exception[@"filePathInProject"];
-      NSInteger line = [exception[@"lineNumber"] integerValue];
-      [reporter testCaseDidFailForTestClass:testClass method:testName withMessage:message file:file line:(NSUInteger)line];
-      status = FBTestReportStatusFailed;
-    } else {
-      status = FBTestReportStatusUnknown;
-    }
-
-    if (status != FBTestReportStatusUnknown) {
-      [reporter testCaseDidFinishForTestClass:testClass method:testName withStatus:status duration:duration];
-    } else {
-      //We don't know how to handle it, but an upstream reporter might.
-      NSString *stringEvent = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-      [reporter handleExternalEvent:stringEvent];
-    }
+    [self handleEndTest:JSONEvent data:data];
   } else if ([eventName isEqualToString:@"end-test-suite"]) {
     NSDate *finishDate = [NSDate dateWithTimeIntervalSince1970:[JSONEvent[@"timestamp"] doubleValue]];
     NSInteger unexpected = [JSONEvent[@"unexpectedExceptionCount"] integerValue];
     FBTestManagerResultSummary *summary = [[FBTestManagerResultSummary alloc]
-                                           initWithTestSuite:JSONEvent[@"suite"]
-                                           finishTime:finishDate
-                                           runCount:[JSONEvent[@"testCaseCount"] integerValue]
-                                           failureCount:[JSONEvent[@"totalFailureCount"] integerValue]
-                                           unexpected:unexpected
-                                           testDuration:[JSONEvent[@"testDuration"] doubleValue]
-                                           totalDuration:[JSONEvent[@"totalDuration"] doubleValue]];
+      initWithTestSuite:JSONEvent[@"suite"]
+      finishTime:finishDate
+      runCount:[JSONEvent[@"testCaseCount"] integerValue]
+      failureCount:[JSONEvent[@"totalFailureCount"] integerValue]
+      unexpected:unexpected
+      testDuration:[JSONEvent[@"testDuration"] doubleValue]
+      totalDuration:[JSONEvent[@"totalDuration"] doubleValue]];
     [reporter finishedWithSummary:summary];
   } else {
     [self.logger logFormat:@"[%@] Unhandled event JSON: %@", NSStringFromClass(self.class), JSONEvent];
@@ -124,6 +100,35 @@
     NSString *stringEvent = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     [reporter handleExternalEvent:stringEvent];
   }
+}
+
+- (void)handleEndTest:(NSDictionary<NSString *, id> *)JSONEvent data:(NSData *)data
+{
+  id<FBXCTestReporter> reporter = self.reporter;
+  NSString *testClass = JSONEvent[@"className"];
+  NSString *testName = JSONEvent[@"methodName"];
+  NSString *result = JSONEvent[@"result"];
+  NSTimeInterval duration = [JSONEvent[@"totalDuration"] doubleValue];
+
+  if ([result isEqualToString:@"success"]) {
+    [reporter testCaseDidFinishForTestClass:testClass method:testName withStatus:FBTestReportStatusPassed duration:duration];
+  } else if ([[NSSet setWithArray:@[@"failure", @"error"]] containsObject:result]) {
+    [self reportTestFailureForTestClass:testClass testName:testName endTestEvent:JSONEvent];
+    [reporter testCaseDidFinishForTestClass:testClass method:testName withStatus:FBTestReportStatusFailed duration:duration];
+  } else {
+    // We don't know how to handle it, but an upstream reporter might.
+    NSString *stringEvent = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    [reporter handleExternalEvent:stringEvent];
+  }
+}
+
+- (void)reportTestFailureForTestClass:(NSString *)testClass testName:(NSString *)testName endTestEvent:(NSDictionary *)JSONEvent
+{
+  NSDictionary *exception = [JSONEvent[@"exceptions"] lastObject];
+  NSString *message = exception[@"reason"];
+  NSString *file = exception[@"filePathInProject"];
+  NSUInteger line = [exception[@"lineNumber"] unsignedIntegerValue];
+  [self.reporter testCaseDidFailForTestClass:testClass method:testName withMessage:message file:file line:line];
 }
 
 @end
