@@ -7,21 +7,21 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import XCTest
 @testable import FBSimulatorControlKit
+import XCTest
 
-class JSONTests : XCTestCase {
+class JSONTests: XCTestCase {
 
   func testEncodesContainerJSON() {
-    let input: [String : AnyObject] = [
-      "foo" : "bar" as AnyObject,
-      "baz" : NSNull(),
+    let input: [String: AnyObject] = [
+      "foo": "bar" as AnyObject,
+      "baz": NSNull(),
     ]
     do {
       let json = try JSON.encode(input as AnyObject)
       XCTAssertEqual(try json.getValue("foo").getString(), "bar")
-      let _ = json.decode()
-      let _ = try json.decodeContainer()
+      _ = json.decode()
+      _ = try json.decodeContainer()
     } catch let error {
       XCTFail("JSON Failure \(error)")
     }
@@ -32,7 +32,7 @@ class JSONTests : XCTestCase {
     do {
       let json = try JSON.encode(input as AnyObject)
       XCTAssertEqual(try json.getString(), "foo")
-      let _ = json.decode()
+      _ = json.decode()
       if case .some = try? json.decodeContainer() {
         XCTFail("\(input) should fail decodeContainer")
       }
@@ -42,19 +42,18 @@ class JSONTests : XCTestCase {
   }
 
   func testParsesBoolFromNumber() {
-    let input: [String : AnyObject] = [
-      "value" : NSNumber(booleanLiteral: false)
+    let input: [String: AnyObject] = [
+      "value": NSNumber(booleanLiteral: false),
     ]
     do {
       var json = try JSON.encode(input as AnyObject)
       XCTAssertEqual(try json.getValue("value").getBool(), false)
-      json = JSON.dictionary(["value" : JSON.bool(false)])
+      json = JSON.dictionary(["value": JSON.bool(false)])
       XCTAssertEqual(try json.getValue("value").getBool(), false)
-      json = JSON.dictionary(["value" : JSON.number(NSNumber(booleanLiteral: true))])
+      json = JSON.dictionary(["value": JSON.number(NSNumber(booleanLiteral: true))])
       XCTAssertEqual(try json.getValue("value").getBool(), true)
     } catch let error {
       XCTFail("JSON Failure \(error)")
     }
   }
-
 }

@@ -7,8 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
 import FBControlCore
+import Foundation
 
 /**
  A Protocol for defining
@@ -21,7 +21,7 @@ protocol Relay {
 /**
  A Relay that composes multiple relays.
  */
-class CompositeRelay : Relay {
+class CompositeRelay: Relay {
   let relays: [Relay]
 
   init(relays: [Relay]) {
@@ -29,13 +29,13 @@ class CompositeRelay : Relay {
   }
 
   func start() throws {
-    for relay in self.relays {
+    for relay in relays {
       try relay.start()
     }
   }
 
   func stop() throws {
-    for relay in self.relays {
+    for relay in relays {
       // We want to stop all relays, so ignoring error propogation will ensure we clean up all of them.
       try? relay.stop()
     }
@@ -45,7 +45,7 @@ class CompositeRelay : Relay {
 /**
  Wraps an existing Relay, spinning the run loop after the underlying relay has started.
  */
-class SynchronousRelay : Relay {
+class SynchronousRelay: Relay {
   let relay: Relay
   let reporter: EventReporter
   let continuation: FBiOSTargetContinuation?
@@ -60,8 +60,8 @@ class SynchronousRelay : Relay {
 
   func start() throws {
     // Start the Relay and notify consumers.
-    try self.relay.start()
-    self.started()
+    try relay.start()
+    started()
 
     // Construct the futures, whichever completes first will cause the await to break.
     var futures: [FBFuture<NSNull>] = []
@@ -73,28 +73,28 @@ class SynchronousRelay : Relay {
       return NSNull()
     }) as! FBFuture<NSNull>
     futures.append(signalFuture)
-    let _ = try FBFuture(race: futures).await()
+    _ = try FBFuture(race: futures).await()
 
     // If there's an async cancellation, we can ensure that we wait for it to finish.
     if let completedFuture = self.continuation?.completed, completedFuture.state == .cancelled {
-      let _ = try completedFuture.cancel().await()
+      _ = try completedFuture.cancel().await()
     }
   }
 
   func stop() throws {
-    try self.relay.stop()
+    try relay.stop()
   }
 }
 
 /**
  Bridges an Action Reader to a Relay
  */
-extension FBiOSActionReader : Relay {
+extension FBiOSActionReader: Relay {
   func start() throws {
-    try self.startListening().await()
+    try startListening().await()
   }
 
   func stop() throws {
-    try self.stopListening().await()
+    try stopListening().await()
   }
 }

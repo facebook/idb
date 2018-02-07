@@ -7,10 +7,10 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
 import FBControlCore
-import FBSimulatorControl
 import FBDeviceControl
+import FBSimulatorControl
+import Foundation
 
 extension Parser {
   public static var ofInt: Parser<Int> {
@@ -37,7 +37,7 @@ extension Parser {
 
   public static var ofAny: Parser<String> {
     let desc = PrimitiveDesc(name: "string", desc: "String without spaces.")
-    return Parser<String>.single(desc, f: { $0 } )
+    return Parser<String>.single(desc, f: { $0 })
   }
 
   public static var ofUDID: Parser<String> {
@@ -60,13 +60,13 @@ extension Parser {
 
   public static var ofExistingDirectory: Parser<String> {
     let desc = PrimitiveDesc(name: "directory", desc: "Path to an existing directory.")
-    return Parser<String>.single(desc) { token  in
+    return Parser<String>.single(desc) { token in
       let path = (token as NSString).standardizingPath
       var isDirectory: ObjCBool = false
       if !FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) {
         throw ParseError.custom("'\(path)' should exist, but doesn't")
       }
-      if (!isDirectory.boolValue) {
+      if !isDirectory.boolValue {
         throw ParseError.custom("'\(path)' should be a directory, but isn't")
       }
       return path
@@ -81,7 +81,7 @@ extension Parser {
       if !FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) {
         throw ParseError.custom("'\(path)' should exist, but doesn't")
       }
-      if (isDirectory.boolValue) {
+      if isDirectory.boolValue {
         throw ParseError.custom("'\(path)' should be a file, but isn't")
       }
       return path
@@ -92,7 +92,7 @@ extension Parser {
     let desc = PrimitiveDesc(name: "file", desc: "Path to a file.")
     return Parser<String>.single(desc) { token in
       do {
-        let _ = try Parser.ofDashSeparator.parse([token])
+        _ = try Parser.ofDashSeparator.parse([token])
       } catch is ParseError {
         return token
       }
@@ -144,12 +144,12 @@ extension Parser {
     return Parser<(String, FBApplicationBundle?)>
       .alternative([
         Parser.ofApplication.fmap { (app) -> (String, FBApplicationBundle?) in (app.bundleID, app) },
-        Parser.ofBundleID.fmap{ (bundleId) -> (String, FBApplicationBundle?) in (bundleId, nil) },
+        Parser.ofBundleID.fmap { (bundleId) -> (String, FBApplicationBundle?) in (bundleId, nil) },
       ])
   }
 
   public static var ofBundleIDOrApplicationDescriptorBundleID: Parser<String> {
-    return Parser.ofBundleIDOrApplicationDescriptor.fmap{ $0.0 }
+    return Parser.ofBundleIDOrApplicationDescriptor.fmap { $0.0 }
   }
 
   public static var ofDate: Parser<Date> {
@@ -164,7 +164,7 @@ extension Parser {
   }
 }
 
-extension OutputOptions : Parsable {
+extension OutputOptions: Parsable {
   public static var parser: Parser<OutputOptions> {
     return Parser<OutputOptions>.union([singleParser])
   }
@@ -182,7 +182,7 @@ extension OutputOptions : Parsable {
   }
 }
 
-extension FBSimulatorManagementOptions : Parsable {
+extension FBSimulatorManagementOptions: Parsable {
   public static var parser: Parser<FBSimulatorManagementOptions> {
     return Parser<FBSimulatorManagementOptions>.union([singleParser])
   }
@@ -224,14 +224,14 @@ extension FBSimulatorManagementOptions : Parsable {
   }
 }
 
-extension Configuration : Parsable {
+extension Configuration: Parsable {
   public static var parser: Parser<Configuration> {
     let outputOptionsParsers = OutputOptions.singleParser.fmap(Configuration.ofOutputOptions)
     let managementOptionsParsers = FBSimulatorManagementOptions.singleParser.fmap(Configuration.ofManagementOptions)
     return Parser<Configuration>.accumulate(0, [
       outputOptionsParsers,
       managementOptionsParsers,
-      self.deviceSetPathParser
+      self.deviceSetPathParser,
     ])
   }
 
@@ -242,7 +242,7 @@ extension Configuration : Parsable {
   }
 }
 
-extension IndividualCreationConfiguration : Parsable {
+extension IndividualCreationConfiguration: Parsable {
   public static var parser: Parser<IndividualCreationConfiguration> {
     return Parser<IndividualCreationConfiguration>.accumulate(0, [
       self.deviceConfigurationParser,
@@ -265,7 +265,7 @@ extension IndividualCreationConfiguration : Parsable {
   }
 
   static var deviceConfigurationParser: Parser<IndividualCreationConfiguration> {
-    return self.deviceParser.fmap { device in
+    return deviceParser.fmap { device in
       return IndividualCreationConfiguration(
         os: nil,
         model: device,
@@ -287,7 +287,7 @@ extension IndividualCreationConfiguration : Parsable {
   }
 
   static var osVersionConfigurationParser: Parser<IndividualCreationConfiguration> {
-    return self.osVersionParser.fmap { osVersion in
+    return osVersionParser.fmap { osVersion in
       return IndividualCreationConfiguration(
         os: osVersion,
         model: nil,
@@ -302,7 +302,7 @@ extension IndividualCreationConfiguration : Parsable {
   }
 
   static var auxDirectoryConfigurationParser: Parser<IndividualCreationConfiguration> {
-    return self.auxDirectoryParser.fmap { auxDirectory in
+    return auxDirectoryParser.fmap { auxDirectory in
       return IndividualCreationConfiguration(
         os: nil,
         model: nil,
@@ -312,7 +312,7 @@ extension IndividualCreationConfiguration : Parsable {
   }
 }
 
-extension CreationSpecification : Parsable {
+extension CreationSpecification: Parsable {
   public static var parser: Parser<CreationSpecification> {
     return Parser.alternative([
       Parser<CreationSpecification>
@@ -324,16 +324,16 @@ extension CreationSpecification : Parsable {
   }
 }
 
-extension FBSimulatorState : Parsable {
+extension FBSimulatorState: Parsable {
   public static var parser: Parser<FBSimulatorState> {
     let names = [
       ("creating", FBSimulatorState.creating),
       ("shutdown", FBSimulatorState.shutdown),
       ("booting", FBSimulatorState.booting),
       ("booted", FBSimulatorState.booted),
-      ("shutting-down", FBSimulatorState.shuttingDown)
+      ("shutting-down", FBSimulatorState.shuttingDown),
     ]
-    let stateParsers = names.map { (name, state) in
+    let stateParsers = names.map { name, state in
       return Parser.ofString(name, state)
     }
     return Parser<FBSimulatorState>.ofFlagWithArg(
@@ -344,7 +344,7 @@ extension FBSimulatorState : Parsable {
   }
 }
 
-extension FBiOSTargetType : Parsable {
+extension FBiOSTargetType: Parsable {
   public static var parser: Parser<FBiOSTargetType> {
     return Parser<FBiOSTargetType>.alternative([
       Parser<FBiOSTargetType>.ofFlag(
@@ -355,7 +355,7 @@ extension FBiOSTargetType : Parsable {
   }
 }
 
-extension FBCrashLogInfoProcessType : Parsable {
+extension FBCrashLogInfoProcessType: Parsable {
   public static var parser: Parser<FBCrashLogInfoProcessType> {
     return Parser<FBCrashLogInfoProcessType>
       .union([
@@ -364,12 +364,12 @@ extension FBCrashLogInfoProcessType : Parsable {
         Parser<FBCrashLogInfoProcessType>
           .ofFlag("system", FBCrashLogInfoProcessType.system, ""),
         Parser<FBCrashLogInfoProcessType>
-          .ofFlag("custom-agent", FBCrashLogInfoProcessType.customAgent, "")
+          .ofFlag("custom-agent", FBCrashLogInfoProcessType.customAgent, ""),
       ])
   }
 }
 
-extension CLI : Parsable {
+extension CLI: Parsable {
   public static var parser: Parser<CLI> {
     return Parser
       .alternative([
@@ -392,29 +392,29 @@ extension CLI : Parsable {
   }
 }
 
-extension Help : Parsable {
+extension Help: Parsable {
   public static var parser: Parser<Help> {
     return Parser
       .ofTwoSequenced(
         OutputOptions.parser,
         Parser.ofString("help", NSNull())
       )
-      .fmap { (output, _) in
+      .fmap { output, _ in
         return Help(outputOptions: output, error: nil, command: nil)
       }
   }
 }
 
-extension Command : Parsable {
+extension Command: Parsable {
   public static var parser: Parser<Command> {
     return Parser
       .ofFourSequenced(
         Configuration.parser,
         FBiOSTargetQueryParsers.parser.optional(),
         FBiOSTargetFormatParsers.parser.optional(),
-        self.compoundActionParser
+        compoundActionParser
       )
-      .fmap { (configuration, query, format, actions) in
+      .fmap { configuration, query, format, actions in
         return Command(
           configuration: configuration,
           actions: actions,
@@ -431,7 +431,7 @@ extension Command : Parsable {
   }
 }
 
-extension ListenInterface : Parsable {
+extension ListenInterface: Parsable {
   public static var parser: Parser<ListenInterface> {
     return Parser<ListenInterface>
       .accumulate(0, [
@@ -446,7 +446,7 @@ extension ListenInterface : Parsable {
       .ofFlag("stdin", ListenInterface(stdin: true, http: nil, hid: nil, continuation: nil), "Listen for commands on stdin")
   }
 
-  static var httpParser:  Parser<ListenInterface> {
+  static var httpParser: Parser<ListenInterface> {
     return Parser<ListenInterface>
       .ofFlagWithArg("http", portParser, "The HTTP Port to listen on")
       .fmap { ListenInterface(stdin: false, http: $0, hid: nil, continuation: nil) }
@@ -464,15 +464,15 @@ extension ListenInterface : Parsable {
       .describe(PrimitiveDesc(
         name: "port",
         desc: "Port number (16-bit unsigned integer).")
-    )
+      )
   }
 }
 
-extension Record : Parsable {
+extension Record: Parsable {
   public static var parser: Parser<Record> {
     return Parser.alternative([
       self.startParser,
-      self.stopParser
+      self.stopParser,
     ])
   }
 
@@ -487,7 +487,7 @@ extension Record : Parsable {
   }
 }
 
-extension FileOutput : Parsable {
+extension FileOutput: Parsable {
   public static var parser: Parser<FileOutput> {
     return Parser.alternative([
       Parser.ofString("-", FileOutput.standardOut),
@@ -496,7 +496,7 @@ extension FileOutput : Parsable {
   }
 }
 
-extension Action : Parsable {
+extension Action: Parsable {
   public static var parser: Parser<Action> {
     return Parser
       .alternative([
@@ -585,7 +585,7 @@ extension Action : Parsable {
       .ofCommandWithArg(
         EventName.contactsUpdate.rawValue,
         Parser<Any>.ofExistingDirectory.fmap(Action.contactsUpdate)
-    )
+      )
   }
 
   static var createParser: Parser<Action> {
@@ -611,7 +611,7 @@ extension Action : Parsable {
           FBDiagnosticQueryParser.parser
         )
       )
-      .fmap { (format, query) in
+      .fmap { format, query in
         query.withFormat(format)
       }
       .fmap(Action.diagnose)
@@ -647,9 +647,9 @@ extension Action : Parsable {
   }
 
   static var launchXCTestParser: Parser<Action> {
-      let optionalTimeoutFlag = Parser<Double>
-        .ofFlagWithArg("test-timeout", Parser<Double>.ofDouble, "")
-        .optional()
+    let optionalTimeoutFlag = Parser<Double>
+      .ofFlagWithArg("test-timeout", Parser<Double>.ofDouble, "")
+      .optional()
 
     let parser = Parser.ofThreeSequenced(
       optionalTimeoutFlag,
@@ -658,20 +658,20 @@ extension Action : Parsable {
     )
 
     let configurationParser = parser
-      .fmap{ (timeout, bundle, appLaunch) -> FBTestLaunchConfiguration in
+      .fmap { (timeout, bundle, appLaunch) -> FBTestLaunchConfiguration in
         var conf =
           FBTestLaunchConfiguration(testBundlePath: bundle)
-            .withApplicationLaunchConfiguration(appLaunch.0)
+          .withApplicationLaunchConfiguration(appLaunch.0)
 
         if let testHostPath = appLaunch.1?.path {
           conf = conf.withTestHostPath(testHostPath)
         }
 
-        if (timeout != nil) {
+        if timeout != nil {
           conf = conf.withTimeout(timeout!)
         }
         return conf
-    }
+      }
 
     return Parser
       .ofCommandWithArg(
@@ -718,10 +718,10 @@ extension Action : Parsable {
       .ofTwoSequenced(
         Parser<String>.ofCommandWithArg(EventName.install.rawValue, Parser<String>.ofAny),
         Parser<Bool>.ofFlag("codesign",
-          "Before installing, sign the bundle and all its frameworks with a certificate from the keychain"
+                            "Before installing, sign the bundle and all its frameworks with a certificate from the keychain"
         )
       )
-      .fmap { (path, shouldCodesign) in
+      .fmap { path, shouldCodesign in
         Action.install(path, shouldCodesign)
       }
   }
@@ -784,7 +784,7 @@ extension Action : Parsable {
         EventName.setLocation.rawValue,
         latLngParser
       )
-      .fmap { (latitude, longitude) in
+      .fmap { latitude, longitude in
         Action.setLocation(latitude, longitude)
       }
   }
@@ -854,7 +854,7 @@ extension Action : Parsable {
   }
 }
 
-extension DiagnosticFormat : Parsable {
+extension DiagnosticFormat: Parsable {
   public static var parser: Parser<DiagnosticFormat> {
     return Parser
       .alternative([
@@ -886,9 +886,9 @@ public struct FBiOSTargetQueryParsers {
   public static var parser: Parser<FBiOSTargetQuery> {
     return Parser.alternative([
       self.allParser,
-      self.unionParser
+      self.unionParser,
     ])
-    .sectionize("targets", "Targets", "")
+      .sectionize("targets", "Targets", "")
   }
 
   static var allParser: Parser<FBiOSTargetQuery> {
@@ -909,9 +909,9 @@ public struct FBiOSTargetQueryParsers {
       self.architectureParser,
       self.targetTypeParser,
       self.osVersionsParser,
-      self.deviceParser
+      self.deviceParser,
     ])
-    .sectionize("targets/query", "Target: Queries", "")
+      .sectionize("targets/query", "Target: Queries", "")
   }
 
   static var firstParser: Parser<FBiOSTargetQuery> {
@@ -987,7 +987,7 @@ struct FBDiagnosticQueryParser {
       .fallback(FBDiagnosticQuery.all())
       .withExpandedDesc
       .sectionize("diagnose/query", "Diagnose: Query", "")
-    }
+  }
 
   static var namedParser: Parser<FBDiagnosticQuery> {
     let nameParser = Parser<String>
@@ -1009,7 +1009,7 @@ struct FBDiagnosticQueryParser {
         crashDateParser,
         FBCrashLogInfoProcessType.parser
       )
-      .fmap { (date, processType) in
+      .fmap { date, processType in
         FBDiagnosticQuery.crashes(of: processType, since: date)
       }
   }
@@ -1020,7 +1020,7 @@ struct FBDiagnosticQueryParser {
         Parser<Any>.ofBundleIDOrApplicationDescriptorBundleID,
         Parser.manyCount(1, Parser<Any>.ofAny)
       )
-      .fmap { (bundleID, fileNames) in
+      .fmap { bundleID, fileNames in
         FBDiagnosticQuery.files(inApplicationOfBundleID: bundleID, withFilenames: fileNames)
       }
   }
@@ -1036,7 +1036,7 @@ struct FBSimulatorBootConfigurationParser {
       .accumulate(1, [
         self.optionsParser.fmap(FBSimulatorBootConfiguration.withOptions),
         self.scaleParser.fmap(FBSimulatorBootConfiguration.withScale),
-        self.localeParser.fmap { FBSimulatorBootConfiguration.withLocalizationOverride(FBLocalizationOverride.withLocale($0)) }
+        self.localeParser.fmap { FBSimulatorBootConfiguration.withLocalizationOverride(FBLocalizationOverride.withLocale($0)) },
       ])
   }
 
@@ -1054,7 +1054,7 @@ struct FBSimulatorBootConfigurationParser {
       Parser<FBScale>
         .ofFlag("scale=75", .scale75, ""),
       Parser<FBScale>
-        .ofFlag("scale=100", .scale100, "")
+        .ofFlag("scale=100", .scale100, ""),
     ]
 
     return Parser.alternative(subparsers)
@@ -1082,11 +1082,11 @@ struct FBProcessLaunchConfigurationParsers {
     return Parser
       .ofFourSequenced(
         FBProcessOutputConfigurationParser.parser,
-        self.waitForDebuggerParser,
+        waitForDebuggerParser,
         Parser<Any>.ofBundleIDOrApplicationDescriptor,
-        self.argumentParser
+        argumentParser
       )
-      .fmap { (output, waitForDebugger, bundleIDOrApplicationDescriptor, arguments) in
+      .fmap { output, waitForDebugger, bundleIDOrApplicationDescriptor, arguments in
         let (bundleId, appDescriptor) = bundleIDOrApplicationDescriptor
         return (
           FBApplicationLaunchConfiguration(
@@ -1102,7 +1102,7 @@ struct FBProcessLaunchConfigurationParsers {
   }
 
   static var appLaunchParser: Parser<FBApplicationLaunchConfiguration> {
-    return appLaunchAndApplicationDescriptorParser.fmap{ $0.0 }
+    return appLaunchAndApplicationDescriptorParser.fmap { $0.0 }
   }
 
   static var agentLaunchParser: Parser<FBAgentLaunchConfiguration> {
@@ -1110,10 +1110,10 @@ struct FBProcessLaunchConfigurationParsers {
       .ofThreeSequenced(
         FBProcessOutputConfigurationParser.parser,
         Parser<Any>.ofBinary,
-        self.argumentParser
+        argumentParser
       )
-      .fmap { (output, binary, arguments) in
-        return FBAgentLaunchConfiguration(binary: binary, arguments: arguments, environment : [:], output: output)
+      .fmap { output, binary, arguments in
+        return FBAgentLaunchConfiguration(binary: binary, arguments: arguments, environment: [:], output: output)
       }
   }
 
@@ -1129,7 +1129,7 @@ struct FBProcessLaunchConfigurationParsers {
     return Parser<Bool>
       .alternative([
         Parser<Bool>.ofString("--wait-for-debugger", true),
-        Parser<Bool>.ofString("-w", true)
+        Parser<Bool>.ofString("-w", true),
       ])
       .fallback(false)
   }

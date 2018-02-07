@@ -7,13 +7,13 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
 import FBSimulatorControl
+import Foundation
 
 extension FBSimulatorState {
-  public var description: String { get {
+  public var description: String {
     return FBSimulatorStateStringFromState(self).rawValue
-  }}
+  }
 }
 
 extension FBiOSTargetQuery {
@@ -39,14 +39,14 @@ extension URL {
     return url.appendingPathComponent(component, isDirectory: isDirectory)
   }
 
-  var bridgedAbsoluteString: String { get {
-    return self.absoluteString
-  }}
+  var bridgedAbsoluteString: String {
+    return absoluteString
+  }
 }
 
 public typealias ControlCoreValue = FBJSONSerializable & CustomStringConvertible
 
-@objc open class ControlCoreLoggerBridge : NSObject {
+@objc open class ControlCoreLoggerBridge: NSObject {
   let reporter: EventReporter
 
   init(reporter: EventReporter) {
@@ -55,32 +55,31 @@ public typealias ControlCoreValue = FBJSONSerializable & CustomStringConvertible
 
   @objc open func log(_ level: Int32, string: String) {
     let subject = FBEventReporterSubject(logString: string, level: level)
-    self.reporter.report(subject)
+    reporter.report(subject)
   }
 }
 
-extension FBiOSTargetType : Accumulator {
+extension FBiOSTargetType: Accumulator {
   public func append(_ other: FBiOSTargetType) -> FBiOSTargetType {
-    return self == FBiOSTargetType.all ? self.intersection(other) : self.union(other)
+    return self == FBiOSTargetType.all ? intersection(other) : union(other)
   }
 }
 
 extension FBiOSTargetQuery {
   public static func ofCount(_ count: Int) -> FBiOSTargetQuery {
-    return self.allTargets().ofCount(count)
+    return allTargets().ofCount(count)
   }
 
   public func ofCount(_ count: Int) -> FBiOSTargetQuery {
-    return self.range(NSRange(location: 0, length: count))
+    return range(NSRange(location: 0, length: count))
   }
 }
 
-extension FBiOSTargetQuery : Accumulator {
+extension FBiOSTargetQuery: Accumulator {
   public func append(_ other: FBiOSTargetQuery) -> Self {
     let targetType = self.targetType.append(other.targetType)
 
-    return self
-      .udids(Array(other.udids))
+    return udids(Array(other.udids))
       .names(Array(other.names))
       .states(other.states)
       .architectures(Array(other.architectures))
@@ -92,7 +91,7 @@ extension FBiOSTargetQuery : Accumulator {
 }
 
 extension FBiOSTargetFormatKey {
-  public static var allFields: [FBiOSTargetFormatKey] { get {
+  public static var allFields: [FBiOSTargetFormatKey] {
     return [
       FBiOSTargetFormatKey.UDID,
       FBiOSTargetFormatKey.name,
@@ -103,11 +102,11 @@ extension FBiOSTargetFormatKey {
       FBiOSTargetFormatKey.processIdentifier,
       FBiOSTargetFormatKey.containerApplicationProcessIdentifier,
     ]
-  }}
+  }
 }
 
 extension FBArchitecture {
-  public static var allFields: [FBArchitecture] { get {
+  public static var allFields: [FBArchitecture] {
     return [
       .I386,
       .X86_64,
@@ -115,16 +114,16 @@ extension FBArchitecture {
       .armv7s,
       .arm64,
     ]
-  }}
-}
-
-extension FBiOSTargetFormat : Accumulator {
-  public func append(_ other: FBiOSTargetFormat) -> Self {
-    return self.appendFields(other.fields)
   }
 }
 
-extension FBSimulatorBootConfiguration : Accumulator {
+extension FBiOSTargetFormat: Accumulator {
+  public func append(_ other: FBiOSTargetFormat) -> Self {
+    return appendFields(other.fields)
+  }
+}
+
+extension FBSimulatorBootConfiguration: Accumulator {
   public func append(_ other: FBSimulatorBootConfiguration) -> Self {
     var configuration = self
     if let locale = other.localizationOverride ?? self.localizationOverride {
@@ -136,12 +135,12 @@ extension FBSimulatorBootConfiguration : Accumulator {
     if let scale = other.scale ?? self.scale {
       configuration = configuration.withScale(scale)
     }
-    configuration = configuration.withOptions(self.options.union(other.options))
-    return configuration;
+    configuration = configuration.withOptions(options.union(other.options))
+    return configuration
   }
 }
 
-extension FBProcessOutputConfiguration : Accumulator {
+extension FBProcessOutputConfiguration: Accumulator {
   public func append(_ other: FBProcessOutputConfiguration) -> Self {
     var configuration = self
     if other.stdOut is String {
@@ -155,7 +154,7 @@ extension FBProcessOutputConfiguration : Accumulator {
 }
 
 extension IndividualCreationConfiguration {
-  public var simulatorConfiguration : FBSimulatorConfiguration { get {
+  public var simulatorConfiguration: FBSimulatorConfiguration {
     var configuration = FBSimulatorConfiguration.default()
     if let model = self.model {
       configuration = configuration.withDeviceModel(model)
@@ -167,7 +166,7 @@ extension IndividualCreationConfiguration {
       configuration = configuration.withAuxillaryDirectory(auxDirectory)
     }
     return configuration
-  }}
+  }
 }
 
 extension Bool {
@@ -185,12 +184,12 @@ extension Bool {
 
 extension HttpRequest {
   func getBoolQueryParam(_ key: String, _ fallback: Bool) -> Bool {
-    return Bool.fallback(from: self.query[key], to: fallback)
+    return Bool.fallback(from: query[key], to: fallback)
   }
 }
 
 extension FBiOSTargetFutureType {
-  public var eventName: EventName { get {
+  public var eventName: EventName {
     switch self {
     case FBiOSTargetFutureType.applicationLaunch:
       return .launch
@@ -199,60 +198,58 @@ extension FBiOSTargetFutureType {
     case FBiOSTargetFutureType.testLaunch:
       return .launchXCTest
     default:
-      return EventName(rawValue: self.rawValue)
+      return EventName(rawValue: rawValue)
     }
-  }}
-}
-
-extension FBiOSTargetFuture {
-  public var eventName: EventName { get {
-    return type(of: self).futureType.eventName
-  }}
-
-  public var printable: String { get {
-    let json = try! JSON.encode(FBiOSActionRouter.json(fromAction: self) as AnyObject)
-    return try! json.serializeToString(false)
-  }}
-}
-
-extension FBProcessLaunchConfiguration : EnvironmentAdditive {}
-
-extension FBTestLaunchConfiguration : EnvironmentAdditive {
-  func withEnvironmentAdditions(_ environmentAdditions: [String : String]) -> Self {
-    guard let appLaunchConf = self.applicationLaunchConfiguration else {
-      return self
-    }
-    return self.withApplicationLaunchConfiguration(appLaunchConf.withEnvironmentAdditions(environmentAdditions))
   }
 }
 
+extension FBiOSTargetFuture {
+  public var eventName: EventName {
+    return type(of: self).futureType.eventName
+  }
+
+  public var printable: String {
+    let json = try! JSON.encode(FBiOSActionRouter.json(fromAction: self) as AnyObject)
+    return try! json.serializeToString(false)
+  }
+}
+
+extension FBProcessLaunchConfiguration: EnvironmentAdditive {}
+
+extension FBTestLaunchConfiguration: EnvironmentAdditive {
+  func withEnvironmentAdditions(_ environmentAdditions: [String: String]) -> Self {
+    guard let appLaunchConf = self.applicationLaunchConfiguration else {
+      return self
+    }
+    return withApplicationLaunchConfiguration(appLaunchConf.withEnvironmentAdditions(environmentAdditions))
+  }
+}
 
 public typealias Writer = FBFileConsumer
 public extension Writer {
   func write(_ string: String) {
     var output = string
-    if (output.characters.last != "\n") {
+    if output.characters.last != "\n" {
       output.append("\n" as Character)
     }
     guard let data = output.data(using: String.Encoding.utf8) else {
       return
     }
-    self.consumeData(data)
+    consumeData(data)
   }
 }
 
 public typealias FileHandleWriter = FBFileWriter
 public extension FileHandleWriter {
-  static var stdOutWriter: FileHandleWriter { get {
+  static var stdOutWriter: FileHandleWriter {
     return FileHandleWriter.syncWriter(with: FileHandle.standardOutput)
-  }}
+  }
 
-  static var stdErrWriter: FileHandleWriter { get {
+  static var stdErrWriter: FileHandleWriter {
     return FileHandleWriter.syncWriter(with: FileHandle.standardError)
-  }}
+  }
 }
 
 public typealias EventType = FBEventType
 
 public typealias JSONKeys = FBJSONKey
-

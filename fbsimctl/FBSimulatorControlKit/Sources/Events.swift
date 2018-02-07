@@ -7,9 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
 import FBControlCore
 import FBSimulatorControl
+import Foundation
 
 public typealias EventName = FBEventName
 

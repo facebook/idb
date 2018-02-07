@@ -7,50 +7,49 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
-
-import XCTest
 import FBSimulatorControl
 @testable import FBSimulatorControlKit
+import Foundation
+import XCTest
 
-class IntegrationTests : XCTestCase {
+class IntegrationTests: XCTestCase {
   func testNoInterferenceBeetweenDeviceSets() {
     let set1 = URL.urlRelativeTo(NSTemporaryDirectory(), component: "FBSimulatorControlKitTests/set_1", isDirectory: true)
     let set2 = URL.urlRelativeTo(NSTemporaryDirectory(), component: "FBSimulatorControlKitTests/set_2", isDirectory: true)
 
-    if ((try? FileManager.default.createDirectory(at: set1, withIntermediateDirectories: true, attributes: [:])) == nil) {
+    if (try? FileManager.default.createDirectory(at: set1, withIntermediateDirectories: true, attributes: [:])) == nil {
       XCTFail("Could not create directory at \(set1)")
     }
-    if ((try? FileManager.default.createDirectory(at: set2, withIntermediateDirectories: true, attributes: [:])) == nil) {
+    if (try? FileManager.default.createDirectory(at: set2, withIntermediateDirectories: true, attributes: [:])) == nil {
       XCTFail("Could not create directory at \(set2)")
     }
 
-    self.assertCLIRunsSuccessfully(set1, ["delete"])
-    self.assertCLIRunsSuccessfully(set2, ["delete"])
-    self.assertCLIRunsSuccessfully(set1, ["create", "iPhone 5s"])
-    self.assertCLIRunsSuccessfully(set2, ["create", "iPad Air 2"])
-    self.assertCLIRunsSuccessfully(set1, ["iPhone 5s", "boot"])
-    self.assertCLIRunsSuccessfully(set2, ["iPad Air 2", "boot"])
+    assertCLIRunsSuccessfully(set1, ["delete"])
+    assertCLIRunsSuccessfully(set2, ["delete"])
+    assertCLIRunsSuccessfully(set1, ["create", "iPhone 5s"])
+    assertCLIRunsSuccessfully(set2, ["create", "iPad Air 2"])
+    assertCLIRunsSuccessfully(set1, ["iPhone 5s", "boot"])
+    assertCLIRunsSuccessfully(set2, ["iPad Air 2", "boot"])
     XCTAssertEqual(
-      self.assertCLIRunsSuccessfully(set1, ["list_device_sets"]).count,
+      assertCLIRunsSuccessfully(set1, ["list_device_sets"]).count,
       2
     )
-    self.assertCLIRunsSuccessfully(set1, ["delete"])
+    assertCLIRunsSuccessfully(set1, ["delete"])
     XCTAssertEqual(
-      self.assertCLIRunsSuccessfully(set2, ["--format", "%m%s", "list"]),
+      assertCLIRunsSuccessfully(set2, ["--format", "%m%s", "list"]),
       ["iPad Air 2 | Booted"]
     )
-    self.assertCLIRunsSuccessfully(set2, ["shutdown"])
+    assertCLIRunsSuccessfully(set2, ["shutdown"])
     XCTAssertEqual(
-      self.assertCLIRunsSuccessfully(set2, ["--format", "%m%s", "list"]),
+      assertCLIRunsSuccessfully(set2, ["--format", "%m%s", "list"]),
       ["iPad Air 2 | Shutdown"]
     )
-    self.assertCLIRunsSuccessfully(set2, ["delete"])
+    assertCLIRunsSuccessfully(set2, ["delete"])
   }
 
   @discardableResult
   func assertCLIRunsSuccessfully(_ simulatorSet: URL, _ command: [String]) -> [String] {
     let arguments = ["--set", simulatorSet.path, "--simulators"] + command
-    return self.assertCLIRunsSuccessfully(arguments)
+    return assertCLIRunsSuccessfully(arguments)
   }
 }

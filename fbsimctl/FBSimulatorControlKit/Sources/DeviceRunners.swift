@@ -7,10 +7,10 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
 import FBDeviceControl
+import Foundation
 
-struct DeviceActionRunner : Runner {
+struct DeviceActionRunner: Runner {
   let context: iOSRunnerContext<(Action, FBDevice)>
 
   func run() -> CommandResult {
@@ -18,9 +18,9 @@ struct DeviceActionRunner : Runner {
     let reporter = DeviceReporter(device: device, format: self.context.format, reporter: self.context.reporter)
     let context = self.context.replace((action, device, reporter))
 
-    switch (action) {
-      default:
-        return DeviceActionRunner.makeRunner(context).run()
+    switch action {
+    default:
+      return DeviceActionRunner.makeRunner(context).run()
     }
   }
 

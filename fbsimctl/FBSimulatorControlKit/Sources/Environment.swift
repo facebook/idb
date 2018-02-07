@@ -7,13 +7,13 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
 import FBSimulatorControl
+import Foundation
 
 let EnvironmentPrefix = "FBSIMCTL_CHILD_"
 
 public extension CLI {
-  func appendEnvironment(_ environment: [String : String]) -> CLI {
+  func appendEnvironment(_ environment: [String: String]) -> CLI {
     switch self {
     case .run(let command):
       return .run(command.appendEnvironment(environment))
@@ -24,23 +24,23 @@ public extension CLI {
 }
 
 public extension Command {
-  func appendEnvironment(_ environment: [String : String]) -> Command {
+  func appendEnvironment(_ environment: [String: String]) -> Command {
     return Command(
-      configuration: self.configuration,
-      actions: self.actions.map { $0.appendEnvironment(environment) },
-      query: self.query,
-      format: self.format
+      configuration: configuration,
+      actions: actions.map { $0.appendEnvironment(environment) },
+      query: query,
+      format: format
     )
   }
 }
 
 protocol EnvironmentAdditive {
-  func withEnvironmentAdditions(_ environmentAdditions: [String : String]) -> Self
+  func withEnvironmentAdditions(_ environmentAdditions: [String: String]) -> Self
 }
 
 extension EnvironmentAdditive {
-  static func subprocessEnvironment(_ environment: [String : String]) -> [String : String] {
-    var additions: [String : String] = [:]
+  static func subprocessEnvironment(_ environment: [String: String]) -> [String: String] {
+    var additions: [String: String] = [:]
     for (key, value) in environment {
       if !key.hasPrefix(EnvironmentPrefix) {
         continue
@@ -52,7 +52,7 @@ extension EnvironmentAdditive {
 }
 
 public extension Action {
-  func appendEnvironment(_ environment: [String : String]) -> Action {
+  func appendEnvironment(_ environment: [String: String]) -> Action {
     switch self {
     case .coreFuture(var action):
       if let additive = action as? EnvironmentAdditive & FBiOSTargetFuture {

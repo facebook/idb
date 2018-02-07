@@ -7,11 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
 import FBDeviceControl
+import Foundation
 
-open class DeviceReporter : iOSReporter {
-  unowned open let device: FBDevice
+open class DeviceReporter: iOSReporter {
+  open unowned let device: FBDevice
   open let reporter: EventReporter
   open let format: FBiOSTargetFormat
 
@@ -21,7 +21,7 @@ open class DeviceReporter : iOSReporter {
     self.reporter = reporter
   }
 
-  open var target: FBiOSTarget { get {
-    return self.device
-  }}
+  open var target: FBiOSTarget {
+    return device
+  }
 }

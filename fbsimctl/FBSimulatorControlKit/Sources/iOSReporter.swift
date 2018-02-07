@@ -12,7 +12,7 @@ import Foundation
 /**
  A Protocol for Commands to access and report about an iOS Target.
  */
-public protocol iOSReporter : class {
+public protocol iOSReporter: class {
   var reporter: EventReporter { get }
   unowned var target: FBiOSTarget { get }
   var format: FBiOSTargetFormat { get }
@@ -24,16 +24,16 @@ public protocol iOSReporter : class {
 extension iOSReporter {
   public func report(_ eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
     let subject = FBEventReporterSubject(
-      target: self.target,
-      format: self.format,
+      target: target,
+      format: format,
       name: eventName,
       type: eventType,
       subject: subject
     )
-    self.reporter.report(subject)
+    reporter.report(subject)
   }
 
   public func reportValue(_ eventName: EventName, _ eventType: EventType, _ value: ControlCoreValue) {
-    self.report(eventName, eventType, value.subject)
+    report(eventName, eventType, value.subject)
   }
 }

@@ -7,9 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import XCTest
 import FBSimulatorControl
 @testable import FBSimulatorControlKit
+import XCTest
 
 public struct Fixtures {
   static func application() -> FBSimulatorApplication {

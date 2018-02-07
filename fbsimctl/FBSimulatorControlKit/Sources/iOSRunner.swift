@@ -7,9 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
-import FBSimulatorControl
 import FBDeviceControl
+import FBSimulatorControl
+import Foundation
 
 extension CommandResultRunner {
   static func unimplementedActionRunner(_ action: Action, target: FBiOSTarget, format: FBiOSTargetFormat) -> Runner {
@@ -27,7 +27,7 @@ struct iOSActionProvider {
   let context: iOSRunnerContext<(Action, FBiOSTarget, iOSReporter)>
 
   func makeRunner() -> Runner? {
-    let (action, target, reporter) = self.context.value
+    let (action, target, reporter) = context.value
 
     switch action {
     case .uninstall(let appBundleID):
@@ -49,7 +49,7 @@ struct iOSActionProvider {
   }
 }
 
-struct FutureRunner<T : AnyObject> : Runner {
+struct FutureRunner<T: AnyObject>: Runner {
   let reporter: iOSReporter
   let name: EventName?
   let subject: EventReporterSubject
@@ -65,11 +65,11 @@ struct FutureRunner<T : AnyObject> : Runner {
   func run() -> CommandResult {
     do {
       if let name = self.name {
-        self.reporter.report(name, .started, self.subject)
+        reporter.report(name, .started, subject)
       }
-      let value = try self.future.await()
+      let value = try future.await()
       if let name = self.name {
-        self.reporter.report(name, .ended, self.subject)
+        reporter.report(name, .ended, subject)
       }
       var continuations: [FBiOSTargetContinuation] = []
       if let continuation = value as? FBiOSTargetContinuation, continuation.completed != nil {
@@ -86,7 +86,7 @@ struct FutureRunner<T : AnyObject> : Runner {
   }
 }
 
-struct SimpleRunner : Runner {
+struct SimpleRunner: Runner {
   let reporter: iOSReporter
   let name: EventName?
   let subject: EventReporterSubject
@@ -102,11 +102,11 @@ struct SimpleRunner : Runner {
   func run() -> CommandResult {
     do {
       if let name = self.name {
-        self.reporter.report(name, .started, self.subject)
+        reporter.report(name, .started, subject)
       }
-      try self.action()
+      try action()
       if let name = self.name {
-        self.reporter.report(name, .ended, self.subject)
+        reporter.report(name, .ended, subject)
       }
       return CommandResult(outcome: .success(nil), continuations: [])
     } catch let error as NSError {

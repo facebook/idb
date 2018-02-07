@@ -7,14 +7,13 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import XCTest
 import FBSimulatorControl
 @testable import FBSimulatorControlKit
+import XCTest
 
-
-class FBiOSTargetFormatParserTests : XCTestCase {
+class FBiOSTargetFormatParserTests: XCTestCase {
   func testParsesKeywords() {
-    self.assertParsesAll(FBiOSTargetFormatParsers.parser, [
+    assertParsesAll(FBiOSTargetFormatParsers.parser, [
       (["--format", "%u"], FBiOSTargetFormat(fields: [.UDID])),
       (["--format=%u"], FBiOSTargetFormat(fields: [.UDID])),
       (["--format", "%n"], FBiOSTargetFormat(fields: [.name])),
@@ -33,9 +32,9 @@ class FBiOSTargetFormatParserTests : XCTestCase {
   }
 }
 
-class FBSimulatorManagementOptionsParserTests : XCTestCase {
+class FBSimulatorManagementOptionsParserTests: XCTestCase {
   func testParsesSimple() {
-    self.assertParsesAll(FBSimulatorManagementOptions.parser, [
+    assertParsesAll(FBSimulatorManagementOptions.parser, [
       (["--delete-all"], FBSimulatorManagementOptions.deleteAllOnFirstStart),
       (["--kill-all"], FBSimulatorManagementOptions.killAllOnFirstStart),
       (["--kill-spurious"], FBSimulatorManagementOptions.killSpuriousSimulatorsOnFirstStart),
@@ -45,18 +44,17 @@ class FBSimulatorManagementOptionsParserTests : XCTestCase {
   }
 
   func testParsesCompound() {
-    self.assertParsesAll(FBSimulatorManagementOptions.parser, [
+    assertParsesAll(FBSimulatorManagementOptions.parser, [
       (["--delete-all", "--kill-all"], FBSimulatorManagementOptions.deleteAllOnFirstStart.union(.killAllOnFirstStart)),
       (["--ignore-spurious-kill-fail", "--kill-spurious-services"], FBSimulatorManagementOptions.ignoreSpuriousKillFail.union(.killSpuriousCoreSimulatorServices)),
-      (["--kill-spurious", "--ignore-spurious-kill-fail"], FBSimulatorManagementOptions.killSpuriousSimulatorsOnFirstStart.union(.ignoreSpuriousKillFail))
+      (["--kill-spurious", "--ignore-spurious-kill-fail"], FBSimulatorManagementOptions.killSpuriousSimulatorsOnFirstStart.union(.ignoreSpuriousKillFail)),
     ])
   }
 }
 
-
-class CreationSpecificationParserTests : XCTestCase {
+class CreationSpecificationParserTests: XCTestCase {
   func testParses() {
-    self.assertParsesAll(CreationSpecification.parser, [
+    assertParsesAll(CreationSpecification.parser, [
       ([], CreationSpecification.empty),
       (["iOS 9.0"], CreationSpecification.iOS9CreationSpecification),
       (["iPhone 6"], CreationSpecification.iPhone6Configuration),
@@ -67,9 +65,9 @@ class CreationSpecificationParserTests : XCTestCase {
   }
 }
 
-class FBSimulatorBootConfigurationTests : XCTestCase {
+class FBSimulatorBootConfigurationTests: XCTestCase {
   func testParsesLocale() {
-    self.assertParses(
+    assertParses(
       FBSimulatorBootConfigurationParser.parser,
       ["--locale", "fr_FR"],
       FBSimulatorBootConfiguration.default.withLocalizationOverride(FBLocalizationOverride.withLocale(Locale(identifier: "fr_FR")))
@@ -77,7 +75,7 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
   }
 
   func testParsesScale() {
-    self.assertParses(
+    assertParses(
       FBSimulatorBootConfigurationParser.parser,
       ["--scale=50"],
       FBSimulatorBootConfiguration.default.withScale(.scale50)
@@ -85,7 +83,7 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
   }
 
   func testParsesConnectBridge() {
-    self.assertParses(
+    assertParses(
       FBSimulatorBootConfigurationParser.parser,
       ["--connect-bridge"],
       FBSimulatorBootConfiguration
@@ -95,7 +93,7 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
   }
 
   func testUseNSWorkspace() {
-    self.assertParses(
+    assertParses(
       FBSimulatorBootConfigurationParser.parser,
       ["--use-nsworkspace"],
       FBSimulatorBootConfiguration
@@ -105,7 +103,7 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
   }
 
   func testParsesDirectLaunchToMakeFramebuffer() {
-    self.assertParses(
+    assertParses(
       FBSimulatorBootConfigurationParser.parser,
       ["--direct-launch"],
       FBSimulatorBootConfiguration.default
@@ -114,7 +112,7 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
   }
 
   func testParsesAllTheAbove() {
-    self.assertParses(
+    assertParses(
       FBSimulatorBootConfigurationParser.parser,
       ["--locale", "en_GB", "--scale=75", "--direct-launch", "--connect-bridge"],
       FBSimulatorBootConfiguration.default
@@ -133,7 +131,7 @@ let validConfigurations: [([String], Configuration)] = [
   (["--set=/usr/bin"], Configuration(outputOptions: OutputOptions(), managementOptions: FBSimulatorManagementOptions(), deviceSetPath: "/usr/bin")),
   (["--debug-logging", "--set", "/usr/bin", "--delete-all", "--kill-spurious"], Configuration(outputOptions: OutputOptions.DebugLogging, managementOptions: FBSimulatorManagementOptions.deleteAllOnFirstStart.union(.killSpuriousSimulatorsOnFirstStart), deviceSetPath: "/usr/bin")),
   (["--delete-all", "--set", "/usr/bin", "--debug-logging", "--kill-spurious"], Configuration(outputOptions: OutputOptions.DebugLogging, managementOptions: FBSimulatorManagementOptions.deleteAllOnFirstStart.union(.killSpuriousSimulatorsOnFirstStart), deviceSetPath: "/usr/bin")),
-  (["--set", "/usr/bin", "--delete-all", "--kill-spurious"], Configuration(outputOptions: OutputOptions(), managementOptions: FBSimulatorManagementOptions.deleteAllOnFirstStart.union(.killSpuriousSimulatorsOnFirstStart), deviceSetPath: "/usr/bin"))
+  (["--set", "/usr/bin", "--delete-all", "--kill-spurious"], Configuration(outputOptions: OutputOptions(), managementOptions: FBSimulatorManagementOptions.deleteAllOnFirstStart.union(.killSpuriousSimulatorsOnFirstStart), deviceSetPath: "/usr/bin")),
 ]
 
 let validQueries: [([String], FBiOSTargetQuery)] = [
@@ -252,7 +250,7 @@ let validActions: [([String], Action)] = [
   (["stream", "--h264", "-"], Action.stream(FBBitmapStreamConfiguration(encoding: .H264, framesPerSecond: nil), .standardOut)),
   (["stream", "--fps=30", "-"], Action.stream(FBBitmapStreamConfiguration(encoding: .BGRA, framesPerSecond: 30), .standardOut)),
   (["stream", "--bgra", "--fps=25", "-"], Action.stream(FBBitmapStreamConfiguration(encoding: .BGRA, framesPerSecond: 25), .standardOut)),
-  (["stream", "--fps" , "60", "/tmp/video.dump"], Action.stream(FBBitmapStreamConfiguration(encoding: .BGRA, framesPerSecond: 60), .path("/tmp/video.dump"))),
+  (["stream", "--fps", "60", "/tmp/video.dump"], Action.stream(FBBitmapStreamConfiguration(encoding: .BGRA, framesPerSecond: 60), .path("/tmp/video.dump"))),
   (["terminate", "com.foo.bar"], .terminate("com.foo.bar")),
   (["uninstall", "com.foo.bar"], .uninstall("com.foo.bar")),
   (["upload", Fixtures.photoPath, Fixtures.videoPath], .upload([Fixtures.photoDiagnostic, Fixtures.videoDiagnostic])),
@@ -269,43 +267,43 @@ let invalidActions: [[String]] = [
   ["listaa"],
 ]
 
-class ConfigurationParserTests : XCTestCase {
+class ConfigurationParserTests: XCTestCase {
   func testParsesValidConfigurations() {
-    self.assertParsesAll(Configuration.parser, validConfigurations)
+    assertParsesAll(Configuration.parser, validConfigurations)
   }
 }
 
-class QueryParserTests : XCTestCase {
+class QueryParserTests: XCTestCase {
   func testParsesValidQueries() {
-    self.assertParsesAll(FBiOSTargetQueryParsers.parser, validQueries)
+    assertParsesAll(FBiOSTargetQueryParsers.parser, validQueries)
   }
 
   func testParsesInvalidQueries() {
-    self.assertFailsToParseAll(FBiOSTargetQueryParsers.parser, invalidQueries)
+    assertFailsToParseAll(FBiOSTargetQueryParsers.parser, invalidQueries)
   }
 }
 
-class ActionParserTests : XCTestCase {
+class ActionParserTests: XCTestCase {
   func testParsesValidActions() {
-    self.assertParsesAll(Action.parser, validActions)
+    assertParsesAll(Action.parser, validActions)
   }
 
   func testFailsToParseInvalidActions() {
-    self.assertFailsToParseAll(Action.parser, invalidActions)
+    assertFailsToParseAll(Action.parser, invalidActions)
   }
 
   func testParsesInsidePrint() {
-    let pairs = validActions.map { (tokens, action) in
+    let pairs = validActions.map { tokens, action in
       return (["print"] + tokens, CLI.print(action))
     }
-    self.assertParsesAll(CLI.parser, pairs)
+    assertParsesAll(CLI.parser, pairs)
   }
 }
 
-class CommandParserTests : XCTestCase {
+class CommandParserTests: XCTestCase {
   func testParsesValidActions() {
     for (suffix, action) in validActions {
-      self.assertWithDefaultAction(action, suffix: suffix)
+      assertWithDefaultAction(action, suffix: suffix)
     }
   }
 
@@ -314,7 +312,7 @@ class CommandParserTests : XCTestCase {
       ["list"], ["boot"], ["listen", "--http", "1000"], ["shutdown"],
     ]
     let actions: [Action] = [.list, .boot(FBSimulatorBootConfiguration.default), .listen(ListenInterface(stdin: false, http: 1000, hid: nil, continuation: nil)), .shutdown]
-    self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
+    assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 
   func testParsesListBootListenShutdownDiagnose() {
@@ -325,7 +323,7 @@ class CommandParserTests : XCTestCase {
       .withOptions([.enableDirectLaunch, .awaitServices, .useNSWorkspace])
     let diagnoseAction = Action.diagnose(FBDiagnosticQuery.all())
     let actions: [Action] = [.list, .create(CreationSpecification.iPhone6Configuration), .boot(launchConfiguration), .listen(ListenInterface(stdin: false, http: 8090, hid: nil, continuation: nil)), .shutdown, diagnoseAction]
-    self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
+    assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 
   func testParsesRecordStartListen() {
@@ -333,7 +331,7 @@ class CommandParserTests : XCTestCase {
       ["record", "start"], ["listen"],
     ]
     let actions: [Action] = [.record(.start(nil)), .listen(ListenInterface())]
-    self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
+    assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 
   func testParsesRecordToPathStartListen() {
@@ -341,14 +339,14 @@ class CommandParserTests : XCTestCase {
       ["record", "start", "/tmp/video.mp4"], ["listen"],
     ]
     let actions: [Action] = [.record(.start("/tmp/video.mp4")), .listen(ListenInterface())]
-    self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
+    assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 
   func testFailsToParseDanglingTokens() {
     let compoundComponents = [
       ["list"], ["create", "iPhone 5"], ["boot", "--direct-launch"], ["listen", "--http", "8090"], ["YOLO"],
     ]
-    self.assertFailsToParseImplodingCompoundActions(compoundComponents)
+    assertFailsToParseImplodingCompoundActions(compoundComponents)
   }
 
   func testParsesMultipleConsecutiveLaunches() {
@@ -358,15 +356,15 @@ class CommandParserTests : XCTestCase {
     let launchConfig1 = FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "--bar"], environment: [:], waitForDebugger: false, output: try! FBProcessOutputConfiguration(stdOut: FBProcessOutputToFileDefaultLocation, stdErr: NSNull()))
     let launchConfig2 = FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: ["--bing", "--bong"], environment: [:], waitForDebugger: false, output: FBProcessOutputConfiguration.outputToDevNull())
     let actions: [Action] = [.launchApp(launchConfig1), .launchApp(launchConfig2)]
-    self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
+    assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 
   func assertWithDefaultAction(_ action: Action, suffix: [String]) {
-    self.assertWithDefaultActions([action], suffix: suffix)
+    assertWithDefaultActions([action], suffix: suffix)
   }
 
   func assertWithDefaultActions(_ actions: [Action], suffix: [String]) {
-    return self.unzipAndAssert(actions, suffix: suffix, extras: [
+    return unzipAndAssert(actions, suffix: suffix, extras: [
       ([], nil, nil),
       (["all"], .allTargets(), nil),
       (["iPad 2"], .device(.modeliPad2), nil),
@@ -378,21 +376,21 @@ class CommandParserTests : XCTestCase {
   }
 
   func assertParsesImplodingCompoundActions(_ actions: [Action], compoundComponents: [[String]]) {
-    self.assertWithDefaultActions(actions, suffix: CommandParserTests.implodeCompoundActions(compoundComponents))
+    assertWithDefaultActions(actions, suffix: CommandParserTests.implodeCompoundActions(compoundComponents))
   }
 
   func assertFailsToParseImplodingCompoundActions(_ compoundComponents: [[String]]) {
-    self.assertParseFails(
+    assertParseFails(
       Command.parser,
       CommandParserTests.implodeCompoundActions(compoundComponents)
     )
   }
 
   func unzipAndAssert(_ actions: [Action], suffix: [String], extras: [([String], FBiOSTargetQuery?, FBiOSTargetFormat?)]) {
-    let pairs = extras.map { (tokens, query, format) in
+    let pairs = extras.map { tokens, query, format in
       return (tokens + suffix, Command(configuration: Configuration.defaultValue, actions: actions, query: query, format: format))
     }
-    self.assertParsesAll(Command.parser, pairs)
+    assertParsesAll(Command.parser, pairs)
   }
 
   static func implodeCompoundActions(_ compoundComponents: [[String]]) -> [String] {

@@ -9,7 +9,7 @@
 
 import Foundation
 
-extension Help : CustomStringConvertible {
+extension Help: CustomStringConvertible {
   public var description: String {
     return CLI.parser.description
   }

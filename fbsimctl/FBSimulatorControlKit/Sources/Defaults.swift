@@ -7,28 +7,28 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
 import FBSimulatorControl
+import Foundation
 
-public enum DefaultsError : Error, CustomStringConvertible {
+public enum DefaultsError: Error, CustomStringConvertible {
   case unreadableRCFile(String)
 
-  public var description: String { get {
+  public var description: String {
     switch self {
     case .unreadableRCFile(let underlyingError):
       return "Unreadable RC File " + underlyingError
     }
-  }}
+  }
 }
 
 public protocol Defaultable {
   static var defaultValue: Self { get }
 }
 
-extension Configuration : Defaultable {
-  public static var defaultValue: Configuration { get {
+extension Configuration: Defaultable {
+  public static var defaultValue: Configuration {
     return Configuration()
-  }}
+  }
 }
 
 extension Configuration {
@@ -45,7 +45,7 @@ let DefaultsRCFile: URL = URL.urlRelativeTo(NSHomeDirectory(), component: ".fbsi
 /**
  Provides Default Values, with overrides from a .rc file
  as well as updates to defaults to avoid repetitious commands.
-*/
+ */
 open class Defaults {
   let logWriter: Writer
   let format: FBiOSTargetFormat
@@ -60,7 +60,7 @@ open class Defaults {
 
   func updateLastQuery(_ query: FBiOSTargetQuery) {
     // TODO: Create the CLI equivalent of the configuration and save.
-    let _ = Defaults.queryHistoryLocation(configuration)
+    _ = Defaults.queryHistoryLocation(configuration)
     self.query = query
   }
 
@@ -75,11 +75,11 @@ open class Defaults {
   static func create(_ configuration: Configuration, logWriter: Writer) throws -> Defaults {
     do {
       var configuration: Configuration = configuration
-      var format: FBiOSTargetFormat? = nil
+      var format: FBiOSTargetFormat?
 
-      if let rcContents = try?  String(contentsOf: DefaultsRCFile) {
+      if let rcContents = try? String(contentsOf: DefaultsRCFile) {
         let rcTokens = Arguments.fromString(rcContents)
-        let (_, result) = try self.rcFileParser.parse(rcTokens)
+        let (_, result) = try rcFileParser.parse(rcTokens)
         if let rcConfiguration = result.0 {
           configuration = configuration.updateIfNonDefault(rcConfiguration)
         }
@@ -98,13 +98,13 @@ open class Defaults {
     }
   }
 
-  fileprivate static var rcFileParser: Parser<(Configuration?, FBiOSTargetFormat?)> { get {
+  fileprivate static var rcFileParser: Parser<(Configuration?, FBiOSTargetFormat?)> {
     return Parser
       .ofTwoSequenced(
         Configuration.parser.optional(),
         FBiOSTargetFormatParsers.parser.optional()
       )
-  }}
+  }
 
   fileprivate static func queryHistoryLocation(_ configuration: Configuration) -> URL {
     let setPath = configuration.deviceSetPath ?? FBSimulatorControlConfiguration.defaultDeviceSetPath()
@@ -113,34 +113,34 @@ open class Defaults {
 }
 
 extension Action {
-  var defaultQuery: FBiOSTargetQuery? { get {
+  var defaultQuery: FBiOSTargetQuery? {
     // Use reasonable defaults for each action.
     // Depending on what state the simulator is expected to be in.
     // Descructive of machine-killing actions shouldn't have defaults.
     switch self {
-      case .coreFuture(let future) where type(of: future).futureType == .diagnosticQuery:
-        return FBiOSTargetQuery.allTargets()
-      case .list:
-        return FBiOSTargetQuery.allTargets()
-      case .coreFuture(let future):
-        return type(of: future).futureType.defaultQuery
-      case .delete:
-        return nil
-      case .listen:
-        fallthrough
-      default:
-        return FBiOSTargetQuery.state(.booted)
+    case .coreFuture(let future) where type(of: future).futureType == .diagnosticQuery:
+      return FBiOSTargetQuery.allTargets()
+    case .list:
+      return FBiOSTargetQuery.allTargets()
+    case .coreFuture(let future):
+      return type(of: future).futureType.defaultQuery
+    case .delete:
+      return nil
+    case .listen:
+      fallthrough
+    default:
+      return FBiOSTargetQuery.state(.booted)
     }
-  }}
+  }
 }
 
 extension FBiOSTargetFutureType {
-  var defaultQuery: FBiOSTargetQuery? { get {
+  var defaultQuery: FBiOSTargetQuery? {
     switch self {
-      case FBiOSTargetFutureType.boot:
-        return nil
-      default:
-        return FBiOSTargetQuery.state(.booted)
+    case FBiOSTargetFutureType.boot:
+      return nil
+    default:
+      return FBiOSTargetQuery.state(.booted)
     }
-  }}
+  }
 }

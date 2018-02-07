@@ -7,8 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
 import FBControlCore
+import Foundation
 
 /**
  Defines the Output of running a Command.
@@ -27,13 +27,13 @@ public struct CommandResult {
 
   func append(_ second: CommandResult) -> CommandResult {
     return CommandResult(
-      outcome: self.outcome.append(second.outcome),
-      continuations: self.continuations + second.continuations
+      outcome: outcome.append(second.outcome),
+      continuations: continuations + second.continuations
     )
   }
 }
 
-@objc class CommandResultBox : NSObject {
+@objc class CommandResultBox: NSObject {
   let value: CommandResult
 
   init(value: CommandResult) {
@@ -55,7 +55,7 @@ protocol ActionPerformer {
 /**
  Defines the Outcome of runnic a Command.
  */
-public enum CommandOutcome : CustomStringConvertible, CustomDebugStringConvertible {
+public enum CommandOutcome: CustomStringConvertible, CustomDebugStringConvertible {
   case success(EventReporterSubject?)
   case failure(String)
 
@@ -78,14 +78,14 @@ public enum CommandOutcome : CustomStringConvertible, CustomDebugStringConvertib
     }
   }
 
-  public var description: String { get {
+  public var description: String {
     switch self {
     case .success: return "Success"
     case .failure(let string): return "Failure '\(string)'"
     }
-  }}
+  }
 
-  public var debugDescription: String { get {
-    return self.description
-  }}
+  public var debugDescription: String {
+    return description
+  }
 }

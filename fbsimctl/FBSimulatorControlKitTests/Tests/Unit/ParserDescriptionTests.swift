@@ -7,16 +7,16 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import XCTest
 import FBSimulatorControl
 @testable import FBSimulatorControlKit
+import XCTest
 
 /**
  * FakeDesc
  *
  * Fake, probe-able ParserDescription
  */
-struct FakeDesc : ParserDescription {
+struct FakeDesc: ParserDescription {
   public let summary: String
   public let isDelimited: Bool
   public let children: [ParserDescription]
@@ -32,21 +32,21 @@ struct FakeDesc : ParserDescription {
     self.isNormalised = isNormalised
   }
 
-  init(_ n : Int, WithChildren children: [ParserDescription]) {
-    self.init(summary: "fake-desc-"  + String(n),
+  init(_ n: Int, WithChildren children: [ParserDescription]) {
+    self.init(summary: "fake-desc-" + String(n),
               isDelimited: false,
               children: children,
               isNormalised: false)
   }
 
-  init(_ n : Int){
+  init(_ n: Int) {
     self.init(n, WithChildren: [])
   }
 
   public var normalised: ParserDescription {
     return FakeDesc(summary: summary,
                     isDelimited: isDelimited,
-                    children: children.map {$0.normalised},
+                    children: children.map { $0.normalised },
                     isNormalised: true)
   }
 }
@@ -61,7 +61,7 @@ func AssertCast<U, T>(_ obj: U, _ tests: (T) -> Void) {
   switch obj {
   case let casted as T:
     tests(casted)
-    break;
+    break
   default:
     XCTFail("AssertCast: Could not dynamically cast value")
     break
@@ -86,11 +86,11 @@ func AssertEqualDesc(_ lhs: ParserDescription, _ rhs: ParserDescription) {
 
   XCTAssertEqual(lcs.count, rcs.count)
   for (l, r) in zip(lcs, rcs) {
-    AssertEqualDesc(l, r);
+    AssertEqualDesc(l, r)
   }
 }
 
-class NormalisationTests : XCTestCase {
+class NormalisationTests: XCTestCase {
 
   func testPrimitive() {
     let prim = PrimitiveDesc(name: "name", desc: "desc")
@@ -176,16 +176,16 @@ class NormalisationTests : XCTestCase {
       SequenceDesc(children: [
         FakeDesc(3),
         SequenceDesc(children: [
-          FakeDesc(4)
-          ])
+          FakeDesc(4),
         ]),
+      ]),
       FakeDesc(5, WithChildren: [
         SequenceDesc(children: [
-          FakeDesc(6)
-          ]),
-        FakeDesc(7)
-        ])
-      ])
+          FakeDesc(6),
+        ]),
+        FakeDesc(7),
+      ]),
+    ])
 
     let expected = SequenceDesc(children: [
       FakeDesc(1),
@@ -194,9 +194,9 @@ class NormalisationTests : XCTestCase {
       FakeDesc(4),
       FakeDesc(5, WithChildren: [
         FakeDesc(6),
-        FakeDesc(7)
-        ])
-      ])
+        FakeDesc(7),
+      ]),
+    ])
 
     AssertEqualDesc(expected, seq.normalised)
   }
@@ -224,16 +224,16 @@ class NormalisationTests : XCTestCase {
       ChoiceDesc(children: [
         FakeDesc(3),
         ChoiceDesc(children: [
-          FakeDesc(4)
-          ])
+          FakeDesc(4),
         ]),
+      ]),
       FakeDesc(5, WithChildren: [
         ChoiceDesc(children: [
-          FakeDesc(6)
-          ]),
-        FakeDesc(7)
-        ])
-      ])
+          FakeDesc(6),
+        ]),
+        FakeDesc(7),
+      ]),
+    ])
 
     let expected = ChoiceDesc(children: [
       FakeDesc(1),
@@ -242,9 +242,9 @@ class NormalisationTests : XCTestCase {
       FakeDesc(4),
       FakeDesc(5, WithChildren: [
         FakeDesc(6),
-        FakeDesc(7)
-        ])
-      ])
+        FakeDesc(7),
+      ]),
+    ])
 
     AssertEqualDesc(expected, choices.normalised)
   }
@@ -260,7 +260,7 @@ class NormalisationTests : XCTestCase {
   }
 }
 
-class DelimitedSummaryTest : XCTestCase {
+class DelimitedSummaryTest: XCTestCase {
   func testNotDelimited() {
     let fake = FakeDesc(summary: "summary",
                         isDelimited: false,
@@ -279,7 +279,7 @@ class DelimitedSummaryTest : XCTestCase {
   }
 }
 
-class FindAllTests : XCTestCase {
+class FindAllTests: XCTestCase {
   func testSingleton() {
     let fake = FakeDesc(1)
     var fakes = [FakeDesc]()
@@ -308,7 +308,7 @@ class FindAllTests : XCTestCase {
     let fake2 = FakeDesc(2)
     let fake1 = FakeDesc(1, WithChildren: [
       fake2,
-      SectionDesc(tag: "tag", name: "name", desc: "desc", child: FakeDesc(3))
+      SectionDesc(tag: "tag", name: "name", desc: "desc", child: FakeDesc(3)),
     ])
 
     var actualFakes = [FakeDesc]()

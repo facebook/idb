@@ -7,11 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import XCTest
 @testable import FBSimulatorControlKit
+import XCTest
 
 public extension XCTestCase {
-  func assertParses<A : Equatable>(_ parser: Parser<A>, _ tokens: [String], _ expected: A) {
+  func assertParses<A: Equatable>(_ parser: Parser<A>, _ tokens: [String], _ expected: A) {
     do {
       let (_, actual) = try parser.parse(tokens)
       XCTAssertEqual(expected, actual)
@@ -20,9 +20,9 @@ public extension XCTestCase {
     }
   }
 
-  func assertParsesAll<A : Equatable>(_ parser: Parser<A>, _ tokenExpectedPairs: [([String], A)]) {
+  func assertParsesAll<A: Equatable>(_ parser: Parser<A>, _ tokenExpectedPairs: [([String], A)]) {
     for (tokens, expected) in tokenExpectedPairs {
-      self.assertParses(parser, tokens, expected)
+      assertParses(parser, tokens, expected)
     }
   }
 
@@ -37,7 +37,7 @@ public extension XCTestCase {
 
   func assertFailsToParseAll<A>(_ parser: Parser<A>, _ tokensList: [[String]]) {
     for tokens in tokensList {
-      self.assertParseFails(parser, tokens)
+      assertParseFails(parser, tokens)
     }
   }
 
@@ -56,32 +56,32 @@ public extension XCTestCase {
   }
 }
 
-@objc class TestWriter : NSObject, Writer {
+@objc class TestWriter: NSObject, Writer {
   let buffer: FBLineBuffer = FBLineBuffer()
   var output: [String] = []
 
   func consumeData(_ data: Data) {
-    self.buffer.append(data)
+    buffer.append(data)
     while let line = self.buffer.consumeLineString() {
-      self.output.append(line)
+      output.append(line)
     }
   }
 
   func consumeEndOfFile() {
   }
 
-  override var description: String { get {
+  override var description: String {
     return output.joined(separator: "\n")
-  }}
+  }
 }
 
 extension FBiOSTargetQuery {
   public static func simulatorStates(_ states: [FBSimulatorState]) -> FBiOSTargetQuery {
-    return self.allTargets().simulatorStates(states)
+    return allTargets().simulatorStates(states)
   }
 
   public func simulatorStates(_ states: [FBSimulatorState]) -> FBiOSTargetQuery {
-    let indexSet = states.reduce(NSMutableIndexSet()) { (indexSet, state) in
+    let indexSet = states.reduce(NSMutableIndexSet()) { indexSet, state in
       indexSet.add(Int(state.rawValue))
       return indexSet
     }

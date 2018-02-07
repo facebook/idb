@@ -1,4 +1,4 @@
-    /**
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
@@ -7,16 +7,16 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
 import FBSimulatorControl
+import Foundation
 
-enum QueryError : Error, CustomStringConvertible {
+enum QueryError: Error, CustomStringConvertible {
   case TooManyMatches([FBiOSTarget], Int)
   case NoMatches
   case WrongTarget(String, String)
   case NoneProvided
 
-  var description: String { get {
+  var description: String {
     switch self {
     case .TooManyMatches(let matches, let expected):
       return "Matched too many Targets. \(expected) targets matched but had \(matches.count)"
@@ -27,16 +27,16 @@ enum QueryError : Error, CustomStringConvertible {
     case .NoneProvided:
       return "No Query Provided"
     }
-  }}
+  }
 }
 
 extension HttpRequest {
   func jsonBody() throws -> JSON {
-    return try JSON.fromData(self.body)
+    return try JSON.fromData(body)
   }
 }
 
-enum ResponseKeys : String {
+enum ResponseKeys: String {
   case Success = "success"
   case Failure = "failure"
   case Status = "status"
@@ -45,24 +45,24 @@ enum ResponseKeys : String {
   case Subject = "subject"
 }
 
-@objc private class HttpEventReporter : NSObject, EventReporter {
+@objc private class HttpEventReporter: NSObject, EventReporter {
   var events: [FBEventReporterSubjectProtocol] = []
   let interpreter: EventInterpreter = FBEventInterpreter.jsonEventInterpreter(false)
   let consumer: Writer = FileHandleWriter.null
 
   func report(_ subject: FBEventReporterSubjectProtocol) {
-    self.events.append(subject)
+    events.append(subject)
   }
 
-  var jsonDescription: JSON { get {
+  var jsonDescription: JSON {
     let events: AnyObject = self.events.map { $0.jsonSerializableRepresentation } as AnyObject
     return try! JSON.encode(events)
-  }}
+  }
 
   static func errorResponse(_ errorMessage: String?) -> HttpResponse {
     let json = JSON.dictionary([
-      ResponseKeys.Status.rawValue : JSON.string(ResponseKeys.Failure.rawValue),
-      ResponseKeys.Message.rawValue : JSON.string(errorMessage ?? "Unknown Error")
+      ResponseKeys.Status.rawValue: JSON.string(ResponseKeys.Failure.rawValue),
+      ResponseKeys.Message.rawValue: JSON.string(errorMessage ?? "Unknown Error"),
     ])
     return HttpResponse.internalServerError(json.data)
   }
@@ -71,15 +71,15 @@ enum ResponseKeys : String {
     switch result.outcome {
     case .failure(let string):
       let json = JSON.dictionary([
-        ResponseKeys.Status.rawValue : JSON.string(ResponseKeys.Failure.rawValue),
-        ResponseKeys.Message.rawValue : JSON.string(string),
-        ResponseKeys.Events.rawValue : self.jsonDescription
+        ResponseKeys.Status.rawValue: JSON.string(ResponseKeys.Failure.rawValue),
+        ResponseKeys.Message.rawValue: JSON.string(string),
+        ResponseKeys.Events.rawValue: self.jsonDescription,
       ])
       return HttpResponse.internalServerError(json.data)
     case .success(let subject):
       var dictionary = [
-        ResponseKeys.Status.rawValue : JSON.string(ResponseKeys.Success.rawValue),
-        ResponseKeys.Events.rawValue : self.jsonDescription
+        ResponseKeys.Status.rawValue: JSON.string(ResponseKeys.Success.rawValue),
+        ResponseKeys.Events.rawValue: self.jsonDescription,
       ]
       if let subject = subject {
         dictionary[ResponseKeys.Subject.rawValue] = subject.jsonDescription
@@ -103,7 +103,7 @@ extension ActionPerformer {
   }
 
   func futureWithSingleTarget<A>(_ query: FBiOSTargetQuery, action: (FBiOSTarget) -> FBFuture<A>) throws -> FBFuture<A> {
-    let target = try self.runnerContext(HttpEventReporter()).querySingleTarget(query)
+    let target = try runnerContext(HttpEventReporter()).querySingleTarget(query)
     let future = target.workQueue.sync {
       return action(target)
     }
@@ -111,7 +111,7 @@ extension ActionPerformer {
   }
 }
 
-enum HttpMethod : String {
+enum HttpMethod: String {
   case GET = "GET"
   case POST = "POST"
 }
@@ -144,7 +144,7 @@ enum ActionHandler {
       let destination = URL(fileURLWithPath: NSTemporaryDirectory())
         .appendingPathComponent("fbsimctl-\(guid)")
         .appendingPathExtension(pathExtension)
-      if (FileManager.default.fileExists(atPath: destination.path)) {
+      if FileManager.default.fileExists(atPath: destination.path) {
         throw ParseError.custom("Could not generate temporary filename, \(destination.path) already exists.")
       }
       try request.body.write(to: destination)
@@ -154,7 +154,7 @@ enum ActionHandler {
   }
 }
 
-class ActionHttpResponseHandler : NSObject, HttpResponseHandler {
+class ActionHttpResponseHandler: NSObject, HttpResponseHandler {
   let performer: ActionPerformer
   let handler: ActionHandler
 
@@ -174,8 +174,8 @@ class ActionHttpResponseHandler : NSObject, HttpResponseHandler {
   }
 }
 
-class SimpleResponseHandler : NSObject, HttpResponseHandler {
-  let handler:(HttpRequest)throws -> HttpResponse
+class SimpleResponseHandler: NSObject, HttpResponseHandler {
+  let handler: (HttpRequest) throws -> HttpResponse
 
   init(handler: @escaping (HttpRequest) throws -> HttpResponse) {
     self.handler = handler
@@ -183,10 +183,10 @@ class SimpleResponseHandler : NSObject, HttpResponseHandler {
   }
 
   func handle(_ request: HttpRequest) -> HttpResponse {
-    return SimpleResponseHandler.perform(request: request, self.handler)
+    return SimpleResponseHandler.perform(request: request, handler)
   }
 
-  static func perform(request: HttpRequest, _ handler:(HttpRequest)throws -> HttpResponse) -> HttpResponse {
+  static func perform(request: HttpRequest, _ handler: (HttpRequest) throws -> HttpResponse) -> HttpResponse {
     do {
       return try handler(request)
     } catch let error as CustomStringConvertible {
@@ -203,7 +203,7 @@ class SimpleResponseHandler : NSObject, HttpResponseHandler {
       return nil
     }
     return FBiOSTargetQuery.udids([
-      try FBiOSTargetQuery.parseUDIDToken(queryPath)
+      try FBiOSTargetQuery.parseUDIDToken(queryPath),
     ])
   }
 }
@@ -225,7 +225,7 @@ extension Route {
   }
 }
 
-struct ActionRoute : Route {
+struct ActionRoute: Route {
   let method: HttpMethod
   let eventName: EventName
   let handler: ActionHandler
@@ -246,25 +246,25 @@ struct ActionRoute : Route {
     return ActionRoute(method: HttpMethod.GET, eventName: eventName, handler: ActionHandler.path(handler))
   }
 
-  var endpoint: String { get {
-    return self.eventName.rawValue
-  }}
+  var endpoint: String {
+    return eventName.rawValue
+  }
 
   func responseHandler(performer: ActionPerformer) -> HttpResponseHandler {
-     return ActionHttpResponseHandler(performer: performer, handler: self.handler)
+    return ActionHttpResponseHandler(performer: performer, handler: handler)
   }
 }
 
-struct ScreenshotRoute : Route {
+struct ScreenshotRoute: Route {
   let format: FBScreenshotFormat
 
-  var method: HttpMethod { get {
+  var method: HttpMethod {
     return HttpMethod.GET
-  }}
+  }
 
-  var endpoint: String { get {
-    return "screenshot.\(self.format.rawValue)"
-  }}
+  var endpoint: String {
+    return "screenshot.\(format.rawValue)"
+  }
 
   func responseHandler(performer: ActionPerformer) -> HttpResponseHandler {
     let format = self.format
@@ -281,13 +281,13 @@ struct ScreenshotRoute : Route {
   }
 }
 
-class HttpRelay : Relay {
-  struct HttpError : Error, CustomStringConvertible {
+class HttpRelay: Relay {
+  struct HttpError: Error, CustomStringConvertible {
     let message: String
 
-    var description: String { get {
+    var description: String {
       return message
-    }}
+    }
   }
 
   let portNumber: in_port_t
@@ -297,7 +297,7 @@ class HttpRelay : Relay {
   init(portNumber: in_port_t, performer: ActionPerformer) {
     self.portNumber = portNumber
     self.performer = performer
-    self.httpServer = HttpServer(
+    httpServer = HttpServer(
       port: portNumber,
       routes: HttpRelay.actionRoutes.flatMap { $0.httpRoutes(performer) },
       logger: FBControlCoreGlobalConfiguration.defaultLogger
@@ -306,43 +306,43 @@ class HttpRelay : Relay {
 
   func start() throws {
     do {
-      try self.httpServer.start()
+      try httpServer.start()
     } catch let error as NSError {
       throw HttpRelay.HttpError(message: "An Error occurred starting the HTTP Server on Port \(self.portNumber): \(error.description)")
     }
   }
 
   func stop() {
-    self.httpServer.stop()
+    httpServer.stop()
   }
 
-  fileprivate static var approveRoute: Route { get {
+  fileprivate static var approveRoute: Route {
     return ActionRoute.post(.approve) { json in
       let approval = try FBSettingsApproval.inflate(fromJSON: json.decode())
       return Action.coreFuture(approval)
     }
-  }}
+  }
 
-  fileprivate static var clearKeychainRoute: Route { get {
+  fileprivate static var clearKeychainRoute: Route {
     return ActionRoute.post(.clearKeychain) { json in
       let bundleID = try json.getValue("bundle_id").getString()
       return Action.clearKeychain(bundleID)
     }
-  }}
+  }
 
-  fileprivate static var configRoute: Route { get {
+  fileprivate static var configRoute: Route {
     return ActionRoute.getConstant(.config, action: Action.config)
-  }}
+  }
 
-  fileprivate static var diagnosticQueryRoute: Route { get {
+  fileprivate static var diagnosticQueryRoute: Route {
     return ActionRoute.post(.diagnose) { json in
       var query = try FBDiagnosticQuery.inflate(fromJSON: json.decode())
       query = query.withFormat(DiagnosticFormat.content)
       return Action.diagnose(query)
     }
-  }}
+  }
 
-  fileprivate static var diagnosticRoute: Route { get {
+  fileprivate static var diagnosticRoute: Route {
     return ActionRoute.get(.diagnose) { components in
       guard let name = components.last else {
         throw ParseError.custom("No diagnostic name provided")
@@ -351,23 +351,23 @@ class HttpRelay : Relay {
       query = query.withFormat(DiagnosticFormat.content)
       return Action.diagnose(query)
     }
-  }}
+  }
 
-  fileprivate static var hidRoute: Route { get {
+  fileprivate static var hidRoute: Route {
     return ActionRoute.post(.hid) { json in
       let event = try FBSimulatorHIDEvent.inflate(fromJSON: json.decode())
       return Action.hid(event)
     }
-  }}
+  }
 
-  fileprivate static var installRoute: Route { get {
+  fileprivate static var installRoute: Route {
     return ActionRoute.postFile(.install, "ipa") { request, file in
       let shouldCodeSign = request.getBoolQueryParam("codesign", false)
       return Action.install(file.path, shouldCodeSign)
     }
-  }}
+  }
 
-  fileprivate static var launchRoute: Route { get {
+  fileprivate static var launchRoute: Route {
     return ActionRoute.post(.launch) { json in
       if let agentLaunch = try? FBAgentLaunchConfiguration.inflate(fromJSON: json.decode()) {
         return Action.launchAgent(agentLaunch)
@@ -378,17 +378,17 @@ class HttpRelay : Relay {
 
       throw JSONError.parse("Could not parse \(json) either an Agent or App Launch")
     }
-  }}
+  }
 
-  fileprivate static var listRoute: Route { get {
+  fileprivate static var listRoute: Route {
     return ActionRoute.getConstant(.list, action: Action.list)
-  }}
+  }
 
-  fileprivate static var listAppsRoute: Route { get {
+  fileprivate static var listAppsRoute: Route {
     return ActionRoute.getConstant(.listApps, action: Action.listApps)
-  }}
+  }
 
-  fileprivate static var openRoute: Route { get {
+  fileprivate static var openRoute: Route {
     return ActionRoute.post(.open) { json in
       let urlString = try json.getValue("url").getString()
       guard let url = URL(string: urlString) else {
@@ -396,64 +396,64 @@ class HttpRelay : Relay {
       }
       return Action.open(url)
     }
-  }}
+  }
 
-  fileprivate static var recordRoute: Route { get {
+  fileprivate static var recordRoute: Route {
     return ActionRoute.post(.record) { json in
       if try json.getValue("start").getBool() {
         return Action.record(Record.start(nil))
       }
       return Action.record(Record.stop)
     }
-  }}
+  }
 
-  fileprivate static var relaunchRoute: Route { get {
+  fileprivate static var relaunchRoute: Route {
     return ActionRoute.post(.relaunch) { json in
       let launchConfiguration = try FBApplicationLaunchConfiguration.inflate(fromJSON: json.decode())
       return Action.relaunch(launchConfiguration)
     }
-  }}
+  }
 
-  fileprivate static var searchRoute: Route { get {
+  fileprivate static var searchRoute: Route {
     return ActionRoute.post(.search) { json in
       let search = try FBBatchLogSearch.inflate(fromJSON: json.decode())
       return Action.search(search)
     }
-  }}
+  }
 
-  fileprivate static var setLocationRoute: Route { get {
+  fileprivate static var setLocationRoute: Route {
     return ActionRoute.post(.setLocation) { json in
       let latitude = try json.getValue("latitude").getNumber().doubleValue
       let longitude = try json.getValue("longitude").getNumber().doubleValue
       return Action.setLocation(latitude, longitude)
     }
-  }}
+  }
 
-  fileprivate static var tapRoute: Route { get {
+  fileprivate static var tapRoute: Route {
     return ActionRoute.post(.tap) { json in
       let x = try json.getValue("x").getNumber().doubleValue
       let y = try json.getValue("y").getNumber().doubleValue
       let event = FBSimulatorHIDEvent.tapAt(x: x, y: y)
       return Action.hid(event)
     }
-  }}
+  }
 
-  fileprivate static var terminateRoute: Route { get {
+  fileprivate static var terminateRoute: Route {
     return ActionRoute.post(.terminate) { json in
       let bundleID = try json.getValue("bundle_id").getString()
       return Action.terminate(bundleID)
     }
-  }}
+  }
 
-  fileprivate static var uninstallRoute: Route { get {
+  fileprivate static var uninstallRoute: Route {
     return ActionRoute.post(.uninstall) { json in
       let bundleID = try json.getValue("bundle_id").getString()
       return Action.uninstall(bundleID)
     }
-  }}
+  }
 
-  fileprivate static var uploadRoute: Route { get {
-    let jsonToDiagnostics:(JSON)throws -> [FBDiagnostic] = { json in
+  fileprivate static var uploadRoute: Route {
+    let jsonToDiagnostics: (JSON) throws -> [FBDiagnostic] = { json in
       switch json {
       case .array(let array):
         let diagnostics = try array.map { jsonDiagnostic in
@@ -471,9 +471,9 @@ class HttpRelay : Relay {
     return ActionRoute.post(.upload) { json in
       return Action.upload(try jsonToDiagnostics(json))
     }
-  }}
+  }
 
-  fileprivate static var actionRoutes: [Route] { get {
+  fileprivate static var actionRoutes: [Route] {
     return [
       self.approveRoute,
       self.clearKeychainRoute,
@@ -497,5 +497,5 @@ class HttpRelay : Relay {
       ScreenshotRoute(format: FBScreenshotFormat.PNG),
       ScreenshotRoute(format: FBScreenshotFormat.JPEG),
     ]
-  }}
+  }
 }

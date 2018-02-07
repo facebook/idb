@@ -7,9 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
-import FBSimulatorControl
 import FBControlCore
+import FBSimulatorControl
+import Foundation
 
 /**
  Some work, yielding a result.
@@ -21,7 +21,7 @@ protocol Runner {
 /**
  Joins multiple Runners together.
  */
-struct SequenceRunner : Runner {
+struct SequenceRunner: Runner {
   let runners: [Runner]
 
   func run() -> CommandResult {
@@ -40,11 +40,11 @@ struct SequenceRunner : Runner {
 /**
  Wraps a CommandResult in a runner
  */
-struct CommandResultRunner : Runner {
+struct CommandResultRunner: Runner {
   let result: CommandResult
 
   func run() -> CommandResult {
-    return self.result
+    return result
   }
 }
 
@@ -57,7 +57,7 @@ extension CommandResult {
 /**
  Wraps a Synchronous Relay in a Runner.
  */
-struct RelayRunner : Runner {
+struct RelayRunner: Runner {
   let relay: SynchronousRelay
 
   func run() -> CommandResult {

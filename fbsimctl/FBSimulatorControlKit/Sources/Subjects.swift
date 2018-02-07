@@ -12,12 +12,12 @@ import Foundation
 public typealias EventReporterSubject = FBEventReporterSubjectProtocol
 
 extension EventReporterSubject {
-  var jsonDescription: JSON { get {
-    return try! JSON.encode(self.jsonSerializableRepresentation as AnyObject)
-  }}
+  var jsonDescription: JSON {
+    return try! JSON.encode(jsonSerializableRepresentation as AnyObject)
+  }
 
   public func append(_ other: EventReporterSubject) -> EventReporterSubject {
-    let joined = self.subSubjects + other.subSubjects
+    let joined = subSubjects + other.subSubjects
     guard let firstElement = joined.first else {
       return FBEventReporterSubject(subjects: [])
     }
@@ -29,20 +29,20 @@ extension EventReporterSubject {
 }
 
 extension FBJSONSerializable {
-  var subject: FBEventReporterSubject { get {
+  var subject: FBEventReporterSubject {
     return FBEventReporterSubject(value: self)
-  }}
+  }
 }
 
-@objc class RecordSubject : NSObject, EventReporterSubject {
+@objc class RecordSubject: NSObject, EventReporterSubject {
   let record: Record
 
   init(_ record: Record) {
     self.record = record
   }
 
-  var jsonSerializableRepresentation: Any { get {
-    var contents: [String : NSObject] = [:]
+  var jsonSerializableRepresentation: Any {
+    var contents: [String: NSObject] = [:]
     switch self.record {
     case .start(let maybePath):
       contents["start"] = NSNumber(value: true)
@@ -55,34 +55,34 @@ extension FBJSONSerializable {
       contents["start"] = NSNumber(value: false)
     }
     return contents
-    }}
+  }
 
-  override var description: String { get {
-    switch self.record {
+  override var description: String {
+    switch record {
     case .start(let maybePath):
       let destination = maybePath ?? "Default Destination"
       return "Start Recording \(destination)"
     case .stop:
       return "Stop Recording"
     }
-  }}
+  }
 
-  var subSubjects: [FBEventReporterSubjectProtocol] { get {
+  var subSubjects: [FBEventReporterSubjectProtocol] {
     return [self]
-  }}
+  }
 }
 
-@objc class ListenSubject : NSObject, EventReporterSubject {
+@objc class ListenSubject: NSObject, EventReporterSubject {
   let interface: ListenInterface
 
   init(_ interface: ListenInterface) {
     self.interface = interface
   }
 
-  var jsonSerializableRepresentation: Any { get {
-    var json: [String : Any] = [
-      "stdin" : NSNumber(value: self.interface.stdin),
-      "handle" : self.interface.continuation?.futureType.rawValue ?? NSNull(),
+  var jsonSerializableRepresentation: Any {
+    var json: [String: Any] = [
+      "stdin": NSNumber(value: self.interface.stdin),
+      "handle": self.interface.continuation?.futureType.rawValue ?? NSNull(),
     ]
     if let http = self.interface.http {
       json["http"] = NSNumber(value: http)
@@ -95,9 +95,9 @@ extension FBJSONSerializable {
       json["hid"] = NSNull()
     }
     return json
-  }}
+  }
 
-  override public var description: String { get {
+  public override var description: String {
     if let listenDescription = self.listenDescription {
       return listenDescription
     }
@@ -113,25 +113,24 @@ extension FBJSONSerializable {
     } else {
       description += "No"
     }
-    description += " stdin: \(self.interface.stdin)"
+    description += " stdin: \(interface.stdin)"
     if let continuation = self.interface.continuation {
       description += " due to \(continuation.futureType.rawValue)"
     }
     return description
-  }}
+  }
 
-  private var listenDescription: String? { get {
-    if !self.interface.isEmptyListen {
+  private var listenDescription: String? {
+    if !interface.isEmptyListen {
       return nil
     }
     guard let continuation = self.interface.continuation else {
       return nil
     }
     return continuation.futureType.listenDescription
-  }}
+  }
 
-  var subSubjects: [FBEventReporterSubjectProtocol] { get {
+  var subSubjects: [FBEventReporterSubjectProtocol] {
     return [self]
-  }}
+  }
 }
-

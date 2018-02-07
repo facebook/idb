@@ -7,20 +7,20 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
 import FBSimulatorControl
+import Foundation
 
 /**
  Errors for the JSON Type
-*/
-public enum JSONError : Error {
+ */
+public enum JSONError: Error {
   case notContainer(JSON)
   case nonEncodable(AnyObject)
   case serialization(NSError)
   case stringifying(Data)
   case parse(String)
 
-  public var description: String { get {
+  public var description: String {
     switch self {
     case .notContainer(let object):
       return "\(object) is not a container"
@@ -33,14 +33,14 @@ public enum JSONError : Error {
     case .parse(let string):
       return "Parsing \(string)"
     }
-  }}
+  }
 }
 
 /**
  The JSON Type.
  */
 public indirect enum JSON {
-  case dictionary([String : JSON])
+  case dictionary([String: JSON])
   case array([JSON])
   case string(String)
   case number(NSNumber)
@@ -56,7 +56,7 @@ public indirect enum JSON {
       }
       return JSON.array(encoded)
     case let dictionary as NSDictionary:
-      var encoded: [String : JSON] = [:]
+      var encoded: [String: JSON] = [:]
       for (key, value) in dictionary {
         guard let key = key as? NSString else {
           throw JSONError.nonEncodable(object)
@@ -80,9 +80,9 @@ public indirect enum JSON {
     return try JSON.encode(object as AnyObject)
   }
 
-  var data: Data { get {
-    return try! JSONSerialization.data(withJSONObject: self.decode(), options: JSONSerialization.WritingOptions())
-  }}
+  var data: Data {
+    return try! JSONSerialization.data(withJSONObject: decode(), options: JSONSerialization.WritingOptions())
+  }
 
   func decode() -> AnyObject {
     switch self {
@@ -112,9 +112,9 @@ public indirect enum JSON {
   public func decodeContainer() throws -> AnyObject {
     switch self {
     case .array:
-      return self.decode()
+      return decode()
     case .dictionary:
-      return self.decode()
+      return decode()
     default:
       throw JSONError.notContainer(self)
     }
@@ -123,7 +123,7 @@ public indirect enum JSON {
   func serializeToString(_ pretty: Bool) throws -> String {
     do {
       let writingOptions = pretty ? JSONSerialization.WritingOptions.prettyPrinted : JSONSerialization.WritingOptions()
-      let jsonObject = try self.decodeContainer()
+      let jsonObject = try decodeContainer()
       let data = try JSONSerialization.data(withJSONObject: jsonObject, options: writingOptions)
       guard let string = String(data: data, encoding: String.Encoding.utf8) else {
         throw JSONError.stringifying(data)
@@ -139,7 +139,7 @@ public indirect enum JSON {
 
 /**
  Simple, Chainable Parsers for the JSON Type
-*/
+ */
 extension JSON {
   func getValue(_ key: String) throws -> JSON {
     guard let value = try getOptionalValue(key) else {
@@ -176,7 +176,7 @@ extension JSON {
     return array
   }
 
-  func getOptionalDictionary() -> [String : JSON]? {
+  func getOptionalDictionary() -> [String: JSON]? {
     switch self {
     case .dictionary(let dictionary):
       return dictionary
@@ -185,9 +185,9 @@ extension JSON {
     }
   }
 
-  func getDictionary() throws -> [String : JSON] {
+  func getDictionary() throws -> [String: JSON] {
     guard let dictionary = getOptionalDictionary() else {
-       throw JSONError.parse("\(self) not a dictionary")
+      throw JSONError.parse("\(self) not a dictionary")
     }
     return dictionary
   }
@@ -222,12 +222,12 @@ extension JSON {
   }
 
   func getArrayOfStrings() throws -> [String] {
-    return try self.getArray().map { try $0.getString() }
+    return try getArray().map { try $0.getString() }
   }
 
-  func getDictionaryOfStrings() throws -> [String : String] {
-    var dictionary: [String : String] = [:]
-    for (key, value) in try self.getDictionary() {
+  func getDictionaryOfStrings() throws -> [String: String] {
+    var dictionary: [String: String] = [:]
+    for (key, value) in try getDictionary() {
       dictionary[key] = try value.getString()
     }
     return dictionary

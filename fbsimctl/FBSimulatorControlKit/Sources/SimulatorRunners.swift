@@ -7,8 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
 import FBSimulatorControl
+import Foundation
 
 extension FileOutput {
   func makeWriter() throws -> FBFileWriter {
@@ -25,7 +25,7 @@ extension FBBitmapStreamingCommands {
   func startStreaming(configuration: FBBitmapStreamConfiguration, output: FileOutput) -> FBFuture<FBiOSTargetContinuation> {
     do {
       let writer = try output.makeWriter()
-      let stream = try self.createStream(with: configuration)
+      let stream = try createStream(with: configuration)
       return stream.startStreaming(writer).mapReplace(stream) as! FBFuture<FBiOSTargetContinuation>
     } catch let error {
       return FBFuture(error: error)
@@ -33,16 +33,16 @@ extension FBBitmapStreamingCommands {
   }
 }
 
-struct SimulatorCreationRunner : Runner {
+struct SimulatorCreationRunner: Runner {
   let context: iOSRunnerContext<CreationSpecification>
 
   func run() -> CommandResult {
     do {
-      for configuration in self.configurations {
-        self.context.reporter.reportSimpleBridge(.create, .started, configuration)
-        let simulator = try self.context.simulatorControl.set.createSimulator(with: configuration).await()
-        self.context.defaults.updateLastQuery(FBiOSTargetQuery.udids([simulator.udid]))
-        self.context.reporter.reportSimpleBridge(.create, .ended, simulator)
+      for configuration in configurations {
+        context.reporter.reportSimpleBridge(.create, .started, configuration)
+        let simulator = try context.simulatorControl.set.createSimulator(with: configuration).await()
+        context.defaults.updateLastQuery(FBiOSTargetQuery.udids([simulator.udid]))
+        context.reporter.reportSimpleBridge(.create, .ended, simulator)
       }
       return .success(nil)
     } catch let error as NSError {
@@ -50,17 +50,17 @@ struct SimulatorCreationRunner : Runner {
     }
   }
 
-  fileprivate var configurations: [FBSimulatorConfiguration] { get {
-    switch self.context.value {
+  fileprivate var configurations: [FBSimulatorConfiguration] {
+    switch context.value {
     case .allMissingDefaults:
-      return  self.context.simulatorControl.set.configurationsForAbsentDefaultSimulators()
+      return context.simulatorControl.set.configurationsForAbsentDefaultSimulators()
     case .individual(let configuration):
       return [configuration.simulatorConfiguration]
     }
-  }}
+  }
 }
 
-struct SimulatorActionRunner : Runner {
+struct SimulatorActionRunner: Runner {
   let context: iOSRunnerContext<(Action, FBSimulator)>
 
   func run() -> CommandResult {
@@ -136,7 +136,7 @@ struct SimulatorActionRunner : Runner {
   }
 }
 
-private struct UploadRunner : Runner {
+private struct UploadRunner: Runner {
   let reporter: SimulatorReporter
   let diagnostics: [FBDiagnostic]
 
@@ -155,7 +155,7 @@ private struct UploadRunner : Runner {
     }
 
     let mediaPredicate = NSPredicate.forMediaPaths()
-    let media = diagnosticLocations.filter { (_, location) in
+    let media = diagnosticLocations.filter { _, location in
       mediaPredicate.evaluate(with: location)
     }
 
@@ -171,15 +171,15 @@ private struct UploadRunner : Runner {
       }
     }
 
-    let basePath = self.reporter.simulator.auxillaryDirectory
+    let basePath = reporter.simulator.auxillaryDirectory
     let arbitraryPredicate = NSCompoundPredicate(notPredicateWithSubpredicate: mediaPredicate)
-    let arbitrary = diagnosticLocations.filter{ arbitraryPredicate.evaluate(with: $0.1) }
+    let arbitrary = diagnosticLocations.filter { arbitraryPredicate.evaluate(with: $0.1) }
     for (sourceDiagnostic, sourcePath) in arbitrary {
       guard let destinationPath = try? sourceDiagnostic.writeOut(toDirectory: basePath as String) else {
         return CommandResult.failure("Could not write out diagnostic \(sourcePath) to path")
       }
       let destinationDiagnostic = FBDiagnosticBuilder().updatePath(destinationPath).build()
-      self.reporter.report(.upload, .discrete, destinationDiagnostic.subject)
+      reporter.report(.upload, .discrete, destinationDiagnostic.subject)
     }
 
     return .success(nil)

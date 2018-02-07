@@ -18,26 +18,26 @@ import Foundation
     self.name = name
   }
 
-  var jsonSerializableRepresentation: Any { get {
+  var jsonSerializableRepresentation: Any {
     return [
-      "signo" : NSNumber(value: self.signo as Int32),
-      "name" : self.name,
+      "signo": NSNumber(value: self.signo as Int32),
+      "name": self.name,
     ]
-  }}
+  }
 
-  override var description: String { get {
-    return "\(self.name) \(self.signo)"
-  }}
+  override var description: String {
+    return "\(name) \(signo)"
+  }
 
-  var subSubjects: [FBEventReporterSubjectProtocol] { get {
+  var subSubjects: [FBEventReporterSubjectProtocol] {
     return [self]
-  }}
+  }
 }
 
 let signalPairs: [SignalInfo] = [
   SignalInfo(signo: SIGTERM, name: "SIGTERM"),
   SignalInfo(signo: SIGHUP, name: "SIGHUP"),
-  SignalInfo(signo: SIGINT, name: "SIGINT")
+  SignalInfo(signo: SIGINT, name: "SIGINT"),
 ]
 
 func ignoreSignal(_: Int32) {}
@@ -51,7 +51,7 @@ class SignalHandler {
   }
 
   func register() {
-    self.sources = signalPairs.map { info in
+    sources = signalPairs.map { info in
       signal(info.signo, ignoreSignal)
       let source = DispatchSource.makeSignalSource(signal: info.signo, queue: DispatchQueue.main)
       source.setEventHandler {
@@ -63,12 +63,12 @@ class SignalHandler {
   }
 
   func unregister() {
-    for source in self.sources {
+    for source in sources {
       source.cancel()
     }
   }
 
-  static var future: FBFuture<SignalInfo> { get {
+  static var future: FBFuture<SignalInfo> {
     // Setup the Signal Handling first, so sending a Signal cannot race with starting the relay.
     let future: FBMutableFuture<SignalInfo> = FBMutableFuture()
     let handler = SignalHandler { info in
@@ -79,5 +79,5 @@ class SignalHandler {
       handler.unregister()
       return future
     }) as! FBFuture<SignalInfo>
-  }}
+  }
 }

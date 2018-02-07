@@ -20,8 +20,8 @@ class LineBuffer {
 
   func appendData(data: NSData) {
     let string = String(data: data, encoding: NSUTF8StringEncoding)!
-    self.buffer.appendContentsOf(string)
-    self.runBuffer()
+    buffer.appendContentsOf(string)
+    runBuffer()
   }
 
   private func runBuffer() {
@@ -30,8 +30,8 @@ class LineBuffer {
       .componentsSeparatedByCharactersInSet(NSCharacterSet.newlineCharacterSet())
       .filter { line in
         line != ""
-    }
-    if (lines.isEmpty) {
+      }
+    if lines.isEmpty {
       return
     }
 
@@ -46,6 +46,6 @@ class LineBuffer {
   }
 }
 
-protocol LineBufferDelegate : class {
+protocol LineBufferDelegate: class {
   func buffer(lineAvailable: String)
 }

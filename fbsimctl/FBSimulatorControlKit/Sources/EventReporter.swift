@@ -7,66 +7,66 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
 import FBSimulatorControl
+import Foundation
 import XCTestBootstrap
 
 public typealias EventInterpreter = FBEventInterpreterProtocol
 public typealias EventReporter = FBEventReporterProtocol
 
-public  extension EventReporter {
-  public var writer: Writer { get {
-    return self.consumer
-  }}
+public extension EventReporter {
+  public var writer: Writer {
+    return consumer
+  }
 
   func reportSimpleBridge(_ eventName: EventName, _ eventType: EventType, _ value: ControlCoreValue) {
-    self.reportSimple(eventName, eventType, value.subject)
+    reportSimple(eventName, eventType, value.subject)
   }
 
   func reportSimple(_ eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
-    self.report(FBEventReporterSubject(name: eventName, type: eventType, subject: subject))
+    report(FBEventReporterSubject(name: eventName, type: eventType, subject: subject))
   }
 
   func reportError(_ message: String) {
-    self.reportSimpleBridge(.failure, .discrete, FBEventReporterSubject(string: message))
+    reportSimpleBridge(.failure, .discrete, FBEventReporterSubject(string: message))
   }
 
   func logDebug(_ string: String) {
-    self.report(FBEventReporterSubject(logString: string, level: Constants.asl_level_debug))
+    report(FBEventReporterSubject(logString: string, level: Constants.asl_level_debug))
   }
 
   func logInfo(_ string: String) {
-    self.report(FBEventReporterSubject(logString: string, level: Constants.asl_level_info))
+    report(FBEventReporterSubject(logString: string, level: Constants.asl_level_info))
   }
 }
 
 public extension OutputOptions {
   public func createReporter(_ writer: Writer) -> EventReporter {
-    return FBEventReporter.withInterpreter(self.createInterpreter(), consumer: writer)
+    return FBEventReporter.withInterpreter(createInterpreter(), consumer: writer)
   }
 
   private func createInterpreter() -> EventInterpreter {
-    if self.contains(OutputOptions.JSON) {
-      let pretty = self.contains(OutputOptions.Pretty)
+    if contains(OutputOptions.JSON) {
+      let pretty = contains(OutputOptions.Pretty)
       return FBEventInterpreter.jsonEventInterpreter(pretty)
     }
     return FBEventInterpreter.humanReadable()
   }
 
   public func createLogWriter() -> Writer {
-    return self.contains(OutputOptions.JSON) ? FileHandleWriter.stdOutWriter : FileHandleWriter.stdErrWriter
+    return contains(OutputOptions.JSON) ? FileHandleWriter.stdOutWriter : FileHandleWriter.stdErrWriter
   }
 }
 
 public extension Help {
   public func createReporter(_ writer: Writer) -> EventReporter {
-    return self.outputOptions.createReporter(writer)
+    return outputOptions.createReporter(writer)
   }
 }
 
 public extension Command {
   public func createReporter(_ writer: Writer) -> EventReporter {
-    return self.configuration.outputOptions.createReporter(writer)
+    return configuration.outputOptions.createReporter(writer)
   }
 }
 

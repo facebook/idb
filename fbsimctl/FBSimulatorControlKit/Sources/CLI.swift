@@ -12,8 +12,8 @@ import Foundation
 /**
  Base Options that are also used in Help.
  */
-public struct OutputOptions : OptionSet {
-  public let rawValue : Int
+public struct OutputOptions: OptionSet {
+  public let rawValue: Int
   public init(rawValue: Int) {
     self.rawValue = rawValue
   }
@@ -31,7 +31,8 @@ public struct Help {
   let error: (Error & CustomStringConvertible)?
   let command: Command?
 }
-extension Help : Equatable {}
+
+extension Help: Equatable {}
 public func == (left: Help, right: Help) -> Bool {
   return left.outputOptions == right.outputOptions && left.command == right.command
 }
@@ -42,17 +43,16 @@ public enum CLI {
   case show(Help)
 }
 
-extension CLI : Equatable {}
+extension CLI: Equatable {}
 public func == (left: CLI, right: CLI) -> Bool {
   switch (left, right) {
-    case (.show(let leftHelp), .show(let rightHelp)):
-      return leftHelp == rightHelp
-    case (.run(let leftCommand), .run(let rightCommand)):
-      return leftCommand == rightCommand
-    case (.print(let leftAction), .print(let rightAction)):
-      return leftAction == rightAction
-    default:
-      return false
+  case (.show(let leftHelp), .show(let rightHelp)):
+    return leftHelp == rightHelp
+  case (.run(let leftCommand), .run(let rightCommand)):
+    return leftCommand == rightCommand
+  case (.print(let leftAction), .print(let rightAction)):
+    return leftAction == rightAction
+  default:
+    return false
   }
 }
-

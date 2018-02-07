@@ -16,7 +16,7 @@ import Foundation
  * recognises, and provides ways to represent that in a human readable format
  * that can be used, for example, in a usage dialog.
  */
-public protocol ParserDescription : CustomStringConvertible {
+public protocol ParserDescription: CustomStringConvertible {
 
   /**
    * normalised: ParserDescription
@@ -99,7 +99,7 @@ extension ParserDescription {
    *
    *     [D1, D2, D4]
    */
-  public func findAll<D : ParserDescription>(_ descs : inout [D]) {
+  public func findAll<D: ParserDescription>(_ descs: inout [D]) {
     for child in children {
       switch child {
       case let d as D:
@@ -110,7 +110,7 @@ extension ParserDescription {
       }
 
       if !(child is SectionDesc) {
-        child.findAll(&descs);
+        child.findAll(&descs)
       }
     }
   }
@@ -121,7 +121,7 @@ extension ParserDescription {
  *
  * Specialisation of `ParserDescription` that has no children.
  */
-public protocol LeafParserDescription : ParserDescription {}
+public protocol LeafParserDescription: ParserDescription {}
 
 extension LeafParserDescription {
   public var children: [ParserDescription] { return [] }
@@ -143,7 +143,7 @@ internal let DEF_FMT = "\t%-25s\t%s"
  * Describes a primitive piece of data. Examples include integers, floats,
  * file and directory URIs etc.
  */
-public struct PrimitiveDesc : LeafParserDescription {
+public struct PrimitiveDesc: LeafParserDescription {
   let name: String
   let desc: String
 
@@ -165,7 +165,7 @@ public struct PrimitiveDesc : LeafParserDescription {
  *
  * Describes a command-line flag.
  */
-public struct FlagDesc : LeafParserDescription {
+public struct FlagDesc: LeafParserDescription {
   let name: String
   let desc: String
 
@@ -187,7 +187,7 @@ public struct FlagDesc : LeafParserDescription {
  *
  * Describes a simple command.
  */
-public struct CmdDesc : LeafParserDescription {
+public struct CmdDesc: LeafParserDescription {
   let cmd: String
 
   public var normalised: ParserDescription {
@@ -205,7 +205,7 @@ public struct CmdDesc : LeafParserDescription {
  * Describes a chunk of format that is logically related. Mainly used to split
  * up large formats into smaller, manageable chunks.
  */
-public struct SectionDesc : ParserDescription {
+public struct SectionDesc: ParserDescription {
   let tag: String
   let name: String
   let desc: String
@@ -213,7 +213,7 @@ public struct SectionDesc : ParserDescription {
 
   public var normalised: ParserDescription {
     return SectionDesc(tag: tag, name: name, desc: desc,
-                       child: child.normalised);
+                       child: child.normalised)
   }
 
   public var isDelimited: Bool { return true }
@@ -228,7 +228,7 @@ public struct SectionDesc : ParserDescription {
     let header = title + "\n" + underline
 
     var flags = [FlagDesc](); findAll(&flags)
-    var seen = [String:Bool]()
+    var seen = [String: Bool]()
     let flagDescs = flags
       .filter { seen.updateValue(true, forKey: $0.summary) == nil }
       .sorted { $0.summary < $1.summary }
@@ -247,7 +247,7 @@ public struct SectionDesc : ParserDescription {
  * Describes a format that recognises at-least `lowerBound`-many occurrences
  * of a rule described by `child`.
  */
-public struct AtleastDesc : ParserDescription {
+public struct AtleastDesc: ParserDescription {
   let lowerBound: Int
   let child: ParserDescription
   let sep: ParserDescription?
@@ -305,7 +305,7 @@ public struct AtleastDesc : ParserDescription {
  * Describes a format that will succeed in parsing even if its child does not
  * succeed.
  */
-public struct OptionalDesc : ParserDescription {
+public struct OptionalDesc: ParserDescription {
   let child: ParserDescription
 
   public var normalised: ParserDescription {
@@ -345,7 +345,7 @@ public struct OptionalDesc : ParserDescription {
  * Where `nd` is the normal form of description `d`.
  */
 
-private func normalisedTransitiveChildren<D : ParserDescription>(
+private func normalisedTransitiveChildren<D: ParserDescription>(
   Of desc: D) -> [ParserDescription] {
   var ntChildren = [ParserDescription]()
 
@@ -359,7 +359,6 @@ private func normalisedTransitiveChildren<D : ParserDescription>(
     case let normChild:
       ntChildren.append(normChild)
       break
-
     }
   }
 
@@ -372,7 +371,7 @@ private func normalisedTransitiveChildren<D : ParserDescription>(
  * Description of a format that recognises the sequential composition of the
  * formats of its children.
  */
-public struct SequenceDesc : ParserDescription {
+public struct SequenceDesc: ParserDescription {
   public let children: [ParserDescription]
 
   public var normalised: ParserDescription {
@@ -404,7 +403,7 @@ public struct SequenceDesc : ParserDescription {
  * Describes a format that accepts a string that matches any of the formats
  * described by rules in `children`.
  */
-public struct ChoiceDesc : ParserDescription {
+public struct ChoiceDesc: ParserDescription {
   public let children: [ParserDescription]
 
   /**
@@ -470,8 +469,8 @@ extension ParserDescription {
    */
   public var usage: String {
     var waitingSections = [SectionDesc]()
-    var sectDescs = [String:String]()
-    var primDescs = [String:String]()
+    var sectDescs = [String: String]()
+    var primDescs = [String: String]()
 
     func addPrims(_ prims: [PrimitiveDesc]) {
       for prim in prims {
@@ -494,11 +493,11 @@ extension ParserDescription {
 
       sectDescs[tag] = sect.description
 
-      sects.removeAll(keepingCapacity: true);
+      sects.removeAll(keepingCapacity: true)
       sect.findAll(&sects)
       waitingSections += sects
 
-      prims.removeAll(keepingCapacity: true);
+      prims.removeAll(keepingCapacity: true)
       sect.findAll(&prims)
       addPrims(prims)
     }

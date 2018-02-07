@@ -7,13 +7,13 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import Foundation
-import FBSimulatorControl
 import FBControlCore
+import FBSimulatorControl
+import Foundation
 
 /**
-  Describes the Configuration for the running FBSimulatorControl Commands
-*/
+ Describes the Configuration for the running FBSimulatorControl Commands
+ */
 public struct Configuration {
   public let outputOptions: OutputOptions
   public let managementOptions: FBSimulatorManagementOptions
@@ -29,9 +29,9 @@ public struct ListenInterface {
   let hid: in_port_t?
   let continuation: FBiOSTargetContinuation?
 
-  var isEmptyListen: Bool { get {
-    return self.stdin == false && self.http == nil && self.hid == nil
-  }}
+  var isEmptyListen: Bool {
+    return stdin == false && http == nil && hid == nil
+  }
 }
 
 /**
@@ -40,7 +40,7 @@ public struct ListenInterface {
 public struct IndividualCreationConfiguration {
   let os: FBOSVersionName?
   let model: FBDeviceModel?
-  let auxDirectory : String?
+  let auxDirectory: String?
 }
 
 /**
@@ -52,8 +52,8 @@ public enum CreationSpecification {
 }
 
 /**
-  An Enumeration specifying the output format of diagnostics.
-*/
+ An Enumeration specifying the output format of diagnostics.
+ */
 public typealias DiagnosticFormat = FBDiagnosticQueryFormat
 
 /**
@@ -86,76 +86,76 @@ public enum Action {
   case open(URL)
   case record(Record)
   case relaunch(FBApplicationLaunchConfiguration)
-  case setLocation(Double,Double)
+  case setLocation(Double, Double)
   case stream(FBBitmapStreamConfiguration, FileOutput)
   case terminate(String)
   case uninstall(String)
   case upload([FBDiagnostic])
   case watchdogOverride([String], TimeInterval)
 
-  static var accessibility: Action { get {
-    return self.coreFuture(FBAccessibilityFetch())
-  }}
+  static var accessibility: Action {
+    return coreFuture(FBAccessibilityFetch())
+  }
 
   static func approve(_ bundleIDs: [String]) -> Action {
-    return self.coreFuture(FBSettingsApproval(bundleIDs: bundleIDs, services: [.location]))
+    return coreFuture(FBSettingsApproval(bundleIDs: bundleIDs, services: [.location]))
   }
 
   static func boot(_ configuration: FBSimulatorBootConfiguration) -> Action {
-    return self.coreFuture(configuration)
+    return coreFuture(configuration)
   }
 
   static func contactsUpdate(_ databaseDirectory: String) -> Action {
-    return self.coreFuture(FBContactsUpdateConfiguration(databaseDirectory: databaseDirectory))
+    return coreFuture(FBContactsUpdateConfiguration(databaseDirectory: databaseDirectory))
   }
 
   static func diagnose(_ query: FBDiagnosticQuery) -> Action {
-    return self.coreFuture(query)
+    return coreFuture(query)
   }
 
-  static var erase: Action { get {
-    return self.coreFuture(FBSimulatorEraseConfiguration())
-  }}
+  static var erase: Action {
+    return coreFuture(FBSimulatorEraseConfiguration())
+  }
 
   static func hid(_ event: FBSimulatorHIDEvent) -> Action {
-    return self.coreFuture(event)
+    return coreFuture(event)
   }
 
   static func install(_ path: String, _ codesign: Bool) -> Action {
-    return self.coreFuture(FBApplicationInstallConfiguration.applicationInstall(withPath: path, codesign: codesign))
+    return coreFuture(FBApplicationInstallConfiguration.applicationInstall(withPath: path, codesign: codesign))
   }
 
   static func launchApp(_ appLaunch: FBApplicationLaunchConfiguration) -> Action {
-    return self.coreFuture(appLaunch)
+    return coreFuture(appLaunch)
   }
 
   static func launchAgent(_ agentLaunch: FBAgentLaunchConfiguration) -> Action {
-    return self.coreFuture(agentLaunch)
+    return coreFuture(agentLaunch)
   }
 
   static func launchXCTest(_ testLaunch: FBTestLaunchConfiguration) -> Action {
-    return self.coreFuture(testLaunch.withUITesting(true))
+    return coreFuture(testLaunch.withUITesting(true))
   }
 
-  static var listApps: Action { get {
-    return self.coreFuture(FBListApplicationsConfiguration())
-  }}
+  static var listApps: Action {
+    return coreFuture(FBListApplicationsConfiguration())
+  }
 
   static func logTail(_ configuration: FBLogTailConfiguration) -> Action {
-    return self.coreFuture(configuration)
+    return coreFuture(configuration)
   }
 
   static func search(_ search: FBBatchLogSearch) -> Action {
-    return self.coreFuture(search)
+    return coreFuture(search)
   }
 
   static func serviceInfo(_ serviceName: String) -> Action {
-    return self.coreFuture(FBServiceInfoConfiguration(serviceName: serviceName))
+    return coreFuture(FBServiceInfoConfiguration(serviceName: serviceName))
   }
 
-  static var shutdown: Action { get {
-    return self.coreFuture(FBShutdownConfiguration())
-  }}
+  static var shutdown: Action {
+    return coreFuture(FBShutdownConfiguration())
+  }
 }
 
 /**
@@ -168,119 +168,119 @@ public struct Command {
   let format: FBiOSTargetFormat?
 }
 
-extension Command : Equatable {}
+extension Command: Equatable {}
 public func == (left: Command, right: Command) -> Bool {
   return left.configuration == right.configuration && left.actions == right.actions && left.query == right.query && left.format == right.format
 }
 
-extension Configuration : Equatable {}
+extension Configuration: Equatable {}
 public func == (left: Configuration, right: Configuration) -> Bool {
   return left.outputOptions == right.outputOptions && left.deviceSetPath == right.deviceSetPath && left.managementOptions == right.managementOptions
 }
 
-extension Configuration : Accumulator {
+extension Configuration: Accumulator {
   public init() {
-    self.outputOptions = OutputOptions()
-    self.managementOptions = FBSimulatorManagementOptions()
-    self.deviceSetPath = nil
+    outputOptions = OutputOptions()
+    managementOptions = FBSimulatorManagementOptions()
+    deviceSetPath = nil
   }
 
-  public static var identity: Configuration { get {
+  public static var identity: Configuration {
     return Configuration.defaultValue
-  }}
+  }
 
   public func append(_ other: Configuration) -> Configuration {
     return Configuration(
-      outputOptions: self.outputOptions.union(other.outputOptions),
-      managementOptions: self.managementOptions.union(other.managementOptions),
-      deviceSetPath: other.deviceSetPath ?? self.deviceSetPath
+      outputOptions: outputOptions.union(other.outputOptions),
+      managementOptions: managementOptions.union(other.managementOptions),
+      deviceSetPath: other.deviceSetPath ?? deviceSetPath
     )
   }
 
   public static func ofOutputOptions(_ output: OutputOptions) -> Configuration {
-    let query = self.identity
+    let query = identity
     return Configuration(outputOptions: output, managementOptions: query.managementOptions, deviceSetPath: query.deviceSetPath)
   }
 
   public static func ofManagementOptions(_ managementOptions: FBSimulatorManagementOptions) -> Configuration {
-    let query = self.identity
+    let query = identity
     return Configuration(outputOptions: query.outputOptions, managementOptions: managementOptions, deviceSetPath: query.deviceSetPath)
   }
 
   public static func ofDeviceSetPath(_ deviceSetPath: String) -> Configuration {
-    let query = self.identity
+    let query = identity
     return Configuration(outputOptions: query.outputOptions, managementOptions: FBSimulatorManagementOptions(), deviceSetPath: deviceSetPath)
   }
 }
 
-extension ListenInterface : Equatable {}
+extension ListenInterface: Equatable {}
 public func == (left: ListenInterface, right: ListenInterface) -> Bool {
   return left.stdin == right.stdin && left.http == right.http && left.hid == right.hid
 }
 
-extension ListenInterface : Accumulator {
+extension ListenInterface: Accumulator {
   public init() {
-    self.stdin = false
-    self.http = nil
-    self.hid = nil
-    self.continuation = nil
+    stdin = false
+    http = nil
+    hid = nil
+    continuation = nil
   }
 
-  public static var identity: ListenInterface { get {
+  public static var identity: ListenInterface {
     return ListenInterface()
-  }}
+  }
 
   public func append(_ other: ListenInterface) -> ListenInterface {
     return ListenInterface(
-      stdin: other.stdin ? other.stdin : self.stdin,
-      http: other.http ?? self.http,
-      hid: other.hid ?? self.hid,
-      continuation: other.continuation ?? self.continuation
+      stdin: other.stdin ? other.stdin : stdin,
+      http: other.http ?? http,
+      hid: other.hid ?? hid,
+      continuation: other.continuation ?? continuation
     )
   }
 }
 
 extension FBiOSTargetFutureType {
-  var listenDescription: String? { get {
+  var listenDescription: String? {
     switch self {
-      case FBiOSTargetFutureType.videoRecording:
-        return "Recording Video"
-      case FBiOSTargetFutureType.videoStreaming:
-        return "Streaming Video"
-      case FBiOSTargetFutureType.testOperation:
-        return "Test Operation"
-      case FBiOSTargetFutureType.actionReader:
-        return "Action Reader"
-      default:
-        return nil
+    case FBiOSTargetFutureType.videoRecording:
+      return "Recording Video"
+    case FBiOSTargetFutureType.videoStreaming:
+      return "Streaming Video"
+    case FBiOSTargetFutureType.testOperation:
+      return "Test Operation"
+    case FBiOSTargetFutureType.actionReader:
+      return "Action Reader"
+    default:
+      return nil
     }
-  }}
+  }
 }
 
-extension IndividualCreationConfiguration : Equatable {}
+extension IndividualCreationConfiguration: Equatable {}
 public func == (left: IndividualCreationConfiguration, right: IndividualCreationConfiguration) -> Bool {
   return left.os == right.os &&
-         left.model == right.model &&
-         left.auxDirectory == right.auxDirectory
+    left.model == right.model &&
+    left.auxDirectory == right.auxDirectory
 }
 
-extension IndividualCreationConfiguration : Accumulator {
+extension IndividualCreationConfiguration: Accumulator {
   public init() {
-    self.os = nil
-    self.model = nil
-    self.auxDirectory = nil
+    os = nil
+    model = nil
+    auxDirectory = nil
   }
 
   public func append(_ other: IndividualCreationConfiguration) -> IndividualCreationConfiguration {
     return IndividualCreationConfiguration(
-      os: other.os ?? self.os,
-      model: other.model ?? self.model,
-      auxDirectory: other.auxDirectory ?? self.auxDirectory
+      os: other.os ?? os,
+      model: other.model ?? model,
+      auxDirectory: other.auxDirectory ?? auxDirectory
     )
   }
 }
 
-extension CreationSpecification : Equatable {}
+extension CreationSpecification: Equatable {}
 public func == (left: CreationSpecification, right: CreationSpecification) -> Bool {
   switch (left, right) {
   case (.allMissingDefaults, .allMissingDefaults):
@@ -292,7 +292,7 @@ public func == (left: CreationSpecification, right: CreationSpecification) -> Bo
   }
 }
 
-extension Record : Equatable {}
+extension Record: Equatable {}
 public func == (left: Record, right: Record) -> Bool {
   switch (left, right) {
   case (.start(let leftPath), .start(let rightPath)):
@@ -304,7 +304,7 @@ public func == (left: Record, right: Record) -> Bool {
   }
 }
 
-extension FileOutput : Equatable {}
+extension FileOutput: Equatable {}
 public func == (left: FileOutput, right: FileOutput) -> Bool {
   switch (left, right) {
   case (.path(let leftPath), .path(let rightPath)):
@@ -316,7 +316,7 @@ public func == (left: FileOutput, right: FileOutput) -> Bool {
   }
 }
 
-extension Action : Equatable { }
+extension Action: Equatable {}
 public func == (left: Action, right: Action) -> Bool {
   switch (left, right) {
   case (.clearKeychain(let leftBundleID), .clearKeychain(let rightBundleID)):
@@ -363,7 +363,7 @@ public func == (left: Action, right: Action) -> Bool {
 }
 
 extension Action {
-  public var reportable: (EventName, EventReporterSubject?) { get {
+  public var reportable: (EventName, EventReporterSubject?) {
     switch self {
     case .clearKeychain(let bundleID):
       return (.clearKeychain, FBEventReporterSubject(string: bundleID ?? "none"))
@@ -380,7 +380,7 @@ extension Action {
     case .keyboardOverride:
       return (.keyboardOverride, nil)
     case .list:
-        return (.list, nil)
+      return (.list, nil)
     case .listApps:
       return (.listApps, nil)
     case .listDeviceSets:
@@ -406,5 +406,5 @@ extension Action {
     case .watchdogOverride(let bundleIDs, _):
       return (.watchdogOverride, FBEventReporterSubject(strings: bundleIDs))
     }
-  }}
+  }
 }

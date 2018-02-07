@@ -7,23 +7,23 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-import XCTest
 import FBSimulatorControl
 @testable import FBSimulatorControlKit
+import XCTest
 
-class EnvironmentTests : XCTestCase {
+class EnvironmentTests: XCTestCase {
   let testEnvironment = [
-    "FBSIMCTL_CHILD_FOO" : "BAR",
-    "PATH" : "IGNORE",
-    "FBSIMCTL_CHILD_BING" : "BONG",
+    "FBSIMCTL_CHILD_FOO": "BAR",
+    "PATH": "IGNORE",
+    "FBSIMCTL_CHILD_BING": "BONG",
   ]
 
   func testAppendsEnvironmentToLaunchConfiguration() {
     let launchConfig = FBApplicationLaunchConfiguration(application: Fixtures.application, arguments: [], environment: [:], waitForDebugger: false, output: FBProcessOutputConfiguration.outputToDevNull())
     let actual = Action.launchApp(launchConfig).appendEnvironment(testEnvironment)
-    let expected  = Action.launchApp(launchConfig.withEnvironmentAdditions([
-      "FOO" : "BAR",
-      "BING" : "BONG",
+    let expected = Action.launchApp(launchConfig.withEnvironmentAdditions([
+      "FOO": "BAR",
+      "BING": "BONG",
     ]))
     XCTAssertEqual(expected, actual)
   }
@@ -33,8 +33,8 @@ class EnvironmentTests : XCTestCase {
 
     let actual = Action.launchXCTest(FBTestLaunchConfiguration().withApplicationLaunchConfiguration(launchConfig)).appendEnvironment(testEnvironment)
     let expected = Action.launchXCTest(FBTestLaunchConfiguration().withApplicationLaunchConfiguration(launchConfig.withEnvironmentAdditions([
-      "FOO" : "BAR",
-      "BING" : "BONG",
+      "FOO": "BAR",
+      "BING": "BONG",
     ])))
 
     XCTAssertEqual(expected, actual)
