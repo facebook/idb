@@ -118,9 +118,12 @@ struct SimulatorActionRunner: Runner {
     case .relaunch(let appLaunch):
       return FutureRunner(reporter, .relaunch, appLaunch.subject, simulator.launchOrRelaunchApplication(appLaunch))
     case .setLocation(let latitude, let longitude):
-      return SimpleRunner(reporter, .setLocation, simulator.subject) {
-        try simulator.setLocation(latitude, longitude: longitude)
-      }
+      return FutureRunner(
+        reporter,
+        .setLocation,
+        simulator.subject,
+        simulator.setLocationWithLatitude(latitude, longitude: longitude)
+      )
     case .upload(let diagnostics):
       return UploadRunner(reporter, diagnostics)
     case .watchdogOverride(let bundleIDs, let timeout):

@@ -165,13 +165,7 @@
   return [[simulator
     connectToBridge]
     onQueue:simulator.workQueue fmap:^(FBSimulatorBridge *bridge) {
-      // Launch the Application.
-      NSError *error = nil;
-      pid_t processIdentifier = [bridge launch:appLaunch stdOutPath:stdErrPath stdErrPath:stdOutPath error:&error];
-      if (processIdentifier < 2) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:@(processIdentifier)];
+      return [bridge launch:appLaunch stdOutPath:stdErrPath stdErrPath:stdOutPath];
     }];
 }
 

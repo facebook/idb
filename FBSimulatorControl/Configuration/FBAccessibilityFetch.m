@@ -33,17 +33,19 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeAcessibilityFetch = @"accessibi
   }
 
   id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
-  return [[commands
+  return [[[commands
     connectToBridge]
-    onQueue:target.workQueue fmap:^ FBFuture<id<FBiOSTargetContinuation>> * (FBSimulatorBridge *bridge) {
-      NSArray<NSDictionary<NSString *, id> *> *elements = [bridge accessibilityElements];
+    onQueue:target.workQueue fmap:^(FBSimulatorBridge *bridge) {
+      return [bridge accessibilityElements];
+    }]
+    onQueue:target.asyncQueue fmap:^ FBFuture<id<FBiOSTargetContinuation>> * (NSArray<NSDictionary<NSString *, id> *> *elements) {
       NSError *error = nil;
       NSData *data = [NSJSONSerialization dataWithJSONObject:elements options:0 error:&error];
       if (!data) {
         return [FBFuture futureWithError:error];
       }
       [consumer consumeData:data];
-      return FBiOSTargetContinuationDone(self.class.futureType);
+      return [FBFuture futureWithResult:FBiOSTargetContinuationDone(self.class.futureType)];
     }];
 }
 

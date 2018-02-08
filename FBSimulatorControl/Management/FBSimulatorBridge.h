@@ -10,16 +10,17 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <FBSimulatorControl/FBSimulatorBridgeCommands.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationLaunchConfiguration;
 @class FBSimulator;
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Wraps the 'SimulatorBridge' Connection and Protocol
  */
-@interface FBSimulatorBridge : NSObject <FBJSONSerializable>
+@interface FBSimulatorBridge : NSObject <FBJSONSerializable, FBSimulatorBridgeCommands>
 
 #pragma mark Initializers
 
@@ -41,20 +42,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Acessibility Elements.
+ Obtain the acessibility element for the main screen at the given point.
+ The returned value is fully JSON serializable.
 
- @return the Available Accessibility Elements.
+ @return the accessibility elements for the main screen, wrapped in a Future.
  */
-- (NSArray<NSDictionary<NSString *, id> *> *)accessibilityElements;
-
-/**
- Sets latitude and longitude of the Simulator.
- The behaviour of a directly-launched Simulator differs from Simulator.app slightly, in that the location isn't automatically set.
- Simulator.app will typically set a location from NSUserDefaults, so Applications will have a default location.
-
- @param latitude the latitude of the location.
- @param longitude the longitude of the location.
- */
-- (void)setLocationWithLatitude:(double)latitude longitude:(double)longitude;
+- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElements;
 
 /**
  Launches an Application.
@@ -62,9 +55,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the Configuration of the App to Launch,
  @param stdOutPath the Path of a File to write stdout to.
  @param stdErrPath the path of a File to write stderr to.
- @return the Process Identifeir of the Launched Application if successful, -1 otherwise.
+ @return the Process Identifier of the Launched Application if successful wrapped in a Future.
  */
-- (pid_t)launch:(FBApplicationLaunchConfiguration *)configuration stdOutPath:(nullable NSString *)stdOutPath stdErrPath:(nullable NSString *)stdErrPath error:(NSError **)error;
+- (FBFuture<NSNumber *> *)launch:(FBApplicationLaunchConfiguration *)configuration stdOutPath:(nullable NSString *)stdOutPath stdErrPath:(nullable NSString *)stdErrPath;
 
 @end
 

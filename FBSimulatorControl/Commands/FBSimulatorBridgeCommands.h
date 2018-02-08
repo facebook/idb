@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Interactions dependent on the existence of an FBSimulatorConnection on a booted Simulator.
  */
-@protocol FBSimulatorBridgeCommands
+@protocol FBSimulatorBridgeCommands <NSObject>
 
 /**
  Sets latitude and longitude of the Simulator.
@@ -26,10 +26,10 @@ NS_ASSUME_NONNULL_BEGIN
  Simulator.app will typically set a location from NSUserDefaults, so Applications will have a default location.
 
  @param latitude the latitude of the location.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @param longitude the longitude of the location.
+ @return a Future that resolves when the location has been sent.
  */
-- (BOOL)setLocation:(double)latitude longitude:(double)longitude error:(NSError **)error;
+- (FBFuture<NSNull *> *)setLocationWithLatitude:(double)latitude longitude:(double)longitude;
 
 @end
 

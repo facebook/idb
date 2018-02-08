@@ -26,6 +26,8 @@
 
 @implementation FBSimulatorBridgeCommands
 
+#pragma mark Initializers
+
 + (instancetype)commandsWithTarget:(FBSimulator *)target
 {
   return [[self alloc] initWithSimulator:target];
@@ -39,17 +41,19 @@
   }
 
   _simulator = simulator;
+
   return self;
 }
 
-- (BOOL)setLocation:(double)latitude longitude:(double)longitude error:(NSError **)error
+#pragma mark FBSimulatorBridgeCommands
+
+- (FBFuture<NSNull *> *)setLocationWithLatitude:(double)latitude longitude:(double)longitude
 {
-  FBSimulatorBridge *bridge = [[[self.simulator connectWithError:error] connectToBridge] await:error];
-  if (!bridge) {
-    return NO;
-  }
-  [bridge setLocationWithLatitude:latitude longitude:longitude];
-  return YES;
+  return [[self.simulator
+    connectToBridge]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorBridge *bridge) {
+      return [bridge setLocationWithLatitude:latitude longitude:longitude];
+    }];
 }
 
 @end
