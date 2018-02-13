@@ -102,7 +102,7 @@
   [self.logger.debug logFormat:@"Killing %@", [FBCollectionInformation oneLineDescriptionFromArray:simulators atKeyPath:@"shortDescription"]];
   NSMutableArray<FBFuture<FBSimulator *> *> *futures = [NSMutableArray array];
   for (FBSimulator *simulator in simulators) {
-    [futures addObject:[self eraseSimulator:simulator]];
+    [futures addObject:[self killSimulator:simulator]];
   }
   return [FBFuture futureWithFutures:futures];
 }
@@ -123,7 +123,7 @@
 
 #pragma mark Private
 
-- (FBFuture<FBSimulator *> *)eraseSimulator:(FBSimulator *)simulator
+- (FBFuture<FBSimulator *> *)killSimulator:(FBSimulator *)simulator
 {
   // Get some preconditions
   NSError *error = nil;
