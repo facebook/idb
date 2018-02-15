@@ -41,6 +41,13 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Interacting with the Simulator
 
 /**
+ Enables Accessibility on the Simulator.
+
+ @return a future that resolves when accessibility has been enabled.
+ */
+- (FBFuture<NSNull *> *)enableAccessibility;
+
+/**
  The Acessibility Elements.
  Obtain the acessibility element for the main screen at the given point.
  The returned value is fully JSON serializable.

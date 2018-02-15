@@ -57,13 +57,16 @@ static NSString *const KeyType = @"type";
   // This mimics the behaviour of Simulator.app, which just looks up the service then connects to the distant object over a Remote Object connection.
   dispatch_queue_t bridgeQueue = FBSimulatorBridge.createBridgeQueue;
   dispatch_queue_t asyncQueue = simulator.asyncQueue;
-  return [[self
+  return [[[self
     bridgeAndOperationForSimulator:simulator]
     onQueue:simulator.workQueue map:^(NSArray<id> *tuple) {
       NSCParameterAssert(tuple.count >= 1);
       SimulatorBridge *bridge = tuple[0];
       FBSimulatorAgentOperation *operation = (tuple.count == 2) ? tuple[1] : nil;
       return [[FBSimulatorBridge alloc] initWithBridge:bridge operation:operation workQueue:bridgeQueue asyncQueue:asyncQueue];
+    }]
+    onQueue:bridgeQueue fmap:^(FBSimulatorBridge *bridge) {
+      return [[bridge enableAccessibility] mapReplace:bridge];
     }];
 }
 
@@ -136,18 +139,11 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
       NSDistantObject *bridgeDistantObject = [bridgeConnection rootProxy];
 
       // Check that the Distant Object Responds to some known selector
-      if (![bridgeDistantObject respondsToSelector:@selector(setLocationScenarioWithPath:)]) {
-        return [[FBSimulatorError
-          describeFormat:@"Distant Object '%@' for '%@' at isn't a SimulatorBridge", portName, bridgeDistantObject]
-          failFuture];
-      }
-
-      // Set the Bridge to a good state.
       SimulatorBridge *bridge = (SimulatorBridge *) bridgeDistantObject;
-      [bridge enableAccessibility];
-      if (![bridge accessibilityEnabled]) {
+      SEL knownSelector = @selector(setLocationScenarioWithPath:);
+      if (![bridge respondsToSelector:knownSelector]) {
         return [[FBSimulatorError
-          describeFormat:@"Could not enable accessibility for bridge '%@'", bridge]
+          describeFormat:@"Distant Object '%@' for '%@' at isn't a SimulatorBridge as it doesn't respond to %@", portName, bridgeDistantObject, NSStringFromSelector(knownSelector)]
           failFuture];
       }
 
@@ -202,6 +198,22 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
 }
 
 #pragma mark Interacting with the Simulator
+
+- (FBFuture<NSNull *> *)enableAccessibility
+{
+  return [[self
+    interactWithBridge]
+    onQueue:self.workQueue fmap:^(SimulatorBridge *bridge) {
+      // Set the Bridge to a good state.
+      [bridge enableAccessibility];
+      if (![bridge accessibilityEnabled]) {
+        return [[FBSimulatorError
+          describeFormat:@"Could not enable accessibility for bridge '%@'", bridge]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
+}
 
 - (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElements
 {
