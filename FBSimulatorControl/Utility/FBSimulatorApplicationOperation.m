@@ -30,7 +30,9 @@
   return [[launchFuture
     onQueue:simulator.workQueue fmap:^(NSNumber *processIdentifierNumber) {
       FBProcessFetcher *fetcher = [FBProcessFetcher new];
-      return [fetcher onQueue:simulator.asyncQueue processInfoFor:processIdentifierNumber.intValue timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+      return [[fetcher
+        onQueue:simulator.asyncQueue processInfoFor:processIdentifierNumber.intValue timeout:FBControlCoreGlobalConfiguration.fastTimeout]
+        rephraseFailure:@"Could not fetch process info for App %@ with configuration %@", processIdentifierNumber, configuration];
     }]
     onQueue:simulator.workQueue map:^(FBProcessInfo *process) {
       FBFuture<NSNull *> *terminationFuture = [FBSimulatorApplicationOperation terminationFutureForSimulator:simulator processIdentifier:process.processIdentifier];

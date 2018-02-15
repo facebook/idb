@@ -21,23 +21,18 @@
 
 - (FBFuture<FBProcessInfo *> *)onQueue:(dispatch_queue_t)queue processInfoFor:(pid_t)processIdentifier timeout:(NSTimeInterval)timeout
 {
-  FBMutableFuture<FBProcessInfo *> *future = [FBMutableFuture future];
-  dispatch_async(queue, ^{
-    FBProcessInfo *process = [self processInfoFor:processIdentifier timeout:timeout];
-    if (process) {
-      [future resolveWithResult:process];
-    } else {
-      [future resolveWithError:[[FBControlCoreError describeFormat:@"Could not obtain process info for %d after %f", processIdentifier, timeout] build]];
-    }
-  });
-  return future;
-}
-
-- (FBProcessInfo *)processInfoFor:(pid_t)processIdentifier timeout:(NSTimeInterval)timeout
-{
-  return [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilExists:^ FBProcessInfo * {
-    return [self processInfoFor:processIdentifier];
-  }];
+  return [[FBFuture
+    onQueue:queue resolveUntil:^{
+      FBProcessInfo *process = [self processInfoFor:processIdentifier];
+      if (!process) {
+        return [[[FBControlCoreError
+          describeFormat:@"Could not obtain process info for %d", processIdentifier]
+          noLogging]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:process];
+    }]
+    timeout:timeout waitingFor:@"The process info for %d to become available", processIdentifier];
 }
 
 - (nullable FBProcessInfo *)processInfoForJobDictionary:(NSDictionary<NSString *, id> *)jobDictionary

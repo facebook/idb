@@ -33,7 +33,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
   return [[launchFuture
     onQueue:simulator.workQueue fmap:^(NSNumber *processIdentifierNumber) {
       FBProcessFetcher *fetcher = [FBProcessFetcher new];
-      return [fetcher onQueue:simulator.asyncQueue processInfoFor:processIdentifierNumber.intValue timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+      return [[fetcher
+        onQueue:simulator.asyncQueue processInfoFor:processIdentifierNumber.intValue timeout:FBControlCoreGlobalConfiguration.fastTimeout]
+        rephraseFailure:@"Could not fetch process info for Agent %@ with configuration %@", processIdentifierNumber, configuration];
     }]
     onQueue:simulator.workQueue map:^(FBProcessInfo *process) {
       return [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr process:process processStatusFuture:processStatusFuture];

@@ -29,15 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<FBProcessInfo *> *)onQueue:(dispatch_queue_t)queue processInfoFor:(pid_t)processIdentifier timeout:(NSTimeInterval)timeout;
 
 /**
- A Query for obtaining all of the process information for a given processIdentifier, with a timeout.
-
- @param processIdentifier the Process Identifier to obtain process info for.
- @param timeout a timeout for finding the process information in.
- @return an FBProcessInfo object if a process with the given identifier could be found, nil otherwise.
- */
-- (nullable FBProcessInfo *)processInfoFor:(pid_t)processIdentifier timeout:(NSTimeInterval)timeout;
-
-/**
  Queryies for the Process Info for a launchd job dictionary.
 
  @param jobDictionary the Job Dictionary to use.
