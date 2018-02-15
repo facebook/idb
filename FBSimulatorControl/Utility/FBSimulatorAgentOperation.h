@@ -59,9 +59,10 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent;
 @property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdErr;
 
 /**
- The Launched Process Info.
+ The Process Info of the launched process.
+ This may be nil in the event that the process was short lived and the process info could not be obtained.
  */
-@property (nonatomic, copy, readonly) FBProcessInfo *process;
+@property (nonatomic, copy, nullable, readonly) FBProcessInfo *processInfo;
 
 /**
  A Future representation of the completion of the agent process.

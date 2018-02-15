@@ -81,7 +81,7 @@
 
 - (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
-  [self.logger logFormat:@"Agent Did Terminate => Value %d %@", statLoc, operation.process.shortDescription];
+  [self.logger logFormat:@"Agent Did Terminate => Value %d %@", statLoc, operation];
 }
 
 - (void)applicationDidLaunch:(FBSimulatorApplicationOperation *)operation

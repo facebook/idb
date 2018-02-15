@@ -118,7 +118,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 
 #pragma mark Public Methods
 
-- (FBFuture<NSNull *> *)killProcess:(FBProcessInfo *)process;
+- (FBFuture<NSNull *> *)killProcess:(FBProcessInfo *)process
 {
   BOOL checkExists = (self.configuration.options & FBProcessTerminationStrategyOptionsCheckProcessExistsBeforeSignal) == FBProcessTerminationStrategyOptionsCheckProcessExistsBeforeSignal;
   NSError *innerError = nil;

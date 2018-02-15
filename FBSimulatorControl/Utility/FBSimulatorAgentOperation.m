@@ -19,30 +19,26 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
 @interface FBSimulatorAgentOperation ()
 
 @property (nonatomic, weak, nullable, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, readonly) FBFuture<FBProcessInfo *> *processInfoFuture;
 
 @end
 
 @implementation FBSimulatorAgentOperation
 
 @synthesize exitCode = _exitCode;
+@synthesize processIdentifier = _processIdentifier;
 
 #pragma mark Initializers
 
 + (FBFuture<FBSimulatorAgentOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
 {
-  return [[launchFuture
-    onQueue:simulator.workQueue fmap:^(NSNumber *processIdentifierNumber) {
-      FBProcessFetcher *fetcher = [FBProcessFetcher new];
-      return [[fetcher
-        onQueue:simulator.asyncQueue processInfoFor:processIdentifierNumber.intValue timeout:FBControlCoreGlobalConfiguration.fastTimeout]
-        rephraseFailure:@"Could not fetch process info for Agent %@ with configuration %@", processIdentifierNumber, configuration];
-    }]
-    onQueue:simulator.workQueue map:^(FBProcessInfo *process) {
-      return [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr process:process processStatusFuture:processStatusFuture];
+  return [launchFuture
+    onQueue:simulator.workQueue map:^(NSNumber *processIdentifierNumber) {
+      return [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr processIdentifier:processIdentifierNumber.intValue processStatusFuture:processStatusFuture];
     }];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr process:(FBProcessInfo *)process processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr processIdentifier:(pid_t)processIdentifier processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
 {
   self = [super init];
   if (!self) {
@@ -53,7 +49,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
   _configuration = configuration;
   _stdOut = stdOut;
   _stdErr = stdErr;
-  _process = process;
+  _processIdentifier = processIdentifier;
   _processStatus = [processStatusFuture
     onQueue:simulator.workQueue
     notifyOfCompletion:^(FBFuture<NSNumber *> *future) {
@@ -73,6 +69,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
         return @(WTERMSIG(stat_loc));
       }
     }];
+  _processInfoFuture = [[FBProcessFetcher.new
+    onQueue:simulator.asyncQueue processInfoFor:processIdentifier timeout:FBControlCoreGlobalConfiguration.fastTimeout]
+    rephraseFailure:@"Could not fetch process info for pid %d with configuration %@", processIdentifier, configuration];
 
   return self;
 }
@@ -83,6 +82,13 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
     return WEXITSTATUS(statLoc) == 0;
   }
   return NO;
+}
+
+#pragma mark Public
+
+- (FBProcessInfo *)processInfo
+{
+  return self.processInfoFuture.result;
 }
 
 #pragma mark Private
@@ -96,19 +102,18 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
 - (void)processWasCancelled
 {
   [self performTeardown];
-  // When cancelled, the process is still alive. Therefore, the process needs to be terminated to fulfill the cancellation contract.
-  [[FBProcessTerminationStrategy
-    strategyWithProcessFetcher:self.simulator.processFetcher.processFetcher workQueue:self.simulator.workQueue logger:self.simulator.logger]
-    killProcess:self.process];
+
+  // When cancelled, the process is may still be alive. Therefore, the process needs to be terminated to fulfill the cancellation contract.
+  FBProcessInfo *processInfo = self.processInfo;
+  if (processInfo) {
+    [[FBProcessTerminationStrategy
+      strategyWithProcessFetcher:self.simulator.processFetcher.processFetcher workQueue:self.simulator.workQueue logger:self.simulator.logger]
+      killProcess:processInfo];
+  }
 }
 
 - (void)performTeardown
 {
-  // Return early if nothing was actually launched.
-  if (!self.process) {
-    return;
-  }
-
   // Tear down the other resources.
   [self.stdOut.completed cancel];
   [self.stdErr.completed cancel];
@@ -126,18 +131,11 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
   return [self.exitCode mapReplace:NSNull.null];
 }
 
-#pragma mark FBLaunchedProcess
-
-- (pid_t)processIdentifier
-{
-  return self.process.processIdentifier;
-}
-
 #pragma mark NSObject
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Agent Operation %@ | State %@", self.process, self.processStatus];
+  return [NSString stringWithFormat:@"Agent Operation %@ | pid %d | State %@", self.configuration, self.processIdentifier, self.processStatus];
 }
 
 @end

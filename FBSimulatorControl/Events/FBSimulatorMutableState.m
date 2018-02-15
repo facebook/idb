@@ -116,22 +116,11 @@
 
 - (void)agentDidLaunch:(FBSimulatorAgentOperation *)operation
 {
-  // De-duplicate known-launched agents.
-  FBProcessInfo *agentProcess = operation.process;
-  if ([self.knownLaunchedProcesses containsObject:agentProcess]) {
-    return;
-  }
-
-  [self.knownLaunchedProcesses addObject:agentProcess];
   [self.sink agentDidLaunch:operation];
 }
 
 - (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
-  if (![self.knownLaunchedProcesses containsObject:operation.process]) {
-    return;
-  }
-
   [self.sink agentDidTerminate:operation statLoc:statLoc];
 }
 
