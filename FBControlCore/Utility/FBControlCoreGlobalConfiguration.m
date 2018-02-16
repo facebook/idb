@@ -15,6 +15,7 @@
 
 NSString *const FBControlCoreStderrLogging = @"FBCONTROLCORE_LOGGING";
 NSString *const FBControlCoreDebugLogging = @"FBCONTROLCORE_DEBUG_LOGGING";
+NSString *const ConfirmShimsAreSignedEnv = @"FBCONTROLCORE_CONFIRM_SIGNED_SHIMS";
 
 static id<FBControlCoreLogger> logger;
 
@@ -60,6 +61,11 @@ static id<FBControlCoreLogger> logger;
 + (void)setDebugLoggingEnabled:(BOOL)enabled
 {
   setenv(FBControlCoreDebugLogging.UTF8String, enabled ? "YES" : "NO", 1);
+}
+
++ (BOOL)confirmCodesignaturesAreValid
+{
+  return NSProcessInfo.processInfo.environment[ConfirmShimsAreSignedEnv].boolValue;
 }
 
 + (NSString *)description

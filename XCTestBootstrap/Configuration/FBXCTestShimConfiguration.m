@@ -19,8 +19,6 @@ static NSString *const KeyMacQueryShim = @"mac_query_shim";
 static NSString *const shimulatorFileName = @"libShimulator.dylib";
 static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 
-static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIMS";
-
 @implementation FBXCTestShimConfiguration
 
 #pragma mark Initializers
@@ -37,7 +35,7 @@ static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIM
 + (NSDictionary<NSString *, NSNumber *> *)canonicalShimNameToCodesigningRequired
 {
   return @{
-    KeySimulatorTestShim: @(NSProcessInfo.processInfo.environment[ConfirmShimsAreSignedEnv].boolValue && FBXcodeConfiguration.isXcode8OrGreater),
+    KeySimulatorTestShim: @(FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid && FBXcodeConfiguration.isXcode8OrGreater),
     KeyMacQueryShim: @NO,
     KeyMacTestShim: @NO,
   };

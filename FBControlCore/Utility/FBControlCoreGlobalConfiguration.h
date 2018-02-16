@@ -62,6 +62,11 @@ extern NSString *const FBControlCoreDebugLogging;
  */
 @property (nonatomic, assign, readwrite, class) BOOL debugLoggingEnabled;
 
+/**
+ Confirm the existence of code signatures, where relevant.
+ */
+@property (nonatomic, assign, readonly, class) BOOL confirmCodesignaturesAreValid;
+
 @end
 
 /**
