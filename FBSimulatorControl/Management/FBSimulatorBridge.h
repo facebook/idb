@@ -49,12 +49,21 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Acessibility Elements.
- Obtain the acessibility element for the main screen at the given point.
+ Obtain the acessibility elements for the main screen.
  The returned value is fully JSON serializable.
 
  @return the accessibility elements for the main screen, wrapped in a Future.
  */
 - (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElements;
+
+/**
+ Obtain the acessibility element for the main screen at the given point.
+ The returned value is fully JSON serializable.
+
+ @param point the coordinate at which to obtain the accessibility element.
+ @return the accessibility element at the provided point, wrapped in a Future.
+ */
+- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point;
 
 /**
  Launches an Application.

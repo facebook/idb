@@ -233,6 +233,24 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
     }];
 }
 
+- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point
+{
+  return [[[self
+    interactWithBridge]
+    onQueue:self.workQueue fmap:^(SimulatorBridge *bridge) {
+      id element = [bridge accessibilityElementForPoint:point.x andY:point.y displayId:0];
+      if (!element) {
+        return [[FBSimulatorError
+          describeFormat:@"No Elements at %f,%f returned from bridge", point.x, point.y]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:element];
+    }]
+    onQueue:self.asyncQueue map:^(id  element) {
+      return [FBSimulatorBridge jsonSerializableElement:element];
+    }];
+}
+
 - (FBFuture<NSNull *> *)setLocationWithLatitude:(double)latitude longitude:(double)longitude
 {
   return [[self
@@ -289,23 +307,29 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
 {
   NSMutableArray<NSDictionary<NSString *, id> *> *array = [NSMutableArray array];
   for (NSDictionary<NSString *, id> *oldItem in data) {
-    NSMutableDictionary<NSString *, id> *item = [NSMutableDictionary dictionary];
-    for (NSString *key in oldItem.allKeys) {
-      id value = oldItem[key];
-      if ([key isEqualToString:KeyAXTraits]) {
-        uint64_t bitmask = [(NSNumber *)value unsignedIntegerValue];
-        item[KeyTraits] = AXExtractTraits(bitmask).allObjects;
-        item[KeyType] = AXExtractTypeFromTraits(bitmask);
-      }
-      else if ([value isKindOfClass:NSString.class] || [value isKindOfClass:NSNumber.class]) {
-        item[key] = oldItem[key];
-      } else if ([value isKindOfClass:NSValue.class]) {
-        item[key] = NSStringFromRect([value rectValue]);
-      }
-    }
+    NSDictionary<NSString *, id> *item = [self jsonSerializableElement:oldItem];
     [array addObject:[item copy]];
   }
   return [array copy];
+}
+
++ (NSDictionary<NSString *, id> *)jsonSerializableElement:(NSDictionary<NSString *, id> *)oldItem
+{
+  NSMutableDictionary<NSString *, id> *item = [NSMutableDictionary dictionary];
+  for (NSString *key in oldItem.allKeys) {
+    id value = oldItem[key];
+    if ([key isEqualToString:KeyAXTraits]) {
+      uint64_t bitmask = [(NSNumber *)value unsignedIntegerValue];
+      item[KeyTraits] = AXExtractTraits(bitmask).allObjects;
+      item[KeyType] = AXExtractTypeFromTraits(bitmask);
+    }
+    else if ([value isKindOfClass:NSString.class] || [value isKindOfClass:NSNumber.class]) {
+      item[key] = oldItem[key];
+    } else if ([value isKindOfClass:NSValue.class]) {
+      item[key] = NSStringFromRect([value rectValue]);
+    }
+  }
+  return item;
 }
 
 #pragma mark NSObject
