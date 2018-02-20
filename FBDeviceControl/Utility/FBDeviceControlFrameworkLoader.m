@@ -104,7 +104,15 @@
   if (![objc_lookUpClass("DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.iPhone"]) {
     return [[[FBDeviceControlError describe:@"Device Type 'Xcode.DeviceType.iPhone' hasn't been initialized yet"] causedBy:innerError] failBool:error];
   }
-  [[objc_lookUpClass("DVTDeviceManager") defaultDeviceManager] startLocating];
+
+  /*
+   Starting in Xcode 9.3, this raises an internal error.  Prior to Xcode 9.3,
+   this call is required.
+   */
+  NSDecimalNumber *xcodeVersion = FBXcodeConfiguration.xcodeVersionNumber;
+  if (![FBDeviceControlFrameworkLoader xcodeVersionIsAtLeast93:xcodeVersion]) {
+     [[objc_lookUpClass("DVTDeviceManager") defaultDeviceManager] startLocating];
+  }
   return YES;
 }
 
@@ -139,6 +147,12 @@
 {
   NSDecimalNumber *xcode90 = [NSDecimalNumber decimalNumberWithString:@"9.0"];
   return [xcodeVersion compare:xcode90] != NSOrderedAscending;
+}
+
++ (BOOL)xcodeVersionIsAtLeast93:(NSDecimalNumber *)xcodeVersion
+{
+  NSDecimalNumber *xcode93 = [NSDecimalNumber decimalNumberWithString:@"9.3"];
+  return [xcodeVersion compare:xcode93] != NSOrderedAscending;
 }
 
 + (NSArray<FBWeakFramework *> *)privateFrameworkForMacOSVersion:(NSOperatingSystemVersion)macOSVersion
@@ -196,7 +210,6 @@
   return [FBDeviceControlFrameworkLoader privateFrameworkForMacOSVersion:macOSVersion
                                                             xcodeVersion:xcodeVersion];
 }
-
 
 @end
 

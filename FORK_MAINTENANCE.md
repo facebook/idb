@@ -1,3 +1,15 @@
+## Update
+
+We have not merged FBSimulatorControl master to this fork since
+18 Aug 2017.  Facebook has not been merging our pull requests
+fast enough or at all.
+
+We are working off our own /develop branch - creating tags as
+new Xcode versions are introduced.
+
+The rest of this document describes how we would interact with
+this repo's upstream if Facebook were more responsive.
+
 ### Maintenance
 
 The master branch of our fork will be kept in step with the upstream
@@ -47,6 +59,7 @@ upstream        git@github.com:facebook/FBSimulatorControl.git (push)
 $ git co master
 $ git pull origin master
 $ git fetch upstream master
+$ git merge upstream/master
 
 $ git co develop
 $ git pull origin develop
