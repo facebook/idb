@@ -27,10 +27,12 @@
 
 - (FBFuture<NSString *> *)xcodePath
 {
+  dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+
   return [[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
     runUntilCompletion]
-    onQueue:dispatch_get_main_queue() fmap:^(FBTask *task) {
+    onQueue:queue fmap:^(FBTask *task) {
       NSString *directory = [task stdOut];
       if (!directory) {
         return [[FBControlCoreError
@@ -51,7 +53,5 @@
       return [FBFuture futureWithResult:directory];
     }];
 }
-
-
 
 @end
