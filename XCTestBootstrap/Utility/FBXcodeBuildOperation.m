@@ -91,20 +91,19 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
 
 #pragma mark Public
 
-+ (BOOL)terminateReparentedXcodeBuildProcessesForTarget:(id<FBiOSTarget>)target processFetcher:(FBProcessFetcher *)processFetcher error:(NSError **)error
++ (FBFuture<NSNull *> *)terminateReparentedXcodeBuildProcessesForTarget:(id<FBiOSTarget>)target processFetcher:(FBProcessFetcher *)processFetcher
 {
   NSArray<FBProcessInfo *> *processes = [processFetcher processesWithProcessName:@"xcodebuild"];
   FBProcessTerminationStrategy *strategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:processFetcher workQueue:target.workQueue logger:target.logger];
   NSString *udid = target.udid;
+  NSMutableArray<FBFuture *> *terminations = [NSMutableArray new];
   for (FBProcessInfo *process in processes) {
     if (![process.environment[XcodebuildEnvironmentTargetUDID] isEqualToString:udid]) {
       continue;
     }
-    if (![[strategy killProcess:process] await:error]) {
-      return NO;
-    }
+    [terminations addObject:[strategy killProcess:process]];
   }
-  return YES;
+  return [[FBFuture futureWithFutures:terminations] mapReplace:[NSNull null]];
 }
 
 + (NSDictionary<NSString *, NSDictionary<NSString *, NSObject *> *> *)xctestRunProperties:(FBTestLaunchConfiguration *)testLaunch

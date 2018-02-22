@@ -42,10 +42,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param target the target to obtain processes for.
  @param processFetcher the process fetcher.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return a Future that resolves when processes have exited.
  */
-+ (BOOL)terminateReparentedXcodeBuildProcessesForTarget:(id<FBiOSTarget>)target processFetcher:(FBProcessFetcher *)processFetcher error:(NSError **)error;
++ (FBFuture<NSNull *> *)terminateReparentedXcodeBuildProcessesForTarget:(id<FBiOSTarget>)target processFetcher:(FBProcessFetcher *)processFetcher;
 
 /**
  The xctest.xctestrun properties for a test launch.

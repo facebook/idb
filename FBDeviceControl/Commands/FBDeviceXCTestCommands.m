@@ -226,11 +226,14 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
       failFuture];
   }
   // Terminate the reparented xcodebuild invocations.
-  NSError *error = nil;
-  if (![FBXcodeBuildOperation terminateReparentedXcodeBuildProcessesForTarget:self.device processFetcher:self.processFetcher error:&error]) {
-    return [FBDeviceControlError failFutureWithError:error];
-  }
+  return [[FBXcodeBuildOperation terminateReparentedXcodeBuildProcessesForTarget:self.device processFetcher:self.processFetcher] onQueue:self.device.workQueue fmap:^(id unused) {
+    return [self _startTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter logger:logger];
+  }];
+}
 
+- (FBFuture<id<FBiOSTargetContinuation>> *)_startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
+{
+  NSError *error = nil;
   // Create the .xctestrun file
   NSString *filePath = [self createXCTestRunFileFromConfiguration:testLaunchConfiguration error:&error];
   if (!filePath) {
