@@ -99,12 +99,11 @@
 @interface FBControlCoreLogger_File : NSObject <FBControlCoreLogger>
 
 @property (nonatomic, strong, nullable, readonly) NSFileHandle *fileHandle;
+@property (nonatomic, strong, readonly) NSDateFormatter *dateFormatter;
 
 @end
 
 @implementation FBControlCoreLogger_File
-
-const char *NewLine = "\n";
 
 - (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle
 {
@@ -114,6 +113,8 @@ const char *NewLine = "\n";
   }
 
   _fileHandle = fileHandle;
+  _dateFormatter = [[NSDateFormatter alloc] init];
+  [_dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss.SSSZZZ"];
 
   return self;
 }
@@ -123,9 +124,10 @@ const char *NewLine = "\n";
   if (!self.fileHandle) {
     return self;
   }
-  const char *data = string.UTF8String;
-  write(self.fileHandle.fileDescriptor, data, strlen(data));
-  write(self.fileHandle.fileDescriptor, NewLine, strlen(NewLine));
+
+  NSString *currentTime = [_dateFormatter stringFromDate:[NSDate date]];
+  const char *logLine = [NSString stringWithFormat:@"%@ %@\n", currentTime, string].UTF8String;
+  write(self.fileHandle.fileDescriptor, logLine, strlen(logLine));
   return self;
 }
 
