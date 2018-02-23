@@ -25,7 +25,7 @@ extension FBBitmapStreamingCommands {
   func startStreaming(configuration: FBBitmapStreamConfiguration, output: FileOutput) -> FBFuture<FBiOSTargetContinuation> {
     do {
       let writer = try output.makeWriter()
-      let stream = try createStream(with: configuration)
+      let stream = try self.createStream(with: configuration).await()
       return stream.startStreaming(writer).mapReplace(stream) as! FBFuture<FBiOSTargetContinuation>
     } catch let error {
       return FBFuture(error: error)

@@ -399,9 +399,9 @@
 
 #pragma mark Not supported
 
-- (nullable id<FBBitmapStream>)createStreamWithConfiguration:(nonnull FBBitmapStreamConfiguration *)configuration error:(NSError *_Nullable __autoreleasing * _Nullable)error
+- (FBFuture<id<FBBitmapStream>> *)createStreamWithConfiguration:(FBBitmapStreamConfiguration *)configuration
 {
-  NSAssert(nil, @"createStreamWithConfiguration:configuration:error: is not yet supported");
+  NSAssert(nil, @"createStreamWithConfiguration: is not yet supported");
   return nil;
 }
 

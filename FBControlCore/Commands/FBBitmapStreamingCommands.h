@@ -20,13 +20,12 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBBitmapStreamingCommands <NSObject, FBiOSTargetCommand>
 
 /**
- Creates a Bitmap Stream for a Simulator.
+ Creates a Bitmap Stream for the iOS Target.
 
  @param configuration the stream configuration.
- @param error an error out for any error that occurs.
- @return the Video Recording session on success, nil otherwise.
+ @return A future that resolves with the Video Recording session.
  */
-- (nullable id<FBBitmapStream>)createStreamWithConfiguration:(FBBitmapStreamConfiguration *)configuration error:(NSError **)error;
+- (FBFuture<id<FBBitmapStream>> *)createStreamWithConfiguration:(FBBitmapStreamConfiguration *)configuration;
 
 @end
 

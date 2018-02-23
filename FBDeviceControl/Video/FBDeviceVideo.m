@@ -33,18 +33,20 @@
 
 #pragma mark Initialization Helpers
 
-+ (nullable AVCaptureDevice *)findCaptureDeviceForDevice:(FBDevice *)device error:(NSError **)error
++ (FBFuture<AVCaptureDevice *> *)findCaptureDeviceForDevice:(FBDevice *)device
 {
-  // Sometimes, especially on first launch the AVCaptureDevice may take a while to come up, we should wait for it.
-  AVCaptureDevice *captureDevice = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilExists:^{
-    return [AVCaptureDevice deviceWithUniqueID:device.udid];
-  }];
-  if (!captureDevice) {
-    return [[FBDeviceControlError
-      describeFormat:@"Could not find Capture Device for %@ in %@", device, [FBCollectionInformation oneLineDescriptionFromArray:AVCaptureDevice.devices]]
-      fail:error];
-  }
-  return captureDevice;
+  return [[FBFuture
+    onQueue:device.workQueue resolveUntil:^{
+      AVCaptureDevice *captureDevice = [AVCaptureDevice deviceWithUniqueID:device.udid];
+      if (!captureDevice) {
+        return [[[FBDeviceControlError
+          describeFormat:@"Capture Device %@ not available", device.udid]
+          noLogging]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:captureDevice];
+    }]
+    timeout:FBControlCoreGlobalConfiguration.fastTimeout waitingFor:@"Device %@ to have an associated capture device appear", device];
 }
 
 + (BOOL)allowAccessToScreenCaptureDevicesWithError:(NSError **)error
@@ -73,53 +75,54 @@
 
 #pragma mark Initializers
 
-+ (nullable AVCaptureSession *)captureSessionForDevice:(FBDevice *)device error:(NSError **)error
++ (FBFuture<AVCaptureSession *> *)captureSessionForDevice:(FBDevice *)device
 {
   // Allow Access
-  NSError *innerError = nil;
-  if (![self allowAccessToScreenCaptureDevicesWithError:&innerError]) {
-    return [FBDeviceControlError failWithError:innerError errorOut:error];
+  NSError *error = nil;
+  if (![self allowAccessToScreenCaptureDevicesWithError:&error]) {
+    return [FBFuture futureWithError:error];
   }
   // Obtain the Capture Device
-  AVCaptureDevice *captureDevice = [self findCaptureDeviceForDevice:device error:&innerError];
-  if (!captureDevice) {
-    return [FBDeviceControlError failWithError:innerError errorOut:error];
-  }
-  // Get the Input instance for this Device.
-  AVCaptureDeviceInput *deviceInput = [AVCaptureDeviceInput deviceInputWithDevice:captureDevice error:&innerError];
-  if (!deviceInput) {
-    return [[[FBDeviceControlError
-      describeFormat:@"Failed to create Device Input for %@", captureDevice]
-      causedBy:innerError]
-      fail:error];
-  }
-  // Add the Input to a new Session.
-  AVCaptureSession *session = [[AVCaptureSession alloc] init];
-  if (![session canAddInput:deviceInput]) {
-    return [[FBDeviceControlError
-      describeFormat:@"Cannot add Device Input to session for %@", captureDevice]
-      fail:error];
-  }
-  [session addInput:deviceInput];
+  return [[self
+    findCaptureDeviceForDevice:device]
+    onQueue:device.workQueue fmap:^(AVCaptureDevice *captureDevice) {
+      // Get the Input instance for this Device.
+      NSError *innerError = nil;
+      AVCaptureDeviceInput *deviceInput = [AVCaptureDeviceInput deviceInputWithDevice:captureDevice error:&innerError];
+      if (!deviceInput) {
+        return [[[FBDeviceControlError
+          describeFormat:@"Failed to create Device Input for %@", captureDevice]
+          causedBy:innerError]
+          failFuture];
+      }
+      // Add the Input to a new Session.
+      AVCaptureSession *session = [[AVCaptureSession alloc] init];
+      if (![session canAddInput:deviceInput]) {
+        return [[FBDeviceControlError
+          describeFormat:@"Cannot add Device Input to session for %@", captureDevice]
+          failFuture];
+      }
+      [session addInput:deviceInput];
 
-  return session;
+      return [FBFuture futureWithResult:session];
+    }];
 }
 
-+ (nullable instancetype)videoForDevice:(FBDevice *)device filePath:(NSString *)filePath error:(NSError **)error
++ (FBFuture<FBDeviceVideo *> *)videoForDevice:(FBDevice *)device filePath:(NSString *)filePath
 {
   // Add the Input to a new Session.
-  NSError *innerError = nil;
-  AVCaptureSession *session = [self captureSessionForDevice:device error:&innerError];
-  if (!session) {
-    return [FBDeviceControlError failWithError:innerError errorOut:error];
-  }
-
-  // Construct the Device Video instance.
-  FBDeviceVideoFileEncoder *encoder = [FBDeviceVideoFileEncoder encoderWithSession:session filePath:filePath logger:device.logger error:&innerError];
-  if (!encoder) {
-    return [FBDeviceControlError failWithError:innerError errorOut:error];
-  }
-  return [[FBDeviceVideo alloc] initWithEncoder:encoder workQueue:device.workQueue];
+  return [[self
+    captureSessionForDevice:device]
+    onQueue:device.workQueue fmap:^(AVCaptureSession *session) {
+      // Construct the Device Video instance.
+      NSError *error = nil;
+      FBDeviceVideoFileEncoder *encoder = [FBDeviceVideoFileEncoder encoderWithSession:session filePath:filePath logger:device.logger error:&error];
+      if (!encoder) {
+        return [FBFuture futureWithError:error];
+      }
+      FBDeviceVideo *video = [[FBDeviceVideo alloc] initWithEncoder:encoder workQueue:device.workQueue];
+      return [FBFuture futureWithResult:video];
+    }];
 }
 
 - (instancetype)initWithEncoder:(FBDeviceVideoFileEncoder *)encoder workQueue:(dispatch_queue_t)workQueue

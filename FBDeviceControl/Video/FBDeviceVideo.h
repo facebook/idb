@@ -27,19 +27,18 @@ NS_ASSUME_NONNULL_BEGIN
  Obtains the AVCaptureSession for a Device.
 
  @param device the Device to obtain the Session for.
- @param error an error out for any error that occurs.
  @return A Capture Session if successful, nil otherwise.
  */
-+ (nullable AVCaptureSession *)captureSessionForDevice:(FBDevice *)device error:(NSError **)error;
++ (FBFuture<AVCaptureSession *> *)captureSessionForDevice:(FBDevice *)device;
 
 /**
  A Factory method for obtaining the Video for a Device.
 
  @param device the Device.
  @param filePath the location of the video to record to, will be deleted if it already exists.
- @param error an error out for any error that occurs.
+ @return a Future wrapping the Device Video.
  */
-+ (nullable instancetype)videoForDevice:(FBDevice *)device filePath:(NSString *)filePath error:(NSError **)error;
++ (FBFuture<FBDeviceVideo *> *)videoForDevice:(FBDevice *)device filePath:(NSString *)filePath;
 
 #pragma mark Public
 

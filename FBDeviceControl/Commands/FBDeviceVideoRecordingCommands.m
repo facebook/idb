@@ -48,7 +48,6 @@
 
 - (FBFuture<id<FBVideoRecordingSession>> *)startRecordingToFile:(NSString *)filePath
 {
-  NSError *error = nil;
   if (self.video) {
     return [[FBDeviceControlError
       describe:@"Cannot create a new video recording session, one is already active"]
@@ -57,11 +56,13 @@
 
   FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithDiagnostic:self.device.diagnostics.video];
   filePath = filePath ?: logBuilder.createPath;
-  self.video = [FBDeviceVideo videoForDevice:self.device filePath:filePath error:&error];
-  if (!self.video) {
-    return [FBDeviceControlError failFutureWithError:error];
-  }
-  return [[self.video startRecording] mapReplace:self.video];
+
+  return [[FBDeviceVideo
+    videoForDevice:self.device filePath:filePath]
+    onQueue:self.device.workQueue fmap:^(FBDeviceVideo *video) {
+      self.video = video;
+      return [[video startRecording] mapReplace:video];
+    }];
 }
 
 - (FBFuture<NSNull *> *)stopRecording
@@ -76,14 +77,18 @@
 
 #pragma mark FBBitmapStreamingCommands
 
-- (nullable id<FBBitmapStream>)createStreamWithConfiguration:(FBBitmapStreamConfiguration *)configuration error:(NSError **)error
+- (FBFuture<id<FBBitmapStream>> *)createStreamWithConfiguration:(FBBitmapStreamConfiguration *)configuration
 {
-  AVCaptureSession *session = [FBDeviceVideo captureSessionForDevice:self.device error:error];
-  if (!session) {
-    return nil;
-  }
-  return [FBDeviceBitmapStream streamWithSession:session encoding:configuration.encoding logger:self.device.logger error:error];
+  return [[FBDeviceVideo
+    captureSessionForDevice:self.device]
+    onQueue:self.device.workQueue fmap:^(AVCaptureSession *session) {
+      NSError *error = nil;
+      FBDeviceBitmapStream *stream = [FBDeviceBitmapStream streamWithSession:session encoding:configuration.encoding logger:self.device.logger error:&error];
+      if (!stream) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:stream];
+    }];
 }
-
 
 @end

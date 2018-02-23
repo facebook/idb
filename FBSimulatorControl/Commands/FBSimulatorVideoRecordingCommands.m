@@ -66,22 +66,25 @@
 
 #pragma mark FBSimulatorStreamingCommands
 
-- (nullable FBSimulatorBitmapStream *)createStreamWithConfiguration:(FBBitmapStreamConfiguration *)configuration error:(NSError **)error
+- (FBFuture<FBSimulatorBitmapStream *> *)createStreamWithConfiguration:(FBBitmapStreamConfiguration *)configuration
 {
   if (![configuration.encoding isEqualToString:FBBitmapStreamEncodingBGRA]) {
-    return [FBSimulatorError failWithErrorMessage:@"Only BGRA is supported for simulators." errorOut:error];
+    return [[FBSimulatorError
+      describe:@"Only BGRA is supported for simulators."]
+      failFuture];
   }
 
-  FBFramebufferSurface *surface = [self obtainSurfaceWithError:error];
-  id<FBControlCoreLogger> logger = self.simulator.logger;
+  NSError *error = nil;
+  FBFramebufferSurface *surface = [self obtainSurfaceWithError:&error];
   if (!surface) {
-    return nil;
+    return [FBFuture futureWithError:error];
   }
+  id<FBControlCoreLogger> logger = self.simulator.logger;
   NSNumber *framesPerSecond = configuration.framesPerSecond;
   if (framesPerSecond) {
-    return [FBSimulatorBitmapStream eagerStreamWithSurface:surface framesPerSecond:framesPerSecond.unsignedIntegerValue logger:logger];
+    return [FBFuture futureWithResult:[FBSimulatorBitmapStream eagerStreamWithSurface:surface framesPerSecond:framesPerSecond.unsignedIntegerValue logger:logger]];
   }
-  return [FBSimulatorBitmapStream lazyStreamWithSurface:surface logger:logger];
+  return [FBFuture futureWithResult:[FBSimulatorBitmapStream lazyStreamWithSurface:surface logger:logger]];
 }
 
 #pragma mark Private
