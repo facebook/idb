@@ -61,7 +61,6 @@
 #import <FBControlCore/FBiOSTargetQuery.h>
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBLaunchedProcess.h>
-#import <FBControlCore/FBLineBuffer.h>
 #import <FBControlCore/FBListApplicationsConfiguration.h>
 #import <FBControlCore/FBLocalizationOverride.h>
 #import <FBControlCore/FBLogCommands.h>

@@ -35,6 +35,39 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
+ Consumes data and accumilates it.
+ This can then be consumed based on lines/strings.
+ Writes and reads will not be synchronized.
+ */
+@interface FBLineBuffer : NSObject <FBFileConsumer>
+
+/**
+ Consume the remainder of the buffer available, returning it as Data.
+ This will flush the entirity of the buffer.
+ */
+- (nullable NSData *)consumeCurrentData;
+
+/**
+ Consume the remainder of the buffer available, returning it as a String.
+ This will flush the entirity of the buffer.
+ */
+- (nullable NSString *)consumeCurrentString;
+
+/**
+ Consume a line if one is available, returning it as Data.
+ This will flush the buffer of the lines that are consumed.
+ */
+- (nullable NSData *)consumeLineData;
+
+/**
+ Consume a line if one is available, returning it as a String.
+ This will flush the buffer of the lines that are consumed.
+ */
+- (nullable NSString *)consumeLineString;
+
+@end
+
+/**
  A Reader of Text Data, calling the callback when a full line is available.
  */
 @interface FBLineFileConsumer : NSObject <FBFileConsumer>

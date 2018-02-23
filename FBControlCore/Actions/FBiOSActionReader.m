@@ -15,7 +15,6 @@
 #import "FBiOSActionRouter.h"
 #import "FBiOSTarget.h"
 #import "FBiOSTargetFuture.h"
-#import "FBLineBuffer.h"
 #import "FBSocketReader.h"
 #import "FBUploadBuffer.h"
 #import "NSRunLoop+FBControlCore.h"
@@ -78,7 +77,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
   if (!data) {
     return;
   }
-  [self.lineBuffer appendData:data];
+  [self.lineBuffer consumeData:data];
   [self runBuffer];
 }
 

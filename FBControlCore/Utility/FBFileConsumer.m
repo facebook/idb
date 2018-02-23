@@ -4,8 +4,82 @@
 
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
-#import "FBLineBuffer.h"
-#import "NSRunLoop+FBControlCore.h"
+
+@interface FBLineBuffer ()
+
+@property (nonatomic, strong, readwrite) NSMutableData *buffer;
+@property (nonatomic, strong, readonly) NSData *terminalData;
+
+@end
+
+@implementation FBLineBuffer
+
+#pragma mark Initializers
+
+- (instancetype)init
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _buffer = [NSMutableData data];
+  _terminalData = [NSData dataWithBytes:"\n" length:1];
+
+  return self;
+}
+
+#pragma mark Public Methods
+
+- (nullable NSData *)consumeCurrentData
+{
+  NSData *data = [self.buffer copy];
+  self.buffer.data = NSData.data;
+  return data;
+}
+
+- (nullable NSString *)consumeCurrentString
+{
+  NSData *data = [self consumeCurrentData];
+  return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+}
+
+- (nullable NSData *)consumeLineData
+{
+  if (self.buffer.length == 0) {
+    return nil;
+  }
+  NSRange newlineRange = [self.buffer rangeOfData:self.terminalData options:0 range:NSMakeRange(0, self.buffer.length)];
+  if (newlineRange.location == NSNotFound) {
+    return nil;
+  }
+  NSData *lineData = [self.buffer subdataWithRange:NSMakeRange(0, newlineRange.location)];
+  [self.buffer replaceBytesInRange:NSMakeRange(0, newlineRange.location + 1) withBytes:"" length:0];
+  return lineData;
+}
+
+- (nullable NSString *)consumeLineString
+{
+  NSData *lineData = self.consumeLineData;
+  if (!lineData) {
+    return nil;
+  }
+  return [[NSString alloc] initWithData:lineData encoding:NSUTF8StringEncoding];
+}
+
+#pragma mark FBFileConsumer
+
+- (void)consumeData:(NSData *)data
+{
+  [self.buffer appendData:data];
+}
+
+- (void)consumeEndOfFile
+{
+
+}
+
+@end
 
 @interface FBLineFileConsumer ()
 
@@ -69,7 +143,7 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 - (void)consumeData:(NSData *)data
 {
   @synchronized (self) {
-    [self.buffer appendData:data];
+    [self.buffer consumeData:data];
     [self dispatchAvailableLines];
   }
 }
@@ -88,6 +162,15 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   }
 }
 
+#pragma mark Public
+
+- (FBFuture<NSNull *> *)eofHasBeenReceived
+{
+  return self.eofHasBeenReceivedFuture;
+}
+
+#pragma mark Private
+
 - (void)dispatchAvailableLines
 {
   NSData *data;
@@ -102,15 +185,6 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
     }
   }
 }
-
-#pragma mark Public
-
-- (FBFuture<NSNull *> *)eofHasBeenReceived
-{
-  return self.eofHasBeenReceivedFuture;
-}
-
-#pragma mark Private
 
 - (void)tearDown
 {
@@ -196,6 +270,8 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 
 @implementation FBLoggingFileConsumer
 
+#pragma mark Initializers
+
 + (instancetype)consumerWithLogger:(id<FBControlCoreLogger>)logger
 {
   return [[self alloc] initWithLogger:logger];
@@ -212,6 +288,8 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 
   return self;
 }
+
+#pragma mark FBFileConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -238,6 +316,8 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 
 @implementation FBCompositeFileConsumer
 
+#pragma mark Initializers
+
 + (instancetype)consumerWithConsumers:(NSArray<id<FBFileConsumer>> *)consumers
 {
   return [[self alloc] initWithConsumers:consumers];
@@ -253,6 +333,8 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   _consumers = consumers;
   return self;
 }
+
+#pragma mark FBFileConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -271,6 +353,8 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 @end
 
 @implementation FBNullFileConsumer
+
+#pragma mark FBFileConsumer
 
 - (void)consumeData:(NSData *)data
 {

@@ -46,4 +46,40 @@
   XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
 }
 
+- (void)testLineBuffer
+{
+  FBLineBuffer *consumer = [FBLineBuffer new];
+  [consumer consumeData:[@"FOO" dataUsingEncoding:NSUTF8StringEncoding]];
+
+  XCTAssertNil(consumer.consumeLineData);
+  XCTAssertNil(consumer.consumeLineString);
+
+  [consumer consumeData:[@"BAR\n" dataUsingEncoding:NSUTF8StringEncoding]];
+
+  XCTAssertEqualObjects(consumer.consumeLineString, @"FOOBAR");
+
+  [consumer consumeData:[@"BANG\nBAZ" dataUsingEncoding:NSUTF8StringEncoding]];
+  [consumer consumeData:[@"\nHELLO\nHERE" dataUsingEncoding:NSUTF8StringEncoding]];
+
+  XCTAssertEqualObjects(consumer.consumeCurrentString, @"BANG\nBAZ\nHELLO\nHERE");
+
+  [consumer consumeData:[@"GOODBYE" dataUsingEncoding:NSUTF8StringEncoding]];
+  [consumer consumeData:[@"\nFOR\nNOW" dataUsingEncoding:NSUTF8StringEncoding]];
+
+  XCTAssertEqualObjects(consumer.consumeCurrentData, [@"GOODBYE\nFOR\nNOW" dataUsingEncoding:NSUTF8StringEncoding]);
+
+  [consumer consumeData:[@"BACKAGAIN" dataUsingEncoding:NSUTF8StringEncoding]];
+  [consumer consumeData:[@"\nTHIS\nIS\nTHE\nTAIL" dataUsingEncoding:NSUTF8StringEncoding]];
+
+  XCTAssertEqualObjects(consumer.consumeLineData, [@"BACKAGAIN" dataUsingEncoding:NSUTF8StringEncoding]);
+
+  [consumer consumeEndOfFile];
+
+  XCTAssertEqualObjects(consumer.consumeLineString, @"THIS");
+  XCTAssertEqualObjects(consumer.consumeLineData, [@"IS" dataUsingEncoding:NSUTF8StringEncoding]);
+  XCTAssertEqualObjects(consumer.consumeLineString, @"THE");
+  XCTAssertNil(consumer.consumeLineString);
+  XCTAssertEqualObjects(consumer.consumeCurrentString, @"TAIL");
+}
+
 @end
