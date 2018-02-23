@@ -396,6 +396,7 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
       return;
     }
     FBFuture *next = chain(future);
+    NSCAssert([next isKindOfClass:FBFuture.class], @"chained value is not a Future, got %@", next);
     [next onQueue:queue notifyOfCompletion:^(FBFuture *final) {
       FBFutureState state = final.state;
       switch (state) {
@@ -428,7 +429,9 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
       [chained cancel];
       return;
     }
-    [fmap(future.result) onQueue:queue notifyOfCompletion:^(FBFuture *next) {
+    FBFuture *fmapped = fmap(future.result);
+    NSCAssert([fmapped isKindOfClass:FBFuture.class], @"fmap'ped value is not a Future, got %@", fmapped);
+    [fmapped onQueue:queue notifyOfCompletion:^(FBFuture *next) {
       if (next.error) {
         [chained resolveWithError:next.error];
         return;
