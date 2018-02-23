@@ -64,6 +64,7 @@
   _logger = logger;
   _deviceSet = deviceSet;
   _configuration = configuration;
+  _workQueue = dispatch_get_main_queue();
 
   _allSimulators = @[];
   _processFetcher = [FBSimulatorProcessFetcher fetcherWithProcessFetcher:[FBProcessFetcher new]];
@@ -322,7 +323,7 @@
 
 - (FBCoreSimulatorTerminationStrategy *)coreSimulatorTerminationStrategy
 {
-  return [FBCoreSimulatorTerminationStrategy strategyWithProcessFetcher:self.processFetcher workQueue:dispatch_get_main_queue() logger:self.logger];
+  return [FBCoreSimulatorTerminationStrategy strategyWithProcessFetcher:self.processFetcher workQueue:self.workQueue logger:self.logger];
 }
 
 - (FBSimulatorEraseStrategy *)eraseStrategy
