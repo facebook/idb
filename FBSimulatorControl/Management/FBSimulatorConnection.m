@@ -127,7 +127,7 @@
     }];
 }
 
-- (BOOL)terminateWithTimeout:(NSTimeInterval)timeout
+- (FBFuture<NSNull *> *)terminate
 {
   NSParameterAssert(NSThread.currentThread.isMainThread);
 
@@ -140,21 +140,16 @@
   // Close the connection with the SimulatorBridge and nullify
   [self.bridge disconnect];
 
-  // Don't wait if there's no timeout
-  if (timeout <= 0) {
-    return YES;
-  }
-
-  int64_t timeoutInt = ((int64_t) timeout) * ((int64_t) NSEC_PER_SEC);
-  BOOL result = dispatch_group_wait(self.teardownGroup, dispatch_time(DISPATCH_TIME_NOW, timeoutInt)) == 0l;
-
-  // Clean up resources and notify.
-  self.framebuffer = nil;
-  self.hid = nil;
-  self.bridge = nil;
-  [self.simulator.eventSink connectionDidDisconnect:self expected:YES];
-
-  return result;
+  // Notify the Future asynchronously.
+  FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
+  dispatch_group_notify(self.teardownGroup, self.simulator.workQueue, ^{
+    self.framebuffer = nil;
+    self.hid = nil;
+    self.bridge = nil;
+    [self.simulator.eventSink connectionDidDisconnect:self expected:YES];
+    [future resolveWithResult:NSNull.null];
+  });
+  return future;
 }
 
 @end

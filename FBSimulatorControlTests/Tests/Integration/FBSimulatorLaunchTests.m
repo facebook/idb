@@ -96,13 +96,12 @@
   XCTAssertEqual(([[NSSet setWithArray:@[simulator1.udid, simulator2.udid, simulator3.udid]] count]), 3u);
 
   NSError *error = nil;
-  BOOL success = [[simulator1 bootWithConfiguration:self.bootConfiguration] await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-  success = [[simulator2 bootWithConfiguration:self.bootConfiguration] await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-  success = [[simulator3 bootWithConfiguration:self.bootConfiguration] await:&error] != nil;
+  FBFuture *bootFuture = [FBFuture futureWithFutures:@[
+    [simulator1 bootWithConfiguration:self.bootConfiguration],
+    [simulator2 bootWithConfiguration:self.bootConfiguration],
+    [simulator3 bootWithConfiguration:self.bootConfiguration],
+  ]];
+  BOOL success = [bootFuture await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
@@ -113,10 +112,27 @@
 
   XCTAssertEqual([NSSet setWithArray:[simulators valueForKeyPath:@"launchdProcess.processIdentifier"]].count, 3u);
 
-  for (FBSimulator *simulator in simulators) {
-    [self assertShutdownSimulatorAndTerminateSession:simulator];
-  }
+  FBFuture *shutdownFuture = [FBFuture futureWithFutures:@[
+    [simulator1 shutdown],
+    [simulator2 shutdown],
+    [simulator3 shutdown],
+  ]];
+  success = [shutdownFuture await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 
+  FBFuture *freeFuture = [FBFuture futureWithFutures:@[
+    [simulator1.pool freeSimulator:simulator1],
+    [simulator2.pool freeSimulator:simulator2],
+    [simulator3.pool freeSimulator:simulator3],
+  ]];
+  success = [freeFuture await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  for (FBSimulator *simulator in simulators) {
+    [self assertSimulatorShutdown:simulator];
+  }
   XCTAssertEqual(self.control.pool.allocatedSimulators.count, 0u);
 }
 

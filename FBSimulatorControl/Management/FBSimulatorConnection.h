@@ -44,13 +44,12 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Connection Lifecycle
 
 /**
- Tears down the bridge and it's resources, waiting for any asynchronous teardown to occur before returning.
- Must only ever be called from the main thread.
+ Tears down the bridge and it's resources.
+ If there is any asynchronous work that is pending, it will resolve the returned future upon completion.
 
- @param timeout the number of seconds to wait for termination to occur in. If 0 or fewer, the reciever won't wait.
- @return YES if the termination occurred within timeout seconds, NO otherwise.
+ @return A Future that resolves when the connection has been terminated.
  */
-- (BOOL)terminateWithTimeout:(NSTimeInterval)timeout;
+- (FBFuture<NSNull *> *)terminate;
 
 /**
  Connects to the FBSimulatorBridge.

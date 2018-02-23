@@ -105,10 +105,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param timeout the timeout in seconds to wait for all connected components to disconnect.
  @param logger a logger to log to
- @param error an error for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
+- (FBFuture<NSNull *> *)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Bridge
 

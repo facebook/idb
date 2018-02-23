@@ -139,26 +139,24 @@
   return connection;
 }
 
-- (BOOL)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
+- (FBFuture<NSNull *> *)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger
 {
   FBSimulator *simulator = self.simulator;
   FBSimulatorConnection *connection = simulator.mutableState.connection;
   if (!connection) {
     [logger.debug logFormat:@"Simulator %@ does not have an active connection", simulator.shortDescription];
-    return YES;
+    return [FBFuture futureWithResult:NSNull.null];
   }
 
-  [logger.debug logFormat:@"Simulator %@ has a connection %@, stopping & wait with timeout %f", simulator.shortDescription, connection, timeout];
   NSDate *date = NSDate.date;
-  if (![connection terminateWithTimeout:timeout]) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Simulator connection %@ did not teardown in less than %f seconds", connection, timeout]
-      inSimulator:simulator]
-      logger:logger]
-      failBool:error];
-  }
-  [logger.debug logFormat:@"Simulator connection %@ torn down in %f seconds", connection, [NSDate.date timeIntervalSinceDate:date]];
-  return YES;
+  [logger.debug logFormat:@"Simulator %@ has a connection %@, stopping & wait with timeout %f", simulator.shortDescription, connection, timeout];
+  return [[[connection
+    terminate]
+    timeout:timeout waitingFor:@"The Simulator Connection to teardown"]
+    onQueue:self.simulator.workQueue map:^(id _) {
+      [logger.debug logFormat:@"Simulator connection %@ torn down in %f seconds", connection, [NSDate.date timeIntervalSinceDate:date]];
+      return NSNull.null;
+    }];
 }
 
 #pragma mark Bridge

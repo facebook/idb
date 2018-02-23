@@ -125,20 +125,11 @@
 
 - (FBFuture<FBSimulator *> *)killSimulator:(FBSimulator *)simulator
 {
-  // Get some preconditions
-  NSError *error = nil;
+  // Before doing anything, get a reference to the current launchd process.
   FBProcessInfo *launchdProcess = simulator.launchdProcess ?: [self.processFetcher launchdProcessForSimDevice:simulator.device];
-  dispatch_queue_t workQueue = simulator.workQueue;
 
   // The Simulator Connection for this process should be tidied up first.
-  if (![simulator disconnectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout logger:self.logger error:&error]) {
-    return [[[[[FBSimulatorError
-      describe:@"Could disconnect from Simulator"]
-      inSimulator:simulator]
-      causedBy:error]
-      logger:self.logger]
-      failFuture];
-  }
+  FBFuture<NSNull *> *disconnectFuture = [simulator disconnectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout logger:self.logger];
 
   // Kill the Simulator.app Process first, see documentation in `-[FBSimDeviceWrapper shutdownWithError:]`.
   // This prevents 'Zombie' Simulator.app from existing.
@@ -158,15 +149,17 @@
   }
 
   // Shutdown will:
-  // 1) Wait for a Simulator launched via Simulator.app to be in a consistent 'Shutdown' state.
-  // 2) Shutdown a SimDevice that has been launched directly via. `-[SimDevice bootWithOptions:error]`.
-  return [[simulatorAppProcessKillFuture
-    onQueue:workQueue fmap:^(id _) {
+  // 1) Wait for the Connection to the Simulator to Disconnect.
+  // 2) Wait for a Simulator launched via Simulator.app to be in a consistent 'Shutdown' state.
+  // 3) Shutdown a SimDevice that has been launched directly via. `-[SimDevice bootWithOptions:error]`.
+  return [[[disconnectFuture
+    fmapReplace:simulatorAppProcessKillFuture]
+    onQueue:simulator.workQueue fmap:^(id _) {
       return [[FBSimulatorShutdownStrategy
         strategyWithSimulator:simulator]
         shutdown];
     }]
-    onQueue:workQueue map:^(id _) {
+    onQueue:simulator.workQueue map:^(id _) {
       if (launchdProcess) {
         [simulator.eventSink simulatorDidTerminate:launchdProcess expected:YES];
       }
