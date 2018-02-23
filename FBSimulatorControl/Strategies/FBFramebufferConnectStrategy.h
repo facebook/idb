@@ -9,16 +9,20 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBFramebuffer;
 @class FBFramebufferConfiguration;
 @class FBSimulator;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Strategy for Connecting the Framebuffer to a Booted Simulator.
  */
 @interface FBFramebufferConnectStrategy : NSObject
+
+#pragma mark Initializers
 
 /**
  Construct a Strategy for connecting to a Simulator Framebuffer.
@@ -28,14 +32,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)strategyWithConfiguration:(FBFramebufferConfiguration *)configuration;
 
+#pragma mark Connecting
+
 /**
  Connects the Simulator to the Framebuffer
 
  @param simulator the simulator to connect to.
- @param error an error out for any error that occurs.
  @return a Framebuffer if successful, NO otherwise.
  */
-- (nullable FBFramebuffer *)connect:(FBSimulator *)simulator error:(NSError **)error;
+- (FBFuture<FBFramebuffer *> *)connect:(FBSimulator *)simulator;
 
 @end
 

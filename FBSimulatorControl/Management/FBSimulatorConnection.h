@@ -41,6 +41,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (instancetype)initWithSimulator:(FBSimulator *)simulator framebuffer:(nullable FBFramebuffer *)framebuffer hid:(nullable FBSimulatorHID *)hid;
 
+#pragma mark Connection Lifecycle
+
 /**
  Tears down the bridge and it's resources, waiting for any asynchronous teardown to occur before returning.
  Must only ever be called from the main thread.
@@ -60,10 +62,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Connects to the Framebuffer.
 
- @param error an error out for any error that occurs.
- @return the Framebuffer instance if successful, nil otherwise.
+ @return a Future that resolves with the Framebuffer instance.
  */
-- (nullable FBFramebuffer *)connectToFramebuffer:(NSError **)error;
+- (FBFuture<FBFramebuffer *> *)connectToFramebuffer;
 
 /**
  Connects to the FBSimulatorHID.

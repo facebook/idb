@@ -75,7 +75,7 @@
   return self;
 }
 
-- (nullable FBFramebuffer *)connect:(FBSimulator *)simulator error:(NSError **)error
+- (FBFuture<FBFramebuffer *> *)connect:(FBSimulator *)simulator
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -85,32 +85,34 @@
 
 @implementation FBFramebufferConnectStrategy_IOPortClient
 
-- (nullable FBFramebuffer *)connect:(FBSimulator *)simulator error:(NSError **)error
+- (FBFuture<FBFramebuffer *> *)connect:(FBSimulator *)simulator
 {
-  FBFramebufferSurface *renderable = [FBFramebufferSurface mainScreenSurfaceForClient:(SimDeviceIOClient *)simulator.device.io logger:simulator.logger error:error];
+  NSError *error = nil;
+  FBFramebufferSurface *renderable = [FBFramebufferSurface mainScreenSurfaceForClient:(SimDeviceIOClient *)simulator.device.io logger:simulator.logger error:&error];
   if (!renderable) {
-    return nil;
+    return [FBFuture futureWithError:error];
   }
-  return [FBFramebuffer framebufferWithRenderable:renderable configuration:self.configuration simulator:simulator];
+  FBFramebuffer *framebuffer = [FBFramebuffer framebufferWithRenderable:renderable configuration:self.configuration simulator:simulator];
+  return [FBFuture futureWithResult:framebuffer];
 }
 
 @end
 
 @implementation FBFramebufferConnectStrategy_FramebufferService
 
-- (nullable FBFramebuffer *)connect:(FBSimulator *)simulator error:(NSError **)error
+- (FBFuture<FBFramebuffer *> *)connect:(FBSimulator *)simulator
 {
-  NSError *innerError = nil;
-  if (![self meetsPreconditionsForConnectingToSimulator:simulator error:&innerError]) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
+  NSError *error = nil;
+  if (![self meetsPreconditionsForConnectingToSimulator:simulator error:&error]) {
+    return [FBFuture futureWithError:error];
   }
 
-  SimDeviceFramebufferService *mainScreenService = [self createMainScreenService:simulator error:&innerError];
+  SimDeviceFramebufferService *mainScreenService = [self createMainScreenService:simulator error:&error];
   if (!mainScreenService) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
+    return [FBFuture futureWithError:error];
   }
   FBFramebuffer *framebuffer = [FBFramebuffer framebufferWithService:mainScreenService configuration:self.configuration simulator:simulator];
-  return framebuffer;
+  return [FBFuture futureWithResult:framebuffer];
 }
 
 - (BOOL)meetsPreconditionsForConnectingToSimulator:(FBSimulator *)simulator error:(NSError **)error

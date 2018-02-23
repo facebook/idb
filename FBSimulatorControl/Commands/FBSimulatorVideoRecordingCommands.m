@@ -44,24 +44,20 @@
 
 - (FBFuture<id<FBVideoRecordingSession>> *)startRecordingToFile:(NSString *)filePath
 {
-  NSError *error = nil;
-  FBSimulatorVideo *video = [self obtainSimulatorVideoWithError:&error];
-  if (!video) {
-    return [FBSimulatorError failFutureWithError:error];
-  }
-  return [[video
-    startRecordingToFile:filePath]
-    mapReplace:video];
+  return [[self
+    obtainSimulatorVideo]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorVideo *video) {
+      return [[video startRecordingToFile:filePath] mapReplace:video];
+    }];
 }
 
 - (FBFuture<NSNull *> *)stopRecording
 {
-  NSError *error = nil;
-  FBSimulatorVideo *video = [self obtainSimulatorVideoWithError:&error];
-  if (!video) {
-    return [FBSimulatorError failFutureWithError:error];
-  }
-  return [video stopRecording];
+  return [[self
+    obtainSimulatorVideo]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorVideo *video) {
+      return [video stopRecording];
+    }];
 }
 
 #pragma mark FBSimulatorStreamingCommands
@@ -73,53 +69,49 @@
       describe:@"Only BGRA is supported for simulators."]
       failFuture];
   }
-
-  NSError *error = nil;
-  FBFramebufferSurface *surface = [self obtainSurfaceWithError:&error];
-  if (!surface) {
-    return [FBFuture futureWithError:error];
-  }
   id<FBControlCoreLogger> logger = self.simulator.logger;
-  NSNumber *framesPerSecond = configuration.framesPerSecond;
-  if (framesPerSecond) {
-    return [FBFuture futureWithResult:[FBSimulatorBitmapStream eagerStreamWithSurface:surface framesPerSecond:framesPerSecond.unsignedIntegerValue logger:logger]];
-  }
-  return [FBFuture futureWithResult:[FBSimulatorBitmapStream lazyStreamWithSurface:surface logger:logger]];
+  return [[self
+    obtainSurface]
+    onQueue:self.simulator.workQueue map:^(FBFramebufferSurface *surface) {
+      NSNumber *framesPerSecond = configuration.framesPerSecond;
+      if (framesPerSecond) {
+        return [FBSimulatorBitmapStream eagerStreamWithSurface:surface framesPerSecond:framesPerSecond.unsignedIntegerValue logger:logger];
+      }
+      return [FBSimulatorBitmapStream lazyStreamWithSurface:surface logger:logger];
+    }];
 }
 
 #pragma mark Private
 
-- (FBSimulatorVideo *)obtainSimulatorVideoWithError:(NSError **)error
+- (FBFuture<FBSimulatorVideo *> *)obtainSimulatorVideo
 {
-  NSError *innerError = nil;
-  FBFramebuffer *framebuffer = [self.simulator framebufferWithError:&innerError];
-  if (!framebuffer) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
-  }
-  FBSimulatorVideo *video = framebuffer.video;
-  if (!video) {
-    return [[[FBSimulatorError
-      describe:@"Simulator Does not have a FBSimulatorVideo instance"]
-      inSimulator:self.simulator]
-      fail:error];
-  }
-  return video;
+  return [[self.simulator
+    connectToFramebuffer]
+    onQueue:self.simulator.workQueue fmap:^(FBFramebuffer *framebuffer) {
+      FBSimulatorVideo *video = framebuffer.video;
+      if (!video) {
+        return [[[FBSimulatorError
+          describe:@"Simulator Does not have a FBSimulatorVideo instance"]
+          inSimulator:self.simulator]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:video];
+    }];
 }
 
-- (FBFramebufferSurface *)obtainSurfaceWithError:(NSError **)error
+- (FBFuture<FBFramebufferSurface *> *)obtainSurface
 {
-  NSError *innerError = nil;
-  FBFramebuffer *framebuffer = [self.simulator framebufferWithError:&innerError];
-  if (!framebuffer) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
-  }
-  FBFramebufferSurface *surface = framebuffer.surface;
-  if (!surface) {
-    return [[FBSimulatorError
-      describe:@"Framebuffer does not have a surface"]
-      fail:error];
-  }
-  return surface;
+  return [[self.simulator
+    connectToFramebuffer]
+    onQueue:self.simulator.workQueue fmap:^(FBFramebuffer *framebuffer) {
+      FBFramebufferSurface *surface = framebuffer.surface;
+      if (!surface) {
+        return [[FBSimulatorError
+          describe:@"Framebuffer does not have a surface"]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:surface];
+    }];
 }
 
 @end

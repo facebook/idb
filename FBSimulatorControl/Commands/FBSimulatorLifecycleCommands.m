@@ -175,11 +175,14 @@
 
 #pragma mark Framebuffer
 
-- (nullable FBFramebuffer *)framebufferWithError:(NSError **)error
+- (FBFuture<FBFramebuffer *> *)connectToFramebuffer
 {
-  return [[self
-    connectWithError:error]
-    connectToFramebuffer:error];
+  NSError *error = nil;
+  FBSimulatorConnection *connection = [self connectWithError:&error];
+  if (!connection) {
+    return [FBFuture futureWithError:error];
+  }
+  return [connection connectToFramebuffer];
 }
 
 #pragma mark URLs

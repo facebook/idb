@@ -122,12 +122,11 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Framebuffer
 
 /**
- Obtains the Framebuffer.
+ Connects to the Framebuffer.
 
- @param error an error out for any error that occurs.
- @return the Framebuffer on success, nil otherwise.
+ @return the Future wrapping the Framebuffer.
  */
-- (nullable FBFramebuffer *)framebufferWithError:(NSError **)error;
+- (FBFuture<FBFramebuffer *> *)connectToFramebuffer;
 
 #pragma mark URLs
 

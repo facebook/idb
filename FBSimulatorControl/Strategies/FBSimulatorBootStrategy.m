@@ -256,8 +256,7 @@
   }
 
   // Create the Framebuffer (if required to do so).
-  NSError *error = nil;
-  FBFramebuffer *framebuffer = nil;
+  FBFuture *framebufferFuture = [FBFuture futureWithResult:NSNull.null];
   if ([self.options shouldCreateFramebuffer:self.configuration]) {
     // If we require a Framebuffer, but don't have one provided, we should use the default one.
     FBFramebufferConfiguration *configuration = self.configuration.framebuffer;
@@ -267,25 +266,27 @@
     }
     // Update it to include the relevant paths for *this* simulator.
     configuration = [configuration inSimulator:self.simulator];
-
-    framebuffer = [[FBFramebufferConnectStrategy
-      strategyWithConfiguration:configuration]
-      connect:self.simulator error:&error];
-    if (!framebuffer) {
-      return [FBSimulatorError failFutureWithError:error];
-    }
+    // Then connect to it.
+    framebufferFuture = [[FBFramebufferConnectStrategy strategyWithConfiguration:configuration] connect:self.simulator];
   }
 
   // Create the HID Port
-  return [[[FBSimulatorHID
-    hidForSimulator:self.simulator]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorHID *hid) {
+  FBFuture *hidFuture = [FBSimulatorHID hidForSimulator:self.simulator];
+
+  return [[[FBFuture
+    futureWithFutures:@[
+      framebufferFuture,
+      hidFuture,
+    ]]
+    onQueue:self.simulator.workQueue fmap:^(NSArray *results) {
       // Booting is simpler than the Simulator.app launch process since the caller calls CoreSimulator Framework directly.
       // Just pass in the options to ensure that the framebuffer service is registered when the Simulator is booted.
-      return [[self bootSimulatorWithOptions:[self.options bootOptions:self.configuration]] mapReplace:hid];
+      return [[self bootSimulatorWithOptions:[self.options bootOptions:self.configuration]] mapReplace:results];
     }]
-    onQueue:self.simulator.workQueue map:^(FBSimulatorHID *hid) {
+    onQueue:self.simulator.workQueue map:^(NSArray *results) {
       // Combine everything into the connection.
+      FBFramebuffer *framebuffer = [results[0] isKindOfClass:NSNull.class] ? nil : results[0];;
+      FBSimulatorHID *hid = results[1];
       return [[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:framebuffer hid:hid];
     }];
 }

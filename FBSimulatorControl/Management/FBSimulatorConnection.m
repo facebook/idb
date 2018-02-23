@@ -99,16 +99,19 @@
     }];
 }
 
-- (nullable FBFramebuffer *)connectToFramebuffer:(NSError **)error
+- (FBFuture<FBFramebuffer *> *)connectToFramebuffer
 {
   if (self.framebuffer) {
-    return self.framebuffer;
+    return [FBFuture futureWithResult:self.framebuffer];
   }
 
-  self.framebuffer = [[FBFramebufferConnectStrategy
+  return [[[FBFramebufferConnectStrategy
     strategyWithConfiguration:[FBFramebufferConfiguration.defaultConfiguration inSimulator:self.simulator]]
-    connect:self.simulator error:error];
-  return self.framebuffer;
+    connect:self.simulator]
+    onQueue:self.simulator.workQueue map:^(FBFramebuffer *framebuffer) {
+      self.framebuffer = framebuffer;
+      return framebuffer;
+    }];
 }
 
 - (FBFuture<FBSimulatorHID *> *)connectToHID

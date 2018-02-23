@@ -46,23 +46,23 @@
 
 - (FBFuture<NSData *> *)takeScreenshot:(FBScreenshotFormat)format
 {
-  NSError *error = nil;
-  FBFramebuffer *framebuffer = [self.simulator framebufferWithError:&error];
-  if (!framebuffer) {
-    return [FBFuture futureWithError:error];
-  }
-  FBSimulatorImage *image = framebuffer.image;
-  NSData *data = nil;
-  if ([format isEqualToString:FBScreenshotFormatJPEG]) {
-    data = [image jpegImageDataWithError:&error];
-  } else if ([format isEqualToString:FBScreenshotFormatPNG]) {
-    data = [image pngImageDataWithError:&error];
-  } else {
-    return [[FBSimulatorError
-      describeFormat:@"%@ is not a recognized screenshot format", format]
-      failFuture];
-  }
-  return data ? [FBFuture futureWithResult:data] : [FBFuture futureWithError:error];
+  return [[self.simulator
+    connectToFramebuffer]
+    onQueue:self.simulator.workQueue fmap:^(FBFramebuffer *framebuffer) {
+      FBSimulatorImage *image = framebuffer.image;
+      NSData *data = nil;
+      NSError *error = nil;
+      if ([format isEqualToString:FBScreenshotFormatJPEG]) {
+        data = [image jpegImageDataWithError:&error];
+      } else if ([format isEqualToString:FBScreenshotFormatPNG]) {
+        data = [image pngImageDataWithError:&error];
+      } else {
+        return [[FBSimulatorError
+          describeFormat:@"%@ is not a recognized screenshot format", format]
+          failFuture];
+      }
+      return data ? [FBFuture futureWithResult:data] : [FBFuture futureWithError:error];
+    }];
 }
 
 @end
