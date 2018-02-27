@@ -826,6 +826,8 @@ static void queryTestBundlePath(NSString *testBundlePath)
     NSData *output = [line dataUsingEncoding:NSUTF8StringEncoding];
     [fileHandle writeData:output];
   }
+  // Close the file so the other end knows this is the end of the input.
+  [fileHandle closeFile];
   exit(kSuccess);
 }
 
