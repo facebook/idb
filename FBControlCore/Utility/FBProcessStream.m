@@ -281,6 +281,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 {
   return [self.reader.stopReading
     onQueue:FBProcessOutput.createWorkQueue chain:^(FBFuture *future) {
+      NSPipe *pipe = self.pipe;
+      [pipe.fileHandleForWriting closeFile];
+
       self.reader = nil;
       self.pipe = nil;
       return future;
@@ -448,7 +451,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
       failFuture];
   }
 
-  NSPipe *pipe = [NSPipe pipe];
+  NSPipe *pipe = NSPipe.pipe;
   NSError *error = nil;
   id<FBFileConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:&error];
   if (!writer) {
@@ -471,6 +474,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
       failFuture];
   }
 
+  [pipe.fileHandleForWriting closeFile];
   _pipe = nil;
   _writer = nil;
 
