@@ -688,6 +688,27 @@
   [self waitForExpectations:@[firstCancelCalled, completionCalled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
+- (void)testCancellationHandlerIsNotCalledIfFutureIsNotCancelled
+{
+  XCTestExpectation *completionCalled = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+
+  FBMutableFuture<NSNull *> *baseFuture = FBMutableFuture.future;
+  [[baseFuture
+    onQueue:self.queue respondToCancellation:^{
+      XCTFail(@"Cancellation should not have been called");
+      return [FBFuture futureWithResult:NSNull.null];
+    }]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture<NSNull *> *completionFuture) {
+      XCTAssertEqual(completionFuture.state, FBFutureStateDone);
+      [completionCalled fulfill];
+    }];
+
+  [baseFuture resolveWithResult:NSNull.null];
+  [baseFuture cancel];
+
+  [self waitForExpectations:@[completionCalled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
 #pragma mark - Helpers
 
 - (void)assertSynchronousResolutionWithBlock:(void (^)(FBMutableFuture *))resolveBlock expectedState:(FBFutureState)state expectedResult:(id)expectedResult expectedError:(NSError *)expectedError
