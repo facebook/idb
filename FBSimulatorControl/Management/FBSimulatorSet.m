@@ -167,33 +167,28 @@
 
   // First, create the device.
   [self.logger.debug logFormat:@"Creating device with Type %@ Runtime %@", deviceType, runtime];
-  SimDevice *device = [self.deviceSet createDeviceWithType:deviceType runtime:runtime name:model error:&innerError];
-  if (!device) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to create a simulator with the name %@, runtime %@, type %@", model, runtime, deviceType]
-      causedBy:innerError]
-      logger:self.logger]
-      failFuture];
-  }
+  return [[FBSimulatorSet
+    onDeviceSet:self.deviceSet createDeviceWithType:deviceType runtime:runtime name:model]
+    onQueue:self.workQueue fmap:^(SimDevice *device) {
+      // The SimDevice should now be in the DeviceSet and thus in the collection of Simulators.
+      FBSimulator *simulator = [FBSimulatorSet keySimulatorsByUDID:self.allSimulators][device.UDID.UUIDString];
+      if (!simulator) {
+        return [[[FBSimulatorError
+          describeFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString]
+          logger:self.logger]
+          failFuture];
+      }
+      simulator.configuration = configuration;
+      [self.logger.debug logFormat:@"Created Simulator %@ for configuration %@", simulator.udid, configuration];
 
-  // The SimDevice should now be in the DeviceSet and thus in the collection of Simulators.
-  FBSimulator *simulator = [FBSimulatorSet keySimulatorsByUDID:self.allSimulators][device.UDID.UUIDString];
-  if (!simulator) {
-    return [[[FBSimulatorError
-      describeFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString]
-      logger:self.logger]
-      failFuture];
-  }
-  simulator.configuration = configuration;
-  [self.logger.debug logFormat:@"Created Simulator %@ for configuration %@", simulator.udid, configuration];
-
-  // This step ensures that the Simulator is in a known-shutdown state after creation.
-  // This prevents racing with any 'booting' interaction that occurs immediately after allocation.
-  return [[[[FBSimulatorShutdownStrategy
-    strategyWithSimulator:simulator]
-    shutdown]
-    rephraseFailure:@"Could not get newly-created simulator into a shutdown state"]
-    mapReplace:simulator];
+      // This step ensures that the Simulator is in a known-shutdown state after creation.
+      // This prevents racing with any 'booting' interaction that occurs immediately after allocation.
+      return [[[[FBSimulatorShutdownStrategy
+        strategyWithSimulator:simulator]
+        shutdown]
+        rephraseFailure:@"Could not get newly-created simulator into a shutdown state"]
+        mapReplace:simulator];
+  }];
 }
 
 - (NSArray<FBSimulatorConfiguration *> *)configurationsForAbsentDefaultSimulators
@@ -334,6 +329,20 @@
 - (FBSimulatorDeletionStrategy *)deletionStrategy
 {
   return [FBSimulatorDeletionStrategy strategyForSet:self];
+}
+
++ (FBFuture<SimDevice *> *)onDeviceSet:(SimDeviceSet *)deviceSet createDeviceWithType:(SimDeviceType *)deviceType runtime:(SimRuntime *)runtime name:(NSString *)name
+{
+  dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+  FBMutableFuture<SimDevice *> *future = FBMutableFuture.future;
+  [deviceSet createDeviceAsyncWithType:deviceType runtime:runtime name:name completionQueue:queue completionHandler:^(NSError *error, SimDevice *device) {
+    if (device) {
+      [future resolveWithResult:device];
+    } else {
+      [future resolveWithError:error];
+    }
+  }];
+  return future;
 }
 
 @end

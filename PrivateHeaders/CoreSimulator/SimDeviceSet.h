@@ -12,7 +12,7 @@
 #import <CoreSimulator/CDStructures.h>
 #import <CoreSimulator/SimDeviceNotifier-Protocol.h>
 
-@class NSArray, NSDictionary, NSMutableDictionary, NSString, SimDeviceNotificationManager, SimServiceContext;
+@class NSArray, NSDictionary, NSMutableDictionary, NSString, SimDeviceNotificationManager, SimServiceContext, SimRuntime, SimDeviceType, SimDeviceType, SimDevice;
 @protocol OS_dispatch_queue;
 
 @interface SimDeviceSet : NSObject <SimDeviceNotifier>
@@ -67,7 +67,7 @@
 - (void)cloneDeviceAsync:(id)arg1 name:(id)arg2 completionQueue:(id)arg3 completionHandler:(CDUnknownBlockType)arg4;
 - (void)deleteDeviceAsync:(id)arg1 completionQueue:(id)arg2 completionHandler:(void(^)(NSError *))arg3;
 - (id)createDeviceWithType:(id)arg1 runtime:(id)arg2 name:(id)arg3 error:(id *)arg4;
-- (void)createDeviceAsyncWithType:(id)arg1 runtime:(id)arg2 name:(id)arg3 completionQueue:(id)arg4 completionHandler:(CDUnknownBlockType)arg5;
+- (void)createDeviceAsyncWithType:(SimDeviceType *)deviceType runtime:(SimRuntime *)runtime name:(NSString *)name completionQueue:(dispatch_queue_t)completionQueue completionHandler:(void (^)(NSError *, SimDevice *))completionHandler;
 - (void)createDeviceAsyncWithType:(id)arg1 runtime:(id)arg2 name:(id)arg3 completionHandler:(CDUnknownBlockType)arg4;
 - (BOOL)unregisterNotificationHandler:(unsigned long long)arg1 error:(id *)arg2;
 - (void)sendNotification:(id)arg1;
