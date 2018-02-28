@@ -83,22 +83,27 @@
 
 @implementation FBSimulatorControlTestCase (FBSimulatorControlAssertions)
 
-- (nullable FBSimulator *)assertObtainsSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration
+- (FBFuture<FBSimulator *> *)assertObtainsSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration
 {
   NSError *error = nil;
   if (![configuration checkRuntimeRequirementsReturningError:&error]) {
-    NSLog(@"Configuration %@ does not meet the runtime requirements with error %@", configuration, error);
-    return nil;
+    return [[FBSimulatorError
+      describeFormat:@"Configuration %@ does not meet the runtime requirements with error %@", configuration, error]
+      failFuture];
   }
-  FBSimulator *simulator = [[self.control.pool allocateSimulatorWithConfiguration:configuration options:self.allocationOptions] await:&error];
-  XCTAssertNil(error);
-  XCTAssertNotNil(simulator);
-  return simulator;
+  return [[self.control.pool
+    allocateSimulatorWithConfiguration:configuration options:self.allocationOptions]
+    onQueue:dispatch_get_main_queue() chain:^(FBFuture *future) {
+      if (future.error) {
+        XCTFail(@"Error in device allocation %@", future.error);
+      }
+      return future;
+    }];
 }
 
 - (nullable FBSimulator *)assertObtainsSimulator
 {
-  return [self assertObtainsSimulatorWithConfiguration:self.simulatorConfiguration];
+  return [[self assertObtainsSimulatorWithConfiguration:self.simulatorConfiguration] await:nil];
 }
 
 - (nullable FBSimulator *)assertObtainsBootedSimulator
@@ -121,7 +126,7 @@
 
 - (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration bootConfiguration:(FBSimulatorBootConfiguration *)bootConfiguration
 {
-  FBSimulator *simulator = [self assertObtainsSimulatorWithConfiguration:configuration];
+  FBSimulator *simulator = [[self assertObtainsSimulatorWithConfiguration:configuration] await:nil];
   if (!simulator) {
     return nil;
   }

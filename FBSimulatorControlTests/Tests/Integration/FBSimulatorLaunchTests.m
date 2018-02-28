@@ -77,25 +77,21 @@
 
 - (void)testLaunchesMultipleSimulators
 {
-  // Simulator Pool management is single threaded since it relies on unsynchronised mutable state
-  // Create the sessions in sequence, then boot them in paralell.
-  FBSimulator *simulator1 = [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel]];
-  if (!simulator1) {
-    return;
-  }
-  FBSimulator *simulator2 = [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel]];
-  if (!simulator2) {
-    return;
-  }
-  FBSimulator *simulator3 = [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPadModel]];
-  if (!simulator3) {
-    return;
-  }
+  FBFuture<NSArray<FBSimulator *> *> *simulatorFutures = [FBFuture futureWithFutures:@[
+    [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel]],
+    [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel]],
+    [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPadModel]],
+  ]];
+  NSError *error = nil;
+  NSArray<FBSimulator *> *simulators = [simulatorFutures await:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(simulators);
 
   XCTAssertEqual(self.control.pool.allocatedSimulators.count, 3u);
-  XCTAssertEqual(([[NSSet setWithArray:@[simulator1.udid, simulator2.udid, simulator3.udid]] count]), 3u);
+  FBSimulator *simulator1 = simulators[0];
+  FBSimulator *simulator2 = simulators[1];
+  FBSimulator *simulator3 = simulators[2];
 
-  NSError *error = nil;
   FBFuture *bootFuture = [FBFuture futureWithFutures:@[
     [simulator1 bootWithConfiguration:self.bootConfiguration],
     [simulator2 bootWithConfiguration:self.bootConfiguration],
@@ -105,7 +101,6 @@
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
-  NSArray *simulators = @[simulator1, simulator2, simulator3];
   for (FBSimulator *simulator in simulators) {
     [self assertSimulatorBooted:simulator];
   }

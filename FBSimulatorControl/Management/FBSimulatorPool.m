@@ -53,14 +53,10 @@
 
 - (FBFuture<FBSimulator *> *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options
 {
-  return [[[self
-    obtainSimulatorWithConfiguration:configuration options:options]
-    onQueue:dispatch_get_main_queue() fmap:^(FBSimulator *simulator) {
+  return [[self
+    obtainAndAllocateSimulatorWithConfiguration:configuration options:options]
+    onQueue:self.set.workQueue fmap:^(FBSimulator *simulator) {
       return [self prepareSimulatorForUsage:simulator configuration:configuration options:options];
-    }]
-    onQueue:dispatch_get_main_queue() map:^(FBSimulator *simulator) {
-      [self pushAllocation:simulator options:options];
-      return simulator;
     }];
 }
 
@@ -130,7 +126,7 @@
 
 #pragma mark - Private
 
-- (FBFuture<FBSimulator *> *)obtainSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options
+- (FBFuture<FBSimulator *> *)obtainAndAllocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options
 {
   NSError *innerError = nil;
   if (![configuration checkRuntimeRequirementsReturningError:&innerError]) {
@@ -146,6 +142,7 @@
     FBSimulator *simulator = [self findUnallocatedSimulatorWithConfiguration:configuration];
     if (simulator) {
       [self.logger.debug logFormat:@"Found unallocated simulator %@ matching %@", simulator.udid, configuration];
+      [self pushAllocation:simulator options:options];
       return [FBFuture futureWithResult:simulator];
     }
   }
@@ -157,7 +154,12 @@
       logger:self.logger]
       failFuture];
   }
-  return [self.set createSimulatorWithConfiguration:configuration];
+  return [[self.set
+    createSimulatorWithConfiguration:configuration]
+    onQueue:self.set.workQueue map:^(FBSimulator *simulator) {
+      [self pushAllocation:simulator options:options];
+      return simulator;
+    }];
 }
 
 - (FBSimulator *)findUnallocatedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration

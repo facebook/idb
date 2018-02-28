@@ -75,7 +75,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the configiuration of the Simulator to obtain.
  @return a Simulator if succesful, nil otherwise.
  */
-- (nullable FBSimulator *)assertObtainsSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration;
+- (FBFuture<FBSimulator *> *)assertObtainsSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration;
 
 /**
  Asserts that a booted Simulator with the default configuration can be obtained.
