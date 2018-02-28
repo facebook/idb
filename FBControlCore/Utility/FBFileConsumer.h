@@ -52,7 +52,7 @@ NS_ASSUME_NONNULL_BEGIN
  This can then be consumed based on lines/strings.
  Writes and reads will not be synchronized.
  */
-@interface FBLineBuffer : NSObject <FBFileConsumer>
+@interface FBLineBuffer : NSObject <FBFileConsumer, FBFileConsumerLifecycle>
 
 /**
  Consume the remainder of the buffer available, returning it as Data.

@@ -9,6 +9,7 @@
 
 @property (nonatomic, strong, readwrite) NSMutableData *buffer;
 @property (nonatomic, strong, readonly) NSData *terminalData;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *eofHasBeenReceivedFuture;
 
 @end
 
@@ -25,6 +26,7 @@
 
   _buffer = [NSMutableData data];
   _terminalData = [NSData dataWithBytes:"\n" length:1];
+  _eofHasBeenReceivedFuture = FBMutableFuture.future;
 
   return self;
 }
@@ -76,7 +78,14 @@
 
 - (void)consumeEndOfFile
 {
+  [self.eofHasBeenReceivedFuture resolveWithResult:NSNull.null];
+}
 
+#pragma mark FBFileConsumerLifecycle
+
+- (FBFuture<NSNull *> *)eofHasBeenReceived
+{
+  return self.eofHasBeenReceivedFuture;
 }
 
 @end

@@ -53,28 +53,34 @@
 
   XCTAssertNil(consumer.consumeLineData);
   XCTAssertNil(consumer.consumeLineString);
+  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
 
   [consumer consumeData:[@"BAR\n" dataUsingEncoding:NSUTF8StringEncoding]];
 
   XCTAssertEqualObjects(consumer.consumeLineString, @"FOOBAR");
+  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
 
   [consumer consumeData:[@"BANG\nBAZ" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"\nHELLO\nHERE" dataUsingEncoding:NSUTF8StringEncoding]];
 
   XCTAssertEqualObjects(consumer.consumeCurrentString, @"BANG\nBAZ\nHELLO\nHERE");
+  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
 
   [consumer consumeData:[@"GOODBYE" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"\nFOR\nNOW" dataUsingEncoding:NSUTF8StringEncoding]];
 
   XCTAssertEqualObjects(consumer.consumeCurrentData, [@"GOODBYE\nFOR\nNOW" dataUsingEncoding:NSUTF8StringEncoding]);
+  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
 
   [consumer consumeData:[@"BACKAGAIN" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"\nTHIS\nIS\nTHE\nTAIL" dataUsingEncoding:NSUTF8StringEncoding]];
 
   XCTAssertEqualObjects(consumer.consumeLineData, [@"BACKAGAIN" dataUsingEncoding:NSUTF8StringEncoding]);
+  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
 
   [consumer consumeEndOfFile];
 
+  XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
   XCTAssertEqualObjects(consumer.consumeLineString, @"THIS");
   XCTAssertEqualObjects(consumer.consumeLineData, [@"IS" dataUsingEncoding:NSUTF8StringEncoding]);
   XCTAssertEqualObjects(consumer.consumeLineString, @"THE");
