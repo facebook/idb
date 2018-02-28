@@ -7,6 +7,7 @@
 @interface FBFileReader ()
 
 @property (nonatomic, strong, readonly) id<FBFileConsumer> consumer;
+@property (nonatomic, copy, readonly) NSString *targeting;
 @property (nonatomic, strong, readonly) dispatch_queue_t readQueue;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *readingHasEnded;
 @property (nonatomic, strong, readonly) FBFuture<NSNull *> *stopped;
@@ -27,7 +28,8 @@
 
 + (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer
 {
-  return [[self alloc] initWithFileHandle:fileHandle consumer:consumer queue:self.createQueue];
+  NSString *targeting = [NSString stringWithFormat:@"fd %d", fileHandle.fileDescriptor];
+  return [[self alloc] initWithFileHandle:fileHandle consumer:consumer targeting:targeting queue:self.createQueue];
 }
 
 + (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileConsumer>)consumer
@@ -41,11 +43,11 @@
         fail:error];
     }
     NSFileHandle *fileHandle = [[NSFileHandle alloc] initWithFileDescriptor:fileDescriptor closeOnDealloc:YES];
-    return [[self alloc] initWithFileHandle:fileHandle consumer:consumer queue:queue];
+    return [[self alloc] initWithFileHandle:fileHandle consumer:consumer targeting:filePath queue:queue];
   }];
 }
 
-- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer queue:(dispatch_queue_t)queue
+- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer targeting:(NSString *)targeting queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -55,6 +57,7 @@
 
   _fileHandle = fileHandle;
   _consumer = consumer;
+  _targeting = targeting;
   _readQueue = queue;
   _readingHasEnded = FBMutableFuture.future;
   _stopped = [_readingHasEnded onQueue:_readQueue chain:^(FBFuture *future) {
@@ -64,6 +67,13 @@
   }];
 
   return self;
+}
+
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Reader for %@ with state %@", self.targeting, self.readingHasEnded];
 }
 
 #pragma mark Public Methods
