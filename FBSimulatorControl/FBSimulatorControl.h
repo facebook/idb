@@ -8,7 +8,6 @@
  */
 
 #import <FBSimulatorControl/FBAccessibilityFetch.h>
-#import <FBSimulatorControl/FBAddVideoPolyfill.h>
 #import <FBSimulatorControl/FBAgentLaunchConfiguration+Simulator.h>
 #import <FBSimulatorControl/FBAgentLaunchStrategy.h>
 #import <FBSimulatorControl/FBApplicationBundle+Simulator.h>

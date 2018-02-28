@@ -13,7 +13,6 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBAddVideoPolyfill.h"
 #import "NSPredicate+FBSimulatorControl.h"
 
 @interface FBUploadMediaStrategy ()
@@ -22,23 +21,11 @@
 
 @end
 
-@interface FBAddVideoStrategy_CoreSimulator : FBUploadMediaStrategy
-
-@end
-
-@interface FBAddVideoStrategy_Polyfill : FBUploadMediaStrategy
-
-@end
-
 @implementation FBUploadMediaStrategy
 
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator
 {
-  Class strategyClass = [simulator.device respondsToSelector:@selector(addVideo:error:)]
-    ? FBAddVideoStrategy_CoreSimulator.class
-    : FBAddVideoStrategy_Polyfill.class;
-
-  return [[strategyClass alloc] initWithSimulator:simulator];
+  return [[self alloc] initWithSimulator:simulator];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator
@@ -54,8 +41,17 @@
 
 - (BOOL)addVideos:(NSArray<NSString *> *)paths error:(NSError **)error
 {
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return NO;
+  for (NSString *path in paths) {
+    NSURL *url = [NSURL fileURLWithPath:path];
+    NSError *innerError = nil;
+    if (![self.simulator.device addVideo:url error:&innerError]) {
+      return [[[FBSimulatorError
+        describeFormat:@"Failed to upload video at path %@", path]
+        causedBy:innerError]
+        failBool:error];
+    }
+  }
+  return YES;
 }
 
 - (BOOL)uploadMedia:(NSArray<NSString *> *)mediaPaths error:(NSError **)error
@@ -120,33 +116,5 @@
   return YES;
 }
 
-
-@end
-
-@implementation FBAddVideoStrategy_CoreSimulator
-
-- (BOOL)addVideos:(NSArray<NSString *> *)paths error:(NSError **)error
-{
-  for (NSString *path in paths) {
-    NSURL *url = [NSURL fileURLWithPath:path];
-    NSError *innerError = nil;
-    if (![self.simulator.device addVideo:url error:&innerError]) {
-      return [[[FBSimulatorError
-        describeFormat:@"Failed to upload video at path %@", path]
-        causedBy:innerError]
-        failBool:error];
-    }
-  }
-  return YES;
-}
-
-@end
-
-@implementation FBAddVideoStrategy_Polyfill
-
-- (BOOL)addVideos:(NSArray<NSString *> *)paths error:(NSError **)error
-{
-  return [[FBAddVideoPolyfill withSimulator:self.simulator] addVideos:paths error:error];
-}
 
 @end
