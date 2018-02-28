@@ -162,7 +162,7 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   }
 }
 
-#pragma mark Public
+#pragma mark FBFileConsumerLifecycle
 
 - (FBFuture<NSNull *> *)eofHasBeenReceived
 {
@@ -246,6 +246,13 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   }
 }
 
+#pragma mark FBFileConsumerLifecycle
+
+- (FBFuture<NSNull *> *)eofHasBeenReceived
+{
+  return self.eofHasBeenReceivedFuture;
+}
+
 #pragma mark Public
 
 - (NSData *)data
@@ -259,11 +266,6 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 {
   NSString *output = [[NSString alloc] initWithData:self.data encoding:NSUTF8StringEncoding];
   return [output componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
-}
-
-- (FBFuture<NSNull *> *)eofHasBeenReceived
-{
-  return self.eofHasBeenReceivedFuture;
 }
 
 @end

@@ -177,7 +177,7 @@
     }];
 }
 
-+ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForExit:(FBLaunchedProcess *)process closingReader:(FBFileReader *)reader consumer:(FBLineFileConsumer *)consumer
++ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForExit:(FBLaunchedProcess *)process closingReader:(FBFileReader *)reader consumer:(id<FBFileConsumerLifecycle>)consumer
 {
   return [process.exitCode onQueue:queue fmap:^(NSNumber *exitCode) {
     return [FBFuture futureWithFutures:@[

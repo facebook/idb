@@ -35,6 +35,19 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
+ A specialization of a FBFileConsumer that can expose lifecycle with a Future.
+ */
+@protocol FBFileConsumerLifecycle <FBFileConsumer>
+
+/**
+ A Future that resolves when an EOF has been recieved.
+ This is helpful for ensuring that all consumer lines have been drained.
+ */
+@property (nonatomic, strong, readonly) FBFuture<NSNull *> *eofHasBeenReceived;
+
+@end
+
+/**
  Consumes data and accumilates it.
  This can then be consumed based on lines/strings.
  Writes and reads will not be synchronized.
@@ -70,7 +83,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Reader of Text Data, calling the callback when a full line is available.
  */
-@interface FBLineFileConsumer : NSObject <FBFileConsumer>
+@interface FBLineFileConsumer : NSObject <FBFileConsumer, FBFileConsumerLifecycle>
 
 /**
  Creates a Consumer of lines from a block.
@@ -110,18 +123,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)asynchronousReaderWithQueue:(dispatch_queue_t)queue dataConsumer:(void (^)(NSData *))consumer;
 
-/**
- A Future that resolves when an EOF has been recieved.
- This is helpful for ensuring that all consumer lines have been drained.
- */
-@property (nonatomic, strong, readonly) FBFuture<NSNull *> *eofHasBeenReceived;
-
 @end
 
 /**
  A Reader that accumilates data.
  */
-@interface FBAccumilatingFileConsumer : NSObject <FBFileConsumer>
+@interface FBAccumilatingFileConsumer : NSObject <FBFileConsumer, FBFileConsumerLifecycle>
 
 /**
  Initializes the reader with empty data.
@@ -147,12 +154,6 @@ NS_ASSUME_NONNULL_BEGIN
  Obtains a copy of the current output data.
  */
 @property (atomic, copy, readonly) NSArray<NSString *> *lines;
-
-/**
- A Future that resolves when an EOF has been recieved.
- This is helpful for ensuring that all consumer lines have been drained.
- */
-@property (nonatomic, strong, readonly) FBFuture<NSNull *> *eofHasBeenReceived;
 
 @end
 
