@@ -42,6 +42,28 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
   return dispatch_time(DISPATCH_TIME_NOW, (int64_t)(inDuration * NSEC_PER_SEC));
 }
 
+static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, FBFuture *(^resolveUntil)(void)) {
+    if (final.hasCompleted) {
+      return;
+    }
+    FBFuture<id> *future = resolveUntil();
+    [future onQueue:queue notifyOfCompletion:^(FBFuture<id> *resolved) {
+      switch (resolved.state) {
+        case FBFutureStateCancelled:
+          [final cancel];
+          return;
+        case FBFutureStateDone:
+          [final resolveWithResult:resolved.result];
+          return;
+        case FBFutureStateFailed:
+          final_resolveUntil(final, queue, resolveUntil);
+          return;
+        default:
+          return;
+      }
+    }];
+}
+
 @interface FBFuture_Handler : NSObject
 
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
@@ -178,28 +200,9 @@ static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
 + (FBFuture<id> *)onQueue:(dispatch_queue_t)queue resolveUntil:(FBFuture<id> *(^)(void))resolveUntil
 {
   FBMutableFuture *final = FBMutableFuture.future;
-
-  __block void (^resolveRecursive)(void);
-  void (^initialResolve)(void);
-  resolveRecursive = initialResolve = ^{
-    FBFuture<id> *future = resolveUntil();
-    [future onQueue:queue notifyOfCompletion:^(FBFuture<id> *resolved) {
-      switch (resolved.state) {
-        case FBFutureStateCancelled:
-          [final cancel];
-          return;
-        case FBFutureStateDone:
-          [final resolveWithResult:resolved.result];
-          return;
-        case FBFutureStateFailed:
-          resolveRecursive();
-          return;
-        default:
-          return;
-      }
-    }];
-  };
-  dispatch_async(queue, initialResolve);
+  dispatch_async(queue, ^{
+    final_resolveUntil(final, queue, resolveUntil);
+  });
   return final;
 }
 
