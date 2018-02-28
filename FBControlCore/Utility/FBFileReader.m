@@ -90,15 +90,11 @@
   NSFileHandle *fileHandle = self.fileHandle;
   id<FBFileConsumer> consumer = self.consumer;
   FBMutableFuture<NSNull *> *readingHasEnded = self.readingHasEnded;
+  NSString *targeting = self.targeting;
 
   // If there is an error creating the IO Object, the errorCode will be delivered asynchronously.
   self.io = dispatch_io_create(DISPATCH_IO_STREAM, fileHandle.fileDescriptor, self.readQueue, ^(int errorCode) {
-    if (errorCode == 0) {
-      [readingHasEnded resolveWithResult:NSNull.null];
-    } else {
-      NSError *error = [[FBControlCoreError describeFormat:@"IO Channel closed with error code %d", errorCode] build];
-      [readingHasEnded resolveWithError:error];
-    }
+    [FBFileReader resolveReading:readingHasEnded withCode:errorCode targeting:targeting];
   });
   if (!self.io) {
     return [[FBControlCoreError
@@ -115,6 +111,9 @@
       __unused dispatch_data_t map = dispatch_data_create_map(dispatchData, &buffer, &size);
       NSData *data = [NSData dataWithBytes:buffer length:size];
       [consumer consumeData:data];
+    }
+    if (done) {
+      [FBFileReader resolveReading:readingHasEnded withCode:errorCode targeting:targeting];
     }
   });
   return [FBFuture futureWithResult:NSNull.null];
@@ -141,6 +140,19 @@
   return [self.stopped onQueue:self.readQueue respondToCancellation:^{
     return [self stopReading];
   }];
+}
+
+#pragma mark Private
+
++ (void)resolveReading:(FBMutableFuture<NSNull *> *)readingHasEnded withCode:(int)errorCode targeting:(NSString *)targeting
+{
+  // Everything completed normally, or ended
+  if (errorCode == 0 || errorCode == ECANCELED) {
+    [readingHasEnded resolveWithResult:NSNull.null];
+  } else {
+    NSError *error = [[FBControlCoreError describeFormat:@"IO Channel %@ closed with error code %d", targeting, errorCode] build];
+    [readingHasEnded resolveWithError:error];
+  }
 }
 
 @end
