@@ -11,6 +11,8 @@
 
 #import <asl.h>
 
+#import "FBFileConsumer.h"
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 
@@ -319,6 +321,74 @@
 
 @end
 
+@interface FBControlCoreLogger_Consumer : NSObject <FBControlCoreLogger>
+
+@property (nonatomic, strong, readonly) id<FBFileConsumer> consumer;
+
+@end
+
+@implementation FBControlCoreLogger_Consumer
+
+- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _consumer = consumer;
+
+  return self;
+}
+
+#pragma mark Protocol Implementation
+
+- (id<FBControlCoreLogger>)log:(NSString *)string
+{
+  NSData *data = [string dataUsingEncoding:NSUTF8StringEncoding];
+  [self.consumer consumeData:data];
+  data = [@"\n" dataUsingEncoding:NSUTF8StringEncoding];
+  [self.consumer consumeData:data];
+  return self;
+}
+
+- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2)
+{
+  va_list args;
+  va_start(args, format);
+  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
+  va_end(args);
+
+  return [self log:string];
+}
+
+- (id<FBControlCoreLogger>)info
+{
+  return [[self.class alloc] initWithConsumer:self.consumer];
+}
+
+- (id<FBControlCoreLogger>)debug
+{
+  return [[self.class alloc] initWithConsumer:self.consumer];
+}
+
+- (id<FBControlCoreLogger>)error
+{
+  return [[self.class alloc] initWithConsumer:self.consumer];
+}
+
+- (id<FBControlCoreLogger>)onQueue:(dispatch_queue_t)queue
+{
+  return [[self.class alloc] initWithConsumer:self.consumer];
+}
+
+- (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
+{
+  return [[self.class alloc] initWithConsumer:self.consumer];
+}
+
+@end
+
 @implementation FBControlCoreLogger
 
 + (id<FBControlCoreLogger>)systemLoggerWritingToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging
@@ -351,6 +421,11 @@
 + (id<FBControlCoreLogger>)compositeLoggerWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers
 {
   return [[FBControlCoreLogger_Composite alloc] initWithLoggers:loggers];
+}
+
++ (id<FBControlCoreLogger>)loggerToConsumer:(id<FBFileConsumer>)consumer
+{
+  return [[FBControlCoreLogger_Consumer alloc] initWithConsumer:consumer];
 }
 
 @end

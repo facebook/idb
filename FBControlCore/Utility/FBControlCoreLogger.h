@@ -11,6 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBFileConsumer;
+
 /**
  A Protocol for Classes that recieve Logger Messages.
  */
@@ -95,6 +97,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return the composite logger.
  */
 + (id<FBControlCoreLogger>)compositeLoggerWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers;
+
+/**
+ Log to a Consumer
+
+ @param consumer the consumer to write data to.
+ @return a logger instance.
+ */
++ (id<FBControlCoreLogger>)loggerToConsumer:(id<FBFileConsumer>)consumer;
 
 @end
 

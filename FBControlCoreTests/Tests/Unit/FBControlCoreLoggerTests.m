@@ -35,4 +35,16 @@
   XCTAssertTrue([fileContent hasSuffix:@"Some content\n"], @"Unexpected fileContent: %@", fileContent);
 }
 
+- (void)testLoggingToConsumer
+{
+  FBLineBuffer *consumer = FBLineBuffer.new;
+  id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToConsumer:consumer];
+
+  [logger log:@"HELLO"];
+  [logger log:@"WORLD"];
+
+  XCTAssertEqualObjects(consumer.consumeLineString, @"HELLO");
+  XCTAssertEqualObjects(consumer.consumeLineString, @"WORLD");
+}
+
 @end
