@@ -11,6 +11,12 @@
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_output";
 
+@interface FBProcessOutput ()
+
+@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
+
+@end
+
 @interface FBProcessOutput_FileHandle : FBProcessOutput
 
 @property (nonatomic, strong, nullable, readwrite) FBDiagnostic *diagnostic;
@@ -61,6 +67,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 @interface FBProcessInput ()
 
+@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 @property (nonatomic, strong, nullable, readonly) NSPipe *pipe;
 @property (nonatomic, strong, nullable, readonly) id<FBFileConsumer> writer;
 
@@ -120,6 +127,23 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 + (FBProcessOutput<NSString *> *)outputToStringBackedByMutableData:(NSMutableData *)data
 {
   return [[FBProcessOutput_String alloc] initWithMutableData:data];
+}
+
+- (instancetype)init
+{
+  return [self initWithWorkQueue:FBProcessOutput.createWorkQueue];
+}
+
+- (instancetype)initWithWorkQueue:(dispatch_queue_t)workQueue
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _workQueue = workQueue;
+
+  return self;
 }
 
 #pragma mark FBStandardStream
@@ -216,7 +240,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 {
   return [[FBFuture
     futureWithResult:NSNull.null]
-    onQueue:FBProcessOutput.createWorkQueue respondToCancellation:^{
+    onQueue:self.workQueue respondToCancellation:^{
       return [self detach];
     }];
 }
@@ -245,7 +269,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 {
   return [[self
     attachToPipeOrFileHandle]
-    onQueue:FBProcessOutput.createWorkQueue map:^(NSPipe *pipe) {
+    onQueue:self.workQueue map:^(NSPipe *pipe) {
       return pipe.fileHandleForWriting;
     }];
 }
@@ -280,7 +304,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 - (FBFuture<NSNull *> *)detach
 {
   return [self.reader.stopReading
-    onQueue:FBProcessOutput.createWorkQueue chain:^(FBFuture *future) {
+    onQueue:self.workQueue chain:^(FBFuture *future) {
       NSPipe *pipe = self.pipe;
       [pipe.fileHandleForWriting closeFile];
 
@@ -432,13 +456,30 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return [[FBProcessInput_Data alloc] initWithData:data];
 }
 
+- (instancetype)init
+{
+  return [self initWithWorkQueue:FBProcessOutput.createWorkQueue];
+}
+
+- (instancetype)initWithWorkQueue:(dispatch_queue_t)workQueue
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _workQueue = workQueue;
+
+  return self;
+}
+
 #pragma mark FBStandardStream
 
 - (FBFuture<NSFileHandle *> *)attachToFileHandle
 {
   return [[self
     attachToPipeOrFileHandle]
-    onQueue:FBProcessOutput.createWorkQueue map:^(NSPipe *pipe) {
+    onQueue:self.workQueue map:^(NSPipe *pipe) {
       return pipe.fileHandleForReading;
     }];
 }
@@ -531,7 +572,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 {
   return [[super
     attachToPipeOrFileHandle]
-    onQueue:FBProcessOutput.createWorkQueue map:^(NSPipe *pipe) {
+    onQueue:self.workQueue map:^(NSPipe *pipe) {
       [self.writer consumeData:self.data];
       [self.writer consumeEndOfFile];
       return pipe;
