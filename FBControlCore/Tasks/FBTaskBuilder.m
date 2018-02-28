@@ -255,21 +255,4 @@
     }];
 }
 
-- (FBTask *)runSynchronouslyUntilCompletionWithTimeout:(NSTimeInterval)timeout
-{
-  FBTask *task = [self startSynchronously];
-  FBFuture<NSNumber *> *future = [task completed];
-  NSError *error = nil;
-  [future awaitWithTimeout:timeout error:&error];
-
-  // The Future will still be running in the event that we await and the future is still running.
-  // In this event we should ancel the future and wait for the cancellation to propogate.
-  if (future.state == FBFutureStateRunning) {
-    [future.cancel await:nil];
-    return task;
-  }
-
-  return task;
-}
-
 @end

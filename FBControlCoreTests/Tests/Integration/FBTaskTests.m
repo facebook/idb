@@ -20,14 +20,22 @@
 
 @implementation FBTaskTests
 
+- (FBTask *)runAndWaitForTaskFuture:(FBFuture *)future
+{
+  [[future timeout:FBControlCoreGlobalConfiguration.regularTimeout waitingFor:@"FBTask to complete"] await:NULL];
+  return future.result;
+}
+
 - (void)testBase64Matches
 {
   NSString *filePath = FBControlCoreFixtures.assetsdCrashPathWithCustomDeviceSet;
   NSString *expected = [[NSData dataWithContentsOfFile:filePath] base64EncodedStringWithOptions:0];
 
-  FBTask *task = [[FBTaskBuilder
+
+  FBFuture *futureTask = [[FBTaskBuilder
     withLaunchPath:@"/usr/bin/base64" arguments:@[@"-i", filePath]]
-    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+    runUntilCompletion];
+  FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
   XCTAssertEqual(task.completed.state, FBFutureStateDone);
   XCTAssertEqualObjects(task.stdOut, expected);
@@ -40,9 +48,10 @@
   NSString *binaryName = [[bundlePath lastPathComponent] stringByDeletingPathExtension];
   NSString *binaryPath = [[bundlePath stringByAppendingPathComponent:@"Contents/MacOS"] stringByAppendingPathComponent:binaryName];
 
-  FBTask *task = [[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/strings" arguments:@[binaryPath]]
-    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+  FBFuture *futureTask = [[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/strings" arguments:@[binaryPath]] runUntilCompletion];
+  FBTask *task = [self runAndWaitForTaskFuture:futureTask];
+
 
   XCTAssertEqual(task.completed.state, FBFutureStateDone);
   XCTAssertTrue([task.stdOut containsString:NSStringFromSelector(_cmd)]);
@@ -54,9 +63,9 @@
   NSBundle *bundle = [NSBundle bundleForClass:self.class];
   NSString *resourcesPath = [[bundle bundlePath] stringByAppendingPathComponent:@"Contents/Resources"];
 
-  FBTask *task = [[FBTaskBuilder
-    withLaunchPath:@"/bin/ls" arguments:@[@"-1", resourcesPath]]
-    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+  FBFuture *futureTask = [[FBTaskBuilder
+    withLaunchPath:@"/bin/ls" arguments:@[@"-1", resourcesPath]] runUntilCompletion];
+  FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
   XCTAssertEqual(task.completed.state, FBFutureStateDone);
   XCTAssertGreaterThan(task.processIdentifier, 1);
@@ -75,12 +84,13 @@
   NSString *filePath = FBControlCoreFixtures.assetsdCrashPathWithCustomDeviceSet;
   NSMutableArray<NSString *> *lines = [NSMutableArray array];
 
-  FBTask *task = [[[FBTaskBuilder
+  FBFuture *futureTask = [[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/grep" arguments:@[@"CoreFoundation", filePath]]
     withStdOutLineReader:^(NSString *line) {
       [lines addObject:line];
     }]
-    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+  runUntilCompletion];
+  FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
   XCTAssertEqual(task.completed.state, FBFutureStateDone);
   XCTAssertTrue([task.stdOut conformsToProtocol:@protocol(FBFileConsumer)]);
@@ -95,11 +105,12 @@
 {
   NSString *bundlePath = [[NSBundle bundleForClass:self.class] bundlePath];
 
-  FBTask *task = [[[[FBTaskBuilder
+  FBFuture *futureTask = [[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/file" arguments:@[bundlePath]]
     withStdErrToLogger:[FBControlCoreLoggerDouble new]]
     withStdOutToLogger:[FBControlCoreLoggerDouble new]]
-    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+    runUntilCompletion];
+  FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
   XCTAssertEqual(task.completed.state, FBFutureStateDone);
   XCTAssertTrue([task.stdOut isKindOfClass:FBControlCoreLoggerDouble.class]);
@@ -110,11 +121,12 @@
 {
   NSString *bundlePath = [[NSBundle bundleForClass:self.class] bundlePath];
 
-  FBTask *task = [[[[FBTaskBuilder
+  FBFuture *futureTask = [[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/file" arguments:@[bundlePath]]
     withStdOutToDevNull]
     withStdErrToDevNull]
-    runSynchronouslyUntilCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+    runUntilCompletion];
+  FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
   XCTAssertEqual(task.completed.state, FBFutureStateDone);
   XCTAssertNil(task.stdOut);
@@ -173,15 +185,6 @@
   XCTAssertFalse(task.completed.hasCompleted);
 
   [self waitForExpectations:@[expectation] timeout:2];
-}
-
-- (void)testWaitingSynchronouslyDoesCancelStalledTask
-{
-  FBTask *task = [[FBTaskBuilder
-    withLaunchPath:@"/bin/sleep" arguments:@[@"1000"]]
-    runSynchronouslyUntilCompletionWithTimeout:1];
-
-  XCTAssertEqual(task.completed.state, FBFutureStateCancelled);
 }
 
 - (void)testInputReading
