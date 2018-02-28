@@ -51,17 +51,14 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
   _stdErr = stdErr;
   _processIdentifier = processIdentifier;
   _processStatus = [processStatusFuture
-    onQueue:simulator.workQueue
-    notifyOfCompletion:^(FBFuture<NSNumber *> *future) {
-      if (future.result) {
-        [self processDidTerminate:future.result.intValue];
-      } else {
-        [self processWasCancelled];
-      }
-  }];
+    onQueue:simulator.workQueue chain:^ FBFuture<NSNumber *> * (FBFuture<NSNumber *> *future) {
+      FBFuture<NSNull *> *teardown = future.result
+        ? [self processDidTerminate:future.result.intValue]
+        : [self processWasCancelled];
+      return [teardown fmapReplace:future];
+    }];
   _exitCode = [processStatusFuture
-    onQueue:simulator.asyncQueue
-    map:^(NSNumber *statLocNumber) {
+    onQueue:simulator.asyncQueue map:^(NSNumber *statLocNumber) {
       int stat_loc = statLocNumber.intValue;
       if (WIFEXITED(stat_loc)) {
         return @(WEXITSTATUS(stat_loc));
@@ -93,15 +90,16 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
 
 #pragma mark Private
 
-- (void)processDidTerminate:(int)stat_loc
+- (FBFuture<NSNull *> *)processDidTerminate:(int)stat_loc
 {
-  [self performTeardown];
+  FBFuture<NSNull *> *teardown = [self performTeardown];
   [self.simulator.eventSink agentDidTerminate:self statLoc:stat_loc];
+  return teardown;
 }
 
-- (void)processWasCancelled
+- (FBFuture<NSNull *> *)processWasCancelled
 {
-  [self performTeardown];
+  FBFuture<NSNull *> *teardown = [self performTeardown];
 
   // When cancelled, the process is may still be alive. Therefore, the process needs to be terminated to fulfill the cancellation contract.
   FBProcessInfo *processInfo = self.processInfo;
@@ -110,13 +108,19 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
       strategyWithProcessFetcher:self.simulator.processFetcher.processFetcher workQueue:self.simulator.workQueue logger:self.simulator.logger]
       killProcess:processInfo];
   }
+
+  return teardown;
 }
 
-- (void)performTeardown
+- (FBFuture<NSNull *> *)performTeardown
 {
   // Tear down the other resources.
-  [self.stdOut.completed cancel];
-  [self.stdErr.completed cancel];
+  return [[FBFuture
+    futureWithFutures:@[
+      [self.stdOut detach] ?: [FBFuture futureWithResult:NSNull.null],
+      [self.stdErr detach] ?: [FBFuture futureWithResult:NSNull.null],
+    ]]
+    mapReplace:NSNull.null];
 }
 
 #pragma mark FBiOSTargetContinuation
