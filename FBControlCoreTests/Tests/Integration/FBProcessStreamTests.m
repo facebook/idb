@@ -38,4 +38,42 @@
   XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
 }
 
+- (void)testViaFifo
+{
+  id<FBAccumulatingLineBuffer> buffer = [FBLineBuffer accumulatingBuffer];
+  NSError *error = nil;
+  id<FBProcessFileOutput> output = [[[FBProcessOutput outputForFileConsumer:buffer] providedThroughFile] await:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(output);
+
+  // Start Reading Asyncly so that the fifo is opened, it can then be written to.
+  FBFuture *startReading = [output startReading];
+  NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:output.filePath];
+  BOOL success = [startReading await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  [fileHandle writeData:[@"HELLO WORLD\n" dataUsingEncoding:NSUTF8StringEncoding]];
+  [fileHandle writeData:[@"HELLO AGAIN" dataUsingEncoding:NSUTF8StringEncoding]];
+  [fileHandle closeFile];
+
+  success = [buffer.eofHasBeenReceived await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  NSArray<NSString *> *expected = @[@"HELLO WORLD", @"HELLO AGAIN"];
+  XCTAssertEqualObjects(buffer.lines, expected);
+}
+
+- (void)testFileToFileDoesNotInvolveIndirection
+{
+  NSString *filePath = @"/tmp/hello_world.txt";
+  NSError *error = nil;
+  id<FBProcessFileOutput> output = [[[FBProcessOutput outputForFilePath:filePath] providedThroughFile] await:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(output);
+
+  XCTAssertEqualObjects(filePath, output.filePath);
+}
+
 @end

@@ -44,6 +44,28 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
+ Process Output that can be provided through a file.
+ */
+@protocol FBProcessFileOutput <NSObject>
+
+/**
+ The File Path to write to.
+ */
+@property (nonatomic, copy, readonly) NSString *filePath;
+
+/**
+ Should be called just after the the file path has been written to.
+ */
+- (FBFuture<NSNull *> *)startReading;
+
+/**
+ Should be called just after the the file has stopped being written to.
+ */
+- (FBFuture<NSNull *> *)stopReading;
+
+@end
+
+/**
  The Termination Handle Type for Process Output.
  */
 extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
@@ -117,6 +139,16 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
  The File Handle.
  */
 @property (nonatomic, strong, readonly) WrappedType contents;
+
+#pragma mark Public Methods
+
+/**
+ Allows the reciever to be written to via a file instead of via a file handle.
+ This is desirable to use when interacting with an API that doesn't support writing to a file handle.
+
+ @return A Future wrapping a FBProcessFileOutput instance.
+ */
+- (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile;
 
 @end
 
