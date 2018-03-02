@@ -114,7 +114,7 @@ NSString *const FBSimulatorNotificationUserInfoKeyWaitingForDebugger = @"waiting
 - (void)applicationDidLaunch:(FBSimulatorApplicationOperation *)operation
 {
   [self materializeNotification:FBSimulatorNotificationNameApplicationProcessDidLaunch userInfo:@{
-    FBSimulatorNotificationUserInfoKeyProcess : operation.process,
+    FBSimulatorNotificationUserInfoKeyProcessIdentifier : @(operation.processIdentifier),
     FBSimulatorNotificationUserInfoKeyWaitingForDebugger : @(operation.configuration.waitForDebugger),
   }];
 }
@@ -123,7 +123,7 @@ NSString *const FBSimulatorNotificationUserInfoKeyWaitingForDebugger = @"waiting
 {
   [self materializeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate userInfo:@{
     FBSimulatorNotificationUserInfoKeyExpectedTermination : @(expected),
-    FBSimulatorNotificationUserInfoKeyProcess : operation.process,
+    FBSimulatorNotificationUserInfoKeyProcessIdentifier : @(operation.processIdentifier),
   }];
 }
 

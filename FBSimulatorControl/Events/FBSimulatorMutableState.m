@@ -126,24 +126,11 @@
 
 - (void)applicationDidLaunch:(FBSimulatorApplicationOperation *)operation
 {
-  // De-duplicate known-launched applications.
-  FBProcessInfo *applicationProcess = operation.process;
-  if ([self.knownLaunchedProcesses containsObject:applicationProcess]) {
-    return;
-  }
-
-  [self.knownLaunchedProcesses addObject:applicationProcess];
   [self.sink applicationDidLaunch:operation];
 }
 
 - (void)applicationDidTerminate:(FBSimulatorApplicationOperation *)operation expected:(BOOL)expected
 {
-  FBProcessInfo *applicationProcess = operation.process;
-  if (![self.knownLaunchedProcesses containsObject:applicationProcess]) {
-    return;
-  }
-
-  [self.knownLaunchedProcesses removeObject:applicationProcess];
   [self.sink applicationDidTerminate:operation expected:expected];
 }
 

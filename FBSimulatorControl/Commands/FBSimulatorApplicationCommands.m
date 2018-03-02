@@ -77,7 +77,7 @@
     strategyWithSimulator:self.simulator]
     launchApplication:configuration]
     onQueue:self.simulator.workQueue map:^(FBSimulatorApplicationOperation *operation) {
-      return @(operation.process.processIdentifier);
+      return @(operation.processIdentifier);
     }];
 }
 

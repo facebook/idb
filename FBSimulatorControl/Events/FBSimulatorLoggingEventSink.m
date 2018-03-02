@@ -86,12 +86,12 @@
 
 - (void)applicationDidLaunch:(FBSimulatorApplicationOperation *)operation
 {
-  [self.logger logFormat:@"Application Did Launch => %@", operation.process.shortDescription];
+  [self.logger logFormat:@"Application Did Launch => %@", operation];
 }
 
 - (void)applicationDidTerminate:(FBSimulatorApplicationOperation *)operation expected:(BOOL)expected
 {
-  [self.logger logFormat:@"Application Did Terminate => Expected %d %@", expected, operation.process.shortDescription];
+  [self.logger logFormat:@"Application Did Terminate => Expected %d %@", expected, operation];
 }
 
 - (void)diagnosticAvailable:(FBDiagnostic *)diagnostic

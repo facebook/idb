@@ -41,9 +41,15 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) FBApplicationLaunchConfiguration *configuration;
 
 /**
- The Launched Process Info.
+ The Process Identifier of the Launched Process.
  */
-@property (nonatomic, copy, readonly) FBProcessInfo *process;
+@property (nonatomic, assign, readonly) pid_t processIdentifier;
+
+/**
+ The Launched Process Info.
+ This may be nil in the event that the process was short lived and the process info could not be obtained.
+ */
+@property (nonatomic, copy, readonly) FBProcessInfo *processInfo;
 
 @end
 

@@ -15,7 +15,7 @@
 @interface FBSimulatorApplicationOperation ()
 
 @property (nonatomic, weak, nullable, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, nullable, readwrite) FBDispatchSourceNotifier *notifier;
+@property (nonatomic, strong, readonly) FBFuture<FBProcessInfo *> *processInfoFuture;
 
 @end
 
@@ -27,20 +27,18 @@
 
 + (FBFuture<FBSimulatorApplicationOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration launchFuture:(FBFuture<NSNumber *> *)launchFuture
 {
-  return [[launchFuture
-    onQueue:simulator.workQueue fmap:^(NSNumber *processIdentifierNumber) {
-      FBProcessFetcher *fetcher = [FBProcessFetcher new];
-      return [[fetcher
+  return [launchFuture
+    onQueue:simulator.workQueue map:^(NSNumber *processIdentifierNumber) {
+      pid_t processIdentifier = processIdentifierNumber.intValue;
+      FBFuture<FBProcessInfo *> *processInfoFuture = [[[FBProcessFetcher new]
         onQueue:simulator.asyncQueue processInfoFor:processIdentifierNumber.intValue timeout:FBControlCoreGlobalConfiguration.fastTimeout]
         rephraseFailure:@"Could not fetch process info for App %@ with configuration %@", processIdentifierNumber, configuration];
-    }]
-    onQueue:simulator.workQueue map:^(FBProcessInfo *process) {
-      FBFuture<NSNull *> *terminationFuture = [FBSimulatorApplicationOperation terminationFutureForSimulator:simulator processIdentifier:process.processIdentifier];
-      return [[self alloc] initWithSimulator:simulator configuration:configuration process:process terminationFuture:terminationFuture];
+      FBFuture<NSNull *> *terminationFuture = [FBSimulatorApplicationOperation terminationFutureForSimulator:simulator processIdentifier:processIdentifier];
+      return [[self alloc] initWithSimulator:simulator configuration:configuration processIdentifier:processIdentifier processInfoFuture:processInfoFuture terminationFuture:terminationFuture];
     }];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration process:(FBProcessInfo *)process terminationFuture:(FBFuture<NSNull *> *)terminationFuture
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration processIdentifier:(pid_t)processIdentifier processInfoFuture:(FBFuture<FBProcessInfo *> *)processInfoFuture terminationFuture:(FBFuture<NSNull *> *)terminationFuture
 {
   self = [super init];
   if (!self) {
@@ -49,12 +47,13 @@
 
   _simulator = simulator;
   _configuration = configuration;
-  _process = process;
+  _processIdentifier = processIdentifier;
   _completed = [terminationFuture
     onQueue:simulator.workQueue
     notifyOfCompletion:^(FBFuture *future) {
       [simulator.eventSink applicationDidTerminate:self expected:NO];
     }];
+  _processInfoFuture = processInfoFuture;
 
   return self;
 }
@@ -79,6 +78,13 @@
     }];
 }
 
+#pragma mark Properties
+
+- (FBProcessInfo *)processInfo
+{
+  return self.processInfoFuture.result;
+}
+
 #pragma mark FBiOSTargetContinuation
 
 - (FBiOSTargetFutureType)futureType
@@ -90,7 +96,7 @@
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Application Operation %@ | State %@", self.process, self.completed];
+  return [NSString stringWithFormat:@"Application Operation %@ | pid %d | State %@", self.configuration.shortDescription, self.processIdentifier, self.completed];
 }
 
 @end
