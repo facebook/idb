@@ -58,22 +58,22 @@ open class SimulatorReporter: NSObject, FBSimulatorEventSink, iOSReporter {
   }
 
   open func agentDidLaunch(_ operation: FBSimulatorAgentOperation) {
-    reportValue(.launch, .discrete, operation.process)
+    reportValue(.launch, .discrete, operation)
   }
 
   open func agentDidTerminate(_ operation: FBSimulatorAgentOperation, statLoc: Int32) {
-    reportValue(.terminate, .discrete, operation.process)
+    reportValue(.terminate, .discrete, operation)
   }
 
   public func applicationDidLaunch(_ operation: FBSimulatorApplicationOperation) {
-    reportValue(.launch, .discrete, operation.process)
+    reportValue(.launch, .discrete, operation)
     if operation.configuration.waitForDebugger {
-      reporter.logInfo("Application launched. To debug, run lldb -p \(operation.process.processIdentifier).")
+      reporter.logInfo("Application launched. To debug, run lldb -p \(operation.processIdentifier).")
     }
   }
 
   open func applicationDidTerminate(_ operation: FBSimulatorApplicationOperation, expected: Bool) {
-    reportValue(.terminate, .discrete, operation.process)
+    reportValue(.terminate, .discrete, operation)
   }
 
   open func diagnosticAvailable(_ log: FBDiagnostic) {

@@ -435,8 +435,6 @@
 		AAC8B2611CEC552A0034A865 /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; };
 		AAC8B2631CEC55370034A865 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAC8B2621CEC55370034A865 /* Foundation.framework */; };
 		AAC8B2641CEC553C0034A865 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E2976B173B900000000 /* Cocoa.framework */; };
-		AACA2C371C2976B100979C45 /* FBAddVideoPolyfill.h in Headers */ = {isa = PBXBuildFile; fileRef = AACA2C351C2976B100979C45 /* FBAddVideoPolyfill.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AACA2C381C2976B100979C45 /* FBAddVideoPolyfill.m in Sources */ = {isa = PBXBuildFile; fileRef = AACA2C361C2976B100979C45 /* FBAddVideoPolyfill.m */; };
 		AACA33581C96F8D100DC9704 /* FBFileFinder.h in Headers */ = {isa = PBXBuildFile; fileRef = AACA33561C96F8D100DC9704 /* FBFileFinder.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AACA33591C96F8D100DC9704 /* FBFileFinder.m in Sources */ = {isa = PBXBuildFile; fileRef = AACA33571C96F8D100DC9704 /* FBFileFinder.m */; };
 		AACC16A61EDF974C00B31582 /* FBXCTestShimConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AACC16A41EDF974C00B31582 /* FBXCTestShimConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1370,8 +1368,6 @@
 		AAC8B2501CEC51520034A865 /* FBDeviceControlFrameworkLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceControlFrameworkLoader.m; sourceTree = "<group>"; };
 		AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBDeviceControl.xcconfig; sourceTree = "<group>"; };
 		AAC8B2621CEC55370034A865 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
-		AACA2C351C2976B100979C45 /* FBAddVideoPolyfill.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBAddVideoPolyfill.h; sourceTree = "<group>"; };
-		AACA2C361C2976B100979C45 /* FBAddVideoPolyfill.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBAddVideoPolyfill.m; sourceTree = "<group>"; };
 		AACA33561C96F8D100DC9704 /* FBFileFinder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBFileFinder.h; sourceTree = "<group>"; };
 		AACA33571C96F8D100DC9704 /* FBFileFinder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFileFinder.m; sourceTree = "<group>"; };
 		AACC16A41EDF974C00B31582 /* FBXCTestShimConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestShimConfiguration.h; sourceTree = "<group>"; };
@@ -2464,8 +2460,6 @@
 		AA9517391C15F54600A89CAD /* Utility */ = {
 			isa = PBXGroup;
 			children = (
-				AACA2C351C2976B100979C45 /* FBAddVideoPolyfill.h */,
-				AACA2C361C2976B100979C45 /* FBAddVideoPolyfill.m */,
 				AAD946A01EF84E4E00B2174E /* FBSimulatorAgentOperation.h */,
 				AAD946A11EF84E4E00B2174E /* FBSimulatorAgentOperation.m */,
 				AA15688A1F0EDBDF000743D5 /* FBSimulatorApplicationOperation.h */,
@@ -3301,7 +3295,6 @@
 				AA861B711E5F920B0080C86B /* FBSimulatorLifecycleCommands.h in Headers */,
 				AA95175B1C15F54600A89CAD /* FBSimulatorEventSink.h in Headers */,
 				AABD8DF91C592DBA008527CD /* FBSimulatorImage.h in Headers */,
-				AACA2C371C2976B100979C45 /* FBAddVideoPolyfill.h in Headers */,
 				AAD4978A1C50F14B00ABC1A7 /* FBMutableSimulatorEventSink.h in Headers */,
 				AA36BE321E08653A00FEAF88 /* FBFramebufferSurface.h in Headers */,
 				AA56445E1E5F6ED0006C1077 /* FBSimulatorKeychainCommands.h in Headers */,
@@ -3872,7 +3865,6 @@
 				AA59E2871C85AA9400C17ED3 /* FBFramebufferFrame.m in Sources */,
 				AA861B721E5F920B0080C86B /* FBSimulatorLifecycleCommands.m in Sources */,
 				AAB07DFF1E92C1D200897C94 /* FBAgentLaunchConfiguration+Simulator.m in Sources */,
-				AACA2C381C2976B100979C45 /* FBAddVideoPolyfill.m in Sources */,
 				AA44AF691E792F7500185844 /* FBSimulatorBitmapStream.m in Sources */,
 				AA6A3B401CC1597000E016C4 /* FBSimulatorBootStrategy.m in Sources */,
 				AA9517611C15F54600A89CAD /* FBSimulatorNotificationEventSink.m in Sources */,
