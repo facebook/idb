@@ -31,7 +31,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
 @property (nonatomic, strong, readonly) FBiOSActionRouter *router;
 @property (nonatomic, strong, readonly) id<FBiOSActionReaderDelegate> delegate;
 @property (nonatomic, strong, readonly) id<FBFileConsumer> writeBack;
-@property (nonatomic, strong, readonly) FBLineBuffer *lineBuffer;
+@property (nonatomic, strong, readonly) id<FBConsumableLineBuffer> lineBuffer;
 @property (nonatomic, strong, readwrite, nullable) FBUploadBuffer *uploadBuffer;
 
 @end
@@ -49,7 +49,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
   _router = router;
   _delegate = delegate;
   _writeBack = writeBack;
-  _lineBuffer = [FBLineBuffer new];
+  _lineBuffer = [FBLineBuffer consumableBuffer];
   _uploadBuffer = nil;
 
   return self;

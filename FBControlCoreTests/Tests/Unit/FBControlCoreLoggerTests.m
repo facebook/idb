@@ -37,7 +37,7 @@
 
 - (void)testLoggingToConsumer
 {
-  FBLineBuffer *consumer = FBLineBuffer.new;
+  id<FBConsumableLineBuffer> consumer = FBLineBuffer.consumableBuffer;
   id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToConsumer:consumer];
 
   [logger log:@"HELLO"];

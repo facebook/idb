@@ -125,7 +125,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
 - (FBFuture<NSString *> *)launchConsumingStdout:(FBAgentLaunchConfiguration *)agentLaunch
 {
-  FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
+  id<FBAccumulatingLineBuffer> consumer = FBLineBuffer.accumulatingBuffer;
   return [[self
     launchAndNotifyOfCompletion:agentLaunch consumer:consumer]
     onQueue:self.simulator.workQueue map:^(NSNumber *_) {

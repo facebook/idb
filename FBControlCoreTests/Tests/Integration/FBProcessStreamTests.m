@@ -19,7 +19,7 @@
 
 - (void)testClosingActiveStreamStopsWriting
 {
-  FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
+  id<FBConsumableLineBuffer> consumer = [FBLineBuffer consumableBuffer];
 
   FBProcessOutput *output = [FBProcessOutput outputForFileConsumer:consumer];
   NSError *error = nil;

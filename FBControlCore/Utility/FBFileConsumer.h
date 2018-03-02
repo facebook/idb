@@ -48,11 +48,26 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- Consumes data and accumilates it.
- This can then be consumed based on lines/strings.
- Writes and reads will not be synchronized.
+ The Non-mutating methods of a line reader.
  */
-@interface FBLineBuffer : NSObject <FBFileConsumer, FBFileConsumerLifecycle>
+@protocol FBAccumulatingLineBuffer <FBFileConsumerLifecycle>
+
+/**
+ Obtains a copy of the current output data.
+ */
+- (NSData *)data;
+
+/**
+ Obtains a copy of the current output data.
+ */
+- (NSArray<NSString *> *)lines;
+
+@end
+
+/**
+ The Mutating Methods of a line reader.
+ */
+@protocol FBConsumableLineBuffer <FBFileConsumerLifecycle, FBAccumulatingLineBuffer>
 
 /**
  Consume the remainder of the buffer available, returning it as Data.
@@ -77,6 +92,36 @@ NS_ASSUME_NONNULL_BEGIN
  This will flush the buffer of the lines that are consumed.
  */
 - (nullable NSString *)consumeLineString;
+
+@end
+
+/**
+ Implementations of a line buffers.
+ This can then be consumed based on lines/strings.
+ Writes and reads are fully synchronized.
+ */
+@interface FBLineBuffer : NSObject
+
+/**
+ A line buffer that is only mutated through consuming data.
+
+ @return a FBLineBuffer implementation.
+ */
++ (id<FBAccumulatingLineBuffer>)accumulatingBuffer;
+
+/**
+ A line buffer that is only mutated through consuming data.
+
+ @return a FBLineBuffer implementation.
+ */
++ (id<FBAccumulatingLineBuffer>)accumulatingBufferForMutableData:(NSMutableData *)data;
+
+/**
+ A line buffer that is appended to by consuming data and can be drained.
+
+ @return a FBConsumableLineBuffer implementation.
+ */
++ (id<FBConsumableLineBuffer>)consumableBuffer;
 
 @end
 
@@ -122,38 +167,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new Line Reader.
  */
 + (instancetype)asynchronousReaderWithQueue:(dispatch_queue_t)queue dataConsumer:(void (^)(NSData *))consumer;
-
-@end
-
-/**
- A Reader that accumilates data.
- */
-@interface FBAccumilatingFileConsumer : NSObject <FBFileConsumer, FBFileConsumerLifecycle>
-
-/**
- Initializes the reader with empty data.
-
- @return a new Data Reader.
- */
-- (instancetype)init;
-
-/**
- Initializes the reader with provided data.
-
- @param data the data to append to.
- @return a new Data Reader.
- */
-- (instancetype)initWithMutableData:(NSMutableData *)data;
-
-/**
- Obtains a copy of the current output data.
- */
-@property (atomic, copy, readonly) NSData *data;
-
-/**
- Obtains a copy of the current output data.
- */
-@property (atomic, copy, readonly) NSArray<NSString *> *lines;
 
 @end
 

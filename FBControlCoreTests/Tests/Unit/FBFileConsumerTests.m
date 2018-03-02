@@ -17,9 +17,9 @@
 
 @implementation FBFileConsumerTests
 
-- (void)testAccumilatingReader
+- (void)testLineBufferAccumulation
 {
-  FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
+  id<FBAccumulatingLineBuffer> consumer = FBLineBuffer.accumulatingBuffer;
   [consumer consumeData:[@"FOO" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"BAR" dataUsingEncoding:NSUTF8StringEncoding]];
 
@@ -46,9 +46,9 @@
   XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
 }
 
-- (void)testLineBuffer
+- (void)testLineBufferConsumption
 {
-  FBLineBuffer *consumer = [FBLineBuffer new];
+  id<FBConsumableLineBuffer> consumer = [FBLineBuffer consumableBuffer];
   [consumer consumeData:[@"FOO" dataUsingEncoding:NSUTF8StringEncoding]];
 
   XCTAssertNil(consumer.consumeLineData);

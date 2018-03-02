@@ -134,7 +134,7 @@
 
 + (FBFuture<NSArray<NSString *> *> *)launchedProcess:(FBLaunchedProcess *)processInfo otestQueryOutputPath:(NSString *)otestQueryOutputPath queue:(dispatch_queue_t)queue
 {
-  FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
+  id<FBAccumulatingLineBuffer> consumer = FBLineBuffer.accumulatingBuffer;
   return [[[[FBFileReader
     readerWithFilePath:otestQueryOutputPath consumer:consumer]
     onQueue:queue fmap:^(FBFileReader *reader) {

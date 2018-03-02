@@ -28,7 +28,7 @@
 {
   // Setup
   NSPipe *pipe = NSPipe.pipe;
-  FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
+  id<FBAccumulatingLineBuffer> consumer = FBLineBuffer.accumulatingBuffer;
   FBFileReader *writer = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:consumer];
 
   // Start reading
@@ -84,7 +84,7 @@
 {
   // Setup
   NSPipe *pipe = NSPipe.pipe;
-  FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
+  id<FBAccumulatingLineBuffer> consumer = FBLineBuffer.accumulatingBuffer;
   FBFileReader *writer = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:consumer];
 
   // Start reading

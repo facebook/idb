@@ -5,7 +5,7 @@
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 
-@interface FBLineBuffer ()
+@interface FBLineBuffer_Accumilating : NSObject <FBAccumulatingLineBuffer>
 
 @property (nonatomic, strong, readwrite) NSMutableData *buffer;
 @property (nonatomic, strong, readonly) NSData *terminalData;
@@ -13,31 +13,102 @@
 
 @end
 
-@implementation FBLineBuffer
+@interface FBLineBuffer_Consumable : FBLineBuffer_Accumilating <FBConsumableLineBuffer>
 
-#pragma mark Initializers
+@end
+
+@implementation FBLineBuffer_Accumilating
 
 - (instancetype)init
+{
+  return [self initWithBackingBuffer:NSMutableData.new];
+}
+
+- (instancetype)initWithBackingBuffer:(NSMutableData *)buffer
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _buffer = [NSMutableData data];
+  _buffer = buffer;
   _terminalData = [NSData dataWithBytes:"\n" length:1];
   _eofHasBeenReceivedFuture = FBMutableFuture.future;
 
   return self;
 }
 
-#pragma mark Public Methods
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  @synchronized (self) {
+    return [NSString stringWithFormat:@"Accumilating Buffer %lu Bytes", self.data.length];
+  }
+}
+
+#pragma mark FBAccumilatingLineBuffer
+
+- (NSData *)data
+{
+  @synchronized (self) {
+    return [self.buffer copy];
+  }
+}
+
+- (NSArray<NSString *> *)lines
+{
+  NSString *output = [[NSString alloc] initWithData:self.data encoding:NSUTF8StringEncoding];
+  return [output componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
+}
+
+#pragma mark FBFileConsumer
+
+- (void)consumeData:(NSData *)data
+{
+  @synchronized (self) {
+    NSAssert(self.eofHasBeenReceived.hasCompleted == NO, @"Cannot consume data after eof recieved");
+    [self.buffer appendData:data];
+  }
+}
+
+- (void)consumeEndOfFile
+{
+  @synchronized (self) {
+    NSAssert(self.eofHasBeenReceived.hasCompleted == NO, @"Cannot consume eof after eof recieved");
+    [self.eofHasBeenReceivedFuture resolveWithResult:NSNull.null];
+  }
+}
+
+#pragma mark FBFileConsumerLifecycle
+
+- (FBFuture<NSNull *> *)eofHasBeenReceived
+{
+  return self.eofHasBeenReceivedFuture;
+}
+
+@end
+
+@implementation FBLineBuffer_Consumable
+
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  @synchronized (self) {
+    return [NSString stringWithFormat:@"Consumable Buffer %lu Bytes", self.data.length];
+  }
+}
+
+#pragma mark FBConsumableLineBuffer
 
 - (nullable NSData *)consumeCurrentData
 {
-  NSData *data = [self.buffer copy];
-  self.buffer.data = NSData.data;
-  return data;
+  @synchronized (self) {
+    NSData *data = self.data;
+    self.buffer.data = NSData.data;
+    return data;
+  }
 }
 
 - (nullable NSString *)consumeCurrentString
@@ -69,23 +140,25 @@
   return [[NSString alloc] initWithData:lineData encoding:NSUTF8StringEncoding];
 }
 
-#pragma mark FBFileConsumer
+@end
 
-- (void)consumeData:(NSData *)data
+@implementation FBLineBuffer
+
+#pragma mark Initializers
+
++ (id<FBAccumulatingLineBuffer>)accumulatingBuffer
 {
-  [self.buffer appendData:data];
+  return [FBLineBuffer_Accumilating new];
 }
 
-- (void)consumeEndOfFile
++ (id<FBAccumulatingLineBuffer>)accumulatingBufferForMutableData:(NSMutableData *)data
 {
-  [self.eofHasBeenReceivedFuture resolveWithResult:NSNull.null];
+  return [[FBLineBuffer_Accumilating alloc] initWithBackingBuffer:data];
 }
 
-#pragma mark FBFileConsumerLifecycle
-
-- (FBFuture<NSNull *> *)eofHasBeenReceived
++ (id<FBConsumableLineBuffer>)consumableBuffer
 {
-  return self.eofHasBeenReceivedFuture;
+  return [FBLineBuffer_Consumable new];
 }
 
 @end
@@ -94,7 +167,7 @@
 
 @property (nonatomic, strong, nullable, readwrite) dispatch_queue_t queue;
 @property (nonatomic, copy, nullable, readwrite) void (^consumer)(NSData *);
-@property (nonatomic, strong, readwrite) FBLineBuffer *buffer;
+@property (nonatomic, strong, readwrite) id<FBConsumableLineBuffer> buffer;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *eofHasBeenReceivedFuture;
 
 @end
@@ -141,7 +214,7 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 
   _queue = queue;
   _consumer = consumer;
-  _buffer = [FBLineBuffer new];
+  _buffer = FBLineBuffer.consumableBuffer;
   _eofHasBeenReceivedFuture = FBMutableFuture.future;
 
   return self;
@@ -205,80 +278,6 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 
 @end
 
-@interface FBAccumilatingFileConsumer ()
-
-@property (nonatomic, strong, nullable, readonly) NSMutableData *mutableData;
-@property (nonatomic, copy, nullable, readonly) NSData *finalData;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *eofHasBeenReceivedFuture;
-
-@end
-
-@implementation FBAccumilatingFileConsumer
-
-#pragma mark Initializers
-
-- (instancetype)init
-{
-  return [self initWithMutableData:NSMutableData.data];
-}
-
-- (instancetype)initWithMutableData:(NSMutableData *)mutableData
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _mutableData = mutableData;
-  _eofHasBeenReceivedFuture = FBMutableFuture.future;
-
-  return self;
-}
-
-#pragma mark FBFileConsumer
-
-- (void)consumeData:(NSData *)data
-{
-  NSAssert(self.finalData == nil, @"Cannot consume data when EOF has been consumed");
-  @synchronized (self) {
-    [self.mutableData appendData:data];
-  }
-}
-
-- (void)consumeEndOfFile
-{
-  NSAssert(self.finalData == nil, @"Cannot consume EOF when EOF has been consumed");
-  @synchronized (self) {
-    _finalData = [self.mutableData copy];
-    _mutableData = nil;
-    [self.eofHasBeenReceivedFuture resolveWithResult:NSNull.null];
-  }
-}
-
-#pragma mark FBFileConsumerLifecycle
-
-- (FBFuture<NSNull *> *)eofHasBeenReceived
-{
-  return self.eofHasBeenReceivedFuture;
-}
-
-#pragma mark Public
-
-- (NSData *)data
-{
-  @synchronized (self) {
-    return self.finalData ?: [self.mutableData copy];
-  }
-}
-
-- (NSArray<NSString *> *)lines
-{
-  NSString *output = [[NSString alloc] initWithData:self.data encoding:NSUTF8StringEncoding];
-  return [output componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
-}
-
-@end
-
 @implementation FBLoggingFileConsumer
 
 #pragma mark Initializers
@@ -315,7 +314,6 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 {
 
 }
-
 
 @end
 
