@@ -74,40 +74,27 @@
 - (FBFuture<FBSimulatorApplicationOperation *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch
 {
   FBSimulator *simulator = self.simulator;
-  return [[[[[simulator
+  return [[[[[[simulator
     installedApplicationWithBundleID:appLaunch.bundleID]
     rephraseFailure:@"App %@ can't be launched as it isn't installed", appLaunch.bundleID]
     onQueue:simulator.workQueue fmap:^(id _) {
       return [self confirmApplicationIsNotRunning:appLaunch.bundleID];
     }]
-    onQueue:simulator.workQueue fmap:^FBFuture<FBSimulatorApplicationOperation *> *(id _) {
+    onQueue:simulator.workQueue fmap:^(id _) {
+      return [appLaunch createOutputForSimulator:simulator];
+    }]
+    onQueue:simulator.workQueue fmap:^(NSArray<FBProcessOutput *> *outputs) {
       return [FBFuture futureWithFutures:@[
-        [appLaunch createStdOutDiagnosticForSimulator:simulator],
-        [appLaunch createStdErrDiagnosticForSimulator:simulator],
+          [outputs[0] providedThroughFile],
+          [outputs[1] providedThroughFile],
       ]];
     }]
-    onQueue:simulator.workQueue fmap:^FBFuture<FBSimulatorApplicationOperation *> *(NSArray<id> *diagnostics) {
-      // Extract the diagnostics
-      FBDiagnostic *stdOutDiagnostic = diagnostics[0];
-      stdOutDiagnostic = [stdOutDiagnostic isKindOfClass:FBDiagnostic.class] ? stdOutDiagnostic : nil;
-      FBDiagnostic *stdErrDiagnostic = diagnostics[1];
-      stdErrDiagnostic = [stdErrDiagnostic isKindOfClass:FBDiagnostic.class] ? stdErrDiagnostic : nil;
+    onQueue:simulator.workQueue fmap:^ FBFuture<FBSimulatorApplicationOperation *> * (NSArray<id<FBProcessFileOutput>> *outputs) {
+      id<FBProcessFileOutput> stdOut = outputs[0];
+      id<FBProcessFileOutput> stdErr = outputs[1];
 
-      // Launch the Application
-      FBFuture<NSNumber *> *launch = [self launchApplication:appLaunch stdOutPath:stdOutDiagnostic.asPath stdErrPath:stdErrDiagnostic.asPath];
-      return [[FBSimulatorApplicationOperation
-        operationWithSimulator:simulator configuration:appLaunch launchFuture:launch]
-        onQueue:simulator.workQueue notifyOfCompletion:^(FBFuture *future) {
-          if (future.state != FBFutureStateDone) {
-            return;
-          }
-          if (stdOutDiagnostic) {
-            [simulator.eventSink diagnosticAvailable:stdOutDiagnostic];
-          }
-          if (stdErrDiagnostic) {
-            [simulator.eventSink diagnosticAvailable:stdErrDiagnostic];
-          }
-        }];
+      FBFuture<NSNumber *> *launch = [self launchApplication:appLaunch stdOut:stdOut stdErr:stdErr];
+      return [FBSimulatorApplicationOperation operationWithSimulator:simulator configuration:appLaunch stdOut:stdOut stdErr:stdErr launchFuture:launch];
     }];
 }
 
@@ -132,6 +119,21 @@
 }
 
 #pragma mark Private
+
+- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOut:(id<FBProcessFileOutput>)stdOut stdErr:(id<FBProcessFileOutput>)stdErr
+{
+  // Start reading now, but don't block on the resolution, we will ensure that the read has started after the app has launched.
+  FBFuture *readingFutures = [FBFuture futureWithFutures:@[
+    [stdOut startReading],
+    [stdErr startReading],
+  ]];
+
+  return [[self
+    launchApplication:appLaunch stdOutPath:stdOut.filePath stdErrPath:stdErr.filePath]
+    onQueue:self.simulator.workQueue fmap:^(NSNumber *result) {
+      return [readingFutures mapReplace:result];
+    }];
+}
 
 - (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
@@ -165,7 +167,7 @@
   return [[simulator
     connectToBridge]
     onQueue:simulator.workQueue fmap:^(FBSimulatorBridge *bridge) {
-      return [bridge launch:appLaunch stdOutPath:stdErrPath stdErrPath:stdOutPath];
+      return [bridge launch:appLaunch stdOutPath:stdOutPath stdErrPath:stdErrPath];
     }];
 }
 

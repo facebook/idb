@@ -85,6 +85,14 @@
   return [self createDiagnosticForSelector:@selector(stdErr) simulator:simulator];
 }
 
+- (FBFuture<NSArray<FBProcessOutput *> *> *)createOutputForSimulator:(FBSimulator *)simulator
+{
+  return [FBFuture futureWithFutures:@[
+    [self createOutputForSimulator:simulator selector:@selector(stdOut)],
+    [self createOutputForSimulator:simulator selector:@selector(stdErr)],
+  ]];
+}
+
 #pragma mark Private
 
 - (FBFuture<id> *)createDiagnosticForSelector:(SEL)selector simulator:(FBSimulator *)simulator
@@ -112,6 +120,28 @@
 
   return [FBFuture futureWithResult:[builder build]];
 }
+
+#pragma mark Private
+
+- (FBFuture<FBProcessOutput *> *)createOutputForSimulator:(FBSimulator *)simulator selector:(SEL)selector
+{
+  return [[self
+    createDiagnosticForSelector:selector simulator:simulator]
+    onQueue:simulator.workQueue fmap:^FBFuture *(id maybeDiagnostic) {
+      if ([maybeDiagnostic isKindOfClass:FBDiagnostic.class]) {
+        FBDiagnostic *diagnostic = maybeDiagnostic;
+        NSString *path = diagnostic.asPath;
+        return [FBFuture futureWithResult:[FBProcessOutput outputForFilePath:path]];
+      }
+      id<FBFileConsumer> consumer = [self.output performSelector:selector];
+      if (![consumer conformsToProtocol:@protocol(FBFileConsumer)]) {
+        return [FBFuture futureWithResult:FBProcessOutput.outputForNullDevice];
+      }
+      return [FBFuture futureWithResult:[FBProcessOutput outputForFileConsumer:consumer]];
+    }];
+}
+
+#pragma clang diagnostic pop
 
 @end
 
@@ -174,5 +204,3 @@
 }
 
 @end
-
-#pragma clang diagnostic pop

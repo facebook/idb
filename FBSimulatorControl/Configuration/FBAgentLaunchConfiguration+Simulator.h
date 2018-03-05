@@ -21,14 +21,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBAgentLaunchConfiguration (Simulator) <FBiOSTargetFuture>
 
-/**
- Creates a Process Output for a Simulator.
-
- @param simulator the simulator to create the output for.
- @return a Future that wraps an Array of the outputs.
- */
-- (FBFuture<NSArray<FBProcessOutput *> *> *)createOutputForSimulator:(FBSimulator *)simulator;
-
 @end
 
 NS_ASSUME_NONNULL_END
