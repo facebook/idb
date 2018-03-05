@@ -2,6 +2,7 @@
 
 #import "FBFileConsumer.h"
 
+#import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 
@@ -320,6 +321,7 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 @interface FBCompositeFileConsumer ()
 
 @property (nonatomic, copy, readonly) NSArray<id<FBFileConsumer>> *consumers;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *eofHasBeenReceivedFuture;
 
 @end
 
@@ -340,7 +342,16 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   }
 
   _consumers = consumers;
+  _eofHasBeenReceivedFuture = FBMutableFuture.future;
+
   return self;
+}
+
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Composite Consumer %@", [FBCollectionInformation oneLineDescriptionFromArray:self.consumers]];
 }
 
 #pragma mark FBFileConsumer
@@ -357,6 +368,14 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   for (id<FBFileConsumer> consumer in self.consumers) {
     [consumer consumeEndOfFile];
   }
+  [self.eofHasBeenReceivedFuture resolveWithResult:NSNull.null];
+}
+
+#pragma mark FBFileConsumerLifecycle
+
+- (FBFuture<NSNull *> *)eofHasBeenReceived
+{
+  return self.eofHasBeenReceivedFuture;
 }
 
 @end

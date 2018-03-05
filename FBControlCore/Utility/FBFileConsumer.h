@@ -190,7 +190,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Composite Consumer.
  */
-@interface FBCompositeFileConsumer : NSObject <FBFileConsumer>
+@interface FBCompositeFileConsumer : NSObject <FBFileConsumer, FBFileConsumerLifecycle>
 
 /**
  A Consumer of Consumers.

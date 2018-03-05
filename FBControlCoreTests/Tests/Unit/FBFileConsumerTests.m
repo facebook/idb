@@ -88,4 +88,32 @@
   XCTAssertEqualObjects(consumer.consumeCurrentString, @"TAIL");
 }
 
+- (void)testCompositeWithCompletion
+{
+  id<FBAccumulatingLineBuffer> accumilating =  [FBLineBuffer consumableBuffer];
+  id<FBConsumableLineBuffer> consumable =  [FBLineBuffer consumableBuffer];
+  id<FBFileConsumerLifecycle> composite = [FBCompositeFileConsumer consumerWithConsumers:@[
+    accumilating,
+    consumable,
+  ]];
+
+  [composite consumeData:[@"FOO" dataUsingEncoding:NSUTF8StringEncoding]];
+
+  XCTAssertNil(consumable.consumeLineString);
+  XCTAssertFalse(composite.eofHasBeenReceived.hasCompleted);
+
+  [composite consumeData:[@"BAR\n" dataUsingEncoding:NSUTF8StringEncoding]];
+
+  XCTAssertEqualObjects(consumable.consumeLineString, @"FOOBAR");
+  XCTAssertNil(consumable.consumeLineString);
+  XCTAssertFalse(consumable.eofHasBeenReceived.hasCompleted);
+  XCTAssertFalse(accumilating.eofHasBeenReceived.hasCompleted);
+  XCTAssertFalse(composite.eofHasBeenReceived.hasCompleted);
+
+  [composite consumeEndOfFile];
+  XCTAssertTrue(consumable.eofHasBeenReceived.hasCompleted);
+  XCTAssertTrue(accumilating.eofHasBeenReceived.hasCompleted);
+  XCTAssertTrue(composite.eofHasBeenReceived.hasCompleted);
+}
+
 @end
