@@ -94,23 +94,25 @@
 
 - (FBFuture<NSArray<NSString *> *> *)listTests
 {
+  id<FBConsumableLineBuffer> shimConsumer = [FBLineBuffer consumableBuffer];
+  return [[[FBProcessOutput
+    outputForFileConsumer:shimConsumer]
+    providedThroughFile]
+    onQueue:self.executor.workQueue fmap:^(id<FBProcessFileOutput> shimOutput) {
+      return [self listTestsWithShimOutput:shimOutput shimConsumer:shimConsumer];
+    }];
+}
+
+#pragma mark Private
+
+- (FBFuture<NSArray<NSString *> *> *)listTestsWithShimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBConsumableLineBuffer>)shimConsumer
+{
   NSString *xctestPath = self.executor.xctestPath;
-  NSString *otestQueryPath = self.executor.queryShimPath;
-  NSString *otestQueryOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"query-output-pipe"];
-  [NSFileManager.defaultManager removeItemAtPath:otestQueryOutputPath error:nil];
-
-  if (mkfifo([otestQueryOutputPath UTF8String], S_IWUSR | S_IRUSR) != 0) {
-    NSError *posixError = [[NSError alloc] initWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
-    return [[[FBXCTestError
-      describeFormat:@"Failed to create a named pipe %@", otestQueryOutputPath]
-      causedBy:posixError]
-      failFuture];
-  }
-
+  NSString *otestQueryShimPath = self.executor.queryShimPath;
   NSArray<NSString *> *arguments = @[@"-XCTest", @"All", self.configuration.testBundlePath];
   NSDictionary<NSString *, NSString *> *environment = @{
-    @"DYLD_INSERT_LIBRARIES": otestQueryPath,
-    @"OTEST_QUERY_OUTPUT_FILE": otestQueryOutputPath,
+    @"DYLD_INSERT_LIBRARIES": otestQueryShimPath,
+    @"OTEST_QUERY_OUTPUT_FILE": shimOutput.filePath,
     @"OtestQueryBundlePath": self.configuration.testBundlePath,
   };
   FBXCTestProcess *process = [FBXCTestProcess
@@ -126,26 +128,20 @@
   return [[process
     startWithTimeout:self.configuration.testTimeout]
     onQueue:self.executor.workQueue fmap:^(FBLaunchedProcess *processInfo) {
-      return [FBListTestStrategy launchedProcess:processInfo otestQueryOutputPath:otestQueryOutputPath queue:self.executor.workQueue];
+      return [FBListTestStrategy launchedProcess:processInfo shimOutput:shimOutput shimConsumer:shimConsumer queue:self.executor.workQueue];
     }];
 }
 
-#pragma mark Private
-
-+ (FBFuture<NSArray<NSString *> *> *)launchedProcess:(FBLaunchedProcess *)processInfo otestQueryOutputPath:(NSString *)otestQueryOutputPath queue:(dispatch_queue_t)queue
++ (FBFuture<NSArray<NSString *> *> *)launchedProcess:(FBLaunchedProcess *)processInfo shimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBConsumableLineBuffer>)shimConsumer queue:(dispatch_queue_t)queue
 {
-  id<FBAccumulatingLineBuffer> consumer = FBLineBuffer.accumulatingBuffer;
-  return [[[[FBFileReader
-    readerWithFilePath:otestQueryOutputPath consumer:consumer]
-    onQueue:queue fmap:^(FBFileReader *reader) {
-      return [[reader startReading] mapReplace:reader];
-    }]
-    onQueue:queue fmap:^(FBFileReader *reader) {
-      return [FBListTestStrategy onQueue:queue confirmExit:processInfo closingReader:reader consumer:consumer];
+  return [[[shimOutput
+    startReading]
+    onQueue:queue fmap:^(id _) {
+      return [FBListTestStrategy onQueue:queue confirmExit:processInfo closingOutput:shimOutput consumer:shimConsumer];
     }]
     onQueue:queue fmap:^(id _) {
       NSMutableArray<NSString *> *testNames = [NSMutableArray array];
-      for (NSString *line in consumer.lines) {
+      for (NSString *line in shimConsumer.lines) {
         if (line.length == 0) {
           // Ignore empty lines
           continue;
@@ -162,7 +158,7 @@
   }];
 }
 
-+ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue confirmExit:(FBLaunchedProcess *)process closingReader:(FBFileReader *)reader consumer:(id<FBFileConsumerLifecycle>)consumer
++ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue confirmExit:(FBLaunchedProcess *)process closingOutput:(id<FBProcessFileOutput>)output consumer:(id<FBConsumableLineBuffer>)consumer
 {
   return [process.exitCode onQueue:queue fmap:^(NSNumber *exitCode) {
     if (exitCode.intValue != 0) {
@@ -171,7 +167,7 @@
         failFuture];
     }
     return [FBFuture futureWithFutures:@[
-      [reader stopReading],
+      [output stopReading],
       [consumer eofHasBeenReceived],
     ]];
   }];
