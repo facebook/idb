@@ -59,43 +59,28 @@
 
 - (FBFuture<NSNull *> *)testFuture
 {
-  id<FBLogicXCTestReporter> reporter = self.reporter;
-  BOOL mirrorToFiles = (self.configuration.mirroring & FBLogicTestMirrorFileLogs) != 0;
+  // Setup the reader of the shim
   BOOL mirrorToLogger = (self.configuration.mirroring & FBLogicTestMirrorLogger) != 0;
+  BOOL mirrorToFiles = (self.configuration.mirroring & FBLogicTestMirrorFileLogs) != 0;
   id<FBControlCoreLogger> logger = self.logger;
+  id<FBLogicXCTestReporter> reporter = self.reporter;
   FBXCTestLogger *mirrorLogger = [FBXCTestLogger defaultLoggerInDefaultDirectory];
+  NSUUID *uuid = NSUUID.UUID;
 
-  [reporter didBeginExecutingTestPlan];
-
-  NSString *xctestPath = self.executor.xctestPath;
-  NSString *shimPath = self.executor.shimPath;
-
-  // The fifo is used by the shim to report events from within the xctest framework.
-  NSString *otestShimOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"shim-output-pipe"];
-  if (mkfifo(otestShimOutputPath.UTF8String, S_IWUSR | S_IRUSR) != 0) {
-    NSError *posixError = [[NSError alloc] initWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
-    return [[[FBXCTestError
-      describeFormat:@"Failed to create a named pipe %@", otestShimOutputPath]
-      causedBy:posixError]
-      failFuture];
-  }
-
-  // The environment requires the shim path and otest-shim path.
-  NSMutableDictionary<NSString *, NSString *> *environment = [NSMutableDictionary dictionaryWithDictionary:@{
-    @"DYLD_INSERT_LIBRARIES": shimPath,
-    @"OTEST_SHIM_STDOUT_FILE": otestShimOutputPath,
-    @"TEST_SHIM_BUNDLE_PATH": self.configuration.testBundlePath,
-    @"FB_TEST_TIMEOUT": @(self.configuration.testTimeout).stringValue,
+  FBLineFileConsumer *shimLineConsumer = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue dataConsumer:^(NSData *line) {
+    [reporter handleEventJSONData:line];
+    if (mirrorToLogger) {
+      NSString *stringLine = [[NSString alloc] initWithData:line encoding:NSUTF8StringEncoding];
+      [mirrorLogger logFormat:@"[Shim StdOut] %@", stringLine];
+    }
   }];
-  [environment addEntriesFromDictionary:self.configuration.processUnderTestEnvironment];
-
-  // Get the Launch Path and Arguments for the xctest process.
-  NSString *testSpecifier = self.configuration.testFilter ?: @"All";
-  NSString *launchPath = xctestPath;
-  NSArray<NSString *> *arguments = @[@"-XCTest", testSpecifier, self.configuration.testBundlePath];
-
-  // Consumes the test output. Separate Readers are used as consuming an EOF will invalidate the reader.
-  NSUUID *uuid = [NSUUID UUID];
+  id<FBFileConsumer> shimConsumer = shimLineConsumer;
+  if (mirrorToFiles) {
+    // Mirror the output
+    NSString *mirrorPath = nil;
+    shimConsumer = [mirrorLogger logConsumptionToFile:shimLineConsumer outputKind:@"shim" udid:uuid filePathOut:&mirrorPath];
+    [logger logFormat:@"Mirroring shim-fifo output to %@", mirrorPath];
+  }
 
   // Setup the stdout reader.
   id<FBFileConsumer> stdOutConsumer = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line){
@@ -123,22 +108,42 @@
     [logger logFormat:@"Mirroring xctest stderr to %@", mirrorPath];
   }
 
-  // Setup the reader of the shim
-  FBLineFileConsumer *otestShimLineConsumer = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue dataConsumer:^(NSData *line) {
-    [reporter handleEventJSONData:line];
-    if (mirrorToLogger) {
-      NSString *stringLine = [[NSString alloc] initWithData:line encoding:NSUTF8StringEncoding];
-      [mirrorLogger logFormat:@"[Shim StdOut] %@", stringLine];
-    }
-  }];
+  return [[[FBProcessOutput
+    outputForFileConsumer:shimConsumer]
+    providedThroughFile]
+    onQueue:self.executor.workQueue fmap:^(id<FBProcessFileOutput> shimOutput) {
+      return [self
+        testFutureWithShimOutput:shimOutput
+        stdOutConsumer:stdOutConsumer
+        stdErrConsumer:stdErrConsumer
+        shimConsumer:shimLineConsumer
+        uuid:uuid];
+    }];
+}
 
-  id<FBFileConsumer> otestShimConsumer = otestShimLineConsumer;
-  if (mirrorToFiles) {
-    // Mirror the output
-    NSString *mirrorPath = nil;
-    otestShimConsumer = [mirrorLogger logConsumptionToFile:otestShimLineConsumer outputKind:@"shim" udid:uuid filePathOut:&mirrorPath];
-    [logger logFormat:@"Mirroring shim-fifo output to %@", mirrorPath];
-  }
+#pragma mark Private
+
+- (FBFuture<NSNull *> *)testFutureWithShimOutput:(id<FBProcessFileOutput>)shimOutput stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer shimConsumer:(id<FBFileConsumerLifecycle>)shimConsumer uuid:(NSUUID *)uuid
+{
+  id<FBLogicXCTestReporter> reporter = self.reporter;
+  [reporter didBeginExecutingTestPlan];
+
+  NSString *xctestPath = self.executor.xctestPath;
+  NSString *shimPath = self.executor.shimPath;
+
+  // The environment requires the shim path and otest-shim path.
+  NSMutableDictionary<NSString *, NSString *> *environment = [NSMutableDictionary dictionaryWithDictionary:@{
+    @"DYLD_INSERT_LIBRARIES": shimPath,
+    @"OTEST_SHIM_STDOUT_FILE": shimOutput.filePath,
+    @"TEST_SHIM_BUNDLE_PATH": self.configuration.testBundlePath,
+    @"FB_TEST_TIMEOUT": @(self.configuration.testTimeout).stringValue,
+  }];
+  [environment addEntriesFromDictionary:self.configuration.processUnderTestEnvironment];
+
+  // Get the Launch Path and Arguments for the xctest process.
+  NSString *testSpecifier = self.configuration.testFilter ?: @"All";
+  NSString *launchPath = xctestPath;
+  NSArray<NSString *> *arguments = @[@"-XCTest", testSpecifier, self.configuration.testBundlePath];
 
   // Construct and start the process
   return [[[self
@@ -147,29 +152,23 @@
     onQueue:self.executor.workQueue fmap:^(FBLaunchedProcess *processInfo) {
       return [self
         completeLaunchedProcess:processInfo
-        otestShimOutputPath:otestShimOutputPath
-        otestShimConsumer:otestShimConsumer
-        otestShimLineConsumer:otestShimLineConsumer];
+        shimOutput:shimOutput
+        shimConsumer:shimConsumer];
     }];
 }
 
-#pragma mark Private
-
-- (FBFuture<NSNull *> *)completeLaunchedProcess:(FBLaunchedProcess *)processInfo otestShimOutputPath:(NSString *)otestShimOutputPath otestShimConsumer:(id<FBFileConsumer>)otestShimConsumer otestShimLineConsumer:(FBLineFileConsumer *)otestShimLineConsumer
+- (FBFuture<NSNull *> *)completeLaunchedProcess:(FBLaunchedProcess *)processInfo shimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBFileConsumerLifecycle>)shimConsumer
 {
   id<FBLogicXCTestReporter> reporter = self.reporter;
   dispatch_queue_t queue = self.executor.workQueue;
 
-  return [[[[[FBLogicTestRunStrategy
+  return [[[[FBLogicTestRunStrategy
     fromQueue:queue waitForDebuggerToBeAttached:self.configuration.waitForDebugger forProcessIdentifier:processInfo.processIdentifier reporter:reporter]
     onQueue:queue fmap:^(id _) {
-      return [FBFileReader readerWithFilePath:otestShimOutputPath consumer:otestShimConsumer];
+      return [shimOutput startReading];
     }]
     onQueue:queue fmap:^(FBFileReader *reader) {
-      return [[reader startReading] mapReplace:reader];
-    }]
-    onQueue:queue fmap:^(FBFileReader *reader) {
-      return [FBLogicTestRunStrategy onQueue:queue waitForExit:processInfo closingReader:reader consumer:otestShimLineConsumer];
+      return [FBLogicTestRunStrategy onQueue:queue waitForExit:processInfo closingOutput:shimOutput consumer:shimConsumer];
     }]
     onQueue:queue map:^(id _) {
       [reporter didFinishExecutingTestPlan];
@@ -177,11 +176,11 @@
     }];
 }
 
-+ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForExit:(FBLaunchedProcess *)process closingReader:(FBFileReader *)reader consumer:(id<FBFileConsumerLifecycle>)consumer
++ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForExit:(FBLaunchedProcess *)process closingOutput:(id<FBProcessFileOutput>)output consumer:(id<FBFileConsumerLifecycle>)consumer
 {
   return [process.exitCode onQueue:queue fmap:^(NSNumber *exitCode) {
     return [FBFuture futureWithFutures:@[
-      [reader stopReading],
+      [output stopReading],
       [consumer eofHasBeenReceived],
     ]];
   }];
