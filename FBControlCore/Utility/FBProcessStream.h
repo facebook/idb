@@ -85,15 +85,6 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
 + (FBProcessOutput<NSNull *> *)outputForNullDevice;
 
 /**
- An Output Container for a File Handle.
-
- @param fileHandle the File Handle.
- @param diagnostic the backing diagnostic.
- @return a Process Output instance.
- */
-+ (FBProcessOutput<FBDiagnostic *> *)outputForFileHandle:(NSFileHandle *)fileHandle diagnostic:(FBDiagnostic *)diagnostic;
-
-/**
  An Output Container for a File Path.
 
  @param filePath the File Path to write to.

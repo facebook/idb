@@ -293,11 +293,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return [[FBProcessOutput_Null alloc] init];
 }
 
-+ (FBProcessOutput<NSFileHandle *> *)outputForFileHandle:(NSFileHandle *)fileHandle diagnostic:(FBDiagnostic *)diagnostic
-{
-  return [[FBProcessOutput_FileHandle alloc] initWithFileHandle:fileHandle diagnostic:diagnostic];
-}
-
 + (FBProcessOutput<NSString *> *)outputForFilePath:(NSString *)filePath
 {
   return [[FBProcessOutput_FilePath alloc] initWithFilePath:filePath];
