@@ -24,9 +24,13 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBProcessFetcher (Helpers)
 
 /**
- Obtains the Future Process.
+ Obtains the Future Process using the background process fetcher.
+
+ @param processIdentifier the process identifier to obtain process info for.
+ @param timeout the timeout in seconds to wait for the process info to appear.
+ @return a future wrapping the process info.
  */
-- (FBFuture<FBProcessInfo *> *)onQueue:(dispatch_queue_t)queue processInfoFor:(pid_t)processIdentifier timeout:(NSTimeInterval)timeout;
++ (FBFuture<FBProcessInfo *> *)obtainProcessInfoForProcessIdentifierInBackground:(pid_t)processIdentifier timeout:(NSTimeInterval)timeout;
 
 /**
  Queryies for the Process Info for a launchd job dictionary.
@@ -35,15 +39,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return the Process Info of the Job Dictionary, if available.
  */
 - (nullable FBProcessInfo *)processInfoForJobDictionary:(NSDictionary<NSString *, id> *)jobDictionary;
-
-/**
- Queries for the Process Info for a launchd job dictionary.
- Jobs without valid processes will not be included in the resulting array.
-
- @param jobDictionaries the Job Dictionaries to obtain process info for.
- @return the Process Info for the Jobs that could be obtained.
- */
-- (NSArray<FBProcessInfo *> *)processInfoForJobDictionaries:(NSArray<NSDictionary<NSString *, id> *> *)jobDictionaries;
 
 /**
  Retrieves the Process Info for an array of NSRunningApplication objects.
@@ -95,17 +90,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return an NSPredicate that operates on an Collection of FBProcessInfo *.
  */
 + (NSPredicate *)processesWithLaunchPath:(NSString *)launchPath;
-
-/**
- Constructs a Predicate that matches against an Application.
- Installing an Application on a Simulator will result in it having a different launch path
- since the Application Bundle is moved into the Simulator's data directory.
- This predicate takes the discrepancy in launch paths into account.
-
- @param binary the binary of the Application to search for.
- @return an NSPredicate that operates on an Collection of id<FBProcessInfo>.
- */
-+ (NSPredicate *)processesForBinary:(FBBinaryDescriptor *)binary;
 
 @end
 

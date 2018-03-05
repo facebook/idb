@@ -34,11 +34,16 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
 {
   return [launchFuture
     onQueue:simulator.workQueue map:^(NSNumber *processIdentifierNumber) {
-      return [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr processIdentifier:processIdentifierNumber.intValue processStatusFuture:processStatusFuture];
+      pid_t processIdentifier = processIdentifierNumber.intValue;
+      FBFuture<FBProcessInfo *> *processInfoFuture = [[FBProcessFetcher
+        obtainProcessInfoForProcessIdentifierInBackground:processIdentifier timeout:FBControlCoreGlobalConfiguration.fastTimeout]
+        rephraseFailure:@"Could not fetch process info for pid %d with configuration %@", processIdentifier, configuration];
+
+      return [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr processIdentifier:processIdentifier processInfoFuture:processInfoFuture processStatusFuture:processStatusFuture];
     }];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr processIdentifier:(pid_t)processIdentifier processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr processIdentifier:(pid_t)processIdentifier processInfoFuture:(FBFuture<FBProcessInfo *> *)processInfoFuture processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
 {
   self = [super init];
   if (!self) {
@@ -66,9 +71,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
         return @(WTERMSIG(stat_loc));
       }
     }];
-  _processInfoFuture = [[FBProcessFetcher.new
-    onQueue:simulator.asyncQueue processInfoFor:processIdentifier timeout:FBControlCoreGlobalConfiguration.fastTimeout]
-    rephraseFailure:@"Could not fetch process info for pid %d with configuration %@", processIdentifier, configuration];
+  _processInfoFuture = processInfoFuture;
 
   return self;
 }
