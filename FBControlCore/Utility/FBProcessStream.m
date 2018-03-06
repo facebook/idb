@@ -262,8 +262,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 @interface FBProcessInput ()
 
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
-@property (nonatomic, strong, nullable, readonly) NSPipe *pipe;
-@property (nonatomic, strong, nullable, readonly) id<FBFileConsumer> writer;
+@property (nonatomic, strong, nullable, readwrite) NSPipe *pipe;
+@property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> writer;
 
 @end
 
@@ -468,16 +468,18 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSNull *> *)detach
 {
-  NSFileHandle *fileHandle = self.fileHandle;
-  if (!fileHandle) {
-    return [[FBControlCoreError
-      describe:@"Cannot detach, there is no file handle"]
-      failFuture];
-  }
+  return [FBFuture onQueue:self.workQueue resolve:^{
+    NSFileHandle *fileHandle = self.fileHandle;
+    if (!fileHandle) {
+      return [[FBControlCoreError
+        describe:@"Cannot detach, there is no file handle"]
+        failFuture];
+    }
 
-  self.fileHandle = nil;
-  [fileHandle closeFile];
-  return [FBFuture futureWithResult:NSNull.null];
+    self.fileHandle = nil;
+    [fileHandle closeFile];
+    return [FBFuture futureWithResult:NSNull.null];
+  }];
 }
 
 - (FBDiagnostic *)contents
@@ -527,17 +529,19 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSPipe *> *)attachToPipeOrFileHandle
 {
-  if (self.pipe) {
-    return [[FBControlCoreError
-      describeFormat:@"Cannot attach when already attached to %@", self.reader]
-      failFuture];
-  }
+  return [FBFuture onQueue:self.workQueue resolve:^{
+    if (self.pipe) {
+      return [[FBControlCoreError
+        describeFormat:@"Cannot attach when already attached to %@", self.reader]
+        failFuture];
+    }
 
-  self.pipe = NSPipe.pipe;
-  self.reader = [FBFileReader readerWithFileHandle:self.pipe.fileHandleForReading consumer:self.consumer];
-  return [[self.reader
-    startReading]
-    mapReplace:self.pipe];
+    self.pipe = NSPipe.pipe;
+    self.reader = [FBFileReader readerWithFileHandle:self.pipe.fileHandleForReading consumer:self.consumer];
+    return [[self.reader
+      startReading]
+      mapReplace:self.pipe];
+  }];
 }
 
 - (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile
@@ -616,24 +620,26 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSFileHandle *> *)attachToFileHandle
 {
-  if (self.fileHandle) {
-    return [[FBControlCoreError
-      describeFormat:@"Cannot attach when already attached to file %@", self.fileHandle]
-      failFuture];
-  }
+  return [FBFuture onQueue:self.workQueue resolve:^{
+    if (self.fileHandle) {
+      return [[FBControlCoreError
+        describeFormat:@"Cannot attach when already attached to file %@", self.fileHandle]
+        failFuture];
+    }
 
-  if (!self.filePath) {
-    self.fileHandle = NSFileHandle.fileHandleWithNullDevice;
+    if (!self.filePath) {
+      self.fileHandle = NSFileHandle.fileHandleWithNullDevice;
+      return [FBFuture futureWithResult:self.fileHandle];
+    }
+
+    if (![NSFileManager.defaultManager createFileAtPath:self.filePath contents:nil attributes:nil]) {
+      return [[FBControlCoreError
+        describeFormat:@"Could not create file for writing at %@", self.filePath]
+        failFuture];
+    }
+    self.fileHandle = [NSFileHandle fileHandleForWritingAtPath:self.filePath];
     return [FBFuture futureWithResult:self.fileHandle];
-  }
-
-  if (![NSFileManager.defaultManager createFileAtPath:self.filePath contents:nil attributes:nil]) {
-    return [[FBControlCoreError
-      describeFormat:@"Could not create file for writing at %@", self.filePath]
-      failFuture];
-  }
-  self.fileHandle = [NSFileHandle fileHandleForWritingAtPath:self.filePath];
-  return [FBFuture futureWithResult:self.fileHandle];
+  }];
 }
 
 - (FBFuture<NSFileHandle *> *)attachToPipeOrFileHandle
@@ -643,15 +649,17 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSNull *> *)detach
 {
-  NSFileHandle *fileHandle = self.fileHandle;
-  if (!fileHandle) {
-    return [[FBControlCoreError
-      describe:@"Cannot Detach Twice"]
-      failFuture];
-  }
-  self.fileHandle = nil;
-  [fileHandle closeFile];
-  return [FBFuture futureWithResult:NSNull.null];
+  return [FBFuture onQueue:self.workQueue resolve:^{
+    NSFileHandle *fileHandle = self.fileHandle;
+    if (!fileHandle) {
+      return [[FBControlCoreError
+        describe:@"Cannot Detach Twice"]
+        failFuture];
+    }
+    self.fileHandle = nil;
+    [fileHandle closeFile];
+    return [FBFuture futureWithResult:NSNull.null];
+  }];
 }
 
 - (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile
@@ -751,40 +759,44 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSPipe *> *)attachToPipeOrFileHandle
 {
-  if (self.pipe || self.writer) {
-    return [[FBControlCoreError
-      describeFormat:@"Cannot Attach Twice"]
-      failFuture];
-  }
+  return [FBFuture onQueue:self.workQueue resolve:^{
+    if (self.pipe || self.writer) {
+      return [[FBControlCoreError
+        describeFormat:@"Cannot Attach Twice"]
+        failFuture];
+    }
 
-  NSPipe *pipe = NSPipe.pipe;
-  NSError *error = nil;
-  id<FBFileConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:&error];
-  if (!writer) {
-    return [[FBControlCoreError
-      describeFormat:@"Failed to create a writer for pipe %@", error]
-      failFuture];
-  }
-  _pipe = pipe;
-  _writer = writer;
-  return [FBFuture futureWithResult:pipe];
+    NSPipe *pipe = NSPipe.pipe;
+    NSError *error = nil;
+    id<FBFileConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:&error];
+    if (!writer) {
+      return [[FBControlCoreError
+        describeFormat:@"Failed to create a writer for pipe %@", error]
+        failFuture];
+    }
+    self.pipe = pipe;
+    self.writer = writer;
+    return [FBFuture futureWithResult:pipe];
+  }];
 }
 
 - (FBFuture<NSNull *> *)detach
 {
-  NSPipe *pipe = self.pipe;
-  id<FBFileConsumer> consumer = self.writer;
-  if (!pipe || !consumer) {
-    return [[FBControlCoreError
-      describeFormat:@"Nothing is attached to %@", self]
-      failFuture];
-  }
+  return [FBFuture onQueue:self.workQueue resolve:^{
+    NSPipe *pipe = self.pipe;
+    id<FBFileConsumer> consumer = self.writer;
+    if (!pipe || !consumer) {
+      return [[FBControlCoreError
+        describeFormat:@"Nothing is attached to %@", self]
+        failFuture];
+    }
 
-  [pipe.fileHandleForWriting closeFile];
-  _pipe = nil;
-  _writer = nil;
+    [pipe.fileHandleForWriting closeFile];
+    self.pipe = nil;
+    self.writer = nil;
 
-  return [FBFuture futureWithResult:NSNull.null];
+    return [FBFuture futureWithResult:NSNull.null];
+  }];
 }
 
 - (id<FBFileConsumer>)contents

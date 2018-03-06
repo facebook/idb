@@ -76,4 +76,44 @@
   XCTAssertEqualObjects(filePath, output.filePath);
 }
 
+- (void)testConcurrentAttachmentIsProhibited
+{
+  id<FBConsumableLineBuffer> consumer = [FBLineBuffer consumableBuffer];
+  FBProcessOutput *output = [FBProcessOutput outputForFileConsumer:consumer];
+
+  dispatch_queue_t concurrentQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+  dispatch_group_t group = dispatch_group_create();
+  __block FBFuture<id> *firstAttempt = nil;
+  __block FBFuture<NSFileHandle *> *secondAttempt = nil;
+  __block FBFuture<id> *thirdAttempt = nil;
+
+  dispatch_group_async(group, concurrentQueue, ^{
+    firstAttempt = [output attachToPipeOrFileHandle];
+  });
+  dispatch_group_async(group, concurrentQueue, ^{
+    secondAttempt = [output attachToFileHandle];
+  });
+  dispatch_group_async(group, concurrentQueue, ^{
+    thirdAttempt = [output attachToPipeOrFileHandle];
+  });
+  dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+
+  [firstAttempt await:nil];
+  [secondAttempt await:nil];
+  [thirdAttempt await:nil];
+
+  NSUInteger successes = 0;
+  if (firstAttempt.state == FBFutureStateDone) {
+    successes++;
+  }
+  if (secondAttempt.state == FBFutureStateDone) {
+    successes++;
+  }
+  if (thirdAttempt.state == FBFutureStateDone) {
+    successes++;
+  }
+
+  XCTAssertEqual(successes, 1u);
+}
+
 @end
