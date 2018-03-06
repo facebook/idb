@@ -59,55 +59,22 @@
 
 - (FBFuture<NSNull *> *)testFuture
 {
-  // Setup the reader of the shim
-  BOOL mirrorToLogger = (self.configuration.mirroring & FBLogicTestMirrorLogger) != 0;
-  BOOL mirrorToFiles = (self.configuration.mirroring & FBLogicTestMirrorFileLogs) != 0;
-  id<FBControlCoreLogger> logger = self.logger;
-  id<FBLogicXCTestReporter> reporter = self.reporter;
-  FBXCTestLogger *mirrorLogger = [FBXCTestLogger defaultLoggerInDefaultDirectory];
   NSUUID *uuid = NSUUID.UUID;
 
-  FBLineFileConsumer *shimLineConsumer = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue dataConsumer:^(NSData *line) {
-    [reporter handleEventJSONData:line];
-    if (mirrorToLogger) {
-      NSString *stringLine = [[NSString alloc] initWithData:line encoding:NSUTF8StringEncoding];
-      [mirrorLogger logFormat:@"[Shim StdOut] %@", stringLine];
-    }
-  }];
-  id<FBFileConsumer> shimConsumer = shimLineConsumer;
-  if (mirrorToFiles) {
-    // Mirror the output
-    NSString *mirrorPath = nil;
-    shimConsumer = [mirrorLogger logConsumptionToFile:shimLineConsumer outputKind:@"shim" udid:uuid filePathOut:&mirrorPath];
-    [logger logFormat:@"Mirroring shim-fifo output to %@", mirrorPath];
-  }
+  return [[self
+    buildOutputsForUUID:uuid]
+    onQueue:self.executor.workQueue fmap:^(NSArray<id<FBFileConsumerLifecycle>> *outputs) {
+      id<FBFileConsumerLifecycle> stdOut = outputs[0];
+      id<FBFileConsumerLifecycle> stdErr = outputs[1];
+      id<FBFileConsumerLifecycle> shim = outputs[2];
+      return [self testFutureWithStdOutConsumer:stdOut stdErrConsumer:stdErr shimConsumer:shim uuid:uuid];
+    }];
+}
 
-  // Setup the stdout reader.
-  id<FBFileConsumer> stdOutConsumer = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line){
-    [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
-    if (mirrorToLogger) {
-      [mirrorLogger logFormat:@"[Test Output] %@", line];
-    }
-  }];
-  if (mirrorToFiles) {
-    NSString *mirrorPath = nil;
-    stdOutConsumer = [mirrorLogger logConsumptionToFile:stdOutConsumer outputKind:@"out" udid:uuid filePathOut:&mirrorPath];
-    [logger logFormat:@"Mirroring xctest stdout to %@", mirrorPath];
-  }
+#pragma mark Private
 
-  // Setup the stderr reader.
-  id<FBFileConsumer> stdErrConsumer = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line){
-    [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
-    if (mirrorToLogger) {
-      [mirrorLogger logFormat:@"[Test Output(err)] %@", line];
-    }
-  }];
-  if (mirrorToFiles) {
-    NSString *mirrorPath = nil;
-    stdErrConsumer = [mirrorLogger logConsumptionToFile:stdErrConsumer outputKind:@"err" udid:uuid filePathOut:&mirrorPath];
-    [logger logFormat:@"Mirroring xctest stderr to %@", mirrorPath];
-  }
-
+- (FBFuture<NSNull *> *)testFutureWithStdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer shimConsumer:(id<FBFileConsumerLifecycle>)shimConsumer uuid:(NSUUID *)uuid
+{
   return [[[FBProcessOutput
     outputForFileConsumer:shimConsumer]
     providedThroughFile]
@@ -116,12 +83,10 @@
         testFutureWithShimOutput:shimOutput
         stdOutConsumer:stdOutConsumer
         stdErrConsumer:stdErrConsumer
-        shimConsumer:shimLineConsumer
+        shimConsumer:shimConsumer
         uuid:uuid];
     }];
 }
-
-#pragma mark Private
 
 - (FBFuture<NSNull *> *)testFutureWithShimOutput:(id<FBProcessFileOutput>)shimOutput stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer shimConsumer:(id<FBFileConsumerLifecycle>)shimConsumer uuid:(NSUUID *)uuid
 {
@@ -208,6 +173,56 @@
       [reporter debuggerAttached];
       return NSNull.null;
     }];
+}
+
+- (FBFuture<NSArray<id<FBFileConsumerLifecycle>> *> *)buildOutputsForUUID:(NSUUID *)udid
+{
+  id<FBLogicXCTestReporter> reporter = self.reporter;
+  id<FBControlCoreLogger> logger = self.logger;
+  dispatch_queue_t queue = self.executor.workQueue;
+  FBXCTestLogger *mirrorLogger = [FBXCTestLogger defaultLoggerInDefaultDirectory];
+  BOOL mirrorToLogger = (self.configuration.mirroring & FBLogicTestMirrorLogger) != 0;
+  BOOL mirrorToFiles = (self.configuration.mirroring & FBLogicTestMirrorFileLogs) != 0;
+
+  NSMutableArray<id<FBFileConsumer>> *shimConsumers = [NSMutableArray array];
+  NSMutableArray<id<FBFileConsumer>> *stdOutConsumers = [NSMutableArray array];
+  NSMutableArray<id<FBFileConsumer>> *stdErrConsumers = [NSMutableArray array];
+
+  id<FBFileConsumer> shimReportingConsumer = [FBLineFileConsumer asynchronousReaderWithQueue:queue dataConsumer:^(NSData *line) {
+    [reporter handleEventJSONData:line];
+  }];
+  [shimConsumers addObject:shimReportingConsumer];
+
+  id<FBFileConsumer> stdOutReportingConsumer = [FBLineFileConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
+    [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
+  }];
+  [stdOutConsumers addObject:stdOutReportingConsumer];
+
+  id<FBFileConsumer> stdErrReportingConsumer = [FBLineFileConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
+    [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
+  }];
+  [stdErrConsumers addObject:stdErrReportingConsumer];
+
+  if (mirrorToLogger) {
+    [shimConsumers addObject:[FBLoggingFileConsumer consumerWithLogger:logger]];
+    [stdErrConsumers addObject:[FBLoggingFileConsumer consumerWithLogger:logger]];
+    [stdErrConsumers addObject:[FBLoggingFileConsumer consumerWithLogger:logger]];
+  }
+
+  id<FBFileConsumer> stdOutConsumer = [FBCompositeFileConsumer consumerWithConsumers:stdOutConsumers];
+  id<FBFileConsumer> stdErrConsumer = [FBCompositeFileConsumer consumerWithConsumers:stdErrConsumers];
+  id<FBFileConsumer> shimConsumer = [FBCompositeFileConsumer consumerWithConsumers:shimConsumers];
+
+  if (!mirrorToFiles) {
+    return [FBFuture futureWithResult:@[stdOutConsumer, stdErrConsumer, shimConsumer]];
+  }
+
+  return [FBFuture
+    futureWithFutures:@[
+      [mirrorLogger logConsumptionToFile:stdOutConsumer outputKind:@"out" udid:udid logger:logger],
+      [mirrorLogger logConsumptionToFile:stdErrConsumer outputKind:@"err" udid:udid logger:logger],
+      [mirrorLogger logConsumptionToFile:shimConsumer outputKind:@"shim" udid:udid logger:logger],
+    ]];
 }
 
 - (FBXCTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer

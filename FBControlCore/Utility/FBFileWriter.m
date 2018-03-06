@@ -44,6 +44,11 @@
 
 #pragma mark Initializers
 
++ (dispatch_queue_t)createWorkQueue
+{
+  return dispatch_queue_create("com.facebook.fbcontrolcore.fbfilewriter", DISPATCH_QUEUE_SERIAL);;
+}
+
 + (nullable NSFileHandle *)fileHandleForPath:(NSString *)filePath error:(NSError **)error
 {
   if (![NSFileManager.defaultManager fileExistsAtPath:filePath]) {
@@ -68,14 +73,19 @@
   return [[FBFileWriter_Sync alloc] initWithFileHandle:fileHandle];
 }
 
-+ (instancetype)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle error:(NSError **)error
++ (instancetype)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle queue:(dispatch_queue_t)queue error:(NSError **)error
 {
-  dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.fbfilewriter", DISPATCH_QUEUE_SERIAL);
   FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileHandle:fileHandle writeQueue:queue];
   if (![writer startReadingWithError:error]) {
     return nil;
   }
   return writer;
+}
+
++ (instancetype)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle error:(NSError **)error
+{
+  dispatch_queue_t queue = self.createWorkQueue;
+  return [self asyncWriterWithFileHandle:fileHandle queue:queue error:error];
 }
 
 + (nullable instancetype)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error
@@ -87,13 +97,21 @@
   return [FBFileWriter syncWriterWithFileHandle:fileHandle];
 }
 
-+ (nullable instancetype)asyncWriterForFilePath:(NSString *)filePath error:(NSError **)error
++ (FBFuture<FBFileWriter *> *)asyncWriterForFilePath:(NSString *)filePath
 {
-  NSFileHandle *fileHandle = [self fileHandleForPath:filePath error:error];
-  if (!fileHandle) {
-    return nil;
-  }
-  return [FBFileWriter asyncWriterWithFileHandle:fileHandle error:error];
+  dispatch_queue_t queue = self.createWorkQueue;
+  return [[FBFuture
+    onQueue:queue resolveValue:^(NSError **error) {
+      return [FBFileWriter fileHandleForPath:filePath error:error];
+    }]
+    onQueue:queue fmap:^(NSFileHandle *fileHandle) {
+      FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileHandle:fileHandle writeQueue:queue];
+      NSError *error = nil;
+      if (![writer startReadingWithError:&error]) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:writer];
+    }];
 }
 
 - (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle

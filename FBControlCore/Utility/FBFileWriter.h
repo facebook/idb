@@ -54,13 +54,13 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable instancetype)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error;
 
 /**
- Creates a Non-Blocking File Writer from a File Path
+ Creates a Non-Blocking File Writer from a File Path.
+ The File Path will be opened asynchronously so that the caller is not blocked.
 
  @param filePath the file handle to write to from. It will be closed when an EOF is sent.
- @param error an error out for any error that occurs.
- @return a File Reader on success, nil otherwise.
+ @return a Future that resolves with the File Reader when reading has started.
  */
-+ (nullable instancetype)asyncWriterForFilePath:(NSString *)filePath error:(NSError **)error;
++ (FBFuture<FBFileWriter *> *)asyncWriterForFilePath:(NSString *)filePath;
 
 @end
 
