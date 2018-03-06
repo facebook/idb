@@ -78,7 +78,30 @@
 
 #pragma mark Public Methods
 
+- (FBFuture<NSNull *> *)completed
+{
+  return [self.stopped onQueue:self.readQueue respondToCancellation:^{
+    return [self stopReading];
+  }];
+}
+
 - (FBFuture<NSNull *> *)startReading
+{
+  return [FBFuture onQueue:self.readQueue resolve:^{
+    return [self startReadingNow];
+  }];
+}
+
+- (FBFuture<NSNull *> *)stopReading
+{
+  return [FBFuture onQueue:self.readQueue resolve:^{
+    return [self stopReadingNow];
+  }];
+}
+
+#pragma mark Private
+
+- (FBFuture<NSNull *> *)startReadingNow
 {
   if (self.io) {
     return [[FBControlCoreError
@@ -119,7 +142,7 @@
   return [FBFuture futureWithResult:NSNull.null];
 }
 
-- (FBFuture<NSNull *> *)stopReading
+- (FBFuture<NSNull *> *)stopReadingNow
 {
   // Return early if we've already stopped.
   if (!self.io) {
@@ -134,15 +157,6 @@
 
   return self.stopped;
 }
-
-- (FBFuture<NSNull *> *)completed
-{
-  return [self.stopped onQueue:self.readQueue respondToCancellation:^{
-    return [self stopReading];
-  }];
-}
-
-#pragma mark Private
 
 + (void)resolveReading:(FBMutableFuture<NSNull *> *)readingHasEnded withCode:(int)errorCode targeting:(NSString *)targeting
 {

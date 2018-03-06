@@ -178,6 +178,49 @@
   XCTAssertFalse(success);
 }
 
+- (void)testConcurrentAttachmentIsProhibited
+{
+  // Read some data.
+  NSError *error = nil;
+  FBFileReader *reader = [[FBFileReader readerWithFilePath:@"/dev/urandom" consumer:self] await:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(reader);
+
+  dispatch_queue_t concurrentQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+  dispatch_group_t group = dispatch_group_create();
+  __block FBFuture<NSNull *> *firstAttempt = nil;
+  __block FBFuture<NSNull *> *secondAttempt = nil;
+  __block FBFuture<NSNull *> *thirdAttempt = nil;
+
+  dispatch_group_async(group, concurrentQueue, ^{
+    firstAttempt = [reader startReading];
+  });
+  dispatch_group_async(group, concurrentQueue, ^{
+    secondAttempt = [reader startReading];
+  });
+  dispatch_group_async(group, concurrentQueue, ^{
+    thirdAttempt = [reader startReading];
+  });
+  dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+
+  [firstAttempt await:nil];
+  [secondAttempt await:nil];
+  [thirdAttempt await:nil];
+
+  NSUInteger successes = 0;
+  if (firstAttempt.state == FBFutureStateDone) {
+    successes++;
+  }
+  if (secondAttempt.state == FBFutureStateDone) {
+    successes++;
+  }
+  if (thirdAttempt.state == FBFutureStateDone) {
+    successes++;
+  }
+
+  XCTAssertEqual(successes, 1u);
+}
+
 #pragma mark FBFileConsumer Implementation
 
 - (void)consumeData:(NSData *)data
