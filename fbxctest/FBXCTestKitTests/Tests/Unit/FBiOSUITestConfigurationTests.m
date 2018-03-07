@@ -126,16 +126,11 @@
 
 - (void)testiOSApplicationTestsWithoutRunTestsAtStart
 {
-  NSError *error = nil;
-  if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
-    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
-    return;
-  }
-
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
   NSArray *arguments = @[ @"-reporter", @"json-stream", @"-sdk", @"iphonesimulator", @"run-tests", @"-uiTest", self.appTestArgument];
 
+  NSError *error = nil;
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(commandLine);

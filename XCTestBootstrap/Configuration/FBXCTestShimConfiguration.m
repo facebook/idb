@@ -23,12 +23,17 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 
 #pragma mark Initializers
 
-+ (NSDictionary<NSString *, NSArray<NSString *> *> *)canonicalShimNameToShimFilenames
++ (dispatch_queue_t)createWorkQueue
+{
+  return dispatch_queue_create("com.facebook.xctestbootstrap.shims", DISPATCH_QUEUE_SERIAL);
+}
+
++ (NSDictionary<NSString *, NSString *> *)canonicalShimNameToShimFilenames
 {
   return @{
-    KeySimulatorTestShim: @[shimulatorFileName],
-    KeyMacTestShim: @[maculatorShimFileName],
-    KeyMacQueryShim: @[maculatorShimFileName],
+    KeySimulatorTestShim: shimulatorFileName,
+    KeyMacTestShim: maculatorShimFileName,
+    KeyMacQueryShim: maculatorShimFileName,
   };
 }
 
@@ -41,98 +46,92 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
   };
 }
 
-+ (NSString *)pathForCanonicallyNamedShim:(NSString *)canonicalName inDirectory:(NSString *)directory error:(NSError **)error
++ (FBFuture<NSString *> *)pathForCanonicallyNamedShim:(NSString *)canonicalName inDirectory:(NSString *)directory
 {
-  NSArray<NSString *> *filenames = self.canonicalShimNameToShimFilenames[canonicalName];
+  NSString *filename = self.canonicalShimNameToShimFilenames[canonicalName];
   id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
   BOOL signingRequired = self.canonicalShimNameToCodesigningRequired[canonicalName].boolValue;
 
-  for (NSString *filename in filenames) {
-    NSString *shimPath = [directory stringByAppendingPathComponent:filename];
-    if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
-      continue;
-    }
-    if (!signingRequired) {
-      return shimPath;
-    }
-    NSError *innerError = nil;
-    if (![[codesign cdHashForBundleAtPath:shimPath] await:&innerError]) {
-      return [[[FBXCTestError
-        describeFormat:@"Shim at path %@ was required to be signed, but it was not", shimPath]
-        causedBy:innerError]
-        fail:error];
-    }
-    return shimPath;
+  NSString *shimPath = [directory stringByAppendingPathComponent:filename];
+  if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
+    return [[FBControlCoreError
+      describeFormat:@"No shim located at expectect location of %@", shimPath]
+      failFuture];
   }
-  return [[FBXCTestError
-    describeFormat:@"Expected any of '%@' to exist in %@, but none were there", [FBCollectionInformation oneLineDescriptionFromArray:filenames], directory]
-    fail:error];
+  if (!signingRequired) {
+    return [FBFuture futureWithResult:shimPath];
+  }
+  return [[[codesign
+    cdHashForBundleAtPath:shimPath]
+    rephraseFailure:@"Shim at path %@ was required to be signed, but it was not", shimPath]
+    mapReplace:shimPath];
 }
 
-+ (nullable NSString *)findShimDirectoryWithError:(NSError **)error
++ (FBFuture<NSString *> *)findShimDirectoryOnQueue:(dispatch_queue_t)queue
 {
-  // If an environment variable is provided, use it
-  NSString *environmentDefinedDirectory = NSProcessInfo.processInfo.environment[@"TEST_SHIMS_DIRECTORY"];
-  if (environmentDefinedDirectory) {
-    return [self confirmExistenceOfRequiredShimsInDirectory:environmentDefinedDirectory error:error];
-  }
+  return [FBFuture
+    onQueue:queue resolve:^ FBFuture<NSString *> *{
+      // If an environment variable is provided, use it
+      NSString *environmentDefinedDirectory = NSProcessInfo.processInfo.environment[@"TEST_SHIMS_DIRECTORY"];
+      if (environmentDefinedDirectory) {
+        return [self confirmExistenceOfRequiredShimsInDirectory:environmentDefinedDirectory];
+      }
 
-  // Otherwise, expect it to be relative to the location of the current executable.
-  NSString *libPath = [self.fbxctestInstallationRoot stringByAppendingPathComponent:@"lib"];
-  libPath = [self confirmExistenceOfRequiredShimsInDirectory:libPath error:nil];
-  if (libPath) {
-    return libPath;
-  }
-
-  // Otherwise, attempt to use the bundled shims
-  NSString *bundlePath = [NSBundle bundleForClass:self].resourcePath;
-  return [self confirmExistenceOfRequiredShimsInDirectory:bundlePath error:error];
+      // Otherwise, expect it to be relative to the location of the current executable.
+      NSString *libPath = [self.fbxctestInstallationRoot stringByAppendingPathComponent:@"lib"];
+      NSString *bundlePath = [NSBundle bundleForClass:self].resourcePath;
+      return [[self
+        confirmExistenceOfRequiredShimsInDirectory:libPath]
+        onQueue:queue chain:^ FBFuture<NSString *> * (FBFuture<NSString *> *future) {
+          if (future.error) {
+            return [self confirmExistenceOfRequiredShimsInDirectory:bundlePath];
+          }
+          return future;
+        }];
+    }];
 }
 
-+ (nullable NSString *)confirmExistenceOfRequiredShimsInDirectory:(NSString *)directory error:(NSError **)error
++ (FBFuture<NSString *> *)confirmExistenceOfRequiredShimsInDirectory:(NSString *)directory
 {
   if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
     return [[FBXCTestError
       describeFormat:@"A shim directory was expected at '%@', but it was not there", directory]
-      fail:error];
+      failFuture];
   }
+  NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];
   for (NSString *canonicalName in self.canonicalShimNameToShimFilenames.allKeys) {
-    if (![self pathForCanonicallyNamedShim:canonicalName inDirectory:directory error:error]) {
-      return nil;
-    }
+    [futures addObject:[self pathForCanonicallyNamedShim:canonicalName inDirectory:directory]];
   }
-  return directory;
+  return [[FBFuture
+    futureWithFutures:futures]
+    mapReplace:directory];
 }
 
-+ (nullable instancetype)defaultShimConfigurationWithError:(NSError **)error
++ (FBFuture<FBXCTestShimConfiguration *> *)defaultShimConfiguration
 {
-  NSError *innerError = nil;
-  NSString *shimDirectory = [self findShimDirectoryWithError:&innerError];
-  if (!shimDirectory) {
-    return [FBXCTestError failWithError:innerError errorOut:error];
-  }
-  return [self shimConfigurationWithDirectory:shimDirectory error:error];
+  dispatch_queue_t queue = self.createWorkQueue;
+  return [[self
+    findShimDirectoryOnQueue:queue]
+    onQueue:queue fmap:^(NSString *directory) {
+      return [self shimConfigurationWithDirectory:directory];
+    }];
 }
 
-+ (nullable instancetype)shimConfigurationWithDirectory:(NSString *)directory error:(NSError **)error
++ (FBFuture<FBXCTestShimConfiguration *> *)shimConfigurationWithDirectory:(NSString *)directory
 {
-  NSString *shimDirectory = [self confirmExistenceOfRequiredShimsInDirectory:directory error:error];
-  if (!shimDirectory) {
-    return nil;
-  }
-  NSString *iOSTestShimPath = [self pathForCanonicallyNamedShim:KeySimulatorTestShim inDirectory:shimDirectory error:error];
-  if (!iOSTestShimPath) {
-    return nil;
-  }
-  NSString *macTestShimPath = [self pathForCanonicallyNamedShim:KeyMacTestShim inDirectory:shimDirectory error:error];
-  if (!macTestShimPath) {
-    return nil;
-  }
-  NSString *macOSQueryShimPath = [self pathForCanonicallyNamedShim:KeyMacQueryShim inDirectory:shimDirectory error:error];
-  if (!macOSQueryShimPath) {
-    return nil;
-  }
-  return [[self alloc] initWithiOSSimulatorTestShimPath:iOSTestShimPath macOSTestShimPath:macTestShimPath macOSQueryShimPath:macOSQueryShimPath];
+  dispatch_queue_t queue = self.createWorkQueue;
+  return [[[self
+    confirmExistenceOfRequiredShimsInDirectory:directory]
+    onQueue:queue fmap:^(NSString *shimDirectory) {
+      return [FBFuture futureWithFutures:@[
+        [self pathForCanonicallyNamedShim:KeySimulatorTestShim inDirectory:shimDirectory],
+        [self pathForCanonicallyNamedShim:KeyMacTestShim inDirectory:shimDirectory],
+        [self pathForCanonicallyNamedShim:KeyMacQueryShim inDirectory:shimDirectory],
+      ]];
+    }]
+    onQueue:queue map:^(NSArray<NSString *> *shims) {
+      return [[self alloc] initWithiOSSimulatorTestShimPath:shims[0] macOSTestShimPath:shims[1] macOSQueryShimPath:shims[2]];
+    }];
 }
 
 + (NSString *)fbxctestInstallationRoot

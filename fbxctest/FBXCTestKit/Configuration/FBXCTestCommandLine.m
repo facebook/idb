@@ -193,7 +193,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
 
   if (shimsRequired) {
     NSError *innerError = nil;
-    FBXCTestShimConfiguration *shimConfiguration = [FBXCTestShimConfiguration defaultShimConfigurationWithError:&innerError];
+    FBXCTestShimConfiguration *shimConfiguration = [[FBXCTestShimConfiguration defaultShimConfiguration] await:&innerError];
     if (!shimConfiguration) {
       return [FBXCTestError failBoolWithError:innerError errorOut:error];
     }

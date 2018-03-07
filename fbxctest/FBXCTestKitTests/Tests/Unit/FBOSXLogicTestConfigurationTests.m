@@ -24,11 +24,20 @@
 
 @implementation FBOSXLogicTestConfigurationTests
 
+- (BOOL)canParseLogicTests
+{
+  NSError *error = nil;
+  if ([[FBXCTestShimConfiguration findShimDirectoryOnQueue:dispatch_get_main_queue()] await:&error]) {
+    return YES;
+  }
+  NSLog(@"Could not locate a shim directory, skipping %@", error);
+  return NO;
+}
+
 - (void)testMacLogicTests
 {
   NSError *error = nil;
-  if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
-    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
+  if (![self canParseLogicTests]) {
     return;
   }
 
@@ -65,8 +74,7 @@
 - (void)testMacLogicTestsIgnoresDestination
 {
   NSError *error = nil;
-  if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
-    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
+  if (![self canParseLogicTests]) {
     return;
   }
 
@@ -102,8 +110,7 @@
 - (void)testMacTestList
 {
   NSError *error = nil;
-  if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
-    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
+  if (![self canParseLogicTests]) {
     return;
   }
 
@@ -135,8 +142,7 @@
 - (void)testMacTestListIgnoresDestination
 {
   NSError *error = nil;
-  if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
-    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
+  if (![self canParseLogicTests]) {
     return;
   }
 

@@ -21,19 +21,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Constructs a Shim Configuration from the default base directory.
 
- @param error an error out for any of the shims that could not be located.
- @return a Shim Configuration on success, nil otherwise.
+ @return a future wrapping the Shim Configuration.
  */
-+ (nullable instancetype)defaultShimConfigurationWithError:(NSError **)error;
++ (FBFuture<FBXCTestShimConfiguration *> *)defaultShimConfiguration;
 
 /**
  Constructs a Shim Configuration from the given base directory.
 
  @param directory the base directory of the shims
- @param error an error out for any of the shims that could not be located.
- @return a Shim Configuration on success, nil otherwise.
+ @return a future wrapping the Shim Configuration.
  */
-+ (nullable instancetype)shimConfigurationWithDirectory:(NSString *)directory error:(NSError **)error;
++ (FBFuture<FBXCTestShimConfiguration *> *)shimConfigurationWithDirectory:(NSString *)directory;
 
 /**
  The Designated Intializer.
@@ -49,11 +47,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Determines the location of the shim directory, or fails
 
- @param error an error out for any of the shims that could not be located.
+ @param queue the queue to use
  @return a Path to the Shim Configuration.
  */
-+ (nullable NSString *)findShimDirectoryWithError:(NSError **)error;
-
++ (FBFuture<NSString *> *)findShimDirectoryOnQueue:(dispatch_queue_t)queue;
 
 #pragma mark Properties
 

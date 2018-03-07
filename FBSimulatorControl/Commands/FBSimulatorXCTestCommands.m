@@ -74,24 +74,23 @@
 
 - (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout
 {
-  NSError *error = nil;
-  FBXCTestShimConfiguration *shims = [FBXCTestShimConfiguration defaultShimConfigurationWithError:&error];
-  if (!shims) {
-    return [FBFuture futureWithError:error];
-  }
-  FBListTestConfiguration *configuration = [FBListTestConfiguration
-    configurationWithShims:shims
-    environment:@{}
-    workingDirectory:self.simulator.auxillaryDirectory
-    testBundlePath:bundlePath
-    waitForDebugger:NO
-    timeout:timeout];
+  return [[FBXCTestShimConfiguration
+    defaultShimConfiguration]
+    onQueue:self.simulator.workQueue fmap:^(FBXCTestShimConfiguration *shims) {
+      FBListTestConfiguration *configuration = [FBListTestConfiguration
+        configurationWithShims:shims
+        environment:@{}
+        workingDirectory:self.simulator.auxillaryDirectory
+        testBundlePath:bundlePath
+        waitForDebugger:NO
+        timeout:timeout];
 
-  return [[FBListTestStrategy
-    strategyWithExecutor:[FBSimulatorXCTestProcessExecutor executorWithSimulator:self.simulator configuration:configuration]
-    configuration:configuration
-    logger:self.simulator.logger]
-    listTests];
+      return [[FBListTestStrategy
+        strategyWithExecutor:[FBSimulatorXCTestProcessExecutor executorWithSimulator:self.simulator configuration:configuration]
+        configuration:configuration
+        logger:self.simulator.logger]
+        listTests];
+  }];
 }
 
 
