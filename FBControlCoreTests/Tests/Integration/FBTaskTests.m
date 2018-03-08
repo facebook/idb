@@ -139,8 +139,10 @@
     withLaunchPath:@"/bin/sleep" arguments:@[@"1"]]
     startSynchronously];
 
-  XCTestExpectation *expectation = [self keyValueObservingExpectationForObject:task keyPath:@"completedTeardown" expectedValue:@YES];
-  [self waitForExpectations:@[expectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  NSError *error = nil;
+  BOOL success = [task.completed awaitWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout error:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 }
 
 - (void)testAwaitingTerminationOfShortLivedProcess
@@ -245,6 +247,42 @@
   XCTAssertEqual(task.completed.state, FBFutureStateCancelled);
   XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
   XCTAssertEqualObjects(task.exitCode.result, @(SIGTERM));
+}
+
+- (void)testSendingSIGINT
+{
+  FBTask *task = [[FBTaskBuilder
+    withLaunchPath:@"/bin/sleep" arguments:@[@"1000000"]]
+    startSynchronously];
+
+  XCTAssertEqual(task.completed.state, FBFutureStateRunning);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateRunning);
+
+  NSError *error = nil;
+  BOOL success = [[task sendSignal:SIGINT] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+  XCTAssertEqual(task.completed.state, FBFutureStateDone);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
+  XCTAssertEqualObjects(task.exitCode.result, @(SIGINT));
+}
+
+- (void)testSendingSIGKILL
+{
+  FBTask *task = [[FBTaskBuilder
+    withLaunchPath:@"/bin/sleep" arguments:@[@"1000000"]]
+    startSynchronously];
+
+  XCTAssertEqual(task.completed.state, FBFutureStateRunning);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateRunning);
+
+  NSError *error = nil;
+  BOOL success = [[task sendSignal:SIGKILL] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+  XCTAssertEqual(task.completed.state, FBFutureStateDone);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
+  XCTAssertEqualObjects(task.exitCode.result, @(SIGKILL));
 }
 
 @end

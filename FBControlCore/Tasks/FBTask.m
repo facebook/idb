@@ -29,7 +29,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 - (void)mountStandardOut:(id)stdOut;
 - (void)mountStandardErr:(id)stdErr;
 - (void)mountStandardIn:(id)stdIn;
-- (void)terminate;
+- (FBFuture<NSNumber *> *)sendSignal:(int)signo;
 
 @end
 
@@ -104,11 +104,21 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   [self.task launch];
 }
 
-- (void)terminate
+- (FBFuture<NSNumber *> *)sendSignal:(int)signo
 {
-  [self.task terminate];
-  [self.task waitUntilExit];
-  self.task.terminationHandler = nil;
+  pid_t processIdentifier = self.processIdentifier;
+  switch (signo) {
+    case SIGTERM:
+      [self.task terminate];
+      break;
+    case SIGINT:
+      [self.task interrupt];
+      break;
+    default:
+      kill(processIdentifier, signo);
+      break;
+  }
+  return self.exitCode;
 }
 
 @end
@@ -125,8 +135,8 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @property (nonatomic, copy, readwrite) NSString *configurationDescription;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *errorFuture;
-
-@property (atomic, assign, readwrite) BOOL completedTeardown;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startedTeardownFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *completedTeardownFuture;
 
 @end
 
@@ -156,7 +166,9 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   _stdInSlot = stdIn;
   _queue = queue;
   _configurationDescription = configurationDescription;
-  _errorFuture = [FBMutableFuture future];
+  _errorFuture = FBMutableFuture.future;
+  _startedTeardownFuture = FBMutableFuture.future;
+  _completedTeardownFuture = FBMutableFuture.future;
 
   _completed = [[[FBFuture race:@[
       [FBMutableFuture.future resolveFromFuture:process.exitCode],
@@ -172,6 +184,16 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
     }];
 
   return self;
+}
+
+#pragma mark Public Methods
+
+- (FBFuture *)sendSignal:(int)signo
+{
+  return [FBFuture
+    onQueue:self.queue resolve:^{
+      return [self.process sendSignal:signo];
+    }];
 }
 
 #pragma mark Accessors
@@ -235,27 +257,40 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 - (FBFuture<NSNull *> *)terminateWithErrorMessage:(nullable NSString *)errorMessage
 {
-  @synchronized(self) {
-    if (errorMessage) {
-      [self.errorFuture resolveWithError:[self errorForMessage:errorMessage]];
-    }
-    if (self.completedTeardown) {
-      return [FBFuture futureWithResult:NSNull.null];
-    }
-
-    [self teardownProcess];
-    FBFuture<NSNull *> *resourceTeardownFuture = [self teardownResources];
-    [self completeTermination];
-    self.completedTeardown = YES;
-    return resourceTeardownFuture;
+  if (self.completedTeardownFuture.hasCompleted && !self.startedTeardownFuture.hasCompleted) {
+    return [[FBControlCoreError
+      describeFormat:@"Cannot call %@ as teardown is in progress", NSStringFromSelector(_cmd)]
+      failFuture];
   }
+  if (errorMessage) {
+    [self.errorFuture resolveWithError:[self errorForMessage:errorMessage]];
+  }
+  if (self.completedTeardownFuture.hasCompleted) {
+    return [FBFuture futureWithResult:NSNull.null];
+  }
+
+  [self.startedTeardownFuture resolveWithResult:NSNull.null];
+  return [[[self
+    teardownProcess]
+    onQueue:self.queue fmap:^(NSNumber *exitCode) {
+      if (![self.acceptableStatusCodes containsObject:exitCode]) {
+        NSError *error = [self errorForMessage:[NSString stringWithFormat:@"Returned non-zero status code %d", self.process.terminationStatus]];
+        [self.errorFuture resolveWithError:error];
+      }
+      return [self teardownResources];
+    }]
+    onQueue:self.queue chain:^(id _) {
+      [self.completedTeardownFuture resolveWithResult:NSNull.null];
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
 }
 
-- (void)teardownProcess
+- (FBFuture<NSNumber *> *)teardownProcess
 {
   if (self.process.isRunning) {
-    [self.process terminate];
+    return [self.process sendSignal:SIGTERM];
   }
+  return self.process.exitCode;
 }
 
 - (FBFuture<NSNull *> *)teardownResources
@@ -267,15 +302,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
       [self.stdInSlot detach] ?: [FBFuture futureWithResult:NSNull.null],
     ]]
     mapReplace:NSNull.null];
-}
-
-- (void)completeTermination
-{
-  NSAssert(self.process.isRunning == NO, @"Process should be terminated before calling completeTermination");
-  if ([self.acceptableStatusCodes containsObject:@(self.process.terminationStatus)] == NO) {
-    NSError *error = [self errorForMessage:[NSString stringWithFormat:@"Returned non-zero status code %d", self.process.terminationStatus]];
-    [self.errorFuture resolveWithError:error];
-  }
 }
 
 - (NSError *)errorForMessage:(NSString *)errorMessage
