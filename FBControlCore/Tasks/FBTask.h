@@ -40,7 +40,8 @@ extern NSString *const FBTaskErrorDomain;
 
 /**
  A future that resolves with the exit code when the process has finished.
- Any errors will be propogated in this future.
+ Cancelling this future will send a SIGTERM to the launched process.
+ Any errors will also be surfaced in this future.
  */
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *completed;
 

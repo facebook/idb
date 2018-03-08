@@ -229,4 +229,22 @@
   XCTAssertEqualObjects(expected, task.stdOut);
 }
 
+- (void)testCancellationIsSignalling
+{
+  FBTask *task = [[FBTaskBuilder
+    withLaunchPath:@"/bin/sleep" arguments:@[@"1000000"]]
+    startSynchronously];
+
+  XCTAssertEqual(task.completed.state, FBFutureStateRunning);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateRunning);
+
+  NSError *error = nil;
+  BOOL success = [[task.completed cancel] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+  XCTAssertEqual(task.completed.state, FBFutureStateCancelled);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
+  XCTAssertEqualObjects(task.exitCode.result, @(SIGTERM));
+}
+
 @end
