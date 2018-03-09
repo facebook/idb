@@ -62,6 +62,15 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch;
 @end
 
 /**
+ Creates a new continuation.
+
+ @param completed the completion future
+ @param futureType the Future Type.
+ @return a new Contiunation
+ */
+extern id<FBiOSTargetContinuation> FBiOSTargetContinuationNamed(FBFuture<NSNull *> *completed, FBiOSTargetFutureType futureType);
+
+/**
  Re-Names an existing continuation.
  Useful when a lower-level continuation should be hoisted to a higher-level naming.
 

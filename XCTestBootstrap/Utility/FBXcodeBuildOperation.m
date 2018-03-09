@@ -13,80 +13,49 @@
 
 static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID";
 
-@interface FBXcodeBuildOperation ()
-
-@property (nonatomic, strong, readonly) FBFuture<FBTask *> *future;
-@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
-
-@end
-
 @implementation FBXcodeBuildOperation
 
-+ (instancetype)operationWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuraton xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath
-{
-  FBFuture<FBTask *> *future = [self createTaskFuture:configuraton xcodeBuildPath:xcodeBuildPath testRunFilePath:testRunFilePath target:target];
-  return [[self alloc] initWithFuture:future asyncQueue:target.asyncQueue];
-}
-
-+ (FBFuture<FBTask *> *)createTaskFuture:(FBTestLaunchConfiguration *)configuraton xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath target:(id<FBiOSTarget>)target
++ (FBFuture<FBTask *> *)operationWithUDID:(NSString *)udid configuration:(FBTestLaunchConfiguration *)configuration xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   NSMutableArray<NSString *> *arguments = [[NSMutableArray alloc] init];
   [arguments addObjectsFromArray:@[
     @"test-without-building",
     @"-xctestrun", testRunFilePath,
-    @"-destination", [NSString stringWithFormat:@"id=%@", target.udid],
+    @"-destination", [NSString stringWithFormat:@"id=%@", udid],
   ]];
 
-  if (configuraton.resultBundlePath) {
+  if (configuration.resultBundlePath) {
     [arguments addObjectsFromArray:@[
       @"-resultBundlePath",
-      configuraton.resultBundlePath,
+      configuration.resultBundlePath,
     ]];
   }
 
-  for (NSString *test in configuraton.testsToRun) {
+  for (NSString *test in configuration.testsToRun) {
     [arguments addObject:[NSString stringWithFormat:@"-only-testing:%@", test]];
   }
 
-  for (NSString *test in configuraton.testsToSkip) {
+  for (NSString *test in configuration.testsToSkip) {
     [arguments addObject:[NSString stringWithFormat:@"-skip-testing:%@", test]];
   }
 
   NSMutableDictionary<NSString *, NSString *> *environment = [NSProcessInfo.processInfo.environment mutableCopy];
-  environment[XcodebuildEnvironmentTargetUDID] = target.udid;
+  environment[XcodebuildEnvironmentTargetUDID] = udid;
 
-  [target.logger logFormat:@"Running test with xcodebuild %@", [arguments componentsJoinedByString:@" "]];
-  return [[[[[FBTaskBuilder
+  [logger logFormat:@"Starting test with xcodebuild %@", [arguments componentsJoinedByString:@" "]];
+  FBTaskBuilder *builder = [[FBTaskBuilder
     withLaunchPath:xcodeBuildPath arguments:arguments]
-    withEnvironment:environment]
-    withStdOutToLogger:target.logger]
-    withStdErrToLogger:target.logger]
-    runUntilCompletion];
-}
-
-- (instancetype)initWithFuture:(FBFuture<FBTask *> *)future asyncQueue:(dispatch_queue_t)asyncQueue
-{
-  self = [super init];
-  if (!self) {
-    return nil;
+    withEnvironment:environment];
+  if (logger) {
+    [builder withStdOutToLogger:logger];
+    [builder withStdErrToLogger:logger];
   }
-
-  _future = future;
-  _asyncQueue = asyncQueue;
-
-  return self;
-}
-
-#pragma mark FBiOSTargetContinuation
-
-- (FBFuture<NSNull *> *)completed
-{
-  return [self.future mapReplace:NSNull.null];
-}
-
-- (FBiOSTargetFutureType)futureType
-{
-  return FBiOSTargetFutureTypeTestOperation;
+  return [[builder
+    start]
+    onQueue:queue map:^(FBTask *task) {
+      [logger logFormat:@"Task started %@ for xcodebuild %@", task, [arguments componentsJoinedByString:@" "]];
+      return task;
+    }];
 }
 
 #pragma mark Public

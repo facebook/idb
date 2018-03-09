@@ -50,7 +50,7 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
 @property (nonatomic, weak, readonly) FBDevice *device;
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
 @property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
-@property (nonatomic, strong, nullable, readonly) FBXcodeBuildOperation *operation;
+@property (nonatomic, strong, nullable, readwrite) id<FBiOSTargetContinuation> operation;
 
 @end
 
@@ -216,7 +216,7 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
 
 #pragma mark FBXCTestCommands Implementation
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
+- (FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   // Return early and fail if there is already a test run for the device.
   // There should only ever be one test run per-device.
@@ -226,51 +226,16 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
       failFuture];
   }
   // Terminate the reparented xcodebuild invocations.
-  return [[FBXcodeBuildOperation
+  return [[[FBXcodeBuildOperation
     terminateAbandonedXcodebuildProcessesForUDID:self.device.udid processFetcher:self.processFetcher queue:self.device.workQueue logger:logger]
     onQueue:self.device.workQueue fmap:^(id _) {
-      return [self _startTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter logger:logger];
+      // Then start the task. This future will yield when the task has *started*.
+      return [self _startTestWithLaunchConfiguration:testLaunchConfiguration logger:logger];
+    }]
+    onQueue:self.device.workQueue map:^(FBTask *task) {
+      // Then wrap the started task, so that we can augment it with logging and adapt it to the FBiOSTargetContinuation interface.
+      return [self _testOperationStarted:task configuration:testLaunchConfiguration reporter:reporter logger:logger];
     }];
-}
-
-- (FBFuture<id<FBiOSTargetContinuation>> *)_startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
-{
-  NSError *error = nil;
-  // Create the .xctestrun file
-  NSString *filePath = [self createXCTestRunFileFromConfiguration:testLaunchConfiguration error:&error];
-  if (!filePath) {
-    return [FBDeviceControlError failFutureWithError:error];
-  }
-
-  // Find the path to xcodebuild
-  NSString *xcodeBuildPath = [FBDeviceXCTestCommands xcodeBuildPathWithError:&error];
-  if (!xcodeBuildPath) {
-    return [FBDeviceControlError failFutureWithError:error];
-  }
-
-  // Create the Task, wrap it and store it
-  _operation = [FBXcodeBuildOperation operationWithTarget:self.device configuration:testLaunchConfiguration xcodeBuildPath:xcodeBuildPath testRunFilePath:filePath];
-
-  if (reporter != nil) {
-    [self.operation.completed onQueue:self.device.workQueue notifyOfCompletion:^(FBFuture *task) {
-      if (testLaunchConfiguration.resultBundlePath) {
-        NSString *testSummariesPath = [testLaunchConfiguration.resultBundlePath stringByAppendingPathComponent:@"TestSummaries.plist"];
-        NSDictionary<NSString *, NSArray *> *results = [NSDictionary dictionaryWithContentsOfFile:testSummariesPath];
-        if (results) {
-          [self.class reportResults:results reporter:reporter];
-          [logger logFormat:@"ResultBundlePath: %@", testLaunchConfiguration.resultBundlePath];
-        }
-        else {
-          NSString *errorMessage = [NSString stringWithFormat:@"No test results were produced for Configuration:\n\n%@", testLaunchConfiguration];
-          [reporter testManagerMediator:nil testPlanDidFailWithMessage:errorMessage];
-        }
-      }
-      [reporter testManagerMediatorDidFinishExecutingTestPlan:nil];
-      self->_operation = nil;
-    }];
-  }
-
-  return [FBFuture futureWithResult:_operation];
 }
 
 - (NSArray<id<FBiOSTargetContinuation>> *)testOperations
@@ -288,6 +253,71 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
 
 #pragma mark Private
 
+- (FBFuture<FBTask *> *)_startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
+{
+  NSError *error = nil;
+  // Create the .xctestrun file
+  NSString *filePath = [self createXCTestRunFileFromConfiguration:configuration error:&error];
+  if (!filePath) {
+    return [FBDeviceControlError failFutureWithError:error];
+  }
+
+  // Find the path to xcodebuild
+  NSString *xcodeBuildPath = [FBDeviceXCTestCommands xcodeBuildPathWithError:&error];
+  if (!xcodeBuildPath) {
+    return [FBDeviceControlError failFutureWithError:error];
+  }
+
+  // Create the Task, wrap it and store it.
+  return [FBXcodeBuildOperation
+    operationWithUDID:self.device.udid
+    configuration:configuration
+    xcodeBuildPath:xcodeBuildPath
+    testRunFilePath:filePath
+    queue:self.device.workQueue
+    logger:logger];
+}
+
+- (id<FBiOSTargetContinuation>)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+{
+  FBFuture<NSNull *> *completed = [[[task
+    completed]
+    onQueue:self.device.workQueue map:^(id _) {
+      // This will execute only if the operation completes successfully.
+      [logger logFormat:@"xcodebuild operation completed successfully %@", task];
+      if (configuration.resultBundlePath) {
+        [logger logFormat:@"Parsing the result bundle %@", configuration.resultBundlePath];
+
+        NSString *testSummariesPath = [configuration.resultBundlePath stringByAppendingPathComponent:@"TestSummaries.plist"];
+        NSDictionary<NSString *, NSArray *> *results = [NSDictionary dictionaryWithContentsOfFile:testSummariesPath];
+        if (results) {
+          [self.class reportResults:results reporter:reporter];
+          [logger logFormat:@"ResultBundlePath: %@", configuration.resultBundlePath];
+        }
+        else {
+          NSString *errorMessage = [NSString stringWithFormat:@"No test results were produced for Configuration:\n\n%@", configuration];
+          [reporter testManagerMediator:nil testPlanDidFailWithMessage:errorMessage];
+        }
+      } else {
+        [logger log:@"No result bundle to parse"];
+      }
+      [reporter testManagerMediatorDidFinishExecutingTestPlan:nil];
+
+      return NSNull.null;
+    }]
+    onQueue:self.device.workQueue chain:^(FBFuture *future) {
+      // Always perform this, whether the operation was successful or not.
+      [logger logFormat:@"Test Operation has completed for %@, with state '%@' removing it as the sole operation for this target", future, configuration.shortDescription];
+      self.operation = nil;
+      return future;
+    }];
+
+
+  self.operation = FBiOSTargetContinuationNamed(completed, FBiOSTargetFutureTypeTestOperation);
+  [logger logFormat:@"Test Operation %@ has started for %@, storing it as the sole operation for this target", task, configuration.shortDescription];
+
+  return self.operation;
+}
 
 + (NSDictionary<NSString *, id> *)overwriteXCTestRunPropertiesWithBaseProperties:(NSDictionary<NSString *, id> *)baseProperties newProperties:(NSDictionary<NSString *, id> *)newProperties
 {

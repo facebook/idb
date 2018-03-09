@@ -21,7 +21,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBDeviceXCTestCommands : NSObject <FBXCTestCommands, FBiOSTargetCommand>
 
-
 /**
  A helper method for overwriting xcTestRunProperties.
  Creates a new properties dictionary with values from baseProperties

@@ -18,22 +18,24 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBiOSTarget;
 
 /**
- An Xcode Build Operation.
+ Builds an xcodebuild invocation as a subprocess.
  */
-@interface FBXcodeBuildOperation : NSObject <FBiOSTargetContinuation>
+@interface FBXcodeBuildOperation : NSObject
 
 #pragma mark Initializers
 
 /**
  The Designated Initializer.
 
- @param target the target to build an operation for.
+ @param udid the udid of the target.
  @param configuration the configuration to use.
  @param xcodeBuildPath the path to xcodebuild.
  @param testRunFilePath the path to the xcodebuild.xctestrun file
- @return a build operation.
+ @param queue the queue to use for serialization.
+ @param logger the logger to log to.
+ @return a future that resolves when the task has launched.
  */
-+ (instancetype)operationWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath;
++ (FBFuture<FBTask *> *)operationWithUDID:(NSString *)udid configuration:(FBTestLaunchConfiguration *)configuration xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 

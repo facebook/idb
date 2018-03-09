@@ -19,6 +19,40 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeAgentLaunch = @"agentlaunch";
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch = @"launch_xctest";
 
+@interface FBiOSTargetContinuation_Named : NSObject <FBiOSTargetContinuation>
+
+@end
+
+@implementation FBiOSTargetContinuation_Named
+
+@synthesize completed = _completed;
+@synthesize futureType = _futureType;
+
+- (instancetype)initWithCompleted:(FBFuture<NSNull *> *)completed futureType:(FBiOSTargetFutureType)futureType
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _completed = completed;
+  _futureType = futureType;
+
+  return self;
+}
+
+- (FBFuture<NSNull *> *)completed
+{
+  return _completed;
+}
+
+- (FBiOSTargetFutureType)futureType
+{
+  return _futureType;
+}
+
+@end
+
 @interface FBiOSTargetContinuation_Renamed : NSObject <FBiOSTargetContinuation>
 
 @property (nonatomic, strong, readonly) id<FBiOSTargetContinuation> continuation;
@@ -86,6 +120,10 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch = @"launch_xctest";
 
 @end
 
+id<FBiOSTargetContinuation> FBiOSTargetContinuationNamed(FBFuture<NSNull *> *completed, FBiOSTargetFutureType futureType)
+{
+  return [[FBiOSTargetContinuation_Named alloc] initWithCompleted:completed futureType:futureType];
+}
 
 id<FBiOSTargetContinuation> FBiOSTargetContinuationRenamed(id<FBiOSTargetContinuation> continuation, FBiOSTargetFutureType futureType)
 {
