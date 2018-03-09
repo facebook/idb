@@ -209,20 +209,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<FBTask *> *)start;
 
 /**
- Builds and Starts the Task, synchronously.
-
- @return a FBTask.
- */
-- (FBTask *)startSynchronously;
-
-@end
-
-/**
- Convenices on top of FBTaskBuilder
- */
-@interface FBTaskBuilder (Convenience)
-
-/**
  Builds and Starts Task, wrapping it in a future.
  The future will resolve when the task has finished executing.
  Cancelling the future will cancel the task.

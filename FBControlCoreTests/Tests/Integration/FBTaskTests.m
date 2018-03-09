@@ -14,6 +14,23 @@
 #import "FBControlCoreFixtures.h"
 #import "FBControlCoreLoggerDouble.h"
 
+@interface FBTaskBuilder (FBTaskTests)
+
+@end
+
+@implementation FBTaskBuilder (FBTaskTests)
+
+- (FBTask *)startSynchronously
+{
+  FBFuture<FBTask *> *future = [self start];
+  NSError *error = nil;
+  FBTask *task = [future await:&error];
+  NSAssert(task, @"Task Could not be started %@", error);
+  return task;
+}
+
+@end
+
 @interface FBTaskTests : XCTestCase
 
 @end

@@ -200,13 +200,13 @@
   return [FBTask startTaskWithConfiguration:self.buildConfiguration];
 }
 
-- (FBTask *)startSynchronously
+- (FBFuture<FBTask *> *)runUntilCompletion
 {
-  FBFuture<FBTask *> *future = [self start];
-  NSError *error = nil;
-  FBTask *task = [future await:&error];
-  NSAssert(task, @"Task Could not be started %@", error);
-  return task;
+  return [[self
+    start]
+    onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0) fmap:^(FBTask *task) {
+      return [[task completed] mapReplace:task];
+    }];
 }
 
 #pragma mark - Private
@@ -240,19 +240,6 @@
     environment = [taskEnvironment copy];
   });
   return environment;
-}
-
-@end
-
-@implementation FBTaskBuilder (Convenience)
-
-- (FBFuture<FBTask *> *)runUntilCompletion
-{
-  return [[self
-    start]
-    onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0) fmap:^(FBTask *task) {
-      return [[task completed] mapReplace:task];
-    }];
 }
 
 @end

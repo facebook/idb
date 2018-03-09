@@ -344,19 +344,21 @@
   return [FBFuture futureWithResult:[NSNull null]];
 }
 
-- (nonnull FBFuture<NSNumber *> *)launchApplication:(nonnull FBApplicationLaunchConfiguration *)configuration
+- (FBFuture<NSNumber *> *)launchApplication:(nonnull FBApplicationLaunchConfiguration *)configuration
 {
   FBProductBundle *product = self.bundleIDToProductMap[configuration.bundleID];
   if (!product) {
     return [FBFuture futureWithResult:@0];
   }
-  FBTask *task = [[[[FBTaskBuilder
+  return [[[[[FBTaskBuilder
     withLaunchPath:product.binaryPath]
     withArguments:configuration.arguments]
     withEnvironment:configuration.environment]
-    startSynchronously];
-  self.bundleIDToRunningTask[product.bundleID] = task;
-  return [FBFuture futureWithResult:@(task.processIdentifier)];
+    start]
+    onQueue:self.workQueue map:^(FBTask *task) {
+      self.bundleIDToRunningTask[product.bundleID] = task;
+      return @(task.processIdentifier);
+    }];
 }
 
 - (nonnull FBFuture<NSDictionary<NSString *,FBProcessInfo *> *> *)runningApplications
