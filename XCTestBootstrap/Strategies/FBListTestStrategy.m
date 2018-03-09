@@ -107,24 +107,19 @@
 
 - (FBFuture<NSArray<NSString *> *> *)listTestsWithShimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBConsumableLineBuffer>)shimConsumer
 {
-  NSString *xctestPath = self.executor.xctestPath;
   NSString *otestQueryShimPath = self.executor.queryShimPath;
-  NSArray<NSString *> *arguments = @[@"-XCTest", @"All", self.configuration.testBundlePath];
   NSDictionary<NSString *, NSString *> *environment = @{
     @"DYLD_INSERT_LIBRARIES": otestQueryShimPath,
     @"OTEST_QUERY_OUTPUT_FILE": shimOutput.filePath,
     @"OtestQueryBundlePath": self.configuration.testBundlePath,
   };
-  FBXCTestProcess *process = [FBXCTestProcess
-    processWithLaunchPath:xctestPath
-    arguments:arguments
-    environment:environment
-    waitForDebugger:NO
+
+  FBXCTestProcess *process = [self.configuration
+    listTestProcessWithEnvironment:environment
     stdOutConsumer:[FBLoggingFileConsumer consumerWithLogger:self.logger]
     stdErrConsumer:[FBLoggingFileConsumer consumerWithLogger:self.logger]
     executor:self.executor];
 
-  // Start the process.
   return [[process
     startWithTimeout:self.configuration.testTimeout]
     onQueue:self.executor.workQueue fmap:^(FBLaunchedProcess *processInfo) {

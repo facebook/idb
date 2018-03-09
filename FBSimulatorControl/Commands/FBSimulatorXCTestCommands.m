@@ -82,6 +82,7 @@
         environment:@{}
         workingDirectory:self.simulator.auxillaryDirectory
         testBundlePath:bundlePath
+        runnerAppPath:nil
         waitForDebugger:NO
         timeout:timeout];
 

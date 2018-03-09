@@ -44,15 +44,6 @@ static BOOL deleteDirectory(NSURL *path)
   return [[NSFileManager defaultManager] removeItemAtURL:path error:nil];
 }
 
-static BOOL isApplicationAtPath(NSString *path)
-{
-  BOOL isDirectory = NO;
-  return path != nil
-    && [path hasSuffix:@".app"]
-    && [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory]
-    && isDirectory;
-}
-
 @implementation FBApplicationBundle (Install)
 
 #pragma mark Public
@@ -73,6 +64,54 @@ static BOOL isApplicationAtPath(NSString *path)
       FBExtractedApplication *application = [[FBExtractedApplication alloc] initWithBundle:bundle extractedPath:extractPath];
       return [FBFuture futureWithResult:application];
   }];
+}
+
++ (NSString *)copyFrameworkToApplicationAtPath:(NSString *)appPath frameworkPath:(NSString *)frameworkPath
+{
+  if (![FBApplicationBundle isApplicationAtPath:appPath]) {
+    return nil;
+  }
+
+  NSError *error = nil;
+  NSFileManager *fileManager= [NSFileManager defaultManager];
+
+  NSString *frameworksDir = [appPath stringByAppendingPathComponent:@"Frameworks"];
+  BOOL isDirectory = NO;
+  if ([fileManager fileExistsAtPath:frameworksDir isDirectory:&isDirectory]) {
+    if (!isDirectory) {
+      return [[FBControlCoreError
+        describeFormat:@"%@ is not a directory", frameworksDir]
+        fail:nil];
+    }
+  } else {
+    if (![fileManager createDirectoryAtPath:frameworksDir withIntermediateDirectories:NO attributes:nil error:&error]) {
+      return [[FBControlCoreError
+        describeFormat:@"Create framework directory %@ failed", frameworksDir]
+        fail:&error];
+    }
+  }
+
+  NSString *toPath = [frameworksDir stringByAppendingPathComponent:[frameworkPath lastPathComponent]];
+  if ([[NSFileManager defaultManager] fileExistsAtPath:toPath]) {
+    return appPath;
+  }
+
+  if (![fileManager copyItemAtPath:frameworkPath toPath:toPath  error:&error]) {
+    return [[FBControlCoreError
+      describeFormat:@"Error copying framework %@ to app %@.", frameworkPath, appPath]
+      fail:&error];
+  }
+
+  return appPath;
+}
+
++ (BOOL)isApplicationAtPath:(NSString *)path
+{
+  BOOL isDirectory = NO;
+  return path != nil
+    && [path hasSuffix:@".app"]
+    && [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory]
+    && isDirectory;
 }
 
 #pragma mark Private
@@ -103,7 +142,7 @@ static short const ZipFileMagicHeader = 0x4b50;
 + (FBFuture<NSString *> *)findOrExtractApplicationAtPath:(NSString *)path extractPath:(NSURL *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   // If it's an App, we don't need to do anything, just return early.
-  if (isApplicationAtPath(path)) {
+  if ([FBApplicationBundle isApplicationAtPath:path]) {
     return [FBFuture futureWithResult:path];
   }
   // The other case is that this is an IPA, check it is before extacting.
@@ -143,7 +182,7 @@ static short const ZipFileMagicHeader = 0x4b50;
     errorHandler:nil];
   NSSet *applicationURLs = [NSSet set];
   for (NSURL *fileURL in directoryEnumerator) {
-    if (isApplicationAtPath(fileURL.path)){
+    if ([FBApplicationBundle isApplicationAtPath:fileURL.path]) {
       applicationURLs = [applicationURLs setByAddingObject:fileURL];
       [directoryEnumerator skipDescendants];
     }

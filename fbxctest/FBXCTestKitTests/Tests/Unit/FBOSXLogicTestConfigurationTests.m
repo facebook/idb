@@ -133,6 +133,7 @@
       environment:@{}
       workingDirectory:workingDirectory
       testBundlePath:testBundlePath
+      runnerAppPath:nil
       waitForDebugger:NO
       timeout:0]
     destination:[[FBXCTestDestinationMacOSX alloc] init]];
@@ -165,6 +166,7 @@
       environment:@{}
       workingDirectory:workingDirectory
       testBundlePath:testBundlePath
+      runnerAppPath:nil
       waitForDebugger:NO
       timeout:0]
     destination:[[FBXCTestDestinationMacOSX alloc] init]];

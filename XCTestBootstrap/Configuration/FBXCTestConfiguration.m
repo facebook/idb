@@ -10,6 +10,8 @@
 #import "FBXCTestConfiguration.h"
 
 #import "FBXCTestConfiguration.h"
+#import "FBXCTestProcess.h"
+#import "FBXCTestProcessExecutor.h"
 #import "FBXCTestShimConfiguration.h"
 #import "XCTestBootstrapError.h"
 
@@ -239,13 +241,27 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
 @end
 
-@implementation FBListTestConfiguration
+@implementation FBListTestConfiguration {
+  NSString *_runnerAppPath;
+}
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout
++ (instancetype)configurationWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath runnerAppPath:(nullable NSString *)runnerAppPath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout
 {
-  return [[FBListTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
+  return [[FBListTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath runnerAppPath:runnerAppPath waitForDebugger:waitForDebugger timeout:timeout];
+}
+
+- (instancetype)initWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath runnerAppPath:(nullable NSString *)runnerAppPath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout
+{
+  self = [super initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
+  if (!self) {
+    return nil;
+  }
+
+  _runnerAppPath = runnerAppPath;
+
+  return self;
 }
 
 #pragma mark Public
@@ -255,13 +271,61 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   return FBXCTestTypeListTest;
 }
 
+- (FBXCTestProcess *)listTestProcessWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor
+{
+  if ([FBApplicationBundle isApplicationAtPath:_runnerAppPath]) {
+    // List test for app test bundle, so we use app binary instead of xctest to load test bundle.
+    NSString *xcTestFrameworkPath =
+    [[FBXcodeConfiguration.developerDirectory
+      stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform"]
+      stringByAppendingPathComponent:@"Developer/Library/Frameworks/XCTest.framework"];
+
+    // Since we spawn process using app binary directly without installation, we need to manully copy
+    // xctest framework to app's rpath so it can be found by dyld when we load test bundle later.
+    [FBApplicationBundle copyFrameworkToApplicationAtPath:_runnerAppPath frameworkPath:xcTestFrameworkPath];
+
+    FBApplicationBundle *appBundle = [FBApplicationBundle applicationWithPath:_runnerAppPath error:nil];
+    return [FBXCTestProcess
+      processWithLaunchPath:appBundle.binary.path
+      arguments:@[]
+      environment:environment
+      waitForDebugger:NO
+      stdOutConsumer:stdOutConsumer
+      stdErrConsumer:stdErrConsumer
+      executor:executor];
+  }
+
+  NSString *xctestPath = executor.xctestPath;
+  NSArray<NSString *> *arguments = @[@"-XCTest", @"All", self.testBundlePath];
+  return [FBXCTestProcess
+    processWithLaunchPath:xctestPath
+    arguments:arguments
+    environment:environment
+    waitForDebugger:NO
+    stdOutConsumer:stdOutConsumer
+    stdErrConsumer:stdErrConsumer
+    executor:executor];
+}
+
 #pragma mark JSON
 
 - (id)jsonSerializableRepresentation
 {
   NSMutableDictionary<NSString *, id> *json = [NSMutableDictionary dictionaryWithDictionary:[super jsonSerializableRepresentation]];
   json[KeyListTestsOnly] = @YES;
+  json[KeyRunnerAppPath] = _runnerAppPath ?: NSNull.null;
   return [json copy];
+}
+
++ (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  NSString *runnerAppPath = [FBCollectionOperations nullableValueForDictionary:json key:KeyRunnerAppPath];
+  if (runnerAppPath && ![runnerAppPath isKindOfClass:NSString.class]) {
+    return [[FBXCTestError
+             describeFormat:@"%@ is not a String for %@", runnerAppPath, KeyRunnerAppPath]
+            fail:error];
+  }
+  return [[FBListTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath runnerAppPath:runnerAppPath waitForDebugger:waitForDebugger timeout:timeout];
 }
 
 @end

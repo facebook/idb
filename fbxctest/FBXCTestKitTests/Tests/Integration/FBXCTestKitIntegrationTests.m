@@ -309,6 +309,36 @@
   XCTAssertEqualObjects(expected, self.reporter.startedTests);
 }
 
+- (void)testiOSAppTestList
+{
+  NSError *error = nil;
+  if (![self validateShimsForTestExecution]) {
+    return;
+  }
+
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *applicationPath = [FBXCTestKitFixtures iOSUITestAppTargetPath];
+  NSString *testBundlePath = [self iOSAppTestBundlePath];
+  NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
+  NSArray<NSString *> *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument, @"-listTestsOnly" ];
+
+  FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(commandLine);
+
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithCommandLine:commandLine context:self.context];
+  BOOL success = [[testRunner execute] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  XCTAssertTrue(self.reporter.printReportWasCalled);
+  NSArray<NSArray<NSString *> *> *expected = @[
+                                               @[@"iOSAppFixtureAppTests", @"testWillAlwaysFail"],
+                                               @[@"iOSAppFixtureAppTests", @"testWillAlwaysPass"],
+                                               ];
+  XCTAssertEqualObjects(expected, self.reporter.startedTests);
+}
+
 - (void)testMacOSXLogicTest
 {
   NSError *error = nil;

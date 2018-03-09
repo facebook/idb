@@ -63,11 +63,15 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
   NSSet<NSString *> *argumentSet = [NSSet setWithArray:arguments];
   FBXCTestConfiguration *configuration = nil;
   if ([argumentSet containsObject:@"-listTestsOnly"]) {
+    if (![argumentSet containsObject:@"-appTest"]) {
+      runnerAppPath = nil;
+    }
     configuration = [FBListTestConfiguration
       configurationWithShims:shims
       environment:environment
       workingDirectory:workingDirectory
       testBundlePath:testBundlePath
+      runnerAppPath:runnerAppPath
       waitForDebugger:waitForDebugger
       timeout:timeout];
   } else if ([argumentSet containsObject:@"-logicTest"]) {
@@ -162,7 +166,10 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       }
       *testBundlePathOut = testBundlePath;
       *runnerAppPathOut = testRunnerAppPath;
-      shimsRequired = NO;
+
+      if (![arguments containsObject:@"-listTestsOnly"]) {
+        shimsRequired = NO;
+      }
     } else if ([argument isEqualToString:@"-uiTest"]) {
       NSArray *components = [parameter componentsSeparatedByString:@":"];
       if (components.count != 3) {
@@ -180,7 +187,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       *testBundlePathOut = testBundlePath;
       *runnerAppPathOut = testRunnerPath;
       *testTargetPathOut = testTargetPath;
-      shimsRequired = NO;
     } else if ([argument isEqualToString:@"-only"]) {
       if (testFilter != nil) {
         return [[FBXCTestError describeFormat:@"Multiple -only options specified: %@, %@", testFilter, parameter] failBool:error];
