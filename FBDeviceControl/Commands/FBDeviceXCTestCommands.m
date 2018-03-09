@@ -226,9 +226,11 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
       failFuture];
   }
   // Terminate the reparented xcodebuild invocations.
-  return [[FBXcodeBuildOperation terminateReparentedXcodeBuildProcessesForTarget:self.device processFetcher:self.processFetcher] onQueue:self.device.workQueue fmap:^(id unused) {
-    return [self _startTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter logger:logger];
-  }];
+  return [[FBXcodeBuildOperation
+    terminateAbandonedXcodebuildProcessesForUDID:self.device.udid processFetcher:self.processFetcher queue:self.device.workQueue logger:logger]
+    onQueue:self.device.workQueue fmap:^(id _) {
+      return [self _startTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter logger:logger];
+    }];
 }
 
 - (FBFuture<id<FBiOSTargetContinuation>> *)_startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger

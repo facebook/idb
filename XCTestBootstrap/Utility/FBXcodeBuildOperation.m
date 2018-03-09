@@ -91,21 +91,6 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
 
 #pragma mark Public
 
-+ (FBFuture<NSNull *> *)terminateReparentedXcodeBuildProcessesForTarget:(id<FBiOSTarget>)target processFetcher:(FBProcessFetcher *)processFetcher
-{
-  NSArray<FBProcessInfo *> *processes = [processFetcher processesWithProcessName:@"xcodebuild"];
-  FBProcessTerminationStrategy *strategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:processFetcher workQueue:target.workQueue logger:target.logger];
-  NSString *udid = target.udid;
-  NSMutableArray<FBFuture *> *terminations = [NSMutableArray new];
-  for (FBProcessInfo *process in processes) {
-    if (![process.environment[XcodebuildEnvironmentTargetUDID] isEqualToString:udid]) {
-      continue;
-    }
-    [terminations addObject:[strategy killProcess:process]];
-  }
-  return [[FBFuture futureWithFutures:terminations] mapReplace:[NSNull null]];
-}
-
 + (NSDictionary<NSString *, NSDictionary<NSString *, NSObject *> *> *)xctestRunProperties:(FBTestLaunchConfiguration *)testLaunch
 {
   return @{
@@ -122,6 +107,38 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
       },
     }
   };
+}
+
++ (FBFuture<NSArray<FBProcessInfo *> *> *)terminateAbandonedXcodebuildProcessesForUDID:(NSString *)udid processFetcher:(FBProcessFetcher *)processFetcher queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  NSArray<FBProcessInfo *> *processes = [self activeXcodebuildProcessesForUDID:udid processFetcher:processFetcher];
+  if (processes.count == 0) {
+    [logger logFormat:@"No processes for %@ to terminate", udid];
+    return [FBFuture futureWithResult:@[]];
+  }
+  [logger logFormat:@"Terminating abandoned xcodebuild processes %@", [FBCollectionInformation oneLineDescriptionFromArray:processes]];
+  FBProcessTerminationStrategy *strategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:processFetcher workQueue:queue logger:logger];
+  NSMutableArray<FBFuture<FBProcessInfo *> *> *futures = [NSMutableArray array];
+  for (FBProcessInfo *process in processes) {
+    FBFuture<FBProcessInfo *> *termination = [[strategy killProcess:process] mapReplace:process];
+    [futures addObject:termination];
+  }
+  return [FBFuture futureWithFutures:futures];
+}
+
+#pragma mark Private
+
++ (NSArray<FBProcessInfo *> *)activeXcodebuildProcessesForUDID:(NSString *)udid processFetcher:(FBProcessFetcher *)processFetcher
+{
+  NSArray<FBProcessInfo *> *xcodebuildProcesses = [processFetcher processesWithProcessName:@"xcodebuild"];
+  NSMutableArray<FBProcessInfo *> *relevantProcesses = [NSMutableArray array];
+  for (FBProcessInfo *process in xcodebuildProcesses) {
+    if (![process.environment[XcodebuildEnvironmentTargetUDID] isEqualToString:udid]) {
+      continue;
+    }
+    [relevantProcesses addObject:process];
+  }
+  return relevantProcesses;
 }
 
 @end

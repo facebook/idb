@@ -38,21 +38,23 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Public Methods
 
 /**
- Terminates all reparented xcodebuild processes.
-
- @param target the target to obtain processes for.
- @param processFetcher the process fetcher.
- @return a Future that resolves when processes have exited.
- */
-+ (FBFuture<NSNull *> *)terminateReparentedXcodeBuildProcessesForTarget:(id<FBiOSTarget>)target processFetcher:(FBProcessFetcher *)processFetcher;
-
-/**
  The xctest.xctestrun properties for a test launch.
 
  @param testLaunch the test launch to base off.
  @return the xctest.xctestrun properties.
  */
 + (NSDictionary<NSString *, NSDictionary<NSString *, NSObject *> *> *)xctestRunProperties:(FBTestLaunchConfiguration *)testLaunch;
+
+/**
+ Terminates all reparented xcodebuild processes.
+
+ @param udid the udid of the target.
+ @param processFetcher the process fetcher to use.
+ @param queue the termination queue
+ @param logger a logger to log to.
+ @return a Future that resolves when processes have exited.
+ */
++ (FBFuture<NSArray<FBProcessInfo *> *> *)terminateAbandonedXcodebuildProcessesForUDID:(NSString *)udid processFetcher:(FBProcessFetcher *)processFetcher queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
