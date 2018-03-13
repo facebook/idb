@@ -212,15 +212,15 @@
       return [self.simulator serviceNameAndProcessIdentifierForSubstring:serviceName];
     }]
     onQueue:self.simulator.workQueue fmap:^(NSArray<id> *result) {
-     NSNumber *processIdentifier = result[1];
-     FBProcessInfo *processInfo = [self.simulator.processFetcher.processFetcher processInfoFor:processIdentifier.intValue];
-     if (!processInfo) {
-       return [[FBSimulatorError
-        describeFormat:@"Could not fetch process info for %@", processIdentifier]
-        failFuture];
-     }
-    return [FBFuture futureWithResult:processInfo];
-   }];
+      NSNumber *processIdentifier = result[1];
+      FBProcessInfo *processInfo = [self.simulator.processFetcher.processFetcher processInfoFor:processIdentifier.intValue];
+      if (!processInfo) {
+        return [[FBSimulatorError
+          describeFormat:@"Could not fetch process info for %@", processIdentifier]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:processInfo];
+    }];
 }
 
 #pragma mark Private
