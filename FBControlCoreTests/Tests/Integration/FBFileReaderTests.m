@@ -45,7 +45,7 @@
     return [expected isEqualToData:consumer.data];
   }];
   XCTestExpectation *expectation = [self expectationForPredicate:predicate evaluatedWithObject:self handler:nil];
-  [self waitForExpectations:@[expectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  [self waitForExpectations:@[expectation] timeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
   // Stop reading
   success = [[writer stopReading] await:&error] != nil;

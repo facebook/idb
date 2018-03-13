@@ -80,11 +80,46 @@
 
   NSArray<NSArray<NSString *> *> *uiTestList = @[
     @[@"iOSUITestFixtureUITests", @"testHelloWorld"],
+    @[@"iOSUITestFixtureUITests", @"testThatPasses1"],
+    @[@"iOSUITestFixtureUITests", @"testThatPasses2"],
   ];
   XCTAssertEqualObjects(self.reporter.startedTests, uiTestList);
   XCTAssertEqualObjects(self.reporter.passedTests, uiTestList);
   XCTAssertEqualObjects(self.reporter.failedTests, @[]);
 }
+
+- (void)testiOSUITestRunWithMultipleTestFilters
+{
+  NSError *error;
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];
+  NSString *testTargetPath = [FBXCTestKitFixtures iOSUITestAppTargetPath];
+  NSString *testBundlePath = self.iOSUITestBundlePath;
+  NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@:%@", testBundlePath, applicationPath, testTargetPath];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-uiTest", appTestArgument,
+                          @"-only", [NSString stringWithFormat:@"%@:iOSUITestFixtureUITests/testThatPasses1", testBundlePath],
+                          @"-only", [NSString stringWithFormat:@"%@:iOSUITestFixtureUITests/testThatPasses2", testBundlePath]];
+  
+  FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(commandLine);
+  
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithCommandLine:commandLine context:self.context];
+  BOOL success = [[testRunner execute] await:&error] != nil;
+  XCTAssertTrue(success);
+  XCTAssertNil(error);
+  
+  XCTAssertTrue(self.reporter.printReportWasCalled);
+  
+  NSArray<NSArray<NSString *> *> *uiTestList = @[
+                                                 @[@"iOSUITestFixtureUITests", @"testThatPasses1"],
+                                                 @[@"iOSUITestFixtureUITests", @"testThatPasses2"],
+                                                 ];
+  XCTAssertEqualObjects(self.reporter.startedTests, uiTestList);
+  XCTAssertEqualObjects(self.reporter.passedTests, uiTestList);
+  XCTAssertEqualObjects(self.reporter.failedTests, @[]);
+}
+
 
 - (void)testRunsiOSUnitTestInApplication
 {
@@ -364,6 +399,57 @@
   XCTAssertEqual(self.reporter.startedTests.count, 10u);
   XCTAssertEqual(self.reporter.passedTests.count, 6u);
   XCTAssertEqual(self.reporter.failedTests.count, 4u);
+}
+
+- (void)testMacOSXLogicTestWithTestFilter
+{
+  NSError *error = nil;
+  if (![[FBXCTestShimConfiguration defaultShimConfiguration] await:&error]) {
+    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
+    return;
+  }
+  
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
+  NSString *testSuiteName = @"MacUnitTestFixtureTests";
+  NSString *testMethodName = @"testWillAlwaysPass";
+  NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath,
+                          @"-only", [NSString stringWithFormat:@"%@:%@/%@", testBundlePath, testSuiteName, testMethodName]];
+  
+  FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(commandLine);
+  
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithCommandLine:commandLine context:self.context];
+  BOOL success = [[testRunner execute] await:&error] != nil;
+  XCTAssertTrue(success);
+  XCTAssertNil(error);
+  
+  XCTAssertTrue(self.reporter.printReportWasCalled);
+  XCTAssertEqual(self.reporter.startedSuites.count, 2u);
+  XCTAssertEqual(self.reporter.startedTests.count, 1u);
+  XCTAssertEqual(self.reporter.passedTests.count, 1u);
+  XCTAssertEqual(self.reporter.failedTests.count, 0u);
+}
+
+- (void)testMacOSXLogicTestWithMultipleTestFiltersFails
+{
+  NSError *error = nil;
+  if (![[FBXCTestShimConfiguration defaultShimConfiguration] await:&error]) {
+    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
+    return;
+  }
+  
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
+  NSString *testSuiteName = @"MacUnitTestFixtureTests";
+  NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath,
+                          @"-only", [NSString stringWithFormat:@"%@:%@/testWillAlwaysPass", testBundlePath, testSuiteName],
+                          @"-only", [NSString stringWithFormat:@"%@:%@/testWillAlwaysFail", testBundlePath, testSuiteName]];
+  
+  FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
+  XCTAssertNotNil(error);
+  XCTAssertNil(commandLine);
 }
 
 - (void)testMacOSXLogicTestEndsOnCrashingTest

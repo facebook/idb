@@ -42,7 +42,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
 
 + (nullable instancetype)commandLineFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory error:(NSError **)error
 {
-  return [self commandLineFromArguments:arguments processUnderTestEnvironment:environment workingDirectory:workingDirectory timeout:0 error:nil];
+  return [self commandLineFromArguments:arguments processUnderTestEnvironment:environment workingDirectory:workingDirectory timeout:0 error:error];
 }
 
 + (nullable instancetype)commandLineFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory timeout:(NSTimeInterval)timeout error:(NSError **)error
@@ -54,10 +54,10 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
   FBXCTestShimConfiguration *shims = nil;
   NSString *testBundlePath = nil;
   NSString *runnerAppPath = nil;
-  NSString *testFilter = nil;
+  NSArray<NSString *> *testFilters = nil;
   NSString *testTargetPathOut = nil;
   BOOL waitForDebugger = NO;
-  if (![FBXCTestCommandLine loadWithArguments:arguments shimsOut:&shims testBundlePathOut:&testBundlePath runnerAppPathOut:&runnerAppPath testTargetPathOut:&testTargetPathOut testFilterOut:&testFilter waitForDebuggerOut:&waitForDebugger error:error]) {
+  if (![FBXCTestCommandLine loadWithArguments:arguments shimsOut:&shims testBundlePathOut:&testBundlePath runnerAppPathOut:&runnerAppPath testTargetPathOut:&testTargetPathOut testFilterOut:&testFilters waitForDebuggerOut:&waitForDebugger error:error]) {
     return nil;
   }
   NSSet<NSString *> *argumentSet = [NSSet setWithArray:arguments];
@@ -82,7 +82,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       testBundlePath:testBundlePath
       waitForDebugger:waitForDebugger
       timeout:timeout
-      testFilter:testFilter
+      testFilters:testFilters
       mirroring:FBLogicTestMirrorFileLogs];
   } else if ([argumentSet containsObject:@"-appTest"]) {
     configuration = [FBTestManagerTestConfiguration
@@ -93,7 +93,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       timeout:timeout
       runnerAppPath:runnerAppPath
       testTargetAppPath:nil
-      testFilter:testFilter];
+      testFilters:testFilters];
   } else if ([argumentSet containsObject:@"-uiTest"]) {
     configuration = [FBTestManagerTestConfiguration
       configurationWithEnvironment:environment
@@ -103,7 +103,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       timeout:timeout
       runnerAppPath:runnerAppPath
       testTargetAppPath:testTargetPathOut
-      testFilter:nil];
+      testFilters:testFilters];
   }
   if (!configuration) {
     return [[FBControlCoreError
@@ -113,10 +113,10 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
   return [[FBXCTestCommandLine alloc] initWithConfiguration:configuration destination:destination];
 }
 
-+ (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments shimsOut:(FBXCTestShimConfiguration **)shimsOut testBundlePathOut:(NSString **)testBundlePathOut runnerAppPathOut:(NSString **)runnerAppPathOut testTargetPathOut:(NSString **)testTargetPathOut testFilterOut:(NSString **)testFilterOut waitForDebuggerOut:(BOOL *)waitForDebuggerOut error:(NSError **)error
++ (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments shimsOut:(FBXCTestShimConfiguration **)shimsOut testBundlePathOut:(NSString **)testBundlePathOut runnerAppPathOut:(NSString **)runnerAppPathOut testTargetPathOut:(NSString **)testTargetPathOut testFilterOut:(NSArray<NSString *> **)testFiltersOut waitForDebuggerOut:(BOOL *)waitForDebuggerOut error:(NSError **)error
 {
   NSUInteger nextArgument = 0;
-  NSString *testFilter = nil;
+  NSMutableArray<NSString *> *testFilters = [[NSMutableArray alloc] init];
   BOOL shimsRequired = YES;
 
   while (nextArgument < arguments.count) {
@@ -188,10 +188,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       *runnerAppPathOut = testRunnerPath;
       *testTargetPathOut = testTargetPath;
     } else if ([argument isEqualToString:@"-only"]) {
-      if (testFilter != nil) {
-        return [[FBXCTestError describeFormat:@"Multiple -only options specified: %@, %@", testFilter, parameter] failBool:error];
-      }
-      testFilter = parameter;
+      [testFilters addObject:parameter];
     } else {
       return [[FBXCTestError describeFormat:@"Unrecognized option: %@", argument] failBool:error];
     }
@@ -205,14 +202,24 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
     }
     *shimsOut = shimConfiguration;
   }
-  if (testFilter != nil) {
+  if (testFilters.count > 0) {
     NSString *expectedPrefix = [*testBundlePathOut stringByAppendingString:@":"];
-    if (![testFilter hasPrefix:expectedPrefix]) {
-      return [[FBXCTestError
-        describeFormat:@"Test filter '%@' does not apply to the test bundle '%@'", testFilter, *testBundlePathOut]
-        failBool:error];
+    NSMutableArray *mappedFilters = [[NSMutableArray alloc] init];
+    for (NSString *testFilter in testFilters) {
+      if (![testFilter hasPrefix:expectedPrefix]) {
+        return [[FBXCTestError
+                 describeFormat:@"Test filter '%@' does not apply to the test bundle '%@'", testFilter, *testBundlePathOut]
+                failBool:error];
+      }
+      [mappedFilters addObject:[testFilter substringFromIndex:expectedPrefix.length]];
     }
-    *testFilterOut = [testFilter substringFromIndex:expectedPrefix.length];
+    *testFiltersOut = [mappedFilters copy];
+    
+    if (*testTargetPathOut == nil && testFilters.count > 1) {
+      return [[FBXCTestError
+               describe:@"Multiple test filters are supported only by UI tests. Provide no or single filter for logic and app tests."]
+              failBool:error];
+    }
   }
 
   return YES;

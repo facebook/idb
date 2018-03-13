@@ -66,7 +66,7 @@
       testBundlePath:self.iOSUnitTestBundlePath
       waitForDebugger:NO
       timeout:0
-      testFilter:nil
+      testFilters:@[]
       mirroring:FBLogicTestMirrorFileLogs]
     destination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]];
   XCTAssertEqualObjects(commandLine, expected);
@@ -105,7 +105,7 @@
       testBundlePath:self.iOSUnitTestBundlePath
       waitForDebugger:NO
       timeout:0
-      testFilter:nil
+      testFilters:@[]
       mirroring:FBLogicTestMirrorFileLogs]
     destination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]];
   XCTAssertEqualObjects(commandLine, expected);
@@ -146,7 +146,7 @@
       testBundlePath:self.iOSUnitTestBundlePath
       waitForDebugger:NO
       timeout:0
-      testFilter:nil
+      testFilters:@[]
       mirroring:FBLogicTestMirrorFileLogs]
     destination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:nil version:nil]];
   XCTAssertEqualObjects(commandLine, expected);

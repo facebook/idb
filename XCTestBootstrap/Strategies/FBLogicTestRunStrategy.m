@@ -104,11 +104,10 @@
     @"FB_TEST_TIMEOUT": @(self.configuration.testTimeout).stringValue,
   }];
   [environment addEntriesFromDictionary:self.configuration.processUnderTestEnvironment];
-
+  
   // Get the Launch Path and Arguments for the xctest process.
-  NSString *testSpecifier = self.configuration.testFilter ?: @"All";
   NSString *launchPath = xctestPath;
-  NSArray<NSString *> *arguments = @[@"-XCTest", testSpecifier, self.configuration.testBundlePath];
+  NSArray<NSString *> *arguments = [self arguments];
 
   // Construct and start the process
   return [[self
@@ -235,6 +234,22 @@
     stdErrConsumer:stdErrConsumer
     executor:self.executor
     timeout:self.configuration.testTimeout];
+}
+
+- (NSArray<NSString *> *)testSpecifierArguments
+{
+  if (self.configuration.testFilters.count == 1) {
+    return @[@"-XCTest", self.configuration.testFilters[0]];
+  }
+  return @[@"-XCTest", @"All"];
+}
+
+- (NSArray<NSString *> *)arguments
+{
+  NSMutableArray *arguments = [[NSMutableArray alloc] init];
+  [arguments addObjectsFromArray:[self testSpecifierArguments]];
+  [arguments addObject:self.configuration.testBundlePath];
+  return [arguments copy];
 }
 
 @end
