@@ -12,6 +12,10 @@
 #import <sys/types.h>
 #import <sys/stat.h>
 
+#import "FBControlCoreError.h"
+#import "FBFileWriter.h"
+#import "FBFileReader.h"
+
 #pragma mark FBProcessFileOutput
 
 @interface FBProcessFileOutput_DirectToFile : NSObject <FBProcessFileOutput>
@@ -211,15 +215,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 @end
 
-@interface FBProcessOutput_FileHandle : FBProcessOutput
-
-@property (nonatomic, strong, nullable, readwrite) FBDiagnostic *diagnostic;
-@property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
-
-- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle diagnostic:(FBDiagnostic *)diagnostic;
-
-@end
-
 @interface FBProcessOutput_FilePath : FBProcessOutput
 
 @property (nonatomic, copy, nullable, readonly) NSString *filePath;
@@ -364,7 +359,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return nil;
 }
 
-- (FBDiagnostic *)contents
+- (id)contents
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -433,69 +428,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 - (FBFuture<NSNull *> *)completed
 {
   return [FBFuture futureWithResult:NSNull.null];
-}
-
-@end
-
-@implementation FBProcessOutput_FileHandle
-
-#pragma mark Initializers
-
-- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle diagnostic:(FBDiagnostic *)diagnostic
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _fileHandle = fileHandle;
-  _diagnostic = diagnostic;
-
-  return self;
-}
-
-#pragma mark FBStandardStream
-
-- (FBFuture<NSFileHandle *> *)attachToFileHandle
-{
-  return [FBFuture futureWithResult:self.fileHandle];
-}
-
-- (FBFuture<NSFileHandle *> *)attachToPipeOrFileHandle
-{
-  return [self attachToFileHandle];
-}
-
-- (FBFuture<NSNull *> *)detach
-{
-  return [FBFuture onQueue:self.workQueue resolve:^{
-    NSFileHandle *fileHandle = self.fileHandle;
-    if (!fileHandle) {
-      return [[FBControlCoreError
-        describe:@"Cannot detach, there is no file handle"]
-        failFuture];
-    }
-
-    self.fileHandle = nil;
-    [fileHandle closeFile];
-    return [FBFuture futureWithResult:NSNull.null];
-  }];
-}
-
-- (FBDiagnostic *)contents
-{
-  return self.diagnostic;
-}
-
-#pragma mark FBiOSTargetContinuation
-
-- (FBFuture<NSNull *> *)completed
-{
-  return [[FBFuture
-    futureWithResult:NSNull.null]
-    onQueue:self.workQueue respondToCancellation:^{
-      return [self detach];
-    }];
 }
 
 @end
@@ -819,7 +751,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 - (void)consumeEndOfFile
 {
   [self.writer consumeEndOfFile];
-  [self detach];
 }
 
 - (id<FBFileConsumer>)contents
