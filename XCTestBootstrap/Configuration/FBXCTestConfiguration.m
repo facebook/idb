@@ -271,7 +271,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   return FBXCTestTypeListTest;
 }
 
-- (FBXCTestProcess *)listTestProcessWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor
+- (FBFuture<id<FBLaunchedProcess>> *)listTestProcessWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor
 {
   if ([FBApplicationBundle isApplicationAtPath:_runnerAppPath]) {
     // List test for app test bundle, so we use app binary instead of xctest to load test bundle.
@@ -286,25 +286,27 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
     FBApplicationBundle *appBundle = [FBApplicationBundle applicationWithPath:_runnerAppPath error:nil];
     return [FBXCTestProcess
-      processWithLaunchPath:appBundle.binary.path
+      startWithLaunchPath:appBundle.binary.path
       arguments:@[]
       environment:environment
       waitForDebugger:NO
       stdOutConsumer:stdOutConsumer
       stdErrConsumer:stdErrConsumer
-      executor:executor];
+      executor:executor
+      timeout:self.testTimeout];
   }
 
   NSString *xctestPath = executor.xctestPath;
   NSArray<NSString *> *arguments = @[@"-XCTest", @"All", self.testBundlePath];
   return [FBXCTestProcess
-    processWithLaunchPath:xctestPath
+    startWithLaunchPath:xctestPath
     arguments:arguments
     environment:environment
     waitForDebugger:NO
     stdOutConsumer:stdOutConsumer
     stdErrConsumer:stdErrConsumer
-    executor:executor];
+    executor:executor
+    timeout:self.testTimeout];
 }
 
 #pragma mark JSON

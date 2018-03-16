@@ -20,14 +20,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorXCTestProcessExecutor : NSObject <FBXCTestProcessExecutor>
 
+#pragma mark Initializer
+
 /**
  The Designated Initializer
 
  @param simulator the simulator.
- @param configuration the configuration.
+ @param shims the shims to use.
  @return a new Logic Test Strategy for Simulators.
  */
-+ (instancetype)executorWithSimulator:(FBSimulator *)simulator configuration:(FBXCTestConfiguration *)configuration;
++ (instancetype)executorWithSimulator:(FBSimulator *)simulator shims:(FBXCTestShimConfiguration *)shims;
 
 @end
 

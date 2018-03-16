@@ -116,7 +116,7 @@ extern FBXCTestType const FBXCTestTypeListTest;
 + (instancetype)configurationWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath runnerAppPath:(nullable NSString *)runnerAppPath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout;
 
 /**
- Get process for list tests in test bundle.
+ Start an xctest process with the given configuration.
 
  @param environment environment variables passing to the process.
  @param stdOutConsumer the Consumer of the launched process stdout.
@@ -124,7 +124,7 @@ extern FBXCTestType const FBXCTestTypeListTest;
  @param executor the executor for running the list test process.
  @return the list test process
  */
-- (FBXCTestProcess *)listTestProcessWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor;
+- (FBFuture<id<FBLaunchedProcess>> *)listTestProcessWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor;
 
 @end
 

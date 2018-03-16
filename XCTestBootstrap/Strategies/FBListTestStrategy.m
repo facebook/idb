@@ -114,20 +114,17 @@
     @"OtestQueryBundlePath": self.configuration.testBundlePath,
   };
 
-  FBXCTestProcess *process = [self.configuration
+  return [[self.configuration
     listTestProcessWithEnvironment:environment
     stdOutConsumer:[FBLoggingFileConsumer consumerWithLogger:self.logger]
     stdErrConsumer:[FBLoggingFileConsumer consumerWithLogger:self.logger]
-    executor:self.executor];
-
-  return [[process
-    startWithTimeout:self.configuration.testTimeout]
-    onQueue:self.executor.workQueue fmap:^(FBLaunchedProcess *processInfo) {
+    executor:self.executor]
+    onQueue:self.executor.workQueue fmap:^(id<FBLaunchedProcess> processInfo) {
       return [FBListTestStrategy launchedProcess:processInfo shimOutput:shimOutput shimConsumer:shimConsumer queue:self.executor.workQueue];
     }];
 }
 
-+ (FBFuture<NSArray<NSString *> *> *)launchedProcess:(FBLaunchedProcess *)processInfo shimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBConsumableLineBuffer>)shimConsumer queue:(dispatch_queue_t)queue
++ (FBFuture<NSArray<NSString *> *> *)launchedProcess:(id<FBLaunchedProcess>)processInfo shimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBConsumableLineBuffer>)shimConsumer queue:(dispatch_queue_t)queue
 {
   return [[[shimOutput
     startReading]
@@ -153,7 +150,7 @@
   }];
 }
 
-+ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue confirmExit:(FBLaunchedProcess *)process closingOutput:(id<FBProcessFileOutput>)output consumer:(id<FBConsumableLineBuffer>)consumer
++ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue confirmExit:(id<FBLaunchedProcess>)process closingOutput:(id<FBProcessFileOutput>)output consumer:(id<FBConsumableLineBuffer>)consumer
 {
   return [process.exitCode onQueue:queue fmap:^(NSNumber *exitCode) {
     if (exitCode.intValue != 0) {

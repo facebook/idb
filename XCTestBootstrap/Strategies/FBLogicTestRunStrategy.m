@@ -111,29 +111,28 @@
   NSArray<NSString *> *arguments = @[@"-XCTest", testSpecifier, self.configuration.testBundlePath];
 
   // Construct and start the process
-  return [[[self
-    testProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutConsumer:stdOutConsumer stdErrConsumer:stdErrConsumer]
-    startWithTimeout:self.configuration.testTimeout]
-    onQueue:self.executor.workQueue fmap:^(FBLaunchedProcess *processInfo) {
+  return [[self
+    startTestProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutConsumer:stdOutConsumer stdErrConsumer:stdErrConsumer]
+    onQueue:self.executor.workQueue fmap:^(id<FBLaunchedProcess> process) {
       return [self
-        completeLaunchedProcess:processInfo
+        completeLaunchedProcess:process
         shimOutput:shimOutput
         shimConsumer:shimConsumer];
     }];
 }
 
-- (FBFuture<NSNull *> *)completeLaunchedProcess:(FBLaunchedProcess *)processInfo shimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBFileConsumerLifecycle>)shimConsumer
+- (FBFuture<NSNull *> *)completeLaunchedProcess:(id<FBLaunchedProcess>)process shimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBFileConsumerLifecycle>)shimConsumer
 {
   id<FBLogicXCTestReporter> reporter = self.reporter;
   dispatch_queue_t queue = self.executor.workQueue;
 
   return [[[[FBLogicTestRunStrategy
-    fromQueue:queue waitForDebuggerToBeAttached:self.configuration.waitForDebugger forProcessIdentifier:processInfo.processIdentifier reporter:reporter]
+    fromQueue:queue waitForDebuggerToBeAttached:self.configuration.waitForDebugger forProcessIdentifier:process.processIdentifier reporter:reporter]
     onQueue:queue fmap:^(id _) {
       return [shimOutput startReading];
     }]
     onQueue:queue fmap:^(FBFileReader *reader) {
-      return [FBLogicTestRunStrategy onQueue:queue waitForExit:processInfo closingOutput:shimOutput consumer:shimConsumer];
+      return [FBLogicTestRunStrategy onQueue:queue waitForExit:process closingOutput:shimOutput consumer:shimConsumer];
     }]
     onQueue:queue map:^(id _) {
       [reporter didFinishExecutingTestPlan];
@@ -141,7 +140,7 @@
     }];
 }
 
-+ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForExit:(FBLaunchedProcess *)process closingOutput:(id<FBProcessFileOutput>)output consumer:(id<FBFileConsumerLifecycle>)consumer
++ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForExit:(id<FBLaunchedProcess>)process closingOutput:(id<FBProcessFileOutput>)output consumer:(id<FBFileConsumerLifecycle>)consumer
 {
   return [process.exitCode onQueue:queue fmap:^(NSNumber *exitCode) {
     return [FBFuture futureWithFutures:@[
@@ -225,16 +224,17 @@
     ]];
 }
 
-- (FBXCTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer
+- (FBFuture<id<FBLaunchedProcess>> *)startTestProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer
 {
   return [FBXCTestProcess
-    processWithLaunchPath:launchPath
+    startWithLaunchPath:launchPath
     arguments:arguments
     environment:[self.configuration buildEnvironmentWithEntries:environment]
     waitForDebugger:self.configuration.waitForDebugger
     stdOutConsumer:stdOutConsumer
     stdErrConsumer:stdErrConsumer
-    executor:self.executor];
+    executor:self.executor
+    timeout:self.configuration.testTimeout];
 }
 
 @end

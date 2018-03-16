@@ -19,7 +19,7 @@
 @interface FBMacXCTestProcessExecutor ()
 
 @property (nonatomic, strong, readonly) FBMacDevice *macDevice;
-@property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBXCTestShimConfiguration *shims;
 
 @end
 
@@ -27,12 +27,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)executorWithMacDevice:(FBMacDevice *)macDevice configuration:(FBXCTestConfiguration *)configuration
++ (instancetype)executorWithMacDevice:(FBMacDevice *)macDevice shims:(FBXCTestShimConfiguration *)shims
 {
-  return [[self alloc] initWithMacDevice:macDevice configuration:configuration];
+  return [[self alloc] initWithMacDevice:macDevice shims:shims];
 }
 
-- (instancetype)initWithMacDevice:(FBMacDevice *)macDevice configuration:(FBXCTestConfiguration *)configuration
+- (instancetype)initWithMacDevice:(FBMacDevice *)macDevice shims:(FBXCTestShimConfiguration *)shims
 {
   self = [super init];
   if (!self) {
@@ -40,21 +40,21 @@
   }
 
   _macDevice = macDevice;
-  _configuration = configuration;
+  _shims = shims;
 
   return self;
 }
 
 #pragma mark FBXCTestProcessExecutor Implementation
 
-- (FBFuture<FBTask *> *)startProcess:(FBXCTestProcess *)process
+- (FBFuture<FBTask *> *)startProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer
 {
   return [[[[[[FBTaskBuilder
-    withLaunchPath:process.launchPath]
-    withArguments:process.arguments]
-    withEnvironment:process.environment]
-    withStdOutConsumer:process.stdOutConsumer]
-    withStdErrConsumer:process.stdErrConsumer]
+    withLaunchPath:launchPath]
+    withArguments:arguments]
+    withEnvironment:environment]
+    withStdOutConsumer:stdOutConsumer]
+    withStdErrConsumer:stdErrConsumer]
     start];
 }
 
@@ -66,12 +66,12 @@
 
 - (NSString *)shimPath
 {
-  return self.configuration.shims.macOSTestShimPath;
+  return self.shims.macOSTestShimPath;
 }
 
 - (NSString *)queryShimPath
 {
-  return self.configuration.shims.macOSQueryShimPath;
+  return self.shims.macOSQueryShimPath;
 }
 
 - (dispatch_queue_t)workQueue

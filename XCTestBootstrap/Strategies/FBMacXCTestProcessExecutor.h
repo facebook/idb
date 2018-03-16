@@ -14,21 +14,23 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBMacDevice;
-@class FBXCTestConfiguration;
+@class FBXCTestShimConfiguration;
 
 /**
  A Logic Test Strategy for macOS.
  */
 @interface FBMacXCTestProcessExecutor : NSObject <FBXCTestProcessExecutor>
 
+#pragma mark Initializers
+
 /**
  The Designated Initializer.
 
  @param macDevice the mac device instance.
- @param configuration a queue to synchronize work on.
+ @param shims the shims to use.
  @return a new FBXCTestProcessExecutor.
  */
-+ (instancetype)executorWithMacDevice:(FBMacDevice *)macDevice configuration:(FBXCTestConfiguration *)configuration;
++ (instancetype)executorWithMacDevice:(FBMacDevice *)macDevice shims:(FBXCTestShimConfiguration *)shims;
 
 @end
 

@@ -82,7 +82,7 @@
     }];
   }
 
-  id<FBXCTestProcessExecutor> executor = [FBMacXCTestProcessExecutor executorWithMacDevice:device configuration:self.configuration];
+  id<FBXCTestProcessExecutor> executor = [FBMacXCTestProcessExecutor executorWithMacDevice:device shims:self.configuration.shims];
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
     return [[[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] execute];
   }
@@ -109,7 +109,7 @@
   if ([self.configuration isKindOfClass:FBTestManagerTestConfiguration.class]) {
     return [[FBTestRunStrategy strategyWithTarget:simulator configuration:(FBTestManagerTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger testPreparationStrategyClass:FBSimulatorTestPreparationStrategy.class] execute];
   }
-  id<FBXCTestProcessExecutor> executor = [FBSimulatorXCTestProcessExecutor executorWithSimulator:simulator configuration:self.configuration];
+  id<FBXCTestProcessExecutor> executor = [FBSimulatorXCTestProcessExecutor executorWithSimulator:simulator shims:self.configuration.shims];
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
     return [[[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] execute];
   }

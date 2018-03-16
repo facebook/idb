@@ -31,20 +31,4 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-/**
- A concrete implementation of FBLaunchedProcess Protocol.
- */
-@interface FBLaunchedProcess : NSObject <FBLaunchedProcess>
-
-/**
- The Designated Initializer.
-
- @param processIdentifier the process identifier.
- @param exitCode a future that resolves with the exit code.
- @return a FBLaunchedProcess Implementation
- */
-- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier exitCode:(FBFuture<NSNumber *> *)exitCode;
-
-@end
-
 NS_ASSUME_NONNULL_END

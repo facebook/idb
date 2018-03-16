@@ -18,7 +18,7 @@
 @interface FBSimulatorXCTestProcessExecutor ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBXCTestShimConfiguration *shims;
 
 @end
 
@@ -26,12 +26,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)executorWithSimulator:(FBSimulator *)simulator configuration:(FBXCTestConfiguration *)configuration
++ (instancetype)executorWithSimulator:(FBSimulator *)simulator shims:(FBXCTestShimConfiguration *)shims
 {
-  return [[self alloc] initWithSimulator:simulator configuration:configuration];
+  return [[self alloc] initWithSimulator:simulator shims:shims];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBXCTestConfiguration *)configuration
+- (instancetype)initWithSimulator:(FBSimulator *)simulator shims:(FBXCTestShimConfiguration *)shims
 {
   self = [super init];
   if (!self) {
@@ -39,32 +39,32 @@
   }
 
   _simulator = simulator;
-  _configuration = configuration;
+  _shims = shims;
 
   return self;
 }
 
 #pragma mark Public
 
-- (FBFuture<FBSimulatorAgentOperation *> *)startProcess:(FBXCTestProcess *)process
+- (FBFuture<FBSimulatorAgentOperation *> *)startProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer
 {
   NSError *error = nil;
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
-    configurationWithStdOut:process.stdOutConsumer
-    stdErr:process.stdErrConsumer
+    configurationWithStdOut:stdOutConsumer
+    stdErr:stdErrConsumer
     error:&error];
   if (!output) {
     return [FBFuture futureWithError:error];
   }
-  FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:process.launchPath error:&error];
+  FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:launchPath error:&error];
   if (!binary) {
     return [FBFuture futureWithError:error];
   }
 
   FBAgentLaunchConfiguration *configuration = [FBAgentLaunchConfiguration
    configurationWithBinary:binary
-   arguments:process.arguments
-   environment:process.environment
+   arguments:arguments
+   environment:environment
    output:output];
 
   return [[FBAgentLaunchStrategy
@@ -80,19 +80,17 @@
 
 - (NSString *)shimPath
 {
-  return self.configuration.shims.iOSSimulatorTestShimPath;
+  return self.shims.iOSSimulatorTestShimPath;
 }
 
 - (NSString *)queryShimPath
 {
-  return self.configuration.shims.iOSSimulatorTestShimPath;
+  return self.shims.iOSSimulatorTestShimPath;
 }
 
 - (dispatch_queue_t)workQueue
 {
   return self.simulator.workQueue;
 }
-
-#pragma mark Private
 
 @end

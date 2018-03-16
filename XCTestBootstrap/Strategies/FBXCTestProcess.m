@@ -19,59 +19,55 @@
 static NSTimeInterval const CrashLogStartDateFuzz = -20;
 static NSTimeInterval const CrashLogWaitTime = 20;
 
-@interface FBXCTestProcess ()
-
-@property (nonatomic, strong, readonly) id<FBXCTestProcessExecutor> executor;
+@interface FBXCTestProcess() <FBLaunchedProcess>
 
 @end
 
 @implementation FBXCTestProcess
 
+@synthesize processIdentifier = _processIdentifier;
+@synthesize exitCode = _exitCode;
+
 #pragma mark Initializers
 
-+ (instancetype)processWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor
-{
-  return [[FBXCTestProcess alloc] initWithLaunchPath:launchPath arguments:arguments environment:environment waitForDebugger:waitForDebugger stdOutConsumer:stdOutConsumer stdErrConsumer:stdErrConsumer executor:executor];
-}
-
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier exitCode:(FBFuture<NSNumber *> *)exitCode
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _launchPath = launchPath;
-  _arguments = arguments;
-  _environment = environment;
-  _waitForDebugger = waitForDebugger;
-  _stdOutConsumer = stdOutConsumer;
-  _stdErrConsumer = stdErrConsumer;
-  _executor = executor;
+  _processIdentifier = processIdentifier;
+  _exitCode = exitCode;
 
   return self;
 }
 
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"xctest Process %d | State %@", self.processIdentifier, self.exitCode];
+}
+
+#pragma mark NSObject
+
 #pragma mark Public
 
-- (FBFuture<NSNumber *> *)startWithTimeout:(NSTimeInterval)timeout
++ (FBFuture<id<FBLaunchedProcess>> *)startWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor timeout:(NSTimeInterval)timeout
 {
   NSDate *startDate = [NSDate.date dateByAddingTimeInterval:CrashLogStartDateFuzz];
 
-  return [[self.executor
-    startProcess:self]
-    onQueue:self.executor.workQueue map:^(FBLaunchedProcess *processInfo) {
-      FBFuture<NSNumber *> *exitCode = [self decorateLaunchedWithErrorHandlingProcess:processInfo startDate:startDate timeout:timeout];
-      return [[FBLaunchedProcess alloc] initWithProcessIdentifier:processInfo.processIdentifier exitCode:exitCode];
+  return [[executor
+    startProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutConsumer:stdOutConsumer stdErrConsumer:stdErrConsumer]
+    onQueue:executor.workQueue map:^(id<FBLaunchedProcess> processInfo) {
+      FBFuture<NSNumber *> *exitCode = [FBXCTestProcess decorateLaunchedWithErrorHandlingProcess:processInfo startDate:startDate timeout:timeout queue:executor.workQueue];
+      return [[FBXCTestProcess alloc] initWithProcessIdentifier:processInfo.processIdentifier exitCode:exitCode];
     }];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSNumber *> *)decorateLaunchedWithErrorHandlingProcess:(FBLaunchedProcess *)processInfo startDate:(NSDate *)startDate timeout:(NSTimeInterval)timeout
++ (FBFuture<NSNumber *> *)decorateLaunchedWithErrorHandlingProcess:(id<FBLaunchedProcess>)processInfo startDate:(NSDate *)startDate timeout:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue
 {
-  dispatch_queue_t queue = self.executor.workQueue;
-
   FBFuture<NSNumber *> *completionFuture = [processInfo.exitCode
     onQueue:queue fmap:^(NSNumber *exitCode) {
       return [FBXCTestProcess onQueue:queue confirmNormalExitFor:processInfo.processIdentifier exitCode:exitCode.intValue startDate:startDate];

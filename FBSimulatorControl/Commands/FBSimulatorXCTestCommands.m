@@ -87,7 +87,7 @@
         timeout:timeout];
 
       return [[FBListTestStrategy
-        strategyWithExecutor:[FBSimulatorXCTestProcessExecutor executorWithSimulator:self.simulator configuration:configuration]
+        strategyWithExecutor:[FBSimulatorXCTestProcessExecutor executorWithSimulator:self.simulator shims:configuration.shims]
         configuration:configuration
         logger:self.simulator.logger]
         listTests];

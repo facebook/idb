@@ -15,6 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBXCTestProcess;
 
+@protocol FBFileConsumer;
+
 /**
  A protocol for defining the platform-specific implementation of running an xctest process.
  */
@@ -25,10 +27,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Starts the xctest process.
 
- @param process the process to execute.
  @return an FBLaunchedProcess identifying the process.
  */
-- (FBFuture<id<FBLaunchedProcess>> *)startProcess:(FBXCTestProcess *)process;
+- (FBFuture<id<FBLaunchedProcess>> *)startProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer;
 
 #pragma mark Properties
 
