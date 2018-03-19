@@ -47,9 +47,9 @@
 
 #pragma mark FBXCTestProcessExecutor Implementation
 
-- (FBFuture<FBTask *> *)startProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer
+- (FBFuture<id<FBLaunchedProcess>> *)startProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer
 {
-  return [[[[[[FBTaskBuilder
+  return (FBFuture<id<FBLaunchedProcess>> *) [[[[[[FBTaskBuilder
     withLaunchPath:launchPath]
     withArguments:arguments]
     withEnvironment:environment]

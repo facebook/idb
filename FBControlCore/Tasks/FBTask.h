@@ -24,7 +24,7 @@ extern NSString *const FBTaskErrorDomain;
 /**
  Programmatic interface to a Task.
  */
-@interface FBTask : NSObject <FBLaunchedProcess>
+@interface FBTask <StdInType : id, StdOutType : id, StdErrType : id> : NSObject <FBLaunchedProcess>
 
 #pragma mark Initializers
 
@@ -62,25 +62,25 @@ extern NSString *const FBTaskErrorDomain;
 @property (nonatomic, assign, readonly) pid_t processIdentifier;
 
 /**
- Returns the stdout of the task.
- May be called from any thread.
- The valid types for these values are the wrapped types in FBProcessOutput.
- */
-@property (nonatomic, strong, nullable, readonly) id stdOut;
-
-/**
- Returns the stdout of the task.
- May be called from any thread.
- The valid types for these values are the wrapped types in FBProcessOutput.
- */
-@property (nonatomic, strong, nullable, readonly) id stdErr;
-
-/**
  Returns the stdin of the task.
  May be called from any thread.
  The valid types for these values are the wrapped types in FBProcessInput.
  */
-@property (nonatomic, strong, nullable, readonly) id stdIn;
+@property (nonatomic, strong, nullable, readonly) StdInType stdIn;
+
+/**
+ Returns the stdout of the task.
+ May be called from any thread.
+ The valid types for these values are the wrapped types in FBProcessOutput.
+ */
+@property (nonatomic, strong, nullable, readonly) StdOutType stdOut;
+
+/**
+ Returns the stdout of the task.
+ May be called from any thread.
+ The valid types for these values are the wrapped types in FBProcessOutput.
+ */
+@property (nonatomic, strong, nullable, readonly) StdErrType stdErr;
 
 @end
 

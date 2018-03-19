@@ -30,6 +30,8 @@
 
 @implementation FBTaskBuilder
 
+#pragma mark Initializers
+
 - (instancetype)initWithLaunchPath:(NSString *)launchPath
 {
   self = [super init];
@@ -61,7 +63,7 @@
   return [[self withLaunchPath:launchPath] withArguments:arguments];
 }
 
-#pragma mark - FBTaskBuilder
+#pragma mark Spawn Configuration
 
 - (instancetype)withLaunchPath:(NSString *)launchPath
 {
@@ -91,6 +93,15 @@
   [dictionary addEntriesFromDictionary:environment];
   return [self withEnvironment:[dictionary copy]];
 }
+
+- (instancetype)withAcceptableTerminationStatusCodes:(NSSet<NSNumber *> *)statusCodes
+{
+  NSParameterAssert(statusCodes);
+  self.acceptableStatusCodes = statusCodes;
+  return self;
+}
+
+#pragma mark Input/Output
 
 - (instancetype)withStdOutInMemoryAsData
 {
@@ -188,12 +199,7 @@
   return self;
 }
 
-- (instancetype)withAcceptableTerminationStatusCodes:(NSSet<NSNumber *> *)statusCodes
-{
-  NSParameterAssert(statusCodes);
-  self.acceptableStatusCodes = statusCodes;
-  return self;
-}
+#pragma mark Building
 
 - (FBFuture<FBTask *> *)start
 {
@@ -209,7 +215,7 @@
     }];
 }
 
-#pragma mark - Private
+#pragma mark Private
 
 - (FBTaskConfiguration *)buildConfiguration
 {
