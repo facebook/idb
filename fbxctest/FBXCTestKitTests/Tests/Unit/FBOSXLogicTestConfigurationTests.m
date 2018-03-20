@@ -65,7 +65,7 @@
       testBundlePath:testBundlePath
       waitForDebugger:NO
       timeout:0
-      testFilter:nil
+      testFilters:@[]
       mirroring:FBLogicTestMirrorFileLogs]
     destination:[[FBXCTestDestinationMacOSX alloc] init]];
   XCTAssertEqualObjects(commandLine, expected);
@@ -101,7 +101,7 @@
       testBundlePath:testBundlePath
       waitForDebugger:NO
       timeout:0
-      testFilter:nil
+      testFilters:@[]
       mirroring:FBLogicTestMirrorFileLogs]
     destination:[[FBXCTestDestinationMacOSX alloc] init]];
   XCTAssertEqualObjects(commandLine, expected);

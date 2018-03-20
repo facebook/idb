@@ -94,8 +94,8 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
      withUITesting:YES];
   }
 
-  if (self.configuration.testFilter != nil) {
-    NSSet<NSString *> *testsToRun = [NSSet setWithObject:self.configuration.testFilter];
+  if (self.configuration.testFilters.count > 0) {
+    NSSet<NSString *> *testsToRun = [NSSet setWithArray:self.configuration.testFilters];
     testLaunchConfiguration = [testLaunchConfiguration withTestsToRun:testsToRun];
   }
 

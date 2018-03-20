@@ -55,7 +55,7 @@
   [self assertValueSemanticsOfConfiguration:configuration];
 
   FBTestManagerTestConfiguration *testManagerTestConfiguration = (FBTestManagerTestConfiguration *)configuration;
-  XCTAssertEqualObjects(testManagerTestConfiguration.testFilter, shortTestFilter);
+  XCTAssertEqualObjects(testManagerTestConfiguration.testFilters, @[shortTestFilter]);
 }
 
 @end

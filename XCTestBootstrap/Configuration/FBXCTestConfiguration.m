@@ -336,12 +336,12 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter
++ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilters:(NSArray<NSString *> *)testFilters
 {
-  return [[FBTestManagerTestConfiguration alloc] initWithShims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter];
+  return [[FBTestManagerTestConfiguration alloc] initWithShims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilters:testFilters];
 }
 
-- (instancetype)initWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter
+- (instancetype)initWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilters:(NSArray<NSString *> *)testFilters
 {
   self = [super initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
   if (!self) {
@@ -350,7 +350,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
   _runnerAppPath = runnerAppPath;
   _testTargetAppPath = testTargetAppPath;
-  _testFilter = testFilter;
+  _testFilters = [NSArray arrayWithArray:testFilters];
 
   return self;
 }
@@ -369,7 +369,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   NSMutableDictionary<NSString *, id> *json = [NSMutableDictionary dictionaryWithDictionary:[super jsonSerializableRepresentation]];
   json[KeyRunnerAppPath] = self.runnerAppPath;
   json[KeyRunnerTargetPath] = self.testTargetAppPath;
-  json[KeyTestFilter] = self.testFilter ?: NSNull.null;
+  json[KeyTestFilter] = self.testFilters;
   return [json copy];
 }
 
@@ -387,13 +387,13 @@ NSString *const KeyWorkingDirectory = @"working_directory";
       describeFormat:@"%@ is not a String for %@", testTargetAppPath, KeyRunnerTargetPath]
       fail:error];
   }
-  NSString *testFilter = [FBCollectionOperations nullableValueForDictionary:json key:KeyTestFilter];
-  if (testFilter && ![testFilter isKindOfClass:NSString.class]) {
+  NSArray<NSString *> *testFilters = [FBCollectionOperations nullableValueForDictionary:json key:KeyTestFilter];
+  if (testFilters && ![testFilters isKindOfClass:NSArray.class]) {
     return [[FBXCTestError
-      describeFormat:@"%@ is not a String for %@", testFilter, KeyTestFilter]
+      describeFormat:@"%@ is not an Array for %@", testFilters, KeyTestFilter]
       fail:error];
   }
-  return [[FBTestManagerTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter];
+  return [[FBTestManagerTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilters:testFilters];
 }
 
 @end
@@ -402,19 +402,19 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring
++ (instancetype)configurationWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilters:(NSArray<NSString *> *)testFilters mirroring:(FBLogicTestMirrorLogs)mirroring
 {
-  return [[FBLogicTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout testFilter:testFilter  mirroring:mirroring];
+  return [[FBLogicTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout testFilters:testFilters mirroring:mirroring];
 }
 
-- (instancetype)initWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring
+- (instancetype)initWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilters:(NSArray<NSString *> *)testFilters mirroring:(FBLogicTestMirrorLogs)mirroring
 {
   self = [super initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
   if (!self) {
     return nil;
   }
 
-  _testFilter = testFilter;
+  _testFilters = [NSArray arrayWithArray:testFilters];
   _mirroring = mirroring;
 
   return self;
@@ -432,25 +432,25 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 - (id)jsonSerializableRepresentation
 {
   NSMutableDictionary<NSString *, id> *json = [NSMutableDictionary dictionaryWithDictionary:[super jsonSerializableRepresentation]];
-  json[KeyTestFilter] = self.testFilter ?: NSNull.null;
+  json[KeyTestFilter] = self.testFilters;
   return [json copy];
 }
 
 + (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  NSString *keyTestFilter = [FBCollectionOperations nullableValueForDictionary:json key:KeyTestFilter];
-  if (keyTestFilter && ![keyTestFilter isKindOfClass:NSString.class]) {
+  NSArray<NSString *> *keyTestFilters = [FBCollectionOperations nullableValueForDictionary:json key:KeyTestFilter];
+  if (keyTestFilters && ![keyTestFilters isKindOfClass:NSArray.class]) {
     return [[FBXCTestError
-      describeFormat:@"%@ is not a String for %@", keyTestFilter, KeyTestFilter]
+      describeFormat:@"%@ is not an Array for %@", keyTestFilters, KeyTestFilter]
       fail:error];
   }
   NSNumber *mirrorOpts = [FBCollectionOperations nullableValueForDictionary:json key:KeyTestMirror];
   if (mirrorOpts && ![mirrorOpts isKindOfClass:NSNumber.class]) {
     return [[FBXCTestError
-             describeFormat:@"%@ is not a Number for %@", keyTestFilter, KeyTestFilter]
+             describeFormat:@"%@ is not a Number for %@", mirrorOpts, KeyTestMirror]
             fail:error];
   }
-  return [[FBLogicTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout testFilter:keyTestFilter mirroring:mirrorOpts.unsignedIntegerValue];
+  return [[FBLogicTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout testFilters:keyTestFilters mirroring:mirrorOpts.unsignedIntegerValue];
 }
 
 @end

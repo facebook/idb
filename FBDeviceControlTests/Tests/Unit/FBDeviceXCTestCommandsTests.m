@@ -100,10 +100,12 @@
                 @"TestStatus": @"Success",
                 @"TestIdentifier": @"testAAA()",
                 @"Duration": @1.2,
+                @"ActivitySummaries": @[],
             }]
           }]
         }]
-      }]
+      }],
+      @"TestName": @"testName",
     }]
   };
 

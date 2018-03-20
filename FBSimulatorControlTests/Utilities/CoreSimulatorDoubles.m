@@ -17,6 +17,20 @@
 @implementation FBSimulatorControlTests_SimDeviceRuntime_Double
 @end
 
+@implementation FBSimulatorControlTests_SimDeviceNotificationManager_Double
+
+- (BOOL)unregisterNotificationHandler:(unsigned long long)arg1 error:(id *)arg2 {
+  return NO;
+}
+
+- (unsigned long long)registerNotificationHandler:(void (^)(NSDictionary *))arg2 {
+  return 0;
+}
+- (unsigned long long)registerNotificationHandlerOnQueue:(NSObject<OS_dispatch_queue> *)arg1 handler:(void (^)(NSDictionary *))arg2 {
+  return 0;
+}
+@end
+
 @implementation FBSimulatorControlTests_SimDevice_Double
 
 @synthesize dataPath = _dataPath;
@@ -45,4 +59,8 @@
 @end
 
 @implementation FBSimulatorControlTests_SimDeviceSet_Double
+- (id)notificationManager
+{
+  return [[FBSimulatorControlTests_SimDeviceNotificationManager_Double alloc] init];
+}
 @end
