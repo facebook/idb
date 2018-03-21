@@ -58,7 +58,8 @@
       timeout:0
       runnerAppPath:FBXCTestKitFixtures.tableSearchApplicationPath
       testTargetAppPath:FBXCTestKitFixtures.iOSUITestAppTargetPath
-      testFilter:nil]
+      testFilter:nil
+      videoRecordingPath:nil]
     destination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]];
   XCTAssertEqualObjects(commandLine, expected);
 }
@@ -89,7 +90,8 @@
       timeout:0
       runnerAppPath:FBXCTestKitFixtures.tableSearchApplicationPath
       testTargetAppPath:FBXCTestKitFixtures.iOSUITestAppTargetPath
-      testFilter:nil]
+      testFilter:nil
+      videoRecordingPath:nil]
     destination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]];
   XCTAssertEqualObjects(commandLine, expected);
 }
@@ -119,7 +121,8 @@
       timeout:0
       runnerAppPath:FBXCTestKitFixtures.tableSearchApplicationPath
       testTargetAppPath:FBXCTestKitFixtures.iOSUITestAppTargetPath
-      testFilter:nil]
+      testFilter:nil
+      videoRecordingPath:nil]
     destination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:nil version:nil]];
   XCTAssertEqualObjects(commandLine, expected);
 }
@@ -150,7 +153,8 @@
       timeout:0
       runnerAppPath:FBXCTestKitFixtures.tableSearchApplicationPath
       testTargetAppPath:FBXCTestKitFixtures.iOSUITestAppTargetPath
-      testFilter:nil]
+      testFilter:nil
+      videoRecordingPath:nil]
     destination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:nil version:nil]];
   XCTAssertEqualObjects(commandLine, expected);
 }

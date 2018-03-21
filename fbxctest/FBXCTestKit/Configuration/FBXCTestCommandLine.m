@@ -85,6 +85,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       testFilter:testFilter
       mirroring:FBLogicTestMirrorFileLogs];
   } else if ([argumentSet containsObject:@"-appTest"]) {
+    NSString *videoRecordingPath = NSProcessInfo.processInfo.environment[@"FBXCTEST_VIDEO_RECORDING_PATH"];
     configuration = [FBTestManagerTestConfiguration
       configurationWithEnvironment:environment
       workingDirectory:workingDirectory
@@ -93,7 +94,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       timeout:timeout
       runnerAppPath:runnerAppPath
       testTargetAppPath:nil
-      testFilter:testFilter];
+      testFilter:testFilter
+      videoRecordingPath:videoRecordingPath];
   } else if ([argumentSet containsObject:@"-uiTest"]) {
     configuration = [FBTestManagerTestConfiguration
       configurationWithEnvironment:environment
@@ -103,7 +105,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       timeout:timeout
       runnerAppPath:runnerAppPath
       testTargetAppPath:testTargetPathOut
-      testFilter:nil];
+      testFilter:nil
+      videoRecordingPath:nil];
   }
   if (!configuration) {
     return [[FBControlCoreError

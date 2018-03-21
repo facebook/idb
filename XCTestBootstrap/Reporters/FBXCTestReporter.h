@@ -144,6 +144,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)testPlanDidFailWithMessage:(nonnull NSString *) message;
 
+/**
+ Called after finished a video recording during test run.
+
+ @param videoRecordingPath the file path of video recording
+ */
+- (void)didRecordVideoAtPath:(nonnull NSString *)videoRecordingPath;
+
 @end
 
 NS_ASSUME_NONNULL_END

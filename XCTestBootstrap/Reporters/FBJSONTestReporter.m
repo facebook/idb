@@ -139,6 +139,16 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   [self storeEvent:[FBJSONTestReporter finishedEventFromSummary:summary]];
 }
 
+- (void)didRecordVideoAtPath:(nonnull NSString *)videoRecordingPath
+{
+  NSDictionary<NSString *, id> *event =
+    @{
+      @"event" : @"video-recording-finished",
+      @"videoRecordingPath" : videoRecordingPath,
+    };
+  [self storeEvent:event];
+}
+
 - (void)didFinishExecutingTestPlan
 {
   _finished = YES;

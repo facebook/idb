@@ -123,6 +123,7 @@ NSString *const KeyTestFilter = @"test_filter";
 NSString *const KeyTestMirror = @"test_mirror";
 NSString *const KeyTestTimeout = @"test_timeout";
 NSString *const KeyTestType = @"test_type";
+NSString *const KeyVideoRecordingPath = @"video_recording_path";
 NSString *const KeyWaitForDebugger = @"wait_for_debugger";
 NSString *const KeyWorkingDirectory = @"working_directory";
 
@@ -336,12 +337,12 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter
++ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter videoRecordingPath:(NSString *)videoRecordingPath
 {
-  return [[FBTestManagerTestConfiguration alloc] initWithShims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter];
+  return [[FBTestManagerTestConfiguration alloc] initWithShims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter videoRecordingPath:videoRecordingPath];
 }
 
-- (instancetype)initWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter
+- (instancetype)initWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter videoRecordingPath:(NSString *)videoRecordingPath
 {
   self = [super initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
   if (!self) {
@@ -351,6 +352,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   _runnerAppPath = runnerAppPath;
   _testTargetAppPath = testTargetAppPath;
   _testFilter = testFilter;
+  _videoRecordingPath = videoRecordingPath;
 
   return self;
 }
@@ -370,6 +372,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   json[KeyRunnerAppPath] = self.runnerAppPath;
   json[KeyRunnerTargetPath] = self.testTargetAppPath;
   json[KeyTestFilter] = self.testFilter ?: NSNull.null;
+  json[KeyVideoRecordingPath] = self.videoRecordingPath ?: NSNull.null;
   return [json copy];
 }
 
@@ -393,7 +396,13 @@ NSString *const KeyWorkingDirectory = @"working_directory";
       describeFormat:@"%@ is not a String for %@", testFilter, KeyTestFilter]
       fail:error];
   }
-  return [[FBTestManagerTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter];
+  NSString *videoRecordingPath = [FBCollectionOperations nullableValueForDictionary:json key:KeyVideoRecordingPath];
+  if (videoRecordingPath && ![videoRecordingPath isKindOfClass:NSString.class]) {
+    return [[FBXCTestError
+             describeFormat:@"%@ is not a String for %@", videoRecordingPath, KeyVideoRecordingPath]
+            fail:error];
+  }
+  return [[FBTestManagerTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter videoRecordingPath:videoRecordingPath];
 }
 
 @end

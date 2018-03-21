@@ -99,6 +99,10 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     testLaunchConfiguration = [testLaunchConfiguration withTestsToRun:testsToRun];
   }
 
+  if (self.configuration.videoRecordingPath != nil) {
+    [self.target startRecordingToFile:self.configuration.videoRecordingPath];
+  }
+
   id<FBXCTestPreparationStrategy> testPreparationStrategy = [self.testPreparationStrategyClass
     strategyWithTestLaunchConfiguration:testLaunchConfiguration
     workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]];
@@ -116,6 +120,10 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
       return [manager execute];
     }]
     onQueue:self.target.workQueue fmap:^(FBTestManagerResult *result) {
+      if (self.configuration.videoRecordingPath != nil) {
+        [self.target stopRecording];
+        [self.reporter didRecordVideoAtPath:self.configuration.videoRecordingPath];
+      }
       if (result.crashDiagnostic) {
         return [[FBXCTestError
           describeFormat:@"The Application Crashed during the Test Run\n%@", result.crashDiagnostic.asString]
