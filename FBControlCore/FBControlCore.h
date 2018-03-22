@@ -82,6 +82,7 @@
 #import <FBControlCore/FBSocketServer.h>
 #import <FBControlCore/FBSocketWriter.h>
 #import <FBControlCore/FBSubstringUtilities.h>
+#import <FBControlCore/FBTask+Helpers.h>
 #import <FBControlCore/FBTask.h>
 #import <FBControlCore/FBTaskBuilder.h>
 #import <FBControlCore/FBTestLaunchConfiguration.h>

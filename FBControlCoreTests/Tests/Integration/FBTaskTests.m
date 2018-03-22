@@ -302,4 +302,22 @@
   XCTAssertEqualObjects(task.exitCode.result, @(SIGKILL));
 }
 
+- (void)testHUPBackoffToKILL
+{
+  FBTask *task = [[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/nohup" arguments:@[@"/bin/sleep", @"10000000"]]
+    startSynchronously];
+
+  XCTAssertEqual(task.completed.state, FBFutureStateRunning);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateRunning);
+
+  NSError *error = nil;
+  BOOL success = [[task sendSignal:SIGHUP backingOfToKillWithTimeout:0.5] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+  XCTAssertEqual(task.completed.state, FBFutureStateDone);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
+  XCTAssertEqual(task.exitCode.result, @(SIGKILL));
+}
+
 @end
