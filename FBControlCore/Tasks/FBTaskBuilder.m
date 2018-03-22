@@ -234,7 +234,7 @@
   static dispatch_once_t onceToken;
   static NSDictionary<NSString *, NSString *> *environment = nil;
   dispatch_once(&onceToken, ^{
-    NSArray<NSString *> *applicableVariables = @[@"DEVELOPER_DIR", @"PATH"];
+    NSArray<NSString *> *applicableVariables = @[@"DEVELOPER_DIR", @"HOME", @"PATH"];
     NSDictionary<NSString *, NSString *> *parentEnvironment = NSProcessInfo.processInfo.environment;
     NSMutableDictionary<NSString *, NSString *> *taskEnvironment = [NSMutableDictionary dictionary];
 
