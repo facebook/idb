@@ -8,12 +8,14 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
 @class FBXCTestCommandLine;
 @protocol FBControlCoreLogger;
+@protocol FBXCTestSimulatorConfigurator;
 
 /**
  Fetches a Simulator for a Test.
@@ -26,11 +28,16 @@ NS_ASSUME_NONNULL_BEGIN
  Creates a Simulator Fetcher for the given configuration
 
  @param workingDirectory the working directory.
+ @param configurators A collection of configurators that will preconfigure simulator before booting it.
  @param logger the logger to use.
  @param error an error out for any error that occurs.
  @return a Fetcher for the given Configuration.
  */
-+ (nullable instancetype)fetcherWithWorkingDirectory:(NSString *)workingDirectory logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable instancetype)fetcherWithWorkingDirectory:(NSString *)workingDirectory
+                           simulatorManagementOptios:(FBSimulatorManagementOptions)simulatorManagementOptions
+                                       configurators:(NSArray<id<FBXCTestSimulatorConfigurator>> *)configurators
+                                              logger:(nullable id<FBControlCoreLogger>)logger
+                                               error:(NSError **)error;
 
 #pragma mark Public Methods
 

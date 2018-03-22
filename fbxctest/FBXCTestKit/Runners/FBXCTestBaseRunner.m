@@ -52,16 +52,17 @@
 
 - (FBFuture<NSNull *> *)execute
 {
-  FBFuture<NSNull *> *future = [self.commandLine.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class] ? [self runiOSTest] : [self runMacTest];
-  return [[future
-    timeout:self.commandLine.globalTimeout waitingFor:@"entire test execution to finish"]
-    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (id _) {
-      NSError *error = nil;
-      if (![self.context.reporter printReportWithError:&error]) {
-        return [FBFuture futureWithError:error];
-      }
-      return FBFuture.empty;
-    }];
+  FBFuture<NSNull *> *testExecutingFuture = [self.commandLine.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class] ? [self runiOSTest] : [self runMacTest];
+  return [[testExecutingFuture
+          timeout:self.commandLine.globalTimeout waitingFor:@"entire test execution to finish"]
+          onQueue:dispatch_get_main_queue()
+          chain:^FBFuture * _Nonnull(FBFuture * _Nonnull aFuture) {
+            NSError *error = nil;
+            if (![self.context.reporter printReportWithError:&error]) {
+              return [FBFuture futureWithError:error];
+            }
+            return aFuture;
+          }];
 }
 
 #pragma mark Private

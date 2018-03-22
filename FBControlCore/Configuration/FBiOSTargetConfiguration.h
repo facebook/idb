@@ -83,6 +83,7 @@ extern FBOSVersionName const FBOSVersionNameiOS_10_0;
 extern FBOSVersionName const FBOSVersionNameiOS_10_1;
 extern FBOSVersionName const FBOSVersionNameiOS_10_2;
 extern FBOSVersionName const FBOSVersionNameiOS_10_3;
+extern FBOSVersionName const FBOSVersionNameiOS_10_3_1;
 extern FBOSVersionName const FBOSVersionNameiOS_11_0;
 extern FBOSVersionName const FBOSVersionNameiOS_11_1;
 extern FBOSVersionName const FBOSVersionNameiOS_11_2;

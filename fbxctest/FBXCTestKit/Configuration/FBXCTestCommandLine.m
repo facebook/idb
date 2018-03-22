@@ -11,19 +11,37 @@
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBXCTestDestination.h"
+#import "FBXCTestKeyboardSimulatorConfigurator.h"
+#import "FBXCTestWatchdogConfigurator.h"
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
+
+NSString *const FBVideoRecordingPathArgName = @"-video";
+NSString *const FBOsLogPathArgName = @"-oslog";
+NSString *const FBTestLogPathArgName = @"-testlog";
+NSString *const FBSimulatorLocalizationSettingsArgName = @"-simulator-localization-settings";
+NSString *const FBWatchdogSettingsArgName = @"-watchdog-settings";
 
 @implementation FBXCTestCommandLine
 
 #pragma mark Initializers
 
-+ (instancetype)commandLineWithConfiguration:(FBXCTestConfiguration *)configuration destination:(FBXCTestDestination *)destination
++ (instancetype)commandLineWithConfiguration:(FBXCTestConfiguration *)configuration
+                                 destination:(FBXCTestDestination *)destination
+                      simulatorConfigurators:(NSArray<id<FBXCTestSimulatorConfigurator>> *)simulatorConfigurators
+                  simulatorManagementOptions:(FBSimulatorManagementOptions)simulatorManagementOptions
 {
-  return [[self alloc] initWithConfiguration:configuration destination:destination];
+    return [[self alloc]
+            initWithConfiguration:configuration
+            destination:destination
+            simulatorConfigurators:simulatorConfigurators
+            simulatorManagementOptions:simulatorManagementOptions];
 }
 
-- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration destination:(FBXCTestDestination *)destination
+- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration
+                          destination:(FBXCTestDestination *)destination
+               simulatorConfigurators:(NSArray<id<FBXCTestSimulatorConfigurator>> *)simulatorConfigurators
+           simulatorManagementOptions:(FBSimulatorManagementOptions)simulatorManagementOptions
 {
   self = [super init];
   if (!self) {
@@ -32,18 +50,15 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
 
   _configuration = configuration;
   _destination = destination;
+  _simulatorConfigurators = [NSArray arrayWithArray:simulatorConfigurators];
+  _simulatorManagementOptions = simulatorManagementOptions;
 
   return self;
 }
 
 #pragma mark Parsing
 
-+ (nullable instancetype)commandLineFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory error:(NSError **)error
-{
-  return [self commandLineFromArguments:arguments processUnderTestEnvironment:environment workingDirectory:workingDirectory timeout:0 error:nil];
-}
-
-+ (nullable instancetype)commandLineFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory timeout:(NSTimeInterval)timeout error:(NSError **)error
++ (nullable instancetype)commandLineFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory timeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   FBXCTestDestination *destination = [self destinationWithArguments:arguments error:error];
   if (!destination) {
@@ -52,10 +67,17 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
   FBXCTestShimConfiguration *shims = nil;
   NSString *testBundlePath = nil;
   NSString *runnerAppPath = nil;
-  NSString *testFilter = nil;
+  NSArray<NSString *> *testFilters = nil;
   NSString *testTargetPathOut = nil;
+  NSArray<NSString *> *additionalApplicationPathsOut = nil;
+  NSArray<id<FBXCTestSimulatorConfigurator>> *simulatorConfigurators = nil;
   BOOL waitForDebugger = NO;
-  if (![FBXCTestCommandLine loadWithArguments:arguments shimsOut:&shims testBundlePathOut:&testBundlePath runnerAppPathOut:&runnerAppPath testTargetPathOut:&testTargetPathOut testFilterOut:&testFilter waitForDebuggerOut:&waitForDebugger error:error]) {
+  NSString *videoRecordingPath = nil;
+  NSString *osLogPath = nil;
+  NSString *testLogPath = nil;
+  FBSimulatorManagementOptions simulatorManagementOptions = FBSimulatorManagementOptionsKillAllOnFirstStart;
+  
+  if (![FBXCTestCommandLine loadWithArguments:arguments logger:logger shimsOut:&shims testBundlePathOut:&testBundlePath runnerAppPathOut:&runnerAppPath testTargetPathOut:&testTargetPathOut additionalApplicationPathsOut:&additionalApplicationPathsOut testFilterOut:&testFilters waitForDebuggerOut:&waitForDebugger simulatorConfigurators:&simulatorConfigurators simulatorManagementOptions:&simulatorManagementOptions videoRecordingPath:&videoRecordingPath oslogPath:&osLogPath testLogPath:&testLogPath error:error]) {
     return nil;
   }
   NSSet<NSString *> *argumentSet = [NSSet setWithArray:arguments];
@@ -80,16 +102,16 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       testBundlePath:testBundlePath
       waitForDebugger:waitForDebugger
       timeout:timeout
-      testFilter:testFilter
+      testFilters:testFilters
       mirroring:FBLogicTestMirrorFileLogs];
   } else if ([argumentSet containsObject:@"-appTest"]) {
     NSMutableDictionary<NSString *, NSString *> *allEnvironment = [NSProcessInfo.processInfo.environment mutableCopy];
     [allEnvironment addEntriesFromDictionary:environment];
 
-    NSString *videoRecordingPath = allEnvironment[@"FBXCTEST_VIDEO_RECORDING_PATH"];
+    videoRecordingPath = allEnvironment[@"FBXCTEST_VIDEO_RECORDING_PATH"];
     NSString *testArtifactsFilenameGlob = allEnvironment[@"FBXCTEST_TEST_ARTIFACTS_FILENAME_GLOB"];
     NSArray<NSString *> *testArtifactsFilenameGlobs = testArtifactsFilenameGlob != nil ? @[testArtifactsFilenameGlob] : nil;
-    NSString *osLogPath = allEnvironment[@"FBXCTEST_OS_LOG_PATH"];
+    osLogPath = allEnvironment[@"FBXCTEST_OS_LOG_PATH"];
 
     configuration = [FBTestManagerTestConfiguration
       configurationWithShims:shims
@@ -99,11 +121,14 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       waitForDebugger:waitForDebugger
       timeout:timeout
       runnerAppPath:runnerAppPath
-      testTargetAppPath:nil
-      testFilter:testFilter
+      testTargetAppPath:testTargetPathOut
+      testFilters:testFilters
       videoRecordingPath:videoRecordingPath
       testArtifactsFilenameGlobs:testArtifactsFilenameGlobs
-      osLogPath:osLogPath];
+      osLogPath:osLogPath
+      additionalApplicationPaths:@[]
+      runnerAppLogPath:testLogPath
+      applicationLogPath:testLogPath];
   } else if ([argumentSet containsObject:@"-uiTest"]) {
     configuration = [FBTestManagerTestConfiguration
       configurationWithShims:shims
@@ -114,23 +139,31 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       timeout:timeout
       runnerAppPath:runnerAppPath
       testTargetAppPath:testTargetPathOut
-      testFilter:nil
-      videoRecordingPath:nil
+      testFilters:testFilters
+      videoRecordingPath:videoRecordingPath
       testArtifactsFilenameGlobs:nil
-      osLogPath:nil];
+      osLogPath:osLogPath
+      additionalApplicationPaths:additionalApplicationPathsOut
+      runnerAppLogPath:testLogPath
+      applicationLogPath:testLogPath];
   }
   if (!configuration) {
     return [[FBControlCoreError
       describeFormat:@"Could not determine test runner type from %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]]
       fail:error];
   }
-  return [[FBXCTestCommandLine alloc] initWithConfiguration:configuration destination:destination];
+  return [[FBXCTestCommandLine alloc]
+          initWithConfiguration:configuration
+          destination:destination
+          simulatorConfigurators:simulatorConfigurators
+          simulatorManagementOptions:simulatorManagementOptions];
 }
 
-+ (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments shimsOut:(FBXCTestShimConfiguration **)shimsOut testBundlePathOut:(NSString **)testBundlePathOut runnerAppPathOut:(NSString **)runnerAppPathOut testTargetPathOut:(NSString **)testTargetPathOut testFilterOut:(NSString **)testFilterOut waitForDebuggerOut:(BOOL *)waitForDebuggerOut error:(NSError **)error
++ (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments logger:(id<FBControlCoreLogger>)logger shimsOut:(FBXCTestShimConfiguration **)shimsOut testBundlePathOut:(NSString **)testBundlePathOut runnerAppPathOut:(NSString **)runnerAppPathOut testTargetPathOut:(NSString **)testTargetPathOut additionalApplicationPathsOut:(NSArray<NSString *> **)additionalApplicationPathsOut testFilterOut:(NSArray<NSString *> **)testFiltersOut waitForDebuggerOut:(BOOL *)waitForDebuggerOut simulatorConfigurators:(NSArray<id<FBXCTestSimulatorConfigurator>> **)simulatorConfiguratorsOut simulatorManagementOptions:(out FBSimulatorManagementOptions *)simulatorManagementOptions videoRecordingPath:(out NSString **)videoRecordingPath oslogPath:(out NSString **)oslogPath testLogPath:(out NSString **)testLogPath error:(NSError **)error
 {
   NSUInteger nextArgument = 0;
-  NSString *testFilter = nil;
+  NSMutableArray<NSString *> *testFilters = [[NSMutableArray alloc] init];
+  NSMutableArray<id<FBXCTestSimulatorConfigurator>> *configurators = [[NSMutableArray alloc] init];
   BOOL shimsRequired = YES;
 
   while (nextArgument < arguments.count) {
@@ -143,6 +176,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       continue;
     } else if ([argument isEqualToString:@"-waitForDebugger"]) {
       *waitForDebuggerOut = YES;
+      continue;
+    } else if ([argument isEqualToString:@"-keep-simulators-alive"]) {
+      *simulatorManagementOptions = 0;
       continue;
     }
     if (nextArgument >= arguments.count) {
@@ -157,6 +193,18 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       // Ignore. This is handled when extracting the destination
     } else if ([argument isEqualToString:@"-destination"]) {
       // Ignore. This is handled when extracting the destination
+    }  else if ([argument isEqualToString:@"-workingDirectory"]) {
+      // Ignore. This is handled by the bootstrapper itself.
+      continue;
+    } else if ([argument isEqualToString:@"-timeout"]) {
+      // Ignore. This is handled by the bootstrapper itself.
+      continue;
+    } else if ([argument isEqualToString:FBVideoRecordingPathArgName]) {
+      *videoRecordingPath = parameter;
+    } else if ([argument isEqualToString:FBOsLogPathArgName]) {
+      *oslogPath = parameter;
+    } else if ([argument isEqualToString:FBTestLogPathArgName]) {
+      *testLogPath = parameter;
     } else if ([argument isEqualToString:@"-logicTest"]) {
       if (*testBundlePathOut != nil) {
         return [[FBXCTestError
@@ -182,12 +230,16 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       *runnerAppPathOut = testRunnerAppPath;
     } else if ([argument isEqualToString:@"-uiTest"]) {
       NSArray *components = [parameter componentsSeparatedByString:@":"];
-      if (components.count != 3) {
-        return [[FBXCTestError describeFormat:@"Test specifier should contain three colon separated components: %@", parameter] failBool:error];
+      if (components.count < 3) {
+        return [[FBXCTestError describeFormat:@"Test specifier should contain three or more colon separated components: %@", parameter] failBool:error];
       }
       NSString *testBundlePath = components[0];
       NSString *testRunnerPath = [self extractBundlePathFromString:components[1]];
       NSString *testTargetPath = [self extractBundlePathFromString:components[2]];
+      NSMutableArray *additionalApplicationPaths = [NSMutableArray new];
+      for (NSUInteger componentId = 3; componentId < components.count; componentId++) {
+        [additionalApplicationPaths addObject:components[componentId]];
+      }
 
       if (*testBundlePathOut != nil) {
         return [[FBXCTestError
@@ -197,11 +249,17 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       *testBundlePathOut = testBundlePath;
       *runnerAppPathOut = testRunnerPath;
       *testTargetPathOut = testTargetPath;
+      *additionalApplicationPathsOut = [additionalApplicationPaths copy];
     } else if ([argument isEqualToString:@"-only"]) {
-      if (testFilter != nil) {
-        return [[FBXCTestError describeFormat:@"Multiple -only options specified: %@, %@", testFilter, parameter] failBool:error];
+      [testFilters addObject:parameter];
+    } else if ([argument isEqualToString:FBSimulatorLocalizationSettingsArgName] ||
+               [argument isEqualToString:FBWatchdogSettingsArgName]) {
+      id<FBXCTestSimulatorConfigurator> configurator = nil;
+      if ([self configuratorForArgument:argument parameter:parameter logger:logger outConfigurator:&configurator error:error] && configurator != nil) {
+        [configurators addObject:configurator];
+      } else {
+        return [[FBXCTestError describeFormat:@"Option %@ has wrong argument %@", argument, parameter] failBool:error];
       }
-      testFilter = parameter;
     } else {
       return [[FBXCTestError describeFormat:@"Unrecognized option: %@", argument] failBool:error];
     }
@@ -215,15 +273,21 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
     }
     *shimsOut = shimConfiguration;
   }
-  if (testFilter != nil) {
+  if (testFilters.count > 0) {
     NSString *expectedPrefix = [*testBundlePathOut stringByAppendingString:@":"];
-    if (![testFilter hasPrefix:expectedPrefix]) {
-      return [[FBXCTestError
-        describeFormat:@"Test filter '%@' does not apply to the test bundle '%@'", testFilter, *testBundlePathOut]
-        failBool:error];
+    NSMutableArray *mappedFilters = [[NSMutableArray alloc] init];
+    for (NSString *testFilter in testFilters) {
+      if (![testFilter hasPrefix:expectedPrefix]) {
+        return [[FBXCTestError
+                 describeFormat:@"Test filter '%@' does not apply to the test bundle '%@'", testFilter, *testBundlePathOut]
+                failBool:error];
+      }
+      [mappedFilters addObject:[testFilter substringFromIndex:expectedPrefix.length]];
     }
-    *testFilterOut = [testFilter substringFromIndex:expectedPrefix.length];
+    *testFiltersOut = [mappedFilters copy];
   }
+  
+  *simulatorConfiguratorsOut = [configurators copy];
 
   return YES;
 }
@@ -325,6 +389,25 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
     path = path.stringByDeletingLastPathComponent;
   }
   return path;
+}
+
++ (BOOL)configuratorForArgument:(NSString *)argument parameter:(NSString *)parameter logger:(id<FBControlCoreLogger>)logger outConfigurator:(out id<FBXCTestSimulatorConfigurator> *)outConfigurator error:(NSError **)error
+{
+  if ([argument isEqualToString:FBSimulatorLocalizationSettingsArgName] ||
+      [argument isEqualToString:FBWatchdogSettingsArgName]) {
+    NSData *contents = [NSData dataWithContentsOfFile:parameter options:NSDataReadingMappedAlways error:error];
+    if (contents == nil) { return NO; }
+    NSDictionary *dictionary = [NSJSONSerialization JSONObjectWithData:contents options:0 error:error];
+    if ([dictionary isKindOfClass:NSDictionary.class]) {
+      if ([argument isEqualToString:FBSimulatorLocalizationSettingsArgName]) {
+        *outConfigurator = [FBXCTestKeyboardSimulatorConfigurator configurationFromDictionary:dictionary logger:logger];
+      } else if ([argument isEqualToString:FBWatchdogSettingsArgName]) {
+        *outConfigurator = [FBXCTestWatchdogConfigurator configurationFromDictionary:dictionary logger:logger];
+      }
+      return YES;
+    }
+  }
+  return NO;
 }
 
 #pragma mark NSObject

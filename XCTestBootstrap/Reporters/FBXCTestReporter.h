@@ -157,6 +157,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)didSaveOSLogAtPath:(nonnull NSString *)osLogPath;
 
 /**
+ Called after saving runner app log during test run.
+ 
+ @param runnerLogPath the file path of runner logs
+ */
+- (void)didSaveRunnerAppLogAtPath:(nonnull NSString *)runnerLogPath;
+
+/**
  Called after copy a test artifacts out of simulator's folder.
 
  @param testArtifactFilename the file name of the test artifacts.

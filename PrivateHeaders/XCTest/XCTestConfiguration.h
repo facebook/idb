@@ -47,6 +47,7 @@
 @property(copy) NSSet *testsToSkip; // @synthesize testsToSkip=_testsToSkip;
 @property(copy) NSSet *testsToRun; // @synthesize testsToRun=_testsToRun;
 @property(copy) NSURL *testBundleURL; // @synthesize testBundleURL=_testBundleURL;
+@property(copy) NSDictionary *testApplicationDependencies; // @synthesize testApplicationDependencies=_testApplicationDependencies;
 
 // iOS 10.x specific
 @property(copy) NSDictionary *aggregateStatisticsBeforeCrash; // @synthesize aggregateStatisticsBeforeCrash=_aggregateStatisticsBeforeCrash;

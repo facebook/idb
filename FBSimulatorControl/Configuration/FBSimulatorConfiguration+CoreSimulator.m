@@ -199,9 +199,6 @@
   if (matchingDeviceTypes.count == 0) {
     return [[FBSimulatorError describeFormat:@"Could not obtain matching DeviceTypes, no matches. Available Device Types %@", matchingDeviceTypes] fail:error];
   }
-  if (matchingDeviceTypes.count > 1) {
-    return [[FBSimulatorError describeFormat:@"Matching Device Types is ambiguous: %@", matchingDeviceTypes] fail:error];
-  }
   return [matchingDeviceTypes firstObject];
 }
 

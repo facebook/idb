@@ -16,11 +16,11 @@
 {
   [super setUp];
   self.continueAfterFailure = NO;
-  [[XCUIApplication new] launch];
 }
 
 - (void)testHelloWorld
 {
+  [[XCUIApplication new] launch];
   XCUIApplication *app = [XCUIApplication new];
   XCUIElement *button = app.buttons[@"Welcome"];
   [self expectationForPredicate:[NSPredicate predicateWithFormat:@"exists = 1 && hittable = 1"]
@@ -33,6 +33,25 @@
             evaluatedWithObject:app.staticTexts[@"Hello world"]
                         handler:nil];
   [self waitForExpectationsWithTimeout:10 handler:nil];
+}
+
+- (void)testThatFails
+{
+  XCUIApplication *app = [XCUIApplication new];
+  XCTAssertTrue(app.state == XCUIApplicationStateRunningForeground);
+}
+
+- (void)testThatPasses1
+{
+  XCUIApplication *app = [XCUIApplication new];
+  XCTAssertFalse(app.state == XCUIApplicationStateRunningForeground);
+}
+
+- (void)testThatPasses2
+{
+  [[XCUIApplication new] launch];
+  XCUIApplication *app = [XCUIApplication new];
+  XCTAssertTrue(app.state == XCUIApplicationStateRunningForeground);
 }
 
 @end

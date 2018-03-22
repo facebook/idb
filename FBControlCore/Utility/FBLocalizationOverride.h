@@ -24,6 +24,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)withLocale:(NSLocale *)locale;
 
++ (instancetype)withLocale:(NSLocale *)locale
+                 keyboards:(NSArray<NSString *> *)keyboards
+         passcodeKeyboards:(NSArray<NSString *> *)passcodeKeyboards
+                 languages:(NSArray<NSString *> *)languages
+ addingEmojiKeybordHandled:(BOOL)addingEmojiKeybordHandled
+   enableKeyboardExpansion:(BOOL)enableKeyboardExpansion;
+
 /**
  The Overrides for an NSUserDefaults dictionary.
  */

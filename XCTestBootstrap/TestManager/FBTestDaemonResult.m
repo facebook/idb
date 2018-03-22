@@ -87,6 +87,11 @@
   return [self.underlyingError build];
 }
 
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Daemon Connection ended with error: %@", [self error]];
+}
+
 @end
 
 @implementation FBTestDaemonResult

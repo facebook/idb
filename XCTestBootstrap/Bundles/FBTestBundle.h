@@ -75,6 +75,14 @@
 - (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath;
 
 /**
+ Adds test application dependencies for UI tests.
+
+ @param testApplicationDependencies test application dependencies
+ @return builder
+ */
+- (instancetype)withTestApplicationDependencies:(NSDictionary<NSString *, NSString *> *)testApplicationDependencies;
+
+/**
  Adds path to automation framework.
 
  @param automationFrameworkPath path to automation framework

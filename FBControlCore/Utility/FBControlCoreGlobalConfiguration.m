@@ -14,6 +14,9 @@
 NSString *const FBControlCoreStderrLogging = @"FBCONTROLCORE_LOGGING";
 NSString *const FBControlCoreDebugLogging = @"FBCONTROLCORE_DEBUG_LOGGING";
 NSString *const ConfirmShimsAreSignedEnv = @"FBCONTROLCORE_CONFIRM_SIGNED_SHIMS";
+NSString *const FBControlCoreFastTimeout = @"FBCONTROLCORE_FAST_TIMEOUT";
+NSString *const FBControlCoreRegularTimeout = @"FBCONTROLCORE_REGULAR_TIMEOUT";
+NSString *const FBControlCoreSlowTimeout = @"FBCONTROLCORE_SLOW_TIMEOUT";
 
 static id<FBControlCoreLogger> logger;
 
@@ -21,17 +24,32 @@ static id<FBControlCoreLogger> logger;
 
 + (NSTimeInterval)fastTimeout
 {
-  return 10;
+  NSString *timeoutFromEnv = NSProcessInfo.processInfo.environment[FBControlCoreFastTimeout];
+  if (timeoutFromEnv) {
+    return timeoutFromEnv.doubleValue;
+  } else {
+    return 10;
+  }
 }
 
 + (NSTimeInterval)regularTimeout
 {
-  return 30;
+  NSString *timeoutFromEnv = NSProcessInfo.processInfo.environment[FBControlCoreRegularTimeout];
+  if (timeoutFromEnv) {
+    return timeoutFromEnv.doubleValue;
+  } else {
+    return 30;
+  }
 }
 
 + (NSTimeInterval)slowTimeout
 {
-  return 120;
+  NSString *timeoutFromEnv = NSProcessInfo.processInfo.environment[FBControlCoreSlowTimeout];
+  if (timeoutFromEnv) {
+    return timeoutFromEnv.doubleValue;
+  } else {
+    return 120;
+  }
 }
 
 + (id<FBControlCoreLogger>)defaultLogger

@@ -39,7 +39,7 @@
                                      @"-only", testFilter];
 
   NSError *error;
-  FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory error:&error];
+  FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory timeout:0 logger:nil error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(commandLine);
 
@@ -53,7 +53,7 @@
   [self assertValueSemanticsOfConfiguration:configuration];
 
   FBTestManagerTestConfiguration *testManagerTestConfiguration = (FBTestManagerTestConfiguration *)configuration;
-  XCTAssertEqualObjects(testManagerTestConfiguration.testFilter, shortTestFilter);
+  XCTAssertEqualObjects(testManagerTestConfiguration.testFilters, shortTestFilter);
 }
 
 @end

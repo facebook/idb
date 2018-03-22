@@ -210,6 +210,7 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
   NSError *error = [NSError errorWithDomain:self.domain code:self.code userInfo:[userInfo copy]];
   if (self.logger.level >= FBControlCoreLogLevelDebug) {
     [self.logger.error logFormat:@"New Error Built ==> %@", error];
+    [self attemptToLogJSONRepresentationOfError:error usingLogger:self.logger.error];
   }
 
   return error;
@@ -244,6 +245,22 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
   NSMutableDictionary *userInfo = [cause.userInfo mutableCopy];
   userInfo[NSLocalizedDescriptionKey] = description;
   return [NSError errorWithDomain:cause.domain code:cause.code userInfo:[userInfo copy]];
+}
+
+- (void)attemptToLogJSONRepresentationOfError:(NSError *)error usingLogger:(id<FBControlCoreLogger>)logger
+{
+  NSDictionary *JSONObject =
+  @{
+    @"errorOrigin": NSStringFromClass(self.class),
+    @"domain": error.domain,
+    @"code": @(error.code),
+    @"text": error.localizedDescription ?: NSNull.null
+    };
+  if ([NSJSONSerialization isValidJSONObject:JSONObject]) {
+    NSData *JSONData = [NSJSONSerialization dataWithJSONObject:JSONObject options:0 error:NULL];
+    NSString *JSONString = [[NSString alloc] initWithData:JSONData encoding:NSUTF8StringEncoding];
+    if (JSONString != nil) { [logger log:JSONString]; }
+  }
 }
 
 @end

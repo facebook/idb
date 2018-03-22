@@ -26,9 +26,6 @@
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestBundleResult.h"
 
-static NSTimeInterval BundleReadyTimeout = 20; // Time for `_XCT_testBundleReadyWithProtocolVersion` to be called after the 'connect'.
-static NSTimeInterval CrashCheckWaitLimit = 200;  // Time to wait for crash report to be generated.
-
 typedef NSString *FBTestBundleConnectionState NS_STRING_ENUM;
 static FBTestBundleConnectionState const FBTestBundleConnectionStateNotConnected = @"not connected";
 static FBTestBundleConnectionState const FBTestBundleConnectionStateConnecting = @"connecting";
@@ -61,6 +58,9 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
 @property (atomic, strong, nullable, readwrite) id<XCTestDriverInterface> testBundleProxy;
 @property (atomic, strong, nullable, readwrite) DTXConnection *testBundleConnection;
 @property (atomic, strong, nullable, readwrite) NSDate *applicationLaunchDate;
+
+- (NSTimeInterval)bundleReadyTimeout;
+- (NSTimeInterval)crashCheckWaitLimit;
 
 @end
 
@@ -159,7 +159,7 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
   }
 
   [self doConnect];
-  return [self.connectFuture timeout:BundleReadyTimeout waitingFor:@"Connection to happen, %@ has not been called yet", NSStringFromSelector(@selector(_XCT_testBundleReadyWithProtocolVersion:minimumVersion:))];
+  return [self.connectFuture timeout:[self bundleReadyTimeout] waitingFor:@"Connection to happen, %@ has not been called yet", NSStringFromSelector(@selector(_XCT_testBundleReadyWithProtocolVersion:minimumVersion:))];
 }
 
 - (FBFuture<FBTestBundleResult *> *)startTestPlan
@@ -220,7 +220,7 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
     }]
     onQueue:self.target.workQueue map:^(DTXConnection *connection) {
       return [self sendStartSessionRequestWithConnection:connection];
-    }]
+    }] 
     onQueue:self.target.workQueue handleError:^(NSError *innerError) {
       XCTestBootstrapError *error = [[XCTestBootstrapError
         describe:@"Failed to create secondary test manager transport"]
@@ -348,7 +348,7 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
 
       return [[crashLog
         notifyOfCrash:[FBCrashLogInfo predicateForCrashLogsWithProcessID:self.context.testRunnerPID]]
-        timeout:CrashCheckWaitLimit
+        timeout:[self crashCheckWaitLimit]
         waitingFor:@"Getting crash log for process with pid %d, bunndle ID: %@", self.context.testRunnerPID, self.context.testRunnerBundleID];
     }];
 }
@@ -372,6 +372,28 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
   }
 
   return result;
+}
+
+// Time for `_XCT_testBundleReadyWithProtocolVersion` to be called after the 'connect'.
+- (NSTimeInterval)bundleReadyTimeout
+{
+    NSString *timeoutFromEnv = NSProcessInfo.processInfo.environment[@"FB_BUNDLE_READY_TIMEOUT"];
+    if (timeoutFromEnv) {
+        return timeoutFromEnv.doubleValue;
+    } else {
+        return 20;
+    }
+}
+
+// Time to wait for crash report to be generated.
+- (NSTimeInterval)crashCheckWaitLimit
+{
+    NSString *timeoutFromEnv = NSProcessInfo.processInfo.environment[@"FB_CRASH_CHECK_WAIT_LIMIT"];
+    if (timeoutFromEnv) {
+        return timeoutFromEnv.doubleValue;
+    } else {
+        return 20;
+    }
 }
 
 #pragma mark XCTestDriverInterface

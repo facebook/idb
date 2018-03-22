@@ -8,6 +8,7 @@
 #import "FBTestRunStrategy.h"
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
+#import <FBControlCore/FBControlCore.h>
 
 @interface FBTestRunStrategy ()
 
@@ -59,24 +60,41 @@
       return [FBFuture futureWithError:error];
     }
   }
-
+  
+  NSMutableArray<FBBundleDescriptor *> *additionalApplications = [NSMutableArray arrayWithCapacity:self.configuration.additionalApplicationPaths.count];
+  for (NSString *path in self.configuration.additionalApplicationPaths) {
+    FBBundleDescriptor *app = [FBBundleDescriptor bundleFromPath:path error:&error];
+    if (!app) {
+      [self.logger logFormat:@"Failed to open additional application: %@", error];
+      return [FBFuture futureWithError:error];
+    } else {
+      [additionalApplications addObject:app];
+    }
+  }
+  
   return [[self.target
     installApplicationWithPath:testRunnerApp.path]
     onQueue:self.target.workQueue fmap:^(id _) {
-      return [self startTestWithTestRunnerApp:testRunnerApp testTargetApp:testTargetApp];
+      return [self startTestWithTestRunnerApp:testRunnerApp testTargetApp:testTargetApp additionalApplications:additionalApplications];
     }];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)startTestWithTestRunnerApp:(FBBundleDescriptor *)testRunnerApp testTargetApp:(FBBundleDescriptor *)testTargetApp
+- (FBFuture<NSNull *> *)startTestWithTestRunnerApp:(FBBundleDescriptor *)testRunnerApp testTargetApp:(FBBundleDescriptor *)testTargetApp additionalApplications:(NSArray<FBBundleDescriptor *> *)additionalApplications
 {
+  FBProcessOutputConfiguration *outputConfiguration = FBProcessOutputConfiguration.outputToDevNull;
+  if (self.configuration.runnerAppLogPath != nil) {
+    outputConfiguration = [FBProcessOutputConfiguration configurationWithStdOut:self.configuration.runnerAppLogPath
+                                                                         stdErr:self.configuration.runnerAppLogPath
+                                                                          error:NULL];
+  }
   FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
     configurationWithBundleID:testRunnerApp.identifier
     bundleName:testRunnerApp.identifier
     arguments:@[]
     environment:self.configuration.processUnderTestEnvironment
-    output:FBProcessOutputConfiguration.outputToDevNull
+    output:outputConfiguration
     launchMode:FBApplicationLaunchModeFailIfRunning];
 
   FBTestLaunchConfiguration *testLaunchConfiguration = [[FBTestLaunchConfiguration
@@ -84,14 +102,15 @@
     withApplicationLaunchConfiguration:appLaunch];
 
   if (testTargetApp) {
-    testLaunchConfiguration = [[[testLaunchConfiguration
+    testLaunchConfiguration = [[[[testLaunchConfiguration
      withTargetApplicationPath:testTargetApp.path]
      withTargetApplicationBundleID:testTargetApp.identifier]
+     withTestApplicationDependencies:[self _testApplicationDependenciesWithTestRunnerApp:testRunnerApp testTargetApp:testTargetApp additionalApplications:additionalApplications]]
      withUITesting:YES];
   }
 
-  if (self.configuration.testFilter != nil) {
-    NSSet<NSString *> *testsToRun = [NSSet setWithObject:self.configuration.testFilter];
+  if (self.configuration.testFilters.count > 0) {
+    NSSet<NSString *> *testsToRun = [NSSet setWithArray:self.configuration.testFilters];
     testLaunchConfiguration = [testLaunchConfiguration withTestsToRun:testsToRun];
   }
 
@@ -146,6 +165,10 @@
       if (self.configuration.osLogPath != nil) {
         [self.reporter didSaveOSLogAtPath:self.configuration.osLogPath];
       }
+      
+      if (self.configuration.runnerAppLogPath != nil) {
+        [self.reporter didSaveRunnerAppLogAtPath:self.configuration.runnerAppLogPath];
+      }
 
       if (self.configuration.testArtifactsFilenameGlobs != nil) {
         [self _saveTestArtifactsOfTestRunnerApp:testRunnerApp withFilenameMatchGlobs:self.configuration.testArtifactsFilenameGlobs];
@@ -162,6 +185,24 @@
       }
       return FBFuture.empty;
     }];
+}
+
+- (NSDictionary<NSString *, NSString *> *)_testApplicationDependenciesWithTestRunnerApp:(FBBundleDescriptor *)testRunnerApp testTargetApp:(FBBundleDescriptor *)testTargetApp additionalApplications:(NSArray<FBBundleDescriptor *> *)additionalApplications
+{
+  NSMutableArray<FBBundleDescriptor *> *allApplications = [additionalApplications mutableCopy];
+  if (testRunnerApp) {
+    [allApplications addObject:testRunnerApp];
+  }
+  if (testTargetApp) {
+    [allApplications addObject:testTargetApp];
+  }
+  NSMutableDictionary<NSString *, NSString *> *testApplicationDependencies = [NSMutableDictionary new];
+  for (FBBundleDescriptor *application in allApplications) {
+    if (application.path != nil && application.identifier != nil) {
+      [testApplicationDependencies setObject:application.path forKey:application.identifier];
+    }
+  }
+  return [testApplicationDependencies copy];
 }
 
 // Save test artifacts matches certain filename globs that are populated during test run

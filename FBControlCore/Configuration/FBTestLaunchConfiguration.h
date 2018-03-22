@@ -72,6 +72,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, nullable) NSString *targetApplicationPath;
 
 /*
+ Path to an application by bundle id for UI tests
+ */
+@property(copy) NSDictionary<NSString *, NSString *> *testApplicationDependencies;
+
+/*
  A dictionary with xctestrun file contents to use.
  */
 @property (nonatomic, copy, readonly, nullable) NSDictionary<NSString *, id> *xcTestRunProperties;
@@ -142,6 +147,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return new test launch configuration with changes applied.
  */
 - (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID;
+
+/**
+ Adds test application dependencies for UI tests.
+
+ @param testApplicationDependencies test application dependencies
+ @return builder
+ */
+- (instancetype)withTestApplicationDependencies:(NSDictionary<NSString *, NSString *> *)testApplicationDependencies;
 
 /**
  Adds xcTestRunProperties. When launching tests those properties will

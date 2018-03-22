@@ -12,10 +12,12 @@
 
 #import "FBXCTestCommandLine.h"
 #import "FBXCTestDestination.h"
+#import "FBXCTestSimulatorConfigurator.h"
 
 @interface FBXCTestSimulatorFetcher ()
 
 @property (nonatomic, strong, readonly) FBSimulatorControl *simulatorControl;
+@property (nonatomic, copy, readonly) NSArray<id<FBXCTestSimulatorConfigurator>> *configurators;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
@@ -24,12 +26,16 @@
 
 #pragma mark Initializers
 
-+ (nullable instancetype)fetcherWithWorkingDirectory:(NSString *)workingDirectory logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (nullable instancetype)fetcherWithWorkingDirectory:(NSString *)workingDirectory
+                           simulatorManagementOptios:(FBSimulatorManagementOptions)simulatorManagementOptions
+                                       configurators:(NSArray<id<FBXCTestSimulatorConfigurator>> *)configurators
+                                              logger:(id<FBControlCoreLogger>)logger
+                                               error:(NSError **)error
 {
   NSString *setPath = [workingDirectory stringByAppendingPathComponent:@"sim"];
   FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
     configurationWithDeviceSetPath:setPath
-    options:FBSimulatorManagementOptionsDeleteAllOnFirstStart
+    options:simulatorManagementOptions
     logger:logger
     reporter:nil];
 
@@ -39,10 +45,12 @@
     return [FBXCTestError failWithError:innerError errorOut:error];
   }
 
-  return [[self alloc] initWithSimulatorControl:simulatorControl logger:logger];
+  return [[self alloc] initWithSimulatorControl:simulatorControl configurators:configurators logger:logger];
 }
 
-- (instancetype)initWithSimulatorControl:(FBSimulatorControl *)simulatorControl logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithSimulatorControl:(FBSimulatorControl *)simulatorControl
+                           configurators:(NSArray<id<FBXCTestSimulatorConfigurator>> *)configurators
+                                  logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -50,6 +58,7 @@
   }
 
   _simulatorControl = simulatorControl;
+  _configurators = [NSArray arrayWithArray:configurators];
   _logger = logger;
 
   return self;
@@ -83,12 +92,22 @@
   FBSimulatorBootConfiguration *bootConfiguration = [[FBSimulatorBootConfiguration
     defaultConfiguration]
     withOptions:FBSimulatorBootOptionsEnableDirectLaunch | FBSimulatorBootOptionsVerifyUsable];
-
-  return [[self
-    fetchSimulatorForLogicTest:destination]
-    onQueue:dispatch_get_main_queue() fmap:^(FBSimulator *simulator) {
-      return [[simulator bootWithConfiguration:bootConfiguration] mapReplace:simulator];
-    }];
+  
+  return
+  [[[self fetchSimulatorForLogicTest:destination]
+   onQueue:dispatch_get_main_queue() fmap:^(FBSimulator *simulator) {
+     return [[simulator bootWithConfiguration:bootConfiguration] mapReplace:simulator];
+   }] onQueue:dispatch_get_main_queue() fmap:^(FBSimulator *result) {
+       NSMutableArray *futures = [[NSMutableArray alloc] init];
+       for (id<FBXCTestSimulatorConfigurator> configurator in self.configurators) {
+           [futures addObject:[configurator configureSimulator:result]];
+       }
+       if (futures.count == 0) {
+           return [FBFuture futureWithResult:result];
+       } else {
+           return [[FBFuture futureWithFutures:futures] mapReplace:result];
+       }
+   }];
 }
 
 - (FBFuture<NSNull *> *)returnSimulator:(FBSimulator *)simulator

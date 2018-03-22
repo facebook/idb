@@ -13,13 +13,18 @@
 static NSString *const LocaleKey = @"AppleLocale";
 static NSString *const LanguagesKey = @"AppleLanguages";
 static NSString *const KeyboardsKey = @"AppleKeyboards";
+static NSString *const PasscodeKeyboardsKey = @"ApplePasscodeKeyboards";
 static NSString *const KeyboardsExpandedKey = @"AppleKeyboardsExpanded";
+static NSString *const AddingEmojiKeybordHandledKey = @"AddingEmojiKeybordHandled";
 
 @interface FBLocalizationOverride ()
 
 @property (nonatomic, copy, readonly) NSLocale *locale;
+@property (nonatomic, copy, readonly) NSArray<NSString *> *languages;
 @property (nonatomic, copy, readonly) NSArray<NSString *> *keyboards;
+@property (nonatomic, copy, readonly) NSArray<NSString *> *passcodeKeyboards;
 @property (nonatomic, assign, readonly) BOOL enableKeyboardExpansion;
+@property (nonatomic, assign, readonly) BOOL addingEmojiKeybordHandled;
 
 @end
 
@@ -28,11 +33,36 @@ static NSString *const KeyboardsExpandedKey = @"AppleKeyboardsExpanded";
 #pragma mark Initializers
 
 + (instancetype)withLocale:(NSLocale *)locale
+                 keyboards:(NSArray<NSString *> *)keyboards
+         passcodeKeyboards:(NSArray<NSString *> *)passcodeKeyboards
+                 languages:(NSArray<NSString *> *)languages
+ addingEmojiKeybordHandled:(BOOL)addingEmojiKeybordHandled
+   enableKeyboardExpansion:(BOOL)enableKeyboardExpansion
 {
-  return [[FBLocalizationOverride alloc] initWithLocale:locale keyboards:@[ @"en_US@hw=US;sw=QWERTY" ] enableKeyboardExpansion:YES];
+  return [[self alloc] initWithLocale:locale
+                            keyboards:keyboards
+                    passcodeKeyboards:passcodeKeyboards
+                            languages:languages
+            addingEmojiKeybordHandled:addingEmojiKeybordHandled
+              enableKeyboardExpansion:enableKeyboardExpansion];
 }
 
-- (instancetype)initWithLocale:(NSLocale *)locale keyboards:(NSArray<NSString *> *)keyboards enableKeyboardExpansion:(BOOL)enableKeyboardExpansion
++ (instancetype)withLocale:(NSLocale *)locale
+{
+  return [[FBLocalizationOverride alloc] initWithLocale:locale
+                                              keyboards:@[ @"en_US@hw=US;sw=QWERTY" ]
+                                      passcodeKeyboards:@[ @"en_US@hw=US;sw=QWERTY" ]
+                                              languages:@[[locale objectForKey:NSLocaleLanguageCode]]
+                              addingEmojiKeybordHandled:NO
+                                enableKeyboardExpansion:YES];
+}
+
+- (instancetype)initWithLocale:(NSLocale *)locale
+                     keyboards:(NSArray<NSString *> *)keyboards
+             passcodeKeyboards:(NSArray<NSString *> *)passcodeKeyboards
+                     languages:(NSArray<NSString *> *)languages
+     addingEmojiKeybordHandled:(BOOL)addingEmojiKeybordHandled
+       enableKeyboardExpansion:(BOOL)enableKeyboardExpansion
 {
   self = [super init];
   if (!self) {
@@ -41,7 +71,10 @@ static NSString *const KeyboardsExpandedKey = @"AppleKeyboardsExpanded";
 
   _locale = locale;
   _keyboards = keyboards;
+  _passcodeKeyboards = passcodeKeyboards;
+  _languages = languages;
   _enableKeyboardExpansion = enableKeyboardExpansion;
+  _addingEmojiKeybordHandled = addingEmojiKeybordHandled;
 
   return self;
 }
@@ -68,20 +101,46 @@ static NSString *const KeyboardsExpandedKey = @"AppleKeyboardsExpanded";
       describeFormat:@"keyboards %@ should be an Array<String> but isn't", keyboards]
       fail:error];
   }
+  NSArray<NSString *> *passcodeKeyboards = json[@"passcode_keyboards"];
+  if (![FBCollectionInformation isArrayHeterogeneous:passcodeKeyboards withClass:NSString.class]) {
+    return [[FBControlCoreError
+             describeFormat:@"passcodeKeyboards %@ should be an Array<String> but isn't", passcodeKeyboards]
+            fail:error];
+  }
+  NSArray<NSString *> *languages = json[@"languages"];
+  if (![FBCollectionInformation isArrayHeterogeneous:languages withClass:NSString.class]) {
+    return [[FBControlCoreError
+             describeFormat:@"languages %@ should be an Array<String> but isn't", languages]
+            fail:error];
+  }
+  NSNumber *addingEmojiKeybordHandled = json[@"adding_emoji_keybord_handled"] ?: @NO;
+  if (![addingEmojiKeybordHandled isKindOfClass:NSNumber.class]) {
+    return [[FBControlCoreError
+             describeFormat:@"adding_emoji_keybord_handled %@ should be an Number but isn't", addingEmojiKeybordHandled]
+            fail:error];
+  }
   NSNumber *enableKeyboardExpansion = json[@"enable_keyboard_expansion"] ?: @YES;
   if (![enableKeyboardExpansion isKindOfClass:NSNumber.class]) {
     return [[FBControlCoreError
       describeFormat:@"enable_keyboard_expansion %@ should be an Number but isn't", enableKeyboardExpansion]
       fail:error];
   }
-  return [[FBLocalizationOverride alloc] initWithLocale:locale keyboards:keyboards enableKeyboardExpansion:enableKeyboardExpansion.boolValue];
+  return [[FBLocalizationOverride alloc] initWithLocale:locale
+                                              keyboards:keyboards
+                                      passcodeKeyboards:passcodeKeyboards
+                                              languages:languages
+                              addingEmojiKeybordHandled:addingEmojiKeybordHandled.boolValue
+                                enableKeyboardExpansion:enableKeyboardExpansion.boolValue];
 }
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
   return @{
     @"locale_identifier" : self.localeIdentifier,
+    @"languages" : self.languages,
     @"keyboards" : self.keyboards,
+    @"passcode_keyboards" : self.passcodeKeyboards,
+    @"adding_emoji_keybord_handled" : @(self.addingEmojiKeybordHandled),
     @"enable_keyboard_expansion" : @(self.enableKeyboardExpansion)
   };
 }
@@ -90,7 +149,12 @@ static NSString *const KeyboardsExpandedKey = @"AppleKeyboardsExpanded";
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  return [[FBLocalizationOverride alloc] initWithLocale:self.locale keyboards:self.keyboards enableKeyboardExpansion:self.enableKeyboardExpansion];
+  return [[FBLocalizationOverride alloc] initWithLocale:self.locale
+                                              keyboards:self.keyboards
+                                      passcodeKeyboards:self.passcodeKeyboards
+                                              languages:self.languages
+                              addingEmojiKeybordHandled:self.addingEmojiKeybordHandled
+                                enableKeyboardExpansion:self.enableKeyboardExpansion];
 }
 
 #pragma mark Properties
@@ -99,9 +163,11 @@ static NSString *const KeyboardsExpandedKey = @"AppleKeyboardsExpanded";
 {
   return @{
     LocaleKey : self.localeIdentifier,
-    LanguagesKey : @[ self.languageIdentifier ],
+    LanguagesKey : self.languages,
     KeyboardsKey : self.keyboards,
-    KeyboardsExpandedKey : self.enableKeyboardExpansion ? @1 : @0
+    PasscodeKeyboardsKey : self.passcodeKeyboards,
+    KeyboardsExpandedKey : self.enableKeyboardExpansion ? @1 : @0,
+    AddingEmojiKeybordHandledKey : self.addingEmojiKeybordHandled ? @"true" : @"false",
   };
 }
 
@@ -109,18 +175,13 @@ static NSString *const KeyboardsExpandedKey = @"AppleKeyboardsExpanded";
 {
   return @[
     [NSString stringWithFormat:@"-%@", LocaleKey], self.localeIdentifier,
-    [NSString stringWithFormat:@"-%@", LanguagesKey], [NSString stringWithFormat:@"(%@)", self.languageIdentifier],
+    [NSString stringWithFormat:@"-%@", LanguagesKey], [NSString stringWithFormat:@"(%@)", self.languages],
   ];
 }
 
 - (NSString *)localeIdentifier
 {
   return self.locale.localeIdentifier;
-}
-
-- (NSString *)languageIdentifier
-{
-  return [self.locale objectForKey:NSLocaleLanguageCode];
 }
 
 #pragma mark NSObject
@@ -130,7 +191,7 @@ static NSString *const KeyboardsExpandedKey = @"AppleKeyboardsExpanded";
   return [NSString stringWithFormat:
     @"Localization Override %@ | Language %@ | Keyboards %@",
     self.localeIdentifier,
-    self.languageIdentifier,
+    self.languages,
     [FBCollectionInformation oneLineDescriptionFromArray:self.keyboards]
   ];
 }
