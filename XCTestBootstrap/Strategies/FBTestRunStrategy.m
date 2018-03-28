@@ -99,10 +99,6 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     testLaunchConfiguration = [testLaunchConfiguration withTestsToRun:testsToRun];
   }
 
-  if (self.configuration.videoRecordingPath != nil) {
-    [self.target startRecordingToFile:self.configuration.videoRecordingPath];
-  }
-
   id<FBXCTestPreparationStrategy> testPreparationStrategy = [self.testPreparationStrategyClass
     strategyWithTestLaunchConfiguration:testLaunchConfiguration
     workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]];
@@ -114,14 +110,27 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     logger:self.target.logger
     testPreparationStrategy:testPreparationStrategy];
 
-  return [[[runner
+  return [[[[[runner
     connectAndStart]
     onQueue:self.target.workQueue fmap:^(FBTestManager *manager) {
+      FBFuture *startedVideoRecording = self.configuration.videoRecordingPath != nil
+        ? [self.target startRecordingToFile:self.configuration.videoRecordingPath]
+        : [FBFuture futureWithResult:NSNull.null];
+      return [FBFuture futureWithFutures:@[[FBFuture futureWithResult:manager], startedVideoRecording]];
+    }]
+    onQueue:self.target.workQueue fmap:^(NSArray<id> *results) {
+      FBTestManager *manager = results[0];
       return [manager execute];
     }]
     onQueue:self.target.workQueue fmap:^(FBTestManagerResult *result) {
+      FBFuture *stoppedVideoRecording = self.configuration.videoRecordingPath != nil
+      ? [self.target stopRecording]
+      : [FBFuture futureWithResult:NSNull.null];
+      return [FBFuture futureWithFutures:@[[FBFuture futureWithResult:result], stoppedVideoRecording]];
+    }]
+    onQueue:self.target.workQueue fmap:^(NSArray<id> *results) {
+      FBTestManagerResult *result = results[0];
       if (self.configuration.videoRecordingPath != nil) {
-        [self.target stopRecording];
         [self.reporter didRecordVideoAtPath:self.configuration.videoRecordingPath];
       }
       if (result.crashDiagnostic) {
