@@ -54,9 +54,10 @@ extern FBDiagnosticQueryFormat FBDiagnosticQueryFormatContent;
 
  @param bundleID the Application Bundle ID to search in.
  @param filenames the filenames to search for.
+ @param filenameGlobs the list of file name glob to search for.
  @return a FBDiagnosticQuery.
  */
-+ (instancetype)filesInApplicationOfBundleID:(NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames;
++ (instancetype)filesInApplicationOfBundleID:(NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames withFilenameGlobs:(NSArray<NSString *> *)filenameGlobs;
 
 /**
  A Query for Crashes of a Process Type, after a date.
@@ -98,6 +99,7 @@ extern FBDiagnosticQueryFormat FBDiagnosticQueryFormatContent;
 
 @property (nonatomic, copy, readonly, nonnull) NSString *bundleID;
 @property (nonatomic, copy, readonly, nonnull) NSArray<NSString *> *filenames;
+@property (nonatomic, copy, readonly, nonnull) NSArray<NSString *> *filenameGlobs;
 
 @end
 

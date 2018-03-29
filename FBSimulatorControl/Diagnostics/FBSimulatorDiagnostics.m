@@ -170,7 +170,7 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
   return [FBSimulatorDiagnostics diagnosticsForSubpathsOf:self.stdOutErrContainersPath];
 }
 
-- (NSArray<FBDiagnostic *> *)diagnosticsForApplicationWithBundleID:(nullable NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames fallbackToGlobalSearch:(BOOL)globalFallback
+- (NSArray<FBDiagnostic *> *)diagnosticsForApplicationWithBundleID:(nullable NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames withFilenameGlobs:(nonnull NSArray<NSString *> *)filenameGlobs fallbackToGlobalSearch:(BOOL)globalFallback
 {
   NSString *directory = nil;
   if (bundleID) {
@@ -182,7 +182,9 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
   if (!directory) {
     return @[];
   }
-  NSArray *paths = [FBFileFinder mostRecentFindFiles:filenames inDirectory:directory];
+  NSArray<NSString *> *pathsByFilenames = [FBFileFinder mostRecentFindFiles:filenames inDirectory:directory];
+  NSArray<NSString *> *pathsByFilenameGlobs = [FBFileFinder recursiveFindByFilenameGlobs:filenameGlobs inDirectory:directory];
+  NSArray<NSString *> *paths = [pathsByFilenames arrayByAddingObjectsFromArray:pathsByFilenameGlobs];
   return [FBSimulatorDiagnostics diagnosticsForPaths:paths];
 }
 
@@ -356,7 +358,7 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
 
 - (NSArray<FBDiagnostic *> *)performSimulator:(FBSimulatorDiagnostics *)diagnostics
 {
-  return [diagnostics diagnosticsForApplicationWithBundleID:self.bundleID withFilenames:self.filenames fallbackToGlobalSearch:YES];
+  return [diagnostics diagnosticsForApplicationWithBundleID:self.bundleID withFilenames:self.filenames withFilenameGlobs:self.filenameGlobs fallbackToGlobalSearch:YES];
 }
 
 @end

@@ -155,9 +155,16 @@ extern FBXCTestType const FBXCTestTypeListTest;
 @property (nonatomic, copy, readonly, nullable) NSString *videoRecordingPath;
 
 /**
+ A list of test artifcats filename globs (see https://en.wikipedia.org/wiki/Glob_(programming) ) that
+ any files in app's container folder matching them will be copied out to a temporary path before
+ simulator is cleaned up.
+ */
+@property (nonatomic, copy, readonly, nullable) NSArray<NSString *> *testArtifactsFilenameGlobs;
+
+/**
  The Designated Initializer.
  */
-+ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(nullable NSString *)testTargetAppPath testFilter:(nullable NSString *)testFilter videoRecordingPath:(nullable NSString *)videoRecordingPath;
++ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(nullable NSString *)testTargetAppPath testFilter:(nullable NSString *)testFilter videoRecordingPath:(nullable NSString *)videoRecordingPath testArtifactsFilenameGlobs:(nullable NSArray<NSString *> *)testArtifactsFilenameGlobs;
 
 @end
 

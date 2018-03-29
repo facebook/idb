@@ -26,6 +26,15 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSArray<NSString *> *)recursiveFindFiles:(NSArray<NSString *> *)filenames inDirectory:(NSString *)directory;
 
 /**
+ Recursively searches the provided directory with provided filename globs.
+
+ @param filenameGlobs the filename globs to search for. Must not be nil.
+ @param directory the directory to search from. Must not be nil.
+ @return an array of all found files.
+ */
++ (NSArray<NSString *> *)recursiveFindByFilenameGlobs:(NSArray<NSString *> *)filenameGlobs inDirectory:(NSString *)directory;
+
+/**
  Recursively searches the provided directory, finding the most recent files with the provided filenames.
 
  @param filenames the files to search for. Must not be nil.

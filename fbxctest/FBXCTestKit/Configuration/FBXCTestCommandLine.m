@@ -86,6 +86,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       mirroring:FBLogicTestMirrorFileLogs];
   } else if ([argumentSet containsObject:@"-appTest"]) {
     NSString *videoRecordingPath = NSProcessInfo.processInfo.environment[@"FBXCTEST_VIDEO_RECORDING_PATH"];
+    NSString *testArtifactsFilenameGlob = NSProcessInfo.processInfo.environment[@"FBXCTEST_TEST_ARTIFACTS_FILENAME_GLOB"];
+    NSArray<NSString *> *testArtifactsFilenameGlobs = testArtifactsFilenameGlob != nil ? @[testArtifactsFilenameGlob] : nil;
     configuration = [FBTestManagerTestConfiguration
       configurationWithEnvironment:environment
       workingDirectory:workingDirectory
@@ -95,7 +97,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       runnerAppPath:runnerAppPath
       testTargetAppPath:nil
       testFilter:testFilter
-      videoRecordingPath:videoRecordingPath];
+      videoRecordingPath:videoRecordingPath
+      testArtifactsFilenameGlobs:testArtifactsFilenameGlobs];
   } else if ([argumentSet containsObject:@"-uiTest"]) {
     configuration = [FBTestManagerTestConfiguration
       configurationWithEnvironment:environment
@@ -106,7 +109,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       runnerAppPath:runnerAppPath
       testTargetAppPath:testTargetPathOut
       testFilter:nil
-      videoRecordingPath:nil];
+      videoRecordingPath:nil
+      testArtifactsFilenameGlobs:nil];
   }
   if (!configuration) {
     return [[FBControlCoreError

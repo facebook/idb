@@ -132,7 +132,7 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
 
 #pragma mark Initializers
 
-- (instancetype)initWithQueryFormat:(FBDiagnosticQueryFormat)format bundleID:(nonnull NSString *)bundleID filenames:(nonnull NSArray<NSString *> *)filenames
+- (instancetype)initWithQueryFormat:(FBDiagnosticQueryFormat)format bundleID:(nonnull NSString *)bundleID filenames:(nonnull NSArray<NSString *> *)filenames filenameGlobs:(nonnull NSArray<NSString *> *)filenameGlobs
 {
   self = [super init];
   if (!self) {
@@ -141,13 +141,14 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
 
   _bundleID = bundleID;
   _filenames = filenames;
+  _filenameGlobs = filenameGlobs;
 
   return self;
 }
 
 - (instancetype)withFormat:(FBDiagnosticQueryFormat)format
 {
-  return [[self.class alloc] initWithQueryFormat:format bundleID:_bundleID filenames:_filenames];
+  return [[self.class alloc] initWithQueryFormat:format bundleID:_bundleID filenames:_filenames filenameGlobs:_filenameGlobs];
 }
 
 #pragma mark NSObject
@@ -183,8 +184,12 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
   if (![bundleID isKindOfClass:NSString.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not a String for 'bundle_id'", bundleID] fail:error];
   }
+  NSArray<NSString *> *filenameGlobs = json[@"filename_globs"];
+  if (![FBCollectionInformation isArrayHeterogeneous:filenameGlobs withClass:NSString.class]) {
+    return [[FBControlCoreError describeFormat:@"%@ is not a NSArray<NSString *> for 'filename_globs'", filenameGlobs] fail:error];
+  }
 
-  return [[self alloc] initWithQueryFormat:format bundleID:bundleID filenames:filenames];
+  return [[self alloc] initWithQueryFormat:format bundleID:bundleID filenames:filenames filenameGlobs:filenameGlobs];
 }
 
 - (id)jsonSerializableRepresentation
@@ -193,6 +198,7 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
     @"type" : FBDiagnosticQueryTypeAppFiles,
     @"bundle_id" : self.bundleID,
     @"filenames" : self.filenames,
+    @"filename_globs" : self.filenameGlobs,
   };
 }
 
@@ -322,9 +328,9 @@ static NSString *const FBDiagnosticQueryCrashesSystem = @"system";
   return [FBDiagnosticQuery_All new];
 }
 
-+ (nonnull instancetype)filesInApplicationOfBundleID:(nonnull NSString *)bundleID withFilenames:(nonnull NSArray<NSString *> *)filenames
++ (nonnull instancetype)filesInApplicationOfBundleID:(nonnull NSString *)bundleID withFilenames:(nonnull NSArray<NSString *> *)filenames withFilenameGlobs:(nonnull NSArray<NSString *> *)filenameGlobs
 {
-  return [[FBDiagnosticQuery_ApplicationLogs alloc] initWithQueryFormat:FBDiagnosticQueryFormatCurrent bundleID:bundleID filenames:filenames];
+  return [[FBDiagnosticQuery_ApplicationLogs alloc] initWithQueryFormat:FBDiagnosticQueryFormatCurrent bundleID:bundleID filenames:filenames filenameGlobs:filenameGlobs];
 }
 
 + (nonnull instancetype)crashesOfType:(FBCrashLogInfoProcessType)processType since:(nonnull NSDate *)date

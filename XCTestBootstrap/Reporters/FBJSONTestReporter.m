@@ -149,6 +149,17 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   [self storeEvent:event];
 }
 
+- (void)didCopiedTestArtifact:(nonnull NSString *)testArtifactFilename toPath:(nonnull NSString *)path
+{
+  NSDictionary<NSString *, id> *event =
+  @{
+    @"event" : @"copy-test-artifact",
+    @"test_artifact_file_name" : testArtifactFilename,
+    @"path" : path,
+    };
+  [self storeEvent:event];
+}
+
 - (void)didFinishExecutingTestPlan
 {
   _finished = YES;

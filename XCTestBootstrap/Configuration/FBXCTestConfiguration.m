@@ -118,6 +118,7 @@ NSString *const KeyListTestsOnly = @"list_only";
 NSString *const KeyRunnerAppPath = @"test_host_path";
 NSString *const KeyRunnerTargetPath = @"test_target_path";
 NSString *const KeyShims = @"shims";
+NSString *const KeyTestArtifactsFilenameGlobs = @"test_artifacts_filename_globs";
 NSString *const KeyTestBundlePath = @"test_bundle_path";
 NSString *const KeyTestFilter = @"test_filter";
 NSString *const KeyTestMirror = @"test_mirror";
@@ -337,12 +338,12 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter videoRecordingPath:(NSString *)videoRecordingPath
++ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter videoRecordingPath:(NSString *)videoRecordingPath testArtifactsFilenameGlobs:(nullable NSArray<NSString *> *)testArtifactsFilenameGlobs
 {
-  return [[FBTestManagerTestConfiguration alloc] initWithShims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter videoRecordingPath:videoRecordingPath];
+  return [[FBTestManagerTestConfiguration alloc] initWithShims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter videoRecordingPath:videoRecordingPath testArtifactsFilenameGlobs:testArtifactsFilenameGlobs];
 }
 
-- (instancetype)initWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter videoRecordingPath:(NSString *)videoRecordingPath
+- (instancetype)initWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter videoRecordingPath:(NSString *)videoRecordingPath testArtifactsFilenameGlobs:(NSArray<NSString *> *)testArtifactsFilenameGlobs
 {
   self = [super initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
   if (!self) {
@@ -353,6 +354,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   _testTargetAppPath = testTargetAppPath;
   _testFilter = testFilter;
   _videoRecordingPath = videoRecordingPath;
+  _testArtifactsFilenameGlobs = testArtifactsFilenameGlobs;
 
   return self;
 }
@@ -373,6 +375,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   json[KeyRunnerTargetPath] = self.testTargetAppPath;
   json[KeyTestFilter] = self.testFilter ?: NSNull.null;
   json[KeyVideoRecordingPath] = self.videoRecordingPath ?: NSNull.null;
+  json[KeyTestArtifactsFilenameGlobs] = self.testArtifactsFilenameGlobs ?: NSNull.null;
   return [json copy];
 }
 
@@ -402,7 +405,13 @@ NSString *const KeyWorkingDirectory = @"working_directory";
              describeFormat:@"%@ is not a String for %@", videoRecordingPath, KeyVideoRecordingPath]
             fail:error];
   }
-  return [[FBTestManagerTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter videoRecordingPath:videoRecordingPath];
+  NSArray<NSString *> *testArtifactsFilenameGlobs = [FBCollectionOperations nullableValueForDictionary:json key:KeyTestArtifactsFilenameGlobs];
+  if (testArtifactsFilenameGlobs && ![testArtifactsFilenameGlobs isKindOfClass:NSArray.class]) {
+    return [[FBXCTestError
+             describeFormat:@"%@ is not a Array for %@", testArtifactsFilenameGlobs, KeyTestArtifactsFilenameGlobs]
+            fail:error];
+  }
+  return [[FBTestManagerTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter videoRecordingPath:videoRecordingPath testArtifactsFilenameGlobs:testArtifactsFilenameGlobs];
 }
 
 @end

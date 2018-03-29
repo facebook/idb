@@ -151,6 +151,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)didRecordVideoAtPath:(nonnull NSString *)videoRecordingPath;
 
+/**
+ Called after copy a test artifacts out of simulator's folder.
+
+ @param testArtifactFilename the file name of the test artifacts.
+ @param path the new path that the test artifact is copied to.
+ */
+- (void)didCopiedTestArtifact:(nonnull NSString *)testArtifactFilename toPath:(nonnull NSString *)path;
+
 @end
 
 NS_ASSUME_NONNULL_END

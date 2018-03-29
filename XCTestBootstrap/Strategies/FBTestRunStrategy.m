@@ -133,6 +133,11 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
       if (self.configuration.videoRecordingPath != nil) {
         [self.reporter didRecordVideoAtPath:self.configuration.videoRecordingPath];
       }
+
+      if (self.configuration.testArtifactsFilenameGlobs != nil) {
+        [self _saveTestArtifactsOfTestRunnerApp:testRunnerApp withFilenameMatchGlobs:self.configuration.testArtifactsFilenameGlobs];
+      }
+
       if (result.crashDiagnostic) {
         return [[FBXCTestError
           describeFormat:@"The Application Crashed during the Test Run\n%@", result.crashDiagnostic.asString]
@@ -144,6 +149,33 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
       }
       return [FBFuture futureWithResult:NSNull.null];
     }];
+}
+
+// Save test artifacts matches certain filename globs that are populated during test run
+// to a temporary folder so it can be obtained by external tools if needed.
+- (void)_saveTestArtifactsOfTestRunnerApp:(FBApplicationBundle *)testRunnerApp withFilenameMatchGlobs:(NSArray<NSString *> *)filenameGlobs
+{
+  NSArray<FBDiagnostic *> *diagnostics = [self.target.diagnostics perform:[FBDiagnosticQuery filesInApplicationOfBundleID:testRunnerApp.bundleID withFilenames:@[] withFilenameGlobs:filenameGlobs]];
+
+  if ([diagnostics count] == 0) {
+    return;
+  }
+
+  NSURL *tempTestArtifactsPath = [NSURL fileURLWithPath:[NSString pathWithComponents:@[NSTemporaryDirectory(), NSProcessInfo.processInfo.globallyUniqueString, @"test_artifacts"]] isDirectory:YES];
+
+  NSError *error = nil;
+  if (![NSFileManager.defaultManager createDirectoryAtURL:tempTestArtifactsPath withIntermediateDirectories:YES attributes:nil error:&error]) {
+    [self.logger logFormat:@"Could not create temporary directory for test artifacts %@", error];
+    return;
+  }
+
+  for (FBDiagnostic *diagnostic in diagnostics) {
+    NSString *testArtifactsFilename = diagnostic.asPath.lastPathComponent;
+    NSString *outputPath = [tempTestArtifactsPath.path stringByAppendingPathComponent:testArtifactsFilename];
+    if ([diagnostic writeOutToFilePath:outputPath error:nil]) {
+      [self.reporter didCopiedTestArtifact:testArtifactsFilename toPath:outputPath];
+    }
+  }
 }
 
 @end
