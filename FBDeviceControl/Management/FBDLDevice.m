@@ -137,6 +137,7 @@ void  (*FB_DLDeviceRelease)(DLDevice *device);
 @interface FBDLDeviceManager : NSObject
 
 @property (nonatomic, assign, readonly) DLDeviceListener *listener;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, FBDLDevice *> *currentDevices;
@@ -152,12 +153,13 @@ void  (*FB_DLDeviceRelease)(DLDevice *device);
 
 @property (nonatomic, weak, readonly) FBDLDeviceManager *manager;
 @property (nonatomic, assign, readonly) DLDevice *dlDevice;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @property (nonatomic, assign, readwrite) DLDeviceConnection *connection;
 @property (nonatomic, strong, readwrite) FBDLDeviceConnection_Context *connectionContext;
 
-- (instancetype)initWithDLDevice:(DLDevice *)dlDevice manager:(FBDLDeviceManager *)manager logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithDLDevice:(DLDevice *)dlDevice manager:(FBDLDeviceManager *)manager queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -331,7 +333,8 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
     NULL,
     NULL
   );
-  FBDLDeviceManager *manager = [[self alloc] initWithListener:listener logger:logger];
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbdevicecontrol.dldevice", DISPATCH_QUEUE_SERIAL);
+  FBDLDeviceManager *manager = [[FBDLDeviceManager alloc] initWithListener:listener queue:queue logger:logger];
   FB_DLDeviceListenerSetContext(listener, (__bridge void *)(manager));
   return manager;
 }
@@ -349,7 +352,7 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
   return manager;
 }
 
-- (instancetype)initWithListener:(DLDeviceListener *)listener logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithListener:(DLDeviceListener *)listener queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -357,6 +360,7 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
   }
 
   _listener = listener;
+  _queue = queue;
   _logger = logger;
   _currentDevices = [NSMutableDictionary dictionary];
   _connectionToDevice = [NSMapTable mapTableWithKeyOptions:NSPointerFunctionsOpaquePersonality valueOptions:NSPointerFunctionsStrongMemory];
@@ -369,7 +373,7 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
 - (void)deviceAttached:(DLDevice *)dlDevice logger:(id<FBControlCoreLogger>)logger
 {
   logger = [logger withPrefix:FB_DLDeviceGetUDID(dlDevice)];
-  FBDLDevice *device = [[FBDLDevice alloc] initWithDLDevice:dlDevice manager:self logger:logger];
+  FBDLDevice *device = [[FBDLDevice alloc] initWithDLDevice:dlDevice manager:self queue:self.queue logger:logger];
   self.currentDevices[device.udid] = device;
   [NSNotificationCenter.defaultCenter postNotificationName:FB_DLDeviceNotificationNameAttached object:device.udid userInfo:@{
     FB_DLDeviceNotificationUserInfoKeyDLDevice: device,
@@ -454,11 +458,11 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
     return [FBFuture futureWithResult:device];
   }
   return [[FBDLDevice
-    oneshotDeviceAttachedNotificationForUDID:udid]
+    oneshotDeviceAttachedNotificationForUDID:udid onQueue:manager.queue]
     timeout:timeout waitingFor:@"the device %@ to appear", udid];
 }
 
-- (instancetype)initWithDLDevice:(DLDevice *)dlDevice manager:(FBDLDeviceManager *)manager logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithDLDevice:(DLDevice *)dlDevice manager:(FBDLDeviceManager *)manager queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -468,6 +472,7 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
   FB_DLDeviceRetain(dlDevice);
   _dlDevice = dlDevice;
   _manager = manager;
+  _queue = queue;
   _udid = [FB_DLDeviceGetUDID(_dlDevice) copy];
   _logger = logger;
 
@@ -510,7 +515,7 @@ static NSString *ScreenshotReplyMessageType = @"ScreenShotReply";
   };
   return [[self
     onService:@"com.apple.mobile.screenshotr" performRequest:request]
-    onQueue:dispatch_get_main_queue() fmap:^(NSDictionary<NSString *, id> *response) {
+    onQueue:self.queue fmap:^(NSDictionary<NSString *, id> *response) {
       NSString *messageType = response[MessageTypeKey];
       if (![messageType isEqualToString:ScreenshotReplyMessageType]) {
         return [[FBDeviceControlError
@@ -547,7 +552,7 @@ static NSString *ScreenshotReplyMessageType = @"ScreenShotReply";
   return connection;
 }
 
-+ (FBFuture<FBDLDevice *> *)oneshotDeviceAttachedNotificationForUDID:(NSString *)udid
++ (FBFuture<FBDLDevice *> *)oneshotDeviceAttachedNotificationForUDID:(NSString *)udid onQueue:(dispatch_queue_t)queue
 {
   __weak NSNotificationCenter *notificationCenter = [NSNotificationCenter defaultCenter];
   FBMutableFuture<FBDLDevice *> *future = [FBMutableFuture future];
@@ -565,7 +570,7 @@ static NSString *ScreenshotReplyMessageType = @"ScreenShotReply";
       [notificationCenter removeObserver:observer];
     }];
 
-  return [future onQueue:dispatch_get_main_queue() respondToCancellation:^{
+  return [future onQueue:queue respondToCancellation:^{
     [notificationCenter removeObserver:observer];
     return [FBFuture futureWithResult:NSNull.null];
   }];
