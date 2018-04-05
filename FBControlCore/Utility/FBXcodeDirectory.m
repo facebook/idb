@@ -40,14 +40,20 @@
           failFuture];
       }
       directory = [directory stringByResolvingSymlinksInPath];
+
+      if ([directory stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length == 0) {
+        return [[FBControlCoreError
+          describe:@"No Xcode Directory returned from xcode-select. Run xcode-select(1) to set this to a valid Xcode install."]
+          failFuture];
+      }
       if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
         return [[FBControlCoreError
           describeFormat:@"No Xcode Directory at: %@", directory]
           failFuture];
       }
-      if ([directory isEqualToString:@"/"] || [directory isEqualToString:@""]) {
+      if ([directory isEqualToString:@"/"] ) {
         return [[FBControlCoreError
-          describe:@"Xcode Directory is defined as the Root Filesystem. Run xcode-select(1) to set this to a valid Xcode install"]
+          describe:@"Xcode Directory is defined as the Root Filesystem. Run xcode-select(1) to set this to a valid Xcode install."]
           failFuture];
       }
       return [FBFuture futureWithResult:directory];
