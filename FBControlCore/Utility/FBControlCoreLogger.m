@@ -67,11 +67,6 @@
   return self;
 }
 
-- (id<FBControlCoreLogger>)onQueue:(dispatch_queue_t)queue
-{
-  return self;
-}
-
 - (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
 {
   return [[self.class alloc] initWithPrefix:prefix level:self.level];
@@ -134,11 +129,6 @@
 - (id<FBControlCoreLogger>)error
 {
   return [self loggerByApplyingSelector:_cmd];
-}
-
-- (id<FBControlCoreLogger>)onQueue:(dispatch_queue_t)queue
-{
-  return [self loggerByApplyingSelector:_cmd object:queue];
 }
 
 - (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
@@ -226,7 +216,10 @@
   [string appendString:message];
   [string appendString:@"\n"];
   NSData *data = [string dataUsingEncoding:NSUTF8StringEncoding];
-  [self.consumer consumeData:data];
+  @synchronized(self.consumer)
+  {
+    [self.consumer consumeData:data];
+  }
   return self;
 }
 
@@ -251,11 +244,6 @@
 }
 
 - (id<FBControlCoreLogger>)error
-{
-  return [[self.class alloc] initWithConsumer:self.consumer prefix:self.prefix dateFormatter:self.dateFormatter];
-}
-
-- (id<FBControlCoreLogger>)onQueue:(dispatch_queue_t)queue
 {
   return [[self.class alloc] initWithConsumer:self.consumer prefix:self.prefix dateFormatter:self.dateFormatter];
 }

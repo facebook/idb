@@ -49,7 +49,6 @@ void (^VideoWriterGlobalCallback)(NSError *) = ^(NSError *error){
 {
   NSURL *fileURL = [NSURL fileURLWithPath:videoPath];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbsimulatorcontrol.videoencoder.simulatorkit", DISPATCH_QUEUE_SERIAL);
-  logger = [logger onQueue:queue];
 
   FBMutableFuture<NSNull *> *finishedWriting = [FBMutableFuture future];
   FBMutableFuture<NSNull *> *startedWriting = [FBMutableFuture future];

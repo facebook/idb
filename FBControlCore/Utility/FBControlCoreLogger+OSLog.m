@@ -83,11 +83,6 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
   return [[self.class alloc] initWithClient:self.client prefix:self.prefix level:FBControlCoreLogLevelError];
 }
 
-- (id<FBControlCoreLogger>)onQueue:(dispatch_queue_t)queue
-{
-  return self;
-}
-
 - (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
 {
   os_log_t client = os_log_create(LoggerSubsystem, prefix.UTF8String);

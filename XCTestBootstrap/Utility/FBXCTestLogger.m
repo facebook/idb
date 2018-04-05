@@ -134,13 +134,6 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
     logDirectory:self.logDirectory];
 }
 
-- (id<FBControlCoreLogger>)onQueue:(dispatch_queue_t)queue
-{
-  return [[self.class alloc]
-    initWithBaseLogger:[self.baseLogger onQueue:queue]
-    logDirectory:self.logDirectory];
-}
-
 - (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
 {
   return [[self.class alloc]

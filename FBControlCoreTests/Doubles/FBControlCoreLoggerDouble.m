@@ -36,11 +36,6 @@
   return self;
 }
 
-- (id<FBControlCoreLogger>)onQueue:(dispatch_queue_t)queue
-{
-  return self;
-}
-
 - (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
 {
   return self;

@@ -62,14 +62,6 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 - (id<FBControlCoreLogger>)error;
 
 /**
- Returns a Logger that will accept log values on the given queue.
-
- @param queue the queue to accept log messages on.
- @return a new Logger that will allows logging of messages on the provided queue.
- */
-- (id<FBControlCoreLogger>)onQueue:(dispatch_queue_t)queue;
-
-/**
  Returns a Logger that will prefix all messages with the given string
 
  @param prefix the prefix to prepend to all messages.

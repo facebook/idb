@@ -55,7 +55,7 @@ static const OSType FBVideoEncoderPixelFormat = kCVPixelFormatType_32ARGB;
 + (instancetype)encoderWithConfiguration:(FBVideoEncoderConfiguration *)configuration videoPath:(NSString *)videoPath logger:(nullable id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbsimulator.videoencoder.builtin", DISPATCH_QUEUE_SERIAL);
-  return [[self alloc] initWithConfiguration:configuration onQueue:queue logger:[logger onQueue:queue]];
+  return [[self alloc] initWithConfiguration:configuration onQueue:queue logger:logger];
 }
 
 - (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration onQueue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger

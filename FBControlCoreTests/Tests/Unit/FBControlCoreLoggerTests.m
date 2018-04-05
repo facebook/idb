@@ -55,4 +55,28 @@
   XCTAssertEqualObjects(consumer.consumeLineString, @"[foo] WORLD");
 }
 
+- (void)testThreadSafetyOfConsumableLogger
+{
+  id<FBConsumableLineBuffer> consumer = FBLineBuffer.consumableBuffer;
+  id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToConsumer:consumer];
+
+  dispatch_group_t group = dispatch_group_create();
+  dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+  dispatch_group_async(group, queue, ^{
+    [logger log:@"1"];
+  });
+  dispatch_group_async(group, queue, ^{
+    [logger log:@"2"];
+  });
+  dispatch_group_async(group, queue, ^{
+    [logger log:@"3"];
+  });
+  dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+
+  NSSet<NSString *> *expected = [NSSet setWithArray:@[@"1", @"2", @"3", @""]];
+  NSSet<NSString *> *actual = [NSSet setWithArray:consumer.lines];
+
+  XCTAssertEqualObjects(expected, actual);
+}
+
 @end
