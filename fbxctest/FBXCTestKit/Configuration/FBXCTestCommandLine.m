@@ -85,9 +85,14 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       testFilter:testFilter
       mirroring:FBLogicTestMirrorFileLogs];
   } else if ([argumentSet containsObject:@"-appTest"]) {
-    NSString *videoRecordingPath = NSProcessInfo.processInfo.environment[@"FBXCTEST_VIDEO_RECORDING_PATH"];
-    NSString *testArtifactsFilenameGlob = NSProcessInfo.processInfo.environment[@"FBXCTEST_TEST_ARTIFACTS_FILENAME_GLOB"];
+    NSMutableDictionary<NSString *, NSString *> *allEnvironment = [NSProcessInfo.processInfo.environment mutableCopy];
+    [allEnvironment addEntriesFromDictionary:environment];
+
+    NSString *videoRecordingPath = allEnvironment[@"FBXCTEST_VIDEO_RECORDING_PATH"];
+    NSString *testArtifactsFilenameGlob = allEnvironment[@"FBXCTEST_TEST_ARTIFACTS_FILENAME_GLOB"];
     NSArray<NSString *> *testArtifactsFilenameGlobs = testArtifactsFilenameGlob != nil ? @[testArtifactsFilenameGlob] : nil;
+    NSString *osLogPath = allEnvironment[@"FBXCTEST_OS_LOG_PATH"];
+
     configuration = [FBTestManagerTestConfiguration
       configurationWithEnvironment:environment
       workingDirectory:workingDirectory
@@ -98,7 +103,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       testTargetAppPath:nil
       testFilter:testFilter
       videoRecordingPath:videoRecordingPath
-      testArtifactsFilenameGlobs:testArtifactsFilenameGlobs];
+      testArtifactsFilenameGlobs:testArtifactsFilenameGlobs
+      osLogPath:osLogPath];
   } else if ([argumentSet containsObject:@"-uiTest"]) {
     configuration = [FBTestManagerTestConfiguration
       configurationWithEnvironment:environment
@@ -110,7 +116,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       testTargetAppPath:testTargetPathOut
       testFilter:nil
       videoRecordingPath:nil
-      testArtifactsFilenameGlobs:nil];
+      testArtifactsFilenameGlobs:nil
+      osLogPath:nil];
   }
   if (!configuration) {
     return [[FBControlCoreError

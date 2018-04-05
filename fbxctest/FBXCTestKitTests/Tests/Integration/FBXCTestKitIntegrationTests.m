@@ -188,6 +188,36 @@
   XCTAssertEqualObjects(expected, self.reporter.startedTests);
 }
 
+- (void)testRunAppTestWithTailingOSLog
+{
+  NSError *error;
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *applicationPath = [FBXCTestKitFixtures iOSUITestAppTargetPath];
+  NSString *testBundlePath = [self iOSAppTestBundlePath];
+  NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument];
+  NSString *osLogPath = [workingDirectory stringByAppendingPathComponent:@"os_log.txt"];
+
+  XCTAssertFalse([[NSFileManager defaultManager] fileExistsAtPath:osLogPath isDirectory:nil], @"should have no os log file");
+
+  FBXCTestCommandLine *commandLine = [FBXCTestCommandLine  commandLineFromArguments:arguments processUnderTestEnvironment:@{@"FBXCTEST_OS_LOG_PATH": osLogPath} workingDirectory:workingDirectory error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(commandLine);
+
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithCommandLine:commandLine context:self.context];
+  BOOL success = [[testRunner execute] await:&error] != nil;
+  XCTAssertTrue(success);
+  XCTAssertNil(error);
+
+  XCTAssertTrue(self.reporter.printReportWasCalled);
+  NSArray<NSArray<NSString *> *> *expected = @[
+                                               @[@"iOSAppFixtureAppTests", @"testWillAlwaysFail"],
+                                               @[@"iOSAppFixtureAppTests", @"testWillAlwaysPass"],
+                                               ];
+  XCTAssertEqualObjects(expected, self.reporter.startedTests);
+  XCTAssertTrue([[NSFileManager defaultManager] fileExistsAtPath:osLogPath isDirectory:nil], @"should create os log file");
+}
+
 - (void)testRunsiOSLogicTestsWithoutApplication
 {
   NSError *error = nil;

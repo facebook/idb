@@ -69,7 +69,8 @@
       testTargetAppPath:FBXCTestKitFixtures.macUITestAppTargetPath
       testFilter:nil
       videoRecordingPath:nil
-      testArtifactsFilenameGlobs:nil]
+      testArtifactsFilenameGlobs:nil
+      osLogPath:nil]
     destination:[[FBXCTestDestinationMacOSX alloc] init]
   ];
   XCTAssertEqualObjects(commandLine, expected);
@@ -104,7 +105,8 @@
       testTargetAppPath:FBXCTestKitFixtures.macUITestAppTargetPath
       testFilter:nil
       videoRecordingPath:nil
-      testArtifactsFilenameGlobs:nil]
+      testArtifactsFilenameGlobs:nil
+      osLogPath:nil]
     destination:[[FBXCTestDestinationMacOSX alloc] init]];
   XCTAssertEqualObjects(commandLine, expected);
 }
@@ -139,7 +141,8 @@
       testTargetAppPath:nil
       testFilter:nil
       videoRecordingPath:nil
-      testArtifactsFilenameGlobs:nil]
+      testArtifactsFilenameGlobs:nil
+      osLogPath:nil]
     destination:[[FBXCTestDestinationMacOSX alloc] init]];
   XCTAssertEqualObjects(commandLine, expected);
 }
@@ -173,7 +176,8 @@
       testTargetAppPath:nil
       testFilter:nil
       videoRecordingPath:nil
-      testArtifactsFilenameGlobs:nil]
+      testArtifactsFilenameGlobs:nil
+      osLogPath:nil]
     destination:[[FBXCTestDestinationMacOSX alloc] init]];
   XCTAssertEqualObjects(commandLine, expected);
 }

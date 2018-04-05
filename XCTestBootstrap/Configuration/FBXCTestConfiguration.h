@@ -150,6 +150,13 @@ extern FBXCTestType const FBXCTestTypeListTest;
 @property (nonatomic, copy, readonly, nullable) NSString *testFilter;
 
 /**
+ The path of log file that we dump all os_log to.
+ (os_log means Apple's unified logging system (https://developer.apple.com/documentation/os/logging),
+ we use this name to avoid confusing between various logging systems)
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *osLogPath;
+
+/**
  The path of video recording file that record the whole test run.
  */
 @property (nonatomic, copy, readonly, nullable) NSString *videoRecordingPath;
@@ -164,7 +171,7 @@ extern FBXCTestType const FBXCTestTypeListTest;
 /**
  The Designated Initializer.
  */
-+ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(nullable NSString *)testTargetAppPath testFilter:(nullable NSString *)testFilter videoRecordingPath:(nullable NSString *)videoRecordingPath testArtifactsFilenameGlobs:(nullable NSArray<NSString *> *)testArtifactsFilenameGlobs;
++ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(nullable NSString *)testTargetAppPath testFilter:(nullable NSString *)testFilter videoRecordingPath:(nullable NSString *)videoRecordingPath testArtifactsFilenameGlobs:(nullable NSArray<NSString *> *)testArtifactsFilenameGlobs osLogPath:(nullable NSString *)osLogPath;
 
 @end
 

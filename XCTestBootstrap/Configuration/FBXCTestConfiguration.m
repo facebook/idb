@@ -115,6 +115,7 @@ FBXCTestType const FBXCTestTypeUITest = @"ui-test";
 
 NSString *const KeyEnvironment = @"environment";
 NSString *const KeyListTestsOnly = @"list_only";
+NSString *const KeyOSLogPath = @"os_log_path";
 NSString *const KeyRunnerAppPath = @"test_host_path";
 NSString *const KeyRunnerTargetPath = @"test_target_path";
 NSString *const KeyShims = @"shims";
@@ -338,12 +339,12 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter videoRecordingPath:(NSString *)videoRecordingPath testArtifactsFilenameGlobs:(nullable NSArray<NSString *> *)testArtifactsFilenameGlobs
++ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter videoRecordingPath:(NSString *)videoRecordingPath testArtifactsFilenameGlobs:(nullable NSArray<NSString *> *)testArtifactsFilenameGlobs osLogPath:(nullable NSString *)osLogPath
 {
-  return [[FBTestManagerTestConfiguration alloc] initWithShims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter videoRecordingPath:videoRecordingPath testArtifactsFilenameGlobs:testArtifactsFilenameGlobs];
+  return [[FBTestManagerTestConfiguration alloc] initWithShims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter videoRecordingPath:videoRecordingPath testArtifactsFilenameGlobs:testArtifactsFilenameGlobs osLogPath:osLogPath];
 }
 
-- (instancetype)initWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter videoRecordingPath:(NSString *)videoRecordingPath testArtifactsFilenameGlobs:(NSArray<NSString *> *)testArtifactsFilenameGlobs
+- (instancetype)initWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter videoRecordingPath:(NSString *)videoRecordingPath testArtifactsFilenameGlobs:(NSArray<NSString *> *)testArtifactsFilenameGlobs osLogPath:(nullable NSString *)osLogPath
 {
   self = [super initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
   if (!self) {
@@ -355,6 +356,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   _testFilter = testFilter;
   _videoRecordingPath = videoRecordingPath;
   _testArtifactsFilenameGlobs = testArtifactsFilenameGlobs;
+  _osLogPath = osLogPath;
 
   return self;
 }
@@ -376,6 +378,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   json[KeyTestFilter] = self.testFilter ?: NSNull.null;
   json[KeyVideoRecordingPath] = self.videoRecordingPath ?: NSNull.null;
   json[KeyTestArtifactsFilenameGlobs] = self.testArtifactsFilenameGlobs ?: NSNull.null;
+  json[KeyOSLogPath] =  self.osLogPath ?: NSNull.null;
   return [json copy];
 }
 
@@ -411,7 +414,13 @@ NSString *const KeyWorkingDirectory = @"working_directory";
              describeFormat:@"%@ is not a Array for %@", testArtifactsFilenameGlobs, KeyTestArtifactsFilenameGlobs]
             fail:error];
   }
-  return [[FBTestManagerTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter videoRecordingPath:videoRecordingPath testArtifactsFilenameGlobs:testArtifactsFilenameGlobs];
+  NSString *osLogPath = [FBCollectionOperations nullableValueForDictionary:json key:KeyOSLogPath];
+  if (osLogPath && ![osLogPath isKindOfClass:NSString.class]) {
+    return [[FBXCTestError
+             describeFormat:@"%@ is not a String for %@", osLogPath, KeyOSLogPath]
+            fail:error];
+  }
+  return [[FBTestManagerTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter videoRecordingPath:videoRecordingPath testArtifactsFilenameGlobs:testArtifactsFilenameGlobs osLogPath:osLogPath];
 }
 
 @end
