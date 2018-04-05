@@ -147,6 +147,10 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
         [self.reporter didRecordVideoAtPath:self.configuration.videoRecordingPath];
       }
 
+      if (self.configuration.osLogPath != nil) {
+        [self.reporter didSaveOSLogAtPath:self.configuration.osLogPath];
+      }
+
       if (self.configuration.testArtifactsFilenameGlobs != nil) {
         [self _saveTestArtifactsOfTestRunnerApp:testRunnerApp withFilenameMatchGlobs:self.configuration.testArtifactsFilenameGlobs];
       }

@@ -152,6 +152,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)didRecordVideoAtPath:(nonnull NSString *)videoRecordingPath;
 
 /**
+ Called after saving os_log during test run.
+
+ @param osLogPath the file path of os log
+ */
+- (void)didSaveOSLogAtPath:(nonnull NSString *)osLogPath;
+
+/**
  Called after copy a test artifacts out of simulator's folder.
 
  @param testArtifactFilename the file name of the test artifacts.

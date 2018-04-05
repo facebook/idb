@@ -149,6 +149,16 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   [self storeEvent:event];
 }
 
+- (void)didSaveOSLogAtPath:(nonnull NSString *)osLogPath
+{
+  NSDictionary<NSString *, id> *event =
+  @{
+    @"event" : @"os-log-saved",
+    @"osLogPath" : osLogPath,
+    };
+  [self storeEvent:event];
+}
+
 - (void)didCopiedTestArtifact:(nonnull NSString *)testArtifactFilename toPath:(nonnull NSString *)path
 {
   NSDictionary<NSString *, id> *event =
