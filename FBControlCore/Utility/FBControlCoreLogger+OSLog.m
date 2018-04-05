@@ -42,16 +42,15 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
 
 - (id<FBControlCoreLogger>)log:(NSString *)message
 {
-  NSString *string = self.prefix ? [NSString stringWithFormat:@"[%@] %@", self.prefix, message] : message;
   switch (self.level) {
     case FBControlCoreLogLevelError:
-      os_log_error(self.client, "%s", string.UTF8String);
+      os_log_error(self.client, "%s", message.UTF8String);
       break;
     case FBControlCoreLogLevelInfo:
-      os_log_info(self.client, "%s", string.UTF8String);
+      os_log_info(self.client, "%s", message.UTF8String);
       break;
     case FBControlCoreLogLevelDebug:
-      os_log_debug(self.client, "%s", string.UTF8String);
+      os_log_debug(self.client, "%s", message.UTF8String);
       break;
     default:
       break;
