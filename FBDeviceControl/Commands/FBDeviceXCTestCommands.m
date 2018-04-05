@@ -275,7 +275,7 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
     xcodeBuildPath:xcodeBuildPath
     testRunFilePath:filePath
     queue:self.device.workQueue
-    logger:logger];
+    logger:[logger withPrefix:@"xcodebuild"]];
 }
 
 - (id<FBiOSTargetContinuation>)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger

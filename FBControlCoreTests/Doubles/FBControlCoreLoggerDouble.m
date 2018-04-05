@@ -46,4 +46,19 @@
   return self;
 }
 
+- (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled
+{
+  return self;
+}
+
+- (NSString *)prefix
+{
+  return nil;
+}
+
+- (FBControlCoreLogLevel)level
+{
+  return FBControlCoreLogLevelUnknown;
+}
+
 @end

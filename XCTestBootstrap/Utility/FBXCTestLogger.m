@@ -75,8 +75,8 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
   NSAssert(fileHandle, @"Could not create a writable file handle for file at path %@", fileHandle);
 
   id<FBControlCoreLogger> baseLogger = [FBControlCoreLogger compositeLoggerWithLoggers:@[
-    [FBControlCoreLogger systemLoggerWritingToStderrr:YES withDebugLogging:YES],
-    [FBControlCoreLogger systemLoggerWritingToFileHandle:fileHandle withDebugLogging:YES],
+    [FBControlCoreLogger systemLoggerWritingToStderr:YES withDebugLogging:YES],
+    [FBControlCoreLogger loggerToFileHandle:fileHandle],
   ]];
 
   return [[self alloc] initWithBaseLogger:baseLogger logDirectory:directory];
@@ -146,6 +146,23 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
   return [[self.class alloc]
     initWithBaseLogger:[self.baseLogger withPrefix:prefix]
     logDirectory:self.logDirectory];
+}
+
+- (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled
+{
+  return [[self.class alloc]
+    initWithBaseLogger:[self.baseLogger withDateFormatEnabled:enabled]
+    logDirectory:self.logDirectory];
+}
+
+- (NSString *)prefix
+{
+  return self.baseLogger.prefix;
+}
+
+- (FBControlCoreLogLevel)level
+{
+  return self.baseLogger.level;
 }
 
 - (FBFuture<id<FBFileConsumerLifecycle>> *)logConsumptionToFile:(id<FBFileConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid logger:(id<FBControlCoreLogger>)logger

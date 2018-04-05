@@ -24,7 +24,7 @@
   [[NSFileManager defaultManager] createFileAtPath:temporaryFilePath contents:nil attributes:nil];
   NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:temporaryFilePath];
 
-  id<FBControlCoreLogger> logger = [FBControlCoreLogger systemLoggerWritingToFileHandle:fileHandle withDebugLogging:YES];
+  id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToFileHandle:fileHandle];
   [logger log:@"Some content"];
   [fileHandle synchronizeFile];
   [fileHandle closeFile];
@@ -45,6 +45,14 @@
 
   XCTAssertEqualObjects(consumer.consumeLineString, @"HELLO");
   XCTAssertEqualObjects(consumer.consumeLineString, @"WORLD");
+
+  logger = [logger withPrefix:@"foo"];
+
+  [logger log:@"HELLO"];
+  [logger log:@"WORLD"];
+
+  XCTAssertEqualObjects(consumer.consumeLineString, @"[foo] HELLO");
+  XCTAssertEqualObjects(consumer.consumeLineString, @"[foo] WORLD");
 }
 
 @end

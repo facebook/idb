@@ -143,6 +143,22 @@
   return self;
 }
 
+- (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled
+{
+  // Timestamps are provided in the json
+  return self;
+}
+
+- (NSString *)prefix
+{
+  return nil;
+}
+
+- (FBControlCoreLogLevel)level
+{
+  return FBControlCoreLogLevelInfo;
+}
+
 @end
 
 @implementation HttpRequest
