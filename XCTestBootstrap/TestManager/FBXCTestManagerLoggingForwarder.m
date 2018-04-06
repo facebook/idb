@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+/* Portions Copyright © Microsoft Corporation. */
+
 #import "FBXCTestManagerLoggingForwarder.h"
 
 #import <XCTest/XCTestManager_IDEInterface-Protocol.h>

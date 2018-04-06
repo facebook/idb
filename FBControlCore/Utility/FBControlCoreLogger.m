@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+/* Portions Copyright © Microsoft Corporation. */
+
 #import "FBControlCoreLogger.h"
 #import <asl.h>
 #import <CocoaLumberjack/CocoaLumberjack.h>
