@@ -1,26 +1,21 @@
 #!/usr/bin/env bash
 
+source bin/log.sh
+source bin/simctl.sh
+ensure_valid_core_sim_service
+
 rm -rf build
 
-if [[ "${SHELL}" =~ "zsh" ]]; then
-  echo "-o pipefail is not available in zsh.  You have been warned."
-else
-  set -o pipefail
-fi
-
-if [ "${XCPRETTY}" = "0" ]; then
-  USE_XCPRETTY=
-else
-  USE_XCPRETTY=`which xcpretty | tr -d '\n'`
-fi
-
-if [ ! -z ${USE_XCPRETTY} ]; then
+hash xcpretty 2>/dev/null
+if [ $? -eq 0 ] && [ "${XCPRETTY}" != "0" ]; then
   XC_PIPE='xcpretty -c'
 else
   XC_PIPE='cat'
 fi
 
-set -e
+info "Will pipe xcodebuild to: ${XC_PIPE}"
+
+set -e -o pipefail
 
 # Legacy directory - remove to avoid confusion.
 rm -rf Products/
