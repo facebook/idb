@@ -305,6 +305,7 @@
   static NSArray<Class> *commandClasses;
   dispatch_once(&onceToken, ^{
     commandClasses = @[
+      FBHostCrashLogCommands.class,
       FBSimulatorScreenshotCommands.class,
       FBSimulatorAgentCommands.class,
       FBSimulatorApplicationCommands.class,

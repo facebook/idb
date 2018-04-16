@@ -34,6 +34,7 @@
 #import <FBControlCore/FBControlCoreFrameworkLoader.h>
 #import <FBControlCore/FBControlCoreGlobalConfiguration.h>
 #import <FBControlCore/FBControlCoreLogger.h>
+#import <FBControlCore/FBCrashLogCommands.h>
 #import <FBControlCore/FBCrashLogInfo.h>
 #import <FBControlCore/FBCrashLogNotifier.h>
 #import <FBControlCore/FBDebugDescribeable.h>
