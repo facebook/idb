@@ -226,7 +226,7 @@
   // This effectively "Passes Ownership" to the Simulator App.
   return @{
     @"persist": @(!configuration.shouldUseDirectLaunch),
-    @"env" : @{}
+    @"env" : configuration.environment ?: @{},
   };
 }
 
