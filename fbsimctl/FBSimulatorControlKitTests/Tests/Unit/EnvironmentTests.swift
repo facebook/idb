@@ -39,4 +39,16 @@ class EnvironmentTests: XCTestCase {
 
     XCTAssertEqual(expected, actual)
   }
+
+  func testAppendsEnvironmentToBootConfiguration() {
+    let bootConfig = FBSimulatorBootConfiguration.default.withBootEnvironment([
+      "FOO": "BAR",
+      "BING": "BONG",
+    ])
+
+    let actual = Action.boot(FBSimulatorBootConfiguration.default).appendEnvironment(testEnvironment)
+    let expected = Action.boot(bootConfig)
+
+    XCTAssertEqual(expected, actual)
+  }
 }

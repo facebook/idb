@@ -12,6 +12,17 @@ import Foundation
 
 let EnvironmentPrefix = "FBSIMCTL_CHILD_"
 
+private func extractChildProcessEnvironment(_ environment: [String: String]) -> [String: String] {
+  var additions: [String: String] = [:]
+  for (key, value) in environment {
+    if !key.hasPrefix(EnvironmentPrefix) {
+      continue
+    }
+    additions[key.replacingOccurrences(of: EnvironmentPrefix, with: "")] = value
+  }
+  return additions
+}
+
 public extension CLI {
   func appendEnvironment(_ environment: [String: String]) -> CLI {
     switch self {
@@ -39,15 +50,11 @@ protocol EnvironmentAdditive {
 }
 
 extension EnvironmentAdditive {
-  static func subprocessEnvironment(_ environment: [String: String]) -> [String: String] {
-    var additions: [String: String] = [:]
-    for (key, value) in environment {
-      if !key.hasPrefix(EnvironmentPrefix) {
-        continue
-      }
-      additions[key.replacingOccurrences(of: EnvironmentPrefix, with: "")] = value
-    }
-    return additions
+}
+
+extension FBSimulatorBootConfiguration : EnvironmentAdditive {
+  func withEnvironmentAdditions(_ environmentAdditions: [String : String]) -> Self {
+    return self.withBootEnvironment(environmentAdditions)
   }
 }
 
@@ -57,7 +64,7 @@ public extension Action {
     case .coreFuture(var action):
       if let additive = action as? EnvironmentAdditive & FBiOSTargetFuture {
         action = additive.withEnvironmentAdditions(
-          FBProcessLaunchConfiguration.subprocessEnvironment(environment)
+          extractChildProcessEnvironment(environment)
         )
       }
       return .coreFuture(action)

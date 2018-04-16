@@ -200,7 +200,7 @@ let validActions: [([String], Action)] = [
   (["create", "iPhone 6"], .create(CreationSpecification.iPhone6Configuration)),
   (["delete"], .delete),
   (["diagnose", "--content", "--crashes-since", "200", "--system"], .diagnose(FBDiagnosticQuery.crashes(of: FBCrashLogInfoProcessType.system, since: Date(timeIntervalSince1970: 200)).withFormat(.content))),
-  (["diagnose", "--content", "com.foo.bar", "foo.txt", "bar.txt"], .diagnose(FBDiagnosticQuery.files(inApplicationOfBundleID: "com.foo.bar", withFilenames: ["foo.txt", "bar.txt"]).withFormat(.content))),
+  (["diagnose", "--content", "com.foo.bar", "foo.txt", "bar.txt"], .diagnose(FBDiagnosticQuery.files(inApplicationOfBundleID: "com.foo.bar", withFilenames: ["foo.txt", "bar.txt"], withFilenameGlobs: []).withFormat(.content))),
   (["diagnose", "--crashes-since", "300", "--custom-agent"], .diagnose(FBDiagnosticQuery.crashes(of: FBCrashLogInfoProcessType.customAgent, since: Date(timeIntervalSince1970: 300)).withFormat(.current))),
   (["diagnose", "--name", "log1", "--name", "log2"], .diagnose(FBDiagnosticQuery.named(["log1", "log2"]).withFormat(.current))),
   (["diagnose", "--path", "--crashes-since", "100", "--application"], .diagnose(FBDiagnosticQuery.crashes(of: FBCrashLogInfoProcessType.application, since: Date(timeIntervalSince1970: 100)).withFormat(.path))),
