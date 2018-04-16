@@ -41,6 +41,13 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeBoot;
 @property (nonatomic, assign, readonly) FBSimulatorBootOptions options;
 
 /**
+ The environment used on boot.
+ Boot environment is passed down to all launched processes in the Simulator.
+ This is useful for injecting a dylib through `DYLD_` environment variables.
+ */
+@property (nonatomic, nullable, copy, readonly) NSDictionary<NSString *, NSString *> *environment;
+
+/**
  The Locale in which to Simulate, may be nil.
  */
 @property (nonatomic, nullable, strong, readonly) FBLocalizationOverride *localizationOverride;
@@ -72,6 +79,16 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeBoot;
  @return a new FBSimulatorBootConfiguration with the arguments applied.
  */
 - (instancetype)withOptions:(FBSimulatorBootOptions)options;
+
+#pragma mark Environment
+
+/**
+ Updates the boot configuration with a new boot environment.
+
+ @param environment the new boot environment.
+ @return a new FBSimulatorBootConfiguration with the arguments applied.
+ */
+- (instancetype)withBootEnvironment:(nullable NSDictionary<NSString *, NSString *> *)environment;
 
 #pragma mark Device Scale
 

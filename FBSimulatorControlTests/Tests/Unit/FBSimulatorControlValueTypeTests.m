@@ -83,8 +83,9 @@
       withLocalizationOverride:[FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]]]
       withOptions:FBSimulatorBootOptionsEnableDirectLaunch]
       withScale:FBScale75],
-    [[FBSimulatorBootConfiguration.defaultConfiguration
+    [[[FBSimulatorBootConfiguration.defaultConfiguration
       withOptions:FBSimulatorBootOptionsUseNSWorkspace]
+      withBootEnvironment:@{@"FOO": @"BAR"}]
       withScale:FBScale25]
   ];
   [self assertEqualityOfCopy:values];
