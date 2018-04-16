@@ -1020,8 +1020,26 @@ struct FBDiagnosticQueryParser {
         Parser<Any>.ofBundleIDOrApplicationDescriptorBundleID,
         Parser.manyCount(1, Parser<Any>.ofAny)
       )
-      .fmap { bundleID, fileNames in
-        FBDiagnosticQuery.files(inApplicationOfBundleID: bundleID, withFilenames: fileNames)
+        .fmap { (arg) -> FBDiagnosticQuery in
+            
+            let (argBundleID, argFileNames) = arg
+            
+            let bundleID :  String  = argBundleID
+            let fileNames: [String] = argFileNames
+            
+            // TODO: maybe replace it with something meaningful
+            //       no idea what the default value should look like
+            // by @dodikk
+            //
+            let filenameGlobsStubToMakeCompilerHappy: [String] = []
+            
+            let result =
+                FBDiagnosticQuery.files(
+                    inApplicationOfBundleID: bundleID,
+                    withFilenames: fileNames,
+                    withFilenameGlobs: filenameGlobsStubToMakeCompilerHappy)
+            
+            return result
       }
   }
 }
