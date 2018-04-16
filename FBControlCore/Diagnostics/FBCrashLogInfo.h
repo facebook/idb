@@ -28,6 +28,8 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  */
 @interface FBCrashLogInfo : NSObject <NSCopying>
 
+#pragma mark Properties
+
 /**
  The Path of the Crash Log.
  */
@@ -63,6 +65,15 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  */
 @property (nonatomic, assign, readonly) FBCrashLogInfoProcessType processType;
 
+#pragma mark Helpers
+
+/**
+ The Diagnostics Report Path for the User.
+ */
+@property (nonatomic, class, copy, readonly) NSString *diagnosticReportsPath;
+
+#pragma mark Initializers
+
 /**
  Creates Crash Log Info from the specified crash log path.
  Returns nil on error.
@@ -71,6 +82,8 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @return a Crash Log Info on success, nil otherwise.
  */
 + (nullable instancetype)fromCrashLogAtPath:(NSString *)path;
+
+#pragma mark Public Methods
 
 /**
  Constructs a FBDiagnostic instance from the Crash Log.

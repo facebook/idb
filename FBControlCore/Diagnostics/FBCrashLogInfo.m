@@ -157,6 +157,13 @@
   }];
 }
 
+#pragma mark Helpers
+
++ (NSString *)diagnosticReportsPath
+{
+  return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/DiagnosticReports"];
+}
+
 #pragma mark Private
 
 + (FBCrashLogInfoProcessType)processTypeForExecutablePath:(NSString *)executablePath
@@ -168,11 +175,6 @@
     return FBCrashLogInfoProcessTypeApplication;
   }
   return FBCrashLogInfoProcessTypeCustomAgent;
-}
-
-+ (NSString *)diagnosticReportsPath
-{
-  return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/DiagnosticReports"];
 }
 
 + (NSPredicate *)predicateForFilesWithBasePath:(NSString *)basePath afterDate:(NSDate *)date withExtension:(NSString *)extension

@@ -54,6 +54,7 @@ static NSTimeInterval const CrashLogWaitTime = 20;
 
 + (FBFuture<id<FBLaunchedProcess>> *)startWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor timeout:(NSTimeInterval)timeout
 {
+  [FBCrashLogNotifier startListening];
   NSDate *startDate = [NSDate.date dateByAddingTimeInterval:CrashLogStartDateFuzz];
 
   return [[executor
@@ -116,23 +117,8 @@ static NSTimeInterval const CrashLogWaitTime = 20;
 
 + (FBFuture<FBCrashLogInfo *> *)onQueue:(dispatch_queue_t)queue crashLogsForTerminationOfProcess:(pid_t)processIdentifier since:(NSDate *)sinceDate
 {
-  NSPredicate *crashLogInfoPredicate = [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLogInfo, id _) {
-    return processIdentifier == crashLogInfo.processIdentifier;
-  }];
-  return [[FBFuture
-    onQueue:queue resolveUntil:^{
-      FBCrashLogInfo *crashInfo = [[[FBCrashLogInfo
-        crashInfoAfterDate:sinceDate]
-        filteredArrayUsingPredicate:crashLogInfoPredicate]
-        firstObject];
-      if (!crashInfo) {
-        return [[[XCTestBootstrapError
-          describeFormat:@"Crash Info for %d could not be obtained", processIdentifier]
-          noLogging]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:crashInfo];
-    }]
+  return [[FBCrashLogNotifier
+    nextCrashLogForProcessIdentifier:processIdentifier]
     timeout:CrashLogWaitTime waitingFor:@"Crash logs for terminated process %d to appear", processIdentifier];
 }
 
