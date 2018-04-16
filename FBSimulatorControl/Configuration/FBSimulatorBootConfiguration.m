@@ -163,22 +163,12 @@ static NSString *const KeyFramebuffer = @"framebuffer";
 
 #pragma mark Options
 
-+ (instancetype)withOptions:(FBSimulatorBootOptions)options
-{
-  return [self.defaultConfiguration withOptions:options];
-}
-
 - (instancetype)withOptions:(FBSimulatorBootOptions)options
 {
   return [[self.class alloc] initWithOptions:options scale:self.scale localizationOverride:self.localizationOverride framebuffer:self.framebuffer];
 }
 
 #pragma mark Scale
-
-+ (instancetype)withScale:(FBScale)scale
-{
-  return [self.defaultConfiguration withScale:scale];
-}
 
 - (instancetype)withScale:(FBScale)scale
 {
@@ -191,22 +181,12 @@ static NSString *const KeyFramebuffer = @"framebuffer";
 
 #pragma mark Locale
 
-+ (instancetype)withLocalizationOverride:(nullable FBLocalizationOverride *)localizationOverride
-{
-  return [self.defaultConfiguration withLocalizationOverride:localizationOverride];
-}
-
 - (instancetype)withLocalizationOverride:(nullable FBLocalizationOverride *)localizationOverride
 {
   return [[self.class alloc] initWithOptions:self.options scale:self.scale localizationOverride:localizationOverride framebuffer:self.framebuffer];
 }
 
 #pragma mark Video
-
-+ (instancetype)withFramebuffer:(FBFramebufferConfiguration *)framebuffer
-{
-  return [self.defaultConfiguration withFramebuffer:framebuffer];
-}
 
 - (instancetype)withFramebuffer:(FBFramebufferConfiguration *)framebuffer
 {

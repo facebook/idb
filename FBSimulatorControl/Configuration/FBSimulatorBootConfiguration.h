@@ -66,33 +66,41 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeBoot;
 #pragma mark Launch Options
 
 /**
- Set Direct Launch Options
+ Updates the boot configuration with new options.
+
+ @param options the options to update.
+ @return a new FBSimulatorBootConfiguration with the arguments applied.
  */
-+ (instancetype)withOptions:(FBSimulatorBootOptions)options;
 - (instancetype)withOptions:(FBSimulatorBootOptions)options;
 
 #pragma mark Device Scale
 
 /**
- Returns a new Configuration with the Scale Applied.
+ Updates the boot configuration with a new scale.
+
+ @param scale the scale to update.
+ @return a new FBSimulatorBootConfiguration with the arguments applied.
  */
-+ (instancetype)withScale:(nullable FBScale)scale;
 - (instancetype)withScale:(nullable FBScale)scale;
 
 #pragma mark Locale
 
 /**
- Set the Localization Override
+ Updates the boot configuration with a new localization.
+
+ @param localizationOverride the localization to update.
+ @return a new FBSimulatorBootConfiguration with the arguments applied.
  */
-+ (instancetype)withLocalizationOverride:(nullable FBLocalizationOverride *)localizationOverride;
 - (instancetype)withLocalizationOverride:(nullable FBLocalizationOverride *)localizationOverride;
 
 #pragma mark Framebuffer
 
 /**
- Set Framebuffer Configuration
+ Updates the boot configuration with a new framebuffer configuration.
+
+ @param framebuffer the framebuffer configuration to apply.
+ @return a new FBSimulatorBootConfiguration with the arguments applied.
  */
-+ (instancetype)withFramebuffer:(nullable FBFramebufferConfiguration *)framebuffer;
 - (instancetype)withFramebuffer:(nullable FBFramebufferConfiguration *)framebuffer;
 
 @end

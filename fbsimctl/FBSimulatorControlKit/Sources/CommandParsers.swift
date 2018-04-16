@@ -1021,8 +1021,22 @@ struct FBDiagnosticQueryParser {
         Parser.manyCount(1, Parser<Any>.ofAny)
       )
       .fmap { bundleID, fileNames in
-        FBDiagnosticQuery.files(inApplicationOfBundleID: bundleID, withFilenames: fileNames)
+        FBDiagnosticQuery.files(inApplicationOfBundleID: bundleID, withFilenames: fileNames, withFilenameGlobs: [])
       }
+  }
+}
+
+extension FBSimulatorBootConfiguration {
+  static func fromOptions(_ options: FBSimulatorBootOptions) -> FBSimulatorBootConfiguration {
+    return FBSimulatorBootConfiguration.default.withOptions(options)
+  }
+
+  static func fromScale(_ scale: FBScale) -> FBSimulatorBootConfiguration {
+    return FBSimulatorBootConfiguration.default.withScale(scale)
+  }
+
+  static func fromLocale(_ locale: Locale) -> FBSimulatorBootConfiguration {
+    return FBSimulatorBootConfiguration.default.withLocalizationOverride(FBLocalizationOverride.withLocale(locale))
   }
 }
 
@@ -1034,9 +1048,9 @@ struct FBSimulatorBootConfigurationParser {
   static var parser: Parser<FBSimulatorBootConfiguration> {
     return Parser<FBSimulatorBootConfiguration>
       .accumulate(1, [
-        self.optionsParser.fmap(FBSimulatorBootConfiguration.withOptions),
-        self.scaleParser.fmap(FBSimulatorBootConfiguration.withScale),
-        self.localeParser.fmap { FBSimulatorBootConfiguration.withLocalizationOverride(FBLocalizationOverride.withLocale($0)) },
+        self.optionsParser.fmap(FBSimulatorBootConfiguration.fromOptions),
+        self.scaleParser.fmap(FBSimulatorBootConfiguration.fromScale),
+        self.localeParser.fmap(FBSimulatorBootConfiguration.fromLocale),
       ])
   }
 

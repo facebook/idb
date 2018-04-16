@@ -110,7 +110,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 
 + (FBSimulatorBootConfiguration *)defaultBootConfiguration
 {
-  return [[FBSimulatorBootConfiguration
+  return [[FBSimulatorBootConfiguration.defaultConfiguration
     withOptions:self.launchOptions]
     withFramebuffer:self.defaultFramebufferConfiguration];
 }

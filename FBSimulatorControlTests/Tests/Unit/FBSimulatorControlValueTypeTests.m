@@ -79,11 +79,11 @@
 - (void)testLaunchConfigurations
 {
   NSArray<FBSimulatorBootConfiguration *> *values = @[
-    [[[FBSimulatorBootConfiguration
+    [[[FBSimulatorBootConfiguration.defaultConfiguration
       withLocalizationOverride:[FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]]]
       withOptions:FBSimulatorBootOptionsEnableDirectLaunch]
       withScale:FBScale75],
-    [[FBSimulatorBootConfiguration
+    [[FBSimulatorBootConfiguration.defaultConfiguration
       withOptions:FBSimulatorBootOptionsUseNSWorkspace]
       withScale:FBScale25]
   ];
@@ -94,7 +94,7 @@
 
 - (void)testLaunchConfigurationScaleAppliedToFramebufferConfiguration
 {
-  FBSimulatorBootConfiguration *launchConfiguration = [[[FBSimulatorBootConfiguration
+  FBSimulatorBootConfiguration *launchConfiguration = [[[FBSimulatorBootConfiguration.defaultConfiguration
     withLocalizationOverride:[FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]]]
     withOptions:FBSimulatorBootOptionsEnableDirectLaunch]
     withFramebuffer:FBFramebufferConfiguration.defaultConfiguration];
@@ -139,7 +139,7 @@
   NSArray<FBDiagnosticQuery *> *values = @[
     [FBDiagnosticQuery all],
     [FBDiagnosticQuery named:@[@"foo", @"bar", @"baz"]],
-    [FBDiagnosticQuery filesInApplicationOfBundleID:@"foo.bar.baz" withFilenames:@[@"foo.txt", @"bar.log"]],
+    [FBDiagnosticQuery filesInApplicationOfBundleID:@"foo.bar.baz" withFilenames:@[@"foo.txt", @"bar.log"] withFilenameGlobs:@[@"*.foo"]],
     [FBDiagnosticQuery crashesOfType:FBCrashLogInfoProcessTypeCustomAgent | FBCrashLogInfoProcessTypeApplication since:[NSDate dateWithTimeIntervalSince1970:100]],
   ];
   [self assertEqualityOfCopy:values];
