@@ -84,7 +84,7 @@
 {
   FBSimulatorBootConfiguration *bootConfiguration = [[FBSimulatorBootConfiguration
     defaultConfiguration]
-    withOptions:FBSimulatorBootOptionsEnableDirectLaunch];
+    withOptions:FBSimulatorBootOptionsEnableDirectLaunch | FBSimulatorBootOptionsVerifyUsable];
 
   return [[self
     fetchSimulatorForLogicTest:destination]
