@@ -31,7 +31,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeBoot = @"boot";
   return configuration;
 }
 
-static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsAwaitServices | FBSimulatorBootOptionsUseNSWorkspace;
+static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsVerifyUsable | FBSimulatorBootOptionsUseNSWorkspace;
 
 - (instancetype)init
 {

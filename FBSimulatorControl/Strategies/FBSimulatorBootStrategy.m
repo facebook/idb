@@ -622,7 +622,7 @@
   [self.simulator.eventSink simulatorDidLaunch:launchdProcess];
 
   // Return early if we're not awaiting services.
-  if ((self.configuration.options & FBSimulatorBootOptionsAwaitServices) != FBSimulatorBootOptionsAwaitServices) {
+  if ((self.configuration.options & FBSimulatorBootOptionsVerifyUsable) != FBSimulatorBootOptionsVerifyUsable) {
     return [FBFuture futureWithResult:launchdProcess];
   }
 

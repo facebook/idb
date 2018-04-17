@@ -20,7 +20,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorBootOptions) {
   FBSimulatorBootOptionsConnectBridge = 1 << 0, /** Connects the Simulator Bridge on boot, rather than lazily on-demand */
   FBSimulatorBootOptionsEnableDirectLaunch = 1 << 1, /** Launches the Simulator via directly (via SimDevice) instead of with Simulator.app. Enables Framebuffer Connection. */
   FBSimulatorBootOptionsUseNSWorkspace = 1 << 2, /** Uses -[NSWorkspace launchApplicationAtURL:options:configuration::error:] to launch Simulator.app */
-  FBSimulatorBootOptionsAwaitServices = 1 << 3, /** Waits for the Simulator to be in a 'Usable' state before returning on the boot command */
+  FBSimulatorBootOptionsVerifyUsable = 1 << 3, /** A Simulator can be report that it is 'Booted' very quickly but is not in Usable. Setting this option requires that the Simulator is 'Usable' before the boot API completes */
 };
 
 NS_ASSUME_NONNULL_BEGIN
