@@ -35,8 +35,9 @@
 
 @interface FBSimulatorBootVerificationStrategy_SimDeviceBootInfo : FBSimulatorBootVerificationStrategy
 
-@end
+@property (nonatomic, strong, nullable, readwrite) SimDeviceBootInfo *lastBootInfo;
 
+@end
 
 @implementation FBSimulatorBootVerificationStrategy
 
@@ -96,17 +97,70 @@ static NSTimeInterval BootVerificationWaitInterval = 0.5;
 - (FBFuture<NSNull *> *)performBootVerification
 {
   SimDeviceBootInfo *bootInfo = self.simulator.device.bootStatus;
+  if (![bootInfo isEqual:self.lastBootInfo]) {
+    self.lastBootInfo = bootInfo;
+    [self.simulator.logger.debug log:[FBSimulatorBootVerificationStrategy_SimDeviceBootInfo describeBootInfo:bootInfo]];
+  }
   if (!bootInfo) {
     return [[FBSimulatorError
-      describeFormat:@"No bootStatus for %@", self.simulator]
+      describeFormat:@"No bootInfo for %@", self.simulator]
       failFuture];
   }
   if (bootInfo.status != SimDeviceBootInfoStatusBooted) {
     return [[FBSimulatorError
-      describeFormat:@"Not booted status is %@", bootInfo]
+      describeFormat:@"Not booted, status is %@", bootInfo]
       failFuture];
   }
   return [FBFuture futureWithResult:NSNull.null];
+}
+
++ (NSString *)describeBootInfo:(SimDeviceBootInfo *)bootInfo
+{
+  NSString *regular = [self regularBootInfo:bootInfo];
+  NSString *migration = [self dataMigrationString:bootInfo];
+  if (!migration) {
+    return regular;
+  }
+  return [NSString stringWithFormat:@"%@ | %@", regular, migration];
+}
+
++ (NSString *)regularBootInfo:(SimDeviceBootInfo *)bootInfo
+{
+  return [NSString stringWithFormat:
+    @"Boot Status %@ | Elapsed %f",
+    [self bootStatusString:bootInfo.status],
+    bootInfo.bootElapsedTime
+  ];
+}
+
++ (NSString *)bootStatusString:(SimDeviceBootInfoStatus)status
+{
+  switch (status) {
+    case SimDeviceBootInfoStatusBooting:
+      return @"Booting";
+    case SimDeviceBootInfoStatusWaitingOnBackboard:
+      return @"WaitingOnBackboard";
+    case SimDeviceBootInfoStatusWaitingOnDataMigration:
+      return @"WaitingOnDataMigration";
+    case SimDeviceBootInfoStatusWaitingOnSystemApp:
+      return @"WaitingOnSystemApp";
+    case SimDeviceBootInfoStatusBooted:
+      return @"Booted";
+    default:
+      return @"Unknown";
+  }
+}
+
++ (NSString *)dataMigrationString:(SimDeviceBootInfo *)bootInfo
+{
+  if (bootInfo.status != SimDeviceBootInfoStatusWaitingOnDataMigration) {
+    return nil;
+  }
+  return [NSString stringWithFormat:
+    @"Migration Phase '%@' | Migration Elapsed %f",
+    bootInfo.migrationPhaseDescription,
+    bootInfo.migrationElapsedTime
+  ];
 }
 
 @end
