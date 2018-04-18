@@ -46,7 +46,7 @@
   XCTAssertEqualObjects(consumer.consumeLineString, @"HELLO");
   XCTAssertEqualObjects(consumer.consumeLineString, @"WORLD");
 
-  logger = [logger withPrefix:@"foo"];
+  logger = [logger withName:@"foo"];
 
   [logger log:@"HELLO"];
   [logger log:@"WORLD"];

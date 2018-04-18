@@ -62,12 +62,12 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 - (id<FBControlCoreLogger>)error;
 
 /**
- Returns a Logger that will prefix all messages with the given string
+ Returns a Logger for a named 'facility' or 'tag'.
 
- @param prefix the prefix to prepend to all messages.
+ @param name the name to apply to all messages.
  @return a new Logger that will allows logging of messages on the provided queue.
  */
-- (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix;
+- (id<FBControlCoreLogger>)withName:(NSString *)name;
 
 /**
  Enables or Disables date formatting in the logger.
@@ -82,7 +82,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 /**
  The Prefix for the Logger, if set.
  */
-@property (nonatomic, copy, nullable, readonly) NSString *prefix;
+@property (nonatomic, copy, nullable, readonly) NSString *name;
 
 /**
  The Current Log Level

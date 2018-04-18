@@ -372,7 +372,7 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
 
 - (void)deviceAttached:(DLDevice *)dlDevice logger:(id<FBControlCoreLogger>)logger
 {
-  logger = [logger withPrefix:FB_DLDeviceGetUDID(dlDevice)];
+  logger = [logger withName:FB_DLDeviceGetUDID(dlDevice)];
   FBDLDevice *device = [[FBDLDevice alloc] initWithDLDevice:dlDevice manager:self queue:self.queue logger:logger];
   self.currentDevices[device.udid] = device;
   [NSNotificationCenter.defaultCenter postNotificationName:FB_DLDeviceNotificationNameAttached object:device.udid userInfo:@{

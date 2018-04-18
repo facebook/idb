@@ -24,9 +24,9 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
 @implementation FBControlCoreLogger_OSLog
 
 @synthesize level = _level;
-@synthesize prefix = _prefix;
+@synthesize name = _name;
 
-- (instancetype)initWithClient:(os_log_t)client prefix:(NSString *)prefix level:(FBControlCoreLogLevel)level
+- (instancetype)initWithClient:(os_log_t)client name:(NSString *)name level:(FBControlCoreLogLevel)level
 {
   self = [super init];
   if (!self) {
@@ -34,7 +34,7 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
   }
 
   _client = client;
-  _prefix = prefix;
+  _name = name;
   _level = level;
 
   return self;
@@ -70,23 +70,23 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
 
 - (id<FBControlCoreLogger>)info
 {
-  return [[self.class alloc] initWithClient:self.client prefix:self.prefix level:FBControlCoreLogLevelInfo];
+  return [[self.class alloc] initWithClient:self.client name:self.name level:FBControlCoreLogLevelInfo];
 }
 
 - (id<FBControlCoreLogger>)debug
 {
-  return [[self.class alloc] initWithClient:self.client prefix:self.prefix level:FBControlCoreLogLevelDebug];
+  return [[self.class alloc] initWithClient:self.client name:self.name level:FBControlCoreLogLevelDebug];
 }
 
 - (id<FBControlCoreLogger>)error
 {
-  return [[self.class alloc] initWithClient:self.client prefix:self.prefix level:FBControlCoreLogLevelError];
+  return [[self.class alloc] initWithClient:self.client name:self.name level:FBControlCoreLogLevelError];
 }
 
-- (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
+- (id<FBControlCoreLogger>)withName:(NSString *)name
 {
-  os_log_t client = os_log_create(LoggerSubsystem, prefix.UTF8String);
-  return [[self.class alloc] initWithClient:client prefix:prefix level:self.level];
+  os_log_t client = os_log_create(LoggerSubsystem, name.UTF8String);
+  return [[self.class alloc] initWithClient:client name:name level:self.level];
 }
 
 - (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)dateFormat
@@ -104,7 +104,7 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
 {
 #if defined(__apple_build_version__)
   os_log_t client = os_log_create(LoggerSubsystem, "");
-  return [[FBControlCoreLogger_OSLog alloc] initWithClient:client prefix:nil level:level];
+  return [[FBControlCoreLogger_OSLog alloc] initWithClient:client name:nil level:level];
 #else
   return nil;
 #endif

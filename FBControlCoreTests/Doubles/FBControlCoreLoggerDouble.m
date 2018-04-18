@@ -36,7 +36,7 @@
   return self;
 }
 
-- (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
+- (id<FBControlCoreLogger>)withName:(NSString *)prefix
 {
   return self;
 }
@@ -46,7 +46,7 @@
   return self;
 }
 
-- (NSString *)prefix
+- (NSString *)name
 {
   return nil;
 }

@@ -137,7 +137,7 @@
   return [[LogReporter alloc] initWithBridge:self.bridge currentLevel:ASL_LEVEL_ERR maxLevel:self.maxLevel dispatchToMain:dispatchToMain];
 }
 
-- (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
+- (id<FBControlCoreLogger>)withName:(NSString *)name
 {
   // Ignore prefixing as 'subject' will be included instead.
   return self;
@@ -149,7 +149,7 @@
   return self;
 }
 
-- (NSString *)prefix
+- (NSString *)name
 {
   return nil;
 }

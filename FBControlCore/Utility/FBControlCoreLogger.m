@@ -19,17 +19,17 @@
 
 @implementation FBControlCoreLogger_NSLog
 
-@synthesize prefix = _prefix;
+@synthesize name = _name;
 @synthesize level = _level;
 
-- (instancetype)initWithPrefix:(NSString *)prefix level:(FBControlCoreLogLevel)level
+- (instancetype)initWithname:(NSString *)name level:(FBControlCoreLogLevel)level
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _prefix = prefix;
+  _name = name;
   _level = level;
 
   return self;
@@ -37,7 +37,7 @@
 
 - (id<FBControlCoreLogger>)log:(NSString *)message
 {
-  NSString *string = self.prefix ? [NSString stringWithFormat:@"[%@] %@", self.prefix, message] : message;
+  NSString *string = self.name ? [NSString stringWithFormat:@"[%@] %@", self.name, message] : message;
   NSLog(@"%@", string);
   return self;
 }
@@ -67,9 +67,9 @@
   return self;
 }
 
-- (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
+- (id<FBControlCoreLogger>)withName:(NSString *)name
 {
-  return [[self.class alloc] initWithPrefix:prefix level:self.level];
+  return [[self.class alloc] initWithname:name level:self.level];
 }
 
 - (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)dateFormat
@@ -131,9 +131,9 @@
   return [self loggerByApplyingSelector:_cmd];
 }
 
-- (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
+- (id<FBControlCoreLogger>)withName:(NSString *)name
 {
-  return [self loggerByApplyingSelector:_cmd object:prefix];
+  return [self loggerByApplyingSelector:_cmd object:name];
 }
 
 - (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)dateFormat
@@ -141,7 +141,7 @@
   return [self loggerByApplyingSelector:_cmd object:@(dateFormat)];
 }
 
-- (NSString *)prefix
+- (NSString *)name
 {
   return nil;
 }
@@ -185,10 +185,10 @@
 
 @implementation FBControlCoreLogger_Consumer
 
-@synthesize prefix = _prefix;
+@synthesize name = _name;
 @synthesize level = _level;
 
-- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer prefix:(NSString *)prefix dateFormatter:(NSDateFormatter *)dateFormatter
+- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer name:(NSString *)name dateFormatter:(NSDateFormatter *)dateFormatter
 {
   self = [super init];
   if (!self) {
@@ -196,7 +196,7 @@
   }
 
   _consumer = consumer;
-  _prefix = prefix;
+  _name = name;
   _dateFormatter = dateFormatter;
 
   return self;
@@ -210,8 +210,8 @@
   if (self.dateFormatter) {
     [string appendFormat:@"%@ ", [self.dateFormatter stringFromDate:NSDate.date]];
   }
-  if (self.prefix) {
-    [string appendFormat:@"[%@] ", self.prefix];
+  if (self.name) {
+    [string appendFormat:@"[%@] ", self.name];
   }
   [string appendString:message];
   [string appendString:@"\n"];
@@ -235,22 +235,22 @@
 
 - (id<FBControlCoreLogger>)info
 {
-  return [[self.class alloc] initWithConsumer:self.consumer prefix:self.prefix dateFormatter:self.dateFormatter];
+  return [[self.class alloc] initWithConsumer:self.consumer name:self.name dateFormatter:self.dateFormatter];
 }
 
 - (id<FBControlCoreLogger>)debug
 {
-  return [[self.class alloc] initWithConsumer:self.consumer prefix:self.prefix dateFormatter:self.dateFormatter];
+  return [[self.class alloc] initWithConsumer:self.consumer name:self.name dateFormatter:self.dateFormatter];
 }
 
 - (id<FBControlCoreLogger>)error
 {
-  return [[self.class alloc] initWithConsumer:self.consumer prefix:self.prefix dateFormatter:self.dateFormatter];
+  return [[self.class alloc] initWithConsumer:self.consumer name:self.name dateFormatter:self.dateFormatter];
 }
 
-- (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
+- (id<FBControlCoreLogger>)withName:(NSString *)name
 {
-  return [[self.class alloc] initWithConsumer:self.consumer prefix:prefix dateFormatter:self.dateFormatter];
+  return [[self.class alloc] initWithConsumer:self.consumer name:name dateFormatter:self.dateFormatter];
 }
 
 - (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled
@@ -260,7 +260,7 @@
     dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss.SSSZZZ"];
   }
-  return [[self.class alloc] initWithConsumer:self.consumer prefix:self.prefix dateFormatter:dateFormatter];
+  return [[self.class alloc] initWithConsumer:self.consumer name:self.name dateFormatter:dateFormatter];
 }
 
 @end
@@ -305,13 +305,13 @@
 
 + (id<FBControlCoreLogger>)loggerToConsumer:(id<FBFileConsumer>)consumer
 {
-  return [[FBControlCoreLogger_Consumer alloc] initWithConsumer:consumer prefix:nil dateFormatter:nil];
+  return [[FBControlCoreLogger_Consumer alloc] initWithConsumer:consumer name:nil dateFormatter:nil];
 }
 
 + (id<FBControlCoreLogger>)loggerToFileHandle:(NSFileHandle *)fileHandle
 {
   id<FBFileConsumer> consumer = [FBFileWriter syncWriterWithFileHandle:fileHandle];
-  return [[FBControlCoreLogger_Consumer alloc] initWithConsumer:consumer prefix:nil dateFormatter:nil];
+  return [[FBControlCoreLogger_Consumer alloc] initWithConsumer:consumer name:nil dateFormatter:nil];
 }
 
 @end

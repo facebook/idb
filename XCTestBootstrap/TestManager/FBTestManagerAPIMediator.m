@@ -80,7 +80,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
   _context = context;
   _target = target;
-  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", target.udid]];
+  _logger = [logger withName:[NSString stringWithFormat:@"%@:", target.udid]];
   _testedApplicationAdditionalEnvironment = testedApplicationAdditionalEnvironment;
 
   _tokenToBundleIDMap = [NSMutableDictionary new];

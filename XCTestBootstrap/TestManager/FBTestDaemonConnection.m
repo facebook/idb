@@ -81,7 +81,7 @@ static FBTestDaemonConnectionState const FBTestDaemonConnectionStateResultAvaila
   _target = target;
   _interface = interface;
   _requestQueue = requestQueue;
-  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", target.udid]];
+  _logger = [logger withName:[NSString stringWithFormat:@"%@:", target.udid]];
 
   _state = FBTestDaemonConnectionStateNotConnected;
 

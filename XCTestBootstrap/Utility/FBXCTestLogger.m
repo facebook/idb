@@ -134,10 +134,10 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
     logDirectory:self.logDirectory];
 }
 
-- (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
+- (id<FBControlCoreLogger>)withName:(NSString *)prefix
 {
   return [[self.class alloc]
-    initWithBaseLogger:[self.baseLogger withPrefix:prefix]
+    initWithBaseLogger:[self.baseLogger withName:prefix]
     logDirectory:self.logDirectory];
 }
 
@@ -148,9 +148,9 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
     logDirectory:self.logDirectory];
 }
 
-- (NSString *)prefix
+- (NSString *)name
 {
-  return self.baseLogger.prefix;
+  return self.baseLogger.name;
 }
 
 - (FBControlCoreLogLevel)level

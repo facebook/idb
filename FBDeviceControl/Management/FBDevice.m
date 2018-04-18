@@ -46,7 +46,7 @@
 
   _set = set;
   _amDevice = amDevice;
-  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@: ", amDevice.udid]];
+  _logger = [logger withName:[NSString stringWithFormat:@"%@: ", amDevice.udid]];
   _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBDevice.commandResponders memoize:YES];
 
   return self;
