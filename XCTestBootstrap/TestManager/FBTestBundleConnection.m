@@ -107,7 +107,7 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
   _target = target;
   _interface = interface;
   _requestQueue = requestQueue;
-  _logger = [logger withName:[NSString stringWithFormat:@"%@:", target.udid]];
+  _logger = logger;
 
   _state = FBTestBundleConnectionStateNotConnected;
   _applicationLaunchDate = NSDate.date;

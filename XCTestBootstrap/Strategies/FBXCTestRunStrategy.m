@@ -49,7 +49,7 @@
   _iosTarget = iosTarget;
   _prepareStrategy = prepareStrategy;
   _reporter = reporter;
-  _logger = [logger withName:[NSString stringWithFormat:@"%@:", iosTarget.udid]];
+  _logger = logger;
 
   return self;
 }

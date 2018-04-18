@@ -81,7 +81,7 @@
   _set = set;
   _processFetcher = processFetcher;
   _auxillaryDirectory = auxillaryDirectory;
-  _logger = logger;
+  _logger = [logger withName:device.UDID.UUIDString];
   _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBSimulator.commandResponders memoize:NO];
 
   return self;

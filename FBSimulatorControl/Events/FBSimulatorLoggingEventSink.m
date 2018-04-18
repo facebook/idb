@@ -27,7 +27,7 @@
 
 + (instancetype)withSimulator:(FBSimulator *)simulator logger:(id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithLogger:[logger withName:[NSString stringWithFormat:@"%@:", simulator.udid]]];
+  return [[self alloc] initWithLogger:logger];
 }
 
 - (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
