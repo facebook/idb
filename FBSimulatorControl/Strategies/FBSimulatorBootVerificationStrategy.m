@@ -36,6 +36,7 @@
 @interface FBSimulatorBootVerificationStrategy_SimDeviceBootInfo : FBSimulatorBootVerificationStrategy
 
 @property (nonatomic, strong, nullable, readwrite) SimDeviceBootInfo *lastBootInfo;
+@property (nonatomic, strong, nullable, readwrite) NSDate *lastInfoUpdateDate;
 
 @end
 
@@ -67,7 +68,8 @@
 
 #pragma mark Public
 
-static NSTimeInterval BootVerificationWaitInterval = 0.5;
+static NSTimeInterval BootVerificationWaitInterval = 0.5; // 500ms
+static NSTimeInterval BootVerificationStallInterval = 1.5; // 60s
 
 - (FBFuture<NSNull *> *)verifySimulatorIsBooted
 {
@@ -97,21 +99,41 @@ static NSTimeInterval BootVerificationWaitInterval = 0.5;
 - (FBFuture<NSNull *> *)performBootVerification
 {
   SimDeviceBootInfo *bootInfo = self.simulator.device.bootStatus;
-  if (![bootInfo isEqual:self.lastBootInfo]) {
-    self.lastBootInfo = bootInfo;
-    [self.simulator.logger.debug log:[FBSimulatorBootVerificationStrategy_SimDeviceBootInfo describeBootInfo:bootInfo]];
-  }
   if (!bootInfo) {
     return [[FBSimulatorError
       describeFormat:@"No bootInfo for %@", self.simulator]
       failFuture];
   }
+  [self updateBootInfo:bootInfo];
   if (bootInfo.status != SimDeviceBootInfoStatusBooted) {
     return [[FBSimulatorError
       describeFormat:@"Not booted, status is %@", bootInfo]
       failFuture];
   }
   return [FBFuture futureWithResult:NSNull.null];
+}
+
+- (void)updateBootInfo:(SimDeviceBootInfo *)bootInfo
+{
+  // The isEqual Method implementation does *not* take into account -[SimDeviceBootInfo bootElapsedTime].
+  // We can check that the differences between the last info and the current one are greater some 'stall threshold.
+  // This can be indicative that something has gone wrong in the boot process.
+  NSTimeInterval stallInterval = BootVerificationStallInterval;
+  id<FBControlCoreLogger> logger = self.simulator.logger;
+  if (!self.lastInfoUpdateDate) {
+    self.lastInfoUpdateDate = NSDate.date;
+  }
+  if ([bootInfo isEqual:self.lastBootInfo]) {
+    NSTimeInterval updateInterval = [NSDate.date timeIntervalSinceDate:self.lastInfoUpdateDate];
+    if (updateInterval < stallInterval) {
+      return;
+    }
+    [logger logFormat:@"Boot Status has not changed from '%@' for %f seconds", [FBSimulatorBootVerificationStrategy_SimDeviceBootInfo describeBootInfo:bootInfo], updateInterval];
+  } else {
+    [logger.debug logFormat:@"Boot Status Changed: %@", [FBSimulatorBootVerificationStrategy_SimDeviceBootInfo describeBootInfo:bootInfo]];
+    self.lastBootInfo = bootInfo;
+    self.lastInfoUpdateDate = NSDate.date;
+  }
 }
 
 + (NSString *)describeBootInfo:(SimDeviceBootInfo *)bootInfo
@@ -127,7 +149,7 @@ static NSTimeInterval BootVerificationWaitInterval = 0.5;
 + (NSString *)regularBootInfo:(SimDeviceBootInfo *)bootInfo
 {
   return [NSString stringWithFormat:
-    @"Boot Status %@ | Elapsed %f",
+    @"%@ | Elapsed %f",
     [self bootStatusString:bootInfo.status],
     bootInfo.bootElapsedTime
   ];
