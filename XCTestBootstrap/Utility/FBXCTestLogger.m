@@ -75,8 +75,8 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
   NSAssert(fileHandle, @"Could not create a writable file handle for file at path %@", fileHandle);
 
   id<FBControlCoreLogger> baseLogger = [FBControlCoreLogger compositeLoggerWithLoggers:@[
-    [FBControlCoreLogger systemLoggerWritingToStderr:YES withDebugLogging:YES],
-    [FBControlCoreLogger loggerToFileHandle:fileHandle],
+    [[FBControlCoreLogger systemLoggerWritingToStderr:YES withDebugLogging:YES] withDateFormatEnabled:YES],
+    [[FBControlCoreLogger loggerToFileHandle:fileHandle] withDateFormatEnabled:YES],
   ]];
 
   return [[self alloc] initWithBaseLogger:baseLogger logDirectory:directory];
