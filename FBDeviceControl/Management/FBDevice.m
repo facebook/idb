@@ -78,10 +78,7 @@
 
 - (NSString *)auxillaryDirectory
 {
-  return [[[NSHomeDirectory()
-    stringByAppendingPathComponent:@"Library"]
-    stringByAppendingPathComponent:@"FBDeviceControl"]
-    stringByAppendingPathComponent:self.udid];
+  return NSFileManager.defaultManager.currentDirectoryPath;
 }
 
 - (FBSimulatorState)state
