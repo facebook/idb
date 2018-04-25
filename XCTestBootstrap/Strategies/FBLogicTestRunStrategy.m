@@ -53,8 +53,7 @@
 
 - (FBFuture<NSNull *> *)execute
 {
-  NSTimeInterval timeout = self.configuration.testTimeout + 5;
-  return [[self testFuture] timeout:timeout waitingFor:@"Logic Test Execution to finish"];
+  return [self testFuture];
 }
 
 - (FBFuture<NSNull *> *)testFuture

@@ -18,6 +18,8 @@
 
 static NSTimeInterval const CrashLogStartDateFuzz = -20;
 static NSTimeInterval const CrashLogWaitTime = 20;
+static NSUInteger const SampleDuration = 1;
+static NSTimeInterval const SampleTimeoutSubtraction = SampleDuration + 1;
 
 @interface FBXCTestProcess() <FBLaunchedProcess>
 
@@ -55,12 +57,20 @@ static NSTimeInterval const CrashLogWaitTime = 20;
 + (FBFuture<id<FBLaunchedProcess>> *)startWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor timeout:(NSTimeInterval)timeout
 {
   [FBCrashLogNotifier startListening];
-  NSDate *startDate = [NSDate.date dateByAddingTimeInterval:CrashLogStartDateFuzz];
+  NSDate *startDate = NSDate.date;
 
   return [[executor
     startProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutConsumer:stdOutConsumer stdErrConsumer:stdErrConsumer]
     onQueue:executor.workQueue map:^(id<FBLaunchedProcess> processInfo) {
-      FBFuture<NSNumber *> *exitCode = [FBXCTestProcess decorateLaunchedWithErrorHandlingProcess:processInfo startDate:startDate timeout:timeout queue:executor.workQueue];
+      // Since launching the process may make some time, we still want to respect the timeout.
+      // For this reason we have to take this delta into account.
+      // In addition, the timing out of the process is also more agressive, since we have to take into account the time to take a stack sample
+      NSTimeInterval realTimeout = MAX(timeout - [NSDate.date timeIntervalSinceDate:startDate] - SampleTimeoutSubtraction, 0);
+
+      // Additionally, we make the start date of the process appear slightly older than we might think, this is in order that we can catch crash logs that may match this process.
+      NSDate *fuzzedStartDate = [startDate dateByAddingTimeInterval:CrashLogStartDateFuzz];
+
+      FBFuture<NSNumber *> *exitCode = [FBXCTestProcess decorateLaunchedWithErrorHandlingProcess:processInfo startDate:fuzzedStartDate timeout:realTimeout queue:executor.workQueue];
       return [[FBXCTestProcess alloc] initWithProcessIdentifier:processInfo.processIdentifier exitCode:exitCode];
     }];
 }
@@ -89,7 +99,7 @@ static NSTimeInterval const CrashLogWaitTime = 20;
 + (FBFuture<id> *)onQueue:(dispatch_queue_t)queue timeoutErrorWithTimeout:(NSTimeInterval)timeout processIdentifier:(pid_t)processIdentifier
 {
   return [[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/sample" arguments:@[@(processIdentifier).stringValue, @"1"]]
+    withLaunchPath:@"/usr/bin/sample" arguments:@[@(processIdentifier).stringValue, @(SampleDuration).stringValue]]
     runUntilCompletion]
     onQueue:queue fmap:^(FBTask *task) {
       return [[FBXCTestError

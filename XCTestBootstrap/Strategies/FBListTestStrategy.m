@@ -50,11 +50,8 @@
 {
   [self.reporter didBeginExecutingTestPlan];
 
-  // Additional timeout added to base timeout to give time to catch a sample.
-  NSTimeInterval timeout = self.strategy.configuration.testTimeout + 5;
-  return [[[self.strategy
+  return [[self.strategy
     listTests]
-    timeout:timeout waitingFor:@"Listing of Tests to complete"]
     onQueue:self.strategy.executor.workQueue map:^(NSArray<NSString *> *testNames) {
       for (NSString *testName in testNames) {
         NSRange slashRange = [testName rangeOfString:@"/"];
