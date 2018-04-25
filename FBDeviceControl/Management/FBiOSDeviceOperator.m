@@ -221,11 +221,6 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
     arg:bundleID, nil];
 }
 
-- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID sinceDate:(NSDate *)date
-{
-  return nil;
-}
-
 - (FBFuture<id> *)observeProcessWithID:(pid_t)processID
 {
   return [self

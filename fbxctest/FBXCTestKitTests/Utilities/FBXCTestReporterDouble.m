@@ -121,6 +121,21 @@
 
 }
 
+- (void)didRecordVideoAtPath:(nonnull NSString *)videoRecordingPath
+{
+
+}
+
+- (void)didSaveOSLogAtPath:(nonnull NSString *)osLogPath
+{
+
+}
+
+- (void)didCopiedTestArtifact:(nonnull NSString *)testArtifactFilename toPath:(nonnull NSString *)path
+{
+
+}
+
 #pragma mark Accessors
 
 - (NSArray<NSArray<NSString *> *> *)startedSuites

@@ -233,9 +233,4 @@
     }];
 }
 
-- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID sinceDate:(NSDate *)date
-{
-  return [[self.simulator.simulatorDiagnostics subprocessCrashesAfterDate:date processsIdentifier:pid processType:FBCrashLogInfoProcessTypeApplication] firstObject];
-}
-
 @end

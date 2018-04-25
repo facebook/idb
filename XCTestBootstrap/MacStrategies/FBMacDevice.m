@@ -217,12 +217,6 @@
 
 #pragma mark Not supported
 
-- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(nonnull NSString *)bundleID sinceDate:(nonnull NSDate *)date
-{
-  NSAssert(nil, @"attemptToFindCrashLogForProcess:bundleID:sinceDate: is not yet supported");
-  return nil;
-}
-
 - (nonnull NSString *)consoleString
 {
   NSAssert(nil, @"consoleString is not yet supported");

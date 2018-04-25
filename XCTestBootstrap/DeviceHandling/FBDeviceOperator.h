@@ -55,17 +55,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID;
 
-/**
- Returns the Crash Log for a given bundle id.
- This is used to augment the reporting of a test report with crash information.
-
- @param pid the Process ID of the potentially-crashed Application Process.
- @param bundleID the Bundle ID of the potentially-crashed Application Process.
- @param date the date to search for logs since.
- @return a Crash Log Info for the provided Bundle ID, nil otherwise.
- */
-- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID sinceDate:(NSDate *)date;
-
 @end
 
 NS_ASSUME_NONNULL_END
