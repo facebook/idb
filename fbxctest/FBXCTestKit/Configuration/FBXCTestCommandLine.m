@@ -346,4 +346,18 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
   return self.configuration.hash ^ self.destination.hash;
 }
 
+#pragma mark Properties
+
+static NSTimeInterval FetchTotalTestProportion = 0.8; // Fetching cannot take greater than 80% of the total test timeout.
+
+- (NSTimeInterval)testPreparationTimeout
+{
+  return self.globalTimeout * FetchTotalTestProportion;
+}
+
+- (NSTimeInterval)globalTimeout
+{
+  return self.configuration.testTimeout;
+}
+
 @end

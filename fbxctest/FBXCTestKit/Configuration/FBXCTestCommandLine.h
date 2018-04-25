@@ -61,6 +61,19 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, readonly) FBXCTestDestination *destination;
 
+#pragma mark Timeouts
+
+/**
+ The Timeout for getting the test into an executable state.
+ For example, preparing a Simulator.
+ */
+@property (nonatomic, assign, readonly) NSTimeInterval testPreparationTimeout;
+
+/**
+ The Timeout to perform all operations.
+ */
+@property (nonatomic, assign, readonly) NSTimeInterval globalTimeout;
+
 @end
 
 NS_ASSUME_NONNULL_END

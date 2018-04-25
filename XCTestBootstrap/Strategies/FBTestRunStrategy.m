@@ -11,8 +11,6 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
-
 @interface FBTestRunStrategy ()
 
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
@@ -64,12 +62,11 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     }
   }
 
-  return [[[self.target
+  return [[self.target
     installApplicationWithPath:testRunnerApp.path]
     onQueue:self.target.workQueue fmap:^(id _) {
       return [self startTestWithTestRunnerApp:testRunnerApp testTargetApp:testTargetApp];
-    }]
-    timeout:ApplicationTestDefaultTimeout waitingFor:@"Test Execution to start"];
+    }];
 }
 
 #pragma mark Private
