@@ -159,7 +159,7 @@
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
 
-  XCTAssertTrue(self.reporter.printReportWasCalled);
+  XCTAssertFalse(self.reporter.printReportWasCalled);
   XCTAssertTrue([error.description containsString:@"testPossibleCrashingOfHostProcess"]);
 }
 
@@ -267,7 +267,7 @@
   XCTAssertNotNil(error);
   XCTAssertTrue([error.description containsString:@"testPossibleCrashingOfHostProcess"]);
 
-  XCTAssertTrue(self.reporter.printReportWasCalled);
+  XCTAssertFalse(self.reporter.printReportWasCalled);
   XCTAssertEqual(self.reporter.startedSuites.count, 2u);
   XCTAssertEqual(self.reporter.startedTests.count, 7u);
   XCTAssertEqual(self.reporter.passedTests.count, 2u);
@@ -296,7 +296,7 @@
   XCTAssertNotNil(error);
   XCTAssertTrue([error.description containsString:@"testPossibleStallingOfHostProcess"]);
 
-  XCTAssertTrue(self.reporter.printReportWasCalled);
+  XCTAssertFalse(self.reporter.printReportWasCalled);
   XCTAssertEqual(self.reporter.startedSuites.count, 2u);
   XCTAssertEqual(self.reporter.startedTests.count, 8u);
   XCTAssertEqual(self.reporter.passedTests.count, 3u);
@@ -418,7 +418,7 @@
   XCTAssertNotNil(error);
   XCTAssertTrue([error.description containsString:@"testPossibleCrashingOfHostProcess"]);
 
-  XCTAssertTrue(self.reporter.printReportWasCalled);
+  XCTAssertFalse(self.reporter.printReportWasCalled);
   XCTAssertEqual(self.reporter.startedSuites.count, 2u);
   XCTAssertEqual(self.reporter.startedTests.count, 7u);
   XCTAssertEqual(self.reporter.passedTests.count, 3u);
@@ -502,7 +502,7 @@
   XCTAssertNotNil(error);
   XCTAssertTrue([error.description containsString:@"testPossibleStallingOfHostProcess"]);
 
-  XCTAssertTrue(self.reporter.printReportWasCalled);
+  XCTAssertFalse(self.reporter.printReportWasCalled);
   XCTAssertEqual(self.reporter.startedSuites.count, 2u);
   XCTAssertEqual(self.reporter.startedTests.count, 8u);
   XCTAssertEqual(self.reporter.passedTests.count, 4u);

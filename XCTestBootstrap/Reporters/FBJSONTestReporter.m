@@ -51,17 +51,23 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   return self;
 }
 
-- (void)printReportWithError:(NSError *)error
+- (BOOL)printReportWithError:(NSError **)error
 {
-  NSString *errorMessage = [FBJSONTestReporter errorMessageWithFinished:_finished currentTestName:_currentTestName error:error];
-  if (errorMessage) {
+  if (!_finished) {
+    NSString *errorMessage = @"No end-ocunit event was received, the test bundle has likely crashed";
+    if (_currentTestName) {
+      errorMessage = [errorMessage stringByAppendingString:@". Crash occurred while this test was running: "];
+      errorMessage = [errorMessage stringByAppendingString:_currentTestName];
+    }
     [self printEvent:[FBJSONTestReporter createOCUnitBeginEvent:self.testType testBundlePath:self.testBundlePath]];
     [self printEvent:[FBJSONTestReporter createOCUnitEndEvent:self.testType testBundlePath:self.testBundlePath message:errorMessage success:NO]];
+    return [[FBXCTestError describe:errorMessage] failBool:error];
   }
   for (NSDictionary *event in _events) {
     [self printEvent:event];
   }
   [self.fileConsumer consumeEndOfFile];
+  return YES;
 }
 
 - (void)storeEvent:(NSDictionary *)dictionary
@@ -303,22 +309,6 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
     @"exceptions" : xctestNameExceptionsMapping[xctestName] ?: @[],
     @"totalDuration" : @(duration),
   };
-}
-
-static NSString *const DidNotFinishWithoutError = @"Test Plan was marked as finished, but no error was obtained";
-
-+ (NSString *)errorMessageWithFinished:(BOOL)finished currentTestName:(NSString *)currentTestName error:(NSError *)error
-{
-  if (finished) {
-    return nil;
-  }
-  if (!error && currentTestName){
-    return [NSString stringWithFormat:@"%@ during the execution of %@", DidNotFinishWithoutError, currentTestName];
-  }
-  else if (!error && !currentTestName) {
-    return [NSString stringWithFormat:@"%@ before a test was executed", DidNotFinishWithoutError];
-  }
-  return error.description;
 }
 
 @end
