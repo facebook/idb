@@ -57,12 +57,9 @@
   FBFuture<NSNull *> *future = [self.commandLine.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class] ? [self runiOSTest] : [self runMacTest];
   return [[future
     timeout:self.commandLine.globalTimeout waitingFor:@"entire test execution to finish"]
-    onQueue:dispatch_get_main_queue() fmap:^(id _) {
-      NSError *error = nil;
-      if (![self.context.reporter printReportWithError:&error]) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:NSNull.null];
+    onQueue:dispatch_get_main_queue() chain:^(FBFuture<NSNull *> *terminal) {
+      [self.context.reporter printReportWithError:terminal.error];
+      return terminal;
     }];
 }
 

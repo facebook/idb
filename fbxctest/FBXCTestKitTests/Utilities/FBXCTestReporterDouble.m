@@ -40,6 +40,20 @@
   return self;
 }
 
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Started Suites %@\nStarted Cases %@\nPassed Tests %@\nFailed Tests %@\nExternal Events %@",
+    [FBCollectionInformation oneLineDescriptionFromArray:self.startedSuites],
+    [FBCollectionInformation oneLineDescriptionFromArray:self.startedTests],
+    [FBCollectionInformation oneLineDescriptionFromArray:self.passedTests],
+    [FBCollectionInformation oneLineDescriptionFromArray:self.failedTests],
+    [FBCollectionInformation oneLineDescriptionFromArray:self.mutableExternalEvents]
+  ];
+}
+
 #pragma mark Methods for Validating
 
 - (void)testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
@@ -63,10 +77,9 @@
   }
 }
 
-- (BOOL)printReportWithError:(NSError **)error
+- (void)printReportWithError:(nullable NSError *)error
 {
   self.printReportWasCalled = YES;
-  return YES;
 }
 
 - (void)handleExternalEvent:(NSString *)line

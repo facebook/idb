@@ -102,9 +102,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Called when the results of the test should be written to the output.
 
- @param error an error for an error that occurs.
+ @param error an infrastructural error, if any error occured during the test execution.
  */
-- (BOOL)printReportWithError:(NSError **)error;
+- (void)printReportWithError:(nullable NSError *)error;
 
 @optional
 /**
