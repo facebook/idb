@@ -34,7 +34,9 @@
         obtainProcessInfoForProcessIdentifierInBackground:processIdentifierNumber.intValue timeout:FBControlCoreGlobalConfiguration.fastTimeout]
         rephraseFailure:@"Could not fetch process info for App %@ with configuration %@", processIdentifierNumber, configuration];
       FBFuture<NSNull *> *terminationFuture = [FBSimulatorApplicationOperation terminationFutureForSimulator:simulator processIdentifier:processIdentifier];
-      return [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr processIdentifier:processIdentifier processInfoFuture:processInfoFuture terminationFuture:terminationFuture];
+      FBSimulatorApplicationOperation *operation = [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr processIdentifier:processIdentifier processInfoFuture:processInfoFuture terminationFuture:terminationFuture];
+      [simulator.eventSink applicationDidLaunch:operation];
+      return operation;
     }];
 }
 
