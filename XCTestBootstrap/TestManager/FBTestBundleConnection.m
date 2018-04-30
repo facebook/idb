@@ -30,6 +30,7 @@
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestBundleResult.h"
 
+static NSTimeInterval BundleReadyTimeout = 20; // Time for `_XCT_testBundleReadyWithProtocolVersion` to be called after the 'connect'.
 static NSTimeInterval CrashCheckWaitLimit = 200;  // Time to wait for crash report to be generated.
 
 typedef NSString *FBTestBundleConnectionState NS_STRING_ENUM;
@@ -162,7 +163,7 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
   }
 
   [self doConnect];
-  return self.connectFuture;
+  return [self.connectFuture timeout:BundleReadyTimeout waitingFor:@"Connection to happen, %@ has not been called yet", NSStringFromSelector(@selector(_XCT_testBundleReadyWithProtocolVersion:minimumVersion:))];
 }
 
 - (FBFuture<FBTestBundleResult *> *)startTestPlan
