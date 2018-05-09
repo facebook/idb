@@ -167,17 +167,12 @@
 
   // First, create the device.
   [self.logger.debug logFormat:@"Creating device with Type %@ Runtime %@", deviceType, runtime];
-  return [[FBSimulatorSet
+  return [[[FBSimulatorSet
     onDeviceSet:self.deviceSet createDeviceWithType:deviceType runtime:runtime name:model]
     onQueue:self.workQueue fmap:^(SimDevice *device) {
-      // The SimDevice should now be in the DeviceSet and thus in the collection of Simulators.
-      FBSimulator *simulator = [FBSimulatorSet keySimulatorsByUDID:self.allSimulators][device.UDID.UUIDString];
-      if (!simulator) {
-        return [[[FBSimulatorError
-          describeFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString]
-          logger:self.logger]
-          failFuture];
-      }
+      return [self fetchNewlyMadeSimulator:device];
+    }]
+    onQueue:self.workQueue fmap:^(FBSimulator *simulator) {
       simulator.configuration = configuration;
       [self.logger.debug logFormat:@"Created Simulator %@ for configuration %@", simulator.udid, configuration];
 
@@ -188,7 +183,17 @@
         shutdown]
         rephraseFailure:@"Could not get newly-created simulator into a shutdown state"]
         mapReplace:simulator];
-  }];
+    }];
+}
+
+- (FBFuture<FBSimulator *> *)cloneSimulator:(FBSimulator *)simulator
+{
+  NSParameterAssert(simulator.set == self);
+  return [[FBSimulatorSet
+    onDeviceSet:self.deviceSet cloneDevice:simulator.device]
+    onQueue:self.workQueue fmap:^(SimDevice *device) {
+      return [self fetchNewlyMadeSimulator:device];
+    }];
 }
 
 - (NSArray<FBSimulatorConfiguration *> *)configurationsForAbsentDefaultSimulators
@@ -292,6 +297,19 @@
   return [dictionary copy];
 }
 
+- (FBFuture<FBSimulator *> *)fetchNewlyMadeSimulator:(SimDevice *)device
+{
+  // The SimDevice should now be in the DeviceSet and thus in the collection of Simulators.
+  FBSimulator *simulator = [FBSimulatorSet keySimulatorsByUDID:self.allSimulators][device.UDID.UUIDString];
+  if (!simulator) {
+    return [[[FBSimulatorError
+      describeFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString]
+      logger:self.logger]
+      failFuture];
+  }
+  return [FBFuture futureWithResult:simulator];
+}
+
 #pragma mark - Properties
 
 #pragma mark Public
@@ -338,6 +356,20 @@
   [deviceSet createDeviceAsyncWithType:deviceType runtime:runtime name:name completionQueue:queue completionHandler:^(NSError *error, SimDevice *device) {
     if (device) {
       [future resolveWithResult:device];
+    } else {
+      [future resolveWithError:error];
+    }
+  }];
+  return future;
+}
+
++ (FBFuture<SimDevice *> *)onDeviceSet:(SimDeviceSet *)deviceSet cloneDevice:(SimDevice *)device
+{
+  dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+  FBMutableFuture<SimDevice *> *future = FBMutableFuture.future;
+  [deviceSet cloneDeviceAsync:device name:device.name completionQueue:queue completionHandler:^(NSError *error, SimDevice *created) {
+    if (created) {
+      [future resolveWithResult:created];
     } else {
       [future resolveWithError:error];
     }

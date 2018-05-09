@@ -55,12 +55,20 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Creation Methods
 
 /**
- Creates and returns a FBSimulator fbased on a configuration.
+ Creates and returns a FBSimulator based on a provided configuration.
 
  @param configuration the Configuration of the Device to Allocate. Must not be nil.
- @return a Future wrapping a created FBSimulator if one could be allocated with the provided options.
+ @return a Future wrapping a created FBSimulator if one could be created.
  */
 - (FBFuture<FBSimulator *> *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration;
+
+/**
+ Clones and returns an FBSimulator that is cloned from an existing simulator.
+
+ @param simulator the Simulator to clone.
+ @return a Future wrapping a created FBSimulator if one could be cloned.
+ */
+- (FBFuture<FBSimulator *> *)cloneSimulator:(FBSimulator *)simulator;
 
 /**
  Finds and creates the Configurations for the missing 'Default Simulators' in the reciever.
