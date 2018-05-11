@@ -21,11 +21,30 @@ extension FileOutput {
   }
 }
 
+extension iOSRunnerContext {
+  private func makeSimulatorConfiguratons(_ creationSpecification: CreationSpecification) -> [FBSimulatorConfiguration] {
+    switch creationSpecification {
+    case .allMissingDefaults:
+      return simulatorControl.set.configurationsForAbsentDefaultSimulators()
+    case .individual(let configuration):
+      return [configuration.simulatorConfiguration]
+    }
+  }
+
+  func createSimulators(_ creationSpecification: CreationSpecification) -> [(ControlCoreValue, FBFuture<FBSimulator>)] {
+    let configurations = makeSimulatorConfiguratons(creationSpecification)
+    return configurations.map { configuration in
+      let future = self.simulatorControl.set.createSimulator(with: configuration)
+      return (configuration, future)
+    }
+  }
+}
+
 extension FBBitmapStreamingCommands {
   func startStreaming(configuration: FBBitmapStreamConfiguration, output: FileOutput) -> FBFuture<FBiOSTargetContinuation> {
     do {
       let writer = try output.makeWriter()
-      let stream = try self.createStream(with: configuration).await()
+      let stream = try createStream(with: configuration).await()
       return stream.startStreaming(writer).mapReplace(stream) as! FBFuture<FBiOSTargetContinuation>
     } catch let error {
       return FBFuture(error: error)
@@ -33,29 +52,22 @@ extension FBBitmapStreamingCommands {
   }
 }
 
-struct SimulatorCreationRunner: Runner {
-  let context: iOSRunnerContext<CreationSpecification>
+struct SimulatorCreationRunner<T>: Runner {
+  let context: iOSRunnerContext<T>
+  let eventName: EventName
+  let futures: [(ControlCoreValue, FBFuture<FBSimulator>)]
 
   func run() -> CommandResult {
     do {
-      for configuration in configurations {
-        context.reporter.reportSimpleBridge(.create, .started, configuration)
-        let simulator = try context.simulatorControl.set.createSimulator(with: configuration).await()
+      for (subject, future) in futures {
+        context.reporter.reportSimpleBridge(eventName, .started, subject)
+        let simulator = try future.await()
         context.defaults.updateLastQuery(FBiOSTargetQuery.udids([simulator.udid]))
-        context.reporter.reportSimpleBridge(.create, .ended, simulator)
+        context.reporter.reportSimpleBridge(eventName, .ended, simulator)
       }
       return .success(nil)
     } catch let error as NSError {
       return .failure("Failed to Create Simulator \(error.description)")
-    }
-  }
-
-  fileprivate var configurations: [FBSimulatorConfiguration] {
-    switch context.value {
-    case .allMissingDefaults:
-      return context.simulatorControl.set.configurationsForAbsentDefaultSimulators()
-    case .individual(let configuration):
-      return [configuration.simulatorConfiguration]
     }
   }
 }

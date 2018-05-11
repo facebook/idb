@@ -189,7 +189,7 @@ struct ActionRunner: Runner {
       return ListenRunner(context: context).run()
     case .create(let configuration):
       let context = self.context.replace(configuration)
-      return SimulatorCreationRunner(context: context).run()
+      return SimulatorCreationRunner(context: context, eventName: .create, futures: context.createSimulators(configuration)).run()
     default:
       let action = action.appendEnvironment(ProcessInfo.processInfo.environment)
       let targets = context.query(query)
