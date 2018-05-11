@@ -504,6 +504,7 @@ extension Action: Parsable {
         self.approveParser,
         self.bootParser,
         self.clearKeychainParser,
+        self.cloneParser,
         self.configParser,
         self.contactsUpdate,
         self.createParser,
@@ -574,6 +575,10 @@ extension Action: Parsable {
       )
       .fmap(Action.clearKeychain)
       .sectionize("clear_keychain", "Action: Clear Keychain", "")
+  }
+
+  static var cloneParser: Parser<Action> {
+    return Parser.ofString(EventName.clone.rawValue, Action.clone)
   }
 
   static var configParser: Parser<Action> {

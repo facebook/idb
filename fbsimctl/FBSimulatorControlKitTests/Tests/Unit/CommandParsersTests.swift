@@ -194,6 +194,7 @@ let validActions: [([String], Action)] = [
   (["clear_keychain"], .clearKeychain(nil)),
   (["contacts_update", "/tmp"], .contactsUpdate("/tmp")),
   (["config"], .config),
+  (["clone"], .clone),
   (["create", "--all-missing-defaults"], .create(CreationSpecification.allMissingDefaults)),
   (["create", "iOS 9.0"], .create(CreationSpecification.iOS9CreationSpecification)),
   (["create", "iPhone 6s", "iOS 9.3"], .create(CreationSpecification.compoundConfiguration0)),

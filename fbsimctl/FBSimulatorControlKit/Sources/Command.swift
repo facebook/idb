@@ -77,6 +77,7 @@ public enum Action {
   case config
   case coreFuture(FBiOSTargetFuture)
   case create(CreationSpecification)
+  case clone
   case delete
   case focus
   case keyboardOverride
@@ -321,6 +322,8 @@ public func == (left: Action, right: Action) -> Bool {
   switch (left, right) {
   case (.clearKeychain(let leftBundleID), .clearKeychain(let rightBundleID)):
     return leftBundleID == rightBundleID
+  case (.clone, .clone):
+    return true
   case (.config, .config):
     return true
   case let (.coreFuture(leftAction), .coreFuture(rightAction)):
@@ -365,6 +368,8 @@ public func == (left: Action, right: Action) -> Bool {
 extension Action {
   public var reportable: (EventName, EventReporterSubject?) {
     switch self {
+    case .clone:
+      return (.clone, nil)
     case .clearKeychain(let bundleID):
       return (.clearKeychain, FBEventReporterSubject(string: bundleID ?? "none"))
     case .config:

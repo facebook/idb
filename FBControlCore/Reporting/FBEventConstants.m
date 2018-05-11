@@ -18,6 +18,7 @@ FBJSONKey const FBJSONKeyTimestamp = @"timestamp";
 
 FBEventName const FBEventNameApprove = @"approve";
 FBEventName const FBEventNameClearKeychain = @"clear_keychain";
+FBEventName const FBEventNameClone = @"clone";
 FBEventName const FBEventNameConfig = @"config";
 FBEventName const FBEventNameCreate = @"create";
 FBEventName const FBEventNameDelete = @"delete";

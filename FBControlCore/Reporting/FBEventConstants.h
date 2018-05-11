@@ -29,6 +29,7 @@ typedef NSString *FBEventName NS_STRING_ENUM;
 
 extern FBEventName const FBEventNameApprove;
 extern FBEventName const FBEventNameClearKeychain;
+extern FBEventName const FBEventNameClone;
 extern FBEventName const FBEventNameConfig;
 extern FBEventName const FBEventNameCreate;
 extern FBEventName const FBEventNameDelete;

@@ -105,6 +105,12 @@ struct SimulatorActionRunner: Runner {
         simulator.subject,
         FBFuture(futures: futures)
       )
+    case .clone:
+      return SimulatorCreationRunner(
+        context: context,
+        eventName: .clone,
+        futures: [(simulator, simulator.set!.cloneSimulator(simulator))]
+      )
     case .delete:
       return FutureRunner(
         reporter,
