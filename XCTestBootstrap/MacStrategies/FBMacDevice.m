@@ -58,7 +58,7 @@
     [[[FBProductBundleBuilder builder]
       withBundlePath:path]
      buildWithError:nil];
-    if (product) {
+    if (product && product.bundleID) {
       mapping[product.bundleID] = product;
     }
   }
