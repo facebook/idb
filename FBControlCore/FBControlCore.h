@@ -29,7 +29,6 @@
 #import <FBControlCore/FBCollectionInformation.h>
 #import <FBControlCore/FBCollectionOperations.h>
 #import <FBControlCore/FBConcurrentCollectionOperations.h>
-#import <FBControlCore/FBiOSTargetConfiguration.h>
 #import <FBControlCore/FBControlCoreError.h>
 #import <FBControlCore/FBControlCoreFrameworkLoader.h>
 #import <FBControlCore/FBControlCoreGlobalConfiguration.h>
@@ -37,6 +36,7 @@
 #import <FBControlCore/FBCrashLogCommands.h>
 #import <FBControlCore/FBCrashLogInfo.h>
 #import <FBControlCore/FBCrashLogNotifier.h>
+#import <FBControlCore/FBCrashLogStore.h>
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBDiagnostic.h>
 #import <FBControlCore/FBDiagnosticQuery.h>
@@ -56,6 +56,7 @@
 #import <FBControlCore/FBiOSActionRouter.h>
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
+#import <FBControlCore/FBiOSTargetConfiguration.h>
 #import <FBControlCore/FBiOSTargetDiagnostics.h>
 #import <FBControlCore/FBiOSTargetFormat.h>
 #import <FBControlCore/FBiOSTargetFuture.h>

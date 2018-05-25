@@ -10,13 +10,10 @@
 #import "FBCrashLogNotifier.h"
 
 #import "FBCrashLogInfo.h"
+#import "FBCrashLogStore.h"
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"
 #import "FBControlCoreError.h"
-
-typedef NSString *FBCrashLogNotificationName NS_STRING_ENUM;
-
-FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
 
 #if defined(__apple_build_version__)
 
@@ -25,12 +22,10 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
 @interface FBCrashLogNotifier_FSEvents : NSObject
 
 @property (nonatomic, copy, readonly) NSString *directory;
+@property (nonatomic, strong, readonly) FBCrashLogStore *store;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) NSMutableDictionary<NSNumber *, FBCrashLogInfo *> *ingestedCrashLogs;
 @property (nonatomic, assign, readwrite) FSEventStreamRef eventStream;
-
-- (void)ingestCrashLogAtPath:(NSString *)path;
 
 @end
 
@@ -44,13 +39,13 @@ static void EventStreamCallback(
 ){
   for (size_t index = 0; index < numEvents; index++) {
     NSString *path = eventPaths[index];
-    [notifier ingestCrashLogAtPath:path];
+    [notifier.store ingestCrashLogAtPath:path];
   }
 }
 
 @implementation FBCrashLogNotifier_FSEvents
 
-- (instancetype)initWithDirectory:(NSString *)directory logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithDirectory:(NSString *)directory store:(FBCrashLogStore *)store logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -58,9 +53,9 @@ static void EventStreamCallback(
   }
 
   _directory = directory;
+  _store = store;
   _logger = logger;
   _queue = dispatch_queue_create("com.facebook.fbcontrolcore.crash_logs.fsevents", DISPATCH_QUEUE_SERIAL);
-  _ingestedCrashLogs = [NSMutableDictionary dictionary];
 
   return self;
 }
@@ -95,54 +90,6 @@ static void EventStreamCallback(
   self.eventStream = eventStream;
 }
 
-- (void)ingestCrashLogAtPath:(NSString *)path
-{
-  FBCrashLogInfo *crashLogInfo = [FBCrashLogInfo fromCrashLogAtPath:path];
-  if (!crashLogInfo) {
-    [self.logger logFormat:@"Could not obtain crash info for %@", path];
-    return;
-  }
-  [self.logger logFormat:@"Ingesting Crash Log %@", crashLogInfo];
-  self.ingestedCrashLogs[@(crashLogInfo.processIdentifier)] = crashLogInfo;
-  [NSNotificationCenter.defaultCenter postNotificationName:FBCrashLogAppeared object:crashLogInfo];
-}
-
-- (FBFuture<FBCrashLogInfo *> *)nextCrashLogForProcessIdentifier:(pid_t)processIdentifier
-{
-  return [FBFuture
-    onQueue:self.queue resolve:^ FBFuture<FBCrashLogInfo *> * {
-      FBCrashLogInfo *info = self.ingestedCrashLogs[@(processIdentifier)];
-      if (info) {
-        return [FBFuture futureWithResult:info];
-      }
-      return [FBCrashLogNotifier_FSEvents oneshotCrashLogNotificationForProcessIdentifier:processIdentifier queue:self.queue];
-    }];
-}
-
-+ (FBFuture<FBCrashLogInfo *> *)oneshotCrashLogNotificationForProcessIdentifier:(pid_t)processIdentifier queue:(dispatch_queue_t)queue
-{
-  __weak NSNotificationCenter *notificationCenter = [NSNotificationCenter defaultCenter];
-  FBMutableFuture<FBCrashLogInfo *> *future = [FBMutableFuture future];
-
-  id __block observer = [notificationCenter
-   addObserverForName:FBCrashLogAppeared
-   object:nil
-   queue:NSOperationQueue.mainQueue
-   usingBlock:^(NSNotification *notification) {
-     FBCrashLogInfo *crashLog = notification.object;
-     if (crashLog.processIdentifier != processIdentifier) {
-       return;
-     }
-     [future resolveWithResult:crashLog];
-     [notificationCenter removeObserver:observer];
-   }];
-
-  return [future onQueue:queue respondToCancellation:^{
-    [notificationCenter removeObserver:observer];
-    return [FBFuture futureWithResult:NSNull.null];
-  }];
-}
-
 @end
 
 #endif
@@ -169,7 +116,9 @@ static void EventStreamCallback(
   }
 
 #if defined(__apple_build_version__)
-  _fsEvents = [[FBCrashLogNotifier_FSEvents alloc] initWithDirectory:FBCrashLogInfo.diagnosticReportsPath logger:logger];
+  NSString *directory = FBCrashLogInfo.diagnosticReportsPath;
+  FBCrashLogStore *store = [FBCrashLogStore storeForDirectory:directory logger:logger];
+  _fsEvents = [[FBCrashLogNotifier_FSEvents alloc] initWithDirectory:FBCrashLogInfo.diagnosticReportsPath store:store logger:logger];
 #else
   _sinceDate = NSDate.date;
 #endif
@@ -201,18 +150,17 @@ static void EventStreamCallback(
 + (FBFuture<FBCrashLogInfo *> *)nextCrashLogForProcessIdentifier:(pid_t)processIdentifier
 {
   [self startListening];
+  NSPredicate *predicate = [FBCrashLogInfo predicateForCrashLogsWithProcessID:processIdentifier];
+
 #if defined(__apple_build_version__)
-  return [FBCrashLogNotifier.sharedInstance.fsEvents nextCrashLogForProcessIdentifier:processIdentifier];
+  return [FBCrashLogNotifier.sharedInstance.fsEvents.store nextCrashLogForMatchingPredicate:predicate];
 #else
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.crashlogfetch", DISPATCH_QUEUE_SERIAL);
-  NSPredicate *crashLogInfoPredicate = [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLogInfo, id _) {
-   return processIdentifier == crashLogInfo.processIdentifier;
-  }];
   return [FBFuture
    onQueue:queue resolveUntil:^{
      FBCrashLogInfo *crashInfo = [[[FBCrashLogInfo
        crashInfoAfterDate:FBCrashLogNotifier.sharedInstance.sinceDate]
-       filteredArrayUsingPredicate:crashLogInfoPredicate]
+       filteredArrayUsingPredicate:predicate]
        firstObject];
      if (!crashInfo) {
        return [[[FBControlCoreError
