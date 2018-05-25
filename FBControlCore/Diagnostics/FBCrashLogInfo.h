@@ -36,6 +36,11 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
 @property (nonatomic, copy, readonly) NSString *crashPath;
 
 /**
+ The identifier of the Crash Log.
+ */
+@property (nonatomic, copy, readonly) NSString *identifier;
+
+/**
  The Path of the Executable Image.
  */
 @property (nonatomic, copy, readonly) NSString *executablePath;
@@ -59,6 +64,11 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  The Process Identifier of the Crashed Process's parent.
  */
 @property (nonatomic, assign, readonly) pid_t parentProcessIdentifier;
+
+/**
+ The date of the crash
+ */
+@property (nonatomic, copy, readonly) NSDate *date;
 
 /**
  The Process Type of the Crash Log
@@ -91,6 +101,14 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @param builder the builder to populate the Crash Log into.
  */
 - (FBDiagnostic *)toDiagnostic:(FBDiagnosticBuilder *)builder;
+
+/**
+ Determines whether the data represents a crash log.
+
+ @param data the data to attempt to parse.
+ @return YES if it is parsable, NO otherwise.
+ */
++ (BOOL)isParsableCrashLog:(NSData *)data;
 
 #pragma mark Bulk Collection
 
