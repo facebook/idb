@@ -18,9 +18,9 @@
   return [self new];
 }
 
-- (FBFuture<FBCrashLogInfo *> *)notifyOfCrash:(pid_t)processIdentifier
+- (FBFuture<FBCrashLogInfo *> *)notifyOfCrash:(NSPredicate *)predicate
 {
-  return [FBCrashLogNotifier nextCrashLogForProcessIdentifier:processIdentifier];
+  return [FBCrashLogNotifier nextCrashLogForPredicate:predicate];
 }
 
 @end

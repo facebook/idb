@@ -23,12 +23,12 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBCrashLogCommands <NSObject, FBiOSTargetCommand>
 
 /**
- Starts tailing the log of a Simulator to a consumer.
+ Notifies when a Crash Log becomes available for a given predicate.
 
- @param processIdentifier the process identifier of the process.
- @return a Future that will complete when the log command has started successfully. The wrapped Awaitable can then be cancelled, or awaited until it is finished.
+ @param predicate the predicate to match against.
+ @return a Future that will resolve when the first predicate matching the crash becomes available.
  */
-- (FBFuture<FBCrashLogInfo *> *)notifyOfCrash:(pid_t)processIdentifier;
+- (FBFuture<FBCrashLogInfo *> *)notifyOfCrash:(NSPredicate *)predicate;
 
 @end
 

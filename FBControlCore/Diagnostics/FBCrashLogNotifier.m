@@ -147,10 +147,9 @@ static void EventStreamCallback(
 #endif
 }
 
-+ (FBFuture<FBCrashLogInfo *> *)nextCrashLogForProcessIdentifier:(pid_t)processIdentifier
++ (FBFuture<FBCrashLogInfo *> *)nextCrashLogForPredicate:(NSPredicate *)predicate
 {
   [self startListening];
-  NSPredicate *predicate = [FBCrashLogInfo predicateForCrashLogsWithProcessID:processIdentifier];
 
 #if defined(__apple_build_version__)
   return [FBCrashLogNotifier.sharedInstance.fsEvents.store nextCrashLogForMatchingPredicate:predicate];
@@ -164,7 +163,7 @@ static void EventStreamCallback(
        firstObject];
      if (!crashInfo) {
        return [[[FBControlCoreError
-         describeFormat:@"Crash Info for %d could not be obtained", processIdentifier]
+         describeFormat:@"Crash Log Info for %@ could not be obtained", predicate]
          noLogging]
          failFuture];
      }

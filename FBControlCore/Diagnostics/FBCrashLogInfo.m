@@ -157,6 +157,13 @@
   }];
 }
 
++ (NSPredicate *)predicateNewerThanDate:(NSDate *)date
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, id _) {
+    return [crashLog.date compare:date] == NSOrderedAscending;
+  }];
+}
+
 #pragma mark Helpers
 
 + (NSString *)diagnosticReportsPath

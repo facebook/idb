@@ -347,7 +347,8 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
           failFuture];
       }
 
-      return [[crashLog notifyOfCrash:self.context.testRunnerPID]
+      return [[crashLog
+        notifyOfCrash:[FBCrashLogInfo predicateForCrashLogsWithProcessID:self.context.testRunnerPID]]
         timeout:CrashCheckWaitLimit
         waitingFor:@"Getting crash log for process with pid %d, bunndle ID: %@", self.context.testRunnerPID, self.context.testRunnerBundleID];
     }];

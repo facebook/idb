@@ -127,8 +127,13 @@ static NSTimeInterval const SampleTimeoutSubtraction = SampleDuration + 1;
 
 + (FBFuture<FBCrashLogInfo *> *)onQueue:(dispatch_queue_t)queue crashLogsForTerminationOfProcess:(pid_t)processIdentifier since:(NSDate *)sinceDate
 {
+  NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[
+    [FBCrashLogInfo predicateForCrashLogsWithProcessID:processIdentifier],
+    [FBCrashLogInfo predicateNewerThanDate:sinceDate],
+  ]];
+
   return [[FBCrashLogNotifier
-    nextCrashLogForProcessIdentifier:processIdentifier]
+    nextCrashLogForPredicate:predicate]
     timeout:CrashLogWaitTime waitingFor:@"Crash logs for terminated process %d to appear", processIdentifier];
 }
 

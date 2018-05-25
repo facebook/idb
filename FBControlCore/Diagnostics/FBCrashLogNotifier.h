@@ -28,12 +28,12 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)startListening;
 
 /**
- Obtains the next crash log, for a given process identifier.
+ Obtains the next crash log, for a given predicate.
 
- @param processIdentifier the process identifier of the process.
- @return a Future wrapping the crash log.
+ @param predicate the predicate to wait for.
+ @return a Future that resolves with the next crash log matching the predicate.
  */
-+ (FBFuture<FBCrashLogInfo *> *)nextCrashLogForProcessIdentifier:(pid_t)processIdentifier;
++ (FBFuture<FBCrashLogInfo *> *)nextCrashLogForPredicate:(NSPredicate *)predicate;
 
 @end
 
