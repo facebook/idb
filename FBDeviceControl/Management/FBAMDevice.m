@@ -262,11 +262,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 + (void)loadMobileDeviceSymbols
 {
-  NSBundle *bundle = [NSBundle bundleWithIdentifier:@"com.apple.mobiledevice"];
-  NSCAssert(bundle.loaded, @"MobileDevice is not loaded");
-  NSString *path = [bundle.bundlePath stringByAppendingPathComponent:@"Versions/Current/MobileDevice"];
-  void *handle = dlopen(path.UTF8String, RTLD_LAZY);
-  NSCAssert(handle, @"MobileDevice dlopen handle from %@ could not be obtained", path);
+  void *handle = [[NSBundle bundleWithIdentifier:@"com.apple.mobiledevice"] dlopenExecutablePath];
   FB_AMDCopyErrorText = FBGetSymbolFromHandle(handle, "AMDCopyErrorText");
   FB_AMDCreateDeviceList = FBGetSymbolFromHandle(handle, "AMDCreateDeviceList");
   FB_AMDeviceConnect = FBGetSymbolFromHandle(handle, "AMDeviceConnect");

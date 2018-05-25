@@ -202,10 +202,7 @@ IndigoMessage *(*IndigoHIDMessageForMouseNSEvent)(CGPoint *point0, CGPoint *poin
 + (void)loadAllSymbols
 {
   [FBSimulatorControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworksOrAbort];
-  NSBundle *frameworkBundle = [NSBundle bundleWithIdentifier:@"com.apple.SimulatorKit"];
-  NSAssert(frameworkBundle, @"Framework com.apple.SimulatorKit should be loaded");
-  NSString *imagePath = [frameworkBundle pathForResource:@"SimulatorKit" ofType:@""];
-  void *handle = dlopen(imagePath.UTF8String, RTLD_NOW);
+  void *handle = [[NSBundle bundleWithIdentifier:@"com.apple.SimulatorKit"] dlopenExecutablePath];
   IndigoHIDMessageForButton = FBGetSymbolFromHandle(handle, "IndigoHIDMessageForButton");
   IndigoHIDMessageForKeyboardArbitrary = FBGetSymbolFromHandle(handle, "IndigoHIDMessageForKeyboardArbitrary");
   IndigoHIDMessageForMouseNSEvent = FBGetSymbolFromHandle(handle, "IndigoHIDMessageForMouseNSEvent");

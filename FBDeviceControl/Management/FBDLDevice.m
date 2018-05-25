@@ -294,11 +294,7 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
 
 + (void)loadDLDeviceSymbols
 {
-  NSBundle *bundle = [NSBundle bundleWithIdentifier:@"com.apple.DeviceLinkX"];
-  NSCAssert(bundle.loaded, @"DeviceLink is not loaded");
-  NSString *path = [bundle.bundlePath stringByAppendingPathComponent:@"Versions/Current/DeviceLink"];
-  void *handle = dlopen(path.UTF8String, RTLD_LAZY);
-
+  void *handle = [[NSBundle bundleWithIdentifier:@"com.apple.DeviceLinkX"] dlopenExecutablePath];
   FB_DLConnectToServiceOnDevice = FBGetSymbolFromHandle(handle, "DLConnectToServiceOnDevice");
   FB_DLCopyConnectedDeviceArray = FBGetSymbolFromHandle(handle, "DLCopyConnectedDeviceArray");
   FB_DLCreateDeviceLinkConnectionForComputer = FBGetSymbolFromHandle(handle, "DLCreateDeviceLinkConnectionForComputer");

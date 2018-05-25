@@ -85,3 +85,16 @@ void *FBGetSymbolFromHandle(void *handle, const char *name)
 }
 
 @end
+
+@implementation NSBundle (FBControlCoreFrameworkLoader)
+
+- (void *)dlopenExecutablePath
+{
+  NSAssert(self.loaded, @"%@ is not loaded", self);
+  NSString *path = [self executablePath];
+  void *handle = dlopen(path.UTF8String, RTLD_LAZY);
+  NSAssert(handle, @"%@ dlopen handle from %@ could not be obtained", self, path);
+  return handle;
+}
+
+@end

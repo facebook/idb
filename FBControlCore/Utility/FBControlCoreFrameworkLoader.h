@@ -9,11 +9,10 @@
 
 #import <Foundation/Foundation.h>
 
-@protocol FBControlCoreLogger;
-
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBWeakFramework;
+@protocol FBControlCoreLogger;
 
 /**
  Loads a Symbol from a Handle, using dlsym.
@@ -62,6 +61,18 @@ void *FBGetSymbolFromHandle(void *handle, const char *name);
  Calls +[FBControlCore loadPrivateFrameworks:error], aborting in the event the Frameworks could not be loaded
  */
 - (void)loadPrivateFrameworksOrAbort;
+
+@end
+
+/**
+ Wrappers around NSBundle.
+ */
+@interface NSBundle (FBControlCoreFrameworkLoader)
+
+/**
+ Performs a dlopen on the executable path and returns the handle, or else aborts.
+ */
+- (void *)dlopenExecutablePath;
 
 @end
 
