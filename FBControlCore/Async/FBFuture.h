@@ -124,7 +124,7 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 - (FBFuture<NSNull *> *)cancel;
 
 /**
- Notifies of Completion.
+ Notifies of the resolution of the Future.
 
  @param queue the queue to notify on.
  @param handler the block to invoke.
@@ -169,6 +169,15 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
  @return a mapped future
  */
 - (FBFuture *)onQueue:(dispatch_queue_t)queue map:(id (^)(T result))map;
+
+/**
+ Attempt to handle an error.
+
+ @param queue the queue to handle on.
+ @param handler the block to invoke.
+ @return a Future that will attempt to handle the error
+ */
+- (FBFuture *)onQueue:(dispatch_queue_t)queue handleError:(FBFuture * (^)(NSError *))handler;
 
 /**
  Cancels the receiver if it doesn't resolve within the timeout.

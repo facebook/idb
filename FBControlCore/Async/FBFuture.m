@@ -453,6 +453,13 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   }];
 }
 
+- (FBFuture *)onQueue:(dispatch_queue_t)queue handleError:(FBFuture * (^)(NSError *))handler
+{
+  return [self onQueue:queue chain:^(FBFuture *future) {
+    return future.error ? handler(future.error) : future;
+  }];
+}
+
 - (FBFuture *)mapReplace:(id)replacement
 {
   return [self onQueue:FBFuture.internalQueue map:^(id _) {
@@ -469,8 +476,8 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 - (FBFuture *)fallback:(id)replacement
 {
-  return [self onQueue:FBFuture.internalQueue chain:^(FBFuture *future) {
-    return future.error ? [FBFuture futureWithResult:replacement] : future;
+  return [self onQueue:FBFuture.internalQueue handleError:^(NSError *_) {
+    return [FBFuture futureWithResult:replacement];
   }];
 }
 
