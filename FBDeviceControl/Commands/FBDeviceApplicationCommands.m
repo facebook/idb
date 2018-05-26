@@ -71,7 +71,7 @@
 {
   return [self.device.amDevice futureForDeviceOperation:^(CFTypeRef device, NSError **error) {
     int afcConn;
-    int afcReturnCode = FB_AMDeviceSecureStartService(device, CFSTR("com.apple.afc"), NULL, &afcConn);
+    int afcReturnCode = self.device.amDevice.calls.SecureStartService(device, CFSTR("com.apple.afc"), NULL, &afcConn);
     if (afcReturnCode != 0) {
       return [[FBDeviceControlError
         describeFormat:@"Failed to start afc service with error code: %x", afcReturnCode]
@@ -86,7 +86,7 @@
 - (FBFuture<NSNull *> *)transferAppURL:(NSURL *)appURL options:(NSDictionary *)options
 {
   return [self handleWithAFCSession:^NSNull *(CFTypeRef device, NSError **error){
-    int transferReturnCode = FB_AMDeviceSecureTransferPath(
+    int transferReturnCode = self.device.amDevice.calls.SecureTransferPath(
       0,
       device,
       (__bridge CFURLRef _Nonnull)(appURL),
@@ -106,7 +106,7 @@
 - (FBFuture<NSNull *> *)secureInstallApplication:(NSURL *)appURL options:(NSDictionary *)options
 {
   return [self handleWithAFCSession:^NSNull *(CFTypeRef device, NSError **error) {
-    int installReturnCode = FB_AMDeviceSecureInstallApplication(
+    int installReturnCode = self.device.amDevice.calls.SecureInstallApplication(
       0,
       device,
       (__bridge CFURLRef _Nonnull)(appURL),
@@ -115,7 +115,7 @@
       0
     );
     if (installReturnCode != 0) {
-      NSString *errorMessage = CFBridgingRelease(FB_AMDCopyErrorText(installReturnCode));
+      NSString *errorMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(installReturnCode));
       return [[FBDeviceControlError
         describeFormat:@"Failed to install application (%@)", errorMessage]
         fail:error];
@@ -128,7 +128,7 @@
 {
   return [self.device.amDevice futureForDeviceOperation:^NSDictionary<NSString *, NSDictionary<NSString *, id> *> *(CFTypeRef device, NSError **error) {
     CFDictionaryRef cf_apps;
-    int returnCode = FB_AMDeviceLookupApplications(device, NULL, &cf_apps);
+    int returnCode = self.device.amDevice.calls.LookupApplications(device, NULL, &cf_apps);
     if (returnCode != 0) {
       return [[FBDeviceControlError
         describe:@"Failed to get list of applications"]
@@ -160,7 +160,7 @@
   // In case that's not possible, we should look into querying if
   // the app is installed first (FB_AMDeviceLookupApplications)
   return [self.device.amDevice futureForDeviceOperation:^id(CFTypeRef device, NSError **error) {
-    int returnCode = FB_AMDeviceSecureUninstallApplication(
+    int returnCode = self.device.amDevice.calls.SecureUninstallApplication(
       0,
       device,
       (__bridge CFStringRef _Nonnull)(bundleID),

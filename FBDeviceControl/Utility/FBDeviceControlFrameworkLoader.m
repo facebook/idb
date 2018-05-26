@@ -22,6 +22,7 @@
 
 #import "FBDeviceControlError.h"
 #import "FBAMDevice.h"
+#import "FBAMDevice+Private.h"
 
 @interface FBDeviceControlFrameworkLoader_Essential : FBDeviceControlFrameworkLoader
 
@@ -184,7 +185,7 @@
   }
   BOOL result = [super loadPrivateFrameworks:logger error:error];
   if (result) {
-    [FBAMDevice loadMobileDeviceSymbols];
+    [FBAMDevice defaultCalls];
   }
   if (result && FBControlCoreGlobalConfiguration.debugLoggingEnabled) {
     [FBAMDevice setDefaultLogLevel:9 logFilePath:@"/tmp/FBDeviceControl_MobileDevice.txt"];

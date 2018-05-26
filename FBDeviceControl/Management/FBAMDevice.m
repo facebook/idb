@@ -49,41 +49,11 @@ typedef struct {
   AMDeviceNotificationType status;
 } AMDeviceNotification;
 
-// Managing Connections & Sessions.
-int (*FB_AMDeviceConnect)(AMDeviceRef device);
-int (*FB_AMDeviceDisconnect)(AMDeviceRef device);
-int (*FB_AMDeviceIsPaired)(AMDeviceRef device);
-int (*FB_AMDeviceValidatePairing)(AMDeviceRef device);
-int (*FB_AMDeviceStartSession)(AMDeviceRef device);
-int (*FB_AMDeviceStopSession)(AMDeviceRef device);
-
-// Getting Properties of a Device.
-_Nullable CFStringRef (*_Nonnull FB_AMDeviceCopyDeviceIdentifier)(AMDeviceRef device);
-_Nullable CFStringRef (*_Nonnull FB_AMDeviceCopyValue)(AMDeviceRef device, _Nullable CFStringRef domain, CFStringRef name);
-
-// Obtaining Devices.
-_Nullable CFArrayRef (*_Nonnull FB_AMDCreateDeviceList)(void);
-int (*FB_AMDeviceNotificationSubscribe)(void *callback, int arg0, int arg1, void *context, void **subscriptionOut);
-int (*FB_AMDeviceNotificationUnsubscribe)(void *subscription);
-
-// Using Connections.
-int (*FB_AMDServiceConnectionGetSocket)(CFTypeRef connection);
-int (*FB_AMDServiceConnectionInvalidate)(CFTypeRef connection);
-int (*FB_AMDeviceSecureStartService)(AMDeviceRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, void *handle);
-int (*FB_AMDeviceStartService)(AMDeviceRef device, CFStringRef service_name, void *handle, uint32_t *unknown);
-int (*FB_AMDeviceSecureTransferPath)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable callback, void *_Nullable context);
-int (*FB_AMDeviceSecureInstallApplication)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable callback, void *_Nullable context);
-int (*FB_AMDeviceSecureUninstallApplication)(int arg0, AMDeviceRef device, CFStringRef arg2, int arg3, void *_Nullable callback, void *_Nullable context);
-int (*FB_AMDeviceLookupApplications)(AMDeviceRef device, CFDictionaryRef _Nullable options, CFDictionaryRef _Nonnull * _Nonnull attributesOut);
-
-// Debugging
-void (*FB_AMDSetLogLevel)(int32_t level);
-_Nullable CFStringRef (*FB_AMDCopyErrorText)(int status);
-
 #pragma mark - FBAMDeviceListener
 
 @interface FBAMDeviceManager : NSObject
 
+@property (nonatomic, assign, readonly) AMDCalls calls;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
@@ -106,7 +76,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
       [manager deviceDisconnected:notification->amDevice];
       break;
     default:
-      [manager.logger logFormat:@"Got Unknown status %d from FB_AMDeviceListenerCallback", notificationType];
+      [manager.logger logFormat:@"Got Unknown status %d from self.calls.ListenerCallback", notificationType];
       break;
   }
 }
@@ -118,14 +88,14 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   static dispatch_once_t onceToken;
   static FBAMDeviceManager *manager;
   dispatch_once(&onceToken, ^{
-    manager = [self managerWithQueue:dispatch_get_main_queue() logger:FBControlCoreGlobalConfiguration.defaultLogger];
+    manager = [self managerWithCalls:FBAMDevice.defaultCalls Queue:dispatch_get_main_queue() logger:FBControlCoreGlobalConfiguration.defaultLogger];
   });
   return manager;
 }
 
-+ (instancetype)managerWithQueue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (instancetype)managerWithCalls:(AMDCalls)calls Queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  FBAMDeviceManager *manager = [[self alloc] initWithQueue:queue logger:logger];
+  FBAMDeviceManager *manager = [[self alloc] initWithCalls:calls queue:queue logger:logger];
   [manager populateFromList];
   NSError *error = nil;
   BOOL success = [manager startListeningWithError:&error];
@@ -133,13 +103,14 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   return manager;
 }
 
-- (instancetype)initWithQueue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _calls = calls;
   _queue = queue;
   _logger = logger;
   _devices = [NSMutableDictionary dictionary];
@@ -165,7 +136,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   // Perform a bridging retain, so that the context of the callback can be strongly referenced.
   // Tidied up when unsubscribing.
   void *subscription = nil;
-  int result = FB_AMDeviceNotificationSubscribe(
+  int result = self.calls.NotificationSubscribe(
     FB_AMDeviceListenerCallback,
     0,
     0,
@@ -190,7 +161,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
       failBool:error];
   }
 
-  int result = FB_AMDeviceNotificationUnsubscribe(self.subscription);
+  int result = self.calls.NotificationUnsubscribe(self.subscription);
   if (result != 0) {
     return [[FBDeviceControlError
       describeFormat:@"AMDeviceNotificationUnsubscribe failed with %d", result]
@@ -205,7 +176,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 - (void)populateFromList
 {
-  CFArrayRef array = FB_AMDCreateDeviceList();
+  CFArrayRef array = self.calls.CreateDeviceList();
   for (NSInteger index = 0; index < CFArrayGetCount(array); index++) {
     AMDeviceRef value = CFArrayGetValueAtIndex(array, index);
     [self deviceConnected:value];
@@ -215,10 +186,10 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 - (void)deviceConnected:(AMDeviceRef)amDevice
 {
-  NSString *udid = CFBridgingRelease(FB_AMDeviceCopyDeviceIdentifier(amDevice));
+  NSString *udid = CFBridgingRelease(self.calls.CopyDeviceIdentifier(amDevice));
   FBAMDevice *device = self.devices[udid];
   if (!device) {
-    device = [[FBAMDevice alloc] initWithUDID:udid workQueue:self.queue];
+    device = [[FBAMDevice alloc] initWithUDID:udid calls:self.calls workQueue:self.queue];
     self.devices[udid] = device;
     [NSNotificationCenter.defaultCenter postNotificationName:FBAMDeviceNotificationNameDeviceAttached object:device];
   }
@@ -229,7 +200,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 - (void)deviceDisconnected:(AMDeviceRef)amDevice
 {
-  NSString *udid = CFBridgingRelease(FB_AMDeviceCopyDeviceIdentifier(amDevice));
+  NSString *udid = CFBridgingRelease(self.calls.CopyDeviceIdentifier(amDevice));
   FBAMDevice *device = self.devices[udid];
   if (!device) {
     return;
@@ -260,30 +231,42 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   CFPreferencesSetAppValue(CFSTR("LogFile"), (__bridge CFPropertyListRef _Nullable)(logFilePath), CFSTR("com.apple.MobileDevice"));
 }
 
-+ (void)loadMobileDeviceSymbols
++ (AMDCalls)defaultCalls
+{
+  static dispatch_once_t onceToken;
+  static AMDCalls defaultCalls;
+  dispatch_once(&onceToken, ^{
+    [self populateMobileDeviceSymbols:&defaultCalls];
+  });
+  return defaultCalls;
+}
+
++ (void)populateMobileDeviceSymbols:(AMDCalls *)calls
 {
   void *handle = [[NSBundle bundleWithIdentifier:@"com.apple.mobiledevice"] dlopenExecutablePath];
-  FB_AMDCopyErrorText = FBGetSymbolFromHandle(handle, "AMDCopyErrorText");
-  FB_AMDCreateDeviceList = FBGetSymbolFromHandle(handle, "AMDCreateDeviceList");
-  FB_AMDeviceConnect = FBGetSymbolFromHandle(handle, "AMDeviceConnect");
-  FB_AMDeviceCopyDeviceIdentifier = FBGetSymbolFromHandle(handle, "AMDeviceCopyDeviceIdentifier");
-  FB_AMDeviceCopyValue = FBGetSymbolFromHandle(handle, "AMDeviceCopyValue");
-  FB_AMDeviceDisconnect = FBGetSymbolFromHandle(handle, "AMDeviceDisconnect");
-  FB_AMDeviceIsPaired = FBGetSymbolFromHandle(handle, "AMDeviceIsPaired");
-  FB_AMDeviceLookupApplications = FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");
-  FB_AMDeviceNotificationSubscribe = FBGetSymbolFromHandle(handle, "AMDeviceNotificationSubscribe");
-  FB_AMDeviceNotificationUnsubscribe = FBGetSymbolFromHandle(handle, "AMDeviceNotificationUnsubscribe");
-  FB_AMDeviceSecureInstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureInstallApplication");
-  FB_AMDeviceSecureStartService = FBGetSymbolFromHandle(handle, "AMDeviceSecureStartService");
-  FB_AMDeviceSecureTransferPath = FBGetSymbolFromHandle(handle, "AMDeviceSecureTransferPath");
-  FB_AMDeviceSecureUninstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureUninstallApplication");
-  FB_AMDeviceStartService = FBGetSymbolFromHandle(handle, "AMDeviceStartService");
-  FB_AMDeviceStartSession = FBGetSymbolFromHandle(handle, "AMDeviceStartSession");
-  FB_AMDeviceStopSession = FBGetSymbolFromHandle(handle, "AMDeviceStopSession");
-  FB_AMDeviceValidatePairing = FBGetSymbolFromHandle(handle, "AMDeviceValidatePairing");
-  FB_AMDServiceConnectionGetSocket = FBGetSymbolFromHandle(handle, "AMDServiceConnectionGetSocket");
-  FB_AMDServiceConnectionInvalidate = FBGetSymbolFromHandle(handle, "AMDServiceConnectionInvalidate");
-  FB_AMDSetLogLevel = FBGetSymbolFromHandle(handle, "AMDSetLogLevel");
+  calls->Connect = FBGetSymbolFromHandle(handle, "AMDeviceConnect");
+  calls->CopyDeviceIdentifier = FBGetSymbolFromHandle(handle, "AMDeviceCopyDeviceIdentifier");
+  calls->CopyErrorText = FBGetSymbolFromHandle(handle, "AMDCopyErrorText");
+  calls->CopyValue = FBGetSymbolFromHandle(handle, "AMDeviceCopyValue");
+  calls->CreateDeviceList = FBGetSymbolFromHandle(handle, "AMDCreateDeviceList");
+  calls->Disconnect = FBGetSymbolFromHandle(handle, "AMDeviceDisconnect");
+  calls->IsPaired = FBGetSymbolFromHandle(handle, "AMDeviceIsPaired");
+  calls->LookupApplications = FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");
+  calls->NotificationSubscribe = FBGetSymbolFromHandle(handle, "AMDeviceNotificationSubscribe");
+  calls->NotificationUnsubscribe = FBGetSymbolFromHandle(handle, "AMDeviceNotificationUnsubscribe");
+  calls->SecureInstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureInstallApplication");
+  calls->SecureStartService = FBGetSymbolFromHandle(handle, "AMDeviceSecureStartService");
+  calls->SecureTransferPath = FBGetSymbolFromHandle(handle, "AMDeviceSecureTransferPath");
+  calls->SecureUninstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureUninstallApplication");
+  calls->ServiceConnectionGetSocket = FBGetSymbolFromHandle(handle, "AMDServiceConnectionGetSocket");
+  calls->ServiceConnectionGetSecureIOContext = FBGetSymbolFromHandle(handle, "AMDServiceConnectionGetSecureIOContext");
+  calls->ServiceConnectionInvalidate = FBGetSymbolFromHandle(handle, "AMDServiceConnectionInvalidate");
+  calls->ServiceConnectionReceive = FBGetSymbolFromHandle(handle, "AMDServiceConnectionReceive");
+  calls->SetLogLevel = FBGetSymbolFromHandle(handle, "AMDSetLogLevel");
+  calls->StartService = FBGetSymbolFromHandle(handle, "AMDeviceStartService");
+  calls->StartSession = FBGetSymbolFromHandle(handle, "AMDeviceStartSession");
+  calls->StopSession = FBGetSymbolFromHandle(handle, "AMDeviceStopSession");
+  calls->ValidatePairing = FBGetSymbolFromHandle(handle, "AMDeviceValidatePairing");
 }
 
 + (NSArray<FBAMDevice *> *)allDevices
@@ -291,7 +274,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   return FBAMDeviceManager.sharedManager.currentDeviceList;
 }
 
-- (instancetype)initWithUDID:(NSString *)udid workQueue:(dispatch_queue_t)workQueue
+- (instancetype)initWithUDID:(NSString *)udid calls:(AMDCalls)calls workQueue:(dispatch_queue_t)workQueue
 {
   self = [super init];
   if (!self) {
@@ -299,6 +282,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   }
 
   _udid = udid;
+  _calls = calls;
   _workQueue = workQueue;
 
   return self;
@@ -337,14 +321,14 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 {
   return [self futureForDeviceOperation:^ NSValue * (AMDeviceRef device, NSError **error) {
     afc_connection afcConnection;
-    int status = FB_AMDeviceSecureStartService(
+    int status = self.calls.SecureStartService(
       device,
       (__bridge CFStringRef)(service),
       (__bridge CFDictionaryRef)(userInfo),
       &afcConnection
     );
     if (status != 0) {
-      NSString *errorDescription = CFBridgingRelease(FB_AMDCopyErrorText(status));
+      NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
       return [[FBDeviceControlError
         describeFormat:@"Start Service Failed with %d %@", status, errorDescription]
         fail:error];
@@ -372,13 +356,13 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 - (BOOL)cacheAllValues
 {
   return [self performOnConnectedDevice:^(AMDeviceRef device, NSError **erro) {
-    self->_deviceName = CFBridgingRelease(FB_AMDeviceCopyValue(device, NULL, CFSTR("DeviceName")));
-    self->_modelName = CFBridgingRelease(FB_AMDeviceCopyValue(device, NULL, CFSTR("DeviceClass")));
-    self->_systemVersion = CFBridgingRelease(FB_AMDeviceCopyValue(device, NULL, CFSTR("ProductVersion")));
-    self->_productType = CFBridgingRelease(FB_AMDeviceCopyValue(device, NULL, CFSTR("ProductType")));
-    self->_architecture = CFBridgingRelease(FB_AMDeviceCopyValue(device, NULL, CFSTR("CPUArchitecture")));
+    self->_deviceName = CFBridgingRelease(self.calls.CopyValue(device, NULL, CFSTR("DeviceName")));
+    self->_modelName = CFBridgingRelease(self.calls.CopyValue(device, NULL, CFSTR("DeviceClass")));
+    self->_systemVersion = CFBridgingRelease(self.calls.CopyValue(device, NULL, CFSTR("ProductVersion")));
+    self->_productType = CFBridgingRelease(self.calls.CopyValue(device, NULL, CFSTR("ProductType")));
+    self->_architecture = CFBridgingRelease(self.calls.CopyValue(device, NULL, CFSTR("CPUArchitecture")));
 
-    NSString *osVersion = [FBAMDevice osVersionForDevice:device];
+    NSString *osVersion = [FBAMDevice osVersionForDevice:device calls:self.calls];
     self->_deviceConfiguration = FBiOSTargetConfiguration.productTypeToDevice[self->_productType];
     self->_osConfiguration = FBiOSTargetConfiguration.nameToOSVersion[osVersion] ?: [FBOSVersion genericWithName:osVersion];
     return @YES;
@@ -398,10 +382,10 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 #pragma mark Private
 
-+ (NSString *)osVersionForDevice:(AMDeviceRef)amDevice
++ (NSString *)osVersionForDevice:(AMDeviceRef)amDevice calls:(AMDCalls)calls
 {
-  NSString *deviceClass = CFBridgingRelease(FB_AMDeviceCopyValue(amDevice, NULL, CFSTR("DeviceClass")));
-  NSString *productVersion = CFBridgingRelease(FB_AMDeviceCopyValue(amDevice, NULL, CFSTR("ProductVersion")));
+  NSString *deviceClass = CFBridgingRelease(calls.CopyValue(amDevice, NULL, CFSTR("DeviceClass")));
+  NSString *productVersion = CFBridgingRelease(calls.CopyValue(amDevice, NULL, CFSTR("ProductVersion")));
   NSDictionary<NSString *, NSString *> *deviceClassOSPrefixMapping = @{
     @"iPhone" : @"iOS",
     @"iPad" : @"iOS",
@@ -416,24 +400,24 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 - (id)performOnConnectedDevice:(id(^)(AMDeviceRef, NSError **))block error:(NSError **)error
 {
   AMDeviceRef amDevice = self.amDevice;
-  int status = FB_AMDeviceConnect(amDevice);
+  int status = self.calls.Connect(amDevice);
   if (status != 0) {
-    NSString *errorDecription = CFBridgingRelease(FB_AMDCopyErrorText(status));
+    NSString *errorDecription = CFBridgingRelease(self.calls.CopyErrorText(status));
     return [[FBDeviceControlError
       describeFormat:@"Failed to connect to device. (%@)", errorDecription]
       fail:error];
   }
-  status = FB_AMDeviceStartSession(amDevice);
+  status = self.calls.StartSession(amDevice);
   if (status != 0) {
-    FB_AMDeviceDisconnect(amDevice);
-    NSString *errorDecription = CFBridgingRelease(FB_AMDCopyErrorText(status));
+    self.calls.Disconnect(amDevice);
+    NSString *errorDecription = CFBridgingRelease(self.calls.CopyErrorText(status));
     return [[FBDeviceControlError
       describeFormat:@"Failed to start session with device. (%@)", errorDecription]
       fail:error];
   }
   id result = block(amDevice, error);
-  FB_AMDeviceStopSession(amDevice);
-  FB_AMDeviceDisconnect(amDevice);
+  self.calls.StopSession(amDevice);
+  self.calls.Disconnect(amDevice);
   return result;
 }
 

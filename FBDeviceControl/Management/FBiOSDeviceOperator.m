@@ -190,7 +190,7 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
   return [[self.device.amDevice
     startTestManagerService]
     onQueue:self.device.workQueue fmap:^(NSValue *connectionValue) {
-      int socket = FB_AMDServiceConnectionGetSocket(connectionValue.pointerValue);
+      int socket = self.device.amDevice.calls.ServiceConnectionGetSocket(connectionValue.pointerValue);
       if (socket <= 0) {
         return [[[FBDeviceControlError
           describe:@"Invalid socket returned from AMDServiceConnectionGetSocket"]
@@ -199,7 +199,7 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
       }
       DTXTransport *transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket disconnectAction:^{
         [logger log:@"Disconnected from test manager daemon socket"];
-        FB_AMDServiceConnectionInvalidate(connectionValue.pointerValue);
+        self.device.amDevice.calls.ServiceConnectionInvalidate(connectionValue.pointerValue);
       }];
       return [FBFuture futureWithResult:transport];
     }];

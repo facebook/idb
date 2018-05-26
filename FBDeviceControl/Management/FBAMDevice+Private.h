@@ -30,18 +30,44 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
  */
 typedef CFTypeRef AMDeviceRef;
 
-// Using Connections
-extern int (*FB_AMDServiceConnectionGetSocket)(CFTypeRef connection);
-extern int (*FB_AMDServiceConnectionInvalidate)(CFTypeRef connection);
-extern int (*FB_AMDeviceSecureStartService)(AMDeviceRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, void *handle);
-extern int (*FB_AMDeviceStartService)(AMDeviceRef device, CFStringRef service_name, void *handle, uint32_t *unknown);
-extern int (*FB_AMDeviceSecureTransferPath)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable callback, void *_Nullable context);
-extern int (*FB_AMDeviceSecureInstallApplication)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable callback, void *_Nullable context);
-extern int (*FB_AMDeviceSecureUninstallApplication)(int arg0, AMDeviceRef device, CFStringRef arg2, int arg3, void *_Nullable callback, void *_Nullable context);
-extern int (*FB_AMDeviceLookupApplications)(AMDeviceRef device, CFDictionaryRef _Nullable options, CFDictionaryRef _Nonnull * _Nonnull attributesOut);
+/**
+ A structure that contains references for all the AMDevice calls we use.
+ */
+typedef struct {
+  // Managing Connections & Sessions.
+  int (*Connect)(AMDeviceRef device);
+  int (*Disconnect)(AMDeviceRef device);
+  int (*IsPaired)(AMDeviceRef device);
+  int (*ValidatePairing)(AMDeviceRef device);
+  int (*StartSession)(AMDeviceRef device);
+  int (*StopSession)(AMDeviceRef device);
 
-// Debugging
-extern _Nullable CFStringRef (* _Nonnull FB_AMDCopyErrorText)(int status);
+  // Getting Properties of a Device.
+  _Nullable CFStringRef (*_Nonnull CopyDeviceIdentifier)(AMDeviceRef device);
+  _Nullable CFStringRef (*_Nonnull CopyValue)(AMDeviceRef device, _Nullable CFStringRef domain, CFStringRef name);
+
+  // Obtaining Devices.
+  _Nullable CFArrayRef (*_Nonnull CreateDeviceList)(void);
+  int (*NotificationSubscribe)(void *callback, int arg0, int arg1, void *context, void **subscriptionOut);
+  int (*NotificationUnsubscribe)(void *subscription);
+
+  // Using Connections.
+  int (*ServiceConnectionGetSocket)(CFTypeRef connection);
+  int (*ServiceConnectionInvalidate)(CFTypeRef connection);
+  int (*ServiceConnectionReceive)(CFTypeRef connection, void *buffer, size_t bytes);
+  int (*ServiceConnectionGetSecureIOContext)(CFTypeRef connection);
+  int (*SecureStartService)(AMDeviceRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, void *handle);
+  int (*StartService)(AMDeviceRef device, CFStringRef service_name, void *handle, uint32_t *unknown);
+  int (*SecureTransferPath)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable callback, void *_Nullable context);
+  int (*SecureInstallApplication)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable callback, void *_Nullable context);
+  int (*SecureUninstallApplication)(int arg0, AMDeviceRef device, CFStringRef arg2, int arg3, void *_Nullable callback, void *_Nullable context);
+  int (*LookupApplications)(AMDeviceRef device, CFDictionaryRef _Nullable options, CFDictionaryRef _Nonnull * _Nonnull attributesOut);
+
+  // Debugging
+  void (*SetLogLevel)(int32_t level);
+  _Nullable CFStringRef (*CopyErrorText)(int status);
+} AMDCalls;
+
 
 #pragma mark - AMDevice Class Private
 
@@ -56,19 +82,30 @@ extern _Nullable CFStringRef (* _Nonnull FB_AMDCopyErrorText)(int status);
 @property (nonatomic, assign, readwrite) AMDeviceRef amDevice;
 
 /**
+ The AMDCalls to be used.
+ */
+@property (nonatomic, assign, readonly) AMDCalls calls;
+
+/**
  The Queue on which work should be performed.
  */
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
+
+/**
+ The default AMDevice calls.
+ */
+@property (nonatomic, assign, readonly, class) AMDCalls defaultCalls;
 
 #pragma mark Private Methods
 
 /**
  The Designated Initializer
 
- @param udid the UDID of the AMDevice
+ @param udid the UDID of the AMDevice.
+ @param calls the calls to use.
  @param workQueue the queue to perform work on.
  */
-- (instancetype)initWithUDID:(NSString *)udid workQueue:(dispatch_queue_t)workQueue;
+- (instancetype)initWithUDID:(NSString *)udid calls:(AMDCalls)calls workQueue:(dispatch_queue_t)workQueue;
 
 /**
  Build a Future from an operation for performing on a device.
