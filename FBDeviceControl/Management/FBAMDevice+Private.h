@@ -11,6 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBAMDServiceConnection;
+
 #pragma mark - Notifications
 
 /**
@@ -118,7 +120,7 @@ typedef struct {
 /**
  Starts test manager daemon service
  */
-- (FBFuture<NSValue *> *)startTestManagerService;
+- (FBFuture<FBAMDServiceConnection *> *)startTestManagerService;
 
 /**
  Starts a Service on the AMDevice.
@@ -127,7 +129,7 @@ typedef struct {
  @param userInfo the userInfo for the service.
  @return a CFType wrapping the connection.
  */
-- (FBFuture<NSValue *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo;
+- (FBFuture<FBAMDServiceConnection *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo;
 
 @end
 
