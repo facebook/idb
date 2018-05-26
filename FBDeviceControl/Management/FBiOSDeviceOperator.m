@@ -178,35 +178,31 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
 
 #pragma mark - FBDeviceOperator protocol
 
-- (DTXTransport *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+- (FBFuture<DTXTransport *> *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger
 {
   if ([NSThread isMainThread]) {
     return [[[FBDeviceControlError
       describe:@"'makeTransportForTestManagerService' method may block and should not be called on the main thread"]
       logger:logger]
-      fail:error];
+      failFuture];
   }
-  NSError *innerError;
-  NSValue *connectionValue = [[self.device.amDevice startTestManagerService] await:&innerError];
-  if (!connectionValue) {
-    return [[[[FBDeviceControlError
-      describe:@"Failed to start test manager daemon service."]
-      logger:logger]
-      causedBy:innerError]
-      fail:error];
-  }
-  int socket = FB_AMDServiceConnectionGetSocket(connectionValue.pointerValue);
-  if (socket <= 0) {
-    return [[[FBDeviceControlError
-      describe:@"Invalid socket returned from AMDServiceConnectionGetSocket"]
-      logger:logger]
-      fail:error];
-  }
-  return
-  [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket disconnectAction:^{
-    [logger log:@"Disconnected from test manager daemon socket"];
-    FB_AMDServiceConnectionInvalidate(connectionValue.pointerValue);
-  }];
+
+  return [[self.device.amDevice
+    startTestManagerService]
+    onQueue:self.device.workQueue fmap:^(NSValue *connectionValue) {
+      int socket = FB_AMDServiceConnectionGetSocket(connectionValue.pointerValue);
+      if (socket <= 0) {
+        return [[[FBDeviceControlError
+          describe:@"Invalid socket returned from AMDServiceConnectionGetSocket"]
+          logger:logger]
+          failFuture];
+      }
+      DTXTransport *transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket disconnectAction:^{
+        [logger log:@"Disconnected from test manager daemon socket"];
+        FB_AMDServiceConnectionInvalidate(connectionValue.pointerValue);
+      }];
+      return [FBFuture futureWithResult:transport];
+    }];
 }
 
 - (BOOL)requiresTestDaemonMediationForTestHostConnection

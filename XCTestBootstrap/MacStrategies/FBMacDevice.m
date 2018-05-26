@@ -150,7 +150,7 @@
 @synthesize requiresTestDaemonMediationForTestHostConnection = _requiresTestDaemonMediationForTestHostConnection;
 @synthesize udid = _udid;
 
-- (DTXTransport *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+- (FBFuture<DTXTransport *> *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger
 {
   NSXPCConnection *connection = [[NSXPCConnection alloc] initWithMachServiceName:@"com.apple.testmanagerd.control" options:0];
   NSXPCInterface *interface = [NSXPCInterface interfaceWithProtocol:@protocol(XCTestManager_XPCControl)];
@@ -174,12 +174,12 @@
   }];
 
   self.connection = connection;
-  __block NSError *xctError;
+  __block NSError *error;
   __block DTXSocketTransport *transport;
-  [proxy _XCT_requestConnectedSocketForTransport:^(NSFileHandle *file, NSError *xctInnerError) {
+  [proxy _XCT_requestConnectedSocketForTransport:^(NSFileHandle *file, NSError *xctError) {
     if (!file) {
-      [logger logFormat:@"Error requesting connection with test manager daemon: %@", xctInnerError.description];
-      xctError = xctInnerError;
+      [logger logFormat:@"Error requesting connection with test manager daemon: %@", xctError.description];
+      error = xctError;
       return;
     }
     transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:file.fileDescriptor disconnectAction:^{
@@ -187,10 +187,10 @@
       [file closeFile];
     }];
   }];
-  if (error) {
-    *error = xctError;
+  if (!transport) {
+    return [FBFuture futureWithError:error];
   }
-  return transport;
+  return [FBFuture futureWithResult:transport];
 }
 
 - (nullable FBProductBundle *)applicationBundleWithBundleID:(nonnull NSString *)bundleID error:(NSError *__autoreleasing _Nullable * _Nullable)error

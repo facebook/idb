@@ -32,10 +32,9 @@ NS_ASSUME_NONNULL_BEGIN
  Starts test manager daemon and creates DTXTransport connection with it
 
  @param logger the Logger to Log to.
- @param error If there is an error, upon return contains an NSError object that describes the problem.
- @return DTXTransport if the operation succeeds, otherwise nil.
+ @return A future wrapping the DTXTransport.
  */
-- (nullable DTXTransport *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
+- (FBFuture<DTXTransport *> *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger;
 
 /**
  Queries application with given bundleID

@@ -214,21 +214,23 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
   self.state = FBTestBundleConnectionStateConnecting;
   [self.logger log:@"Connecting Test Bundle"];
 
-  dispatch_async(self.requestQueue, ^{
-    NSError *error;
-    DTXTransport *transport = [self.target.deviceOperator makeTransportForTestManagerServiceWithLogger:self.logger error:&error];
-    if (error || !transport) {
-      XCTestBootstrapError *realError = [[XCTestBootstrapError
-        describe:@"Failed to create transport"]
-        causedBy:error];
-      [self concludeWithResult:[FBTestBundleResult failedInError:realError]];
-      return;
-    }
-    DTXConnection *connection = [self setupTestBundleConnectionWithTransport:transport];
-    dispatch_async(self.target.workQueue, ^{
-      [self sendStartSessionRequestWithConnection:connection];
-    });
-  });
+  [[[[FBFuture
+    onQueue:self.requestQueue resolve:^{
+      return [self.target.deviceOperator makeTransportForTestManagerServiceWithLogger:self.logger];
+    }]
+    onQueue:self.requestQueue map:^(DTXTransport *transport) {
+      return [self setupTestBundleConnectionWithTransport:transport];
+    }]
+    onQueue:self.target.workQueue map:^(DTXConnection *connection) {
+      return [self sendStartSessionRequestWithConnection:connection];
+    }]
+    onQueue:self.target.workQueue handleError:^(NSError *innerError) {
+      XCTestBootstrapError *error = [[XCTestBootstrapError
+        describe:@"Failed to create secondary test manager transport"]
+        causedBy:innerError];
+      [self concludeWithResult:[FBTestBundleResult failedInError:error]];
+      return [FBFuture futureWithError:error.build];
+    }];
 }
 
 - (DTXConnection *)setupTestBundleConnectionWithTransport:(DTXTransport *)transport
@@ -255,7 +257,7 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
   return self.testBundleConnection;
 }
 
-- (void)sendStartSessionRequestWithConnection:(DTXConnection *)connection
+- (DTXRemoteInvocationReceipt *)sendStartSessionRequestWithConnection:(DTXConnection *)connection
 {
   [self.logger log:@"Checking test manager availability..."];
   DTXProxyChannel *proxyChannel = [self.testBundleConnection
@@ -281,6 +283,7 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
     [self.logger logFormat:@"testmanagerd handled session request using protcol version %ld.", (long)FBProtocolVersion];
     [proxyChannel cancel];
   }];
+  return receipt;
 }
 
 - (DTXRemoteInvocationReceipt *)setupLegacyProtocolConnectionViaRemoteProxy:(id<XCTestManager_DaemonConnectionInterface>)remoteProxy proxyChannel:(DTXProxyChannel *)proxyChannel

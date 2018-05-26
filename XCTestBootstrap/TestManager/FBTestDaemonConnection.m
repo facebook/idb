@@ -187,17 +187,21 @@ static FBTestDaemonConnectionState const FBTestDaemonConnectionStateResultAvaila
 {
   self.state = FBTestDaemonConnectionStateConnecting;
   [self.logger log:@"Starting the daemon connection"];
-  dispatch_async(self.requestQueue, ^{
-    NSError *innerError = nil;
-    DTXTransport *transport = [self.target.deviceOperator makeTransportForTestManagerServiceWithLogger:self.logger error:&innerError];
-    if (innerError || !transport) {
+
+  [[[FBFuture
+    onQueue:self.requestQueue resolve:^{
+     return [self.target.deviceOperator makeTransportForTestManagerServiceWithLogger:self.logger];
+    }]
+    onQueue:self.requestQueue map:^(DTXTransport *transport){
+      return [self createDaemonConnectionWithTransport:transport];
+    }]
+    onQueue:self.target.workQueue handleError:^(NSError *innerError) {
       XCTestBootstrapError *error = [[XCTestBootstrapError
         describe:@"Failed to created secondary test manager transport"]
         causedBy:innerError];
       [self concludeWithResult:[FBTestDaemonResult failedInError:error]];
-    }
-    [self createDaemonConnectionWithTransport:transport];
-  });
+      return [FBFuture futureWithError:error.build];
+    }];
 }
 
 - (DTXConnection *)createDaemonConnectionWithTransport:(DTXTransport *)transport

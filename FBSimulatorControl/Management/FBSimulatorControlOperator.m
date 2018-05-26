@@ -68,21 +68,14 @@
 
 #pragma mark - FBDeviceOperator protocol
 
-- (DTXTransport *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+- (FBFuture<DTXTransport *> *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger
 {
-  if ([NSThread isMainThread]) {
-    return [[[FBSimulatorError
-      describe:@"'makeTransportForTestManagerService' method may block and should not be called on the main thread"]
-      logger:logger]
-      fail:error];
-  }
-
   const BOOL simulatorIsBooted = (self.simulator.state == FBSimulatorStateBooted);
   if (!simulatorIsBooted) {
     return [[[FBSimulatorError
       describe:@"Simulator should be already booted"]
       logger:logger]
-      fail:error];
+      failFuture];
   }
 
   NSError *innerError;
@@ -92,7 +85,7 @@
       describe:@"Falied to create test manager dameon socket"]
       causedBy:innerError]
       logger:logger]
-      fail:error];
+      failFuture];
   }
 
   DTXSocketTransport *transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:testManagerSocket disconnectAction:^{
@@ -101,10 +94,10 @@
   if (!transport) {
     return [[FBSimulatorError
       describeFormat:@"Could not create a DTXSocketTransport for %d", testManagerSocket]
-      fail:error];
+      failFuture];
   }
 
-  return transport;
+  return [FBFuture futureWithResult:transport];
 }
 
 - (int)makeTestManagerDaemonSocketWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
