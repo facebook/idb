@@ -16,6 +16,7 @@
 
 #import "FBAMDServiceConnection.h"
 #import "FBDeviceControlError.h"
+#import "FBAFCConnection.h"
 
 #pragma mark - Notifications
 
@@ -24,21 +25,6 @@ NSNotificationName const FBAMDeviceNotificationNameDeviceAttached = @"FBAMDevice
 NSNotificationName const FBAMDeviceNotificationNameDeviceDetached = @"FBAMDeviceNotificationNameDeviceDetached";
 
 #pragma mark - AMDevice API
-
-typedef struct afc_connection {
-  unsigned int handle;            /* 0 */
-  unsigned int unknown0;          /* 4 */
-  unsigned char unknown1;         /* 8 */
-  unsigned char padding[3];       /* 9 */
-  unsigned int unknown2;          /* 12 */
-  unsigned int unknown3;          /* 16 */
-  unsigned int unknown4;          /* 20 */
-  unsigned int fs_block_size;     /* 24 */
-  unsigned int sock_block_size;   /* 28: always 0x3c */
-  unsigned int io_timeout;        /* 32: from AFCConnectionOpen, usu. 0 */
-  void *afc_lock;                 /* 36 */
-  unsigned int context;           /* 40 */
-} __attribute__ ((packed)) afc_connection;
 
 typedef NS_ENUM(int, AMDeviceNotificationType) {
   AMDeviceNotificationTypeConnected = 1,
@@ -250,6 +236,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   calls->CopyErrorText = FBGetSymbolFromHandle(handle, "AMDCopyErrorText");
   calls->CopyValue = FBGetSymbolFromHandle(handle, "AMDeviceCopyValue");
   calls->CreateDeviceList = FBGetSymbolFromHandle(handle, "AMDCreateDeviceList");
+  calls->CreateHouseArrestService = FBGetSymbolFromHandle(handle, "AMDeviceCreateHouseArrestService");
   calls->Disconnect = FBGetSymbolFromHandle(handle, "AMDeviceDisconnect");
   calls->IsPaired = FBGetSymbolFromHandle(handle, "AMDeviceIsPaired");
   calls->LookupApplications = FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");
