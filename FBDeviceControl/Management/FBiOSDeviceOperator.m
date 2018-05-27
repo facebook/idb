@@ -29,9 +29,8 @@
 
 #import <objc/runtime.h>
 
-#import "FBAFCConnection.h"
-#import "FBAMDServiceConnection.h"
 #import "FBAMDevice+Private.h"
+#import "FBAMDServiceConnection.h"
 #import "FBDevice+Private.h"
 #import "FBDevice.h"
 #import "FBDeviceControlError.h"
