@@ -29,13 +29,12 @@
 
 #import <objc/runtime.h>
 
-#import "FBAMDevice+Private.h"
-#import "FBAMDServiceConnection.h"
-#import "FBDevice+Private.h"
 #import "FBDevice.h"
+#import "FBDevice+Private.h"
+#import "FBDeviceSet.h"
+#import "FBAMDevice+Private.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
-#import "FBDeviceSet.h"
 
 #import <FBControlCore/FBControlCore.h>
 
@@ -190,8 +189,8 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
 
   return [[self.device.amDevice
     startTestManagerService]
-    onQueue:self.device.workQueue fmap:^(FBAMDServiceConnection *connection) {
-      int socket = connection.socket;
+    onQueue:self.device.workQueue fmap:^(NSValue *connectionValue) {
+      int socket = self.device.amDevice.calls.ServiceConnectionGetSocket(connectionValue.pointerValue);
       if (socket <= 0) {
         return [[[FBDeviceControlError
           describe:@"Invalid socket returned from AMDServiceConnectionGetSocket"]
@@ -200,7 +199,7 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
       }
       DTXTransport *transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket disconnectAction:^{
         [logger log:@"Disconnected from test manager daemon socket"];
-        self.device.amDevice.calls.ServiceConnectionInvalidate(connection.connection);
+        self.device.amDevice.calls.ServiceConnectionInvalidate(connectionValue.pointerValue);
       }];
       return [FBFuture futureWithResult:transport];
     }];

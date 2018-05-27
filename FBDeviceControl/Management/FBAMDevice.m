@@ -14,7 +14,6 @@
 
 #include <dlfcn.h>
 
-#import "FBAMDServiceConnection.h"
 #import "FBDeviceControlError.h"
 
 #pragma mark - Notifications
@@ -318,15 +317,15 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   }];
 }
 
-- (FBFuture<FBAMDServiceConnection *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo
+- (FBFuture<NSValue *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo
 {
-  return [self futureForDeviceOperation:^ FBAMDServiceConnection * (AMDeviceRef device, NSError **error) {
-    AMDServiceConnectionRef connection;
+  return [self futureForDeviceOperation:^ NSValue * (AMDeviceRef device, NSError **error) {
+    afc_connection afcConnection;
     int status = self.calls.SecureStartService(
       device,
       (__bridge CFStringRef)(service),
       (__bridge CFDictionaryRef)(userInfo),
-      &connection
+      &afcConnection
     );
     if (status != 0) {
       NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
@@ -334,11 +333,11 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
         describeFormat:@"Start Service Failed with %d %@", status, errorDescription]
         fail:error];
     }
-    return [[FBAMDServiceConnection alloc] initWithServiceConnection:connection calls:self.calls];
+    return [NSValue valueWithPointer:&afcConnection];
   }];
 }
 
-- (FBFuture<FBAMDServiceConnection *> *)startTestManagerService
+- (FBFuture<NSValue *> *)startTestManagerService
 {
   NSDictionary *userInfo = @{
     @"CloseOnInvalidate" : @1,
