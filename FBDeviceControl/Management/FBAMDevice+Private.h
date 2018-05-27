@@ -9,7 +9,11 @@
 
 #import <FBDeviceControl/FBAMDevice.h>
 
+#import "FBAFCConnection.h"
+
 NS_ASSUME_NONNULL_BEGIN
+
+@class FBAMDServiceConnection;
 
 #pragma mark - Notifications
 
@@ -62,6 +66,7 @@ typedef struct {
   int (*SecureInstallApplication)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable callback, void *_Nullable context);
   int (*SecureUninstallApplication)(int arg0, AMDeviceRef device, CFStringRef arg2, int arg3, void *_Nullable callback, void *_Nullable context);
   int (*LookupApplications)(AMDeviceRef device, CFDictionaryRef _Nullable options, CFDictionaryRef _Nonnull * _Nonnull attributesOut);
+  int (*CreateHouseArrestService)(AMDeviceRef device, CFStringRef bundleID, void *_Nullable unused, AFCConnectionRef *connectionOut);
 
   // Debugging
   void (*SetLogLevel)(int32_t level);
@@ -118,16 +123,16 @@ typedef struct {
 /**
  Starts test manager daemon service
  */
-- (FBFuture<NSValue *> *)startTestManagerService;
+- (FBFuture<FBAMDServiceConnection *> *)startTestManagerService;
 
 /**
  Starts a Service on the AMDevice.
 
  @param service the service name
  @param userInfo the userInfo for the service.
- @return a CFType wrapping the connection.
+ @return a Future wrapping the FBAFCConnection.
  */
-- (FBFuture<NSValue *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo;
+- (FBFuture<FBAMDServiceConnection *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo;
 
 @end
 

@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import <FBDeviceControl/FBAFCConnection.h>
 #import <FBDeviceControl/FBAMDevice.h>
 #import <FBDeviceControl/FBDevice.h>
 #import <FBDeviceControl/FBDeviceBitmapStream.h>
