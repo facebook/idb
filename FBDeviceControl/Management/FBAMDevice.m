@@ -251,7 +251,6 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   calls->ServiceConnectionInvalidate = FBGetSymbolFromHandle(handle, "AMDServiceConnectionInvalidate");
   calls->ServiceConnectionReceive = FBGetSymbolFromHandle(handle, "AMDServiceConnectionReceive");
   calls->SetLogLevel = FBGetSymbolFromHandle(handle, "AMDSetLogLevel");
-  calls->StartService = FBGetSymbolFromHandle(handle, "AMDeviceStartService");
   calls->StartSession = FBGetSymbolFromHandle(handle, "AMDeviceStartSession");
   calls->StopSession = FBGetSymbolFromHandle(handle, "AMDeviceStopSession");
   calls->ValidatePairing = FBGetSymbolFromHandle(handle, "AMDeviceValidatePairing");

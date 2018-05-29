@@ -12,6 +12,7 @@
 #import "FBDevice+Private.h"
 #import "FBAMDevice+Private.h"
 #import "FBDeviceControlError.h"
+#import "FBAMDServiceConnection.h"
 
 @interface FBDeviceLogTerminationContinuation : NSObject <FBiOSTargetContinuation>
 
@@ -90,23 +91,16 @@
   }
 
   dispatch_queue_t queue = self.device.asyncQueue;
-  return [[[self.device.amDevice futureForDeviceOperation:^id _Nonnull(CFTypeRef device, NSError **error) {
-    NSString *name = @"com.apple.syslog_relay";
-    CFTypeRef handle = 0;
-    uint32_t unused;
-    mach_error_t result = self.device.amDevice.calls.StartService(device, (__bridge CFStringRef)(name), &handle, &unused);
-    if (result != 0) {
-      return [FBFuture futureWithError:[FBDeviceControlError errorForFormat:@"Error when starting service %@: %d", name, result]];
-    }
-
-    int sock = (int)((uint32_t)handle);
-    return [[NSFileHandle alloc] initWithFileDescriptor:sock closeOnDealloc:YES];
-  }] onQueue:queue map:^(NSFileHandle *_Nonnull handle) {
-    FBFileReader *reader = [FBFileReader readerWithFileHandle:handle consumer:consumer];
-    return [[reader startReading] mapReplace:reader];
-  }] onQueue:queue map:^(FBFileReader *reader) {
-    return [[FBDeviceLogTerminationContinuation alloc] initWithReader:reader  consumer:consumer];
-  }];
+  return [[[self.device.amDevice
+    startService:@"com.apple.syslog_relay" userInfo:@{}]
+    onQueue:queue fmap:^(FBAMDServiceConnection *connection) {
+      NSFileHandle *handle = [[NSFileHandle alloc] initWithFileDescriptor:connection.socket closeOnDealloc:YES];
+      FBFileReader *reader = [FBFileReader readerWithFileHandle:handle consumer:consumer];
+      return [[reader startReading] mapReplace:reader];
+    }]
+    onQueue:queue map:^(FBFileReader *reader) {
+      return [[FBDeviceLogTerminationContinuation alloc] initWithReader:reader consumer:consumer];
+    }];
 }
 
 @end
