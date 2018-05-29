@@ -412,6 +412,8 @@
 		AABA7CEF20BB3CFF00C1E73A /* FBAMDServiceConnection.h in Headers */ = {isa = PBXBuildFile; fileRef = AABA7CED20BB3CFF00C1E73A /* FBAMDServiceConnection.h */; };
 		AABA7CF020BB3CFF00C1E73A /* FBAMDServiceConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = AABA7CEE20BB3CFF00C1E73A /* FBAMDServiceConnection.m */; };
 		AABA7CF220BB3D1900C1E73A /* FBAFCConnectionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AABA7CF120BB3D1900C1E73A /* FBAFCConnectionTests.m */; };
+		AABA7CF520BB450B00C1E73A /* FBDeviceApplicationDataCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AABA7CF320BB450B00C1E73A /* FBDeviceApplicationDataCommands.m */; };
+		AABA7CF620BB450B00C1E73A /* FBDeviceApplicationDataCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AABA7CF420BB450B00C1E73A /* FBDeviceApplicationDataCommands.h */; };
 		AABBF3231DAC110000E2B6AF /* FBTaskBuilder.h in Headers */ = {isa = PBXBuildFile; fileRef = AABBF3211DAC110000E2B6AF /* FBTaskBuilder.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AABBF3241DAC110000E2B6AF /* FBTaskBuilder.m in Sources */ = {isa = PBXBuildFile; fileRef = AABBF3221DAC110000E2B6AF /* FBTaskBuilder.m */; };
 		AABBF32B1DAC112900E2B6AF /* FBTaskConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AABBF3291DAC112900E2B6AF /* FBTaskConfiguration.h */; };
@@ -1359,6 +1361,8 @@
 		AABA7CED20BB3CFF00C1E73A /* FBAMDServiceConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBAMDServiceConnection.h; sourceTree = "<group>"; };
 		AABA7CEE20BB3CFF00C1E73A /* FBAMDServiceConnection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBAMDServiceConnection.m; sourceTree = "<group>"; };
 		AABA7CF120BB3D1900C1E73A /* FBAFCConnectionTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBAFCConnectionTests.m; sourceTree = "<group>"; };
+		AABA7CF320BB450B00C1E73A /* FBDeviceApplicationDataCommands.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceApplicationDataCommands.m; sourceTree = "<group>"; };
+		AABA7CF420BB450B00C1E73A /* FBDeviceApplicationDataCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceApplicationDataCommands.h; sourceTree = "<group>"; };
 		AABBF3211DAC110000E2B6AF /* FBTaskBuilder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTaskBuilder.h; sourceTree = "<group>"; };
 		AABBF3221DAC110000E2B6AF /* FBTaskBuilder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTaskBuilder.m; sourceTree = "<group>"; };
 		AABBF3291DAC112900E2B6AF /* FBTaskConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = FBTaskConfiguration.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
@@ -2633,6 +2637,8 @@
 			children = (
 				AA3E443E1F14AE2C00F333D2 /* FBDeviceApplicationCommands.h */,
 				AA3E443F1F14AE2C00F333D2 /* FBDeviceApplicationCommands.m */,
+				AABA7CF420BB450B00C1E73A /* FBDeviceApplicationDataCommands.h */,
+				AABA7CF320BB450B00C1E73A /* FBDeviceApplicationDataCommands.m */,
 				2FB8110E1FB5C97400A848FB /* FBDeviceLogCommands.h */,
 				2FB8110F1FB5C97400A848FB /* FBDeviceLogCommands.m */,
 				AABD19A31FFD1EE50043771C /* FBDeviceScreenshotCommands.h */,
@@ -3252,6 +3258,7 @@
 				AA682B1A1CEC9E8B009B6ECA /* FBDeviceSet.h in Headers */,
 				2FB811101FB5C97400A848FB /* FBDeviceLogCommands.h in Headers */,
 				AAC8B2531CEC51520034A865 /* FBiOSDeviceOperator.h in Headers */,
+				AABA7CF620BB450B00C1E73A /* FBDeviceApplicationDataCommands.h in Headers */,
 				AABA7CEF20BB3CFF00C1E73A /* FBAMDServiceConnection.h in Headers */,
 				AAC8B2511CEC51520034A865 /* FBDevice.h in Headers */,
 				AA4D30701E79983700A9FBD0 /* FBDeviceBitmapStream.h in Headers */,
@@ -3956,6 +3963,7 @@
 			files = (
 				AABA7CF020BB3CFF00C1E73A /* FBAMDServiceConnection.m in Sources */,
 				AAC8B2581CEC51520034A865 /* FBDeviceControlError.m in Sources */,
+				AABA7CF520BB450B00C1E73A /* FBDeviceApplicationDataCommands.m in Sources */,
 				AA280F521E714823006BB9E0 /* FBDeviceVideoFileEncoder.m in Sources */,
 				AAE248031DF8978700E0949D /* FBDeviceVideoRecordingCommands.m in Sources */,
 				AABD72AD1E64A957004D6EBE /* FBDeviceXCTestCommands.m in Sources */,

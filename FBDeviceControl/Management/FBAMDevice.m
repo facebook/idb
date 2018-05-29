@@ -347,7 +347,10 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 - (void)dealloc
 {
-  CFRelease(_amDevice);
+  if (_amDevice) {
+    CFRelease(_amDevice);
+    _amDevice = NULL;
+  }
 }
 
 #pragma mark Private

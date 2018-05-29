@@ -18,6 +18,7 @@
 
 #import "FBAMDevice.h"
 #import "FBDeviceApplicationCommands.h"
+#import "FBDeviceApplicationDataCommands.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceLogCommands.h"
 #import "FBDeviceScreenshotCommands.h"
@@ -190,6 +191,7 @@
     commandClasses = [[NSMutableArray alloc] init];
     [commandClasses addObjectsFromArray:@[
       FBDeviceApplicationCommands.class,
+      FBDeviceApplicationDataCommands.class,
       FBDeviceLogCommands.class,
       FBDeviceScreenshotCommands.class,
       FBDeviceVideoRecordingCommands.class,
