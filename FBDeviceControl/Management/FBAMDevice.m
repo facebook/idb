@@ -297,16 +297,23 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 #pragma mark Public Methods
 
-- (FBFuture *)futureForDeviceOperation:(id(^)(AMDeviceRef, NSError **))block
+- (FBFuture *)futureForDeviceOperation:(FBFuture *(^)(AMDeviceRef))fmap
 {
-  return [FBFuture onQueue:self.workQueue resolveValue:^(NSError **error) {
-    return [self performOnConnectedDevice:block error:error];
+  return [FBFuture onQueue:self.workQueue resolve:^{
+    NSError *error = nil;
+    FBFuture *future = [self performOnConnectedDevice:^(AMDeviceRef device){
+      return fmap(device);
+    } error:&error];
+    if (!future) {
+      return [FBFuture futureWithError:error];
+    }
+    return future;
   }];
 }
 
 - (FBFuture<FBAMDServiceConnection *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo
 {
-  return [self futureForDeviceOperation:^ FBAMDServiceConnection * (AMDeviceRef device, NSError **error) {
+  return [self futureForDeviceOperation:^ FBFuture<FBAMDServiceConnection *> * (AMDeviceRef device) {
     AMDServiceConnectionRef connection;
     int status = self.calls.SecureStartService(
       device,
@@ -318,10 +325,15 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
       NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
       return [[FBDeviceControlError
         describeFormat:@"Start Service Failed with %d %@", status, errorDescription]
-        fail:error];
+        failFuture];
     }
-    return [[FBAMDServiceConnection alloc] initWithServiceConnection:connection calls:self.calls];
+    return [FBFuture futureWithResult:[[FBAMDServiceConnection alloc] initWithServiceConnection:connection device:device calls:self.calls]];
   }];
+}
+
+- (FBFuture<FBAMDServiceConnection *> *)startAFCService
+{
+  return [self startService:@"com.apple.afc" userInfo:@{}];
 }
 
 - (FBFuture<FBAMDServiceConnection *> *)startTestManagerService
@@ -342,7 +354,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 - (BOOL)cacheAllValues
 {
-  return [self performOnConnectedDevice:^(AMDeviceRef device, NSError **erro) {
+  return [self performOnConnectedDevice:^(AMDeviceRef device) {
     self->_deviceName = CFBridgingRelease(self.calls.CopyValue(device, NULL, CFSTR("DeviceName")));
     self->_modelName = CFBridgingRelease(self.calls.CopyValue(device, NULL, CFSTR("DeviceClass")));
     self->_systemVersion = CFBridgingRelease(self.calls.CopyValue(device, NULL, CFSTR("ProductVersion")));
@@ -384,7 +396,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   return [NSString stringWithFormat:@"%@ %@", osPrefix, productVersion];
 }
 
-- (id)performOnConnectedDevice:(id(^)(AMDeviceRef, NSError **))block error:(NSError **)error
+- (id)performOnConnectedDevice:(id(^)(AMDeviceRef))block error:(NSError **)error
 {
   AMDeviceRef amDevice = self.amDevice;
   int status = self.calls.Connect(amDevice);
@@ -402,7 +414,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
       describeFormat:@"Failed to start session with device. (%@)", errorDecription]
       fail:error];
   }
-  id result = block(amDevice, error);
+  id result = block(amDevice);
   self.calls.StopSession(amDevice);
   self.calls.Disconnect(amDevice);
   return result;

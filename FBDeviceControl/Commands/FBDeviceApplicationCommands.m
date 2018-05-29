@@ -11,11 +11,12 @@
 
 #import <objc/runtime.h>
 
-#import "FBDevice.h"
-#import "FBAMDevice.h"
 #import "FBAMDevice+Private.h"
-#import "FBDeviceControlError.h"
+#import "FBAMDevice.h"
+#import "FBAMDServiceConnection.h"
 #import "FBDevice+Private.h"
+#import "FBDevice.h"
+#import "FBDeviceControlError.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -67,75 +68,63 @@
 
 #pragma mark Private
 
-- (FBFuture *)handleWithAFCSession:(id(^)(CFTypeRef device, NSError **))operationBlock
-{
-  return [self.device.amDevice futureForDeviceOperation:^(CFTypeRef device, NSError **error) {
-    int afcConn;
-    int afcReturnCode = self.device.amDevice.calls.SecureStartService(device, CFSTR("com.apple.afc"), NULL, &afcConn);
-    if (afcReturnCode != 0) {
-      return [[FBDeviceControlError
-        describeFormat:@"Failed to start afc service with error code: %x", afcReturnCode]
-        fail:error];
-    }
-    id operationResult = operationBlock(device, error);
-    close(afcConn);
-    return operationResult;
-  }];
-}
-
 - (FBFuture<NSNull *> *)transferAppURL:(NSURL *)appURL options:(NSDictionary *)options
 {
-  return [self handleWithAFCSession:^NSNull *(CFTypeRef device, NSError **error){
-    int transferReturnCode = self.device.amDevice.calls.SecureTransferPath(
-      0,
-      device,
-      (__bridge CFURLRef _Nonnull)(appURL),
-      (__bridge CFDictionaryRef _Nonnull)(options),
-      NULL,
-      0
-    );
-    if (transferReturnCode != 0) {
-      return [[FBDeviceControlError
-        describeFormat:@"Failed to transfer path with error code: %x", transferReturnCode]
-        fail:error];
-    }
-    return NSNull.null;
-  }];
+  return [[self.device.amDevice
+    startAFCService]
+    onQueue:self.device.workQueue fmap:^(FBAMDServiceConnection *connection) {
+      int transferReturnCode = self.device.amDevice.calls.SecureTransferPath(
+        0,
+        connection.device,
+        (__bridge CFURLRef _Nonnull)(appURL),
+        (__bridge CFDictionaryRef _Nonnull)(options),
+        NULL,
+        0
+      );
+      if (transferReturnCode != 0) {
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to transfer path with error code: %x", transferReturnCode]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
 }
 
 - (FBFuture<NSNull *> *)secureInstallApplication:(NSURL *)appURL options:(NSDictionary *)options
 {
-  return [self handleWithAFCSession:^NSNull *(CFTypeRef device, NSError **error) {
-    int installReturnCode = self.device.amDevice.calls.SecureInstallApplication(
-      0,
-      device,
-      (__bridge CFURLRef _Nonnull)(appURL),
-      (__bridge CFDictionaryRef _Nonnull)(options),
-      NULL,
-      0
-    );
-    if (installReturnCode != 0) {
-      NSString *errorMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(installReturnCode));
-      return [[FBDeviceControlError
-        describeFormat:@"Failed to install application (%@)", errorMessage]
-        fail:error];
-    }
-    return NSNull.null;
-  }];
+  return [[self.device.amDevice
+    startAFCService]
+    onQueue:self.device.workQueue fmap:^(FBAMDServiceConnection *connection) {
+      int installReturnCode = self.device.amDevice.calls.SecureInstallApplication(
+        0,
+        connection.device,
+        (__bridge CFURLRef _Nonnull)(appURL),
+        (__bridge CFDictionaryRef _Nonnull)(options),
+        NULL,
+        0
+      );
+      if (installReturnCode != 0) {
+        NSString *errorMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(installReturnCode));
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to install application (%@)", errorMessage]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
 }
 
 - (FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)installedApplicationsData
 {
-  return [self.device.amDevice futureForDeviceOperation:^NSDictionary<NSString *, NSDictionary<NSString *, id> *> *(CFTypeRef device, NSError **error) {
+  return [self.device.amDevice futureForDeviceOperation:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (AMDeviceRef device) {
     CFDictionaryRef cf_apps;
     int returnCode = self.device.amDevice.calls.LookupApplications(device, NULL, &cf_apps);
     if (returnCode != 0) {
       return [[FBDeviceControlError
         describe:@"Failed to get list of applications"]
-        fail:error];
+        failFuture];
     }
-    NSDictionary *apps = CFBridgingRelease(cf_apps);
-    return apps;
+    NSDictionary<NSString *, NSDictionary<NSString *, id> *> *apps = CFBridgingRelease(cf_apps);
+    return [FBFuture futureWithResult:apps];
   }];
 }
 
@@ -159,7 +148,7 @@
   // Currently it returns 0 as if it had succeded
   // In case that's not possible, we should look into querying if
   // the app is installed first (FB_AMDeviceLookupApplications)
-  return [self.device.amDevice futureForDeviceOperation:^id(CFTypeRef device, NSError **error) {
+  return [self.device.amDevice futureForDeviceOperation:^(AMDeviceRef device) {
     int returnCode = self.device.amDevice.calls.SecureUninstallApplication(
       0,
       device,
@@ -171,9 +160,9 @@
     if (returnCode != 0) {
       return [[FBDeviceControlError
         describeFormat:@"Failed to uninstall application with error code %x", returnCode]
-        fail:error];
+        failFuture];
     }
-    return NSNull.null;
+    return [FBFuture futureWithResult:NSNull.null];
   }];
 }
 

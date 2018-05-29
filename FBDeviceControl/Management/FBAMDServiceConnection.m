@@ -15,7 +15,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection calls:(AMDCalls)calls
+- (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls;
 {
   self = [super init];
   if (!self) {
@@ -23,6 +23,7 @@
   }
 
   _connection = connection;
+  _device = device;
   _calls = calls;
 
   return self;

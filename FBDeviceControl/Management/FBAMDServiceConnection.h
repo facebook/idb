@@ -29,9 +29,11 @@ typedef CFTypeRef AMDServiceConnectionRef;
  The Designated Initializer.
 
  @param connection the connection to use.
+ @param device the device to use.
+ @param calls the calls to use.
  @return a FBAMDServiceConnection instance.
  */
-- (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection calls:(AMDCalls)calls;
+- (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls;
 
 #pragma mark Public
 
@@ -50,6 +52,11 @@ typedef CFTypeRef AMDServiceConnectionRef;
  The Wrapped Connection.
  */
 @property (nonatomic, assign, readonly) AMDServiceConnectionRef connection;
+
+/**
+ The Device to use.
+ */
+@property (nonatomic, assign, readonly) AMDeviceRef device;
 
 /**
  The Calls to use.

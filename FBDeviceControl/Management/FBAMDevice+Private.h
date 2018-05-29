@@ -114,10 +114,10 @@ typedef struct {
 /**
  Build a Future from an operation for performing on a device.
 
- @param block the block to execute for the device.
+ @param fmap a block that fmap's to the returned future.
  @return a Future that resolves with the result of the block.
  */
-- (FBFuture *)futureForDeviceOperation:(id(^)(AMDeviceRef, NSError **))block;
+- (FBFuture *)futureForDeviceOperation:(FBFuture *(^)(AMDeviceRef))fmap;
 
 /**
  Starts test manager daemon service
@@ -132,6 +132,13 @@ typedef struct {
  @return a Future wrapping the FBAFCConnection.
  */
 - (FBFuture<FBAMDServiceConnection *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo;
+
+/**
+ Starts an AFC Session on the Device.
+
+ @return a Future wrapping the service connection.
+ */
+- (FBFuture<FBAMDServiceConnection *> *)startAFCService;
 
 @end
 
