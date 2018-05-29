@@ -72,6 +72,11 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
     }];
 }
 
+- (NSArray<FBCrashLogInfo *> *)ingestedCrashLogsMatchingPredicate:(NSPredicate *)predicate
+{
+  return [self.ingestedCrashLogs filteredArrayUsingPredicate:predicate];
+}
+
 #pragma mark Private
 
 + (FBFuture<FBCrashLogInfo *> *)oneshotCrashLogNotificationForPredicate:(NSPredicate *)predicate queue:(dispatch_queue_t)queue

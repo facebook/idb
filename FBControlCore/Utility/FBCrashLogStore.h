@@ -50,6 +50,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<FBCrashLogInfo *> *)nextCrashLogForMatchingPredicate:(NSPredicate *)predicate;
 
+/**
+ Obtains all of the ingested logs that match the given predicate.
+
+ @param predicate the predicate to use.
+ @return an array of all the ingested crash logs.
+ */
+- (NSArray<FBCrashLogInfo *> *)ingestedCrashLogsMatchingPredicate:(NSPredicate *)predicate;
+
 @end
 
 NS_ASSUME_NONNULL_END

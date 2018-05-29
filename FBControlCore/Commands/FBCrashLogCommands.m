@@ -10,6 +10,7 @@
 #import "FBCrashLogCommands.h"
 
 #import "FBCrashLogNotifier.h"
+#import "FBCrashLogStore.h"
 
 @interface FBHostCrashLogCommands ()
 
@@ -43,6 +44,11 @@
 - (FBFuture<FBCrashLogInfo *> *)notifyOfCrash:(NSPredicate *)predicate
 {
   return [self.notifier nextCrashLogForPredicate:predicate];
+}
+
+- (FBFuture<NSArray<FBCrashLogInfo *> *> *)crashes:(NSPredicate *)predicate
+{
+  return [FBFuture futureWithResult:[self.notifier.store ingestedCrashLogsMatchingPredicate:predicate]];
 }
 
 @end

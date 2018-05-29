@@ -160,7 +160,7 @@
 + (NSPredicate *)predicateNewerThanDate:(NSDate *)date
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, id _) {
-    return [crashLog.date compare:date] == NSOrderedAscending;
+    return [date compare:crashLog.date] == NSOrderedAscending;
   }];
 }
 

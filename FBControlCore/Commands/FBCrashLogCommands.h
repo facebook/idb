@@ -23,6 +23,14 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBCrashLogCommands <NSObject, FBiOSTargetCommand>
 
 /**
+ Obtains all of the crash logs matching a given predicate.
+
+ @param predicate the predicate to match against.
+ @return a Future that resolves with crash logs.
+ */
+- (FBFuture<NSArray<FBCrashLogInfo *> *> *)crashes:(NSPredicate *)predicate;
+
+/**
  Notifies when a Crash Log becomes available for a given predicate.
 
  @param predicate the predicate to match against.
