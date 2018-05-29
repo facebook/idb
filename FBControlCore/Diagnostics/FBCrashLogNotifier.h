@@ -14,18 +14,33 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBCrashLogInfo;
+@class FBCrashLogStore;
 
 /**
  An interface for being notified of crash logs for a given process identifier.
  */
 @interface FBCrashLogNotifier : NSObject
 
+#pragma mark Properties
+
+/**
+ The Shared Notifier.
+ */
+@property (nonatomic, strong, readonly, class) FBCrashLogNotifier *sharedInstance;
+
+/**
+ The store of crash logs.
+ */
+@property (nonatomic, strong, readonly) FBCrashLogStore *store;
+
 #pragma mark Notifications
 
 /**
  Starts listening for crash logs.
+
+ @return the reciever, for chaining.
  */
-+ (void)startListening;
+- (instancetype)startListening;
 
 /**
  Obtains the next crash log, for a given predicate.
@@ -33,7 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param predicate the predicate to wait for.
  @return a Future that resolves with the next crash log matching the predicate.
  */
-+ (FBFuture<FBCrashLogInfo *> *)nextCrashLogForPredicate:(NSPredicate *)predicate;
+- (FBFuture<FBCrashLogInfo *> *)nextCrashLogForPredicate:(NSPredicate *)predicate;
 
 @end
 

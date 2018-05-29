@@ -115,10 +115,10 @@ static void EventStreamCallback(
     return nil;
   }
 
-#if defined(__apple_build_version__)
   NSString *directory = FBCrashLogInfo.diagnosticReportsPath;
-  FBCrashLogStore *store = [FBCrashLogStore storeForDirectory:directory logger:logger];
-  _fsEvents = [[FBCrashLogNotifier_FSEvents alloc] initWithDirectory:FBCrashLogInfo.diagnosticReportsPath store:store logger:logger];
+  _store = [FBCrashLogStore storeForDirectory:directory logger:logger];
+#if defined(__apple_build_version__)
+  _fsEvents = [[FBCrashLogNotifier_FSEvents alloc] initWithDirectory:FBCrashLogInfo.diagnosticReportsPath store:_store logger:logger];
 #else
   _sinceDate = NSDate.date;
 #endif
@@ -138,16 +138,17 @@ static void EventStreamCallback(
 
 #pragma mark Public Methods
 
-+ (void)startListening
+- (instancetype)startListening
 {
 #if defined(__apple_build_version__)
-  [FBCrashLogNotifier.sharedInstance.fsEvents startListening];
+  [self.fsEvents startListening];
 #else
-  FBCrashLogNotifier.sharedInstance.sinceDate = NSDate.date;
+  self.sinceDate = NSDate.date;
 #endif
+  return self;
 }
 
-+ (FBFuture<FBCrashLogInfo *> *)nextCrashLogForPredicate:(NSPredicate *)predicate
+- (FBFuture<FBCrashLogInfo *> *)nextCrashLogForPredicate:(NSPredicate *)predicate
 {
   [self startListening];
 

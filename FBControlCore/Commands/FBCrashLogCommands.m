@@ -11,16 +11,38 @@
 
 #import "FBCrashLogNotifier.h"
 
+@interface FBHostCrashLogCommands ()
+
+@property (nonatomic, strong, readonly) FBCrashLogNotifier *notifier;
+
+@end
+
 @implementation FBHostCrashLogCommands
+
+#pragma mark Initializers
 
 + (instancetype)commandsWithTarget:(id<FBiOSTarget>)target
 {
-  return [self new];
+  return [[self alloc] initWithNotifier:FBCrashLogNotifier.sharedInstance];
 }
+
+- (instancetype)initWithNotifier:(FBCrashLogNotifier *)notifier
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _notifier = notifier;
+
+  return self;
+}
+
+#pragma mark id<FBiOSTarget>
 
 - (FBFuture<FBCrashLogInfo *> *)notifyOfCrash:(NSPredicate *)predicate
 {
-  return [FBCrashLogNotifier nextCrashLogForPredicate:predicate];
+  return [self.notifier nextCrashLogForPredicate:predicate];
 }
 
 @end
