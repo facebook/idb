@@ -51,8 +51,28 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
 
 #pragma mark Public Methods
 
+- (NSArray<FBCrashLogInfo *> *)ingestAllExistingInDirectory
+{
+  NSArray<NSString *> *contents = [NSFileManager.defaultManager contentsOfDirectoryAtPath:self.directory error:nil];
+  if (!contents) {
+    return @[];
+  }
+  NSMutableArray<FBCrashLogInfo *> *ingested = NSMutableArray.array;
+  for (NSString *path in contents) {
+    FBCrashLogInfo *crash = [self ingestCrashLogAtPath:[self.directory stringByAppendingPathComponent:path]];
+    if (!crash) {
+      continue;
+    }
+    [ingested addObject:crash];
+  }
+  return ingested;
+}
+
 - (FBCrashLogInfo *)ingestCrashLogAtPath:(NSString *)path
 {
+  if ([self hasIngestedCrashLogWithKey:path.lastPathComponent]) {
+    return nil;
+  }
   FBCrashLogInfo *crashLogInfo = [FBCrashLogInfo fromCrashLogAtPath:path];
   if (!crashLogInfo) {
     [self.logger logFormat:@"Could not obtain crash info for %@", path];
@@ -62,6 +82,31 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
   [self.ingestedCrashLogs addObject:crashLogInfo];
   [NSNotificationCenter.defaultCenter postNotificationName:FBCrashLogAppeared object:crashLogInfo];
   return crashLogInfo;
+}
+
+- (FBCrashLogInfo *)ingestCrashLogData:(NSData *)data key:(NSString *)key
+{
+  if ([self hasIngestedCrashLogWithKey:key]) {
+    return nil;
+  }
+  if (![FBCrashLogInfo isParsableCrashLog:data]) {
+    return nil;
+  }
+  NSString *destination = [self.directory stringByAppendingPathComponent:key];
+  if (![NSFileManager.defaultManager fileExistsAtPath:self.directory]) {
+    if (![NSFileManager.defaultManager createDirectoryAtPath:self.directory withIntermediateDirectories:YES attributes:nil error:nil]) {
+      return nil;
+    }
+  }
+  if (![data writeToFile:destination atomically:YES]) {
+    return nil;
+  }
+  return [self ingestCrashLogAtPath:destination];
+}
+
+- (BOOL)hasIngestedCrashLogWithKey:(NSString *)key
+{
+  return [self.ingestedKeys containsObject:key];
 }
 
 - (FBFuture<FBCrashLogInfo *> *)nextCrashLogForMatchingPredicate:(NSPredicate *)predicate
@@ -101,6 +146,11 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
     [notificationCenter removeObserver:observer];
     return [FBFuture futureWithResult:NSNull.null];
   }];
+}
+
+- (NSSet<NSString *> *)ingestedKeys
+{
+  return [NSSet setWithArray:[self.ingestedCrashLogs valueForKeyPath:@"crashPath.lastPathComponent"]];
 }
 
 @end

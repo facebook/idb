@@ -147,4 +147,14 @@
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
+- (FBFuture<NSArray<FBCrashLogInfo *> *> *)crashes:(NSPredicate *)predicate
+{
+  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
+}
+
+- (FBFuture<FBCrashLogInfo *> *)notifyOfCrash:(NSPredicate *)predicate
+{
+  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
+}
+
 @end

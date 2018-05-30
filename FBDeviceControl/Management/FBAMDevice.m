@@ -349,7 +349,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 {
   if (_amDevice) {
     CFRelease(_amDevice);
-    _amDevice = NULL;
+    _amDevice = NULL;   
   }
 }
 

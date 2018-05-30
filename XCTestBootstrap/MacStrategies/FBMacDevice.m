@@ -431,8 +431,21 @@
   return nil;
 }
 
-- (nonnull FBFuture<NSData *> *)takeScreenshot:(nonnull FBScreenshotFormat)format {
+- (nonnull FBFuture<NSData *> *)takeScreenshot:(nonnull FBScreenshotFormat)format
+{
   NSAssert(nil, @"takeScreenshot: is not yet supported");
+  return nil;
+}
+
+- (nonnull FBFuture<FBCrashLogInfo *> *)notifyOfCrash:(NSPredicate *)predicate
+{
+  NSAssert(NO, @"-[%@ %@] is not yet supported", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (FBFuture<NSArray<FBCrashLogInfo *> *> *)crashes:(NSPredicate *)predicate
+{
+  NSAssert(NO, @"-[%@ %@] is not yet supported", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
 }
 

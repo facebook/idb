@@ -35,12 +35,36 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Public Methods
 
 /**
+ Ingests all of the crash logs in the directory.
+
+ @return all the crash logs that have just been ingested.
+ */
+- (NSArray<FBCrashLogInfo *> *)ingestAllExistingInDirectory;
+
+/**
  Ingest the given path.
 
  @param path the path to ingest.
  @return the crash log info if it exists.
  */
 - (nullable FBCrashLogInfo *)ingestCrashLogAtPath:(NSString *)path;
+
+/**
+ Ingest the given data.
+
+ @param data the data to ingest.
+ @param key the key to key on.
+ @return the crash log info if it exists.
+ */
+- (nullable FBCrashLogInfo *)ingestCrashLogData:(NSData *)data key:(NSString *)key;
+
+/**
+ Checks whether the crash log has already been ingested.
+
+ @param key the key to key on.
+ @return YES if ingested, NO otherwise.
+ */
+- (BOOL)hasIngestedCrashLogWithKey:(NSString *)key;
 
 /**
  A future that resolves the next time a crash log becomes available that matches the given predicate.
