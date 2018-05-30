@@ -216,6 +216,7 @@ static NSUInteger MaxLineSearch = 20;
     }
   }
 
+  free(line);
   if (processName == nil || identifier == nil || parentProcessName == nil || executablePath == nil || processIdentifier == -1 || parentProcessIdentifier == -1 || date == nil) {
     return NO;
   }
