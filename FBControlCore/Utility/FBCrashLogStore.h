@@ -53,18 +53,18 @@ NS_ASSUME_NONNULL_BEGIN
  Ingest the given data.
 
  @param data the data to ingest.
- @param key the key to key on.
+ @param name the name of the crash log.
  @return the crash log info if it exists.
  */
-- (nullable FBCrashLogInfo *)ingestCrashLogData:(NSData *)data key:(NSString *)key;
+- (nullable FBCrashLogInfo *)ingestCrashLogData:(NSData *)data name:(NSString *)name;
 
 /**
  Checks whether the crash log has already been ingested.
 
- @param key the key to key on.
+ @param name the name of the crash log.
  @return YES if ingested, NO otherwise.
  */
-- (BOOL)hasIngestedCrashLogWithKey:(NSString *)key;
+- (BOOL)hasIngestedCrashLogWithName:(NSString *)name;
 
 /**
  A future that resolves the next time a crash log becomes available that matches the given predicate.

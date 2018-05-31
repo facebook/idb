@@ -122,14 +122,15 @@ static NSString *const PingSuccess = @"ping";
 
 - (nullable FBCrashLogInfo *)crashLogInfo:(FBAFCConnection *)afc path:(NSString *)path error:(NSError **)error
 {
-  if ([self.store hasIngestedCrashLogWithKey:path]) {
+  NSString *name = path;
+  if ([self.store hasIngestedCrashLogWithName:name]) {
     return nil;
   }
   NSData *data = [afc contentsOfPath:path error:error];
   if (!data) {
     return nil;
   }
-  return [self.store ingestCrashLogData:data key:path];
+  return [self.store ingestCrashLogData:data name:name];
 }
 
 @end

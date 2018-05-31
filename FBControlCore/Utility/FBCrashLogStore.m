@@ -70,7 +70,7 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
 
 - (FBCrashLogInfo *)ingestCrashLogAtPath:(NSString *)path
 {
-  if ([self hasIngestedCrashLogWithKey:path.lastPathComponent]) {
+  if ([self hasIngestedCrashLogWithName:path.lastPathComponent]) {
     return nil;
   }
   FBCrashLogInfo *crashLogInfo = [FBCrashLogInfo fromCrashLogAtPath:path];
@@ -84,15 +84,15 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
   return crashLogInfo;
 }
 
-- (FBCrashLogInfo *)ingestCrashLogData:(NSData *)data key:(NSString *)key
+- (nullable FBCrashLogInfo *)ingestCrashLogData:(NSData *)data name:(NSString *)name
 {
-  if ([self hasIngestedCrashLogWithKey:key]) {
+  if ([self hasIngestedCrashLogWithName:name]) {
     return nil;
   }
   if (![FBCrashLogInfo isParsableCrashLog:data]) {
     return nil;
   }
-  NSString *destination = [self.directory stringByAppendingPathComponent:key];
+  NSString *destination = [self.directory stringByAppendingPathComponent:name];
   if (![NSFileManager.defaultManager fileExistsAtPath:self.directory]) {
     if (![NSFileManager.defaultManager createDirectoryAtPath:self.directory withIntermediateDirectories:YES attributes:nil error:nil]) {
       return nil;
@@ -104,9 +104,9 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
   return [self ingestCrashLogAtPath:destination];
 }
 
-- (BOOL)hasIngestedCrashLogWithKey:(NSString *)key
+- (BOOL)hasIngestedCrashLogWithName:(NSString *)key
 {
-  return [self.ingestedKeys containsObject:key];
+  return [self.ingestedNames containsObject:key];
 }
 
 - (FBFuture<FBCrashLogInfo *> *)nextCrashLogForMatchingPredicate:(NSPredicate *)predicate
@@ -148,9 +148,9 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
   }];
 }
 
-- (NSSet<NSString *> *)ingestedKeys
+- (NSSet<NSString *> *)ingestedNames
 {
-  return [NSSet setWithArray:[self.ingestedCrashLogs valueForKeyPath:@"crashPath.lastPathComponent"]];
+  return [NSSet setWithArray:[self.ingestedCrashLogs valueForKeyPath:@"name"]];
 }
 
 @end

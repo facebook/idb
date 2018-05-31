@@ -132,6 +132,13 @@
   return self;
 }
 
+#pragma mark Properties
+
+- (NSString *)name
+{
+  return self.crashPath.lastPathComponent;
+}
+
 #pragma mark Bulk Collection
 
 + (NSArray<FBCrashLogInfo *> *)crashInfoAfterDate:(NSDate *)date
@@ -161,6 +168,20 @@
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, id _) {
     return [date compare:crashLog.date] == NSOrderedAscending;
+  }];
+}
+
++ (NSPredicate *)predicateForIdentifier:(NSString *)identifier
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, id _) {
+    return [identifier isEqualToString:crashLog.identifier];
+  }];
+}
+
++ (NSPredicate *)predicateForName:(NSString *)name
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, id _) {
+    return [name isEqualToString:crashLog.name];
   }];
 }
 

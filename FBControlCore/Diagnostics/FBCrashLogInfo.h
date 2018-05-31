@@ -31,6 +31,12 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
 #pragma mark Properties
 
 /**
+ The "Unique" name of the crash log.
+ This is taken to be the the last path component of the crash log path.
+ */
+@property (nonatomic, copy, readonly) NSString *name;
+
+/**
  The Path of the Crash Log.
  */
 @property (nonatomic, copy, readonly) NSString *crashPath;
@@ -137,6 +143,22 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @return a NSPredicate.
  */
 + (NSPredicate *)predicateNewerThanDate:(NSDate *)date;
+
+/**
+ A Predicate for FBCrashLogInfo that matches a identifier.
+
+ @param identifier the identifier to use.
+ @return an NSPredicate
+ */
++ (NSPredicate *)predicateForIdentifier:(NSString *)identifier;
+
+/**
+ A Predicate for FBCrashLogInfo that matches a name.
+
+ @param name the names use.
+ @return an NSPredicate
+ */
++ (NSPredicate *)predicateForName:(NSString *)name;
 
 @end
 

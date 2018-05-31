@@ -19,6 +19,16 @@
 
 @implementation FBCrashLogInfoTests
 
++ (NSArray<FBCrashLogInfo *> *)allCrashLogs
+{
+  return @[
+    [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.assetsdCrashPathWithCustomDeviceSet],
+    [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.agentCrashPathWithCustomDeviceSet],
+    [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.appCrashPathWithDefaultDeviceSet],
+    [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.appCrashPathWithCustomDeviceSet],
+  ];
+}
+
 - (void)testAssetsdCustomSet
 {
   FBCrashLogInfo *info = [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.assetsdCrashPathWithCustomDeviceSet];
@@ -73,6 +83,18 @@
   XCTAssertEqualObjects(info.executablePath, @"/private/var/folders/*/TableSearch.app/TableSearch");
   XCTAssertEqualWithAccuracy(info.date.timeIntervalSinceReferenceDate, 479723902, 1);
   XCTAssertEqual(info.processType, FBCrashLogInfoProcessTypeApplication);
+}
+
+- (void)testIdentifierPredicate
+{
+  NSArray<FBCrashLogInfo *> *crashes = [FBCrashLogInfoTests.allCrashLogs filteredArrayUsingPredicate:[FBCrashLogInfo predicateForIdentifier:@"assetsd"]];
+  XCTAssertEqual(crashes.count, 1u);
+}
+
+- (void)testNamePredicate
+{
+  NSArray<FBCrashLogInfo *> *crashes = [FBCrashLogInfoTests.allCrashLogs filteredArrayUsingPredicate:[FBCrashLogInfo predicateForName:@"assetsd_custom_set.crash"]];
+  XCTAssertEqual(crashes.count, 1u);
 }
 
 @end
