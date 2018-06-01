@@ -144,7 +144,10 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   dispatch_after(FBFutureCreateDispatchTime(delay), FBFuture.internalQueue, ^{
     [delayed resolveFromFuture:future];
   });
-  return delayed;
+  return [delayed onQueue:FBFuture.internalQueue respondToCancellation:^{
+    [future cancel];
+    return [FBFuture futureWithResult:NSNull.null];
+  }];
 }
 
 + (instancetype)onQueue:(dispatch_queue_t)queue resolveValue:(id(^)(NSError **))resolve;
@@ -410,7 +413,14 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
       }
     }];
   }];
-  return chained;
+  // Chaining: 'self' References 'chained'
+  // Cancellation: 'chained' references 'self'
+  // Break the cycle, if weakSelf is nullified, this is fine as completion has been processed already.
+  __weak typeof(self) weakSelf = self;
+  return [chained onQueue:FBFuture.internalQueue respondToCancellation:^{
+    [weakSelf cancel];
+    return [FBFuture futureWithResult:NSNull.null];
+  }];
 }
 
 - (FBFuture *)onQueue:(dispatch_queue_t)queue fmap:(FBFuture * (^)(id result))fmap
@@ -435,7 +445,14 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
       [chained resolveWithResult:next.result];
     }];
   }];
-  return chained;
+  // Chaining: 'self' References 'chained'
+  // Cancellation: 'chained' references 'self'
+  // Break the cycle, if weakSelf is nullified, this is fine as completion has been processed already.
+  __weak typeof(self) weakSelf = self;
+  return [chained onQueue:FBFuture.internalQueue respondToCancellation:^{
+    [weakSelf cancel];
+    return [FBFuture futureWithResult:NSNull.null];
+  }];
 }
 
 - (FBFuture *)onQueue:(dispatch_queue_t)queue map:(id (^)(id result))map

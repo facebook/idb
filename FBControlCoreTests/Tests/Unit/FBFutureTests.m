@@ -710,6 +710,61 @@
   [self waitForExpectations:@[completionCalled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
+- (void)testCancelingPropogatesOnAMappedFuture
+{
+  XCTestExpectation *delayedCalled = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+  FBFuture *delayed = [[[FBFuture
+    futureWithResult:@YES]
+    delay:100]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
+      XCTAssertEqual(future.state, FBFutureStateCancelled);
+      [delayedCalled fulfill];
+    }];
+
+  FBFuture *chained = [delayed
+    onQueue:self.queue map:^(id _) {
+      XCTFail(@"Cancellation should prevent propogation");
+      return [FBFuture futureWithResult:@NO];
+    }];
+
+  [chained cancel];
+  [self waitForExpectations:@[delayedCalled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
+- (void)testCancellationOfDelayedFutureWhenRacing
+{
+  XCTestExpectation *delayedCompletionCalled = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+  XCTestExpectation *immediateCompletionCalled = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+  XCTestExpectation *raceCompletionCalled = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+
+  FBFuture *delayed = [[[[FBFuture
+    futureWithResult:NSNull.null]
+    delay:1]
+    onQueue:self.queue fmap:^(id _) {
+      XCTFail(@"Cancellation should prevent propogation");
+      return [FBFuture futureWithResult:@NO];
+    }]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *inner) {
+      XCTAssertEqual(inner.state, FBFutureStateCancelled);
+      [delayedCompletionCalled fulfill];
+    }];
+  FBFuture *immediate = [[FBFuture
+    futureWithResult:@YES]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture<NSNumber *> *future) {
+      XCTAssertEqualObjects(future.result, @YES);
+      [immediateCompletionCalled fulfill];
+    }];
+  FBFuture *raced = [[FBFuture
+    race:@[delayed, immediate]]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture<NSNumber *> *future) {
+      XCTAssertEqualObjects(future.result, @YES);
+      [raceCompletionCalled fulfill];
+    }];
+
+  [self waitForExpectations:@[delayedCompletionCalled, immediateCompletionCalled, raceCompletionCalled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  XCTAssertEqualObjects(raced.result, @YES);
+}
+
 #pragma mark - Helpers
 
 - (void)assertSynchronousResolutionWithBlock:(void (^)(FBMutableFuture *))resolveBlock expectedState:(FBFutureState)state expectedResult:(id)expectedResult expectedError:(NSError *)expectedError
