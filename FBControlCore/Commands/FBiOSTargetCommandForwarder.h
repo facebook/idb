@@ -39,9 +39,9 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Initializer.
 
  @param commandClasses the classes to forward to.
- @param memoize YES if the commands should be memoized once instantiated, NO otherwise.
+ @param statefulCommands A set of stateful command class names that should be memoized.
  */
-+ (instancetype)forwarderWithTarget:(id<FBiOSTarget>)target commandClasses:(NSArray<Class> *)commandClasses memoize:(BOOL)memoize;
++ (instancetype)forwarderWithTarget:(id<FBiOSTarget>)target commandClasses:(NSArray<Class> *)commandClasses statefulCommands:(NSSet<NSString *> *)statefulCommands;
 
 @end
 

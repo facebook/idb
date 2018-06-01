@@ -49,6 +49,17 @@
 
 @end
 
+@interface FBSimulatorVideo_SimCtl : FBSimulatorVideo
+
+@property (nonatomic, strong, readonly) NSString *deviceSetPath;
+@property (nonatomic, strong, readonly) NSString *deviceUUID;
+@property (nonatomic, strong, readwrite) FBFuture *recordingTaskFuture;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+
+- (instancetype)initWithDeviceSetPath:(NSString *)deviceSetPath deviceUUID:(NSString *)deviceUUID logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
+
+@end
+
 @implementation FBSimulatorVideo
 
 #pragma mark Initializers
@@ -61,6 +72,11 @@
 + (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   return [[FBSimulatorVideo_SimulatorKit alloc] initWithConfiguration:configuration surface:surface logger:logger eventSink:eventSink];
+}
+
++ (instancetype)simctlVideoForDeviceSetPath:(NSString *)deviceSetPath deviceUUID:(NSString *)deviceUUID logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
+{
+  return [[FBSimulatorVideo_SimCtl alloc] initWithDeviceSetPath:deviceSetPath deviceUUID:deviceUUID logger:logger eventSink:eventSink];
 }
 
 - (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
@@ -259,6 +275,78 @@
   return [future onQueue:queue notifyOfCompletion:^(id _) {
     [self.completedFuture resolveWithResult:NSNull.null];
   }];
+}
+
+@end
+
+@implementation FBSimulatorVideo_SimCtl
+
+- (instancetype)initWithDeviceSetPath:(NSString *)deviceSetPath deviceUUID:(NSString *)deviceUUID logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+{
+  self = [super initWithConfiguration:FBVideoEncoderConfiguration.defaultConfiguration logger:logger eventSink:eventSink];
+  if (!self) {
+    return nil;
+  }
+
+  _deviceSetPath = deviceSetPath;
+  _deviceUUID = deviceUUID;
+  _queue = dispatch_queue_create("com.facebook.simulatorvideo.simctl", DISPATCH_QUEUE_SERIAL);
+  _recordingTaskFuture = nil;
+
+  return self;
+}
+
+#pragma mark Public
+
+- (FBFuture<NSNull *> *)startRecordingToFile:(NSString *)filePath
+{
+  if (_recordingTaskFuture != nil) {
+    return [[FBSimulatorError
+             describe:@"Cannot Start Recording, there is already an recording task running"]
+            failFuture];
+  }
+  // Choose the Path for the Log
+  NSString *path = filePath ?: self.configuration.filePath;
+
+  _recordingTaskFuture = [[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/xcrun"
+    arguments:@[
+      @"simctl",
+      @"--set",
+      _deviceSetPath,
+      @"io",
+      _deviceUUID,
+      @"recordVideo",
+      filePath,
+    ]] start];
+
+  // Report the availability of the video
+  FBDiagnostic *diagnostic = [[[[[FBDiagnosticBuilder builder]
+                                 updatePath:path]
+                                updateFileType:self.configuration.fileType]
+                               updatePath:path]
+                              build];
+  [self.eventSink diagnosticAvailable:diagnostic];
+
+  return _recordingTaskFuture;
+}
+
+- (FBFuture<NSNull *> *)stopRecording
+{
+  if (_recordingTaskFuture == nil) {
+    return [[FBSimulatorError
+             describe:@"Cannot Stop Recording, there is no recording task running"]
+            failFuture];
+  }
+
+  FBFuture *future = [[_recordingTaskFuture onQueue:_queue fmap:^(FBTask *task){
+    return [task sendSignal:SIGINT];
+  }] onQueue:_queue notifyOfCompletion:^(id _) {
+    [self.completedFuture resolveWithResult:NSNull.null];
+  }];
+
+  _recordingTaskFuture = nil;
+  return future;
 }
 
 @end

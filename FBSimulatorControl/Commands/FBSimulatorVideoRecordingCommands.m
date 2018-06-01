@@ -9,8 +9,12 @@
 
 #import "FBSimulatorVideoRecordingCommands.h"
 
+#import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceSet.h>
+
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorSet.h"
 #import "FBFramebuffer.h"
 #import "FBSimulatorVideo.h"
 #import "FBFramebufferSurface.h"
@@ -19,6 +23,7 @@
 @interface FBSimulatorVideoRecordingCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, readonly) FBSimulatorVideo *simulatorVideo;
 
 @end
 
@@ -85,6 +90,17 @@
 
 - (FBFuture<FBSimulatorVideo *> *)obtainSimulatorVideo
 {
+  if ([NSProcessInfo.processInfo.environment[@"FBXCTEST_SIMCTL_VIDEO_RECORDING"] boolValue]) {
+    if (_simulatorVideo == nil) {
+      _simulatorVideo = [FBSimulatorVideo
+        simctlVideoForDeviceSetPath:self.simulator.set.deviceSet.setPath
+        deviceUUID:self.simulator.device.UDID.UUIDString
+        logger:self.simulator.logger
+        eventSink:self.simulator.eventSink];
+    }
+    return [FBFuture futureWithResult:_simulatorVideo];
+  }
+
   return [[self.simulator
     connectToFramebuffer]
     onQueue:self.simulator.workQueue fmap:^(FBFramebuffer *framebuffer) {

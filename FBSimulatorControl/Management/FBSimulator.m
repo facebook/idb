@@ -82,7 +82,7 @@
   _processFetcher = processFetcher;
   _auxillaryDirectory = auxillaryDirectory;
   _logger = [logger withName:device.UDID.UUIDString];
-  _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBSimulator.commandResponders memoize:NO];
+  _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBSimulator.commandResponders statefulCommands:FBSimulator.statefulCommands];
 
   return self;
 }
@@ -331,6 +331,18 @@
     return [device.dataPath stringByAppendingPathComponent:@"fbsimulatorcontrol"];
   }
   return [configuration.auxillaryDirectory stringByAppendingPathComponent:device.UDID.UUIDString];
+}
+
++ (NSSet<NSString *> *)statefulCommands
+{
+  static dispatch_once_t onceToken;
+  static NSSet<NSString *> *statefulCommands;
+  dispatch_once(&onceToken, ^{
+    statefulCommands = [NSSet setWithArray:@[
+      NSStringFromClass(FBSimulatorVideoRecordingCommands.class),
+    ]];
+  });
+  return statefulCommands;
 }
 
 @end

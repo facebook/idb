@@ -49,7 +49,7 @@
   _set = set;
   _amDevice = amDevice;
   _logger = [logger withName:amDevice.udid];
-  _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBDevice.commandResponders memoize:YES];
+  _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBDevice.commandResponders statefulCommands:FBDevice.statefulCommands];
 
   return self;
 }
@@ -239,6 +239,23 @@
   }
 
   return NO;
+}
+
+#pragma mark Private
+
++ (NSSet<NSString *> *)statefulCommands
+{
+  static dispatch_once_t onceToken;
+  static NSSet<NSString *> *statefulCommands;
+  dispatch_once(&onceToken, ^{
+    NSMutableArray<NSString *> *allCommands = NSMutableArray.new;
+    for (Class commandClass in FBDevice.commandResponders) {
+      [allCommands addObject:NSStringFromClass(commandClass)];
+    }
+
+    statefulCommands = [NSSet setWithArray:allCommands];
+  });
+  return statefulCommands;
 }
 
 @end

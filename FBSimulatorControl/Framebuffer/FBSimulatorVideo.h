@@ -46,6 +46,17 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
 
+/**
+ The Designated Initializer, for doing simulator video recording using Apple's simctl
+
+ @param deviceSetPath path of simulator's device set
+ @param deviceUUID UUID of simulator's device
+ @param logger the logger object to log events to, may be nil.
+ @param eventSink an event sink to report video output to.
+ @return a new FBSimulatorVideo instance.
+ */
++ (instancetype)simctlVideoForDeviceSetPath:(NSString *)deviceSetPath deviceUUID:(NSString *)deviceUUID logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
+
 #pragma mark Public Methods
 
 /**
