@@ -664,9 +664,10 @@
   XCTAssertEqual(cancelledFirstTime, cancelledSecondTime);
 }
 
-- (void)testInstallingCancellationHandlerTwiceWillOnlyCallFirstCancellationHandler
+- (void)testInstallingCancellationHandlerTwiceWillCallBothCancellationHandlers
 {
   XCTestExpectation *firstCancelCalled = [[XCTestExpectation alloc] initWithDescription:@"Resolved Responding to Cancellation"];
+  XCTestExpectation *secondCancelCalled = [[XCTestExpectation alloc] initWithDescription:@"Resolved Responding to Cancellation"];
   XCTestExpectation *completionCalled = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
 
   FBFuture<NSNumber *> *future = [[[[FBMutableFuture
@@ -676,7 +677,7 @@
       return [FBFuture futureWithResult:NSNull.null];
     }]
     onQueue:self.queue respondToCancellation:^{
-      XCTFail(@"Second Cancellation should not have been called");
+      [secondCancelCalled fulfill];
       return [FBFuture futureWithResult:NSNull.null];
     }]
     onQueue:self.queue notifyOfCompletion:^(FBFuture<NSNull *> *completionFuture) {
@@ -685,7 +686,7 @@
     }];
 
   [future cancel];
-  [self waitForExpectations:@[firstCancelCalled, completionCalled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  [self waitForExpectations:@[firstCancelCalled, secondCancelCalled, completionCalled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
 - (void)testCancellationHandlerIsNotCalledIfFutureIsNotCancelled

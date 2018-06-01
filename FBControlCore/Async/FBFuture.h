@@ -117,9 +117,9 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
  This will always start the process of cancellation.
  Some cancellation is immediate, however there are some cases where cancellation is asynchronous.
  In these cases the future returned will not be resolved immediately.
- If you wish to wait for the cancellation to have been fully resolved, await the returned futures.
+ If you wish to wait for the cancellation to have been fully resolved, chain on the future returned.
 
- @return a Future that resolves when the future is cancelled.
+ @return a Future that resolves when cancellation of all handlers has been processed.
  */
 - (FBFuture<NSNull *> *)cancel;
 
@@ -135,6 +135,7 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 /**
  Respond to a cancellation request.
  This provides the opportunity to provide asynchronous cancellation.
+ This can be called multiple times for the same reference.
 
  @param queue the queue to notify on.
  @param handler the block to invoke if cancelled.

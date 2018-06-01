@@ -115,7 +115,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 @interface FBFuture ()
 
 @property (nonatomic, strong, readonly) NSMutableArray<FBFuture_Handler *> *handlers;
-@property (nonatomic, strong, nullable, readwrite) FBFuture_Cancellation *cancelResponder;
+@property (nonatomic, strong, nullable, readwrite) NSMutableArray<FBFuture_Cancellation *> *cancelResponders;
 @property (nonatomic, strong, nullable, readwrite) FBFuture<NSNull *> *resolvedCancellation;
 
 @end
@@ -323,6 +323,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
   _state = FBFutureStateRunning;
   _handlers = [NSMutableArray array];
+  _cancelResponders = [NSMutableArray array];
 
   return self;
 }
@@ -346,15 +347,10 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
       return [FBFuture futureWithResult:NSNull.null];
     }
   }
-  FBFuture_Cancellation *cancelResponder = [self resolveAsCancelled];
+  NSArray<FBFuture_Cancellation *> *cancelResponders = [self resolveAsCancelled];
   @synchronized (self) {
-    if (cancelResponder) {
-      FBFuture<NSNull *> *resolvedCancellation = [FBFuture onQueue:cancelResponder.queue resolve:cancelResponder.handler];
-      self.resolvedCancellation = resolvedCancellation;
-      return resolvedCancellation;
-    } else {
-      return [FBFuture futureWithResult:NSNull.null];
-    }
+    self.resolvedCancellation = [FBFuture resolveCancellationResponders:cancelResponders];
+    return self.resolvedCancellation;
   }
 }
 
@@ -382,10 +378,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   NSParameterAssert(handler);
 
   @synchronized(self) {
-    if (self.cancelResponder) {
-      return self;
-    }
-    _cancelResponder = [[FBFuture_Cancellation alloc] initWithQueue:queue handler:handler];
+    [self.cancelResponders addObject:[[FBFuture_Cancellation alloc] initWithQueue:queue handler:handler]];
     return self;
   }
 }
@@ -558,7 +551,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
       self.result = result;
       self.state = FBFutureStateDone;
       [self fireAllHandlers];
-      self.cancelResponder = nil;
+      self.cancelResponders = nil;
     }
   }
 
@@ -572,7 +565,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
       self.error = error;
       self.state = FBFutureStateFailed;
       [self fireAllHandlers];
-      self.cancelResponder = nil;
+      self.cancelResponders = nil;
     }
   }
   return self;
@@ -606,16 +599,16 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 #pragma mark Private
 
-- (FBFuture_Cancellation *)resolveAsCancelled
+- (NSArray<FBFuture_Cancellation *> *)resolveAsCancelled
 {
   @synchronized (self) {
     if (self.state == FBFutureStateRunning) {
       self.state = FBFutureStateCancelled;
       [self fireAllHandlers];
     }
-    FBFuture_Cancellation *cancelResponder = self.cancelResponder;
-    self.cancelResponder = nil;
-    return cancelResponder;
+    NSArray<FBFuture_Cancellation *> *cancelResponders = self.cancelResponders;
+    self.cancelResponders = nil;
+    return cancelResponders;
   }
 }
 
@@ -627,6 +620,22 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
     });
   }
   [self.handlers removeAllObjects];
+}
+
++ (FBFuture<NSNull *> *)resolveCancellationResponders:(NSArray<FBFuture_Cancellation *> *)cancelResponders
+{
+  if (cancelResponders.count == 0) {
+    return [FBFuture futureWithResult:NSNull.null];
+  } else if (cancelResponders.count == 1) {
+    FBFuture_Cancellation *cancelResponder = cancelResponders[0];
+    return [FBFuture onQueue:cancelResponder.queue resolve:cancelResponder.handler];
+  } else {
+    NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
+    for (FBFuture_Cancellation *cancelResponder in cancelResponders) {
+      [futures addObject:[FBFuture onQueue:cancelResponder.queue resolve:cancelResponder.handler]];
+    }
+    return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
+  }
 }
 
 + (dispatch_queue_t)internalQueue
