@@ -27,6 +27,9 @@ typedef enum : uint64_t {
   FBAFCreateReadAndWrite = 3
 } FBAFCReadMode;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+
 /**
  A Structure holding references to all of the Apple File Conduit APIs.
  */
@@ -52,6 +55,8 @@ typedef struct {
   CFTypeRef (*OperationGetResultObject)(CFTypeRef operation);
   int (*SetSecureContext)(CFTypeRef connection);
 } AFCCalls;
+
+#pragma clang diagnostic pop
 
 /**
  An Object wrapper for an Apple File Conduit handle/

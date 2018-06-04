@@ -11,28 +11,15 @@
 
 #import "FBAFCConnection.h"
 
-NS_ASSUME_NONNULL_BEGIN
-
-@class FBAMDServiceConnection;
-
-#pragma mark - Notifications
-
-/**
- Notification for the Attachment of a Device.
- */
-extern NSNotificationName const FBAMDeviceNotificationNameDeviceAttached;
-
-/**
- Notification for the Detachment of a Device.
- */
-extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
-
 #pragma mark - AMDevice API
 
 /**
  An Alias for where AMDevices are used in the AMDevice APIs.
  */
 typedef CFTypeRef AMDeviceRef;
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
 
 /**
  A structure that contains references for all the AMDevice calls we use.
@@ -71,6 +58,24 @@ typedef struct {
   void (*SetLogLevel)(int32_t level);
   _Nullable CFStringRef (*CopyErrorText)(int status);
 } AMDCalls;
+
+#pragma clang diagnostic pop
+
+NS_ASSUME_NONNULL_BEGIN
+
+@class FBAMDServiceConnection;
+
+#pragma mark - Notifications
+
+/**
+ Notification for the Attachment of a Device.
+ */
+extern NSNotificationName const FBAMDeviceNotificationNameDeviceAttached;
+
+/**
+ Notification for the Detachment of a Device.
+ */
+extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
 
 
 #pragma mark - AMDevice Class Private
