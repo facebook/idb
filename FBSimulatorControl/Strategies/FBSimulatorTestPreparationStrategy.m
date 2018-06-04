@@ -89,11 +89,19 @@
 
 - (FBFuture<FBTestRunnerConfiguration *> *)prepareTestWithIOSTargetAfterCheckingCodesignature:(FBSimulator *)simulator
 {
-  NSString *osRuntimePath = [simulator.device.runtime.root stringByAppendingPathComponent:@"Developer"];
-  NSString *developerLibraryPath = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library"];
+  NSString *runtimeRoot = simulator.device.runtime.root;
+  NSString *developerRuntimePath = [runtimeRoot stringByAppendingPathComponent:@"Developer"];
+  NSString *developerLibraryPath = [developerRuntimePath stringByAppendingPathComponent:@"Library"];
+  NSString *xcodeLibraryInjection = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library"];
 
-  NSString *automationFrameworkPath = [osRuntimePath stringByAppendingPathComponent:@"Library/PrivateFrameworks/XCTAutomationSupport.framework"];
-  NSString *xctTargetBootstrapInjectPath = [osRuntimePath stringByAppendingPathComponent:@"usr/lib/libXCTTargetBootstrapInject.dylib"];
+  NSString *xctTargetBootstrapInjectPath = [developerRuntimePath stringByAppendingPathComponent:@"usr/lib/libXCTTargetBootstrapInject.dylib"];
+  NSString *automationFrameworkPath = [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks/XCTAutomationSupport.framework"];
+  NSArray<NSString *> *XCTestFrameworksPaths = @[
+    [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"],
+    [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks"],
+    [runtimeRoot stringByAppendingPathComponent:@"System/Library/PrivateFrameworks/IMSharedUtilities.framework/Frameworks"]
+  ];
+
   NSDictionary *testedApplicationAdditionalEnvironment = @{
     @"DYLD_INSERT_LIBRARIES" : xctTargetBootstrapInjectPath
   };
@@ -132,11 +140,7 @@
       failFuture];
   }
 
-  NSString *IDEBundleInjectionFrameworkPath = [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks/IDEBundleInjection.framework"];
-  NSArray<NSString *> *XCTestFrameworksPaths = @[
-    [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"],
-    [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks"],
-  ];
+  NSString *IDEBundleInjectionFrameworkPath = [xcodeLibraryInjection stringByAppendingPathComponent:@"PrivateFrameworks/IDEBundleInjection.framework"];
 
   FBProductBundle *IDEBundleInjectionFramework = [[[FBProductBundleBuilder builder]
     withBundlePath:IDEBundleInjectionFrameworkPath]
