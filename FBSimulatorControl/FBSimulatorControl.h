@@ -46,6 +46,7 @@
 #import <FBSimulatorControl/FBSimulatorControlOperator.h>
 #import <FBSimulatorControl/FBSimulatorDiagnostics.h>
 #import <FBSimulatorControl/FBSimulatorEraseConfiguration.h>
+#import <FBSimulatorControl/FBSimulatorTestPreparationStrategy.h>
 #import <FBSimulatorControl/FBSimulatorError.h>
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 #import <FBSimulatorControl/FBSimulatorHID.h>

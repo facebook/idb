@@ -10,13 +10,11 @@
 #import "FBSimulatorTestPreparationStrategy.h"
 
 #import <FBControlCore/FBControlCore.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
+#import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimRuntime.h>
 
-#import "FBDeviceOperator.h"
-#import "FBProductBundle.h"
-#import "FBTestBundle.h"
-#import "FBTestConfiguration.h"
-#import "FBTestRunnerConfiguration.h"
-#import "XCTestBootstrapError.h"
+#import "FBSimulator.h"
 
 @interface FBSimulatorTestPreparationStrategy ()
 
@@ -68,9 +66,9 @@
 
 #pragma mark FBTestPreparationStrategy protocol
 
-- (FBFuture<FBTestRunnerConfiguration *> *)prepareTestWithIOSTarget:(id<FBiOSTarget>)iosTarget
+- (FBFuture<FBTestRunnerConfiguration *> *)prepareTestWithIOSTarget:(FBSimulator *)simulator
 {
-  NSAssert(iosTarget, @"iosTarget is needed to load bundles");
+  NSParameterAssert([simulator isKindOfClass:FBSimulator.class]);
   NSAssert(self.workingDirectory, @"Working directory is needed to prepare bundles");
   NSAssert(self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID, @"Test runner bundle ID is needed to load bundles");
   NSAssert(self.testLaunchConfiguration.testBundlePath, @"Path to test bundle is needed to load bundles");
@@ -80,18 +78,18 @@
     return [[[self.codesign
       cdHashForBundleAtPath:self.testLaunchConfiguration.testBundlePath]
       rephraseFailure:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", self.testLaunchConfiguration.testBundlePath]
-      onQueue:iosTarget.workQueue fmap:^(id _) {
-        return [self prepareTestWithIOSTargetAfterCheckingCodesignature:iosTarget];
+      onQueue:simulator.workQueue fmap:^(id _) {
+        return [self prepareTestWithIOSTargetAfterCheckingCodesignature:simulator];
       }];
   }
-  return [self prepareTestWithIOSTargetAfterCheckingCodesignature:iosTarget];
+  return [self prepareTestWithIOSTargetAfterCheckingCodesignature:simulator];
 }
 
 #pragma mark Private
 
-- (FBFuture<FBTestRunnerConfiguration *> *)prepareTestWithIOSTargetAfterCheckingCodesignature:(id<FBiOSTarget>)iosTarget
+- (FBFuture<FBTestRunnerConfiguration *> *)prepareTestWithIOSTargetAfterCheckingCodesignature:(FBSimulator *)simulator
 {
-  NSString *osRuntimePath = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot/Developer"];
+  NSString *osRuntimePath = [simulator.device.runtime.root stringByAppendingPathComponent:@"Developer"];
   NSString *developerLibraryPath = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library"];
 
   NSString *automationFrameworkPath = [osRuntimePath stringByAppendingPathComponent:@"Library/PrivateFrameworks/XCTAutomationSupport.framework"];
@@ -126,7 +124,7 @@
   }
 
   // Prepare test runner
-  FBProductBundle *application = [iosTarget.deviceOperator applicationBundleWithBundleID:self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID error:&error];
+  FBProductBundle *application = [simulator.deviceOperator applicationBundleWithBundleID:self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID error:&error];
   if (!application) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare test runner"]
