@@ -121,7 +121,7 @@ Direct Launching does not currently support manipulation of the UI within the Si
 [`fbsimctl` is a Command Line Interface](https://github.com/facebook/FBSimulatorControl/blob/master/fbsimctl/README.md) for `FBSimulatorControl` API calls, so `FBSimulatorControl` functionality can be used without the need to integrate with the Framework. It is currently under development. As `fbsimctl` is under active development, the User Interface will be prone to change.
 
 ## Contributing
-See the [CONTRIBUTING](CONTRIBUTING) file for how to help out. There's plenty to work on the issues!
+See the [CONTRIBUTING](CONTRIBUTING.md) file for how to help out. There's plenty to work on the issues!
 
 ## Example Projects
 
