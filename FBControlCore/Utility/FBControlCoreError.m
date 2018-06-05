@@ -123,6 +123,14 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
   return [FBFuture futureWithError:error];
 }
 
+- (void *)failPointer:(NSError **)error;
+{
+  if (error) {
+    *error = [self build];
+  }
+  return NULL;
+}
+
 - (instancetype)extraInfo:(NSString *)key value:(id)value
 {
   if (!key || !value) {

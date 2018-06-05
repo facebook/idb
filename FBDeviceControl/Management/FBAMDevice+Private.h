@@ -101,6 +101,11 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 
 /**
+ The logger to log to.
+ */
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+
+/**
  The default AMDevice calls.
  */
 @property (nonatomic, assign, readonly, class) AMDCalls defaultCalls;
@@ -113,8 +118,10 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
  @param udid the UDID of the AMDevice.
  @param calls the calls to use.
  @param workQueue the queue to perform work on.
+ @param logger the logger to use.
+ @return a new FBAMDevice instance.
  */
-- (instancetype)initWithUDID:(NSString *)udid calls:(AMDCalls)calls workQueue:(dispatch_queue_t)workQueue;
+- (instancetype)initWithUDID:(NSString *)udid calls:(AMDCalls)calls workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Build a Future from an operation for performing on a device.
