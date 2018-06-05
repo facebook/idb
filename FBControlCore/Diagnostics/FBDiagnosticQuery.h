@@ -25,8 +25,6 @@ extern FBDiagnosticQueryFormat FBDiagnosticQueryFormatCurrent;
 extern FBDiagnosticQueryFormat FBDiagnosticQueryFormatPath;
 extern FBDiagnosticQueryFormat FBDiagnosticQueryFormatContent;
 
-@class FBSimulatorDiagnostics;
-
 /**
  A value object for describing which diagnostics to fetch.
  */
@@ -83,30 +81,15 @@ extern FBDiagnosticQueryFormat FBDiagnosticQueryFormatContent;
  */
 @property (nonatomic, copy, readonly) FBDiagnosticQueryFormat format;
 
-@end
+#pragma mark Public Methods
 
-@interface FBDiagnosticQuery_All : FBDiagnosticQuery
+/**
+ Run the query against a target.
 
-@end
-
-@interface FBDiagnosticQuery_Named : FBDiagnosticQuery
-
-@property (nonatomic, copy, readonly, nonnull) NSArray<NSString *> *names;
-
-@end
-
-@interface FBDiagnosticQuery_ApplicationLogs : FBDiagnosticQuery
-
-@property (nonatomic, copy, readonly, nonnull) NSString *bundleID;
-@property (nonatomic, copy, readonly, nonnull) NSArray<NSString *> *filenames;
-@property (nonatomic, copy, readonly, nonnull) NSArray<NSString *> *filenameGlobs;
-
-@end
-
-@interface FBDiagnosticQuery_Crashes : FBDiagnosticQuery
-
-@property (nonatomic, assign, readonly) FBCrashLogInfoProcessType processType;
-@property (nonatomic, copy, readonly, nonnull) NSDate *date;
+ @param target the target to run against.
+ @return a future returning the diagnostics that were fetched.
+ */
+- (FBFuture<NSArray<FBDiagnostic *> *> *)run:(id<FBiOSTarget>)target;
 
 @end
 

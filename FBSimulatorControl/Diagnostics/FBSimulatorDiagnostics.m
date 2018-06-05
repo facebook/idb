@@ -190,7 +190,8 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
 
 - (NSArray<FBDiagnostic *> *)allDiagnostics
 {
-  NSMutableArray *logs = [NSMutableArray arrayWithArray:@[
+  NSMutableArray<FBDiagnostic *> *logs = [[super allDiagnostics] mutableCopy];
+  [logs addObjectsFromArray:@[
     self.syslog,
     self.coreSimulator,
     self.simulatorBootstrap,
@@ -199,12 +200,8 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
   ]];
   [logs addObjectsFromArray:self.eventLogs.allValues];
   [logs addObjectsFromArray:self.stdOutErrDiagnostics];
+  [logs addObjectsFromArray:[super allDiagnostics]];
   return [logs filteredArrayUsingPredicate:FBSimulatorDiagnostics.predicateForHasContent];
-}
-
-- (NSArray<FBDiagnostic *> *)perform:(FBDiagnosticQuery *)query
-{
-  return [[super perform:query] arrayByAddingObjectsFromArray:[query performSimulator:self]];
 }
 
 #pragma mark FBSimulatorEventSink Implementation
@@ -350,33 +347,6 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
     [array addObject:[[[FBDiagnosticBuilder builder] updatePath:path] build]];
   }
   return [array filteredArrayUsingPredicate:self.predicateForHasContent];
-}
-
-@end
-
-@implementation FBDiagnosticQuery_ApplicationLogs (Simulators)
-
-- (NSArray<FBDiagnostic *> *)performSimulator:(FBSimulatorDiagnostics *)diagnostics
-{
-  return [diagnostics diagnosticsForApplicationWithBundleID:self.bundleID withFilenames:self.filenames withFilenameGlobs:self.filenameGlobs fallbackToGlobalSearch:YES];
-}
-
-@end
-
-@implementation FBDiagnosticQuery_Crashes (Simulators)
-
-- (NSArray<FBDiagnostic *> *)performSimulator:(FBSimulatorDiagnostics *)diagnostics
-{
-  return [diagnostics subprocessCrashesAfterDate:self.date withProcessType:self.processType];
-}
-
-@end
-
-@implementation FBDiagnosticQuery (Simulators)
-
-- (NSArray<FBDiagnostic *> *)performSimulator:(FBSimulatorDiagnostics *)diagnostics
-{
-  return @[];
 }
 
 @end

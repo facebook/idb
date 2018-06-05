@@ -169,7 +169,10 @@
 // to a temporary folder so it can be obtained by external tools if needed.
 - (void)_saveTestArtifactsOfTestRunnerApp:(FBApplicationBundle *)testRunnerApp withFilenameMatchGlobs:(NSArray<NSString *> *)filenameGlobs
 {
-  NSArray<FBDiagnostic *> *diagnostics = [self.target.diagnostics perform:[FBDiagnosticQuery filesInApplicationOfBundleID:testRunnerApp.bundleID withFilenames:@[] withFilenameGlobs:filenameGlobs]];
+  NSArray<FBDiagnostic *> *diagnostics = [[[FBDiagnosticQuery
+    filesInApplicationOfBundleID:testRunnerApp.bundleID withFilenames:@[] withFilenameGlobs:filenameGlobs]
+    run:self.target]
+    await:nil];
 
   if ([diagnostics count] == 0) {
     return;

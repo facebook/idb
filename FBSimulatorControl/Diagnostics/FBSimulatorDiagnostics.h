@@ -53,27 +53,6 @@ extern FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap;
  */
 - (NSString *)coreSimulatorLogsDirectory;
 
-#pragma mark Crash Log Diagnostics
-
-/**
- Crash logs of all the subprocesses that have crashed in the Simulator after the specified date.
-
- @param date the earliest to search for crash reports. If nil will find reports regardless of date.
- @param processType an Option Set for the kinds of crashes that should be fetched.
- @return an NSArray<FBDiagnostic *> of all the applicable crash reports.
- */
-- (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date withProcessType:(FBCrashLogInfoProcessType)processType;
-
-/**
- Crash logs of all the subprocesses that have crashed in the Simulator after the specified date.
-
- @param date the earliest to search for crash reports. If nil will find reports regardless of date.
- @param processIdentifier The Process Identifier to filter on.
- @param processType an Option Set for the kinds of crashes that should be fetched.
- @return an NSArray<FBDiagnostic *> of all the applicable crash reports.
- */
-- (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date processsIdentifier:(pid_t)processIdentifier processType:(FBCrashLogInfoProcessType)processType;
-
 #pragma mark Standard Diagnostics
 
 /**

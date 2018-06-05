@@ -15,7 +15,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBDiagnostic;
 @class FBDiagnosticBuilder;
-@class FBDiagnosticQuery;
 
 /**
  The Name of the Video Log
@@ -81,14 +80,6 @@ extern FBDiagnosticName const FBDiagnosticNameScreenshot;
  @return a dictionary mapping diagnostic names to diagnostics.
  */
 - (NSDictionary<NSString *, FBDiagnostic *> *)namedDiagnostics;
-
-/**
- Returns an array of the diagnostics that match the query.
-
- @param query the query to fetch with.
- @return an Array of Diagnostics that match
- */
-- (NSArray<FBDiagnostic *> *)perform:(FBDiagnosticQuery *)query;
 
 /**
  A Predicate for FBDiagnostics that have content.

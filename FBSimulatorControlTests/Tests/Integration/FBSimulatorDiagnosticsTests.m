@@ -36,30 +36,6 @@
   [self assertNeedle:needle inHaystack:haystack];
 }
 
-- (void)testAppCrashLogIsFetched
-{
-  if (FBSimulatorControlTestCase.isRunningOnTravis) {
-    return;
-  }
-
-  NSDate *launchDate = [NSDate date];
-  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
-  NSString *path = [[NSBundle bundleForClass: self.class] pathForResource:@"libShimulator" ofType:@"dylib"];
-  FBApplicationLaunchConfiguration *configuration = [self.tableSearchAppLaunch injectingLibrary:path];
-  FBApplicationLaunchConfiguration *appLaunch = [configuration withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
-
-  NSError *error = nil;
-  BOOL success = [[simulator launchApplication:appLaunch] await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-
-  // Shimulator sends an unrecognized selector to NSFileManager to cause a crash.
-  // The CrashReporter service is a background service as it will symbolicate in a separate process.
-  [self assertFindsNeedle:@"-[NSFileManager stringWithFormat:]" fromHaystackBlock:^ NSString * {
-    return [[[simulator.simulatorDiagnostics subprocessCrashesAfterDate:launchDate withProcessType:FBCrashLogInfoProcessTypeApplication] firstObject] asString];
-  }];
-}
-
 - (void)testSystemLog
 {
   if (FBSimulatorControlTestCase.isRunningOnTravis) {

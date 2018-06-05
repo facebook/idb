@@ -78,45 +78,11 @@ FBDiagnosticName const FBDiagnosticNameScreenshot = @"screenshot";
   return [dictionary copy];
 }
 
-- (NSArray<FBDiagnostic *> *)perform:(FBDiagnosticQuery *)query
-{
-  return [query perform:self];
-}
-
 + (NSPredicate *)predicateForHasContent
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBDiagnostic *diagnostic, NSDictionary *_) {
     return diagnostic.hasLogContent;
   }];
-}
-
-@end
-
-@implementation FBDiagnosticQuery_All (iOSTarget)
-
-- (NSArray<FBDiagnostic *> *)perform:(FBiOSTargetDiagnostics *)diagnostics
-{
-  return [diagnostics allDiagnostics];
-}
-
-@end
-
-@implementation FBDiagnosticQuery_Named (iOSTarget)
-
-- (NSArray<FBDiagnostic *> *)perform:(FBiOSTargetDiagnostics *)diagnostics
-{
-  return [[[diagnostics namedDiagnostics]
-    objectsForKeys:self.names notFoundMarker:(id)NSNull.null]
-    filteredArrayUsingPredicate:NSPredicate.notNullPredicate];
-}
-
-@end
-
-@implementation FBDiagnosticQuery (iOSTarget)
-
-- (NSArray<FBDiagnostic *> *)perform:(FBSimulatorDiagnostics *)diagnostics
-{
-  return @[];
 }
 
 @end

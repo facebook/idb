@@ -35,6 +35,31 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
 
 @end
 
+@interface FBDiagnosticQuery_All : FBDiagnosticQuery
+
+@end
+
+@interface FBDiagnosticQuery_Named : FBDiagnosticQuery
+
+@property (nonatomic, copy, readonly, nonnull) NSArray<NSString *> *names;
+
+@end
+
+@interface FBDiagnosticQuery_ApplicationLogs : FBDiagnosticQuery
+
+@property (nonatomic, copy, readonly, nonnull) NSString *bundleID;
+@property (nonatomic, copy, readonly, nonnull) NSArray<NSString *> *filenames;
+@property (nonatomic, copy, readonly, nonnull) NSArray<NSString *> *filenameGlobs;
+
+@end
+
+@interface FBDiagnosticQuery_Crashes : FBDiagnosticQuery
+
+@property (nonatomic, assign, readonly) FBCrashLogInfoProcessType processType;
+@property (nonatomic, copy, readonly, nonnull) NSDate *date;
+
+@end
+
 @implementation FBDiagnosticQuery_All
 
 #pragma mark Initializers
@@ -63,6 +88,13 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
   return @{
     @"type" : FBDiagnosticQueryTypeAll,
   };
+}
+
+#pragma mark Private
+
+- (FBFuture<NSArray<FBDiagnostic *> *> *)run:(id<FBiOSTarget>)target
+{
+  return [FBFuture futureWithResult:[target.diagnostics allDiagnostics]];
 }
 
 @end
@@ -124,6 +156,17 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
     @"type" : FBDiagnosticQueryTypeNamed,
     @"names" : self.names,
   };
+}
+
+#pragma mark Private
+
+- (FBFuture<NSArray<FBDiagnostic *> *> *)run:(id<FBiOSTarget>)target
+{
+  NSArray<FBDiagnostic *> *diagnostics = [[[target.diagnostics
+    namedDiagnostics]
+    objectsForKeys:self.names notFoundMarker:(id)NSNull.null]
+    filteredArrayUsingPredicate:NSPredicate.notNullPredicate];
+  return [FBFuture futureWithResult:diagnostics];
 }
 
 @end
@@ -312,6 +355,22 @@ static NSString *const FBDiagnosticQueryCrashesSystem = @"system";
   return processType;
 }
 
+- (FBFuture<NSArray<FBDiagnostic *> *> *)run:(id<FBiOSTarget>)target
+{
+  NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[
+    [FBCrashLogInfo predicateNewerThanDate:self.date],
+  ]];
+  return [[target
+    crashes:predicate]
+    onQueue:target.asyncQueue map:^(NSArray<FBCrashLogInfo *> *crashes) {
+      NSMutableArray<FBDiagnostic *> *diagnostics = [NSMutableArray array];
+      for (FBCrashLogInfo *crash in crashes) {
+        [diagnostics addObject:[crash toDiagnostic:FBDiagnosticBuilder.builder]];
+      }
+      return diagnostics;
+    }];
+}
+
 @end
 
 @implementation FBDiagnosticQuery
@@ -438,16 +497,20 @@ static NSString *KeyType = @"type";
 
 - (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
-  id<FBEventReporterSubject> subject = [FBEventReporterSubject subjectWithName:FBiOSTargetFutureTypeDiagnosticQuery type:FBEventTypeStarted value:self];
-  [reporter report:subject];
+  id<FBEventReporterSubject> startSubject = [FBEventReporterSubject subjectWithName:FBiOSTargetFutureTypeDiagnosticQuery type:FBEventTypeStarted value:self];
+  [reporter report:startSubject];
 
-  subject = [FBDiagnosticQuery resolveDiagnostics:[target.diagnostics perform:self] format:self.format];
-  [reporter report:subject];
+  return [[self
+    run:target]
+    onQueue:target.workQueue map:^(NSArray<FBDiagnostic *> *diagnostics) {
+      id<FBEventReporterSubject> subject = [FBDiagnosticQuery resolveDiagnostics:diagnostics format:self.format];
+      [reporter report:subject];
 
-  subject = [FBEventReporterSubject subjectWithName:FBiOSTargetFutureTypeDiagnosticQuery type:FBEventTypeEnded value:self ];
-  [reporter report:subject];
+      subject = [FBEventReporterSubject subjectWithName:FBiOSTargetFutureTypeDiagnosticQuery type:FBEventTypeEnded value:self ];
+      [reporter report:subject];
 
-  return [FBFuture futureWithResult:FBiOSTargetContinuationDone(FBDiagnosticQuery.futureType)];
+      return FBiOSTargetContinuationDone(FBDiagnosticQuery.futureType);
+    }];
 }
 
 + (id<FBEventReporterSubject>)resolveDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics format:(FBDiagnosticQueryFormat)format
@@ -463,6 +526,13 @@ static NSString *KeyType = @"type";
     [subjects addObject:[FBEventReporterSubject subjectWithName:FBEventNameDiagnostic type:FBEventTypeDiscrete value:resolved]];
   }
   return [FBEventReporterSubject compositeSubjectWithArray:subjects];
+}
+
+#pragma mark Private
+
+- (NSArray<FBDiagnostic *> *)run:(FBiOSTargetDiagnostics *)diagnostics
+{
+  return @[];
 }
 
 @end
