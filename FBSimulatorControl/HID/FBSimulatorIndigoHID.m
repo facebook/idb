@@ -133,43 +133,43 @@
 
 + (IndigoMessage *)touchMessageWithPayload:(IndigoTouch *)payload messageSizeOut:(size_t *)messageSizeOut
 {
-  // Sizes for the payload.
+  // Sizes for the message + payload.
   // The size should be 320/0x140
-  size_t messageSize = sizeof(IndigoMessage) + sizeof(IndigoInner);
+  size_t messageSize = sizeof(IndigoMessage) + sizeof(IndigoPayload);
   if (messageSizeOut) {
     *messageSizeOut = messageSize;
   }
   // The stride should be 0x90
-  size_t stride = sizeof(IndigoInner);
+  size_t stride = sizeof(IndigoPayload);
 
   // Create and set the common values
   IndigoMessage *message = calloc(0x1, messageSize);
-  message->innerSize = sizeof(IndigoInner);
+  message->innerSize = sizeof(IndigoPayload);
   message->eventType = IndigoEventTypeTouch;
-  message->inner.field1 = 0x0000000b;
-  message->inner.timestamp = mach_absolute_time();
+  message->payload.field1 = 0x0000000b;
+  message->payload.timestamp = mach_absolute_time();
 
   // Copy in the Digitizer Payload from the caller.
-  void *destination = &(message->inner.unionPayload.button);
+  void *destination = &(message->payload.event.button);
   void *source = payload;
   memcpy(destination, source, sizeof(IndigoTouch));
 
-  // Duplicate the First IndigoInner Payload.
+  // Duplicate the first IndigoPayload.
   // Also need to set the bits at (0x30 + 0x90) to 0x1.
   // On 32-Bit Archs this is equivalent this is done with a long to stomp over both fields:
   // uintptr_t mem = (uintptr_t) message;
   // mem += 0xc0;
   // int64_t *val = (int64_t *)mem;
   // *val = 0x200000001;
-  source = &(message->inner);
+  source = &(message->payload);
   destination = source;
   destination += stride;
-  IndigoInner *second = (IndigoInner *) destination;
+  IndigoPayload *second = (IndigoPayload *) destination;
   memcpy(destination, source, stride);
 
   // Adjust the second payload slightly.
-  second->unionPayload.touch.field1 = 0x00000001;
-  second->unionPayload.touch.field2 = 0x00000002;
+  second->event.touch.field1 = 0x00000001;
+  second->event.touch.field2 = 0x00000002;
 
   return message;
 }
@@ -231,9 +231,9 @@ IndigoMessage *(*IndigoHIDMessageForMouseNSEvent)(CGPoint *point0, CGPoint *poin
 + (IndigoMessage *)touchMessageWithPoint:(CGPoint)point direction:(FBSimulatorHIDDirection)direction messageSizeOut:(size_t *)messageSizeOut
 {
   IndigoMessage *message = IndigoHIDMessageForMouseNSEvent(&point, 0x0, 0x32, (int) [self eventTypeForDirection:direction], 0x0);
-  message->inner.unionPayload.touch.xRatio = point.x;
-  message->inner.unionPayload.touch.yRatio = point.y;
-  return [self touchMessageWithPayload:&(message->inner.unionPayload.touch) messageSizeOut:messageSizeOut];
+  message->payload.event.touch.xRatio = point.x;
+  message->payload.event.touch.yRatio = point.y;
+  return [self touchMessageWithPayload:&(message->payload.event.touch) messageSizeOut:messageSizeOut];
 }
 
 @end
@@ -330,13 +330,13 @@ IndigoMessage *(*IndigoHIDMessageForMouseNSEvent)(CGPoint *point0, CGPoint *poin
   IndigoMessage *message = calloc(0x1 , messageSize);
 
   // Set the down payload of the message.
-  message->innerSize = sizeof(IndigoInner);
+  message->innerSize = sizeof(IndigoPayload);
   message->eventType = IndigoEventTypeButton;
-  message->inner.field1 = 0x2;
-  message->inner.timestamp = mach_absolute_time();
+  message->payload.field1 = 0x2;
+  message->payload.timestamp = mach_absolute_time();
 
   // Copy the contents of the payload.
-  void *destination = &message->inner.unionPayload.button;
+  void *destination = &message->payload.event.button;
   void *source = (void *) payload;
   memcpy(destination, source, sizeof(IndigoButton));
   return message;

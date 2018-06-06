@@ -28,9 +28,9 @@
 
   XCTAssertEqual(leftMessage->eventType, rightMessage->eventType);
   XCTAssertEqual(leftMessage->innerSize, rightMessage->innerSize);
-  XCTAssertEqual(leftMessage->inner.unionPayload.button.eventSource, rightMessage->inner.unionPayload.button.eventSource);
-  XCTAssertEqual(leftMessage->inner.unionPayload.button.eventType, rightMessage->inner.unionPayload.button.eventType);
-  XCTAssertEqual(leftMessage->inner.unionPayload.button.eventTarget, rightMessage->inner.unionPayload.button.eventTarget);
+  XCTAssertEqual(leftMessage->payload.event.button.eventSource, rightMessage->payload.event.button.eventSource);
+  XCTAssertEqual(leftMessage->payload.event.button.eventType, rightMessage->payload.event.button.eventType);
+  XCTAssertEqual(leftMessage->payload.event.button.eventTarget, rightMessage->payload.event.button.eventTarget);
   XCTAssertEqual(malloc_size(leftMessage), malloc_size(rightMessage));
 }
 
@@ -41,10 +41,10 @@
 
   XCTAssertEqual(leftMessage->eventType, rightMessage->eventType);
   XCTAssertEqual(leftMessage->innerSize, rightMessage->innerSize);
-  XCTAssertEqual(leftMessage->inner.unionPayload.button.eventSource, rightMessage->inner.unionPayload.button.eventSource);
-  XCTAssertEqual(leftMessage->inner.unionPayload.button.eventType, rightMessage->inner.unionPayload.button.eventType);
-  XCTAssertEqual(leftMessage->inner.unionPayload.button.eventTarget, rightMessage->inner.unionPayload.button.eventTarget);
-  XCTAssertEqual(leftMessage->inner.unionPayload.button.keyCode, rightMessage->inner.unionPayload.button.keyCode);
+  XCTAssertEqual(leftMessage->payload.event.button.eventSource, rightMessage->payload.event.button.eventSource);
+  XCTAssertEqual(leftMessage->payload.event.button.eventType, rightMessage->payload.event.button.eventType);
+  XCTAssertEqual(leftMessage->payload.event.button.eventTarget, rightMessage->payload.event.button.eventTarget);
+  XCTAssertEqual(leftMessage->payload.event.button.keyCode, rightMessage->payload.event.button.keyCode);
   XCTAssertEqual(malloc_size(leftMessage), malloc_size(rightMessage));
 }
 
@@ -55,24 +55,24 @@
 
   XCTAssertEqual(leftMessage->eventType, rightMessage->eventType);
   XCTAssertEqual(leftMessage->innerSize, rightMessage->innerSize);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field1, rightMessage->inner.unionPayload.touch.field1);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field2, rightMessage->inner.unionPayload.touch.field2);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field3, rightMessage->inner.unionPayload.touch.field3);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.xRatio, rightMessage->inner.unionPayload.touch.xRatio);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.yRatio, rightMessage->inner.unionPayload.touch.yRatio);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field6, rightMessage->inner.unionPayload.touch.field6);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field7, rightMessage->inner.unionPayload.touch.field7);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field8, rightMessage->inner.unionPayload.touch.field8);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field9, rightMessage->inner.unionPayload.touch.field9);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field10, rightMessage->inner.unionPayload.touch.field10);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field11, rightMessage->inner.unionPayload.touch.field11);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field12, rightMessage->inner.unionPayload.touch.field12);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field13, rightMessage->inner.unionPayload.touch.field13);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field14, rightMessage->inner.unionPayload.touch.field14);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field15, rightMessage->inner.unionPayload.touch.field15);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field16, rightMessage->inner.unionPayload.touch.field16);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field17, rightMessage->inner.unionPayload.touch.field17);
-  XCTAssertEqual(leftMessage->inner.unionPayload.touch.field18, rightMessage->inner.unionPayload.touch.field18);
+  XCTAssertEqual(leftMessage->payload.event.touch.field1, rightMessage->payload.event.touch.field1);
+  XCTAssertEqual(leftMessage->payload.event.touch.field2, rightMessage->payload.event.touch.field2);
+  XCTAssertEqual(leftMessage->payload.event.touch.field3, rightMessage->payload.event.touch.field3);
+  XCTAssertEqual(leftMessage->payload.event.touch.xRatio, rightMessage->payload.event.touch.xRatio);
+  XCTAssertEqual(leftMessage->payload.event.touch.yRatio, rightMessage->payload.event.touch.yRatio);
+  XCTAssertEqual(leftMessage->payload.event.touch.field6, rightMessage->payload.event.touch.field6);
+  XCTAssertEqual(leftMessage->payload.event.touch.field7, rightMessage->payload.event.touch.field7);
+  XCTAssertEqual(leftMessage->payload.event.touch.field8, rightMessage->payload.event.touch.field8);
+  XCTAssertEqual(leftMessage->payload.event.touch.field9, rightMessage->payload.event.touch.field9);
+  XCTAssertEqual(leftMessage->payload.event.touch.field10, rightMessage->payload.event.touch.field10);
+  XCTAssertEqual(leftMessage->payload.event.touch.field11, rightMessage->payload.event.touch.field11);
+  XCTAssertEqual(leftMessage->payload.event.touch.field12, rightMessage->payload.event.touch.field12);
+  XCTAssertEqual(leftMessage->payload.event.touch.field13, rightMessage->payload.event.touch.field13);
+  XCTAssertEqual(leftMessage->payload.event.touch.field14, rightMessage->payload.event.touch.field14);
+  XCTAssertEqual(leftMessage->payload.event.touch.field15, rightMessage->payload.event.touch.field15);
+  XCTAssertEqual(leftMessage->payload.event.touch.field16, rightMessage->payload.event.touch.field16);
+  XCTAssertEqual(leftMessage->payload.event.touch.field17, rightMessage->payload.event.touch.field17);
+  XCTAssertEqual(leftMessage->payload.event.touch.field18, rightMessage->payload.event.touch.field18);
   XCTAssertEqual(malloc_size(leftMessage), malloc_size(rightMessage));
 }
 

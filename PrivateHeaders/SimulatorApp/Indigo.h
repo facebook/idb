@@ -28,12 +28,12 @@ typedef struct {
 } IndigoQuad;
 
 /**
- A Payload for Digitizer Events.
+ An Event for Digitizer Events.
 
  The 'Location' of the touch is in the xRatio and yRatio slots.
  This is 0 > x > 1 and 0 > y > 1, representing the distance from the top left.
  The top left corner is xRatio=0.0, yRatio=0.0
- The bottom right corner is xRatio=1.1, yRatio=1.1
+ The bottom right corner is xRatio=1.0, yRatio=1.0
  The center is xRatio=0.5, yRatio=0.5
 
  The 9th and 10th Slot Represent a touch-up or touch-down.
@@ -61,7 +61,7 @@ typedef struct {
 } IndigoTouch;
 
 /**
- The Indigo Payload for a wheel event.
+ The Indigo Event for a wheel event.
  */
 typedef struct {
   unsigned int field1; // 0x20 + 0x10 + 0x0 = 0x30
@@ -72,7 +72,7 @@ typedef struct {
 } IndigoWheel;
 
 /**
- The Indigo Payload for a button event.
+ The Indigo Event for a button event.
  */
 typedef struct {
   unsigned int eventSource; // 0x20 + 0x10 + 0x0 = 0x30
@@ -100,7 +100,7 @@ typedef struct {
 #define ButtonEventTypeUp 0x2
 
 /**
- An Indigo Payload for the accelerometer.
+ An Indigo Event for the accelerometer.
  */
 typedef struct {
   unsigned int field1; // 0x20 + 0x10 + 0x0 = 0x30
@@ -108,7 +108,7 @@ typedef struct {
 } IndigoAccelerometer;
 
 /**
- An Indigo Payload for force touch.
+ An Indigo Event for force touch.
  */
 typedef struct {
   unsigned int field1; // 0x20 + 0x10 + 0x0 = 0x30
@@ -118,7 +118,7 @@ typedef struct {
 } IndigoForce;
 
 /**
- An Indigo Payload for a Game Controller.
+ An Indigo Event for a Game Controller.
  */
 typedef struct {
   IndigoQuad dpad; // 0x20 + 0x10 + 0x0 = 0x30
@@ -127,6 +127,10 @@ typedef struct {
   IndigoQuad joystick; // 0x20 + 0x10 + 0x60 = 0x90
 } IndigoGameController;
 
+/**
+ A Union of all possible event types.
+ The eventType to use is identified in the header.
+ */
 typedef union {
   IndigoTouch touch;
   IndigoWheel wheel;
@@ -134,26 +138,27 @@ typedef union {
   IndigoAccelerometer accelerometer;
   IndigoForce force;
   IndigoGameController gameController;
-} IndigoUnion;
+} IndigoEvent;
 
 /**
- The Inner Struct of an Indigo Payload
+ The Payload embedded inside an Message.
+ Embedded below the usual mach_msg headers.
  */
 typedef struct {
   unsigned int field1; // 0x20 + 0x0 = 0x20:
   unsigned long long timestamp; // 0x20 + 0x04 = 0x24: This is a mach_absolute_time (uint64_t).
   unsigned int field3; // 0x20 + 0x10 = 0x2c
-  IndigoUnion unionPayload; // 0x20 + 0x10 = 0x30
-} IndigoInner;
+  IndigoEvent event; // 0x20 + 0x10 = 0x30
+} IndigoPayload;
 
 /**
- The Full Indigo message send with mach_msg_send.
+ The Indigo Message sent over the wire with mach_msg_send.
  */
 typedef struct {
     MachMessageHeader header; // 0x0
     unsigned int innerSize; // 0x18
     unsigned char eventType; // 0x1c
-    IndigoInner inner; // 0x20
+    IndigoPayload payload; // 0x20
 } IndigoMessage;
 
 #define IndigoEventTypeButton 1
