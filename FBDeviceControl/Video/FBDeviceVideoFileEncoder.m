@@ -63,11 +63,15 @@
 - (FBFuture<NSNull *> *)startRecording
 {
   NSError *innerError = nil;
-  if ([NSFileManager.defaultManager fileExistsAtPath:self.filePath] && ![NSFileManager.defaultManager removeItemAtPath:self.filePath error:&innerError]) {
-    return [[[FBDeviceControlError
-      describeFormat:@"Failed to remove existing device video at %@", self.filePath]
-      causedBy:innerError]
-      failFuture];
+  if ([NSFileManager.defaultManager fileExistsAtPath:self.filePath]) {
+    [self.logger logFormat:@"File already exists at %@, deleting", self.filePath];
+    if (![NSFileManager.defaultManager removeItemAtPath:self.filePath error:&innerError]) {
+      return [[[FBDeviceControlError
+        describeFormat:@"Failed to remove existing device video at %@", self.filePath]
+        causedBy:innerError]
+        failFuture];
+    }
+    [self.logger logFormat:@"Removed video file at %@", self.filePath];
   }
   if (![NSFileManager.defaultManager createDirectoryAtPath:self.filePath.stringByDeletingLastPathComponent withIntermediateDirectories:YES attributes:nil error:&innerError]) {
     return [[[FBDeviceControlError

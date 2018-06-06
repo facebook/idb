@@ -161,7 +161,7 @@
 {
   FBDeviceVideoFileEncoder *encoder = self.encoder;
   return [[encoder
-    stopRecording]
+    completed]
     onQueue:self.workQueue respondToCancellation:^{
       return [encoder stopRecording];
     }];

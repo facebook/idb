@@ -72,7 +72,9 @@
       describeFormat:@"There was no existing video instance for %@", self.device]
       failFuture];
   }
-  return [self.video stopRecording];
+  FBDeviceVideo *video = self.video;
+  self.video = nil;
+  return [video stopRecording];
 }
 
 #pragma mark FBBitmapStreamingCommands
