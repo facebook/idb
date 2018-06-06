@@ -203,6 +203,12 @@
   return commandClasses;
 }
 
++ (NSSet<Class> *)statefulCommands
+{
+  // All commands are stateful
+  return [NSSet setWithArray:self.commandResponders];
+}
+
 + (BOOL)addForwardingCommandClass:(Class)class error:(NSError **)error
 {
   if (![class conformsToProtocol:@protocol(FBiOSTargetCommand)]){
@@ -239,23 +245,6 @@
   }
 
   return NO;
-}
-
-#pragma mark Private
-
-+ (NSSet<NSString *> *)statefulCommands
-{
-  static dispatch_once_t onceToken;
-  static NSSet<NSString *> *statefulCommands;
-  dispatch_once(&onceToken, ^{
-    NSMutableArray<NSString *> *allCommands = NSMutableArray.new;
-    for (Class commandClass in FBDevice.commandResponders) {
-      [allCommands addObject:NSStringFromClass(commandClass)];
-    }
-
-    statefulCommands = [NSSet setWithArray:allCommands];
-  });
-  return statefulCommands;
 }
 
 @end

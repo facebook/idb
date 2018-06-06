@@ -20,10 +20,9 @@
 
 @property (nonatomic, weak, readonly) id<FBiOSTarget> target;
 @property (nonatomic, copy, readonly) NSArray<Class> *commandClasses;
+@property (nonatomic, strong, readonly) NSSet<Class> *statefulCommands; // Stateful command objects that need to be memoized.
 
 @property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, id> *memoizedCommands;
-
-@property (nonatomic, strong, readonly) NSSet<NSString *> *statefulCommands; // Stateful command objects that need to be memoized.
 
 @end
 
@@ -31,12 +30,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)forwarderWithTarget:(id<FBiOSTarget>)target commandClasses:(NSArray<Class> *)commandClasses statefulCommands:(NSSet<NSString *> *)statefulCommands
++ (instancetype)forwarderWithTarget:(id<FBiOSTarget>)target commandClasses:(NSArray<Class> *)commandClasses statefulCommands:(NSSet<Class> *)statefulCommands
 {
   return [[self alloc] initWithTarget:target commandClasses:commandClasses statefulCommands:statefulCommands];
 }
 
-- (instancetype)initWithTarget:(id<FBiOSTarget>)target commandClasses:(NSArray<Class> *)commandClasses statefulCommands:(NSSet<NSString *> *)statefulCommands
+- (instancetype)initWithTarget:(id<FBiOSTarget>)target commandClasses:(NSArray<Class> *)commandClasses statefulCommands:(NSSet<Class> *)statefulCommands
 
 {
   self = [super init];
@@ -73,8 +72,8 @@
   }
 
   id instance = [self createCommandForClass:class];
-  if ([self.statefulCommands containsObject:key]) {
-    self.memoizedCommands[NSStringFromClass(class)] = instance;
+  if ([self.statefulCommands containsObject:class]) {
+    self.memoizedCommands[key] = instance;
   }
   return instance;
 }
