@@ -24,7 +24,7 @@
 
 + (nonnull instancetype)SimulatorKit
 {
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Library/PrivateFrameworks/SimulatorKit.framework" requiredClassNames:@[@"SimDeviceFramebufferService"]];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Library/PrivateFrameworks/SimulatorKit.framework" requiredClassNames:@[]];
 }
 
 + (nonnull instancetype)DTXConnectionServices
