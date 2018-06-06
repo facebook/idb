@@ -22,7 +22,6 @@
 @property (nonatomic, strong, readwrite) FBSimulatorConnection *connection;
 
 @property (nonatomic, assign, readwrite) FBSimulatorState lastKnownState;
-@property (nonatomic, strong, readonly) NSMutableSet<FBProcessInfo *> *knownLaunchedProcesses;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> sink;
 
 @end
@@ -39,8 +38,6 @@
   _launchdProcess = launchdProcess;
   _containerApplication = containerApplication;
   _sink = sink;
-
-  _knownLaunchedProcesses = [NSMutableSet set];
   _lastKnownState = FBSimulatorStateUnknown;
 
   return self;
