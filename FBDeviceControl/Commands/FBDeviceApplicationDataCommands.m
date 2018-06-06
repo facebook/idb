@@ -157,10 +157,10 @@
     NSError *error = nil;
     FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:afcConnection calls:self.afcCalls];
     id result = operationBlock(connection, &error);
+    self.afcCalls.ConnectionClose(afcConnection);
     if (!result) {
       return [FBFuture futureWithError:error];
     }
-    self.afcCalls.ConnectionClose(afcConnection);
     return [FBFuture futureWithResult:result];
   }];
 }
