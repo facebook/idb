@@ -82,6 +82,18 @@ extern FBDiagnosticName const FBDiagnosticNameScreenshot;
 - (NSDictionary<NSString *, FBDiagnostic *> *)namedDiagnostics;
 
 /**
+ Fetches Diagnostics inside Application Containers.
+ Looks inside the Home Directory of the Application.
+
+ @param bundleID the Appliction to search for by Bundle ID. May be nil.
+ @param filenames the Filenames of the Diagnostics to search for. Must not be nil.
+ @param filenameGlobs the filename globs of the Diagnostics to search for. Must not be nil.
+ @param globalFallback if YES, the entire Simulator will be searched in the event that the Application's Home Directory cannot be found.
+ @return an Dictionary of all the successfully found diagnostics.
+ */
+- (NSArray<FBDiagnostic *> *)diagnosticsForApplicationWithBundleID:(nullable NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames withFilenameGlobs:(NSArray<NSString *> *)filenameGlobs fallbackToGlobalSearch:(BOOL)globalFallback;
+
+/**
  A Predicate for FBDiagnostics that have content.
  */
 + (NSPredicate *)predicateForHasContent;

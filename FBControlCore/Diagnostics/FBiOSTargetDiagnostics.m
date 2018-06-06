@@ -78,6 +78,11 @@ FBDiagnosticName const FBDiagnosticNameScreenshot = @"screenshot";
   return [dictionary copy];
 }
 
+- (NSArray<FBDiagnostic *> *)diagnosticsForApplicationWithBundleID:(nullable NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames withFilenameGlobs:(nonnull NSArray<NSString *> *)filenameGlobs fallbackToGlobalSearch:(BOOL)globalFallback
+{
+  return @[];
+}
+
 + (NSPredicate *)predicateForHasContent
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBDiagnostic *diagnostic, NSDictionary *_) {

@@ -245,6 +245,15 @@ FBDiagnosticQueryType FBDiagnosticQueryTypeNamed = @"named";
   };
 }
 
+#pragma mark Private
+
+- (FBFuture<NSArray<FBDiagnostic *> *> *)run:(id<FBiOSTarget>)target
+{
+  NSArray<FBDiagnostic *> *diagnostics = [target.diagnostics diagnosticsForApplicationWithBundleID:self.bundleID withFilenames:self.filenames withFilenameGlobs:self.filenameGlobs fallbackToGlobalSearch:YES];
+
+  return [FBFuture futureWithResult:diagnostics];
+}
+
 @end
 
 @implementation FBDiagnosticQuery_Crashes
