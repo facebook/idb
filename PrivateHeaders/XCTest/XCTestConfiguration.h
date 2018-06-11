@@ -18,7 +18,6 @@
     NSSet *_testsToRun;
     BOOL _reportResultsToIDE;
     NSUUID *_sessionIdentifier;
-    NSString *_pathToXcodeReportingSocket;
     BOOL _disablePerformanceMetrics;
     BOOL _treatMissingBaselinesAsFailures;
     NSURL *_baselineFileURL;
@@ -46,7 +45,6 @@
 @property BOOL disablePerformanceMetrics; // @synthesize disablePerformanceMetrics=_disablePerformanceMetrics;
 @property BOOL reportResultsToIDE; // @synthesize reportResultsToIDE=_reportResultsToIDE;
 @property(copy) NSURL *baselineFileURL; // @synthesize baselineFileURL=_baselineFileURL;
-@property(copy) NSString *pathToXcodeReportingSocket; // @synthesize pathToXcodeReportingSocket=_pathToXcodeReportingSocket;
 @property(copy) NSUUID *sessionIdentifier; // @synthesize sessionIdentifier=_sessionIdentifier;
 @property(copy) NSSet *testsToSkip; // @synthesize testsToSkip=_testsToSkip;
 @property(copy) NSSet *testsToRun; // @synthesize testsToRun=_testsToRun;

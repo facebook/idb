@@ -25,7 +25,6 @@
   testConfiguration.treatMissingBaselinesAsFailures = NO;
   testConfiguration.productModuleName = moduleName;
   testConfiguration.reportResultsToIDE = YES;
-  testConfiguration.pathToXcodeReportingSocket = nil;
   testConfiguration.testsMustRunOnMainThread = uiTesting;
   testConfiguration.initializeForUITesting = uiTesting;
   testConfiguration.testsToRun = testsToRun;
