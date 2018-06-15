@@ -7,21 +7,27 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AA017F491BD777B600F45E9D /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = AA017F481BD777B600F45E9D /* main.m */; };
-		AA56EAEB1EEF089A0062C2BC /* XCTestShim.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB07DEE1E8EC07000897C94 /* XCTestShim.m */; };
-		AAB07DEF1E8EC07000897C94 /* XCTestShim.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB07DEE1E8EC07000897C94 /* XCTestShim.m */; };
+		EED62EDC20D12217006E86E5 /* dyld-interposing.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EDA20D12217006E86E5 /* dyld-interposing.h */; };
+		EED62EDD20D12217006E86E5 /* dyld-interposing.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EDA20D12217006E86E5 /* dyld-interposing.h */; };
+		EED62EDE20D12217006E86E5 /* XCTestPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EDB20D12217006E86E5 /* XCTestPrivate.h */; };
+		EED62EDF20D12217006E86E5 /* XCTestPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EDB20D12217006E86E5 /* XCTestPrivate.h */; };
+		EED62EE220D12242006E86E5 /* ReporterEvents.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EE020D12242006E86E5 /* ReporterEvents.h */; };
+		EED62EE320D12242006E86E5 /* ReporterEvents.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EE020D12242006E86E5 /* ReporterEvents.h */; };
+		EED62EE420D12242006E86E5 /* XCTestReporterShim.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EE120D12242006E86E5 /* XCTestReporterShim.m */; };
+		EED62EE520D12242006E86E5 /* XCTestReporterShim.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EE120D12242006E86E5 /* XCTestReporterShim.m */; };
+		EED62EE720D1224C006E86E5 /* TestCrashShim.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EE620D1224C006E86E5 /* TestCrashShim.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		AA017F411BD7776B00F45E9D /* libShimulator.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libShimulator.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA017F481BD777B600F45E9D /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		AA56EAE21EEF08720062C2BC /* libMaculator.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libMaculator.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA56EAEC1EEFC5270062C2BC /* Shimulator.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shimulator.xcconfig; sourceTree = "<group>"; };
-		AA56EAED1EEFC6090062C2BC /* Maculator.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Maculator.xcconfig; sourceTree = "<group>"; };
-		AAB07DEE1E8EC07000897C94 /* XCTestShim.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = XCTestShim.m; sourceTree = "<group>"; };
-		AAB07DF01E8EC0F400897C94 /* dyld-interposing.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "dyld-interposing.h"; sourceTree = "<group>"; };
-		AAB07DF11E8EC14D00897C94 /* XCTestPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTestPrivate.h; sourceTree = "<group>"; };
-		AAB07DF21E8EC1D200897C94 /* ReporterEvents.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ReporterEvents.h; sourceTree = "<group>"; };
+		EED62ED820D12209006E86E5 /* Maculator.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Maculator.xcconfig; sourceTree = "<group>"; };
+		EED62ED920D12209006E86E5 /* Shimulator.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shimulator.xcconfig; sourceTree = "<group>"; };
+		EED62EDA20D12217006E86E5 /* dyld-interposing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "dyld-interposing.h"; sourceTree = "<group>"; };
+		EED62EDB20D12217006E86E5 /* XCTestPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XCTestPrivate.h; sourceTree = "<group>"; };
+		EED62EE020D12242006E86E5 /* ReporterEvents.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ReporterEvents.h; sourceTree = "<group>"; };
+		EED62EE120D12242006E86E5 /* XCTestReporterShim.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = XCTestReporterShim.m; sourceTree = "<group>"; };
+		EED62EE620D1224C006E86E5 /* TestCrashShim.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TestCrashShim.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -45,13 +51,10 @@
 		AA017F381BD7776B00F45E9D = {
 			isa = PBXGroup;
 			children = (
-				AAB07DF01E8EC0F400897C94 /* dyld-interposing.h */,
-				AAB07DF21E8EC1D200897C94 /* ReporterEvents.h */,
-				AAB07DF11E8EC14D00897C94 /* XCTestPrivate.h */,
-				AA017F481BD777B600F45E9D /* main.m */,
-				AAB07DEE1E8EC07000897C94 /* XCTestShim.m */,
-				AA56EAED1EEFC6090062C2BC /* Maculator.xcconfig */,
-				AA56EAEC1EEFC5270062C2BC /* Shimulator.xcconfig */,
+				EED62ED420D1212D006E86E5 /* Configs */,
+				EED62ED520D12134006E86E5 /* Tools */,
+				EED62ED720D12147006E86E5 /* TestReporterShim */,
+				EED62ED620D1213B006E86E5 /* TestCrashShim */,
 				AA017F421BD7776B00F45E9D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -65,6 +68,41 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		EED62ED420D1212D006E86E5 /* Configs */ = {
+			isa = PBXGroup;
+			children = (
+				EED62ED820D12209006E86E5 /* Maculator.xcconfig */,
+				EED62ED920D12209006E86E5 /* Shimulator.xcconfig */,
+			);
+			path = Configs;
+			sourceTree = "<group>";
+		};
+		EED62ED520D12134006E86E5 /* Tools */ = {
+			isa = PBXGroup;
+			children = (
+				EED62EDA20D12217006E86E5 /* dyld-interposing.h */,
+				EED62EDB20D12217006E86E5 /* XCTestPrivate.h */,
+			);
+			path = Tools;
+			sourceTree = "<group>";
+		};
+		EED62ED620D1213B006E86E5 /* TestCrashShim */ = {
+			isa = PBXGroup;
+			children = (
+				EED62EE620D1224C006E86E5 /* TestCrashShim.m */,
+			);
+			path = TestCrashShim;
+			sourceTree = "<group>";
+		};
+		EED62ED720D12147006E86E5 /* TestReporterShim */ = {
+			isa = PBXGroup;
+			children = (
+				EED62EE020D12242006E86E5 /* ReporterEvents.h */,
+				EED62EE120D12242006E86E5 /* XCTestReporterShim.m */,
+			);
+			path = TestReporterShim;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -72,6 +110,9 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EED62EE220D12242006E86E5 /* ReporterEvents.h in Headers */,
+				EED62EDC20D12217006E86E5 /* dyld-interposing.h in Headers */,
+				EED62EDE20D12217006E86E5 /* XCTestPrivate.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -79,6 +120,9 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EED62EE320D12242006E86E5 /* ReporterEvents.h in Headers */,
+				EED62EDD20D12217006E86E5 /* dyld-interposing.h in Headers */,
+				EED62EDF20D12217006E86E5 /* XCTestPrivate.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -177,8 +221,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA017F491BD777B600F45E9D /* main.m in Sources */,
-				AAB07DEF1E8EC07000897C94 /* XCTestShim.m in Sources */,
+				EED62EE720D1224C006E86E5 /* TestCrashShim.m in Sources */,
+				EED62EE420D12242006E86E5 /* XCTestReporterShim.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -186,7 +230,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA56EAEB1EEF089A0062C2BC /* XCTestShim.m in Sources */,
+				EED62EE520D12242006E86E5 /* XCTestReporterShim.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -209,28 +253,28 @@
 		};
 		AA017F461BD7776B00F45E9D /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA56EAEC1EEFC5270062C2BC /* Shimulator.xcconfig */;
+			baseConfigurationReference = EED62ED920D12209006E86E5 /* Shimulator.xcconfig */;
 			buildSettings = {
 			};
 			name = Debug;
 		};
 		AA017F471BD7776B00F45E9D /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA56EAEC1EEFC5270062C2BC /* Shimulator.xcconfig */;
+			baseConfigurationReference = EED62ED920D12209006E86E5 /* Shimulator.xcconfig */;
 			buildSettings = {
 			};
 			name = Release;
 		};
 		AA56EAE81EEF08720062C2BC /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA56EAED1EEFC6090062C2BC /* Maculator.xcconfig */;
+			baseConfigurationReference = EED62ED820D12209006E86E5 /* Maculator.xcconfig */;
 			buildSettings = {
 			};
 			name = Debug;
 		};
 		AA56EAE91EEF08720062C2BC /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA56EAED1EEFC6090062C2BC /* Maculator.xcconfig */;
+			baseConfigurationReference = EED62ED820D12209006E86E5 /* Maculator.xcconfig */;
 			buildSettings = {
 			};
 			name = Release;
