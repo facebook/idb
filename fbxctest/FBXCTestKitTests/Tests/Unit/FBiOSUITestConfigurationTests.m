@@ -51,7 +51,8 @@
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
     commandLineWithConfiguration:[FBTestManagerTestConfiguration
-      configurationWithEnvironment:processEnvironment
+      configurationWithShims:configuration.shims
+      environment:processEnvironment
       workingDirectory:workingDirectory
       testBundlePath:self.iOSUITestBundlePath
       waitForDebugger:NO
@@ -85,7 +86,8 @@
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
     commandLineWithConfiguration:[FBTestManagerTestConfiguration
-      configurationWithEnvironment:processEnvironment
+      configurationWithShims:configuration.shims
+      environment:processEnvironment
       workingDirectory:workingDirectory
       testBundlePath:self.iOSUITestBundlePath
       waitForDebugger:NO
@@ -118,7 +120,8 @@
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
     commandLineWithConfiguration:[FBTestManagerTestConfiguration
-      configurationWithEnvironment:processEnvironment
+      configurationWithShims:configuration.shims
+      environment:processEnvironment
       workingDirectory:workingDirectory
       testBundlePath:self.iOSUITestBundlePath
       waitForDebugger:NO
@@ -152,7 +155,8 @@
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
     commandLineWithConfiguration:[FBTestManagerTestConfiguration
-      configurationWithEnvironment:processEnvironment
+      configurationWithShims:configuration.shims
+      environment:processEnvironment
       workingDirectory:workingDirectory
       testBundlePath:self.iOSUITestBundlePath
       waitForDebugger:NO

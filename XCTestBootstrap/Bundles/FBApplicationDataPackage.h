@@ -52,11 +52,6 @@
  */
 @property (nonatomic, strong, readonly) FBProductBundle *XCTestFramework;
 
-/**
- IDEBundleInjection.framework
- */
-@property (nonatomic, strong, readonly) FBProductBundle *IDEBundleInjectionFramework;
-
 @end
 
 
@@ -65,7 +60,6 @@
  - coping testBundle
  - preparing test configuration used to start tests
  - preparing XCTest.framework
- - preparing IDEBundleInjection.framework
  - codesigning all bundles with codesigner, if set
  */
 @interface FBApplicationDataPackageBuilder : NSObject

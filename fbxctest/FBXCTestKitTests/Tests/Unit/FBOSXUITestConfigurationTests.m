@@ -60,7 +60,8 @@
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
     commandLineWithConfiguration:[FBTestManagerTestConfiguration
-      configurationWithEnvironment:processEnvironment
+      configurationWithShims:configuration.shims
+      environment:processEnvironment
       workingDirectory:workingDirectory
       testBundlePath:FBXCTestKitFixtures.macUITestBundlePath
       waitForDebugger:NO
@@ -96,7 +97,8 @@
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
     commandLineWithConfiguration:[FBTestManagerTestConfiguration
-      configurationWithEnvironment:processEnvironment
+      configurationWithShims:configuration.shims
+      environment:processEnvironment
       workingDirectory:workingDirectory
       testBundlePath:FBXCTestKitFixtures.macUITestBundlePath
       waitForDebugger:NO
@@ -132,7 +134,8 @@
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
     commandLineWithConfiguration:[FBTestManagerTestConfiguration
-      configurationWithEnvironment:processEnvironment
+      configurationWithShims:configuration.shims
+      environment:processEnvironment
       workingDirectory:workingDirectory
       testBundlePath:FBXCTestKitFixtures.macUnitTestBundlePath
       waitForDebugger:NO
@@ -167,7 +170,8 @@
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
     commandLineWithConfiguration:[FBTestManagerTestConfiguration
-      configurationWithEnvironment:processEnvironment
+      configurationWithShims:configuration.shims
+      environment:processEnvironment
       workingDirectory:workingDirectory
       testBundlePath:FBXCTestKitFixtures.macUnitTestBundlePath
       waitForDebugger:NO

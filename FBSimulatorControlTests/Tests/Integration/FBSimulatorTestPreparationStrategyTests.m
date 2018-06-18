@@ -38,9 +38,6 @@
   XCTAssertNotNil(env);
   XCTAssertTrue([env[@"AppTargetLocation"] containsString:@"MobileSafari.app/MobileSafari"]);
   XCTAssertTrue([env[@"TestBundleLocation"] containsString:@"iOSUnitTestFixture.xctest"]);
-  XCTAssertTrue([env[@"XCInjectBundle"] containsString:@"iOSUnitTestFixture.xctest"]);
-  XCTAssertTrue([env[@"XCInjectBundleInto"]  containsString:@"MobileSafari.app/MobileSafari"]);
-  XCTAssertTrue([env[@"DYLD_INSERT_LIBRARIES"] containsString:@"IDEBundleInjection.framework/IDEBundleInjection"]);
 }
 
 - (FBTestLaunchConfiguration *)defaultTestLaunch

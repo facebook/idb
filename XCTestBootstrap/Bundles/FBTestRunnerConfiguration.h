@@ -26,13 +26,13 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param sessionIdentifier identifier used to run test.
  @param hostApplication the test host.
- @param ideInjectionFramework IDEBundleInjection.framework product bundle.
+ @param hostApplicationAdditionalEnvironment additional environment variable used to launch test host app
  @param testBundle the test bundle.
  @param testConfigurationPath path to test configuration that should be used to start tests.
  @param frameworkSearchPath the search path for Frameworks.
  @param testedApplicationAdditionalEnvironment Launch environment variables added to test target application
  */
-+ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
++ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBProductBundle *)hostApplication hostApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
 
 /**
  Test session identifier

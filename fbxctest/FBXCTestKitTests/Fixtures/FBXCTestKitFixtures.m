@@ -32,6 +32,12 @@
       stringByAppendingPathComponent:@"TableSearch"];
 }
 
++ (NSString *)testRunnerApp
+{
+  return [[[NSBundle bundleForClass:self] pathForResource:@"FBTestRunnerApp" ofType:@"app"]
+          stringByAppendingPathComponent:@"FBTestRunnerApp"];
+}
+
 + (NSString *)iOSUnitTestBundlePath
 {
   return [[NSBundle bundleForClass:self] pathForResource:@"iOSUnitTestFixture" ofType:@"xctest"];

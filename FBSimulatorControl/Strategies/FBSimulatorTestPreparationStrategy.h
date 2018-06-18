@@ -14,6 +14,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBTestLaunchConfiguration;
+@class FBXCTestShimConfiguration;
 
 @protocol FBFileManager;
 @protocol FBCodesignProvider;
@@ -36,6 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
  @return A new FBSimulatorTestRunStrategy Instance.
  */
 + (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
+                                              shims:(FBXCTestShimConfiguration *)shims
                                    workingDirectory:(NSString *)workingDirectory
                                         fileManager:(id<FBFileManager>)fileManager
                                            codesign:(id<FBCodesignProvider>)codesign;

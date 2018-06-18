@@ -61,7 +61,6 @@
   OCMockObject<FBFileManager> *fileManagerMock = [OCMockObject mockForProtocol:@protocol(FBFileManager)];
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] createDirectoryAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/TestPlans" withIntermediateDirectories:YES attributes:[OCMArg any] error:[OCMArg anyObjectRef]];
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] copyItemAtPath:@"/platform/ibuddy/Developer/Library/Frameworks/XCTest.framework" toPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/XCTest.framework" error:[OCMArg anyObjectRef]];
-  [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] copyItemAtPath:@"/platform/ibuddy/Developer/Library/PrivateFrameworks/IDEBundleInjection.framework" toPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/IDEBundleInjection.framework" error:[OCMArg anyObjectRef]];
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] copyItemAtPath:@"/test/Magic.xctest" toPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/Magic.xctest" error:[OCMArg anyObjectRef]];
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] writeData:[OCMArg any] toFile:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/TestPlans/Magic.xctest.xctestconfiguration" options:YES error:[OCMArg anyObjectRef]];
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] writeData:[OCMArg any] toFile:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/Magic.xctest/Magic-E621E1F8-C36C-495A-93FC-0C247A3E6E5F.xctestconfiguration" options:YES error:[OCMArg anyObjectRef]];
@@ -92,7 +91,6 @@
   XCTAssertNotNil(package.testConfiguration);
   XCTAssertNotNil(package.testBundle);
   XCTAssertNotNil(package.XCTestFramework);
-  XCTAssertNotNil(package.IDEBundleInjectionFramework);
 
   [fileManagerMock verify];
 }
@@ -125,20 +123,11 @@
   XCTAssertEqualObjects(product.path, @"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/XCTest.framework");
 }
 
-- (void)testIDEBundleInjectionFramework
-{
-  FBProductBundle *product = [self buildSilentPackageWithCodeSigner:nil].IDEBundleInjectionFramework;
-  XCTAssertNotNil(product);
-  XCTAssertEqualObjects(product.filename, @"IDEBundleInjection.framework");
-  XCTAssertEqualObjects(product.path, @"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/IDEBundleInjection.framework");
-}
-
 - (void)testCodesigning
 {
   OCMockObject<FBCodesignProvider> *codesignerMock = [OCMockObject mockForProtocol:@protocol(FBCodesignProvider)];
   [[[codesignerMock expect] andReturn:[FBFuture futureWithResult:NSNull.null]] signBundleAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/Magic.xctest"];
   [[[codesignerMock expect] andReturn:[FBFuture futureWithResult:NSNull.null]] signBundleAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/XCTest.framework"];
-  [[[codesignerMock expect] andReturn:[FBFuture futureWithResult:NSNull.null]] signBundleAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/IDEBundleInjection.framework"];
   [self buildSilentPackageWithCodeSigner:codesignerMock];
   [codesignerMock verify];
 }

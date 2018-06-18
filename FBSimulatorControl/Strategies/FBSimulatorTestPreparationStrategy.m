@@ -19,6 +19,7 @@
 @interface FBSimulatorTestPreparationStrategy ()
 
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
+@property (nonatomic, copy, readonly) FBXCTestShimConfiguration *shims;
 @property (nonatomic, copy, readonly) FBTestLaunchConfiguration *testLaunchConfiguration;
 @property (nonatomic, strong, readonly) id<FBFileManager> fileManager;
 @property (nonatomic, strong, readonly) id<FBCodesignProvider> codesign;
@@ -34,19 +35,22 @@
 {
   id<FBFileManager> fileManager = NSFileManager.defaultManager;
   id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
-  return [self strategyWithTestLaunchConfiguration:testLaunchConfiguration workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
+  FBXCTestShimConfiguration *shims = [[FBXCTestShimConfiguration defaultShimConfiguration] await:nil];
+  return [self strategyWithTestLaunchConfiguration:testLaunchConfiguration shims:shims workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
 }
 
 + (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
+                                              shims:(FBXCTestShimConfiguration *)shims
                                    workingDirectory:(NSString *)workingDirectory
                                         fileManager:(id<FBFileManager>)fileManager
                                            codesign:(id<FBCodesignProvider>)codesign
 {
-  return [[self alloc] initWithTestLaunchConfiguration:testLaunchConfiguration workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
+  return [[self alloc] initWithTestLaunchConfiguration:testLaunchConfiguration shims:shims workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
 }
 
 
 - (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
+                                          shims:(FBXCTestShimConfiguration *)shims
                                workingDirectory:(NSString *)workingDirectory
                                     fileManager:(id<FBFileManager>)fileManager
                                        codesign:(id<FBCodesignProvider>)codesign
@@ -57,6 +61,7 @@
   }
 
   _testLaunchConfiguration = testLaunchConfiguration;
+  _shims = shims;
   _workingDirectory = workingDirectory;
   _fileManager = fileManager;
   _codesign = codesign;
@@ -89,18 +94,37 @@
 
 - (FBFuture<FBTestRunnerConfiguration *> *)prepareTestWithIOSTargetAfterCheckingCodesignature:(FBSimulator *)simulator
 {
+  NSString *platformDeveloperFrameworksPath = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks"];
   NSString *runtimeRoot = simulator.device.runtime.root;
   NSString *developerRuntimePath = [runtimeRoot stringByAppendingPathComponent:@"Developer"];
   NSString *developerLibraryPath = [developerRuntimePath stringByAppendingPathComponent:@"Library"];
-  NSString *xcodeLibraryInjection = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library"];
 
   NSString *xctTargetBootstrapInjectPath = [developerRuntimePath stringByAppendingPathComponent:@"usr/lib/libXCTTargetBootstrapInject.dylib"];
   NSString *automationFrameworkPath = [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks/XCTAutomationSupport.framework"];
   NSArray<NSString *> *XCTestFrameworksPaths = @[
     [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"],
     [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks"],
-    [runtimeRoot stringByAppendingPathComponent:@"System/Library/PrivateFrameworks/IMSharedUtilities.framework/Frameworks"]
   ];
+
+  NSError *error;
+  FBProductBundle *XCTestBundle =
+  [[[FBProductBundleBuilder builder]
+    withBundlePath:[platformDeveloperFrameworksPath stringByAppendingPathComponent:@"XCTest.framework"]]
+   buildWithError:&error];
+  if (!XCTestBundle) {
+    return
+    [[[XCTestBootstrapError describe:@"Failed to locate XCTest.framework"]
+      causedBy:error]
+     failFuture];
+  }
+  NSArray<NSString *> *injects = @[
+    XCTestBundle.binaryPath,
+    self.shims.iOSSimulatorTestShimPath,
+   ];
+  NSDictionary *hostApplicationAdditionalEnvironment = @{
+    @"SHIMULATOR_START_XCTEST": @"1",
+    @"DYLD_INSERT_LIBRARIES": [injects componentsJoinedByString:@":"],
+  };
 
   NSDictionary *testedApplicationAdditionalEnvironment = @{
     @"DYLD_INSERT_LIBRARIES" : xctTargetBootstrapInjectPath
@@ -111,7 +135,6 @@
   }
 
   // Prepare XCTest bundle
-  NSError *error;
   NSUUID *sessionIdentifier = [NSUUID UUID];
   FBTestBundle *testBundle = [[[[[[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
     withBundlePath:self.testLaunchConfiguration.testBundlePath]
@@ -140,22 +163,10 @@
       failFuture];
   }
 
-  NSString *IDEBundleInjectionFrameworkPath = [xcodeLibraryInjection stringByAppendingPathComponent:@"PrivateFrameworks/IDEBundleInjection.framework"];
-
-  FBProductBundle *IDEBundleInjectionFramework = [[[FBProductBundleBuilder builder]
-    withBundlePath:IDEBundleInjectionFrameworkPath]
-    buildWithError:&error];
-  if (!IDEBundleInjectionFramework) {
-    return [[[XCTestBootstrapError
-      describe:@"Failed to prepare IDEBundleInjectionFramework"]
-      causedBy:error]
-      failFuture];
-  }
-
   FBTestRunnerConfiguration *configuration = [FBTestRunnerConfiguration
     configurationWithSessionIdentifier:sessionIdentifier
     hostApplication:application
-    ideInjectionFramework:IDEBundleInjectionFramework
+    hostApplicationAdditionalEnvironment:hostApplicationAdditionalEnvironment.copy
     testBundle:testBundle
     testConfigurationPath:testBundle.configuration.path
     frameworkSearchPath:[XCTestFrameworksPaths componentsJoinedByString:@":"]

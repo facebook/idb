@@ -18,22 +18,20 @@
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
++ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBProductBundle *)hostApplication hostApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
 {
   NSParameterAssert(sessionIdentifier);
   NSParameterAssert(hostApplication);
   NSParameterAssert(testConfigurationPath);
-  NSParameterAssert(ideInjectionFramework);
   NSParameterAssert(testBundle);
 
   NSArray<NSString *> *launchArguments = [self launchArguments];
   NSDictionary<NSString *, NSString *> *launchEnvironment = [self
                                                              launchEnvironmentWithHostApplication:hostApplication
-                                                             ideInjectionFramework:ideInjectionFramework
+                                                             hostApplicationAdditionalEnvironment:hostApplicationAdditionalEnvironment
                                                              testBundle:testBundle
                                                              testConfigurationPath:testConfigurationPath
                                                              frameworkSearchPath:frameworkSearchPath];
-
   return [[self alloc] initWithSessionIdentifier:sessionIdentifier testRunner:hostApplication launchArguments:launchArguments launchEnvironment:launchEnvironment testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
 }
 
@@ -70,21 +68,22 @@
   ];
 }
 
-+ (NSDictionary *)launchEnvironmentWithHostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath
++ (NSDictionary *)launchEnvironmentWithHostApplication:(FBProductBundle *)hostApplication hostApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath
 {
-  NSDictionary *environmentVariables = @{
+  NSString *appFrameworks = [hostApplication.path stringByAppendingPathComponent:@"Frameworks"];
+  NSMutableDictionary *environmentVariables = hostApplicationAdditionalEnvironment.mutableCopy;
+  [environmentVariables addEntriesFromDictionary:@{
     @"AppTargetLocation" : hostApplication.binaryPath,
-    @"DYLD_INSERT_LIBRARIES" : ideInjectionFramework.binaryPath,
-    @"DYLD_FRAMEWORK_PATH" : frameworkSearchPath ?: @"",
-    @"DYLD_LIBRARY_PATH" : frameworkSearchPath ?: @"",
+    @"DYLD_FRAMEWORK_PATH" : appFrameworks ?: @"",
+    @"DYLD_LIBRARY_PATH" : appFrameworks ?: @"",
+    @"DYLD_FALLBACK_FRAMEWORK_PATH" : frameworkSearchPath ?: @"",
+    @"DYLD_FALLBACK_LIBRARY_PATH" : frameworkSearchPath ?: @"",
     @"OBJC_DISABLE_GC" : @"YES",
     @"TestBundleLocation" : testBundle.path,
-    @"XCInjectBundle" : testBundle.path,
-    @"XCInjectBundleInto" : hostApplication.binaryPath,
     @"XCODE_DBG_XPC_EXCLUSIONS" : @"com.apple.dt.xctestSymbolicator",
     @"XCTestConfigurationFilePath" : testConfigurationPath,
-  };
-  return [self addAdditionalEnvironmentVariables:environmentVariables];
+  }];
+  return [self addAdditionalEnvironmentVariables:environmentVariables.copy];
 }
 
 + (NSDictionary *)addAdditionalEnvironmentVariables:(NSDictionary *)currentEnvironmentVariables

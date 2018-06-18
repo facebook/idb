@@ -94,7 +94,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
     NSString *osLogPath = allEnvironment[@"FBXCTEST_OS_LOG_PATH"];
 
     configuration = [FBTestManagerTestConfiguration
-      configurationWithEnvironment:environment
+      configurationWithShims:shims
+      environment:environment
       workingDirectory:workingDirectory
       testBundlePath:testBundlePath
       waitForDebugger:waitForDebugger
@@ -107,7 +108,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       osLogPath:osLogPath];
   } else if ([argumentSet containsObject:@"-uiTest"]) {
     configuration = [FBTestManagerTestConfiguration
-      configurationWithEnvironment:environment
+      configurationWithShims:shims
+      environment:environment
       workingDirectory:workingDirectory
       testBundlePath:testBundlePath
       waitForDebugger:waitForDebugger
@@ -180,10 +182,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
       }
       *testBundlePathOut = testBundlePath;
       *runnerAppPathOut = testRunnerAppPath;
-
-      if (![arguments containsObject:@"-listTestsOnly"]) {
-        shimsRequired = NO;
-      }
     } else if ([argument isEqualToString:@"-uiTest"]) {
       NSArray *components = [parameter componentsSeparatedByString:@":"];
       if (components.count != 3) {

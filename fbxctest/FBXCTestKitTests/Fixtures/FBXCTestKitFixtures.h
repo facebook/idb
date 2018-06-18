@@ -34,6 +34,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (NSString *)tableSearchApplicationPath;
 
++ (NSString *)testRunnerApp;
+
 /**
  An iOS Unit Test XCTest Target.
 

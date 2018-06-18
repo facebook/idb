@@ -61,7 +61,7 @@
 {
   NSError *error;
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
-  NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];
+  NSString *applicationPath = [FBXCTestKitFixtures testRunnerApp];
   NSString *testTargetPath = [FBXCTestKitFixtures iOSUITestAppTargetPath];
   NSString *testBundlePath = self.iOSUITestBundlePath;
   NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@:%@", testBundlePath, applicationPath, testTargetPath];

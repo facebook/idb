@@ -24,7 +24,6 @@ static NSString *const FBTestPlanDirectoryName = @"TestPlans";
 @property (nonatomic, strong) FBTestConfiguration *testConfiguration;
 @property (nonatomic, strong) FBTestBundle *testBundle;
 @property (nonatomic, strong) FBProductBundle *XCTestFramework;
-@property (nonatomic, strong) FBProductBundle *IDEBundleInjectionFramework;
 @end
 
 @implementation FBApplicationDataPackage
@@ -109,13 +108,11 @@ static NSString *const FBTestPlanDirectoryName = @"TestPlans";
   NSString *testConfigurationFileName = [self.testBundle.name stringByAppendingPathExtension:@"xctest.xctestconfiguration"];
   NSString *testBundlePath = [packageBundlePath stringByAppendingPathComponent:self.testBundle.path.lastPathComponent];
   NSString *XCTestFrameworkPath = [packageBundlePath stringByAppendingPathComponent:@"XCTest.framework"];
-  NSString *IDEBundleInjectionFrameworkPath = [packageBundlePath stringByAppendingPathComponent:@"IDEBundleInjection.framework"];
   NSString *workingDirectory = nil;
 
   if (self.workingDirectory) {
     NSAssert(self.platformDirectory, @"platformDirectory is required to create data package");
     XCTestFrameworkPath = [self.platformDirectory stringByAppendingPathComponent:@"Developer/Library/Frameworks/XCTest.framework"];
-    IDEBundleInjectionFrameworkPath = [self.platformDirectory stringByAppendingPathComponent:@"Developer/Library/PrivateFrameworks/IDEBundleInjection.framework"];
     testBundlePath = self.testBundle.path;
     workingDirectory = packageBundlePath;
   }
@@ -173,19 +170,6 @@ static NSString *const FBTestPlanDirectoryName = @"TestPlans";
   if (!package.XCTestFramework) {
     return
     [[[XCTestBootstrapError describe:@"Failed to generate XCTestFramework bundle"]
-      causedBy:innerError]
-     fail:error];
-  }
-
-  package.IDEBundleInjectionFramework =
-  [[[[[FBProductBundleBuilder builderWithFileManager:self.fileManager]
-      withBundlePath:IDEBundleInjectionFrameworkPath]
-     withWorkingDirectory:workingDirectory]
-    withCodesignProvider:self.codesignProvider]
-   buildWithError:&innerError];
-  if (!package.IDEBundleInjectionFramework) {
-    return
-    [[[XCTestBootstrapError describe:@"Failed to generate IDEBundleInjectionFramework bundle"]
       causedBy:innerError]
      fail:error];
   }
