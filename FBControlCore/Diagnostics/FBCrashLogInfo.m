@@ -189,7 +189,13 @@
 
 + (NSString *)diagnosticReportsPath
 {
-  return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/DiagnosticReports"];
+  NSString *userReportsPath = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/DiagnosticReports"];
+  BOOL userReportsPathExists = [[NSFileManager defaultManager] fileExistsAtPath:userReportsPath];
+  if (userReportsPathExists) {
+    return userReportsPath;
+  }
+  // diagnostic reports for root
+  return @"/Library/Logs/DiagnosticReports";
 }
 
 #pragma mark Private
