@@ -16,6 +16,18 @@
 		EED62EE420D12242006E86E5 /* XCTestReporterShim.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EE120D12242006E86E5 /* XCTestReporterShim.m */; };
 		EED62EE520D12242006E86E5 /* XCTestReporterShim.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EE120D12242006E86E5 /* XCTestReporterShim.m */; };
 		EED62EE720D1224C006E86E5 /* TestCrashShim.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EE620D1224C006E86E5 /* TestCrashShim.m */; };
+		EED62EED20D12432006E86E5 /* FBRuntimeTools.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EE920D12431006E86E5 /* FBRuntimeTools.m */; };
+		EED62EEE20D12432006E86E5 /* FBRuntimeTools.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EE920D12431006E86E5 /* FBRuntimeTools.m */; };
+		EED62EEF20D12432006E86E5 /* FBRuntimeTools.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EEA20D12431006E86E5 /* FBRuntimeTools.h */; };
+		EED62EF020D12432006E86E5 /* FBRuntimeTools.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EEA20D12431006E86E5 /* FBRuntimeTools.h */; };
+		EED62EF120D12432006E86E5 /* FBDebugLog.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EEB20D12431006E86E5 /* FBDebugLog.h */; };
+		EED62EF220D12432006E86E5 /* FBDebugLog.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EEB20D12431006E86E5 /* FBDebugLog.h */; };
+		EED62EF320D12432006E86E5 /* FBDebugLog.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EEC20D12432006E86E5 /* FBDebugLog.m */; };
+		EED62EF420D12432006E86E5 /* FBDebugLog.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EEC20D12432006E86E5 /* FBDebugLog.m */; };
+		EED62EF720D1243E006E86E5 /* FBXCTestMain.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EF520D1243E006E86E5 /* FBXCTestMain.h */; };
+		EED62EF820D1243E006E86E5 /* FBXCTestMain.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EF520D1243E006E86E5 /* FBXCTestMain.h */; };
+		EED62EF920D1243E006E86E5 /* FBXCTestMain.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EF620D1243E006E86E5 /* FBXCTestMain.m */; };
+		EED62EFA20D1243E006E86E5 /* FBXCTestMain.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EF620D1243E006E86E5 /* FBXCTestMain.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +40,12 @@
 		EED62EE020D12242006E86E5 /* ReporterEvents.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ReporterEvents.h; sourceTree = "<group>"; };
 		EED62EE120D12242006E86E5 /* XCTestReporterShim.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = XCTestReporterShim.m; sourceTree = "<group>"; };
 		EED62EE620D1224C006E86E5 /* TestCrashShim.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TestCrashShim.m; sourceTree = "<group>"; };
+		EED62EE920D12431006E86E5 /* FBRuntimeTools.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBRuntimeTools.m; sourceTree = "<group>"; };
+		EED62EEA20D12431006E86E5 /* FBRuntimeTools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBRuntimeTools.h; sourceTree = "<group>"; };
+		EED62EEB20D12431006E86E5 /* FBDebugLog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDebugLog.h; sourceTree = "<group>"; };
+		EED62EEC20D12432006E86E5 /* FBDebugLog.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDebugLog.m; sourceTree = "<group>"; };
+		EED62EF520D1243E006E86E5 /* FBXCTestMain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestMain.h; sourceTree = "<group>"; };
+		EED62EF620D1243E006E86E5 /* FBXCTestMain.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestMain.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,6 +71,7 @@
 			children = (
 				EED62ED420D1212D006E86E5 /* Configs */,
 				EED62ED520D12134006E86E5 /* Tools */,
+				EED62EE820D123CB006E86E5 /* TestLoadingShim */,
 				EED62ED720D12147006E86E5 /* TestReporterShim */,
 				EED62ED620D1213B006E86E5 /* TestCrashShim */,
 				AA017F421BD7776B00F45E9D /* Products */,
@@ -81,6 +100,10 @@
 			isa = PBXGroup;
 			children = (
 				EED62EDA20D12217006E86E5 /* dyld-interposing.h */,
+				EED62EEB20D12431006E86E5 /* FBDebugLog.h */,
+				EED62EEC20D12432006E86E5 /* FBDebugLog.m */,
+				EED62EEA20D12431006E86E5 /* FBRuntimeTools.h */,
+				EED62EE920D12431006E86E5 /* FBRuntimeTools.m */,
 				EED62EDB20D12217006E86E5 /* XCTestPrivate.h */,
 			);
 			path = Tools;
@@ -103,6 +126,18 @@
 			path = TestReporterShim;
 			sourceTree = "<group>";
 		};
+		EED62EE820D123CB006E86E5 /* TestLoadingShim */ = {
+			isa = PBXGroup;
+			children = (
+				EED62EF520D1243E006E86E5 /* FBXCTestMain.h */,
+				EED62EF620D1243E006E86E5 /* FBXCTestMain.m */,
+			);
+			path = TestLoadingShim;
+			sourceTree = "<group>";
+		};
+
+
+
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -110,9 +145,12 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EED62EF720D1243E006E86E5 /* FBXCTestMain.h in Headers */,
+				EED62EF120D12432006E86E5 /* FBDebugLog.h in Headers */,
 				EED62EE220D12242006E86E5 /* ReporterEvents.h in Headers */,
 				EED62EDC20D12217006E86E5 /* dyld-interposing.h in Headers */,
 				EED62EDE20D12217006E86E5 /* XCTestPrivate.h in Headers */,
+				EED62EEF20D12432006E86E5 /* FBRuntimeTools.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -120,9 +158,12 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EED62EF820D1243E006E86E5 /* FBXCTestMain.h in Headers */,
+				EED62EF220D12432006E86E5 /* FBDebugLog.h in Headers */,
 				EED62EE320D12242006E86E5 /* ReporterEvents.h in Headers */,
 				EED62EDD20D12217006E86E5 /* dyld-interposing.h in Headers */,
 				EED62EDF20D12217006E86E5 /* XCTestPrivate.h in Headers */,
+				EED62EF020D12432006E86E5 /* FBRuntimeTools.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -221,7 +262,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EED62EF920D1243E006E86E5 /* FBXCTestMain.m in Sources */,
+				EED62EF320D12432006E86E5 /* FBDebugLog.m in Sources */,
 				EED62EE720D1224C006E86E5 /* TestCrashShim.m in Sources */,
+				EED62EED20D12432006E86E5 /* FBRuntimeTools.m in Sources */,
 				EED62EE420D12242006E86E5 /* XCTestReporterShim.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -230,6 +274,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EED62EEE20D12432006E86E5 /* FBRuntimeTools.m in Sources */,
+				EED62EFA20D1243E006E86E5 /* FBXCTestMain.m in Sources */,
+				EED62EF420D12432006E86E5 /* FBDebugLog.m in Sources */,
 				EED62EE520D12242006E86E5 /* XCTestReporterShim.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
