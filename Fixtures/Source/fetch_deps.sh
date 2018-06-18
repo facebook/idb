@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -ex
+
+SCRIPT="$(realpath "$0")"
+SCRIPTPATH="$(dirname "$SCRIPT")"
+RUNNER_FRAMEWORK_DIR="$SCRIPTPATH/FBTestRunnerApp/Frameworks"
+XCODE_PATH=$(xcode-select -p)
+
+if [ ! -d "$RUNNER_FRAMEWORK_DIR" ]; then
+  mkdir "$RUNNER_FRAMEWORK_DIR"
+fi
+
+rm -rf "${RUNNER_FRAMEWORK_DIR:-}/*"
+cp -rf "$XCODE_PATH/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCTest.framework" "$RUNNER_FRAMEWORK_DIR"
+cp -rf "$XCODE_PATH/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework" "$RUNNER_FRAMEWORK_DIR"

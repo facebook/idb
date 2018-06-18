@@ -10,6 +10,10 @@
 		8BEAE9751FD66F9800C9113D /* iOSAppFixtureAppTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BEAE9741FD66F9800C9113D /* iOSAppFixtureAppTests.m */; };
 		AA19D6F91D61ADC700229B59 /* MacUnitTestFixtureTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA19D6F71D61ADC700229B59 /* MacUnitTestFixtureTests.m */; };
 		AA19D6FD1D61ADD400229B59 /* iOSUnitTestFixtureTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA19D6FB1D61ADD400229B59 /* iOSUnitTestFixtureTests.m */; };
+		EE097E6920CAF50000DF2566 /* FBAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = EE097E6820CAF50000DF2566 /* FBAppDelegate.m */; };
+		EE097E7720CAF50200DF2566 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = EE097E7620CAF50200DF2566 /* main.m */; };
+		EE26BC9220D1174B00B1E477 /* XCTAutomationSupport.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EE26BC8E20D1172E00B1E477 /* XCTAutomationSupport.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		EE26BC9320D1174B00B1E477 /* XCTest.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EE26BC8F20D1172E00B1E477 /* XCTest.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		EE737DA21FACCAA6005DF1F3 /* MacUITestFixtureUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = EE737D9A1FACCA7D005DF1F3 /* MacUITestFixtureUITests.m */; };
 		EE737DA31FACCABC005DF1F3 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = EE737D911FACCA7D005DF1F3 /* AppDelegate.m */; };
 		EE737DA51FACCAC1005DF1F3 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = EE737D931FACCA7D005DF1F3 /* MainMenu.xib */; };
@@ -44,6 +48,20 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		EE097E9320CE80FE00DF2566 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				EE26BC9220D1174B00B1E477 /* XCTAutomationSupport.framework in CopyFiles */,
+				EE26BC9320D1174B00B1E477 /* XCTest.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		8BEAE9721FD66F9800C9113D /* iOSAppFixtureAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSAppFixtureAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8BEAE9741FD66F9800C9113D /* iOSAppFixtureAppTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = iOSAppFixtureAppTests.m; sourceTree = "<group>"; };
@@ -56,6 +74,11 @@
 		AA19D6F71D61ADC700229B59 /* MacUnitTestFixtureTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MacUnitTestFixtureTests.m; sourceTree = "<group>"; };
 		AA19D6FA1D61ADD400229B59 /* iOSUnitTestFixture.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = iOSUnitTestFixture.xcconfig; sourceTree = "<group>"; };
 		AA19D6FB1D61ADD400229B59 /* iOSUnitTestFixtureTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = iOSUnitTestFixtureTests.m; sourceTree = "<group>"; };
+		EE097E6520CAF50000DF2566 /* FBTestRunnerApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FBTestRunnerApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE097E6720CAF50000DF2566 /* FBAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBAppDelegate.h; sourceTree = "<group>"; };
+		EE097E6820CAF50000DF2566 /* FBAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBAppDelegate.m; sourceTree = "<group>"; };
+		EE097E7520CAF50200DF2566 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		EE097E7620CAF50200DF2566 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		EE0E34411FAC94E30052AA1A /* iOSAppFixture.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOSAppFixture.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE0E34581FAC94E30052AA1A /* iOSAppUITestFixture.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSAppUITestFixture.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE0E34861FAC95510052AA1A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -63,6 +86,8 @@
 		EE0E34881FAC95510052AA1A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		EE0E348C1FAC95510052AA1A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EE0E348D1FAC95510052AA1A /* iOSUITestFixtureUITests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = iOSUITestFixtureUITests.m; sourceTree = "<group>"; };
+		EE26BC8E20D1172E00B1E477 /* XCTAutomationSupport.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = XCTAutomationSupport.framework; sourceTree = "<group>"; };
+		EE26BC8F20D1172E00B1E477 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = XCTest.framework; sourceTree = "<group>"; };
 		EE737D6F1FACCA41005DF1F3 /* MacAppFixture.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacAppFixture.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE737D811FACCA41005DF1F3 /* MacAppUITestsFixture.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacAppUITestsFixture.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE737D901FACCA7D005DF1F3 /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -93,6 +118,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AA19D6E71D61AD3200229B59 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE097E6220CAF50000DF2566 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -154,7 +186,9 @@
 				EE737D8E1FACCA7D005DF1F3 /* MacUITestFixture */,
 				AA19D6EB1D61AD3200229B59 /* iOSUnitTestFixture */,
 				EE0E347E1FAC95510052AA1A /* iOSUITestFixture */,
+				EE097E6620CAF50000DF2566 /* FBTestRunnerApp */,
 				AA19D6CF1D61ACF700229B59 /* Products */,
+				EE097E8120CAFCF300DF2566 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -169,6 +203,7 @@
 				EE737D811FACCA41005DF1F3 /* MacAppUITestsFixture.xctest */,
 				EE737DAB1FACCF5E005DF1F3 /* MacCommonApp.app */,
 				8BEAE9721FD66F9800C9113D /* iOSAppFixtureAppTests.xctest */,
+				EE097E6520CAF50000DF2566 /* FBTestRunnerApp.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -191,6 +226,25 @@
 				AA19D6FB1D61ADD400229B59 /* iOSUnitTestFixtureTests.m */,
 			);
 			path = iOSUnitTestFixture;
+			sourceTree = "<group>";
+		};
+		EE097E6620CAF50000DF2566 /* FBTestRunnerApp */ = {
+			isa = PBXGroup;
+			children = (
+				EE26BC8D20D1172E00B1E477 /* Frameworks */,
+				EE097E6720CAF50000DF2566 /* FBAppDelegate.h */,
+				EE097E6820CAF50000DF2566 /* FBAppDelegate.m */,
+				EE097E7520CAF50200DF2566 /* Info.plist */,
+				EE097E7620CAF50200DF2566 /* main.m */,
+			);
+			path = FBTestRunnerApp;
+			sourceTree = "<group>";
+		};
+		EE097E8120CAFCF300DF2566 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		EE0E347E1FAC95510052AA1A /* iOSUITestFixture */ = {
@@ -220,6 +274,15 @@
 				EE0E348D1FAC95510052AA1A /* iOSUITestFixtureUITests.m */,
 			);
 			path = Tests;
+			sourceTree = "<group>";
+		};
+		EE26BC8D20D1172E00B1E477 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				EE26BC8E20D1172E00B1E477 /* XCTAutomationSupport.framework */,
+				EE26BC8F20D1172E00B1E477 /* XCTest.framework */,
+			);
+			path = Frameworks;
 			sourceTree = "<group>";
 		};
 		EE737D8E1FACCA7D005DF1F3 /* MacUITestFixture */ = {
@@ -315,6 +378,23 @@
 			productName = iOSUnitTestFixture;
 			productReference = AA19D6EA1D61AD3200229B59 /* iOSUnitTestFixture.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		EE097E6420CAF50000DF2566 /* FBTestRunnerApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EE097E7A20CAF50200DF2566 /* Build configuration list for PBXNativeTarget "FBTestRunnerApp" */;
+			buildPhases = (
+				EE097E6120CAF50000DF2566 /* Sources */,
+				EE097E6220CAF50000DF2566 /* Frameworks */,
+				EE097E9320CE80FE00DF2566 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FBTestRunnerApp;
+			productName = FBTestRunnerApp;
+			productReference = EE097E6520CAF50000DF2566 /* FBTestRunnerApp.app */;
+			productType = "com.apple.product-type.application";
 		};
 		EE0E34401FAC94E30052AA1A /* iOSAppFixture */ = {
 			isa = PBXNativeTarget;
@@ -423,6 +503,15 @@
 					AA19D6E91D61AD3200229B59 = {
 						CreatedOnToolsVersion = 7.3.1;
 					};
+					EE097E6420CAF50000DF2566 = {
+						CreatedOnToolsVersion = 9.4;
+						ProvisioningStyle = Automatic;
+						SystemCapabilities = {
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
+						};
+					};
 					EE0E34401FAC94E30052AA1A = {
 						CreatedOnToolsVersion = 9.1;
 						ProvisioningStyle = Automatic;
@@ -478,6 +567,7 @@
 				EE737D801FACCA41005DF1F3 /* MacAppUITestsFixture */,
 				EE737DAA1FACCF5E005DF1F3 /* MacCommonApp */,
 				8BEAE9711FD66F9800C9113D /* iOSAppFixtureAppTests */,
+				EE097E6420CAF50000DF2566 /* FBTestRunnerApp */,
 			);
 		};
 /* End PBXProject section */
@@ -565,6 +655,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA19D6FD1D61ADD400229B59 /* iOSUnitTestFixtureTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE097E6120CAF50000DF2566 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE097E7720CAF50200DF2566 /* main.m in Sources */,
+				EE097E6920CAF50000DF2566 /* FBAppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -822,6 +921,115 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		EE097E7820CAF50200DF2566 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/FBTestRunnerApp/Frameworks",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = FBTestRunnerApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/FBTestRunnerApp/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.testRunnerApp.FBTestRunnerApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		EE097E7920CAF50200DF2566 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/FBTestRunnerApp/Frameworks",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = FBTestRunnerApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/FBTestRunnerApp/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.testRunnerApp.FBTestRunnerApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -1297,6 +1505,15 @@
 			buildConfigurations = (
 				AA19D6F01D61AD3200229B59 /* Debug */,
 				AA19D6F11D61AD3200229B59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EE097E7A20CAF50200DF2566 /* Build configuration list for PBXNativeTarget "FBTestRunnerApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE097E7820CAF50200DF2566 /* Debug */,
+				EE097E7920CAF50200DF2566 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
