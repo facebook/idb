@@ -324,12 +324,14 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   calls->LookupApplications = FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");
   calls->NotificationSubscribe = FBGetSymbolFromHandle(handle, "AMDeviceNotificationSubscribe");
   calls->NotificationUnsubscribe = FBGetSymbolFromHandle(handle, "AMDeviceNotificationUnsubscribe");
+  calls->Release = FBGetSymbolFromHandle(handle, "AMDeviceRelease");
+  calls->Retain = FBGetSymbolFromHandle(handle, "AMDeviceRetain");
   calls->SecureInstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureInstallApplication");
   calls->SecureStartService = FBGetSymbolFromHandle(handle, "AMDeviceSecureStartService");
   calls->SecureTransferPath = FBGetSymbolFromHandle(handle, "AMDeviceSecureTransferPath");
   calls->SecureUninstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureUninstallApplication");
-  calls->ServiceConnectionGetSocket = FBGetSymbolFromHandle(handle, "AMDServiceConnectionGetSocket");
   calls->ServiceConnectionGetSecureIOContext = FBGetSymbolFromHandle(handle, "AMDServiceConnectionGetSecureIOContext");
+  calls->ServiceConnectionGetSocket = FBGetSymbolFromHandle(handle, "AMDServiceConnectionGetSocket");
   calls->ServiceConnectionInvalidate = FBGetSymbolFromHandle(handle, "AMDServiceConnectionInvalidate");
   calls->ServiceConnectionReceive = FBGetSymbolFromHandle(handle, "AMDServiceConnectionReceive");
   calls->SetLogLevel = FBGetSymbolFromHandle(handle, "AMDSetLogLevel");
@@ -365,11 +367,11 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   AMDeviceRef oldAMDevice = _amDevice;
   _amDevice = amDevice;
   if (amDevice) {
-    CFRetain(amDevice);
+    self.calls.Retain(amDevice);
     [self cacheAllValues];
   }
   if (oldAMDevice) {
-    CFRelease(oldAMDevice);
+    self.calls.Release(oldAMDevice);
   }
 }
 
@@ -433,7 +435,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 - (void)dealloc
 {
   if (_amDevice) {
-    CFRelease(_amDevice);
+    self.calls.Release(_amDevice);
     _amDevice = NULL;   
   }
 }

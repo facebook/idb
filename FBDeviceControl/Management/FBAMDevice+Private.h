@@ -33,6 +33,10 @@ typedef struct {
   int (*StartSession)(AMDeviceRef device);
   int (*StopSession)(AMDeviceRef device);
 
+  // Memory Management
+  void (*Retain)(AMDeviceRef device);
+  void (*Release)(AMDeviceRef device);
+
   // Getting Properties of a Device.
   _Nullable CFStringRef (*_Nonnull CopyDeviceIdentifier)(AMDeviceRef device);
   _Nullable CFStringRef (*_Nonnull CopyValue)(AMDeviceRef device, _Nullable CFStringRef domain, CFStringRef name);
