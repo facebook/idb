@@ -104,21 +104,10 @@
   NSArray<NSString *> *XCTestFrameworksPaths = @[
     [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"],
     [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks"],
+    platformDeveloperFrameworksPath,
   ];
 
-  NSError *error;
-  FBProductBundle *XCTestBundle =
-  [[[FBProductBundleBuilder builder]
-    withBundlePath:[platformDeveloperFrameworksPath stringByAppendingPathComponent:@"XCTest.framework"]]
-   buildWithError:&error];
-  if (!XCTestBundle) {
-    return
-    [[[XCTestBootstrapError describe:@"Failed to locate XCTest.framework"]
-      causedBy:error]
-     failFuture];
-  }
   NSArray<NSString *> *injects = @[
-    XCTestBundle.binaryPath,
     self.shims.iOSSimulatorTestShimPath,
    ];
   NSDictionary *hostApplicationAdditionalEnvironment = @{
@@ -135,6 +124,7 @@
   }
 
   // Prepare XCTest bundle
+  NSError *error;
   NSUUID *sessionIdentifier = [NSUUID UUID];
   FBTestBundle *testBundle = [[[[[[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
     withBundlePath:self.testLaunchConfiguration.testBundlePath]

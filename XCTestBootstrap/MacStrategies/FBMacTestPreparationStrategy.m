@@ -101,19 +101,7 @@
     testedApplicationAdditionalEnvironment = nil;
   }
 
-  NSError *error;
-  FBProductBundle *XCTestBundle =
-  [[[FBProductBundleBuilder builder]
-    withBundlePath:[developerFrameworksPath stringByAppendingPathComponent:@"XCTest.framework"]]
-   buildWithError:&error];
-  if (!XCTestBundle) {
-    return
-    [[[XCTestBootstrapError describe:@"Failed to locate XCTest.framework"]
-      causedBy:error]
-     failFuture];
-  }
   NSArray<NSString *> *injects = @[
-    XCTestBundle.binaryPath,
     self.shims.macOSTestShimPath,
   ];
   NSDictionary *hostApplicationAdditionalEnvironment = @{
@@ -122,6 +110,7 @@
   };
 
   // Prepare XCTest bundle
+  NSError *error;
   NSUUID *sessionIdentifier = [NSUUID UUID];
   FBTestBundle *testBundle = [[[[[[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
     withBundlePath:self.testLaunchConfiguration.testBundlePath]
@@ -154,6 +143,7 @@
   NSArray<NSString *> *XCTestFrameworksPaths = @[
     [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"],
     [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks"],
+    developerFrameworksPath,
   ];
 
   FBTestRunnerConfiguration *configuration = [FBTestRunnerConfiguration

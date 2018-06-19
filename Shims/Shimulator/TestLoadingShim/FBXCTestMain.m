@@ -9,6 +9,9 @@
 
 #import "FBXCTestMain.h"
 
+#import <dlfcn.h>
+#import <objc/runtime.h>
+
 #import "FBRuntimeTools.h"
 #import "XCTestPrivate.h"
 #import "FBDebugLog.h"
@@ -18,7 +21,6 @@ static NSString *const ShimulatorStartXCTest = @"SHIMULATOR_START_XCTEST";
 __attribute__((constructor)) static void XCTestMainEntryPoint()
 {
   FBDebugLog(@"[XCTestMainEntryPoint] Running inside: %@", [[NSBundle mainBundle] bundleIdentifier]);
-  FBDebugLog(@"[XCTestMainEntryPoint] Env:\n %@", NSProcessInfo.processInfo.environment);
   if (!NSProcessInfo.processInfo.environment[ShimulatorStartXCTest]) {
     FBDebugLog(@"[XCTestMainEntryPoint] SHIMULATOR_START_XCTEST not present. Bye");
     return;
@@ -30,13 +32,33 @@ __attribute__((constructor)) static void XCTestMainEntryPoint()
   FBDebugLog(@"[XCTestMainEntryPoint] Hold back, trying to load test bundle");
   if (!FBXCTestMain()) {
     NSLog(@"[XCTestMainEntryPoint] Loading XCTest bundle failed, bye");
-    exit(-1);
+    exit(1);
   }
   FBDebugLog(@"[XCTestMainEntryPoint] End of XCTestMainEntryPoint");
 }
 
+BOOL FBLoadXCTestIfNeeded()
+{
+  FBDebugLog(@"Env: %@", [NSProcessInfo processInfo].environment);
+
+  if (objc_lookUpClass("XCTest")) {
+    FBDebugLog(@"[XCTestMainEntryPoint] XCTest already loaded");
+    return YES;
+  }
+  FBDebugLog(@"[XCTestMainEntryPoint] Loading XCTest framework");
+  if (!dlopen("XCTest.framework/XCTest", RTLD_LAZY)) {
+    FBDebugLog(@"[XCTestMainEntryPoint] Failed to load XCTest.framework. %@", [NSString stringWithUTF8String:dlerror()]);
+    return NO;
+  }
+  FBDebugLog(@"[XCTestMainEntryPoint] XCTest loaded");
+  return YES;
+}
+
 BOOL FBXCTestMain()
 {
+  if (!FBLoadXCTestIfNeeded()) {
+    exit(2);
+  }
   NSString *configurationPath = NSProcessInfo.processInfo.environment[@"XCTestConfigurationFilePath"];
   if (!configurationPath) {
     NSLog(@"Failed to load XCTest as XCTestConfigurationFilePath environment variable is empty");
