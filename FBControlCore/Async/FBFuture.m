@@ -178,7 +178,9 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return [[self.future
     onQueue:queue fmap:fmap]
     onQueue:queue notifyOfCompletion:^(FBFuture *_) {
-      [teardowns makeObjectsPerformSelector:@selector(performTeardown)];
+      for (FBFutureContext_Teardown *teardown in teardowns.reverseObjectEnumerator) {
+        [teardown performTeardown];
+      }
     }];
 }
 

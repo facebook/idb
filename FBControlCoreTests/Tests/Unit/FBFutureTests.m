@@ -800,7 +800,7 @@
   [self waitForExpectations:@[teardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
-- (void)testStackedTeardown
+- (void)testStackedTeardownBehavesLikeAStack
 {
   __block BOOL fmapCalled = NO;
   __block BOOL outerTeardownCalled = NO;
@@ -813,7 +813,7 @@
     futureWithResult:@1]
     onQueue:self.queue contextualTeardown:^(id value){
       XCTAssertTrue(fmapCalled);
-      XCTAssertFalse(innerTeardownCalled);
+      XCTAssertTrue(innerTeardownCalled);
       XCTAssertEqualObjects(value, @1);
       outerTeardownCalled = YES;
       [outerTeardownExpectation fulfill];
@@ -822,7 +822,7 @@
       XCTAssertEqualObjects(value, @1);
       return [[FBFuture futureWithResult:@2] onQueue:self.queue contextualTeardown:^(id innerValue) {
         XCTAssertEqualObjects(innerValue, @2);
-        XCTAssertTrue(outerTeardownCalled);
+        XCTAssertFalse(outerTeardownCalled);
         innerTeardownCalled = YES;
         [innerTeardownExpectation fulfill];
       }];
