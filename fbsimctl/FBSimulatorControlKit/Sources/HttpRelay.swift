@@ -97,8 +97,8 @@ extension ActionPerformer {
     do {
       let result = try future.await(withTimeout: FBControlCoreGlobalConfiguration.slowTimeout)
       return reporter.interactionResultResponse(result.value)
-    } catch {
-      return reporter.interactionResultResponse(.failure("Timed Out Performing Action \(action)"))
+    } catch let caughtError {
+        return reporter.interactionResultResponse(.failure("Error Performing Action \(action): \(caughtError.localizedDescription)"))
     }
   }
 
