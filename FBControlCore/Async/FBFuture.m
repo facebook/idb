@@ -112,6 +112,101 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 @end
 
+@interface FBFutureContext_Teardown : NSObject
+
+@property (nonatomic, strong, readonly) FBFuture *future;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) void (^action)(id);
+
+@end
+
+@implementation FBFutureContext_Teardown
+
+- (instancetype)initWithFuture:(FBFuture *)future queue:(dispatch_queue_t)queue action:(void (^)(id))action
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _future = future;
+  _queue = queue;
+  _action = action;
+
+  return self;
+}
+
+- (void)performTeardown
+{
+  void (^action)(id) = self.action;
+
+  [self.future onQueue:self.queue notifyOfCompletion:^(FBFuture *resolved) {
+    if (resolved.result) {
+      action(resolved.result);
+    }
+  }];
+}
+
+@end
+
+@interface FBFutureContext ()
+
+@property (nonatomic, strong, readonly) FBFuture *future;
+@property (nonatomic, copy, readonly) NSMutableArray<FBFutureContext_Teardown *> *teardowns;
+
+@end
+
+@implementation FBFutureContext
+
+- (instancetype)initWithFuture:(FBFuture *)future teardowns:(NSMutableArray<FBFutureContext_Teardown *> *)teardowns
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _future = future;
+  _teardowns = teardowns;
+
+  return self;
+}
+
+- (FBFuture *)onQueue:(dispatch_queue_t)queue fmap:(FBFuture * (^)(id))fmap
+{
+  NSArray<FBFutureContext_Teardown *> *teardowns = self.teardowns;
+
+  return [[self.future
+    onQueue:queue fmap:fmap]
+    onQueue:queue notifyOfCompletion:^(FBFuture *_) {
+      [teardowns makeObjectsPerformSelector:@selector(performTeardown)];
+    }];
+}
+
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue pend:(FBFuture * (^)(id result))fmap
+{
+  FBFuture *next = [self.future onQueue:queue fmap:fmap];
+  return [[FBFutureContext alloc] initWithFuture:next teardowns:self.teardowns];
+}
+
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue push:(FBFutureContext * (^)(id))fmap
+{
+  __block FBFutureContext *nextContext = nil;
+  FBFuture *future = [self.future onQueue:queue fmap:^(id result) {
+    FBFutureContext *resolved = fmap(result);
+    [nextContext.teardowns addObjectsFromArray:resolved.teardowns];
+    return resolved.future;
+  }];
+  nextContext = [[FBFutureContext alloc] initWithFuture:future teardowns:self.teardowns];
+  return nextContext;
+}
+
++ (FBFutureContext *)error:(NSError *)error
+{
+  return [[self alloc] initWithFuture:[FBFuture futureWithError:error] teardowns:[NSMutableArray array]];
+}
+
+@end
+
 @interface FBFuture ()
 
 @property (nonatomic, strong, readonly) NSMutableArray<FBFuture_Handler *> *handlers;
@@ -468,6 +563,12 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return [self onQueue:queue chain:^(FBFuture *future) {
     return future.error ? handler(future.error) : future;
   }];
+}
+
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(id))action
+{
+  FBFutureContext_Teardown *teardown = [[FBFutureContext_Teardown alloc] initWithFuture:self queue:queue action:action];
+  return [[FBFutureContext alloc] initWithFuture:self teardowns:@[teardown].mutableCopy];
 }
 
 - (FBFuture *)mapReplace:(id)replacement

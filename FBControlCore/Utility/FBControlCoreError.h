@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
 @class FBFuture;
+@class FBFutureContext;
 
 @protocol FBControlCoreLogger;
 
@@ -50,6 +51,7 @@ extern NSString *const FBControlCoreErrorDomain;
 - (void *)failPointer:(NSError **)error;
 - (nullable id)fail:(NSError **)error;
 - (FBFuture *)failFuture;
+- (FBFutureContext *)failFutureContext;
 
 /**
  Attach additional diagnostic information.

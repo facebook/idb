@@ -102,11 +102,11 @@ static NSUInteger bar2Called = 0;
   [forwarder doFoo];
   [forwarder doBar];
 
-  XCTAssertEqual(foo1Called, 2);
-  XCTAssertEqual(foo2Called, 0);
-  XCTAssertEqual(bar2Called, 1);
-  XCTAssertEqual(fooConstructed, 2);
-  XCTAssertEqual(barConstructed, 1);
+  XCTAssertEqual(foo1Called, 2u);
+  XCTAssertEqual(foo2Called, 0u);
+  XCTAssertEqual(bar2Called, 1u);
+  XCTAssertEqual(fooConstructed, 2u);
+  XCTAssertEqual(barConstructed, 1u);
 }
 
 - (void)testForwardsToFirstInArrayWithState
@@ -116,11 +116,11 @@ static NSUInteger bar2Called = 0;
   [forwarder doFoo];
   [forwarder doBar];
 
-  XCTAssertEqual(foo1Called, 2);
-  XCTAssertEqual(foo2Called, 0);
-  XCTAssertEqual(bar2Called, 1);
-  XCTAssertEqual(fooConstructed, 1);
-  XCTAssertEqual(barConstructed, 1);
+  XCTAssertEqual(foo1Called, 2u);
+  XCTAssertEqual(foo2Called, 0u);
+  XCTAssertEqual(bar2Called, 1u);
+  XCTAssertEqual(fooConstructed, 1u);
+  XCTAssertEqual(barConstructed, 1u);
 }
 
 @end

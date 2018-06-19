@@ -21,7 +21,7 @@
 
 - (void)setUp
 {
-  self.queue = dispatch_queue_create("com.facebook.fbcontrolcore.tests.future", DISPATCH_QUEUE_CONCURRENT);
+  self.queue = dispatch_queue_create("com.facebook.fbcontrolcore.tests.future", DISPATCH_QUEUE_SERIAL);
 }
 
 - (void)testResolvesSynchronouslyWithObject
@@ -763,6 +763,121 @@
 
   [self waitForExpectations:@[delayedCompletionCalled, immediateCompletionCalled, raceCompletionCalled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
   XCTAssertEqualObjects(raced.result, @YES);
+}
+
+- (void)testContextualTeardownOrdering
+{
+  __block BOOL fmapCalled = NO;
+  __block BOOL teardownCalled = NO;
+  XCTestExpectation *completionExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+  XCTestExpectation *teardownExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Teardown"];
+
+  [[[[[FBFuture
+    futureWithResult:@1]
+    onQueue:self.queue contextualTeardown:^(id value){
+      XCTAssertTrue(fmapCalled);
+      XCTAssertEqualObjects(value, @1);
+      teardownCalled = YES;
+      [teardownExpectation fulfill];
+    }]
+    onQueue:self.queue pend:^(id value) {
+      XCTAssertEqualObjects(value, @1);
+      return [FBFuture futureWithResult:@2];
+    }]
+    onQueue:self.queue fmap:^(id value) {
+      XCTAssertFalse(teardownCalled);
+      XCTAssertEqualObjects(value, @2);
+      fmapCalled = YES;
+      return [FBFuture futureWithResult:@3];
+    }]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
+      XCTAssertTrue(fmapCalled);
+      XCTAssertEqualObjects(future.result, @3);
+      [completionExpectation fulfill];
+    }];
+
+  [self waitForExpectations:@[completionExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  [self waitForExpectations:@[teardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
+- (void)testStackedTeardown
+{
+  __block BOOL fmapCalled = NO;
+  __block BOOL outerTeardownCalled = NO;
+  __block BOOL innerTeardownCalled = NO;
+  XCTestExpectation *completionExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+  XCTestExpectation *outerTeardownExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Outer Teardown"];
+  XCTestExpectation *innerTeardownExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Inner Teardown"];
+
+  [[[[[FBFuture
+    futureWithResult:@1]
+    onQueue:self.queue contextualTeardown:^(id value){
+      XCTAssertTrue(fmapCalled);
+      XCTAssertFalse(innerTeardownCalled);
+      XCTAssertEqualObjects(value, @1);
+      outerTeardownCalled = YES;
+      [outerTeardownExpectation fulfill];
+    }]
+    onQueue:self.queue push:^(id value) {
+      XCTAssertEqualObjects(value, @1);
+      return [[FBFuture futureWithResult:@2] onQueue:self.queue contextualTeardown:^(id innerValue) {
+        XCTAssertEqualObjects(innerValue, @2);
+        XCTAssertTrue(outerTeardownCalled);
+        innerTeardownCalled = YES;
+        [innerTeardownExpectation fulfill];
+      }];
+    }]
+    onQueue:self.queue fmap:^(id value) {
+      XCTAssertFalse(outerTeardownCalled);
+      XCTAssertEqualObjects(value, @2);
+      fmapCalled = YES;
+      return [FBFuture futureWithResult:@3];
+    }]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
+      XCTAssertTrue(fmapCalled);
+      XCTAssertEqualObjects(future.result, @3);
+      [completionExpectation fulfill];
+    }];
+
+  [self waitForExpectations:@[completionExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  [self waitForExpectations:@[outerTeardownExpectation, innerTeardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
+- (void)testStackedErrorDoesNotResolveInnerStack
+{
+  NSError *error = [NSError errorWithDomain:@"foo" code:2 userInfo:nil];
+
+  __block BOOL pushCalled = NO;
+  __block BOOL outerTeardownCalled = NO;
+  XCTestExpectation *completionExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+  XCTestExpectation *outerTeardownExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Outer Teardown"];
+
+  [[[[[FBFuture
+    futureWithResult:@1]
+    onQueue:self.queue contextualTeardown:^(id value){
+        XCTAssertTrue(pushCalled);
+        XCTAssertEqualObjects(value, @1);
+        outerTeardownCalled = YES;
+        [outerTeardownExpectation fulfill];
+    }]
+    onQueue:self.queue push:^(id value) {
+      pushCalled = YES;
+      XCTAssertEqualObjects(value, @1);
+      return [[FBFuture futureWithError:error] onQueue:self.queue contextualTeardown:^(id innerValue) {
+        XCTFail(@"Should not resolve error teardown");
+      }];
+    }]
+    onQueue:self.queue fmap:^(id result) {
+      XCTFail(@"Should not resolve error mapping");
+      return [FBFuture futureWithError:error];
+    }]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
+      XCTAssertTrue(pushCalled);
+      XCTAssertEqualObjects(future.error, error);
+      [completionExpectation fulfill];
+    }];
+
+  [self waitForExpectations:@[completionExpectation, outerTeardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
 #pragma mark - Helpers

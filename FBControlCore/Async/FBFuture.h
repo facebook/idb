@@ -11,6 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBFutureContext<T>;
+
 /**
  A State for the Future.
  */
@@ -181,6 +183,15 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 - (FBFuture *)onQueue:(dispatch_queue_t)queue handleError:(FBFuture * (^)(NSError *))handler;
 
 /**
+ Creates an FBFutureContext that allows the value yielded from the future to be torn down.
+
+ @param queue the queue to perform the teardown on.
+ @param action the teardown action to invoke
+ @return an object that acts as a proxy to the teardown.
+ */
+- (FBFutureContext<T> *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(T))action;
+
+/**
  Cancels the receiver if it doesn't resolve within the timeout.
 
  @param timeout the amount of time to time out the receiver in
@@ -291,6 +302,60 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
  @return the reciever, for chaining.
  */
 - (instancetype)resolveFromFuture:(FBFuture *)future;
+
+@end
+
+/**
+ Wraps a Future in such a way that teardown work can be deferred.
+ This is useful when the Future wraps some kind of resource that requires cleanup.
+ The completion of some chained future is used as the trigger to determine that cleanup should be performed.
+
+ From this class:
+ - A Future can be obtained that will completed before the teardown work does.
+ - Additional chaining is possible, deferring the teardown further.
+
+ The API intentionally mirrors some of the methods in FBFuture.
+ The Nominal types are different so that it is impossible to get FBFuture and FBFutureContext mixed up.
+ */
+@interface FBFutureContext <T : id> : NSObject
+
+/**
+ Return a Future from the context.
+ The reciever's teardown will occur *after* the Future returned by `fmap` resolves.
+
+ @param queue the queue to chain on.
+ @param fmap the function to re-map the result to a new future, only called on success.
+ @return a Future derived from the fmap. The teardown of the context will occur *after* this future has resolved.
+ */
+- (FBFuture *)onQueue:(dispatch_queue_t)queue fmap:(FBFuture * (^)(T result))fmap;
+
+/**
+ Continue to keep the context alive, but fmap a new future.
+ The reciever's teardown will not occur after the `pend`'s Future has resolved.
+
+ @param queue the queue to chain on.
+ @param fmap the function to re-map the result to a new future, only called on success.
+ @return a Context derived from the fmap.
+ */
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue pend:(FBFuture * (^)(T result))fmap;
+
+/**
+ Pushes another context.
+ This can be used to make a stack of contexts that unroll once the produced context pops.
+
+ @param queue the queue to chain on.
+ @param fmap the block to produce more context.
+ @return a Context derived from the fmap with the current context stacked below.
+ */
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue push:(FBFutureContext * (^)(T result))fmap;
+
+/**
+ An empty context that raises an error.
+
+ @param error an error to raise.
+ @return a new Future Context.
+ */
++ (FBFutureContext *)error:(NSError *)error;
 
 @end
 
