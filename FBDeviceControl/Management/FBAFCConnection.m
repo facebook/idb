@@ -115,7 +115,7 @@ static AFCCalls defaultCalls;
   mach_error_t result = self.calls.DirectoryCreate(self.connection, [path UTF8String]);
   if (result != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"Error when creating directory: %d", result]
+      describeFormat:@"Error when creating directory: %@", [self errorMessageWithCode:result]]
       failBool:error];
   }
   return YES;
@@ -130,7 +130,7 @@ const char *DoubleDot = "..";
   mach_error_t result = self.calls.DirectoryOpen(self.connection, path.UTF8String, &directory);
   if (result != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"Error when opening directory: %d", result]
+      describeFormat:@"Error when opening directory: %@", [self errorMessageWithCode:result]]
       fail:error];
   }
   NSMutableArray<NSString *> *dirs = [NSMutableArray array];
@@ -157,7 +157,7 @@ const char *DoubleDot = "..";
   mach_error_t result = self.calls.FileRefOpen(self.connection, [path UTF8String], FBAFCReadOnlyMode, &file);
   if (result != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"Error when opening file: %x", result]
+      describeFormat:@"Error when opening file: %@", [self errorMessageWithCode:result]]
       fail:error];
   }
   self.calls.FileRefSeek(self.connection, file, 0, 2);
@@ -174,7 +174,7 @@ const char *DoubleDot = "..";
     if (result != 0) {
       self.calls.FileRefClose(self.connection, file);
       return [[FBDeviceControlError
-        describeFormat:@"Error when reading file: %x", result]
+        describeFormat:@"Error when reading file: %@", [self errorMessageWithCode:result]]
         fail:error];
     }
   }
@@ -190,7 +190,7 @@ const char *DoubleDot = "..";
     mach_error_t result = self.calls.RemovePath(self.connection, [path UTF8String]);
     if (result != 0) {
       return [[FBDeviceControlError
-        describeFormat:@"Error when removing path: %d", result]
+        describeFormat:@"Error when removing path: %@", [self errorMessageWithCode:result]]
         failBool:error];
     }
   }
@@ -212,7 +212,7 @@ const char *DoubleDot = "..";
   mach_error_t result = self.calls.FileRefOpen(self.connection, containerPath.UTF8String, FBAFCreateReadAndWrite, &fileReference);
   if (result != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"Error when opening file: %x", result]
+      describeFormat:@"Error when opening file: %@", [self errorMessageWithCode:result]]
       failBool:error];
   }
 
@@ -229,7 +229,7 @@ const char *DoubleDot = "..";
   self.calls.FileRefClose(self.connection, fileReference);
   if (writeResult != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"Error when writing file: %x", writeResult]
+      describeFormat:@"Error when writing file: %@", [self errorMessageWithCode:writeResult]]
       failBool:error];
   }
   return YES;
@@ -254,6 +254,13 @@ const char *DoubleDot = "..";
   return YES;
 }
 
+- (NSString *)errorMessageWithCode:(int)code
+{
+  const char *name = self.calls.ErrorString(code);
+  NSDictionary<NSString *, id> *info = CFBridgingRelease(self.calls.ConnectionCopyLastErrorInfo(self.connection));
+  return [NSString stringWithFormat:@"%s %@", name, [FBCollectionInformation oneLineDescriptionFromDictionary:info]];
+}
+
 #pragma mark AFC Calls
 
 + (AFCCalls)defaultCalls
@@ -271,6 +278,7 @@ const char *DoubleDot = "..";
 {
   void *handle = [[NSBundle bundleWithIdentifier:@"com.apple.mobiledevice"] dlopenExecutablePath];
   calls->ConnectionClose = FBGetSymbolFromHandle(handle, "AFCConnectionClose");
+  calls->ConnectionCopyLastErrorInfo = FBGetSymbolFromHandle(handle, "AFCConnectionCopyLastErrorInfo");
   calls->ConnectionOpen = FBGetSymbolFromHandle(handle, "AFCConnectionOpen");
   calls->ConnectionProcessOperation = FBGetSymbolFromHandle(handle, "AFCConnectionProcessOperation");
   calls->Create = FBGetSymbolFromHandle(handle, "AFCConnectionCreate");
@@ -278,6 +286,7 @@ const char *DoubleDot = "..";
   calls->DirectoryCreate = FBGetSymbolFromHandle(handle, "AFCDirectoryCreate");
   calls->DirectoryOpen = FBGetSymbolFromHandle(handle, "AFCDirectoryOpen");
   calls->DirectoryRead = FBGetSymbolFromHandle(handle, "AFCDirectoryRead");
+  calls->ErrorString = FBGetSymbolFromHandle(handle, "AFCErrorString");
   calls->FileRefClose = FBGetSymbolFromHandle(handle, "AFCFileRefClose");
   calls->FileRefOpen = FBGetSymbolFromHandle(handle, "AFCFileRefOpen");
   calls->FileRefRead = FBGetSymbolFromHandle(handle, "AFCFileRefRead");

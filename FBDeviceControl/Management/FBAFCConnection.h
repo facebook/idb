@@ -34,9 +34,13 @@ typedef enum : uint64_t {
  A Structure holding references to all of the Apple File Conduit APIs.
  */
 typedef struct {
+  // Creating a Connection
   AFCConnectionRef (*Create)(void *_Nullable unknown0, int socket, void *_Nullable unknown1, void *_Nullable unknown2, void *_Nullable unknown3);
   int (*ConnectionOpen)(CFTypeRef handle, uint32_t io_timeout,CFTypeRef _Nullable *_Nullable conn);
   int (*ConnectionClose)(AFCConnectionRef connection);
+  int (*SetSecureContext)(CFTypeRef connection);
+
+  // Individual Operations
   int (*DirectoryOpen)(AFCConnectionRef connection, const char *path, CFTypeRef _Nullable * _Nullable dir);
   int (*DirectoryRead)(AFCConnectionRef connection, CFTypeRef dir, char *_Nullable*_Nullable dirent);
   int (*DirectoryClose)(AFCConnectionRef connection, CFTypeRef dir);
@@ -49,11 +53,16 @@ typedef struct {
   int (*FileRefWrite)(AFCConnectionRef connection, CFTypeRef ref, const void *_Nonnull buf, uint64_t len);
   int (*RenamePath)(AFCConnectionRef connection, const char *_Nonnull path, const char *_Nonnull toPath);
   int (*RemovePath)(AFCConnectionRef connection, const char *_Nonnull path);
+
+  // Batch Operations
   int (*ConnectionProcessOperation)(AFCConnectionRef connection, CFTypeRef operation);
   int (*OperationGetResultStatus)(CFTypeRef operation);
   CFTypeRef (*OperationCreateRemovePathAndContents)(CFTypeRef allocator, CFStringRef path, void *_Nullable unknown_callback_maybe);
   CFTypeRef (*OperationGetResultObject)(CFTypeRef operation);
-  int (*SetSecureContext)(CFTypeRef connection);
+
+  // Errors
+  char *(*ErrorString)(int errorCode);
+  CFDictionaryRef (*ConnectionCopyLastErrorInfo)(AFCConnectionRef connection);
 } AFCCalls;
 
 #pragma clang diagnostic pop
