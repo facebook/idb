@@ -81,6 +81,24 @@ BOOL FBXCTestMain()
     return NO;
   }
   [configuration setAbsolutePath:configurationPath];
+
+  NSURL *testBundleURL = configuration.testBundleURL;
+  if (!testBundleURL) {
+    NSLog(@"XCTestConfiguration has no test bundle URL value");
+    return NO;
+  }
+
+  NSBundle *testBundle = [NSBundle bundleWithURL:testBundleURL];
+  if (!testBundle) {
+    NSLog(@"Failed to open test bundle from %@", testBundleURL);
+    return NO;
+  }
+
+  if (![testBundle loadAndReturnError:&error]) {
+    NSLog(@"Failed load test bundle with error: %@", error);
+    return NO;
+  }
+
   void (*XCTestMain)(XCTestConfiguration *) = (void (*)(XCTestConfiguration *))FBRetrieveXCTestSymbol("_XCTestMain");
   CFRunLoopPerformBlock([NSRunLoop mainRunLoop].getCFRunLoop, kCFRunLoopCommonModes, ^{
     XCTestMain(configuration);
