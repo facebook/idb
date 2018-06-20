@@ -120,16 +120,38 @@ static NSMutableArray<NSString *> *sEvents;
   return device;
 }
 
-- (void)testConnectToDevice
+- (void)testConnectToDeviceWithSuccess
 {
-  FBFuture<FBAMDeviceConnection *> *future = [[self.device connectToDevice] onQueue:dispatch_get_main_queue() fmap:^(FBAMDeviceConnection *result) {
-    return [FBFuture futureWithResult:result];
+  FBFuture<NSNull *> *future = [[self.device connectToDevice] onQueue:dispatch_get_main_queue() fmap:^(FBAMDeviceConnection *result) {
+    return [FBFuture futureWithResult:NSNull.null];
   }];
 
   NSError *error = nil;
   id value = [future await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(value);
+
+  NSArray<NSString *> *actual = [FBAMDeviceTests.events copy];
+  NSArray<NSString *> *expected = @[
+    @"connect",
+    @"start_session",
+    @"stop_session",
+    @"disconnect",
+  ];
+
+  XCTAssertEqualObjects(expected, actual);
+}
+
+- (void)testConnectToDeviceWithFailure
+{
+  FBFuture<NSNull *> *future = [[self.device connectToDevice] onQueue:dispatch_get_main_queue() fmap:^(FBAMDeviceConnection *result) {
+    return [[FBDeviceControlError describeFormat:@"A bad thing"] failFuture];
+  }];
+
+  NSError *error = nil;
+  id value = [future await:&error];
+  XCTAssertNotNil(error);
+  XCTAssertNil(value);
 
   NSArray<NSString *> *actual = [FBAMDeviceTests.events copy];
   NSArray<NSString *> *expected = @[
