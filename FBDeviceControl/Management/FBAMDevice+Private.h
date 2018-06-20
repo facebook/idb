@@ -81,6 +81,16 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceAttached;
  */
 extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
 
+#pragma mark - Refcounted Connection Wrapper
+
+@interface FBAMDeviceConnection : NSObject
+
+/**
+ The underlying device reference.
+ */
+@property (nonatomic, assign, readonly) AMDeviceRef device;
+
+@end
 
 #pragma mark - AMDevice Class Private
 
@@ -128,17 +138,16 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
 - (instancetype)initWithUDID:(NSString *)udid calls:(AMDCalls)calls workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
 
 /**
- Build a Future from an operation for performing on a device.
+ Obtain the connection for a device.
 
- @param fmap a block that fmap's to the returned future.
- @return a Future that resolves with the result of the block.
+ @return a connection wrapped in an async context.
  */
-- (FBFuture *)futureForDeviceOperation:(FBFuture *(^)(AMDeviceRef))fmap;
+- (FBFutureContext<FBAMDeviceConnection *> *)connectToDevice;
 
 /**
  Starts test manager daemon service
  */
-- (FBFuture<FBAMDServiceConnection *> *)startTestManagerService;
+- (FBFutureContext<FBAMDServiceConnection *> *)startTestManagerService;
 
 /**
  Starts a Service on the AMDevice.
@@ -147,14 +156,23 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
  @param userInfo the userInfo for the service.
  @return a Future wrapping the FBAFCConnection.
  */
-- (FBFuture<FBAMDServiceConnection *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo;
+- (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo;
 
 /**
  Starts an AFC Session on the Device.
 
- @return a Future wrapping the service connection.
+ @return a Future wrapping the AFC connection.
  */
-- (FBFuture<FBAMDServiceConnection *> *)startAFCService;
+- (FBFutureContext<FBAMDServiceConnection *> *)startAFCService;
+
+/**
+ Starts house arrest for a given bundle id.
+
+ @param bundleID the bundle id to use.
+ @param afcCalls the AFC calls to inject
+ @return a Future context wrapping the AFC Connection.
+ */
+- (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls;
 
 @end
 

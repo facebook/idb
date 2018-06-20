@@ -144,24 +144,15 @@
 
 - (FBFuture *)handleWithAFCSessionForBundleID:(NSString *)bundleID operationBlock:(id(^)(FBAFCConnection *, NSError **))operationBlock
 {
-  return [self.device.amDevice futureForDeviceOperation:^(AMDeviceRef device) {
-    AFCConnectionRef afcConnection = NULL;
-    int status = self.device.amDevice.calls.CreateHouseArrestService(device, (__bridge CFStringRef _Nonnull)(bundleID), NULL, &afcConnection);
-    if (status != 0) {
-      NSString *internalMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
-      return [[FBDeviceControlError
-        describeFormat:@"Failed to start house_arrest service (%@)", internalMessage]
-        failFuture];
-    }
-
-    NSError *error = nil;
-    FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:afcConnection calls:self.afcCalls];
-    id result = operationBlock(connection, &error);
-    self.afcCalls.ConnectionClose(afcConnection);
-    if (!result) {
-      return [FBFuture futureWithError:error];
-    }
-    return [FBFuture futureWithResult:result];
+  return [[self.device.amDevice
+    houseArrestAFCConnectionForBundleID:bundleID afcCalls:self.afcCalls]
+    onQueue:self.device.workQueue fmap:^(FBAFCConnection *connection) {
+      NSError *error = nil;
+      id result = operationBlock(connection.connection, &error);
+      if (!result) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:result];
   }];
 }
 

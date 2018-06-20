@@ -115,17 +115,19 @@
 
 - (FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)installedApplicationsData
 {
-  return [self.device.amDevice futureForDeviceOperation:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (AMDeviceRef device) {
-    CFDictionaryRef cf_apps;
-    int returnCode = self.device.amDevice.calls.LookupApplications(device, NULL, &cf_apps);
-    if (returnCode != 0) {
-      return [[FBDeviceControlError
-        describe:@"Failed to get list of applications"]
-        failFuture];
-    }
-    NSDictionary<NSString *, NSDictionary<NSString *, id> *> *apps = CFBridgingRelease(cf_apps);
-    return [FBFuture futureWithResult:apps];
-  }];
+  return [[self.device.amDevice
+    connectToDevice]
+    onQueue:self.device.workQueue fmap:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (FBAMDeviceConnection *connection) {
+      CFDictionaryRef cf_apps;
+      int returnCode = self.device.amDevice.calls.LookupApplications(connection.device, NULL, &cf_apps);
+      if (returnCode != 0) {
+        return [[FBDeviceControlError
+          describe:@"Failed to get list of applications"]
+          failFuture];
+      }
+      NSDictionary<NSString *, NSDictionary<NSString *, id> *> *apps = CFBridgingRelease(cf_apps);
+      return [FBFuture futureWithResult:apps];
+    }];
 }
 
 #pragma mark FBApplicationCommands Implementation
@@ -148,22 +150,24 @@
   // Currently it returns 0 as if it had succeded
   // In case that's not possible, we should look into querying if
   // the app is installed first (FB_AMDeviceLookupApplications)
-  return [self.device.amDevice futureForDeviceOperation:^(AMDeviceRef device) {
-    int returnCode = self.device.amDevice.calls.SecureUninstallApplication(
-      0,
-      device,
-      (__bridge CFStringRef _Nonnull)(bundleID),
-      0,
-      NULL,
-      0
-    );
-    if (returnCode != 0) {
-      return [[FBDeviceControlError
-        describeFormat:@"Failed to uninstall application with error code %x", returnCode]
-        failFuture];
-    }
-    return [FBFuture futureWithResult:NSNull.null];
-  }];
+  return [[self.device.amDevice
+    connectToDevice]
+    onQueue:self.device.workQueue fmap:^(FBAMDeviceConnection *connectedDevice) {
+      int returnCode = self.device.amDevice.calls.SecureUninstallApplication(
+        0,
+        connectedDevice.device,
+        (__bridge CFStringRef _Nonnull)(bundleID),
+        0,
+        NULL,
+        0
+      );
+      if (returnCode != 0) {
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to uninstall application with error code %x", returnCode]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
 }
 
 - (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications

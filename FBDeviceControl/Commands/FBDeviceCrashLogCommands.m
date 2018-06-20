@@ -96,27 +96,31 @@ static NSString *const PingSuccess = @"ping";
         [self.store ingestAllExistingInDirectory];
         self.hasPerformedInitialIngestion = YES;
       }
-      return [self.device.amDevice startService:CrashReportCopyService userInfo:@{}];
+      return [FBFuture futureWithResult:response];
     }]
-    onQueue:self.device.asyncQueue fmap:^ FBFuture<NSArray<FBCrashLogInfo *> *> * (FBAMDServiceConnection *connection) {
-      NSError *error = nil;
-      FBAFCConnection *afc = [FBAFCConnection afcFromServiceConnection:connection calls:FBAFCConnection.defaultCalls error:&error];
-      if (!afc) {
-        return [FBFuture futureWithError:error];
-      }
-      NSArray<NSString *> *paths = [afc contentsOfDirectory:@"." error:&error];
-      if (!paths) {
-        return [FBFuture futureWithError:error];
-      }
-      NSMutableArray<FBCrashLogInfo *> *crashes = [NSMutableArray array];
-      for (NSString *path in paths) {
-        FBCrashLogInfo *crash = [self crashLogInfo:afc path:path error:nil];
-        if (!crash) {
-          continue;
-        }
-        [crashes addObject:crash];
-      }
-      return [FBFuture futureWithResult:crashes];
+    onQueue:self.device.workQueue fmap:^(id _) {
+      return [[self.device.amDevice
+        startService:CrashReportCopyService userInfo:@{}]
+        onQueue:self.device.asyncQueue fmap:^ FBFuture<NSArray<FBCrashLogInfo *> *> * (FBAMDServiceConnection *connection) {
+          NSError *error = nil;
+          FBAFCConnection *afc = [FBAFCConnection afcFromServiceConnection:connection calls:FBAFCConnection.defaultCalls error:&error];
+          if (!afc) {
+            return [FBFuture futureWithError:error];
+          }
+          NSArray<NSString *> *paths = [afc contentsOfDirectory:@"." error:&error];
+          if (!paths) {
+            return [FBFuture futureWithError:error];
+          }
+          NSMutableArray<FBCrashLogInfo *> *crashes = [NSMutableArray array];
+          for (NSString *path in paths) {
+            FBCrashLogInfo *crash = [self crashLogInfo:afc path:path error:nil];
+            if (!crash) {
+              continue;
+            }
+            [crashes addObject:crash];
+          }
+          return [FBFuture futureWithResult:crashes];
+      }];
     }];
 }
 

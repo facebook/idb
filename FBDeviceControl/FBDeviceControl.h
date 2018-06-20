@@ -9,6 +9,7 @@
 
 #import <FBDeviceControl/FBAFCConnection.h>
 #import <FBDeviceControl/FBAMDevice.h>
+#import <FBDeviceControl/FBAMDevice+Private.h>
 #import <FBDeviceControl/FBDevice.h>
 #import <FBDeviceControl/FBDeviceBitmapStream.h>
 #import <FBDeviceControl/FBDeviceControlError.h>
