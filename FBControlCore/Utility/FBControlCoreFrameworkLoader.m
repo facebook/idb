@@ -68,7 +68,7 @@ void *FBGetSymbolFromHandle(void *handle, const char *name)
 
 - (void)loadPrivateFrameworksOrAbort
 {
-  id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
+  id<FBControlCoreLogger> logger = [FBControlCoreGlobalConfiguration.defaultLogger withName:@"framework_loader"];
   NSError *error = nil;
   BOOL success = [self loadPrivateFrameworks:logger.debug error:&error];
   if (success) {
