@@ -16,6 +16,14 @@
 #import "XCTestPrivate.h"
 #import "FBDebugLog.h"
 
+#include "TargetConditionals.h"
+
+#if TARGET_IPHONE_SIMULATOR
+#import <UIKit/UIKit.h>
+#elif TARGET_OS_MAC
+#import <AppKit/AppKit.h>
+#endif
+
 static NSString *const ShimulatorStartXCTest = @"SHIMULATOR_START_XCTEST";
 
 __attribute__((constructor)) static void XCTestMainEntryPoint()
@@ -52,6 +60,21 @@ BOOL FBLoadXCTestIfNeeded()
   }
   FBDebugLog(@"[XCTestMainEntryPoint] XCTest loaded");
   return YES;
+}
+
+void FBDeployBlockWhenAppLoads(void(^mainBlock)()) {
+#if TARGET_IPHONE_SIMULATOR
+  NSString *notification = UIApplicationDidFinishLaunchingNotification;
+#elif TARGET_OS_MAC
+  NSString *notification = NSApplicationDidFinishLaunchingNotification;
+#endif
+  [[NSNotificationCenter defaultCenter]
+   addObserverForName:notification
+   object:nil
+   queue:[NSOperationQueue mainQueue]
+   usingBlock:^(NSNotification *note) {
+     mainBlock();
+   }];
 }
 
 BOOL FBXCTestMain()
@@ -98,10 +121,11 @@ BOOL FBXCTestMain()
     NSLog(@"Failed load test bundle with error: %@", error);
     return NO;
   }
-
   void (*XCTestMain)(XCTestConfiguration *) = (void (*)(XCTestConfiguration *))FBRetrieveXCTestSymbol("_XCTestMain");
-  CFRunLoopPerformBlock([NSRunLoop mainRunLoop].getCFRunLoop, kCFRunLoopCommonModes, ^{
-    XCTestMain(configuration);
+  FBDeployBlockWhenAppLoads(^{
+    CFRunLoopPerformBlock([NSRunLoop mainRunLoop].getCFRunLoop, kCFRunLoopCommonModes, ^{
+      XCTestMain(configuration);
+    });
   });
   return YES;
 }
