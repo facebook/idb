@@ -148,7 +148,7 @@
     houseArrestAFCConnectionForBundleID:bundleID afcCalls:self.afcCalls]
     onQueue:self.device.workQueue fmap:^(FBAFCConnection *connection) {
       NSError *error = nil;
-      id result = operationBlock(connection.connection, &error);
+      id result = operationBlock(connection, &error);
       if (!result) {
         return [FBFuture futureWithError:error];
       }
