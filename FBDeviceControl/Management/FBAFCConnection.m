@@ -185,7 +185,7 @@ const char *DoubleDot = "..";
 - (BOOL)removePath:(NSString *)path recursively:(BOOL)recursively error:(NSError **)error
 {
   if (recursively) {
-    return FBAFCRemovePathAndContents(self.connection, (__bridge CFStringRef)(path), error);
+    return FBAFCRemovePathAndContents(self, (__bridge CFStringRef)(path), error);
   } else {
     mach_error_t result = self.calls.RemovePath(self.connection, [path UTF8String]);
     if (result != 0) {
