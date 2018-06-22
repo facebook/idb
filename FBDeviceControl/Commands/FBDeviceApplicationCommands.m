@@ -116,7 +116,7 @@
 - (FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)installedApplicationsData
 {
   return [[self.device.amDevice
-    connectToDevice]
+    connectToDeviceWithPurpose:@"installed_apps"]
     onQueue:self.device.workQueue fmap:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (FBAMDeviceConnection *connection) {
       CFDictionaryRef cf_apps;
       int returnCode = self.device.amDevice.calls.LookupApplications(connection.device, NULL, &cf_apps);
@@ -151,7 +151,7 @@
   // In case that's not possible, we should look into querying if
   // the app is installed first (FB_AMDeviceLookupApplications)
   return [[self.device.amDevice
-    connectToDevice]
+    connectToDeviceWithPurpose:@"uninstall_%@", bundleID]
     onQueue:self.device.workQueue fmap:^(FBAMDeviceConnection *connectedDevice) {
       int returnCode = self.device.amDevice.calls.SecureUninstallApplication(
         0,

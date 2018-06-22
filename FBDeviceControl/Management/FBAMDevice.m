@@ -204,47 +204,105 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 @end
 
+#pragma mark - FBAMDeviceConnection
+
 @interface FBAMDeviceConnection ()
 
+@property (nonatomic, copy, readonly) NSString *udid;
 @property (nonatomic, assign, readonly) AMDCalls calls;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, assign, readwrite) NSUInteger utilizationCount;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) NSMutableArray<FBMutableFuture<NSNull *> *> *pending;
+@property (nonatomic, strong, nullable, readwrite) FBFuture<NSNull *> *current;
+@property (nonatomic, assign, readwrite) BOOL connected;
 
 @end
 
 @implementation FBAMDeviceConnection
 
-- (instancetype)initWithDevice:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithUDID:(NSString *)udid device:(AMDeviceRef)device calls:(AMDCalls)calls queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
-
   if (!self) {
     return nil;
   }
 
+  _udid = udid;
   _device = device;
   _calls = calls;
   _logger = logger;
-  _utilizationCount = 0;
+  _queue = queue;
+  _pending = [NSMutableArray array];
+  _connected = NO;
 
   return self;
 }
 
-- (AMDeviceRef)useDeviceWithError:(NSError **)error
+- (id<FBControlCoreLogger>)loggerWithPurpose:(NSString *)purpose
 {
+  return [self.logger withName:[NSString stringWithFormat:@"%@_%@", self.udid, purpose]];
+}
+
+- (FBFutureContext<FBAMDeviceConnection *> *)utilizeWithPurpose:(NSString *)purpose
+{
+  id<FBControlCoreLogger> logger = [self loggerWithPurpose:purpose];
+  return [[[self
+    deviceNoLongerInUseWithLogger:logger]
+    onQueue:self.queue fmap:^(id _){
+      if (self.connected) {
+        [logger log:@"Re-Using existing connection"];
+        return [FBFuture futureWithResult:self];
+      }
+      NSError *error = nil;
+      [logger log:@"No active connection, connecting"];
+      if (![self connectToDeviceNow:purpose error:&error]) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:self];
+    }]
+    onQueue:self.queue contextualTeardown:^(id _) {
+      NSUInteger remainingConsumers = [self popQueue];
+      if (remainingConsumers == 0) {
+        [logger log:@"No more consumers, disconnecting"];
+        [self disconnectFromDeviceNow:purpose error:nil];
+      } else {
+        [logger logFormat:@"%lu More consumers waiting, not disconnecting", remainingConsumers];
+      }
+    }];
+}
+
+- (FBFuture<NSNull *> *)deviceNoLongerInUseWithLogger:(id<FBControlCoreLogger>)logger
+{
+  return [FBFuture
+    onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
+      if (self.current) {
+        [logger logFormat:@"Device currently in use, waiting"];
+        FBMutableFuture<NSNull *> *deviceAvailable = FBMutableFuture.future;
+        [self.pending addObject:deviceAvailable];
+        return deviceAvailable;
+      }
+      [logger logFormat:@"Device immediately available"];
+      self.current = [FBFuture futureWithResult:NSNull.null];
+      return self.current;
+    }];
+}
+
+- (AMDeviceRef)connectToDeviceNow:(NSString *)purpose error:(NSError **)error
+{
+  id<FBControlCoreLogger> logger = [self loggerWithPurpose:purpose];
   AMDeviceRef amDevice = self.device;
   if (amDevice == NULL) {
     return [[FBDeviceControlError
       describe:@"Cannot utilize a non existent AMDeviceRef"]
       failPointer:error];
   }
-  if (self.utilizationCount != 0) {
+  if (self.connected) {
     return [[FBDeviceControlError
-      describeFormat:@"Cannot utilize device when it has a utilization count of %lu", self.utilizationCount]
+      describe:@"Cannot utilize device when it is already in use"]
       failPointer:error];
   }
 
-  [self.logger log:@"Connecting to AMDevice"];
+  [logger log:@"Connecting to AMDevice"];
   int status = self.calls.Connect(amDevice);
   if (status != 0) {
     NSString *errorDecription = CFBridgingRelease(self.calls.CopyErrorText(status));
@@ -252,7 +310,8 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
       describeFormat:@"Failed to connect to device. (%@)", errorDecription]
       failPointer:error];
   }
-  [self.logger log:@"Starting Session on AMDevice"];
+
+  [logger log:@"Starting Session on AMDevice"];
   status = self.calls.StartSession(amDevice);
   if (status != 0) {
     self.calls.Disconnect(amDevice);
@@ -261,26 +320,66 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
       describeFormat:@"Failed to start session with device. (%@)", errorDecription]
       failPointer:error];
   }
-  [self.logger log:@"Device ready for use"];
-  self.utilizationCount++;
+
+  [logger log:@"Device ready for use"];
+  self.connected = YES;
   return amDevice;
 }
 
-- (BOOL)endUsageWithError:(NSError **)error
+- (BOOL)disconnectFromDeviceNow:(NSString *)purpose error:(NSError **)error
 {
-  if (self.utilizationCount != 1) {
+  id<FBControlCoreLogger> logger = [self loggerWithPurpose:purpose];
+  if (!self.connected) {
     return [[FBDeviceControlError
-      describeFormat:@"Cannot utilize device when it has a utilization count of %lu", self.utilizationCount]
+      describe:@"Cannot utilize device when it is not in use"]
       failBool:error];
   }
+
   AMDeviceRef amDevice = self.device;
-  [self.logger log:@"Stopping Session on AMDevice"];
+  [logger log:@"Stopping Session on AMDevice"];
   self.calls.StopSession(amDevice);
-  [self.logger log:@"Disconnecting from AMDevice"];
+
+  [logger log:@"Disconnecting from AMDevice"];
   self.calls.Disconnect(amDevice);
-  [self.logger log:@"Disconnected from AMDevice"];
-  self.utilizationCount--;
+
+  [logger log:@"Disconnected from AMDevice"];
+  self.connected = NO;
+
   return YES;
+}
+
+- (NSUInteger)popQueue
+{
+  NSUInteger pendingConsumers = self.pending.count;
+  if (pendingConsumers == 0) {
+    self.current = nil;
+    return 0;
+  }
+  FBMutableFuture<NSNull *> *future = [self.pending lastObject];
+  [self.pending removeLastObject];
+  [future resolveWithResult:NSNull.null];
+  self.current = future;
+  return pendingConsumers;
+}
+
+- (void)deviceReferenceChanged:(AMDeviceRef)device
+{
+  AMDeviceRef oldAMDevice = _device;
+  _device = device;
+  if (device) {
+    self.calls.Retain(device);
+  }
+  if (oldAMDevice) {
+    self.calls.Release(oldAMDevice);
+  }
+}
+
+- (void)dealloc
+{
+  if (_device) {
+    self.calls.Release(_device);
+    _device = NULL;
+  }
 }
 
 @end
@@ -288,8 +387,6 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 #pragma mark - FBAMDevice Implementation
 
 @implementation FBAMDevice
-
-@synthesize amDevice = _amDevice;
 
 #pragma mark Initializers
 
@@ -356,6 +453,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   _calls = calls;
   _workQueue = workQueue;
   _logger = [logger withName:udid];
+  _connection = [[FBAMDeviceConnection alloc] initWithUDID:udid device:NULL calls:calls queue:workQueue logger:logger];
 
   return self;
 }
@@ -364,45 +462,30 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 - (void)setAmDevice:(AMDeviceRef)amDevice
 {
-  AMDeviceRef oldAMDevice = _amDevice;
-  _amDevice = amDevice;
-  if (amDevice) {
-    self.calls.Retain(amDevice);
-    [self cacheAllValues];
-  }
-  if (oldAMDevice) {
-    self.calls.Release(oldAMDevice);
-  }
+  [self.connection deviceReferenceChanged:amDevice];
+  [self cacheAllValues];
 }
 
 - (AMDeviceRef)amDevice
 {
-  return _amDevice;
+  return self.connection.device;
 }
 
 #pragma mark Public Methods
 
-- (FBFutureContext<FBAMDeviceConnection *> *)connectToDevice;
+- (FBFutureContext<FBAMDeviceConnection *> *)connectToDeviceWithPurpose:(NSString *)format, ...
 {
-  return [[FBFuture
-    onQueue:self.workQueue resolve:^{
-      FBAMDeviceConnection *connection = self.connection;
-      NSError *error = nil;
-      AMDeviceRef device = [connection useDeviceWithError:&error];
-      if (!device) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:connection];
-    }]
-    onQueue:self.workQueue contextualTeardown:^(FBAMDeviceConnection *connection) {
-      [connection endUsageWithError:nil];
-    }];
+  va_list args;
+  va_start(args, format);
+  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
+  va_end(args);
+  return [self.connection utilizeWithPurpose:string];
 }
 
 - (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo
 {
   return [[self
-    connectToDevice]
+    connectToDeviceWithPurpose:@"start_service_%@", service]
     onQueue:self.workQueue pend:^(FBAMDeviceConnection *connectedDevice) {
       AMDServiceConnectionRef connection;
       int status = self.calls.SecureStartService(
@@ -438,7 +521,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 - (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls
 {
   return [[self
-    connectToDevice]
+    connectToDeviceWithPurpose:@"house_arrest_%@", bundleID]
     onQueue:self.workQueue push:^ FBFutureContext<FBAFCConnection *> * (FBAMDeviceConnection *connectedDevice) {
       AFCConnectionRef afcConnection = NULL;
       int status = self.calls.CreateHouseArrestService(
@@ -462,21 +545,15 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   }];
 }
 
-
-- (void)dealloc
-{
-  if (_amDevice) {
-    self.calls.Release(_amDevice);
-    _amDevice = NULL;   
-  }
-}
-
 #pragma mark Private
+
+static NSString *const CacheValuesPurpose = @"cache_values";
 
 - (BOOL)cacheAllValues
 {
   FBAMDeviceConnection *connection = self.connection;
-  AMDeviceRef device = [connection useDeviceWithError:nil];
+  NSError *error = nil;
+  AMDeviceRef device = [connection connectToDeviceNow:CacheValuesPurpose error:&error];
   if (!device) {
     return NO;
   }
@@ -490,7 +567,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   _deviceConfiguration = FBiOSTargetConfiguration.productTypeToDevice[self->_productType];
   _osConfiguration = FBiOSTargetConfiguration.nameToOSVersion[osVersion] ?: [FBOSVersion genericWithName:osVersion];
 
-  if (![connection endUsageWithError:nil]) {
+  if (![connection disconnectFromDeviceNow:CacheValuesPurpose error:nil]) {
     return NO;
   }
   return YES;
@@ -522,11 +599,6 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
     return productVersion;
   }
   return [NSString stringWithFormat:@"%@ %@", osPrefix, productVersion];
-}
-
-- (FBAMDeviceConnection *)connection
-{
-  return [[FBAMDeviceConnection alloc] initWithDevice:self.amDevice calls:self.calls logger:self.logger];
 }
 
 @end

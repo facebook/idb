@@ -99,10 +99,14 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
 #pragma mark Properties
 
 /**
- The AMDevice Reference.
- May dissapear if the AMDevice is no longer valid.
+ The AMDevice Reference
  */
 @property (nonatomic, assign, readwrite) AMDeviceRef amDevice;
+
+/**
+ A wrapper for the connection to the AMDeviceRef
+ */
+@property (nonatomic, strong, readonly) FBAMDeviceConnection *connection;
 
 /**
  The AMDCalls to be used.
@@ -140,9 +144,10 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
 /**
  Obtain the connection for a device.
 
+ @param format the purpose of the connection
  @return a connection wrapped in an async context.
  */
-- (FBFutureContext<FBAMDeviceConnection *> *)connectToDevice;
+- (FBFutureContext<FBAMDeviceConnection *> *)connectToDeviceWithPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
 
 /**
  Starts test manager daemon service
