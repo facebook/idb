@@ -201,7 +201,6 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
       }
       DTXTransport *transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket disconnectAction:^{
         [logger log:@"Disconnected from test manager daemon socket"];
-        self.device.amDevice.calls.ServiceConnectionInvalidate(connection.connection);
       }];
       return [FBFuture futureWithResult:transport];
     }];

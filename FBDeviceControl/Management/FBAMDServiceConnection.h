@@ -13,6 +13,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBControlCoreLogger;
+
 /**
  The Connection Reference as is typically passed around between functions.
  */
@@ -31,9 +33,10 @@ typedef CFTypeRef AMDServiceConnectionRef;
  @param connection the connection to use.
  @param device the device to use.
  @param calls the calls to use.
+ @param logger the logger to use.
  @return a FBAMDServiceConnection instance.
  */
-- (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls;
+- (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Public
 
@@ -45,6 +48,15 @@ typedef CFTypeRef AMDServiceConnectionRef;
  @return the data.
  */
 - (NSData *)receive:(size_t)size error:(NSError **)error;
+
+/**
+ Invalidates the Service connection.
+ After this is called, this object is no longer valid.
+
+ @param error an error out for any error that occurs.
+ @return YES is succesful, NO otherwise.
+ */
+- (BOOL)invalidateWithError:(NSError **)error;
 
 #pragma mark Properties
 
@@ -62,6 +74,11 @@ typedef CFTypeRef AMDServiceConnectionRef;
  The Calls to use.
  */
 @property (nonatomic, assign, readonly) AMDCalls calls;
+
+/**
+ The Logger to use.
+ */
+@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
 /**
  The socket for the connection.

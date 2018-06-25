@@ -13,6 +13,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBAMDServiceConnection;
 
+@protocol FBControlCoreLogger;
+
 /**
  The Connection Reference as is typically passed around between functions.
  */
@@ -79,19 +81,21 @@ typedef struct {
 
  @param connection the wrapped pointer value.
  @param calls the calls to use.
+ @param logger the logger to use.
  @return a new FBAFConnection Instance.
  */
-- (instancetype)initWithConnection:(AFCConnectionRef)connection calls:(AFCCalls)calls;
+- (instancetype)initWithConnection:(AFCConnectionRef)connection calls:(AFCCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Constructs an FBAFCConnection from a Service Connection.
 
  @param serviceConnection the connection to use.
  @param calls the calls to use.
+ @param logger the logger to use.
  @param error an error out for any error that occurs.
  @return an FBAFCConnection instance.
  */
-+ (nullable instancetype)afcFromServiceConnection:(FBAMDServiceConnection *)serviceConnection calls:(AFCCalls)calls error:(NSError **)error;
++ (nullable instancetype)afcFromServiceConnection:(FBAMDServiceConnection *)serviceConnection calls:(AFCCalls)calls logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 #pragma mark Public Methods
 
@@ -143,6 +147,15 @@ typedef struct {
  */
 - (BOOL)removePath:(NSString *)path recursively:(BOOL)recursively error:(NSError **)error;
 
+/**
+ Close the connection.
+ The connection should not be used after this.
+
+ @param error an error out for any error that occurs.
+ @return YES if succesful, NO otherwise.
+ */
+- (BOOL)closeWithError:(NSError **)error;
+
 #pragma mark Properties
 
 /**
@@ -154,6 +167,11 @@ typedef struct {
  The Calls to use.
  */
 @property (nonatomic, assign, readonly) AFCCalls calls;
+
+/**
+ The logger to use
+ */
+@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
 /**
  The Default Calls.

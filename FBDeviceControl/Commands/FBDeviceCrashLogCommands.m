@@ -103,7 +103,7 @@ static NSString *const PingSuccess = @"ping";
         startService:CrashReportCopyService userInfo:@{}]
         onQueue:self.device.asyncQueue fmap:^ FBFuture<NSArray<FBCrashLogInfo *> *> * (FBAMDServiceConnection *connection) {
           NSError *error = nil;
-          FBAFCConnection *afc = [FBAFCConnection afcFromServiceConnection:connection calls:FBAFCConnection.defaultCalls error:&error];
+          FBAFCConnection *afc = [FBAFCConnection afcFromServiceConnection:connection calls:FBAFCConnection.defaultCalls logger:connection.logger error:&error];
           if (!afc) {
             return [FBFuture futureWithError:error];
           }

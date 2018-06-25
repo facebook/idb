@@ -486,21 +486,35 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 {
   return [[self
     connectToDeviceWithPurpose:@"start_service_%@", service]
-    onQueue:self.workQueue pend:^(FBAMDeviceConnection *connectedDevice) {
-      AMDServiceConnectionRef connection;
+    onQueue:self.workQueue push:^(FBAMDeviceConnection *connectedDevice) {
+      AMDServiceConnectionRef serviceConnection;
+      [self.logger logFormat:@"Starting service %@", service];
       int status = self.calls.SecureStartService(
         connectedDevice.device,
         (__bridge CFStringRef)(service),
         (__bridge CFDictionaryRef)(userInfo),
-        &connection
+        &serviceConnection
       );
       if (status != 0) {
         NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
-        return [[FBDeviceControlError
+        return [[[FBDeviceControlError
           describeFormat:@"Start Service Failed with %d %@", status, errorDescription]
-          failFuture];
+          logger:self.logger]
+          failFutureContext];
       }
-      return [FBFuture futureWithResult:[[FBAMDServiceConnection alloc] initWithServiceConnection:connection device:connectedDevice.device calls:self.calls]];
+      FBAMDServiceConnection *connection = [[FBAMDServiceConnection alloc] initWithServiceConnection:serviceConnection device:connectedDevice.device calls:self.calls logger:self.logger];
+      [self.logger logFormat:@"Service %@ started", service];
+      return [[FBFuture
+        futureWithResult:connection]
+        onQueue:self.workQueue contextualTeardown:^(id _) {
+          [self.logger logFormat:@"Invalidating service %@", service];
+          NSError *error = nil;
+          if (![connection invalidateWithError:&error]) {
+            [self.logger logFormat:@"Failed to invalidate service %@ with error %@", service, error];
+          } else {
+            [self.logger logFormat:@"Invalidated service %@", service];
+          }
+        }];
     }];
 }
 
@@ -524,6 +538,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
     connectToDeviceWithPurpose:@"house_arrest_%@", bundleID]
     onQueue:self.workQueue push:^ FBFutureContext<FBAFCConnection *> * (FBAMDeviceConnection *connectedDevice) {
       AFCConnectionRef afcConnection = NULL;
+      [self.logger logFormat:@"Starting house arrest for '%@'", bundleID];
       int status = self.calls.CreateHouseArrestService(
         connectedDevice.device,
         (__bridge CFStringRef _Nonnull)(bundleID),
@@ -532,16 +547,23 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
       );
       if (status != 0) {
         NSString *internalMessage = CFBridgingRelease(self.calls.CopyErrorText(status));
-        return [[FBDeviceControlError
-          describeFormat:@"Failed to start house_arrest service (%@)", internalMessage]
+        return [[[FBDeviceControlError
+          describeFormat:@"Failed to start house_arrest service for '%@' with error (%@)", bundleID, internalMessage]
+          logger:self.logger]
           failFutureContext];
       }
-      FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:afcConnection calls:afcCalls];
+      FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:afcConnection calls:afcCalls logger:self.logger];
       return [[FBFuture
         futureWithResult:connection]
         onQueue:self.workQueue contextualTeardown:^(id _) {
-        connection.calls.ConnectionClose(afcConnection);
-    }];
+          [self.logger logFormat:@"Closing connection to House Arrest for '%@'", bundleID];
+          NSError *error = nil;
+          if (![connection closeWithError:&error]) {
+            [self.logger logFormat:@"Failed to close House Arrest for '%@' with error %@", bundleID, error];
+          } else {
+            [self.logger logFormat:@"Closed House Arrest service for '%@'", bundleID];
+          }
+        }];
   }];
 }
 

@@ -79,7 +79,7 @@ static NSMutableDictionary *sEvents;
     .FileRefClose = fileClose,
   };
 
-  FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:self.connectionRef calls:afcCalls];
+  FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:self.connectionRef calls:afcCalls logger:nil];
 
   /** Structure
     ./{UUID}

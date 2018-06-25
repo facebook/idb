@@ -15,7 +15,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls;
+- (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger;
 {
   self = [super init];
   if (!self) {
@@ -25,6 +25,7 @@
   _connection = connection;
   _device = device;
   _calls = calls;
+  _logger = logger;
 
   return self;
 }
@@ -48,6 +49,28 @@
       fail:error];
   }
   return [NSData dataWithBytesNoCopy:buffer length:size freeWhenDone:YES];
+}
+
+- (BOOL)invalidateWithError:(NSError **)error
+{
+  if (!_connection) {
+    return [[FBDeviceControlError
+      describe:@"No connection to invalidate"]
+      failBool:error];
+  }
+  NSString *connectionDescription = CFBridgingRelease(CFCopyDescription(self.connection));
+  [self.logger logFormat:@"Invalidating Connection %@", connectionDescription];
+  int status = self.calls.ServiceConnectionInvalidate(self.connection);
+  if (status != 0) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to invalidate connection %@ with error %d", connectionDescription, status]
+      failBool:error];
+  }
+  [self.logger logFormat:@"Invalidated connection %@", connectionDescription];
+  // AMDServiceConnectionInvalidate does not release the connection.
+  CFRelease(_connection);
+  _connection = NULL;
+  return YES;
 }
 
 #pragma mark Properties
