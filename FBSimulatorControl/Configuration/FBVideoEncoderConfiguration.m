@@ -19,7 +19,7 @@
 
 + (NSString *)defaultVideoPath
 {
-  return [NSHomeDirectory() stringByAppendingString:@"video.mp4"];
+  return [NSHomeDirectory() stringByAppendingPathComponent:@"video.mp4"];
 }
 
 + (instancetype)defaultConfiguration

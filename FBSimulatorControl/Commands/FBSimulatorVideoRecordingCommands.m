@@ -23,7 +23,7 @@
 @interface FBSimulatorVideoRecordingCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBSimulatorVideo *simulatorVideo;
+@property (nonatomic, strong, nullable, readwrite) FBSimulatorVideo *recorder;
 
 @end
 
@@ -42,6 +42,7 @@
   }
 
   _simulator = simulator;
+
   return self;
 }
 
@@ -49,19 +50,34 @@
 
 - (FBFuture<id<FBVideoRecordingSession>> *)startRecordingToFile:(NSString *)filePath
 {
-  return [[self
-    obtainSimulatorVideo]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorVideo *video) {
-      return [[video startRecordingToFile:filePath] mapReplace:video];
+  return [[FBFuture
+    onQueue:self.simulator.workQueue resolve:^ FBFuture<FBSimulatorVideo *> * {
+      if (self.recorder) {
+        return [[FBSimulatorError
+          describeFormat:@"Cannot start recording, there is already a recorder %@", self.recorder]
+          failFuture];
+      }
+      return [self obtainVideoRecorder];
+    }]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorVideo *recorder) {
+      self.recorder = recorder;
+      return [[recorder startRecordingToFile:filePath] mapReplace:recorder];
     }];
 }
 
 - (FBFuture<NSNull *> *)stopRecording
 {
-  return [[self
-    obtainSimulatorVideo]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorVideo *video) {
-      return [video stopRecording];
+  return [[FBFuture
+    onQueue:self.simulator.workQueue resolve:^ FBFuture<NSNull *> * {
+       if (!self.recorder) {
+         return [[FBSimulatorError
+          describeFormat:@"Cannot start recording, there is not an active recorder %@", self.recorder]
+          failFuture];
+       }
+       return [self.recorder stopRecording];
+    }]
+    onQueue:self.simulator.workQueue notifyOfCompletion:^(id _){
+      self.recorder = nil;
     }];
 }
 
@@ -88,17 +104,15 @@
 
 #pragma mark Private
 
-- (FBFuture<FBSimulatorVideo *> *)obtainSimulatorVideo
+- (FBFuture<FBSimulatorVideo *> *)obtainVideoRecorder
 {
-  if ([NSProcessInfo.processInfo.environment[@"FBXCTEST_SIMCTL_VIDEO_RECORDING"] boolValue]) {
-    if (_simulatorVideo == nil) {
-      _simulatorVideo = [FBSimulatorVideo
-        simctlVideoForDeviceSetPath:self.simulator.set.deviceSet.setPath
-        deviceUUID:self.simulator.device.UDID.UUIDString
-        logger:self.simulator.logger
-        eventSink:self.simulator.eventSink];
-    }
-    return [FBFuture futureWithResult:_simulatorVideo];
+  if (FBSimulatorVideoRecordingCommands.shouldUseSimctlEncoder) {
+    FBSimulatorVideo *recorder = [FBSimulatorVideo
+      simctlVideoForDeviceSetPath:self.simulator.set.deviceSet.setPath
+      deviceUUID:self.simulator.device.UDID.UUIDString
+      logger:self.simulator.logger
+      eventSink:self.simulator.eventSink];
+    return [FBFuture futureWithResult:recorder];
   }
 
   return [[self.simulator
@@ -128,6 +142,11 @@
       }
       return [FBFuture futureWithResult:surface];
     }];
+}
+
++ (BOOL)shouldUseSimctlEncoder
+{
+  return !NSProcessInfo.processInfo.environment[@"FBSIMULATORCONTROL_IN_PROCESS_RECORDER"].boolValue;
 }
 
 @end

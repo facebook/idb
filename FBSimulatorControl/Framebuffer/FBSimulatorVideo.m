@@ -300,15 +300,19 @@
 
 - (FBFuture<NSNull *> *)startRecordingToFile:(NSString *)filePath
 {
-  if (_recordingTaskFuture != nil) {
+  if (self.recordingTaskFuture != nil) {
     return [[FBSimulatorError
-             describe:@"Cannot Start Recording, there is already an recording task running"]
-            failFuture];
+      describe:@"Cannot Start Recording, there is already an recording task running"]
+      failFuture];
   }
   // Choose the Path for the Log
-  NSString *path = filePath ?: self.configuration.filePath;
+  filePath = filePath ?: self.configuration.filePath;
 
-  _recordingTaskFuture = [[FBTaskBuilder
+  // Make a logger for the output
+  id<FBControlCoreLogger> logger = [self.logger withName:@"simctl_encode"];
+
+  // Start the recording task
+  self.recordingTaskFuture = [[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/xcrun"
     arguments:@[
       @"simctl",
@@ -317,35 +321,39 @@
       @"io",
       _deviceUUID,
       @"recordVideo",
+      @"--type=mp4",
       filePath,
-    ]] start];
+    ]]
+    withStdOutToLogger:logger]
+    withStdErrToLogger:logger]
+    start];
 
   // Report the availability of the video
   FBDiagnostic *diagnostic = [[[[[FBDiagnosticBuilder builder]
-                                 updatePath:path]
-                                updateFileType:self.configuration.fileType]
-                               updatePath:path]
-                              build];
+    updatePath:filePath]
+    updateFileType:self.configuration.fileType]
+    updatePath:filePath]
+    build];
   [self.eventSink diagnosticAvailable:diagnostic];
 
-  return _recordingTaskFuture;
+  return self.recordingTaskFuture;
 }
 
 - (FBFuture<NSNull *> *)stopRecording
 {
-  if (_recordingTaskFuture == nil) {
+  if (self.recordingTaskFuture == nil) {
     return [[FBSimulatorError
-             describe:@"Cannot Stop Recording, there is no recording task running"]
-            failFuture];
+      describe:@"Cannot Stop Recording, there is no recording task running"]
+      failFuture];
   }
 
-  FBFuture *future = [[_recordingTaskFuture onQueue:_queue fmap:^(FBTask *task){
-    return [task sendSignal:SIGINT];
-  }] onQueue:_queue notifyOfCompletion:^(id _) {
-    [self.completedFuture resolveWithResult:NSNull.null];
-  }];
+  FBFuture *future = [self.recordingTaskFuture
+    onQueue:_queue fmap:^(FBTask *task){
+      return [task sendSignal:SIGINT];
+    }];
+  [self.completedFuture resolveFromFuture:future];
 
-  _recordingTaskFuture = nil;
+  self.recordingTaskFuture = nil;
   return future;
 }
 
