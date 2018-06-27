@@ -117,9 +117,9 @@
 {
   return [[self.device.amDevice
     connectToDeviceWithPurpose:@"installed_apps"]
-    onQueue:self.device.workQueue fmap:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (FBAMDeviceConnection *connection) {
+    onQueue:self.device.workQueue fmap:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (FBAMDevice *device) {
       CFDictionaryRef cf_apps;
-      int returnCode = self.device.amDevice.calls.LookupApplications(connection.device, NULL, &cf_apps);
+      int returnCode = self.device.amDevice.calls.LookupApplications(device.amDevice, NULL, &cf_apps);
       if (returnCode != 0) {
         return [[FBDeviceControlError
           describe:@"Failed to get list of applications"]
@@ -152,10 +152,10 @@
   // the app is installed first (FB_AMDeviceLookupApplications)
   return [[self.device.amDevice
     connectToDeviceWithPurpose:@"uninstall_%@", bundleID]
-    onQueue:self.device.workQueue fmap:^(FBAMDeviceConnection *connectedDevice) {
+    onQueue:self.device.workQueue fmap:^(FBAMDevice *device) {
       int returnCode = self.device.amDevice.calls.SecureUninstallApplication(
         0,
-        connectedDevice.device,
+        device.amDevice,
         (__bridge CFStringRef _Nonnull)(bundleID),
         0,
         NULL,

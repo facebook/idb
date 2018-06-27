@@ -81,20 +81,9 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceAttached;
  */
 extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
 
-#pragma mark - Refcounted Connection Wrapper
-
-@interface FBAMDeviceConnection : NSObject
-
-/**
- The underlying device reference.
- */
-@property (nonatomic, assign, readonly) AMDeviceRef device;
-
-@end
-
 #pragma mark - AMDevice Class Private
 
-@interface FBAMDevice ()
+@interface FBAMDevice () <FBFutureContextManagerDelegate>
 
 #pragma mark Properties
 
@@ -104,9 +93,9 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
 @property (nonatomic, assign, readwrite) AMDeviceRef amDevice;
 
 /**
- A wrapper for the connection to the AMDeviceRef
+ The Context Manager for the Connection
  */
-@property (nonatomic, strong, readonly) FBAMDeviceConnection *connection;
+@property (nonatomic, strong, readonly) FBFutureContextManager<FBAMDevice *> *connectionContextManager;
 
 /**
  The AMDCalls to be used.
@@ -147,7 +136,7 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
  @param format the purpose of the connection
  @return a connection wrapped in an async context.
  */
-- (FBFutureContext<FBAMDeviceConnection *> *)connectToDeviceWithPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+- (FBFutureContext<FBAMDevice *> *)connectToDeviceWithPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
 
 /**
  Starts test manager daemon service

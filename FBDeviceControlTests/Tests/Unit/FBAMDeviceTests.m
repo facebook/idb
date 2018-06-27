@@ -137,7 +137,7 @@ static NSMutableArray<NSString *> *sEvents;
 
 - (void)testConnectToDeviceWithSuccess
 {
-  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue() fmap:^(FBAMDeviceConnection *result) {
+  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue() fmap:^(FBAMDevice *result) {
     return [FBFuture futureWithResult:NSNull.null];
   }];
 
@@ -159,7 +159,7 @@ static NSMutableArray<NSString *> *sEvents;
 
 - (void)testConnectToDeviceWithFailure
 {
-  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue() fmap:^(FBAMDeviceConnection *result) {
+  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue() fmap:^(FBAMDevice *result) {
     return [[FBDeviceControlError describeFormat:@"A bad thing"] failFuture];
   }];
 
@@ -241,7 +241,7 @@ static NSMutableArray<NSString *> *sEvents;
 
   FBAMDevice *device = self.device;
   dispatch_async(schedule, ^{
-    FBFuture<NSNull *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map fmap:^(FBAMDeviceConnection *result) {
+    FBFuture<NSNull *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map fmap:^(FBAMDevice *result) {
       return [FBFuture futureWithResult:NSNull.null];
     }];
     NSError *error = nil;
@@ -251,7 +251,7 @@ static NSMutableArray<NSString *> *sEvents;
     [call1Expectation fulfill];
   });
   dispatch_async(schedule, ^{
-    FBFuture<NSNull *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map fmap:^(FBAMDeviceConnection *result) {
+    FBFuture<NSNull *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map fmap:^(FBAMDevice *result) {
       return [FBFuture futureWithResult:NSNull.null];
     }];
     NSError *error = nil;
@@ -261,7 +261,7 @@ static NSMutableArray<NSString *> *sEvents;
     [call2Expectation fulfill];
   });
   dispatch_async(schedule, ^{
-    FBFuture<NSNull *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map fmap:^(FBAMDeviceConnection *result) {
+    FBFuture<NSNull *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map fmap:^(FBAMDevice *result) {
       return [FBFuture futureWithResult:NSNull.null];
     }];
     NSError *error = nil;
