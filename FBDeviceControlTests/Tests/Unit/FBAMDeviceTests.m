@@ -14,6 +14,7 @@
 @interface FBAMDeviceTests : XCTestCase
 
 @property (nonatomic, strong, readwrite, class) NSMutableArray<NSString *> *events;
+@property (nonatomic, strong, readwrite) FBAMDevice *device;
 
 @end
 
@@ -51,9 +52,16 @@ static int StopSession(AMDeviceRef ref)
   return 0;
 }
 
-static int SecureStartService(AMDeviceRef device, CFStringRef service_name, CFDictionaryRef userinfo, void *handle)
+static int SecureStartService(AMDeviceRef device, CFStringRef service_name, CFDictionaryRef userinfo, CFTypeRef *serviceOut)
 {
   [FBAMDeviceTests.events addObject:@"secure_start_service"];
+  *serviceOut = CFSTR("A Service");
+  return 0;
+}
+
+static int ServiceConnectionInvalidate(CFTypeRef connection)
+{
+  [FBAMDeviceTests.events addObject:@"service_connection_invalidate"];
   return 0;
 }
 
@@ -65,6 +73,7 @@ static CFStringRef CopyValue(AMDeviceRef device, CFStringRef domain, CFStringRef
 static int CreateHouseArrestService(AMDeviceRef device, CFStringRef bundleID, void *unused, AFCConnectionRef *connectionOut)
 {
   [FBAMDeviceTests.events addObject:@"create_house_arrest_service"];
+  *connectionOut = (AFCConnectionRef) CFSTR("A HOUSE ARREST");
   return 0;
 }
 
@@ -93,7 +102,7 @@ static NSMutableArray<NSString *> *sEvents;
 
 - (AMDeviceRef)deviceRef
 {
-  return (AMDeviceRef) 0x10;
+  return (AMDeviceRef) CFSTR("A DEVICE");
 }
 
 - (AMDCalls)stubbedCalls
@@ -108,16 +117,22 @@ static NSMutableArray<NSString *> *sEvents;
     .CopyValue = CopyValue,
     .SecureStartService = SecureStartService,
     .CreateHouseArrestService = CreateHouseArrestService,
+    .ServiceConnectionInvalidate = ServiceConnectionInvalidate,
   };
   return calls;
 }
 
-- (FBAMDevice *)device
+- (void)setUp
 {
   FBAMDevice *device = [[FBAMDevice alloc] initWithUDID:@"foo" calls:self.stubbedCalls workQueue:dispatch_get_main_queue() logger:FBControlCoreGlobalConfiguration.defaultLogger];
   device.amDevice = self.deviceRef;
   [FBAMDeviceTests.events removeAllObjects];
-  return device;
+  self.device = device;
+}
+
+- (void)tearDown
+{
+  self.device = nil;
 }
 
 - (void)testConnectToDeviceWithSuccess
@@ -180,6 +195,7 @@ static NSMutableArray<NSString *> *sEvents;
     @"connect",
     @"start_session",
     @"secure_start_service",
+    @"service_connection_invalidate",
     @"stop_session",
     @"disconnect",
   ];
