@@ -17,6 +17,7 @@
 #import "FBAMDServiceConnection.h"
 #import "FBDeviceControlError.h"
 #import "FBAFCConnection.h"
+#import "FBAMDeviceServiceManager.h"
 
 #pragma mark - Notifications
 
@@ -172,14 +173,15 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   CFRelease(array);
 }
 
-static NSTimeInterval ConnectionReuseTimeout = 3.0;
+static const NSTimeInterval ConnectionReuseTimeout = 10.0;
+static const NSTimeInterval ServiceReuseTimeout = 3.0;
 
 - (void)deviceConnected:(AMDeviceRef)amDevice
 {
   NSString *udid = CFBridgingRelease(self.calls.CopyDeviceIdentifier(amDevice));
   FBAMDevice *device = self.devices[udid];
   if (!device) {
-    device = [[FBAMDevice alloc] initWithUDID:udid calls:self.calls connectionReuseTimeout:@(ConnectionReuseTimeout) workQueue:self.queue logger:self.logger];
+    device = [[FBAMDevice alloc] initWithUDID:udid calls:self.calls connectionReuseTimeout:@(ConnectionReuseTimeout) serviceReuseTimeout:@(ServiceReuseTimeout) workQueue:self.queue logger:self.logger];
     self.devices[udid] = device;
     [NSNotificationCenter.defaultCenter postNotificationName:FBAMDeviceNotificationNameDeviceAttached object:device];
   }
@@ -267,7 +269,7 @@ static NSTimeInterval ConnectionReuseTimeout = 3.0;
   return FBAMDeviceManager.sharedManager.currentDeviceList;
 }
 
-- (instancetype)initWithUDID:(NSString *)udid calls:(AMDCalls)calls connectionReuseTimeout:(NSNumber *)connectionReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithUDID:(NSString *)udid calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -280,6 +282,7 @@ static NSTimeInterval ConnectionReuseTimeout = 3.0;
   _logger = [logger withName:udid];
   _connectionContextManager = [FBFutureContextManager managerWithQueue:workQueue delegate:self logger:logger];
   _contextPoolTimeout = connectionReuseTimeout;
+  _serviceManager = [FBAMDeviceServiceManager managerWithAMDevice:self serviceTimeout:serviceReuseTimeout];
 
   return self;
 }
@@ -368,36 +371,12 @@ static NSTimeInterval ConnectionReuseTimeout = 3.0;
 - (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls
 {
   return [[self
-    connectToDeviceWithPurpose:@"house_arrest_%@", bundleID]
+    connectToDeviceWithPurpose:@"house_arrest"]
     onQueue:self.workQueue push:^ FBFutureContext<FBAFCConnection *> * (FBAMDevice *device) {
-      AFCConnectionRef afcConnection = NULL;
-      [self.logger logFormat:@"Starting house arrest for '%@'", bundleID];
-      int status = self.calls.CreateHouseArrestService(
-        device.amDevice,
-        (__bridge CFStringRef _Nonnull)(bundleID),
-        NULL,
-        &afcConnection
-      );
-      if (status != 0) {
-        NSString *internalMessage = CFBridgingRelease(self.calls.CopyErrorText(status));
-        return [[[FBDeviceControlError
-          describeFormat:@"Failed to start house_arrest service for '%@' with error (%@)", bundleID, internalMessage]
-          logger:self.logger]
-          failFutureContext];
-      }
-      FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:afcConnection calls:afcCalls logger:self.logger];
-      return [[FBFuture
-        futureWithResult:connection]
-        onQueue:self.workQueue contextualTeardown:^(id _) {
-          [self.logger logFormat:@"Closing connection to House Arrest for '%@'", bundleID];
-          NSError *error = nil;
-          if (![connection closeWithError:&error]) {
-            [self.logger logFormat:@"Failed to close House Arrest for '%@' with error %@", bundleID, error];
-          } else {
-            [self.logger logFormat:@"Closed House Arrest service for '%@'", bundleID];
-          }
-        }];
-  }];
+      return [[self.serviceManager
+        houseArrestAFCConnectionForBundleID:bundleID afcCalls:afcCalls]
+        utilizeWithPurpose:self.udid];
+    }];
 }
 
 #pragma mark FBFutureContextManager Implementation
@@ -450,7 +429,7 @@ static NSTimeInterval ConnectionReuseTimeout = 3.0;
 
 - (NSString *)contextName
 {
-  return self.udid;
+  return [NSString stringWithFormat:@"%@_connection", self.udid];
 }
 
 #pragma mark Private

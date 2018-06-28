@@ -68,6 +68,7 @@ typedef struct {
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBAMDServiceConnection;
+@class FBAMDeviceServiceManager;
 
 #pragma mark - Notifications
 
@@ -98,6 +99,11 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
 @property (nonatomic, strong, readonly) FBFutureContextManager<FBAMDevice *> *connectionContextManager;
 
 /**
+ The Service Manager.
+ */
+@property (nonatomic, strong, readonly) FBAMDeviceServiceManager *serviceManager;
+
+/**
  The AMDCalls to be used.
  */
 @property (nonatomic, assign, readonly) AMDCalls calls;
@@ -125,11 +131,12 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
  @param udid the UDID of the AMDevice.
  @param calls the calls to use.
  @param connectionReuseTimeout the time to wait before releasing a connection
+ @param serviceReuseTimeout the time to wait before releasing a service
  @param workQueue the queue to perform work on.
  @param logger the logger to use.
  @return a new FBAMDevice instance.
  */
-- (instancetype)initWithUDID:(NSString *)udid calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithUDID:(NSString *)udid calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Obtain the connection for a device.
