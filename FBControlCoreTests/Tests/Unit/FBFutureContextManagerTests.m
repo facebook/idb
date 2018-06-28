@@ -28,7 +28,7 @@
   self.teardownCalled = 0;
 }
 
-- (FBFutureContextManager<NSNumber *, NSString *> *)manager
+- (FBFutureContextManager<NSNumber *> *)manager
 {
   id<FBControlCoreLogger> logger = [FBControlCoreGlobalConfiguration.defaultLogger withName:@"manager_test"];
   return [FBFutureContextManager managerWithQueue:self.queue delegate:self logger:logger];
@@ -53,7 +53,7 @@
 
 - (void)testConcurrentAquireOnlyPreparesOnce
 {
-  FBFutureContextManager<NSNumber *, NSString *> *manager = self.manager;
+  FBFutureContextManager<NSNumber *> *manager = self.manager;
   dispatch_queue_t concurrent = dispatch_queue_create("com.facebook.fbcontrolcore.tests.future_context.concurrent", DISPATCH_QUEUE_CONCURRENT);
   FBMutableFuture *future0 = FBMutableFuture.future;
   FBMutableFuture *future1 = FBMutableFuture.future;
@@ -91,6 +91,20 @@
 
   XCTAssertEqual(self.prepareCalled, 1);
   XCTAssertEqual(self.teardownCalled, 1);
+}
+
+- (void)testImmediateAquireAndRelease
+{
+  FBFutureContextManager<NSNumber *> *manager = self.manager;
+
+  NSError *error = nil;
+  NSNumber *context = [manager utilizeNowWithPurpose:@"A Test" error:&error];
+  XCTAssertNil(error);
+  XCTAssertEqualObjects(context, @0);
+
+  BOOL success = [manager returnNowWithPurpose:@"A Test" error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 }
 
 - (NSString *)contextName

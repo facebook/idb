@@ -124,8 +124,21 @@ static NSMutableArray<NSString *> *sEvents;
 
 - (void)setUp
 {
+  [FBAMDeviceTests.events removeAllObjects];
+
   FBAMDevice *device = [[FBAMDevice alloc] initWithUDID:@"foo" calls:self.stubbedCalls workQueue:dispatch_get_main_queue() logger:FBControlCoreGlobalConfiguration.defaultLogger];
+  NSArray<NSString *> *events = [FBAMDeviceTests.events copy];
+  XCTAssertEqualObjects(events, @[]);
+
   device.amDevice = self.deviceRef;
+  events = [FBAMDeviceTests.events copy];
+  XCTAssertEqualObjects(events, (@[
+    @"connect",
+    @"start_session",
+    @"stop_session",
+    @"disconnect",
+  ]));
+
   [FBAMDeviceTests.events removeAllObjects];
   self.device = device;
 }
@@ -231,47 +244,40 @@ static NSMutableArray<NSString *> *sEvents;
   XCTAssertEqualObjects(expected, actual);
 }
 
-- (void)testConcurrentUtilizationIsSerialized
+- (void)testConcurrentUtilizationHasSharedConnection
 {
-  XCTestExpectation *call1Expectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Call1"];
-  XCTestExpectation *call2Expectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Call2"];
-  XCTestExpectation *call3Expectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Call3"];
   dispatch_queue_t schedule = dispatch_queue_create("com.facebook.fbdevicecontrol.amdevicetests.schedule", DISPATCH_QUEUE_CONCURRENT);
   dispatch_queue_t map = dispatch_queue_create("com.facebook.fbdevicecontrol.amdevicetests.map", DISPATCH_QUEUE_SERIAL);
+  FBMutableFuture<NSNumber *> *future0 = FBMutableFuture.future;
+  FBMutableFuture<NSNumber *> *future1 = FBMutableFuture.future;
+  FBMutableFuture<NSNumber *> *future2 = FBMutableFuture.future;
 
   FBAMDevice *device = self.device;
   dispatch_async(schedule, ^{
-    FBFuture<NSNull *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map fmap:^(FBAMDevice *result) {
-      return [FBFuture futureWithResult:NSNull.null];
+    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map fmap:^(FBAMDevice *result) {
+      return [FBFuture futureWithResult:@0];
     }];
-    NSError *error = nil;
-    id value = [future await:&error];
-    XCTAssertNil(error);
-    XCTAssertNotNil(value);
-    [call1Expectation fulfill];
+    [future0 resolveFromFuture:future];
   });
   dispatch_async(schedule, ^{
-    FBFuture<NSNull *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map fmap:^(FBAMDevice *result) {
-      return [FBFuture futureWithResult:NSNull.null];
+    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map fmap:^(FBAMDevice *result) {
+      return [FBFuture futureWithResult:@1];
     }];
-    NSError *error = nil;
-    id value = [future await:&error];
-    XCTAssertNil(error);
-    XCTAssertNotNil(value);
-    [call2Expectation fulfill];
+    [future1 resolveFromFuture:future];
   });
   dispatch_async(schedule, ^{
-    FBFuture<NSNull *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map fmap:^(FBAMDevice *result) {
-      return [FBFuture futureWithResult:NSNull.null];
+    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map fmap:^(FBAMDevice *result) {
+      return [FBFuture futureWithResult:@2];
     }];
-    NSError *error = nil;
-    id value = [future await:&error];
-    XCTAssertNil(error);
-    XCTAssertNotNil(value);
-    [call3Expectation fulfill];
+    [future2 resolveFromFuture:future];
   });
 
-  [self waitForExpectations:@[call1Expectation, call2Expectation, call3Expectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+
+  NSError *error = nil;
+  NSArray<NSNumber *> *value = [[FBFuture futureWithFutures:@[future0, future1, future2]] await:&error];
+  XCTAssertNil(error);
+  XCTAssertEqualObjects(value, (@[@0, @1, @2]));
+
   NSArray<NSString *> *actual = [FBAMDeviceTests.events copy];
   NSArray<NSString *> *expected = @[
     @"connect",

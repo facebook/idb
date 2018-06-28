@@ -21,7 +21,7 @@
 
 @property (nonatomic, strong, readonly) NSMutableArray<FBMutableFuture<NSNull *> *> *pending;
 @property (nonatomic, strong, nullable, readwrite) FBFuture<NSNull *> *current;
-@property (nonatomic, assign, readwrite) id existingContext;
+@property (nonatomic, strong, readwrite) id existingContext;
 
 
 @end
@@ -100,7 +100,8 @@
       describeFormat:@"Could not extract prepare synchronously in %@", prepare]
       fail:error];
   }
-  return prepare.result;
+  self.existingContext = prepare.result;
+  return self.existingContext;
 }
 
 - (BOOL)returnNowWithPurpose:(NSString *)purpose error:(NSError **)error
@@ -118,6 +119,7 @@
       describeFormat:@"Could not return context synchronously in %@", teardown]
       failBool:error];
   }
+  self.existingContext = nil;
   return YES;
 }
 
