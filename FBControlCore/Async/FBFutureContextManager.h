@@ -43,6 +43,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) NSString *contextName;
 
+/**
+ The amount of time to allow the resource to be held with no-one utilizing it.
+ This is useful for ensuring that the same connection
+ */
+@property (nonatomic, copy, readonly) NSNumber *contextPoolTimeout;
+
 @end
 
 /**

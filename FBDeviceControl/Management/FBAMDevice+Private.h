@@ -124,11 +124,12 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
 
  @param udid the UDID of the AMDevice.
  @param calls the calls to use.
+ @param connectionReuseTimeout the time to wait before releasing a connection
  @param workQueue the queue to perform work on.
  @param logger the logger to use.
  @return a new FBAMDevice instance.
  */
-- (instancetype)initWithUDID:(NSString *)udid calls:(AMDCalls)calls workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithUDID:(NSString *)udid calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Obtain the connection for a device.

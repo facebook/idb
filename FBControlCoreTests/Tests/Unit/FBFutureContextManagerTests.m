@@ -16,6 +16,7 @@
 @property (nonatomic, strong, readwrite) dispatch_queue_t queue;
 @property (nonatomic, assign, readwrite) NSUInteger prepareCalled;
 @property (nonatomic, assign, readwrite) NSUInteger teardownCalled;
+@property (nonatomic, copy, readwrite) NSNumber *contextPoolTimeout;
 
 @end
 
@@ -24,6 +25,7 @@
 - (void)setUp
 {
   self.queue = dispatch_queue_create("com.facebook.fbcontrolcore.tests.future_context", DISPATCH_QUEUE_SERIAL);
+  self.contextPoolTimeout = nil;
   self.prepareCalled = 0;
   self.teardownCalled = 0;
 }
@@ -46,6 +48,74 @@
   id value = [future awaitWithTimeout:1 error:&error];
   XCTAssertNil(error);
   XCTAssertEqualObjects(value, @123);
+
+  XCTAssertEqual(self.prepareCalled, 1);
+  XCTAssertEqual(self.teardownCalled, 1);
+}
+
+- (void)testSequentialAquire
+{
+  FBFutureContextManager<NSNumber *> *manager = self.manager;
+
+  FBFuture *future0 = [[manager
+    utilizeWithPurpose:@"A Test"]
+    onQueue:self.queue fmap:^(id result) {
+      return [FBFuture futureWithResult:@0];
+    }];
+
+  NSError *error = nil;
+  id value = [future0 awaitWithTimeout:1 error:&error];
+  XCTAssertNil(error);
+  XCTAssertEqualObjects(value, @0);
+
+  XCTAssertEqual(self.prepareCalled, 1);
+  XCTAssertEqual(self.teardownCalled, 1);
+
+  FBFuture *future1 = [[manager
+    utilizeWithPurpose:@"A Test"]
+    onQueue:self.queue fmap:^(id result) {
+      return [FBFuture futureWithResult:@1];
+    }];
+  value = [future1 awaitWithTimeout:1 error:&error];
+  XCTAssertNil(error);
+  XCTAssertEqualObjects(value, @1);
+
+  XCTAssertEqual(self.prepareCalled, 2);
+  XCTAssertEqual(self.teardownCalled, 2);
+}
+
+- (void)testSequentialAquireWithCooloff
+{
+  FBFutureContextManager<NSNumber *> *manager = self.manager;
+  self.contextPoolTimeout = @0.2;
+
+  FBFuture *future0 = [[manager
+    utilizeWithPurpose:@"A Test"]
+    onQueue:self.queue fmap:^(id result) {
+      return [FBFuture futureWithResult:@0];
+    }];
+
+  NSError *error = nil;
+  id value = [future0 awaitWithTimeout:1 error:&error];
+  XCTAssertNil(error);
+  XCTAssertEqualObjects(value, @0);
+
+  XCTAssertEqual(self.prepareCalled, 1);
+  XCTAssertEqual(self.teardownCalled, 0);
+
+  FBFuture *future1 = [[manager
+    utilizeWithPurpose:@"A Test"]
+    onQueue:self.queue fmap:^(id result) {
+      return [FBFuture futureWithResult:@1];
+    }];
+  value = [future1 awaitWithTimeout:1 error:&error];
+  XCTAssertNil(error);
+  XCTAssertEqualObjects(value, @1);
+
+  XCTAssertEqual(self.prepareCalled, 1);
+  XCTAssertEqual(self.teardownCalled, 0);
+
+  [[FBFuture futureWithDelay:0.25 future:[FBFuture futureWithResult:NSNull.null]] await:nil];
 
   XCTAssertEqual(self.prepareCalled, 1);
   XCTAssertEqual(self.teardownCalled, 1);
@@ -120,7 +190,6 @@
 
 - (FBFuture<NSNull *> *)teardown:(id)context logger:(id<FBControlCoreLogger>)logger
 {
-  XCTAssertEqualObjects(context, @0);
   self.teardownCalled++;
   return [FBFuture futureWithResult:NSNull.null];
 }

@@ -172,12 +172,14 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   CFRelease(array);
 }
 
+static NSTimeInterval ConnectionReuseTimeout = 3.0;
+
 - (void)deviceConnected:(AMDeviceRef)amDevice
 {
   NSString *udid = CFBridgingRelease(self.calls.CopyDeviceIdentifier(amDevice));
   FBAMDevice *device = self.devices[udid];
   if (!device) {
-    device = [[FBAMDevice alloc] initWithUDID:udid calls:self.calls workQueue:self.queue logger:self.logger];
+    device = [[FBAMDevice alloc] initWithUDID:udid calls:self.calls connectionReuseTimeout:@(ConnectionReuseTimeout) workQueue:self.queue logger:self.logger];
     self.devices[udid] = device;
     [NSNotificationCenter.defaultCenter postNotificationName:FBAMDeviceNotificationNameDeviceAttached object:device];
   }
@@ -209,6 +211,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 @implementation FBAMDevice
 
 @synthesize amDevice = _amDevice;
+@synthesize contextPoolTimeout = _contextPoolTimeout;
 
 #pragma mark Initializers
 
@@ -264,7 +267,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   return FBAMDeviceManager.sharedManager.currentDeviceList;
 }
 
-- (instancetype)initWithUDID:(NSString *)udid calls:(AMDCalls)calls workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithUDID:(NSString *)udid calls:(AMDCalls)calls connectionReuseTimeout:(NSNumber *)connectionReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -276,6 +279,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   _workQueue = workQueue;
   _logger = [logger withName:udid];
   _connectionContextManager = [FBFutureContextManager managerWithQueue:workQueue delegate:self logger:logger];
+  _contextPoolTimeout = connectionReuseTimeout;
 
   return self;
 }

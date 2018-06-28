@@ -20,6 +20,7 @@
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @property (nonatomic, strong, readonly) NSMutableArray<FBMutableFuture<NSNull *> *> *pending;
+@property (nonatomic, strong, nullable, readwrite) FBFuture<NSNull *> *teardownTimeout;
 @property (nonatomic, strong, nullable, readwrite) FBFuture<NSNull *> *current;
 @property (nonatomic, strong, readwrite) id existingContext;
 
@@ -60,6 +61,7 @@
   return [[[[self
     resourceNoLongerInUseWithLogger:logger]
     onQueue:self.queue fmap:^ FBFuture<id> * (id _){
+      [self cancelTimer:logger];
       id existingContext = self.existingContext;
       if (existingContext) {
        [logger logFormat:@"Re-Using existing context %@", existingContext];
@@ -77,9 +79,15 @@
       if (remainingConsumers == 0) {
         id existingContext = self.existingContext;
         NSAssert(existingContext, @"Expected a context preserved");
-        [logger log:@"No more consumers, tearing down context"];
-        [self.delegate teardown:existingContext logger:logger];
-        self.existingContext = nil;
+        NSNumber *poolTimeout = self.delegate.contextPoolTimeout;
+        if (poolTimeout) {
+          NSTimeInterval timeout = poolTimeout.doubleValue;
+          [logger logFormat:@"No more consumers, but pooling the context, will wait for %f seconds of inactivity before tearing down", timeout];
+          [self teardownInFuture:timeout logger:logger];
+        } else {
+          [logger log:@"No more consumers, no timeout tearing down context now"];
+          [self teardownNow:logger];
+        }
       } else {
         [logger logFormat:@"%lu More consumers waiting, not tearing down", remainingConsumers];
       }
@@ -109,7 +117,7 @@
   id existingContext = self.existingContext;
   if (!existingContext) {
     return [[FBControlCoreError
-      describeFormat:@"Could not return context for %@ as none exists", purpose]
+      describeFormat:@"Could not return context for '%@' as none exists", purpose]
       failBool:error];
   }
   id<FBControlCoreLogger> logger = [self loggerWithPurpose:purpose];
@@ -140,6 +148,11 @@
         [self.pending addObject:deviceAvailable];
         return deviceAvailable;
       }
+      if (self.existingContext) {
+        [logger logFormat:@"No user of context '%@' but we don't need to re-aquire it", self.delegate.contextName];
+        self.current = [FBFuture futureWithResult:NSNull.null];
+        return self.current;
+      }
       [logger logFormat:@"Context '%@' not in use, time to aquire it", self.delegate.contextName];
       self.current = [FBFuture futureWithResult:NSNull.null];
       return self.current;
@@ -160,5 +173,45 @@
   return pendingConsumers;
 }
 
+- (void)teardownInFuture:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger
+{
+  [self cancelTimer:logger];
+
+  __weak typeof(self) weakSelf = self;
+  self.teardownTimeout = [[FBFuture
+    futureWithDelay:timeout future:[FBFuture futureWithResult:NSNull.null]]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
+      if (!future.result) {
+        return;
+      }
+      if (weakSelf.current) {
+        [logger logFormat:@"Not tearing down context after %f seconds as we have an existing consumer", timeout];
+      } else {
+        [logger logFormat:@"No-one else wants the context, tearing it down"];
+        [weakSelf teardownNow:logger];
+      }
+    }];
+}
+
+- (void)cancelTimer:(id<FBControlCoreLogger>)logger
+{
+  if (self.teardownTimeout) {
+    [logger logFormat:@"Cancelling timer for old timeout"];
+    [self.teardownTimeout cancel];
+    self.teardownTimeout = nil;
+  }
+}
+
+- (void)teardownNow:(id<FBControlCoreLogger>)logger
+{
+  id existingContext = self.existingContext;
+  if (!existingContext) {
+    [logger log:@"Nothing to teardown"];
+    return;
+  }
+  [logger logFormat:@"Tearing down context %@ now", existingContext];
+  [self.delegate teardown:existingContext logger:logger];
+  self.existingContext = nil;
+}
 
 @end

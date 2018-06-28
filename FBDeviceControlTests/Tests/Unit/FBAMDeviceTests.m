@@ -126,10 +126,10 @@ static NSMutableArray<NSString *> *sEvents;
 {
   [FBAMDeviceTests.events removeAllObjects];
 
-  FBAMDevice *device = [[FBAMDevice alloc] initWithUDID:@"foo" calls:self.stubbedCalls workQueue:dispatch_get_main_queue() logger:FBControlCoreGlobalConfiguration.defaultLogger];
   NSArray<NSString *> *events = [FBAMDeviceTests.events copy];
   XCTAssertEqualObjects(events, @[]);
 
+  FBAMDevice *device = [[FBAMDevice alloc] initWithUDID:@"foo" calls:self.stubbedCalls connectionReuseTimeout:nil workQueue:dispatch_get_main_queue() logger:FBControlCoreGlobalConfiguration.defaultLogger];
   device.amDevice = self.deviceRef;
   events = [FBAMDeviceTests.events copy];
   XCTAssertEqualObjects(events, (@[
