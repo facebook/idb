@@ -178,6 +178,7 @@ static const NSTimeInterval ServiceReuseTimeout = 3.0;
 
 - (void)deviceConnected:(AMDeviceRef)amDevice
 {
+  [self.logger logFormat:@"Device Connected %@", amDevice];
   NSString *udid = CFBridgingRelease(self.calls.CopyDeviceIdentifier(amDevice));
   FBAMDevice *device = self.devices[udid];
   if (!device) {
@@ -185,18 +186,25 @@ static const NSTimeInterval ServiceReuseTimeout = 3.0;
     self.devices[udid] = device;
     [NSNotificationCenter.defaultCenter postNotificationName:FBAMDeviceNotificationNameDeviceAttached object:device];
   }
-  if (amDevice != device.amDevice) {
+  AMDeviceRef oldDevice = device.amDevice;
+  if (amDevice != oldDevice) {
+    [self.logger logFormat:@"New Device '%@' replaces Old Device '%@'", amDevice, oldDevice];
     device.amDevice = amDevice;
+  } else {
+    [self.logger logFormat:@"Existing Device %@ is the same as the old", amDevice];
   }
 }
 
 - (void)deviceDisconnected:(AMDeviceRef)amDevice
 {
+  [self.logger logFormat:@"Device Disconnected %@", amDevice];
   NSString *udid = CFBridgingRelease(self.calls.CopyDeviceIdentifier(amDevice));
   FBAMDevice *device = self.devices[udid];
   if (!device) {
+    [self.logger logFormat:@"No Device named %@ from inflated devices, nothing to remove", udid];
     return;
   }
+  [self.logger logFormat:@"Removing Device %@ from inflated devices", udid];
   [self.devices removeObjectForKey:udid];
   [NSNotificationCenter.defaultCenter postNotificationName:FBAMDeviceNotificationNameDeviceDetached object:device];
 }
@@ -440,6 +448,7 @@ static NSString *const CacheValuesPurpose = @"cache_values";
 {
   NSError *error = nil;
   FBAMDevice *device = [self.connectionContextManager utilizeNowWithPurpose:CacheValuesPurpose error:&error];
+  [self.logger logFormat:@"Caching values for AMDeviceRef %@", device.amDevice];
   if (!device) {
     return NO;
   }
@@ -452,6 +461,8 @@ static NSString *const CacheValuesPurpose = @"cache_values";
   NSString *osVersion = [FBAMDevice osVersionForDevice:device.amDevice calls:self.calls];
   _deviceConfiguration = FBiOSTargetConfiguration.productTypeToDevice[self->_productType];
   _osConfiguration = FBiOSTargetConfiguration.nameToOSVersion[osVersion] ?: [FBOSVersion genericWithName:osVersion];
+
+  [self.logger logFormat:@"Finished caching values for AMDeviceRef %@", device.amDevice];
 
   if (![self.connectionContextManager returnNowWithPurpose:CacheValuesPurpose error:nil]) {
     return NO;

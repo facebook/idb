@@ -63,6 +63,7 @@
   }
 
   _device = device;
+
   return self;
 }
 
@@ -95,6 +96,7 @@
   return [[self.device.amDevice
     startAFCService]
     onQueue:self.device.workQueue fmap:^(FBAMDServiceConnection *connection) {
+      [self.device.logger logFormat:@"Installing Application %@", appURL];
       int installReturnCode = self.device.amDevice.calls.SecureInstallApplication(
         0,
         connection.device,
@@ -109,6 +111,7 @@
           describeFormat:@"Failed to install application (%@)", errorMessage]
           failFuture];
       }
+      [self.device.logger logFormat:@"Installed Application %@", appURL];
       return [FBFuture futureWithResult:NSNull.null];
     }];
 }
@@ -138,7 +141,7 @@
   NSDictionary *options = @{@"PackageType" : @"Developer"};
   return [[self
     transferAppURL:appURL options:options]
-    onQueue:self.device.workQueue fmap:^FBFuture *(NSNull *_) {
+    onQueue:self.device.workQueue fmap:^(NSNull *_) {
       return [self secureInstallApplication:appURL options:options];
     }];
 }
@@ -153,6 +156,7 @@
   return [[self.device.amDevice
     connectToDeviceWithPurpose:@"uninstall_%@", bundleID]
     onQueue:self.device.workQueue fmap:^(FBAMDevice *device) {
+      [self.device.logger logFormat:@"Uninstalling Application %@", bundleID];
       int returnCode = self.device.amDevice.calls.SecureUninstallApplication(
         0,
         device.amDevice,
@@ -166,6 +170,7 @@
           describeFormat:@"Failed to uninstall application with error code %x", returnCode]
           failFuture];
       }
+      [self.device.logger logFormat:@"Uninstalled Application %@", bundleID];
       return [FBFuture futureWithResult:NSNull.null];
     }];
 }
