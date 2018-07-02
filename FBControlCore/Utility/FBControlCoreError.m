@@ -198,7 +198,7 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
   [userInfo addEntriesFromDictionary:self.additionalInfo];
 
   NSError *error = [NSError errorWithDomain:self.domain code:self.code userInfo:[userInfo copy]];
-  if (FBControlCoreGlobalConfiguration.debugLoggingEnabled && self.logger) {
+  if (self.logger.level >= FBControlCoreLogLevelDebug) {
     [self.logger.error logFormat:@"New Error Built ==> %@", error];
   }
 

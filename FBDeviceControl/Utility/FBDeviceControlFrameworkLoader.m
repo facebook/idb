@@ -187,7 +187,7 @@
   if (result) {
     [FBAMDevice defaultCalls];
   }
-  if (result && FBControlCoreGlobalConfiguration.debugLoggingEnabled) {
+  if (logger.level >= FBControlCoreLogLevelDebug) {
     [FBAMDevice setDefaultLogLevel:9 logFilePath:@"/tmp/FBDeviceControl_MobileDevice.txt"];
   }
   return result;

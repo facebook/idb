@@ -57,31 +57,9 @@ extern NSString *const FBControlCoreDebugLogging;
 @property (nonatomic, strong, readwrite, class) id<FBControlCoreLogger> defaultLogger;
 
 /**
- YES if additional debug logging should be provided to the logger, NO otherwise.
- This affects a number of subsystems.
- */
-@property (nonatomic, assign, readwrite, class) BOOL debugLoggingEnabled;
-
-/**
  Confirm the existence of code signatures, where relevant.
  */
 @property (nonatomic, assign, readonly, class) BOOL confirmCodesignaturesAreValid;
-
-@end
-
-/**
- Updates the Global Configuration.
- These Methods should typically be called *before any other* method in FBControlCore.
- */
-@interface FBControlCoreGlobalConfiguration (Setters)
-
-/**
- Update the current process environment to enable logging to stderr.
-
- @param stderrLogging YES if stderr logging should be enabled, NO otherwise.
- @param debugLogging YES if stdout logging should be enabled, NO otherwise.
- */
-+ (void)setDefaultLoggerToASLWithStderrLogging:(BOOL)stderrLogging debugLogging:(BOOL)debugLogging;
 
 @end
 

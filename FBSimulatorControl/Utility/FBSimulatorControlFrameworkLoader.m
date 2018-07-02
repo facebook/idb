@@ -59,7 +59,7 @@
   BOOL loaded = [super loadPrivateFrameworks:logger error:error];
   if (loaded) {
     // Set CoreSimulator Logging since it is now loaded.
-    [FBSimulatorControlFrameworkLoader_Essential setCoreSimulatorLoggingEnabled:FBControlCoreGlobalConfiguration.debugLoggingEnabled];
+    [FBSimulatorControlFrameworkLoader_Essential setCoreSimulatorLoggingEnabled:(logger.level >= FBControlCoreLogLevelDebug)];
   }
   return loaded;
 }

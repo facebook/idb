@@ -148,7 +148,7 @@
 
 - (FBControlCoreLogLevel)level
 {
-  return FBControlCoreLogLevelUnknown;
+  return FBControlCoreLogLevelMultiple;
 }
 
 #pragma clang diagnostic push

@@ -53,16 +53,6 @@ static id<FBControlCoreLogger> logger;
   logger = defaultLogger;
 }
 
-+ (BOOL)debugLoggingEnabled
-{
-  return [NSProcessInfo.processInfo.environment[FBControlCoreDebugLogging] boolValue];
-}
-
-+ (void)setDebugLoggingEnabled:(BOOL)enabled
-{
-  setenv(FBControlCoreDebugLogging.UTF8String, enabled ? "YES" : "NO", 1);
-}
-
 + (BOOL)confirmCodesignaturesAreValid
 {
   return NSProcessInfo.processInfo.environment[ConfirmShimsAreSignedEnv].boolValue;
@@ -70,10 +60,7 @@ static id<FBControlCoreLogger> logger;
 
 + (NSString *)description
 {
-  return [NSString stringWithFormat:
-    @"Debug Logging Enabled %d",
-    self.debugLoggingEnabled
-  ];
+  return [NSString stringWithFormat:@"Default Logger %@", logger];
 }
 
 - (NSString *)description
@@ -92,12 +79,17 @@ static id<FBControlCoreLogger> logger;
 
 + (id<FBControlCoreLogger>)createDefaultLogger
 {
-  return [FBControlCoreLogger systemLoggerWritingToStderr:self.stderrLoggingEnabled withDebugLogging:self.debugLoggingEnabled];
+  return [FBControlCoreLogger systemLoggerWritingToStderr:self.stderrLoggingEnabledByDefault withDebugLogging:self.debugLoggingEnabledByDefault];
 }
 
-+ (BOOL)stderrLoggingEnabled
++ (BOOL)stderrLoggingEnabledByDefault
 {
-  return [NSProcessInfo.processInfo.environment[FBControlCoreStderrLogging] boolValue] || self.debugLoggingEnabled;
+  return [NSProcessInfo.processInfo.environment[FBControlCoreStderrLogging] boolValue];
+}
+
++ (BOOL)debugLoggingEnabledByDefault
+{
+  return [NSProcessInfo.processInfo.environment[FBControlCoreDebugLogging] boolValue];
 }
 
 + (nullable id)readValueForKey:(NSString *)key fromPlistAtPath:(NSString *)plistPath
@@ -108,16 +100,6 @@ static id<FBControlCoreLogger> logger;
   id value = infoPlist[key];
   NSCAssert(value, @"'%@' does not exist in plist '%@'", key, infoPlist.allKeys);
   return value;
-}
-
-@end
-
-@implementation FBControlCoreGlobalConfiguration (Setters)
-
-+ (void)setDefaultLoggerToASLWithStderrLogging:(BOOL)stderrLogging debugLogging:(BOOL)debugLogging
-{
-  setenv(FBControlCoreStderrLogging.UTF8String, stderrLogging ? "YES" : "NO", 1);
-  [self setDebugLoggingEnabled:debugLogging];
 }
 
 @end

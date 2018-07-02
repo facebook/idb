@@ -12,13 +12,14 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- The Log Level
+ The Log Level.
+ The Multiple Level exists so that composite loggers can decide whether to log individually.
  */
 typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
-  FBControlCoreLogLevelUnknown = 0,
   FBControlCoreLogLevelError = 1,
   FBControlCoreLogLevelInfo = 2,
   FBControlCoreLogLevelDebug = 3,
+  FBControlCoreLogLevelMultiple = 1000,
 };
 
 @protocol FBFileConsumer;
