@@ -300,7 +300,7 @@ const char *DoubleDot = "..";
       failBool:error];
   }
   return [[[[FBDeviceControlError
-    describe:@"AFCOperation failed"]
+    describeFormat:@"AFCOperation failed. underlying error: %@", infoDictionary]
     code:code.integerValue]
     logger:self.logger]
     failBool:error];
