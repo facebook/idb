@@ -326,8 +326,12 @@ static const NSTimeInterval ServiceReuseTimeout = 3.0;
   return [self.connectionContextManager utilizeWithPurpose:string];
 }
 
-- (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo
+- (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service
 {
+  NSDictionary<NSString *, id> *userInfo = @{
+    @"CloseOnInvalidate" : @1,
+    @"InvalidateOnDetach" : @1,
+  };
   return [[self
     connectToDeviceWithPurpose:@"start_service_%@", service]
     onQueue:self.workQueue push:^(FBAMDevice *device) {
@@ -364,16 +368,12 @@ static const NSTimeInterval ServiceReuseTimeout = 3.0;
 
 - (FBFutureContext<FBAMDServiceConnection *> *)startAFCService
 {
-  return [self startService:@"com.apple.afc" userInfo:@{}];
+  return [self startService:@"com.apple.afc"];
 }
 
 - (FBFutureContext<FBAMDServiceConnection *> *)startTestManagerService
 {
-  NSDictionary *userInfo = @{
-    @"CloseOnInvalidate" : @1,
-    @"InvalidateOnDetach" : @1
-  };
-  return [self startService:@"com.apple.testmanagerd.lockdown" userInfo:userInfo];
+  return [self startService:@"com.apple.testmanagerd.lockdown"];
 }
 
 - (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls

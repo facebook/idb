@@ -92,7 +92,7 @@
 
   dispatch_queue_t queue = self.device.asyncQueue;
   return [[[self.device.amDevice
-    startService:@"com.apple.syslog_relay" userInfo:@{}]
+    startService:@"com.apple.syslog_relay"]
     onQueue:queue fmap:^(FBAMDServiceConnection *connection) {
       NSFileHandle *handle = [[NSFileHandle alloc] initWithFileDescriptor:connection.socket closeOnDealloc:YES];
       FBFileReader *reader = [FBFileReader readerWithFileHandle:handle consumer:consumer];

@@ -155,10 +155,9 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
  Starts a Service on the AMDevice.
 
  @param service the service name
- @param userInfo the userInfo for the service.
  @return a Future wrapping the FBAFCConnection.
  */
-- (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service userInfo:(NSDictionary *)userInfo;
+- (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service;
 
 /**
  Starts an AFC Session on the Device.

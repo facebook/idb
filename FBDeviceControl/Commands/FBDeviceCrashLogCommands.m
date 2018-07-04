@@ -75,7 +75,7 @@ static NSString *const PingSuccess = @"ping";
 - (FBFuture<NSArray<FBCrashLogInfo *> *> *)ingestAllCrashLogs
 {
   return [[[self.device.amDevice
-    startService:CrashReportMoverService userInfo:@{}]
+    startService:CrashReportMoverService]
     onQueue:self.device.asyncQueue fmap:^ FBFuture<FBAMDServiceConnection *> * (FBAMDServiceConnection *connection) {
       NSError *error = nil;
       NSData *data = [connection receive:4 error:&error];
@@ -100,7 +100,7 @@ static NSString *const PingSuccess = @"ping";
     }]
     onQueue:self.device.workQueue fmap:^(id _) {
       return [[self.device.amDevice
-        startService:CrashReportCopyService userInfo:@{}]
+        startService:CrashReportCopyService]
         onQueue:self.device.asyncQueue fmap:^ FBFuture<NSArray<FBCrashLogInfo *> *> * (FBAMDServiceConnection *connection) {
           NSError *error = nil;
           FBAFCConnection *afc = [FBAFCConnection afcFromServiceConnection:connection calls:FBAFCConnection.defaultCalls logger:connection.logger error:&error];
