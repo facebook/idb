@@ -380,6 +380,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_5_0 = @"watchOS 5.0";
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_11_3],
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_11_4],
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_11_4],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_12_0],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_0],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_1],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_2],
