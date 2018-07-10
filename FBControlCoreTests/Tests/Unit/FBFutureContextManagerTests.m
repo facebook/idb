@@ -49,8 +49,8 @@
   XCTAssertNil(error);
   XCTAssertEqualObjects(value, @123);
 
-  XCTAssertEqual(self.prepareCalled, 1);
-  XCTAssertEqual(self.teardownCalled, 1);
+  XCTAssertEqual(self.prepareCalled, 1u);
+  XCTAssertEqual(self.teardownCalled, 1u);
 }
 
 - (void)testSequentialAquire
@@ -68,8 +68,8 @@
   XCTAssertNil(error);
   XCTAssertEqualObjects(value, @0);
 
-  XCTAssertEqual(self.prepareCalled, 1);
-  XCTAssertEqual(self.teardownCalled, 1);
+  XCTAssertEqual(self.prepareCalled, 1u);
+  XCTAssertEqual(self.teardownCalled, 1u);
 
   FBFuture *future1 = [[manager
     utilizeWithPurpose:@"A Test"]
@@ -80,8 +80,8 @@
   XCTAssertNil(error);
   XCTAssertEqualObjects(value, @1);
 
-  XCTAssertEqual(self.prepareCalled, 2);
-  XCTAssertEqual(self.teardownCalled, 2);
+  XCTAssertEqual(self.prepareCalled, 2u);
+  XCTAssertEqual(self.teardownCalled, 2u);
 }
 
 - (void)testSequentialAquireWithCooloff
@@ -100,8 +100,8 @@
   XCTAssertNil(error);
   XCTAssertEqualObjects(value, @0);
 
-  XCTAssertEqual(self.prepareCalled, 1);
-  XCTAssertEqual(self.teardownCalled, 0);
+  XCTAssertEqual(self.prepareCalled, 1u);
+  XCTAssertEqual(self.teardownCalled, 0u);
 
   FBFuture *future1 = [[manager
     utilizeWithPurpose:@"A Test"]
@@ -112,13 +112,13 @@
   XCTAssertNil(error);
   XCTAssertEqualObjects(value, @1);
 
-  XCTAssertEqual(self.prepareCalled, 1);
-  XCTAssertEqual(self.teardownCalled, 0);
+  XCTAssertEqual(self.prepareCalled, 1u);
+  XCTAssertEqual(self.teardownCalled, 0u);
 
   [[FBFuture futureWithDelay:0.25 future:[FBFuture futureWithResult:NSNull.null]] await:nil];
 
-  XCTAssertEqual(self.prepareCalled, 1);
-  XCTAssertEqual(self.teardownCalled, 1);
+  XCTAssertEqual(self.prepareCalled, 1u);
+  XCTAssertEqual(self.teardownCalled, 1u);
 }
 
 - (void)testConcurrentAquireOnlyPreparesOnce
@@ -159,8 +159,8 @@
   XCTAssertNil(error);
   XCTAssertEqualObjects(value, (@[@0, @1, @2]));
 
-  XCTAssertEqual(self.prepareCalled, 1);
-  XCTAssertEqual(self.teardownCalled, 1);
+  XCTAssertEqual(self.prepareCalled, 1u);
+  XCTAssertEqual(self.teardownCalled, 1u);
 }
 
 - (void)testImmediateAquireAndRelease

@@ -53,7 +53,7 @@
 
 - (FBControlCoreLogLevel)level
 {
-  return FBControlCoreLogLevelUnknown;
+  return FBControlCoreLogLevelMultiple;
 }
 
 @end

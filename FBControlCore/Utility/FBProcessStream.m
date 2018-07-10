@@ -16,6 +16,8 @@
 #import "FBFileWriter.h"
 #import "FBFileReader.h"
 
+static NSTimeInterval ProcessDetachDrainTimeout = 4;
+
 #pragma mark FBProcessFileOutput
 
 @interface FBProcessFileOutput_DirectToFile : NSObject <FBProcessFileOutput>
@@ -499,7 +501,11 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSNull *> *)detach
 {
-  return [self.reader.stopReading
+  return [[[self.reader.completed
+    timeout:ProcessDetachDrainTimeout waitingFor:@"Process Reading to Finish"]
+    onQueue:self.workQueue chain:^(FBFuture *_) {
+      return [self.reader stopReading];
+    }]
     onQueue:self.workQueue chain:^(FBFuture *future) {
       NSPipe *pipe = self.pipe;
       [pipe.fileHandleForWriting closeFile];
