@@ -20,14 +20,14 @@
 
 @implementation FBLogicReporterAdapter
 
-- (instancetype)initWithReporter:(id<FBXCTestReporter>)reporter
+- (instancetype)initWithReporter:(id<FBXCTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [self init];
   if (!self) {
     return nil;
   }
   _reporter = reporter;
-  _logger = [FBXCTestLogger defaultLoggerInDefaultDirectory];
+  _logger = [logger withName:@"FBLogicReporterAdapter"];
 
   return self;
 }
@@ -59,17 +59,19 @@
 
 - (void)handleEventJSONData:(NSData *)data
 {
-  NSError *error;
-  NSDictionary<NSString *, id> *JSONEvent = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-  if (error || ![JSONEvent isKindOfClass:[NSDictionary class]]) {
-    [self.logger logFormat:@"[%@] Received invalid JSON: %@",
-     NSStringFromClass(self.class),
-     [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]];
+  if (data.length == 0) {
+    [self.logger log:@"Recieved zero-length JSON data"];
     return;
   }
+  NSError *error;
+  NSDictionary<NSString *, id> *JSONEvent = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+  if (![JSONEvent isKindOfClass:[NSDictionary class]]) {
+    [self.logger logFormat:@"Received invalid JSON: '%@' %@", [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding], error];
+    return;
+  }
+
   NSString *eventName = JSONEvent[@"event"];
   id<FBXCTestReporter> reporter = self.reporter;
-
   if ([eventName isEqualToString:@"begin-test-suite"]) {
     NSString *suite = JSONEvent[@"suite"];
     NSString *startTime = JSONEvent[@"timestamp"];

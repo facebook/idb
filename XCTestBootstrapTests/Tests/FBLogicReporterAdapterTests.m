@@ -54,7 +54,7 @@ static FBTestManagerResultSummary *summaryFromDictionary(NSDictionary *JSONEvent
 {
   [super setUp];
   self.reporterMock = [OCMockObject mockForProtocol:@protocol(FBXCTestReporter)];
-  self.adapter = [[FBLogicReporterAdapter alloc] initWithReporter:(id)self.reporterMock];
+  self.adapter = [[FBLogicReporterAdapter alloc] initWithReporter:(id)self.reporterMock logger:nil];
 }
 
 - (void)test_LogicReporter_testSuiteDidStart

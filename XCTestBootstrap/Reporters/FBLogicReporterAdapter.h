@@ -11,7 +11,9 @@
 #import <XCTestBootstrap/FBLogicXCTestReporter.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
 @protocol FBXCTestReporter;
+@protocol FBControlCoreLogger;
 
 /**
  This adapter parses streams of events in JSON and invokes
@@ -19,7 +21,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBLogicReporterAdapter : NSObject <FBLogicXCTestReporter>
 
-- (instancetype)initWithReporter:(id<FBXCTestReporter>)reporter;
+/**
+ The Designated Initializer.
+
+ @param reporter the reporter to report to.
+ @param logger an optional logger to log to,
+ @return a new FBLogicXCTestReporter instance.
+ */
+- (instancetype)initWithReporter:(id<FBXCTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
+
 NS_ASSUME_NONNULL_END

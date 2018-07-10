@@ -87,7 +87,7 @@
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
     return [[[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] execute];
   }
-  FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:self.context.reporter];
+  FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:self.context.reporter logger:self.context.logger];
   return [[FBLogicTestRunStrategy strategyWithExecutor:executor configuration:(FBLogicTestConfiguration *)self.configuration reporter:adapter logger:self.context.logger] execute];
 }
 
@@ -115,7 +115,7 @@
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
     return [[[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] execute];
   }
-  FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:self.context.reporter];
+  FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:self.context.reporter logger:self.context.logger];
   return [[FBLogicTestRunStrategy strategyWithExecutor:executor configuration:(FBLogicTestConfiguration *)self.configuration reporter:adapter logger:self.context.logger] execute];
 }
 
