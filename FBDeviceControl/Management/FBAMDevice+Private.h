@@ -8,70 +8,11 @@
  */
 
 #import <FBDeviceControl/FBAMDevice.h>
-
-#import "FBAFCConnection.h"
-
-#pragma mark - AMDevice API
-
-/**
- An Alias for where AMDevices are used in the AMDevice APIs.
- */
-typedef CFTypeRef AMDeviceRef;
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wnullability-completeness"
-
-/**
- Defines the "Progress Callback" function signature.
- */
-typedef void (*AMDeviceProgressCallback)(NSDictionary<NSString *, id> *progress, void *_Nullable context);
-
-/**
- A structure that contains references for all the AMDevice calls we use.
- */
-typedef struct {
-  // Managing Connections & Sessions.
-  int (*Connect)(AMDeviceRef device);
-  int (*Disconnect)(AMDeviceRef device);
-  int (*IsPaired)(AMDeviceRef device);
-  int (*ValidatePairing)(AMDeviceRef device);
-  int (*StartSession)(AMDeviceRef device);
-  int (*StopSession)(AMDeviceRef device);
-
-  // Memory Management
-  void (*Retain)(AMDeviceRef device);
-  void (*Release)(AMDeviceRef device);
-
-  // Getting Properties of a Device.
-  _Nullable CFStringRef (*_Nonnull CopyDeviceIdentifier)(AMDeviceRef device);
-  _Nullable CFStringRef (*_Nonnull CopyValue)(AMDeviceRef device, _Nullable CFStringRef domain, CFStringRef name);
-
-  // Obtaining Devices.
-  _Nullable CFArrayRef (*_Nonnull CreateDeviceList)(void);
-  int (*NotificationSubscribe)(void *callback, int arg0, int arg1, void *context, void **subscriptionOut);
-  int (*NotificationUnsubscribe)(void *subscription);
-
-  // Using Connections.
-  int (*ServiceConnectionGetSocket)(CFTypeRef connection);
-  int (*ServiceConnectionInvalidate)(CFTypeRef connection);
-  int (*ServiceConnectionReceive)(CFTypeRef connection, void *buffer, size_t bytes);
-  int (*ServiceConnectionGetSecureIOContext)(CFTypeRef connection);
-  int (*SecureStartService)(AMDeviceRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, CFTypeRef *serviceOut);
-  int (*SecureTransferPath)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
-  int (*SecureInstallApplication)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
-  int (*SecureUninstallApplication)(int arg0, AMDeviceRef device, CFStringRef arg2, int arg3, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
-  int (*LookupApplications)(AMDeviceRef device, CFDictionaryRef _Nullable options, CFDictionaryRef _Nonnull * _Nonnull attributesOut);
-  int (*CreateHouseArrestService)(AMDeviceRef device, CFStringRef bundleID, void *_Nullable unused, AFCConnectionRef *connectionOut);
-
-  // Debugging
-  void (*SetLogLevel)(int32_t level);
-  _Nullable CFStringRef (*CopyErrorText)(int status);
-} AMDCalls;
-
-#pragma clang diagnostic pop
+#import <FBDeviceControl/FBAMDefines.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBAFCConnection;
 @class FBAMDServiceConnection;
 @class FBAMDeviceServiceManager;
 

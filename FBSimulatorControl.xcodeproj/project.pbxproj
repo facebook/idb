@@ -405,6 +405,7 @@
 		AAB07DFF1E92C1D200897C94 /* FBAgentLaunchConfiguration+Simulator.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB07DFD1E92C1D200897C94 /* FBAgentLaunchConfiguration+Simulator.m */; };
 		AAB123821DB4B16900F20555 /* FBDispatchSourceNotifier.h in Headers */ = {isa = PBXBuildFile; fileRef = AAB123801DB4B16900F20555 /* FBDispatchSourceNotifier.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAB123831DB4B16900F20555 /* FBDispatchSourceNotifier.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB123811DB4B16900F20555 /* FBDispatchSourceNotifier.m */; };
+		AAB1507420F5ED7600BB17A1 /* FBAMDefines.h in Headers */ = {isa = PBXBuildFile; fileRef = AAB1507320F5ED7600BB17A1 /* FBAMDefines.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAB207C01C2099A9007C7908 /* FBSimulatorLoggingEventSink.h in Headers */ = {isa = PBXBuildFile; fileRef = AAB207BE1C2099A9007C7908 /* FBSimulatorLoggingEventSink.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAB207C11C2099A9007C7908 /* FBSimulatorLoggingEventSink.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB207BF1C2099A9007C7908 /* FBSimulatorLoggingEventSink.m */; };
 		AAB475F420C80F7D00B37634 /* FBiOSTargetCommandForwarderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB475F320C80F7D00B37634 /* FBiOSTargetCommandForwarderTests.m */; };
@@ -1362,6 +1363,7 @@
 		AAB07DFD1E92C1D200897C94 /* FBAgentLaunchConfiguration+Simulator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBAgentLaunchConfiguration+Simulator.m"; sourceTree = "<group>"; };
 		AAB123801DB4B16900F20555 /* FBDispatchSourceNotifier.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDispatchSourceNotifier.h; sourceTree = "<group>"; };
 		AAB123811DB4B16900F20555 /* FBDispatchSourceNotifier.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDispatchSourceNotifier.m; sourceTree = "<group>"; };
+		AAB1507320F5ED7600BB17A1 /* FBAMDefines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBAMDefines.h; sourceTree = "<group>"; };
 		AAB207BE1C2099A9007C7908 /* FBSimulatorLoggingEventSink.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorLoggingEventSink.h; sourceTree = "<group>"; };
 		AAB207BF1C2099A9007C7908 /* FBSimulatorLoggingEventSink.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorLoggingEventSink.m; sourceTree = "<group>"; };
 		AAB475F320C80F7D00B37634 /* FBiOSTargetCommandForwarderTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetCommandForwarderTests.m; sourceTree = "<group>"; };
@@ -2632,6 +2634,7 @@
 			children = (
 				AABA7CEA20BB3CFA00C1E73A /* FBAFCConnection.h */,
 				AABA7CE920BB3CFA00C1E73A /* FBAFCConnection.m */,
+				AAB1507320F5ED7600BB17A1 /* FBAMDefines.h */,
 				AA682B1E1CECD49B009B6ECA /* FBAMDevice.h */,
 				AA682B1F1CECD49B009B6ECA /* FBAMDevice.m */,
 				AA682B231CEDA237009B6ECA /* FBAMDevice+Private.h */,
@@ -3295,6 +3298,7 @@
 				AABA7CEF20BB3CFF00C1E73A /* FBAMDServiceConnection.h in Headers */,
 				AAC8B2511CEC51520034A865 /* FBDevice.h in Headers */,
 				AA4D30701E79983700A9FBD0 /* FBDeviceBitmapStream.h in Headers */,
+				AAB1507420F5ED7600BB17A1 /* FBAMDefines.h in Headers */,
 				AAC8B22E1CEC51120034A865 /* FBDeviceControl.h in Headers */,
 				AA280F4D1E714779006BB9E0 /* FBDeviceVideo.h in Headers */,
 				AAC8B2571CEC51520034A865 /* FBDeviceControlError.h in Headers */,

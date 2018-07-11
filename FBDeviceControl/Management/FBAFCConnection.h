@@ -9,65 +9,12 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBDeviceControl/FBAMDefines.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBAMDServiceConnection;
-
 @protocol FBControlCoreLogger;
-
-/**
- The Connection Reference as is typically passed around between functions.
- */
-typedef void AFCConnection;
-typedef AFCConnection *AFCConnectionRef;
-
-/**
- An enum for read modes.
- */
-typedef enum : uint64_t {
-  FBAFCReadOnlyMode = 1,
-  FBAFCreateReadAndWrite = 3
-} FBAFCReadMode;
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wnullability-completeness"
-
-/**
- A Structure holding references to all of the Apple File Conduit APIs.
- */
-typedef struct {
-  // Creating a Connection
-  AFCConnectionRef (*Create)(void *_Nullable unknown0, int socket, void *_Nullable unknown1, void *_Nullable unknown2, void *_Nullable unknown3);
-  int (*ConnectionOpen)(CFTypeRef handle, uint32_t io_timeout,CFTypeRef _Nullable *_Nullable conn);
-  int (*ConnectionClose)(AFCConnectionRef connection);
-  int (*SetSecureContext)(CFTypeRef connection);
-
-  // Individual Operations
-  int (*DirectoryOpen)(AFCConnectionRef connection, const char *path, CFTypeRef _Nullable * _Nullable dir);
-  int (*DirectoryRead)(AFCConnectionRef connection, CFTypeRef dir, char *_Nullable*_Nullable dirent);
-  int (*DirectoryClose)(AFCConnectionRef connection, CFTypeRef dir);
-  int (*DirectoryCreate)(AFCConnectionRef connection, const char *dir);
-  int (*FileRefOpen)(AFCConnectionRef connection, const char *_Nonnull path, FBAFCReadMode mode, CFTypeRef *_Nonnull ref);
-  int (*FileRefClose)(AFCConnectionRef connection, CFTypeRef ref);
-  int (*FileRefSeek)(AFCConnectionRef connection, CFTypeRef ref, int64_t offset, uint64_t mode);
-  int (*FileRefTell)(AFCConnectionRef connection, CFTypeRef ref, uint64_t *_Nonnull offset);
-  int (*FileRefRead)(AFCConnectionRef connection, CFTypeRef ref, void *_Nonnull buf, uint64_t *_Nonnull len);
-  int (*FileRefWrite)(AFCConnectionRef connection, CFTypeRef ref, const void *_Nonnull buf, uint64_t len);
-  int (*RenamePath)(AFCConnectionRef connection, const char *_Nonnull path, const char *_Nonnull toPath);
-  int (*RemovePath)(AFCConnectionRef connection, const char *_Nonnull path);
-
-  // Batch Operations
-  int (*ConnectionProcessOperation)(AFCConnectionRef connection, CFTypeRef operation);
-  int (*OperationGetResultStatus)(CFTypeRef operation);
-  CFTypeRef (*OperationCreateRemovePathAndContents)(CFTypeRef allocator, CFStringRef path, void *_Nullable unknown_callback_maybe);
-  CFTypeRef (*OperationGetResultObject)(CFTypeRef operation);
-
-  // Errors
-  char *(*ErrorString)(int errorCode);
-  CFDictionaryRef (*ConnectionCopyLastErrorInfo)(AFCConnectionRef connection);
-} AFCCalls;
-
-#pragma clang diagnostic pop
 
 /**
  An Object wrapper for an Apple File Conduit handle/

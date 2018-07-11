@@ -15,6 +15,7 @@
 #import "FBAMDevice.h"
 #import "FBAMDevice+Private.h"
 #import "FBAMDServiceConnection.h"
+#import "FBAFCConnection.h"
 
 @interface FBDeviceCrashLogCommands ()
 
