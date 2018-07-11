@@ -22,12 +22,33 @@ typedef CFTypeRef AMDeviceRef;
 typedef CFTypeRef AFCConnectionRef;
 
 /**
+ An opaque handle to a notification subscription.
+ */
+typedef void *AMDNotificationSubscription;
+
+/**
  An enum for read modes.
  */
 typedef enum : uint64_t {
   FBAFCReadOnlyMode = 1,
   FBAFCreateReadAndWrite = 3
 } FBAFCReadMode;
+
+/**
+ AMDevice Notification Types.
+ */
+typedef NS_ENUM(int, AMDeviceNotificationType) {
+  AMDeviceNotificationTypeConnected = 1,
+  AMDeviceNotificationTypeDisconnected = 2,
+};
+
+/**
+ A Notification structure.
+ */
+typedef struct {
+  AMDeviceRef amDevice;
+  AMDeviceNotificationType status;
+} AMDeviceNotification;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnullability-completeness"
@@ -36,6 +57,11 @@ typedef enum : uint64_t {
  Defines the "Progress Callback" function signature.
  */
 typedef void (*AMDeviceProgressCallback)(NSDictionary<NSString *, id> *progress, void *_Nullable context);
+
+/**
+ Defines the "Notification Callback" function signature.
+ */
+typedef void (*AMDeviceNotificationCallback)(AMDeviceNotification *notification, void *_Nullable context);
 
 /**
  A Structure that references to the AMDevice APIs we use.
@@ -59,8 +85,8 @@ typedef struct {
 
   // Obtaining Devices.
   _Nullable CFArrayRef (*_Nonnull CreateDeviceList)(void);
-  int (*NotificationSubscribe)(void *callback, int arg0, int arg1, void *context, void **subscriptionOut);
-  int (*NotificationUnsubscribe)(void *subscription);
+  int (*NotificationSubscribe)(AMDeviceNotificationCallback callback, int arg0, int arg1, void *context, AMDNotificationSubscription *subscriptionOut);
+  int (*NotificationUnsubscribe)(AMDNotificationSubscription subscription);
 
   // Using Connections.
   int (*ServiceConnectionGetSocket)(CFTypeRef connection);
@@ -78,7 +104,6 @@ typedef struct {
   void (*SetLogLevel)(int32_t level);
   _Nullable CFStringRef (*CopyErrorText)(int status);
 } AMDCalls;
-
 
 /**
  A Structure holding references to the 'Apple File Conduit' APIs we use.

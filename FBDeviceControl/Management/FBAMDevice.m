@@ -25,18 +25,6 @@ NSNotificationName const FBAMDeviceNotificationNameDeviceAttached = @"FBAMDevice
 
 NSNotificationName const FBAMDeviceNotificationNameDeviceDetached = @"FBAMDeviceNotificationNameDeviceDetached";
 
-#pragma mark - AMDevice API
-
-typedef NS_ENUM(int, AMDeviceNotificationType) {
-  AMDeviceNotificationTypeConnected = 1,
-  AMDeviceNotificationTypeDisconnected = 2,
-};
-
-typedef struct {
-  AMDeviceRef amDevice;
-  AMDeviceNotificationType status;
-} AMDeviceNotification;
-
 #pragma mark - FBAMDeviceListener
 
 @interface FBAMDeviceManager : NSObject
@@ -46,7 +34,7 @@ typedef struct {
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, FBAMDevice *> *devices;
-@property (nonatomic, assign, readwrite) void *subscription;
+@property (nonatomic, assign, readwrite) AMDNotificationSubscription subscription;
 
 - (void)deviceConnected:(AMDeviceRef)amDevice;
 - (void)deviceDisconnected:(AMDeviceRef)amDevice;
@@ -124,9 +112,9 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
   // Perform a bridging retain, so that the context of the callback can be strongly referenced.
   // Tidied up when unsubscribing.
-  void *subscription = nil;
+  AMDNotificationSubscription subscription = nil;
   int result = self.calls.NotificationSubscribe(
-    FB_AMDeviceListenerCallback,
+    (AMDeviceNotificationCallback) FB_AMDeviceListenerCallback,
     0,
     0,
     (void *) CFBridgingRetain(self),
