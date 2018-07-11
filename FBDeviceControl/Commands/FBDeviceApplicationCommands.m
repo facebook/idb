@@ -22,6 +22,21 @@
 #pragma clang diagnostic ignored "-Wprotocol"
 #pragma clang diagnostic ignored "-Wincomplete-implementation"
 
+static void UninstallCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAMDevice *device)
+{
+  [device.logger logFormat:@"Uninstall Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
+}
+
+static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAMDevice *device)
+{
+  [device.logger logFormat:@"Install Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
+}
+
+static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAMDevice *device)
+{
+  [device.logger logFormat:@"Transfer Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
+}
+
 @interface FBDeviceApplicationCommands ()
 
 @property (nonatomic, weak, readonly) FBDevice *device;
@@ -74,17 +89,18 @@
   return [[self.device.amDevice
     startAFCService]
     onQueue:self.device.workQueue fmap:^(FBAMDServiceConnection *connection) {
-      int transferReturnCode = self.device.amDevice.calls.SecureTransferPath(
+      int status = self.device.amDevice.calls.SecureTransferPath(
         0,
         connection.device,
         (__bridge CFURLRef _Nonnull)(appURL),
         (__bridge CFDictionaryRef _Nonnull)(options),
-        NULL,
-        0
+        (AMDeviceProgressCallback) TransferCallback,
+        (__bridge void *) (self.device.amDevice)
       );
-      if (transferReturnCode != 0) {
+      if (status != 0) {
+        NSString *internalMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
         return [[FBDeviceControlError
-          describeFormat:@"Failed to transfer path with error code: %x", transferReturnCode]
+          describeFormat:@"Failed to transfer '%@' with error (%@)", appURL, internalMessage]
           failFuture];
       }
       return [FBFuture futureWithResult:NSNull.null];
@@ -102,8 +118,8 @@
         connection.device,
         (__bridge CFURLRef _Nonnull)(appURL),
         (__bridge CFDictionaryRef _Nonnull)(options),
-        NULL,
-        0
+        (AMDeviceProgressCallback) InstallCallback,
+        (__bridge void *) (self.device.amDevice)
       );
       if (installReturnCode != 0) {
         NSString *errorMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(installReturnCode));
@@ -157,17 +173,18 @@
     connectToDeviceWithPurpose:@"uninstall_%@", bundleID]
     onQueue:self.device.workQueue fmap:^(FBAMDevice *device) {
       [self.device.logger logFormat:@"Uninstalling Application %@", bundleID];
-      int returnCode = self.device.amDevice.calls.SecureUninstallApplication(
+      int status = self.device.amDevice.calls.SecureUninstallApplication(
         0,
         device.amDevice,
         (__bridge CFStringRef _Nonnull)(bundleID),
         0,
-        NULL,
-        0
+        (AMDeviceProgressCallback) UninstallCallback,
+        (__bridge void *) (device)
       );
-      if (returnCode != 0) {
+      if (status != 0) {
+        NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
         return [[FBDeviceControlError
-          describeFormat:@"Failed to uninstall application with error code %x", returnCode]
+          describeFormat:@"Failed to uninstall application '%@' with error (%@)", bundleID, internalMessage]
           failFuture];
       }
       [self.device.logger logFormat:@"Uninstalled Application %@", bundleID];
