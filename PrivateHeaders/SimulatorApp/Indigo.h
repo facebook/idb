@@ -14,7 +14,7 @@
 
 #import <SimulatorApp/Mach.h>
 
-#pragma pack(4)
+#pragma pack(push, 4)
 
 /**
  A Quad that is sent via Indigo.
@@ -160,4 +160,4 @@ typedef struct {
 #define IndigoEventTypeTouch 2
 #define IndigoEventTypeUnknown 3
 
-#pragma pack(4)
+#pragma pack(pop)

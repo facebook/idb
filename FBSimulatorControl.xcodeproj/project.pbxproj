@@ -110,8 +110,6 @@
 		AA2076C81F0B7542001F180C /* FBUploadBufferTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2076B71F0B7541001F180C /* FBUploadBufferTests.m */; };
 		AA2076D01F0B76AF001F180C /* FBFileWriterTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2076CF1F0B76AF001F180C /* FBFileWriterTests.m */; };
 		AA2076D21F0B779B001F180C /* FBFileReaderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2076D11F0B779B001F180C /* FBFileReaderTests.m */; };
-		AA2076D51F0B7CE8001F180C /* FBSocketWriter.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2076D31F0B7CE8001F180C /* FBSocketWriter.m */; };
-		AA2076D61F0B7CE8001F180C /* FBSocketWriter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA2076D41F0B7CE8001F180C /* FBSocketWriter.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA2076D81F0B7D03001F180C /* FBSocketIntegrationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2076D71F0B7D03001F180C /* FBSocketIntegrationTests.m */; };
 		AA21258F1F04E08400FB6032 /* FBSimulatorHIDIntegrationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA21258E1F04E08300FB6032 /* FBSimulatorHIDIntegrationTests.m */; };
 		AA25770A1DF16B1300789490 /* FBDefaultsModificationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA2577081DF16B1300789490 /* FBDefaultsModificationStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -3519,7 +3517,7 @@
 			isa = PBXProject;
 			attributes = {
 				CLASSPREFIX = FB;
-				LastUpgradeCheck = 0800;
+				LastUpgradeCheck = 1000;
 				ORGANIZATIONNAME = Facebook;
 				TargetAttributes = {
 					AA819DB11B9FB40D002F58CA = {
@@ -3955,7 +3953,6 @@
 				EEBD605C1C9062E900298A07 /* FBASLParser.m in Sources */,
 				AAD0DE041CEB064200C28B58 /* FBSubstringUtilities.m in Sources */,
 				F5CFE3EB1F051EEC003B3297 /* FBDependentDylib+ApplePrivateDylibs.m in Sources */,
-				AAD414AB1E4E2F3100815112 /* FBSocketReader.m in Sources */,
 				AA6D511E1E96BE68003B5582 /* FBiOSActionReader.m in Sources */,
 				AA4A7E2E1DD9F4EB001F9D8E /* FBFileReader.m in Sources */,
 				AA2942811D00AB0800880984 /* FBiOSTarget.m in Sources */,
@@ -4004,7 +4001,6 @@
 				AA2076BA1F0B7542001F180C /* FBBitmapStreamConfigurationTests.m in Sources */,
 				AA2076B81F0B7542001F180C /* FBiOSActionReaderTests.m in Sources */,
 				AA3B92B11DD1C716000C045B /* FBControlCoreLoggerDouble.m in Sources */,
-				AA2076C71F0B7542001F180C /* FBProcessOutputConfigurationTests.m in Sources */,
 				AA30A4A21F3C941200EA4B2A /* FBiOSTargetActionTests.m in Sources */,
 				AA2076D21F0B779B001F180C /* FBFileReaderTests.m in Sources */,
 			);
