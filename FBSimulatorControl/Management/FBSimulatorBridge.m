@@ -56,10 +56,11 @@
 
   // Load Accessibility, return early if this fails
   [bridge enableAccessibility];
-  if (![bridge accessibilityEnabled]) {
+  SEL knownSelector = @selector(setLocationScenarioWithPath:);
+  if (![bridge respondsToSelector:knownSelector]) {
     return [[FBSimulatorError
-      describeFormat:@"Could not enable accessibility for bridge '%@'", bridge]
-      fail:error];
+             describeFormat:@"Object '%@' for '%@' isn't a SimulatorBridge as it doesn't respond to %@", portName, bridge, NSStringFromSelector(knownSelector)]
+            fail:error];
   }
 
   return [[FBSimulatorBridge alloc] initWithBridge:bridge operation:operation];
