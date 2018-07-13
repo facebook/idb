@@ -57,26 +57,6 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- A Frame Generator for Xcode 7's 'SimDeviceFramebufferService'.
- */
-@interface FBFramebufferBackingStoreFrameGenerator : FBFramebufferFrameGenerator
-
-#pragma mark Initializers
-
-/**
- Creates and returns a new Generator for the Xcode 7 'SimDeviceFramebufferBackingStore'.
-
- @param service the Framebuffer Service
- @param scale the Scale Factor.
- @param queue the Queue that attached sinks will be notified on.
- @param logger the logger to log to.
- @return a new Framebuffer Frame Generator.
- */
-+ (instancetype)generatorWithFramebufferService:(SimDeviceFramebufferService *)service scale:(NSDecimalNumber *)scale queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
-
-@end
-
-/**
  A Frame Generator for the an IOSurface reprentation, available in Xcode 8 or greater.
  */
 @interface FBFramebufferIOSurfaceFrameGenerator : FBFramebufferFrameGenerator <FBFramebufferSurfaceConsumer>

@@ -1026,9 +1026,7 @@
 		AA386D6F1E44F3EA005C6118 /* OS_dispatch_source-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OS_dispatch_source-Protocol.h"; sourceTree = "<group>"; };
 		AA386D701E44F3EA005C6118 /* OS_xpc_object-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OS_xpc_object-Protocol.h"; sourceTree = "<group>"; };
 		AA386D711E44F3EA005C6118 /* SimDeviceBootInfo-SimulatorKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceBootInfo-SimulatorKit.h"; sourceTree = "<group>"; };
-		AA386D721E44F3EA005C6118 /* SimDeviceFramebufferBackingStore+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceFramebufferBackingStore+Removed.h"; sourceTree = "<group>"; };
 		AA386D731E44F3EA005C6118 /* SimDeviceFramebufferService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceFramebufferService.h; sourceTree = "<group>"; };
-		AA386D741E44F3EA005C6118 /* SimDeviceFramebufferService+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceFramebufferService+Removed.h"; sourceTree = "<group>"; };
 		AA386D751E44F3EA005C6118 /* SimDeviceIOPortConsumer-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceIOPortConsumer-Protocol.h"; sourceTree = "<group>"; };
 		AA386D761E44F3EA005C6118 /* SimDeviceIOPortDescriptorState-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceIOPortDescriptorState-Protocol.h"; sourceTree = "<group>"; };
 		AA386D771E44F3EA005C6118 /* SimDeviceIOPortInterface-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceIOPortInterface-Protocol.h"; sourceTree = "<group>"; };
@@ -1965,9 +1963,7 @@
 				AA386D6F1E44F3EA005C6118 /* OS_dispatch_source-Protocol.h */,
 				AA386D701E44F3EA005C6118 /* OS_xpc_object-Protocol.h */,
 				AA386D711E44F3EA005C6118 /* SimDeviceBootInfo-SimulatorKit.h */,
-				AA386D721E44F3EA005C6118 /* SimDeviceFramebufferBackingStore+Removed.h */,
 				AA386D731E44F3EA005C6118 /* SimDeviceFramebufferService.h */,
-				AA386D741E44F3EA005C6118 /* SimDeviceFramebufferService+Removed.h */,
 				AA386D751E44F3EA005C6118 /* SimDeviceIOPortConsumer-Protocol.h */,
 				AA386D761E44F3EA005C6118 /* SimDeviceIOPortDescriptorState-Protocol.h */,
 				AA386D771E44F3EA005C6118 /* SimDeviceIOPortInterface-Protocol.h */,

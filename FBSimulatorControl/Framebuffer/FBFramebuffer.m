@@ -18,9 +18,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import <SimulatorKit/SimDeviceFramebufferBackingStore+Removed.h>
-#import <SimulatorKit/SimDeviceFramebufferService.h>
-#import <SimulatorKit/SimDeviceFramebufferService+Removed.h>
 #import <SimulatorKit/SimDeviceIOPortConsumer-Protocol.h>
 #import <SimulatorKit/SimDisplayVideoWriter.h>
 
@@ -87,18 +84,14 @@
   dispatch_queue_t queue = self.createClientQueue;
   id<FBControlCoreLogger> logger = [self loggerForSimulator:simulator queue:queue];
 
-  if (FBXcodeConfiguration.isXcode8OrGreater) {
-    FBFramebufferSurface *surface = [FBFramebufferSurface mainScreenSurfaceForFramebufferService:framebufferService logger:simulator.logger];
-    FBFramebufferFrameGenerator *frameGenerator = [FBFramebufferIOSurfaceFrameGenerator
-      generatorWithRenderable:surface
-      scale:configuration.scaleValue
-      queue:queue
-      logger:logger];
+  FBFramebufferSurface *surface = [FBFramebufferSurface mainScreenSurfaceForFramebufferService:framebufferService logger:simulator.logger];
+  FBFramebufferFrameGenerator *frameGenerator = [FBFramebufferIOSurfaceFrameGenerator
+    generatorWithRenderable:surface
+    scale:configuration.scaleValue
+    queue:queue
+    logger:logger];
 
-    return [[FBFramebuffer_IOSurface alloc] initWithConfiguration:configuration frameGenerator:frameGenerator surface:surface logger:logger];
-  }
-  FBFramebufferBackingStoreFrameGenerator *frameGenerator = [FBFramebufferBackingStoreFrameGenerator generatorWithFramebufferService:framebufferService scale:configuration.scaleValue queue:queue logger:logger];
-  return [[FBFramebuffer_FramebufferService alloc] initWithConfiguration:configuration frameGenerator:frameGenerator surface:nil logger:logger];
+  return [[FBFramebuffer_IOSurface alloc] initWithConfiguration:configuration frameGenerator:frameGenerator surface:surface logger:logger];
 }
 
 + (instancetype)framebufferWithRenderable:(FBFramebufferSurface *)surface configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator
@@ -185,32 +178,6 @@
 - (id)jsonSerializableRepresentation
 {
   return self.frameGenerator.jsonSerializableRepresentation;
-}
-
-@end
-
-@implementation FBFramebuffer_FramebufferService
-
-#pragma mark Properties
-
-- (FBSimulatorImage *)createImage
-{
-  return [FBSimulatorImage imageWithFrameGenerator:self.frameGenerator];
-}
-
-- (FBSimulatorVideo *)createVideo
-{
-  return [FBSimulatorVideo videoWithConfiguration:self.configuration.encoder frameGenerator:self.frameGenerator logger:self.logger];
-}
-
-#pragma mark NSObject
-
-- (NSString *)description
-{
-  return [NSString stringWithFormat:
-    @"Framebuffer %@",
-    self.frameGenerator
-  ];
 }
 
 @end

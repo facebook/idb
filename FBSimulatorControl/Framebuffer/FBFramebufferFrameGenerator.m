@@ -15,8 +15,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import <SimulatorKit/SimDeviceFramebufferService.h>
-#import <SimulatorKit/SimDeviceFramebufferService+Removed.h>
-#import <SimulatorKit/SimDeviceFramebufferBackingStore+Removed.h>
 
 #import "FBFramebufferFrame.h"
 #import "FBSurfaceImageGenerator.h"
@@ -48,12 +46,6 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
 @property (atomic, assign, readwrite) CMTimebaseRef timebase;
 @property (atomic, assign, readwrite) NSUInteger frameCount;
 @property (atomic, assign, readwrite) CGSize size;
-
-@end
-
-@interface FBFramebufferBackingStoreFrameGenerator ()
-
-@property (nonatomic, strong, readonly) SimDeviceFramebufferService *service;
 
 @end
 
@@ -238,86 +230,6 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
     default:
       return @"Unknown";
   }
-}
-
-@end
-
-@implementation FBFramebufferBackingStoreFrameGenerator
-
-#pragma mark Initializers
-
-+ (instancetype)generatorWithFramebufferService:(SimDeviceFramebufferService *)service scale:(NSDecimalNumber *)scale queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
-{
-  return [[self alloc] initWithFramebufferService:service scale:scale queue:queue logger:logger];
-}
-
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)service scale:(NSDecimalNumber *)scale queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
-{
-  self = [super initWithScale:scale queue:queue logger:logger];
-  if (!self) {
-    return nil;
-  }
-
-  _service = service;
-
-  return self;
-}
-
-#pragma mark Client Callbacks from SimDeviceFramebufferService
-
-- (void)framebufferService:(SimDeviceFramebufferService *)service didUpdateRegion:(CGRect)region ofBackingStore:(SimDeviceFramebufferBackingStore *)backingStore
-{
-  // We recieve the backing store on the first surface.
-  if (self.state == FBFramebufferServiceStateStarting) {
-    self.state = FBFramebufferServiceStateRunning;
-    [self firstFrameWithBackingStore:backingStore];
-  } else if (self.state == FBFramebufferServiceStateRunning) {
-    [self backingStoreDidUpdate:backingStore];
-  }
-}
-
-- (void)framebufferService:(SimDeviceFramebufferService *)service didRotateToAngle:(double)angle
-{
-
-}
-
-- (void)framebufferService:(SimDeviceFramebufferService *)service didFailWithError:(NSError *)error
-{
-  dispatch_group_t group = dispatch_group_create();
-  [self teardownWithGroup:group];
-}
-
-#pragma mark Public Methods
-
-- (void)firstFrameWithBackingStore:(SimDeviceFramebufferBackingStore *)backingStore
-{
-  [self startTimebaseNow];
-  [self pushNewFrameFromCurrentTimeWithBackingStore:backingStore];
-}
-
-- (void)backingStoreDidUpdate:(SimDeviceFramebufferBackingStore *)backingStore
-{
-  [self pushNewFrameFromCurrentTimeWithBackingStore:backingStore];
-}
-
-#pragma mark Private
-
-- (void)firstConsumerAttached
-{
-  [self.service registerClient:self onQueue:self.queue];
-  [self.service resume];
-}
-
-- (void)detachAllConsumers:(dispatch_group_t)teardownGroup
-{
-  [self.service suspend];
-}
-
-- (void)pushNewFrameFromCurrentTimeWithBackingStore:(SimDeviceFramebufferBackingStore *)backingStore
-{
-  CGSize size = NSMakeSize(backingStore.pixelsWide, backingStore.pixelsHigh);
-  self.size = size;
-  [self pushNewFrameFromCurrentTimeWithCGImage:backingStore.image size:size];
 }
 
 @end
