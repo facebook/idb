@@ -19,7 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulatorImage;
 @class FBSimulatorVideo;
 @class SimDeviceFramebufferService;
-@protocol FBFramebufferFrameSink;
 @protocol FBFramebufferSurfaceConsumer;
 
 /**
@@ -44,32 +43,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new FBSimulatorDirectLaunch instance. Must not be nil.
  */
 + (instancetype)framebufferWithSurface:(FBFramebufferSurface *)surface configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator;
-
-#pragma mark Public Methods
-
-/**
- Causes the Framebuffer to Tear Down.
- Must only be called from the main queue.
- A dispatch_group is provided to allow for delegates to append any asychronous operations that may need cleanup.
- For example in the case of the Video Recorder, this means completing the writing to file.
-
- @param teardownGroup the dispatch_group to append asynchronous operations to.
- */
-- (void)teardownWithGroup:(dispatch_group_t)teardownGroup;
-
-/**
- Attaches a Frame Sink
-
- @param frameSink the Frame Sink to attach.
- */
-- (void)attachFrameSink:(id<FBFramebufferFrameSink>)frameSink;
-
-/**
- Detaches a Frame Sink
-
- @param frameSink the Frame Sink to detach.
- */
-- (void)detachFrameSink:(id<FBFramebufferFrameSink>)frameSink;
 
 #pragma mark Properties
 

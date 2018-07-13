@@ -26,8 +26,6 @@
 #import <CoreSimulator/SimDeviceIO.h>
 #import <CoreSimulator/SimDeviceIOClient.h>
 
-#import "FBFramebufferFrame.h"
-#import "FBFramebufferFrameGenerator.h"
 #import "FBSimulatorImage.h"
 #import "FBSimulatorVideo.h"
 #import "FBFramebufferSurface.h"
@@ -43,9 +41,8 @@
 
 @property (nonatomic, strong, readonly) FBFramebufferConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) FBFramebufferFrameGenerator *frameGenerator;
 
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator surface:(nullable FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration surface:(nullable FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -75,17 +72,10 @@
 {
   dispatch_queue_t queue = self.createClientQueue;
   id<FBControlCoreLogger> logger = [self loggerForSimulator:simulator queue:queue];
-
-  // Otherwise we have to use the built-in frame generation.
-  FBFramebufferFrameGenerator *frameGenerator = [FBFramebufferIOSurfaceFrameGenerator
-    generatorWithRenderable:surface
-    scale:configuration.scaleValue
-    queue:queue
-    logger:logger];
-  return [[FBFramebuffer alloc] initWithConfiguration:configuration frameGenerator:frameGenerator surface:surface logger:logger];
+  return [[FBFramebuffer alloc] initWithConfiguration:configuration surface:surface logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator surface:(nullable FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration surface:(nullable FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -93,31 +83,10 @@
   }
 
   _configuration = configuration;
-  _frameGenerator = frameGenerator;
   _surface = surface;
   _logger = logger;
 
   return self;
-}
-
-#pragma mark Public
-
-- (void)teardownWithGroup:(dispatch_group_t)teardownGroup
-{
-  NSParameterAssert(NSThread.currentThread.isMainThread);
-  [self.frameGenerator teardownWithGroup:teardownGroup];
-}
-
-- (void)attachFrameSink:(id<FBFramebufferFrameSink>)frameSink
-{
-  NSParameterAssert(frameSink);
-  [self.frameGenerator attachSink:frameSink];
-}
-
-- (void)detachFrameSink:(id<FBFramebufferFrameSink>)frameSink
-{
-  NSParameterAssert(frameSink);
-  [self.frameGenerator detachSink:frameSink];
 }
 
 #pragma mark Properties
@@ -152,7 +121,7 @@
 
 - (id)jsonSerializableRepresentation
 {
-  return self.frameGenerator.jsonSerializableRepresentation;
+  return @{};
 }
 
 @end

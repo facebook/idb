@@ -131,25 +131,19 @@
 {
   NSParameterAssert(NSThread.currentThread.isMainThread);
 
-  // Tear Down the Framebuffer
-  [self.framebuffer teardownWithGroup:self.teardownGroup];
-
   // Disconnect the HID
   [self.hid disconnect];
 
   // Close the connection with the SimulatorBridge and nullify
   [self.bridge disconnect];
 
-  // Notify the Future asynchronously.
-  FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
-  dispatch_group_notify(self.teardownGroup, self.simulator.workQueue, ^{
-    self.framebuffer = nil;
-    self.hid = nil;
-    self.bridge = nil;
-    [self.simulator.eventSink connectionDidDisconnect:self expected:YES];
-    [future resolveWithResult:NSNull.null];
-  });
-  return future;
+  // Nullify
+  self.framebuffer = nil;
+  self.hid = nil;
+  self.bridge = nil;
+  [self.simulator.eventSink connectionDidDisconnect:self expected:YES];
+
+  return [FBFuture futureWithResult:NSNull.null];
 }
 
 @end
