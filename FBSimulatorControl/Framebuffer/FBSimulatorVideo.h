@@ -13,7 +13,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBFramebufferFrameGenerator;
 @class FBFramebufferSurface;
 @class FBVideoEncoderConfiguration;
 @protocol FBControlCoreLogger;
@@ -23,16 +22,6 @@ NS_ASSUME_NONNULL_BEGIN
  Controls the Recording of a Simulator's Framebuffer to a Video.
  */
 @interface FBSimulatorVideo : NSObject <FBiOSTargetContinuation>
-
-/**
- The Initializer for a Frame Generator.
-
- @param configuration the configuration to use for encoding.
- @param frameGenerator the Frame Generator to register with.
- @param logger the logger object to log events to, may be nil.
- @return a new FBSimulatorVideo instance.
- */
-+ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger;
 
 /**
  The Designated Initializer.
@@ -70,11 +59,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return A Future that resolves when recording has stopped.
  */
 - (FBFuture<NSNull *> *)stopRecording;
-
-/**
- YES if Surface Based Supporting is available, NO otherwise.
- */
-+ (BOOL)surfaceSupported;
 
 @end
 

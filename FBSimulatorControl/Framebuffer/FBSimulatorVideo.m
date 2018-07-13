@@ -13,12 +13,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBFramebufferFrame.h"
 #import "FBFramebufferConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBVideoEncoderConfiguration.h"
-#import "FBVideoEncoderBuiltIn.h"
-#import "FBFramebufferFrameGenerator.h"
 #import "FBVideoEncoderSimulatorKit.h"
 
 @interface FBSimulatorVideo ()
@@ -27,15 +24,7 @@
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *completedFuture;
 
-@property (nonatomic, strong, readwrite) id encoder;
-
-@end
-
-@interface FBSimulatorVideo_BuiltIn : FBSimulatorVideo
-
-@property (nonatomic, strong, readonly) FBFramebufferFrameGenerator *frameGenerator;
-
-- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger;
+@property (nonatomic, strong, readwrite) FBVideoEncoderSimulatorKit *encoder;
 
 @end
 
@@ -61,11 +50,6 @@
 @implementation FBSimulatorVideo
 
 #pragma mark Initializers
-
-+ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger
-{
-  return [[FBSimulatorVideo_BuiltIn alloc] initWithConfiguration:configuration frameGenerator:frameGenerator logger:logger];
-}
 
 + (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
 {
@@ -105,11 +89,6 @@
   return nil;
 }
 
-+ (BOOL)surfaceSupported
-{
-  return FBVideoEncoderSimulatorKit.isSupported;
-}
-
 #pragma mark FBiOSTargetContinuation
 
 - (FBiOSTargetFutureType)futureType
@@ -130,75 +109,6 @@
 {
   int64_t timeoutInt = ((int64_t) timeInterval) * ((int64_t) NSEC_PER_SEC);
   return dispatch_time(DISPATCH_TIME_NOW, timeoutInt);
-}
-
-@end
-
-@implementation FBSimulatorVideo_BuiltIn
-
-#pragma mark Initializers
-
-- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger
-{
-  self = [super initWithConfiguration:configuration logger:logger];
-  if (!self) {
-    return nil;
-  }
-
-  _frameGenerator = frameGenerator;
-
-  return self;
-}
-
-#pragma mark Public Methods
-
-- (FBFuture<NSNull *> *)startRecordingToFile:(NSString *)filePath
-{
-  if (self.encoder) {
-    return [[FBSimulatorError
-      describe:@"Cannot Start Recording, there is already an active encoder"]
-      failFuture];
-  }
-  // Choose the Path for the Log
-  NSString *path = filePath ?: self.configuration.filePath;
-
-  // Create the encoder and start it
-  self.encoder = [FBVideoEncoderBuiltIn encoderWithConfiguration:self.configuration videoPath:path logger:self.logger];
-  FBFuture<NSNull *> *future = [self.encoder startRecording];
-
-  // Register the encoder with the Frame Generator
-  [self.frameGenerator attachSink:self.encoder];
-
-  return future;
-}
-
-- (FBFuture<NSNull *> *)stopRecording
-{
-  if (!self.encoder) {
-    return [[FBSimulatorError
-      describe:@"Cannot stop Recording, there is not an active encoder"]
-      failFuture];
-  }
-
-  // Detach the Encoder, stop, then release it.
-  [self.frameGenerator detachSink:self.encoder];
-  FBFuture *future = [self.encoder stopRecording];
-  self.encoder = nil;
-  return [future onQueue:[self.encoder mediaQueue] notifyOfCompletion:^(id _) {
-    [self.completedFuture resolveWithResult:NSNull.null];
-  }];
-}
-
-#pragma mark FBFramebufferFrameSink Implementation
-
-- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didUpdate:(FBFramebufferFrame *)frame
-{
-  [self.encoder frameGenerator:frameGenerator didUpdate:frame];
-}
-
-- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
-{
-  [self.encoder frameGenerator:frameGenerator didBecomeInvalidWithError:error teardownGroup:teardownGroup];
 }
 
 @end

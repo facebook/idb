@@ -193,9 +193,7 @@
 
 - (FBSimulatorVideo *)createVideo
 {
-  return FBSimulatorVideo.surfaceSupported
-    ? [FBSimulatorVideo videoWithConfiguration:self.configuration.encoder surface:self.surface logger:self.logger]
-    : [FBSimulatorVideo videoWithConfiguration:self.configuration.encoder frameGenerator:self.frameGenerator logger:self.logger];
+  return [FBSimulatorVideo videoWithConfiguration:self.configuration.encoder surface:self.surface logger:self.logger];
 }
 
 @end
