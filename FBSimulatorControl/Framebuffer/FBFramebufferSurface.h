@@ -95,6 +95,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (NSArray<id<FBFramebufferSurfaceConsumer>> *)attachedConsumers;
 
+/**
+ Queries if the consumer is attached.
+
+ @param consumer the consumer to use.
+ @return YES if attached, NO otherwise.
+ */
+- (BOOL)isConsumerAttached:(id<FBFramebufferSurfaceConsumer>)consumer;
+
 @end
 
 NS_ASSUME_NONNULL_END

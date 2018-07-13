@@ -24,10 +24,11 @@ NS_ASSUME_NONNULL_BEGIN
  Create and return a new Image Generator.
 
  @param scale the scale to use for the Image.
+ @param purpose the pupose of the image generator.
  @param logger the logger to use.
  @return a new Image Generator.
  */
-+ (instancetype)imageGeneratorWithScale:(NSDecimalNumber *)scale logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)imageGeneratorWithScale:(NSDecimalNumber *)scale purpose:(NSString *)purpose logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Return a CGImageRef.

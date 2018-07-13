@@ -27,9 +27,10 @@ NS_ASSUME_NONNULL_BEGIN
  Creates a new FBSimulatorImage instance using a Surface.
 
  @param surface the surface to obtain frames from.
+ @param logger the logger to use.
  @return a new FBSimulatorImage instance.
  */
-+ (instancetype)imageWithSurface:(FBFramebufferSurface *)surface;
++ (instancetype)imageWithSurface:(FBFramebufferSurface *)surface logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 

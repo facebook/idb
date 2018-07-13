@@ -109,7 +109,7 @@
 
 - (FBSimulatorImage *)createImage
 {
-  return [FBSimulatorImage imageWithSurface:self.surface];
+  return [FBSimulatorImage imageWithSurface:self.surface logger:self.logger];
 }
 
 - (FBSimulatorVideo *)createVideo

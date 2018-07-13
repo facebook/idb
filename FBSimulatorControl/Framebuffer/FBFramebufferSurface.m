@@ -233,6 +233,11 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
   return [consumers copy];
 }
 
+- (BOOL)isConsumerAttached:(id<FBFramebufferSurfaceConsumer>)consumer
+{
+  return [[self attachedConsumers] containsObject:consumer];
+}
+
 @end
 
 @implementation FBFramebufferSurface_IOClient

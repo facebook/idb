@@ -31,14 +31,13 @@
 #import "FBSimulatorError.h"
 #import "FBSurfaceImageGenerator.h"
 
-@interface FBSimulatorImage () <FBFramebufferSurfaceConsumer>
+@interface FBSimulatorImage ()
 
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 @property (nonatomic, strong, readonly) FBSurfaceImageGenerator *imageGenerator;
 @property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
 @property (nonatomic, strong, readwrite) NSUUID *consumerUUID;
-
-- (instancetype)initWithSurface:(FBFramebufferSurface *)surface;
 
 @end
 
@@ -51,22 +50,23 @@
   return dispatch_queue_create("com.facebook.FBSimulatorControl.framebuffer.image", DISPATCH_QUEUE_SERIAL);
 }
 
-+ (instancetype)imageWithSurface:(FBFramebufferSurface *)surface
++ (instancetype)imageWithSurface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBSimulatorImage alloc] initWithSurface:surface];
+  return [[FBSimulatorImage alloc] initWithSurface:surface logger:logger];
 }
 
-- (instancetype)initWithSurface:(FBFramebufferSurface *)surface
+- (instancetype)initWithSurface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _writeQueue = FBSimulatorImage.writeQueue;
   _surface = surface;
+  _logger = logger;
   _consumerUUID = [NSUUID UUID];
-  _imageGenerator = [FBSurfaceImageGenerator imageGeneratorWithScale:NSDecimalNumber.one logger:nil];
+  _writeQueue = FBSimulatorImage.writeQueue;
+  _imageGenerator = [FBSurfaceImageGenerator imageGeneratorWithScale:NSDecimalNumber.one purpose:@"simulator_image" logger:self.logger];
 
   return self;
 }
@@ -75,13 +75,20 @@
 
 - (nullable CGImageRef)image
 {
+  if (![self.surface isConsumerAttached:self.imageGenerator]) {
+    [self.logger logFormat:@"Image Generator %@ not attached, attaching", self.imageGenerator];
+    IOSurfaceRef surface = [self.surface attachConsumer:self.imageGenerator onQueue:self.writeQueue];
+    if (surface) {
+      [self.logger logFormat:@"Surface %@ immediately available, adding to Image Generator %@", surface, self.imageGenerator];
+      [self.imageGenerator didChangeIOSurface:surface];
+    } else {
+      [self.logger log:@"Surface for ImageGenerator not immedately available"];
+    }
+  }
+
   CGImageRef image = self.imageGenerator.image;
   if (image) {
     return image;
-  }
-  IOSurfaceRef surface = [self.surface attachConsumer:self onQueue:self.writeQueue];
-  if (surface) {
-    [self didChangeIOSurface:surface];
   }
   return self.imageGenerator.image;
 }
@@ -132,23 +139,6 @@
   }
   CFRelease(destination);
   return data;
-}
-
-#pragma mark FBFramebufferSurfaceConsumer
-
-- (NSString *)consumerIdentifier
-{
-  return NSStringFromClass(self.class);
-}
-
-- (void)didChangeIOSurface:(IOSurfaceRef)surface
-{
-  [self.imageGenerator didChangeIOSurface:surface];
-}
-
-- (void)didReceiveDamageRect:(CGRect)rect
-{
-  [self.imageGenerator didReceiveDamageRect:rect];
 }
 
 @end
