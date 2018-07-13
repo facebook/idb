@@ -81,11 +81,11 @@
 - (FBFuture<FBFramebuffer *> *)connect:(FBSimulator *)simulator
 {
   NSError *error = nil;
-  FBFramebufferSurface *renderable = [FBFramebufferSurface mainScreenSurfaceForClient:(SimDeviceIOClient *)simulator.device.io logger:simulator.logger error:&error];
-  if (!renderable) {
+  FBFramebufferSurface *surface = [FBFramebufferSurface mainScreenSurfaceForClient:(SimDeviceIOClient *)simulator.device.io logger:simulator.logger error:&error];
+  if (!surface) {
     return [FBFuture futureWithError:error];
   }
-  FBFramebuffer *framebuffer = [FBFramebuffer framebufferWithRenderable:renderable configuration:self.configuration simulator:simulator];
+  FBFramebuffer *framebuffer = [FBFramebuffer framebufferWithSurface:surface configuration:self.configuration simulator:simulator];
   return [FBFuture futureWithResult:framebuffer];
 }
 
@@ -104,7 +104,8 @@
   if (!mainScreenService) {
     return [FBFuture futureWithError:error];
   }
-  FBFramebuffer *framebuffer = [FBFramebuffer framebufferWithService:mainScreenService configuration:self.configuration simulator:simulator];
+  FBFramebufferSurface *surface = [FBFramebufferSurface mainScreenSurfaceForFramebufferService:mainScreenService logger:simulator.logger];
+  FBFramebuffer *framebuffer = [FBFramebuffer framebufferWithSurface:surface configuration:self.configuration simulator:simulator];
   return [FBFuture futureWithResult:framebuffer];
 }
 

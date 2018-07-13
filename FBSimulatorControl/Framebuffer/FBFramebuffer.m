@@ -49,14 +49,6 @@
 
 @end
 
-@interface FBFramebuffer_FramebufferService : FBFramebuffer
-
-@end
-
-@interface FBFramebuffer_IOSurface : FBFramebuffer
-
-@end
-
 @implementation FBFramebuffer
 
 @synthesize image = _image;
@@ -79,22 +71,7 @@
   return [simulator.logger withName:[NSString stringWithFormat:@"%@:", simulator.udid]];
 }
 
-+ (instancetype)framebufferWithService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator
-{
-  dispatch_queue_t queue = self.createClientQueue;
-  id<FBControlCoreLogger> logger = [self loggerForSimulator:simulator queue:queue];
-
-  FBFramebufferSurface *surface = [FBFramebufferSurface mainScreenSurfaceForFramebufferService:framebufferService logger:simulator.logger];
-  FBFramebufferFrameGenerator *frameGenerator = [FBFramebufferIOSurfaceFrameGenerator
-    generatorWithRenderable:surface
-    scale:configuration.scaleValue
-    queue:queue
-    logger:logger];
-
-  return [[FBFramebuffer_IOSurface alloc] initWithConfiguration:configuration frameGenerator:frameGenerator surface:surface logger:logger];
-}
-
-+ (instancetype)framebufferWithRenderable:(FBFramebufferSurface *)surface configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator
++ (instancetype)framebufferWithSurface:(FBFramebufferSurface *)surface configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
   dispatch_queue_t queue = self.createClientQueue;
   id<FBControlCoreLogger> logger = [self loggerForSimulator:simulator queue:queue];
@@ -105,7 +82,7 @@
     scale:configuration.scaleValue
     queue:queue
     logger:logger];
-  return [[FBFramebuffer_IOSurface alloc] initWithConfiguration:configuration frameGenerator:frameGenerator surface:surface logger:logger];
+  return [[FBFramebuffer alloc] initWithConfiguration:configuration frameGenerator:frameGenerator surface:surface logger:logger];
 }
 
 - (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator surface:(nullable FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
@@ -163,14 +140,12 @@
 
 - (FBSimulatorImage *)createImage
 {
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
+  return [FBSimulatorImage imageWithSurface:self.surface];
 }
 
 - (FBSimulatorVideo *)createVideo
 {
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
+  return [FBSimulatorVideo videoWithConfiguration:self.configuration.encoder surface:self.surface logger:self.logger];
 }
 
 #pragma mark FBJSONSerializable Implementation
@@ -178,22 +153,6 @@
 - (id)jsonSerializableRepresentation
 {
   return self.frameGenerator.jsonSerializableRepresentation;
-}
-
-@end
-
-@implementation FBFramebuffer_IOSurface
-
-#pragma mark Properties
-
-- (FBSimulatorImage *)createImage
-{
-  return [FBSimulatorImage imageWithSurface:self.surface];
-}
-
-- (FBSimulatorVideo *)createVideo
-{
-  return [FBSimulatorVideo videoWithConfiguration:self.configuration.encoder surface:self.surface logger:self.logger];
 }
 
 @end

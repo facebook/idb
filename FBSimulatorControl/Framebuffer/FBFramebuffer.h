@@ -38,22 +38,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates and returns a FBFramebuffer.
 
- @param framebufferService the SimDeviceFramebufferService to connect to.
- @param configuration the configuration of the Framebuffer.
- @param simulator the Simulator to which the Framebuffer belongs.
- @return a new FBSimulatorDirectLaunch instance. Must not be nil.
- */
-+ (instancetype)framebufferWithService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator;
-
-/**
- Creates and returns a FBFramebuffer.
-
  @param surface the Renderable to connect to.
  @param configuration the configuration of the Framebuffer.
  @param simulator the Simulator to which the Framebuffer belongs.
  @return a new FBSimulatorDirectLaunch instance. Must not be nil.
  */
-+ (instancetype)framebufferWithRenderable:(FBFramebufferSurface *)surface configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator;
++ (instancetype)framebufferWithSurface:(FBFramebufferSurface *)surface configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator;
 
 #pragma mark Public Methods
 
