@@ -13,7 +13,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBFramebufferFrameGenerator;
 @class FBFramebufferSurface;
 @protocol FBSimulatorEventSink;
 
@@ -23,14 +22,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulatorImage : NSObject
 
 #pragma mark Initializers
-
-/**
- Creates a new FBSimulatorImage instance using a Frame Generator.
-
- @param frameGenerator the Frame Generator to register with.
- @return a new FBSimulatorImage instance.
- */
-+ (instancetype)imageWithFrameGenerator:(FBFramebufferFrameGenerator *)frameGenerator;
 
 /**
  Creates a new FBSimulatorImage instance using a Surface.
