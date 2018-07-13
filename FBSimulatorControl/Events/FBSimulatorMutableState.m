@@ -131,11 +131,6 @@
   [self.sink applicationDidTerminate:operation expected:expected];
 }
 
-- (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
-{
-  [self.sink diagnosticAvailable:diagnostic];
-}
-
 - (void)didChangeState:(FBSimulatorState)state
 {
   if (state == self.lastKnownState) {

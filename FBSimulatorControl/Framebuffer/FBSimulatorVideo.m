@@ -16,7 +16,6 @@
 #import "FBFramebufferFrame.h"
 #import "FBFramebufferConfiguration.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorEventSink.h"
 #import "FBVideoEncoderConfiguration.h"
 #import "FBVideoEncoderBuiltIn.h"
 #import "FBFramebufferFrameGenerator.h"
@@ -26,7 +25,6 @@
 
 @property (nonatomic, strong, readonly) FBVideoEncoderConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *completedFuture;
 
 @property (nonatomic, strong, readwrite) id encoder;
@@ -37,7 +35,7 @@
 
 @property (nonatomic, strong, readonly) FBFramebufferFrameGenerator *frameGenerator;
 
-- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
+- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -45,7 +43,7 @@
 
 @property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
 
-- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
+- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -56,7 +54,7 @@
 @property (nonatomic, strong, readwrite) FBFuture *recordingTaskFuture;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
-- (instancetype)initWithDeviceSetPath:(NSString *)deviceSetPath deviceUUID:(NSString *)deviceUUID logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
+- (instancetype)initWithDeviceSetPath:(NSString *)deviceSetPath deviceUUID:(NSString *)deviceUUID logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -64,22 +62,22 @@
 
 #pragma mark Initializers
 
-+ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBSimulatorVideo_BuiltIn alloc] initWithConfiguration:configuration frameGenerator:frameGenerator logger:logger eventSink:eventSink];
+  return [[FBSimulatorVideo_BuiltIn alloc] initWithConfiguration:configuration frameGenerator:frameGenerator logger:logger];
 }
 
-+ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBSimulatorVideo_SimulatorKit alloc] initWithConfiguration:configuration surface:surface logger:logger eventSink:eventSink];
+  return [[FBSimulatorVideo_SimulatorKit alloc] initWithConfiguration:configuration surface:surface logger:logger];
 }
 
-+ (instancetype)simctlVideoForDeviceSetPath:(NSString *)deviceSetPath deviceUUID:(NSString *)deviceUUID logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)simctlVideoForDeviceSetPath:(NSString *)deviceSetPath deviceUUID:(NSString *)deviceUUID logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBSimulatorVideo_SimCtl alloc] initWithDeviceSetPath:deviceSetPath deviceUUID:deviceUUID logger:logger eventSink:eventSink];
+  return [[FBSimulatorVideo_SimCtl alloc] initWithDeviceSetPath:deviceSetPath deviceUUID:deviceUUID logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -88,7 +86,6 @@
 
   _configuration = configuration;
   _logger = logger;
-  _eventSink = eventSink;
   _completedFuture = [FBMutableFuture future];
 
   return self;
@@ -141,9 +138,9 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super initWithConfiguration:configuration logger:logger eventSink:eventSink];
+  self = [super initWithConfiguration:configuration logger:logger];
   if (!self) {
     return nil;
   }
@@ -171,14 +168,6 @@
 
   // Register the encoder with the Frame Generator
   [self.frameGenerator attachSink:self.encoder];
-
-  // Report the availability of the video
-  FBDiagnostic *diagnostic = [[[[[FBDiagnosticBuilder builder]
-    updatePath:path]
-    updateFileType:self.configuration.fileType]
-    updatePath:path]
-    build];
-  [self.eventSink diagnosticAvailable:diagnostic];
 
   return future;
 }
@@ -216,9 +205,9 @@
 
 @implementation FBSimulatorVideo_SimulatorKit
 
-- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super initWithConfiguration:configuration logger:logger eventSink:eventSink];
+  self = [super initWithConfiguration:configuration logger:logger];
   if (!self) {
     return nil;
   }
@@ -249,14 +238,6 @@
   self.encoder = [FBVideoEncoderSimulatorKit encoderWithRenderable:self.surface videoPath:path logger:self.logger];
   FBFuture<NSNull *> *future = [self.encoder startRecording];
 
-  // Report the availability of the video
-  FBDiagnostic *diagnostic = [[[[[FBDiagnosticBuilder builder]
-    updatePath:path]
-    updateFileType:self.configuration.fileType]
-    updatePath:path]
-    build];
-  [self.eventSink diagnosticAvailable:diagnostic];
-
   return future;
 }
 
@@ -281,9 +262,9 @@
 
 @implementation FBSimulatorVideo_SimCtl
 
-- (instancetype)initWithDeviceSetPath:(NSString *)deviceSetPath deviceUUID:(NSString *)deviceUUID logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithDeviceSetPath:(NSString *)deviceSetPath deviceUUID:(NSString *)deviceUUID logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super initWithConfiguration:FBVideoEncoderConfiguration.defaultConfiguration logger:logger eventSink:eventSink];
+  self = [super initWithConfiguration:FBVideoEncoderConfiguration.defaultConfiguration logger:logger];
   if (!self) {
     return nil;
   }
@@ -327,14 +308,6 @@
     withStdOutToLogger:logger]
     withStdErrToLogger:logger]
     start];
-
-  // Report the availability of the video
-  FBDiagnostic *diagnostic = [[[[[FBDiagnosticBuilder builder]
-    updatePath:filePath]
-    updateFileType:self.configuration.fileType]
-    updatePath:filePath]
-    build];
-  [self.eventSink diagnosticAvailable:diagnostic];
 
   return self.recordingTaskFuture;
 }

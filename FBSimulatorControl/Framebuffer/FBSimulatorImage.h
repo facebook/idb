@@ -11,12 +11,11 @@
 
 #import <FBSimulatorControl/FBFramebufferSurface.h>
 
-@class FBDiagnostic;
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBFramebufferFrameGenerator;
 @class FBFramebufferSurface;
 @protocol FBSimulatorEventSink;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  Provides access to an Image Representation of a Simulator's Framebuffer.
@@ -28,24 +27,18 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a new FBSimulatorImage instance using a Frame Generator.
 
- @param filePath the File Path to write to.
  @param frameGenerator the Frame Generator to register with.
- @param eventQueue the Event Queu to report Image Logs on.
- @param eventSink the Event Sink to report Image Logs to.
  @return a new FBSimulatorImage instance.
  */
-+ (instancetype)imageWithFilePath:(NSString *)filePath frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator eventQueue:(dispatch_queue_t)eventQueue eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)imageWithFrameGenerator:(FBFramebufferFrameGenerator *)frameGenerator;
 
 /**
  Creates a new FBSimulatorImage instance using a Surface.
 
- @param filePath the File Path to write to.
  @param surface the surface to obtain frames from.
- @param eventQueue the Event Queu to report Image Logs on.
- @param eventSink the Event Sink to report Image Logs to.
  @return a new FBSimulatorImage instance.
  */
-+ (instancetype)imageWithFilePath:(NSString *)filePath surface:(FBFramebufferSurface *)surface eventQueue:(dispatch_queue_t)eventQueue eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)imageWithSurface:(FBFramebufferSurface *)surface;
 
 #pragma mark Public Methods
 

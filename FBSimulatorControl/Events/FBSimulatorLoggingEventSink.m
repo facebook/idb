@@ -94,11 +94,6 @@
   [self.logger logFormat:@"Application Did Terminate => Expected %d %@", expected, operation];
 }
 
-- (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
-{
-  [self.logger logFormat:@"Log Available => %@", diagnostic.shortDescription];
-}
-
 - (void)didChangeState:(FBSimulatorState)state
 {
   [self.logger logFormat:@"Did Change State => %@", FBSimulatorStateStringFromState(state)];

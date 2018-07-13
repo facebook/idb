@@ -104,13 +104,6 @@
   }
 }
 
-- (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
-{
-  for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink diagnosticAvailable:diagnostic];
-  }
-}
-
 - (void)didChangeState:(FBSimulatorState)state
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {

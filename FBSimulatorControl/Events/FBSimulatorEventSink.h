@@ -13,7 +13,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulatorApplicationOperation;
 @class FBApplicationLaunchConfiguration;
-@class FBDiagnostic;
 @class FBProcessInfo;
 @class FBSimulator;
 @class FBSimulatorAgentOperation;
@@ -101,13 +100,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param expected whether the termination was expected or not.
  */
 - (void)applicationDidTerminate:(FBSimulatorApplicationOperation *)operation expected:(BOOL)expected;
-
-/**
- Event for the availablilty of a new log.
-
- @param diagnostic the diagnostic log.
- */
-- (void)diagnosticAvailable:(FBDiagnostic *)diagnostic;
 
 /**
  Event for the change in a Simulator's state.

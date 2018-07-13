@@ -69,11 +69,6 @@ extern FBSimulatorNotificationName const FBSimulatorNotificationNameAgentProcess
 extern FBSimulatorNotificationName const FBSimulatorNotificationNameAgentProcessDidTerminate;
 
 /**
- Notification that is fired when diagnostic information is gained.
- */
-extern FBSimulatorNotificationName const FBSimulatorNotificationNameGainedDiagnosticInformation;
-
-/**
  Notification the Simulator State changed.
  */
 extern FBSimulatorNotificationName const FBSimulatorNotificationNameStateDidChange;
@@ -97,11 +92,6 @@ extern FBSimulatorNotificationUserInfoKey const FBSimulatorNotificationUserInfoK
  Notification UserInfo for the Simulator Bridge.
  */
 extern FBSimulatorNotificationUserInfoKey const FBSimulatorNotificationUserInfoKeyConnection;
-
-/**
- Notification UserInfo for the name of a diagnostic.
- */
-extern FBSimulatorNotificationUserInfoKey const FBSimulatorNotificationUserInfoKeyDiagnostic;
 
 /**
  Notification UserInfo for Simulator State.

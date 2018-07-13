@@ -110,8 +110,7 @@
     FBSimulatorVideo *recorder = [FBSimulatorVideo
       simctlVideoForDeviceSetPath:self.simulator.set.deviceSet.setPath
       deviceUUID:self.simulator.device.UDID.UUIDString
-      logger:self.simulator.logger
-      eventSink:self.simulator.eventSink];
+      logger:self.simulator.logger];
     return [FBFuture futureWithResult:recorder];
   }
 

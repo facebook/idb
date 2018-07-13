@@ -22,13 +22,11 @@ FBSimulatorNotificationName const FBSimulatorNotificationNameApplicationProcessD
 FBSimulatorNotificationName const FBSimulatorNotificationNameApplicationProcessDidTerminate = @"FBSimulatorNotificationNameApplicationProcessDidTerminate";
 FBSimulatorNotificationName const FBSimulatorNotificationNameAgentProcessDidLaunch = @"FBSimulatorNotificationNameAgentProcessDidLaunch";
 FBSimulatorNotificationName const FBSimulatorNotificationNameAgentProcessDidTerminate = @"FBSimulatorNotificationNameAgentProcessDidTerminate";
-FBSimulatorNotificationName const FBSimulatorNotificationNameGainedDiagnosticInformation = @"FBSimulatorNotificationNameGainedDiagnosticInformation";
 FBSimulatorNotificationName const FBSimulatorNotificationNameStateDidChange = @"FBSimulatorNotificationNameStateDidChange";
 
 NSString *const FBSimulatorNotificationUserInfoKeyExpectedTermination = @"expected";
 NSString *const FBSimulatorNotificationUserInfoKeyProcess = @"process";
 NSString *const FBSimulatorNotificationUserInfoKeyProcessIdentifier = @"pid";
-NSString *const FBSimulatorNotificationUserInfoKeyDiagnostic = @"diagnostic_log";
 NSString *const FBSimulatorNotificationUserInfoKeyConnection = @"connection";
 NSString *const FBSimulatorNotificationUserInfoKeyState = @"simulator_state";
 NSString *const FBSimulatorNotificationUserInfoKeyTestManager = @"testManager";
@@ -124,13 +122,6 @@ NSString *const FBSimulatorNotificationUserInfoKeyWaitingForDebugger = @"waiting
   [self materializeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate userInfo:@{
     FBSimulatorNotificationUserInfoKeyExpectedTermination : @(expected),
     FBSimulatorNotificationUserInfoKeyProcessIdentifier : @(operation.processIdentifier),
-  }];
-}
-
-- (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
-{
-  [self materializeNotification:FBSimulatorNotificationNameGainedDiagnosticInformation userInfo:@{
-    FBSimulatorNotificationUserInfoKeyDiagnostic : diagnostic
   }];
 }
 

@@ -29,7 +29,6 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
 @interface FBSimulatorDiagnostics ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) NSMutableDictionary *eventLogs;
 
 @end
 
@@ -51,7 +50,6 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
   }
 
   _simulator = simulator;
-  _eventLogs = [NSMutableDictionary dictionary];
 
   return self;
 }
@@ -127,19 +125,17 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
 
 - (FBDiagnostic *)video
 {
-  return [[[self.baseLogBuilder
+  return [[self.baseLogBuilder
     updateDiagnostic:[super video]]
-    updateDiagnostic:self.eventLogs[FBDiagnosticNameVideo]]
     build];
 }
 
 - (FBDiagnostic *)screenshot
 {
-  return [[[[[self.baseLogBuilder
+  return [[[[self.baseLogBuilder
     updateShortName:FBDiagnosticNameScreenshot]
     updateFileType:@"png"]
     updatePathFromDefaultLocation]
-    updateDiagnostic:self.eventLogs[FBDiagnosticNameScreenshot]]
     build];
 }
 
@@ -198,7 +194,6 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
     self.video,
     self.screenshot
   ]];
-  [logs addObjectsFromArray:self.eventLogs.allValues];
   [logs addObjectsFromArray:self.stdOutErrDiagnostics];
   [logs addObjectsFromArray:[super allDiagnostics]];
   return [logs filteredArrayUsingPredicate:FBSimulatorDiagnostics.predicateForHasContent];
@@ -254,14 +249,6 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
 - (void)applicationDidTerminate:(FBSimulatorApplicationOperation *)operation expected:(BOOL)expected
 {
 
-}
-
-- (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
-{
-  if (!diagnostic.shortName) {
-    return;
-  }
-  self.eventLogs[diagnostic.shortName] = diagnostic;
 }
 
 - (void)didChangeState:(FBSimulatorState)state

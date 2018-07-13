@@ -30,10 +30,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the configuration to use for encoding.
  @param frameGenerator the Frame Generator to register with.
  @param logger the logger object to log events to, may be nil.
- @param eventSink an event sink to report video output to.
  @return a new FBSimulatorVideo instance.
  */
-+ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger;
 
 /**
  The Designated Initializer.
@@ -41,10 +40,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the configuration to use for encoding.
  @param surface the Renderable to Record.
  @param logger the logger object to log events to, may be nil.
- @param eventSink an event sink to report video output to.
  @return a new FBSimulatorVideo instance.
  */
-+ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger;
 
 /**
  The Designated Initializer, for doing simulator video recording using Apple's simctl
@@ -52,10 +50,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param deviceSetPath path of simulator's device set
  @param deviceUUID UUID of simulator's device
  @param logger the logger object to log events to, may be nil.
- @param eventSink an event sink to report video output to.
  @return a new FBSimulatorVideo instance.
  */
-+ (instancetype)simctlVideoForDeviceSetPath:(NSString *)deviceSetPath deviceUUID:(NSString *)deviceUUID logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)simctlVideoForDeviceSetPath:(NSString *)deviceSetPath deviceUUID:(NSString *)deviceUUID logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 

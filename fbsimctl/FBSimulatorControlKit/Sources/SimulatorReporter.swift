@@ -76,10 +76,6 @@ open class SimulatorReporter: NSObject, FBSimulatorEventSink, iOSReporter {
     reportValue(.terminate, .discrete, operation)
   }
 
-  open func diagnosticAvailable(_ log: FBDiagnostic) {
-    reportValue(.diagnostic, .discrete, log)
-  }
-
   open func didChange(_ state: FBSimulatorState) {
     reportValue(.stateChange, .discrete, FBEventReporterSubject(string: state.description))
   }

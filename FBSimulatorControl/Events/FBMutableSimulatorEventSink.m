@@ -61,11 +61,6 @@
   [self.eventSink applicationDidTerminate:operation expected:expected];
 }
 
-- (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
-{
-  [self.eventSink diagnosticAvailable:diagnostic];
-}
-
 - (void)didChangeState:(FBSimulatorState)state
 {
   [self.eventSink didChangeState:state];
