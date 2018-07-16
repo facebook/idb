@@ -113,28 +113,38 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark Public
 
-- (nullable FBBitmapStreamAttributes *)streamAttributesWithError:(NSError **)error
+- (FBFuture<FBBitmapStreamAttributes *> *)streamAttributes
 {
-  [self attachConsumerIfNeeded];
-  NSDictionary<NSString *, id> *attributes = self.pixelBufferAttributes;
-  if (!attributes) {
-    return [[FBSimulatorError
-      describe:@"Could not obtain stream attributes"]
-      fail:error];
-  }
-  return [[FBBitmapStreamAttributes alloc] initWithAttributes:attributes];
+  return [[self
+    attachConsumerIfNeeded]
+    onQueue:self.writeQueue fmap:^ FBFuture<FBBitmapStreamAttributes *> * (id _) {
+      NSDictionary<NSString *, id> *dictionary = self.pixelBufferAttributes;
+      if (!dictionary) {
+        return [[FBSimulatorError
+          describe:@"Could not obtain stream attributes"]
+          failFuture];
+      }
+      FBBitmapStreamAttributes *attributes = [[FBBitmapStreamAttributes alloc] initWithAttributes:dictionary];
+      return [FBFuture futureWithResult:attributes];
+    }];
 }
 
 - (FBFuture<NSNull *> *)startStreaming:(id<FBFileConsumer>)consumer
 {
-  if (self.consumer) {
-    return [[FBSimulatorError
-      describe:@"Cannot start streaming, a consumer is already attached"]
-      failFuture];
-  }
-  self.consumer = consumer;
-  [self attachConsumerIfNeeded];
-  return self.startFuture;
+  return [[FBFuture
+    onQueue:self.writeQueue resolve:^ FBFuture<NSNull *> * {
+      if (self.consumer) {
+        return [[FBSimulatorError
+          describe:@"Cannot start streaming, a consumer is already attached"]
+          failFuture];
+      }
+      self.consumer = consumer;
+
+      return [self attachConsumerIfNeeded];
+    }]
+    onQueue:self.writeQueue fmap:^(id _) {
+      return self.startFuture;
+    }];
 }
 
 - (FBFuture<NSNull *> *)stopStreaming
@@ -156,18 +166,18 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark Private
 
-- (void)attachConsumerIfNeeded
+- (FBFuture<NSNull *> *)attachConsumerIfNeeded
 {
-  if ([self.surface.attachedConsumers containsObject:self]) {
-    return;
-  }
-  // If we have a surface now, we can start rendering, so mount the surface.
-  IOSurfaceRef surface = [self.surface attachConsumer:self onQueue:self.writeQueue];
-  if (surface) {
-    dispatch_async(self.writeQueue, ^{
-      [self didChangeIOSurface:surface];
-    });
-  }
+  return [FBFuture onQueue:self.writeQueue resolve:^{
+    if ([self.surface isConsumerAttached:self]) {
+      [self.logger logFormat:@"Already attached %@ as a consumer", self];
+      return [FBFuture futureWithResult:NSNull.null];
+    }
+    // If we have a surface now, we can start rendering, so mount the surface.
+    IOSurfaceRef surface = [self.surface attachConsumer:self onQueue:self.writeQueue];
+    [self didChangeIOSurface:surface];
+    return [FBFuture futureWithResult:NSNull.null];
+  }];
 }
 
 #pragma mark FBFramebufferSurfaceConsumer

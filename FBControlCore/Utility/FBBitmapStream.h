@@ -48,10 +48,9 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming;
 /**
  Obtains a Dictonary Describing the Attributes of the Stream.
 
- @param error an error out for any error that occurs.
- @return the Attributes if successful, NO otherwise.
+ @return a Future wrapping the stream attributes.
  */
-- (nullable FBBitmapStreamAttributes *)streamAttributesWithError:(NSError **)error;
+- (FBFuture<FBBitmapStreamAttributes *> *)streamAttributes;
 
 /**
  Starts the Streaming, to a File Consumer.

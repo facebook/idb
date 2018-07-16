@@ -106,15 +106,16 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark Public Methods
 
-- (nullable FBBitmapStreamAttributes *)streamAttributesWithError:(NSError **)error
+- (FBFuture<FBBitmapStreamAttributes *> *)streamAttributes
 {
-  NSDictionary<NSString *, id> *attributes = self.pixelBufferAttributes;
-  if (!attributes) {
+  NSDictionary<NSString *, id> *dictionary = self.pixelBufferAttributes;
+  if (!dictionary) {
     return [[FBDeviceControlError
       describe:@"Could not obtain stream attributes"]
-      fail:error];
+      failFuture];
   }
-  return [[FBBitmapStreamAttributes alloc] initWithAttributes:attributes];
+  FBBitmapStreamAttributes *attributes = [[FBBitmapStreamAttributes alloc] initWithAttributes:dictionary];
+  return [FBFuture futureWithResult:attributes];
 }
 
 - (FBFuture<NSNull *> *)startStreaming:(id<FBFileConsumer>)consumer
