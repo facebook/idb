@@ -128,6 +128,7 @@ See the [CONTRIBUTING](CONTRIBUTING) file for how to help out. There's plenty to
 * [fbsimctl](https://github.com/facebook/FBSimulatorControl/blob/master/fbsimctl/README.md): Command line interface
 * [SimulatorController](https://github.com/davidlawson/SimulatorController): GUI interface written in Swift
 * [FBSimulatorClient](https://github.com/tapthaker/FBSimulatorClient): Simulator interface using REST requests
+* [iSimulator](https://github.com/wigl/iSimulator): GUI utility to control the Simulator, manage the app installed on the simulator.
 
 ## License
 [`FBSimulatorControl` is BSD-licensed](LICENSE). We also provide an additional [patent grant](PATENTS).
