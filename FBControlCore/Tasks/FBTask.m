@@ -103,7 +103,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   FBMutableFuture<NSNumber *> *exitCode = (FBMutableFuture *) self.exitCode;
   id<FBControlCoreLogger> logger = self.logger;
   self.task.terminationHandler = ^(NSTask *task) {
-    if (logger.level >= DEBUG) {
+    if (logger.level >= FBControlCoreLogLevelDebug) {
       [logger logFormat:@"Task finished with exit code %d", task.terminationStatus];
     }
     [exitCode resolveWithResult:@(task.terminationStatus)];
