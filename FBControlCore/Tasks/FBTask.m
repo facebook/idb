@@ -10,6 +10,7 @@
 #import "FBTask.h"
 
 #import "FBControlCoreError.h"
+#import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"
 #import "FBFileConsumer.h"
 #import "FBFileWriter.h"
@@ -36,6 +37,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 @interface FBTaskProcess_NSTask : NSObject <FBTaskProcess>
 
 @property (nonatomic, strong, readwrite) NSTask *task;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -61,6 +63,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
   _task = task;
   _exitCode = FBMutableFuture.future;
+  _logger = [[FBControlCoreGlobalConfiguration defaultLogger] withName:[NSString stringWithFormat:@"FBTask_%@", [task.launchPath lastPathComponent]]];
 
   return self;
 }
@@ -98,9 +101,19 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 - (void)launch
 {
   FBMutableFuture<NSNumber *> *exitCode = (FBMutableFuture *) self.exitCode;
+  id<FBControlCoreLogger> logger = self.logger;
   self.task.terminationHandler = ^(NSTask *task) {
+    if (logger.level >= DEBUG) {
+      [logger logFormat:@"Task finished with exit code %d", task.terminationStatus];
+    }
     [exitCode resolveWithResult:@(task.terminationStatus)];
   };
+
+  NSString *arguments = [self.task.arguments componentsJoinedByString:@" "];
+  [self.logger logFormat:@"Running %@ %@ with environment %@",
+    self.task.launchPath,
+    arguments,
+    self.task.environment];
   [self.task launch];
 }
 
