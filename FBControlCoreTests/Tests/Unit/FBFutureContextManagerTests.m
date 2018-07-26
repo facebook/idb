@@ -17,6 +17,8 @@
 @property (nonatomic, assign, readwrite) NSUInteger prepareCalled;
 @property (nonatomic, assign, readwrite) NSUInteger teardownCalled;
 @property (nonatomic, copy, readwrite) NSNumber *contextPoolTimeout;
+@property (nonatomic, assign, readwrite) BOOL failPrepare;
+@property (nonatomic, assign, readwrite) BOOL resetFailPrepare; // if YES, set failPrepare = NO when prepare fails
 
 @end
 
@@ -28,6 +30,8 @@
   self.contextPoolTimeout = nil;
   self.prepareCalled = 0;
   self.teardownCalled = 0;
+  self.failPrepare = NO;
+  self.resetFailPrepare = NO;
 }
 
 - (FBFutureContextManager<NSNumber *> *)manager
@@ -163,6 +167,95 @@
   XCTAssertEqual(self.teardownCalled, 1u);
 }
 
+- (void)testFailInPrepare
+{
+  FBFutureContextManager<NSNumber *> *manager = self.manager;
+  self.failPrepare = YES;
+  FBFuture *future0 = [[manager
+                        utilizeWithPurpose:@"A Test"]
+                       onQueue:self.queue fmap:^(id result) {
+                         return [FBFuture futureWithResult:@0];
+                       }];
+
+  NSError *error = nil;
+  id value = [future0 awaitWithTimeout:1 error:&error];
+  XCTAssertNotNil(error);
+
+  XCTAssertEqual(self.prepareCalled, 1u);
+  XCTAssertEqual(self.teardownCalled, 0u);
+
+  self.failPrepare = NO;
+  FBFuture *future1 = [[manager
+                        utilizeWithPurpose:@"A Test"]
+                       onQueue:self.queue fmap:^(id result) {
+                         return [FBFuture futureWithResult:@1];
+                       }];
+  error = nil;
+  value = [future1 awaitWithTimeout:1 error:&error];
+  XCTAssertNil(error);
+  XCTAssertEqualObjects(value, @1);
+
+  XCTAssertEqual(self.prepareCalled, 2u);
+  XCTAssertEqual(self.teardownCalled, 1u);
+}
+
+- (void)testConcurrentAquireWithOneFailInPrepare
+{
+  FBFutureContextManager<NSNumber *> *manager = self.manager;
+  dispatch_queue_t concurrent = dispatch_queue_create("com.facebook.fbcontrolcore.tests.future_context.concurrent", DISPATCH_QUEUE_CONCURRENT);
+  FBMutableFuture *future0 = FBMutableFuture.future;
+  FBMutableFuture *future1 = FBMutableFuture.future;
+  FBMutableFuture *future2 = FBMutableFuture.future;
+
+  self.failPrepare = YES;
+  self.resetFailPrepare = YES;
+  dispatch_async(concurrent, ^{
+    FBFuture *inner = [[manager
+                        utilizeWithPurpose:@"A Test 1"]
+                       onQueue:self.queue fmap:^(id result) {
+                         return [FBFuture futureWithResult:@0];
+                       }];
+    [future0 resolveFromFuture:inner];
+  });
+  dispatch_async(concurrent, ^{
+    FBFuture *inner = [[manager
+                        utilizeWithPurpose:@"A Test 2"]
+                       onQueue:self.queue fmap:^(id result) {
+                         return [FBFuture futureWithResult:@1];
+                       }];
+    [future1 resolveFromFuture:inner];
+  });
+  dispatch_async(concurrent, ^{
+    FBFuture *inner = [[manager
+                        utilizeWithPurpose:@"A Test 3"]
+                       onQueue:self.queue fmap:^(id result) {
+                         return [FBFuture futureWithResult:@2];
+                       }];
+    [future2 resolveFromFuture:inner];
+  });
+
+  NSMutableArray<NSNumber *> *values = [NSMutableArray array];
+  NSMutableArray<NSError *> *errors = [NSMutableArray array];
+
+  for (FBFuture *future in @[future0, future1, future2]) {
+    NSNumber *value = nil;
+    NSError *error = nil;
+    value = [future awaitWithTimeout:1 error:&error];
+    if (value) {
+      [values addObject:value];
+    }
+    if (error) {
+      [errors addObject:error];
+    }
+  }
+
+  XCTAssertEqual(values.count, 2u);
+  XCTAssertEqual(errors.count, 1u);
+
+  XCTAssertEqual(self.prepareCalled, 2u);
+  XCTAssertEqual(self.teardownCalled, 1u);
+}
+
 - (void)testImmediateAquireAndRelease
 {
   FBFutureContextManager<NSNumber *> *manager = self.manager;
@@ -185,7 +278,15 @@
 - (FBFuture<id> *)prepare:(id<FBControlCoreLogger>)logger
 {
   self.prepareCalled++;
-  return [FBFuture futureWithResult:@0];
+  if (self.failPrepare) {
+    if (self.resetFailPrepare) {
+      self.failPrepare = NO;
+    }
+    return [[FBControlCoreError describe:@"Error in prepare"] failFuture];
+  }
+  else {
+    return [FBFuture futureWithResult:@0];
+  }
 }
 
 - (FBFuture<NSNull *> *)teardown:(id)context logger:(id<FBControlCoreLogger>)logger

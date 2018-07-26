@@ -58,7 +58,7 @@
 - (FBFutureContext<id> *)utilizeWithPurpose:(NSString *)purpose
 {
   id<FBControlCoreLogger> logger = [self loggerWithPurpose:purpose];
-  return [[[[self
+  return [[[[[self
     resourceNoLongerInUseWithLogger:logger]
     onQueue:self.queue fmap:^ FBFuture<id> * (id _){
       [self cancelTimer:logger];
@@ -69,6 +69,10 @@
       }
       [logger log:@"No active context, preparing..."];
       return [self.delegate prepare:logger];
+    }]
+    onQueue:self.queue handleError:^ FBFuture *(NSError *error) {
+      [self popQueue];
+      return [FBFuture futureWithError:error];
     }]
     onQueue:self.queue map:^(id context) {
       self.existingContext = context;
