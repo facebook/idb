@@ -24,7 +24,6 @@
 #import <FBControlCore/FBBitmapStreamConfiguration.h>
 #import <FBControlCore/FBBitmapStreamingCommands.h>
 #import <FBControlCore/FBBundleDescriptor.h>
-#import <FBControlCore/FBCapacityQueue.h>
 #import <FBControlCore/FBCodesignProvider.h>
 #import <FBControlCore/FBCollectionInformation.h>
 #import <FBControlCore/FBCollectionOperations.h>
