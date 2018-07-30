@@ -21,7 +21,7 @@ extension FBiOSTargetQuery {
     if let _ = UUID(uuidString: token) {
       return token
     }
-    if token.characters.count != 40 {
+    if token.count != 40 {
       throw ParseError.couldNotInterpret("UDID is not 40 characters long", token)
     }
     let nonDeviceUDIDSet = CharacterSet(charactersIn: "0123456789ABCDEFabcdef").inverted
@@ -229,7 +229,7 @@ public typealias Writer = FBFileConsumer
 public extension Writer {
   func write(_ string: String) {
     var output = string
-    if output.characters.last != "\n" {
+    if output.last != "\n" {
       output.append("\n" as Character)
     }
     guard let data = output.data(using: String.Encoding.utf8) else {
