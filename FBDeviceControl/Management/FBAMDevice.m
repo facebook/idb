@@ -430,7 +430,7 @@ static const NSTimeInterval ServiceReuseTimeout = 3.0;
 
 - (BOOL)isContextSharable
 {
-  return NO;
+  return YES;
 }
 
 #pragma mark Private
