@@ -72,7 +72,7 @@
   }];
 }
 
-- (void)device:(SimDevice *)device didChangeState:(FBSimulatorState)state
+- (void)device:(SimDevice *)device didChangeState:(FBiOSTargetState)state
 {
   FBiOSTargetQuery *query = [FBiOSTargetQuery udid:device.UDID.UUIDString];
   NSArray<FBSimulator *> *simulators = [self.set query:query];
@@ -83,10 +83,10 @@
   [simulator.eventSink didChangeState:state];
 
   // Update State in response to boot/shutdown
-  if (state == FBSimulatorStateBooted) {
+  if (state == FBiOSTargetStateBooted) {
     [self fetchLaunchdSimInfoFromBootOfSimulator:simulator];
   }
-  if (state == FBSimulatorStateShutdown || state == FBSimulatorStateShuttingDown) {
+  if (state == FBiOSTargetStateShutdown || state == FBiOSTargetStateShuttingDown) {
     [self discardLaunchdSimInfoFromShutdownOfSimulator:simulator];
   }
 }

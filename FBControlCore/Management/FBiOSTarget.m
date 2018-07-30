@@ -11,50 +11,50 @@
 
 #import "FBiOSTargetConfiguration.h"
 
-FBSimulatorStateString const FBSimulatorStateStringCreating = @"Creating";
-FBSimulatorStateString const FBSimulatorStateStringShutdown = @"Shutdown";
-FBSimulatorStateString const FBSimulatorStateStringBooting = @"Booting";
-FBSimulatorStateString const FBSimulatorStateStringBooted = @"Booted";
-FBSimulatorStateString const FBSimulatorStateStringShuttingDown = @"Shutting Down";
-FBSimulatorStateString const FBSimulatorStateStringUnknown = @"Unknown";
+FBiOSTargetStateString const FBiOSTargetStateStringCreating = @"Creating";
+FBiOSTargetStateString const FBiOSTargetStateStringShutdown = @"Shutdown";
+FBiOSTargetStateString const FBiOSTargetStateStringBooting = @"Booting";
+FBiOSTargetStateString const FBiOSTargetStateStringBooted = @"Booted";
+FBiOSTargetStateString const FBiOSTargetStateStringShuttingDown = @"Shutting Down";
+FBiOSTargetStateString const FBiOSTargetStateStringUnknown = @"Unknown";
 
-NSString *FBSimulatorStateStringFromState(FBSimulatorState state)
+NSString *FBiOSTargetStateStringFromState(FBiOSTargetState state)
 {
   switch (state) {
-    case FBSimulatorStateCreating:
-      return FBSimulatorStateStringCreating;
-    case FBSimulatorStateShutdown:
-      return FBSimulatorStateStringShutdown;
-    case FBSimulatorStateBooting:
-      return FBSimulatorStateStringBooting;
-    case FBSimulatorStateBooted:
-      return FBSimulatorStateStringBooted;
-    case FBSimulatorStateShuttingDown:
-      return FBSimulatorStateStringShuttingDown;
+    case FBiOSTargetStateCreating:
+      return FBiOSTargetStateStringCreating;
+    case FBiOSTargetStateShutdown:
+      return FBiOSTargetStateStringShutdown;
+    case FBiOSTargetStateBooting:
+      return FBiOSTargetStateStringBooting;
+    case FBiOSTargetStateBooted:
+      return FBiOSTargetStateStringBooted;
+    case FBiOSTargetStateShuttingDown:
+      return FBiOSTargetStateStringShuttingDown;
     default:
-      return FBSimulatorStateStringUnknown;
+      return FBiOSTargetStateStringUnknown;
   }
 }
 
-FBSimulatorState FBSimulatorStateFromStateString(NSString *stateString)
+FBiOSTargetState FBiOSTargetStateFromStateString(NSString *stateString)
 {
   stateString = [stateString.lowercaseString stringByReplacingOccurrencesOfString:@"-" withString:@" "];
-  if ([stateString isEqualToString:FBSimulatorStateStringCreating.lowercaseString]) {
-    return FBSimulatorStateCreating;
+  if ([stateString isEqualToString:FBiOSTargetStateStringCreating.lowercaseString]) {
+    return FBiOSTargetStateCreating;
   }
-  if ([stateString isEqualToString:FBSimulatorStateStringShutdown.lowercaseString]) {
-    return FBSimulatorStateShutdown;
+  if ([stateString isEqualToString:FBiOSTargetStateStringShutdown.lowercaseString]) {
+    return FBiOSTargetStateShutdown;
   }
-  if ([stateString isEqualToString:FBSimulatorStateStringBooting.lowercaseString]) {
-    return FBSimulatorStateBooting;
+  if ([stateString isEqualToString:FBiOSTargetStateStringBooting.lowercaseString]) {
+    return FBiOSTargetStateBooting;
   }
-  if ([stateString isEqualToString:FBSimulatorStateStringBooted.lowercaseString]) {
-    return FBSimulatorStateBooted;
+  if ([stateString isEqualToString:FBiOSTargetStateStringBooted.lowercaseString]) {
+    return FBiOSTargetStateBooted;
   }
-  if ([stateString isEqualToString:FBSimulatorStateStringShuttingDown.lowercaseString]) {
-    return FBSimulatorStateShuttingDown;
+  if ([stateString isEqualToString:FBiOSTargetStateStringShuttingDown.lowercaseString]) {
+    return FBiOSTargetStateShuttingDown;
   }
-  return FBSimulatorStateUnknown;
+  return FBiOSTargetStateUnknown;
 }
 
 NSArray<NSString *> *FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType targetType)

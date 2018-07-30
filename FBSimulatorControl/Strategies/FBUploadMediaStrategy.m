@@ -78,7 +78,7 @@
   if (!photoPaths.count) {
     return YES;
   }
-  if (self.simulator.state != FBSimulatorStateBooted) {
+  if (self.simulator.state != FBiOSTargetStateBooted) {
     return [[FBSimulatorError
       describeFormat:@"Simulator must be booted to upload photos, is %@", self.simulator.device.stateString]
       failBool:error];
@@ -100,7 +100,7 @@
   if (!videoPaths.count) {
     return YES;
   }
-  if (self.simulator.state != FBSimulatorStateBooted) {
+  if (self.simulator.state != FBiOSTargetStateBooted) {
     return [[FBSimulatorError
       describeFormat:@"Simulator must be booted to upload videos, is %@", self.simulator.device.stateString]
       failBool:error];

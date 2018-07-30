@@ -94,9 +94,9 @@
   [self.logger logFormat:@"Application Did Terminate => Expected %d %@", expected, operation];
 }
 
-- (void)didChangeState:(FBSimulatorState)state
+- (void)didChangeState:(FBiOSTargetState)state
 {
-  [self.logger logFormat:@"Did Change State => %@", FBSimulatorStateStringFromState(state)];
+  [self.logger logFormat:@"Did Change State => %@", FBiOSTargetStateStringFromState(state)];
 }
 
 @end

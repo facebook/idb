@@ -35,13 +35,13 @@ NS_ASSUME_NONNULL_BEGIN
  Uses the known values of SimDevice State, to construct an enumeration.
  These mirror the values from -[SimDeviceState state].
  */
-typedef NS_ENUM(NSUInteger, FBSimulatorState) {
-  FBSimulatorStateCreating = 0,
-  FBSimulatorStateShutdown = 1,
-  FBSimulatorStateBooting = 2,
-  FBSimulatorStateBooted = 3,
-  FBSimulatorStateShuttingDown = 4,
-  FBSimulatorStateUnknown = 99,
+typedef NS_ENUM(NSUInteger, FBiOSTargetState) {
+  FBiOSTargetStateCreating = 0,
+  FBiOSTargetStateShutdown = 1,
+  FBiOSTargetStateBooting = 2,
+  FBiOSTargetStateBooted = 3,
+  FBiOSTargetStateShuttingDown = 4,
+  FBiOSTargetStateUnknown = 99,
 };
 
 /**
@@ -58,13 +58,13 @@ typedef NS_OPTIONS(NSUInteger, FBiOSTargetType) {
 /**
  String Representations of Simulator State.
  */
-typedef NSString *FBSimulatorStateString NS_STRING_ENUM;
-extern FBSimulatorStateString const FBSimulatorStateStringCreating;
-extern FBSimulatorStateString const FBSimulatorStateStringShutdown;
-extern FBSimulatorStateString const FBSimulatorStateStringBooting;
-extern FBSimulatorStateString const FBSimulatorStateStringBooted;
-extern FBSimulatorStateString const FBSimulatorStateStringShuttingDown;
-extern FBSimulatorStateString const FBSimulatorStateStringUnknown;
+typedef NSString *FBiOSTargetStateString NS_STRING_ENUM;
+extern FBiOSTargetStateString const FBiOSTargetStateStringCreating;
+extern FBiOSTargetStateString const FBiOSTargetStateStringShutdown;
+extern FBiOSTargetStateString const FBiOSTargetStateStringBooting;
+extern FBiOSTargetStateString const FBiOSTargetStateStringBooted;
+extern FBiOSTargetStateString const FBiOSTargetStateStringShuttingDown;
+extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 
 /**
  Common Properties of Devices & Simulators.
@@ -104,7 +104,7 @@ extern FBSimulatorStateString const FBSimulatorStateStringUnknown;
 /**
  The State of the iOS Target. Currently only applies to Simulators.
  */
-@property (nonatomic, assign, readonly) FBSimulatorState state;
+@property (nonatomic, assign, readonly) FBiOSTargetState state;
 
 /**
  The Type of the iOS Target
@@ -172,12 +172,12 @@ extern FBSimulatorStateString const FBSimulatorStateStringUnknown;
 /**
  The canonical string representation of the state enum.
  */
-extern FBSimulatorStateString FBSimulatorStateStringFromState(FBSimulatorState state);
+extern FBiOSTargetStateString FBiOSTargetStateStringFromState(FBiOSTargetState state);
 
 /**
  The canonical enum representation of the state string.
  */
-extern FBSimulatorState FBSimulatorStateFromStateString(FBSimulatorStateString stateString);
+extern FBiOSTargetState FBiOSTargetStateFromStateString(FBiOSTargetStateString stateString);
 
 /**
  The canonical string representations of the target type Option Set.

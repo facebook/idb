@@ -46,7 +46,7 @@
 
 - (void)assertSimulatorBooted:(FBSimulator *)simulator
 {
-  XCTAssertEqual(simulator.state, FBSimulatorStateBooted);
+  XCTAssertEqual(simulator.state, FBiOSTargetStateBooted);
   XCTAssertNotNil(simulator.launchdProcess);
   if (self.expectContainerProcesses) {
     XCTAssertNotNil(simulator.containerApplication);
@@ -57,7 +57,7 @@
 
 - (void)assertSimulatorShutdown:(FBSimulator *)simulator
 {
-  XCTAssertEqual(simulator.state, FBSimulatorStateShutdown);
+  XCTAssertEqual(simulator.state, FBiOSTargetStateShutdown);
   XCTAssertNil(simulator.launchdProcess);
   XCTAssertNil(simulator.containerApplication);
 }

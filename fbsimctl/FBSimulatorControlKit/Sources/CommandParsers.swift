@@ -324,19 +324,19 @@ extension CreationSpecification: Parsable {
   }
 }
 
-extension FBSimulatorState: Parsable {
-  public static var parser: Parser<FBSimulatorState> {
+extension FBiOSTargetState: Parsable {
+  public static var parser: Parser<FBiOSTargetState> {
     let names = [
-      ("creating", FBSimulatorState.creating),
-      ("shutdown", FBSimulatorState.shutdown),
-      ("booting", FBSimulatorState.booting),
-      ("booted", FBSimulatorState.booted),
-      ("shutting-down", FBSimulatorState.shuttingDown),
+      ("creating", FBiOSTargetState.creating),
+      ("shutdown", FBiOSTargetState.shutdown),
+      ("booting", FBiOSTargetState.booting),
+      ("booted", FBiOSTargetState.booted),
+      ("shutting-down", FBiOSTargetState.shuttingDown),
     ]
     let stateParsers = names.map { name, state in
       return Parser.ofString(name, state)
     }
-    return Parser<FBSimulatorState>.ofFlagWithArg(
+    return Parser<FBiOSTargetState>.ofFlagWithArg(
       "state",
       Parser.alternative(stateParsers),
       "A Simulator State"
@@ -953,7 +953,7 @@ public struct FBiOSTargetQueryParsers {
   }
 
   static var simulatorStateParser: Parser<FBiOSTargetQuery> {
-    return FBSimulatorState
+    return FBiOSTargetState
       .parser
       .fmap(FBiOSTargetQuery.state)
   }

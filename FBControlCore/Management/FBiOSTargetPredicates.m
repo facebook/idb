@@ -16,7 +16,7 @@
   return [self udid:target.udid];
 }
 
-+ (NSPredicate *)state:(FBSimulatorState)state
++ (NSPredicate *)state:(FBiOSTargetState)state
 {
   return [self states:[NSIndexSet indexSetWithIndex:(NSUInteger)state]];
 }

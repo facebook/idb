@@ -97,7 +97,7 @@
 
 #pragma mark States
 
-- (FBFuture<NSNull *> *)resolveState:(FBSimulatorState)state
+- (FBFuture<NSNull *> *)resolveState:(FBiOSTargetState)state
 {
   FBSimulator *simulator = self.simulator;
   return [[FBFuture onQueue:simulator.workQueue resolveWhen:^ BOOL {
@@ -127,7 +127,7 @@
   if (simulator.mutableState.connection) {
     return simulator.mutableState.connection;
   }
-  if (simulator.state != FBSimulatorStateBooted) {
+  if (simulator.state != FBiOSTargetStateBooted) {
     return [[[FBSimulatorError
       describeFormat:@"Cannot connect to Simulator in state %@", simulator.stateString]
       inSimulator:simulator]

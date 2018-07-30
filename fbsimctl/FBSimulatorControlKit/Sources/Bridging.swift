@@ -10,9 +10,9 @@
 import FBSimulatorControl
 import Foundation
 
-extension FBSimulatorState {
+extension FBiOSTargetState {
   public var description: String {
-    return FBSimulatorStateStringFromState(self).rawValue
+    return FBiOSTargetStateStringFromState(self).rawValue
   }
 }
 

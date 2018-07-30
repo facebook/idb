@@ -76,7 +76,7 @@ static NSTimeInterval BootVerificationStallInterval = 1.5; // 60s
   FBSimulator *simulator = self.simulator;
 
   return [[simulator
-    resolveState:FBSimulatorStateBooted]
+    resolveState:FBiOSTargetStateBooted]
     onQueue:simulator.workQueue fmap:^FBFuture *(NSNull *_) {
       return [FBFuture onQueue:simulator.workQueue resolveUntil:^{
         return [[self performBootVerification] delay:BootVerificationWaitInterval];

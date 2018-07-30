@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param state the state to match against.
  @return an NSPredicate.
  */
-+ (NSPredicate *)state:(FBSimulatorState)state;
++ (NSPredicate *)state:(FBiOSTargetState)state;
 
 /**
  Predicate for matching against Simulator based on a Option Set Target Type.

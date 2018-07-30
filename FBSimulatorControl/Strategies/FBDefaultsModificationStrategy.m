@@ -92,15 +92,15 @@
 - (FBFuture<NSNull *> *)amendRelativeToPath:(NSString *)relativePath defaults:(NSDictionary<NSString *, id> *)defaults managingService:(NSString *)serviceName
 {
   FBSimulator *simulator = self.simulator;
-  FBSimulatorState state = simulator.state;
-  if (state != FBSimulatorStateBooted && state != FBSimulatorStateShutdown) {
+  FBiOSTargetState state = simulator.state;
+  if (state != FBiOSTargetStateBooted && state != FBiOSTargetStateShutdown) {
     return [[FBSimulatorError
-      describeFormat:@"Cannot amend a plist when the Simulator state is %@, should be %@ or %@", FBSimulatorStateStringFromState(state), FBSimulatorStateStringShutdown, FBSimulatorStateStringBooted]
+      describeFormat:@"Cannot amend a plist when the Simulator state is %@, should be %@ or %@", FBiOSTargetStateStringFromState(state), FBiOSTargetStateStringShutdown, FBiOSTargetStateStringBooted]
       failFuture];
   }
 
   // Stop the service, if booted.
-  FBFuture<NSNull *> *stopFuture = state == FBSimulatorStateBooted
+  FBFuture<NSNull *> *stopFuture = state == FBiOSTargetStateBooted
     ? [simulator stopServiceWithName:serviceName]
     : [FBFuture futureWithResult:NSNull.null];
 
@@ -113,7 +113,7 @@
     }]
     onQueue:self.simulator.workQueue fmap:^FBFuture<NSNull *> *(NSNull *_) {
       // Re-start the Service if booted.
-      return state == FBSimulatorStateBooted
+      return state == FBiOSTargetStateBooted
         ? [simulator startServiceWithName:serviceName]
         : [FBFuture futureWithResult:NSNull.null];
     }];

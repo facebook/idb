@@ -21,7 +21,7 @@
 @property (nonatomic, copy, readwrite) FBProcessInfo *containerApplication;
 @property (nonatomic, strong, readwrite) FBSimulatorConnection *connection;
 
-@property (nonatomic, assign, readwrite) FBSimulatorState lastKnownState;
+@property (nonatomic, assign, readwrite) FBiOSTargetState lastKnownState;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> sink;
 
 @end
@@ -38,7 +38,7 @@
   _launchdProcess = launchdProcess;
   _containerApplication = containerApplication;
   _sink = sink;
-  _lastKnownState = FBSimulatorStateUnknown;
+  _lastKnownState = FBiOSTargetStateUnknown;
 
   return self;
 }
@@ -131,7 +131,7 @@
   [self.sink applicationDidTerminate:operation expected:expected];
 }
 
-- (void)didChangeState:(FBSimulatorState)state
+- (void)didChangeState:(FBiOSTargetState)state
 {
   if (state == self.lastKnownState) {
     return;

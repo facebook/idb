@@ -45,7 +45,7 @@ static NSString *const SecuritydServiceName = @"com.apple.securityd";
 - (FBFuture<NSNull *> *)clearKeychain
 {
   FBFuture<NSNull *> *stopServiceFuture = [FBFuture futureWithResult:NSNull.null];
-  if (self.simulator.state == FBSimulatorStateBooted) {
+  if (self.simulator.state == FBiOSTargetStateBooted) {
     stopServiceFuture = [[self.simulator stopServiceWithName:SecuritydServiceName] mapReplace:NSNull.null];
   }
   return [stopServiceFuture
@@ -54,7 +54,7 @@ static NSString *const SecuritydServiceName = @"com.apple.securityd";
       if (![self removeKeychainDirectory:&error]) {
         return [FBFuture futureWithError:error];
       }
-      if (self.simulator.state == FBSimulatorStateBooted) {
+      if (self.simulator.state == FBiOSTargetStateBooted) {
         return [[self.simulator startServiceWithName:SecuritydServiceName] mapReplace:NSNull.null];
       }
       return [FBFuture futureWithResult:NSNull.null];

@@ -251,7 +251,7 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
 
 }
 
-- (void)didChangeState:(FBSimulatorState)state
+- (void)didChangeState:(FBiOSTargetState)state
 {
 
 }

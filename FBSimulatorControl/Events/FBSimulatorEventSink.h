@@ -106,7 +106,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param state the changed state.
  */
-- (void)didChangeState:(FBSimulatorState)state;
+- (void)didChangeState:(FBiOSTargetState)state;
 
 @end
 

@@ -125,7 +125,7 @@ NSString *const FBSimulatorNotificationUserInfoKeyWaitingForDebugger = @"waiting
   }];
 }
 
-- (void)didChangeState:(FBSimulatorState)state
+- (void)didChangeState:(FBiOSTargetState)state
 {
   [self materializeNotification:FBSimulatorNotificationNameStateDidChange userInfo:@{
     FBSimulatorNotificationUserInfoKeyState : @(state)

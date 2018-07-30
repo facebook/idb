@@ -27,14 +27,14 @@
 {
   // Assumes that the orderding of the input is the same as the ordering as -[FBSimulatorSet allSimulators]
   self.simulators = [self createPoolWithExistingSimDeviceSpecs:@[
-    @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBSimulatorStateCreating), @"os" : FBOSVersionNameiOS_8_0},
-    @{@"name" : FBDeviceModeliPad2, @"state" : @(FBSimulatorStateBooted), @"os" : FBOSVersionNameiOS_8_0},
-    @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBSimulatorStateShutdown), @"os" : FBOSVersionNameiOS_9_0},
-    @{@"name" : FBDeviceModeliPhone6S, @"state" : @(FBSimulatorStateShuttingDown), @"os" : FBOSVersionNameiOS_9_0},
-    @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBSimulatorStateBooted), @"os" : FBOSVersionNameiOS_9_1},
-    @{@"name" : FBDeviceModeliPadAir2, @"state" : @(FBSimulatorStateCreating), @"os" : FBOSVersionNameiOS_9_1},
-    @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBSimulatorStateShutdown), @"os" : FBOSVersionNameiOS_9_2},
-    @{@"name" : FBDeviceModeliPadAir, @"state" : @(FBSimulatorStateBooted), @"os" : FBOSVersionNameiOS_9_3},
+    @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBiOSTargetStateCreating), @"os" : FBOSVersionNameiOS_8_0},
+    @{@"name" : FBDeviceModeliPad2, @"state" : @(FBiOSTargetStateBooted), @"os" : FBOSVersionNameiOS_8_0},
+    @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBiOSTargetStateShutdown), @"os" : FBOSVersionNameiOS_9_0},
+    @{@"name" : FBDeviceModeliPhone6S, @"state" : @(FBiOSTargetStateShuttingDown), @"os" : FBOSVersionNameiOS_9_0},
+    @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBiOSTargetStateBooted), @"os" : FBOSVersionNameiOS_9_1},
+    @{@"name" : FBDeviceModeliPadAir2, @"state" : @(FBiOSTargetStateCreating), @"os" : FBOSVersionNameiOS_9_1},
+    @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBiOSTargetStateShutdown), @"os" : FBOSVersionNameiOS_9_2},
+    @{@"name" : FBDeviceModeliPadAir, @"state" : @(FBiOSTargetStateBooted), @"os" : FBOSVersionNameiOS_9_3},
   ]];
 }
 
@@ -72,7 +72,7 @@
 
 - (void)testFilterBySingleState
 {
-  FBiOSTargetQuery *query = [FBiOSTargetQuery states:[NSIndexSet indexSetWithIndex:FBSimulatorStateBooted]];
+  FBiOSTargetQuery *query = [FBiOSTargetQuery states:[NSIndexSet indexSetWithIndex:FBiOSTargetStateBooted]];
   NSArray<FBSimulator *> *actual = [self.set query:query];
   NSArray<FBSimulator *> *expected = @[self.simulators[1], self.simulators[4], self.simulators[7]];
   XCTAssertEqualObjects(expected, actual);
@@ -80,7 +80,7 @@
 
 - (void)testFilterBySingleMultipleStates
 {
-  NSIndexSet *states = [FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateShutdown), @(FBSimulatorStateShuttingDown)]];
+  NSIndexSet *states = [FBCollectionOperations indecesFromArray:@[@(FBiOSTargetStateShutdown), @(FBiOSTargetStateShuttingDown)]];
   FBiOSTargetQuery *query = [FBiOSTargetQuery states:states];
   NSArray<FBSimulator *> *actual = [self.set query:query];
   NSArray<FBSimulator *> *expected = @[self.simulators[2], self.simulators[3], self.simulators[6]];
@@ -89,7 +89,7 @@
 
 - (void)testFilterByStateAndName
 {
-  FBiOSTargetQuery *query = [[FBiOSTargetQuery states:[NSIndexSet indexSetWithIndex:FBSimulatorStateCreating]] devices:@[FBDeviceModeliPhone5]];
+  FBiOSTargetQuery *query = [[FBiOSTargetQuery states:[NSIndexSet indexSetWithIndex:FBiOSTargetStateCreating]] devices:@[FBDeviceModeliPhone5]];
   NSArray<FBSimulator *> *actual = [self.set query:query];
   NSArray<FBSimulator *> *expected = @[self.simulators[0]];
   XCTAssertEqualObjects(expected, actual);
@@ -97,7 +97,7 @@
 
 - (void)testNoMatches
 {
-  FBiOSTargetQuery *query = [[FBiOSTargetQuery states:[NSIndexSet indexSetWithIndex:FBSimulatorStateBooting]] devices:@[FBDeviceModeliPhone5]];
+  FBiOSTargetQuery *query = [[FBiOSTargetQuery states:[NSIndexSet indexSetWithIndex:FBiOSTargetStateBooting]] devices:@[FBDeviceModeliPhone5]];
   NSArray<FBSimulator *> *actual = [self.set query:query];
   NSArray<FBSimulator *> *expected = @[];
   XCTAssertEqualObjects(expected, actual);

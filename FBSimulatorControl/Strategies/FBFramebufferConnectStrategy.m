@@ -127,7 +127,7 @@
 
 - (BOOL)meetsPreconditionsForConnectingToSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
-  if (simulator.state != FBSimulatorStateShutdown && simulator.state != FBSimulatorStateBooted) {
+  if (simulator.state != FBiOSTargetStateShutdown && simulator.state != FBiOSTargetStateBooted) {
     return [[FBSimulatorError
       describeFormat:@"Cannot connect Framebuffer unless shutdown or booted, actual state %@", simulator.stateString]
       failBool:error];

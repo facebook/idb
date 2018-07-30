@@ -52,7 +52,7 @@
 
 - (FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger workingDirectory:(nullable NSString *)workingDirectory
 {
-  if (self.simulator.state != FBSimulatorStateBooted) {
+  if (self.simulator.state != FBiOSTargetStateBooted) {
     return [[[FBSimulatorError
       describe:@"Simulator must be booted to run tests"]
       inSimulator:self.simulator]

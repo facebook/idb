@@ -122,12 +122,12 @@ static NSString *const KeyRange = @"range";
   return [[self.class alloc] initWithNames:self.names udids:self.udids states:[indexSet copy] architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
 }
 
-+ (instancetype)state:(FBSimulatorState)state
++ (instancetype)state:(FBiOSTargetState)state
 {
   return [self states:[NSIndexSet indexSetWithIndex:state]];
 }
 
-- (instancetype)state:(FBSimulatorState)state
+- (instancetype)state:(FBiOSTargetState)state
 {
   return [self states:[NSIndexSet indexSetWithIndex:state]];
 }
@@ -389,7 +389,7 @@ static NSString *const KeyRange = @"range";
 {
   NSMutableArray<NSString *> *stateStrings = [NSMutableArray array];
   [stateIndeces enumerateIndexesUsingBlock:^(NSUInteger state, BOOL *stop) {
-    NSString *string = FBSimulatorStateStringFromState(state).lowercaseString;
+    NSString *string = FBiOSTargetStateStringFromState(state).lowercaseString;
     [stateStrings addObject:string];
   }];
   return [stateStrings copy];
@@ -399,7 +399,7 @@ static NSString *const KeyRange = @"range";
 {
   NSMutableIndexSet *stateIndeces = [NSMutableIndexSet indexSet];
   for (NSString *stateString in stateStrings) {
-    FBSimulatorState state = FBSimulatorStateFromStateString(stateString);
+    FBiOSTargetState state = FBiOSTargetStateFromStateString(stateString);
     [stateIndeces addIndex:(NSUInteger)state];
   }
   return stateIndeces;

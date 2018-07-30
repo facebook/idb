@@ -77,7 +77,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The State of the allocated Simulator.
  */
-@property (nonatomic, assign, readonly) FBSimulatorState state;
+@property (nonatomic, assign, readonly) FBiOSTargetState state;
 
 /**
  The Product Family of the Simulator.
@@ -87,7 +87,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A string representation of the Simulator State.
  */
-@property (nonatomic, copy, readonly, nonnull) FBSimulatorStateString stateString;
+@property (nonatomic, copy, readonly, nonnull) FBiOSTargetStateString stateString;
 
 /**
  The Directory that Contains the Simulator's Data

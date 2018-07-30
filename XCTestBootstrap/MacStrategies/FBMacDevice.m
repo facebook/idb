@@ -79,7 +79,7 @@
     _requiresTestDaemonMediationForTestHostConnection = YES;
     _shortDescription = _name = @"Local MacOSX host";
     _udid = [FBMacDevice resolveDeviceUDID];
-    _state = FBSimulatorStateBooted;
+    _state = FBiOSTargetStateBooted;
     _targetType = FBiOSTargetTypeLocalMac;
     _workQueue = dispatch_get_main_queue();
     _workingDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];

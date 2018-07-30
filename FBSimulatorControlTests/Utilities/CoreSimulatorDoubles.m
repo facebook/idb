@@ -37,9 +37,9 @@
   return _dataPath;
 }
 
-- (FBSimulatorStateString)stateString
+- (FBiOSTargetStateString)stateString
 {
-  return FBSimulatorStateStringFromState(self.state);
+  return FBiOSTargetStateStringFromState(self.state);
 }
 
 @end

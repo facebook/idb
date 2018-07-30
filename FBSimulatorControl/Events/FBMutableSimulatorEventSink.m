@@ -61,7 +61,7 @@
   [self.eventSink applicationDidTerminate:operation expected:expected];
 }
 
-- (void)didChangeState:(FBSimulatorState)state
+- (void)didChangeState:(FBiOSTargetState)state
 {
   [self.eventSink didChangeState:state];
 }

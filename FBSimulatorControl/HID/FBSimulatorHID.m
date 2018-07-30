@@ -88,7 +88,7 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 + (FBFuture<FBSimulatorHID *> *)reimplementedHidPortForSimulator:(FBSimulator *)simulator
 {
   // We have to create this before boot, return early if this isn't true.
-  if (simulator.state != FBSimulatorStateShutdown) {
+  if (simulator.state != FBiOSTargetStateShutdown) {
     return [[FBSimulatorError
      describeFormat:@"Simulator must be shut down to create a HID port is %@", simulator.stateString]
      failFuture];

@@ -104,7 +104,7 @@
   }
 }
 
-- (void)didChangeState:(FBSimulatorState)state
+- (void)didChangeState:(FBiOSTargetState)state
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
     [sink didChangeState:state];

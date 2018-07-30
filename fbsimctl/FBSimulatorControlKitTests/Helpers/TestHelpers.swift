@@ -76,11 +76,11 @@ public extension XCTestCase {
 }
 
 extension FBiOSTargetQuery {
-  public static func simulatorStates(_ states: [FBSimulatorState]) -> FBiOSTargetQuery {
+  public static func simulatorStates(_ states: [FBiOSTargetState]) -> FBiOSTargetQuery {
     return allTargets().simulatorStates(states)
   }
 
-  public func simulatorStates(_ states: [FBSimulatorState]) -> FBiOSTargetQuery {
+  public func simulatorStates(_ states: [FBiOSTargetState]) -> FBiOSTargetQuery {
     let indexSet = states.reduce(NSMutableIndexSet()) { indexSet, state in
       indexSet.add(Int(state.rawValue))
       return indexSet

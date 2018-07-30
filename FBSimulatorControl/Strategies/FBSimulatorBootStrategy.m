@@ -496,7 +496,7 @@
   return [[[self.launcher
     launchSimulatorProcessWithArguments:arguments environment:environment]
     onQueue:self.simulator.workQueue fmap:^(NSNull *_) {
-      return [self.simulator resolveState:FBSimulatorStateBooted];
+      return [self.simulator resolveState:FBiOSTargetStateBooted];
     }]
     onQueue:self.simulator.workQueue fmap:^(NSNull *_) {
       FBProcessInfo *containerApplication = [self.simulator.processFetcher simulatorApplicationProcessForSimDevice:self.simulator.device];
@@ -567,10 +567,10 @@
 - (FBFuture<NSNull *> *)boot
 {
   // Return early depending on Simulator state.
-  if (self.simulator.state == FBSimulatorStateBooted) {
+  if (self.simulator.state == FBiOSTargetStateBooted) {
     return [FBFuture futureWithResult:NSNull.null];
   }
-  if (self.simulator.state != FBSimulatorStateShutdown) {
+  if (self.simulator.state != FBiOSTargetStateShutdown) {
     return [[[FBSimulatorError
       describeFormat:@"Cannot Boot Simulator when in %@ state", self.simulator.stateString]
       inSimulator:self.simulator]

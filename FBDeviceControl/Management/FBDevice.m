@@ -83,9 +83,9 @@
   return NSFileManager.defaultManager.currentDirectoryPath;
 }
 
-- (FBSimulatorState)state
+- (FBiOSTargetState)state
 {
-  return FBSimulatorStateBooted;
+  return FBiOSTargetStateBooted;
 }
 
 - (FBiOSTargetType)targetType

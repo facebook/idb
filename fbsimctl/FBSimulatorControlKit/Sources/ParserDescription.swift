@@ -224,7 +224,7 @@ public struct SectionDesc: ParserDescription {
 
   public var description: String {
     let title = "\(summary) \(name)"
-    let underline = String(repeating: "=", count: title.characters.count)
+    let underline = String(repeating: "=", count: title.count)
     let header = title + "\n" + underline
 
     var flags = [FlagDesc](); findAll(&flags)

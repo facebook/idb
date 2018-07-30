@@ -73,13 +73,13 @@
 {
   FBiOSTargetDouble *first = [FBiOSTargetDouble new];
   first.targetType = FBiOSTargetTypeDevice;
-  first.state = FBSimulatorStateBooted;
+  first.state = FBiOSTargetStateBooted;
   first.deviceType = FBiOSTargetConfiguration.nameToDevice[FBDeviceModeliPhone6S];
   first.osVersion = FBiOSTargetConfiguration.nameToOSVersion[FBOSVersionNameiOS_10_0];
 
   FBiOSTargetDouble *second = [FBiOSTargetDouble new];
   second.targetType = FBiOSTargetTypeSimulator;
-  first.state = FBSimulatorStateBooted;
+  first.state = FBiOSTargetStateBooted;
   second.deviceType = FBiOSTargetConfiguration.nameToDevice[FBDeviceModeliPhone6S];
   second.osVersion = FBiOSTargetConfiguration.nameToOSVersion[FBOSVersionNameiOS_10_0];
 
@@ -90,7 +90,7 @@
 {
   FBiOSTargetDouble *first = [FBiOSTargetDouble new];
   first.targetType = FBiOSTargetTypeDevice;
-  first.state = FBSimulatorStateBooted;
+  first.state = FBiOSTargetStateBooted;
   first.deviceType = FBiOSTargetConfiguration.nameToDevice[FBDeviceModeliPhone6S];
   first.osVersion = FBiOSTargetConfiguration.nameToOSVersion[FBOSVersionNameiOS_10_0];
 
@@ -105,12 +105,12 @@
 - (void)testStateOrdering
 {
   NSArray<NSNumber *> *stateOrder = @[
-    @(FBSimulatorStateCreating),
-    @(FBSimulatorStateShutdown),
-    @(FBSimulatorStateBooting),
-    @(FBSimulatorStateBooted),
-    @(FBSimulatorStateShuttingDown),
-    @(FBSimulatorStateUnknown),
+    @(FBiOSTargetStateCreating),
+    @(FBiOSTargetStateShutdown),
+    @(FBiOSTargetStateBooting),
+    @(FBiOSTargetStateBooted),
+    @(FBiOSTargetStateShuttingDown),
+    @(FBiOSTargetStateUnknown),
   ];
   NSMutableArray<id<FBiOSTarget>> *input = [NSMutableArray array];
   for (NSNumber *stateNumber in stateOrder) {
@@ -122,8 +122,8 @@
     [input addObject:target];
   }
   for (NSUInteger index = 0; index < input.count; index++) {
-    FBSimulatorState expected = stateOrder[index].unsignedIntegerValue;
-    FBSimulatorState actual = input[index].state;
+    FBiOSTargetState expected = stateOrder[index].unsignedIntegerValue;
+    FBiOSTargetState actual = input[index].state;
     XCTAssertEqual(expected, actual);
   }
 }
@@ -135,7 +135,7 @@
   for (FBDeviceType *deviceType in deviceTypes) {
     FBiOSTargetDouble *target = [FBiOSTargetDouble new];
     target.targetType = FBiOSTargetTypeDevice;
-    target.state = FBSimulatorStateBooted;
+    target.state = FBiOSTargetStateBooted;
     target.deviceType = deviceType;
     target.osVersion = FBiOSTargetConfiguration.nameToOSVersion[FBOSVersionNameiOS_10_0];
     [input addObject:target];

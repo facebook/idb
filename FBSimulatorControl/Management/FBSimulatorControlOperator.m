@@ -70,7 +70,7 @@
 
 - (FBFuture<DTXTransport *> *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger
 {
-  const BOOL simulatorIsBooted = (self.simulator.state == FBSimulatorStateBooted);
+  const BOOL simulatorIsBooted = (self.simulator.state == FBiOSTargetStateBooted);
   if (!simulatorIsBooted) {
     return [[[FBSimulatorError
       describe:@"Simulator should be already booted"]

@@ -78,7 +78,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param state the state to wait on
  @return A future that resolves when it has transitioned to the given state.
  */
-- (FBFuture<NSNull *> *)resolveState:(FBSimulatorState)state;
+- (FBFuture<NSNull *> *)resolveState:(FBiOSTargetState)state;
 
 #pragma mark Focus
 

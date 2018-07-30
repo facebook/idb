@@ -76,7 +76,7 @@ open class SimulatorReporter: NSObject, FBSimulatorEventSink, iOSReporter {
     reportValue(.terminate, .discrete, operation)
   }
 
-  open func didChange(_ state: FBSimulatorState) {
+  open func didChange(_ state: FBiOSTargetState) {
     reportValue(.stateChange, .discrete, FBEventReporterSubject(string: state.description))
   }
 }

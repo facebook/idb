@@ -135,7 +135,7 @@
   return self.device.name;
 }
 
-- (FBSimulatorState)state
+- (FBiOSTargetState)state
 {
   return self.device.state;
 }
@@ -207,7 +207,7 @@
 
 - (NSString *)stateString
 {
-  return FBSimulatorStateStringFromState(self.state);
+  return FBiOSTargetStateStringFromState(self.state);
 }
 
 - (NSString *)dataDirectory
