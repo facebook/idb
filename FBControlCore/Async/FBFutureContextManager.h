@@ -48,6 +48,10 @@ NS_ASSUME_NONNULL_BEGIN
  This is useful for ensuring that the same connection
  */
 @property (nonatomic, copy, readonly) NSNumber *contextPoolTimeout;
+/**
+ Allows the context to be shared.
+ */
+@property (nonatomic, assign, readonly) BOOL isContextSharable;
 
 @end
 

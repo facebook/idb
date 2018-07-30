@@ -79,6 +79,11 @@
   return [NSString stringWithFormat:@"house_arrest_%@", self.bundleID];
 }
 
+- (BOOL)isContextSharable
+{
+  return NO;
+}
+
 @end
 
 @interface FBAMDeviceServiceManager ()

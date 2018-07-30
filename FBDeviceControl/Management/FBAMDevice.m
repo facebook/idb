@@ -428,6 +428,11 @@ static const NSTimeInterval ServiceReuseTimeout = 3.0;
   return [NSString stringWithFormat:@"%@_connection", self.udid];
 }
 
+- (BOOL)isContextSharable
+{
+  return NO;
+}
+
 #pragma mark Private
 
 static NSString *const CacheValuesPurpose = @"cache_values";
