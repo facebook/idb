@@ -287,10 +287,8 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
     CVPixelBufferUnlockBaseAddress(outPixelBuffer, kCVPixelBufferLock_ReadOnly);
     CVPixelBufferRelease(outPixelBuffer);
     free((void *)imageData);
-    
-    CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
-
     [consumer consumeData:data];
+    CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
 }
 
 
