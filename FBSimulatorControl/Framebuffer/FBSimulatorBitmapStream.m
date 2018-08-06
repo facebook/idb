@@ -245,15 +245,54 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 + (void)writeBitmap:(CVPixelBufferRef)pixelBuffer consumer:(id<FBFileConsumer>)consumer
 {
-  CVPixelBufferLockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
+//    CVPixelBufferLockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
+//
+//    void *baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer);
+//    size_t size = CVPixelBufferGetDataSize(pixelBuffer);
+//    NSData *data = [NSData dataWithBytesNoCopy:baseAddress length:size freeWhenDone:NO];
+//    [consumer consumeData:data];
+//
+//    CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
 
-  void *baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer);
-  size_t size = CVPixelBufferGetDataSize(pixelBuffer);
-  NSData *data = [NSData dataWithBytesNoCopy:baseAddress length:size freeWhenDone:NO];
-  [consumer consumeData:data];
+    size_t width = CVPixelBufferGetWidth(pixelBuffer);
+    size_t height = CVPixelBufferGetHeight(pixelBuffer);
+    size_t bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer);
+    
+    CVPixelBufferLockBaseAddress(pixelBuffer, 0);
+    GLubyte *sourceImageBytes = CVPixelBufferGetBaseAddress(pixelBuffer);
+    CGDataProviderRef dataProvider = CGDataProviderCreateWithData(NULL, sourceImageBytes, (unsigned long)(bytesPerRow * height), NULL);
+    CGColorSpaceRef genericRGBColorspace = CGColorSpaceCreateDeviceRGB();
+    CGImageRef cgImageFromBytes = CGImageCreate(width, height, 8, 32, bytesPerRow, genericRGBColorspace, kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst, dataProvider, NULL, NO, kCGRenderingIntentDefault);
+    
+    size_t finalWidth = width;
+    size_t finalHeight = height;
+    
+    GLubyte *imageData = (GLubyte *) calloc(1, finalWidth * finalHeight * 4);
+    
+    CGContextRef imageContext = CGBitmapContextCreate(imageData, finalWidth, finalHeight, 8, finalWidth * 4, genericRGBColorspace,  kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst);
+    
+    CGContextDrawImage(imageContext, CGRectMake(0.0, 0.0, finalWidth, finalHeight), cgImageFromBytes);
+    CGImageRelease(cgImageFromBytes);
+    CGContextRelease(imageContext);
+    CGColorSpaceRelease(genericRGBColorspace);
+    CGDataProviderRelease(dataProvider);
+    
+    CVPixelBufferRef outPixelBuffer = NULL;
+    CVPixelBufferCreateWithBytes(kCFAllocatorDefault, finalWidth, finalHeight, kCVPixelFormatType_32BGRA, imageData, finalWidth * 4, NULL, NULL, NULL, &outPixelBuffer);
 
-  CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
+    CVPixelBufferLockBaseAddress(outPixelBuffer, kCVPixelBufferLock_ReadOnly);
+    size_t finalSize = CVPixelBufferGetDataSize(outPixelBuffer);
+    void *baseOutAddress = CVPixelBufferGetBaseAddress(outPixelBuffer);
+    NSData *data = [NSData dataWithBytesNoCopy:baseOutAddress length:(NSUInteger)finalSize freeWhenDone:NO];
+    CVPixelBufferUnlockBaseAddress(outPixelBuffer, kCVPixelBufferLock_ReadOnly);
+    CVPixelBufferRelease(outPixelBuffer);
+    free((void *)imageData);
+    
+    CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
+
+    [consumer consumeData:data];
 }
+
 
 #pragma mark FBiOSTargetContinuation
 
