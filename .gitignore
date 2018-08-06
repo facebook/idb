@@ -51,3 +51,4 @@ output/
 
 # Files copied from Xcode
 Fixtures/Source/FBTestRunnerApp/Frameworks
+out
