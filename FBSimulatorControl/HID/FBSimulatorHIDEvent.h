@@ -52,6 +52,56 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeHID;
  */
 + (instancetype)shortKeyPress:(unsigned int)keyCode;
 
+/**
+ A HID touch down event.
+
+ @param x the x-coordinate from the top left.
+ @param y the y-coordinate from the top left.
+ @return a new HID event.
+ */
++ (instancetype)touchDownAtX:(double)x y:(double)y;
+
+/**
+ A HID touch up event.
+
+ @param x the x-coordinate from the top left.
+ @param y the y-coordinate from the top left.
+ @return a new HID event.
+ */
++ (instancetype)touchUpAtX:(double)x y:(double)y;
+
+/**
+ A HID Event that press the button down.
+
+ @param button the button to use.
+ @return a new HID Event.
+ */
++ (instancetype)buttonDown:(FBSimulatorHIDButton)button;
+
+/**
+ A HID Event that press the button up.
+
+ @param button the button to use.
+ @return a new HID Event.
+ */
++ (instancetype)buttonUp:(FBSimulatorHIDButton)button;
+
+/**
+ A HID Event from the keyboard that press the key up.
+
+ @param keyCode the Key Code to send.
+ @return a new HID Event.
+ */
++ (instancetype)keyUp:(unsigned int)keyCode;
+
+/**
+ A HID Event from the keyboard that press the key down.
+
+ @param keyCode the Key Code to send.
+ @return a new HID Event.
+ */
++ (instancetype)keyDown:(unsigned int)keyCode;
+
 #pragma mark Public Methods
 
 /**
