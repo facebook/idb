@@ -161,8 +161,8 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   CFRelease(array);
 }
 
-static const NSTimeInterval ConnectionReuseTimeout = 10.0;
-static const NSTimeInterval ServiceReuseTimeout = 3.0;
+//static const NSTimeInterval ConnectionReuseTimeout = 10.0;
+//static const NSTimeInterval ServiceReuseTimeout = 3.0;
 
 - (void)deviceConnected:(AMDeviceRef)amDevice
 {
@@ -170,7 +170,8 @@ static const NSTimeInterval ServiceReuseTimeout = 3.0;
   NSString *udid = CFBridgingRelease(self.calls.CopyDeviceIdentifier(amDevice));
   FBAMDevice *device = self.devices[udid];
   if (!device) {
-    device = [[FBAMDevice alloc] initWithUDID:udid calls:self.calls connectionReuseTimeout:@(ConnectionReuseTimeout) serviceReuseTimeout:@(ServiceReuseTimeout) workQueue:self.queue logger:self.logger];
+    // Ideally we'd use non-nil timeouts here to pool connections, but it causes install errors on iOS 10 / iPhone 6. So for now we teardown connections immediately.
+    device = [[FBAMDevice alloc] initWithUDID:udid calls:self.calls connectionReuseTimeout:nil serviceReuseTimeout:nil workQueue:self.queue logger:self.logger];
     self.devices[udid] = device;
     [NSNotificationCenter.defaultCenter postNotificationName:FBAMDeviceNotificationNameDeviceAttached object:device];
   }
