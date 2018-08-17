@@ -8,17 +8,19 @@
  */
 
 #import <Foundation/Foundation.h>
+#import <FBControlCore/FBiOSTargetSet.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBDevice;
 @class FBiOSTargetQuery;
 @protocol FBControlCoreLogger;
+@protocol FBiOSTargetSetDelegate;
 
 /**
  Fetches Devices from the list of Available Devices.
  */
-@interface FBDeviceSet : NSObject
+@interface FBDeviceSet : NSObject <FBiOSTargetSet>
 
 #pragma mark Initializers
 
@@ -26,8 +28,17 @@ NS_ASSUME_NONNULL_BEGIN
  Returns the Default Device Set.
 
  @param error an error out for any error that occurs constructing the set.
+ @param delegate a delegate that gets called when device status changes.
  @return the Default Device Set if successful, nil otherwise.
  */
++ (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error delegate:(nullable id<FBiOSTargetSetDelegate>)delegate;
+
+/**
+ Returns the Default Device Set.
+
+@param error an error out for any error that occurs constructing the set.
+@return the Default Device Set if successful, nil otherwise.
+*/
 + (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 #pragma mark Querying

@@ -19,6 +19,8 @@
 #import <IDEiOSSupportCore/DVTiOSDevice.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <FBControlCore/FBiOSTargetSet.h>
+#import <FBControlCore/FBiOSTarget.h>
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
@@ -34,6 +36,7 @@
 @implementation FBDeviceSet
 
 @synthesize allDevices = _allDevices;
+@synthesize delegate = _delegate;
 
 #pragma mark Initializers
 
@@ -42,23 +45,29 @@
   [FBDeviceControlFrameworkLoader.essentialFrameworks loadPrivateFrameworksOrAbort];
 }
 
-+ (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
++ (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error delegate:(nullable id<FBiOSTargetSetDelegate>)delegate
 {
   static dispatch_once_t onceToken;
   static FBDeviceSet *deviceSet = nil;
   dispatch_once(&onceToken, ^{
-    deviceSet = [[FBDeviceSet alloc] initWithLogger:logger];
+    deviceSet = [[FBDeviceSet alloc] initWithLogger:logger delegate:delegate];
   });
   return deviceSet;
 }
 
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
++ (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  return [FBDeviceSet defaultSetWithLogger:logger error:error delegate:nil];
+}
+
+- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger delegate:(id<FBiOSTargetSetDelegate>)delegate
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _delegate = delegate;
   _logger = logger;
   _allDevices = @[];
   [self recalculateAllDevices];
@@ -119,11 +128,15 @@
 - (void)deviceAttachedNotification:(NSNotification *)notification
 {
   [self recalculateAllDevices];
+  FBAMDevice *device = notification.object;
+  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:FBiOSTargetStateBooted type:FBiOSTargetTypeDevice]];
 }
 
 - (void)deviceDetachedNotification:(NSNotification *)notification
 {
   [self recalculateAllDevices];
+  FBAMDevice *device = notification.object;
+  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:FBiOSTargetStateShutdown type:FBiOSTargetTypeDevice]];
 }
 
 - (void)recalculateAllDevices
