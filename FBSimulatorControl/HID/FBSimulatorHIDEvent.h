@@ -102,6 +102,14 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeHID;
  */
 + (instancetype)keyDown:(unsigned int)keyCode;
 
+/**
+ A HID Event for sequence of shortKeyPress events.
+
+ @param sequence a sequence of Key Codes to send.
+ @return a new HID Event.
+ */
++ (instancetype)shortKeyPressSequence:(NSArray<NSNumber *> *)sequence;
+
 #pragma mark Public Methods
 
 /**

@@ -555,6 +555,18 @@ static NSString *const KeyKeycode = @"keycode";
   ]];
 }
 
++ (instancetype)shortKeyPressSequence:(NSArray<NSNumber *> *)sequence
+{
+  NSMutableArray<FBSimulatorHIDEvent *> *events = [NSMutableArray array];
+
+  for (id keyCode in sequence) {
+    [events addObject:[self keyDown:[keyCode unsignedIntegerValue]]];
+    [events addObject:[self keyUp:[keyCode unsignedIntegerValue]]];
+  }
+
+  return [self eventWithEvents:events];
+}
+
 #pragma mark JSON
 
 + (instancetype)inflateFromJSON:(id)json error:(NSError **)error
