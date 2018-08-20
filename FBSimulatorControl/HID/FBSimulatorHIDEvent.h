@@ -110,6 +110,18 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeHID;
  */
 + (instancetype)shortKeyPressSequence:(NSArray<NSNumber *> *)sequence;
 
+/**
+ A HID Event for performing swipe from one point to another point. swipe is a series of tap down events along the line between the starting point and the ending point with delta pixels between points.
+
+ @param xStart x coordinate of the starting point
+ @param yStart y coordinate of the starting point
+ @param xEnd x coordinate of the ending point
+ @param yEnd y coordinate of the ending point
+ @param delta distance between tap down events
+ @return a new HID Event.
+ */
++ (instancetype)swipe:(double)xStart yStart:(double)yStart xEnd:(double)xEnd yEnd:(double)yEnd delta:(double)delta;
+
 #pragma mark Public Methods
 
 /**

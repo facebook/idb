@@ -567,6 +567,24 @@ static NSString *const KeyKeycode = @"keycode";
   return [self eventWithEvents:events];
 }
 
++ (instancetype)swipe:(double)xStart yStart:(double)yStart xEnd:(double)xEnd yEnd:(double)yEnd delta:(double)delta
+{
+  NSMutableArray<FBSimulatorHIDEvent *> *events = [NSMutableArray array];
+  double distance = sqrt(pow(yEnd - yStart, 2) + pow(xEnd - xStart, 2));
+  int steps = distance / delta;
+
+  double dx = (xEnd - xStart) / steps;
+  double dy = (yEnd - yStart) / steps;
+
+  for (int i = 0 ; i <= steps ; ++i) {
+      [events addObject:[self touchDownAtX:(xStart + dx * i) y:(yStart + dy * i)]];
+  }
+
+  [events addObject:[self touchUpAtX:xEnd y:yEnd]];
+
+  return [self eventWithEvents:events];
+}
+
 #pragma mark JSON
 
 + (instancetype)inflateFromJSON:(id)json error:(NSError **)error
