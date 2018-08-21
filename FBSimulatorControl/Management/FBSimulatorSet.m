@@ -36,6 +36,7 @@
 @implementation FBSimulatorSet
 
 @synthesize allSimulators = _allSimulators;
+@synthesize delegate = _delegate;
 
 #pragma mark Initializers
 
@@ -44,23 +45,24 @@
   [FBSimulatorControlFrameworkLoader.essentialFrameworks loadPrivateFrameworksOrAbort];
 }
 
-+ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
++ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error delegate:(id<FBiOSTargetSetDelegate>)delegate;
 {
   NSError *innerError = nil;
-  FBSimulatorSet *set = [[FBSimulatorSet alloc] initWithConfiguration:configuration deviceSet:deviceSet logger:logger];
+  FBSimulatorSet *set = [[FBSimulatorSet alloc] initWithConfiguration:configuration deviceSet:deviceSet logger:logger delegate:delegate];
   if (![set performSetPreconditionsWithConfiguration:configuration Error:&innerError]) {
     return [[[FBSimulatorError describe:@"Failed meet simulator set preconditions"] causedBy:innerError] fail:error];
   }
   return set;
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logger delegate:(id<FBiOSTargetSetDelegate>)delegate
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _delegate = delegate;
   _logger = logger;
   _deviceSet = deviceSet;
   _configuration = configuration;

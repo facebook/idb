@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <FBControlCore/FBiOSTargetSet.h>
 
 @class FBSimulator;
 @class FBSimulatorConfiguration;
@@ -20,14 +21,17 @@
 @class SimDeviceSet;
 
 @protocol FBControlCoreLogger;
+@protocol FBiOSTargetSetDelegate;
 
 NS_ASSUME_NONNULL_BEGIN
+
+#pragma mark - FBSimulatorSet
 
 /**
  Complements SimDeviceSet with additional functionality and more resiliant behaviours.
  Performs the preconditions necessary to call certain SimDeviceSet/SimDevice methods.
  */
-@interface FBSimulatorSet : NSObject <FBDebugDescribeable, FBJSONSerializable>
+@interface FBSimulatorSet : NSObject <FBDebugDescribeable, FBJSONSerializable, FBiOSTargetSet>
 
 #pragma mark Intializers
 
@@ -38,9 +42,10 @@ NS_ASSUME_NONNULL_BEGIN
  @param deviceSet the Device Set to wrap.
  @param logger the logger to use to verbosely describe what is going on. May be nil.
  @param error any error that occurred during the creation of the pool.
+ @param delegate the delegate notifies of any changes to the state of the simulators in the set
  @return a new FBSimulatorPool.
  */
-+ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error delegate:(nullable id<FBiOSTargetSetDelegate>)delegate;
 
 #pragma mark Querying
 

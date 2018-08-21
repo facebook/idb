@@ -48,7 +48,7 @@
   if (!deviceSet) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
-  FBSimulatorSet *set = [FBSimulatorSet setWithConfiguration:configuration deviceSet:deviceSet logger:logger error:&innerError];
+  FBSimulatorSet *set = [FBSimulatorSet setWithConfiguration:configuration deviceSet:deviceSet logger:logger error:&innerError delegate:nil];
   if (!set) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
