@@ -26,7 +26,7 @@ static NSString *const KeyType = @"type";
   return self;
 }
 
-- (NSDictionary<NSString *, NSString *> *)jsonSerializableRepresentation
+- (NSDictionary<NSString *, id> *)jsonSerializableRepresentation
 {
   return @{
            KeyUDID : self.udid,
@@ -37,8 +37,8 @@ static NSString *const KeyType = @"type";
 
 + (instancetype)inflateFromJSON:(id)json error:(NSError **)error {
   NSString *udid = json[KeyUDID];
-  FBiOSTargetState state = [json[KeyState] integerValue];
-  FBiOSTargetType type = [json[KeyType] integerValue];
+  FBiOSTargetState state = [json[KeyState] unsignedIntegerValue];
+  FBiOSTargetType type = [json[KeyType] unsignedIntegerValue];
   return [[FBiOSTargetStateUpdate alloc] initWithUDID:udid state:state type:type];
 }
 

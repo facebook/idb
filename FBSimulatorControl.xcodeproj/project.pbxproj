@@ -44,6 +44,9 @@
 		842A2B741F6AC89C00063EB1 /* FBActivityRecord.m in Sources */ = {isa = PBXBuildFile; fileRef = 842A2B721F6AC89C00063EB1 /* FBActivityRecord.m */; };
 		84E05F9E1F7144DD00668049 /* FBDeviceXCTestCommandsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 84E05F9D1F7144DD00668049 /* FBDeviceXCTestCommandsTests.m */; };
 		877123F31BDA797800530B1E /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 877123F21BDA797800530B1E /* video0.mp4 */; };
+		8BD1AF47212DACDE001F65E1 /* FBiOSTargetStateUpdate.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BD1AF44212DACDD001F65E1 /* FBiOSTargetStateUpdate.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		8BD1AF48212DACDE001F65E1 /* FBiOSTargetStateUpdate.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BD1AF45212DACDD001F65E1 /* FBiOSTargetStateUpdate.m */; };
+		8BD1AF4B212DB04E001F65E1 /* FBiOSTargetSet.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BD1AF46212DACDE001F65E1 /* FBiOSTargetSet.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0080D71DB4CCFD009A25CB /* FBProcessTerminationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0080D51DB4CCFD009A25CB /* FBProcessTerminationStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0080D81DB4CCFD009A25CB /* FBProcessTerminationStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0080D61DB4CCFD009A25CB /* FBProcessTerminationStrategy.m */; };
 		AA017F581BD7787300F45E9D /* libShimulator.dylib in Resources */ = {isa = PBXBuildFile; fileRef = AA017F4C1BD7784700F45E9D /* libShimulator.dylib */; };
@@ -809,6 +812,9 @@
 		842A2B721F6AC89C00063EB1 /* FBActivityRecord.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBActivityRecord.m; sourceTree = "<group>"; };
 		84E05F9D1F7144DD00668049 /* FBDeviceXCTestCommandsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBDeviceXCTestCommandsTests.m; sourceTree = "<group>"; };
 		877123F21BDA797800530B1E /* video0.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = video0.mp4; sourceTree = "<group>"; };
+		8BD1AF44212DACDD001F65E1 /* FBiOSTargetStateUpdate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetStateUpdate.h; sourceTree = "<group>"; };
+		8BD1AF45212DACDD001F65E1 /* FBiOSTargetStateUpdate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetStateUpdate.m; sourceTree = "<group>"; };
+		8BD1AF46212DACDE001F65E1 /* FBiOSTargetSet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetSet.h; sourceTree = "<group>"; };
 		AA0080D51DB4CCFD009A25CB /* FBProcessTerminationStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBProcessTerminationStrategy.h; sourceTree = "<group>"; };
 		AA0080D61DB4CCFD009A25CB /* FBProcessTerminationStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProcessTerminationStrategy.m; sourceTree = "<group>"; };
 		AA017F4C1BD7784700F45E9D /* libShimulator.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libShimulator.dylib; sourceTree = "<group>"; };
@@ -2264,6 +2270,9 @@
 				AA9B24D71D07F9BB00CEE14F /* FBiOSTargetPredicates.m */,
 				AA63FD721D00A3D5000B3842 /* FBiOSTargetQuery.h */,
 				AA63FD731D00A3D5000B3842 /* FBiOSTargetQuery.m */,
+				8BD1AF46212DACDE001F65E1 /* FBiOSTargetSet.h */,
+				8BD1AF44212DACDD001F65E1 /* FBiOSTargetStateUpdate.h */,
+				8BD1AF45212DACDD001F65E1 /* FBiOSTargetStateUpdate.m */,
 			);
 			path = Management;
 			sourceTree = "<group>";
@@ -3460,6 +3469,7 @@
 				AA391AD21CEF4CBC00817691 /* FBLocalizationOverride.h in Headers */,
 				AA0CA38720643CCF00347424 /* FBCrashLogCommands.h in Headers */,
 				EEBD605D1C9062E900298A07 /* FBCrashLogInfo.h in Headers */,
+				8BD1AF47212DACDE001F65E1 /* FBiOSTargetStateUpdate.h in Headers */,
 				AA682B2F1CEDC4F3009B6ECA /* FBiOSTarget.h in Headers */,
 				AA6A3B091CC0C96E00E016C4 /* FBCollectionOperations.h in Headers */,
 				EEBD60941C908F8500298A07 /* FBCollectionInformation.h in Headers */,
@@ -3496,6 +3506,7 @@
 				AAD0FA181FA1D11600EBCEA8 /* NSRunLoop+FBControlCore.h in Headers */,
 				EE87FA402008C088002716FE /* AXTraits.h in Headers */,
 				AA0080D71DB4CCFD009A25CB /* FBProcessTerminationStrategy.h in Headers */,
+				8BD1AF4B212DB04E001F65E1 /* FBiOSTargetSet.h in Headers */,
 				AA9B24D81D07F9BB00CEE14F /* FBiOSTargetPredicates.h in Headers */,
 				AA2CD5A01F87C7640030C56D /* FBListApplicationsConfiguration.h in Headers */,
 				AACC503C1EAA230F0034A987 /* FBBitmapStreamConfiguration.h in Headers */,
@@ -4135,6 +4146,7 @@
 				AA08487C1F3F499800A4BA60 /* FBFuture.m in Sources */,
 				AA89546C1D5C7400006BD815 /* FBControlCoreFrameworkLoader.m in Sources */,
 				AA7EE102205FAF7800B9B122 /* FBTask+Helpers.m in Sources */,
+				8BD1AF48212DACDE001F65E1 /* FBiOSTargetStateUpdate.m in Sources */,
 				AA58F8931D959593006F8D81 /* FBCodesignProvider.m in Sources */,
 				EEBD607D1C9062E900298A07 /* FBConcurrentCollectionOperations.m in Sources */,
 				EEBD60831C9062E900298A07 /* FBControlCoreLogger.m in Sources */,

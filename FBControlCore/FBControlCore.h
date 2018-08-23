@@ -62,6 +62,8 @@
 #import <FBControlCore/FBiOSTargetFuture.h>
 #import <FBControlCore/FBiOSTargetPredicates.h>
 #import <FBControlCore/FBiOSTargetQuery.h>
+#import <FBControlCore/FBiOSTargetSet.h>
+#import <FBControlCore/FBiOSTargetStateUpdate.h>
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBLaunchedProcess.h>
 #import <FBControlCore/FBListApplicationsConfiguration.h>

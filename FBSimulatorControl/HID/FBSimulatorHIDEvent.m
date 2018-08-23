@@ -560,8 +560,8 @@ static NSString *const KeyKeycode = @"keycode";
   NSMutableArray<FBSimulatorHIDEvent *> *events = [NSMutableArray array];
 
   for (id keyCode in sequence) {
-    [events addObject:[self keyDown:[keyCode unsignedIntegerValue]]];
-    [events addObject:[self keyUp:[keyCode unsignedIntegerValue]]];
+    [events addObject:[self keyDown:[keyCode unsignedIntValue]]];
+    [events addObject:[self keyUp:[keyCode unsignedIntValue]]];
   }
 
   return [self eventWithEvents:events];
@@ -571,7 +571,7 @@ static NSString *const KeyKeycode = @"keycode";
 {
   NSMutableArray<FBSimulatorHIDEvent *> *events = [NSMutableArray array];
   double distance = sqrt(pow(yEnd - yStart, 2) + pow(xEnd - xStart, 2));
-  int steps = distance / delta;
+  int steps = (int)(distance / delta);
 
   double dx = (xEnd - xStart) / steps;
   double dy = (yEnd - yStart) / steps;
