@@ -1,13 +1,24 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #import "FBiOSTargetStateUpdate.h"
-
 @implementation FBiOSTargetStateUpdate
 @synthesize jsonSerializableRepresentation;
 
 static NSString *const KeyUDID = @"udid";
 static NSString *const KeyState = @"state";
 static NSString *const KeyType = @"type";
+
+static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
+{
+  if ((targetType & FBiOSTargetTypeDevice) == FBiOSTargetTypeDevice) {
+    return @"device";
+  } else if ((targetType & FBiOSTargetTypeSimulator) == FBiOSTargetTypeSimulator) {
+    return @"simulator";
+  } else if ((targetType & FBiOSTargetTypeLocalMac) == FBiOSTargetTypeLocalMac) {
+    return @"mac";
+  }
+  return nil;
+}
 
 - (instancetype)initWithUDID:(NSString *)udid state:(FBiOSTargetState)state type:(FBiOSTargetType)type
 {
@@ -31,7 +42,7 @@ static NSString *const KeyType = @"type";
   return @{
            KeyUDID : self.udid,
            KeyState : FBiOSTargetStateStringFromState(self.state),
-           KeyType : FBiOSTargetTypeStringsFromTargetType(self.type),
+           KeyType : FBiOSTargetTypeStringFromTargetType(self.type),
            };
 }
 
