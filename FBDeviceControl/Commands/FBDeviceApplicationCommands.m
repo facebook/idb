@@ -86,36 +86,34 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 
 - (FBFuture<NSNull *> *)transferAppURL:(NSURL *)appURL options:(NSDictionary *)options
 {
-  return [[self.device.amDevice
-    startAFCService]
-    onQueue:self.device.workQueue fmap:^(FBAMDServiceConnection *connection) {
-      int status = self.device.amDevice.calls.SecureTransferPath(
-        0,
-        connection.device,
-        (__bridge CFURLRef _Nonnull)(appURL),
-        (__bridge CFDictionaryRef _Nonnull)(options),
-        (AMDeviceProgressCallback) TransferCallback,
-        (__bridge void *) (self.device.amDevice)
-      );
-      if (status != 0) {
-        NSString *internalMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
-        return [[FBDeviceControlError
-          describeFormat:@"Failed to transfer '%@' with error (%@)", appURL, internalMessage]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:NSNull.null];
-    }];
+  return [FBFuture onQueue:self.device.workQueue resolve:^ {
+    int status = self.device.amDevice.calls.SecureTransferPath(
+      0,
+      self.device.amDevice.amDevice,
+      (__bridge CFURLRef _Nonnull)(appURL),
+      (__bridge CFDictionaryRef _Nonnull)(options),
+      (AMDeviceProgressCallback) TransferCallback,
+      (__bridge void *) (self.device.amDevice)
+    );
+    if (status != 0) {
+      NSString *internalMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
+      return [[FBDeviceControlError
+        describeFormat:@"Failed to transfer '%@' with error (%@)", appURL, internalMessage]
+        failFuture];
+    }
+    return [FBFuture futureWithResult:NSNull.null];
+  }];
 }
 
 - (FBFuture<NSNull *> *)secureInstallApplication:(NSURL *)appURL options:(NSDictionary *)options
 {
   return [[self.device.amDevice
-    startAFCService]
-    onQueue:self.device.workQueue fmap:^(FBAMDServiceConnection *connection) {
+    connectToDeviceWithPurpose:@"install"]
+    onQueue:self.device.workQueue fmap:^(FBAMDevice *device) {
       [self.device.logger logFormat:@"Installing Application %@", appURL];
       int installReturnCode = self.device.amDevice.calls.SecureInstallApplication(
         0,
-        connection.device,
+        device.amDevice,
         (__bridge CFURLRef _Nonnull)(appURL),
         (__bridge CFDictionaryRef _Nonnull)(options),
         (AMDeviceProgressCallback) InstallCallback,
