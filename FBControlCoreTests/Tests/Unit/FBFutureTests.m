@@ -122,6 +122,28 @@
   [self waitForExpectations:@[expectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
+- (void)testDoActionCallback
+{
+  XCTestExpectation *actionExpectation = [[XCTestExpectation alloc] initWithDescription:@"Action Callback called"];
+  XCTestExpectation *completionExpectation = [[XCTestExpectation alloc] initWithDescription:@"Completion called"];
+  __block BOOL actionCalled = NO;
+
+  [[[FBFuture
+    futureWithResult:@YES]
+    onQueue:self.queue doOnResolved:^(NSNumber *value) {
+      XCTAssertEqual(value, @YES);
+      actionCalled = YES;
+      [actionExpectation fulfill];
+    }]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture<NSNumber *> *future) {
+      XCTAssertEqual(future.result, @YES);
+      XCTAssertTrue(actionCalled);
+      [completionExpectation fulfill];
+    }];
+
+  [self waitForExpectations:@[actionExpectation, completionExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
 - (void)testCompositeSuccess
 {
   XCTestExpectation *expectation = [[XCTestExpectation alloc] initWithDescription:@"Composite Callback is called"];

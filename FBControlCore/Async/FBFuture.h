@@ -135,6 +135,16 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 - (instancetype)onQueue:(dispatch_queue_t)queue notifyOfCompletion:(void (^)(FBFuture *))handler;
 
 /**
+ Notifies of the successful resolution of the Future.
+ The handler will resolve before the chained Future.
+
+ @param queue the queue to notify on.
+ @param handler the block to invoke.
+ @return the Reciever, for chaining.
+ */
+- (instancetype)onQueue:(dispatch_queue_t)queue doOnResolved:(void (^)(T))handler;
+
+/**
  Respond to a cancellation request.
  This provides the opportunity to provide asynchronous cancellation.
  This can be called multiple times for the same reference.

@@ -472,6 +472,15 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return self;
 }
 
+- (instancetype)onQueue:(dispatch_queue_t)queue doOnResolved:(void (^)(id))handler
+{
+  return [self onQueue:queue map:^(id result) {
+    handler(result);
+    return result;
+  }];
+}
+
+
 - (instancetype)onQueue:(dispatch_queue_t)queue respondToCancellation:(FBFuture<NSNull *> *(^)(void))handler
 {
   NSParameterAssert(queue);
