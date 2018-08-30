@@ -42,6 +42,7 @@ extern FBEventName const FBEventNameHelp;
 extern FBEventName const FBEventNameInstall;
 extern FBEventName const FBEventNameKeyboardOverride;
 extern FBEventName const FBEventNameLaunch;
+extern FBEventName const FBEventNameLaunchAgent;
 extern FBEventName const FBEventNameLaunchXCTest;
 extern FBEventName const FBEventNameList;
 extern FBEventName const FBEventNameListApps;

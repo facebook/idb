@@ -31,6 +31,7 @@ FBEventName const FBEventNameHelp = @"help";
 FBEventName const FBEventNameInstall = @"install";
 FBEventName const FBEventNameKeyboardOverride = @"keyboard_override";
 FBEventName const FBEventNameLaunch = @"launch";
+FBEventName const FBEventNameLaunchAgent = @"agentlaunch";
 FBEventName const FBEventNameLaunchXCTest = @"launch_xctest";
 FBEventName const FBEventNameList = @"list";
 FBEventName const FBEventNameListApps = @"list_apps";
