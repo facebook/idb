@@ -72,12 +72,22 @@
   return [[self
     dataContainerPathForBundleID:bundleID]
     onQueue:self.simulator.asyncQueue fmap:^(NSString *dataContainer) {
-      NSError *error;
+      // if it already exists at the destination path we should remove it before copying again
+      if ([NSFileManager.defaultManager fileExistsAtPath:destinationPath]) {
+        NSError *removeError;
+        if (![NSFileManager.defaultManager removeItemAtPath:destinationPath error:&removeError]) {
+          return [[[FBSimulatorError
+            describeFormat:@"Could not remove %@", destinationPath]
+            causedBy:removeError]
+            failFuture];
+        }
+      }
       NSString *source = [dataContainer stringByAppendingPathComponent:containerPath];
-      if (![NSFileManager.defaultManager copyItemAtPath:source toPath:destinationPath error:&error]) {
+      NSError *copyError;
+      if (![NSFileManager.defaultManager copyItemAtPath:source toPath:destinationPath error:&copyError]) {
         return [[[FBSimulatorError
           describeFormat:@"Could not copy from %@ to %@", source, destinationPath]
-          causedBy:error]
+          causedBy:copyError]
           failFuture];
       }
       return [FBFuture futureWithResult:NSNull.null];
