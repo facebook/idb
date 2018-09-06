@@ -129,14 +129,14 @@
 {
   [self recalculateAllDevices];
   FBAMDevice *device = notification.object;
-  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:FBiOSTargetStateBooted type:FBiOSTargetTypeDevice]];
+  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:FBiOSTargetStateBooted type:FBiOSTargetTypeDevice name:device.deviceName osVersion:device.osConfiguration architecture:device.architecture]];
 }
 
 - (void)deviceDetachedNotification:(NSNotification *)notification
 {
   [self recalculateAllDevices];
   FBAMDevice *device = notification.object;
-  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:FBiOSTargetStateShutdown type:FBiOSTargetTypeDevice]];
+  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:FBiOSTargetStateShutdown type:FBiOSTargetTypeDevice name:device.deviceName osVersion:device.osConfiguration architecture:device.architecture]];
 }
 
 - (void)recalculateAllDevices

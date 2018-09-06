@@ -1,12 +1,16 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #import "FBiOSTargetStateUpdate.h"
+#import "FBiOSTargetConfiguration.h"
 @implementation FBiOSTargetStateUpdate
 @synthesize jsonSerializableRepresentation;
 
 static NSString *const KeyUDID = @"udid";
 static NSString *const KeyState = @"state";
 static NSString *const KeyType = @"type";
+static NSString *const KeyName = @"name";
+static NSString *const KeyOsVersion = @"os_version";
+static NSString *const KeyArchitecture = @"architecture";
 
 static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
 {
@@ -20,7 +24,7 @@ static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
   return nil;
 }
 
-- (instancetype)initWithUDID:(NSString *)udid state:(FBiOSTargetState)state type:(FBiOSTargetType)type
+- (instancetype)initWithUDID:(NSString *)udid state:(FBiOSTargetState)state type:(FBiOSTargetType)type name:(NSString *)name osVersion:(FBOSVersion *)osVersion architecture:(FBArchitecture)architecture;
 {
   self = [super init];
   if (!self) {
@@ -29,6 +33,9 @@ static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
   _udid = udid;
   _state = state;
   _type = type;
+  _name = name;
+  _osVersion = osVersion;
+  _architecture = architecture;
 
   return self;
 }
@@ -43,6 +50,9 @@ static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
            KeyUDID : self.udid,
            KeyState : FBiOSTargetStateStringFromState(self.state),
            KeyType : FBiOSTargetTypeStringFromTargetType(self.type),
+           KeyName : self.name,
+           KeyOsVersion : self.osVersion.name,
+           KeyArchitecture : self.architecture,
            };
 }
 
@@ -50,7 +60,10 @@ static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
   NSString *udid = json[KeyUDID];
   FBiOSTargetState state = [json[KeyState] unsignedIntegerValue];
   FBiOSTargetType type = [json[KeyType] unsignedIntegerValue];
-  return [[FBiOSTargetStateUpdate alloc] initWithUDID:udid state:state type:type];
+  NSString *name = json[KeyName];
+  FBOSVersion *osVersion = [FBOSVersion genericWithName:json[KeyOsVersion]];
+  NSString *architecture = json[KeyArchitecture];
+  return [[FBiOSTargetStateUpdate alloc] initWithUDID:udid state:state type:type name:name osVersion:osVersion architecture:architecture];
 }
 
 @end
