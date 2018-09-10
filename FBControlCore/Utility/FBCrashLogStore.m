@@ -18,7 +18,7 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
 
 @interface FBCrashLogStore ()
 
-@property (nonatomic, copy, readonly) NSString *directory;
+@property (nonatomic, copy, readonly) NSArray<NSString *> *directories;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) NSMutableArray<FBCrashLogInfo *> *ingestedCrashLogs;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
@@ -29,19 +29,19 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
 
 #pragma mark Initializers
 
-+ (instancetype)storeForDirectory:(NSString *)directory logger:(id<FBControlCoreLogger>)logger
++ (instancetype)storeForDirectories:(NSArray<NSString *> *)directories logger:(id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithDirectory:directory logger:logger];
+  return [[self alloc] initWithDirectories:directories logger:logger];
 }
 
-- (instancetype)initWithDirectory:(NSString *)directory logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithDirectories:(NSArray<NSString *> *)directories logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _directory = directory;
+  _directories = directories;
   _logger = logger;
   _ingestedCrashLogs = NSMutableArray.array;
   _queue = dispatch_queue_create("com.facebook.fbcontrolcore.crash_store", DISPATCH_QUEUE_SERIAL);
@@ -53,19 +53,13 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
 
 - (NSArray<FBCrashLogInfo *> *)ingestAllExistingInDirectory
 {
-  NSArray<NSString *> *contents = [NSFileManager.defaultManager contentsOfDirectoryAtPath:self.directory error:nil];
-  if (!contents) {
-    return @[];
-  }
   NSMutableArray<FBCrashLogInfo *> *ingested = NSMutableArray.array;
-  for (NSString *path in contents) {
-    FBCrashLogInfo *crash = [self ingestCrashLogAtPath:[self.directory stringByAppendingPathComponent:path]];
-    if (!crash) {
-      continue;
-    }
-    [ingested addObject:crash];
+
+  for (NSString *directory in self.directories) {
+    NSArray<FBCrashLogInfo *> *crashLogs = [self ingestCrashLogInDirectory:directory];
+    [ingested addObjectsFromArray:crashLogs];
   }
-  return ingested;
+  return [ingested copy];
 }
 
 - (FBCrashLogInfo *)ingestCrashLogAtPath:(NSString *)path
@@ -92,16 +86,20 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
   if (![FBCrashLogInfo isParsableCrashLog:data]) {
     return nil;
   }
-  NSString *destination = [self.directory stringByAppendingPathComponent:name];
-  if (![NSFileManager.defaultManager fileExistsAtPath:self.directory]) {
-    if (![NSFileManager.defaultManager createDirectoryAtPath:self.directory withIntermediateDirectories:YES attributes:nil error:nil]) {
-      return nil;
+  for (NSString *directory in self.directories) {
+    NSString *destination = [directory stringByAppendingPathComponent:name];
+    if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
+      if (![NSFileManager.defaultManager createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:nil]) {
+        continue;
+      }
     }
+    if (![data writeToFile:destination atomically:YES]) {
+      continue;
+    }
+    return [self ingestCrashLogAtPath:destination];
   }
-  if (![data writeToFile:destination atomically:YES]) {
-    return nil;
-  }
-  return [self ingestCrashLogAtPath:destination];
+
+  return nil;
 }
 
 - (BOOL)hasIngestedCrashLogWithName:(NSString *)key
@@ -146,6 +144,24 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
     [notificationCenter removeObserver:observer];
     return [FBFuture futureWithResult:NSNull.null];
   }];
+}
+
+- (NSArray<FBCrashLogInfo *> *)ingestCrashLogInDirectory:(NSString *)directory
+{
+  NSArray<NSString *> *contents = [NSFileManager.defaultManager contentsOfDirectoryAtPath:directory error:nil];
+  if (!contents) {
+    return @[];
+  }
+
+  NSMutableArray<FBCrashLogInfo *> *ingested = NSMutableArray.array;
+  for (NSString *path in contents) {
+    FBCrashLogInfo *crash = [self ingestCrashLogAtPath:[directory stringByAppendingPathComponent:path]];
+    if (!crash) {
+      continue;
+    }
+    [ingested addObject:crash];
+  }
+  return [ingested copy];
 }
 
 - (NSSet<NSString *> *)ingestedNames

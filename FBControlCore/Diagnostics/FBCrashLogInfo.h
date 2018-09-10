@@ -84,9 +84,9 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
 #pragma mark Helpers
 
 /**
- The Diagnostics Report Path for the User.
+ The Diagnostics Report Paths for the User.
  */
-@property (nonatomic, class, copy, readonly) NSString *diagnosticReportsPath;
+@property (nonatomic, class, copy, readonly) NSArray<NSString *> *diagnosticReportsPaths;
 
 #pragma mark Initializers
 

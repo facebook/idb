@@ -32,7 +32,7 @@
 + (instancetype)commandsWithTarget:(FBDevice *)target
 {
   NSString *storeDirectory = [target.auxillaryDirectory stringByAppendingPathComponent:@"crash_store"];
-  FBCrashLogStore *store = [FBCrashLogStore storeForDirectory:storeDirectory logger:target.logger];
+  FBCrashLogStore *store = [FBCrashLogStore storeForDirectories:@[storeDirectory] logger:target.logger];
   return [[self alloc] initWithDevice:target store:store];
 }
 

@@ -26,11 +26,11 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer.
 
- @param directory the directory to store into.
+ @param directories the directories to store into.
  @param logger the logger to use.
  @return a store for the device.
  */
-+ (instancetype)storeForDirectory:(NSString *)directory logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)storeForDirectories:(NSArray<NSString *> *)directories logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 

@@ -143,16 +143,22 @@
 
 + (NSArray<FBCrashLogInfo *> *)crashInfoAfterDate:(NSDate *)date
 {
-  NSString *basePath = self.diagnosticReportsPath;
+  NSMutableArray<FBCrashLogInfo *> *allCrashInfos = NSMutableArray.new;
 
-  return [[FBConcurrentCollectionOperations
-    filterMap:[NSFileManager.defaultManager contentsOfDirectoryAtPath:basePath error:nil]
-    predicate:[FBCrashLogInfo predicateForFilesWithBasePath:basePath afterDate:date withExtension:@"crash"]
-    map:^ FBCrashLogInfo * (NSString *fileName) {
-      NSString *path = [basePath stringByAppendingPathComponent:fileName];
-      return [FBCrashLogInfo fromCrashLogAtPath:path];
-    }]
-    filteredArrayUsingPredicate:NSPredicate.notNullPredicate];
+  for (NSString *basePath in self.diagnosticReportsPaths) {
+    NSArray<FBCrashLogInfo *> *crashInfos = [[FBConcurrentCollectionOperations
+      filterMap:[NSFileManager.defaultManager contentsOfDirectoryAtPath:basePath error:nil]
+      predicate:[FBCrashLogInfo predicateForFilesWithBasePath:basePath afterDate:date withExtension:@"crash"]
+      map:^ FBCrashLogInfo * (NSString *fileName) {
+        NSString *path = [basePath stringByAppendingPathComponent:fileName];
+        return [FBCrashLogInfo fromCrashLogAtPath:path];
+      }]
+      filteredArrayUsingPredicate:NSPredicate.notNullPredicate];
+
+    [allCrashInfos addObjectsFromArray:crashInfos];
+  }
+
+  return [allCrashInfos copy];
 }
 
 #pragma mark Predicates
@@ -187,15 +193,12 @@
 
 #pragma mark Helpers
 
-+ (NSString *)diagnosticReportsPath
++ (NSArray<NSString *> *)diagnosticReportsPaths
 {
-  NSString *userReportsPath = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/DiagnosticReports"];
-  BOOL userReportsPathExists = [[NSFileManager defaultManager] fileExistsAtPath:userReportsPath];
-  if (userReportsPathExists) {
-    return userReportsPath;
-  }
-  // diagnostic reports for root
-  return @"/Library/Logs/DiagnosticReports";
+  return @[
+    [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/DiagnosticReports"],
+    @"/Library/Logs/DiagnosticReports", // diagnostic reports path when ReportCrash is running as root.
+  ];
 }
 
 #pragma mark Private

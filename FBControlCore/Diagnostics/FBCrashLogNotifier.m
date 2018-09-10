@@ -21,7 +21,7 @@
 
 @interface FBCrashLogNotifier_FSEvents : NSObject
 
-@property (nonatomic, copy, readonly) NSString *directory;
+@property (nonatomic, copy, readonly) NSArray<NSString *> *directories;
 @property (nonatomic, strong, readonly) FBCrashLogStore *store;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
@@ -45,14 +45,14 @@ static void EventStreamCallback(
 
 @implementation FBCrashLogNotifier_FSEvents
 
-- (instancetype)initWithDirectory:(NSString *)directory store:(FBCrashLogStore *)store logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithDirectories:(NSArray<NSString *> *)directories store:(FBCrashLogStore *)store logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _directory = directory;
+  _directories = directories;
   _store = store;
   _logger = logger;
   _queue = dispatch_queue_create("com.facebook.fbcontrolcore.crash_logs.fsevents", DISPATCH_QUEUE_SERIAL);
@@ -73,7 +73,13 @@ static void EventStreamCallback(
     .release = CFRelease,
     .copyDescription = NULL,
   };
-  NSArray<NSString *> *pathsToWatch = @[self.directory];
+
+  NSMutableArray<NSString *> *pathsToWatch = NSMutableArray.array;
+  for (NSString *reportPath in self.directories) {
+    if ([[NSFileManager defaultManager] fileExistsAtPath:reportPath]) {
+      [pathsToWatch addObject:reportPath];
+    }
+  }
 
   FSEventStreamRef eventStream = FSEventStreamCreate(
     NULL, // Allocator
@@ -115,10 +121,10 @@ static void EventStreamCallback(
     return nil;
   }
 
-  NSString *directory = FBCrashLogInfo.diagnosticReportsPath;
-  _store = [FBCrashLogStore storeForDirectory:directory logger:logger];
+  _store = [FBCrashLogStore storeForDirectories:FBCrashLogInfo.diagnosticReportsPaths logger:logger];
+
 #if defined(__apple_build_version__)
-  _fsEvents = [[FBCrashLogNotifier_FSEvents alloc] initWithDirectory:FBCrashLogInfo.diagnosticReportsPath store:_store logger:logger];
+  _fsEvents = [[FBCrashLogNotifier_FSEvents alloc] initWithDirectories:FBCrashLogInfo.diagnosticReportsPaths store:_store logger:logger];
 #else
   _sinceDate = NSDate.date;
 #endif
