@@ -902,6 +902,33 @@
   [self waitForExpectations:@[completionExpectation, outerTeardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
+- (void)testFutureToContext
+{
+  __block BOOL teardownCalled = NO;
+  XCTestExpectation *innerTeardownExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Inner Teardown"];
+
+  [[[FBFuture
+    futureWithResult:@1]
+    onQueue:self.queue pushTeardown:^(id value) {
+      XCTAssertEqualObjects(value, @1);
+      return [[FBFuture
+        futureWithResult:@2]
+        onQueue:self.queue contextualTeardown:^(id innerValue) {
+          XCTAssertFalse(teardownCalled);
+          XCTAssertEqualObjects(innerValue, @2);
+          [innerTeardownExpectation fulfill];
+          teardownCalled = YES;
+        }];
+    }]
+    onQueue:self.queue fmap:^(id value) {
+      XCTAssertEqualObjects(value, @2);
+      XCTAssertFalse(teardownCalled);
+      return [FBFuture futureWithResult:@3];
+    }];
+
+  [self waitForExpectations:@[innerTeardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
 #pragma mark - Helpers
 
 - (void)assertSynchronousResolutionWithBlock:(void (^)(FBMutableFuture *))resolveBlock expectedState:(FBFutureState)state expectedResult:(id)expectedResult expectedError:(NSError *)expectedError

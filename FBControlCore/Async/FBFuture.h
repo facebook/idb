@@ -202,6 +202,15 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 - (FBFutureContext<T> *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(T))action;
 
 /**
+ Creates an FBFutureContext that allows a future to be mapped into a FBFutureContext.
+
+ @param queue the queue to perform the teardown on.
+ @param fmap the teardown to push
+ @return an object that acts as a proxy to the teardown.
+ */
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue pushTeardown:(FBFutureContext *(^)(T))fmap;
+
+/**
  Cancels the receiver if it doesn't resolve within the timeout.
 
  @param timeout the amount of time to time out the receiver in
