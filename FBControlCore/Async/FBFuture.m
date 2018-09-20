@@ -151,7 +151,6 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 @interface FBFutureContext ()
 
-@property (nonatomic, strong, readonly) FBFuture *future;
 @property (nonatomic, copy, readonly) NSMutableArray<FBFutureContext_Teardown *> *teardowns;
 
 @end

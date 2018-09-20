@@ -14,10 +14,13 @@
 #import "FBDeviceControlError.h"
 #import "FBAMDServiceConnection.h"
 
+#pragma mark Protocol Adaptor
+
 @interface FBDeviceLogTerminationContinuation : NSObject <FBiOSTargetContinuation>
 
-- (instancetype)initWithReader:(FBFileReader *)reader consumer:(id<FBFileConsumer>)consumer;
+- (instancetype)initWithContext:(FBFutureContext<NSNull *> *)context reader:(FBFileReader *)reader consumer:(id<FBFileConsumer>)consumer;
 
+@property (nonatomic, strong, readonly) FBFutureContext<NSNull *> *context;
 @property (nonatomic, strong, readonly) FBFileReader *reader;
 @property (nonatomic, strong, readonly) id<FBFileConsumer> consumer;
 
@@ -25,13 +28,14 @@
 
 @implementation FBDeviceLogTerminationContinuation
 
-- (instancetype)initWithReader:(FBFileReader *)reader consumer:(id<FBFileConsumer>)consumer
+- (instancetype)initWithContext:(FBFutureContext<NSNull *> *)context reader:(FBFileReader *)reader consumer:(id<FBFileConsumer>)consumer
 {
   self = [self init];
   if (!self) {
     return nil;
   }
 
+  _context = context;
   _reader = reader;
   _consumer = consumer;
 
@@ -40,7 +44,7 @@
 
 - (FBFuture<NSNull *> *)completed
 {
-  return self.reader.completed;
+  return self.context.future;
 }
 
 - (FBiOSTargetFutureType)futureType
@@ -49,6 +53,8 @@
 }
 
 @end
+
+#pragma mark FBDeviceLogCommands Implementation
 
 @interface FBDeviceLogCommands()
 
@@ -89,18 +95,24 @@
   if (arguments.count == 0) {
     [self.device.logger logFormat:@"[FBDeviceLogCommands] Unsupported arguments: %@", arguments];
   }
+  FBMutableFuture<id<FBiOSTargetContinuation>> *started = FBMutableFuture.future;
 
   dispatch_queue_t queue = self.device.asyncQueue;
-  return [[[self.device.amDevice
+  __block FBFutureContext<NSNull *> *context = [[[self.device.amDevice
     startService:@"com.apple.syslog_relay"]
-    onQueue:queue fmap:^(FBAMDServiceConnection *connection) {
+    onQueue:queue pend:^(FBAMDServiceConnection *connection) {
       NSFileHandle *handle = [[NSFileHandle alloc] initWithFileDescriptor:connection.socket closeOnDealloc:YES];
       FBFileReader *reader = [FBFileReader readerWithFileHandle:handle consumer:consumer];
       return [[reader startReading] mapReplace:reader];
     }]
-    onQueue:queue map:^(FBFileReader *reader) {
-      return [[FBDeviceLogTerminationContinuation alloc] initWithReader:reader consumer:consumer];
+    onQueue:queue pend:^(FBFileReader *reader){
+      FBFuture<NSNull *> *completed = FBMutableFuture.future;
+      id<FBiOSTargetContinuation> result = [[FBDeviceLogTerminationContinuation alloc] initWithContext:context reader:reader consumer:consumer];
+      [started resolveWithResult:result];
+      return [FBFuture futureWithResult:completed];
     }];
+
+  return started;
 }
 
 @end
