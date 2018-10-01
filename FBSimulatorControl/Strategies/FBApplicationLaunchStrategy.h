@@ -30,16 +30,6 @@ NS_ASSUME_NONNULL_BEGIN
  Creates and returns a new Application Launch Strategy.
 
  @param simulator the Simulator to launch the Application on.
- @param useBridge YES if the SimulatorBridge should be used, NO otherwise.
- @return a new Application Launch Strategy.
- */
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator useBridge:(BOOL)useBridge;
-
-/**
- Creates and returns a new Application Launch Strategy.
- Uses the default of CoreSimulator to launch the Application
-
- @param simulator the Simulator to launch the Application on.
  @return a new Application Launch Strategy.
  */
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator;

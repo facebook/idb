@@ -46,15 +46,9 @@
 
 #pragma mark Initializers
 
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator useBridge:(BOOL)useBridge;
-{
-  Class strategyClass = useBridge ? FBApplicationLaunchStrategy_CoreSimulator.class : FBApplicationLaunchStrategy_CoreSimulator.class;
-  return [[strategyClass alloc] initWithSimulator:simulator];
-}
-
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator
 {
-  return [self strategyWithSimulator:simulator useBridge:NO];
+  return [[self alloc] initWithSimulator:simulator];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator
@@ -135,12 +129,6 @@
     }];
 }
 
-- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return 0;
-}
-
 - (FBFuture<NSNull *> *)confirmApplicationIsNotRunning:(NSString *)bundleID
 {
   return [[self.simulator
@@ -155,25 +143,6 @@
       return [FBFuture futureWithResult:NSNull.null];
     }];
 }
-
-@end
-
-@implementation FBApplicationLaunchStrategy_Bridge
-
-- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
-{
-  // The Bridge must be connected in order for the launch to work.
-  FBSimulator *simulator = self.simulator;
-  return [[simulator
-    connectToBridge]
-    onQueue:simulator.workQueue fmap:^(FBSimulatorBridge *bridge) {
-      return [bridge launch:appLaunch stdOutPath:stdOutPath stdErrPath:stdErrPath];
-    }];
-}
-
-@end
-
-@implementation FBApplicationLaunchStrategy_CoreSimulator
 
 - (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {

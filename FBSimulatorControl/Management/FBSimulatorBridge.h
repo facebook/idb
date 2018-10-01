@@ -65,16 +65,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point;
 
-/**
- Launches an Application.
-
- @param configuration the Configuration of the App to Launch,
- @param stdOutPath the Path of a File to write stdout to.
- @param stdErrPath the path of a File to write stderr to.
- @return the Process Identifier of the Launched Application if successful wrapped in a Future.
- */
-- (FBFuture<NSNumber *> *)launch:(FBApplicationLaunchConfiguration *)configuration stdOutPath:(nullable NSString *)stdOutPath stdErrPath:(nullable NSString *)stdErrPath;
-
 @end
 
 NS_ASSUME_NONNULL_END
