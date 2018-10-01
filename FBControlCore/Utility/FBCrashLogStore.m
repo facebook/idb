@@ -20,7 +20,7 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
 
 @property (nonatomic, copy, readonly) NSArray<NSString *> *directories;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) NSMutableArray<FBCrashLogInfo *> *ingestedCrashLogs;
+@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, FBCrashLogInfo *> *ingestedCrashLogs;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
@@ -43,13 +43,13 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
 
   _directories = directories;
   _logger = logger;
-  _ingestedCrashLogs = NSMutableArray.array;
+  _ingestedCrashLogs = NSMutableDictionary.dictionary;
   _queue = dispatch_queue_create("com.facebook.fbcontrolcore.crash_store", DISPATCH_QUEUE_SERIAL);
 
   return self;
 }
 
-#pragma mark Public Methods
+#pragma mark Ingestion
 
 - (NSArray<FBCrashLogInfo *> *)ingestAllExistingInDirectory
 {
@@ -67,15 +67,12 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
   if ([self hasIngestedCrashLogWithName:path.lastPathComponent]) {
     return nil;
   }
-  FBCrashLogInfo *crashLogInfo = [FBCrashLogInfo fromCrashLogAtPath:path];
-  if (!crashLogInfo) {
+  FBCrashLogInfo *crashLog = [FBCrashLogInfo fromCrashLogAtPath:path];
+  if (!crashLog) {
     [self.logger logFormat:@"Could not obtain crash info for %@", path];
     return nil;
   }
-  [self.logger logFormat:@"Ingesting Crash Log %@", crashLogInfo];
-  [self.ingestedCrashLogs addObject:crashLogInfo];
-  [NSNotificationCenter.defaultCenter postNotificationName:FBCrashLogAppeared object:crashLogInfo];
-  return crashLogInfo;
+  return  [self ingestCrashLog:crashLog];
 }
 
 - (nullable FBCrashLogInfo *)ingestCrashLogData:(NSData *)data name:(NSString *)name
@@ -102,9 +99,16 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
   return nil;
 }
 
-- (BOOL)hasIngestedCrashLogWithName:(NSString *)key
+#pragma mark Fetching
+
+- (FBCrashLogInfo *)ingestedCrashLogWithName:(NSString *)name
 {
-  return [self.ingestedNames containsObject:key];
+  return self.ingestedCrashLogs[name];
+}
+
+- (NSArray<FBCrashLogInfo *> *)allIngestedCrashLogs
+{
+  return self.ingestedCrashLogs.allValues;
 }
 
 - (FBFuture<FBCrashLogInfo *> *)nextCrashLogForMatchingPredicate:(NSPredicate *)predicate
@@ -117,10 +121,38 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
 
 - (NSArray<FBCrashLogInfo *> *)ingestedCrashLogsMatchingPredicate:(NSPredicate *)predicate
 {
-  return [self.ingestedCrashLogs filteredArrayUsingPredicate:predicate];
+  return [self.ingestedCrashLogs.allValues filteredArrayUsingPredicate:predicate];
+}
+
+- (NSArray<FBCrashLogInfo *> *)pruneCrashLogsMatchingPredicate:(NSPredicate *)predicate
+{
+  NSMutableArray<NSString *> *keys = NSMutableArray.array;
+  NSMutableArray<FBCrashLogInfo *> *crashLogs = NSMutableArray.array;
+  for (FBCrashLogInfo *crashLog in self.ingestedCrashLogs.allValues) {
+    if (![predicate evaluateWithObject:crashLog]) {
+      continue;
+    }
+    [keys addObject:crashLog.name];
+    [crashLogs addObject:crashLog];
+  }
+  [self.ingestedCrashLogs removeObjectsForKeys:keys];
+  return crashLogs;
 }
 
 #pragma mark Private
+
+- (BOOL)hasIngestedCrashLogWithName:(NSString *)key
+{
+  return self.ingestedCrashLogs[key] != nil;
+}
+
+- (FBCrashLogInfo *)ingestCrashLog:(FBCrashLogInfo *)crashLog
+{
+  [self.logger logFormat:@"Ingesting Crash Log %@", crashLog];
+  self.ingestedCrashLogs[crashLog.name] = crashLog;
+  [NSNotificationCenter.defaultCenter postNotificationName:FBCrashLogAppeared object:crashLog];
+  return crashLog;
+}
 
 + (FBFuture<FBCrashLogInfo *> *)oneshotCrashLogNotificationForPredicate:(NSPredicate *)predicate queue:(dispatch_queue_t)queue
 {
@@ -162,11 +194,6 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
     [ingested addObject:crash];
   }
   return [ingested copy];
-}
-
-- (NSSet<NSString *> *)ingestedNames
-{
-  return [NSSet setWithArray:[self.ingestedCrashLogs valueForKeyPath:@"name"]];
 }
 
 @end

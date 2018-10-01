@@ -370,7 +370,7 @@ static NSString *const FBDiagnosticQueryCrashesSystem = @"system";
     [FBCrashLogInfo predicateNewerThanDate:self.date],
   ]];
   return [[target
-    crashes:predicate]
+    crashes:predicate useCache:NO]
     onQueue:target.asyncQueue map:^(NSArray<FBCrashLogInfo *> *crashes) {
       NSMutableArray<FBDiagnostic *> *diagnostics = [NSMutableArray array];
       for (FBCrashLogInfo *crash in crashes) {

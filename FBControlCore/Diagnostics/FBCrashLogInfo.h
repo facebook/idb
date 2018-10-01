@@ -139,10 +139,18 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
 /**
  A Predicate for FBCrashLogInfo that passes for all Crash Logs that are newer than the given date.
 
- @param date the start date.
+ @param date the date.
  @return a NSPredicate.
  */
 + (NSPredicate *)predicateNewerThanDate:(NSDate *)date;
+
+/**
+ A Predicate for FBCrashLogInfo that passes for all Crash Logs that are older than the given date.
+
+ @param date the date.
+ @return a NSPredicate.
+ */
++ (NSPredicate *)predicateOlderThanDate:(NSDate *)date;
 
 /**
  A Predicate for FBCrashLogInfo that matches a identifier.
@@ -159,6 +167,14 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @return an NSPredicate
  */
 + (NSPredicate *)predicateForName:(NSString *)name;
+
+/**
+ A Predicate that searches for a substring in the executable path.
+
+ @param contains the substring to search for.
+ @return an NSPredicate
+ */
++ (NSPredicate *)predicateForExecutablePathContains:(NSString *)contains;
 
 @end
 

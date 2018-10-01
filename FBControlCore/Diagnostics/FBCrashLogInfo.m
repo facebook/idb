@@ -177,6 +177,11 @@
   }];
 }
 
++ (NSPredicate *)predicateOlderThanDate:(NSDate *)date
+{
+  return [NSCompoundPredicate notPredicateWithSubpredicate:[self predicateNewerThanDate:date]];
+}
+
 + (NSPredicate *)predicateForIdentifier:(NSString *)identifier
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, id _) {
@@ -188,6 +193,13 @@
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, id _) {
     return [name isEqualToString:crashLog.name];
+  }];
+}
+
++ (NSPredicate *)predicateForExecutablePathContains:(NSString *)contains
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, id _) {
+    return [crashLog.executablePath containsString:contains];
   }];
 }
 

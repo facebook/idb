@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)storeForDirectories:(NSArray<NSString *> *)directories logger:(id<FBControlCoreLogger>)logger;
 
-#pragma mark Public Methods
+#pragma mark Ingestion
 
 /**
  Ingests all of the crash logs in the directory.
@@ -58,13 +58,22 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable FBCrashLogInfo *)ingestCrashLogData:(NSData *)data name:(NSString *)name;
 
+#pragma mark Fetching
+
 /**
- Checks whether the crash log has already been ingested.
+ Returns the ingested crash log for a given name
 
  @param name the name of the crash log.
- @return YES if ingested, NO otherwise.
+ @return the Crash Log Info, if present.
  */
-- (BOOL)hasIngestedCrashLogWithName:(NSString *)name;
+- (nullable FBCrashLogInfo *)ingestedCrashLogWithName:(NSString *)name;
+
+/**
+ Returns all of the ingested crash logs.
+
+ @return all of the ingested crash logs.
+ */
+- (NSArray<FBCrashLogInfo *> *)allIngestedCrashLogs;
 
 /**
  A future that resolves the next time a crash log becomes available that matches the given predicate.
@@ -81,6 +90,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return an array of all the ingested crash logs.
  */
 - (NSArray<FBCrashLogInfo *> *)ingestedCrashLogsMatchingPredicate:(NSPredicate *)predicate;
+
+/**
+ Prunes all of the ingested logs that match the given predicate.
+
+ @param predicate the predicate to use.
+ @return an array of all the pruned crash logs.
+ */
+- (NSArray<FBCrashLogInfo *> *)pruneCrashLogsMatchingPredicate:(NSPredicate *)predicate;
 
 @end
 

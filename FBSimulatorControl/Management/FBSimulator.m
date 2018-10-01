@@ -23,19 +23,21 @@
 #import "FBMutableSimulatorEventSink.h"
 #import "FBSimulatorAgentCommands.h"
 #import "FBSimulatorApplicationCommands.h"
+#import "FBSimulatorApplicationDataCommands.h"
 #import "FBSimulatorBridgeCommands.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorControlOperator.h"
+#import "FBSimulatorCrashLogCommands.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorMutableState.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHIDEvent.h"
 #import "FBSimulatorLifecycleCommands.h"
 #import "FBSimulatorLogCommands.h"
 #import "FBSimulatorLoggingEventSink.h"
+#import "FBSimulatorMutableState.h"
 #import "FBSimulatorNotificationEventSink.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorScreenshotCommands.h"
@@ -43,7 +45,6 @@
 #import "FBSimulatorSettingsCommands.h"
 #import "FBSimulatorVideoRecordingCommands.h"
 #import "FBSimulatorXCTestCommands.h"
-#import "FBSimulatorApplicationDataCommands.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -305,16 +306,16 @@
   static NSArray<Class> *commandClasses;
   dispatch_once(&onceToken, ^{
     commandClasses = @[
-      FBHostCrashLogCommands.class,
-      FBSimulatorScreenshotCommands.class,
       FBSimulatorAgentCommands.class,
       FBSimulatorApplicationCommands.class,
       FBSimulatorApplicationDataCommands.class,
       FBSimulatorBridgeCommands.class,
+      FBSimulatorCrashLogCommands.class,
       FBSimulatorKeychainCommands.class,
       FBSimulatorLaunchCtlCommands.class,
       FBSimulatorLifecycleCommands.class,
       FBSimulatorLogCommands.class,
+      FBSimulatorScreenshotCommands.class,
       FBSimulatorSettingsCommands.class,
       FBSimulatorVideoRecordingCommands.class,
       FBSimulatorXCTestCommands.class,
@@ -339,6 +340,7 @@
   static NSSet<NSString *> *statefulCommands;
   dispatch_once(&onceToken, ^{
     statefulCommands = [NSSet setWithArray:@[
+      FBSimulatorCrashLogCommands.class,
       FBSimulatorVideoRecordingCommands.class,
     ]];
   });

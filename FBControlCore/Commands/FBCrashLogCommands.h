@@ -16,6 +16,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBCrashLogInfo;
+@class FBCrashLogStore;
 
 /**
  Commands for obtaining crash logs.
@@ -26,9 +27,10 @@ NS_ASSUME_NONNULL_BEGIN
  Obtains all of the crash logs matching a given predicate.
 
  @param predicate the predicate to match against.
+ @param useCache YES to use the cached crash logs, NO to re-fetch. Pass YES when significant events have happened.
  @return a Future that resolves with crash logs.
  */
-- (FBFuture<NSArray<FBCrashLogInfo *> *> *)crashes:(NSPredicate *)predicate;
+- (FBFuture<NSArray<FBCrashLogInfo *> *> *)crashes:(NSPredicate *)predicate useCache:(BOOL)useCache;
 
 /**
  Notifies when a Crash Log becomes available for a given predicate.
@@ -38,12 +40,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<FBCrashLogInfo *> *)notifyOfCrash:(NSPredicate *)predicate;
 
-@end
-
 /**
- An implementation of FBCrashLogCommands, that looks for crash logs on the host.
+ Prunes all of the crashes that may be cached that match the given predicate.
+
+ @param predicate the predicate to match against.
+ @return a Future that will resolve with the pruned crash logs.
  */
-@interface FBHostCrashLogCommands : NSObject <FBCrashLogCommands>
+- (FBFuture<NSArray<FBCrashLogInfo *> *> *)pruneCrashes:(NSPredicate *)predicate;
 
 @end
 

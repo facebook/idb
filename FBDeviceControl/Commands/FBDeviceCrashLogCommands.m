@@ -58,26 +58,114 @@ static NSString *const PingSuccess = @"ping";
 
 - (FBFuture<FBCrashLogInfo *> *)notifyOfCrash:(NSPredicate *)predicate
 {
-  [self ingestAllCrashLogs];
+  [self ingestAllCrashLogs:NO];
   return [self.store nextCrashLogForMatchingPredicate:predicate];
 }
 
-- (FBFuture<NSArray<FBCrashLogInfo *> *> *)crashes:(NSPredicate *)predicate
+- (FBFuture<NSArray<FBCrashLogInfo *> *> *)crashes:(NSPredicate *)predicate useCache:(BOOL)useCache
 {
   return [[self
-    ingestAllCrashLogs]
+    ingestAllCrashLogs:useCache]
     onQueue:self.device.workQueue map:^(NSArray<FBCrashLogInfo *> *_) {
       return [self.store ingestedCrashLogsMatchingPredicate:predicate];
     }];
 }
 
+- (FBFuture<NSArray<FBCrashLogInfo *> *> *)pruneCrashes:(NSPredicate *)predicate
+{
+  id<FBControlCoreLogger> logger = [self.device.logger withName:@"crash_remove"];
+  return [[self
+    ingestAllCrashLogs:YES]
+    onQueue:self.device.workQueue fmap:^(NSArray<FBCrashLogInfo *> *_) {
+      NSArray<FBCrashLogInfo *> *pruned = [self.store pruneCrashLogsMatchingPredicate:predicate];
+      [logger logFormat:@"Pruned %@ logs from local cache", [FBCollectionInformation oneLineDescriptionFromArray:[pruned valueForKeyPath:@"name"]]];
+      return [self removeCrashLogsFromDevice:pruned logger:logger];
+    }];
+}
+
 #pragma mark Private
 
-- (FBFuture<NSArray<FBCrashLogInfo *> *> *)ingestAllCrashLogs
+- (FBFuture<NSArray<FBCrashLogInfo *> *> *)ingestAllCrashLogs:(BOOL)useCache
 {
-  return [[[self.device.amDevice
+  if (self.hasPerformedInitialIngestion && useCache) {
+    return [FBFuture futureWithResult:@[]];
+  }
+
+  id<FBControlCoreLogger> logger = self.device.logger;
+  return [[self
+    copyCrashReportsAndGetFileConnection]
+    onQueue:self.device.workQueue fmap:^(FBAFCConnection *afc) {
+      if (!self.hasPerformedInitialIngestion) {
+        [self.store ingestAllExistingInDirectory];
+        self.hasPerformedInitialIngestion = YES;
+      }
+      NSError *error = nil;
+      NSArray<NSString *> *paths = [afc contentsOfDirectory:@"." error:&error];
+      if (!paths) {
+        return [FBFuture futureWithError:error];
+      }
+      NSMutableArray<FBCrashLogInfo *> *crashes = [NSMutableArray array];
+      for (NSString *path in paths) {
+        FBCrashLogInfo *crash = [self crashLogInfo:afc path:path error:&error];
+        if (!crash) {
+          [logger logFormat:@"Failed to ingest crash log %@: %@", path, error];
+          continue;
+        }
+        [crashes addObject:crash];
+      }
+      return [FBFuture futureWithResult:crashes];
+    }];
+}
+
+- (FBFuture<NSArray<FBCrashLogInfo *> *> *)removeCrashLogsFromDevice:(NSArray<FBCrashLogInfo *> *)crashesToRemove logger:(id<FBControlCoreLogger>)logger
+{
+  return [[self
+    crashReportFileConnection]
+    onQueue:self.device.workQueue fmap:^(FBAFCConnection *afc) {
+      NSMutableArray<FBCrashLogInfo *> *removed = NSMutableArray.array;
+      for (FBCrashLogInfo *crash in crashesToRemove) {
+        NSError *error = nil;
+        if ([afc removePath:crash.name recursively:NO error:&error]) {
+          [logger logFormat:@"Crash %@ removed from device", crash.name];
+          [removed addObject:crash];
+        } else {
+          [logger logFormat:@"Crash %@ could not be removed from device: %@", crash.name, error];
+        }
+      }
+      return [FBFuture futureWithResult:removed];
+    }];
+}
+
+- (nullable FBCrashLogInfo *)crashLogInfo:(FBAFCConnection *)afc path:(NSString *)path error:(NSError **)error
+{
+  NSString *name = path;
+  FBCrashLogInfo *existing = [self.store ingestedCrashLogWithName:path];
+  if (existing) {
+    [self.device.logger logFormat:@"No need to re-ingest %@", path];
+    return existing;
+  }
+  NSData *data = [afc contentsOfPath:path error:error];
+  if (!data) {
+    return nil;
+  }
+  return [self.store ingestCrashLogData:data name:name];
+}
+
+- (FBFutureContext<FBAFCConnection *> *)copyCrashReportsAndGetFileConnection
+{
+  return [[self
+    moveCrashReports]
+    onQueue:self.device.workQueue pushTeardown:^(NSString *_) {
+      return [self crashReportFileConnection];
+    }];
+}
+
+- (FBFuture<NSString *> *)moveCrashReports
+{
+  return [[self.device.amDevice
     startService:CrashReportMoverService]
-    onQueue:self.device.asyncQueue fmap:^ FBFuture<FBAMDServiceConnection *> * (FBAMDServiceConnection *connection) {
+    // The mover is used first and can be discarded when done.
+    onQueue:self.device.asyncQueue fmap:^ FBFuture<NSString *> * (FBAMDServiceConnection *connection) {
       NSError *error = nil;
       NSData *data = [connection receive:4 error:&error];
       if (!data) {
@@ -93,49 +181,23 @@ static NSString *const PingSuccess = @"ping";
           causedBy:error]
           failFuture];
       }
-      if (!self.hasPerformedInitialIngestion) {
-        [self.store ingestAllExistingInDirectory];
-        self.hasPerformedInitialIngestion = YES;
-      }
       return [FBFuture futureWithResult:response];
-    }]
-    onQueue:self.device.workQueue fmap:^(id _) {
-      return [[self.device.amDevice
-        startService:CrashReportCopyService]
-        onQueue:self.device.asyncQueue fmap:^ FBFuture<NSArray<FBCrashLogInfo *> *> * (FBAMDServiceConnection *connection) {
-          NSError *error = nil;
-          FBAFCConnection *afc = [FBAFCConnection afcFromServiceConnection:connection calls:FBAFCConnection.defaultCalls logger:connection.logger error:&error];
-          if (!afc) {
-            return [FBFuture futureWithError:error];
-          }
-          NSArray<NSString *> *paths = [afc contentsOfDirectory:@"." error:&error];
-          if (!paths) {
-            return [FBFuture futureWithError:error];
-          }
-          NSMutableArray<FBCrashLogInfo *> *crashes = [NSMutableArray array];
-          for (NSString *path in paths) {
-            FBCrashLogInfo *crash = [self crashLogInfo:afc path:path error:nil];
-            if (!crash) {
-              continue;
-            }
-            [crashes addObject:crash];
-          }
-          return [FBFuture futureWithResult:crashes];
-      }];
     }];
 }
 
-- (nullable FBCrashLogInfo *)crashLogInfo:(FBAFCConnection *)afc path:(NSString *)path error:(NSError **)error
+- (FBFutureContext<FBAFCConnection *> *)crashReportFileConnection
 {
-  NSString *name = path;
-  if ([self.store hasIngestedCrashLogWithName:name]) {
-    return nil;
-  }
-  NSData *data = [afc contentsOfPath:path error:error];
-  if (!data) {
-    return nil;
-  }
-  return [self.store ingestCrashLogData:data name:name];
+  return [[self.device.amDevice
+    startService:CrashReportCopyService]
+    // Re-map this into a AFC Connection.
+    onQueue:self.device.workQueue pend:^(FBAMDServiceConnection *connection) {
+      NSError *error = nil;
+      FBAFCConnection *afc = [FBAFCConnection afcFromServiceConnection:connection calls:FBAFCConnection.defaultCalls logger:self.device.logger error:&error];
+      if (!afc) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:afc];
+    }];
 }
 
 @end
