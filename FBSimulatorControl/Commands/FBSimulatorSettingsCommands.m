@@ -132,17 +132,26 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
 
 - (FBFuture<NSNull *> *)modifyTCCDatabaseWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services
 {
-  NSString *filePath = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/TCC/TCC.db"];
-  if (!filePath) {
+  NSString *databasePath = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/TCC/TCC.db"];
+  if (!databasePath) {
     return [[FBSimulatorError
-      describeFormat:@"Expected file to exist at path %@ but it was not there", filePath]
+      describeFormat:@"Expected file to exist at path %@ but it was not there", databasePath]
       failFuture];
   }
-  NSArray<NSString *> *arguments = @[
-    filePath,
-    [NSString stringWithFormat:@"INSERT or REPLACE INTO access VALUES %@", [FBSimulatorSettingsCommands buildRowsForBundleIDs:bundleIDs services:services]],
-  ];
-  return [FBSimulatorSettingsCommands runSqliteCommandWithArguments:arguments];
+
+  id<FBControlCoreLogger> logger = [self.simulator.logger withName:@"sqlite_auth"];
+  dispatch_queue_t queue = self.simulator.asyncQueue;
+
+  return [[[FBSimulatorSettingsCommands
+    buildRowsForDatabase:databasePath bundleIDs:bundleIDs services:services queue:queue logger:logger]
+    onQueue:self.simulator.workQueue fmap:^(NSString *rows) {
+      return [FBSimulatorSettingsCommands
+        runSqliteCommandOnDatabase:databasePath
+        arguments:@[[NSString stringWithFormat:@"INSERT or REPLACE INTO access VALUES %@", rows]]
+        queue:queue
+        logger:logger];
+    }]
+    mapReplace:NSNull.null];
 }
 
 #pragma mark Private
@@ -186,10 +195,24 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
   return [filtered copy];
 }
 
-+ (NSString *)buildRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBSettingsApprovalService> *)services
++ (FBFuture<NSString *> *)buildRowsForDatabase:(NSString *)databasePath bundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBSettingsApprovalService> *)services queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   NSParameterAssert(bundleIDs.count >= 1);
   NSParameterAssert(services.count >= 1);
+
+  return [[self
+    runSqliteCommandOnDatabase:databasePath arguments:@[@".schema access"] queue:queue logger:logger]
+    onQueue:queue map:^(NSString *result) {
+      if ([result containsString:@"last_modified"]) {
+        return [FBSimulatorSettingsCommands postiOS12ApprovalRowsForBundleIDs:bundleIDs services:services];
+      } else {
+        return [FBSimulatorSettingsCommands preiOS12ApprovalRowsForBundleIDs:bundleIDs services:services];
+      }
+    }];
+}
+
++ (NSString *)preiOS12ApprovalRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBSettingsApprovalService> *)services
+{
   NSMutableArray<NSString *> *tuples = [NSMutableArray array];
   for (NSString *bundleID in bundleIDs) {
     for (FBSettingsApprovalService service in [self filteredTCCApprovals:services]) {
@@ -200,12 +223,35 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
   return [tuples componentsJoinedByString:@", "];
 }
 
-+ (FBFuture<NSNull *> *)runSqliteCommandWithArguments:(NSArray<NSString *> *)arguments
++ (NSString *)postiOS12ApprovalRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBSettingsApprovalService> *)services
 {
-  return [[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/sqlite3" arguments:arguments]
+  NSUInteger timestamp = NSDate.date.timeIntervalSince1970;
+  NSMutableArray<NSString *> *tuples = [NSMutableArray array];
+  for (NSString *bundleID in bundleIDs) {
+    for (FBSettingsApprovalService service in [self filteredTCCApprovals:services]) {
+      NSString *serviceName = self.tccDatabaseMapping[service];
+      [tuples addObject:[NSString stringWithFormat:@"('%@', '%@', 0, 1, 1, NULL, NULL, NULL, 'UNUSED', NULL, NULL, %lu)", serviceName, bundleID, timestamp]];
+    }
+  }
+  return [tuples componentsJoinedByString:@", "];
+}
+
++ (FBFuture<NSString *> *)runSqliteCommandOnDatabase:(NSString *)databasePath arguments:(NSArray<NSString *> *)arguments queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  return [[[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/sqlite3" arguments:[@[databasePath] arrayByAddingObjectsFromArray:arguments]]
+    withStdOutInMemoryAsString]
+    withStdErrInMemoryAsString]
     runUntilCompletion]
-    mapReplace:NSNull.null];
+    onQueue:queue fmap:^(FBTask<NSNull *, NSString *, NSString *> *task) {
+      if ([task.stdErr hasPrefix:@"Error"]) {
+        return [[[FBSimulatorError
+          describeFormat:@"Failed to execute sqlite command: %@", task.stdErr]
+          logger:logger]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:task.stdOut];
+    }];
 }
 
 + (NSArray<NSString *> *)contactsDatabaseFilePathsFromContainingDirectory:(NSString *)databaseDirectory error:(NSError **)error
