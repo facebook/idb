@@ -225,7 +225,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
 
 + (NSString *)postiOS12ApprovalRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBSettingsApprovalService> *)services
 {
-  NSUInteger timestamp = NSDate.date.timeIntervalSince1970;
+  NSUInteger timestamp = (NSUInteger)NSDate.date.timeIntervalSince1970;
   NSMutableArray<NSString *> *tuples = [NSMutableArray array];
   for (NSString *bundleID in bundleIDs) {
     for (FBSettingsApprovalService service in [self filteredTCCApprovals:services]) {
