@@ -229,11 +229,6 @@
   return self.mutableState.launchdProcess;
 }
 
-- (FBSimulatorConnection *)connection
-{
-  return self.mutableState.connection;
-}
-
 - (FBProcessInfo *)containerApplication
 {
   return self.mutableState.containerApplication;
@@ -341,6 +336,7 @@
   dispatch_once(&onceToken, ^{
     statefulCommands = [NSSet setWithArray:@[
       FBSimulatorCrashLogCommands.class,
+      FBSimulatorLifecycleCommands.class,
       FBSimulatorVideoRecordingCommands.class,
     ]];
   });

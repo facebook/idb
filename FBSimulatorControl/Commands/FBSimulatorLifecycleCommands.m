@@ -31,6 +31,7 @@
 @interface FBSimulatorLifecycleCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, readwrite) FBSimulatorConnection *connection;
 
 @end
 
@@ -124,8 +125,8 @@
 - (nullable FBSimulatorConnection *)connectWithError:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
-  if (simulator.mutableState.connection) {
-    return simulator.mutableState.connection;
+  if (self.connection) {
+    return self.connection;
   }
   if (simulator.state != FBiOSTargetStateBooted) {
     return [[[FBSimulatorError
@@ -135,6 +136,7 @@
   }
 
   FBSimulatorConnection *connection = [[FBSimulatorConnection alloc] initWithSimulator:simulator framebuffer:nil hid:nil];
+  self.connection = connection;
   [simulator.eventSink connectionDidConnect:connection];
   return connection;
 }
@@ -142,7 +144,7 @@
 - (FBFuture<NSNull *> *)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger
 {
   FBSimulator *simulator = self.simulator;
-  FBSimulatorConnection *connection = simulator.mutableState.connection;
+  FBSimulatorConnection *connection = self.connection;
   if (!connection) {
     [logger.debug logFormat:@"Simulator %@ does not have an active connection", simulator.shortDescription];
     return [FBFuture futureWithResult:NSNull.null];
@@ -155,6 +157,7 @@
     timeout:timeout waitingFor:@"The Simulator Connection to teardown"]
     onQueue:self.simulator.workQueue map:^(id _) {
       [logger.debug logFormat:@"Simulator connection %@ torn down in %f seconds", connection, [NSDate.date timeIntervalSinceDate:date]];
+      [self.simulator.eventSink connectionDidDisconnect:connection expected:YES];
       return NSNull.null;
     }];
 }

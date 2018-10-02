@@ -19,7 +19,6 @@
 
 @property (nonatomic, copy, readwrite) FBProcessInfo *launchdProcess;
 @property (nonatomic, copy, readwrite) FBProcessInfo *containerApplication;
-@property (nonatomic, strong, readwrite) FBSimulatorConnection *connection;
 
 @property (nonatomic, assign, readwrite) FBiOSTargetState lastKnownState;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> sink;
@@ -72,18 +71,12 @@
 - (void)connectionDidConnect:(FBSimulatorConnection *)connection
 {
   NSParameterAssert(connection);
-  NSParameterAssert(self.connection == nil);
-
-  self.connection = connection;
   [self.sink connectionDidConnect:connection];
 }
 
 - (void)connectionDidDisconnect:(FBSimulatorConnection *)connection expected:(BOOL)expected
 {
   NSParameterAssert(connection);
-  NSParameterAssert(self.connection);
-
-  self.connection = nil;
   [self.sink connectionDidDisconnect:connection expected:expected];
 }
 

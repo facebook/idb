@@ -42,11 +42,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, nullable, readonly) FBProcessInfo *containerApplication;
 
-/**
- The current Simulator Connection.
- */
-@property (nonatomic, strong, nullable, readonly) FBSimulatorConnection *connection;
-
 @end
 
 NS_ASSUME_NONNULL_END
