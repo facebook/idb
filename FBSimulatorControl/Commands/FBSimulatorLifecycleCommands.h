@@ -19,6 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulatorBootConfiguration;
 @class FBSimulatorBridge;
 @class FBSimulatorConnection;
+@class FBSimulatorHID;
 
 @protocol FBControlCoreLogger;
 
@@ -95,10 +96,18 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Connects to the FBSimulatorConnection.
 
- @param error an error out for any error that occurs.
- @return the Simulator Connection on success, nil otherwise.
+ @return A Future wrapping the the Simulator Connection.
  */
-- (nullable FBSimulatorConnection *)connectWithError:(NSError **)error;
+- (FBFuture<FBSimulatorConnection *> *)connect;
+
+/**
+ Connects to the FBSimulatorConnection, using existing values.
+
+ @param hid the hid to connect.
+ @param framebuffer the framebuffer to connect.
+ @return A Future wrapping the the Simulator Connection.
+ */
+- (FBFuture<FBSimulatorConnection *> *)connectWithHID:(nullable FBSimulatorHID *)hid framebuffer:(nullable FBFramebuffer *)framebuffer;
 
 /**
  Disconnects from FBSimulatorConnection.

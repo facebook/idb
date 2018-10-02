@@ -252,7 +252,7 @@
 {
   // Only Boot with CoreSimulator when told to do so. Return early if not.
   if (!self.shouldBootWithCoreSimulator) {
-    return [FBFuture futureWithResult:[[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:nil hid:nil]];
+    return [self.simulator connect];
   }
 
   // Create the Framebuffer (if required to do so).
@@ -287,7 +287,7 @@
       // Combine everything into the connection.
       FBFramebuffer *framebuffer = [results[0] isKindOfClass:NSNull.class] ? nil : results[0];;
       FBSimulatorHID *hid = results[1];
-      return [[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:framebuffer hid:hid];
+      return [self.simulator connectWithHID:hid framebuffer:framebuffer];
     }];
 }
 
@@ -600,13 +600,9 @@
         }];
     }]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
-      return [[self verifySimulatorIsBooted] mapReplace:connection];
+      return [self verifySimulatorIsBooted];
     }]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
-      // Broadcast the availability of the new bridge.
-      [self.simulator.eventSink connectionDidConnect:connection];
-      return [FBFuture futureWithResult:NSNull.null];
-    }];
+    mapReplace:NSNull.null];
 }
 
 - (FBFuture<FBProcessInfo *> *)verifySimulatorIsBooted

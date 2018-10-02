@@ -122,23 +122,28 @@
 
 #pragma mark Connection
 
-- (nullable FBSimulatorConnection *)connectWithError:(NSError **)error
+- (FBFuture<FBSimulatorConnection *> *)connect
+{
+  return [self connectWithHID:nil framebuffer:nil];
+}
+
+- (FBFuture<FBSimulatorConnection *> *)connectWithHID:(FBSimulatorHID *)hid framebuffer:(FBFramebuffer *)framebuffer
 {
   FBSimulator *simulator = self.simulator;
   if (self.connection) {
-    return self.connection;
+    return [FBFuture futureWithResult:self.connection];
   }
-  if (simulator.state != FBiOSTargetStateBooted) {
+  if (simulator.state != FBiOSTargetStateBooted && simulator.state != FBiOSTargetStateBooting) {
     return [[[FBSimulatorError
       describeFormat:@"Cannot connect to Simulator in state %@", simulator.stateString]
       inSimulator:simulator]
-      fail:error];
+      failFuture];
   }
 
-  FBSimulatorConnection *connection = [[FBSimulatorConnection alloc] initWithSimulator:simulator framebuffer:nil hid:nil];
+  FBSimulatorConnection *connection = [[FBSimulatorConnection alloc] initWithSimulator:simulator framebuffer:framebuffer hid:hid];
   self.connection = connection;
   [simulator.eventSink connectionDidConnect:connection];
-  return connection;
+  return [FBFuture futureWithResult:connection];
 }
 
 - (FBFuture<NSNull *> *)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger
@@ -166,24 +171,22 @@
 
 - (FBFuture<FBSimulatorBridge *> *)connectToBridge
 {
-  NSError *error = nil;
-  FBSimulatorConnection *connection = [self connectWithError:&error];
-  if (!connection) {
-    return [FBFuture futureWithError:error];
-  }
-  return [connection connectToBridge];
+  return [[self
+    connect]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
+      return [connection connectToBridge];
+    }];
 }
 
 #pragma mark Framebuffer
 
 - (FBFuture<FBFramebuffer *> *)connectToFramebuffer
 {
-  NSError *error = nil;
-  FBSimulatorConnection *connection = [self connectWithError:&error];
-  if (!connection) {
-    return [FBFuture futureWithError:error];
-  }
-  return [connection connectToFramebuffer];
+  return [[self
+    connect]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
+      return [connection connectToFramebuffer];
+    }];
 }
 
 #pragma mark URLs

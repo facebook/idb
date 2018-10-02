@@ -676,16 +676,14 @@ static NSString *const DirectionUp = @"up";
 
 - (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
-  if (![target isKindOfClass:FBSimulator.class]) {
+  id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
+  if (![target conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
     return [[FBSimulatorError
       describeFormat:@"%@ is not a Simulator", target]
       failFuture];
   }
-  FBSimulator *simulator = (FBSimulator *) target;
-  return [[[[FBFuture
-    onQueue:target.workQueue resolveValue:^ FBSimulatorConnection * (NSError **error) {
-      return [simulator connectWithError:error];
-    }]
+  return [[[[commands
+    connect]
     onQueue:target.workQueue fmap:^(FBSimulatorConnection *connection) {
       return [connection connectToHID];
     }]
