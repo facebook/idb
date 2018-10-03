@@ -82,9 +82,21 @@
 
 - (FBFuture<FBSimulator *> *)fetchSimulatorForApplicationTest:(FBXCTestDestinationiPhoneSimulator *)destination
 {
+  FBSimulatorBootOptions options = FBSimulatorBootOptionsEnableDirectLaunch | FBSimulatorBootOptionsVerifyUsable;
+
+  if (FBXcodeConfiguration.isXcode10OrGreater) {
+    NSMutableDictionary<NSString *, NSString *> *environment = [NSProcessInfo.processInfo.environment mutableCopy];
+    NSString *videoRecordingPath = environment[@"FBXCTEST_VIDEO_RECORDING_PATH"];
+    if (videoRecordingPath != nil) {
+      // rdar://44907260
+      // In Xcode 10, we need to launch Simulator.app to setup simulator properly for enabling video recording.
+      options &= ~FBSimulatorBootOptionsEnableDirectLaunch;
+    }
+  }
+
   FBSimulatorBootConfiguration *bootConfiguration = [[FBSimulatorBootConfiguration
     defaultConfiguration]
-    withOptions:FBSimulatorBootOptionsEnableDirectLaunch | FBSimulatorBootOptionsVerifyUsable];
+    withOptions:options];
 
   return [[self
     fetchSimulatorForLogicTest:destination]
