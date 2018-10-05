@@ -9,7 +9,6 @@
 
 #import "FBSimulatorScreenshotCommands.h"
 
-#import "FBFramebuffer.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorImage.h"
@@ -17,6 +16,7 @@
 @interface FBSimulatorScreenshotCommands ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, nullable, readwrite) FBSimulatorImage *image;
 
 @end
 
@@ -46,10 +46,9 @@
 
 - (FBFuture<NSData *> *)takeScreenshot:(FBScreenshotFormat)format
 {
-  return [[self.simulator
-    connectToFramebuffer]
-    onQueue:self.simulator.workQueue fmap:^(FBFramebuffer *framebuffer) {
-      FBSimulatorImage *image = framebuffer.image;
+  return [[self
+    connectToImage]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorImage *image) {
       NSData *data = nil;
       NSError *error = nil;
       if ([format isEqualToString:FBScreenshotFormatJPEG]) {
@@ -62,6 +61,23 @@
           failFuture];
       }
       return data ? [FBFuture futureWithResult:data] : [FBFuture futureWithError:error];
+    }];
+}
+
+#pragma mark Private Methods
+
+- (FBFuture<FBSimulatorImage *> *)connectToImage
+{
+  if (self.image) {
+    return [FBFuture futureWithResult:self.image];
+  }
+
+  return [[self.simulator
+    connectToFramebuffer]
+    onQueue:self.simulator.workQueue fmap:^(FBFramebuffer *framebuffer) {
+      FBSimulatorImage *image = [FBSimulatorImage imageWithFramebuffer:framebuffer logger:self.simulator.logger];
+      self.image = image;
+      return [FBFuture futureWithResult:image];
     }];
 }
 

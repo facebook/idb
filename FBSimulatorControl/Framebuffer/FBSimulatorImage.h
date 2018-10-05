@@ -9,11 +9,11 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBFramebufferSurface.h>
+#import <FBSimulatorControl/FBFramebuffer.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBFramebufferSurface;
+@class FBFramebuffer;
 @protocol FBSimulatorEventSink;
 
 /**
@@ -26,11 +26,11 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a new FBSimulatorImage instance using a Surface.
 
- @param surface the surface to obtain frames from.
+ @param framebuffer the framebuffer to obtain frames from.
  @param logger the logger to use.
  @return a new FBSimulatorImage instance.
  */
-+ (instancetype)imageWithSurface:(FBFramebufferSurface *)surface logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)imageWithFramebuffer:(FBFramebuffer *)framebuffer logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 

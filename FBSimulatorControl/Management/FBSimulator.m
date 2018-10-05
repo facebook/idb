@@ -337,6 +337,7 @@
     statefulCommands = [NSSet setWithArray:@[
       FBSimulatorCrashLogCommands.class,
       FBSimulatorLifecycleCommands.class,
+      FBSimulatorScreenshotCommands.class,
       FBSimulatorVideoRecordingCommands.class,
     ]];
   });

@@ -18,7 +18,7 @@
 #import <SimulatorKit/SimDisplayVideoWriter.h>
 #import <SimulatorKit/SimDisplayVideoWriter+Removed.h>
 
-#import "FBFramebufferSurface.h"
+#import "FBFramebuffer.h"
 #import "FBSimulatorError.h"
 
 // A Global Block for the Video Writer completion callback.
@@ -31,10 +31,10 @@ void (^VideoWriterGlobalCallback)(NSError *) = ^(NSError *error){
   (void) error;
 };
 
-@interface FBVideoEncoderSimulatorKit () <FBFramebufferSurfaceConsumer>
+@interface FBVideoEncoderSimulatorKit () <FBFramebufferConsumer>
 
 @property (nonatomic, strong, nullable, readonly) SimDisplayVideoWriter *writer;
-@property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
+@property (nonatomic, strong, readonly) FBFramebuffer *framebuffer;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBFuture<NSNull *> *finishedWriting;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startedWriting;
@@ -45,7 +45,7 @@ void (^VideoWriterGlobalCallback)(NSError *) = ^(NSError *error){
 
 #pragma mark Initializers
 
-+ (instancetype)encoderWithRenderable:(FBFramebufferSurface *)surface videoPath:(NSString *)videoPath logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)encoderWithFramebuffer:(FBFramebuffer *)framebuffer videoPath:(NSString *)videoPath logger:(nullable id<FBControlCoreLogger>)logger
 {
   NSURL *fileURL = [NSURL fileURLWithPath:videoPath];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbsimulatorcontrol.videoencoder.simulatorkit", DISPATCH_QUEUE_SERIAL);
@@ -54,7 +54,7 @@ void (^VideoWriterGlobalCallback)(NSError *) = ^(NSError *error){
   FBMutableFuture<NSNull *> *startedWriting = [FBMutableFuture future];
   SimDisplayVideoWriter *writer = [FBVideoEncoderSimulatorKit createVideoWriterForURL:fileURL mediaQueue:queue startedWriting:startedWriting finishedWriting:finishedWriting logger:logger];
 
-  return [[self alloc] initWithWriter:writer surface:surface fileURL:fileURL mediaQueue:queue startedWriting:startedWriting finishedWriting:finishedWriting logger:logger];
+  return [[self alloc] initWithWriter:writer framebuffer:framebuffer fileURL:fileURL mediaQueue:queue startedWriting:startedWriting finishedWriting:finishedWriting logger:logger];
 }
 
 + (SimDisplayVideoWriter *)createVideoWriterForURL:(NSURL *)url mediaQueue:(dispatch_queue_t)mediaQueue startedWriting:(FBMutableFuture<NSNull *> *)startedWriting finishedWriting:(FBMutableFuture<NSNull *> *)finishedWriting logger:(nullable id<FBControlCoreLogger>)logger
@@ -104,7 +104,7 @@ void (^VideoWriterGlobalCallback)(NSError *) = ^(NSError *error){
     completionHandler:VideoWriterGlobalCallback];
 }
 
-- (instancetype)initWithWriter:(nullable SimDisplayVideoWriter *)writer surface:(FBFramebufferSurface *)surface fileURL:(NSURL *)fileURL mediaQueue:(dispatch_queue_t)mediaQueue startedWriting:(FBMutableFuture<NSNull *> *)startedWriting finishedWriting:(FBFuture<NSNull *> *)finishedWriting logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithWriter:(nullable SimDisplayVideoWriter *)writer framebuffer:(FBFramebuffer *)framebuffer fileURL:(NSURL *)fileURL mediaQueue:(dispatch_queue_t)mediaQueue startedWriting:(FBMutableFuture<NSNull *> *)startedWriting finishedWriting:(FBFuture<NSNull *> *)finishedWriting logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -112,7 +112,7 @@ void (^VideoWriterGlobalCallback)(NSError *) = ^(NSError *error){
   }
 
   _writer = writer;
-  _surface = surface;
+  _framebuffer = framebuffer;
   _mediaQueue = mediaQueue;
   _finishedWriting = finishedWriting;
   _startedWriting = startedWriting;
@@ -175,7 +175,7 @@ void (^VideoWriterGlobalCallback)(NSError *) = ^(NSError *error){
   [self.logger log:@"Start Writing in Video Writer"];
   [self.writer startWriting];
   [self.logger log:@"Attaching Consumer in Video Writer"];
-  IOSurfaceRef surface = [self.surface attachConsumer:self onQueue:self.mediaQueue];
+  IOSurfaceRef surface = [self.framebuffer attachConsumer:self onQueue:self.mediaQueue];
   if (surface) {
     dispatch_async(self.mediaQueue, ^{
       [self didChangeIOSurface:surface];
@@ -208,7 +208,7 @@ void (^VideoWriterGlobalCallback)(NSError *) = ^(NSError *error){
   // Detach the Consumer first, we don't want to send any more Damage Rects.
   // If a Damage Rect send races with finishWriting, a crash can occur.
   [self.logger log:@"Detaching Consumer in Video Writer"];
-  [self.surface detachConsumer:self];
+  [self.framebuffer detachConsumer:self];
   // Now there are no more incoming rects, tear down the video encoding.
   [self.logger log:@"Finishing Writing in Video Writer"];
   [self.writer finishWriting];

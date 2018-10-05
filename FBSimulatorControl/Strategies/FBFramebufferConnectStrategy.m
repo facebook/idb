@@ -19,7 +19,7 @@
 
 #import "FBFramebuffer.h"
 #import "FBFramebufferConfiguration.h"
-#import "FBFramebufferSurface.h"
+#import "FBFramebuffer.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBridge.h"
@@ -81,11 +81,10 @@
 - (FBFuture<FBFramebuffer *> *)connect:(FBSimulator *)simulator
 {
   NSError *error = nil;
-  FBFramebufferSurface *surface = [FBFramebufferSurface mainScreenSurfaceForClient:(SimDeviceIOClient *)simulator.device.io logger:simulator.logger error:&error];
-  if (!surface) {
+  FBFramebuffer *framebuffer = [FBFramebuffer mainScreenSurfaceForClient:(SimDeviceIOClient *)simulator.device.io logger:simulator.logger error:&error];
+  if (!framebuffer) {
     return [FBFuture futureWithError:error];
   }
-  FBFramebuffer *framebuffer = [FBFramebuffer framebufferWithSurface:surface configuration:self.configuration simulator:simulator];
   return [FBFuture futureWithResult:framebuffer];
 }
 
@@ -104,8 +103,7 @@
   if (!mainScreenService) {
     return [FBFuture futureWithError:error];
   }
-  FBFramebufferSurface *surface = [FBFramebufferSurface mainScreenSurfaceForFramebufferService:mainScreenService logger:simulator.logger];
-  FBFramebuffer *framebuffer = [FBFramebuffer framebufferWithSurface:surface configuration:self.configuration simulator:simulator];
+  FBFramebuffer *framebuffer = [FBFramebuffer mainScreenSurfaceForFramebufferService:mainScreenService logger:simulator.logger];
   return [FBFuture futureWithResult:framebuffer];
 }
 

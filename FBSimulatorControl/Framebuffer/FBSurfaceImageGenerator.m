@@ -86,7 +86,7 @@
   return cgImage;
 }
 
-#pragma mark FBFramebufferSurfaceConsumer
+#pragma mark FBFramebufferConsumer
 
 - (void)didChangeIOSurface:(IOSurfaceRef)surface
 {

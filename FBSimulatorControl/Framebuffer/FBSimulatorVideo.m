@@ -30,9 +30,9 @@
 
 @interface FBSimulatorVideo_SimulatorKit : FBSimulatorVideo
 
-@property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
+@property (nonatomic, strong, readonly) FBFramebuffer *framebuffer;
 
-- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration framebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -51,9 +51,9 @@
 
 #pragma mark Initializers
 
-+ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
++ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration framebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBSimulatorVideo_SimulatorKit alloc] initWithConfiguration:configuration surface:surface logger:logger];
+  return [[FBSimulatorVideo_SimulatorKit alloc] initWithConfiguration:configuration framebuffer:framebuffer logger:logger];
 }
 
 + (instancetype)simctlVideoForDeviceSetPath:(NSString *)deviceSetPath deviceUUID:(NSString *)deviceUUID logger:(id<FBControlCoreLogger>)logger
@@ -70,7 +70,7 @@
 
   _configuration = configuration;
   _logger = logger;
-  _completedFuture = [FBMutableFuture future];
+  _completedFuture = FBMutableFuture.future;
 
   return self;
 }
@@ -115,14 +115,14 @@
 
 @implementation FBSimulatorVideo_SimulatorKit
 
-- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration framebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithConfiguration:configuration logger:logger];
   if (!self) {
     return nil;
   }
 
-  _surface = surface;
+  _framebuffer = framebuffer;
 
   BOOL pendingStart = (configuration.options & FBVideoEncoderOptionsAutorecord) == FBVideoEncoderOptionsAutorecord;
   if (pendingStart) {
@@ -145,7 +145,7 @@
   NSString *path = filePath ?: self.configuration.filePath;
 
   // Create and start the encoder.
-  self.encoder = [FBVideoEncoderSimulatorKit encoderWithRenderable:self.surface videoPath:path logger:self.logger];
+  self.encoder = [FBVideoEncoderSimulatorKit encoderWithFramebuffer:self.framebuffer videoPath:path logger:self.logger];
   FBFuture<NSNull *> *future = [self.encoder startRecording];
 
   return future;

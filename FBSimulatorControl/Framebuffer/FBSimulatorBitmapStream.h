@@ -11,11 +11,11 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import <FBSimulatorControl/FBFramebufferSurface.h>
+#import <FBSimulatorControl/FBFramebuffer.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBFramebufferSurface;
+@class FBFramebuffer;
 @protocol FBFileConsumer;
 @protocol FBControlCoreLogger;
 
@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
  This component can be used to provide a real-time stream of a Simulator's Framebuffer.
  This can be connected to additional software via a stream to a File Handle or Fifo.
  */
-@interface FBSimulatorBitmapStream : NSObject <FBFramebufferSurfaceConsumer, FBBitmapStream>
+@interface FBSimulatorBitmapStream : NSObject <FBFramebufferConsumer, FBBitmapStream>
 
 #pragma mark Initializers
 
@@ -32,22 +32,22 @@ NS_ASSUME_NONNULL_BEGIN
  Constructs a Bitmap Stream.
  Bitmaps will only be written when there is a new bitmap available.
 
- @param surface the surface to connect to.
+ @param framebuffer the framebuffer to get frames from.
  @param logger the logger to log to.
  @return a new Bitmap Stream object.
  */
-+ (instancetype)lazyStreamWithSurface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)lazyStreamWithFramebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Constructs a Bitmap Stream.
  Bitmaps will be written at an interval in seconds, regardless of whether the frame is new or not.
 
- @param surface the surface to connect to.
+ @param framebuffer the framebuffer to get frames from.
  @param framesPerSecond the number of frames to send per second.
  @param logger the logger to log to.
  @return a new Bitmap Stream object.
  */
-+ (instancetype)eagerStreamWithSurface:(FBFramebufferSurface *)surface framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)eagerStreamWithFramebuffer:(FBFramebuffer *)framebuffer framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

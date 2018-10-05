@@ -56,14 +56,14 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 @property (nonatomic, assign, readonly) uint64_t timeInterval;
 @property (nonatomic, strong, readwrite) FBDispatchSourceNotifier *timer;
 
-- (instancetype)initWithSurface:(FBFramebufferSurface *)surface writeQueue:(dispatch_queue_t)writeQueue timeInterval:(uint64_t)timeInterval logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer writeQueue:(dispatch_queue_t)writeQueue timeInterval:(uint64_t)timeInterval logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
 
 @interface FBSimulatorBitmapStream ()
 
-@property (nonatomic, weak, readonly) FBFramebufferSurface *surface;
+@property (nonatomic, weak, readonly) FBFramebuffer *framebuffer;
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startFuture;
@@ -84,25 +84,25 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   return dispatch_queue_create("com.facebook.FBSimulatorControl.BitmapStream", DISPATCH_QUEUE_SERIAL);
 }
 
-+ (instancetype)lazyStreamWithSurface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
++ (instancetype)lazyStreamWithFramebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBSimulatorBitmapStream_Lazy alloc] initWithSurface:surface writeQueue:self.writeQueue logger:logger];
+  return [[FBSimulatorBitmapStream_Lazy alloc] initWithFramebuffer:framebuffer writeQueue:self.writeQueue logger:logger];
 }
 
-+ (instancetype)eagerStreamWithSurface:(FBFramebufferSurface *)surface framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)eagerStreamWithFramebuffer:(FBFramebuffer *)framebuffer framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger;
 {
   uint64_t timeInterval = NSEC_PER_SEC / framesPerSecond;
-  return [[FBSimulatorBitmapStream_Eager alloc] initWithSurface:surface writeQueue:self.writeQueue timeInterval:timeInterval logger:logger];
+  return [[FBSimulatorBitmapStream_Eager alloc] initWithFramebuffer:framebuffer writeQueue:self.writeQueue timeInterval:timeInterval logger:logger];
 }
 
-- (instancetype)initWithSurface:(FBFramebufferSurface *)surface writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _surface = surface;
+  _framebuffer = framebuffer;
   _writeQueue = writeQueue;
   _logger = logger;
   _startFuture = FBMutableFuture.future;
@@ -154,12 +154,12 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
       describe:@"Cannot stop streaming, no consumer attached"]
       failFuture];
   }
-  if (![self.surface.attachedConsumers containsObject:self]) {
+  if (![self.framebuffer.attachedConsumers containsObject:self]) {
     return [[FBSimulatorError
       describe:@"Cannot stop streaming, is not attached to a surface"]
       failFuture];
   }
-  [self.surface detachConsumer:self];
+  [self.framebuffer detachConsumer:self];
   [self.stopFuture resolveWithResult:NSNull.null];
   return self.stopFuture;
 }
@@ -169,18 +169,18 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 - (FBFuture<NSNull *> *)attachConsumerIfNeeded
 {
   return [FBFuture onQueue:self.writeQueue resolve:^{
-    if ([self.surface isConsumerAttached:self]) {
+    if ([self.framebuffer isConsumerAttached:self]) {
       [self.logger logFormat:@"Already attached %@ as a consumer", self];
       return [FBFuture futureWithResult:NSNull.null];
     }
     // If we have a surface now, we can start rendering, so mount the surface.
-    IOSurfaceRef surface = [self.surface attachConsumer:self onQueue:self.writeQueue];
+    IOSurfaceRef surface = [self.framebuffer attachConsumer:self onQueue:self.writeQueue];
     [self didChangeIOSurface:surface];
     return [FBFuture futureWithResult:NSNull.null];
   }];
 }
 
-#pragma mark FBFramebufferSurfaceConsumer
+#pragma mark FBFramebufferConsumer
 
 - (NSString *)consumerIdentifier
 {
@@ -282,9 +282,9 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 @implementation FBSimulatorBitmapStream_Eager
 
-- (instancetype)initWithSurface:(FBFramebufferSurface *)surface writeQueue:(dispatch_queue_t)writeQueue timeInterval:(uint64_t)timeInterval logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer writeQueue:(dispatch_queue_t)writeQueue timeInterval:(uint64_t)timeInterval logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super initWithSurface:surface writeQueue:writeQueue logger:logger];
+  self = [super initWithFramebuffer:framebuffer writeQueue:writeQueue logger:logger];
   if (!self) {
     return nil;
   }

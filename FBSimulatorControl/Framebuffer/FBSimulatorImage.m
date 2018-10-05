@@ -27,7 +27,7 @@
 #import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
 #import <SimulatorKit/SimDisplayRenderable-Protocol.h>
 
-#import "FBFramebufferSurface.h"
+#import "FBFramebuffer.h"
 #import "FBSimulatorError.h"
 #import "FBSurfaceImageGenerator.h"
 
@@ -36,7 +36,7 @@
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 @property (nonatomic, strong, readonly) FBSurfaceImageGenerator *imageGenerator;
-@property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
+@property (nonatomic, strong, readonly) FBFramebuffer *framebuffer;
 @property (nonatomic, strong, readwrite) NSUUID *consumerUUID;
 
 @end
@@ -50,19 +50,19 @@
   return dispatch_queue_create("com.facebook.FBSimulatorControl.framebuffer.image", DISPATCH_QUEUE_SERIAL);
 }
 
-+ (instancetype)imageWithSurface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
++ (instancetype)imageWithFramebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBSimulatorImage alloc] initWithSurface:surface logger:logger];
+  return [[FBSimulatorImage alloc] initWithFramebuffer:framebuffer logger:logger];
 }
 
-- (instancetype)initWithSurface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _surface = surface;
+  _framebuffer = framebuffer;
   _logger = logger;
   _consumerUUID = [NSUUID UUID];
   _writeQueue = FBSimulatorImage.writeQueue;
@@ -75,9 +75,9 @@
 
 - (nullable CGImageRef)image
 {
-  if (![self.surface isConsumerAttached:self.imageGenerator]) {
+  if (![self.framebuffer isConsumerAttached:self.imageGenerator]) {
     [self.logger logFormat:@"Image Generator %@ not attached, attaching", self.imageGenerator];
-    IOSurfaceRef surface = [self.surface attachConsumer:self.imageGenerator onQueue:self.writeQueue];
+    IOSurfaceRef surface = [self.framebuffer attachConsumer:self.imageGenerator onQueue:self.writeQueue];
     if (surface) {
       [self.logger logFormat:@"Surface %@ immediately available, adding to Image Generator %@", surface, self.imageGenerator];
       [self.imageGenerator didChangeIOSurface:surface];

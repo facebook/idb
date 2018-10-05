@@ -59,7 +59,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<FBSimulatorBridge *> *)connectToBridge;
 
 /**
- Connects to the Framebuffer.
+ Connects to the Framebuffer's Surface.
 
  @return a Future that resolves with the Framebuffer instance.
  */

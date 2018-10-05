@@ -17,8 +17,8 @@
 #import "FBSimulatorSet.h"
 #import "FBFramebuffer.h"
 #import "FBSimulatorVideo.h"
-#import "FBFramebufferSurface.h"
 #import "FBSimulatorBitmapStream.h"
+#import "FBVideoEncoderConfiguration.h"
 
 @interface FBSimulatorVideoRecordingCommands ()
 
@@ -83,14 +83,14 @@
       failFuture];
   }
   id<FBControlCoreLogger> logger = self.simulator.logger;
-  return [[self
-    obtainSurface]
-    onQueue:self.simulator.workQueue map:^(FBFramebufferSurface *surface) {
+  return [[self.simulator
+    connectToFramebuffer]
+    onQueue:self.simulator.workQueue map:^(FBFramebuffer *framebuffer) {
       NSNumber *framesPerSecond = configuration.framesPerSecond;
       if (framesPerSecond) {
-        return [FBSimulatorBitmapStream eagerStreamWithSurface:surface framesPerSecond:framesPerSecond.unsignedIntegerValue logger:logger];
+        return [FBSimulatorBitmapStream eagerStreamWithFramebuffer:framebuffer framesPerSecond:framesPerSecond.unsignedIntegerValue logger:logger];
       }
-      return [FBSimulatorBitmapStream lazyStreamWithSurface:surface logger:logger];
+      return [FBSimulatorBitmapStream lazyStreamWithFramebuffer:framebuffer logger:logger];
     }];
 }
 
@@ -112,30 +112,9 @@
 
   return [[self.simulator
     connectToFramebuffer]
-    onQueue:self.simulator.workQueue fmap:^(FBFramebuffer *framebuffer) {
-      FBSimulatorVideo *video = framebuffer.video;
-      if (!video) {
-        return [[[FBSimulatorError
-          describe:@"Simulator Does not have a FBSimulatorVideo instance"]
-          inSimulator:self.simulator]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:video];
-    }];
-}
-
-- (FBFuture<FBFramebufferSurface *> *)obtainSurface
-{
-  return [[self.simulator
-    connectToFramebuffer]
-    onQueue:self.simulator.workQueue fmap:^(FBFramebuffer *framebuffer) {
-      FBFramebufferSurface *surface = framebuffer.surface;
-      if (!surface) {
-        return [[FBSimulatorError
-          describe:@"Framebuffer does not have a surface"]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:surface];
+    onQueue:self.simulator.workQueue map:^(FBFramebuffer *framebuffer) {
+      FBSimulatorVideo *video = [FBSimulatorVideo videoWithConfiguration:FBVideoEncoderConfiguration.defaultConfiguration framebuffer:framebuffer logger:self.simulator.logger];
+      return video;
     }];
 }
 

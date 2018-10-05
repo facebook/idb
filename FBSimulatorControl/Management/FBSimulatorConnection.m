@@ -44,7 +44,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator framebuffer:(nullable FBFramebuffer *)framebuffer hid:(nullable FBSimulatorHID *)hid
+- (instancetype)initWithSimulator:(FBSimulator *)simulator framebuffer:(FBFramebuffer *)framebuffer hid:(FBSimulatorHID *)hid
 {
   self = [super init];
   if (!self) {
