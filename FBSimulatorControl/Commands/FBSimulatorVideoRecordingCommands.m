@@ -23,7 +23,7 @@
 @interface FBSimulatorVideoRecordingCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, nullable, readwrite) FBSimulatorVideo *recorder;
+@property (nonatomic, strong, nullable, readwrite) FBSimulatorVideo *video;
 
 @end
 
@@ -48,20 +48,12 @@
 
 #pragma mark FBVideoRecordingCommands Implementation
 
-- (FBFuture<id<FBVideoRecordingSession>> *)startRecordingToFile:(NSString *)filePath
+- (FBFuture<id<FBiOSTargetContinuation>> *)startRecordingToFile:(NSString *)filePath
 {
-  return [[FBFuture
-    onQueue:self.simulator.workQueue resolve:^ FBFuture<FBSimulatorVideo *> * {
-      if (self.recorder) {
-        return [[FBSimulatorError
-          describeFormat:@"Cannot start recording, there is already a recorder %@", self.recorder]
-          failFuture];
-      }
-      return [self obtainVideoRecorder];
-    }]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorVideo *recorder) {
-      self.recorder = recorder;
-      return [[recorder startRecordingToFile:filePath] mapReplace:recorder];
+  return [[self
+    obtainVideo]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorVideo *video) {
+      return [[video startRecordingToFile:filePath] mapReplace:video];
     }];
 }
 
@@ -69,15 +61,15 @@
 {
   return [[FBFuture
     onQueue:self.simulator.workQueue resolve:^ FBFuture<NSNull *> * {
-       if (!self.recorder) {
+       if (!self.video) {
          return [[FBSimulatorError
-          describeFormat:@"Cannot start recording, there is not an active recorder %@", self.recorder]
+          describe:@"Cannot start recording, there is not an active recorder"]
           failFuture];
        }
-       return [self.recorder stopRecording];
+       return [self.video stopRecording];
     }]
     onQueue:self.simulator.workQueue notifyOfCompletion:^(id _){
-      self.recorder = nil;
+      self.video = nil;
     }];
 }
 
@@ -104,8 +96,12 @@
 
 #pragma mark Private
 
-- (FBFuture<FBSimulatorVideo *> *)obtainVideoRecorder
+- (FBFuture<FBSimulatorVideo *> *)obtainVideo
 {
+  if (self.video) {
+    return [FBFuture futureWithResult:self.video];
+  }
+
   if (FBSimulatorVideoRecordingCommands.shouldUseSimctlEncoder) {
     FBSimulatorVideo *recorder = [FBSimulatorVideo
       simctlVideoForDeviceSetPath:self.simulator.set.deviceSet.setPath
