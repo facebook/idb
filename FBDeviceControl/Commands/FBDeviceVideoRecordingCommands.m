@@ -46,7 +46,7 @@
 
 #pragma mark FBVideoRecordingCommands
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)startRecordingToFile:(NSString *)filePath
+- (FBFuture<id<FBVideoRecordingSession>> *)startRecordingToFile:(NSString *)filePath
 {
   if (self.video) {
     return [[FBDeviceControlError
