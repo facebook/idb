@@ -283,7 +283,7 @@
       // Just pass in the options to ensure that the framebuffer service is registered when the Simulator is booted.
       return [[self bootSimulatorWithOptions:[self.options bootOptions:self.configuration]] mapReplace:results];
     }]
-    onQueue:self.simulator.workQueue map:^(NSArray *results) {
+    onQueue:self.simulator.workQueue fmap:^(NSArray *results) {
       // Combine everything into the connection.
       FBFramebuffer *framebuffer = [results[0] isKindOfClass:NSNull.class] ? nil : results[0];;
       FBSimulatorHID *hid = results[1];
