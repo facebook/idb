@@ -639,6 +639,18 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   }];
 }
 
+- (FBFuture *)logCompletion:(id<FBControlCoreLogger>)logger withPurpose:(NSString *)format, ...
+{
+  va_list args;
+  va_start(args, format);
+  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
+  va_end(args);
+
+  return [self onQueue:FBFuture.internalQueue notifyOfCompletion:^(FBFuture *resolved) {
+    [logger logFormat:@"Complted %@ with state '%@'", string, resolved];
+  }];
+}
+
 #pragma mark - Properties
 
 - (BOOL)hasCompleted

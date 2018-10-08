@@ -101,20 +101,17 @@
   if (self.video) {
     return [FBFuture futureWithResult:self.video];
   }
-
   if (FBSimulatorVideoRecordingCommands.shouldUseSimctlEncoder) {
-    FBSimulatorVideo *recorder = [FBSimulatorVideo
-      simctlVideoForDeviceSetPath:self.simulator.set.deviceSet.setPath
-      deviceUUID:self.simulator.device.UDID.UUIDString
-      logger:self.simulator.logger];
-    return [FBFuture futureWithResult:recorder];
+    self.video = [FBSimulatorVideo videoWithSimctlExecutor:self.simulator.simctlExecutor logger:self.simulator.logger];
+    return [FBFuture futureWithResult:self.video];
   }
+
 
   return [[self.simulator
     connectToFramebuffer]
     onQueue:self.simulator.workQueue map:^(FBFramebuffer *framebuffer) {
-      FBSimulatorVideo *video = [FBSimulatorVideo videoWithConfiguration:FBVideoEncoderConfiguration.defaultConfiguration framebuffer:framebuffer logger:self.simulator.logger];
-      return video;
+      self.video = [FBSimulatorVideo videoWithConfiguration:FBVideoEncoderConfiguration.defaultConfiguration framebuffer:framebuffer logger:self.simulator.logger];
+      return self.video;
     }];
 }
 

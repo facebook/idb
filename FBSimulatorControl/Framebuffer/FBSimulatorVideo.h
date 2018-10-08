@@ -13,6 +13,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBAppleSimctlCommandExecutor;
 @class FBFramebuffer;
 @class FBVideoEncoderConfiguration;
 @protocol FBControlCoreLogger;
@@ -36,12 +37,11 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer, for doing simulator video recording using Apple's simctl
 
- @param deviceSetPath path of simulator's device set
- @param deviceUUID UUID of simulator's device
+ @param simctlExecutor the simctl executor
  @param logger the logger object to log events to, may be nil.
  @return a new FBSimulatorVideo instance.
  */
-+ (instancetype)simctlVideoForDeviceSetPath:(NSString *)deviceSetPath deviceUUID:(NSString *)deviceUUID logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)videoWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 

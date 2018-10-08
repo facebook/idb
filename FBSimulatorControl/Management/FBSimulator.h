@@ -28,6 +28,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBSimulatorEventSink;
 @protocol FBControlCoreLogger;
+
+@class FBAppleSimctlCommandExecutor;
 @class FBControlCoreLogger;
 @class FBProcessFetcher;
 @class FBProcessInfo;
@@ -108,6 +110,11 @@ NS_ASSUME_NONNULL_BEGIN
  The FBSimulatorDiagnostics instance for fetching diagnostics for the Simulator.
  */
 @property (nonatomic, strong, readonly, nonnull) FBSimulatorDiagnostics *simulatorDiagnostics;
+
+/*
+ A command executor for simctl
+ */
+@property (nonatomic, strong, readonly) FBAppleSimctlCommandExecutor *simctlExecutor;
 
 @end
 

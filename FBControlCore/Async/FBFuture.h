@@ -13,6 +13,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBFutureContext<T>;
 
+@protocol FBControlCoreLogger;
+
 /**
  A State for the Future.
  */
@@ -259,6 +261,14 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
  @return a future with the replacement.
  */
 - (FBFuture<T> *)rephraseFailure:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+
+/**
+ A helper to log completion of the future.
+
+ @param logger the logger to log to.
+ @param format a description of the future.
+ */
+- (FBFuture<T> *)logCompletion:(id<FBControlCoreLogger>)logger withPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(2,3);
 
 #pragma mark Properties
 

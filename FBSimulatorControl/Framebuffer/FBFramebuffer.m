@@ -9,8 +9,7 @@
 
 #import "FBFramebuffer.h"
 
-#import <CoreSimulator/SimDeviceIO+Removed.h>
-#import <CoreSimulator/SimDeviceIOClient.h>
+#import <CoreSimulator/SimDeviceIOProtocol-Protocol.h>
 
 #import <xpc/xpc.h>
 
@@ -144,11 +143,11 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 
 @interface FBFramebuffer_IOClient : FBFramebuffer
 
-@property (nonatomic, strong, readonly) SimDeviceIOClient *ioClient;
+@property (nonatomic, strong, readonly) id<SimDeviceIOProtocol> ioClient;
 @property (nonatomic, strong, readonly) id<SimDeviceIOPortInterface> port;
 @property (nonatomic, strong, readonly) id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> surface;
 
-- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithIOClient:(id<SimDeviceIOProtocol>)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -165,23 +164,23 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 
 #pragma mark Initializers
 
-+ (nullable instancetype)mainScreenSurfaceForClient:(SimDeviceIOClient *)ioClient logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (nullable instancetype)mainScreenSurfaceForClient:(id<SimDeviceIOProtocol>)ioClient logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   for (id<SimDeviceIOPortInterface> port in ioClient.ioPorts) {
     if (![port conformsToProtocol:@protocol(SimDeviceIOPortInterface)]) {
       continue;
     }
-    id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> surface = (id) [port descriptor];
-    if (![surface conformsToProtocol:@protocol(SimDisplayRenderable)]) {
+    id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> descriptor = (id) [port descriptor];
+    if (![descriptor conformsToProtocol:@protocol(SimDisplayRenderable)]) {
       continue;
     }
-    if (![surface conformsToProtocol:@protocol(SimDisplayIOSurfaceRenderable)]) {
+    if (![descriptor conformsToProtocol:@protocol(SimDisplayIOSurfaceRenderable)]) {
       continue;
     }
-    return [[FBFramebuffer_IOClient alloc] initWithIOClient:ioClient port:port surface:surface logger:logger];
+    return [[FBFramebuffer_IOClient alloc] initWithIOClient:ioClient port:port surface:descriptor logger:logger];
   }
   return [[FBSimulatorError
-    describeFormat:@"Could not find the Main Screen Surface for IO Client %@", ioClient]
+    describeFormat:@"Could not find the Main Screen Surface for Clients %@ in %@", [FBCollectionInformation oneLineDescriptionFromArray:ioClient.ioPorts], ioClient]
     fail:error];
 }
 
@@ -249,7 +248,7 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 
 @implementation FBFramebuffer_IOClient
 
-- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithIOClient:(id<SimDeviceIOProtocol>)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithLogger:logger];
   if (!self) {

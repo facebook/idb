@@ -19,6 +19,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBAccessibilityFetch.h"
+#import "FBAppleSimctlCommandExecutor.h"
 #import "FBCompositeSimulatorEventSink.h"
 #import "FBMutableSimulatorEventSink.h"
 #import "FBSimulatorAgentCommands.h"
@@ -247,6 +248,11 @@
 - (void)setUserEventSink:(id<FBSimulatorEventSink>)userEventSink
 {
   self.mutableSink.eventSink = userEventSink;
+}
+
+- (FBAppleSimctlCommandExecutor *)simctlExecutor
+{
+  return [FBAppleSimctlCommandExecutor executorForSimulator:self];
 }
 
 #pragma mark NSObject
