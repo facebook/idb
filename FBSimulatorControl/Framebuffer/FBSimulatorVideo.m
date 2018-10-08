@@ -19,6 +19,8 @@
 #import "FBVideoEncoderConfiguration.h"
 #import "FBVideoEncoderSimulatorKit.h"
 
+static const NSTimeInterval SimCtlIOPollDelay = 20.0;  // Wait this long for "simctl io poll" to create IOSurface.
+
 @interface FBSimulatorVideo ()
 
 @property (nonatomic, strong, readonly) FBVideoEncoderConfiguration *configuration;
@@ -198,14 +200,64 @@
       failFuture];
   }
 
-  // Create the task
-  self.recordingStarted = [[[[self.simctlExecutor
-    taskBuilderWithCommand:@"io" arguments:@[@"recordVideo", @"--type=mp4", filePath]]
-    withStdOutInMemoryAsString]
-    withStdErrInMemoryAsString]
-    start];
+  // Choose the Path for the Log
+  filePath = filePath ?: self.configuration.filePath;
 
-  return [self.recordingStarted mapReplace:NSNull.null];
+  FBTaskBuilder *recordingTaskBuilder = [[[self.simctlExecutor
+    taskBuilderWithCommand:@"io"
+    arguments:@[
+      @"recordVideo",
+      @"--type=mp4",
+      filePath
+    ]]
+    withStdOutInMemoryAsString]
+    withStdErrInMemoryAsString];
+
+  if (!FBXcodeConfiguration.isXcode10OrGreater) {
+    self.recordingStarted = [recordingTaskBuilder start];
+    return [self.recordingStarted mapReplace:NSNull.null];
+  }
+
+  // In Xcode 10, we need to run "simctl io poll" to create IOSurface first
+  // to make video recording work, if the simulator is launched without Simulator.app.
+
+  NSMutableArray<NSString *> *lines = [NSMutableArray array];
+  id<FBControlCoreLogger> ioPollLogger = [self.logger withName:@"simctl_io_poll"];
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.simulatorvideo.simctl.io.poll", DISPATCH_QUEUE_SERIAL);
+
+  return [[[[[[[self.simctlExecutor
+    taskBuilderWithCommand:@"io"
+    arguments:@[@"poll"]]
+    withStdOutLineReader:^(NSString *line) {
+      [ioPollLogger log:line];
+      [lines addObject:line];
+    }]
+    withStdErrLineReader:^(NSString *line) {
+      [ioPollLogger log:line];
+      [lines addObject:line];
+    }]
+    start]
+    onQueue:queue fmap:^FBFuture *(FBTask *task) {
+      return [[[[FBFuture onQueue:queue resolveWhen:^BOOL{
+        for (NSString *line in lines) {
+          if ([line containsString:@"IOSurface changed"]) {
+            return YES;
+          }
+        }
+        return NO;
+      }]
+      mapReplace:task]
+      timeout:SimCtlIOPollDelay
+      waitingFor:@"simulator IO surface created"]
+      fallback:task];
+    }]
+    onQueue:queue fmap:^FBFuture *(FBTask *task) {
+      return [task sendSignal:SIGINT];
+    }]
+    onQueue:queue fmap:^FBFuture *(id _) {
+      self.recordingStarted = [recordingTaskBuilder start];
+      return [self.recordingStarted mapReplace:NSNull.null];
+    }];
 }
 
 - (FBFuture<NSNull *> *)stopRecording
