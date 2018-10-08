@@ -281,7 +281,25 @@ static NSString *const KeyDataContainer = @"DataContainer";
   }
 
   NSSet<NSString *> *binaryArchitectures = application.binary.architectures;
+
   NSSet<NSString *> *supportedArchitectures = FBControlCoreConfigurationVariants.baseArchToCompatibleArch[self.simulator.deviceType.simulatorArchitecture];
+
+  // Starting in Xcode 10.1 (and possibly related the version of macOS)
+  // simulatorArchitecture is return nil or an empty set of arches when the
+  // simulator version is >= 12.0.
+  //
+  // My hypothesis is that the problem stems from the usage of out-of-date
+  // private methods from the CoreSimulator framework (allowed by out-of-date
+  // headers).
+  //
+  // "Simulator does not support any of the architectures ([x86_64]) of the
+  //  executable at <path>. Simulator Archs ([(null)])".
+  //
+  // All new devices will have an x86_64 arch.
+  if (!supportedArchitectures || supportedArchitectures.count == 0) {
+    supportedArchitectures = [NSSet setWithObject:@"x86_64"];
+  }
+
   if (![binaryArchitectures intersectsSet:supportedArchitectures]) {
     return [[FBSimulatorError
     describeFormat:
