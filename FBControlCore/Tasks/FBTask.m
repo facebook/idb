@@ -110,10 +110,12 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   };
 
   NSString *arguments = [self.task.arguments componentsJoinedByString:@" "];
-  [self.logger logFormat:@"Running %@ %@ with environment %@",
-    self.task.launchPath,
-    arguments,
-    self.task.environment];
+  if (logger.level >= FBControlCoreLogLevelDebug) {
+    [self.logger logFormat:@"Running %@ %@ with environment %@",
+      self.task.launchPath,
+      arguments,
+      self.task.environment];
+  }
   [self.task launch];
 }
 
