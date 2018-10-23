@@ -9,22 +9,29 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBSimulator;
+/**
+ Commands to perform on a Simulator, related to photos/videos on the device
+ */
+@protocol FBSimulatorMediaCommands <NSObject, FBiOSTargetCommand>
 
 /**
- A Strategy for Adding a Video to a Simulator.
+ Add media files to the simulator
+
+ @param mediaFileURLs local paths to the media files to add
+ @return A future that resolves when the media has been added.
  */
-@interface FBUploadMediaStrategy : NSObject
+- (FBFuture<NSNull *> *)addMedia:(NSArray<NSURL *> *)mediaFileURLs;
+
+@end
 
 /**
- Creates a Strategy for the provided Simulator.
-
- @param simulator the Simulator to launch on.
- @return a new Add Video Strategy.
+ The implementation of the FBSimulatorMediaCommands instance.
  */
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator;
+@interface FBSimulatorMediaCommands : NSObject <FBSimulatorMediaCommands>
 
 /**
  Uploads photos or videos to the Camera Roll of the Simulator.
@@ -53,7 +60,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if the upload was successful, NO otherwise.
  */
 - (BOOL)uploadPhotos:(NSArray<NSString *> *)photoPaths error:(NSError **)error;
-
 
 @end
 

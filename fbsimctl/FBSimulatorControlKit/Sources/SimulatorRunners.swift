@@ -181,10 +181,8 @@ private struct UploadRunner: Runner {
     }
 
     if media.count > 0 {
-      let paths = media.map { $0.1 }
-      let runner = SimpleRunner(reporter, .upload, FBEventReporterSubject(strings: paths)) {
-        try FBUploadMediaStrategy(simulator: self.reporter.simulator).uploadMedia(paths)
-      }
+      let paths = media.map { NSURL.fileURL(withPath: $0.1) }
+      let runner = FutureRunner(self.reporter, .upload, self.reporter.simulator.subject, self.reporter.simulator.addMedia(paths))
       let result = runner.run()
       switch result.outcome {
       case .failure: return result

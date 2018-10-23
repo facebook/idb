@@ -15,17 +15,17 @@
 #import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlTestCase.h"
 
-@interface FBSimulatorMediaUploadTests : FBSimulatorControlTestCase
+@interface FBSimulatorMediaCommandsTests : FBSimulatorControlTestCase
 
 @end
 
-@implementation FBSimulatorMediaUploadTests
+@implementation FBSimulatorMediaCommandsTests
 
 - (void)testPhotoUpload
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   NSError *error = nil;
-  BOOL success = [[FBUploadMediaStrategy strategyWithSimulator:simulator] uploadPhotos:@[FBSimulatorControlFixtures.photo0Path, FBSimulatorControlFixtures.photo1Path] error:&error];
+  BOOL success = [[FBSimulatorMediaCommands commandsWithTarget:simulator] uploadPhotos:@[FBSimulatorControlFixtures.photo0Path, FBSimulatorControlFixtures.photo1Path] error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }
@@ -34,7 +34,7 @@
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   NSError *error = nil;
-  BOOL success = [[FBUploadMediaStrategy strategyWithSimulator:simulator] uploadVideos:@[FBSimulatorControlFixtures.video0Path] error:&error];
+  BOOL success = [[FBSimulatorMediaCommands commandsWithTarget:simulator] uploadVideos:@[FBSimulatorControlFixtures.video0Path] error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }
