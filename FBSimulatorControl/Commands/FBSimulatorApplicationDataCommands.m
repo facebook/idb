@@ -69,24 +69,37 @@
 
 - (FBFuture<NSNull *> *)copyDataFromContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath toDestinationPath:(NSString *)destinationPath
 {
+  __block NSString *dstPath = destinationPath;
   return [[self
     dataContainerPathForBundleID:bundleID]
     onQueue:self.simulator.asyncQueue fmap:^(NSString *dataContainer) {
-      // if it already exists at the destination path we should remove it before copying again
-      if ([NSFileManager.defaultManager fileExistsAtPath:destinationPath]) {
-        NSError *removeError;
-        if (![NSFileManager.defaultManager removeItemAtPath:destinationPath error:&removeError]) {
+      NSString *source = [dataContainer stringByAppendingPathComponent:containerPath];
+      BOOL srcIsDirecory = NO;
+      if ([NSFileManager.defaultManager fileExistsAtPath:source isDirectory:&srcIsDirecory] && !srcIsDirecory) {
+        NSError *createDirectoryError;
+        if (![NSFileManager.defaultManager createDirectoryAtPath:dstPath withIntermediateDirectories:YES attributes:nil error:&createDirectoryError]) {
           return [[[FBSimulatorError
-            describeFormat:@"Could not remove %@", destinationPath]
+                    describeFormat:@"Could not create temporary directory"]
+                   causedBy:createDirectoryError]
+                  failFuture];
+        }
+        dstPath = [dstPath stringByAppendingPathComponent:[source lastPathComponent]];
+      }
+      // if it already exists at the destination path we should remove it before copying again
+      if ([NSFileManager.defaultManager fileExistsAtPath:dstPath]) {
+        NSError *removeError;
+        if (![NSFileManager.defaultManager removeItemAtPath:dstPath error:&removeError]) {
+          return [[[FBSimulatorError
+            describeFormat:@"Could not remove %@", dstPath]
             causedBy:removeError]
             failFuture];
         }
       }
-      NSString *source = [dataContainer stringByAppendingPathComponent:containerPath];
+
       NSError *copyError;
-      if (![NSFileManager.defaultManager copyItemAtPath:source toPath:destinationPath error:&copyError]) {
+      if (![NSFileManager.defaultManager copyItemAtPath:source toPath:dstPath error:&copyError]) {
         return [[[FBSimulatorError
-          describeFormat:@"Could not copy from %@ to %@", source, destinationPath]
+          describeFormat:@"Could not copy from %@ to %@", source, dstPath]
           causedBy:copyError]
           failFuture];
       }
