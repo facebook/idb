@@ -74,11 +74,12 @@
 - (FBFuture<NSNull *> *)startTestWithTestRunnerApp:(FBApplicationBundle *)testRunnerApp testTargetApp:(FBApplicationBundle *)testTargetApp
 {
   FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-    configurationWithApplication:testRunnerApp
+    configurationWithBundleID:testRunnerApp.bundleID
+    bundleName:testRunnerApp.bundleID
     arguments:@[]
     environment:self.configuration.processUnderTestEnvironment
-    waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull];
+    output:FBProcessOutputConfiguration.outputToDevNull
+    launchMode:FBApplicationLaunchModeFailIfRunning];
 
   FBTestLaunchConfiguration *testLaunchConfiguration = [[FBTestLaunchConfiguration
     configurationWithTestBundlePath:self.configuration.testBundlePath]

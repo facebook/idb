@@ -180,8 +180,8 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
     bundleName:bundleID
     arguments:arguments
     environment:targetEnvironment
-    waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull];
+    output:FBProcessOutputConfiguration.outputToDevNull
+    launchMode:FBApplicationLaunchModeFailIfRunning];
   id token = @(receipt.hash);
 
   [[[FBTestApplicationLaunchStrategy

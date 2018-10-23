@@ -68,11 +68,24 @@
 - (FBFuture<FBSimulatorApplicationOperation *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch
 {
   FBSimulator *simulator = self.simulator;
-  return [[[[[[simulator
+  return [[[[[[[simulator
     installedApplicationWithBundleID:appLaunch.bundleID]
     rephraseFailure:@"App %@ can't be launched as it isn't installed", appLaunch.bundleID]
     onQueue:simulator.workQueue fmap:^(id _) {
-      return [self confirmApplicationIsNotRunning:appLaunch.bundleID];
+      return [self.simulator runningApplicationWithBundleID:appLaunch.bundleID];
+    }]
+    onQueue:simulator.workQueue chain:^FBFuture<NSNull *> *(FBFuture<FBProcessInfo *> *processFuture) {
+      FBProcessInfo *process = processFuture.result;
+      if (process) {
+        if (appLaunch.launchMode == FBApplicationLaunchModeFailIfRunning) {
+          return [[FBSimulatorError
+                   describeFormat:@"App %@ can't be launched as is running (%@)", appLaunch.bundleID, process.shortDescription]
+                  failFuture];
+        } else if (appLaunch.launchMode == FBApplicationLaunchModeRelaunchIfRunning) {
+          return [[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process];
+        }
+      }
+      return [FBFuture futureWithResult:NSNull.null];
     }]
     onQueue:simulator.workQueue fmap:^(id _) {
       return [appLaunch createOutputForSimulator:simulator];
@@ -89,26 +102,6 @@
 
       FBFuture<NSNumber *> *launch = [self launchApplication:appLaunch stdOut:stdOut stdErr:stdErr];
       return [FBSimulatorApplicationOperation operationWithSimulator:simulator configuration:appLaunch stdOut:stdOut stdErr:stdErr launchFuture:launch];
-    }];
-}
-
-- (FBFuture<FBSimulatorApplicationOperation *> *)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch
-{
-  NSParameterAssert(appLaunch);
-
-  // Kill the Application if it exists. Don't bother killing the process if it doesn't exist
-  FBSimulator *simulator = self.simulator;
-  return [[[simulator
-    runningApplicationWithBundleID:appLaunch.bundleID]
-    onQueue:self.simulator.workQueue chain:^FBFuture<NSNull *> *(FBFuture<FBProcessInfo *> *future) {
-      FBProcessInfo *process = future.result;
-      if (process) {
-        return [[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process];
-      }
-      return [FBFuture futureWithResult:NSNull.null];
-    }]
-    onQueue:simulator.workQueue fmap:^FBFuture *(NSNull *result) {
-      return [simulator launchApplication:appLaunch];
     }];
 }
 
@@ -129,18 +122,13 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)confirmApplicationIsNotRunning:(NSString *)bundleID
+- (FBFuture<NSNumber *> *)isApplicationRunning:(NSString *)bundleID
 {
   return [[self.simulator
     runningApplicationWithBundleID:bundleID]
     onQueue:self.simulator.workQueue chain:^(FBFuture<FBProcessInfo *> *future){
       FBProcessInfo *process = future.result;
-      if (process) {
-        return [[FBSimulatorError
-          describeFormat:@"App %@ can't be launched as is running (%@)", bundleID, process.shortDescription]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:NSNull.null];
+      return process ? [FBFuture futureWithResult:@YES] : [FBFuture futureWithResult:@NO];
     }];
 }
 

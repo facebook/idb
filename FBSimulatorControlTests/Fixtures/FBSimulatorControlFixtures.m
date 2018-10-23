@@ -106,13 +106,18 @@ static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
 
 - (FBApplicationLaunchConfiguration *)safariAppLaunch
 {
+  return [self safariAppLaunchWithMode:FBApplicationLaunchModeFailIfRunning];
+}
+
+- (FBApplicationLaunchConfiguration *)safariAppLaunchWithMode:(FBApplicationLaunchMode)launchMode
+{
   return [FBApplicationLaunchConfiguration
     configurationWithBundleID:MobileSafariBundleIdentifier
     bundleName:MobileSafariBundleName
     arguments:@[]
     environment:@{@"FROM" : @"FBSIMULATORCONTROL"}
-    waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull];
+    output:FBProcessOutputConfiguration.outputToDevNull
+    launchMode:launchMode];
 }
 
 - (FBAgentLaunchConfiguration *)agentLaunch1

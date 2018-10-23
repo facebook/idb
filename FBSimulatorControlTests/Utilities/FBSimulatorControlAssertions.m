@@ -172,11 +172,15 @@
 
 - (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration boots:(FBSimulatorBootConfiguration *)bootConfiguration launchesThenRelaunchesApplication:(FBApplicationLaunchConfiguration *)launchConfiguration
 {
-  FBSimulator *simulator = [self assertSimulatorWithConfiguration:simulatorConfiguration boots:bootConfiguration thenLaunchesApplication:launchConfiguration];
-  FBProcessInfo *firstLaunch = [[simulator runningApplicationWithBundleID:launchConfiguration.bundleID] await:nil];
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:simulatorConfiguration bootConfiguration:bootConfiguration];
 
   NSError *error = nil;
-  BOOL success = [[simulator launchOrRelaunchApplication:launchConfiguration] await:&error] != nil;
+  BOOL success = [[simulator launchApplication:launchConfiguration] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+  FBProcessInfo *firstLaunch = [[simulator runningApplicationWithBundleID:launchConfiguration.bundleID] await:nil];
+
+  success = [[simulator launchApplication:launchConfiguration] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

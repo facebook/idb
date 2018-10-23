@@ -194,13 +194,20 @@
   }
 
   FBApplicationLaunchConfiguration *configuration = [FBApplicationLaunchConfiguration
-    configurationWithApplication:app.bundle
+    configurationWithBundleID:app.bundle.bundleID
+    bundleName:app.bundle.name
     arguments:arguments
     environment:environment
-    waitForDebugger:waitForDebugger
-    output:FBProcessOutputConfiguration.outputToDevNull];
+    output:FBProcessOutputConfiguration.outputToDevNull
+    launchMode:FBApplicationLaunchModeRelaunchIfRunning];
+  if (waitForDebugger) {
+    configuration = [configuration withWaitForDebugger:error];
+    if (*error) {
+      return NO;
+    }
+  }
 
-  if (![[self.simulator launchOrRelaunchApplication:configuration] await:error]) {
+  if (![[self.simulator launchApplication:configuration] await:error]) {
     return NO;
   }
   return YES;

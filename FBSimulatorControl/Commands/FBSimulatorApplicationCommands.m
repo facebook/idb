@@ -139,15 +139,6 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch
-{
-  NSParameterAssert(appLaunch);
-  return [[[FBApplicationLaunchStrategy
-    strategyWithSimulator:self.simulator]
-    launchOrRelaunchApplication:appLaunch]
-    mapReplace:NSNull.null];
-}
-
 #pragma mark Querying Application State
 
 - (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID

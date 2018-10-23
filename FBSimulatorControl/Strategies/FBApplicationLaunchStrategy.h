@@ -44,15 +44,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<FBSimulatorApplicationOperation *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
 
-/**
- Launches the Application with the given Configuration, or Re-Launches it.
- A Relaunch is a kill of the currently launched application, followed by a launch.
-
- @param appLaunch the Application to Re-Launch.
- @return A Future that resolves with the launched Application.
- */
-- (FBFuture<FBSimulatorApplicationOperation *> *)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
-
 @end
 
 NS_ASSUME_NONNULL_END

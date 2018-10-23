@@ -1107,16 +1107,18 @@ struct FBProcessLaunchConfigurationParsers {
       )
       .fmap { output, waitForDebugger, bundleIDOrApplicationDescriptor, arguments in
         let (bundleId, appDescriptor) = bundleIDOrApplicationDescriptor
-        return (
-          FBApplicationLaunchConfiguration(
-            bundleID: bundleId,
-            bundleName: nil,
-            arguments: arguments,
-            environment: [:],
-            waitForDebugger: waitForDebugger,
-            output: output),
-          appDescriptor
+        var appLaunchConfig = FBApplicationLaunchConfiguration(
+          bundleID: bundleId,
+          bundleName: nil,
+          arguments: arguments,
+          environment: [:],
+          output: output,
+          launchMode:FBApplicationLaunchMode.relaunchIfRunning
         )
+        if (waitForDebugger) {
+          appLaunchConfig = appLaunchConfig.withWaitForDebugger(nil)
+        }
+        return (appLaunchConfig, appDescriptor)
       }
   }
 

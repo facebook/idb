@@ -133,8 +133,9 @@ struct SimulatorActionRunner: Runner {
       return SimpleRunner(reporter, .open, FBEventReporterSubject(string: url.bridgedAbsoluteString)) {
         try simulator.open(url)
       }
-    case .relaunch(let appLaunch):
-      return FutureRunner(reporter, .relaunch, appLaunch.subject, simulator.launchOrRelaunchApplication(appLaunch))
+    case .relaunch(var appLaunch):
+      appLaunch = FBApplicationLaunchConfiguration.init(bundleID: appLaunch.bundleID, bundleName: appLaunch.bundleName, arguments: appLaunch.arguments, environment: appLaunch.environment, output: appLaunch.output, launchMode: .relaunchIfRunning)
+      return FutureRunner(reporter, .relaunch, appLaunch.subject, simulator.launchApplication(appLaunch))
     case .setLocation(let latitude, let longitude):
       return FutureRunner(
         reporter,

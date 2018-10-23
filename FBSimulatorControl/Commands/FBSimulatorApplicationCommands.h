@@ -21,17 +21,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @protocol FBSimulatorApplicationCommands <FBApplicationCommands, FBiOSTargetCommand>
 
-#pragma mark Application Lifecycle
-
-/**
- Launches the Application with the given Configuration, or Re-Launches it.
- A Relaunch is a kill of the currently launched application, followed by a launch.
-
- @param appLaunch the Application Launch Configuration to Launch.
- @return A Future that resolves when the application is relaunched.
- */
-- (FBFuture<NSNull *> *)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
-
 #pragma mark Querying Application State
 
 /**

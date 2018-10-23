@@ -15,25 +15,27 @@
 static NSString *const KeyBundleID = @"bundle_id";
 static NSString *const KeyBundleName = @"bundle_name";
 static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
+static NSString *const KeyLaunchMode = @"launch_mode";
 
 @implementation FBApplicationLaunchConfiguration
 
++ (instancetype)configurationWithApplication:(FBApplicationBundle *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output
+{
+  return [self configurationWithBundleID:application.bundleID bundleName:application.name arguments:arguments environment:environment output:output launchMode:FBApplicationLaunchModeFailIfRunning];
+}
+
 + (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output
+{
+  return [[self alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment waitForDebugger:waitForDebugger output:output launchMode:FBApplicationLaunchModeFailIfRunning];
+}
+
++ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output launchMode:(FBApplicationLaunchMode)launchMode
 {
   if (!bundleID || !arguments || !environment) {
     return nil;
   }
 
-  return [[self alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment waitForDebugger:waitForDebugger output:output];
-}
-
-+ (instancetype)configurationWithApplication:(FBApplicationBundle *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output
-{
-  if (!application) {
-    return nil;
-  }
-
-  return [self configurationWithBundleID:application.bundleID bundleName:application.name arguments:arguments environment:environment waitForDebugger:waitForDebugger output:output];
+  return [[self alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment waitForDebugger:NO output:output launchMode:launchMode];
 }
 
 + (instancetype)inflateFromJSON:(id)json error:(NSError **)error
@@ -50,16 +52,24 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
   if (![waitForDebugger isKindOfClass:NSNumber.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not a boolean signalizing whether to wait for debugger", waitForDebugger] fail:error];
   }
+  NSNumber *launchMode = json[KeyLaunchMode] ?: @NO;
+  if (![launchMode isKindOfClass:NSNumber.class]) {
+    return [[FBControlCoreError describeFormat:@"%@ is not an enum signalizing the launch mode", launchMode] fail:error];
+  }
   NSArray<NSString *> *arguments = nil;
   NSDictionary<NSString *, NSString *> *environment = nil;
   FBProcessOutputConfiguration *output = nil;
   if (![FBProcessLaunchConfiguration fromJSON:json extractArguments:&arguments environment:&environment output:&output error:error]) {
     return nil;
   }
-  return [self configurationWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment waitForDebugger:waitForDebugger.boolValue output:output];
+  if (waitForDebugger.boolValue && launchMode.intValue == FBApplicationLaunchModeForegroundIfRunning) {
+    *error = [FBControlCoreError errorForDescription:@"Can't wait for a debugger when launchMode = FBApplicationLaunchModeForegroundIfRunning"];
+    return nil;
+  }
+  return [[FBApplicationLaunchConfiguration alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment waitForDebugger:waitForDebugger.boolValue output:output launchMode:(FBApplicationLaunchMode)launchMode.intValue];
 }
 
-- (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output
+- (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output launchMode:(FBApplicationLaunchMode)launchMode
 {
   self = [super initWithArguments:arguments environment:environment output:output];
   if (!self) {
@@ -69,8 +79,24 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
   _bundleID = bundleID;
   _bundleName = bundleName;
   _waitForDebugger = waitForDebugger;
+  _launchMode = launchMode;
 
   return self;
+}
+
+- (instancetype)withWaitForDebugger:(NSError * _Nullable __autoreleasing *)error
+{
+  if (self.launchMode == FBApplicationLaunchModeForegroundIfRunning) {
+    *error = [FBControlCoreError errorForDescription:@"Can't wait for a debugger when launchMode = FBApplicationLaunchModeForegroundIfRunning"];
+  }
+  return [[FBApplicationLaunchConfiguration alloc]
+          initWithBundleID:self.bundleID
+          bundleName:self.bundleName
+          arguments:self.arguments
+          environment:self.environment
+          waitForDebugger:YES
+          output:self.output
+          launchMode:self.launchMode];
 }
 
 - (instancetype)withOutput:(FBProcessOutputConfiguration *)output
@@ -81,7 +107,8 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
       arguments:self.arguments
       environment:self.environment
       waitForDebugger:self.waitForDebugger
-      output:output];
+      output:output
+      launchMode:self.launchMode];
 }
 
 #pragma mark Abstract Methods
@@ -89,11 +116,12 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
 - (NSString *)debugDescription
 {
   return [NSString stringWithFormat:
-    @"%@ | Arguments %@ | Environment %@ | WaitForDebugger %@ | Output %@",
-    self.shortDescription,
-    [FBCollectionInformation oneLineDescriptionFromArray:self.arguments],
-    [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
-    self.waitForDebugger ? @"YES" : @"NO",
+          @"%@ | Arguments %@ | Environment %@ | WaitForDebugger %@ | LaunchMode %lu | Output %@",
+          self.shortDescription,
+          [FBCollectionInformation oneLineDescriptionFromArray:self.arguments],
+          [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
+          self.waitForDebugger != 0 ? @"YES" : @"NO",
+          (unsigned long)self.launchMode,
     self.output
   ];
 }
@@ -113,7 +141,8 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
     arguments:self.arguments
     environment:self.environment
     waitForDebugger:self.waitForDebugger
-    output:self.output];
+    output:self.output
+    launchMode:self.launchMode];
 }
 
 #pragma mark NSObject
@@ -128,7 +157,8 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
   return [super isEqual:object] &&
          [self.bundleID isEqualToString:object.bundleID] &&
          (self.bundleName == object.bundleName || [self.bundleName isEqual:object.bundleName]) &&
-          self.waitForDebugger == object.waitForDebugger;
+          self.waitForDebugger == self.waitForDebugger &&
+          self.launchMode == object.launchMode;
 
 }
 
@@ -140,6 +170,7 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
   representation[KeyBundleID] = self.bundleID;
   representation[KeyBundleName] = self.bundleName;
   representation[KeyWaitForDebugger] = @(self.waitForDebugger);
+  representation[KeyLaunchMode] = @(self.launchMode);
   return [representation mutableCopy];
 }
 

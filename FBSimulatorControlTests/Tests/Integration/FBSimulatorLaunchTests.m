@@ -138,7 +138,7 @@
 
 - (void)testRelaunchesSafariApplication
 {
-  [self doTestApplicationRelaunches:self.safariAppLaunch];
+  [self doTestApplicationRelaunches:[self safariAppLaunchWithMode:FBApplicationLaunchModeRelaunchIfRunning]];
 }
 
 - (void)testLaunchesSampleApplication

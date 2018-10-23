@@ -11,11 +11,13 @@
 #import <XCTest/XCTest.h>
 
 @class FBAgentLaunchConfiguration;
-@class FBApplicationBundle ;
+@class FBApplicationBundle;
 @class FBApplicationLaunchConfiguration;
 @class FBDiagnostic;
 @class FBProcessInfo;
 @class FBTestLaunchConfiguration;
+
+typedef NS_ENUM(NSUInteger, FBApplicationLaunchMode);
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -65,6 +67,11 @@ NS_ASSUME_NONNULL_BEGIN
  An App Launch for the built in Mobile Safari.
  */
 - (FBApplicationLaunchConfiguration *)safariAppLaunch;
+
+/**
+ An App Launch for the built in Mobile Safari in a given mode
+ */
+- (FBApplicationLaunchConfiguration *)safariAppLaunchWithMode:(FBApplicationLaunchMode)launchMode;
 
 /**
  A build of Apple's 'Table Search' Sample Application.

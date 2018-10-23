@@ -17,12 +17,31 @@
 @class FBBinaryDescriptor;
 @class FBProcessOutputConfiguration;
 
+typedef NS_ENUM(NSUInteger, FBApplicationLaunchMode) {
+  FBApplicationLaunchModeFailIfRunning,
+  FBApplicationLaunchModeForegroundIfRunning,
+  FBApplicationLaunchModeRelaunchIfRunning,
+};
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Value object with the information required to launch an Application.
  */
 @interface FBApplicationLaunchConfiguration : FBProcessLaunchConfiguration <FBiOSTargetFuture>
+
+/**
+ Creates and returns a new Configuration with the provided parameters.
+
+ @param bundleID the Bundle ID (CFBundleIdentifier) of the App to Launch. Must not be nil.
+ @param bundleName the BundleName (CFBundleName) of the App to Launch. May be nil.
+ @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
+ @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
+ @param output the output configuration for the launched process.
+ @param launchMode an enum that describes how to launch the application
+ @return a new Configuration Object with the arguments applied.
+ */
++ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output launchMode:(FBApplicationLaunchMode)launchMode;
 
 /**
  Creates and returns a new Configuration with the provided parameters.
@@ -50,6 +69,14 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output;
 
 /**
+ Call if the app launch should wait for a debugger to be attached
+
+ @param error set if this conflicts with the exising configuration
+ @return new application launch configuration with changes applied.
+ */
+- (instancetype)withWaitForDebugger:(NSError **)error;
+
+/**
  Adds output configuration.
 
  @param output output configuration
@@ -66,6 +93,11 @@ NS_ASSUME_NONNULL_BEGIN
  The Name (CFBundleName) of the the Application to Launch. May be nil.
  */
 @property (nullable, nonatomic, copy, readonly) NSString *bundleName;
+
+/**
+ An enum describing how to launch the application
+ */
+@property (nonatomic, assign, readonly) FBApplicationLaunchMode launchMode;
 
 /**
  A BOOL signalizing whether the application should wait for debugger to be attached immediately after launch.
