@@ -68,8 +68,13 @@
 
 - (NSData *)touchScreenSize:(CGSize)screenSize direction:(FBSimulatorHIDDirection)direction x:(double)x y:(double)y
 {
+  return [self touchScreenSize:screenSize screenScale:1.0 direction:direction x:x y:y];
+}
+
+- (NSData *)touchScreenSize:(CGSize)screenSize screenScale:(float)screenScale direction:(FBSimulatorHIDDirection)direction x:(double)x y:(double)y
+{
   // Convert Screen Offset to Ratio for Indigo.
-  CGPoint point = [self.class screenRatioFromPoint:CGPointMake(x, y) screenSize:screenSize];
+  CGPoint point = [self.class screenRatioFromPoint:CGPointMake(x, y) screenSize:screenSize screenScale:screenScale];
   size_t messageSize;
   IndigoMessage *message = [self.class touchMessageWithPoint:point direction:direction messageSizeOut:&messageSize];
   return [NSData dataWithBytesNoCopy:message length:messageSize freeWhenDone:YES];
@@ -123,11 +128,11 @@
   NSAssert(NO, @"Direction Code %lul is not known", (unsigned long)direction);
 }
 
-+ (CGPoint)screenRatioFromPoint:(CGPoint)point screenSize:(CGSize)screenSize
++ (CGPoint)screenRatioFromPoint:(CGPoint)point screenSize:(CGSize)screenSize screenScale:(float)screenScale
 {
   return CGPointMake(
-    point.x / screenSize.width,
-    point.y / screenSize.height
+    (point.x * screenScale) / screenSize.width,
+    (point.y * screenScale) / screenSize.height
   );
 }
 

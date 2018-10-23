@@ -80,6 +80,18 @@ typedef NS_ENUM(NSUInteger, FBSimulatorHIDButton) {
  */
 - (NSData *)touchScreenSize:(CGSize)screenSize direction:(FBSimulatorHIDDirection)direction x:(double)x y:(double)y;
 
+
+/**
+ A Touch Event.
+ @param screenSize the size of the screen in pixels.
+ @param screenScale the scale of the screen e.g. @2x
+ @param direction the direction of the event.
+ @param x the X-Coordinate in pixels
+ @param y the Y-Coordinate pixels
+ @return an NSData-Wrapped IndigoMessage. The data is owned by the reciever and will be freed when the data is deallocated.
+ */
+- (NSData *)touchScreenSize:(CGSize)screenSize screenScale:(float)screenScale direction:(FBSimulatorHIDDirection)direction x:(double)x y:(double)y;
+
 @end
 
 NS_ASSUME_NONNULL_END

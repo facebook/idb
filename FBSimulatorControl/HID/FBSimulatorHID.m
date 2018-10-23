@@ -30,6 +30,7 @@
 
 @property (nonatomic, strong, readonly) FBSimulatorIndigoHID *indigo;
 @property (nonatomic, assign, readonly) CGSize mainScreenSize;
+@property (nonatomic, assign, readonly) float mainScreenScale;
 
 @end
 
@@ -40,6 +41,8 @@
 
 - (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize queue:(dispatch_queue_t)queue registrationPort:(mach_port_t)registrationPort;
 
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize mainScreenScale:(float)mainScreenScale queue:(dispatch_queue_t)queue registrationPort:(mach_port_t)registrationPort;
+
 @end
 
 @interface FBSimulatorHID_SimulatorKit : FBSimulatorHID
@@ -47,6 +50,8 @@
 @property (nonatomic, strong, nullable, readonly) SimDeviceLegacyClient *client;
 
 - (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize queue:(dispatch_queue_t)queue client:(SimDeviceLegacyClient *)client;
+
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize mainScreenScale:(float)mainScreenScale queue:(dispatch_queue_t)queue client:(SimDeviceLegacyClient *)client;
 
 @end
 
@@ -81,7 +86,8 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
       failFuture];
   }
   CGSize mainScreenSize = simulator.device.deviceType.mainScreenSize;
-  FBSimulatorHID *hid = [[FBSimulatorHID_SimulatorKit alloc] initWithIndigo:FBSimulatorIndigoHID.defaultHID mainScreenSize:mainScreenSize queue:self.workQueue client:client];
+  float scale = simulator.device.deviceType.mainScreenScale;
+  FBSimulatorHID *hid = [[FBSimulatorHID_SimulatorKit alloc] initWithIndigo:FBSimulatorIndigoHID.defaultHID mainScreenSize:mainScreenSize mainScreenScale:scale queue:self.workQueue client:client];
   return [FBFuture futureWithResult:hid];
 }
 
@@ -95,13 +101,14 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   }
 
   CGSize mainScreenSize = simulator.device.deviceType.mainScreenSize;
+  float scale = simulator.device.deviceType.mainScreenScale;
   dispatch_queue_t queue = self.workQueue;
 
   return [[self
     onQueue:queue registrationPortForSimulator:simulator]
     onQueue:queue map:^(NSNumber *registrationPortNumber) {
       mach_port_t registrationPort = registrationPortNumber.unsignedIntValue;
-      return [[FBSimulatorHID_Reimplemented alloc] initWithIndigo:FBSimulatorIndigoHID.reimplemented mainScreenSize:mainScreenSize queue:queue registrationPort:registrationPort];
+      return [[FBSimulatorHID_Reimplemented alloc] initWithIndigo:FBSimulatorIndigoHID.reimplemented mainScreenSize:mainScreenSize mainScreenScale:scale queue:queue registrationPort:registrationPort];
     }];
 }
 
@@ -143,6 +150,11 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 - (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize queue:(dispatch_queue_t)queue
 {
+  return [self initWithIndigo:indigo mainScreenSize:mainScreenSize mainScreenScale:1.0 queue:queue];
+}
+
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize mainScreenScale:(float)mainScreenScale queue:(dispatch_queue_t)queue
+{
   self = [super init];
   if (!self) {
     return nil;
@@ -151,6 +163,7 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   _indigo = indigo;
   _mainScreenSize = mainScreenSize;
   _queue = queue;
+  _mainScreenScale = mainScreenScale;
 
   return self;
 }
@@ -203,7 +216,7 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 - (FBFuture<NSNull *> *)sendTouchWithType:(FBSimulatorHIDDirection)type x:(double)x y:(double)y
 {
-  return [self sendIndigoMessageDataOnWorkQueue:[self.indigo touchScreenSize:self.mainScreenSize direction:type x:x y:y]];
+  return [self sendIndigoMessageDataOnWorkQueue:[self.indigo touchScreenSize:self.mainScreenSize screenScale:self.mainScreenScale direction:type x:x y:y]];
 }
 
 #pragma mark Private
@@ -229,7 +242,12 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 - (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize queue:(dispatch_queue_t)queue registrationPort:(mach_port_t)registrationPort
 {
-  self = [super initWithIndigo:indigo mainScreenSize:mainScreenSize queue:queue];
+  return [self initWithIndigo:indigo mainScreenSize:mainScreenSize mainScreenScale:1.0 queue:queue registrationPort:registrationPort];
+}
+
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize mainScreenScale:(float)mainScreenScale queue:(dispatch_queue_t)queue registrationPort:(mach_port_t)registrationPort
+{
+  self = [super initWithIndigo:indigo mainScreenSize:mainScreenSize mainScreenScale:mainScreenScale queue:queue];
   if (!self) {
     return nil;
   }
@@ -354,7 +372,12 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 - (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize queue:(dispatch_queue_t)queue client:(SimDeviceLegacyClient *)client
 {
-  self = [super initWithIndigo:indigo mainScreenSize:mainScreenSize queue:queue];
+  return [self initWithIndigo:indigo mainScreenSize:mainScreenSize mainScreenScale:1.0 queue:queue client:client];
+}
+
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize mainScreenScale:(float)mainScreenScale queue:(dispatch_queue_t)queue client:(SimDeviceLegacyClient *)client
+{
+  self = [super initWithIndigo:indigo mainScreenSize:mainScreenSize mainScreenScale:mainScreenScale queue:queue];
   if (!self) {
     return nil;
   }
