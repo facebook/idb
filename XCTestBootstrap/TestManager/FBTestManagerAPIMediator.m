@@ -54,8 +54,8 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 @property (nonatomic, strong, readonly) FBXCTestManagerLoggingForwarder *loggingForwarder;
 @property (nonatomic, strong, readonly) NSMutableDictionary *tokenToBundleIDMap;
 
-@property (nonatomic, strong, nullable, readwrite) FBTestBundleConnection *bundleConnection;
-@property (nonatomic, strong, nullable, readwrite) FBTestDaemonConnection *daemonConnection;
+@property (nonatomic, strong, readonly) FBTestBundleConnection *bundleConnection;
+@property (nonatomic, strong, readonly) FBTestDaemonConnection *daemonConnection;
 @property (nonatomic, strong, nullable, readwrite) FBTestManagerResult *result;
 
 @property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
@@ -138,16 +138,14 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (FBFuture<FBTestManagerResult *> *)disconnect
 {
-  [self.bundleConnection disconnect];
-  self.bundleConnection = nil;
-
-  [self.daemonConnection disconnect];
-  self.daemonConnection = nil;
-
-  if (self.result) {
-    return [FBFuture futureWithResult:self.result];
-  }
-  return [FBFuture futureWithResult:[self concludeWithResult:FBTestManagerResult.clientRequestedDisconnect]];
+  return [[FBFuture
+    futureWithFutures:@[[self.bundleConnection disconnect], [self.daemonConnection disconnect]]]
+    onQueue:self.target.workQueue map:^(id _) {
+      if (self.result) {
+        return [FBFuture futureWithResult:self.result];
+      }
+      return [FBFuture futureWithResult:[self concludeWithResult:FBTestManagerResult.clientRequestedDisconnect]];
+    }];
 }
 
 #pragma mark Reporting
