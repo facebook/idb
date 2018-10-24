@@ -54,7 +54,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 @property (nonatomic, strong, readonly) FBXCTestManagerLoggingForwarder *loggingForwarder;
 @property (nonatomic, strong, readonly) NSMutableDictionary *tokenToBundleIDMap;
 
-@property (nonatomic, strong, readonly) FBMutableFuture *connectFuture;
 @property (nonatomic, strong, nullable, readwrite) FBTestBundleConnection *bundleConnection;
 @property (nonatomic, strong, nullable, readwrite) FBTestDaemonConnection *daemonConnection;
 @property (nonatomic, strong, nullable, readwrite) FBTestManagerResult *result;

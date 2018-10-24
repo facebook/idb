@@ -56,8 +56,8 @@ static FBTestDaemonConnectionState const FBTestDaemonConnectionStateResultAvaila
 @property (atomic, nullable, strong, readwrite) id<XCTestManager_DaemonConnectionInterface> daemonProxy;
 @property (atomic, nullable, strong, readwrite) DTXConnection *daemonConnection;
 
-@property (nonatomic, strong, readonly) FBMutableFuture *connectFuture;
-@property (nonatomic, strong, readonly) FBMutableFuture *resultFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<FBTestDaemonResult *> *connectFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<FBTestDaemonResult *> *resultFuture;
 
 @end
 

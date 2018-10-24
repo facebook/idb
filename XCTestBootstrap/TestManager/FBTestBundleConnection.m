@@ -48,23 +48,23 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
 
 @interface FBTestBundleConnection () <XCTestManager_IDEInterface>
 
-@property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) FBTestManagerContext *context;
 @property (nonatomic, weak, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
+@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) FBTestManagerContext *context;
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
 
 @property (atomic, strong, readwrite) FBTestBundleConnectionState state;
 @property (atomic, strong, readwrite) FBTestBundleResult *result;
 
-@property (nonatomic, strong, nullable, readwrite) FBMutableFuture *connectFuture;
-@property (nonatomic, strong, nullable, readwrite) FBMutableFuture *testPlanFuture;
-@property (nonatomic, strong, nullable, readwrite) FBMutableFuture *disconnectFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<FBTestBundleResult *> *connectFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<FBTestBundleResult *> *testPlanFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<FBTestBundleResult *> *disconnectFuture;
 
 @property (atomic, assign, readwrite) long long testBundleProtocolVersion;
-@property (atomic, nullable, strong, readwrite) id<XCTestDriverInterface> testBundleProxy;
-@property (atomic, nullable, strong, readwrite) DTXConnection *testBundleConnection;
-@property (atomic, nullable, strong, readwrite) NSDate *applicationLaunchDate;
+@property (atomic, strong, nullable, readwrite) id<XCTestDriverInterface> testBundleProxy;
+@property (atomic, strong, nullable, readwrite) DTXConnection *testBundleConnection;
+@property (atomic, strong, nullable, readwrite) NSDate *applicationLaunchDate;
 
 @end
 
