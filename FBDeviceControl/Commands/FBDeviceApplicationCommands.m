@@ -122,7 +122,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
       if (installReturnCode != 0) {
         NSString *errorMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(installReturnCode));
         return [[FBDeviceControlError
-          describeFormat:@"Failed to install application (%@)", errorMessage]
+          describeFormat:@"Failed to install application %@ (%@)", [appURL lastPathComponent], errorMessage]
           failFuture];
       }
       [self.device.logger logFormat:@"Installed Application %@", appURL];
