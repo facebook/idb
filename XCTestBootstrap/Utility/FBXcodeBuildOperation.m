@@ -12,6 +12,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID";
+static NSString *XcodebuildDestinationTimeoutSecs = @"180"; // How long xcodebuild should wait for the device to be available
 
 @implementation FBXcodeBuildOperation
 
@@ -22,6 +23,7 @@ static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID
     @"test-without-building",
     @"-xctestrun", testRunFilePath,
     @"-destination", [NSString stringWithFormat:@"id=%@", udid],
+    @"-destination-timeout", XcodebuildDestinationTimeoutSecs,
   ]];
 
   if (configuration.resultBundlePath) {
