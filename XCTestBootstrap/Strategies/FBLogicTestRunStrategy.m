@@ -233,7 +233,8 @@
     stdOutConsumer:stdOutConsumer
     stdErrConsumer:stdErrConsumer
     executor:self.executor
-    timeout:self.configuration.testTimeout];
+    timeout:self.configuration.testTimeout
+    logger:self.logger];
 }
 
 @end

@@ -115,7 +115,8 @@
     listTestProcessWithEnvironment:environment
     stdOutConsumer:[FBLoggingFileConsumer consumerWithLogger:self.logger]
     stdErrConsumer:[FBLoggingFileConsumer consumerWithLogger:self.logger]
-    executor:self.executor]
+    executor:self.executor
+    logger:self.logger]
     onQueue:self.executor.workQueue fmap:^(id<FBLaunchedProcess> processInfo) {
       return [FBListTestStrategy launchedProcess:processInfo shimOutput:shimOutput shimConsumer:shimConsumer queue:self.executor.workQueue];
     }];

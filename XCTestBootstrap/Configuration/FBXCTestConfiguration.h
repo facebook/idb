@@ -122,9 +122,10 @@ extern FBXCTestType const FBXCTestTypeListTest;
  @param stdOutConsumer the Consumer of the launched process stdout.
  @param stdErrConsumer the Consumer of the launched process stderr.
  @param executor the executor for running the list test process.
+ @param logger the logger to log to
  @return the list test process
  */
-- (FBFuture<id<FBLaunchedProcess>> *)listTestProcessWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor;
+- (FBFuture<id<FBLaunchedProcess>> *)listTestProcessWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
