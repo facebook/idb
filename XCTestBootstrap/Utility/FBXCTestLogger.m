@@ -171,6 +171,7 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
       return [FBCompositeFileConsumer consumerWithConsumers:@[
         consumer,
         writer,
+        [FBLoggingFileConsumer consumerWithLogger:logger],
       ]];
     }];
 }
