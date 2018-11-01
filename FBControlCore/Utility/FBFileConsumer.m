@@ -308,6 +308,10 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   if (!string) {
     return;
   }
+  string = [string stringByTrimmingCharactersInSet:NSCharacterSet.newlineCharacterSet];
+  if (string.length < 1) {
+    return;
+  }
   [self.logger log:string];
 }
 
