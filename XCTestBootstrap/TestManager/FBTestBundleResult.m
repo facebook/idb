@@ -108,7 +108,9 @@
 @end
 
 @interface FBTestBundleResult_FailedInError : FBTestBundleResult
+
 @property (nonatomic, strong, readonly) XCTestBootstrapError *underlyingError;
+
 @end
 
 @implementation FBTestBundleResult_FailedInError
@@ -121,6 +123,7 @@
   }
 
   _underlyingError = error;
+
   return self;
 }
 
