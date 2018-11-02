@@ -48,4 +48,11 @@
  */
 - (void)handleEventJSONData:(NSData *)data;
 
+/**
+ Called when the test process has crashed mid test
+
+ @param error error returned by the test process, most likely includes a stack trace
+ */
+- (void)didCrashDuringTest:(NSError *)error;
+
 @end

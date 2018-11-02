@@ -133,4 +133,11 @@
   [self.reporter testCaseDidFailForTestClass:testClass method:testName withMessage:message file:file line:line];
 }
 
+- (void)didCrashDuringTest:(NSError *)error
+{
+  if ([self.reporter respondsToSelector:@selector(didCrashDuringTest:)]) {
+    [self.reporter didCrashDuringTest:error];
+  }
+}
+
 @end

@@ -125,13 +125,18 @@
   id<FBLogicXCTestReporter> reporter = self.reporter;
   dispatch_queue_t queue = self.executor.workQueue;
 
-  return [[[[FBLogicTestRunStrategy
+  return [[[[[FBLogicTestRunStrategy
     fromQueue:queue waitForDebuggerToBeAttached:self.configuration.waitForDebugger forProcessIdentifier:process.processIdentifier reporter:reporter]
     onQueue:queue fmap:^(id _) {
       return [shimOutput startReading];
     }]
     onQueue:queue fmap:^(FBFileReader *reader) {
       return [FBLogicTestRunStrategy onQueue:queue waitForExit:process closingOutput:shimOutput consumer:shimConsumer];
+    }]
+    onQueue:queue handleError:^FBFuture * _Nonnull(NSError * error) {
+      // Abnormal exit
+      [self.reporter didCrashDuringTest:error];
+      return [FBFuture futureWithError:error];
     }]
     onQueue:queue map:^(id _) {
       [reporter didFinishExecutingTestPlan];

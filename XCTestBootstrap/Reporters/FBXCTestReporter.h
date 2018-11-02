@@ -166,6 +166,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)didCopiedTestArtifact:(nonnull NSString *)testArtifactFilename toPath:(nonnull NSString *)path;
 
+/**
+ Called when the test process has crashed mid test
+
+ @param error error returned by the test process, most likely includes a stack trace
+ */
+- (void)didCrashDuringTest:(NSError *)error;
+
 @end
 
 NS_ASSUME_NONNULL_END
