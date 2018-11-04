@@ -255,6 +255,16 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
     }];
 }
 
+- (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)isEnabled keyboardType:(unsigned char)keyboardType
+{
+  return [[self
+           interactWithBridge]
+          onQueue:self.workQueue fmap:^(id<SimulatorBridge>bridge) {
+            [bridge setHardwareKeyboardEnabled:isEnabled keyboardType:keyboardType];
+            return [FBFuture futureWithResult:NSNull.null];
+          }];
+}
+
 - (FBFuture<NSNull *> *)setLocationWithLatitude:(double)latitude longitude:(double)longitude
 {
   return [[self

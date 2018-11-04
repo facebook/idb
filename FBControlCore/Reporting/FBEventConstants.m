@@ -43,6 +43,7 @@ FBEventName const FBEventNameRecord = @"record";
 FBEventName const FBEventNameRelaunch = @"relaunch";
 FBEventName const FBEventNameSearch = @"search";
 FBEventName const FBEventNameServiceInfo = @"service_info";
+FBEventName const FBEventNameSetHardwareKeyboard = @"set_hardware_keyboard";
 FBEventName const FBEventNameSetLocation = @"set_location";
 FBEventName const FBEventNameShutdown = @"shutdown";
 FBEventName const FBEventNameSignalled = @"signalled";

@@ -11,7 +11,7 @@ import FBSimulatorControl
 import Foundation
 
 @objc open class CLIBootstrapper: NSObject {
-  open static func bootstrap() -> Int32 {
+  public static func bootstrap() -> Int32 {
     let arguments = Array(CommandLine.arguments.dropFirst(1))
     let environment = ProcessInfo.processInfo.environment
     let (cli, writer, reporter, _) = CLI.fromArguments(arguments, environment: environment).bootstrap()

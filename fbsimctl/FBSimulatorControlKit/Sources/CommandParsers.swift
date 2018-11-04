@@ -525,6 +525,7 @@ extension Action: Parsable {
         self.recordParser,
         self.relaunchParser,
         self.serviceInfoParser,
+        self.setHardwareKeyboardParser,
         self.setLocationParser,
         self.shutdownParser,
         self.streamParser,
@@ -777,6 +778,22 @@ extension Action: Parsable {
         Parser<String>.ofBundleIDOrApplicationDescriptorBundleID
       )
       .fmap(Action.serviceInfo)
+  }
+
+  static var setHardwareKeyboardParser: Parser<Action> {
+    let keyboardStateParser = Parser<Bool>
+      .alternative([
+        Parser<Bool>.ofString("enabled", true),
+        Parser<Bool>.ofString("disabled", false),
+      ])
+      .fallback(true)
+
+    return Parser
+      .ofCommandWithArg(
+        EventName.setHardwareKeyboard.rawValue,
+        keyboardStateParser
+      )
+      .fmap(Action.setHardwareKeyboard)
   }
 
   static var setLocationParser: Parser<Action> {

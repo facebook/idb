@@ -56,4 +56,13 @@
     }];
 }
 
+- (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)isEnabled keyboardType:(unsigned char)keyboardType
+{
+  return [[self.simulator
+           connectToBridge]
+          onQueue:self.simulator.workQueue fmap:^(FBSimulatorBridge *bridge) {
+            return [bridge setHardwareKeyboardEnabled:isEnabled keyboardType:keyboardType];
+          }];
+}
+
 @end

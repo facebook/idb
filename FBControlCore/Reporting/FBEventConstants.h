@@ -54,6 +54,7 @@ extern FBEventName const FBEventNameRecord;
 extern FBEventName const FBEventNameRelaunch;
 extern FBEventName const FBEventNameSearch;
 extern FBEventName const FBEventNameServiceInfo;
+extern FBEventName const FBEventNameSetHardwareKeyboard;
 extern FBEventName const FBEventNameSetLocation;
 extern FBEventName const FBEventNameShutdown;
 extern FBEventName const FBEventNameSignalled;

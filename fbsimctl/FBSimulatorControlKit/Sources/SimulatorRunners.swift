@@ -136,6 +136,13 @@ struct SimulatorActionRunner: Runner {
     case .relaunch(var appLaunch):
       appLaunch = FBApplicationLaunchConfiguration.init(bundleID: appLaunch.bundleID, bundleName: appLaunch.bundleName, arguments: appLaunch.arguments, environment: appLaunch.environment, output: appLaunch.output, launchMode: .relaunchIfRunning)
       return FutureRunner(reporter, .relaunch, appLaunch.subject, simulator.launchApplication(appLaunch))
+    case .setHardwareKeyboard(let isEnabled):
+      return FutureRunner(
+        reporter,
+        .setHardwareKeyboard,
+        simulator.subject,
+        simulator.setHardwareKeyboardEnabled(isEnabled, keyboardType:0)
+      )
     case .setLocation(let latitude, let longitude):
       return FutureRunner(
         reporter,

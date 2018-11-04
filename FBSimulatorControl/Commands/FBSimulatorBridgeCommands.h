@@ -31,6 +31,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)setLocationWithLatitude:(double)latitude longitude:(double)longitude;
 
+/**
+ Sets the state of the hardware keyboard connection for the Simulator.
+ Disabling the hardware keyboard might decrease flackiness for tests where automated text input is being performed, since the latter require the on-screen keyboard to be visible.
+
+ @param isEnabled wether to enable or disable the hardware keyboard.
+ @param keyboardType the keyboard type. This value should be one UIKeyboardType enumeration members.
+ @return a Future that resolves when the hardware keyboard connection state has been set.
+ */
+- (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)isEnabled keyboardType:(unsigned char)keyboardType;
+
 @end
 
 /**

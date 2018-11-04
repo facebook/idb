@@ -87,6 +87,7 @@ public enum Action {
   case open(URL)
   case record(Record)
   case relaunch(FBApplicationLaunchConfiguration)
+  case setHardwareKeyboard(Bool)
   case setLocation(Double, Double)
   case stream(FBBitmapStreamConfiguration, FileOutput)
   case terminate(String)
@@ -348,6 +349,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftStart == rightStart
   case (.relaunch(let leftLaunch), .relaunch(let rightLaunch)):
     return leftLaunch == rightLaunch
+  case (.setHardwareKeyboard(let leftEnabled), .setHardwareKeyboard(let rightEnabled)):
+    return leftEnabled == rightEnabled
   case (.setLocation(let leftLat, let leftLon), .setLocation(let rightLat, let rightLon)):
     return leftLat == rightLat && leftLon == rightLon
   case (.stream(let leftConfiguration, let leftOutput), .stream(let rightConfiguration, let rightOutput)):
@@ -398,6 +401,8 @@ extension Action {
       return (.record, RecordSubject(record))
     case .relaunch(let appLaunch):
       return (.relaunch, appLaunch.subject)
+    case .setHardwareKeyboard:
+      return (.setHardwareKeyboard, nil)
     case .setLocation:
       return (.setLocation, nil)
     case .stream:
