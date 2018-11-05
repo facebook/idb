@@ -167,7 +167,7 @@
 @interface FBCoreSimulatorBootOptions_Xcode8 : NSObject <FBCoreSimulatorBootOptions>
 @end
 
-@interface FBCoreSimulatorBootOptions_Xcode9 : NSObject <FBCoreSimulatorBootOptions>
+@interface FBCoreSimulatorBootOptions_Xcode9_10 : NSObject <FBCoreSimulatorBootOptions>
 @end
 
 @implementation FBCoreSimulatorBootOptions_Xcode7
@@ -212,7 +212,7 @@
 
 @end
 
-@implementation FBCoreSimulatorBootOptions_Xcode9
+@implementation FBCoreSimulatorBootOptions_Xcode9_10
 
 - (BOOL)shouldCreateFramebuffer:(FBSimulatorBootConfiguration *)configuration
 {
@@ -222,8 +222,11 @@
 
 - (NSDictionary<NSString *, id> *)bootOptions:(FBSimulatorBootConfiguration *)configuration
 {
-  // If we are launching with the Simulator App, we want to persist the Simulator.
-  // This effectively "Passes Ownership" to the Simulator App.
+  // "Persisting" means for the booted Simulator to live beyond the lifecycle of the process that calls the boot API.
+  // This is the default for `simctl which boots the simulator and leaves it booted until 'shutdown' is called.
+  // This is also possible in `simctl` if the undocumented `--wait` flag is passed after the Simulator's UDID.
+  // If "Direct Launch" is enabled we *do not* want the Simulator to live beyond the lifecycle of the process calling boot
+  // as this gives us cleaner teardown semantics for automated scenarios.
   return @{
     @"persist": @(!configuration.shouldUseDirectLaunch),
     @"env" : configuration.environment ?: @{},
@@ -527,7 +530,7 @@
 + (id<FBCoreSimulatorBootOptions>)coreSimulatorBootOptions
 {
   if (FBXcodeConfiguration.isXcode9OrGreater) {
-    return [FBCoreSimulatorBootOptions_Xcode9 new];
+    return [FBCoreSimulatorBootOptions_Xcode9_10 new];
   } else if (FBXcodeConfiguration.isXcode8OrGreater) {
     return [FBCoreSimulatorBootOptions_Xcode8 new];
   } else {
