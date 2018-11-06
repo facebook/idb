@@ -79,9 +79,10 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
       NSFileHandle *stdErrHandle = fileHandles[1];
 
       // Launch the Process
-      FBMutableFuture *processStatusFuture = [FBMutableFuture future];
-      FBFuture<NSNumber *> *launchFuture = [self
-        launchAgentWithLaunchPath:agentLaunch.agentBinary.path
+      FBMutableFuture<NSNumber *> *processStatusFuture = FBMutableFuture.future;
+      FBFuture<NSNumber *> *launchFuture = [FBAgentLaunchStrategy
+        launchAgentWithSimulator:simulator
+        launchPath:agentLaunch.agentBinary.path
         arguments:agentLaunch.arguments
         environment:agentLaunch.environment
         waitForDebugger:NO
@@ -135,11 +136,12 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
 #pragma mark Private
 
-- (FBFuture<NSNumber *> *)launchAgentWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr processStatusFuture:(nullable FBMutableFuture<NSNumber *> *)processStatusFuture
++ (FBFuture<NSNumber *> *)launchAgentWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr processStatusFuture:(FBMutableFuture<NSNumber *> *)processStatusFuture
 {
   // Get the Options
-  NSDictionary<NSString *, id> *options = [FBAgentLaunchConfiguration
-    simDeviceLaunchOptionsWithLaunchPath:launchPath
+  NSDictionary<NSString *, id> *options = [FBAgentLaunchStrategy
+    simDeviceLaunchOptionsWithSimulator:simulator
+    launchPath:launchPath
     arguments:arguments
     environment:environment
     waitForDebugger:waitForDebugger
@@ -148,14 +150,14 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
   // The Process launches and terminates synchronously
   FBMutableFuture<NSNumber *> *launchFuture = [FBMutableFuture future];
-  [self.simulator.device
+  [simulator.device
     spawnAsyncWithPath:launchPath
     options:options
-    terminationQueue:self.simulator.workQueue
+    terminationQueue:simulator.workQueue
     terminationHandler:^(int stat_loc) {
       [processStatusFuture resolveWithResult:@(stat_loc)];
     }
-    completionQueue:self.simulator.workQueue
+    completionQueue:simulator.workQueue
     completionHandler:^(NSError *innerError, pid_t processIdentifier){
       if (innerError) {
         [launchFuture resolveWithError:innerError];
@@ -164,6 +166,23 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
       }
   }];
   return launchFuture;
+}
+
++ (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr
+{
+  // argv[0] should be launch path of the process. SimDevice does not do this automatically, so we need to add it.
+  arguments = [@[launchPath] arrayByAddingObjectsFromArray:arguments];
+  NSMutableDictionary<NSString *, id> *options = [FBProcessLaunchConfiguration launchOptionsWithArguments:arguments environment:environment waitForDebugger:waitForDebugger];
+  if (stdOut){
+    options[@"stdout"] = @([stdOut fileDescriptor]);
+  }
+  if (stdErr) {
+    options[@"stderr"] = @([stdErr fileDescriptor]);
+  }
+  if (simulator.state != FBiOSTargetStateBooted) {
+    options[@"standalone"] = @YES;
+  }
+  return [options copy];
 }
 
 @end
