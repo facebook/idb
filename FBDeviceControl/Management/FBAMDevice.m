@@ -162,7 +162,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 }
 
 static const NSTimeInterval ConnectionReuseTimeout = 10.0;
-static const NSTimeInterval ServiceReuseTimeout = 3.0;
+static const NSTimeInterval ServiceReuseTimeout = 6.0;
 
 - (void)deviceConnected:(AMDeviceRef)amDevice
 {
