@@ -95,11 +95,16 @@
   }
 
   _loggers = loggers;
+
   return self;
 }
 
 - (id<FBControlCoreLogger>)log:(NSString *)message
 {
+  message = [FBControlCoreLogger loggableStringLine:message];
+  if (!message) {
+    return self;
+  }
   for (id<FBControlCoreLogger> logger in self.loggers) {
     [logger log:message];
   }
@@ -206,6 +211,10 @@
 
 - (id<FBControlCoreLogger>)log:(NSString *)message
 {
+  message = [FBControlCoreLogger loggableStringLine:message];
+  if (!message) {
+    return self;
+  }
   NSMutableString *string = [NSMutableString string];
   if (self.dateFormatter) {
     [string appendFormat:@"%@ ", [self.dateFormatter stringFromDate:NSDate.date]];
@@ -312,6 +321,18 @@
 {
   id<FBFileConsumer> consumer = [FBFileWriter syncWriterWithFileHandle:fileHandle];
   return [[FBControlCoreLogger_Consumer alloc] initWithConsumer:consumer name:nil dateFormatter:nil];
+}
+
++ (NSString *)loggableStringLine:(NSString *)string
+{
+  if (!string) {
+    return nil;
+  }
+  string = [string stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+  if (string.length == 0) {
+    return nil;
+  }
+  return string;
 }
 
 @end

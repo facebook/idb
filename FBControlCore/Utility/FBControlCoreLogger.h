@@ -131,6 +131,14 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  */
 + (id<FBControlCoreLogger>)loggerToFileHandle:(NSFileHandle *)fileHandle;
 
+/**
+ Strips the newline and returns a nullable string if the string shouldn't be logged.
+
+ @param string the string to log.
+ @return the modifier string.
+ */
++ (nullable NSString *)loggableStringLine:(nullable NSString *)string;
+
 @end
 
 NS_ASSUME_NONNULL_END
