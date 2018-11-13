@@ -80,9 +80,11 @@
   return [[self
     readFileWithBundleID:bundleID path:containerPath]
     onQueue:self.device.asyncQueue fmap:^FBFuture<NSNull *> *(NSData *fileData) {
-     if (![fileData writeToFile:destinationPath atomically:NO]) {
-       return [[FBDeviceControlError
-        describeFormat:@"Failed write data to file at path %@", destinationPath]
+     NSError *error;
+     if (![fileData writeToFile:destinationPath options:0 error:&error]) {
+       return [[[FBDeviceControlError
+        describeFormat:@"Failed to write data to file at path %@", destinationPath]
+        causedBy:error]
         failFuture];
      }
      return [FBFuture futureWithResult:NSNull.null];
