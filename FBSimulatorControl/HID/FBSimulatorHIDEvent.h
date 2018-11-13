@@ -130,6 +130,14 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeHID;
  */
 + (instancetype)eventWithEvents:(NSArray<FBSimulatorHIDEvent *> *)events;
 
+/**
+ A HID Event that delays the next event by a set duration
+
+ @param duration Amount of time to delay the next event by in seconds
+ @return a new HID Event.
+ */
++ (instancetype)delay:(double)duration;
+
 #pragma mark Public Methods
 
 /**
