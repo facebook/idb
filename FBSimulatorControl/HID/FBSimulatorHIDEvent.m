@@ -563,7 +563,7 @@ static NSString *const KeyDuration = @"duration";
 
 - (NSUInteger)hash
 {
-  return self.duration;
+  return (NSUInteger)self.duration;
 }
 
 @end
