@@ -109,7 +109,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 {
   return [[self.device.amDevice
     connectToDeviceWithPurpose:@"install"]
-    onQueue:self.device.workQueue pop:^(FBAMDevice *device) {
+    onQueue:self.device.workQueue fmap:^(FBAMDevice *device) {
       [self.device.logger logFormat:@"Installing Application %@", appURL];
       int installReturnCode = self.device.amDevice.calls.SecureInstallApplication(
         0,
@@ -134,7 +134,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 {
   return [[self.device.amDevice
     connectToDeviceWithPurpose:@"installed_apps"]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (FBAMDevice *device) {
+    onQueue:self.device.workQueue fmap:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (FBAMDevice *device) {
       CFDictionaryRef cf_apps;
       int returnCode = self.device.amDevice.calls.LookupApplications(device.amDevice, NULL, &cf_apps);
       if (returnCode != 0) {
@@ -169,7 +169,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
   // the app is installed first (FB_AMDeviceLookupApplications)
   return [[self.device.amDevice
     connectToDeviceWithPurpose:@"uninstall_%@", bundleID]
-    onQueue:self.device.workQueue pop:^(FBAMDevice *device) {
+    onQueue:self.device.workQueue fmap:^(FBAMDevice *device) {
       [self.device.logger logFormat:@"Uninstalling Application %@", bundleID];
       int status = self.device.amDevice.calls.SecureUninstallApplication(
         0,

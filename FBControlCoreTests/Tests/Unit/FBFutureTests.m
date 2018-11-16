@@ -806,7 +806,7 @@
       XCTAssertEqualObjects(value, @1);
       return [FBFuture futureWithResult:@2];
     }]
-    onQueue:self.queue pop:^(id value) {
+    onQueue:self.queue fmap:^(id value) {
       XCTAssertFalse(teardownCalled);
       XCTAssertEqualObjects(value, @2);
       fmapCalled = YES;
@@ -849,7 +849,7 @@
         [innerTeardownExpectation fulfill];
       }];
     }]
-    onQueue:self.queue pop:^(id value) {
+    onQueue:self.queue fmap:^(id value) {
       XCTAssertFalse(outerTeardownCalled);
       XCTAssertEqualObjects(value, @2);
       fmapCalled = YES;
@@ -889,7 +889,7 @@
         XCTFail(@"Should not resolve error teardown");
       }];
     }]
-    onQueue:self.queue pop:^(id result) {
+    onQueue:self.queue fmap:^(id result) {
       XCTFail(@"Should not resolve error mapping");
       return [FBFuture futureWithError:error];
     }]
@@ -920,7 +920,7 @@
           teardownCalled = YES;
         }];
     }]
-    onQueue:self.queue pop:^(id value) {
+    onQueue:self.queue fmap:^(id value) {
       XCTAssertEqualObjects(value, @2);
       XCTAssertFalse(teardownCalled);
       return [FBFuture futureWithResult:@3];

@@ -352,14 +352,13 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 
 /**
  Return a Future from the context.
- The reciever's teardown will occur *after* the Future returned by `pop` resolves.
- If you wish to keep the context alive after the `pop` then use `pend` instead.
+ The reciever's teardown will occur *after* the Future returned by `fmap` resolves.
 
  @param queue the queue to chain on.
- @param pop the function to re-map the result to a new future, only called on success.
+ @param fmap the function to re-map the result to a new future, only called on success.
  @return a Future derived from the fmap. The teardown of the context will occur *after* this future has resolved.
  */
-- (FBFuture *)onQueue:(dispatch_queue_t)queue pop:(FBFuture * (^)(T result))pop;
+- (FBFuture *)onQueue:(dispatch_queue_t)queue fmap:(FBFuture * (^)(T result))fmap;
 
 /**
  Continue to keep the context alive, but fmap a new future.

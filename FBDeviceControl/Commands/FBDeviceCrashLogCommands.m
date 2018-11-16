@@ -94,7 +94,7 @@ static NSString *const PingSuccess = @"ping";
   id<FBControlCoreLogger> logger = self.device.logger;
   return [[self
     copyCrashReportsAndGetFileConnection]
-    onQueue:self.device.workQueue pop:^(FBAFCConnection *afc) {
+    onQueue:self.device.workQueue fmap:^(FBAFCConnection *afc) {
       if (!self.hasPerformedInitialIngestion) {
         [self.store ingestAllExistingInDirectory];
         self.hasPerformedInitialIngestion = YES;
@@ -121,7 +121,7 @@ static NSString *const PingSuccess = @"ping";
 {
   return [[self
     crashReportFileConnection]
-    onQueue:self.device.workQueue pop:^(FBAFCConnection *afc) {
+    onQueue:self.device.workQueue fmap:^(FBAFCConnection *afc) {
       NSMutableArray<FBCrashLogInfo *> *removed = NSMutableArray.array;
       for (FBCrashLogInfo *crash in crashesToRemove) {
         NSError *error = nil;
@@ -165,7 +165,7 @@ static NSString *const PingSuccess = @"ping";
   return [[self.device.amDevice
     startService:CrashReportMoverService]
     // The mover is used first and can be discarded when done.
-    onQueue:self.device.asyncQueue pop:^ FBFuture<NSString *> * (FBAMDServiceConnection *connection) {
+    onQueue:self.device.asyncQueue fmap:^ FBFuture<NSString *> * (FBAMDServiceConnection *connection) {
       NSError *error = nil;
       NSData *data = [connection receive:4 error:&error];
       if (!data) {
