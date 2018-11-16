@@ -148,7 +148,7 @@
 {
   return [[self.device.amDevice
     houseArrestAFCConnectionForBundleID:bundleID afcCalls:self.afcCalls]
-    onQueue:self.device.workQueue fmap:^(FBAFCConnection *connection) {
+    onQueue:self.device.workQueue pop:^(FBAFCConnection *connection) {
       NSError *error = nil;
       id result = operationBlock(connection, &error);
       if (!result) {

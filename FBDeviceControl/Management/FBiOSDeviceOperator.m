@@ -191,7 +191,7 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
 
   return [[self.device.amDevice
     startTestManagerService]
-    onQueue:self.device.workQueue fmap:^(FBAMDServiceConnection *connection) {
+    onQueue:self.device.workQueue pop:^(FBAMDServiceConnection *connection) {
       int socket = connection.socket;
       if (socket <= 0) {
         return [[[FBDeviceControlError
