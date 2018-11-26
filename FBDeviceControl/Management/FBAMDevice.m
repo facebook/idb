@@ -172,7 +172,6 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   if (!device) {
     device = [[FBAMDevice alloc] initWithUDID:udid calls:self.calls connectionReuseTimeout:@(ConnectionReuseTimeout) serviceReuseTimeout:@(ServiceReuseTimeout) workQueue:self.queue logger:self.logger];
     self.devices[udid] = device;
-    [NSNotificationCenter.defaultCenter postNotificationName:FBAMDeviceNotificationNameDeviceAttached object:device];
   }
   AMDeviceRef oldDevice = device.amDevice;
   if (amDevice != oldDevice) {
@@ -181,6 +180,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   } else {
     [self.logger logFormat:@"Existing Device %@ is the same as the old", amDevice];
   }
+  [NSNotificationCenter.defaultCenter postNotificationName:FBAMDeviceNotificationNameDeviceAttached object:device.udid];
 }
 
 - (void)deviceDisconnected:(AMDeviceRef)amDevice
@@ -194,7 +194,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   }
   [self.logger logFormat:@"Removing Device %@ from inflated devices", udid];
   [self.devices removeObjectForKey:udid];
-  [NSNotificationCenter.defaultCenter postNotificationName:FBAMDeviceNotificationNameDeviceDetached object:device];
+  [NSNotificationCenter.defaultCenter postNotificationName:FBAMDeviceNotificationNameDeviceDetached object:device.udid];
 }
 
 - (NSArray<FBAMDevice *> *)currentDeviceList

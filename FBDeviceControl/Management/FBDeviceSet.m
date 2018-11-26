@@ -88,7 +88,7 @@
   if ([query excludesAll:FBiOSTargetTypeDevice]) {
     return @[];
   }
-  return (NSArray<FBDevice *> *)[query filter:self.allDevices];
+  return (NSArray<FBDevice *> *)[query filter:_allDevices];
 }
 
 - (nullable FBDevice *)deviceWithUDID:(NSString *)udid
@@ -128,15 +128,15 @@
 - (void)deviceAttachedNotification:(NSNotification *)notification
 {
   [self recalculateAllDevices];
-  FBAMDevice *device = notification.object;
-  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:FBiOSTargetStateBooted type:FBiOSTargetTypeDevice name:device.deviceName osVersion:device.osConfiguration architecture:device.architecture]];
+  FBDevice *device = [self deviceWithUDID:notification.object];
+  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:FBiOSTargetStateBooted type:FBiOSTargetTypeDevice name:device.name osVersion:device.osVersion architecture:device.architecture]];
 }
 
 - (void)deviceDetachedNotification:(NSNotification *)notification
 {
+  FBDevice *device = [self deviceWithUDID:notification.object];
   [self recalculateAllDevices];
-  FBAMDevice *device = notification.object;
-  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:FBiOSTargetStateShutdown type:FBiOSTargetTypeDevice name:device.deviceName osVersion:device.osConfiguration architecture:device.architecture]];
+  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:FBiOSTargetStateShutdown type:FBiOSTargetTypeDevice name:device.name osVersion:device.osVersion architecture:device.architecture]];
 }
 
 - (void)recalculateAllDevices
