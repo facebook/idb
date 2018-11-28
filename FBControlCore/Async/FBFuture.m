@@ -170,12 +170,12 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return self;
 }
 
-- (FBFuture *)onQueue:(dispatch_queue_t)queue fmap:(FBFuture * (^)(id))fmap
+- (FBFuture *)onQueue:(dispatch_queue_t)queue pop:(FBFuture * (^)(id))pop
 {
   NSArray<FBFutureContext_Teardown *> *teardowns = self.teardowns;
 
   return [[self.future
-    onQueue:queue fmap:fmap]
+    onQueue:queue fmap:pop]
     onQueue:queue notifyOfCompletion:^(FBFuture *_) {
       for (FBFutureContext_Teardown *teardown in teardowns.reverseObjectEnumerator) {
         [teardown performTeardown];

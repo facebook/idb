@@ -47,7 +47,7 @@
 {
   FBFuture *future = [[self.manager
     utilizeWithPurpose:@"A Test"]
-    onQueue:self.queue fmap:^(id result) {
+    onQueue:self.queue pop:^(id result) {
       return [FBFuture futureWithResult:@123];
     }];
 
@@ -66,7 +66,7 @@
 
   FBFuture *future0 = [[manager
     utilizeWithPurpose:@"A Test"]
-    onQueue:self.queue fmap:^(id result) {
+    onQueue:self.queue pop:^(id result) {
       return [FBFuture futureWithResult:@0];
     }];
 
@@ -80,7 +80,7 @@
 
   FBFuture *future1 = [[manager
     utilizeWithPurpose:@"A Test"]
-    onQueue:self.queue fmap:^(id result) {
+    onQueue:self.queue pop:^(id result) {
       return [FBFuture futureWithResult:@1];
     }];
   value = [future1 awaitWithTimeout:1 error:&error];
@@ -98,7 +98,7 @@
 
   FBFuture *future0 = [[manager
     utilizeWithPurpose:@"A Test"]
-    onQueue:self.queue fmap:^(id result) {
+    onQueue:self.queue pop:^(id result) {
       return [FBFuture futureWithResult:@0];
     }];
 
@@ -112,7 +112,7 @@
 
   FBFuture *future1 = [[manager
     utilizeWithPurpose:@"A Test"]
-    onQueue:self.queue fmap:^(id result) {
+    onQueue:self.queue pop:^(id result) {
       return [FBFuture futureWithResult:@1];
     }];
   value = [future1 awaitWithTimeout:1 error:&error];
@@ -139,7 +139,7 @@
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
       utilizeWithPurpose:@"Test 0"]
-      onQueue:self.queue fmap:^(id result) {
+      onQueue:self.queue pop:^(id result) {
         [self.logger log:@"Test 0 In Use"];
         return [FBFuture futureWithResult:@0];
       }];
@@ -148,7 +148,7 @@
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
       utilizeWithPurpose:@"Test 1"]
-      onQueue:self.queue fmap:^(id result) {
+      onQueue:self.queue pop:^(id result) {
         [self.logger log:@"Test 1 In Use"];
         return [FBFuture futureWithResult:@1];
       }];
@@ -157,7 +157,7 @@
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
       utilizeWithPurpose:@"Test 2"]
-      onQueue:self.queue fmap:^(id result) {
+      onQueue:self.queue pop:^(id result) {
         [self.logger log:@"Test 2 In Use"];
         return [FBFuture futureWithResult:@2];
       }];
@@ -185,7 +185,7 @@
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
       utilizeWithPurpose:@"Test 0"]
-      onQueue:self.queue fmap:^(id result) {
+      onQueue:self.queue pop:^(id result) {
         [self.logger log:@"Test 0 In Use"];
         return [FBFuture futureWithResult:@0];
       }];
@@ -194,7 +194,7 @@
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
       utilizeWithPurpose:@"Test 1"]
-      onQueue:self.queue fmap:^(id result){
+      onQueue:self.queue pop:^(id result){
         [self.logger log:@"Test 1 In Use"];
         return [FBFuture futureWithResult:@1];
       }];
@@ -203,7 +203,7 @@
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
       utilizeWithPurpose:@"Test 2"]
-      onQueue:self.queue fmap:^(id result) {
+      onQueue:self.queue pop:^(id result) {
         [self.logger log:@"Test 2 In Use"];
         return [FBFuture futureWithResult:@2];
       }];
@@ -225,7 +225,7 @@
   self.failPrepare = YES;
   FBFuture *future0 = [[manager
     utilizeWithPurpose:@"A Test"]
-    onQueue:self.queue fmap:^(id result) {
+    onQueue:self.queue pop:^(id result) {
       return [FBFuture futureWithResult:@0];
     }];
 
@@ -238,10 +238,10 @@
 
   self.failPrepare = NO;
   FBFuture *future1 = [[manager
-                        utilizeWithPurpose:@"A Test"]
-                       onQueue:self.queue fmap:^(id result) {
-                         return [FBFuture futureWithResult:@1];
-                       }];
+    utilizeWithPurpose:@"A Test"]
+    onQueue:self.queue pop:^(id result) {
+      return [FBFuture futureWithResult:@1];
+    }];
   error = nil;
   value = [future1 awaitWithTimeout:1 error:&error];
   XCTAssertNil(error);
@@ -264,7 +264,7 @@
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
       utilizeWithPurpose:@"A Test 1"]
-      onQueue:self.queue fmap:^(id result) {
+      onQueue:self.queue pop:^(id result) {
        return [FBFuture futureWithResult:@0];
       }];
     [future0 resolveFromFuture:inner];
@@ -272,7 +272,7 @@
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
     utilizeWithPurpose:@"A Test 2"]
-    onQueue:self.queue fmap:^(id result) {
+    onQueue:self.queue pop:^(id result) {
       return [FBFuture futureWithResult:@1];
     }];
     [future1 resolveFromFuture:inner];
@@ -280,7 +280,7 @@
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
       utilizeWithPurpose:@"A Test 3"]
-      onQueue:self.queue fmap:^(id result) {
+      onQueue:self.queue pop:^(id result) {
         return [FBFuture futureWithResult:@2];
       }];
     [future2 resolveFromFuture:inner];

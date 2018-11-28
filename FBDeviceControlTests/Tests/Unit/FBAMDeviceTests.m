@@ -160,7 +160,7 @@ static NSMutableArray<NSString *> *sEvents;
 
 - (void)testConnectToDeviceWithSuccess
 {
-  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue() fmap:^(FBAMDevice *result) {
+  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue() pop:^(FBAMDevice *result) {
     return [FBFuture futureWithResult:NSNull.null];
   }];
 
@@ -182,7 +182,7 @@ static NSMutableArray<NSString *> *sEvents;
 
 - (void)testConnectToDeviceWithFailure
 {
-  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue() fmap:^(FBAMDevice *result) {
+  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue() pop:^(FBAMDevice *result) {
     return [[FBDeviceControlError describeFormat:@"A bad thing"] failFuture];
   }];
 
@@ -204,7 +204,7 @@ static NSMutableArray<NSString *> *sEvents;
 
 - (void)testStartAFCService
 {
-  FBFuture<FBAMDServiceConnection *> *future = [[self.device startAFCService] onQueue:dispatch_get_main_queue() fmap:^(FBAMDServiceConnection *result) {
+  FBFuture<FBAMDServiceConnection *> *future = [[self.device startAFCService] onQueue:dispatch_get_main_queue() pop:^(FBAMDServiceConnection *result) {
     return [FBFuture futureWithResult:result];
   }];
 
@@ -232,7 +232,7 @@ static NSMutableArray<NSString *> *sEvents;
     .ConnectionClose = ConnectionClose,
   };
 
-  FBFuture<FBAFCConnection *> *future = [[self.device houseArrestAFCConnectionForBundleID:@"com.foo.bar" afcCalls:afcCalls] onQueue:dispatch_get_main_queue() fmap:^(FBAFCConnection *result) {
+  FBFuture<FBAFCConnection *> *future = [[self.device houseArrestAFCConnectionForBundleID:@"com.foo.bar" afcCalls:afcCalls] onQueue:dispatch_get_main_queue() pop:^(FBAFCConnection *result) {
     return [FBFuture futureWithResult:result];
   }];
 
@@ -268,19 +268,19 @@ static NSMutableArray<NSString *> *sEvents;
   FBMutableFuture<NSNumber *> *future2 = FBMutableFuture.future;
 
   dispatch_async(schedule, ^{
-    FBFuture<NSNull *> *inner = [[device houseArrestAFCConnectionForBundleID:@"com.foo.bar" afcCalls:afcCalls] onQueue:map fmap:^(FBAFCConnection *result) {
+    FBFuture<NSNull *> *inner = [[device houseArrestAFCConnectionForBundleID:@"com.foo.bar" afcCalls:afcCalls] onQueue:map pop:^(FBAFCConnection *result) {
       return [FBFuture futureWithResult:@0];
     }];
     [future0 resolveFromFuture:inner];
   });
   dispatch_async(schedule, ^{
-    FBFuture<NSNull *> *inner = [[device houseArrestAFCConnectionForBundleID:@"com.foo.bar" afcCalls:afcCalls] onQueue:map fmap:^(FBAFCConnection *result) {
+    FBFuture<NSNull *> *inner = [[device houseArrestAFCConnectionForBundleID:@"com.foo.bar" afcCalls:afcCalls] onQueue:map pop:^(FBAFCConnection *result) {
       return [FBFuture futureWithResult:@1];
     }];
     [future1 resolveFromFuture:inner];
   });
   dispatch_async(schedule, ^{
-    FBFuture<NSNull *> *inner = [[device houseArrestAFCConnectionForBundleID:@"com.foo.bar" afcCalls:afcCalls] onQueue:map fmap:^(FBAFCConnection *result) {
+    FBFuture<NSNull *> *inner = [[device houseArrestAFCConnectionForBundleID:@"com.foo.bar" afcCalls:afcCalls] onQueue:map pop:^(FBAFCConnection *result) {
       return [FBFuture futureWithResult:@2];
     }];
     [future2 resolveFromFuture:inner];
@@ -323,19 +323,19 @@ static NSMutableArray<NSString *> *sEvents;
   FBAMDevice *device = self.device;
 
   dispatch_async(schedule, ^{
-    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map fmap:^(FBAMDevice *result) {
+    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map pop:^(FBAMDevice *result) {
       return [FBFuture futureWithResult:@0];
     }];
     [future0 resolveFromFuture:future];
   });
   dispatch_async(schedule, ^{
-    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map fmap:^(FBAMDevice *result) {
+    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map pop:^(FBAMDevice *result) {
       return [FBFuture futureWithResult:@1];
     }];
     [future1 resolveFromFuture:future];
   });
   dispatch_async(schedule, ^{
-    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map fmap:^(FBAMDevice *result) {
+    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map pop:^(FBAMDevice *result) {
       return [FBFuture futureWithResult:@2];
     }];
     [future2 resolveFromFuture:future];
