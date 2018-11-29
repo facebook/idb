@@ -292,6 +292,13 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
  */
 @property (atomic, assign, readonly) FBFutureState state;
 
+/**
+ The name of the Future.
+ This can be used to set contextual information about the work that the Future represents.
+ Any name is incorporated into the description.
+ */
+@property (atomic, copy, nullable, readonly) NSString *name;
+
 @end
 
 /**
@@ -303,8 +310,16 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 
 /**
  A Future that can be controlled externally.
+ The Future is in a 'running' state until it is resolved with the `resolve` methods.
  */
 + (FBMutableFuture<T> *)future;
+
+/**
+ A Mutable Future with a Name
+
+ @param name the name of the Future
+ */
++ (FBMutableFuture<T> *)futureWithName:(nullable NSString *)name;
 
 #pragma mark Mutation
 

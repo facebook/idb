@@ -224,13 +224,13 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 + (FBFuture *)futureWithResult:(id)result
 {
-  FBMutableFuture *future = [self new];
+  FBMutableFuture *future = FBMutableFuture.future;
   return [future resolveWithResult:result];
 }
 
 + (FBFuture *)futureWithError:(NSError *)error
 {
-  FBMutableFuture *future = [self new];
+  FBMutableFuture *future = FBMutableFuture.future;
   return [future resolveWithError:error];
 }
 
@@ -248,7 +248,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 + (instancetype)onQueue:(dispatch_queue_t)queue resolveValue:(id(^)(NSError **))resolve;
 {
-  FBMutableFuture *future = [self new];
+  FBMutableFuture *future = FBMutableFuture.future;
   dispatch_async(queue, ^{
     NSError *error = nil;
     id result = resolve(&error);
@@ -264,7 +264,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 + (instancetype)onQueue:(dispatch_queue_t)queue resolve:( FBFuture *(^)(void) )resolve
 {
-  FBMutableFuture *future = [self new];
+  FBMutableFuture *future = FBMutableFuture.future;
   dispatch_async(queue, ^{
     FBFuture *resolved = resolve();
     [future resolveFromFuture:resolved];
@@ -328,7 +328,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
     return [FBFuture futureWithResult:@[]];
   }
 
-  FBMutableFuture *compositeFuture = [FBMutableFuture new];
+  FBMutableFuture *compositeFuture = FBMutableFuture.future;
   NSMutableArray *results = [[FBCollectionOperations arrayWithObject:NSNull.null count:futures.count] mutableCopy];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.future.composite", DISPATCH_QUEUE_SERIAL);
   __block NSUInteger remaining = futures.count;
@@ -376,7 +376,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 {
   NSParameterAssert(futures.count > 0);
 
-  FBMutableFuture *compositeFuture = [FBMutableFuture new];
+  FBMutableFuture *compositeFuture = FBMutableFuture.future;
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.future.race", DISPATCH_QUEUE_SERIAL);
   __block NSUInteger remainingCounter = futures.count;
 
@@ -415,6 +415,11 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 - (instancetype)init
 {
+  return [self initWithName:nil];
+}
+
+- (instancetype)initWithName:(NSString *)name
+{
   self = [super init];
   if (!self) {
     return nil;
@@ -424,6 +429,8 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   _handlers = [NSMutableArray array];
   _cancelResponders = [NSMutableArray array];
 
+  _name = name;
+
   return self;
 }
 
@@ -431,7 +438,12 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Future %@", FBFutureStateStringFromState(self.state)];
+  NSString *state = [NSString stringWithFormat:@"Future %@", FBFutureStateStringFromState(self.state)];
+  NSString *name = self.name;
+  if (name) {
+    return [NSString stringWithFormat:@"%@ %@", name, state];
+  }
+  return state;
 }
 
 #pragma mark FBFuture
@@ -824,7 +836,12 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 + (FBMutableFuture *)future
 {
-  return [FBMutableFuture new];
+  return [self futureWithName:nil];
+}
+
++ (FBMutableFuture *)futureWithName:(NSString *)name
+{
+  return [[FBMutableFuture alloc] initWithName:name];
 }
 
 @end
