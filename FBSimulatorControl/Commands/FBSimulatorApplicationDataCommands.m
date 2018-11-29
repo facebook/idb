@@ -132,7 +132,7 @@
       NSError *error;
       NSString *fullOriginPath = [dataContainer stringByAppendingPathComponent:originPath];
       NSString *fullDestinationPath = [dataContainer stringByAppendingPathComponent:destinationPath];
-      if (![NSFileManager.defaultManager moveItemAtPath:fullOriginPath toPath:fullOriginPath error:&error]) {
+      if (![NSFileManager.defaultManager moveItemAtPath:fullOriginPath toPath:fullDestinationPath error:&error]) {
         return [[[FBSimulatorError
           describeFormat:@"Could not move item at %@ to %@", fullOriginPath, fullDestinationPath]
           causedBy:error]
