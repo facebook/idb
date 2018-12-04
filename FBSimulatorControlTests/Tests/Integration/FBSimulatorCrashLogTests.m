@@ -32,7 +32,7 @@
   FBApplicationLaunchConfiguration *configuration = [self.tableSearchAppLaunch injectingLibrary:path];
   FBApplicationLaunchConfiguration *appLaunch = [configuration withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
 
-  FBFuture<FBCrashLogInfo *> *crashLogFuture = [simulator notifyOfCrash:[FBCrashLogInfo predicateForName:@"TableSearch"]];
+  FBFuture<FBCrashLogInfo *> *crashLogFuture = [simulator notifyOfCrash:[FBCrashLogInfo predicateForIdentifier:@"TableSearch"]];
 
   NSError *error = nil;
   BOOL success = [[simulator launchApplication:appLaunch] await:&error] != nil;
