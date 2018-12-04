@@ -17,6 +17,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBControlCoreLogger;
 
+typedef enum {
+  FBDataTypeTAR,
+  FBDataTypeIPA,
+  FBDataTypeUknown,
+} FBDataType;
+
 /**
  A value for an extracted application.
  */
@@ -67,6 +73,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return if the path is an application path.
  */
 + (BOOL)isApplicationAtPath:(NSString *)path;
+
+/**
+ Check if given NSData is an ipa or a tar
+
+ @param data the data to check.
+ @return data type
+ */
++ (FBDataType)getDataType:(NSData *)data;
 
 @end
 

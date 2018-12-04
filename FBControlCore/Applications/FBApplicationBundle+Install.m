@@ -118,6 +118,20 @@ static BOOL deleteDirectory(NSURL *path)
 
 // The Magic Header for Zip Files is two chars 'PK'. As a short this is as below.
 static short const ZipFileMagicHeader = 0x4b50;
+// The Magic Header for Tar Files
+static short const TarFileMagicHeader = 0x8b1f;
+
++ (FBDataType)getDataType:(NSData *)data
+{
+  short magic = 0;
+  [data getBytes:&magic length:sizeof(short)];
+  if (magic == ZipFileMagicHeader) {
+    return FBDataTypeIPA;
+  } else if (magic == TarFileMagicHeader) {
+    return FBDataTypeTAR;
+  }
+  return FBDataTypeUknown;
+}
 
 + (BOOL)isIPAAtPath:(NSString *)path error:(NSError **)error
 {
@@ -149,7 +163,7 @@ static short const ZipFileMagicHeader = 0x4b50;
   NSError *error = nil;
   if (![FBApplicationBundle isIPAAtPath:path error:&error]) {
     return [[[FBControlCoreError
-      describeFormat:@"File at path %@ is neither an IPA not a .app", path]
+      describeFormat:@"File at path %@ is neither an IPA nor an .app", path]
       causedBy:error]
       failFuture];
   }
