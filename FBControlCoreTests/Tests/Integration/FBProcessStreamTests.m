@@ -30,9 +30,8 @@
   [pipe.fileHandleForWriting writeData:[@"HELLO WORLD\n" dataUsingEncoding:NSUTF8StringEncoding]];
   [pipe.fileHandleForWriting writeData:[@"HELLO AGAIN"  dataUsingEncoding:NSUTF8StringEncoding]];
 
-  BOOL success = [[output detach] await:&error] != nil;
+  [[output detach] await:&error];
   XCTAssertNil(error);
-  XCTAssertTrue(success);
 
   XCTAssertThrows(pipe.fileHandleForWriting.fileDescriptor);
   XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
@@ -113,6 +112,9 @@
     successes++;
   }
 
+  NSError *error;
+  [[output detach] await:&error];
+  XCTAssertNil(error);
   XCTAssertEqual(successes, 1u);
 }
 
