@@ -231,14 +231,13 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 @property (nonatomic, strong, nullable, readwrite) NSPipe *pipe;
 @property (nonatomic, strong, nullable, readwrite) FBFileReader *reader;
 @property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> consumer;
+@property (nonatomic, strong, nullable, readwrite) id<FBControlCoreLogger> logger;
 
-- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer;
+- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
 
 @interface FBProcessOutput_Logger : FBProcessOutput_Consumer
-
-@property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
 
 - (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger;
 
@@ -295,9 +294,14 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return [[FBProcessOutput_FilePath alloc] initWithFilePath:filePath];
 }
 
++ (FBProcessOutput<id<FBFileConsumer>> *)outputForFileConsumer:(id<FBFileConsumer>)fileConsumer logger:(nullable id<FBControlCoreLogger>)logger
+{
+  return [[FBProcessOutput_Consumer alloc] initWithConsumer:fileConsumer logger:logger];
+}
+
 + (FBProcessOutput<id<FBFileConsumer>> *)outputForFileConsumer:(id<FBFileConsumer>)fileConsumer
 {
-  return [[FBProcessOutput_Consumer alloc] initWithConsumer:fileConsumer];
+  return [[FBProcessOutput_Consumer alloc] initWithConsumer:fileConsumer logger:nil];
 }
 
 + (FBProcessOutput<id<FBControlCoreLogger>> *)outputForLogger:(id<FBControlCoreLogger>)logger
@@ -397,7 +401,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 @end
 
 @implementation FBProcessOutput_Null
-
 #pragma mark FBStandardStream
 
 - (FBFuture<NSFileHandle *> *)attachToFileHandle
@@ -438,7 +441,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 #pragma mark Initializers
 
-- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer
+- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -446,7 +449,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   }
 
   _consumer = consumer;
-
+  _logger = logger;
   return self;
 }
 
@@ -471,7 +474,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
     }
 
     self.pipe = NSPipe.pipe;
-    self.reader = [FBFileReader readerWithFileHandle:self.pipe.fileHandleForReading consumer:self.consumer];
+    self.reader = [FBFileReader readerWithFileHandle:self.pipe.fileHandleForReading consumer:self.consumer logger:self.logger];
     return [[self.reader
       startReading]
       mapReplace:self.pipe];
@@ -523,12 +526,10 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 - (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
 {
   id<FBFileConsumer> consumer = [FBLoggingFileConsumer consumerWithLogger:logger];
-  self = [super initWithConsumer:consumer];
+  self = [super initWithConsumer:consumer logger:logger];
   if (!self) {
     return nil;
   }
-
-  _logger = logger;
 
   return self;
 }
@@ -617,7 +618,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 - (instancetype)initWithMutableData:(NSMutableData *)mutableData
 {
   id<FBAccumulatingLineBuffer> consumer = [FBLineBuffer accumulatingBufferForMutableData:mutableData];
-  self = [super initWithConsumer:consumer];
+  self = [super initWithConsumer:consumer logger:nil];
   if (!self) {
     return nil;
   }

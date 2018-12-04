@@ -3,7 +3,7 @@
 #import "FBFileReader.h"
 
 #import "FBControlCoreError.h"
-
+#import "FBControlCoreLogger.h"
 @interface FBFileReader ()
 
 @property (nonatomic, strong, readonly) id<FBFileConsumer> consumer;
@@ -11,6 +11,7 @@
 @property (nonatomic, strong, readonly) dispatch_queue_t readQueue;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *readingHasEnded;
 @property (nonatomic, strong, readonly) FBFuture<NSNull *> *stopped;
+@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
 @property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
 @property (nonatomic, strong, nullable, readwrite) dispatch_io_t io;
@@ -26,13 +27,18 @@
   return dispatch_queue_create("com.facebook.fbxctest.multifilereader", DISPATCH_QUEUE_SERIAL);
 }
 
-+ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer
++ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger
 {
   NSString *targeting = [NSString stringWithFormat:@"fd %d", fileHandle.fileDescriptor];
-  return [[self alloc] initWithFileHandle:fileHandle consumer:consumer targeting:targeting queue:self.createQueue];
+  return [[self alloc] initWithFileHandle:fileHandle consumer:consumer targeting:targeting queue:self.createQueue logger:logger];
 }
 
-+ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileConsumer>)consumer
++ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer
+{
+  return [self readerWithFileHandle:fileHandle consumer:consumer logger:nil];
+}
+
++ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = self.createQueue;
   return [FBFuture onQueue:queue resolveValue:^(NSError **error) {
@@ -43,11 +49,16 @@
         fail:error];
     }
     NSFileHandle *fileHandle = [[NSFileHandle alloc] initWithFileDescriptor:fileDescriptor closeOnDealloc:YES];
-    return [[self alloc] initWithFileHandle:fileHandle consumer:consumer targeting:filePath queue:queue];
+    return [[self alloc] initWithFileHandle:fileHandle consumer:consumer targeting:filePath queue:queue logger:logger];
   }];
 }
 
-- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer targeting:(NSString *)targeting queue:(dispatch_queue_t)queue
++ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileConsumer>)consumer
+{
+  return [self readerWithFilePath:filePath consumer:consumer logger:nil];
+}
+
+- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer targeting:(NSString *)targeting queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -60,6 +71,7 @@
   _targeting = targeting;
   _readQueue = queue;
   _readingHasEnded = FBMutableFuture.future;
+  _logger = logger;
   _stopped = [_readingHasEnded onQueue:_readQueue chain:^(FBFuture *future) {
     [consumer consumeEndOfFile];
     weakSelf.fileHandle = nil;
@@ -67,6 +79,13 @@
   }];
 
   return self;
+}
+
+- (void)dealloc
+{
+  if (self.stopped.state == FBFutureStateRunning) {
+    [self.logger.error log:@"FileReader is being deallocated before it has completed. please call detach or bad things can happen"];
+  }
 }
 
 #pragma mark NSObject

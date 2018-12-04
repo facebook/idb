@@ -97,6 +97,15 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
  An Output Container that passes to File Consumer
 
  @param fileConsumer the file consumer to write to.
+ @param logger the logger to log to.
+ @return a Process Output instance.
+ */
++ (FBProcessOutput<id<FBFileConsumer>> *)outputForFileConsumer:(id<FBFileConsumer>)fileConsumer logger:(nullable id<FBControlCoreLogger>)logger;
+
+/**
+ An Output Container that passes to File Consumer
+
+ @param fileConsumer the file consumer to write to.
  @return a Process Output instance.
  */
 + (FBProcessOutput<id<FBFileConsumer>> *)outputForFileConsumer:(id<FBFileConsumer>)fileConsumer;
