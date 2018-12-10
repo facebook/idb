@@ -71,7 +71,7 @@
 {
   NSMutableString *format = [@"FALSEPREDICATE" mutableCopy];
   if (targetType & FBiOSTargetTypeDevice) {
-    [format appendString:@" OR SELF MATCHES '^[[:xdigit:]]{40}$'"];
+    [format appendString:@" OR SELF MATCHES '^[[:xdigit:]]{40}$' OR SELF MATCHES '0000[[:xdigit:]]{4}-00[[:xdigit:]]*$'"];
   }
   if (targetType & FBiOSTargetTypeSimulator) {
     [format appendString:@" OR SELF MATCHES '^[[:xdigit:]]{8}-([[:xdigit:]]{4}-){3}[[:xdigit:]]{12}$'"];
