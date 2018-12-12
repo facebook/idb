@@ -58,6 +58,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable FBCrashLogInfo *)ingestCrashLogData:(NSData *)data name:(NSString *)name;
 
+/**
+ Removes the crash log at at a given path.
+
+ @param path the path of the crash log to remove
+ @return the crash log info if one exists.
+ */
+- (nullable FBCrashLogInfo *)removeCrashLogAtPath:(NSString *)path;
+
 #pragma mark Fetching
 
 /**

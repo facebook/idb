@@ -99,6 +99,17 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
   return nil;
 }
 
+- (nullable FBCrashLogInfo *)removeCrashLogAtPath:(NSString *)path
+{
+  NSString *key = path.lastPathComponent;
+  FBCrashLogInfo *crashLog = [self ingestedCrashLogWithName:key];
+  if (!crashLog) {
+    return nil;
+  }
+  [self.ingestedCrashLogs removeObjectForKey:key];
+  return crashLog;
+}
+
 #pragma mark Fetching
 
 - (FBCrashLogInfo *)ingestedCrashLogWithName:(NSString *)name
