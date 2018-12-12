@@ -90,7 +90,7 @@ static void EventStreamCallback(
   return self;
 }
 
-- (void)startListening
+- (void)startListening:(BOOL)onlyNew
 {
   if (self.eventStream) {
     return;
@@ -116,7 +116,7 @@ static void EventStreamCallback(
     (FSEventStreamCallback) EventStreamCallback, // Callback
     &context,  // Context
     CFBridgingRetain(pathsToWatch), // Paths to watch
-    kFSEventStreamEventIdSinceNow,  // Since When
+    onlyNew ? kFSEventStreamEventIdSinceNow : 0,  // Since When
     0,  // Latency
     kFSEventStreamCreateFlagUseCFTypes | kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagNoDefer
   );
@@ -174,10 +174,10 @@ static void EventStreamCallback(
 
 #pragma mark Public Methods
 
-- (instancetype)startListening
+- (instancetype)startListening:(BOOL)onlyNew
 {
 #if defined(__apple_build_version__)
-  [self.fsEvents startListening];
+  [self.fsEvents startListening:onlyNew];
 #else
   self.sinceDate = NSDate.date;
 #endif
@@ -186,7 +186,7 @@ static void EventStreamCallback(
 
 - (FBFuture<FBCrashLogInfo *> *)nextCrashLogForPredicate:(NSPredicate *)predicate
 {
-  [self startListening];
+  [self startListening:YES];
 
 #if defined(__apple_build_version__)
   return [FBCrashLogNotifier.sharedInstance.fsEvents.store nextCrashLogForMatchingPredicate:predicate];

@@ -58,7 +58,7 @@ static NSTimeInterval const SampleTimeoutSubtraction = SampleDuration + 1;
 
 + (FBFuture<id<FBLaunchedProcess>> *)startWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor timeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger
 {
-  FBCrashLogNotifier *notifier = [FBCrashLogNotifier.sharedInstance startListening];
+  FBCrashLogNotifier *notifier = [FBCrashLogNotifier.sharedInstance startListening:YES];
   NSDate *startDate = NSDate.date;
 
   return [[executor
