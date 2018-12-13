@@ -273,13 +273,26 @@ static NSString *const KeyDataContainer = @"DataContainer";
       NSURL *appURL = [NSURL fileURLWithPath:application.path];
 
       NSError *error = nil;
-      if (![self.simulator.device installApplication:appURL withOptions:options error:&error]) {
-        return [[[FBSimulatorError
-          describeFormat:@"Failed to install Application %@ with options %@", application, options]
-          causedBy:error]
-          failFuture];
+      if ([self.simulator.device installApplication:appURL withOptions:options error:&error]) {
+        return [FBFuture futureWithResult:NSNull.null];
       }
-      return [FBFuture futureWithResult:NSNull.null];
+
+      // Retry install if the first attempt failed with 'Failed to load Info.plist...'.
+      // This is to mitagate an error where the first install of an app after uninstalling it
+      // always fails.
+      // See Apple bug report 46691107
+      if ([error.description containsString:@"Failed to load Info.plist from bundle at path"]) {
+        [self.simulator.logger log:@"Retrying install due to reinstall bug"];
+        error = nil;
+        if ([self.simulator.device installApplication:appURL withOptions:options error:&error]) {
+          return [FBFuture futureWithResult:NSNull.null];
+        }
+      }
+
+      return [[[FBSimulatorError
+                describeFormat:@"Failed to install Application %@ with options %@", application, options]
+               causedBy:error]
+              failFuture];
     }];
 }
 
