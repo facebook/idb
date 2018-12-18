@@ -131,10 +131,12 @@
   id<FBFileConsumer> consumer = self.consumer;
   FBMutableFuture<NSNull *> *readingHasEnded = self.readingHasEnded;
   NSString *targeting = self.targeting;
+  __block int readErrorCode = 0;
 
   // If there is an error creating the IO Object, the errorCode will be delivered asynchronously.
-  self.io = dispatch_io_create(DISPATCH_IO_STREAM, fileHandle.fileDescriptor, self.readQueue, ^(int errorCode) {
-    [FBFileReader resolveReading:readingHasEnded withCode:errorCode targeting:targeting];
+  // This does not include any error during the read, which instead comes from the dispatch_io_read callback.
+  self.io = dispatch_io_create(DISPATCH_IO_STREAM, fileHandle.fileDescriptor, self.readQueue, ^(int createErrorCode) {
+    [FBFileReader resolveReading:readingHasEnded withCode:(createErrorCode ?: readErrorCode) targeting:targeting];
   });
   if (!self.io) {
     return [[FBControlCoreError
@@ -152,8 +154,8 @@
       NSData *data = [NSData dataWithBytes:buffer length:size];
       [consumer consumeData:data];
     }
-    if (done) {
-      [FBFileReader resolveReading:readingHasEnded withCode:errorCode targeting:targeting];
+    if (errorCode) {
+      readErrorCode = errorCode;
     }
   });
   return [FBFuture futureWithResult:NSNull.null];
