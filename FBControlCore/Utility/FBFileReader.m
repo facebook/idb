@@ -13,7 +13,7 @@
 @property (nonatomic, strong, readonly) FBFuture<NSNull *> *stopped;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
-@property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
+@property (nonatomic, strong, readwrite) NSFileHandle *fileHandle;
 @property (nonatomic, strong, nullable, readwrite) dispatch_io_t io;
 
 @end
@@ -64,7 +64,6 @@
   if (!self) {
     return nil;
   }
-  __weak typeof(self) weakSelf = self;
 
   _fileHandle = fileHandle;
   _consumer = consumer;
@@ -74,7 +73,6 @@
   _logger = logger;
   _stopped = [_readingHasEnded onQueue:_readQueue chain:^(FBFuture *future) {
     [consumer consumeEndOfFile];
-    weakSelf.fileHandle = nil;
     return future;
   }];
 

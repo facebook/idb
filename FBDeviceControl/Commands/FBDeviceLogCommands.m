@@ -111,7 +111,7 @@
       FBFuture<NSNull *> *completed = FBMutableFuture.future;
       id<FBiOSTargetContinuation> result = [[FBDeviceLogTerminationContinuation alloc] initWithContext:context reader:reader consumer:consumer];
       [started resolveWithResult:result];
-      return [FBFuture futureWithResult:completed];
+       return [FBFuture futureWithResult:completed];
     }];
 
   return started;
