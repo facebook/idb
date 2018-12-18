@@ -93,7 +93,9 @@
 - (FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
 {
   if (arguments.count == 0) {
-    [self.device.logger logFormat:@"[FBDeviceLogCommands] Unsupported arguments: %@", arguments];
+    NSString *unsupportedArgumentsMessage = [NSString stringWithFormat:@"[FBDeviceLogCommands][rdar://38452839] Unsupported arguments: %@", arguments];
+    [consumer consumeData:[unsupportedArgumentsMessage dataUsingEncoding:NSUTF8StringEncoding]];
+    [self.device.logger log:unsupportedArgumentsMessage];
   }
   FBMutableFuture<id<FBiOSTargetContinuation>> *started = FBMutableFuture.future;
 
