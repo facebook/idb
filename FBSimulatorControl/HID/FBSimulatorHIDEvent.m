@@ -517,20 +517,20 @@ static NSString *const KeyDuration = @"duration";
 {
   if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
     return [[FBSimulatorError
-             describe:@"Expected an input of Dictionary<String, Object>"]
-            fail:error];
+      describe:@"Expected an input of Dictionary<String, Object>"]
+      fail:error];
   }
   NSString *class = json[KeyEventClass];
   if (![class isEqualToString:EventClassStringDelay]) {
     return [[FBSimulatorError
-             describeFormat:@"Expected %@ to be %@", class, EventClassStringDelay]
-            fail:error];
+      describeFormat:@"Expected %@ to be %@", class, EventClassStringDelay]
+      fail:error];
   }
   NSNumber *duration = json[KeyDuration];
   if (![duration isKindOfClass:NSNumber.class]) {
     return [[FBSimulatorError
-             describeFormat:@"Expected %@ for %@ to be a Number", duration, KeyDuration]
-            fail:error];
+      describeFormat:@"Expected %@ for %@ to be a Number", duration, KeyDuration]
+      fail:error];
   }
   return [[self alloc] initWithDuration:duration.doubleValue];
 }
@@ -538,9 +538,9 @@ static NSString *const KeyDuration = @"duration";
 - (id)jsonSerializableRepresentation
 {
   return @{
-           KeyDuration: @(self.duration),
-           KeyEventClass: EventClassStringDelay,
-           };
+    KeyDuration: @(self.duration),
+    KeyEventClass: EventClassStringDelay,
+  };
 }
 
 - (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
@@ -563,7 +563,7 @@ static NSString *const KeyDuration = @"duration";
 
 - (NSUInteger)hash
 {
-  return self.duration;
+  return (NSUInteger) self.duration;
 }
 
 @end
