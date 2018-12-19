@@ -100,13 +100,6 @@ static NSString *StateStringFromState(FBFileReaderState state)
   return self;
 }
 
-- (void)dealloc
-{
-  if (self.stopped.state == FBFutureStateRunning) {
-    [self.logger.error log:@"FileReader is being deallocated before it has completed. please call detach or bad things can happen"];
-  }
-}
-
 #pragma mark NSObject
 
 - (NSString *)description
@@ -156,7 +149,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
   // If there is an error creating the IO Object, the errorCode will be delivered asynchronously.
   // This does not include any error during the read, which instead comes from the dispatch_io_read callback.
   self.io = dispatch_io_create(DISPATCH_IO_STREAM, fileHandle.fileDescriptor, self.readQueue, ^(int createErrorCode) {
-    [self resolveReadingWithCode:(createErrorCode ?: readErrorCode)];
+    [self resolveReadingOfFileHandle:fileHandle withErrorCode:(createErrorCode ?: readErrorCode)];
   });
   if (!self.io) {
     return [[FBControlCoreError
@@ -205,7 +198,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
   return self.stopped;
 }
 
-- (FBFuture<NSNumber *> *)resolveReadingWithCode:(int)errorCode
+- (FBFuture<NSNumber *> *)resolveReadingOfFileHandle:(NSFileHandle *)fileHandle withErrorCode:(int)errorCode
 {
   // Everything completed normally, or ended so teardown the channel and notify
   self.io = nil;
@@ -214,7 +207,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
     return [self.readingHasEnded resolveWithResult:@(FBFileReaderStateTerminatedNormally)];
   } else {
     self.state = FBFileReaderStateTerminatedAbnormally;
-    NSError *error = [[FBControlCoreError describeFormat:@"IO Channel %@ closed with error code %d", self.description, errorCode] build];
+    NSError *error = [[FBControlCoreError describeFormat:@"IO Channel %@ for fd %d closed with error code %d", self.description, fileHandle.fileDescriptor, errorCode] build];
     return [self.readingHasEnded resolveWithError:error];
   }
 }
