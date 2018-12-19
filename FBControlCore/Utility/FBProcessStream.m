@@ -115,7 +115,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 - (FBFuture<NSNull *> *)stopReading
 {
   return [[FBFuture
-    onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
+    onQueue:self.queue resolve:^ FBFuture<NSNumber *> * {
       if (!self.reader) {
       return [[FBControlCoreError
         describeFormat:@"No active reader for fifo"]

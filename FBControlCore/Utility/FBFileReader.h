@@ -8,6 +8,17 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ The File Reader States
+ */
+typedef NS_ENUM(NSUInteger, FBFileReaderState) {
+  FBFileReaderStateNotStarted = 0,
+  FBFileReaderStateReading = 1,
+  FBFileReaderStateTerminating = 2,
+  FBFileReaderStateTerminatedNormally = 3,
+  FBFileReaderStateTerminatedAbnormally = 4,
+};
+
+/**
  Reads a file in the background, forwarding to a consumer.
  you need to call startReading to setup the channel and stopReading when
  you finish consumption. not calling stopReading will lead to undefined behaviour
@@ -67,16 +78,21 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Stops Reading the file.
 
- @return a Future that resolves when the consumption of the file has finished.
+ @return a Future that resolves when the consumption of the file has finished. The wrapped NSNumber is the FBFileReaderState of termination.
  */
-- (FBFuture<NSNull *> *)stopReading;
+- (FBFuture<NSNumber *> *)stopReading;
+
+#pragma mark Properties
 
 /**
- A future that resolves when the reading has stopped.
-
- @return a Future that resolves when the consumption of the file has finished.
+ The current state of the file reader
  */
-- (FBFuture<NSNull *> *)completed;
+@property (atomic, assign, readonly) FBFileReaderState state;
+
+/**
+ A Future that resolves when the reading has ended. The wrapped NSNumber is the FBFileReaderState of termination.
+ */
+@property (nonatomic, strong, readonly) FBFuture<NSNull *> *completed;
 
 @end
 
