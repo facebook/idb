@@ -499,12 +499,12 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSNull *> *)completed
 {
-  return self.reader.completed;
+  return [self.reader.finishedReading mapReplace:NSNull.null];
 }
 
 - (FBFuture<NSNull *> *)detach
 {
-  return [[[self.reader.completed
+  return [[[self.reader.finishedReading
     timeout:ProcessDetachDrainTimeout waitingFor:@"Process Reading to Finish"]
     onQueue:self.workQueue chain:^(FBFuture *_) {
       return [self.reader stopReading];
