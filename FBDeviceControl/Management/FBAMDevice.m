@@ -445,11 +445,12 @@ static NSString *const CacheValuesPurpose = @"cache_values";
   if (!device) {
     return NO;
   }
+  _architecture = CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, CFSTR("CPUArchitecture")));
+  _buildVersion = CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, CFSTR("BuildVersion")));
   _deviceName = CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, CFSTR("DeviceName")));
   _modelName = CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, CFSTR("DeviceClass")));
-  _systemVersion = CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, CFSTR("ProductVersion")));
   _productType = CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, CFSTR("ProductType")));
-  _architecture = CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, CFSTR("CPUArchitecture")));
+  _productVersion = CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, CFSTR("ProductVersion")));
 
   NSString *osVersion = [FBAMDevice osVersionForDevice:device.amDevice calls:self.calls];
   _deviceConfiguration = FBiOSTargetConfiguration.productTypeToDevice[self->_productType];

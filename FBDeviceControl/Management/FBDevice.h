@@ -42,9 +42,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSString *modelName;
 
 /**
- Device's system Version
+ Device's system 'Product Version'
  */
-@property (nonatomic, copy, readonly) NSString *systemVersion;
+@property (nonatomic, copy, readonly) NSString *productVersion;
 
 @end
 

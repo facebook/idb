@@ -62,9 +62,14 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable, copy, readonly) NSString *modelName;
 
 /**
- The Device's 'System Version'.
+ The Device's 'Product Version'.
  */
-@property (nonatomic, nullable, copy, readonly) NSString *systemVersion;
+@property (nonatomic, nullable, copy, readonly) NSString *productVersion;
+
+/**
+ The Device's 'Build Version'.
+ */
+@property (nonatomic, nullable, copy, readonly) NSString *buildVersion;
 
 /**
  The FBControlCore Configuration Variant representing the Device.

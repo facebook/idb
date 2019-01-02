@@ -172,9 +172,9 @@
   return self.amDevice.modelName;
 }
 
-- (NSString *)systemVersion
+- (NSString *)productVersion
 {
-  return self.amDevice.systemVersion;
+  return self.amDevice.productVersion;
 }
 
 - (FBiOSTargetScreenInfo *)screenInfo
