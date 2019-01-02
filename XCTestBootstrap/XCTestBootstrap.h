@@ -7,7 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <XCTestBootstrap/FBApplicationDataPackage.h>
 #import <XCTestBootstrap/FBDeviceOperator.h>
 #import <XCTestBootstrap/FBJSONTestReporter.h>
 #import <XCTestBootstrap/FBListTestStrategy.h>

@@ -9,7 +9,6 @@
 
 #import "FBTestRunnerConfiguration.h"
 
-#import "FBApplicationDataPackage.h"
 #import "FBProductBundle.h"
 #import "FBTestBundle.h"
 #import "FBTestConfiguration.h"

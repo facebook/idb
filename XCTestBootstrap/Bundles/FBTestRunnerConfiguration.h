@@ -11,7 +11,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBApplicationDataPackage;
 @class FBProductBundle;
 @class FBTestBundle;
 @class FBTestConfiguration;
