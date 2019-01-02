@@ -184,13 +184,12 @@
 
 #pragma mark Forwarding
 
-+ (NSMutableArray<Class> *)commandResponders
++ (NSArray<Class> *)commandResponders
 {
   static dispatch_once_t onceToken;
-  static NSMutableArray<Class> *commandClasses;
+  static NSArray<Class> *commandClasses;
   dispatch_once(&onceToken, ^{
-    commandClasses = [[NSMutableArray alloc] init];
-    [commandClasses addObjectsFromArray:@[
+    commandClasses = @[
       FBDeviceApplicationCommands.class,
       FBDeviceApplicationDataCommands.class,
       FBDeviceCrashLogCommands.class,
@@ -198,7 +197,7 @@
       FBDeviceScreenshotCommands.class,
       FBDeviceVideoRecordingCommands.class,
       FBDeviceXCTestCommands.class,
-    ]];
+    ];
   });
   return commandClasses;
 }
@@ -207,17 +206,6 @@
 {
   // All commands are stateful
   return [NSSet setWithArray:self.commandResponders];
-}
-
-+ (BOOL)addForwardingCommandClass:(Class)class error:(NSError **)error
-{
-  if (![class conformsToProtocol:@protocol(FBiOSTargetCommand)]){
-    return [[FBDeviceControlError
-      describe:@"Failed to add forwarding class. Class does not conform to FBiOSTargetCommand protocol."]
-      failBool:error];
-  }
-  [[self commandResponders] addObject:class];
-  return YES;
 }
 
 - (id)forwardingTargetForSelector:(SEL)selector

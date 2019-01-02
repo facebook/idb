@@ -46,16 +46,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) NSString *systemVersion;
 
-/**
- Add a forwarding class. The class has to conform to the FBiOSTargetCommand
- protocol. The class is added globally for all all devices and needs to
- be added before FBDevice instances are created.
-
- @param class Command class to be added.
- @returns if it succeeded
- */
-+ (BOOL)addForwardingCommandClass:(Class)class error:(NSError **)error;
-
 @end
 
 NS_ASSUME_NONNULL_END
