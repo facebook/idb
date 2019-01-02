@@ -185,7 +185,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   _startedTeardownFuture = FBMutableFuture.future;
   _completedTeardownFuture = FBMutableFuture.future;
 
-  _completed = [[[FBFuture race:@[
+  _completed = [[[[FBFuture race:@[
       [FBMutableFuture.future resolveFromFuture:process.exitCode],
       _errorFuture,
     ]]
@@ -196,7 +196,8 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
     }]
     onQueue:self.queue respondToCancellation:^FBFuture<NSNull *> *{
       return [self terminateWithErrorMessage:@"Execution was cancelled"];
-    }];
+    }]
+    named:self.configurationDescription];
 
   return self;
 }

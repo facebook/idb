@@ -45,6 +45,8 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 
 @synthesize filePath = _filePath;
 
+#pragma mark Initializers
+
 - (instancetype)initWithFilePath:(NSString *)filePath
 {
   self = [super init];
@@ -57,19 +59,27 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
   return self;
 }
 
+#pragma mark FBProcessFileOutput
+
 - (FBFuture<NSNull *> *)startReading
 {
-  return [FBFuture futureWithResult:NSNull.null];
+  return [[FBFuture
+    futureWithResult:NSNull.null]
+    nameFormat:@"Start reading %@", self.description];
 }
 
 - (FBFuture<NSNull *> *)stopReading
 {
-  return [FBFuture futureWithResult:NSNull.null];
+  return [[FBFuture
+    futureWithResult:NSNull.null]
+    nameFormat:@"Stop reading %@", self.description];
 }
+
+#pragma mark NSObject
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Output to %@", self.filePath];
+  return [NSString stringWithFormat:@"File output to %@", self.filePath];
 }
 
 @end
@@ -77,6 +87,8 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 @implementation FBProcessFileOutput_Consumer
 
 @synthesize filePath = _filePath;
+
+#pragma mark Initializers
 
 - (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer filePath:(NSString *)filePath queue:(dispatch_queue_t)queue
 {
@@ -92,9 +104,11 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
   return self;
 }
 
+#pragma mark FBProcessFileOutput
+
 - (FBFuture<NSNull *> *)startReading
 {
-  return [[[FBFuture
+  return [[[[FBFuture
     onQueue:self.queue resolve:^ FBFuture<FBFileReader *> * {
       if (self.reader) {
         return [[FBControlCoreError
@@ -109,12 +123,13 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
     onQueue:self.queue map:^(FBFileReader *reader) {
       self.reader = reader;
       return NSNull.null;
-    }];
+    }]
+    nameFormat:@"Start reading %@", self.description];
 }
 
 - (FBFuture<NSNull *> *)stopReading
 {
-  return [[FBFuture
+  return [[[FBFuture
     onQueue:self.queue resolve:^ FBFuture<NSNumber *> * {
       if (!self.reader) {
       return [[FBControlCoreError
@@ -126,12 +141,15 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
     onQueue:self.queue map:^(id _) {
       self.reader = nil;
       return NSNull.null;
-    }];
+    }]
+    nameFormat:@"Stop reading %@", self.description];
 }
+
+#pragma mark NSObject
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Output to %@", self.filePath];
+  return [NSString stringWithFormat:@"Consumer output to %@", self.filePath];
 }
 
 @end
@@ -139,6 +157,8 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 @implementation FBProcessFileOutput_Reader
 
 @synthesize filePath = _filePath;
+
+#pragma mark Initializers
 
 - (instancetype)initWithOutput:(FBProcessOutput *)output filePath:(NSString *)filePath queue:(dispatch_queue_t)queue
 {
@@ -154,9 +174,11 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
   return self;
 }
 
+#pragma mark FBProcessFileOutput
+
 - (FBFuture<NSNull *> *)startReading
 {
-  return [[[[FBFuture
+  return [[[[[FBFuture
     onQueue:self.queue resolve:^ FBFuture<NSFileHandle *> * {
       if (self.writer || self.nested) {
         return [[FBControlCoreError
@@ -176,12 +198,13 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
     onQueue:self.queue map:^ NSNull * (id<FBProcessFileOutput> nested) {
       self.nested = nested;
       return NSNull.null;
-    }];
+    }]
+    nameFormat:@"Start Reading %@", self.description];
 }
 
 - (FBFuture<NSNull *> *)stopReading
 {
-  return [[FBFuture
+  return [[[FBFuture
     onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
       if (!self.writer || !self.nested) {
         return [[FBControlCoreError
@@ -193,8 +216,11 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
     onQueue:self.queue map:^(id _) {
       self.nested = nil;
       return NSNull.null;
-    }];
+    }]
+    nameFormat:@"Stop Reading %@", self.description];
 }
+
+#pragma mark NSObject
 
 - (NSString *)description
 {
@@ -203,7 +229,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 
 @end
 
-#pragma mark FBProcessOutput
+#pragma mark - FBProcessOutput
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_output";
 
@@ -386,21 +412,10 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return [FBFuture futureWithResult:fifoPath];
 }
 
-#pragma mark FBiOSTargetContinuation
-
-- (FBiOSTargetFutureType)futureType
-{
-  return FBiOSTargetFutureTypeProcessOutput;
-}
-
-- (FBFuture<NSNull *> *)completed
-{
-  return nil;
-}
-
 @end
 
 @implementation FBProcessOutput_Null
+
 #pragma mark FBStandardStream
 
 - (FBFuture<NSFileHandle *> *)attachToFileHandle
@@ -428,11 +443,11 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return NSNull.null;
 }
 
-#pragma mark FBiOSTargetContinuation
+#pragma mark NSObject
 
-- (FBFuture<NSNull *> *)completed
+- (NSString *)description
 {
-  return [FBFuture futureWithResult:NSNull.null];
+  return @"Null Output";
 }
 
 @end
@@ -450,6 +465,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
   _consumer = consumer;
   _logger = logger;
+
   return self;
 }
 
@@ -457,11 +473,12 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSFileHandle *> *)attachToFileHandle
 {
-  return [[self
+  return [[[self
     attachToPipeOrFileHandle]
     onQueue:self.workQueue map:^(NSPipe *pipe) {
       return pipe.fileHandleForWriting;
-    }];
+    }]
+    nameFormat:@"Attach to file handle %@", self.description];
 }
 
 - (FBFuture<NSPipe *> *)attachToPipeOrFileHandle
@@ -475,36 +492,26 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
     self.pipe = NSPipe.pipe;
     self.reader = [FBFileReader readerWithFileHandle:self.pipe.fileHandleForReading consumer:self.consumer logger:self.logger];
-    return [[self.reader
+    return [[[self.reader
       startReading]
-      mapReplace:self.pipe];
+      mapReplace:self.pipe]
+      nameFormat:@"Attach to pipe %@", self.description];
   }];
 }
 
 - (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile
 {
-  return [[self
+  return [[[self
     makeFifoOutput]
     onQueue:self.workQueue map:^ id<FBProcessFileOutput> (NSString *fifoPath) {
       return [[FBProcessFileOutput_Consumer alloc] initWithConsumer:self.consumer filePath:fifoPath queue:FBProcessOutput.createWorkQueue];
-    }];
-}
-
-- (id<FBFileConsumer>)contents
-{
-  return self.consumer;
-}
-
-#pragma mark FBiOSTargetContinuation
-
-- (FBFuture<NSNull *> *)completed
-{
-  return [self.reader.finishedReading mapReplace:NSNull.null];
+    }]
+    nameFormat:@"Relay %@ to file", self.description];
 }
 
 - (FBFuture<NSNull *> *)detach
 {
-  return [[[self.reader.finishedReading
+  return [[[[self.reader.finishedReading
     timeout:ProcessDetachDrainTimeout waitingFor:@"Process Reading to Finish"]
     onQueue:self.workQueue chain:^(FBFuture *_) {
       return [self.reader stopReading];
@@ -516,12 +523,27 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
       self.reader = nil;
       self.pipe = nil;
       return future;
-    }];
+    }]
+    nameFormat:@"Detach %@", self.description];
+}
+
+- (id<FBFileConsumer>)contents
+{
+  return self.consumer;
+}
+
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Output to consumer %@", self.consumer];
 }
 
 @end
 
 @implementation FBProcessOutput_Logger
+
+#pragma mark Initializers
 
 - (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
 {
@@ -534,14 +556,25 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return self;
 }
 
+#pragma mark FBStandardStream
+
 - (id<FBControlCoreLogger>)contents
 {
   return self.logger;
 }
 
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Output to logger %@", self.logger];
+}
+
 @end
 
 @implementation FBProcessOutput_FilePath
+
+#pragma mark Initializers
 
 - (instancetype)initWithFilePath:(NSString *)filePath
 {
@@ -559,26 +592,28 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSFileHandle *> *)attachToFileHandle
 {
-  return [FBFuture onQueue:self.workQueue resolve:^{
-    if (self.fileHandle) {
-      return [[FBControlCoreError
-        describeFormat:@"Cannot attach when already attached to file %@", self.fileHandle]
-        failFuture];
-    }
+  return [[FBFuture
+    onQueue:self.workQueue resolve:^{
+      if (self.fileHandle) {
+        return [[FBControlCoreError
+          describeFormat:@"Cannot attach when already attached to file %@", self.fileHandle]
+          failFuture];
+      }
 
-    if (!self.filePath) {
-      self.fileHandle = NSFileHandle.fileHandleWithNullDevice;
+      if (!self.filePath) {
+        self.fileHandle = NSFileHandle.fileHandleWithNullDevice;
+        return [FBFuture futureWithResult:self.fileHandle];
+      }
+
+      if (![NSFileManager.defaultManager createFileAtPath:self.filePath contents:nil attributes:nil]) {
+        return [[FBControlCoreError
+          describeFormat:@"Could not create file for writing at %@", self.filePath]
+          failFuture];
+      }
+      self.fileHandle = [NSFileHandle fileHandleForWritingAtPath:self.filePath];
       return [FBFuture futureWithResult:self.fileHandle];
-    }
-
-    if (![NSFileManager.defaultManager createFileAtPath:self.filePath contents:nil attributes:nil]) {
-      return [[FBControlCoreError
-        describeFormat:@"Could not create file for writing at %@", self.filePath]
-        failFuture];
-    }
-    self.fileHandle = [NSFileHandle fileHandleForWritingAtPath:self.filePath];
-    return [FBFuture futureWithResult:self.fileHandle];
-  }];
+    }]
+    nameFormat:@"Attach to %@", self.description];
 }
 
 - (FBFuture<NSFileHandle *> *)attachToPipeOrFileHandle
@@ -588,17 +623,19 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSNull *> *)detach
 {
-  return [FBFuture onQueue:self.workQueue resolve:^{
-    NSFileHandle *fileHandle = self.fileHandle;
-    if (!fileHandle) {
-      return [[FBControlCoreError
-        describe:@"Cannot Detach Twice"]
-        failFuture];
-    }
-    self.fileHandle = nil;
-    [fileHandle closeFile];
-    return [FBFuture futureWithResult:NSNull.null];
-  }];
+  return [[FBFuture
+    onQueue:self.workQueue resolve:^{
+      NSFileHandle *fileHandle = self.fileHandle;
+      if (!fileHandle) {
+        return [[FBControlCoreError
+          describe:@"Cannot Detach Twice"]
+          failFuture];
+      }
+      self.fileHandle = nil;
+      [fileHandle closeFile];
+      return [FBFuture futureWithResult:NSNull.null];
+    }]
+    nameFormat:@"Detach from %@", self.description];
 }
 
 - (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile
@@ -611,9 +648,18 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return self.filePath;
 }
 
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Output to %@", self.filePath];
+}
+
 @end
 
 @implementation FBProcessOutput_Data
+
+#pragma mark Initializers
 
 - (instancetype)initWithMutableData:(NSMutableData *)mutableData
 {
@@ -628,14 +674,25 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return self;
 }
 
+#pragma mark FBStandardStream
+
 - (NSData *)contents
 {
   return self.dataConsumer.data;
 }
 
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return @"Output to Mutable Data";
+}
+
 @end
 
 @implementation FBProcessOutput_String
+
+#pragma mark FBStandardStream
 
 - (NSString *)contents
 {
@@ -650,6 +707,13 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
     }
   }
   return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+}
+
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return @"Output to Mutable String";
 }
 
 @end
@@ -689,53 +753,58 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSFileHandle *> *)attachToFileHandle
 {
-  return [[self
+  return [[[self
     attachToPipeOrFileHandle]
     onQueue:self.workQueue map:^(NSPipe *pipe) {
       return pipe.fileHandleForReading;
-    }];
+    }]
+    nameFormat:@"Attach %@ to file handle", self.description];
 }
 
 - (FBFuture<NSPipe *> *)attachToPipeOrFileHandle
 {
-  return [FBFuture onQueue:self.workQueue resolve:^{
-    if (self.pipe || self.writer) {
-      return [[FBControlCoreError
-        describeFormat:@"Cannot Attach Twice"]
-        failFuture];
-    }
+  return [[FBFuture
+    onQueue:self.workQueue resolve:^{
+      if (self.pipe || self.writer) {
+        return [[FBControlCoreError
+          describeFormat:@"Cannot Attach Twice"]
+          failFuture];
+      }
 
-    NSPipe *pipe = NSPipe.pipe;
-    NSError *error = nil;
-    id<FBFileConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:&error];
-    if (!writer) {
-      return [[FBControlCoreError
-        describeFormat:@"Failed to create a writer for pipe %@", error]
-        failFuture];
-    }
-    self.pipe = pipe;
-    self.writer = writer;
-    return [FBFuture futureWithResult:pipe];
-  }];
+      NSPipe *pipe = NSPipe.pipe;
+      NSError *error = nil;
+      id<FBFileConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:&error];
+      if (!writer) {
+        return [[FBControlCoreError
+          describeFormat:@"Failed to create a writer for pipe %@", error]
+          failFuture];
+      }
+      self.pipe = pipe;
+      self.writer = writer;
+      return [FBFuture futureWithResult:pipe];
+    }]
+    nameFormat:@"Attach %@ to pipe", self.description];
 }
 
 - (FBFuture<NSNull *> *)detach
 {
-  return [FBFuture onQueue:self.workQueue resolve:^{
-    NSPipe *pipe = self.pipe;
-    id<FBFileConsumer> consumer = self.writer;
-    if (!pipe || !consumer) {
-      return [[FBControlCoreError
-        describeFormat:@"Nothing is attached to %@", self]
-        failFuture];
-    }
+  return [[FBFuture
+    onQueue:self.workQueue resolve:^{
+      NSPipe *pipe = self.pipe;
+      id<FBFileConsumer> consumer = self.writer;
+      if (!pipe || !consumer) {
+        return [[FBControlCoreError
+          describeFormat:@"Nothing is attached to %@", self]
+          failFuture];
+      }
 
-    [pipe.fileHandleForWriting closeFile];
-    self.pipe = nil;
-    self.writer = nil;
+      [pipe.fileHandleForWriting closeFile];
+      self.pipe = nil;
+      self.writer = nil;
 
-    return [FBFuture futureWithResult:NSNull.null];
-  }];
+      return [FBFuture futureWithResult:NSNull.null];
+    }]
+    nameFormat:@"Detach %@", self.description];
 }
 
 - (id<FBFileConsumer>)contents
@@ -765,9 +834,18 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return self;
 }
 
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Input to %@", self.writer];
+}
+
 @end
 
 @implementation FBProcessInput_Data
+
+#pragma mark Initializers
 
 - (instancetype)initWithData:(NSData *)data
 {
@@ -785,18 +863,26 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSPipe *> *)attachToPipeOrFileHandle
 {
-  return [[super
+  return [[[super
     attachToPipeOrFileHandle]
     onQueue:self.workQueue map:^(NSPipe *pipe) {
       [self.writer consumeData:self.data];
       [self.writer consumeEndOfFile];
       return pipe;
-    }];
+    }]
+    nameFormat:@"Attach %@ to pipe", self.description];
 }
 
 - (NSData *)contents
 {
   return self.data;
+}
+
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return @"Input to Data";
 }
 
 @end

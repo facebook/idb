@@ -282,6 +282,14 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
  */
 - (FBFuture<T> *)named:(NSString *)name;
 
+/**
+ Rename the future with a format string.
+
+ @param format the format string for the Future's name.
+ @return the reciever, for chaining.
+ */
+- (FBFuture<T> *)nameFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+
 #pragma mark Properties
 
 /**

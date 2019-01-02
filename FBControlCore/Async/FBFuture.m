@@ -670,6 +670,16 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return self;
 }
 
+- (FBFuture *)nameFormat:(NSString *)format, ...
+{
+  va_list args;
+  va_start(args, format);
+  NSString *name = [[NSString alloc] initWithFormat:format arguments:args];
+  va_end(args);
+
+  return [self named:name];
+}
+
 #pragma mark - Properties
 
 - (BOOL)hasCompleted

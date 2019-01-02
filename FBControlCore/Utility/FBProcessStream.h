@@ -74,7 +74,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
 /**
  A container object for the output of a process.
  */
-@interface FBProcessOutput<WrappedType> : NSObject <FBiOSTargetContinuation, FBStandardStream>
+@interface FBProcessOutput<WrappedType> : NSObject <FBStandardStream>
 
 #pragma mark Initializers
 
