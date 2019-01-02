@@ -88,7 +88,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
   _consumer = consumer;
   _targeting = targeting;
   _readQueue = queue;
-  _ioChannelFinishedReadOperation = FBMutableFuture.future;
+  _ioChannelFinishedReadOperation = [FBMutableFuture futureWithNameFormat:@"IO Channel Read of %@", targeting];
   _logger = logger;
   _state = FBFileReaderStateNotStarted;
 
@@ -188,17 +188,15 @@ static NSString *StateStringFromState(FBFileReaderState state)
 
   // Return the future after dispatching to the main queue.
   // Cleanup of the IO Channel happens in the dispatch_io_create callback;
-  [self ioChannelHasFinishedReadOperation:self.fileHandle withErrorCode:ECANCELED];
-
-  return self.ioChannelFinishedReadOperation;
+  return [self ioChannelHasFinishedReadOperation:self.fileHandle withErrorCode:ECANCELED];
 }
 
-- (void)ioChannelHasFinishedReadOperation:(NSFileHandle *)fileHandle withErrorCode:(int)errorCode
+- (FBFuture<NSNumber *> *)ioChannelHasFinishedReadOperation:(NSFileHandle *)fileHandle withErrorCode:(int)errorCode
 {
   // This can be called through a manual stopping of reading, or reaching the eof.
   // Either way this should only execute once, so short circuit if it does.
   if (self.state != FBFileReaderStateReading) {
-    return;
+    return self.ioChannelFinishedReadOperation;
   }
   [self.consumer consumeEndOfFile];
   NSAssert(self.io, @"The IO Channel to close should be present");
@@ -217,6 +215,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
       break;
   }
   [self.ioChannelFinishedReadOperation resolveWithResult:@(errorCode)];
+  return [[FBFuture futureWithResult:@(errorCode)] named:self.ioChannelFinishedReadOperation.name];
 }
 
 - (void)ioChannelControlHasRelinquished:(NSFileHandle *)fileHandle withErrorCode:(int)errorCode

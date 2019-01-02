@@ -261,6 +261,7 @@
   XCTAssertEqual(finished.state, FBFutureStateRunning);
   success = [[finished cancel] await:&error] != nil;
   XCTAssertNil(error);
+  XCTAssertTrue(success);
   XCTAssertEqual(finished.state, FBFutureStateCancelled);
   XCTAssertEqual(reader.state, FBFileReaderStateFinishedReadingByCancellation);
 }

@@ -210,6 +210,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 @interface FBFuture ()
 
+@property (atomic, copy, nullable, readwrite) NSString *name;
 @property (nonatomic, strong, readonly) NSMutableArray<FBFuture_Handler *> *handlers;
 @property (nonatomic, strong, nullable, readwrite) NSMutableArray<FBFuture_Cancellation *> *cancelResponders;
 @property (nonatomic, strong, nullable, readwrite) FBFuture<NSNull *> *resolvedCancellation;
@@ -460,7 +461,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   }
   NSArray<FBFuture_Cancellation *> *cancelResponders = [self resolveAsCancelled];
   @synchronized (self) {
-    self.resolvedCancellation = [FBFuture resolveCancellationResponders:cancelResponders];
+    self.resolvedCancellation = [FBFuture resolveCancellationResponders:cancelResponders forOriginalName:self.name];
     return self.resolvedCancellation;
   }
 }
@@ -663,6 +664,12 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   }];
 }
 
+- (FBFuture *)named:(NSString *)name
+{
+  self.name = name;
+  return self;
+}
+
 #pragma mark - Properties
 
 - (BOOL)hasCompleted
@@ -787,19 +794,20 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   [self.handlers removeAllObjects];
 }
 
-+ (FBFuture<NSNull *> *)resolveCancellationResponders:(NSArray<FBFuture_Cancellation *> *)cancelResponders
++ (FBFuture<NSNull *> *)resolveCancellationResponders:(NSArray<FBFuture_Cancellation *> *)cancelResponders forOriginalName:(NSString *)originalName
 {
+  NSString *name = [NSString stringWithFormat:@"Cancellation of %@", originalName];
   if (cancelResponders.count == 0) {
-    return [FBFuture futureWithResult:NSNull.null];
+    return [[FBFuture futureWithResult:NSNull.null] named:name];
   } else if (cancelResponders.count == 1) {
     FBFuture_Cancellation *cancelResponder = cancelResponders[0];
-    return [FBFuture onQueue:cancelResponder.queue resolve:cancelResponder.handler];
+    return [[FBFuture onQueue:cancelResponder.queue resolve:cancelResponder.handler] named:name];
   } else {
     NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
     for (FBFuture_Cancellation *cancelResponder in cancelResponders) {
       [futures addObject:[FBFuture onQueue:cancelResponder.queue resolve:cancelResponder.handler]];
     }
-    return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
+    return [[[FBFuture futureWithFutures:futures] mapReplace:NSNull.null] named:name];
   }
 }
 
@@ -842,6 +850,16 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 + (FBMutableFuture *)futureWithName:(NSString *)name
 {
   return [[FBMutableFuture alloc] initWithName:name];
+}
+
++ (FBMutableFuture *)futureWithNameFormat:(NSString *)format, ...
+{
+  va_list args;
+  va_start(args, format);
+  NSString *name = [[NSString alloc] initWithFormat:format arguments:args];
+  va_end(args);
+
+  return [self futureWithName:name];
 }
 
 @end

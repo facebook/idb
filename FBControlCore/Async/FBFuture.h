@@ -119,8 +119,9 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 /**
  Cancels the asynchronous operation.
  This will always start the process of cancellation.
- Some cancellation is immediate, however there are some cases where cancellation is asynchronous.
- In these cases the future returned will not be resolved immediately.
+ Some cancellation is immediate, the returned future may resolve immediatey.
+
+ However, other cancellation operations are asynchronous, where the future will not resolve immediately.
  If you wish to wait for the cancellation to have been fully resolved, chain on the future returned.
 
  @return a Future that resolves when cancellation of all handlers has been processed.
@@ -147,9 +148,12 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 - (instancetype)onQueue:(dispatch_queue_t)queue doOnResolved:(void (^)(T))handler;
 
 /**
- Respond to a cancellation request.
- This provides the opportunity to provide asynchronous cancellation.
- This can be called multiple times for the same reference.
+ Respond to the cancellation of the reciever.
+ Since the cancellation handler can itself return a future, asynchronous cancellation is permitted.
+ This can be called multiple times for the same Future if multiple cleanup operations need to occur.
+
+ Make sure that the future that is returned from this block is itself not the same reference as the reciever.
+ Otherwise the `cancel` call will itself resolve as 'cancelled'.
 
  @param queue the queue to notify on.
  @param handler the block to invoke if cancelled.
@@ -270,6 +274,14 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
  */
 - (FBFuture<T> *)logCompletion:(id<FBControlCoreLogger>)logger withPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(2,3);
 
+/**
+ Rename the future.
+
+ @param name the name of the Future.
+ @return the reciever, for chaining.
+ */
+- (FBFuture<T> *)named:(NSString *)name;
+
 #pragma mark Properties
 
 /**
@@ -311,15 +323,26 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 /**
  A Future that can be controlled externally.
  The Future is in a 'running' state until it is resolved with the `resolve` methods.
+
+ @return a new Mutable Future.
  */
 + (FBMutableFuture<T> *)future;
 
 /**
- A Mutable Future with a Name
+ A Mutable Future with a Name.
 
  @param name the name of the Future
+ @return a new Mutable Future.
  */
 + (FBMutableFuture<T> *)futureWithName:(nullable NSString *)name;
+
+/**
+ A Mutable Future with a Formatted Name
+
+ @param format the format string for the Future's name.
+ @return a new Mutable Future.
+ */
++ (FBMutableFuture<T> *)futureWithNameFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
 
 #pragma mark Mutation
 
