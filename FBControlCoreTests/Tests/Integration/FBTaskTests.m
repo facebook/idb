@@ -315,9 +315,13 @@
   BOOL success = [[task sendSignal:SIGHUP backingOfToKillWithTimeout:0.5] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  XCTAssertEqual(task.completed.state, FBFutureStateDone);
   XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
   XCTAssertEqual(task.exitCode.result, @(SIGKILL));
+
+  success = [task.completed await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+  XCTAssertEqual(task.completed.state, FBFutureStateDone);
 }
 
 @end
