@@ -9,6 +9,12 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
+@class FBInstalledApplication;
+
 @protocol FBCodesignProvider;
 @protocol FBFileManager;
 
@@ -46,15 +52,6 @@
  Full path to binary
  */
 @property (nonatomic, copy, readonly) NSString *binaryPath;
-
-/**
- Creates copy of test bundle with changed parent directory.
- It does NOT reload Info.plist file so directory may not exist.
-
- @param directory new parent directory for bundle
- @return product bundle copy with changed parent dictionary.
- */
-- (instancetype)copyLocatedInDirectory:(NSString *)directory;
 
 @end
 
@@ -119,4 +116,15 @@
  */
 - (FBProductBundle *)buildWithError:(NSError **)error;
 
+/**
+ Make a Product Bundle from an FBInstalledApplication.
+
+ @param installedApplication the application install.
+ @param error an error out for any error occurs
+ @return A Product bundle, or nil on error.
+ */
++ (nullable FBProductBundle *)productBundleFromInstalledApplication:(FBInstalledApplication *)installedApplication error:(NSError **)error;
+
 @end
+
+NS_ASSUME_NONNULL_END

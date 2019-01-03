@@ -36,12 +36,15 @@
   [[[fileManagerMock stub] andReturn:@{}] dictionaryWithPath:[OCMArg any]];
 
   NSError *error;
-  FBTestBundle *testBundle =
-  [[[[[FBTestBundleBuilder builderWithFileManager:fileManagerMock]
-      withBundlePath:bundle.bundlePath]
-     withWorkingDirectory:@"/Deep/Deep/Darkness"]
+  FBTestBundle *testBundle = [[[[[[[FBTestBundleBuilder
+    builderWithFileManager:fileManagerMock]
+    withBinaryName:@"FooApp"]
+    withBundleID:@"com.foo.app"]
+    withBundlePath:bundle.bundlePath]
+    withWorkingDirectory:@"/Deep/Deep/Darkness"]
     withSessionIdentifier:sessionIdentifier]
-   buildWithError:&error];
+    buildWithError:&error];
+
   XCTAssertNil(error);
   XCTAssertTrue([testBundle isKindOfClass:FBTestBundle.class]);
   XCTAssertNotNil(testBundle.configuration);
@@ -62,10 +65,11 @@
 {
   NSError *error;
   NSBundle *bundle = [NSBundle bundleForClass:self.class];
-  FBTestBundle *testBundle =
-  [[[FBTestBundleBuilder builder]
+  FBTestBundle *testBundle = [[[FBTestBundleBuilder
+    builder]
     withBundlePath:bundle.bundlePath]
-   buildWithError:&error];
+    buildWithError:&error];
+
   XCTAssertNil(error);
   XCTAssertTrue([testBundle isKindOfClass:FBTestBundle.class]);
   XCTAssertNil(testBundle.configuration);

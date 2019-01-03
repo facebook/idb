@@ -25,20 +25,7 @@
 
 @implementation FBProductBundle
 
-- (instancetype)copyLocatedInDirectory:(NSString *)directory
-{
-  FBProductBundle *bundle = [self.class new];
-  bundle.bundleID = self.bundleID;
-  bundle.name = self.name;
-  bundle.filename = self.filename;
-  bundle.path = [directory stringByAppendingPathComponent:self.filename];
-  bundle.binaryName = self.binaryName;
-  bundle.binaryPath = [bundle.path stringByAppendingPathComponent:self.binaryName];
-  return bundle;
-}
-
 @end
-
 
 @implementation FBProductBundleBuilder
 
@@ -124,6 +111,7 @@
       fail:error];
   }
 
+  // Use the infoPlist if these values aren't already set.
   NSDictionary *infoPlist = [self.fileManager dictionaryWithPath:[self.bundlePath stringByAppendingPathComponent:@"Info.plist"]];
   if (!infoPlist) {
     infoPlist = [self.fileManager dictionaryWithPath:[self.bundlePath stringByAppendingPathComponent:@"Contents/Info.plist"]];
@@ -131,27 +119,42 @@
   if (!infoPlist) {
     infoPlist = [self.fileManager dictionaryWithPath:[self.bundlePath stringByAppendingPathComponent:@"Resources/Info.plist"]];
   }
-  if (!infoPlist) {
-    return
-    [[XCTestBootstrapError describeFormat:@"Failed to read Info.plist for bundle: %@", self.bundlePath]
-     fail:error];
+
+  FBProductBundle *bundleProduct = [self.productClass new];
+  bundleProduct.binaryName = self.binaryName ?: infoPlist[@"CFBundleExecutable"];
+  if (!bundleProduct.binaryName) {
+    return [[XCTestBootstrapError
+      describeFormat:@"No binary name provided and one could not be obtained from the Info.plist of %@", self.bundlePath]
+      fail:error];
   }
-  NSString *binaryName = self.binaryName ?: infoPlist[@"CFBundleExecutable"];
+  bundleProduct.bundleID = self.bundleID ?: infoPlist[@"CFBundleIdentifier"];
+  if (!bundleProduct.bundleID) {
+    return [[XCTestBootstrapError
+      describeFormat:@"No bundle id provided and one could not be obtained from the Info.plist of %@", self.bundlePath]
+      fail:error];
+  }
+
   NSString *binaryPath = nil;
-  if (binaryName) {
-    binaryPath = [targetBundlePath stringByAppendingPathComponent:binaryName];
+  if (bundleProduct.binaryName) {
+    binaryPath = [targetBundlePath stringByAppendingPathComponent:bundleProduct.binaryName];
     if (![self.fileManager fileExistsAtPath:binaryPath]) {
-      binaryPath = [[targetBundlePath stringByAppendingPathComponent:@"Contents/MacOS"] stringByAppendingPathComponent:binaryName];
+      binaryPath = [[targetBundlePath stringByAppendingPathComponent:@"Contents/MacOS"] stringByAppendingPathComponent:bundleProduct.binaryName];
     }
   }
-  FBProductBundle *bundleProduct = [self.productClass new];
   bundleProduct.path = targetBundlePath;
   bundleProduct.filename = targetBundlePath.lastPathComponent;
   bundleProduct.name = targetBundlePath.lastPathComponent.stringByDeletingPathExtension;
-  bundleProduct.bundleID = self.bundleID ?: infoPlist[@"CFBundleIdentifier"];
-  bundleProduct.binaryName = binaryName;
   bundleProduct.binaryPath = binaryPath;
   return bundleProduct;
+}
+
++ (FBProductBundle *)productBundleFromInstalledApplication:(FBInstalledApplication *)installedApplication error:(NSError **)error
+{
+  return [[[[[self builder]
+    withBundlePath:installedApplication.bundle.path]
+    withBundleID:installedApplication.bundle.bundleID]
+    withBinaryName:installedApplication.bundle.name]
+    buildWithError:error];
 }
 
 @end

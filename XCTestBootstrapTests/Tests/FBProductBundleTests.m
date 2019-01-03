@@ -107,22 +107,16 @@
   [codesignerMock verify];
 }
 
-- (void)testCopyAtLocation
+- (void)testFromInstalledApplication
 {
-  NSBundle *bundle = [NSBundle bundleForClass:self.class];
-  NSError *error;
-  FBProductBundle *productBundle =
-  [[[FBProductBundleBuilder builder]
-    withBundlePath:bundle.bundlePath]
-   buildWithError:&error];
+  FBInstalledApplication *application = [FBInstalledApplication
+    installedApplicationWithBundle:[FBApplicationBundle applicationWithName:@"FooApp" path:@"/Foo.app" bundleID:@"com.foo.app"]
+    installType:FBApplicationInstallTypeUser
+    dataContainer:@"/tmp/container"];
+  NSError *error = nil;
+  FBProductBundle *bundle = [FBProductBundleBuilder productBundleFromInstalledApplication:application error:&error];
   XCTAssertNil(error);
-  FBProductBundle *productBundleCopy = [productBundle copyLocatedInDirectory:@"/Magic"];
-  XCTAssertEqualObjects(productBundleCopy.name, productBundle.name);
-  XCTAssertEqualObjects(productBundleCopy.filename, productBundle.filename);
-  XCTAssertEqualObjects(productBundleCopy.path, [@"/Magic" stringByAppendingPathComponent:productBundleCopy.filename]);
-  XCTAssertEqualObjects(productBundleCopy.bundleID, productBundle.bundleID);
-  XCTAssertEqualObjects(productBundleCopy.binaryName, productBundle.binaryName);
-  XCTAssertEqualObjects(productBundleCopy.binaryPath, [productBundleCopy.path stringByAppendingPathComponent:productBundle.binaryName]);
+  XCTAssertEqualObjects(bundle.binaryName, @"FooApp");
 }
 
 @end
