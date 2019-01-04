@@ -87,12 +87,6 @@
 
 #pragma mark - Device specific operations
 
-- (NSString *)containerPathForApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  id<DVTApplication> app = [self installedApplicationWithBundleIdentifier:bundleID];
-  return [app containerPath];
-}
-
 - (NSString *)applicationPathForApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   id<DVTApplication> app = [self installedApplicationWithBundleIdentifier:bundleID];
@@ -108,24 +102,6 @@
 {
   [self fetchApplications];
   return [self.dvtDevice installedApplicationWithBundleIdentifier:bundleID];
-}
-
-- (BOOL)uploadApplicationDataAtPath:(NSString *)path bundleID:(NSString *)bundleID error:(NSError **)error
-{
-  return [[[self uploadApplicationDataAtPath:path bundleID:bundleID] await:error] boolValue];
-}
-
-- (FBFuture<NSNumber *> *)uploadApplicationDataAtPath:(NSString *)path bundleID:(NSString *)bundleID
-{
-  return [FBFuture onQueue:self.device.asyncQueue resolveValue:^id (NSError **error) {
-    BOOL result = [self.dvtDevice uploadApplicationDataWithPath:path forInstalledApplicationWithBundleIdentifier:bundleID error:error];
-    return result ? @(result) : nil;
-  }];
-}
-
-- (BOOL)cleanApplicationStateWithBundleIdentifier:(NSString *)bundleIdentifier error:(NSError **)error
-{
-  return [[self cleanApplicationStateWithBundleIdentifier:bundleIdentifier] await:error] != nil;
 }
 
 #pragma mark - DVTDevice support
@@ -288,17 +264,6 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
   } else {
     return [FBFuture futureWithResult:NSNull.null];
   }
-}
-
-- (FBFuture<id> *)cleanApplicationStateWithBundleIdentifier:(NSString *)bundleIdentifier
-{
-  return [FBFuture onQueue:self.device.asyncQueue resolveValue:^id (NSError **error) {
-    if ([self.dvtDevice installedApplicationWithBundleIdentifier:bundleIdentifier]) {
-      return [self.dvtDevice uninstallApplicationWithBundleIdentifierSync:bundleIdentifier];
-    } else {
-      return @YES;
-    }
-  }];
 }
 
 @end
