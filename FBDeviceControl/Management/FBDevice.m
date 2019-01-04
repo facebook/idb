@@ -10,8 +10,6 @@
 #import "FBDevice.h"
 #import "FBDevice+Private.h"
 
-#import <IDEiOSSupportCore/DVTiOSDevice.h>
-
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import <FBControlCore/FBControlCore.h>

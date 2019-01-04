@@ -10,14 +10,6 @@
 #import "FBDeviceSet.h"
 #import "FBDeviceSet+Private.h"
 
-#import <DTDeviceKitBase/DTDKRemoteDeviceConsoleController.h>
-#import <DTDeviceKitBase/DTDKRemoteDeviceToken.h>
-
-#import <DTXConnectionServices/DTXChannel.h>
-#import <DTXConnectionServices/DTXMessage.h>
-
-#import <IDEiOSSupportCore/DVTiOSDevice.h>
-
 #import <FBControlCore/FBControlCore.h>
 #import <FBControlCore/FBiOSTargetSet.h>
 #import <FBControlCore/FBiOSTarget.h>

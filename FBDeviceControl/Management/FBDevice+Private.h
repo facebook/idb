@@ -11,7 +11,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class DVTiOSDevice;
 @class FBAMDevice;
 @class FBDeviceVideoRecordingCommands;
 @class FBDeviceXCTestCommands;

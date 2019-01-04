@@ -9,15 +9,12 @@
 
 #import <FBDeviceControl/FBDeviceSet.h>
 
-@class DVTDeviceManager;
-@class DVTiOSDevice;
 @protocol FBControlCoreLogger;
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface FBDeviceSet ()
 
-@property (nonatomic, strong, readonly) DVTDeviceManager *deviceManager;
 @property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end

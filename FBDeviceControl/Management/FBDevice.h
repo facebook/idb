@@ -12,7 +12,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-@class DVTiOSDevice;
 @class FBDeviceSet;
 @class FBProductBundle;
 @class FBTestRunnerConfiguration;
@@ -22,7 +21,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- Class that wraps DVTAbstractiOSDevice and it's device operator that can perform actions on it.
+ A class that represents an iOS Device.
  */
 @interface FBDevice : NSObject <FBiOSTarget>
 
