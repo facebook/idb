@@ -92,13 +92,19 @@ typedef struct {
   int (*ServiceConnectionGetSocket)(CFTypeRef connection);
   int (*ServiceConnectionInvalidate)(CFTypeRef connection);
   int (*ServiceConnectionReceive)(CFTypeRef connection, void *buffer, size_t bytes);
+  int (*ServiceConnectionSend)(CFTypeRef connection, void *buffer, size_t bytes);
   int (*ServiceConnectionGetSecureIOContext)(CFTypeRef connection);
+
+  // Services
   int (*SecureStartService)(AMDeviceRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, CFTypeRef *serviceOut);
   int (*SecureTransferPath)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
   int (*SecureInstallApplication)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
   int (*SecureUninstallApplication)(int arg0, AMDeviceRef device, CFStringRef arg2, int arg3, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
   int (*LookupApplications)(AMDeviceRef device, CFDictionaryRef _Nullable options, CFDictionaryRef _Nonnull * _Nonnull attributesOut);
   int (*CreateHouseArrestService)(AMDeviceRef device, CFStringRef bundleID, void *_Nullable unused, AFCConnectionRef *connectionOut);
+
+  // Developer Images
+  int (*MountImage)(AMDeviceRef device, CFStringRef image, CFDictionaryRef options, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
 
   // Debugging
   void (*SetLogLevel)(int32_t level);
