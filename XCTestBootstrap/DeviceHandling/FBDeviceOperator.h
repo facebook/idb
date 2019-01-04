@@ -37,16 +37,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<DTXTransport *> *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger;
 
 /**
- Queries application with given bundleID
-
- @param bundleID bundle ID of queried application
- @param error If there is an error, upon return contains an NSError object that describes the problem.
- @return applicationBundle if application is installed, otherwise nil
- */
-- (nullable FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID
-                                                      error:(NSError *_Nullable *)error;
-
-/**
  Returns PID of application with given bundleID
 
  @param bundleID bundle ID of installed application.

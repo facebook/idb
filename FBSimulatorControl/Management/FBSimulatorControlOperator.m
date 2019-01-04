@@ -171,21 +171,6 @@
   return YES;
 }
 
-- (FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  FBInstalledApplication *application = [[self.simulator installedApplicationWithBundleID:bundleID] await:error];
-  if (!application) {
-    return nil;
-  }
-
-  FBProductBundle *productBundle =
-  [[[FBProductBundleBuilder builder]
-    withBundlePath:application.bundle.path]
-   buildWithError:error];
-
-  return productBundle;
-}
-
 - (BOOL)launchApplicationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment waitForDebugger:(BOOL)waitForDebugger error:(NSError **)error
 {
   FBInstalledApplication *app = [[self.simulator installedApplicationWithBundleID:bundleID] await:error];

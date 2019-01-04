@@ -110,23 +110,6 @@
   return [self.dvtDevice installedApplicationWithBundleIdentifier:bundleID];
 }
 
-- (FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  id<DVTApplication> application = [self installedApplicationWithBundleIdentifier:bundleID];
-  if (!application) {
-    return nil;
-  }
-
-  FBProductBundle *productBundle =
-  [[[[[FBProductBundleBuilder builder]
-      withBundlePath:[application installedPath]]
-     withBundleID:[application identifier]]
-    withBinaryName:[application executableName]]
-   buildWithError:error];
-
-  return productBundle;
-}
-
 - (BOOL)uploadApplicationDataAtPath:(NSString *)path bundleID:(NSString *)bundleID error:(NSError **)error
 {
   return [[[self uploadApplicationDataAtPath:path bundleID:bundleID] await:error] boolValue];

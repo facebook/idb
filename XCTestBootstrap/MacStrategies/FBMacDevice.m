@@ -193,18 +193,6 @@
   return [FBFuture futureWithResult:transport];
 }
 
-- (nullable FBProductBundle *)applicationBundleWithBundleID:(nonnull NSString *)bundleID error:(NSError *__autoreleasing _Nullable * _Nullable)error
-{
-  FBProductBundle *bundle = self.bundleIDToProductMap[bundleID];
-  if (!bundle) {
-    if (error) {
-      *error = [XCTestBootstrapError errorForFormat:@"Application with bundleID (%@) was installed by XCTestBootstrap", bundleID];
-    }
-    return nil;
-  }
-  return bundle;
-}
-
 - (nonnull FBFuture<NSNumber *> *)processIDWithBundleID:(nonnull NSString *)bundleID
 {
   FBTask *task = self.bundleIDToRunningTask[bundleID];

@@ -229,7 +229,7 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
         describe:@"Failed to create secondary test manager transport"]
         causedBy:innerError];
       [self concludeWithResult:[FBTestBundleResult failedInError:error]];
-      return [FBFuture futureWithError:error.build];
+      return [FBFuture futureWithError:[error build]];
     }];
 }
 

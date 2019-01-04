@@ -24,36 +24,26 @@
 
 - (void)testTestBundleLoadWithPath
 {
-  NSString *expectedTestConfigPath = @"/Deep/Deep/Darkness/iOSUnitTestFixture.xctest/iOSUnitTestFixture-E621E1F8-C36C-495A-93FC-0C247A3E6E5F.xctestconfiguration";
   NSUUID *sessionIdentifier = [[NSUUID alloc] initWithUUIDString:@"E621E1F8-C36C-495A-93FC-0C247A3E6E5F"];
   NSBundle *bundle = [FBTestBundleTests iosUnitTestBundleFixture];
 
-  OCMockObject<FBFileManager> *fileManagerMock = [OCMockObject mockForProtocol:@protocol(FBFileManager)];
-  [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] copyItemAtPath:bundle.bundlePath toPath:expectedTestConfigPath.stringByDeletingLastPathComponent error:[OCMArg anyObjectRef]];
-  [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] writeData:[OCMArg any] toFile:expectedTestConfigPath options:0 error:[OCMArg anyObjectRef]];
-  [[[[fileManagerMock stub] andReturnValue:@YES] ignoringNonObjectArgs] createDirectoryAtPath:@"/Deep/Deep/Darkness" withIntermediateDirectories:YES attributes:[OCMArg any] error:[OCMArg anyObjectRef]];
-  [[[[fileManagerMock stub] andReturnValue:@NO] ignoringNonObjectArgs] fileExistsAtPath:[OCMArg any]];
-  [[[fileManagerMock stub] andReturn:@{}] dictionaryWithPath:[OCMArg any]];
-
   NSError *error;
   FBTestBundle *testBundle = [[[[[[[FBTestBundleBuilder
-    builderWithFileManager:fileManagerMock]
+    builder]
     withBinaryName:@"FooApp"]
     withBundleID:@"com.foo.app"]
     withBundlePath:bundle.bundlePath]
-    withWorkingDirectory:@"/Deep/Deep/Darkness"]
+    withWorkingDirectory:NSTemporaryDirectory()]
     withSessionIdentifier:sessionIdentifier]
     buildWithError:&error];
 
   XCTAssertNil(error);
   XCTAssertTrue([testBundle isKindOfClass:FBTestBundle.class]);
+  XCTAssertTrue([testBundle.configuration.testBundlePath hasSuffix:@"iOSUnitTestFixture.xctest"]);
+  XCTAssertTrue([testBundle.configuration.path hasSuffix:@"iOSUnitTestFixture.xctest/iOSUnitTestFixture-E621E1F8-C36C-495A-93FC-0C247A3E6E5F.xctestconfiguration"]);
   XCTAssertNotNil(testBundle.configuration);
   XCTAssertEqualObjects(testBundle.configuration.sessionIdentifier, sessionIdentifier);
   XCTAssertEqualObjects(testBundle.configuration.moduleName, @"iOSUnitTestFixture");
-  XCTAssertEqualObjects(testBundle.configuration.testBundlePath, expectedTestConfigPath.stringByDeletingLastPathComponent);
-  XCTAssertEqualObjects(testBundle.configuration.path, expectedTestConfigPath);
-
-  [fileManagerMock verify];
 }
 
 - (void)testNoBundlePath

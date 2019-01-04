@@ -87,24 +87,30 @@
 
 - (FBFuture<FBTestRunnerConfiguration *> *)prepareTestWithIOSTargetAfterCheckingCodesignature:(id<FBiOSTarget>)iosTarget
 {
+  // Paths
   NSString *developerPath = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/MacOSX.platform/Developer"];
   NSString *developerLibraryPath = [developerPath stringByAppendingPathComponent:@"Library"];
   NSString *developerFrameworksPath = [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"];
   NSString *automationFrameworkPath = [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks/XCTAutomationSupport.framework"];
+  NSArray<NSString *> *XCTestFrameworksPaths = @[
+    [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"],
+    [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks"],
+    developerFrameworksPath,
+  ];
   NSString *xctTargetBootstrapInjectPath = [developerPath stringByAppendingPathComponent:@"usr/lib/libXCTTargetBootstrapInject.dylib"];
+
+  // Environments
   NSDictionary *testedApplicationAdditionalEnvironment = @{
     @"DYLD_INSERT_LIBRARIES" : xctTargetBootstrapInjectPath
   };
-
   if (![self.fileManager fileExistsAtPath:automationFrameworkPath] && ![self.fileManager fileExistsAtPath:xctTargetBootstrapInjectPath]) {
     automationFrameworkPath = nil;
     testedApplicationAdditionalEnvironment = nil;
   }
-
   NSArray<NSString *> *injects = @[
     self.shims.macOSTestShimPath,
   ];
-  NSDictionary *hostApplicationAdditionalEnvironment = @{
+  NSDictionary<NSString *, NSString *> *hostApplicationAdditionalEnvironment = @{
     @"SHIMULATOR_START_XCTEST": @"1",
     @"DYLD_INSERT_LIBRARIES": [injects componentsJoinedByString:@":"],
   };
@@ -132,29 +138,23 @@
   }
 
   // Prepare test runner
-  FBProductBundle *application = [iosTarget.deviceOperator applicationBundleWithBundleID:self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID error:&error];
-  if (!application) {
-    return [[[XCTestBootstrapError
-      describe:@"Failed to prepare test runner"]
-      causedBy:error]
-      failFuture];
-  }
-
-  NSArray<NSString *> *XCTestFrameworksPaths = @[
-    [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"],
-    [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks"],
-    developerFrameworksPath,
-  ];
-
-  FBTestRunnerConfiguration *configuration = [FBTestRunnerConfiguration
-    configurationWithSessionIdentifier:sessionIdentifier
-    hostApplication:application
-    hostApplicationAdditionalEnvironment:hostApplicationAdditionalEnvironment
-    testBundle:testBundle
-    testConfigurationPath:testBundle.configuration.path
-    frameworkSearchPath:[XCTestFrameworksPaths componentsJoinedByString:@":"]
-    testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
-  return [FBFuture futureWithResult:configuration];
+  return [[[iosTarget
+    installedApplicationWithBundleID:self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID]
+    onQueue:iosTarget.workQueue fmap:^(FBInstalledApplication *installedApplication) {
+      return [FBFuture resolveValue:^(NSError **innerError) {
+        return [FBProductBundleBuilder productBundleFromInstalledApplication:installedApplication error:innerError];
+      }];
+    }]
+    onQueue:iosTarget.workQueue map:^(FBProductBundle *hostApplication) {
+      return [FBTestRunnerConfiguration
+        configurationWithSessionIdentifier:sessionIdentifier
+        hostApplication:hostApplication
+        hostApplicationAdditionalEnvironment:hostApplicationAdditionalEnvironment
+        testBundle:testBundle
+        testConfigurationPath:testBundle.configuration.path
+        frameworkSearchPath:[XCTestFrameworksPaths componentsJoinedByString:@":"]
+        testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
+    }];
 }
 
 @end

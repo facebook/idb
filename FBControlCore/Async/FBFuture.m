@@ -247,6 +247,17 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   }];
 }
 
++ (instancetype)resolveValue:( id(^)(NSError **) )resolve
+{
+  NSError *error = nil;
+  id result = resolve(&error);
+  if (result) {
+    return [FBFuture futureWithResult:result];
+  } else {
+    return [FBFuture futureWithError:error];
+  }
+}
+
 + (instancetype)onQueue:(dispatch_queue_t)queue resolveValue:(id(^)(NSError **))resolve;
 {
   FBMutableFuture *future = FBMutableFuture.future;

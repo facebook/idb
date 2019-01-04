@@ -77,6 +77,14 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 + (FBFuture<T> *)onQueue:(dispatch_queue_t)queue resolveUntil:(FBFuture<T> *(^)(void))resolveUntil;
 
 /**
+ Resolve a future synchronously, by value.
+
+ @param resolve the the block to resolve the future.
+ @return the reciever, for chaining.
+ */
++ (instancetype)resolveValue:( T(^)(NSError **) )resolve;
+
+/**
  Resolve a future asynchronously, by value.
 
  @param queue to resolve on.
