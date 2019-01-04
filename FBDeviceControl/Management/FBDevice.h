@@ -42,9 +42,27 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSString *modelName;
 
 /**
- Device's system 'Product Version'
+ Device's 'Product Version'
  */
 @property (nonatomic, copy, readonly) NSString *productVersion;
+
+/**
+ Device's 'Product Version'
+ */
+@property (nonatomic, copy, readonly) NSString *buildVersion;
+
+/**
+ Interpolated NSOperatingSystemVersion.
+ */
+@property (nonatomic, assign, readonly) NSOperatingSystemVersion operatingSystemVersion;
+
+/**
+ Constructs an Operating System Version from a string.
+
+ @param string the string to interpolate.
+ @return an NSOperatingSystemVersion for the string.
+ */
++ (NSOperatingSystemVersion)operatingSystemVersionFromString:(NSString *)string;
 
 @end
 
