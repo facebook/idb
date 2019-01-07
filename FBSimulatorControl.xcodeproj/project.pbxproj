@@ -71,8 +71,6 @@
 		AA0EE66E1D06A7E300422361 /* FBiOSTargetFormat.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0EE66C1D06A7E300422361 /* FBiOSTargetFormat.m */; };
 		AA0F63431F25E81D00C2C763 /* FBSocketReader.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0F633F1F25E81C00C2C763 /* FBSocketReader.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0F63441F25E81D00C2C763 /* FBSocketReader.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0F63401F25E81C00C2C763 /* FBSocketReader.m */; };
-		AA0F63451F25E81D00C2C763 /* FBSocketWriter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0F63411F25E81C00C2C763 /* FBSocketWriter.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0F63461F25E81D00C2C763 /* FBSocketWriter.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0F63421F25E81C00C2C763 /* FBSocketWriter.m */; };
 		AA0F6F2A1CA3DCF700926518 /* FBWeakFrameworkLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0F6F281CA3DCF700926518 /* FBWeakFrameworkLoader.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0F6F2B1CA3DCF700926518 /* FBWeakFrameworkLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0F6F291CA3DCF700926518 /* FBWeakFrameworkLoader.m */; };
 		AA0FF9091E6DE3EC0052634B /* FBVideoEncoderConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0FF9071E6DE3EC0052634B /* FBVideoEncoderConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -837,8 +835,6 @@
 		AA0EE66C1D06A7E300422361 /* FBiOSTargetFormat.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetFormat.m; sourceTree = "<group>"; };
 		AA0F633F1F25E81C00C2C763 /* FBSocketReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSocketReader.h; sourceTree = "<group>"; };
 		AA0F63401F25E81C00C2C763 /* FBSocketReader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSocketReader.m; sourceTree = "<group>"; };
-		AA0F63411F25E81C00C2C763 /* FBSocketWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSocketWriter.h; sourceTree = "<group>"; };
-		AA0F63421F25E81C00C2C763 /* FBSocketWriter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSocketWriter.m; sourceTree = "<group>"; };
 		AA0F6F281CA3DCF700926518 /* FBWeakFrameworkLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBWeakFrameworkLoader.h; sourceTree = "<group>"; };
 		AA0F6F291CA3DCF700926518 /* FBWeakFrameworkLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBWeakFrameworkLoader.m; sourceTree = "<group>"; };
 		AA0FF9071E6DE3EC0052634B /* FBVideoEncoderConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBVideoEncoderConfiguration.h; sourceTree = "<group>"; };
@@ -1785,8 +1781,6 @@
 				AA0F63401F25E81C00C2C763 /* FBSocketReader.m */,
 				AAF026EE1F25ED1A0091FDAB /* FBSocketServer.h */,
 				AAF026EF1F25ED1A0091FDAB /* FBSocketServer.m */,
-				AA0F63411F25E81C00C2C763 /* FBSocketWriter.h */,
-				AA0F63421F25E81C00C2C763 /* FBSocketWriter.m */,
 			);
 			path = Sockets;
 			sourceTree = "<group>";
@@ -3495,7 +3489,6 @@
 				EEBD60621C9062E900298A07 /* FBControlCore.h in Headers */,
 				AA4D306C1E79972E00A9FBD0 /* FBBitmapStream.h in Headers */,
 				AA8FA1811EE637DD00FB1EA6 /* FBUploadBuffer.h in Headers */,
-				AA0F63451F25E81D00C2C763 /* FBSocketWriter.h in Headers */,
 				AA19D7D21F14BC9600E436CD /* FBApplicationBundle.h in Headers */,
 				AA34F3D120B72B3C0068420F /* FBCrashLogStore.h in Headers */,
 				AAEA3AA61C90BB62004F8409 /* FBLogSearch.h in Headers */,
@@ -4098,7 +4091,6 @@
 				AAEA3AA71C90BB62004F8409 /* FBLogSearch.m in Sources */,
 				7352B4DB1F44BE4100B6D0EA /* FBXcodeConfiguration.m in Sources */,
 				AA2CD59F1F87C75E0030C56D /* FBListApplicationsConfiguration.m in Sources */,
-				AA0F63461F25E81D00C2C763 /* FBSocketWriter.m in Sources */,
 				D76C2AFB1F13F8F3000EF13D /* FBReportingiOSActionReaderDelegate.m in Sources */,
 				AA8C8AD61E7688BF008A23C2 /* FBVideoRecordingCommands.m in Sources */,
 				D76C2ADA1F0E7A8A000EF13D /* FBiOSTargetFuture.m in Sources */,

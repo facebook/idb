@@ -31,12 +31,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-@interface FBiOSActionReaderSocketTests : FBiOSActionReaderTests <FBSocketConsumer>
-
-@property (nonatomic, strong, readwrite) FBSocketWriter *writer;
-
-@end
-
 @interface FBiOSActionReaderFileTests : FBiOSActionReaderTests
 
 @property (nonatomic, strong, readwrite) NSPipe *pipe;
@@ -271,66 +265,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (XCTestSuite *)defaultTestSuite
 {
   return [XCTestSuite testSuiteForTestCaseClass:self.class];
-}
-
-@end
-
-@implementation FBiOSActionReaderSocketTests
-
-- (void)setUp
-{
-  [super setUp];
-
-  self.reader = [FBiOSActionReader socketReaderForRouter:self.router delegate:self port:FBiOSActionReaderSocketTests.readerPort];
-  self.writer = [FBSocketWriter writerForHost:@"localhost" port:FBiOSActionReaderSocketTests.readerPort consumer:self];
-
-  NSError *error;
-  BOOL success = [[self.reader startListening] await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-
-  success = [[self.writer startWriting] await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-}
-
-- (void)tearDown
-{
-  [super tearDown];
-
-  NSError *error;
-  BOOL success = [[self.writer stopWriting] await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-}
-
-+ (in_port_t)readerPort
-{
-  return 4232;
-}
-
-+ (XCTestSuite *)defaultTestSuite
-{
-  // Don't run the socket tests on travis
-  if (NSProcessInfo.processInfo.environment[@"TRAVIS"]) {
-    return [XCTestSuite testSuiteWithName:NSStringFromClass(self.class)];
-  }
-  return [XCTestSuite testSuiteForTestCaseClass:self.class];
-}
-
-- (void)writeBackAvailable:(id<FBFileConsumer>)writeBack
-{
-  self.consumer = writeBack;
-}
-
-- (void)consumeData:(NSData *)data
-{
-
-}
-
-- (void)consumeEndOfFile
-{
-  self.consumer = nil;
 }
 
 @end
