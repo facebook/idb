@@ -15,7 +15,7 @@
 #import "FBiOSActionRouter.h"
 #import "FBiOSTarget.h"
 #import "FBiOSTargetFuture.h"
-#import "FBSocketReader.h"
+#import "FBSocketConnectionManager.h"
 #import "FBUploadBuffer.h"
 #import "NSRunLoop+FBControlCore.h"
 
@@ -228,9 +228,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
 
 #pragma clang diagnostic push
 
-@interface FBiOSActionSocket : FBiOSActionReader <FBSocketReaderDelegate>
+@interface FBiOSActionSocket : FBiOSActionReader <FBSocketConnectionManagerDelegate>
 
-@property (nonatomic, strong, nullable, readwrite) FBSocketReader *reader;
+@property (nonatomic, strong, nullable, readwrite) FBSocketConnectionManager *reader;
 
 - (instancetype)initWithDelegate:(id<FBiOSActionReaderDelegate>)delegate router:(FBiOSActionRouter *)router port:(in_port_t)port;
 
@@ -340,7 +340,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
     return nil;
   }
 
-  _reader = [FBSocketReader socketReaderOnPort:port delegate:self];
+  _reader = [FBSocketConnectionManager socketReaderOnPort:port delegate:self];
 
   return self;
 }
@@ -369,7 +369,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
   return future;
 }
 
-#pragma mark FBSocketReaderDelegate Implementation
+#pragma mark FBSocketConnectionManagerDelegate Implementation
 
 - (id<FBSocketConsumer>)consumerWithClientAddress:(struct in6_addr)clientAddress
 {

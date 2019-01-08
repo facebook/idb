@@ -18,12 +18,12 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBFileConsumer;
-@protocol FBSocketReaderDelegate;
+@protocol FBSocketConnectionManagerDelegate;
 
 /**
- A Reader of a Socket, passing input to a consumer.
+ A wrapped socket-server, that manages the lifecycles of individual connections
  */
-@interface FBSocketReader : NSObject
+@interface FBSocketConnectionManager : NSObject
 
 #pragma mark Initializers
 
@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param delegate the delegate to use.
  @return a new socket reader.
  */
-+ (instancetype)socketReaderOnPort:(in_port_t)port delegate:(id<FBSocketReaderDelegate>)delegate;
++ (instancetype)socketReaderOnPort:(in_port_t)port delegate:(id<FBSocketConnectionManagerDelegate>)delegate;
 
 #pragma mark Public
 
@@ -71,7 +71,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Delegate for the Socket Reader
  */
-@protocol FBSocketReaderDelegate <NSObject>
+@protocol FBSocketConnectionManagerDelegate <NSObject>
 
 /**
  Create a consumer for the provided client.

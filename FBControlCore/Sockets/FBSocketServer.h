@@ -66,7 +66,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Called when the socket server has a new client connected.
- The File Handle return will close on deallocation so it is up to consumers to retain it.
+ The File Handle return will close on deallocation so it is up to consumers to retain it if it needs to use it.
+ If you wish to reject the connection, close the file handle immediately.
 
  @param server the socket server.
  @param address the IP Address of the connected client.
