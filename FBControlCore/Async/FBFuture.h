@@ -207,20 +207,21 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 - (FBFuture *)onQueue:(dispatch_queue_t)queue handleError:(FBFuture * (^)(NSError *))handler;
 
 /**
- Creates an FBFutureContext that allows the value yielded from the future to be torn down.
+ Creates an 'context object' that allows for the value contained by a future to be torn-down when the context is done.
+ This is useful for resource cleanup, where closing a resource needs to be managed.
 
  @param queue the queue to perform the teardown on.
- @param action the teardown action to invoke
- @return an object that acts as a proxy to the teardown.
+ @param action the teardown action to invoke. This block will be executed after the context object is done.
+ @return a 'contex object' that manages the tear-down of the reciever's value.
  */
 - (FBFutureContext<T> *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(T))action;
 
 /**
- Creates an FBFutureContext that allows a future to be mapped into a FBFutureContext.
+ Creates an 'context object' from a block.
 
  @param queue the queue to perform the teardown on.
- @param fmap the teardown to push
- @return an object that acts as a proxy to the teardown.
+ @param fmap the 'context object' to add.
+ @return a 'contex object' that manages the tear-down of the reciever's value.
  */
 - (FBFutureContext *)onQueue:(dispatch_queue_t)queue pushTeardown:(FBFutureContext *(^)(T))fmap;
 
@@ -434,6 +435,16 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
  @return a Context derived from the fmap with the current context stacked below.
  */
 - (FBFutureContext *)onQueue:(dispatch_queue_t)queue push:(FBFutureContext * (^)(T result))fmap;
+
+/**
+ Extracts the wrapped context, so that it can be torn-down at a later time.
+ This is designed to allow a context manager to be combined with the teardown of other long-running operations.
+
+ @param queue the queue to chain on.
+ @param enter the block that recieves two parameters. The first is the context value, the second is a future that will tear-down the context when it is resolved.
+ @return a Future that wraps the value returned from fmap.
+ */
+- (FBFuture *)onQueue:(dispatch_queue_t)queue enter:(id (^)(T result, FBMutableFuture<NSNull *> *teardown))enter;
 
 /**
  An empty context that raises an error.

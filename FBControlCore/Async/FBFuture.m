@@ -201,6 +201,20 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return nextContext;
 }
 
+- (FBFuture *)onQueue:(dispatch_queue_t)queue enter:(id (^)(id result, FBMutableFuture<NSNull *> *teardown))enter
+{
+  FBMutableFuture *started = FBMutableFuture.future;
+
+  [self onQueue:queue pop:^(id contextValue){
+    FBMutableFuture<NSNull *> *completed = FBMutableFuture.future;
+    id mappedValue = enter(contextValue, completed);
+    [started resolveWithResult:mappedValue];
+    return completed;
+  }];
+
+  return started;
+}
+
 + (FBFutureContext *)error:(NSError *)error
 {
   return [[self alloc] initWithFuture:[FBFuture futureWithError:error] teardowns:[NSMutableArray array]];

@@ -929,6 +929,39 @@
   [self waitForExpectations:@[innerTeardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
+- (void)testContextToFuture
+{
+  __block FBMutableFuture<NSNull *> *teardown = nil;
+  __block BOOL teardownCalled = NO;
+  XCTestExpectation *completionExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+  XCTestExpectation *teardownExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+
+  [[[[FBFuture
+    futureWithResult:@1]
+    onQueue:self.queue contextualTeardown:^(NSNumber *value) {
+      XCTAssertEqualObjects(value, @1);
+      teardownCalled = YES;
+      [teardownExpectation fulfill];
+    }]
+    onQueue:self.queue enter:^(id value, FBMutableFuture<NSNull *> *innerTeardown) {
+      XCTAssertEqualObjects(value, @1);
+      teardown = innerTeardown;
+      return @2;
+    }]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
+      XCTAssertEqualObjects(future.result, @2);
+      [completionExpectation fulfill];
+    }];
+
+  // Wait for the base future to resolve and confirm there's no teardown called yet.
+  [self waitForExpectations:@[completionExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  XCTAssertFalse(teardownCalled);
+
+  // Now teardown the context manually.
+  [teardown resolveWithResult:NSNull.null];
+  [self waitForExpectations:@[teardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
 #pragma mark - Helpers
 
 - (void)assertSynchronousResolutionWithBlock:(void (^)(FBMutableFuture *))resolveBlock expectedState:(FBFutureState)state expectedResult:(id)expectedResult expectedError:(NSError *)expectedError
