@@ -137,7 +137,7 @@
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
+- (FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }

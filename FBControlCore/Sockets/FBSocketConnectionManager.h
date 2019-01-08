@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBFileConsumer.h>
+#import <FBControlCore/FBDataConsumer.h>
 #import <FBControlCore/FBFuture.h>
 
 #import <sys/socket.h>
@@ -17,7 +17,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBFileConsumer;
+@protocol FBDataConsumer;
 @protocol FBSocketConnectionManagerDelegate;
 
 /**
@@ -57,14 +57,14 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A consumer of a socket.
  */
-@protocol FBSocketConsumer <FBFileConsumer>
+@protocol FBSocketConsumer <FBDataConsumer>
 
 /**
  Called when a write end is available.
 
  @param writeBack a consumer to write back to.
  */
-- (void)writeBackAvailable:(id<FBFileConsumer>)writeBack;
+- (void)writeBackAvailable:(id<FBDataConsumer>)writeBack;
 
 @end
 

@@ -287,7 +287,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
   return FBiOSTargetFutureTypeApproval;
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBSimulatorSettingsCommands> commands = (id<FBSimulatorSettingsCommands>) target;
   if (![target conformsToProtocol:@protocol(FBSimulatorSettingsCommands)]) {

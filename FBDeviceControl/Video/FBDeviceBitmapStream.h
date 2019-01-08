@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class AVCaptureSession;
 @class FBBitmapStreamAttributes;
-@protocol FBFileConsumer;
+@protocol FBDataConsumer;
 
 /**
  A Video Encoder that Writes to a Stream.

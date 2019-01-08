@@ -11,7 +11,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBFileConsumer.h"
+#import "FBDataConsumer.h"
 #import "FBTask.h"
 #import "FBTaskConfiguration.h"
 #import "FBProcessStream.h"
@@ -153,26 +153,26 @@
   return self;
 }
 
-- (instancetype)withStdOutConsumer:(id<FBFileConsumer>)consumer
+- (instancetype)withStdOutConsumer:(id<FBDataConsumer>)consumer
 {
-  self.stdOut = [FBProcessOutput outputForFileConsumer:consumer];
+  self.stdOut = [FBProcessOutput outputForDataConsumer:consumer];
   return self;
 }
 
-- (instancetype)withStdErrConsumer:(id<FBFileConsumer>)consumer
+- (instancetype)withStdErrConsumer:(id<FBDataConsumer>)consumer
 {
-  self.stdErr = [FBProcessOutput outputForFileConsumer:consumer];
+  self.stdErr = [FBProcessOutput outputForDataConsumer:consumer];
   return self;
 }
 
 - (instancetype)withStdOutLineReader:(void (^)(NSString *))reader
 {
-  return [self withStdOutConsumer:[FBLineFileConsumer asynchronousReaderWithConsumer:reader]];
+  return [self withStdOutConsumer:[FBLineDataConsumer asynchronousReaderWithConsumer:reader]];
 }
 
 - (instancetype)withStdErrLineReader:(void (^)(NSString *))reader
 {
-  return [self withStdErrConsumer:[FBLineFileConsumer asynchronousReaderWithConsumer:reader]];
+  return [self withStdErrConsumer:[FBLineDataConsumer asynchronousReaderWithConsumer:reader]];
 }
 
 - (instancetype)withStdOutToLogger:(id<FBControlCoreLogger>)logger

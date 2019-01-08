@@ -755,7 +755,7 @@ static NSString *const DirectionUp = @"up";
   return FBiOSTargetFutureTypeHID;
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
   if (![target conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {

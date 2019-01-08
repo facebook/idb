@@ -24,7 +24,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeAcessibilityFetch = @"accessibi
   return FBiOSTargetFutureTypeAcessibilityFetch;
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   if (![target conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
     return [[FBControlCoreError

@@ -225,7 +225,7 @@ extension FBTestLaunchConfiguration: EnvironmentAdditive {
   }
 }
 
-public typealias Writer = FBFileConsumer
+public typealias Writer = FBDataConsumer
 public extension Writer {
   func write(_ string: String) {
     var output = string

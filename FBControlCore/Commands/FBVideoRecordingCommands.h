@@ -15,7 +15,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBFileConsumer;
+@protocol FBDataConsumer;
 
 /**
  The Termination Handle Type for an Recording Operation.

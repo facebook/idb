@@ -18,17 +18,17 @@
 
 @interface FBDeviceLogTerminationContinuation : NSObject <FBiOSTargetContinuation>
 
-- (instancetype)initWithContext:(FBFutureContext<NSNull *> *)context reader:(FBFileReader *)reader consumer:(id<FBFileConsumer>)consumer;
+- (instancetype)initWithContext:(FBFutureContext<NSNull *> *)context reader:(FBFileReader *)reader consumer:(id<FBDataConsumer>)consumer;
 
 @property (nonatomic, strong, readonly) FBFutureContext<NSNull *> *context;
 @property (nonatomic, strong, readonly) FBFileReader *reader;
-@property (nonatomic, strong, readonly) id<FBFileConsumer> consumer;
+@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
 
 @end
 
 @implementation FBDeviceLogTerminationContinuation
 
-- (instancetype)initWithContext:(FBFutureContext<NSNull *> *)context reader:(FBFileReader *)reader consumer:(id<FBFileConsumer>)consumer
+- (instancetype)initWithContext:(FBFutureContext<NSNull *> *)context reader:(FBFileReader *)reader consumer:(id<FBDataConsumer>)consumer
 {
   self = [self init];
   if (!self) {
@@ -90,7 +90,7 @@
   return [[FBDeviceControlError describeFormat:@"%@ is unimplemented", NSStringFromSelector(_cmd)] failFuture];
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
+- (FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
   if (arguments.count == 0) {
     NSString *unsupportedArgumentsMessage = [NSString stringWithFormat:@"[FBDeviceLogCommands][rdar://38452839] Unsupported arguments: %@", arguments];

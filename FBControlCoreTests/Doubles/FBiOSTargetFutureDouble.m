@@ -57,7 +57,7 @@ static NSString *const KeySucceed = @"succeed";
   };
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   if (self.succeed) {
     return [FBFuture futureWithResult:FBiOSTargetContinuationDone(self.class.futureType)];

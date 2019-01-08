@@ -46,7 +46,7 @@
 
 #pragma mark Public
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
+- (FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
   return (FBFuture<id<FBiOSTargetContinuation>> *) [self startLogCommand:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer];
 }
@@ -67,7 +67,7 @@
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)runLogCommandAndWait:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
+- (FBFuture<NSNull *> *)runLogCommandAndWait:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
   return [[[self
     startLogCommand:arguments consumer:consumer]
@@ -86,7 +86,7 @@
   }];
 }
 
-- (FBFuture<FBSimulatorAgentOperation *> *)startLogCommand:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer
+- (FBFuture<FBSimulatorAgentOperation *> *)startLogCommand:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
   NSError *error = nil;
   FBBinaryDescriptor *binary = [self logBinaryDescriptorWithError:&error];

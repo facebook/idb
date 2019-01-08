@@ -2,7 +2,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBFileConsumer.h>
+#import <FBControlCore/FBDataConsumer.h>
 #import <FBControlCore/FBFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -33,7 +33,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
  @param logger the logger to use.
  @return a File Reader.
  */
-+ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Creates a File Reader from a File Handle.
@@ -42,7 +42,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
  @param consumer the consumer to forward to.
  @return a File Reader.
  */
-+ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer;
++ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDataConsumer>)consumer;
 
 /**
  Creates a File Reader for a File at Path.
@@ -52,7 +52,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
  @param logger the logger to use.
  @return a File Reader, that is available when the underlying file handle has been opened.
  */
-+ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Creates a File Reader for a File at Path.
@@ -61,7 +61,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
  @param consumer the consumer to forward to.
  @return a File Reader, that is available when the underlying file handle has been opened.
  */
-+ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileConsumer>)consumer;
++ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBDataConsumer>)consumer;
 
 #pragma mark Public Methods
 

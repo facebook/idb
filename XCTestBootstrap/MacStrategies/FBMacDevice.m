@@ -413,7 +413,7 @@
   return nil;
 }
 
-- (nonnull FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(nonnull NSArray<NSString *> *)arguments consumer:(nonnull id<FBFileConsumer>)consumer
+- (nonnull FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(nonnull NSArray<NSString *> *)arguments consumer:(nonnull id<FBDataConsumer>)consumer
 {
   NSAssert(nil, @"tailLog:consumer: is not yet supported");
   return nil;

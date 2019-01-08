@@ -14,7 +14,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBControlCoreLogger;
-@protocol FBFileConsumer;
+@protocol FBDataConsumer;
 
 @class FBFuture;
 
@@ -156,7 +156,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the consumer to consume the data.
  @return the reciever, for chaining.
  */
-- (FBTaskBuilder<StdInType, id<FBFileConsumer>, StdErrType> *)withStdOutConsumer:(id<FBFileConsumer>)consumer;
+- (FBTaskBuilder<StdInType, id<FBDataConsumer>, StdErrType> *)withStdOutConsumer:(id<FBDataConsumer>)consumer;
 
 /**
  Redirects stderr data to the consumer.
@@ -164,7 +164,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the consumer to consume the data.
  @return the reciever, for chaining.
  */
-- (FBTaskBuilder<StdInType, StdOutType, id<FBFileConsumer>> *)withStdErrConsumer:(id<FBFileConsumer>)consumer;
+- (FBTaskBuilder<StdInType, StdOutType, id<FBDataConsumer>> *)withStdErrConsumer:(id<FBDataConsumer>)consumer;
 
 /**
  Redirects stdout to the reader block, on a per line basis.
@@ -172,7 +172,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param reader the block to use for reading lines
  @return the reciever, for chaining.
  */
-- (FBTaskBuilder<StdInType, id<FBFileConsumer>, StdErrType> *)withStdOutLineReader:(void (^)(NSString *))reader;
+- (FBTaskBuilder<StdInType, id<FBDataConsumer>, StdErrType> *)withStdOutLineReader:(void (^)(NSString *))reader;
 
 /**
  Redirects stderr to the reader block, on a per line basis.
@@ -180,7 +180,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param reader the block to use for reading lines
  @return the reciever, for chaining.
  */
-- (FBTaskBuilder<StdInType, StdOutType, id<FBFileConsumer>> *)withStdErrLineReader:(void (^)(NSString *))reader;
+- (FBTaskBuilder<StdInType, StdOutType, id<FBDataConsumer>> *)withStdErrLineReader:(void (^)(NSString *))reader;
 
 /**
  Redirects stdout to the provided logger, on a per line basis.
@@ -199,14 +199,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBTaskBuilder<StdInType, StdOutType, id<FBControlCoreLogger>> *)withStdErrToLogger:(id<FBControlCoreLogger>)logger;
 
 /**
- Creates a File Consumer for stdin.
+ Creates a Data Consumer for stdin.
 
  @return the reciver, for chaining.
  */
-- (FBTaskBuilder<id<FBFileConsumer>, StdOutType, StdErrType> *)withStdInConnected;
+- (FBTaskBuilder<id<FBDataConsumer>, StdOutType, StdErrType> *)withStdInConnected;
 
 /**
- Creates a File Consumer for stdin.
+ Creates a Data Consumer for stdin.
 
  @param data the data to send.
  @return the reciver, for chaining.

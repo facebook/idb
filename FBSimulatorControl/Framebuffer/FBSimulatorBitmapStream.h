@@ -16,7 +16,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBFramebuffer;
-@protocol FBFileConsumer;
+@protocol FBDataConsumer;
 @protocol FBControlCoreLogger;
 
 /**

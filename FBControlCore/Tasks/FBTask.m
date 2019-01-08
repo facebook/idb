@@ -12,7 +12,7 @@
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"
-#import "FBFileConsumer.h"
+#import "FBDataConsumer.h"
 #import "FBFileWriter.h"
 #import "FBLaunchedProcess.h"
 #import "FBProcessStream.h"

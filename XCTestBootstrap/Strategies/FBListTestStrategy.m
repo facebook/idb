@@ -93,7 +93,7 @@
 {
   id<FBConsumableLineBuffer> shimConsumer = [FBLineBuffer consumableBuffer];
   return [[[FBProcessOutput
-    outputForFileConsumer:shimConsumer]
+    outputForDataConsumer:shimConsumer]
     providedThroughFile]
     onQueue:self.executor.workQueue fmap:^(id<FBProcessFileOutput> shimOutput) {
       return [self listTestsWithShimOutput:shimOutput shimConsumer:shimConsumer];
@@ -113,8 +113,8 @@
 
   return [[self.configuration
     listTestProcessWithEnvironment:environment
-    stdOutConsumer:[FBLoggingFileConsumer consumerWithLogger:self.logger]
-    stdErrConsumer:[FBLoggingFileConsumer consumerWithLogger:self.logger]
+    stdOutConsumer:[FBLoggingDataConsumer consumerWithLogger:self.logger]
+    stdErrConsumer:[FBLoggingDataConsumer consumerWithLogger:self.logger]
     executor:self.executor
     logger:self.logger]
     onQueue:self.executor.workQueue fmap:^(id<FBLaunchedProcess> processInfo) {

@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readwrite) FBiOSTargetDouble *target;
 @property (nonatomic, strong, readwrite) FBiOSActionRouter *router;
 @property (nonatomic, strong, readwrite) FBiOSActionReader *reader;
-@property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> consumer;
+@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> consumer;
 
 @property (nonatomic, strong, readwrite) NSMutableArray<id<FBiOSTargetFuture>> *startedActions;
 @property (nonatomic, strong, readwrite) NSMutableArray<id<FBiOSTargetFuture>> *finishedActions;

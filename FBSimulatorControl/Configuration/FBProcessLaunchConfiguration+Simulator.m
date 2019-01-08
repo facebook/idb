@@ -133,11 +133,11 @@
         NSString *path = diagnostic.asPath;
         return [FBFuture futureWithResult:[FBProcessOutput outputForFilePath:path]];
       }
-      id<FBFileConsumer> consumer = [self.output performSelector:selector];
-      if (![consumer conformsToProtocol:@protocol(FBFileConsumer)]) {
+      id<FBDataConsumer> consumer = [self.output performSelector:selector];
+      if (![consumer conformsToProtocol:@protocol(FBDataConsumer)]) {
         return [FBFuture futureWithResult:FBProcessOutput.outputForNullDevice];
       }
-      return [FBFuture futureWithResult:[FBProcessOutput outputForFileConsumer:consumer]];
+      return [FBFuture futureWithResult:[FBProcessOutput outputForDataConsumer:consumer]];
     }];
 }
 

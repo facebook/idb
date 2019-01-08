@@ -93,7 +93,7 @@ static NSString *const KeyServiceName = @"service_name";
   return FBiOSTargetFutureTypeServiceInfo;
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBSimulatorLaunchCtlCommands> commands = (id<FBSimulatorLaunchCtlCommands>) target;
   if (![commands conformsToProtocol:@protocol(FBSimulatorLaunchCtlCommands)]) {

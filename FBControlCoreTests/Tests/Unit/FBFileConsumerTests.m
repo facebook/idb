@@ -11,11 +11,11 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@interface FBFileConsumerTests : XCTestCase
+@interface FBDataConsumerTests : XCTestCase
 
 @end
 
-@implementation FBFileConsumerTests
+@implementation FBDataConsumerTests
 
 - (void)testLineBufferAccumulation
 {
@@ -34,7 +34,7 @@
 - (void)testLineConsumer
 {
   NSMutableArray<NSString *> *lines = [NSMutableArray array];
-  FBLineFileConsumer *consumer = [FBLineFileConsumer synchronousReaderWithConsumer:^(NSString *line) {
+  FBLineDataConsumer *consumer = [FBLineDataConsumer synchronousReaderWithConsumer:^(NSString *line) {
     [lines addObject:line];
   }];
 
@@ -92,7 +92,7 @@
 {
   id<FBAccumulatingLineBuffer> accumilating =  [FBLineBuffer consumableBuffer];
   id<FBConsumableLineBuffer> consumable =  [FBLineBuffer consumableBuffer];
-  id<FBFileConsumerLifecycle> composite = [FBCompositeFileConsumer consumerWithConsumers:@[
+  id<FBDataConsumerLifecycle> composite = [FBCompositeDataConsumer consumerWithConsumers:@[
     accumilating,
     consumable,
   ]];

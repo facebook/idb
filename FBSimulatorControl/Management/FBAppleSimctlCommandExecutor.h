@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulator;
 
 @protocol FBControlCoreLogger;
-@protocol FBFileConsumer;
+@protocol FBDataConsumer;
 
 /**
  A command executor for 'simctl'

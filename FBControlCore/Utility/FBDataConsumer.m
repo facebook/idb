@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#import "FBFileConsumer.h"
+#import "FBDataConsumer.h"
 
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
@@ -63,7 +63,7 @@
   return [output componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
 }
 
-#pragma mark FBFileConsumer
+#pragma mark FBDataConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -81,7 +81,7 @@
   }
 }
 
-#pragma mark FBFileConsumerLifecycle
+#pragma mark FBDataConsumerLifecycle
 
 - (FBFuture<NSNull *> *)eofHasBeenReceived
 {
@@ -164,7 +164,7 @@
 
 @end
 
-@interface FBLineFileConsumer ()
+@interface FBLineDataConsumer ()
 
 @property (nonatomic, strong, nullable, readwrite) dispatch_queue_t queue;
 @property (nonatomic, copy, nullable, readwrite) void (^consumer)(NSData *);
@@ -181,7 +181,7 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   };
 }
 
-@implementation FBLineFileConsumer
+@implementation FBLineDataConsumer
 
 #pragma mark Initializers
 
@@ -221,7 +221,7 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   return self;
 }
 
-#pragma mark FBFileConsumer
+#pragma mark FBDataConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -245,7 +245,7 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   }
 }
 
-#pragma mark FBFileConsumerLifecycle
+#pragma mark FBDataConsumerLifecycle
 
 - (FBFuture<NSNull *> *)eofHasBeenReceived
 {
@@ -279,7 +279,7 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 
 @end
 
-@implementation FBLoggingFileConsumer
+@implementation FBLoggingDataConsumer
 
 #pragma mark Initializers
 
@@ -300,7 +300,7 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   return self;
 }
 
-#pragma mark FBFileConsumer
+#pragma mark FBDataConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -322,23 +322,23 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 
 @end
 
-@interface FBCompositeFileConsumer ()
+@interface FBCompositeDataConsumer ()
 
-@property (nonatomic, copy, readonly) NSArray<id<FBFileConsumer>> *consumers;
+@property (nonatomic, copy, readonly) NSArray<id<FBDataConsumer>> *consumers;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *eofHasBeenReceivedFuture;
 
 @end
 
-@implementation FBCompositeFileConsumer
+@implementation FBCompositeDataConsumer
 
 #pragma mark Initializers
 
-+ (instancetype)consumerWithConsumers:(NSArray<id<FBFileConsumer>> *)consumers
++ (instancetype)consumerWithConsumers:(NSArray<id<FBDataConsumer>> *)consumers
 {
   return [[self alloc] initWithConsumers:consumers];
 }
 
-- (instancetype)initWithConsumers:(NSArray<id<FBFileConsumer>> *)consumers
+- (instancetype)initWithConsumers:(NSArray<id<FBDataConsumer>> *)consumers
 {
   self = [super init];
   if (!self) {
@@ -358,24 +358,24 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   return [NSString stringWithFormat:@"Composite Consumer %@", [FBCollectionInformation oneLineDescriptionFromArray:self.consumers]];
 }
 
-#pragma mark FBFileConsumer
+#pragma mark FBDataConsumer
 
 - (void)consumeData:(NSData *)data
 {
-  for (id<FBFileConsumer> consumer in self.consumers) {
+  for (id<FBDataConsumer> consumer in self.consumers) {
     [consumer consumeData:data];
   }
 }
 
 - (void)consumeEndOfFile
 {
-  for (id<FBFileConsumer> consumer in self.consumers) {
+  for (id<FBDataConsumer> consumer in self.consumers) {
     [consumer consumeEndOfFile];
   }
   [self.eofHasBeenReceivedFuture resolveWithResult:NSNull.null];
 }
 
-#pragma mark FBFileConsumerLifecycle
+#pragma mark FBDataConsumerLifecycle
 
 - (FBFuture<NSNull *> *)eofHasBeenReceived
 {
@@ -384,9 +384,9 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
 
 @end
 
-@implementation FBNullFileConsumer
+@implementation FBNullDataConsumer
 
-#pragma mark FBFileConsumer
+#pragma mark FBDataConsumer
 
 - (void)consumeData:(NSData *)data
 {

@@ -95,7 +95,7 @@ static NSString *const KeyArguments = @"arguments";
   return FBiOSTargetFutureTypeLogTail;
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBLogCommands> commands = (id<FBLogCommands>) target;
   if (![target conformsToProtocol:@protocol(FBLogCommands)]) {

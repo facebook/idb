@@ -57,7 +57,7 @@
     return [self printErrorMessage:error];
   }
   FBFileWriter *stdOutFileWriter = [FBFileWriter syncWriterWithFileHandle:NSFileHandle.fileHandleWithStandardOutput];
-  FBJSONTestReporter *reporter = [[FBJSONTestReporter alloc] initWithTestBundlePath:commandLine.configuration.testBundlePath testType:commandLine.configuration.testType logger:self.logger fileConsumer:stdOutFileWriter];
+  FBJSONTestReporter *reporter = [[FBJSONTestReporter alloc] initWithTestBundlePath:commandLine.configuration.testBundlePath testType:commandLine.configuration.testType logger:self.logger dataConsumer:stdOutFileWriter];
   FBXCTestContext *context = [FBXCTestContext contextWithReporter:reporter logger:self.logger];
 
   [self.logger.info logFormat:@"Bootstrapping Test Runner with Configuration %@", [FBCollectionInformation oneLineJSONDescription:commandLine.configuration]];

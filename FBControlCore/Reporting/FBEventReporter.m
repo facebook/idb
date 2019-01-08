@@ -11,7 +11,7 @@
 
 #import "FBEventReporterSubject.h"
 #import "FBEventInterpreter.h"
-#import "FBFileConsumer.h"
+#import "FBDataConsumer.h"
 
 @implementation FBEventReporter
 
@@ -20,12 +20,12 @@
 
 #pragma mark Initializers
 
-+ (id<FBEventReporter>)reporterWithInterpreter:(id<FBEventInterpreter>)interpreter consumer:(id<FBFileConsumer>)consumer
++ (id<FBEventReporter>)reporterWithInterpreter:(id<FBEventInterpreter>)interpreter consumer:(id<FBDataConsumer>)consumer
 {
   return [[self alloc] initWithInterpreter:interpreter consumer:consumer];
 }
 
-- (instancetype)initWithInterpreter:(id<FBEventInterpreter>)interpreter consumer:(id<FBFileConsumer>)consumer
+- (instancetype)initWithInterpreter:(id<FBEventInterpreter>)interpreter consumer:(id<FBDataConsumer>)consumer
 {
   self = [super init];
   if (!self) {

@@ -111,7 +111,7 @@ static NSString *const KeySize = @"size";
   return FBiOSTargetFutureTypeBinaryTransfer;
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   return [FBFuture futureWithResult:FBiOSTargetContinuationDone(self.class.futureType)];
 }
@@ -224,7 +224,7 @@ static NSString *const KeyPath = @"path";
   return FBiOSTargetFutureTypeUploadedBinary;
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   return [FBFuture futureWithResult:FBiOSTargetContinuationDone(self.class.futureType)];
 }

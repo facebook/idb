@@ -9,7 +9,7 @@
 
 #import "FBControlCoreLogger.h"
 
-#import "FBFileConsumer.h"
+#import "FBDataConsumer.h"
 #import "FBFileWriter.h"
 #import "FBControlCoreLogger+OSLog.h"
 
@@ -183,7 +183,7 @@
 
 @interface FBControlCoreLogger_Consumer : NSObject <FBControlCoreLogger>
 
-@property (nonatomic, strong, readonly) id<FBFileConsumer> consumer;
+@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
 @property (nonatomic, strong, readonly, nullable) NSDateFormatter *dateFormatter;
 
 @end
@@ -193,7 +193,7 @@
 @synthesize name = _name;
 @synthesize level = _level;
 
-- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer name:(NSString *)name dateFormatter:(NSDateFormatter *)dateFormatter
+- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer name:(NSString *)name dateFormatter:(NSDateFormatter *)dateFormatter
 {
   self = [super init];
   if (!self) {
@@ -312,14 +312,14 @@
   return [[FBControlCoreLogger_Composite alloc] initWithLoggers:loggers];
 }
 
-+ (id<FBControlCoreLogger>)loggerToConsumer:(id<FBFileConsumer>)consumer
++ (id<FBControlCoreLogger>)loggerToConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreLogger_Consumer alloc] initWithConsumer:consumer name:nil dateFormatter:nil];
 }
 
 + (id<FBControlCoreLogger>)loggerToFileHandle:(NSFileHandle *)fileHandle
 {
-  id<FBFileConsumer> consumer = [FBFileWriter syncWriterWithFileHandle:fileHandle];
+  id<FBDataConsumer> consumer = [FBFileWriter syncWriterWithFileHandle:fileHandle];
   return [[FBControlCoreLogger_Consumer alloc] initWithConsumer:consumer name:nil dateFormatter:nil];
 }
 

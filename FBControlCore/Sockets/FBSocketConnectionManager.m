@@ -17,7 +17,7 @@
 #import "FBSocketServer.h"
 #import "FBControlCoreError.h"
 
-@interface FBSocketConnectionManager_Connection : NSObject <FBFileConsumer>
+@interface FBSocketConnectionManager_Connection : NSObject <FBDataConsumer>
 
 @property (nonatomic, strong, readonly) id<FBSocketConsumer> consumer;
 
@@ -74,7 +74,7 @@
   _completionQueue = nil;
 }
 
-#pragma mark FBFileConsumer Implementation
+#pragma mark FBDataConsumer Implementation
 
 - (void)consumeData:(NSData *)data
 {

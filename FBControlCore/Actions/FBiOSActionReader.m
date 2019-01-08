@@ -30,7 +30,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
 @property (nonatomic, strong, readonly) FBiOSActionReader *reader;
 @property (nonatomic, strong, readonly) FBiOSActionRouter *router;
 @property (nonatomic, strong, readonly) id<FBiOSActionReaderDelegate> delegate;
-@property (nonatomic, strong, readonly) id<FBFileConsumer> writeBack;
+@property (nonatomic, strong, readonly) id<FBDataConsumer> writeBack;
 @property (nonatomic, strong, readonly) id<FBConsumableLineBuffer> lineBuffer;
 @property (nonatomic, strong, readwrite, nullable) FBUploadBuffer *uploadBuffer;
 
@@ -38,7 +38,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
 
 @implementation FBiOSActionReaderMediator
 
-- (instancetype)initWithReader:(FBiOSActionReader *)reader router:(FBiOSActionRouter *)router delegate:(id<FBiOSActionReaderDelegate>)delegate writeBack:(id<FBFileConsumer>)writeBack
+- (instancetype)initWithReader:(FBiOSActionReader *)reader router:(FBiOSActionRouter *)router delegate:(id<FBiOSActionReaderDelegate>)delegate writeBack:(id<FBDataConsumer>)writeBack
 {
   self = [super init];
   if (!self) {
@@ -57,12 +57,12 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
 
 #pragma mark FBSocketConsumer Implementation
 
-- (void)writeBackAvailable:(id<FBFileConsumer>)writeBack
+- (void)writeBackAvailable:(id<FBDataConsumer>)writeBack
 {
   _writeBack = writeBack;
 }
 
-#pragma mark FBFileConsumer Implementation
+#pragma mark FBDataConsumer Implementation
 
 - (void)consumeData:(NSData *)data
 {
@@ -209,7 +209,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
   return self.delegate.interpreter;
 }
 
-- (id<FBFileConsumer>)consumer
+- (id<FBDataConsumer>)consumer
 {
   return self.delegate.consumer;
 }
@@ -236,7 +236,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
 
 @end
 
-@interface FBiOSActionFileHandle : FBiOSActionReader <FBFileConsumer>
+@interface FBiOSActionFileHandle : FBiOSActionReader <FBDataConsumer>
 
 @property (nonatomic, strong, readonly) FBiOSActionReaderMediator *mediator;
 @property (nonatomic, strong, nullable, readwrite) FBFileReader *reader;
@@ -421,7 +421,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
   return future;
 }
 
-#pragma mark FBFileConsumer
+#pragma mark FBDataConsumer
 
 - (void)consumeData:(NSData *)data
 {

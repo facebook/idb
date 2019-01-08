@@ -69,7 +69,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startFuture;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *stopFuture;
 
-@property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> consumer;
+@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> consumer;
 @property (nonatomic, assign, nullable, readwrite) CVPixelBufferRef pixelBuffer;
 @property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, id> *pixelBufferAttributes;
 
@@ -129,7 +129,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
     }];
 }
 
-- (FBFuture<NSNull *> *)startStreaming:(id<FBFileConsumer>)consumer
+- (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer>)consumer
 {
   return [[FBFuture
     onQueue:self.writeQueue resolve:^ FBFuture<NSNull *> * {
@@ -243,7 +243,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   [FBSimulatorBitmapStream writeBitmap:self.pixelBuffer consumer:self.consumer];
 }
 
-+ (void)writeBitmap:(CVPixelBufferRef)pixelBuffer consumer:(id<FBFileConsumer>)consumer
++ (void)writeBitmap:(CVPixelBufferRef)pixelBuffer consumer:(id<FBDataConsumer>)consumer
 {
   CVPixelBufferLockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
 

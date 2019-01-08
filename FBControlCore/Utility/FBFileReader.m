@@ -26,7 +26,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
 @interface FBFileReader ()
 
 @property (nonatomic, copy, readonly) NSString *targeting;
-@property (nonatomic, strong, readonly) id<FBFileConsumer> consumer;
+@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
 @property (nonatomic, strong, readonly) dispatch_queue_t readQueue;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *ioChannelFinishedReadOperation;
 @property (nonatomic, strong, readonly) NSFileHandle *fileHandle;
@@ -46,18 +46,18 @@ static NSString *StateStringFromState(FBFileReaderState state)
   return dispatch_queue_create("com.facebook.fbcontrolcore.fbfilereader", DISPATCH_QUEUE_SERIAL);
 }
 
-+ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger
 {
   NSString *targeting = [NSString stringWithFormat:@"fd %d", fileHandle.fileDescriptor];
   return [[self alloc] initWithFileHandle:fileHandle consumer:consumer targeting:targeting queue:self.createQueue logger:logger];
 }
 
-+ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer
++ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDataConsumer>)consumer
 {
   return [self readerWithFileHandle:fileHandle consumer:consumer logger:nil];
 }
 
-+ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger
++ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = self.createQueue;
   return [FBFuture onQueue:queue resolveValue:^(NSError **error) {
@@ -72,12 +72,12 @@ static NSString *StateStringFromState(FBFileReaderState state)
   }];
 }
 
-+ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileConsumer>)consumer
++ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBDataConsumer>)consumer
 {
   return [self readerWithFilePath:filePath consumer:consumer logger:nil];
 }
 
-- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer targeting:(NSString *)targeting queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDataConsumer>)consumer targeting:(NSString *)targeting queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -138,7 +138,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
 
   // Get locals to be captured by the read, rather than self.
   NSFileHandle *fileHandle = self.fileHandle;
-  id<FBFileConsumer> consumer = self.consumer;
+  id<FBDataConsumer> consumer = self.consumer;
   __block int readErrorCode = 0;
 
   // If there is an error creating the IO Object, the errorCode will be delivered asynchronously.

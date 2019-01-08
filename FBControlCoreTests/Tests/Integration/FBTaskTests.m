@@ -110,7 +110,7 @@
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
   XCTAssertEqual(task.completed.state, FBFutureStateDone);
-  XCTAssertTrue([task.stdOut conformsToProtocol:@protocol(FBFileConsumer)]);
+  XCTAssertTrue([task.stdOut conformsToProtocol:@protocol(FBDataConsumer)]);
   XCTAssertGreaterThan(task.processIdentifier, 1);
 
   [[[FBFuture futureWithResult:NSNull.null] delay:2] await:nil];
@@ -217,7 +217,7 @@
     withStdErrToDevNull]
     startSynchronously];
 
-  XCTAssertTrue([task.stdIn conformsToProtocol:@protocol(FBFileConsumer)]);
+  XCTAssertTrue([task.stdIn conformsToProtocol:@protocol(FBDataConsumer)]);
   [task.stdIn consumeData:expected];
   [task.stdIn consumeEndOfFile];
 

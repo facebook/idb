@@ -112,13 +112,13 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
 - (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBAgentLaunchConfiguration *)agentLaunch
 {
-  return [self launchAndNotifyOfCompletion:agentLaunch consumer:[FBNullFileConsumer new]];
+  return [self launchAndNotifyOfCompletion:agentLaunch consumer:[FBNullDataConsumer new]];
 }
 
-- (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBAgentLaunchConfiguration *)agentLaunch consumer:(id<FBFileConsumer>)consumer
+- (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBAgentLaunchConfiguration *)agentLaunch consumer:(id<FBDataConsumer>)consumer
 {
   return [[self
-    launchAgent:agentLaunch stdOut:[FBProcessOutput outputForFileConsumer:consumer] stdErr:FBProcessOutput.outputForNullDevice]
+    launchAgent:agentLaunch stdOut:[FBProcessOutput outputForDataConsumer:consumer] stdErr:FBProcessOutput.outputForNullDevice]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorAgentOperation *operation) {
       return [operation exitCode];
     }];

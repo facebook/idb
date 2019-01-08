@@ -17,15 +17,15 @@ NSString *const FBProcessOutputToFileDefaultLocation = @"FBProcessOutputToFileDe
 
 + (nullable instancetype)configurationWithStdOut:(id)stdOut stdErr:(id)stdErr error:(NSError **)error
 {
-  if (![stdOut isKindOfClass:NSNull.class] && ![stdOut isKindOfClass:NSString.class] && ![stdOut conformsToProtocol:@protocol(FBFileConsumer)]) {
+  if (![stdOut isKindOfClass:NSNull.class] && ![stdOut isKindOfClass:NSString.class] && ![stdOut conformsToProtocol:@protocol(FBDataConsumer)]) {
     return [[FBControlCoreError
-      describeFormat:@"'stdout' should be (Null | String | FBFileConsumer) but is %@",  stdOut]
+      describeFormat:@"'stdout' should be (Null | String | FBDataConsumer) but is %@",  stdOut]
       fail:error];
   }
 
-  if (![stdErr isKindOfClass:NSNull.class] && ![stdErr isKindOfClass:NSString.class] && ![stdErr conformsToProtocol:@protocol(FBFileConsumer)]) {
+  if (![stdErr isKindOfClass:NSNull.class] && ![stdErr isKindOfClass:NSString.class] && ![stdErr conformsToProtocol:@protocol(FBDataConsumer)]) {
     return [[FBControlCoreError
-      describeFormat:@"'stderr' should be (Null | String | FBFileConsumer) but is %@",  stdErr]
+      describeFormat:@"'stderr' should be (Null | String | FBDataConsumer) but is %@",  stdErr]
       fail:error];
   }
   return [[self alloc] initWithStdOut:stdOut stdErr:stdErr];

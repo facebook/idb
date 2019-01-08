@@ -15,7 +15,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBEventInterpreter;
-@protocol FBFileConsumer;
+@protocol FBDataConsumer;
 @protocol FBEventReporterSubject;
 
 /**
@@ -38,7 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Consumer
  */
-@property (nonatomic, strong, readonly) id<FBFileConsumer> consumer;
+@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
 
 @end
 
@@ -54,7 +54,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the consumer to write to.
  @return a new Event Reporter.
  */
-+ (id<FBEventReporter>)reporterWithInterpreter:(id<FBEventInterpreter>)interpreter consumer:(id<FBFileConsumer>)consumer;
++ (id<FBEventReporter>)reporterWithInterpreter:(id<FBEventInterpreter>)interpreter consumer:(id<FBDataConsumer>)consumer;
 
 @end
 

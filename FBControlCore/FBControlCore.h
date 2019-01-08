@@ -44,7 +44,7 @@
 #import <FBControlCore/FBEventInterpreter.h>
 #import <FBControlCore/FBEventReporter.h>
 #import <FBControlCore/FBEventReporterSubject.h>
-#import <FBControlCore/FBFileConsumer.h>
+#import <FBControlCore/FBDataConsumer.h>
 #import <FBControlCore/FBFileFinder.h>
 #import <FBControlCore/FBFileManager.h>
 #import <FBControlCore/FBFileReader.h>

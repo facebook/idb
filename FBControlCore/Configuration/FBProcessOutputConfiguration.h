@@ -67,7 +67,7 @@ extern NSString *const FBProcessOutputToFileDefaultLocation;
  - NSNull if the output is not to be redirected.
  - NSString for the File Path to output to.
  - FBProcessOutputToDefaultLocation if the output is to be directed to a file, at a default location.
- - FBFileConsumer for consuming the output.
+ - FBDataConsumer for consuming the output.
  */
 @property (nonatomic, strong, readonly) id stdOut;
 
@@ -77,7 +77,7 @@ extern NSString *const FBProcessOutputToFileDefaultLocation;
  - NSNull if the output is not to be redirected.
  - NSString for the File Path to output to.
  - FBProcessOutputToDefaultLocation if the output is to be directed to a file, at a default location.
- - FBFileConsumer for consuming the output.
+ - FBDataConsumer for consuming the output.
  */
 @property (nonatomic, strong, readonly) id stdErr;
 

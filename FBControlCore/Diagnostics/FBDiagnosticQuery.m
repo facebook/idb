@@ -504,7 +504,7 @@ static NSString *KeyType = @"type";
   return FBiOSTargetFutureTypeDiagnosticQuery;
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBEventReporterSubject> startSubject = [FBEventReporterSubject subjectWithName:FBiOSTargetFutureTypeDiagnosticQuery type:FBEventTypeStarted value:self];
   [reporter report:startSubject];

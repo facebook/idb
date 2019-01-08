@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBFileConsumer.h>
+#import <FBControlCore/FBDataConsumer.h>
 #import <FBControlCore/FBiOSTargetFuture.h>
 #import <FBControlCore/FBFuture.h>
 
@@ -94,21 +94,21 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
 + (FBProcessOutput<NSString *> *)outputForFilePath:(NSString *)filePath;
 
 /**
- An Output Container that passes to File Consumer
+ An Output Container that passes to Data Consumer.
 
- @param fileConsumer the file consumer to write to.
+ @param dataConsumer the file consumer to write to.
  @param logger the logger to log to.
  @return a Process Output instance.
  */
-+ (FBProcessOutput<id<FBFileConsumer>> *)outputForFileConsumer:(id<FBFileConsumer>)fileConsumer logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(id<FBDataConsumer>)dataConsumer logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
- An Output Container that passes to File Consumer
+ An Output Container that passes to Data Consumer.
 
- @param fileConsumer the file consumer to write to.
+ @param dataConsumer the data consumer to write to.
  @return a Process Output instance.
  */
-+ (FBProcessOutput<id<FBFileConsumer>> *)outputForFileConsumer:(id<FBFileConsumer>)fileConsumer;
++ (FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(id<FBDataConsumer>)dataConsumer;
 
 /**
  An Output Container that writes to a logger
@@ -166,7 +166,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
 
  @return a Process Output instance.
  */
-+ (FBProcessInput<id<FBFileConsumer>> *)inputProducingConsumer;
++ (FBProcessInput<id<FBDataConsumer>> *)inputProducingConsumer;
 
 /**
  An Input container that connects data to the iput.

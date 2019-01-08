@@ -15,7 +15,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBFileConsumer;
+@protocol FBDataConsumer;
 @protocol FBControlCoreLogger;
 
 /**
@@ -29,9 +29,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param testBundlePath the Test Bundle to Report for.
  @param testType the Test Type to Report for
  @param logger the logger to log out-of-band information to.
- @param fileConsumer the consumer of the output.
+ @param dataConsumer the consumer of the output.
  */
-- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath testType:(NSString *)testType logger:(nullable id<FBControlCoreLogger>)logger fileConsumer:(id<FBFileConsumer>)fileConsumer;
+- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath testType:(NSString *)testType logger:(nullable id<FBControlCoreLogger>)logger dataConsumer:(id<FBDataConsumer>)dataConsumer;
 
 @end
 

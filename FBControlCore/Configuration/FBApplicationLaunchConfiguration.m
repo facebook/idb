@@ -181,7 +181,7 @@ static NSString *const KeyLaunchMode = @"launch_mode";
   return FBiOSTargetFutureTypeApplicationLaunch;
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   return [[target launchApplication:self] mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
 }

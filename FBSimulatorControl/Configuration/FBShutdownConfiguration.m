@@ -22,7 +22,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeListShutdown = @"shutdown";
   return FBiOSTargetFutureTypeListShutdown;
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
   if (![target conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {

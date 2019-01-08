@@ -408,7 +408,7 @@ static NSString *const KeyResultBundlePath = @"resultBundlePath";
   return FBiOSTargetFutureTypeTestLaunch;
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBXCTestCommands> commands = (id<FBXCTestCommands>) target;
   if (![commands conformsToProtocol:@protocol(FBXCTestCommands)]) {

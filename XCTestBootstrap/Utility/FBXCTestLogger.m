@@ -158,7 +158,7 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
   return self.baseLogger.level;
 }
 
-- (FBFuture<id<FBFileConsumerLifecycle>> *)logConsumptionToFile:(id<FBFileConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<id<FBDataConsumerLifecycle>> *)logConsumptionToFile:(id<FBDataConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid logger:(id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
   NSString *fileName = [NSString stringWithFormat:@"%@.%@", uuid.UUIDString, outputKind];
@@ -168,10 +168,10 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
     asyncWriterForFilePath:filePath]
     onQueue:queue map:^(FBFileWriter *writer) {
       [logger.info logFormat:@"Mirroring output to %@", filePath];
-      return [FBCompositeFileConsumer consumerWithConsumers:@[
+      return [FBCompositeDataConsumer consumerWithConsumers:@[
         consumer,
         writer,
-        [FBLoggingFileConsumer consumerWithLogger:logger],
+        [FBLoggingDataConsumer consumerWithLogger:logger],
       ]];
     }];
 }

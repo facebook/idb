@@ -62,20 +62,20 @@
 
   return [[self
     buildOutputsForUUID:uuid]
-    onQueue:self.executor.workQueue fmap:^(NSArray<id<FBFileConsumerLifecycle>> *outputs) {
-      id<FBFileConsumerLifecycle> stdOut = outputs[0];
-      id<FBFileConsumerLifecycle> stdErr = outputs[1];
-      id<FBFileConsumerLifecycle> shim = outputs[2];
+    onQueue:self.executor.workQueue fmap:^(NSArray<id<FBDataConsumerLifecycle>> *outputs) {
+      id<FBDataConsumerLifecycle> stdOut = outputs[0];
+      id<FBDataConsumerLifecycle> stdErr = outputs[1];
+      id<FBDataConsumerLifecycle> shim = outputs[2];
       return [self testFutureWithStdOutConsumer:stdOut stdErrConsumer:stdErr shimConsumer:shim uuid:uuid];
     }];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)testFutureWithStdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer shimConsumer:(id<FBFileConsumerLifecycle>)shimConsumer uuid:(NSUUID *)uuid
+- (FBFuture<NSNull *> *)testFutureWithStdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer shimConsumer:(id<FBDataConsumerLifecycle>)shimConsumer uuid:(NSUUID *)uuid
 {
   return [[[FBProcessOutput
-    outputForFileConsumer:shimConsumer]
+    outputForDataConsumer:shimConsumer]
     providedThroughFile]
     onQueue:self.executor.workQueue fmap:^(id<FBProcessFileOutput> shimOutput) {
       return [self
@@ -87,7 +87,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)testFutureWithShimOutput:(id<FBProcessFileOutput>)shimOutput stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer shimConsumer:(id<FBFileConsumerLifecycle>)shimConsumer uuid:(NSUUID *)uuid
+- (FBFuture<NSNull *> *)testFutureWithShimOutput:(id<FBProcessFileOutput>)shimOutput stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer shimConsumer:(id<FBDataConsumerLifecycle>)shimConsumer uuid:(NSUUID *)uuid
 {
   id<FBLogicXCTestReporter> reporter = self.reporter;
   [reporter didBeginExecutingTestPlan];
@@ -120,7 +120,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)completeLaunchedProcess:(id<FBLaunchedProcess>)process shimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBFileConsumerLifecycle>)shimConsumer
+- (FBFuture<NSNull *> *)completeLaunchedProcess:(id<FBLaunchedProcess>)process shimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBDataConsumerLifecycle>)shimConsumer
 {
   id<FBLogicXCTestReporter> reporter = self.reporter;
   dispatch_queue_t queue = self.executor.workQueue;
@@ -144,7 +144,7 @@
     }];
 }
 
-+ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForExit:(id<FBLaunchedProcess>)process closingOutput:(id<FBProcessFileOutput>)output consumer:(id<FBFileConsumerLifecycle>)consumer
++ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForExit:(id<FBLaunchedProcess>)process closingOutput:(id<FBProcessFileOutput>)output consumer:(id<FBDataConsumerLifecycle>)consumer
 {
   return [process.exitCode onQueue:queue fmap:^(NSNumber *exitCode) {
     return [FBFuture futureWithFutures:@[
@@ -178,7 +178,7 @@
     }];
 }
 
-- (FBFuture<NSArray<id<FBFileConsumerLifecycle>> *> *)buildOutputsForUUID:(NSUUID *)udid
+- (FBFuture<NSArray<id<FBDataConsumerLifecycle>> *> *)buildOutputsForUUID:(NSUUID *)udid
 {
   id<FBLogicXCTestReporter> reporter = self.reporter;
   id<FBControlCoreLogger> logger = self.logger;
@@ -187,34 +187,34 @@
   BOOL mirrorToLogger = (self.configuration.mirroring & FBLogicTestMirrorLogger) != 0;
   BOOL mirrorToFiles = (self.configuration.mirroring & FBLogicTestMirrorFileLogs) != 0;
 
-  NSMutableArray<id<FBFileConsumer>> *shimConsumers = [NSMutableArray array];
-  NSMutableArray<id<FBFileConsumer>> *stdOutConsumers = [NSMutableArray array];
-  NSMutableArray<id<FBFileConsumer>> *stdErrConsumers = [NSMutableArray array];
+  NSMutableArray<id<FBDataConsumer>> *shimConsumers = [NSMutableArray array];
+  NSMutableArray<id<FBDataConsumer>> *stdOutConsumers = [NSMutableArray array];
+  NSMutableArray<id<FBDataConsumer>> *stdErrConsumers = [NSMutableArray array];
 
-  id<FBFileConsumer> shimReportingConsumer = [FBLineFileConsumer asynchronousReaderWithQueue:queue dataConsumer:^(NSData *line) {
+  id<FBDataConsumer> shimReportingConsumer = [FBLineDataConsumer asynchronousReaderWithQueue:queue dataConsumer:^(NSData *line) {
     [reporter handleEventJSONData:line];
   }];
   [shimConsumers addObject:shimReportingConsumer];
 
-  id<FBFileConsumer> stdOutReportingConsumer = [FBLineFileConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
+  id<FBDataConsumer> stdOutReportingConsumer = [FBLineDataConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
     [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
   [stdOutConsumers addObject:stdOutReportingConsumer];
 
-  id<FBFileConsumer> stdErrReportingConsumer = [FBLineFileConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
+  id<FBDataConsumer> stdErrReportingConsumer = [FBLineDataConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
     [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
   [stdErrConsumers addObject:stdErrReportingConsumer];
 
   if (mirrorToLogger) {
-    [shimConsumers addObject:[FBLoggingFileConsumer consumerWithLogger:logger]];
-    [stdErrConsumers addObject:[FBLoggingFileConsumer consumerWithLogger:logger]];
-    [stdErrConsumers addObject:[FBLoggingFileConsumer consumerWithLogger:logger]];
+    [shimConsumers addObject:[FBLoggingDataConsumer consumerWithLogger:logger]];
+    [stdErrConsumers addObject:[FBLoggingDataConsumer consumerWithLogger:logger]];
+    [stdErrConsumers addObject:[FBLoggingDataConsumer consumerWithLogger:logger]];
   }
 
-  id<FBFileConsumer> stdOutConsumer = [FBCompositeFileConsumer consumerWithConsumers:stdOutConsumers];
-  id<FBFileConsumer> stdErrConsumer = [FBCompositeFileConsumer consumerWithConsumers:stdErrConsumers];
-  id<FBFileConsumer> shimConsumer = [FBCompositeFileConsumer consumerWithConsumers:shimConsumers];
+  id<FBDataConsumer> stdOutConsumer = [FBCompositeDataConsumer consumerWithConsumers:stdOutConsumers];
+  id<FBDataConsumer> stdErrConsumer = [FBCompositeDataConsumer consumerWithConsumers:stdErrConsumers];
+  id<FBDataConsumer> shimConsumer = [FBCompositeDataConsumer consumerWithConsumers:shimConsumers];
 
   if (!mirrorToFiles) {
     return [FBFuture futureWithResult:@[stdOutConsumer, stdErrConsumer, shimConsumer]];
@@ -228,7 +228,7 @@
     ]];
 }
 
-- (FBFuture<id<FBLaunchedProcess>> *)startTestProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBFileConsumer>)stdOutConsumer stdErrConsumer:(id<FBFileConsumer>)stdErrConsumer
+- (FBFuture<id<FBLaunchedProcess>> *)startTestProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer
 {
   return [FBXCTestProcess
     startWithLaunchPath:launchPath

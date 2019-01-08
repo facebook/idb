@@ -59,7 +59,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log the mirrored path to.
  @return a Future that resolves with the new consumer.
  */
-- (FBFuture<id<FBFileConsumerLifecycle>> *)logConsumptionToFile:(id<FBFileConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid logger:(id<FBControlCoreLogger>)logger;
+- (FBFuture<id<FBDataConsumerLifecycle>> *)logConsumptionToFile:(id<FBDataConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

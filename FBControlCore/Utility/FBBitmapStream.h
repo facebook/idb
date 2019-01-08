@@ -36,7 +36,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming;
 
 @end
 
-@protocol FBFileConsumer;
+@protocol FBDataConsumer;
 
 /**
  Streams Bitmaps to a File Sink
@@ -53,12 +53,12 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming;
 - (FBFuture<FBBitmapStreamAttributes *> *)streamAttributes;
 
 /**
- Starts the Streaming, to a File Consumer.
+ Starts the Streaming, to a Data Consumer.
 
  @param consumer the consumer to consume the bytes to.
  @return A future that resolves when the streaming has started.
  */
-- (FBFuture<NSNull *> *)startStreaming:(id<FBFileConsumer>)consumer;
+- (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer>)consumer;
 
 /**
  Stops the Streaming.

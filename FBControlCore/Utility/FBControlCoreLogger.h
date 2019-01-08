@@ -22,7 +22,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
   FBControlCoreLogLevelMultiple = 1000,
 };
 
-@protocol FBFileConsumer;
+@protocol FBDataConsumer;
 
 /**
  A Protocol for Classes that recieve Logger Messages.
@@ -121,7 +121,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param consumer the consumer to write data to.
  @return a logger instance.
  */
-+ (id<FBControlCoreLogger>)loggerToConsumer:(id<FBFileConsumer>)consumer;
++ (id<FBControlCoreLogger>)loggerToConsumer:(id<FBDataConsumer>)consumer;
 
 /**
  Log to a File Handle.

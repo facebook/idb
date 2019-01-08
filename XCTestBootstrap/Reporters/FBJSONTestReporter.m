@@ -15,7 +15,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 
 @interface FBJSONTestReporter ()
 
-@property (nonatomic, strong, readonly) id<FBFileConsumer> fileConsumer;
+@property (nonatomic, strong, readonly) id<FBDataConsumer> dataConsumer;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, copy, readonly) NSString *testBundlePath;
 @property (nonatomic, copy, readonly) NSString *testType;
@@ -30,14 +30,14 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 
 @implementation FBJSONTestReporter
 
-- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath testType:(NSString *)testType logger:(id<FBControlCoreLogger>)logger fileConsumer:(id<FBFileConsumer>)fileConsumer
+- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath testType:(NSString *)testType logger:(id<FBControlCoreLogger>)logger dataConsumer:(id<FBDataConsumer>)dataConsumer
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _fileConsumer = fileConsumer;
+  _dataConsumer = dataConsumer;
   _logger = logger;
   _testBundlePath = testBundlePath;
   _testType = testType;
@@ -66,7 +66,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   for (NSDictionary *event in _events) {
     [self printEvent:event];
   }
-  [self.fileConsumer consumeEndOfFile];
+  [self.dataConsumer consumeEndOfFile];
   return YES;
 }
 
@@ -80,8 +80,8 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 - (void)printEvent:(NSDictionary *)event
 {
   NSData *data = [NSJSONSerialization dataWithJSONObject:event options:0 error:nil];
-  [self.fileConsumer consumeData:data];
-  [self.fileConsumer consumeData:[NSData dataWithBytes:"\n" length:1]];
+  [self.dataConsumer consumeData:data];
+  [self.dataConsumer consumeData:[NSData dataWithBytes:"\n" length:1]];
 }
 
 #pragma mark FBXCTestReporter

@@ -15,7 +15,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBFileConsumer;
+@protocol FBDataConsumer;
 
 /**
  An FBiOSActionReaderDelegate that reports events.

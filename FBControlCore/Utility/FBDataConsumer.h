@@ -13,15 +13,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBControlCoreLogger;
-
 /**
- A Consumer of a File's Data.
+ A consumer of NSData.
  */
-@protocol FBFileConsumer <NSObject>
+@protocol FBDataConsumer <NSObject>
 
 /**
- Consumes the provided text data.
+ Consumes the provided binary data.
 
  @param data the data to consume.
  */
@@ -35,9 +33,9 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- A specialization of a FBFileConsumer that can expose lifecycle with a Future.
+ A specialization of a FBDataConsumer that can expose lifecycle with a Future.
  */
-@protocol FBFileConsumerLifecycle <FBFileConsumer>
+@protocol FBDataConsumerLifecycle <FBDataConsumer>
 
 /**
  A Future that resolves when an EOF has been recieved.
@@ -50,7 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Non-mutating methods of a line reader.
  */
-@protocol FBAccumulatingLineBuffer <FBFileConsumerLifecycle>
+@protocol FBAccumulatingLineBuffer <FBDataConsumerLifecycle>
 
 /**
  Obtains a copy of the current output data.
@@ -67,7 +65,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Mutating Methods of a line reader.
  */
-@protocol FBConsumableLineBuffer <FBFileConsumerLifecycle, FBAccumulatingLineBuffer>
+@protocol FBConsumableLineBuffer <FBDataConsumerLifecycle, FBAccumulatingLineBuffer>
 
 /**
  Consume the remainder of the buffer available, returning it as Data.
@@ -128,7 +126,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Reader of Text Data, calling the callback when a full line is available.
  */
-@interface FBLineFileConsumer : NSObject <FBFileConsumer, FBFileConsumerLifecycle>
+@interface FBLineDataConsumer : NSObject <FBDataConsumer, FBDataConsumerLifecycle>
 
 /**
  Creates a Consumer of lines from a block.
@@ -170,10 +168,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+@protocol FBControlCoreLogger;
+
 /**
  A consumer that does nothing with the data.
  */
-@interface FBLoggingFileConsumer : NSObject <FBFileConsumer>
+@interface FBLoggingDataConsumer : NSObject <FBDataConsumer>
 
 /**
  The Designated Initializer
@@ -190,7 +190,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Composite Consumer.
  */
-@interface FBCompositeFileConsumer : NSObject <FBFileConsumer, FBFileConsumerLifecycle>
+@interface FBCompositeDataConsumer : NSObject <FBDataConsumer, FBDataConsumerLifecycle>
 
 /**
  A Consumer of Consumers.
@@ -198,14 +198,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumers the consumers to compose.
  @return a new consumer.
  */
-+ (instancetype)consumerWithConsumers:(NSArray<id<FBFileConsumer>> *)consumers;
++ (instancetype)consumerWithConsumers:(NSArray<id<FBDataConsumer>> *)consumers;
 
 @end
 
 /**
  A consumer that does nothing with the data.
  */
-@interface FBNullFileConsumer : NSObject <FBFileConsumer>
+@interface FBNullDataConsumer : NSObject <FBDataConsumer>
 
 @end
 

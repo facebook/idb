@@ -15,7 +15,7 @@
 @interface FBJSONTestReporterTests : XCTestCase
 
 @property (nonatomic, strong, readwrite) NSMutableArray<NSString *> *lines;
-@property (nonatomic, strong, readwrite) id<FBFileConsumer> consumer;
+@property (nonatomic, strong, readwrite) id<FBDataConsumer> consumer;
 @property (nonatomic, strong, readwrite) FBJSONTestReporter *reporter;
 
 @end
@@ -25,10 +25,10 @@
 - (void)setUp
 {
   NSMutableArray<NSString *> *lines = [NSMutableArray array];
-  self.consumer = [FBLineFileConsumer synchronousReaderWithConsumer:^(NSString *line) {
+  self.consumer = [FBLineDataConsumer synchronousReaderWithConsumer:^(NSString *line) {
     [lines addObject:line];
   }];
-  self.reporter = [[FBJSONTestReporter alloc] initWithTestBundlePath:@"/path.bundle" testType:@"footype" logger:nil fileConsumer:self.consumer];
+  self.reporter = [[FBJSONTestReporter alloc] initWithTestBundlePath:@"/path.bundle" testType:@"footype" logger:nil dataConsumer:self.consumer];
   self.lines = lines;
 }
 

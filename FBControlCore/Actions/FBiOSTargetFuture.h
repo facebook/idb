@@ -15,7 +15,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBFileConsumer;
+@protocol FBDataConsumer;
 @protocol FBEventReporter;
 @protocol FBiOSTarget;
 @protocol FBiOSTargetFutureDelegate;
@@ -106,7 +106,7 @@ extern id<FBiOSTargetContinuation> FBiOSTargetContinuationDone(FBiOSTargetFuture
  @param reporter the reporter to report structured data to.
  @return a Future wrapping the action type.
  */
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter;
+- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter;
 
 @end
 

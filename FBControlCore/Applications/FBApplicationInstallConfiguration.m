@@ -107,7 +107,7 @@ static NSString *const KeyCodesign = @"codesign";
   return FBiOSTargetFutureTypeInstall;
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   return [[[[FBApplicationBundle
     onQueue:target.asyncQueue findOrExtractApplicationAtPath:self.applicationPath logger:target.logger]

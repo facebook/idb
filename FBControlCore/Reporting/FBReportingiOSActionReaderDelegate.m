@@ -9,7 +9,7 @@
 
 #import "FBReportingiOSActionReaderDelegate.h"
 
-#import "FBFileConsumer.h"
+#import "FBDataConsumer.h"
 #import "FBEventReporter.h"
 #import "FBEventReporterSubject.h"
 #import "FBEventConstants.h"
@@ -122,7 +122,7 @@
   return self.reporter.interpreter;
 }
 
-- (id<FBFileConsumer>)consumer
+- (id<FBDataConsumer>)consumer
 {
   return self.reporter.consumer;
 }

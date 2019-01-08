@@ -11,7 +11,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@interface FBFileReaderTests : XCTestCase <FBFileConsumer>
+@interface FBFileReaderTests : XCTestCase <FBDataConsumer>
 
 @property (atomic, assign, readwrite) BOOL didRecieveEOF;
 
@@ -331,7 +331,7 @@
   XCTAssertEqual(reader.state, FBFileReaderStateFinishedReadingInError);
 }
 
-#pragma mark FBFileConsumer Implementation
+#pragma mark FBDataConsumer Implementation
 
 - (void)consumeEndOfFile
 {

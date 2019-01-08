@@ -20,7 +20,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeErase = @"erase";
   return FBiOSTargetFutureTypeErase;
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
   if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {

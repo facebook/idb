@@ -355,7 +355,7 @@ static NSString *const KeySince = @"since";
   return FBiOSTargetFutureTypeSearch;
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBFileConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   FBiOSTargetFutureType futureType = self.class.futureType;
   return [[self

@@ -26,7 +26,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 
 @interface FBProcessFileOutput_Consumer : NSObject <FBProcessFileOutput>
 
-@property (nonatomic, strong, readonly) id<FBFileConsumer> consumer;
+@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
 @property (nonatomic, strong, nullable, readwrite) FBFileReader *reader;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
@@ -90,7 +90,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 
 #pragma mark Initializers
 
-- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer filePath:(NSString *)filePath queue:(dispatch_queue_t)queue
+- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer filePath:(NSString *)filePath queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -256,10 +256,10 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 @property (nonatomic, strong, nullable, readwrite) NSPipe *pipe;
 @property (nonatomic, strong, nullable, readwrite) FBFileReader *reader;
-@property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> consumer;
+@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> consumer;
 @property (nonatomic, strong, nullable, readwrite) id<FBControlCoreLogger> logger;
 
-- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -285,11 +285,11 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 @property (nonatomic, strong, nullable, readwrite) NSPipe *pipe;
-@property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> writer;
+@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> writer;
 
 @end
 
-@interface FBProcessInput_Consumer : FBProcessInput <FBFileConsumer>
+@interface FBProcessInput_Consumer : FBProcessInput <FBDataConsumer>
 
 @end
 
@@ -320,14 +320,14 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return [[FBProcessOutput_FilePath alloc] initWithFilePath:filePath];
 }
 
-+ (FBProcessOutput<id<FBFileConsumer>> *)outputForFileConsumer:(id<FBFileConsumer>)fileConsumer logger:(nullable id<FBControlCoreLogger>)logger
++ (FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(id<FBDataConsumer>)dataConsumer logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [[FBProcessOutput_Consumer alloc] initWithConsumer:fileConsumer logger:logger];
+  return [[FBProcessOutput_Consumer alloc] initWithConsumer:dataConsumer logger:logger];
 }
 
-+ (FBProcessOutput<id<FBFileConsumer>> *)outputForFileConsumer:(id<FBFileConsumer>)fileConsumer
++ (FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(id<FBDataConsumer>)dataConsumer
 {
-  return [[FBProcessOutput_Consumer alloc] initWithConsumer:fileConsumer logger:nil];
+  return [[FBProcessOutput_Consumer alloc] initWithConsumer:dataConsumer logger:nil];
 }
 
 + (FBProcessOutput<id<FBControlCoreLogger>> *)outputForLogger:(id<FBControlCoreLogger>)logger
@@ -456,7 +456,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 #pragma mark Initializers
 
-- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -527,7 +527,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
     nameFormat:@"Detach %@", self.description];
 }
 
-- (id<FBFileConsumer>)contents
+- (id<FBDataConsumer>)contents
 {
   return self.consumer;
 }
@@ -547,7 +547,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
 {
-  id<FBFileConsumer> consumer = [FBLoggingFileConsumer consumerWithLogger:logger];
+  id<FBDataConsumer> consumer = [FBLoggingDataConsumer consumerWithLogger:logger];
   self = [super initWithConsumer:consumer logger:logger];
   if (!self) {
     return nil;
@@ -722,7 +722,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 #pragma mark Initializers
 
-+ (FBProcessInput<id<FBFileConsumer>> *)inputProducingConsumer
++ (FBProcessInput<id<FBDataConsumer>> *)inputProducingConsumer
 {
   return [[FBProcessInput_Consumer alloc] init];
 }
@@ -773,7 +773,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
       NSPipe *pipe = NSPipe.pipe;
       NSError *error = nil;
-      id<FBFileConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:&error];
+      id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:&error];
       if (!writer) {
         return [[FBControlCoreError
           describeFormat:@"Failed to create a writer for pipe %@", error]
@@ -791,7 +791,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return [[FBFuture
     onQueue:self.workQueue resolve:^{
       NSPipe *pipe = self.pipe;
-      id<FBFileConsumer> consumer = self.writer;
+      id<FBDataConsumer> consumer = self.writer;
       if (!pipe || !consumer) {
         return [[FBControlCoreError
           describeFormat:@"Nothing is attached to %@", self]
@@ -807,7 +807,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
     nameFormat:@"Detach %@", self.description];
 }
 
-- (id<FBFileConsumer>)contents
+- (id<FBDataConsumer>)contents
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -829,7 +829,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   [self.writer consumeEndOfFile];
 }
 
-- (id<FBFileConsumer>)contents
+- (id<FBDataConsumer>)contents
 {
   return self;
 }

@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBFileConsumer.h>
+#import <FBControlCore/FBDataConsumer.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
  A File Data Consumer that writes to a file handle.
  Writes are non-blocking.
  */
-@interface FBFileWriter : NSObject <FBFileConsumer>
+@interface FBFileWriter : NSObject <FBDataConsumer>
 
 #pragma mark Initializers
 
