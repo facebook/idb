@@ -33,6 +33,25 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
+ A consumer of dispatch_data.
+ */
+@protocol FBDispatchDataConsumer <NSObject>
+
+/**
+ Consumes the provided binary data.
+
+ @param data the data to consume.
+ */
+- (void)consumeData:(dispatch_data_t)data;
+
+/**
+ Consumes an EOF.
+ */
+- (void)consumeEndOfFile;
+
+@end
+
+/**
  A specialization of a FBDataConsumer that can expose lifecycle with a Future.
  */
 @protocol FBDataConsumerLifecycle <FBDataConsumer>
@@ -90,6 +109,47 @@ NS_ASSUME_NONNULL_BEGIN
  This will flush the buffer of the lines that are consumed.
  */
 - (nullable NSString *)consumeLineString;
+
+@end
+
+/**
+ Adapts a NSData consumer to a dispatch_data consumer to.
+ */
+@interface FBDataConsumerAdaptor : NSObject
+
+/**
+ Adapts a NSData consumer to a dispatch_data consumer.
+
+ @param consumer the consumer to adapt.
+ @return a dispatch_data consumer.
+ */
++ (id<FBDispatchDataConsumer>)dispatchDataConsumerForDataConsumer:(id<FBDataConsumer>)consumer;
+
+/**
+ Adapts a NSData consumer to a dispatch_data consumer.
+
+ @param consumer the consumer to adapt.
+ @return a NSData consumer.
+ */
++ (id<FBDataConsumer>)dataConsumerForDispatchDataConsumer:(id<FBDispatchDataConsumer>)consumer;
+
+/**
+ Converts dispatch_data to NSData.
+ Note that this will copy data if the underlying dispatch data is non-contiguous.
+
+ @param dispatchData the data to adapt.
+ @return NSData from the dispatchData.
+ */
++ (NSData *)adaptDispatchData:(dispatch_data_t)dispatchData;
+
+/**
+ Converts dispatch_data to NSData.
+ Note that this will copy data if the underlying dispatch data is non-contiguous.
+
+ @param data the NSData to adapt.
+ @return NSData from the dispatchData.
+ */
++ (dispatch_data_t)adaptNSData:(NSData *)data;
 
 @end
 
