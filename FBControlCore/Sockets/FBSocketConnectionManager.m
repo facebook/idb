@@ -23,7 +23,7 @@
 
 @property (nonatomic, strong, nullable, readonly) NSFileHandle *fileHandle;
 @property (nonatomic, strong, nullable, readonly) FBFileReader *reader;
-@property (nonatomic, strong, nullable, readonly) FBFileWriter *writer;
+@property (nonatomic, strong, nullable, readonly) id<FBDataConsumer> writer;
 
 @property (nonatomic, strong, nullable, readonly) dispatch_queue_t completionQueue;
 @property (nonatomic, strong, nullable, readonly) void (^completionHandler)(void);

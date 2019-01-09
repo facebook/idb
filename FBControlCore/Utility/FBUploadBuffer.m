@@ -249,9 +249,9 @@ static NSString *const KeyPath = @"path";
 
 @interface FBUploadBuffer_ToFile : FBUploadBuffer
 
-@property (nonatomic, strong, readwrite, nullable) FBFileWriter *writer;
+@property (nonatomic, strong, readwrite, nullable) id<FBDataConsumer> writer;
 
-- (instancetype)initWithHeader:(FBUploadHeader *)header filePath:(NSString *)filePath writer:(FBFileWriter *)writer;
+- (instancetype)initWithHeader:(FBUploadHeader *)header filePath:(NSString *)filePath writer:(id<FBDataConsumer>)writer;
 
 @end
 
@@ -272,7 +272,7 @@ static size_t ToFileThreshold = 2 * 1024 * 1024;
 
   if (header.size > ToFileThreshold) {
     NSError *error = nil;
-    FBFileWriter *writer = [FBFileWriter syncWriterForFilePath:filePath error:&error];
+    id<FBDataConsumer> writer = [FBFileWriter syncWriterForFilePath:filePath error:&error];
     NSAssert(writer, @"Could not create writer %@", error);
     return [[FBUploadBuffer_ToFile alloc] initWithHeader:header filePath:filePath writer:writer];
   }
@@ -384,7 +384,7 @@ static size_t ToFileThreshold = 2 * 1024 * 1024;
 
 @implementation FBUploadBuffer_ToFile
 
-- (instancetype)initWithHeader:(FBUploadHeader *)header filePath:(NSString *)filePath writer:(FBFileWriter *)writer
+- (instancetype)initWithHeader:(FBUploadHeader *)header filePath:(NSString *)filePath writer:(id<FBDataConsumer>)writer
 {
   self = [super initWithHeader:header filePath:filePath];
   if (!self) {

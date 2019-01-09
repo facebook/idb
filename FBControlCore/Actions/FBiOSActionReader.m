@@ -240,7 +240,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
 
 @property (nonatomic, strong, readonly) FBiOSActionReaderMediator *mediator;
 @property (nonatomic, strong, nullable, readwrite) FBFileReader *reader;
-@property (nonatomic, strong, nullable, readwrite) FBFileWriter *writer;
+@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> writer;
 
 - (instancetype)initWithDelegate:(id<FBiOSActionReaderDelegate>)delegate router:(FBiOSActionRouter *)router readHandle:(NSFileHandle *)readHandle writeHandle:(NSFileHandle *)writeHandle;
 

@@ -14,10 +14,11 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- A File Data Consumer that writes to a file handle.
- Writes are non-blocking.
+ A Data Consumer that writes out to a file or file descriptor.
+ The dual of FBFileReader.
+ Unlike FBFileReader, once initialized, this writer is ready to consume data.
  */
-@interface FBFileWriter : NSObject <FBDataConsumer>
+@interface FBFileWriter : NSObject
 
 #pragma mark Initializers
 
@@ -26,41 +27,41 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a File Reader.
  */
-@property (nonatomic, strong, readonly, class) FBFileWriter *nullWriter;
+@property (nonatomic, strong, readonly, class) id<FBDataConsumer> nullWriter;
 
 /**
- Creates a Blocking Writer from a File Handle.
+ Creates a blocking Data Consumer from a file handle.
 
  @param fileHandle the file handle to write to. It will be closed when an EOF is sent.
- @return a File Reader.
+ @return a Data Consumer.
  */
-+ (instancetype)syncWriterWithFileHandle:(NSFileHandle *)fileHandle;
++ (id<FBDataConsumer>)syncWriterWithFileHandle:(NSFileHandle *)fileHandle;
 
 /**
- Creates a Non-Blocking Writer from a File Handle.
+ Creates a non-blocking Data Consumer from a file Handle.
 
  @param fileHandle the file handle to write to. It will be closed when an EOF is sent.
- @return a File Reader.
+ @return a Data Consumer.
  */
-+ (nullable instancetype)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle error:(NSError **)error;
++ (nullable id<FBDataConsumer>)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle error:(NSError **)error;
 
 /**
- Creates a Blocking File Writer from a File Path
+ Creates a blocking Data Consumer from a file path.
 
  @param filePath the file handle to write to from. It will be closed when an EOF is sent.
  @param error an error out for any error that occurs.
- @return a File Reader on success, nil otherwise.
+ @return a Data Consumer on success, nil otherwise.
  */
-+ (nullable instancetype)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error;
++ (nullable id<FBDataConsumer>)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error;
 
 /**
- Creates a Non-Blocking File Writer from a File Path.
+ Creates a non-blocking Data Consumer from a file path.
  The File Path will be opened asynchronously so that the caller is not blocked.
 
  @param filePath the file handle to write to from. It will be closed when an EOF is sent.
- @return a Future that resolves with the File Reader when reading has started.
+ @return a Future that resolves with the Data Consumer.
  */
-+ (FBFuture<FBFileWriter *> *)asyncWriterForFilePath:(NSString *)filePath;
++ (FBFuture<id<FBDataConsumer>> *)asyncWriterForFilePath:(NSString *)filePath;
 
 @end
 

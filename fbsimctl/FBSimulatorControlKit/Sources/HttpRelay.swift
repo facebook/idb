@@ -48,7 +48,7 @@ enum ResponseKeys: String {
 @objc private class HttpEventReporter: NSObject, EventReporter {
   var events: [FBEventReporterSubjectProtocol] = []
   let interpreter: EventInterpreter = FBEventInterpreter.jsonEventInterpreter(false)
-  let consumer: Writer = FileHandleWriter.null
+  let consumer: Writer = FBFileWriter.nullWriter
 
   func report(_ subject: FBEventReporterSubjectProtocol) {
     events.append(subject)

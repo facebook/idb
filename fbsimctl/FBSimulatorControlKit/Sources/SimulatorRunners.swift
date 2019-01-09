@@ -11,7 +11,7 @@ import FBSimulatorControl
 import Foundation
 
 extension FileOutput {
-  func makeWriter() throws -> FBFileWriter {
+  func makeWriter() throws -> FBDataConsumer {
     switch self {
     case .path(let path):
       return try FBFileWriter.syncWriter(forFilePath: path)

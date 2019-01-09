@@ -110,9 +110,9 @@ extension CLI {
   private func createWriter() -> Writer {
     switch self {
     case .show:
-      return FileHandleWriter.stdErrWriter
+      return FBFileWriter.stdErrWriter
     case .print:
-      return FileHandleWriter.stdOutWriter
+      return FBFileWriter.stdOutWriter
     case .run(let command):
       return command.createWriter()
     }
@@ -123,9 +123,9 @@ extension Command {
   func createWriter() -> Writer {
     for action in actions {
       if case .stream = action {
-        return FileHandleWriter.stdErrWriter
+        return FBFileWriter.stdErrWriter
       }
     }
-    return FileHandleWriter.stdOutWriter
+    return FBFileWriter.stdOutWriter
   }
 }

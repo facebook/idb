@@ -24,7 +24,7 @@
 {
   // Setup
   NSPipe *pipe = NSPipe.pipe;
-  FBFileWriter *writer = [FBFileWriter syncWriterWithFileHandle:pipe.fileHandleForWriting];
+  id<FBDataConsumer> writer = [FBFileWriter syncWriterWithFileHandle:pipe.fileHandleForWriting];
 
   // Write some data and confirm that it is as expected.
   NSData *expected = [@"Foo Bar Baz" dataUsingEncoding:NSUTF8StringEncoding];
@@ -46,7 +46,7 @@
   // Setup
   NSPipe *pipe = NSPipe.pipe;
   NSError *error = nil;
-  FBFileWriter *writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:&error];
+  id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(writer);
 
@@ -84,7 +84,7 @@
   XCTAssertNil(error);
   XCTAssertNotNil(results);
 
-  FBFileWriter *writer = results[0];
+  id<FBDataConsumer> writer = results[0];
   FBFileReader *reader = results[1];
 
   BOOL success = [[reader startReading] await:&error] != nil;

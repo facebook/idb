@@ -89,7 +89,7 @@ struct BaseCommandRunner: Runner {
 
   func run() -> CommandResult {
     do {
-      let defaults = try Defaults.create(command.configuration, logWriter: FileHandleWriter.stdOutWriter)
+      let defaults = try Defaults.create(command.configuration, logWriter: FBFileWriter.stdOutWriter)
       let simulatorControl = try defaults.configuration.buildSimulatorControl()
       let deviceControl = try defaults.configuration.buildDeviceControl()
       let format = command.format ?? defaults.format

@@ -54,7 +54,7 @@ public extension OutputOptions {
   }
 
   public func createLogWriter() -> Writer {
-    return contains(OutputOptions.JSON) ? FileHandleWriter.stdOutWriter : FileHandleWriter.stdErrWriter
+    return contains(OutputOptions.JSON) ? FBFileWriter.stdOutWriter : FBFileWriter.stdErrWriter
   }
 }
 

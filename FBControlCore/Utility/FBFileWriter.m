@@ -11,7 +11,7 @@
 
 #import "FBControlCoreError.h"
 
-@interface FBFileWriter ()
+@interface FBFileWriter () <FBDataConsumer>
 
 @property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
 
@@ -63,17 +63,17 @@
   return fileHandle;
 }
 
-+ (instancetype)nullWriter
++ (id<FBDataConsumer>)nullWriter
 {
   return [[FBFileWriter_Null alloc] init];
 }
 
-+ (instancetype)syncWriterWithFileHandle:(NSFileHandle *)fileHandle
++ (id<FBDataConsumer>)syncWriterWithFileHandle:(NSFileHandle *)fileHandle
 {
   return [[FBFileWriter_Sync alloc] initWithFileHandle:fileHandle];
 }
 
-+ (instancetype)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle queue:(dispatch_queue_t)queue error:(NSError **)error
++ (id<FBDataConsumer>)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle queue:(dispatch_queue_t)queue error:(NSError **)error
 {
   FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileHandle:fileHandle writeQueue:queue];
   if (![writer startReadingWithError:error]) {
@@ -82,13 +82,13 @@
   return writer;
 }
 
-+ (instancetype)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle error:(NSError **)error
++ (id<FBDataConsumer>)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle error:(NSError **)error
 {
   dispatch_queue_t queue = self.createWorkQueue;
   return [self asyncWriterWithFileHandle:fileHandle queue:queue error:error];
 }
 
-+ (nullable instancetype)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error
++ (id<FBDataConsumer>)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error
 {
   NSFileHandle *fileHandle = [self fileHandleForPath:filePath error:error];
   if (!fileHandle) {
@@ -97,7 +97,7 @@
   return [FBFileWriter syncWriterWithFileHandle:fileHandle];
 }
 
-+ (FBFuture<FBFileWriter *> *)asyncWriterForFilePath:(NSString *)filePath
++ (FBFuture<id<FBDataConsumer>> *)asyncWriterForFilePath:(NSString *)filePath
 {
   dispatch_queue_t queue = self.createWorkQueue;
   return [[FBFuture

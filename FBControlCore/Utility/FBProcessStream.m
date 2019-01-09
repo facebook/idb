@@ -35,7 +35,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 @interface FBProcessFileOutput_Reader : NSObject <FBProcessFileOutput>
 
 @property (nonatomic, strong, readonly) FBProcessOutput *output;
-@property (nonatomic, strong, nullable, readwrite) FBFileWriter *writer;
+@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> writer;
 @property (nonatomic, strong, nullable, readwrite) id<FBProcessFileOutput> nested;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
@@ -187,10 +187,10 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
       }
       return [self.output attachToFileHandle];
     }]
-    onQueue:self.queue map:^ FBFileWriter * (NSFileHandle *fileHandle) {
+    onQueue:self.queue map:^ id<FBDataConsumer>  (NSFileHandle *fileHandle) {
       return [FBFileWriter syncWriterWithFileHandle:fileHandle];
     }]
-    onQueue:self.queue fmap:^ FBFuture<id<FBProcessFileOutput>> * (FBFileWriter *writer) {
+    onQueue:self.queue fmap:^ FBFuture<id<FBProcessFileOutput>> * (id<FBDataConsumer> writer) {
       self.writer = writer;
       id<FBProcessFileOutput> consumer = [[FBProcessFileOutput_Consumer alloc] initWithConsumer:writer filePath:self.filePath queue:self.queue];
       return [[consumer startReading] mapReplace:consumer];
