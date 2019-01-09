@@ -29,7 +29,7 @@
   // Setup
   NSPipe *pipe = NSPipe.pipe;
   id<FBAccumulatingLineBuffer> consumer = FBLineBuffer.accumulatingBuffer;
-  FBFileReader *reader = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:consumer];
+  FBFileReader *reader = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:consumer logger:nil];
   XCTAssertEqual(reader.state, FBFileReaderStateNotStarted);
 
   // Start reading
@@ -61,7 +61,7 @@
 {
   // Setup
   NSPipe *pipe = NSPipe.pipe;
-  FBFileReader *reader = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:self];
+  FBFileReader *reader = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:self logger:nil];
   XCTAssertEqual(reader.state, FBFileReaderStateNotStarted);
 
   // Start reading
@@ -93,7 +93,7 @@
   // Setup
   NSPipe *pipe = NSPipe.pipe;
   id<FBAccumulatingLineBuffer> consumer = FBLineBuffer.accumulatingBuffer;
-  FBFileReader *reader = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:consumer];
+  FBFileReader *reader = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:consumer logger:nil];
   XCTAssertEqual(reader.state, FBFileReaderStateNotStarted);
 
   // Start reading
@@ -128,7 +128,7 @@
   // Setup
   NSPipe *pipe = NSPipe.pipe;
   id<FBAccumulatingLineBuffer> consumer = FBLineBuffer.accumulatingBuffer;
-  FBFileReader *reader = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:consumer];
+  FBFileReader *reader = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:consumer logger:nil];
   XCTAssertEqual(reader.state, FBFileReaderStateNotStarted);
 
   // Start reading
@@ -160,7 +160,7 @@
 {
   // Read some data.
   NSError *error = nil;
-  FBFileReader *reader = [[FBFileReader readerWithFilePath:@"/dev/urandom" consumer:self] await:&error];
+  FBFileReader *reader = [[FBFileReader readerWithFilePath:@"/dev/urandom" consumer:self logger:nil] await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(reader);
   XCTAssertEqual(reader.state, FBFileReaderStateNotStarted);
@@ -184,7 +184,7 @@
 {
   // Read some data.
   NSError *error = nil;
-  FBFileReader *reader = [[FBFileReader readerWithFilePath:@"/dev/urandom" consumer:self] await:&error];
+  FBFileReader *reader = [[FBFileReader readerWithFilePath:@"/dev/urandom" consumer:self logger:nil] await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(reader);
   XCTAssertEqual(reader.state, FBFileReaderStateNotStarted);
@@ -214,7 +214,7 @@
 {
   // Read some data.
   NSError *error = nil;
-  FBFileReader *reader = [[FBFileReader readerWithFilePath:@"/dev/urandom" consumer:self] await:&error];
+  FBFileReader *reader = [[FBFileReader readerWithFilePath:@"/dev/urandom" consumer:self logger:nil] await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(reader);
   XCTAssertEqual(reader.state, FBFileReaderStateNotStarted);
@@ -245,7 +245,7 @@
 {
   // Read some data.
   NSError *error = nil;
-  FBFileReader *reader = [[FBFileReader readerWithFilePath:@"/dev/urandom" consumer:self] await:&error];
+  FBFileReader *reader = [[FBFileReader readerWithFilePath:@"/dev/urandom" consumer:self logger:nil] await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(reader);
   XCTAssertEqual(reader.state, FBFileReaderStateNotStarted);
@@ -270,7 +270,7 @@
 {
   // Read some data.
   NSError *error = nil;
-  FBFileReader *reader = [[FBFileReader readerWithFilePath:@"/dev/urandom" consumer:self] await:&error];
+  FBFileReader *reader = [[FBFileReader readerWithFilePath:@"/dev/urandom" consumer:self logger:nil] await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(reader);
   XCTAssertEqual(reader.state, FBFileReaderStateNotStarted);
@@ -314,7 +314,7 @@
 - (void)testAttemptingToReadAGarbageFileDescriptor
 {
   // Setup
-  FBFileReader *reader = [FBFileReader readerWithFileHandle:[[NSFileHandle alloc] initWithFileDescriptor:92123 closeOnDealloc:NO] consumer:self];
+  FBFileReader *reader = [FBFileReader readerWithFileHandle:[[NSFileHandle alloc] initWithFileDescriptor:92123 closeOnDealloc:NO] consumer:self logger:nil];
   XCTAssertEqual(reader.state, FBFileReaderStateNotStarted);
 
   // Start reading, the start is asyncrhonous, so we can't know ahead of time if the fd is bad.

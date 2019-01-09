@@ -26,26 +26,21 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 #pragma mark Initializers
 
 /**
- Creates a File Reader from a File Handle.
+ Creates a file reader from a NSFileHandle.
+ The file handle passed in will be retained by the reader until reading has finished.
+ The semantics of the closing of the underlying file descriptor are handled by NSFileHandle.
+ File descriptors can be automatically closed when they are deallocated by creating a NSFileHandle with `closeOnDealloc:`.
 
  @param fileHandle the file handle to read from. It will be closed when the reader stops.
  @param consumer the consumer to forward to.
  @param logger the logger to use.
- @return a File Reader.
+ @return a file reader.
  */
 + (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
- Creates a File Reader from a File Handle.
-
- @param fileHandle the file handle to read from. It will be closed when the reader stops.
- @param consumer the consumer to forward to.
- @return a File Reader.
- */
-+ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDataConsumer>)consumer;
-
-/**
- Creates a File Reader for a File at Path.
+ Creates a file reader for a file at path.
+ A file handle will be internally created, and closed when reading has finished.
 
  @param filePath the File Path to read from.
  @param consumer the consumer to forward to.
@@ -53,15 +48,6 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
  @return a File Reader, that is available when the underlying file handle has been opened.
  */
 + (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
-
-/**
- Creates a File Reader for a File at Path.
-
- @param filePath the File Path to read from.
- @param consumer the consumer to forward to.
- @return a File Reader, that is available when the underlying file handle has been opened.
- */
-+ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBDataConsumer>)consumer;
 
 #pragma mark Public Methods
 

@@ -76,7 +76,7 @@
 
   FBFuture<NSArray<id> *> *futures = [FBFuture futureWithFutures:@[
     [FBFileWriter asyncWriterForFilePath:fifoPath],
-    [FBFileReader readerWithFilePath:fifoPath consumer:consumer],
+    [FBFileReader readerWithFilePath:fifoPath consumer:consumer logger:nil],
   ]];
 
   NSError *error = nil;

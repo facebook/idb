@@ -115,7 +115,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
           describeFormat:@"Cannot call startReading twice"]
           failFuture];
       }
-      return [FBFileReader readerWithFilePath:self.filePath consumer:self.consumer];
+      return [FBFileReader readerWithFilePath:self.filePath consumer:self.consumer logger:nil];
     }]
     onQueue:self.queue fmap:^(FBFileReader *reader) {
       return [[reader startReading] mapReplace:reader];

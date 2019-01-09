@@ -52,11 +52,6 @@ static NSString *StateStringFromState(FBFileReaderState state)
   return [[self alloc] initWithFileHandle:fileHandle consumer:consumer targeting:targeting queue:self.createQueue logger:logger];
 }
 
-+ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDataConsumer>)consumer
-{
-  return [self readerWithFileHandle:fileHandle consumer:consumer logger:nil];
-}
-
 + (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = self.createQueue;
@@ -70,11 +65,6 @@ static NSString *StateStringFromState(FBFileReaderState state)
     NSFileHandle *fileHandle = [[NSFileHandle alloc] initWithFileDescriptor:fileDescriptor closeOnDealloc:YES];
     return [[self alloc] initWithFileHandle:fileHandle consumer:consumer targeting:filePath queue:queue logger:logger];
   }];
-}
-
-+ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBDataConsumer>)consumer
-{
-  return [self readerWithFilePath:filePath consumer:consumer logger:nil];
 }
 
 - (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDataConsumer>)consumer targeting:(NSString *)targeting queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger

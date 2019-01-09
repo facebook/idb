@@ -55,7 +55,7 @@
     [self teardown];
     return [FBFuture futureWithError:error];
   }
-  _reader = [FBFileReader readerWithFileHandle:self.fileHandle consumer:self];
+  _reader = [FBFileReader readerWithFileHandle:self.fileHandle consumer:self logger:nil];
   return [[_reader
     startReading]
     onQueue:dispatch_get_main_queue() chain:^(FBFuture<NSNull *> *future) {
