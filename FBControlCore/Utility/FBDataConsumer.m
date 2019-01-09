@@ -6,115 +6,6 @@
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 
-@interface FBDataConsumerAdaptor_ToNSData : NSObject <FBDispatchDataConsumer>
-
-@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
-
-@end
-
-@implementation FBDataConsumerAdaptor_ToNSData
-
-#pragma mark Initializers
-
-- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _consumer = consumer;
-
-  return self;
-}
-
-#pragma mark FBDataConsumer
-
-- (void)consumeData:(dispatch_data_t)dispatchData
-{
-  NSData *data = [FBDataConsumerAdaptor adaptDispatchData:dispatchData];
-  [self.consumer consumeData:data];
-}
-
-- (void)consumeEndOfFile
-{
-  [self.consumer consumeEndOfFile];
-}
-
-@end
-
-@interface FBDataConsumerAdaptor_ToDispatchData : NSObject <FBDataConsumer>
-
-@property (nonatomic, strong, readonly) id<FBDispatchDataConsumer> consumer;
-
-@end
-
-@implementation FBDataConsumerAdaptor_ToDispatchData
-
-#pragma mark Initializers
-
-- (instancetype)initWithConsumer:(id<FBDispatchDataConsumer>)consumer
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _consumer = consumer;
-
-  return self;
-}
-
-#pragma mark FBDataConsumer
-
-- (void)consumeData:(NSData *)data
-{
-  dispatch_data_t dispatchData = [FBDataConsumerAdaptor adaptNSData:data];
-  [self.consumer consumeData:dispatchData];
-}
-
-- (void)consumeEndOfFile
-{
-  [self.consumer consumeEndOfFile];
-}
-
-@end
-
-@implementation FBDataConsumerAdaptor
-
-#pragma mark Initializers
-
-+ (id<FBDispatchDataConsumer>)dispatchDataConsumerForDataConsumer:(id<FBDataConsumer>)consumer;
-{
-  return [[FBDataConsumerAdaptor_ToNSData alloc] initWithConsumer:consumer];
-}
-
-+ (id<FBDataConsumer>)dataConsumerForDispatchDataConsumer:(id<FBDispatchDataConsumer>)consumer
-{
-  return [[FBDataConsumerAdaptor_ToDispatchData alloc] initWithConsumer:consumer];
-}
-
-#pragma mark Public
-
-+ (NSData *)adaptDispatchData:(dispatch_data_t)dispatchData
-{
-  const void *buffer;
-  size_t size;
-  __unused dispatch_data_t map = dispatch_data_create_map(dispatchData, &buffer, &size);
-  return [NSData dataWithBytes:buffer length:size];
-}
-
-+ (dispatch_data_t)adaptNSData:(NSData *)data
-{
-  return dispatch_data_create(data.bytes, data.length, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-    // Retain the data, so that it isn't released until the dispatch_data is released
-    (void) data;
-  });
-}
-
-@end
-
-
 @interface FBLineBuffer_Accumilating : NSObject <FBAccumulatingLineBuffer>
 
 @property (nonatomic, strong, readwrite) NSMutableData *buffer;
@@ -128,8 +19,6 @@
 @end
 
 @implementation FBLineBuffer_Accumilating
-
-#pragma mark Initializers
 
 - (instancetype)init
 {

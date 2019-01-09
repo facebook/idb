@@ -39,16 +39,6 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 + (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
- Creates a File Reader of Dispatch Data from a File Handle.
-
- @param fileHandle the file handle to read from. It will be closed when the reader stops.
- @param consumer the consumer to forward to.
- @param logger the logger to use.
- @return a File Reader.
- */
-+ (instancetype)dispatchDataReaderWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDispatchDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
-
-/**
  Creates a file reader for a file at path.
  A file handle will be internally created, and closed when reading has finished.
 

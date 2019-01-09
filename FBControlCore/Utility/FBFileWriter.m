@@ -11,7 +11,7 @@
 
 #import "FBControlCoreError.h"
 
-@interface FBFileWriter () <FBDispatchDataConsumer>
+@interface FBFileWriter () <FBDataConsumer>
 
 @property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
 
@@ -65,12 +65,12 @@
 
 + (id<FBDataConsumer>)nullWriter
 {
-  return [FBDataConsumerAdaptor dataConsumerForDispatchDataConsumer:[[FBFileWriter_Null alloc] init]];
+  return [[FBFileWriter_Null alloc] init];
 }
 
 + (id<FBDataConsumer>)syncWriterWithFileHandle:(NSFileHandle *)fileHandle
 {
-  return [FBDataConsumerAdaptor dataConsumerForDispatchDataConsumer:[[FBFileWriter_Sync alloc] initWithFileHandle:fileHandle]];
+  return [[FBFileWriter_Sync alloc] initWithFileHandle:fileHandle];
 }
 
 + (id<FBDataConsumer>)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle queue:(dispatch_queue_t)queue error:(NSError **)error
@@ -79,17 +79,7 @@
   if (![writer startReadingWithError:error]) {
     return nil;
   }
-  return [FBDataConsumerAdaptor dataConsumerForDispatchDataConsumer:writer];
-}
-
-+ (FBFuture<id<FBDataConsumer>> *)asyncDispatchDataWriterWithFileHandle:(NSFileHandle *)fileHandle
-{
-  NSError *error = nil;
-  FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileHandle:fileHandle writeQueue:self.createWorkQueue];
-  if (![writer startReadingWithError:&error]) {
-    return [FBFuture futureWithError:error];
-  }
-  return [FBFuture futureWithResult:writer];
+  return writer;
 }
 
 + (id<FBDataConsumer>)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle error:(NSError **)error
@@ -107,7 +97,7 @@
   return [FBFileWriter syncWriterWithFileHandle:fileHandle];
 }
 
-+ (FBFuture<id<FBDispatchDataConsumer>> *)asyncWriterForFilePath:(NSString *)filePath
++ (FBFuture<id<FBDataConsumer>> *)asyncWriterForFilePath:(NSString *)filePath
 {
   dispatch_queue_t queue = self.createWorkQueue;
   return [[FBFuture
@@ -138,7 +128,7 @@
 
 #pragma mark Public Methods
 
-- (void)consumeData:(dispatch_data_t)data
+- (void)consumeData:(NSData *)data
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
 }
@@ -167,7 +157,7 @@
 
 @implementation FBFileWriter_Null
 
-- (void)consumeData:(dispatch_data_t)data
+- (void)consumeData:(NSData *)data
 {
   // do nothing
 }
@@ -181,9 +171,9 @@
 
 @implementation FBFileWriter_Sync
 
-- (void)consumeData:(dispatch_data_t)data
+- (void)consumeData:(NSData *)data
 {
-  [self.fileHandle writeData:[FBDataConsumerAdaptor adaptDispatchData:data]];
+  [self.fileHandle writeData:data];
 }
 
 - (void)consumeEndOfFileClosingFileHandle:(BOOL)close
@@ -232,13 +222,17 @@
   return YES;
 }
 
-- (void)consumeData:(dispatch_data_t)data
+- (void)consumeData:(NSData *)data
 {
   if (!self.io) {
     return;
   }
 
-  dispatch_io_write(self.io, 0, data, self.writeQueue, ^(bool done, dispatch_data_t remainder, int error) {});
+  dispatch_data_t dispatchData = dispatch_data_create(data.bytes, data.length, self.writeQueue, ^{
+    // Retain the data, so that it isn't released and the buffer freed before it is used in dispatch_io_write.
+    (void) data;
+  });
+  dispatch_io_write(self.io, 0, dispatchData, self.writeQueue, ^(bool done, dispatch_data_t remainder, int error) {});
 }
 
 - (void)consumeEndOfFileClosingFileHandle:(BOOL)close
