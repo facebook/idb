@@ -228,10 +228,21 @@
     return;
   }
 
-  dispatch_data_t dispatchData = dispatch_data_create(data.bytes, data.length, self.writeQueue, ^{
-    // Retain the data, so that it isn't released and the buffer freed before it is used in dispatch_io_write.
-    (void) data;
-  });
+  // The safest possible way of adapting the NSData to dispatch_data_t is to ensure that buffer backing the dispatch_data_t data is:
+  // 1) Immutable
+  // 2) Is not freed until the dispatch_data_t is destroyed.
+  // There are two ways of doing this:
+  // 1) Copy the NSData, and retain it for the lifecycle of the dispatch_data_t.
+  // 2) Use DISPATCH_DATA_DESTRUCTOR_DEFAULT which will copy the underlying buffer.
+  // This uses #2 as it's preferable to let libdispatch do the management itself and avoids an object copy (NSData) as well as a potential buffer copy in `-[NSData copy]`.
+  // It can be quite surprising how many methods result in the creation of NSMutableData, for example `-[NSString dataUsingEncoding:]` can result in NSConcreteMutableData.
+  // By copying the buffer we are sure that the data in the dispatch wrapper is completely immutable.
+  dispatch_data_t dispatchData = dispatch_data_create(
+    data.bytes,
+    data.length,
+    dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+    DISPATCH_DATA_DESTRUCTOR_DEFAULT
+  );
   dispatch_io_write(self.io, 0, dispatchData, self.writeQueue, ^(bool done, dispatch_data_t remainder, int error) {});
 }
 
