@@ -148,10 +148,12 @@ static NSString *StateStringFromState(FBFileReaderState state)
   dispatch_io_set_low_water(self.io, 1);
   dispatch_io_read(self.io, 0, SIZE_MAX, self.readQueue, ^(bool done, dispatch_data_t dispatchData, int errorCode) {
     if (dispatchData != NULL) {
-      const void *buffer;
-      size_t size;
-      __unused dispatch_data_t map = dispatch_data_create_map(dispatchData, &buffer, &size);
-      NSData *data = [NSData dataWithBytes:buffer length:size];
+      // One-way bridging of dispatch_data_t to NSData is permitted.
+      // Since we can't safely assume all consumers of the NSData work discontiguous ranges, we have to make the dispatch_data contiguous.
+      // This is done with dispatch_data_create_map, which is 0-copy for a contiguous range but copies for non-contiguous ranges.
+      // https://twitter.com/catfish_man/status/393032222808100864
+      // https://developer.apple.com/library/archive/releasenotes/Foundation/RN-Foundation-older-but-post-10.8/
+      NSData *data = (NSData *) dispatch_data_create_map(dispatchData, NULL, NULL);
       [consumer consumeData:data];
     }
     if (done) {
