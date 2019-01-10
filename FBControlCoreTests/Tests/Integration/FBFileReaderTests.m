@@ -28,7 +28,7 @@
 {
   // Setup
   NSPipe *pipe = NSPipe.pipe;
-  id<FBAccumulatingLineBuffer> consumer = FBLineBuffer.accumulatingBuffer;
+  id<FBAccumulatingBuffer> consumer = FBLineBuffer.accumulatingBuffer;
   FBFileReader *reader = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:consumer logger:nil];
   XCTAssertEqual(reader.state, FBFileReaderStateNotStarted);
 
@@ -92,7 +92,7 @@
 {
   // Setup
   NSPipe *pipe = NSPipe.pipe;
-  id<FBAccumulatingLineBuffer> consumer = FBLineBuffer.accumulatingBuffer;
+  id<FBAccumulatingBuffer> consumer = FBLineBuffer.accumulatingBuffer;
   FBFileReader *reader = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:consumer logger:nil];
   XCTAssertEqual(reader.state, FBFileReaderStateNotStarted);
 
@@ -127,7 +127,7 @@
 {
   // Setup
   NSPipe *pipe = NSPipe.pipe;
-  id<FBAccumulatingLineBuffer> consumer = FBLineBuffer.accumulatingBuffer;
+  id<FBAccumulatingBuffer> consumer = FBLineBuffer.accumulatingBuffer;
   FBFileReader *reader = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:consumer logger:nil];
   XCTAssertEqual(reader.state, FBFileReaderStateNotStarted);
 

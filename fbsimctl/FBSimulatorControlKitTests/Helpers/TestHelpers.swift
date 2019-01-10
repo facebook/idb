@@ -57,7 +57,7 @@ public extension XCTestCase {
 }
 
 @objc class TestWriter: NSObject, Writer {
-  let buffer: FBConsumableLineBuffer = FBLineBuffer.consumableBuffer()
+  let buffer: FBConsumableBuffer = FBLineBuffer.consumableBuffer()
   var output: [String] = []
 
   func consumeData(_ data: Data) {

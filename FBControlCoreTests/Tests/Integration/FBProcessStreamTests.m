@@ -19,7 +19,7 @@
 
 - (void)testClosingActiveStreamStopsWriting
 {
-  id<FBConsumableLineBuffer> consumer = [FBLineBuffer consumableBuffer];
+  id<FBConsumableBuffer> consumer = [FBLineBuffer consumableBuffer];
 
   FBProcessOutput *output = [FBProcessOutput outputForDataConsumer:consumer];
   NSError *error = nil;
@@ -39,7 +39,7 @@
 
 - (void)testViaFifo
 {
-  id<FBAccumulatingLineBuffer> buffer = [FBLineBuffer accumulatingBuffer];
+  id<FBAccumulatingBuffer> buffer = [FBLineBuffer accumulatingBuffer];
   NSError *error = nil;
   id<FBProcessFileOutput> output = [[[FBProcessOutput outputForDataConsumer:buffer] providedThroughFile] await:&error];
   XCTAssertNil(error);
@@ -77,7 +77,7 @@
 
 - (void)testConcurrentAttachmentIsProhibited
 {
-  id<FBConsumableLineBuffer> consumer = [FBLineBuffer consumableBuffer];
+  id<FBConsumableBuffer> consumer = [FBLineBuffer consumableBuffer];
   FBProcessOutput *output = [FBProcessOutput outputForDataConsumer:consumer];
 
   dispatch_queue_t concurrentQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);

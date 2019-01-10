@@ -53,7 +53,7 @@
 
 - (FBFuture<NSArray<NSString *> *> *)logLinesWithArguments:(NSArray<NSString *> *)arguments
 {
-  id<FBAccumulatingLineBuffer> consumer = FBLineBuffer.accumulatingBuffer;
+  id<FBAccumulatingBuffer> consumer = FBLineBuffer.accumulatingBuffer;
   return [[self
     runLogCommandAndWait:arguments consumer:consumer]
     onQueue:self.simulator.asyncQueue fmap:^(id _){

@@ -271,7 +271,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 @interface FBProcessOutput_Data : FBProcessOutput_Consumer
 
-@property (nonatomic, strong, readonly) id<FBAccumulatingLineBuffer> dataConsumer;
+@property (nonatomic, strong, readonly) id<FBAccumulatingBuffer> dataConsumer;
 
 - (instancetype)initWithMutableData:(NSMutableData *)mutableData;
 
@@ -663,7 +663,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (instancetype)initWithMutableData:(NSMutableData *)mutableData
 {
-  id<FBAccumulatingLineBuffer> consumer = [FBLineBuffer accumulatingBufferForMutableData:mutableData];
+  id<FBAccumulatingBuffer> consumer = [FBLineBuffer accumulatingBufferForMutableData:mutableData];
   self = [super initWithConsumer:consumer logger:nil];
   if (!self) {
     return nil;

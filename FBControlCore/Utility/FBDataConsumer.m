@@ -6,15 +6,17 @@
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 
-@interface FBLineBuffer_Accumilating : NSObject <FBAccumulatingLineBuffer>
+@interface FBLineBuffer_Accumilating : NSObject <FBAccumulatingBuffer>
 
 @property (nonatomic, strong, readwrite) NSMutableData *buffer;
-@property (nonatomic, strong, readonly) NSData *terminalData;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *eofHasBeenReceivedFuture;
 
 @end
 
-@interface FBLineBuffer_Consumable : FBLineBuffer_Accumilating <FBConsumableLineBuffer>
+@interface FBLineBuffer_Consumable : FBLineBuffer_Accumilating <FBConsumableBuffer>
+
+@property (nonatomic, copy, nullable, readwrite) NSData *notificationTerminal;
+@property (nonatomic, strong, nullable, readwrite) FBMutableFuture<NSData *> *notification;
 
 @end
 
@@ -33,10 +35,19 @@
   }
 
   _buffer = buffer;
-  _terminalData = [NSData dataWithBytes:"\n" length:1];
   _eofHasBeenReceivedFuture = FBMutableFuture.future;
 
   return self;
+}
+
++ (NSData *)newlineTerminal
+{
+  static dispatch_once_t onceToken;
+  static NSData *data = nil;
+  dispatch_once(&onceToken, ^{
+    data = [NSData dataWithBytes:"\n" length:1];
+  });
+  return data;
 }
 
 #pragma mark NSObject
@@ -101,7 +112,7 @@
   }
 }
 
-#pragma mark FBConsumableLineBuffer
+#pragma mark FBConsumableBuffer
 
 - (nullable NSData *)consumeCurrentData
 {
@@ -118,18 +129,23 @@
   return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 }
 
-- (nullable NSData *)consumeLineData
+- (nullable NSData *)consumeUntil:(NSData *)terminal
 {
   if (self.buffer.length == 0) {
     return nil;
   }
-  NSRange newlineRange = [self.buffer rangeOfData:self.terminalData options:0 range:NSMakeRange(0, self.buffer.length)];
+  NSRange newlineRange = [self.buffer rangeOfData:terminal options:0 range:NSMakeRange(0, self.buffer.length)];
   if (newlineRange.location == NSNotFound) {
     return nil;
   }
   NSData *lineData = [self.buffer subdataWithRange:NSMakeRange(0, newlineRange.location)];
-  [self.buffer replaceBytesInRange:NSMakeRange(0, newlineRange.location + 1) withBytes:"" length:0];
+  [self.buffer replaceBytesInRange:NSMakeRange(0, newlineRange.location + terminal.length) withBytes:"" length:0];
   return lineData;
+}
+
+- (nullable NSData *)consumeLineData
+{
+  return [self consumeUntil:FBLineBuffer_Accumilating.newlineTerminal];
 }
 
 - (nullable NSString *)consumeLineString
@@ -141,23 +157,60 @@
   return [[NSString alloc] initWithData:lineData encoding:NSUTF8StringEncoding];
 }
 
+- (FBFuture<NSString *> *)consumeAndNotifyWhen:(NSData *)terminal
+{
+  @synchronized (self) {
+    if (self.notificationTerminal) {
+      return [[FBControlCoreError
+        describe:@"Cannot listen for the two terminals at the same time"]
+        failFuture];
+    }
+    NSData *partial = [self consumeUntil:terminal];
+    if (partial) {
+      return [FBFuture futureWithResult:partial];
+    }
+    self.notificationTerminal = terminal;
+    self.notification = FBMutableFuture.future;
+    return self.notification;
+  }
+}
+
+#pragma mark FBDataConsumer
+
+- (void)consumeData:(NSData *)data
+{
+  [super consumeData:data];
+  @synchronized (self) {
+    if (!self.notificationTerminal) {
+      return;
+    }
+    NSData *partial = [self consumeUntil:self.notificationTerminal];
+    if (!partial) {
+      return;
+    }
+    [self.notification resolveWithResult:partial];
+    self.notification = nil;
+    self.notificationTerminal = nil;
+  }
+}
+
 @end
 
 @implementation FBLineBuffer
 
 #pragma mark Initializers
 
-+ (id<FBAccumulatingLineBuffer>)accumulatingBuffer
++ (id<FBAccumulatingBuffer>)accumulatingBuffer
 {
   return [FBLineBuffer_Accumilating new];
 }
 
-+ (id<FBAccumulatingLineBuffer>)accumulatingBufferForMutableData:(NSMutableData *)data
++ (id<FBAccumulatingBuffer>)accumulatingBufferForMutableData:(NSMutableData *)data
 {
   return [[FBLineBuffer_Accumilating alloc] initWithBackingBuffer:data];
 }
 
-+ (id<FBConsumableLineBuffer>)consumableBuffer
++ (id<FBConsumableBuffer>)consumableBuffer
 {
   return [FBLineBuffer_Consumable new];
 }
@@ -168,7 +221,7 @@
 
 @property (nonatomic, strong, nullable, readwrite) dispatch_queue_t queue;
 @property (nonatomic, copy, nullable, readwrite) void (^consumer)(NSData *);
-@property (nonatomic, strong, readwrite) id<FBConsumableLineBuffer> buffer;
+@property (nonatomic, strong, readwrite) id<FBConsumableBuffer> buffer;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *eofHasBeenReceivedFuture;
 
 @end

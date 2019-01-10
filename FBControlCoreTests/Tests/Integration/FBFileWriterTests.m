@@ -68,7 +68,7 @@
 
 - (void)testOpeningAFifoAtBothEndsAsynchronously
 {
-  id<FBAccumulatingLineBuffer> consumer = [FBLineBuffer accumulatingBuffer];
+  id<FBAccumulatingBuffer> consumer = [FBLineBuffer accumulatingBuffer];
 
   NSString *fifoPath = [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
   int status = mkfifo(fifoPath.UTF8String, S_IWUSR | S_IRUSR);

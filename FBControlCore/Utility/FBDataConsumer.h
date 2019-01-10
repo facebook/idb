@@ -46,9 +46,9 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- The Non-mutating methods of a line reader.
+ The non-mutating methods of a buffer.
  */
-@protocol FBAccumulatingLineBuffer <FBDataConsumerLifecycle>
+@protocol FBAccumulatingBuffer <FBDataConsumerLifecycle>
 
 /**
  Obtains a copy of the current output data.
@@ -63,33 +63,57 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- The Mutating Methods of a line reader.
+ The mutating methods of a buffer.
  */
-@protocol FBConsumableLineBuffer <FBDataConsumerLifecycle, FBAccumulatingLineBuffer>
+@protocol FBConsumableBuffer <FBDataConsumerLifecycle, FBAccumulatingBuffer>
 
 /**
  Consume the remainder of the buffer available, returning it as Data.
  This will flush the entirity of the buffer.
+
+ @return all the current data in the buffer.
  */
 - (nullable NSData *)consumeCurrentData;
 
 /**
  Consume the remainder of the buffer available, returning it as a String.
  This will flush the entirity of the buffer.
+
+ @return all the current data in the buffer as a string.
  */
 - (nullable NSString *)consumeCurrentString;
 
 /**
+ Consumes until data recieved.
+
+ @param terminal the terminal.
+ @return all the data before the separator if there is data to consume, nil otherwise.
+ */
+- (nullable NSData *)consumeUntil:(NSData *)terminal;
+
+/**
  Consume a line if one is available, returning it as Data.
  This will flush the buffer of the lines that are consumed.
+
+ @return all the data before a newline if there is data to consume, nil otherwise.
  */
 - (nullable NSData *)consumeLineData;
 
 /**
  Consume a line if one is available, returning it as a String.
  This will flush the buffer of the lines that are consumed.
+
+ @return all the data before a newline as a string if there is data to consume, nil otherwise.
  */
 - (nullable NSString *)consumeLineString;
+
+/**
+ Notifies when there has been consumption to a terminal
+
+ @param terminal the terminal.
+ @return a future wrapping the read data.
+ */
+- (FBFuture<NSData *> *)consumeAndNotifyWhen:(NSData *)terminal;
 
 @end
 
@@ -105,21 +129,21 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a FBLineBuffer implementation.
  */
-+ (id<FBAccumulatingLineBuffer>)accumulatingBuffer;
++ (id<FBAccumulatingBuffer>)accumulatingBuffer;
 
 /**
  A line buffer that is only mutated through consuming data.
 
  @return a FBLineBuffer implementation.
  */
-+ (id<FBAccumulatingLineBuffer>)accumulatingBufferForMutableData:(NSMutableData *)data;
++ (id<FBAccumulatingBuffer>)accumulatingBufferForMutableData:(NSMutableData *)data;
 
 /**
  A line buffer that is appended to by consuming data and can be drained.
 
- @return a FBConsumableLineBuffer implementation.
+ @return a FBConsumableBuffer implementation.
  */
-+ (id<FBConsumableLineBuffer>)consumableBuffer;
++ (id<FBConsumableBuffer>)consumableBuffer;
 
 @end
 
