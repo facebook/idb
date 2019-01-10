@@ -17,10 +17,7 @@
 #import "FBDevice+Private.h"
 #import "FBDevice.h"
 #import "FBDeviceControlError.h"
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wprotocol"
-#pragma clang diagnostic ignored "-Wincomplete-implementation"
+#import "FBiOSDeviceOperator.h"
 
 static void UninstallCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAMDevice *device)
 {
@@ -80,71 +77,6 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
   _device = device;
 
   return self;
-}
-
-#pragma mark Private
-
-- (FBFuture<NSNull *> *)transferAppURL:(NSURL *)appURL options:(NSDictionary *)options
-{
-  return [FBFuture onQueue:self.device.workQueue resolve:^ {
-    int status = self.device.amDevice.calls.SecureTransferPath(
-      0,
-      self.device.amDevice.amDevice,
-      (__bridge CFURLRef _Nonnull)(appURL),
-      (__bridge CFDictionaryRef _Nonnull)(options),
-      (AMDeviceProgressCallback) TransferCallback,
-      (__bridge void *) (self.device.amDevice)
-    );
-    if (status != 0) {
-      NSString *internalMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
-      return [[FBDeviceControlError
-        describeFormat:@"Failed to transfer '%@' with error (%@)", appURL, internalMessage]
-        failFuture];
-    }
-    return [FBFuture futureWithResult:NSNull.null];
-  }];
-}
-
-- (FBFuture<NSNull *> *)secureInstallApplication:(NSURL *)appURL options:(NSDictionary *)options
-{
-  return [[self.device.amDevice
-    connectToDeviceWithPurpose:@"install"]
-    onQueue:self.device.workQueue pop:^(FBAMDevice *device) {
-      [self.device.logger logFormat:@"Installing Application %@", appURL];
-      int installReturnCode = self.device.amDevice.calls.SecureInstallApplication(
-        0,
-        device.amDevice,
-        (__bridge CFURLRef _Nonnull)(appURL),
-        (__bridge CFDictionaryRef _Nonnull)(options),
-        (AMDeviceProgressCallback) InstallCallback,
-        (__bridge void *) (self.device.amDevice)
-      );
-      if (installReturnCode != 0) {
-        NSString *errorMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(installReturnCode));
-        return [[FBDeviceControlError
-          describeFormat:@"Failed to install application %@ (%@)", [appURL lastPathComponent], errorMessage]
-          failFuture];
-      }
-      [self.device.logger logFormat:@"Installed Application %@", appURL];
-      return [FBFuture futureWithResult:NSNull.null];
-    }];
-}
-
-- (FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)installedApplicationsData
-{
-  return [[self.device.amDevice
-    connectToDeviceWithPurpose:@"installed_apps"]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (FBAMDevice *device) {
-      CFDictionaryRef cf_apps;
-      int returnCode = self.device.amDevice.calls.LookupApplications(device.amDevice, NULL, &cf_apps);
-      if (returnCode != 0) {
-        return [[FBDeviceControlError
-          describe:@"Failed to get list of applications"]
-          failFuture];
-      }
-      NSDictionary<NSString *, NSDictionary<NSString *, id> *> *apps = CFBridgingRelease(cf_apps);
-      return [FBFuture futureWithResult:apps];
-    }];
 }
 
 #pragma mark FBApplicationCommands Implementation
@@ -228,42 +160,88 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
   return [FBFuture futureWithResult:@{}];
 }
 
-#pragma mark Forwarding
-
-+ (BOOL)isSelectorFromProtocolImplementation:(SEL)selector
+- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
 {
-  Protocol *protocol = @protocol(FBApplicationCommands);
-  struct objc_method_description description = protocol_getMethodDescription(protocol, selector, YES, YES);
-  return description.name != NULL;
+  return [[self
+    installedApplicationWithBundleID:bundleID]
+    onQueue:self.device.workQueue chain:^(FBFuture *future) {
+      return [FBFuture futureWithResult:(future.state == FBFutureStateDone ? @YES : @NO)];
+    }];
 }
 
-+ (BOOL)instancesRespondToSelector:(SEL)selector
+- (FBFuture<NSNull *> *)killApplicationWithBundleID:(NSString *)bundleID
 {
-  if ([self isSelectorFromProtocolImplementation:selector]) {
-    return YES;
-  }
-  return [super instancesRespondToSelector:selector];
+  return [((FBiOSDeviceOperator *) self.device.deviceOperator) killApplicationWithBundleID:bundleID];
 }
 
-- (BOOL)respondsToSelector:(SEL)selector
+- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
-  if ([self.class isSelectorFromProtocolImplementation:selector]) {
-    return YES;
-  }
-  return [super respondsToSelector:selector];
+  return [((FBiOSDeviceOperator *) self.device.deviceOperator) launchApplication:configuration];
 }
 
-- (id)forwardingTargetForSelector:(SEL)selector
+#pragma mark Private
+
+- (FBFuture<NSNull *> *)transferAppURL:(NSURL *)appURL options:(NSDictionary *)options
 {
-  // FBDeviceApplicationCommands doesn't itself implement all FBApplicationCommands methods.
-  // So forward to the Device Operator where appropriate.
-  id<FBDeviceOperator> operator = self.device.deviceOperator;
-  if ([operator respondsToSelector:selector]) {
-    return operator;
-  }
-  return [super forwardingTargetForSelector:selector];
+  return [FBFuture onQueue:self.device.workQueue resolve:^ {
+    int status = self.device.amDevice.calls.SecureTransferPath(
+      0,
+      self.device.amDevice.amDevice,
+      (__bridge CFURLRef _Nonnull)(appURL),
+      (__bridge CFDictionaryRef _Nonnull)(options),
+      (AMDeviceProgressCallback) TransferCallback,
+      (__bridge void *) (self.device.amDevice)
+    );
+    if (status != 0) {
+      NSString *internalMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
+      return [[FBDeviceControlError
+        describeFormat:@"Failed to transfer '%@' with error (%@)", appURL, internalMessage]
+        failFuture];
+    }
+    return [FBFuture futureWithResult:NSNull.null];
+  }];
+}
+
+- (FBFuture<NSNull *> *)secureInstallApplication:(NSURL *)appURL options:(NSDictionary *)options
+{
+  return [[self.device.amDevice
+    connectToDeviceWithPurpose:@"install"]
+    onQueue:self.device.workQueue pop:^(FBAMDevice *device) {
+      [self.device.logger logFormat:@"Installing Application %@", appURL];
+      int installReturnCode = self.device.amDevice.calls.SecureInstallApplication(
+        0,
+        device.amDevice,
+        (__bridge CFURLRef _Nonnull)(appURL),
+        (__bridge CFDictionaryRef _Nonnull)(options),
+        (AMDeviceProgressCallback) InstallCallback,
+        (__bridge void *) (self.device.amDevice)
+      );
+      if (installReturnCode != 0) {
+        NSString *errorMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(installReturnCode));
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to install application %@ (%@)", [appURL lastPathComponent], errorMessage]
+          failFuture];
+      }
+      [self.device.logger logFormat:@"Installed Application %@", appURL];
+      return [FBFuture futureWithResult:NSNull.null];
+    }];
+}
+
+- (FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)installedApplicationsData
+{
+  return [[self.device.amDevice
+    connectToDeviceWithPurpose:@"installed_apps"]
+    onQueue:self.device.workQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (FBAMDevice *device) {
+      CFDictionaryRef cf_apps;
+      int returnCode = self.device.amDevice.calls.LookupApplications(device.amDevice, NULL, &cf_apps);
+      if (returnCode != 0) {
+        return [[FBDeviceControlError
+          describe:@"Failed to get list of applications"]
+          failFuture];
+      }
+      NSDictionary<NSString *, NSDictionary<NSString *, id> *> *apps = CFBridgingRelease(cf_apps);
+      return [FBFuture futureWithResult:apps];
+    }];
 }
 
 @end
-
-#pragma clang diagnostic pop

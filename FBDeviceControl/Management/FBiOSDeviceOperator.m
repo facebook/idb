@@ -193,11 +193,6 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
 
 #pragma mark FBApplicationCommands Implementation
 
-- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
-{
-  return [self installedApplicationWithBundleIdentifier:bundleID];
-}
-
 - (FBFuture<id> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   NSError *error = nil;
