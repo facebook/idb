@@ -190,7 +190,6 @@ static NSString *StateStringFromState(FBFileReaderState state)
   if (self.state != FBFileReaderStateReading) {
     return self.ioChannelFinishedReadOperation;
   }
-  [self.consumer consumeEndOfFile];
   NSAssert(self.io, @"The IO Channel to close should be present");
   switch (errorCode) {
     case 0:
@@ -217,7 +216,15 @@ static NSString *StateStringFromState(FBFileReaderState state)
   if (self.state == FBFileReaderStateReading) {
     [self ioChannelHasFinishedReadOperation:fileHandle withErrorCode:errorCode];
   }
-  // We only need to get rid of the IO Channel to release the cycles on self.
+  // This should only be written once and only after all pending write operations have finished.
+  // We can't run this after dispatch_io_close because, from the dispatch_io_stop docs
+  // "If the DISPATCH_IO_STOP option is specified in the flags parameter, the system attempts to interrupt any outstanding read and write operations on the I/O channel.
+  //  Even if you specify this flag, the corresponding handlers may be invoked with partial results.
+  //  In addition, the final invocation of the handler is passed the ECANCELED error code to indicate that the operation was interrupted."
+  // This means that we can't assume that the dispatch_io_stop will result in no more data to be delivered to the consumer.
+  // This method is only called once, and at the end of *all* read operations.
+  [self.consumer consumeEndOfFile];
+  // Weneed to get rid of the IO Channel to release the cycles on self.
   self.io = nil;
 }
 
