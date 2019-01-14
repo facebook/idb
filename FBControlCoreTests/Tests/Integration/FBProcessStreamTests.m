@@ -33,7 +33,6 @@
   [[output detach] await:&error];
   XCTAssertNil(error);
 
-  XCTAssertThrows(pipe.fileHandleForWriting.fileDescriptor);
   XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
 }
 

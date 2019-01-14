@@ -166,7 +166,7 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
 
   return [[FBFileWriter
     asyncWriterForFilePath:filePath]
-    onQueue:queue map:^(id<FBDataConsumer> writer) {
+    onQueue:queue map:^(id<FBDataConsumer, FBDataConsumerLifecycle> writer) {
       [logger.info logFormat:@"Mirroring output to %@", filePath];
       return [FBCompositeDataConsumer consumerWithConsumers:@[
         consumer,

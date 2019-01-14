@@ -20,33 +20,12 @@
 
 @implementation FBFileWriterTests
 
-- (void)testClosesFileHandle
-{
-  // Setup
-  NSPipe *pipe = NSPipe.pipe;
-  id<FBDataConsumer> writer = [FBFileWriter syncWriterWithFileHandle:pipe.fileHandleForWriting];
-
-  // Write some data and confirm that it is as expected.
-  NSData *expected = [@"Foo Bar Baz" dataUsingEncoding:NSUTF8StringEncoding];
-  [writer consumeData:expected];
-  NSData *actual = [pipe.fileHandleForReading availableData];
-  XCTAssertEqualObjects(expected, actual);
-
-  // Close the handle, confirm it does not assert if more data arrives.
-  [writer consumeEndOfFile];
-  XCTAssertNoThrow([writer consumeData:expected]);
-
-  // There should be no more data to consume.
-  actual = [pipe.fileHandleForReading readDataToEndOfFile];
-  XCTAssertEqual(actual.length, 0u);
-}
-
-- (void)testNonBlocking
+- (void)testNonBlockingCloseOfPipe
 {
   // Setup
   NSPipe *pipe = NSPipe.pipe;
   NSError *error = nil;
-  id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:&error];
+  id<FBDataConsumer, FBDataConsumerLifecycle> writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(writer);
 
@@ -57,13 +36,30 @@
   NSData *actual = [pipe.fileHandleForReading availableData];
   XCTAssertEqualObjects(expected, actual);
 
-  // Close the handle, confirm it does not assert if more data arrives.
+  // Close the writer by consuming the end of file
   [writer consumeEndOfFile];
-  XCTAssertNoThrow([writer consumeData:expected]);
+  BOOL success = [writer.eofHasBeenReceived await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 
-  // There should be no more data to consume.
-  actual = [pipe.fileHandleForReading readDataToEndOfFile];
-  XCTAssertEqual(actual.length, 0u);
+  [pipe.fileHandleForWriting closeFile];
+  [pipe.fileHandleForReading closeFile];
+}
+
+- (void)testNonBlockingClose
+{
+  // Setup
+  NSError *error = nil;
+  NSString *filePath = [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
+  NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:filePath];
+  id<FBDataConsumer, FBDataConsumerLifecycle> writer = [FBFileWriter asyncWriterWithFileHandle:fileHandle error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(writer);
+
+  // Write some data and confirm that it is as expected.
+  NSData *data = [@"Foo Bar Baz" dataUsingEncoding:NSUTF8StringEncoding];
+  [writer consumeData:data];
+  [writer consumeEndOfFile];
 }
 
 - (void)testOpeningAFifoAtBothEndsAsynchronously
