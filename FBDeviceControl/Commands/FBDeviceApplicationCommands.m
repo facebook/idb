@@ -46,24 +46,6 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 
 #pragma mark Initializers
 
-+ (FBInstalledApplication *)installedApplicationFromDictionary:(NSDictionary<NSString *, id> *)app
-{
-  NSString *bundleName = app[FBApplicationInstallInfoKeyBundleName] ?: @"";
-  NSString *path = app[FBApplicationInstallInfoKeyPath] ?: @"";
-  NSString *bundleID = app[FBApplicationInstallInfoKeyBundleIdentifier];
-  FBApplicationBundle *bundle = [FBApplicationBundle
-                                 applicationWithName:bundleName
-                                 path:path
-                                 bundleID:bundleID];
-
-  NSString *installTypeString = app[FBApplicationInstallInfoKeyApplicationType] ?: @"";
-  FBApplicationInstallType installType = [FBInstalledApplication installTypeFromString:installTypeString];
-  FBInstalledApplication *application = [FBInstalledApplication
-                                         installedApplicationWithBundle:bundle
-                                         installType:installType];
-  return application;
-}
-
 + (instancetype)commandsWithTarget:(FBDevice *)target
 {
   return [[self alloc] initWithDevice:target];
@@ -127,7 +109,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 - (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications
 {
   return [[self
-    installedApplicationsData]
+    installedApplicationsData:FBDeviceApplicationCommands.installedApplicationLookupAttributes]
     onQueue:self.device.asyncQueue map:^(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *applicationData) {
       NSMutableArray<FBInstalledApplication *> *installedApplications = [[NSMutableArray alloc] initWithCapacity:applicationData.count];
       NSEnumerator *objectEnumerator = [applicationData objectEnumerator];
@@ -145,14 +127,14 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 - (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID
 {
   return [[self
-   installedApplicationsData]
-   onQueue:self.device.asyncQueue fmap:^FBFuture *(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *applicationData) {
-     NSDictionary <NSString *, id> *app = applicationData[bundleID];
-     if (!app) {
-       return [[FBDeviceControlError describeFormat:@"Application with bundle ID: %@ is not installed", bundleID] failFuture];
-     }
-     FBInstalledApplication *application = [FBDeviceApplicationCommands installedApplicationFromDictionary:app];
-     return [FBFuture futureWithResult:application];
+    installedApplicationsData:FBDeviceApplicationCommands.installedApplicationLookupAttributes]
+    onQueue:self.device.asyncQueue fmap:^FBFuture *(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *applicationData) {
+      NSDictionary <NSString *, id> *app = applicationData[bundleID];
+      if (!app) {
+        return [[FBDeviceControlError describeFormat:@"Application with bundle ID: %@ is not installed", bundleID] failFuture];
+      }
+      FBInstalledApplication *application = [FBDeviceApplicationCommands installedApplicationFromDictionary:app];
+      return [FBFuture futureWithResult:application];
    }];
 }
 
@@ -242,20 +224,26 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
     }];
 }
 
-- (FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)installedApplicationsData
+- (FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)installedApplicationsData:(NSArray<NSString *> *)returnAttributes
 {
   return [[self.device.amDevice
     connectToDeviceWithPurpose:@"installed_apps"]
     onQueue:self.device.workQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (FBAMDevice *device) {
-      CFDictionaryRef cf_apps;
-      int returnCode = self.device.amDevice.calls.LookupApplications(device.amDevice, NULL, &cf_apps);
+      NSDictionary<NSString *, id> *options = @{
+        @"ReturnAttributes": returnAttributes,
+      };
+      CFDictionaryRef applications;
+      int returnCode = self.device.amDevice.calls.LookupApplications(
+        device.amDevice,
+        (__bridge CFDictionaryRef _Nullable)(options),
+        &applications
+      );
       if (returnCode != 0) {
         return [[FBDeviceControlError
           describe:@"Failed to get list of applications"]
           failFuture];
       }
-      NSDictionary<NSString *, NSDictionary<NSString *, id> *> *apps = CFBridgingRelease(cf_apps);
-      return [FBFuture futureWithResult:apps];
+      return [FBFuture futureWithResult:CFBridgingRelease(applications)];
     }];
 }
 
@@ -266,6 +254,38 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
     onQueue:self.device.workQueue map:^(FBInstalledApplication *installedApplication) {
       return installedApplication.bundle.path;
     }];
+}
+
++ (FBInstalledApplication *)installedApplicationFromDictionary:(NSDictionary<NSString *, id> *)app
+{
+  NSString *bundleName = app[FBApplicationInstallInfoKeyBundleName] ?: @"";
+  NSString *path = app[FBApplicationInstallInfoKeyPath] ?: @"";
+  NSString *bundleID = app[FBApplicationInstallInfoKeyBundleIdentifier];
+  FBApplicationInstallType installType = [FBInstalledApplication installTypeFromString:(app[FBApplicationInstallInfoKeyApplicationType] ?: @"")];
+
+  FBApplicationBundle *bundle = [FBApplicationBundle
+    applicationWithName:bundleName
+    path:path
+    bundleID:bundleID];
+
+  return [FBInstalledApplication
+    installedApplicationWithBundle:bundle
+    installType:installType];
+}
+
++ (NSArray<NSString *> *)installedApplicationLookupAttributes
+{
+  static dispatch_once_t onceToken;
+  static NSArray<NSString *> *lookupAttributes = nil;
+  dispatch_once(&onceToken, ^{
+    lookupAttributes = @[
+      FBApplicationInstallInfoKeyApplicationType,
+      FBApplicationInstallInfoKeyBundleIdentifier,
+      FBApplicationInstallInfoKeyBundleName,
+      FBApplicationInstallInfoKeyPath,
+    ];
+  });
+  return lookupAttributes;
 }
 
 @end
