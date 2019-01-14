@@ -34,14 +34,6 @@
 #pragma mark Public Methods
 
 /**
- Launches an Application with the provided Application Launch Configuration.
-
- @param configuration the Application Launch Configuration to use.
- @return A future that resolves when successful, with the process identifier of the launched process.
- */
-- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration;
-
-/**
  Kills application with the given bundle identifier.
 
  @param bundleID bundle ID of installed application

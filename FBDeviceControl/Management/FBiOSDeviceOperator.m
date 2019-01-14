@@ -85,25 +85,6 @@
   return self;
 }
 
-#pragma mark - Device specific operations
-
-- (NSString *)applicationPathForApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  id<DVTApplication> app = [self installedApplicationWithBundleIdentifier:bundleID];
-  return [app installedPath];
-}
-
-- (void)fetchApplications
-{
-  [[self fetchApplicationsAsync] await:nil];
-}
-
-- (id<DVTApplication>)installedApplicationWithBundleIdentifier:(NSString *)bundleID
-{
-  [self fetchApplications];
-  return [self.dvtDevice installedApplicationWithBundleIdentifier:bundleID];
-}
-
 #pragma mark - DVTDevice support
 
 - (nullable DVTiOSDevice *)dvtDeviceWithUDID:(NSString *)udid
@@ -177,13 +158,6 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
     arg:bundleID, nil];
 }
 
-- (FBFuture<id> *)observeProcessWithID:(pid_t)processID
-{
-  return [self
-    hubControlFutureWithSelector:NSSelectorFromString(@"startObservingPid:")
-    arg:@(processID), nil];
-}
-
 - (FBFuture<id> *)killProcessWithID:(pid_t)processID
 {
   return [self
@@ -192,22 +166,6 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
 }
 
 #pragma mark FBApplicationCommands Implementation
-
-- (FBFuture<id> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
-{
-  NSError *error = nil;
-  NSString *remotePath = [self applicationPathForApplicationWithBundleID:configuration.bundleID error:&error];
-  if (!remotePath) {
-    return [FBFuture futureWithError:error];
-  }
-  NSDictionary *options = @{@"StartSuspendedKey" : @NO};
-  return [[self
-    hubControlFutureWithSelector:NSSelectorFromString(@"launchSuspendedProcessWithDevicePath:bundleIdentifier:environment:arguments:options:")
-    arg:remotePath, configuration.bundleID, configuration.environment, configuration.arguments, options, nil]
-    onQueue:dispatch_get_main_queue() fmap:^(NSNumber *processIdentifier) {
-      return [self observeProcessWithID:processIdentifier.intValue];
-    }];
-}
 
 - (FBFuture<NSNull *> *)killApplicationWithBundleID:(NSString *)bundleID
 {
@@ -239,26 +197,6 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
   }];
 
   return future;
-}
-
-- (id)executeHubProcessControlSelector:(SEL)aSelector
-                                 error:(NSError *_Nullable *)error
-                             arguments:(id)arg, ...
-{
-  return [[self hubControlFutureWithSelector:aSelector arg:arg] await:error];
-}
-
-- (FBFuture<NSNull *> *)fetchApplicationsAsync
-{
-  if (!self.dvtDevice.applications) {
-    return [FBFuture onQueue:self.device.asyncQueue resolveValue:^id (NSError **error) {
-      DVTFuture *future = [self.dvtDevice.token fetchApplications];
-      [future waitUntilFinished];
-      return NSNull.null;
-    }];
-  } else {
-    return [FBFuture futureWithResult:NSNull.null];
-  }
 }
 
 @end

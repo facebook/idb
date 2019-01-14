@@ -16,7 +16,9 @@
 #import "FBAMDServiceConnection.h"
 #import "FBDevice+Private.h"
 #import "FBDevice.h"
+#import "FBDeviceApplicationLaunchStrategy.h"
 #import "FBDeviceControlError.h"
+#import "FBDeviceDebuggerCommands.h"
 #import "FBiOSDeviceOperator.h"
 
 static void UninstallCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAMDevice *device)
@@ -176,7 +178,20 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 
 - (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
-  return [((FBiOSDeviceOperator *) self.device.deviceOperator) launchApplication:configuration];
+  __block NSString *remoteAppPath = nil;
+  return [[[self
+    remoteApplicationPathForConfiguration:configuration]
+    onQueue:self.device.workQueue pushTeardown:^(NSString *result) {
+      remoteAppPath = result;
+      return [[FBDeviceDebuggerCommands
+        commandsWithTarget:self.device]
+        connectToDebugServer];
+    }]
+    onQueue:self.device.workQueue pop:^(FBAMDServiceConnection *connection) {
+      return [[FBDeviceApplicationLaunchStrategy
+        strategyWithDebugConnection:connection logger:self.device.logger]
+        launchApplication:configuration remoteAppPath:remoteAppPath];
+    }];
 }
 
 #pragma mark Private
@@ -241,6 +256,15 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
       }
       NSDictionary<NSString *, NSDictionary<NSString *, id> *> *apps = CFBridgingRelease(cf_apps);
       return [FBFuture futureWithResult:apps];
+    }];
+}
+
+- (FBFuture<NSString *> *)remoteApplicationPathForConfiguration:(FBApplicationLaunchConfiguration *)configuration
+{
+  return [[self
+    installedApplicationWithBundleID:configuration.bundleID]
+    onQueue:self.device.workQueue map:^(FBInstalledApplication *installedApplication) {
+      return installedApplication.bundle.path;
     }];
 }
 
