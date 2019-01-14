@@ -73,7 +73,7 @@ static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
   }];
 }
 
-- (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout didTimeout:(BOOL *)didTimeout error:(NSError **)error
+- (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   [NSRunLoop updateRunLoopIsAwaiting:YES];
   BOOL completed = [self spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
@@ -81,15 +81,9 @@ static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
   }];
   [NSRunLoop updateRunLoopIsAwaiting:NO];
   if (!completed) {
-    if (didTimeout) {
-      *didTimeout = YES;
-    }
     return [[FBControlCoreError
       describeFormat:@"Timed out waiting for future %@ in %f seconds", future, timeout]
       fail:error];
-  }
-  if (didTimeout) {
-    *didTimeout = NO;
   }
   if (future.error) {
     if (error) {
@@ -97,13 +91,12 @@ static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
     }
     return nil;
   }
+  if (future.state == FBFutureStateCancelled) {
+    return [[FBControlCoreError
+      describeFormat:@"Future %@ was cancelled", future]
+      fail:error];
+  }
   return future.result;
-}
-
-- (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  BOOL didTimeout = NO;
-  return [self awaitCompletionOfFuture:future timeout:timeout didTimeout:&didTimeout error:error];
 }
 
 @end

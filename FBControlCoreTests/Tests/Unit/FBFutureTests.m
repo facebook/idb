@@ -297,6 +297,19 @@
   XCTAssertEqualObjects(error, expected);
 }
 
+- (void)testAsyncCancellation
+{
+  FBMutableFuture *future = FBMutableFuture.future;
+  dispatch_async(self.queue, ^{
+    [future cancel];
+  });
+
+  NSError *error = nil;
+  id value = [future awaitWithTimeout:1 error:&error];
+  XCTAssertNil(value);
+  XCTAssertNotNil(error.description);
+}
+
 - (void)testChainValueThenError
 {
   XCTestExpectation *step1 = [[XCTestExpectation alloc] initWithDescription:@"chain1 is called"];

@@ -112,8 +112,9 @@
   }
 
   NSError *error;
-  [[output detach] await:&error];
-  XCTAssertNil(error);
+  BOOL success = [[output detach] await:&error] != nil;
+  XCTAssertFalse(success);
+  XCTAssertNotNil(error);
   XCTAssertEqual(successes, 1u);
 }
 
