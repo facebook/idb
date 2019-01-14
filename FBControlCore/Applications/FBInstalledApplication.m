@@ -11,15 +11,18 @@
 
 #import "FBApplicationBundle.h"
 
-FBApplicationInstallTypeString const FBApplicationInstallTypeStringUser = @"user";
+FBApplicationInstallTypeString const FBApplicationInstallTypeStringUnknown = @"unknown";
 FBApplicationInstallTypeString const FBApplicationInstallTypeStringSystem = @"system";
 FBApplicationInstallTypeString const FBApplicationInstallTypeStringMac = @"mac";
-FBApplicationInstallTypeString const FBApplicationInstallTypeStringUnknown = @"unknown";
+FBApplicationInstallTypeString const FBApplicationInstallTypeStringUser = @"user";
+FBApplicationInstallTypeString const FBApplicationInstallTypeStringUserEnterprise = @"user_enterprise";
+FBApplicationInstallTypeString const FBApplicationInstallTypeStringUserDevelopment = @"user_development";
 
 FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyApplicationType = @"ApplicationType";
-FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyPath = @"Path";
-FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleName = @"CFBundleName";
 FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleIdentifier = @"CFBundleIdentifier";
+FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleName = @"CFBundleName";
+FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyPath = @"Path";
+FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdentity = @"SignerIdentity";
 
 @implementation FBInstalledApplication
 
@@ -105,6 +108,10 @@ static NSString *const KeyDataContainer = @"data_container";
   switch (installType) {
     case FBApplicationInstallTypeUser:
       return FBApplicationInstallTypeStringUser;
+    case FBApplicationInstallTypeUserDevelopment:
+      return FBApplicationInstallTypeStringUserDevelopment;
+    case FBApplicationInstallTypeUserEnterprise:
+      return FBApplicationInstallTypeStringUserEnterprise;
     case FBApplicationInstallTypeSystem:
       return FBApplicationInstallTypeStringSystem;
     case FBApplicationInstallTypeMac:
@@ -114,7 +121,7 @@ static NSString *const KeyDataContainer = @"data_container";
   }
 }
 
-+ (FBApplicationInstallType)installTypeFromString:(FBApplicationInstallTypeString)installTypeString
++ (FBApplicationInstallType)installTypeFromString:(nullable FBApplicationInstallTypeString)installTypeString signerIdentity:(nullable NSString *)signerIdentity
 {
   if (!installTypeString) {
     return FBApplicationInstallTypeUnknown;
@@ -124,6 +131,11 @@ static NSString *const KeyDataContainer = @"data_container";
     return FBApplicationInstallTypeSystem;
   }
   if ([installTypeString isEqualToString:FBApplicationInstallTypeStringUser]) {
+    if ([signerIdentity containsString:@"iPhone Distribution"]) {
+      return FBApplicationInstallTypeUserEnterprise;
+    } else if ([signerIdentity containsString:@"iPhone Developer"]) {
+      return FBApplicationInstallTypeUserDevelopment;
+    }
     return FBApplicationInstallTypeUser;
   }
   if ([installTypeString isEqualToString:FBApplicationInstallTypeStringMac]) {

@@ -258,7 +258,7 @@ static NSString *const KeyDataContainer = @"DataContainer";
 
   return [FBInstalledApplication
     installedApplicationWithBundle:bundle
-    installType:[FBInstalledApplication installTypeFromString:typeString]
+    installType:[FBInstalledApplication installTypeFromString:typeString signerIdentity:nil]
     dataContainer:dataContainer.path];
 }
 

@@ -19,10 +19,12 @@ NS_ASSUME_NONNULL_BEGIN
  The Installed Type of the Application.
  */
 typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
-  FBApplicationInstallTypeUnknown = 0, /** The Application Type is Unknown */
-  FBApplicationInstallTypeSystem = 1, /** The Application Type is part of the Operating System */
-  FBApplicationInstallTypeUser = 2, /** The Application Type is installable by the User */
-  FBApplicationInstallTypeMac = 3, /** The Application Type is part of macOS */
+  FBApplicationInstallTypeUnknown = 0, /** The Application is unknown */
+  FBApplicationInstallTypeSystem = 1, /** The Application is part of the Operating System */
+  FBApplicationInstallTypeMac = 2, /** The Application is part of macOS */
+  FBApplicationInstallTypeUser = 3, /** The Application has been installed by the user */
+  FBApplicationInstallTypeUserEnterprise = 4, /** The Application has been installed by the user and signed with a distribution certificate */
+  FBApplicationInstallTypeUserDevelopment = 5, /** The Application has been installed by the user and signed with a development certificate */
 };
 
 /**
@@ -31,18 +33,20 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
 typedef NSString *FBApplicationInstallTypeString NS_STRING_ENUM;
 extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringUnknown;
 extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringSystem;
-extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringUser;
 extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringMac;
+extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringUser;
+extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringUserEnterprise;
+extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringUserDevelopment;
 
 /**
  Keys from UserInfo about Applications
  */
 typedef NSString *FBApplicationInstallInfoKey NS_EXTENSIBLE_STRING_ENUM;
 extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyApplicationType;
-extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyPath;
-extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleName;
 extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleIdentifier;
-
+extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleName;
+extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyPath;
+extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdentity;
 
 /**
  A container for an Application Bundle and how it is installed.
@@ -91,6 +95,9 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleIdenti
 
 /**
  Returns a String Represnting the Application Install Type.
+
+ @param installType the install type enum.
+ @return a string of the install type.
  */
 + (FBApplicationInstallTypeString)stringFromApplicationInstallType:(FBApplicationInstallType)installType;
 
@@ -98,8 +105,10 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleIdenti
  Returns the FBApplicationInstallType from the string representation.
 
  @param installTypeString install type as a string
+ @param signerIdentity the signer identity.
+ @return an FBApplicationInstallType
  */
-+ (FBApplicationInstallType)installTypeFromString:(nullable FBApplicationInstallTypeString)installTypeString;
++ (FBApplicationInstallType)installTypeFromString:(nullable FBApplicationInstallTypeString)installTypeString signerIdentity:(nullable NSString *)signerIdentity;
 
 @end
 

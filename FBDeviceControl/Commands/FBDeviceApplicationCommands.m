@@ -261,7 +261,9 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
   NSString *bundleName = app[FBApplicationInstallInfoKeyBundleName] ?: @"";
   NSString *path = app[FBApplicationInstallInfoKeyPath] ?: @"";
   NSString *bundleID = app[FBApplicationInstallInfoKeyBundleIdentifier];
-  FBApplicationInstallType installType = [FBInstalledApplication installTypeFromString:(app[FBApplicationInstallInfoKeyApplicationType] ?: @"")];
+  FBApplicationInstallType installType = [FBInstalledApplication
+    installTypeFromString:(app[FBApplicationInstallInfoKeyApplicationType] ?: @"")
+    signerIdentity:(app[FBApplicationInstallInfoKeySignerIdentity] ? : @"")];
 
   FBApplicationBundle *bundle = [FBApplicationBundle
     applicationWithName:bundleName
@@ -283,6 +285,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
       FBApplicationInstallInfoKeyBundleIdentifier,
       FBApplicationInstallInfoKeyBundleName,
       FBApplicationInstallInfoKeyPath,
+      FBApplicationInstallInfoKeySignerIdentity,
     ];
   });
   return lookupAttributes;
