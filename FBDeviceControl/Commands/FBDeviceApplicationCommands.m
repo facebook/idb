@@ -162,7 +162,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 {
   __block NSString *remoteAppPath = nil;
   return [[[self
-    remoteApplicationPathForConfiguration:configuration]
+    launchableRemoteApplicationPathForConfiguration:configuration]
     onQueue:self.device.workQueue pushTeardown:^(NSString *result) {
       remoteAppPath = result;
       return [[FBDeviceDebuggerCommands
@@ -247,12 +247,17 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
     }];
 }
 
-- (FBFuture<NSString *> *)remoteApplicationPathForConfiguration:(FBApplicationLaunchConfiguration *)configuration
+- (FBFuture<NSString *> *)launchableRemoteApplicationPathForConfiguration:(FBApplicationLaunchConfiguration *)configuration
 {
   return [[self
     installedApplicationWithBundleID:configuration.bundleID]
-    onQueue:self.device.workQueue map:^(FBInstalledApplication *installedApplication) {
-      return installedApplication.bundle.path;
+    onQueue:self.device.workQueue fmap:^(FBInstalledApplication *installedApplication) {
+      if (installedApplication.installType != FBApplicationInstallTypeUserDevelopment) {
+        return [[FBDeviceControlError
+          describeFormat:@"Application %@ cannot be launched as it's not signed with a development identity", installedApplication]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:installedApplication.bundle.path];
     }];
 }
 
