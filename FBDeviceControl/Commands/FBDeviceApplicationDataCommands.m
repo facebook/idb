@@ -70,7 +70,6 @@
         return nil;
       }
     }
-
     return NSNull.null;
   }];
 }
@@ -98,22 +97,18 @@
     if (!success) {
       return nil;
     }
-
-    return [NSNull null];
+    return NSNull.null;
   }];
 }
 
 - (FBFuture<NSNull *> *)movePath:(NSString *)originPath toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID
 {
   return [self handleWithAFCSessionForBundleID:bundleID operationBlock:^ NSNull * (FBAFCConnection *afc, NSError **error) {
-    mach_error_t result = afc.calls.RenamePath(afc.connection, [originPath UTF8String], [destinationPath UTF8String]);
-    if (result != 0) {
-      return [[FBDeviceControlError
-        describeFormat:@"Error when moving path: %d", result]
-        fail:error];
+    BOOL success = [afc renamePath:originPath destination:destinationPath error:error];
+    if (!success) {
+      return nil;
     }
-
-    return [NSNull null];
+    return NSNull.null;
   }];
 }
 
@@ -124,8 +119,7 @@
     if (!success) {
       return nil;
     }
-
-    return [NSNull null];
+    return NSNull.null;
   }];
 }
 

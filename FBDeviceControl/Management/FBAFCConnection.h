@@ -95,6 +95,16 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)removePath:(NSString *)path recursively:(BOOL)recursively error:(NSError **)error;
 
 /**
+ Renames a path.
+
+ @param path the path to rename
+ @param destination the destination path.
+ @param error an error out for any occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)renamePath:(NSString *)path destination:(NSString *)destination error:(NSError **)error;
+
+/**
  Close the connection.
  The connection should not be used after this.
 

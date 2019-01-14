@@ -165,6 +165,17 @@ const char *DoubleDot = "..";
   }
 }
 
+- (BOOL)renamePath:(NSString *)path destination:(NSString *)destination error:(NSError **)error
+{
+  mach_error_t result = self.calls.RenamePath(self.connection, path.UTF8String, destination.UTF8String);
+  if (result != 0) {
+    return [[FBDeviceControlError
+      describeFormat:@"Error when renaming from %@ to %@: %@", path, destination, [self errorMessageWithCode:result]]
+      failBool:error];
+  }
+  return YES;
+}
+
 - (BOOL)closeWithError:(NSError **)error
 {
   if (!_connection) {
