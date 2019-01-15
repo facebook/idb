@@ -182,53 +182,56 @@ static NSString *StateStringFromState(FBFileReaderState state)
     return self.ioChannelFinishedReadOperation;
   }
 
-  // Return the future after dispatching to the main queue.
-  // Cleanup of the IO Channel happens in the dispatch_io_create callback;
-  return [self ioChannelHasFinishedReadOperation:self.fileHandle withErrorCode:ECANCELED];
+  // dispatch_io_close will stop future reads of the io channel.
+  // However, it does not mean that the dispatch_io_read callback will recieve further calls.
+  // The true arbiter of whether we have reached the end of a read operation is 'done' being set in dispatch_io_read.
+  // Therefore, closing the channel will have the effect that dispatch_io_read will become 'done' in the near future.
+  // The ioChannelFinishedReadOperation future will then be resolved, so we can return that future from here.
+  dispatch_io_close(self.io, DISPATCH_IO_STOP);
+  return self.ioChannelFinishedReadOperation;
 }
 
 - (FBFuture<NSNumber *> *)ioChannelHasFinishedReadOperation:(NSFileHandle *)fileHandle withErrorCode:(int)errorCode
 {
-  // This can be called through a manual stopping of reading, or reaching the eof.
-  // Either way this should only execute once, so short circuit if it does.
+  // This should only be called in response to the 'done' flagging on dispatch_io_read and not after calling dispatch_io_close.
+  // "If the DISPATCH_IO_STOP option is specified in the flags parameter, the system attempts to interrupt any outstanding read and write operations on the I/O channel.
+  //  Even if you specify this flag, the corresponding handlers may be invoked with partial results.
+  //  In addition, the final invocation of the handler is passed the ECANCELED error code to indicate that the operation was interrupted."
+  // This means that we can't assume that the dispatch_io_close will result in no more data to be delivered to dispatch_io_read and therefore the consumer.
+  // We should also short circuit if we're not at a terminal state.
   if (self.state != FBFileReaderStateReading) {
     return self.ioChannelFinishedReadOperation;
   }
-  NSAssert(self.io, @"The IO Channel to close should be present");
   switch (errorCode) {
     case 0:
       self.state = FBFileReaderStateFinishedReadingNormally;
-      dispatch_io_close(self.io, 0);
       break;
     case ECANCELED:
       self.state = FBFileReaderStateFinishedReadingByCancellation;
-      dispatch_io_close(self.io, DISPATCH_IO_STOP);
       break;
     default:
       self.state = FBFileReaderStateFinishedReadingInError;
-      dispatch_io_close(self.io, 0);
       break;
   }
+  // Closing is not essential here as dispatch_io_close only marks the IO channel to prevent futher dispatch_io operations.
+  // "After calling this function, you should not schedule any more read or write operations on the channel. Doing so causes an error to be sent to your handler".
+  // However, this does enforce the invariant that future operations on the channel should fail.
+  dispatch_io_close(self.io, 0);
   [self.ioChannelFinishedReadOperation resolveWithResult:@(errorCode)];
+  [self.consumer consumeEndOfFile];
   return [[FBFuture futureWithResult:@(errorCode)] named:self.ioChannelFinishedReadOperation.name];
 }
 
 - (void)ioChannelControlHasRelinquished:(NSFileHandle *)fileHandle withErrorCode:(int)errorCode
 {
+  NSAssert(self.io, @"Should only be called if an IO channel is present");
   // In the case of a bad file descriptor (EBADF) this may be called before we're done.
   // In that case, make sure we do the first-stage of tear-down.
   if (self.state == FBFileReaderStateReading) {
     [self ioChannelHasFinishedReadOperation:fileHandle withErrorCode:errorCode];
   }
-  // This should only be written once and only after all pending write operations have finished.
-  // We can't run this after dispatch_io_close because, from the dispatch_io_stop docs
-  // "If the DISPATCH_IO_STOP option is specified in the flags parameter, the system attempts to interrupt any outstanding read and write operations on the I/O channel.
-  //  Even if you specify this flag, the corresponding handlers may be invoked with partial results.
-  //  In addition, the final invocation of the handler is passed the ECANCELED error code to indicate that the operation was interrupted."
-  // This means that we can't assume that the dispatch_io_stop will result in no more data to be delivered to the consumer.
-  // This method is only called once, and at the end of *all* read operations.
-  [self.consumer consumeEndOfFile];
-  // Weneed to get rid of the IO Channel to release the cycles on self.
+  // Now that the IO channel is done for good, we can finally remove the reference to it.
+  // By this point all read operations have finished and the consumer has been notified of an end-of-file.
   self.io = nil;
 }
 

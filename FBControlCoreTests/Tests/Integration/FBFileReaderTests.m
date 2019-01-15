@@ -11,6 +11,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <sys/types.h>
+#import <sys/stat.h>
+
 @interface FBFileReaderTests : XCTestCase <FBDataConsumer>
 
 @property (atomic, assign, readwrite) BOOL didRecieveEOF;
@@ -83,6 +86,42 @@
   XCTAssertEqualObjects(result, @(ECANCELED));
   XCTAssertEqualObjects(reader.finishedReading.result, @(ECANCELED));
   XCTAssertEqual(reader.state, FBFileReaderStateFinishedReadingByCancellation);
+
+  // Confirm we got an eof
+  XCTAssertTrue(self.didRecieveEOF);
+}
+
+- (void)testConsumesEOFAfterStoppedReadingEvenIfOtherEndOfFifoDoesNotClose
+{
+  NSString *fifoPath = [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
+  int status = mkfifo(fifoPath.UTF8String, S_IWUSR | S_IRUSR);
+  XCTAssertEqual(status, 0);
+
+  NSError *error = nil;
+  NSArray<id> *writerAndReader = [[FBFuture
+    futureWithFutures:@[
+      [FBFileWriter asyncWriterForFilePath:fifoPath],
+      [FBFileReader readerWithFilePath:fifoPath consumer:self logger:nil],
+    ]]
+    await:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(writerAndReader);
+
+  id<FBDataConsumer> writer = writerAndReader[0];
+  FBFileReader *reader = writerAndReader[1];
+
+  BOOL success = [[reader startReading] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  // Write some data
+  [writer consumeData:[@"HELLO\n" dataUsingEncoding:NSUTF8StringEncoding]];
+  [writer consumeData:[@"THERE\n" dataUsingEncoding:NSUTF8StringEncoding]];
+  [writer consumeEndOfFile];
+
+  success = [[reader stopReading] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 
   // Confirm we got an eof
   XCTAssertTrue(self.didRecieveEOF);
