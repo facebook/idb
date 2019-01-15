@@ -18,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface FBiOSActionReaderTests : XCTestCase <FBiOSActionReaderDelegate>
 
+@property (nonatomic, strong, readwrite) NSPipe *pipe;
 @property (nonatomic, strong, readwrite) FBiOSTargetDouble *target;
 @property (nonatomic, strong, readwrite) FBiOSActionRouter *router;
 @property (nonatomic, strong, readwrite) FBiOSActionReader *reader;
@@ -28,12 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readwrite) NSMutableArray<id<FBiOSTargetFuture>> *failedActions;
 @property (nonatomic, strong, readwrite) NSMutableArray<FBUploadedDestination *> *uploads;
 @property (nonatomic, strong, readwrite) NSMutableArray<NSString *> *badInput;
-
-@end
-
-@interface FBiOSActionReaderFileTests : FBiOSActionReaderTests
-
-@property (nonatomic, strong, readwrite) NSPipe *pipe;
 
 @end
 
@@ -49,6 +44,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setUp
 {
   [super setUp];
+
   NSArray<Class> *actionClasses = [FBiOSActionRouter.defaultActionClasses arrayByAddingObject:FBiOSTargetFutureDouble.class];
   self.target = [FBiOSTargetDouble new];
   self.target.auxillaryDirectory = NSTemporaryDirectory();
@@ -58,6 +54,15 @@ NS_ASSUME_NONNULL_BEGIN
   self.failedActions = [NSMutableArray array];
   self.uploads = [NSMutableArray array];
   self.badInput = [NSMutableArray array];
+
+  self.pipe = NSPipe.pipe;
+  self.reader = [FBiOSActionReader fileReaderForRouter:self.router delegate:self readHandle:self.pipe.fileHandleForReading writeHandle:self.pipe.fileHandleForWriting];
+  self.consumer = [FBFileWriter syncWriterWithFileHandle:self.pipe.fileHandleForWriting];
+
+  NSError *error;
+  BOOL success = [[self.reader startListening] await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 }
 
 - (void)tearDown
@@ -68,11 +73,6 @@ NS_ASSUME_NONNULL_BEGIN
   BOOL success = [[self.reader stopListening] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
-}
-
-+ (XCTestSuite *)defaultTestSuite
-{
-  return [XCTestSuite testSuiteWithName:@"Ignoring Base Class"];
 }
 
 - (NSPredicate *)predicateForStarted:(id<FBiOSTargetFuture>)action
@@ -242,29 +242,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (id<FBEventReporter>)reporter
 {
   return nil;
-}
-
-@end
-
-@implementation FBiOSActionReaderFileTests
-
-- (void)setUp
-{
-  [super setUp];
-
-  self.pipe = NSPipe.pipe;
-  self.reader = [FBiOSActionReader fileReaderForRouter:self.router delegate:self readHandle:self.pipe.fileHandleForReading writeHandle:self.pipe.fileHandleForWriting];
-  self.consumer = [FBFileWriter syncWriterWithFileHandle:self.pipe.fileHandleForWriting];
-
-  NSError *error;
-  BOOL success = [[self.reader startListening] await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-}
-
-+ (XCTestSuite *)defaultTestSuite
-{
-  return [XCTestSuite testSuiteForTestCaseClass:self.class];
 }
 
 @end
