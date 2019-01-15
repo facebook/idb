@@ -8,7 +8,7 @@
 
 @interface FBDataConsumerAdaptor ()
 
-+ (NSData *)adaptDispatchData:(dispatch_data_t)dispatchData;
++ (dispatch_data_t)adaptNSData:(NSData *)dispatchData;
 
 @end
 
@@ -49,6 +49,48 @@
 
 @end
 
+@interface FBDataConsumerAdaptor_ToDispatchData : NSObject <FBDataConsumer, FBDataConsumerLifecycle>
+
+@property (nonatomic, strong, readonly) id<FBDispatchDataConsumer, FBDataConsumerLifecycle> consumer;
+
+@end
+
+@implementation FBDataConsumerAdaptor_ToDispatchData
+
+#pragma mark Initializers
+
+- (instancetype)initWithConsumer:(id<FBDispatchDataConsumer, FBDataConsumerLifecycle>)consumer
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _consumer = consumer;
+
+  return self;
+}
+
+#pragma mark FBDataConsumer
+
+- (void)consumeData:(NSData *)data
+{
+  dispatch_data_t dispatchData = [FBDataConsumerAdaptor adaptNSData:data];
+  [self.consumer consumeData:dispatchData];
+}
+
+- (void)consumeEndOfFile
+{
+  [self.consumer consumeEndOfFile];
+}
+
+- (FBFuture<NSNull *> *)eofHasBeenReceived
+{
+  return self.consumer.eofHasBeenReceived;
+}
+
+@end
+
 @implementation FBDataConsumerAdaptor
 
 #pragma mark Initializers
@@ -56,6 +98,11 @@
 + (id<FBDispatchDataConsumer>)dispatchDataConsumerForDataConsumer:(id<FBDataConsumer>)consumer;
 {
   return [[FBDataConsumerAdaptor_ToNSData alloc] initWithConsumer:consumer];
+}
+
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)dataConsumerForDispatchDataConsumer:(id<FBDispatchDataConsumer, FBDataConsumerLifecycle>)consumer;
+{
+  return [[FBDataConsumerAdaptor_ToDispatchData alloc] initWithConsumer:consumer];
 }
 
 #pragma mark Public
@@ -68,6 +115,27 @@
   // https://twitter.com/catfish_man/status/393032222808100864
   // https://developer.apple.com/library/archive/releasenotes/Foundation/RN-Foundation-older-but-post-10.8/
   return (NSData *) dispatch_data_create_map(dispatchData, NULL, NULL);
+}
+
+#pragma mark Private
+
++ (dispatch_data_t)adaptNSData:(NSData *)data
+{
+  // The safest possible way of adapting the NSData to dispatch_data_t is to ensure that buffer backing the dispatch_data_t data is:
+  // 1) Immutable
+  // 2) Is not freed until the dispatch_data_t is destroyed.
+  // There are two ways of doing this:
+  // 1) Copy the NSData, and retain it for the lifecycle of the dispatch_data_t.
+  // 2) Use DISPATCH_DATA_DESTRUCTOR_DEFAULT which will copy the underlying buffer.
+  // This uses #2 as it's preferable to let libdispatch do the management itself and avoids an object copy (NSData) as well as a potential buffer copy in `-[NSData copy]`.
+  // It can be quite surprising how many methods result in the creation of NSMutableData, for example `-[NSString dataUsingEncoding:]` can result in NSConcreteMutableData.
+  // By copying the buffer we are sure that the data in the dispatch wrapper is completely immutable.
+  return dispatch_data_create(
+    data.bytes,
+    data.length,
+    dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+    DISPATCH_DATA_DESTRUCTOR_DEFAULT
+  );
 }
 
 @end

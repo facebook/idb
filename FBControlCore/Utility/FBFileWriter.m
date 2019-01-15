@@ -20,15 +20,15 @@
 
 @end
 
-@interface FBFileWriter_Null : FBFileWriter <FBDataConsumer, FBDataConsumerLifecycle>
+@interface FBFileWriter_Null : FBFileWriter <FBDispatchDataConsumer, FBDataConsumerLifecycle>
 
 @end
 
-@interface FBFileWriter_Sync : FBFileWriter <FBDataConsumer, FBDataConsumerLifecycle>
+@interface FBFileWriter_Sync : FBFileWriter <FBDispatchDataConsumer, FBDataConsumerLifecycle>
 
 @end
 
-@interface FBFileWriter_Async : FBFileWriter <FBDataConsumer, FBDataConsumerLifecycle>
+@interface FBFileWriter_Async : FBFileWriter <FBDispatchDataConsumer, FBDataConsumerLifecycle>
 
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 @property (nonatomic, strong, readwrite) dispatch_io_t io;
@@ -62,25 +62,6 @@
   return fileHandle;
 }
 
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)nullWriter
-{
-  return [[FBFileWriter_Null alloc] init];
-}
-
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)syncWriterWithFileHandle:(NSFileHandle *)fileHandle
-{
-  return [[FBFileWriter_Sync alloc] initWithFileHandle:fileHandle];
-}
-
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle queue:(dispatch_queue_t)queue error:(NSError **)error
-{
-  FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileHandle:fileHandle writeQueue:queue];
-  if (![writer startReadingWithError:error]) {
-    return nil;
-  }
-  return writer;
-}
-
 + (FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *)asyncDispatchDataWriterWithFileHandle:(NSFileHandle *)fileHandle
 {
   NSError *error = nil;
@@ -89,6 +70,25 @@
     return [FBFuture futureWithError:error];
   }
   return [FBFuture futureWithResult:writer];
+}
+
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)nullWriter
+{
+  return [FBDataConsumerAdaptor dataConsumerForDispatchDataConsumer:[[FBFileWriter_Null alloc] init]];
+}
+
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)syncWriterWithFileHandle:(NSFileHandle *)fileHandle
+{
+  return [FBDataConsumerAdaptor dataConsumerForDispatchDataConsumer:[[FBFileWriter_Sync alloc] initWithFileHandle:fileHandle]];
+}
+
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle queue:(dispatch_queue_t)queue error:(NSError **)error
+{
+  FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileHandle:fileHandle writeQueue:queue];
+  if (![writer startReadingWithError:error]) {
+    return nil;
+  }
+  return [FBDataConsumerAdaptor dataConsumerForDispatchDataConsumer:writer];
 }
 
 + (id<FBDataConsumer, FBDataConsumerLifecycle>)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle error:(NSError **)error
@@ -119,7 +119,7 @@
       if (![writer startReadingWithError:&error]) {
         return [FBFuture futureWithError:error];
       }
-      return [FBFuture futureWithResult:writer];
+      return [FBFuture futureWithResult:[FBDataConsumerAdaptor dataConsumerForDispatchDataConsumer:writer]];
     }];
 }
 
@@ -142,7 +142,7 @@
 
 #pragma mark FBDataConsumer
 
-- (void)consumeData:(NSData *)data
+- (void)consumeData:(dispatch_data_t)data
 {
   // do nothing
 }
@@ -163,9 +163,9 @@
 
 #pragma mark FBDataConsumer
 
-- (void)consumeData:(NSData *)data
+- (void)consumeData:(dispatch_data_t)data
 {
-  [self.fileHandle writeData:data];
+  [self.fileHandle writeData:[FBDataConsumerAdaptor adaptDispatchData:data]];
 }
 
 - (void)consumeEndOfFile
@@ -200,26 +200,11 @@
 
 #pragma mark FBDataConsumer
 
-- (void)consumeData:(NSData *)data
+- (void)consumeData:(dispatch_data_t)data
 {
   NSParameterAssert(self.io);
 
-  // The safest possible way of adapting the NSData to dispatch_data_t is to ensure that buffer backing the dispatch_data_t data is:
-  // 1) Immutable
-  // 2) Is not freed until the dispatch_data_t is destroyed.
-  // There are two ways of doing this:
-  // 1) Copy the NSData, and retain it for the lifecycle of the dispatch_data_t.
-  // 2) Use DISPATCH_DATA_DESTRUCTOR_DEFAULT which will copy the underlying buffer.
-  // This uses #2 as it's preferable to let libdispatch do the management itself and avoids an object copy (NSData) as well as a potential buffer copy in `-[NSData copy]`.
-  // It can be quite surprising how many methods result in the creation of NSMutableData, for example `-[NSString dataUsingEncoding:]` can result in NSConcreteMutableData.
-  // By copying the buffer we are sure that the data in the dispatch wrapper is completely immutable.
-  dispatch_data_t dispatchData = dispatch_data_create(
-    data.bytes,
-    data.length,
-    dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
-    DISPATCH_DATA_DESTRUCTOR_DEFAULT
-  );
-  dispatch_io_write(self.io, 0, dispatchData, self.writeQueue, ^(bool done, dispatch_data_t remainder, int error) {});
+  dispatch_io_write(self.io, 0, data, self.writeQueue, ^(bool done, dispatch_data_t remainder, int error) {});
 }
 
 - (void)consumeEndOfFile

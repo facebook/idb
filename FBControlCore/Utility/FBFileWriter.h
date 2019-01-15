@@ -48,6 +48,14 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable id<FBDataConsumer, FBDataConsumerLifecycle>)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle error:(NSError **)error;
 
 /**
+ Creates a non-blocking Dispatch Data Consumer from a file Handle.
+
+ @param fileHandle the file handle to write to. It will be closed when an EOF is sent.
+ @return a Future wrapping the Data Consumer.
+ */
++ (FBFuture<id<FBDispatchDataConsumer>> *)asyncDispatchDataWriterWithFileHandle:(NSFileHandle *)fileHandle;
+
+/**
  Creates a blocking Data Consumer from a file path.
  The file handle backing this path will be closed when and end-of-file is sent.
 

@@ -149,6 +149,23 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (id<FBDispatchDataConsumer>)dispatchDataConsumerForDataConsumer:(id<FBDataConsumer>)consumer;
 
+/**
+ Adapts a NSData consumer to a dispatch_data consumer.
+
+ @param consumer the consumer to adapt.
+ @return a NSData consumer.
+ */
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)dataConsumerForDispatchDataConsumer:(id<FBDispatchDataConsumer, FBDataConsumerLifecycle>)consumer;
+
+/**
+ Converts dispatch_data to NSData.
+ Note that this will copy data if the underlying dispatch data is non-contiguous.
+
+ @param dispatchData the data to adapt.
+ @return NSData from the dispatchData.
+ */
++ (NSData *)adaptDispatchData:(dispatch_data_t)dispatchData;
+
 @end
 
 /**
