@@ -26,19 +26,38 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)consumeData:(NSData *)data;
 
 /**
- Consumes an EOF.
+ Consumes an end-of-file.
  */
 - (void)consumeEndOfFile;
 
 @end
 
 /**
- A specialization of a FBDataConsumer that can expose lifecycle with a Future.
+ A consumer of dispatch_data.
  */
-@protocol FBDataConsumerLifecycle <FBDataConsumer>
+@protocol FBDispatchDataConsumer <NSObject>
 
 /**
- A Future that resolves when an EOF has been recieved.
+ Consumes the provided binary data.
+
+ @param data the data to consume.
+ */
+- (void)consumeData:(dispatch_data_t)data;
+
+/**
+ Consumes an end-of-file.
+ */
+- (void)consumeEndOfFile;
+
+@end
+
+/**
+ Allows observation of a data consumer to observe.
+ */
+@protocol FBDataConsumerLifecycle <NSObject>
+
+/**
+ A Future that resolves when an end-of-file has been recieved.
  This is helpful for ensuring that all consumer lines have been drained.
  */
 @property (nonatomic, strong, readonly) FBFuture<NSNull *> *eofHasBeenReceived;
@@ -48,7 +67,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The non-mutating methods of a buffer.
  */
-@protocol FBAccumulatingBuffer <FBDataConsumerLifecycle>
+@protocol FBAccumulatingBuffer <FBDataConsumer, FBDataConsumerLifecycle>
 
 /**
  Obtains a copy of the current output data.
@@ -65,7 +84,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The mutating methods of a buffer.
  */
-@protocol FBConsumableBuffer <FBDataConsumerLifecycle, FBAccumulatingBuffer>
+@protocol FBConsumableBuffer <FBAccumulatingBuffer>
 
 /**
  Consume the remainder of the buffer available, returning it as Data.
@@ -114,6 +133,21 @@ NS_ASSUME_NONNULL_BEGIN
  @return a future wrapping the read data.
  */
 - (FBFuture<NSData *> *)consumeAndNotifyWhen:(NSData *)terminal;
+
+@end
+
+/**
+ Adapts a NSData consumer to a dispatch_data consumer to.
+ */
+@interface FBDataConsumerAdaptor : NSObject
+
+/**
+ Adapts a NSData consumer to a dispatch_data consumer.
+
+ @param consumer the consumer to adapt.
+ @return a dispatch_data consumer.
+ */
++ (id<FBDispatchDataConsumer>)dispatchDataConsumerForDataConsumer:(id<FBDataConsumer>)consumer;
 
 @end
 

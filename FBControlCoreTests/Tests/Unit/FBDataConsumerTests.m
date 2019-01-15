@@ -99,7 +99,7 @@
 {
   id<FBAccumulatingBuffer> accumilating =  FBLineBuffer.consumableBuffer;
   id<FBConsumableBuffer> consumable =  FBLineBuffer.consumableBuffer;
-  id<FBDataConsumerLifecycle> composite = [FBCompositeDataConsumer consumerWithConsumers:@[
+  id<FBDataConsumer, FBDataConsumerLifecycle> composite = [FBCompositeDataConsumer consumerWithConsumers:@[
     accumilating,
     consumable,
   ]];

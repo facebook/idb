@@ -26,7 +26,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
 @interface FBFileReader ()
 
 @property (nonatomic, copy, readonly) NSString *targeting;
-@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+@property (nonatomic, strong, readonly) id<FBDispatchDataConsumer> consumer;
 @property (nonatomic, strong, readonly) dispatch_queue_t readQueue;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *ioChannelFinishedReadOperation;
 @property (nonatomic, strong, readonly) NSFileHandle *fileHandle;
@@ -48,6 +48,11 @@ static NSString *StateStringFromState(FBFileReaderState state)
 
 + (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger
 {
+  return [self dispatchDataReaderWithFileHandle:fileHandle consumer:[FBDataConsumerAdaptor dispatchDataConsumerForDataConsumer:consumer] logger:logger];
+}
+
++ (instancetype)dispatchDataReaderWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDispatchDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger
+{
   NSString *targeting = [NSString stringWithFormat:@"fd %d", fileHandle.fileDescriptor];
   return [[self alloc] initWithFileHandle:fileHandle consumer:consumer targeting:targeting queue:self.createQueue logger:logger];
 }
@@ -63,11 +68,11 @@ static NSString *StateStringFromState(FBFileReaderState state)
         fail:error];
     }
     NSFileHandle *fileHandle = [[NSFileHandle alloc] initWithFileDescriptor:fileDescriptor closeOnDealloc:YES];
-    return [[self alloc] initWithFileHandle:fileHandle consumer:consumer targeting:filePath queue:queue logger:logger];
+    return [[self alloc] initWithFileHandle:fileHandle consumer:[FBDataConsumerAdaptor dispatchDataConsumerForDataConsumer:consumer] targeting:filePath queue:queue logger:logger];
   }];
 }
 
-- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDataConsumer>)consumer targeting:(NSString *)targeting queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDispatchDataConsumer>)consumer targeting:(NSString *)targeting queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -132,7 +137,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
 
   // Get locals to be captured by the read, rather than self.
   NSFileHandle *fileHandle = self.fileHandle;
-  id<FBDataConsumer> consumer = self.consumer;
+  id<FBDispatchDataConsumer> consumer = self.consumer;
   __block int readErrorCode = 0;
 
   // If there is an error creating the IO Object, the errorCode will be delivered asynchronously.
@@ -152,13 +157,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
   dispatch_io_set_low_water(self.io, 1);
   dispatch_io_read(self.io, 0, SIZE_MAX, self.readQueue, ^(bool done, dispatch_data_t dispatchData, int errorCode) {
     if (dispatchData != NULL) {
-      // One-way bridging of dispatch_data_t to NSData is permitted.
-      // Since we can't safely assume all consumers of the NSData work discontiguous ranges, we have to make the dispatch_data contiguous.
-      // This is done with dispatch_data_create_map, which is 0-copy for a contiguous range but copies for non-contiguous ranges.
-      // https://twitter.com/catfish_man/status/393032222808100864
-      // https://developer.apple.com/library/archive/releasenotes/Foundation/RN-Foundation-older-but-post-10.8/
-      NSData *data = (NSData *) dispatch_data_create_map(dispatchData, NULL, NULL);
-      [consumer consumeData:data];
+      [consumer consumeData:dispatchData];
     }
     if (done) {
       readErrorCode = errorCode;

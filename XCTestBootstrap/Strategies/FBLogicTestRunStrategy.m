@@ -64,17 +64,17 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
   return [[self
     buildOutputsForUUID:uuid]
-    onQueue:self.executor.workQueue fmap:^(NSArray<id<FBDataConsumerLifecycle>> *outputs) {
-      id<FBDataConsumerLifecycle> stdOut = outputs[0];
-      id<FBDataConsumerLifecycle> stdErr = outputs[1];
-      id<FBDataConsumerLifecycle> shim = outputs[2];
+    onQueue:self.executor.workQueue fmap:^(NSArray<id<FBDataConsumer, FBDataConsumerLifecycle>> *outputs) {
+      id<FBDataConsumer, FBDataConsumerLifecycle> stdOut = outputs[0];
+      id<FBDataConsumer, FBDataConsumerLifecycle> stdErr = outputs[1];
+      id<FBDataConsumer, FBDataConsumerLifecycle> shim = outputs[2];
       return [self testFutureWithStdOutConsumer:stdOut stdErrConsumer:stdErr shimConsumer:shim uuid:uuid];
     }];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)testFutureWithStdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer shimConsumer:(id<FBDataConsumerLifecycle>)shimConsumer uuid:(NSUUID *)uuid
+- (FBFuture<NSNull *> *)testFutureWithStdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer shimConsumer:(id<FBDataConsumer, FBDataConsumerLifecycle>)shimConsumer uuid:(NSUUID *)uuid
 {
   return [[[FBProcessOutput
     outputForDataConsumer:shimConsumer]

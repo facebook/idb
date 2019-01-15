@@ -6,7 +6,74 @@
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 
-@interface FBLineBuffer_Accumilating : NSObject <FBAccumulatingBuffer>
+@interface FBDataConsumerAdaptor ()
+
++ (NSData *)adaptDispatchData:(dispatch_data_t)dispatchData;
+
+@end
+
+@interface FBDataConsumerAdaptor_ToNSData : NSObject <FBDispatchDataConsumer>
+
+@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+
+@end
+
+@implementation FBDataConsumerAdaptor_ToNSData
+
+#pragma mark Initializers
+
+- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _consumer = consumer;
+
+  return self;
+}
+
+#pragma mark FBDataConsumer
+
+- (void)consumeData:(dispatch_data_t)dispatchData
+{
+  NSData *data = [FBDataConsumerAdaptor adaptDispatchData:dispatchData];
+  [self.consumer consumeData:data];
+}
+
+- (void)consumeEndOfFile
+{
+  [self.consumer consumeEndOfFile];
+}
+
+@end
+
+@implementation FBDataConsumerAdaptor
+
+#pragma mark Initializers
+
++ (id<FBDispatchDataConsumer>)dispatchDataConsumerForDataConsumer:(id<FBDataConsumer>)consumer;
+{
+  return [[FBDataConsumerAdaptor_ToNSData alloc] initWithConsumer:consumer];
+}
+
+#pragma mark Public
+
++ (NSData *)adaptDispatchData:(dispatch_data_t)dispatchData
+{
+  // One-way bridging of dispatch_data_t to NSData is permitted.
+  // Since we can't safely assume all consumers of the NSData work discontiguous ranges, we have to make the dispatch_data contiguous.
+  // This is done with dispatch_data_create_map, which is 0-copy for a contiguous range but copies for non-contiguous ranges.
+  // https://twitter.com/catfish_man/status/393032222808100864
+  // https://developer.apple.com/library/archive/releasenotes/Foundation/RN-Foundation-older-but-post-10.8/
+  return (NSData *) dispatch_data_create_map(dispatchData, NULL, NULL);
+}
+
+@end
+
+
+@interface FBLineBuffer_Accumilating : NSObject <FBDataConsumer, FBAccumulatingBuffer>
 
 @property (nonatomic, strong, readwrite) NSMutableData *buffer;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *eofHasBeenReceivedFuture;
@@ -21,6 +88,8 @@
 @end
 
 @implementation FBLineBuffer_Accumilating
+
+#pragma mark Initializers
 
 - (instancetype)init
 {
