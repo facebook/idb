@@ -110,9 +110,13 @@ static NSString *StateStringFromState(FBFileReaderState state)
 
 - (FBFuture<NSNumber *> *)finishedReading
 {
-  return [self.ioChannelFinishedReadOperation onQueue:self.readQueue respondToCancellation:^{
-    return [self stopReadingNow];
-  }];
+  // We don't re-alias ioChannelFinishedReadOperation as if it's externally cancelled, we want the ioChannelFinishedReadOperation to resolve normally
+  return [[[FBMutableFuture
+    futureWithNameFormat:@"Finished reading of %@", self.targeting]
+    resolveFromFuture:self.ioChannelFinishedReadOperation]
+    onQueue:self.readQueue respondToCancellation:^{
+     return [self stopReadingNow];
+    }];
 }
 
 #pragma mark Private
