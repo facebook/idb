@@ -16,6 +16,8 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
+
 @interface FBLogicTestRunStrategy ()
 
 @property (nonatomic, strong, readonly) id<FBXCTestProcessExecutor> executor;
@@ -133,7 +135,7 @@
     onQueue:queue fmap:^(FBFileReader *reader) {
       return [FBLogicTestRunStrategy onQueue:queue waitForExit:process closingOutput:shimOutput consumer:shimConsumer];
     }]
-    onQueue:queue handleError:^FBFuture * _Nonnull(NSError * error) {
+    onQueue:queue handleError:^(NSError *error) {
       // Abnormal exit
       [self.reporter didCrashDuringTest:error];
       return [FBFuture futureWithError:error];
@@ -146,12 +148,20 @@
 
 + (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForExit:(id<FBLaunchedProcess>)process closingOutput:(id<FBProcessFileOutput>)output consumer:(id<FBDataConsumerLifecycle>)consumer
 {
-  return [process.exitCode onQueue:queue fmap:^(NSNumber *exitCode) {
-    return [FBFuture futureWithFutures:@[
-      [output stopReading],
-      [consumer eofHasBeenReceived],
-    ]];
-  }];
+  return [process.exitCode
+    onQueue:queue fmap:^(NSNumber *exitCode) {
+      // Since there's no guarantee that the xctest process has closed the writing end of the fifo, we can't rely on getting and end-of-file naturally
+      // This means that we have to stop reading manually instead.
+      // However, we want to ensure that we've read all the way to the end of the file so that no test results are missing, since the reading is asynchronous.
+      // The stopReading will cause the end-of-file to be sent to the consumer, this is a guarantee that the FBFileReader API makes.
+      // To prevent this from hanging indefinately, we also wrap this in a reasonable timeout so we have a better message in the worst-case scenario.
+      return [[FBFuture
+        futureWithFutures:@[
+          [output stopReading],
+          [consumer eofHasBeenReceived],
+        ]]
+        timeout:EndOfFileFromStopReadingTimeout waitingFor:@"recieve and end-of-file after fifo has been stopped, as the process has already exited with code %@", exitCode];
+    }];
 }
 
 + (FBFuture<NSNull *> *)fromQueue:(dispatch_queue_t)queue waitForDebuggerToBeAttached:(BOOL)waitFor forProcessIdentifier:(pid_t)processIdentifier reporter:(id<FBLogicXCTestReporter>)reporter
