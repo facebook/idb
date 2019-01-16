@@ -84,7 +84,7 @@
       [self popPending:uuid];
       return [FBFuture futureWithError:error];
     }]
-    onQueue:self.queue contextualTeardown:^(id _) {
+    onQueue:self.queue contextualTeardown:^(id _, FBFutureState __) {
       NSUInteger remainingConsumers = [self popPending:uuid];
       if (remainingConsumers == 0) {
         FBFuture<id> *context = self.context;

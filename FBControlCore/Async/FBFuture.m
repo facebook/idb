@@ -116,13 +116,13 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 @property (nonatomic, strong, readonly) FBFuture *future;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) void (^action)(id);
+@property (nonatomic, strong, readonly) void (^action)(id, FBFutureState);
 
 @end
 
 @implementation FBFutureContext_Teardown
 
-- (instancetype)initWithFuture:(FBFuture *)future queue:(dispatch_queue_t)queue action:(void (^)(id))action
+- (instancetype)initWithFuture:(FBFuture *)future queue:(dispatch_queue_t)queue action:(void (^)(id, FBFutureState))action
 {
   self = [super init];
   if (!self) {
@@ -136,13 +136,13 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return self;
 }
 
-- (void)performTeardown
+- (void)performTeardown:(FBFutureState)endState
 {
-  void (^action)(id) = self.action;
+  void (^action)(id, FBFutureState) = self.action;
 
   [self.future onQueue:self.queue notifyOfCompletion:^(FBFuture *resolved) {
     if (resolved.result) {
-      action(resolved.result);
+      action(resolved.result, endState);
     }
   }];
 }
@@ -176,9 +176,9 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
   return [[self.future
     onQueue:queue fmap:pop]
-    onQueue:queue notifyOfCompletion:^(FBFuture *_) {
+    onQueue:queue notifyOfCompletion:^(FBFuture *resolved) {
       for (FBFutureContext_Teardown *teardown in teardowns.reverseObjectEnumerator) {
-        [teardown performTeardown];
+        [teardown performTeardown:resolved.state];
       }
     }];
 }
@@ -613,7 +613,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   }];
 }
 
-- (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(id))action
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(id, FBFutureState))action
 {
   FBFutureContext_Teardown *teardown = [[FBFutureContext_Teardown alloc] initWithFuture:self queue:queue action:action];
   return [[FBFutureContext alloc] initWithFuture:self teardowns:@[teardown].mutableCopy];

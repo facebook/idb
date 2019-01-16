@@ -809,9 +809,10 @@
 
   [[[[[FBFuture
     futureWithResult:@1]
-    onQueue:self.queue contextualTeardown:^(id value){
+    onQueue:self.queue contextualTeardown:^(id value, FBFutureState state){
       XCTAssertTrue(fmapCalled);
       XCTAssertEqualObjects(value, @1);
+      XCTAssertEqual(state, FBFutureStateDone);
       teardownCalled = YES;
       [teardownExpectation fulfill];
     }]
@@ -846,18 +847,20 @@
 
   [[[[[FBFuture
     futureWithResult:@1]
-    onQueue:self.queue contextualTeardown:^(id value){
+    onQueue:self.queue contextualTeardown:^(id value, FBFutureState state){
       XCTAssertTrue(fmapCalled);
       XCTAssertTrue(innerTeardownCalled);
       XCTAssertEqualObjects(value, @1);
+      XCTAssertEqual(state, FBFutureStateDone);
       outerTeardownCalled = YES;
       [outerTeardownExpectation fulfill];
     }]
     onQueue:self.queue push:^(id value) {
       XCTAssertEqualObjects(value, @1);
-      return [[FBFuture futureWithResult:@2] onQueue:self.queue contextualTeardown:^(id innerValue) {
+      return [[FBFuture futureWithResult:@2] onQueue:self.queue contextualTeardown:^(id innerValue, FBFutureState innerState) {
         XCTAssertEqualObjects(innerValue, @2);
         XCTAssertFalse(outerTeardownCalled);
+        XCTAssertEqual(innerState, FBFutureStateDone);
         innerTeardownCalled = YES;
         [innerTeardownExpectation fulfill];
       }];
@@ -889,16 +892,17 @@
 
   [[[[[FBFuture
     futureWithResult:@1]
-    onQueue:self.queue contextualTeardown:^(id value){
+    onQueue:self.queue contextualTeardown:^(id value, FBFutureState state){
         XCTAssertTrue(pushCalled);
         XCTAssertEqualObjects(value, @1);
+        XCTAssertEqual(state, FBFutureStateFailed);
         outerTeardownCalled = YES;
         [outerTeardownExpectation fulfill];
     }]
     onQueue:self.queue push:^(id value) {
       pushCalled = YES;
       XCTAssertEqualObjects(value, @1);
-      return [[FBFuture futureWithError:error] onQueue:self.queue contextualTeardown:^(id innerValue) {
+      return [[FBFuture futureWithError:error] onQueue:self.queue contextualTeardown:^(id innerValue, FBFutureState innerState) {
         XCTFail(@"Should not resolve error teardown");
       }];
     }]
@@ -926,9 +930,10 @@
       XCTAssertEqualObjects(value, @1);
       return [[FBFuture
         futureWithResult:@2]
-        onQueue:self.queue contextualTeardown:^(id innerValue) {
+        onQueue:self.queue contextualTeardown:^(id innerValue, FBFutureState state) {
           XCTAssertFalse(teardownCalled);
           XCTAssertEqualObjects(innerValue, @2);
+          XCTAssertEqual(state, FBFutureStateDone);
           [innerTeardownExpectation fulfill];
           teardownCalled = YES;
         }];
@@ -951,7 +956,7 @@
 
   [[[[FBFuture
     futureWithResult:@1]
-    onQueue:self.queue contextualTeardown:^(NSNumber *value) {
+    onQueue:self.queue contextualTeardown:^(NSNumber *value, FBFutureState state) {
       XCTAssertEqualObjects(value, @1);
       teardownCalled = YES;
       [teardownExpectation fulfill];

@@ -209,12 +209,15 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 /**
  Creates an 'context object' that allows for the value contained by a future to be torn-down when the context is done.
  This is useful for resource cleanup, where closing a resource needs to be managed.
+ The teardown will always be called, regardless of the terminating condition of any chained future.
+ The state passed in the teardown callback is the state of the resolved future from any chaining that may happen.
+ The teardown will only be called if the reciever has resolved, as this is how the context value is resolved.
 
  @param queue the queue to perform the teardown on.
- @param action the teardown action to invoke. This block will be executed after the context object is done.
- @return a 'contex object' that manages the tear-down of the reciever's value.
+ @param action the teardown action to invoke. This block will be executed after the context object is done. This also includes the state that the resultant future ended in.
+ @return a 'context object' that manages the tear-down of the reciever's value.
  */
-- (FBFutureContext<T> *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(T))action;
+- (FBFutureContext<T> *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(T, FBFutureState))action;
 
 /**
  Creates an 'context object' from a block.

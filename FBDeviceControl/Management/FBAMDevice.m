@@ -344,7 +344,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
       [self.logger logFormat:@"Service %@ started", service];
       return [[FBFuture
         futureWithResult:connection]
-        onQueue:self.workQueue contextualTeardown:^(id _) {
+        onQueue:self.workQueue contextualTeardown:^(id _, FBFutureState __) {
           [self.logger logFormat:@"Invalidating service %@", service];
           NSError *error = nil;
           if (![connection invalidateWithError:&error]) {
