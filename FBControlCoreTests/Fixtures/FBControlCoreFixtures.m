@@ -48,6 +48,11 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"agent_custom_set" ofType:@"crash"];
 }
 
++ (NSString *)bundleResource
+{
+  return [NSBundle bundleForClass:self].resourcePath;
+}
+
 @end
 
 @implementation XCTestCase (FBControlCoreFixtures)

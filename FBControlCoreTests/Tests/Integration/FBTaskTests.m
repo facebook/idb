@@ -324,4 +324,42 @@
   XCTAssertEqual(task.completed.state, FBFutureStateDone);
 }
 
+- (void)testPipingInputToSuccessivelyRunTasksSucceeds
+{
+  NSString *tarSource = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.tar.gz", NSUUID.UUID.UUIDString]];
+  NSString *tarDestination = [tarSource stringByAppendingString:@".destination"];
+
+  NSError *error = nil;
+  BOOL success = [NSFileManager.defaultManager createDirectoryAtPath:tarDestination withIntermediateDirectories:YES attributes:nil error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  success = [[[[[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/tar"]
+    withArguments:@[@"-zcvf", tarSource, FBControlCoreFixtures.bundleResource]]
+    withStdOutToDevNull]
+    withStdErrToDevNull]
+    runUntilCompletion]
+    mapReplace:NSNull.null]
+    await:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  NSData *tarData = [NSData dataWithContentsOfFile:tarSource];
+
+  for (NSUInteger count = 0; count < 10; count++) {
+    success = [[[[[[[[FBTaskBuilder
+      withLaunchPath:@"/usr/bin/tar"]
+      withArguments:@[@"-C", tarDestination, @"-zxpf", @"-"]]
+      withStdInFromData:tarData]
+      withStdOutToDevNull]
+      withStdErrToDevNull]
+      runUntilCompletion]
+      mapReplace:NSNull.null]
+      await:&error] != nil;
+    XCTAssertNil(error);
+    XCTAssertTrue(success);
+  }
+}
+
 @end

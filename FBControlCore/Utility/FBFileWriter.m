@@ -234,13 +234,26 @@
   NSParameterAssert(!self.io);
 
   // If there is an error creating the IO Object, the errorCode will be delivered asynchronously.
-  NSFileHandle *fileHandle = self.fileHandle;
-  self.io = dispatch_io_create(DISPATCH_IO_STREAM, fileHandle.fileDescriptor, self.writeQueue, ^(int errorCode) {
-    [self ioChannelDidCloseWithError:errorCode];
+  // Having a self -> IO -> self cycle shouldn't be a problem in theory, since the cleanup handler should get when IO is done.
+  // However, it appears that having the cycle in place here means that the cleanup handler is *never* called in the following circumstance:
+  // 1) Pipe of FD14 is created.
+  // 2) A writer is created for this pipe
+  // 3) Data is written to this writer
+  // 4) `consumeEndOfFile` is called and subsequently dispatch_io_close.
+  // 5) The cleanup handler is called and subsequently the FD closed and IO channel disposed of via nil-ification.
+  // 6) Pipe FD14 is torn down.
+  // 7) A new Pipe resolving to FD14 is created.
+  // 8) Data is written to this writer
+  // 9) `consumeEndOfFile` is called and subsequently dispatch_io_close.
+  // 10) The cleanup handler is *never* called and the FD is therefore never closed.
+  // This isn't a problem in practice if different FDs are splayed, but repeating FDs representing different dispatch channels will cause this problem.
+  __weak typeof(self) weakSelf = self;
+  self.io = dispatch_io_create(DISPATCH_IO_STREAM, self.fileHandle.fileDescriptor, self.writeQueue, ^(int errorCode) {
+    [weakSelf ioChannelDidCloseWithError:errorCode];
   });
   if (!self.io) {
     return [[FBControlCoreError
-      describeFormat:@"A IO Channel could not be created for fd %d", fileHandle.fileDescriptor]
+      describeFormat:@"A IO Channel could not be created for fd %d", self.fileHandle.fileDescriptor]
       failBool:error];
   }
 

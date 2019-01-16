@@ -53,6 +53,11 @@
  */
 + (NSString *)agentCrashPathWithCustomDeviceSet;
 
+/**
+ All of the above, in a directory
+ */
++ (NSString *)bundleResource;
+
 @end
 
 @interface XCTestCase (FBControlCoreFixtures)
