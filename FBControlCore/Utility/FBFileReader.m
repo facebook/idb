@@ -64,7 +64,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
     int fileDescriptor = open(filePath.UTF8String, O_RDONLY);
     if (fileDescriptor == -1) {
       return [[FBControlCoreError
-        describeFormat:@"open of %@ returned an error %d", filePath, errno]
+        describeFormat:@"open of %@ returned an error '%s'", filePath, strerror(errno)]
         fail:error];
     }
     NSFileHandle *fileHandle = [[NSFileHandle alloc] initWithFileDescriptor:fileDescriptor closeOnDealloc:YES];

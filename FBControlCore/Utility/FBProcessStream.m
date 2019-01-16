@@ -403,9 +403,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 {
   NSString *fifoPath = [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
   if (mkfifo(fifoPath.UTF8String, S_IWUSR | S_IRUSR) != 0) {
-    return [[[[FBControlCoreError
-      describeFormat:@"Failed to create a named pipe %@", fifoPath]
-      code:errno]
+    return [[[FBControlCoreError
+      describeFormat:@"Failed to create a named pipe for fifo %@ with error '%s'", fifoPath, strerror(errno)]
       inDomain:NSPOSIXErrorDomain]
       failFuture];
   }

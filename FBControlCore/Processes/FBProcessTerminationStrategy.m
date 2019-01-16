@@ -157,7 +157,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
         failFuture];
     }
     return [[FBControlCoreError
-      describeFormat:@"Failed to kill process %@ with unknown errno %d", process.shortDescription, errorCode]
+      describeFormat:@"Failed to kill process %@ with error '%s'", process.shortDescription, strerror(errorCode)]
       failFuture];
   }
 
