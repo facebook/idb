@@ -25,23 +25,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorTestPreparationStrategy : NSObject <FBXCTestPreparationStrategy>
 
-#pragma mark Initializers
-
-/**
- Creates and returns a Strategy strategyWith given paramenters.
-
- @param testLaunchConfiguration configuration used to launch test.
- @param workingDirectory directory used to prepare all bundles.
- @param fileManager file manager used to prepare all bundles.
- @param codesign a codesign provider
- @return A new FBSimulatorTestRunStrategy Instance.
- */
-+ (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
-                                              shims:(FBXCTestShimConfiguration *)shims
-                                   workingDirectory:(NSString *)workingDirectory
-                                        fileManager:(id<FBFileManager>)fileManager
-                                           codesign:(id<FBCodesignProvider>)codesign;
-
 @end
 
 NS_ASSUME_NONNULL_END

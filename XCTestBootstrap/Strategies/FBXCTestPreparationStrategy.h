@@ -19,20 +19,22 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBCodesignProvider;
 
 /**
- A Protocol for preparing iOS for running an XCTest.
+ A protocol that defines an interface for preparing a test configuration.
  */
 @protocol FBXCTestPreparationStrategy
 
+#pragma mark Initializers
+
 /**
- Creates and returns a Strategy strategyWith given paramenters.
- Will use default implementations of the File Manager and Codesign.
+ Creates and returns a test preparation strategy for Simulators with the given parameters.
 
  @param testLaunchConfiguration configuration used to launch test.
  @param workingDirectory directory used to prepare all bundles.
- @return A new FBSimulatorTestRunStrategy Instance.
+ @return a FBXCTestPreparationStrategy instance.
  */
-+ (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
-                                   workingDirectory:(NSString *)workingDirectory;
++ (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration workingDirectory:(NSString *)workingDirectory;
+
+#pragma mark Public Methods
 
 /**
  Prepares FBTestRunnerConfiguration

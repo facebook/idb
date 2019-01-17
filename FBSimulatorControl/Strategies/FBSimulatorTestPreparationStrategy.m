@@ -19,7 +19,6 @@
 @interface FBSimulatorTestPreparationStrategy ()
 
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
-@property (nonatomic, copy, readonly) FBXCTestShimConfiguration *shims;
 @property (nonatomic, copy, readonly) FBTestLaunchConfiguration *testLaunchConfiguration;
 @property (nonatomic, strong, readonly) id<FBFileManager> fileManager;
 @property (nonatomic, strong, readonly) id<FBCodesignProvider> codesign;
@@ -30,30 +29,14 @@
 
 #pragma mark Initializers
 
-+ (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
-                                   workingDirectory:(NSString *)workingDirectory
++ (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration workingDirectory:(NSString *)workingDirectory
 {
   id<FBFileManager> fileManager = NSFileManager.defaultManager;
   id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
-  FBXCTestShimConfiguration *shims = [[FBXCTestShimConfiguration defaultShimConfiguration] await:nil];
-  return [self strategyWithTestLaunchConfiguration:testLaunchConfiguration shims:shims workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
+  return [[self alloc] initWithTestLaunchConfiguration:testLaunchConfiguration  workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
 }
 
-+ (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
-                                              shims:(FBXCTestShimConfiguration *)shims
-                                   workingDirectory:(NSString *)workingDirectory
-                                        fileManager:(id<FBFileManager>)fileManager
-                                           codesign:(id<FBCodesignProvider>)codesign
-{
-  return [[self alloc] initWithTestLaunchConfiguration:testLaunchConfiguration shims:shims workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
-}
-
-
-- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
-                                          shims:(FBXCTestShimConfiguration *)shims
-                               workingDirectory:(NSString *)workingDirectory
-                                    fileManager:(id<FBFileManager>)fileManager
-                                       codesign:(id<FBCodesignProvider>)codesign
+- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration workingDirectory:(NSString *)workingDirectory fileManager:(id<FBFileManager>)fileManager codesign:(id<FBCodesignProvider>)codesign
 {
   self = [super init];
   if (!self) {
@@ -61,7 +44,6 @@
   }
 
   _testLaunchConfiguration = testLaunchConfiguration;
-  _shims = shims;
   _workingDirectory = workingDirectory;
   _fileManager = fileManager;
   _codesign = codesign;
@@ -107,14 +89,6 @@
     platformDeveloperFrameworksPath,
   ];
 
-  // Environment
-  NSArray<NSString *> *injects = @[
-    self.shims.iOSSimulatorTestShimPath,
-   ];
-  NSDictionary<NSString *, NSString *> *hostApplicationAdditionalEnvironment = @{
-    @"SHIMULATOR_START_XCTEST": @"1",
-    @"DYLD_INSERT_LIBRARIES": [injects componentsJoinedByString:@":"],
-  };
   NSDictionary *testedApplicationAdditionalEnvironment = @{
     @"DYLD_INSERT_LIBRARIES" : xctTargetBootstrapInjectPath
   };
@@ -147,11 +121,20 @@
   return [[[simulator
     installedApplicationWithBundleID:self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID]
     onQueue:simulator.workQueue fmap:^(FBInstalledApplication *installedApplication) {
-      return [FBFuture resolveValue:^(NSError **innerError) {
-        return [FBProductBundleBuilder productBundleFromInstalledApplication:installedApplication error:innerError];
-      }];
+      return [FBFuture futureWithFutures:@[
+        [FBFuture resolveValue:^(NSError **innerError) {
+          return [FBProductBundleBuilder productBundleFromInstalledApplication:installedApplication error:innerError];
+        }],
+        [FBXCTestShimConfiguration defaultShimConfiguration],
+      ]];
     }]
-    onQueue:simulator.workQueue map:^(FBProductBundle *hostApplication) {
+    onQueue:simulator.workQueue map:^(NSArray<id> *tuple) {
+      FBProductBundle *hostApplication = tuple[0];
+      FBXCTestShimConfiguration *shims = tuple[1];
+      NSDictionary<NSString *, NSString *> *hostApplicationAdditionalEnvironment = @{
+        @"SHIMULATOR_START_XCTEST": @"1",
+        @"DYLD_INSERT_LIBRARIES": shims.iOSSimulatorTestShimPath,
+      };
       return [FBTestRunnerConfiguration
         configurationWithSessionIdentifier:sessionIdentifier
         hostApplication:hostApplication
