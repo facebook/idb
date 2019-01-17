@@ -75,7 +75,7 @@ NSDictionary *EventDictionaryWithNameAndContent(NSString *name, NSDictionary *co
   return eventJSON;
 }
 
-void XTSwizzleClassSelectorForFunction(Class cls, SEL sel, IMP newImp)
+void XTSwizzleClassSelectorForFunction(Class cls, SEL sel, IMP newImp) __attribute__((no_sanitize("nullability-arg")))
 {
   Class clscls = object_getClass((id)cls);
   Method originalMethod = class_getClassMethod(cls, sel);

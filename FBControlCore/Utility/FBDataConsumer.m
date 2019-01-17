@@ -119,7 +119,7 @@
 
 #pragma mark Private
 
-+ (dispatch_data_t)adaptNSData:(NSData *)data
++ (dispatch_data_t)adaptNSData:(NSData *)data __attribute__((no_sanitize("nullability-arg")))
 {
   // The safest possible way of adapting the NSData to dispatch_data_t is to ensure that buffer backing the dispatch_data_t data is:
   // 1) Immutable

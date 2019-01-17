@@ -262,7 +262,7 @@
   return [[self.class alloc] initWithConsumer:self.consumer name:name dateFormatter:self.dateFormatter];
 }
 
-- (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled
+- (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled __attribute__((no_sanitize("bool")))
 {
   NSDateFormatter *dateFormatter = nil;
   if (enabled) {
