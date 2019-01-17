@@ -12,6 +12,8 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+NSString *const FBXCTestShimDirectoryEnvironmentOverride = @"TEST_SHIMS_DIRECTORY";
+
 static NSString *const KeySimulatorTestShim = @"ios_simulator_test_shim";
 static NSString *const KeyMacTestShim = @"mac_test_shim";
 static NSString *const KeyMacQueryShim = @"mac_query_shim";
@@ -70,23 +72,31 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 + (FBFuture<NSString *> *)findShimDirectoryOnQueue:(dispatch_queue_t)queue
 {
   return [FBFuture
-    onQueue:queue resolve:^ FBFuture<NSString *> *{
-      // If an environment variable is provided, use it
-      NSString *environmentDefinedDirectory = NSProcessInfo.processInfo.environment[@"TEST_SHIMS_DIRECTORY"];
+    onQueue:queue resolve:^ FBFuture<NSString *> * {
+      NSMutableArray<NSString *> *searchPaths = NSMutableArray.array;
+      NSString *environmentDefinedDirectory = NSProcessInfo.processInfo.environment[FBXCTestShimDirectoryEnvironmentOverride];
       if (environmentDefinedDirectory) {
-        return [self confirmExistenceOfRequiredShimsInDirectory:environmentDefinedDirectory];
+        [searchPaths addObject:environmentDefinedDirectory];
       }
+      [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"lib"]];
+      [searchPaths addObject:[NSBundle bundleForClass:self].resourcePath];
 
-      // Otherwise, expect it to be relative to the location of the current executable.
-      NSString *libPath = [self.fbxctestInstallationRoot stringByAppendingPathComponent:@"lib"];
-      NSString *bundlePath = [NSBundle bundleForClass:self].resourcePath;
-      return [[self
-        confirmExistenceOfRequiredShimsInDirectory:libPath]
-        onQueue:queue chain:^ FBFuture<NSString *> * (FBFuture<NSString *> *future) {
-          if (future.error) {
-            return [self confirmExistenceOfRequiredShimsInDirectory:bundlePath];
+      NSMutableArray<FBFuture<NSString *> *> *futures = NSMutableArray.array;
+      for (NSString *path in searchPaths) {
+        [futures addObject:[[self confirmExistenceOfRequiredShimsInDirectory:path] fallback:@""]];
+      }
+      return [[FBFuture
+        futureWithFutures:futures]
+        onQueue:queue fmap:^(NSArray<NSString *> *paths) {
+          for (NSString *path in paths) {
+            if (path.length == 0) {
+              continue;
+            }
+            return [FBFuture futureWithResult:path];
           }
-          return future;
+          return [[FBControlCoreError
+            describeFormat:@"Could not find shims in any of the expected directories %@", [FBCollectionInformation oneLineDescriptionFromArray:searchPaths]]
+            failFuture];
         }];
     }];
 }
@@ -95,7 +105,7 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 {
   if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
     return [[FBXCTestError
-      describeFormat:@"A shim directory was expected at '%@', but it was not there", directory]
+      describeFormat:@"A shim directory was searched for at '%@', but it was not there", directory]
       failFuture];
   }
   NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];

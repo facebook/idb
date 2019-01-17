@@ -14,6 +14,11 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ The environment key for an override of the test shims directory.
+ */
+extern NSString *const FBXCTestShimDirectoryEnvironmentOverride;
+
+/**
  A Configuration object for the location of the Test Shims.
  */
 @interface FBXCTestShimConfiguration : NSObject <FBJSONSerializable, FBJSONDeserializable, NSCopying>
