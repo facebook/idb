@@ -86,9 +86,7 @@
 
 - (NSError *)error
 {
-  return [[self.underlyingError
-    extraInfo:XCTestBootstrapResultErrorKey value:self]
-    build];
+  return [self.underlyingError build];
 }
 
 @end

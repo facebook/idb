@@ -89,9 +89,8 @@
 
 - (NSError *)error
 {
-  return [[[XCTestBootstrapError
+  return [[XCTestBootstrapError
     describeFormat:@"The Test Bundle Crashed during the Test Run %@", self.diagnostic.asString]
-    extraInfo:XCTestBootstrapResultErrorKey value:self]
     build];
 }
 
@@ -134,9 +133,7 @@
 
 - (NSError *)error
 {
-  return [[self.underlyingError
-    extraInfo:XCTestBootstrapResultErrorKey value:self]
-    build];
+  return [self.underlyingError build];
 }
 
 - (FBDiagnostic *)diagnostic

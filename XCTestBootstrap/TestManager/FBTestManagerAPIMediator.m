@@ -115,12 +115,17 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   }
   return [self.bundleConnection.connect
     onQueue:self.target.workQueue
-    fmap:^FBFuture *(FBTestBundleResult *result) {
-      NSError *error = result.error;
-      if (error) {
-        return [FBFuture futureWithResult:[FBTestManagerResult bundleConnectionFailed:error.userInfo[XCTestBootstrapResultErrorKey]]];
+    fmap:^(FBTestBundleResult *bundleResult) {
+      if (!bundleResult.didEndSuccessfully) {
+        return [FBFuture futureWithResult:[FBTestManagerResult bundleConnectionFailed:bundleResult]];
       }
-      return self.daemonConnection.connect;
+      return [self.daemonConnection.connect
+        onQueue:self.target.workQueue map:^(FBTestDaemonResult *daemonResult) {
+          if (!daemonResult.didEndSuccessfully) {
+            return [FBTestManagerResult daemonConnectionFailed:daemonResult];
+          }
+          return [FBTestManagerResult success];
+        }];
     }];
 }
 
