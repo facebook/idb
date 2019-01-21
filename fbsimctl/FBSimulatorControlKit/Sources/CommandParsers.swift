@@ -1113,7 +1113,7 @@ struct FBProcessLaunchConfigurationParsers {
           arguments: arguments,
           environment: [:],
           output: output,
-          launchMode:FBApplicationLaunchMode.relaunchIfRunning
+          launchMode: FBApplicationLaunchMode.failIfRunning
         )
         if (waitForDebugger) {
           appLaunchConfig = appLaunchConfig.withWaitForDebugger(nil)

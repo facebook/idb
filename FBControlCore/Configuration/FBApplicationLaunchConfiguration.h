@@ -17,10 +17,13 @@
 @class FBBinaryDescriptor;
 @class FBProcessOutputConfiguration;
 
+/**
+ Launch Modes for an Applicaton
+ */
 typedef NS_ENUM(NSUInteger, FBApplicationLaunchMode) {
-  FBApplicationLaunchModeFailIfRunning,
-  FBApplicationLaunchModeForegroundIfRunning,
-  FBApplicationLaunchModeRelaunchIfRunning,
+  FBApplicationLaunchModeFailIfRunning = 0,
+  FBApplicationLaunchModeForegroundIfRunning = 1,
+  FBApplicationLaunchModeRelaunchIfRunning = 2,
 };
 
 NS_ASSUME_NONNULL_BEGIN
