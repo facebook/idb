@@ -40,5 +40,6 @@
 @interface FBSimulatorControlTests_SimDeviceSet_Double : NSObject
 
 @property (nonatomic, readwrite, copy) NSArray *availableDevices;
+@property (nonatomic, readwrite, strong) SimDeviceNotificationManager *notificationManager;
 
 @end
