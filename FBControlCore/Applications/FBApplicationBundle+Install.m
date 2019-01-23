@@ -114,24 +114,24 @@ static BOOL deleteDirectory(NSURL *path)
     && isDirectory;
 }
 
-#pragma mark Private
-
 // The Magic Header for Zip Files is two chars 'PK'. As a short this is as below.
 static unsigned short const ZipFileMagicHeader = 0x4b50;
 // The Magic Header for Tar Files
 static unsigned short const TarFileMagicHeader = 0x8b1f;
 
-+ (FBDataType)getDataType:(NSData *)data
++ (FBFileHeaderMagic)headerMagicForData:(NSData *)data
 {
   unsigned short magic = 0;
   [data getBytes:&magic length:sizeof(short)];
   if (magic == ZipFileMagicHeader) {
-    return FBDataTypeIPA;
+    return FBFileHeaderMagicIPA;
   } else if (magic == TarFileMagicHeader) {
-    return FBDataTypeTAR;
+    return FBFileHeaderMagicTAR;
   }
-  return FBDataTypeUknown;
+  return FBFileHeaderMagicUnknown;
 }
+
+#pragma mark Private
 
 + (BOOL)isIPAAtPath:(NSString *)path error:(NSError **)error
 {
