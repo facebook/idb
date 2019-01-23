@@ -406,6 +406,32 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
  */
 @interface FBFutureContext <T : id> : NSObject
 
+#pragma mark Initializers
+
+/**
+ Constructs a context with no teardown.
+
+ @param future the future to wrap.
+ @return a FBFutureContext wrapping the Future.
+ */
++ (FBFutureContext<T> *)futureContextWithFuture:(FBFuture<T> *)future;
+
+/**
+ Constructs a context with no teardown, from a result.
+
+ @param result the result to wrap.
+ @return a FBFutureContext wrapping the Future.
+ */
++ (FBFutureContext<T> *)futureContextWithResult:(T)result;
+
+/**
+ Constructs a context with no teardown, from an error.
+
+ @param error an error to raise.
+ @return a new Future Context.
+ */
++ (FBFutureContext *)futureContextWithError:(NSError *)error;
+
 #pragma mark Public Methods
 
 /**
@@ -448,14 +474,6 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
  @return a Future that wraps the value returned from fmap.
  */
 - (FBFuture *)onQueue:(dispatch_queue_t)queue enter:(id (^)(T result, FBMutableFuture<NSNull *> *teardown))enter;
-
-/**
- An empty context that raises an error.
-
- @param error an error to raise.
- @return a new Future Context.
- */
-+ (FBFutureContext *)error:(NSError *)error;
 
 #pragma mark Properties
 

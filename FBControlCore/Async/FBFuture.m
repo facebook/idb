@@ -157,6 +157,23 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 @implementation FBFutureContext
 
+#pragma mark Initializers
+
++ (FBFutureContext *)futureContextWithFuture:(FBFuture *)future;
+{
+  return [[self alloc] initWithFuture:future teardowns:[NSMutableArray array]];
+}
+
++ (FBFutureContext *)futureContextWithResult:(id)result
+{
+  return [self futureContextWithFuture:[FBFuture futureWithResult:result]];
+}
+
++ (FBFutureContext *)futureContextWithError:(NSError *)error
+{
+  return [self futureContextWithFuture:[FBFuture futureWithError:error]];
+}
+
 - (instancetype)initWithFuture:(FBFuture *)future teardowns:(NSMutableArray<FBFutureContext_Teardown *> *)teardowns
 {
   self = [super init];
@@ -169,6 +186,8 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
   return self;
 }
+
+#pragma mark Public
 
 - (FBFuture *)onQueue:(dispatch_queue_t)queue pop:(FBFuture * (^)(id))pop
 {
@@ -213,11 +232,6 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   }];
 
   return started;
-}
-
-+ (FBFutureContext *)error:(NSError *)error
-{
-  return [[self alloc] initWithFuture:[FBFuture futureWithError:error] teardowns:[NSMutableArray array]];
 }
 
 @end
