@@ -394,9 +394,9 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   [logger log:@"Connecting to AMDevice"];
   int status = self.calls.Connect(amDevice);
   if (status != 0) {
-    NSString *errorDecription = CFBridgingRelease(self.calls.CopyErrorText(status));
+    NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
     return [[FBDeviceControlError
-      describeFormat:@"Failed to connect to device. (%@)", errorDecription]
+      describeFormat:@"Failed to connect to device. (%@)", errorDescription]
       failFuture];
   }
 
@@ -404,9 +404,9 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   status = self.calls.StartSession(amDevice);
   if (status != 0) {
     self.calls.Disconnect(amDevice);
-    NSString *errorDecription = CFBridgingRelease(self.calls.CopyErrorText(status));
+    NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
     return [[FBDeviceControlError
-      describeFormat:@"Failed to start session with device. (%@)", errorDecription]
+      describeFormat:@"Failed to start session with device. (%@)", errorDescription]
       failFuture];
   }
 
