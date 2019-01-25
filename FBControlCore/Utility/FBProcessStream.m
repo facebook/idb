@@ -535,7 +535,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Output to consumer %@", self.consumer];
+  return @"Output to consumer";
 }
 
 @end
@@ -566,7 +566,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Output to logger %@", self.logger];
+  return @"Output to logger";
 }
 
 @end
@@ -837,7 +837,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Input to %@", self.writer];
+  return @"Input to consumer";
 }
 
 @end
