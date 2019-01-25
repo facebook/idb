@@ -205,7 +205,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
     connectToDeviceWithPurpose:@"install"]
     onQueue:self.device.workQueue pop:^(FBAMDevice *device) {
       [self.device.logger logFormat:@"Installing Application %@", appURL];
-      int installReturnCode = self.device.amDevice.calls.SecureInstallApplication(
+      int status = self.device.amDevice.calls.SecureInstallApplication(
         0,
         device.amDevice,
         (__bridge CFURLRef _Nonnull)(appURL),
@@ -213,8 +213,8 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
         (AMDeviceProgressCallback) InstallCallback,
         (__bridge void *) (self.device.amDevice)
       );
-      if (installReturnCode != 0) {
-        NSString *errorMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(installReturnCode));
+      if (status != 0) {
+        NSString *errorMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
         return [[FBDeviceControlError
           describeFormat:@"Failed to install application %@ (%@)", [appURL lastPathComponent], errorMessage]
           failFuture];
@@ -233,14 +233,15 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
         @"ReturnAttributes": returnAttributes,
       };
       CFDictionaryRef applications;
-      int returnCode = self.device.amDevice.calls.LookupApplications(
+      int status = self.device.amDevice.calls.LookupApplications(
         device.amDevice,
         (__bridge CFDictionaryRef _Nullable)(options),
         &applications
       );
-      if (returnCode != 0) {
+      if (status != 0) {
+        NSString *errorMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
         return [[FBDeviceControlError
-          describe:@"Failed to get list of applications"]
+          describeFormat:@"Failed to get list of applications (%@)", errorMessage]
           failFuture];
       }
       return [FBFuture futureWithResult:CFBridgingRelease(applications)];
