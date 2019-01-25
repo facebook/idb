@@ -174,7 +174,10 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
     self.devices[udid] = device;
   }
   AMDeviceRef oldDevice = device.amDevice;
-  if (amDevice != oldDevice) {
+  if (oldDevice == NULL) {
+    [self.logger logFormat:@"New Device '%@' appeared for the first time", amDevice];
+    device.amDevice = amDevice;
+  } else if (amDevice != oldDevice) {
     [self.logger logFormat:@"New Device '%@' replaces Old Device '%@'", amDevice, oldDevice];
     device.amDevice = amDevice;
   } else {
@@ -191,7 +194,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   if (!device) {
     [self.logger logFormat:@"No Device named %@ from inflated devices, nothing to remove", udid];
     return;
-  }
+  } 
   [self.logger logFormat:@"Removing Device %@ from inflated devices", udid];
   [self.devices removeObjectForKey:udid];
   [NSNotificationCenter.defaultCenter postNotificationName:FBAMDeviceNotificationNameDeviceDetached object:device.udid];
