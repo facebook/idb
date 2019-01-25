@@ -20,7 +20,6 @@
 {
   NSArray<NSString *> *searchPaths = @[
     [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/DeviceSupport"],
-    [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Developer/Xcode/iOS DeviceSupport"],
   ];
 
   NSString *buildVersion = device.buildVersion;
