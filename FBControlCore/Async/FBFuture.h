@@ -466,6 +466,15 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
 - (FBFutureContext *)onQueue:(dispatch_queue_t)queue push:(FBFutureContext * (^)(T result))fmap;
 
 /**
+ Adds a teardown to the context
+
+ @param queue the queue to call the teardown on
+ @param action the teardown action
+ @return a context with the teardown applied.
+ */
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(T, FBFutureState))action;
+
+/**
  Extracts the wrapped context, so that it can be torn-down at a later time.
  This is designed to allow a context manager to be combined with the teardown of other long-running operations.
 

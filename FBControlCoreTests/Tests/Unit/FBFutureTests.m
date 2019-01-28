@@ -881,6 +881,50 @@
   [self waitForExpectations:@[outerTeardownExpectation, innerTeardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
+- (void)testAdditionalTeardownOrdering
+{
+  __block BOOL popCalled = NO;
+  __block BOOL initialTeardownCalled = NO;
+  __block BOOL subsequentTeardownCalled = NO;
+  XCTestExpectation *completionExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+  XCTestExpectation *initialTeardownExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Outer Teardown"];
+  XCTestExpectation *subsequentTeardownExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Inner Teardown"];
+
+  [[[[[FBFuture
+    futureWithResult:@1]
+    onQueue:self.queue contextualTeardown:^(id value, FBFutureState state){
+      XCTAssertTrue(popCalled);
+      XCTAssertTrue(subsequentTeardownCalled);
+      XCTAssertEqualObjects(value, @1);
+      XCTAssertEqual(state, FBFutureStateDone);
+      initialTeardownCalled = YES;
+      [initialTeardownExpectation fulfill];
+    }]
+    onQueue:self.queue contextualTeardown:^(id value, FBFutureState state){
+      XCTAssertTrue(popCalled);
+      XCTAssertFalse(initialTeardownCalled);
+      XCTAssertEqualObjects(value, @1);
+      XCTAssertEqual(state, FBFutureStateDone);
+      subsequentTeardownCalled = YES;
+      [subsequentTeardownExpectation fulfill];
+    }]
+    onQueue:self.queue pop:^(id value) {
+      XCTAssertFalse(initialTeardownCalled);
+      XCTAssertFalse(subsequentTeardownCalled);
+      XCTAssertEqualObjects(value, @1);
+      popCalled = YES;
+      return [FBFuture futureWithResult:@3];
+    }]
+   onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
+     XCTAssertTrue(popCalled);
+     XCTAssertEqualObjects(future.result, @3);
+     [completionExpectation fulfill];
+   }];
+
+  [self waitForExpectations:@[completionExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  [self waitForExpectations:@[initialTeardownExpectation, subsequentTeardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
 - (void)testStackedErrorDoesNotResolveInnerStack
 {
   NSError *error = [NSError errorWithDomain:@"foo" code:2 userInfo:nil];
