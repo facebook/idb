@@ -57,6 +57,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)stopListening;
 
+/**
+ Starts the socket server, managed by a context manager
+
+ @return a FBFutureContext that will stop listening when the context is torn down.
+ */
+- (FBFutureContext<NSNull *> *)startListeningContext;
+
 @end
 
 /**

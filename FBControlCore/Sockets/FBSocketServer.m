@@ -68,6 +68,15 @@
   return [FBFuture futureWithResult:NSNull.null];
 }
 
+- (FBFutureContext<NSNull *> *)startListeningContext
+{
+  return [[self
+    startListening]
+    onQueue:self.delegate.queue contextualTeardown:^(NSNull *_, FBFutureState __) {
+      [self stopListening];
+    }];
+}
+
 #pragma mark Private
 
 - (FBFuture<NSNull *> *)createSocketWithPort:(in_port_t)port
