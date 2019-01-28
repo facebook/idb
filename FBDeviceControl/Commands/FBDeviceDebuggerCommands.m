@@ -15,6 +15,7 @@
 #import "FBDevice+Private.h"
 #import "FBDevice.h"
 #import "FBDeviceControlError.h"
+#import "FBDeviceDebugServer.h"
 
 // Much of the implementation here comes from:
 // - DTDeviceKitBase which provides implementations of functions for calling AMDevice calls.
@@ -56,6 +57,17 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
   return self;
 }
 
+#pragma mark FBDebuggerCommands Implementation
+
+- (FBFuture<id<FBDebugServer>> *)launchDebugServerForApplicationWithPath:(NSString *)path port:(in_port_t)port
+{
+  return [[self
+    lldbBootstrapCommandsForApplicationAtPath:path port:port]
+    onQueue:self.device.workQueue fmap:^(NSArray<NSString *> *commands) {
+      return [FBDeviceDebugServer debugServerForServiceConnection:[self connectToDebugServer] port:port lldbBootstrapCommands:commands queue:self.device.workQueue logger:self.device.logger];
+    }];
+}
+
 #pragma mark Public
 
 - (FBFutureContext<FBAMDServiceConnection *> *)connectToDebugServer
@@ -72,7 +84,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
 - (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage
 {
   NSError *error = nil;
-  FBDeveloperDiskImage *diskImage = [FBDeveloperDiskImage developerDiskImage:self.device error:&error];
+  FBDeveloperDiskImage *diskImage = [FBDeveloperDiskImage developerDiskImage:self.device logger:self.device.logger error:&error];
   if (!diskImage) {
     return [FBFuture futureWithError:error];
   }
@@ -100,5 +112,55 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
     }];
 }
 
+- (FBFuture<FBApplicationBundle *> *)applicationBundleForPath:(NSString *)path
+{
+  return [FBFuture resolveValue:^(NSError **error) {
+    return [FBApplicationBundle applicationWithPath:path error:error];
+  }];
+}
+
+- (FBFuture<NSArray<NSString *> *> *)lldbBootstrapCommandsForApplicationAtPath:(NSString *)path port:(in_port_t)port
+{
+  return [[self
+    applicationBundleForPath:path]
+    onQueue:self.device.workQueue fmap:^(FBApplicationBundle *bundle) {
+      return [FBFuture futureWithFutures:@[
+        [self platformSelectCommand],
+        [FBDeviceDebuggerCommands localTargetForApplicationAtPath:path],
+        [self remoteTargetForBundleID:bundle.bundleID],
+        [FBDeviceDebuggerCommands processConnectForPort:port],
+      ]];
+    }];
+}
+
+- (FBFuture<NSString *> *)platformSelectCommand
+{
+  return [[FBFuture
+    resolveValue:^(NSError **error) {
+      return [FBDeveloperDiskImage pathForDeveloperSymbols:self.device logger:self.device.logger error:error];
+    }]
+    onQueue:self.device.workQueue map:^(NSString *path) {
+      return [NSString stringWithFormat:@"platform select remote-ios --sysroot '%@'", path];
+    }];
+}
+
++ (FBFuture<NSString *> *)localTargetForApplicationAtPath:(NSString *)path
+{
+  return [FBFuture futureWithResult:[NSString stringWithFormat:@"target create '%@'", path]];
+}
+
+- (FBFuture<NSString *> *)remoteTargetForBundleID:(NSString *)bundleID
+{
+  return [[self.device
+    installedApplicationWithBundleID:bundleID]
+    onQueue:self.device.asyncQueue map:^(FBInstalledApplication *installedApplication) {
+      return [NSString stringWithFormat:@"script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec(\"%@\"))", installedApplication.bundle.path];
+    }];
+}
+
++ (FBFuture<NSString *> *)processConnectForPort:(in_port_t)port
+{
+  return [FBFuture futureWithResult:[NSString stringWithFormat:@"process connect connect://localhost:%d", port]];
+}
 
 @end

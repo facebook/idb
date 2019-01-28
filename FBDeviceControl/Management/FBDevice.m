@@ -19,6 +19,7 @@
 #import "FBDeviceApplicationDataCommands.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceCrashLogCommands.h"
+#import "FBDeviceDebuggerCommands.h"
 #import "FBDeviceLogCommands.h"
 #import "FBDeviceScreenshotCommands.h"
 #import "FBDeviceSet+Private.h"
@@ -230,6 +231,7 @@
       FBDeviceApplicationCommands.class,
       FBDeviceApplicationDataCommands.class,
       FBDeviceCrashLogCommands.class,
+      FBDeviceDebuggerCommands.class,
       FBDeviceLogCommands.class,
       FBDeviceScreenshotCommands.class,
       FBDeviceVideoRecordingCommands.class,

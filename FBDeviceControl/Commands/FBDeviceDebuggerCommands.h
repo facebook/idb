@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Implementations of debugger related commands.
  */
-@interface FBDeviceDebuggerCommands : NSObject
+@interface FBDeviceDebuggerCommands : NSObject <FBDebuggerCommands>
 
 #pragma mark Initializers
 

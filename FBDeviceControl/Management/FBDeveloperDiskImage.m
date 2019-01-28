@@ -9,6 +9,8 @@
 
 #import "FBDeveloperDiskImage.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBDevice.h"
 #import "FBDeviceControlError.h"
 
@@ -16,26 +18,33 @@
 
 #pragma mark Private
 
-+ (NSString *)pathForDeviceSupportDirectory:(FBDevice *)device error:(NSError **)error
++ (NSString *)pathForDeveloperDiskImageDirectory:(FBDevice *)device logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSArray<NSString *> *searchPaths = @[
     [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/DeviceSupport"],
   ];
 
   NSString *buildVersion = device.buildVersion;
-  NSOperatingSystemVersion targetVersion = device.operatingSystemVersion;
+  [logger logFormat:@"Attempting to find Disk Image directory by Build Version %@", buildVersion];
   for (NSString *searchPath in searchPaths) {
     for (NSString *fileName in [NSFileManager.defaultManager enumeratorAtPath:searchPath]) {
       NSString *path = [searchPath stringByAppendingPathComponent:fileName];
       if ([path containsString:buildVersion]) {
         return path;
       }
+    }
+  }
+  NSOperatingSystemVersion targetVersion = device.operatingSystemVersion;
+  [logger logFormat:@"Attempting to find Disk Image directory by Version %ld.%ld", (long)targetVersion.majorVersion, targetVersion.minorVersion];
+  for (NSString *searchPath in searchPaths) {
+    for (NSString *fileName in [NSFileManager.defaultManager enumeratorAtPath:searchPath]) {
       NSOperatingSystemVersion currentVersion = [FBDevice operatingSystemVersionFromString:fileName];
       if (currentVersion.majorVersion == targetVersion.majorVersion && currentVersion.minorVersion == targetVersion.minorVersion) {
-        return path;
+        return [searchPath stringByAppendingPathComponent:fileName];
       }
     }
   }
+
   return [[FBDeviceControlError
     describeFormat:@"Could not find the DeveloperDiskImage for %@", self]
     fail:error];
@@ -43,9 +52,9 @@
 
 #pragma mark Initializers
 
-+ (FBDeveloperDiskImage *)developerDiskImage:(FBDevice *)device error:(NSError **)error
++ (FBDeveloperDiskImage *)developerDiskImage:(FBDevice *)device logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  NSString *directory = [self pathForDeviceSupportDirectory:device error:error];
+  NSString *directory = [self pathForDeveloperDiskImageDirectory:device logger:logger error:error];
   if (!directory) {
     return nil;
   }
@@ -77,5 +86,29 @@
 
   return self;
 }
+
+#pragma mark Public
+
++ (NSString *)pathForDeveloperSymbols:(FBDevice *)device logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  NSArray<NSString *> *searchPaths = @[
+    [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Developer/Xcode/iOS DeviceSupport"],
+    [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/DeviceSupport"],
+  ];
+  NSString *buildVersion = device.buildVersion;
+  [logger logFormat:@"Attempting to find Symbols directory by build version %@", buildVersion];
+  for (NSString *searchPath in searchPaths) {
+    for (NSString *fileName in [NSFileManager.defaultManager enumeratorAtPath:searchPath]) {
+      NSString *path = [searchPath stringByAppendingPathComponent:fileName];
+      if ([path containsString:buildVersion]) {
+        return [path stringByAppendingPathComponent:@"Symbols"];
+      }
+    }
+  }
+  return [[FBDeviceControlError
+    describeFormat:@"Could not find the Symbols for %@", self]
+    fail:error];
+}
+
 
 @end

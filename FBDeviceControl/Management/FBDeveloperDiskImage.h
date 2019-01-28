@@ -12,6 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBDevice;
+@protocol FBControlCoreLogger;
 
 @interface FBDeveloperDiskImage : NSObject
 
@@ -20,10 +21,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Finds the path of the Device Support disk image, if one can be found.
 
+ @param device the device to find for.
+ @param logger the logger to log to.
  @param error an error out for any error that occurs.
  @return the path of the disk image.
  */
-+ (nullable FBDeveloperDiskImage *)developerDiskImage:(FBDevice *)device error:(NSError **)error;
++ (nullable FBDeveloperDiskImage *)developerDiskImage:(FBDevice *)device logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 #pragma mark Properties
 
@@ -36,6 +39,17 @@ NS_ASSUME_NONNULL_BEGIN
  The path of the signature.
  */
 @property (nonatomic, copy, readonly) NSData *signature;
+
+#pragma mark Public
+
+/**
+ Returns the path for the symbosl of the device.
+
+ @param device the device to find for.
+ @param logger the logger to log to.
+ @param error an error out for any error that occurs.
+ */
++ (NSString *)pathForDeveloperSymbols:(FBDevice *)device logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 @end
 

@@ -29,7 +29,7 @@
 
 #pragma mark Initializers
 
-+ (instancetype)commandsWithTarget:(id<FBiOSTarget>)target afcCalls:(AFCCalls)afcCalls
++ (instancetype)commandsWithTarget:(FBDevice *)target afcCalls:(AFCCalls)afcCalls
 {
   return [[self alloc] initWithDevice:target afcCalls:afcCalls];
 }

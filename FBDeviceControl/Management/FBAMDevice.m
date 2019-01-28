@@ -366,6 +366,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
 
 - (FBFutureContext<FBAMDServiceConnection *> *)startTestManagerService
 {
+  // See XCTDaemonControlMobileDevice in Xcode.
   return [self startService:@"com.apple.testmanagerd.lockdown"];
 }
 

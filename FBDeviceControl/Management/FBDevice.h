@@ -12,18 +12,18 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBDeviceSet;
 @class FBProductBundle;
 @class FBTestRunnerConfiguration;
 @protocol FBDeviceOperator;
 @protocol FBControlCoreLogger;
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  A class that represents an iOS Device.
  */
-@interface FBDevice : NSObject <FBiOSTarget>
+@interface FBDevice : NSObject <FBiOSTarget, FBDebuggerCommands>
 
 /**
  The Device Set to which the Device Belongs.
