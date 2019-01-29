@@ -18,33 +18,28 @@
 
 @interface FBDeviceLogTerminationContinuation : NSObject <FBiOSTargetContinuation>
 
-- (instancetype)initWithContext:(FBFutureContext<NSNull *> *)context reader:(FBFileReader *)reader consumer:(id<FBDataConsumer>)consumer;
+- (instancetype)initWithReader:(FBFileReader *)reader completed:(FBMutableFuture<NSNull *> *)completed;
 
-@property (nonatomic, strong, readonly) FBFutureContext<NSNull *> *context;
 @property (nonatomic, strong, readonly) FBFileReader *reader;
-@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *completed;
 
 @end
 
 @implementation FBDeviceLogTerminationContinuation
 
-- (instancetype)initWithContext:(FBFutureContext<NSNull *> *)context reader:(FBFileReader *)reader consumer:(id<FBDataConsumer>)consumer
+@synthesize completed = _completed;
+
+- (instancetype)initWithReader:(FBFileReader *)reader completed:(FBMutableFuture<NSNull *> *)completed
 {
   self = [self init];
   if (!self) {
     return nil;
   }
 
-  _context = context;
   _reader = reader;
-  _consumer = consumer;
+  _completed = completed;
 
   return self;
-}
-
-- (FBFuture<NSNull *> *)completed
-{
-  return self.context.future;
 }
 
 - (FBiOSTargetFutureType)futureType
@@ -97,24 +92,18 @@
     [consumer consumeData:[unsupportedArgumentsMessage dataUsingEncoding:NSUTF8StringEncoding]];
     [self.device.logger log:unsupportedArgumentsMessage];
   }
-  FBMutableFuture<id<FBiOSTargetContinuation>> *started = FBMutableFuture.future;
 
   dispatch_queue_t queue = self.device.asyncQueue;
-  __block FBFutureContext<NSNull *> *context = [[[self.device.amDevice
+  return [[[self.device.amDevice
     startService:@"com.apple.syslog_relay"]
     onQueue:queue pend:^(FBAMDServiceConnection *connection) {
       NSFileHandle *handle = [[NSFileHandle alloc] initWithFileDescriptor:connection.socket closeOnDealloc:YES];
       FBFileReader *reader = [FBFileReader readerWithFileHandle:handle consumer:consumer logger:nil];
       return [[reader startReading] mapReplace:reader];
     }]
-    onQueue:queue pend:^(FBFileReader *reader){
-      FBFuture<NSNull *> *completed = FBMutableFuture.future;
-      id<FBiOSTargetContinuation> result = [[FBDeviceLogTerminationContinuation alloc] initWithContext:context reader:reader consumer:consumer];
-      [started resolveWithResult:result];
-       return [FBFuture futureWithResult:completed];
+    onQueue:queue enter:^(FBFileReader *reader, FBMutableFuture<NSNull *> *teardown) {
+      return [[FBDeviceLogTerminationContinuation alloc] initWithReader:reader completed:teardown];
     }];
-
-  return started;
 }
 
 @end
