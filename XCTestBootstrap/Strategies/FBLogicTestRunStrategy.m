@@ -91,7 +91,6 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
 - (FBFuture<NSNull *> *)testFutureWithShimOutput:(id<FBProcessFileOutput>)shimOutput stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer shimConsumer:(id<FBDataConsumerLifecycle>)shimConsumer uuid:(NSUUID *)uuid
 {
-  [self.logger logFormat:@"Starting Logic Test execution of %@", [FBCollectionInformation oneLineJSONDescription:self.configuration.jsonSerializableRepresentation]];
   id<FBLogicXCTestReporter> reporter = self.reporter;
   [reporter didBeginExecutingTestPlan];
 
@@ -137,12 +136,11 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
       return [FBLogicTestRunStrategy onQueue:queue waitForExit:process closingOutput:shimOutput consumer:shimConsumer];
     }]
     onQueue:queue handleError:^(NSError *error) {
-      [self.logger logFormat:@"Abnormal exit of xctest process %@", error];
+      // Abnormal exit
       [self.reporter didCrashDuringTest:error];
       return [FBFuture futureWithError:error];
     }]
     onQueue:queue map:^(id _) {
-      [self.logger log:@"Normal exit of xctest process"];
       [reporter didFinishExecutingTestPlan];
       return NSNull.null;
     }];
@@ -242,11 +240,6 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
 - (FBFuture<id<FBLaunchedProcess>> *)startTestProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer
 {
-  [self.logger logFormat:
-    @"Launching xctest process with arguments %@, environment %@",
-    [FBCollectionInformation oneLineDescriptionFromArray:[@[launchPath] arrayByAddingObjectsFromArray:arguments]],
-    [FBCollectionInformation oneLineDescriptionFromDictionary:environment]
-  ];
   return [FBXCTestProcess
     startWithLaunchPath:launchPath
     arguments:arguments
