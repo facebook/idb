@@ -52,9 +52,9 @@ protocol EnvironmentAdditive {
 extension EnvironmentAdditive {
 }
 
-extension FBSimulatorBootConfiguration : EnvironmentAdditive {
-  func withEnvironmentAdditions(_ environmentAdditions: [String : String]) -> Self {
-    return self.withBootEnvironment(environmentAdditions)
+extension FBSimulatorBootConfiguration: EnvironmentAdditive {
+  func withEnvironmentAdditions(_ environmentAdditions: [String: String]) -> Self {
+    return withBootEnvironment(environmentAdditions)
   }
 }
 

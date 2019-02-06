@@ -134,8 +134,8 @@ struct SimulatorActionRunner: Runner {
         try simulator.open(url)
       }
     case .relaunch(let processLaunch):
-      var appLaunch = FBApplicationLaunchConfiguration.init(bundleID: processLaunch.bundleID, bundleName: processLaunch.bundleName, arguments: processLaunch.arguments, environment: processLaunch.environment, output: processLaunch.output, launchMode: .relaunchIfRunning)
-      if (processLaunch.waitForDebugger) {
+      var appLaunch = FBApplicationLaunchConfiguration(bundleID: processLaunch.bundleID, bundleName: processLaunch.bundleName, arguments: processLaunch.arguments, environment: processLaunch.environment, output: processLaunch.output, launchMode: .relaunchIfRunning)
+      if processLaunch.waitForDebugger {
         appLaunch = appLaunch.withWaitForDebugger(nil)
       }
       return FutureRunner(reporter, .relaunch, appLaunch.subject, simulator.launchApplication(appLaunch))
@@ -186,7 +186,7 @@ private struct UploadRunner: Runner {
 
     if media.count > 0 {
       let paths = media.map { NSURL.fileURL(withPath: $0.1) }
-      let runner = FutureRunner(self.reporter, .upload, self.reporter.simulator.subject, self.reporter.simulator.addMedia(paths))
+      let runner = FutureRunner(reporter, .upload, reporter.simulator.subject, reporter.simulator.addMedia(paths))
       let result = runner.run()
       switch result.outcome {
       case .failure: return result

@@ -122,7 +122,8 @@ extension Parser {
       tag: tag,
       name: name,
       desc: explain,
-      child: matchDescription)
+      child: matchDescription
+    )
 
     return Parser(desc, output: output)
   }

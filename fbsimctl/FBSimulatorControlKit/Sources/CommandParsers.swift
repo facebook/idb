@@ -348,9 +348,11 @@ extension FBiOSTargetType: Parsable {
   public static var parser: Parser<FBiOSTargetType> {
     return Parser<FBiOSTargetType>.alternative([
       Parser<FBiOSTargetType>.ofFlag(
-        "simulators", FBiOSTargetType.simulator, ""),
+        "simulators", FBiOSTargetType.simulator, ""
+      ),
       Parser<FBiOSTargetType>.ofFlag(
-        "devices", FBiOSTargetType.device, ""),
+        "devices", FBiOSTargetType.device, ""
+      ),
     ])
   }
 }
@@ -463,8 +465,8 @@ extension ListenInterface: Parsable {
       .fmap { UInt16($0) }
       .describe(PrimitiveDesc(
         name: "port",
-        desc: "Port number (16-bit unsigned integer).")
-      )
+        desc: "Port number (16-bit unsigned integer)."
+      ))
   }
 }
 
@@ -723,8 +725,7 @@ extension Action: Parsable {
       .ofTwoSequenced(
         Parser<String>.ofCommandWithArg(EventName.install.rawValue, Parser<String>.ofAny),
         Parser<Bool>.ofFlag("codesign",
-                            "Before installing, sign the bundle and all its frameworks with a certificate from the keychain"
-        )
+                            "Before installing, sign the bundle and all its frameworks with a certificate from the keychain")
       )
       .fmap { path, shouldCodesign in
         Action.install(path, shouldCodesign)
@@ -1115,7 +1116,7 @@ struct FBProcessLaunchConfigurationParsers {
           output: output,
           launchMode: FBApplicationLaunchMode.failIfRunning
         )
-        if (waitForDebugger) {
+        if waitForDebugger {
           appLaunchConfig = appLaunchConfig.withWaitForDebugger(nil)
         }
         return (appLaunchConfig, appDescriptor)

@@ -346,7 +346,8 @@ public struct OptionalDesc: ParserDescription {
  */
 
 private func normalisedTransitiveChildren<D: ParserDescription>(
-  Of desc: D) -> [ParserDescription] {
+  Of desc: D
+) -> [ParserDescription] {
   var ntChildren = [ParserDescription]()
 
   for child in desc.children {
