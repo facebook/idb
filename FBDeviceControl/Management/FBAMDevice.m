@@ -73,9 +73,10 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 + (instancetype)managerWithCalls:(AMDCalls)calls Queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   FBAMDeviceManager *manager = [[self alloc] initWithCalls:calls queue:queue logger:logger];
-  [manager populateFromList];
   NSError *error = nil;
-  BOOL success = [manager startListeningWithError:&error];
+  BOOL success = [manager populateFromListWithError:&error];
+  NSAssert(success, @"Failed to list devices %@", error);
+  success = [manager startListeningWithError:&error];
   NSAssert(success, @"Failed to Start Listening %@", error);
   return manager;
 }
@@ -151,14 +152,18 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   return YES;
 }
 
-- (void)populateFromList
+- (BOOL)populateFromListWithError:(NSError **)error
 {
-  CFArrayRef array = self.calls.CreateDeviceList();
+  _Nullable CFArrayRef array = self.calls.CreateDeviceList();
+  if (array == NULL) {
+    return [[FBDeviceControlError describe:@"AMDCreateDeviceList returned NULL"] failBool:error];
+  }
   for (NSInteger index = 0; index < CFArrayGetCount(array); index++) {
     AMDeviceRef value = CFArrayGetValueAtIndex(array, index);
     [self deviceConnected:value];
   }
   CFRelease(array);
+  return YES;
 }
 
 static const NSTimeInterval ConnectionReuseTimeout = 10.0;
