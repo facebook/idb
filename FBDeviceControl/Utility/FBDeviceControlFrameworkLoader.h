@@ -20,18 +20,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBDeviceControlFrameworkLoader : FBControlCoreFrameworkLoader
 
-#pragma mark Initializers
-
-/**
- The Essential FBDeviceControl Frameworks.
- */
-@property (nonatomic, strong, class, readonly) FBDeviceControlFrameworkLoader *essentialFrameworks;
-
-/**
- The Essential FBDeviceControl Frameworks.
- */
-@property (nonatomic, strong, class, readonly) FBDeviceControlFrameworkLoader *xcodeFrameworks;
-
 @end
 
 NS_ASSUME_NONNULL_END

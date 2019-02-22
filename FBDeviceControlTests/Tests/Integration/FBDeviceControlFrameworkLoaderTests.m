@@ -13,11 +13,11 @@
 
 #import <FBDeviceControl/FBDeviceControl.h>
 
-@interface FBDeviceControlLinkerTests : XCTestCase
+@interface FBDeviceControlFrameworkLoaderTests : XCTestCase
 
 @end
 
-@implementation FBDeviceControlLinkerTests
+@implementation FBDeviceControlFrameworkLoaderTests
 
 + (void)initialize
 {
@@ -31,8 +31,7 @@
 
 - (void)testLinksPrivateFrameworks
 {
-  [FBDeviceControlFrameworkLoader.essentialFrameworks loadPrivateFrameworksOrAbort];
-  [FBDeviceControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworksOrAbort];
+  [FBDeviceControlFrameworkLoader.new loadPrivateFrameworksOrAbort];
 }
 
 - (void)testConstructsDeviceSet

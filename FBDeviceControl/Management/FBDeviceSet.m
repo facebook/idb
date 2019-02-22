@@ -34,7 +34,7 @@
 
 + (void)initialize
 {
-  [FBDeviceControlFrameworkLoader.essentialFrameworks loadPrivateFrameworksOrAbort];
+  [FBDeviceControlFrameworkLoader.new loadPrivateFrameworksOrAbort];
 }
 
 + (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error delegate:(nullable id<FBiOSTargetSetDelegate>)delegate

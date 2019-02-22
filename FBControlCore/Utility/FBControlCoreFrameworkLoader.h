@@ -28,9 +28,27 @@ void *FBGetSymbolFromHandle(void *handle, const char *name);
  */
 @interface FBControlCoreFrameworkLoader : NSObject
 
+#pragma mark Initializers
+
 /**
+ The Designated Initializer
+
+ @param frameworkName the name of the loading framework.
+ @param frameworks the framework dependencies
+ @return a new Framework Loader
  */
 + (instancetype)loaderWithName:(NSString *)frameworkName frameworks:(NSArray<FBWeakFramework *> *)frameworks;
+
+/**
+ The Designated Initializer
+
+ @param frameworkName the name of the loading framework.
+ @param frameworks the framework dependencies
+ @return a new Framework Loader
+ */
+- (instancetype)initWithName:(NSString *)frameworkName frameworks:(NSArray<FBWeakFramework *> *)frameworks;
+
+#pragma mark Properties
 
 /**
  The Named set of Frameworks.
@@ -46,6 +64,8 @@ void *FBGetSymbolFromHandle(void *handle, const char *name);
  YES if the Frameworks are loaded, NO otherwise.
  */
 @property (nonatomic, assign, readonly) BOOL hasLoadedFrameworks;
+
+#pragma mark Public Methods
 
 /**
  Confirms that the current user can load Frameworks.
