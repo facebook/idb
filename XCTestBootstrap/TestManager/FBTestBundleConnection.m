@@ -17,6 +17,7 @@
 #import <DTXConnectionServices/DTXProxyChannel.h>
 #import <DTXConnectionServices/DTXRemoteInvocationReceipt.h>
 #import <DTXConnectionServices/DTXTransport.h>
+#import <DTXConnectionServices/DTXSocketTransport.h>
 
 #import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
 
@@ -214,11 +215,12 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
   self.state = FBTestBundleConnectionStateConnecting;
   [self.logger log:@"Connecting Test Bundle"];
 
-  [[[[FBFuture
-    onQueue:self.requestQueue resolve:^{
-      return [self.target.deviceOperator makeTransportForTestManagerServiceWithLogger:self.logger];
-    }]
-    onQueue:self.requestQueue map:^(DTXTransport *transport) {
+  [[[[self.target
+    transportForTestManagerService]
+    onQueue:self.requestQueue enter:^(NSNumber *socket, FBMutableFuture<NSNull *> *teardown) {
+      DTXTransport *transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket.intValue disconnectAction:^{
+        [teardown resolveWithResult:NSNull.null];
+      }];
       return [self setupTestBundleConnectionWithTransport:transport];
     }]
     onQueue:self.target.workQueue map:^(DTXConnection *connection) {
@@ -429,7 +431,7 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
     [self concludeWithResult:[FBTestBundleResult failedInError:error]];
     return nil;
   }
-  if (!self.target.deviceOperator.requiresTestDaemonMediationForTestHostConnection) {
+  if (!self.target.requiresTestDaemonMediationForTestHostConnection) {
     XCTestBootstrapError *error = [[XCTestBootstrapError
       describe:@"Test Bundle Connection cannot handle a Device that doesn't require daemon mediation"]
       code:XCTestBootstrapErrorCodeStartupFailure];

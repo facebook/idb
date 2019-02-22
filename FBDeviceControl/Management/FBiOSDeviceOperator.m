@@ -120,32 +120,6 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
 
 #pragma mark - FBDeviceOperator protocol
 
-- (FBFuture<DTXTransport *> *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger
-{
-  if ([NSThread isMainThread]) {
-    return [[[FBDeviceControlError
-      describe:@"'makeTransportForTestManagerService' method may block and should not be called on the main thread"]
-      logger:logger]
-      failFuture];
-  }
-
-  return [[self.device.amDevice
-    startTestManagerService]
-    onQueue:self.device.workQueue pop:^(FBAMDServiceConnection *connection) {
-      int socket = connection.socket;
-      if (socket <= 0) {
-        return [[[FBDeviceControlError
-          describe:@"Invalid socket returned from AMDServiceConnectionGetSocket"]
-          logger:logger]
-          failFuture];
-      }
-      DTXTransport *transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket disconnectAction:^{
-        [logger log:@"Disconnected from test manager daemon socket"];
-      }];
-      return [FBFuture futureWithResult:transport];
-    }];
-}
-
 - (BOOL)requiresTestDaemonMediationForTestHostConnection
 {
   return self.dvtDevice.requiresTestDaemonMediationForTestHostConnection;

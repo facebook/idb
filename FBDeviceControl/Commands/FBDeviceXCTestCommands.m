@@ -11,9 +11,13 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+#import "FBAMDevice+Private.h"
+#import "FBAMDevice.h"
+#import "FBDevice+Private.h"
 #import "FBDevice.h"
-#import "FBDeviceXCTestCommands.h"
 #import "FBDeviceControlError.h"
+#import "FBDeviceXCTestCommands.h"
+#import "FBAMDServiceConnection.h"
 
 static inline id readFromDict(NSDictionary *dict, NSString *key, Class klass)
 {
@@ -249,6 +253,20 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
   return [[FBDeviceControlError
     describeFormat:@"Cannot list the tests in bundle %@ as this is not supported on devices", bundlePath]
     failFuture];
+}
+
+- (FBFutureContext<NSNumber *> *)transportForTestManagerService
+{
+  return [[self.device.amDevice
+    startTestManagerService]
+    onQueue:self.device.workQueue pend:^(FBAMDServiceConnection *connection) {
+      return [FBFuture futureWithResult:@(connection.socket)];
+    }];
+}
+
+- (BOOL)requiresTestDaemonMediationForTestHostConnection
+{
+  return YES;
 }
 
 #pragma mark Private

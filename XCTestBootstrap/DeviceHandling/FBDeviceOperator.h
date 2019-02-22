@@ -11,10 +11,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@class DTXTransport;
-@class DVTAbstractiOSDevice;
-@class FBProductBundle;
-@class FBTestRunnerConfiguration;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -22,19 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
  Operators are used to control devices
  */
 @protocol FBDeviceOperator <NSObject>
-
-/**
- Determines whether device supports testing with test manager daemon
- */
-@property (nonatomic, assign, readonly) BOOL requiresTestDaemonMediationForTestHostConnection;
-
-/**
- Starts test manager daemon and creates DTXTransport connection with it
-
- @param logger the Logger to Log to.
- @return A future wrapping the DTXTransport.
- */
-- (FBFuture<DTXTransport *> *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger;
 
 /**
  Returns PID of application with given bundleID

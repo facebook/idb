@@ -76,7 +76,6 @@
     _bundleIDToProductMap = [FBMacDevice fetchInstalledApplications];
     _bundleIDToRunningTask = @{}.mutableCopy;
     _launchdProcess = [[FBProcessInfo alloc] initWithProcessIdentifier:1 launchPath:@"/sbin/launchd" arguments:@[] environment:@{}];
-    _requiresTestDaemonMediationForTestHostConnection = YES;
     _shortDescription = _name = @"Local MacOSX host";
     _udid = [FBMacDevice resolveDeviceUDID];
     _state = FBiOSTargetStateBooted;
@@ -147,11 +146,12 @@
 
 
 #pragma mark - FBDeviceOperator
-@synthesize requiresTestDaemonMediationForTestHostConnection = _requiresTestDaemonMediationForTestHostConnection;
+
 @synthesize udid = _udid;
 
-- (FBFuture<DTXTransport *> *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger
+- (FBFutureContext<NSNumber *> *)transportForTestManagerService
 {
+  id<FBControlCoreLogger> logger = self.logger;
   NSXPCConnection *connection = [[NSXPCConnection alloc] initWithMachServiceName:@"com.apple.testmanagerd.control" options:0];
   NSXPCInterface *interface = [NSXPCInterface interfaceWithProtocol:@protocol(XCTestManager_XPCControl)];
   [connection setRemoteObjectInterface:interface];
@@ -175,22 +175,21 @@
 
   self.connection = connection;
   __block NSError *error;
-  __block DTXSocketTransport *transport;
+  __block NSFileHandle *transport;
   [proxy _XCT_requestConnectedSocketForTransport:^(NSFileHandle *file, NSError *xctError) {
     if (!file) {
       [logger logFormat:@"Error requesting connection with test manager daemon: %@", xctError.description];
       error = xctError;
       return;
     }
-    transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:file.fileDescriptor disconnectAction:^{
-      [logger log:@"Disconnected from test manager daemon socket"];
-      [file closeFile];
-    }];
+    transport = file;
   }];
   if (!transport) {
-    return [FBFuture futureWithError:error];
+    return [FBFutureContext futureContextWithError:error];
   }
-  return [FBFuture futureWithResult:transport];
+  return [[FBFuture futureWithResult:transport] onQueue:self.workQueue contextualTeardown:^(id _, FBFutureState __) {
+    [transport closeFile];
+  }];
 }
 
 - (nonnull FBFuture<NSNumber *> *)processIDWithBundleID:(nonnull NSString *)bundleID
@@ -201,6 +200,11 @@
     return [FBFuture futureWithError:error];
   }
   return [FBFuture futureWithResult:@(self.bundleIDToRunningTask[bundleID].processIdentifier)];
+}
+
+- (BOOL)requiresTestDaemonMediationForTestHostConnection
+{
+  return YES;
 }
 
 #pragma mark Not supported

@@ -132,6 +132,16 @@
   return nil;
 }
 
+- (BOOL)requiresTestDaemonMediationForTestHostConnection
+{
+  return YES;
+}
+
+- (FBFutureContext<NSNumber *> *)transportForTestManagerService
+{
+  return [FBFutureContext futureContextWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
+}
+
 - (FBFuture<NSArray<NSString *> *> *)logLinesWithArguments:(NSArray<NSString *> *)arguments
 {
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];

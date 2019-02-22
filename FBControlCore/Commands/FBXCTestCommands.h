@@ -48,6 +48,18 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestOperation;
  */
 - (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout;
 
+/**
+ Starts 'testmanagerd' connection and creates socket to it.
+
+ @return A future context wrapping the socket transport. The socket transport will be torn down when the context exits
+ */
+- (FBFutureContext<NSNumber *> *)transportForTestManagerService;
+
+/**
+ Determines whether device supports testing with test manager daemon
+ */
+- (BOOL)requiresTestDaemonMediationForTestHostConnection;
+
 @end
 
 NS_ASSUME_NONNULL_END
