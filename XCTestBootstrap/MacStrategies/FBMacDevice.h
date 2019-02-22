@@ -10,14 +10,13 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <XCTestBootstrap/FBDeviceOperator.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 /*
  Class that can be used for operating on local Mac device
  */
-@interface FBMacDevice : NSObject <FBDeviceOperator, FBiOSTarget>
+@interface FBMacDevice : NSObject <FBiOSTarget>
 
 - (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger;
 

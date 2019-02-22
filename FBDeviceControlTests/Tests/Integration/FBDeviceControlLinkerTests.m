@@ -44,15 +44,6 @@
   XCTAssertNotNil(deviceSet.allDevices);
 }
 
-- (void)testLazilyFetchesDVTClasses
-{
-  NSError *error = nil;
-  FBDeviceSet *deviceSet = [FBDeviceSet defaultSetWithLogger:FBControlCoreGlobalConfiguration.defaultLogger error:&error];
-  XCTAssertNil(error);
-  XCTAssertNotNil([deviceSet.allDevices valueForKey:@"description"]);
-  XCTAssertEqual(deviceSet.allDevices.count, [[[deviceSet.allDevices valueForKey:@"deviceOperator"] filteredArrayUsingPredicate:NSPredicate.notNullPredicate] count]);
-}
-
 - (void)testReadsFromMobileDevice
 {
   NSArray<FBAMDevice *> *devices = [FBAMDevice allDevices];

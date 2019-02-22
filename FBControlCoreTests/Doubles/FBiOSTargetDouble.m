@@ -12,7 +12,6 @@
 @implementation FBiOSTargetDouble
 
 @synthesize architecture;
-@synthesize deviceOperator;
 @synthesize logger;
 @synthesize screenInfo;
 
@@ -113,6 +112,11 @@
 }
 
 - (FBFuture<NSDictionary<NSString *, FBProcessInfo *> *> *)runningApplications
+{
+  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
+}
+
+- (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID
 {
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }

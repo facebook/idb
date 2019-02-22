@@ -17,7 +17,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBDeviceSet;
 @class FBProductBundle;
 @class FBTestRunnerConfiguration;
-@protocol FBDeviceOperator;
 @protocol FBControlCoreLogger;
 
 /**

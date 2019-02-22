@@ -13,7 +13,6 @@
 #import <XCTestBootstrap/XCTestBootstrap.h>
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBDeviceOperator.h"
 #import "FBProductBundle.h"
 #import "FBTestManager.h"
 #import "FBTestManagerContext.h"

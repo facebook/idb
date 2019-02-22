@@ -26,7 +26,6 @@
 #import <FBControlCore/FBCrashLogCommands.h>
 
 #import "XCTestBootstrapError.h"
-#import "FBDeviceOperator.h"
 #import "FBTestManagerContext.h"
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestBundleResult.h"
@@ -336,7 +335,7 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
 
 - (FBFuture<FBCrashLogInfo *> *)findCrashedProcessLog
 {
-  return [[self.target.deviceOperator
+  return [[self.target
     processIDWithBundleID:self.context.testRunnerBundleID]
     onQueue:self.target.workQueue chain:^FBFuture<FBTestBundleResult *> *(FBFuture<NSNumber *> *processIdentifierFuture) {
       if (processIdentifierFuture.result) {

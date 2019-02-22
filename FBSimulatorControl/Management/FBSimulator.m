@@ -29,7 +29,6 @@
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorControlOperator.h"
 #import "FBSimulatorCrashLogCommands.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
@@ -54,7 +53,6 @@
 
 @implementation FBSimulator
 
-@synthesize deviceOperator = _deviceOperator;
 @synthesize auxillaryDirectory = _auxillaryDirectory;
 @synthesize logger = _logger;
 
@@ -118,14 +116,6 @@
     FBSimulatorHIDEvent.class,
     FBTestLaunchConfiguration.class,
   ];
-}
-
-- (id<FBDeviceOperator>)deviceOperator
-{
-  if (_deviceOperator == nil) {
-    _deviceOperator = [FBSimulatorControlOperator operatorWithSimulator:self];
-  }
-  return _deviceOperator;
 }
 
 - (NSString *)udid

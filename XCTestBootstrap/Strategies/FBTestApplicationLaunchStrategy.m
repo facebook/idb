@@ -11,8 +11,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBDeviceOperator.h"
-
 @interface FBTestApplicationLaunchStrategy ()
 
 @property (nonatomic, strong, readonly) id<FBiOSTarget> iosTarget;

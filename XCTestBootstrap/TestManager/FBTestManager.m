@@ -9,7 +9,6 @@
 
 #import "FBTestManager.h"
 
-#import "FBDeviceOperator.h"
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestManagerContext.h"
 #import "FBTestManagerResult.h"

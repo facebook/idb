@@ -28,7 +28,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBiOSActionRouter;
 @class FBiOSTargetDiagnostics;
 @class FBiOSTargetScreenInfo;
-@protocol FBDeviceOperator;
 @protocol FBControlCoreLogger;
 
 /**
@@ -140,11 +139,6 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
  Process Information about the Container Application of the iOS Target. Currently only applies to Simulators.
  */
 @property (nonatomic, copy, nullable, readonly) FBProcessInfo *containerApplication;
-
-/**
- Device operator used to control device. It provides API for XCTestBoostrap to interact with the device.
- */
-@property (nonatomic, nullable, strong, readonly) id<FBDeviceOperator> deviceOperator;
 
 /**
  The Queue to serialize work on.

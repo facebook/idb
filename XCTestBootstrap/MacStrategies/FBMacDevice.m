@@ -96,11 +96,6 @@
   return self;
 }
 
-- (id<FBDeviceOperator>)deviceOperator
-{
-  return self;
-}
-
 - (FBFuture<NSNull *> *)restorePrimaryDeviceState
 {
   NSMutableArray<FBFuture *> *queuedFutures = @[].mutableCopy;
@@ -143,9 +138,6 @@
   IOObjectRelease(platformExpert);
   return (NSString *)CFBridgingRelease(serialNumberAsCFString);
 }
-
-
-#pragma mark - FBDeviceOperator
 
 @synthesize udid = _udid;
 

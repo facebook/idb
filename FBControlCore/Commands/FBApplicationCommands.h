@@ -87,6 +87,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSDictionary<NSString *, FBProcessInfo *> *> *)runningApplications;
 
+/**
+ Returns PID of application with given bundleID
+
+ @param bundleID bundle ID of installed application.
+ @return A future wrapping the process id.
+ */
+- (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID;
+
 @end
 
 NS_ASSUME_NONNULL_END

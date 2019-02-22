@@ -19,7 +19,6 @@
 #import "FBDeviceApplicationLaunchStrategy.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceDebuggerCommands.h"
-#import "FBiOSDeviceOperator.h"
 
 static void UninstallCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAMDevice *device)
 {
@@ -153,9 +152,18 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
     }];
 }
 
+- (FBFuture<id> *)processIDWithBundleID:(NSString *)bundleID
+{
+  return [[FBDeviceControlError
+    describeFormat:@"-[%@ %@] is unimplemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
 - (FBFuture<NSNull *> *)killApplicationWithBundleID:(NSString *)bundleID
 {
-  return [((FBiOSDeviceOperator *) self.device.deviceOperator) killApplicationWithBundleID:bundleID];
+  return [[FBDeviceControlError
+    describeFormat:@"-[%@ %@] is unimplemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
 }
 
 - (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration

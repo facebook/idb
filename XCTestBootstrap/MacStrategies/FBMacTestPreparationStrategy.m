@@ -11,7 +11,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBDeviceOperator.h"
 #import "FBProductBundle.h"
 #import "FBTestBundle.h"
 #import "FBTestConfiguration.h"

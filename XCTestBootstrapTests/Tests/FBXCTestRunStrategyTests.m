@@ -50,13 +50,11 @@
 {
   id testConfigurationMock = [OCMockObject niceMockForClass:FBTestRunnerConfiguration.class];
   OCMockObject<FBXCTestPreparationStrategy> *prepareTestMock = [OCMockObject mockForProtocol:@protocol(FBXCTestPreparationStrategy)];
-  OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)];
-  [[[deviceOperatorMock stub] andReturn:[FBFuture futureWithResult:@13]] processIDWithBundleID:[OCMArg any]];
 
   [[[prepareTestMock expect] andReturn:[FBFuture futureWithResult:testConfigurationMock]] prepareTestWithIOSTarget:[OCMArg any]];
   OCMockObject *iOSTarget = [OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)];
   [[[iOSTarget stub] andReturn:dispatch_get_main_queue()] workQueue];
-  [[[iOSTarget stub] andReturn:deviceOperatorMock] deviceOperator];
+  [[[iOSTarget stub] andReturn:[FBFuture futureWithResult:@13]] processIDWithBundleID:OCMArg.any];
   [(id<FBApplicationCommands>)[[iOSTarget stub] andReturn:[FBFuture futureWithResult:@YES]] launchApplication:[OCMArg any]];
 
   FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithIOSTarget:(id)iOSTarget testPrepareStrategy:prepareTestMock reporter:nil logger:nil];
@@ -74,12 +72,9 @@
     waitForDebugger:NO
     output:FBProcessOutputConfiguration.outputToDevNull];
 
-  OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)];
-  [[[deviceOperatorMock stub] andReturn:[FBFuture futureWithResult:@13]] processIDWithBundleID:[OCMArg any]];
-
   OCMockObject<FBiOSTarget> *iosTargetMock = [OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)];
-  [[[iosTargetMock stub] andReturn:deviceOperatorMock] deviceOperator];
   [[[iosTargetMock stub] andReturn:dispatch_get_main_queue()] workQueue];
+  [[[iosTargetMock stub] andReturn:[FBFuture futureWithResult:@13]] processIDWithBundleID:OCMArg.any];
   [(id<FBApplicationCommands>)[[iosTargetMock expect] andReturn:[FBFuture futureWithResult:@YES]] launchApplication:launchConfiguration];
 
   id testRunnerMock = [OCMockObject niceMockForClass:FBProductBundle.class];

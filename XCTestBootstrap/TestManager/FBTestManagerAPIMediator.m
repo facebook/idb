@@ -27,7 +27,6 @@
 #import "XCTestBootstrapError.h"
 #import "FBXCTestManagerLoggingForwarder.h"
 
-#import "FBDeviceOperator.h"
 #import "FBTestReporterForwarder.h"
 #import "FBTestManagerTestReporter.h"
 #import "FBTestManagerResultSummary.h"

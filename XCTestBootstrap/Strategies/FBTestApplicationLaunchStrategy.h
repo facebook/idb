@@ -15,7 +15,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationLaunchConfiguration;
 
-@protocol FBDeviceOperator;
 @protocol FBiOSTarget;
 
 /**

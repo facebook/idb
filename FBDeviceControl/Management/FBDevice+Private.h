@@ -15,7 +15,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBDeviceVideoRecordingCommands;
 @class FBDeviceXCTestCommands;
 @class FBiOSTargetCommandForwarder;
-@protocol FBDeviceOperator;
 
 @interface FBDevice ()
 

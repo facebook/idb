@@ -25,7 +25,6 @@
 #import "FBDeviceSet+Private.h"
 #import "FBDeviceVideoRecordingCommands.h"
 #import "FBDeviceXCTestCommands.h"
-#import "FBiOSDeviceOperator.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -33,7 +32,6 @@
 
 @implementation FBDevice
 
-@synthesize deviceOperator = _deviceOperator;
 @synthesize logger = _logger;
 
 #pragma mark Initializers
@@ -187,14 +185,6 @@
 
 #pragma mark Properties
 
-- (id<FBDeviceOperator>)deviceOperator
-{
-  if (_deviceOperator == nil) {
-    _deviceOperator = [FBiOSDeviceOperator forDevice:self];
-  }
-  return _deviceOperator;
-}
-
 - (NSString *)modelName
 {
   return self.amDevice.modelName;
@@ -253,10 +243,6 @@
   id command = [self.forwarder forwardingTargetForSelector:selector];
   if (command) {
     return command;
-  }
-  // Otherwise try the operator
-  if ([FBiOSDeviceOperator instancesRespondToSelector:selector]) {
-    return self.deviceOperator;
   }
   // Nothing left.
   return [super forwardingTargetForSelector:selector];

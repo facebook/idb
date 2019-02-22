@@ -43,7 +43,6 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorControlFrameworkLoader.h>
-#import <FBSimulatorControl/FBSimulatorControlOperator.h>
 #import <FBSimulatorControl/FBSimulatorDiagnostics.h>
 #import <FBSimulatorControl/FBSimulatorEraseConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorError.h>

@@ -214,6 +214,15 @@
     }];
 }
 
+- (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID
+{
+  return [[self
+    runningApplicationWithBundleID:bundleID]
+    onQueue:self.simulator.workQueue map:^(FBProcessInfo *info) {
+      return @(info.processIdentifier);
+    }];
+}
+
 #pragma mark Private
 
 static NSString *const KeyDataContainer = @"DataContainer";

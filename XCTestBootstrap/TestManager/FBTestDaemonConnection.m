@@ -27,7 +27,6 @@
 
 #import "XCTestBootstrapError.h"
 #import "FBTestManagerAPIMediator.h"
-#import "FBDeviceOperator.h"
 #import "FBTestManagerContext.h"
 #import "FBTestDaemonResult.h"
 
