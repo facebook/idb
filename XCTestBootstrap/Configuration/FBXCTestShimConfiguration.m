@@ -10,7 +10,8 @@
 #import "FBXCTestShimConfiguration.h"
 
 #import <FBControlCore/FBControlCore.h>
-#import <XCTestBootstrap/XCTestBootstrap.h>
+
+#import "XCTestBootstrapError.h"
 
 NSString *const FBXCTestShimDirectoryEnvironmentOverride = @"TEST_SHIMS_DIRECTORY";
 

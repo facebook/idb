@@ -9,8 +9,10 @@
 
 #import "FBManagedTestRunStrategy.h"
 
-#import <FBControlCore/FBControlCore.h>
-#import <XCTestBootstrap/XCTestBootstrap.h>
+#import "FBTestManager.h"
+#import "FBXCTestRunStrategy.h"
+#import "XCTestBootstrapError.h"
+#import "XCTestBootstrapFrameworkLoader.h"
 
 @interface FBManagedTestRunStrategy ()
 
