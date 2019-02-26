@@ -58,7 +58,7 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
   NSString *shimPath = [directory stringByAppendingPathComponent:filename];
   if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
     return [[FBControlCoreError
-      describeFormat:@"No shim located at expectect location of %@", shimPath]
+      describeFormat:@"No shim located at expected location of %@", shimPath]
       failFuture];
   }
   if (!signingRequired) {
