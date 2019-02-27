@@ -29,6 +29,7 @@
 @interface FBSimulatorServiceContext ()
 
 @property (nonatomic, strong, readonly) SimServiceContext *serviceContext;
+@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
 - (instancetype)initWithServiceContext:(SimServiceContext *)serviceContext;
 
@@ -36,19 +37,26 @@
 
 @implementation FBSimulatorServiceContext
 
-#pragma mark Initialization
+#pragma mark Initialization Public
 
 + (instancetype)sharedServiceContext
+{
+  return [self sharedServiceContextWithLogger:FBControlCoreGlobalConfiguration.defaultLogger];
+}
+
++ (instancetype)sharedServiceContextWithLogger:(id<FBControlCoreLogger>)logger
 {
   static dispatch_once_t onceToken;
   static FBSimulatorServiceContext *serviceContext = nil;
   dispatch_once(&onceToken, ^{
-    serviceContext = [self createServiceContext];
+    serviceContext = [self createServiceContextWithLogger:logger];
   });
   return serviceContext;
 }
 
-+ (instancetype)createServiceContext
+#pragma mark Initialization Private
+
++ (instancetype)createServiceContextWithLogger:(id<FBControlCoreLogger>)logger
 {
   Class serviceContextClass = objc_lookUpClass("SimServiceContext");
   NSAssert([serviceContextClass respondsToSelector:@selector(sharedServiceContextForDeveloperDir:error:)], @"Service Context cannot be instantiated");

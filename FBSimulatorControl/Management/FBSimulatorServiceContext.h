@@ -15,6 +15,8 @@
 @class SimRuntime;
 @class SimServiceContext;
 
+@protocol FBControlCoreLogger;
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -22,10 +24,24 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorServiceContext : NSObject
 
+#pragma mark Initializers
+
 /**
- Returns the current Service Context.
+ Returns the shared Service Context instance.
+
+ @param logger the logger to use.
+ @return the shared context.
+ */
++ (instancetype)sharedServiceContextWithLogger:(nullable id<FBControlCoreLogger>)logger;
+
+/**
+ Returns the shared Service Context instance.
+
+ @return the shared context.
  */
 + (instancetype)sharedServiceContext;
+
+#pragma mark Public Methods
 
 /**
  Return the paths to all of the device sets.

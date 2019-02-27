@@ -43,7 +43,7 @@
 + (nullable instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSError *innerError = nil;
-  FBSimulatorServiceContext *serviceContext = [FBSimulatorServiceContext sharedServiceContext];
+  FBSimulatorServiceContext *serviceContext = [FBSimulatorServiceContext sharedServiceContextWithLogger:logger];
   SimDeviceSet *deviceSet = [serviceContext createDeviceSetWithConfiguration:configuration error:&innerError];
   if (!deviceSet) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
