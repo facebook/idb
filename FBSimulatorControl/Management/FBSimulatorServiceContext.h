@@ -23,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulatorServiceContext : NSObject
 
 /**
- Returns the Current SimSericeContext.
+ Returns the current Service Context.
  */
 + (instancetype)sharedServiceContext;
 
