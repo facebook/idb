@@ -14,6 +14,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
+@class FBSimulatorSet;
 
 @protocol FBControlCoreLogger;
 @protocol FBDataConsumer;
@@ -26,12 +27,20 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Initializers
 
 /**
- Constructs an Executor.
+ Constructs an Executor for a given simulator.
 
  @param simulator the simulator to execute on
  @return a new command executor
  */
 + (instancetype)executorForSimulator:(FBSimulator *)simulator;
+
+/**
+ Constructs an Executor for a given simulator set.
+
+ @param set the simulator to execute against.
+ @return a new command executor
+ */
++ (instancetype)executorForDeviceSet:(FBSimulatorSet *)set;
 
 #pragma mark Public Methods
 

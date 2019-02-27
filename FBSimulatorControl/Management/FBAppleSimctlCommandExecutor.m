@@ -17,7 +17,7 @@
 @interface FBAppleSimctlCommandExecutor ()
 
 @property (nonatomic, copy, readonly) NSString *deviceSetPath;
-@property (nonatomic, copy, readonly) NSString *deviceUUID;
+@property (nonatomic, copy, nullable, readonly) NSString *deviceUUID;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
@@ -30,6 +30,11 @@
 + (instancetype)executorForSimulator:(FBSimulator *)simulator
 {
   return [[self alloc] initWithDeviceSetPath:simulator.set.deviceSet.setPath deviceUUID:simulator.udid logger:[simulator.logger withName:@"simctl"]];
+}
+
++ (instancetype)executorForDeviceSet:(FBSimulatorSet *)set
+{
+  return [[self alloc] initWithDeviceSetPath:set.deviceSet.setPath deviceUUID:nil logger:set.logger];
 }
 
 - (instancetype)initWithDeviceSetPath:(NSString *)deviceSetPath deviceUUID:(NSString *)deviceUUID logger:(id<FBControlCoreLogger>)logger
@@ -51,17 +56,20 @@
 
 - (FBTaskBuilder<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *)taskBuilderWithCommand:(NSString *)command arguments:(NSArray<NSString *> *)arguments
 {
-  NSArray<NSString *> *baseArguments = @[
+  NSMutableArray<NSString *> *derived = [NSMutableArray arrayWithArray:@[
     @"simctl",
     @"--set",
     self.deviceSetPath,
     command,
-    self.deviceUUID,
-  ];
+  ]];
+  if (self.deviceUUID) {
+    [derived addObject:self.deviceUUID];
+  }
+  [derived addObjectsFromArray:arguments];
 
   return [[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/xcrun"
-    arguments:[baseArguments arrayByAddingObjectsFromArray:arguments]]
+    arguments:derived]
     withStdOutToLogger:self.logger]
     withStdErrToLogger:self.logger]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@(0)]];
