@@ -26,7 +26,7 @@
   static dispatch_once_t onceToken;
   static FBSimulatorControlFrameworkLoader *loader;
   dispatch_once(&onceToken, ^{
-    loader = [FBSimulatorControlFrameworkLoader loaderWithName:@"FBSimulatorControl" frameworks:@[
+    loader = [FBSimulatorControlFrameworkLoader_Essential loaderWithName:@"FBSimulatorControl" frameworks:@[
       FBWeakFramework.CoreSimulator,
     ]];
   });
