@@ -48,7 +48,7 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
 
 @interface FBTestBundleConnection () <XCTestManager_IDEInterface>
 
-@property (nonatomic, weak, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
+@property (nonatomic, strong, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBTestManagerContext *context;
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
