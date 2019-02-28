@@ -71,6 +71,7 @@
   _deviceSet = deviceSet;
   _configuration = configuration;
   _workQueue = dispatch_get_main_queue();
+  _asyncQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
 
   _allSimulators = @[];
   _processFetcher = [FBSimulatorProcessFetcher fetcherWithProcessFetcher:[FBProcessFetcher new]];
@@ -174,7 +175,7 @@
   // First, create the device.
   [self.logger.debug logFormat:@"Creating device with Type %@ Runtime %@", deviceType, runtime];
   return [[[FBSimulatorSet
-    onDeviceSet:self.deviceSet createDeviceWithType:deviceType runtime:runtime name:model]
+    onDeviceSet:self.deviceSet createDeviceWithType:deviceType runtime:runtime name:model queue:self.asyncQueue]
     onQueue:self.workQueue fmap:^(SimDevice *device) {
       return [self fetchNewlyMadeSimulator:device];
     }]
@@ -196,7 +197,7 @@
 {
   NSParameterAssert(simulator.set == self);
   return [[FBSimulatorSet
-    onDeviceSet:self.deviceSet cloneDevice:simulator.device]
+    onDeviceSet:self.deviceSet cloneDevice:simulator.device queue:self.asyncQueue]
     onQueue:self.workQueue fmap:^(SimDevice *device) {
       return [self fetchNewlyMadeSimulator:device];
     }];
@@ -355,9 +356,8 @@
   return [FBSimulatorDeletionStrategy strategyForSet:self];
 }
 
-+ (FBFuture<SimDevice *> *)onDeviceSet:(SimDeviceSet *)deviceSet createDeviceWithType:(SimDeviceType *)deviceType runtime:(SimRuntime *)runtime name:(NSString *)name
++ (FBFuture<SimDevice *> *)onDeviceSet:(SimDeviceSet *)deviceSet createDeviceWithType:(SimDeviceType *)deviceType runtime:(SimRuntime *)runtime name:(NSString *)name queue:(dispatch_queue_t)queue
 {
-  dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
   FBMutableFuture<SimDevice *> *future = FBMutableFuture.future;
   [deviceSet createDeviceAsyncWithType:deviceType runtime:runtime name:name completionQueue:queue completionHandler:^(NSError *error, SimDevice *device) {
     if (device) {
@@ -369,9 +369,8 @@
   return future;
 }
 
-+ (FBFuture<SimDevice *> *)onDeviceSet:(SimDeviceSet *)deviceSet cloneDevice:(SimDevice *)device
++ (FBFuture<SimDevice *> *)onDeviceSet:(SimDeviceSet *)deviceSet cloneDevice:(SimDevice *)device queue:(dispatch_queue_t)queue
 {
-  dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
   FBMutableFuture<SimDevice *> *future = FBMutableFuture.future;
   [deviceSet cloneDeviceAsync:device name:device.name completionQueue:queue completionHandler:^(NSError *error, SimDevice *created) {
     if (created) {
