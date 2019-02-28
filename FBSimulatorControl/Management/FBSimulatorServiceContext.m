@@ -101,18 +101,16 @@
 
 - (SimDeviceSet *)createDeviceSetWithConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
 {
-  NSError *innerError = nil;
   NSString *deviceSetPath = configuration.deviceSetPath;
-  if (deviceSetPath != nil) {
-    if (![NSFileManager.defaultManager createDirectoryAtPath:deviceSetPath withIntermediateDirectories:YES attributes:nil error:&innerError]) {
-      return [[[FBSimulatorError
-        describeFormat:@"Failed to create custom SimDeviceSet directory at %@", deviceSetPath]
-        causedBy:innerError]
-        fail:error];
-    }
+  if (!deviceSetPath) {
+    return [self.serviceContext defaultDeviceSetWithError:error];
   }
-
-  SimDeviceSet *deviceSet = [self createUnderlyingDeviceSet:deviceSetPath error:&innerError];
+  deviceSetPath = [FBSimulatorServiceContext fullyQualifiedDeviceSetPath:configuration.deviceSetPath error:error];
+  if (!deviceSetPath) {
+    return nil;
+  }
+  NSError *innerError = nil;
+  SimDeviceSet *deviceSet = [self.serviceContext deviceSetWithPath:deviceSetPath error:&innerError];
   if (!deviceSet) {
     return [[[FBSimulatorError
       describeFormat:@"Could not create underlying device set for configuration %@", configuration]
@@ -124,11 +122,29 @@
 
 #pragma mark Private
 
-- (SimDeviceSet *)createUnderlyingDeviceSet:(NSString *)deviceSetPath error:(NSError **)error
++ (NSString *)fullyQualifiedDeviceSetPath:(NSString *)deviceSetPath error:(NSError **)error
 {
-  return deviceSetPath
-    ? [self.serviceContext deviceSetWithPath:deviceSetPath error:error]
-    : [self.serviceContext defaultDeviceSetWithError:error];
+  NSParameterAssert(deviceSetPath);
+
+  NSError *innerError = nil;
+  if (![NSFileManager.defaultManager createDirectoryAtPath:deviceSetPath withIntermediateDirectories:YES attributes:nil error:&innerError]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Failed to create custom SimDeviceSet directory at %@", deviceSetPath]
+      causedBy:innerError]
+      fail:error];
+  }
+
+  // -[NSString stringByResolvingSymlinksInPath] doesn't resolve /var to /private/var.
+  // This is important for -[SimServiceContext deviceSetWithPath:error], which internally caches based on a fully resolved path.
+  char pathBuffer[PATH_MAX + 1];
+  char *result = realpath(deviceSetPath.UTF8String, pathBuffer);
+  if (!result) {
+    return [[FBSimulatorError
+      describeFormat:@"Failed to get realpath for %@ '%s'", deviceSetPath, strerror(errno)]
+      fail:error];
+  }
+  return [[NSString alloc] initWithCString:pathBuffer encoding:NSASCIIStringEncoding];
 }
+
 
 @end
