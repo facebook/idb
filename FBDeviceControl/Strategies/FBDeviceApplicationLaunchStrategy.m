@@ -20,6 +20,16 @@
 static NSString *const Terminator = @"#";
 static NSTimeInterval LaunchTimeout = 60;
 
+static NSData *wrapCommandInSums(NSString *input)
+{
+  NSInteger checksum = 0;
+  for (NSUInteger index = 0; index < input.length; index++) {
+    checksum += [input characterAtIndex:index];
+  }
+  NSString *output = [NSString stringWithFormat:@"$%@#%02lx", input, (checksum & 0xff)];
+  return [output dataUsingEncoding:NSASCIIStringEncoding];
+}
+
 static NSString *hexEncode(NSString *input)
 {
   NSMutableString *output = [NSMutableString string];
@@ -39,16 +49,6 @@ static NSString *launchStringWithArguments(NSArray<NSString *> *arguments)
     [string appendFormat:@"%lu,%lu,%@", (unsigned long)hex.length, (unsigned long)index, hex];
   }
   return string;
-}
-
-static NSData *wrapCommandInSums(NSString *input)
-{
-  NSInteger checksum = 0;
-  for (NSUInteger index = 0; index < input.length; index++) {
-    checksum += [input characterAtIndex:index];
-  }
-  NSString *output = [NSString stringWithFormat:@"$%@#%02lx", input, (checksum & 0xff)];
-  return [output dataUsingEncoding:NSASCIIStringEncoding];
 }
 
 static NSArray<NSString *> *environmentCommands(NSDictionary<NSString *, NSString *> *environment)
@@ -137,11 +137,11 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 - (FBFuture<NSNull *> *)noAckMode
 {
   NSData *ack = [@"+" dataUsingEncoding:NSASCIIStringEncoding];
-  [self.writer consumeData:ack];
+  [self _sendRaw:ack];
   return [[self
     sendUntilOK:@"QStartNoAckMode"]
     onQueue:self.queue map:^(id _) {
-      [self.writer consumeData:ack];
+      [self _sendRaw:ack];
       return NSNull.null;
     }];
 }
@@ -162,8 +162,7 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 
 - (FBFuture<NSString *> *)sendAndGetResponse:(NSString *)command
 {
-  [self.logger logFormat:@"SEND: %@", command];
-  [self.writer consumeData:wrapCommandInSums(command)];
+  [self sendNow:command];
   return [[self.buffer
     consumeAndNotifyWhen:[Terminator dataUsingEncoding:NSASCIIStringEncoding]]
     onQueue:self.queue map:^(NSData *data) {
@@ -184,6 +183,17 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
       NSArray<NSString *> *next = [commands subarrayWithRange:NSMakeRange(1, commands.count - 1)];
       return [self sendMultiUntilOK:next];
     }];
+}
+
+- (void)sendNow:(NSString *)command
+{
+  [self.logger logFormat:@"SEND: %@", command];
+  [self _sendRaw:wrapCommandInSums(command)];
+}
+
+- (void)_sendRaw:(NSData *)data
+{
+  [self.writer consumeData:data];
 }
 
 @end
@@ -255,6 +265,8 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
       if (!pid) {
         return [FBFuture futureWithError:error];
       }
+      // App has launched, tell the debugger to continue so the app actually runs.
+      [client sendNow:@"c"];
       return [FBFuture futureWithResult:pid];
     }]
     timeout:LaunchTimeout waitingFor:@"Timed out waiting for launch to complete"];
