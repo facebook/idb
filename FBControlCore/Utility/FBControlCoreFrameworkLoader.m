@@ -18,9 +18,14 @@
 
 void *FBGetSymbolFromHandle(void *handle, const char *name)
 {
-  void *function = dlsym(handle, name);
+  void *function = FBGetSymbolFromHandleOptional(handle, name);
   NSCAssert(function, @"%s could not be located", name);
   return function;
+}
+
+void *FBGetSymbolFromHandleOptional(void *handle, const char *name)
+{
+  return dlsym(handle, name);
 }
 
 @implementation FBControlCoreFrameworkLoader

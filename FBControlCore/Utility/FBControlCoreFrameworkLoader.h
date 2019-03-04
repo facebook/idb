@@ -16,12 +16,23 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Loads a Symbol from a Handle, using dlsym.
+ Will assert if the symbol cannot be found.
 
  @param handle the handle to obtain.
  @param name the name of the symbol.
  @return the Symbol if successful.
  */
 void *FBGetSymbolFromHandle(void *handle, const char *name);
+
+/**
+ Loads a Symbol from a Handle, using dlsym.
+ Will return a NULL pointer if the symbol cannot be found.
+
+ @param handle the handle to obtain.
+ @param name the name of the symbol.
+ @return the Symbol if successful.
+ */
+void *FBGetSymbolFromHandleOptional(void *handle, const char *name);
 
 /**
  A Base Framework loader, that will ensure that the current user can load Frameworks.

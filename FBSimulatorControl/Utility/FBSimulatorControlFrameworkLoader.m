@@ -13,6 +13,16 @@
 
 #import <CoreSimulator/NSUserDefaults-SimDefaults.h>
 
+static void FBSimulatorControl_SimLogHandler(int level, const char *function, int lineNumber, NSString *format, ...)
+{
+  va_list args;
+  va_start(args, format);
+  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
+  va_end(args);
+  id<FBControlCoreLogger> logger = [FBControlCoreGlobalConfiguration.defaultLogger withName:@"CoreSimulator"];
+  [logger log:string];
+}
+
 @interface FBSimulatorControlFrameworkLoader_Essential : FBSimulatorControlFrameworkLoader
 
 @end
@@ -58,6 +68,8 @@
   }
   BOOL loaded = [super loadPrivateFrameworks:logger error:error];
   if (loaded) {
+    // Hook the default handler to call us instead.
+    [FBSimulatorControlFrameworkLoader_Essential setInternalLogHandler];
     // Set CoreSimulator Logging since it is now loaded.
     [FBSimulatorControlFrameworkLoader_Essential setCoreSimulatorLoggingEnabled:(logger.level >= FBControlCoreLogLevelDebug)];
   }
@@ -73,6 +85,20 @@
   }
   NSUserDefaults *simulatorDefaults = [NSUserDefaults simulatorDefaults];
   [simulatorDefaults setBool:enabled forKey:@"DebugLogging"];
+}
+
++ (BOOL)setInternalLogHandler
+{
+  void *coreSimulatorBundle = [[NSBundle bundleWithIdentifier:@"com.apple.CoreSimulator"] dlopenExecutablePath];
+  if (!coreSimulatorBundle) {
+    return NO;
+  }
+  void (*SetHandler)(void *) = FBGetSymbolFromHandleOptional(coreSimulatorBundle, "SimLogSetHandler");
+  if (!SetHandler) {
+    return NO;
+  }
+  SetHandler(FBSimulatorControl_SimLogHandler);
+  return YES;
 }
 
 @end
