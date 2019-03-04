@@ -101,7 +101,7 @@
   int result = bind(socketHandle, (struct sockaddr *)&address, sizeof(address));
   if (result != 0) {
     return [[FBControlCoreError
-      describeFormat:@"Failed to bind the socket with error '%s'", strerror(errno)]
+      describeFormat:@"Failed to bind the socket on port %d with error '%s'", self.port, strerror(errno)]
       failFuture];
   }
 
@@ -109,7 +109,7 @@
   result = listen(socketHandle, 10);
   if (result != 0) {
     return [[FBControlCoreError
-      describeFormat:@"Failed to listen on the socket error '%s'", strerror(errno)]
+      describeFormat:@"Failed to listen on the socket on port %d error '%s'", self.port, strerror(errno)]
       failFuture];
   }
 
