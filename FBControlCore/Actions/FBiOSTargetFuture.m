@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <FBControlCore/FBiOSTargetFuture.h>
+#import "FBiOSTargetFuture.h"
 
 #import <objc/runtime.h>
 
