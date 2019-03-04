@@ -46,7 +46,7 @@ typedef NS_ENUM(int, AMDeviceNotificationType) {
  A Notification structure.
  */
 typedef struct {
-  AMDeviceRef amDevice;
+  AMDeviceRef _Nonnull amDevice;
   AMDeviceNotificationType status;
 } AMDeviceNotification;
 
