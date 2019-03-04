@@ -25,7 +25,7 @@
 - (void)setUp
 {
   NSMutableArray<NSString *> *lines = [NSMutableArray array];
-  self.consumer = [FBLineDataConsumer synchronousReaderWithConsumer:^(NSString *line) {
+  self.consumer = [FBBlockDataConsumer synchronousLineConsumerWithBlock:^(NSString *line) {
     [lines addObject:line];
   }];
   self.reporter = [[FBJSONTestReporter alloc] initWithTestBundlePath:@"/path.bundle" testType:@"footype" logger:nil dataConsumer:self.consumer];

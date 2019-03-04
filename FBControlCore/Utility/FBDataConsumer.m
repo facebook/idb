@@ -354,7 +354,7 @@
 
 @end
 
-@interface FBLineDataConsumer ()
+@interface FBBlockDataConsumer () <FBDataConsumer, FBDataConsumerLifecycle>
 
 @property (nonatomic, strong, nullable, readwrite) dispatch_queue_t queue;
 @property (nonatomic, copy, nullable, readwrite) void (^consumer)(NSData *);
@@ -371,27 +371,27 @@ static inline dataBlock FBDataConsumerBlock (void(^consumer)(NSString *)) {
   };
 }
 
-@implementation FBLineDataConsumer
+@implementation FBBlockDataConsumer
 
 #pragma mark Initializers
 
-+ (instancetype)synchronousReaderWithConsumer:(void (^)(NSString *))consumer
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)synchronousLineConsumerWithBlock:(void (^)(NSString *))consumer
 {
   return [[self alloc] initWithQueue:nil consumer:FBDataConsumerBlock(consumer)];
 }
 
-+ (instancetype)asynchronousReaderWithConsumer:(void (^)(NSString *))consumer
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousLineConsumerWithBlock:(void (^)(NSString *))consumer
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBControlCore.LineConsumer", DISPATCH_QUEUE_SERIAL);
   return [[self alloc] initWithQueue:queue consumer:FBDataConsumerBlock(consumer)];
 }
 
-+ (instancetype)asynchronousReaderWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSString *))consumer
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSString *))consumer
 {
   return [[self alloc] initWithQueue:queue consumer:FBDataConsumerBlock(consumer)];
 }
 
-+ (instancetype)asynchronousReaderWithQueue:(dispatch_queue_t)queue dataConsumer:(void (^)(NSData *))consumer
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(dispatch_queue_t)queue dataConsumer:(void (^)(NSData *))consumer
 {
   return [[self alloc] initWithQueue:queue consumer:consumer];
 }

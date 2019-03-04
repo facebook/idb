@@ -167,12 +167,12 @@
 
 - (instancetype)withStdOutLineReader:(void (^)(NSString *))reader
 {
-  return [self withStdOutConsumer:[FBLineDataConsumer asynchronousReaderWithConsumer:reader]];
+  return [self withStdOutConsumer:[FBBlockDataConsumer asynchronousLineConsumerWithBlock:reader]];
 }
 
 - (instancetype)withStdErrLineReader:(void (^)(NSString *))reader
 {
-  return [self withStdErrConsumer:[FBLineDataConsumer asynchronousReaderWithConsumer:reader]];
+  return [self withStdErrConsumer:[FBBlockDataConsumer asynchronousLineConsumerWithBlock:reader]];
 }
 
 - (instancetype)withStdOutToLogger:(id<FBControlCoreLogger>)logger

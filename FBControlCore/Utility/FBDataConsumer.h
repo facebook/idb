@@ -199,9 +199,9 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- A Reader of Text Data, calling the callback when a full line is available.
+ A consumer of data, passing output to a block.
  */
-@interface FBLineDataConsumer : NSObject <FBDataConsumer, FBDataConsumerLifecycle>
+@interface FBBlockDataConsumer : NSObject
 
 /**
  Creates a Consumer of lines from a block.
@@ -210,7 +210,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the block to call when a line has been consumed.
  @return a new Line Reader.
  */
-+ (instancetype)synchronousReaderWithConsumer:(void (^)(NSString *))consumer;
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)synchronousLineConsumerWithBlock:(void (^)(NSString *))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -219,7 +219,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the block to call when a line has been consumed.
  @return a new Line Reader.
  */
-+ (instancetype)asynchronousReaderWithConsumer:(void (^)(NSString *))consumer;
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousLineConsumerWithBlock:(void (^)(NSString *))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -229,7 +229,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the block to call when a line has been consumed.
  @return a new Line Reader.
  */
-+ (instancetype)asynchronousReaderWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSString *))consumer;
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSString *))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -239,7 +239,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the block to call when a line has been consumed.
  @return a new Line Reader.
  */
-+ (instancetype)asynchronousReaderWithQueue:(dispatch_queue_t)queue dataConsumer:(void (^)(NSData *))consumer;
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(dispatch_queue_t)queue dataConsumer:(void (^)(NSData *))consumer;
 
 @end
 

@@ -203,17 +203,17 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   NSMutableArray<id<FBDataConsumer>> *stdOutConsumers = [NSMutableArray array];
   NSMutableArray<id<FBDataConsumer>> *stdErrConsumers = [NSMutableArray array];
 
-  id<FBDataConsumer> shimReportingConsumer = [FBLineDataConsumer asynchronousReaderWithQueue:queue dataConsumer:^(NSData *line) {
+  id<FBDataConsumer> shimReportingConsumer = [FBBlockDataConsumer asynchronousLineConsumerWithQueue:queue dataConsumer:^(NSData *line) {
     [reporter handleEventJSONData:line];
   }];
   [shimConsumers addObject:shimReportingConsumer];
 
-  id<FBDataConsumer> stdOutReportingConsumer = [FBLineDataConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
+  id<FBDataConsumer> stdOutReportingConsumer = [FBBlockDataConsumer asynchronousLineConsumerWithQueue:queue consumer:^(NSString *line){
     [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
   [stdOutConsumers addObject:stdOutReportingConsumer];
 
-  id<FBDataConsumer> stdErrReportingConsumer = [FBLineDataConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
+  id<FBDataConsumer> stdErrReportingConsumer = [FBBlockDataConsumer asynchronousLineConsumerWithQueue:queue consumer:^(NSString *line){
     [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
   [stdErrConsumers addObject:stdErrReportingConsumer];

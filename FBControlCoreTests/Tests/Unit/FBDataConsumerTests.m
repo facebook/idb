@@ -34,7 +34,7 @@
 - (void)testLineConsumer
 {
   NSMutableArray<NSString *> *lines = [NSMutableArray array];
-  FBLineDataConsumer *consumer = [FBLineDataConsumer synchronousReaderWithConsumer:^(NSString *line) {
+  id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer synchronousLineConsumerWithBlock:^(NSString *line) {
     [lines addObject:line];
   }];
 
