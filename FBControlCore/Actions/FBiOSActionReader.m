@@ -18,6 +18,7 @@
 #import "FBSocketConnectionManager.h"
 #import "FBUploadBuffer.h"
 #import "NSRunLoop+FBControlCore.h"
+#import "FBDataBuffer.h"
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader";
 
@@ -49,7 +50,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
   _router = router;
   _delegate = delegate;
   _writeBack = writeBack;
-  _lineBuffer = [FBLineBuffer consumableBuffer];
+  _lineBuffer = [FBDataBuffer consumableBuffer];
   _uploadBuffer = nil;
 
   return self;

@@ -13,8 +13,9 @@
 #import <sys/stat.h>
 
 #import "FBControlCoreError.h"
-#import "FBFileWriter.h"
+#import "FBDataBuffer.h"
 #import "FBFileReader.h"
+#import "FBFileWriter.h"
 
 static NSTimeInterval ProcessDetachDrainTimeout = 4;
 
@@ -662,7 +663,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (instancetype)initWithMutableData:(NSMutableData *)mutableData
 {
-  id<FBAccumulatingBuffer> consumer = [FBLineBuffer accumulatingBufferForMutableData:mutableData];
+  id<FBAccumulatingBuffer> consumer = [FBDataBuffer accumulatingBufferForMutableData:mutableData];
   self = [super initWithConsumer:consumer logger:nil];
   if (!self) {
     return nil;

@@ -280,7 +280,7 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
   if (!writer) {
     return [FBFuture futureWithError:error];
   }
-  id<FBConsumableBuffer> outputBuffer = FBLineBuffer.consumableBuffer;
+  id<FBConsumableBuffer> outputBuffer = FBDataBuffer.consumableBuffer;
   id<FBDataConsumer> output = [FBCompositeDataConsumer consumerWithConsumers:@[
     outputBuffer,
     [FBLoggingDataConsumer consumerWithLogger:[logger withName:@"RECV"]],

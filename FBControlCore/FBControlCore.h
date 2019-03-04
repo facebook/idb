@@ -36,6 +36,7 @@
 #import <FBControlCore/FBCrashLogInfo.h>
 #import <FBControlCore/FBCrashLogNotifier.h>
 #import <FBControlCore/FBCrashLogStore.h>
+#import <FBControlCore/FBDataBuffer.h>
 #import <FBControlCore/FBDataConsumer.h>
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBDebuggerCommands.h>

@@ -19,7 +19,7 @@
 
 - (void)testLineBufferAccumulation
 {
-  id<FBAccumulatingBuffer> consumer = FBLineBuffer.accumulatingBuffer;
+  id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
   [consumer consumeData:[@"FOO" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"BAR" dataUsingEncoding:NSUTF8StringEncoding]];
 
@@ -48,7 +48,7 @@
 
 - (void)testLineBufferConsumption
 {
-  id<FBConsumableBuffer> consumer = FBLineBuffer.consumableBuffer;
+  id<FBConsumableBuffer> consumer = FBDataBuffer.consumableBuffer;
   [consumer consumeData:[@"FOO" dataUsingEncoding:NSUTF8StringEncoding]];
 
   XCTAssertNil(consumer.consumeLineData);
@@ -97,8 +97,8 @@
 
 - (void)testCompositeWithCompletion
 {
-  id<FBAccumulatingBuffer> accumilating =  FBLineBuffer.consumableBuffer;
-  id<FBConsumableBuffer> consumable =  FBLineBuffer.consumableBuffer;
+  id<FBAccumulatingBuffer> accumilating =  FBDataBuffer.consumableBuffer;
+  id<FBConsumableBuffer> consumable =  FBDataBuffer.consumableBuffer;
   id<FBDataConsumer, FBDataConsumerLifecycle> composite = [FBCompositeDataConsumer consumerWithConsumers:@[
     accumilating,
     consumable,
@@ -125,7 +125,7 @@
 
 - (void)testFutureConsumption
 {
-  id<FBConsumableBuffer> consumer = [FBLineBuffer consumableBuffer];
+  id<FBConsumableBuffer> consumer = [FBDataBuffer consumableBuffer];
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
   XCTestExpectation *doneExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved All"];
 

@@ -91,7 +91,7 @@
 
 - (FBFuture<NSArray<NSString *> *> *)listTests
 {
-  id<FBConsumableBuffer> shimConsumer = [FBLineBuffer consumableBuffer];
+  id<FBConsumableBuffer> shimConsumer = [FBDataBuffer consumableBuffer];
   return [[[FBProcessOutput
     outputForDataConsumer:shimConsumer]
     providedThroughFile]

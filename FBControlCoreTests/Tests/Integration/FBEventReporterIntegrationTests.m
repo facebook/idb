@@ -32,7 +32,7 @@
 
 - (void)assertSubject:(id<FBEventReporterSubject>)subject hasJSONContents:(NSArray<NSDictionary<NSString *, id> *> *)contents
 {
-  id<FBAccumulatingBuffer> consumer = FBLineBuffer.accumulatingBuffer;
+  id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
   id<FBEventInterpreter> interpreter = [FBEventInterpreter jsonEventInterpreter:NO];
   id<FBEventReporter> reporter = [FBEventReporter reporterWithInterpreter:interpreter consumer:consumer];
 

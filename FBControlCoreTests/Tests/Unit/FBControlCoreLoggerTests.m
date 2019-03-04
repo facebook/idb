@@ -37,7 +37,7 @@
 
 - (void)testLoggingToConsumer
 {
-  id<FBConsumableBuffer> consumer = FBLineBuffer.consumableBuffer;
+  id<FBConsumableBuffer> consumer = FBDataBuffer.consumableBuffer;
   id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToConsumer:consumer];
 
   [logger log:@"HELLO"];
@@ -57,7 +57,7 @@
 
 - (void)testThreadSafetyOfConsumableLogger
 {
-  id<FBConsumableBuffer> consumer = FBLineBuffer.consumableBuffer;
+  id<FBConsumableBuffer> consumer = FBDataBuffer.consumableBuffer;
   id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToConsumer:consumer];
 
   dispatch_group_t group = dispatch_group_create();
