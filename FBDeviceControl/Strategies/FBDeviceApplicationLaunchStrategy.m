@@ -65,7 +65,9 @@ static NSTimeInterval LaunchTimeout = 60;
   return [[[[[[[client
     noAckMode]
     onQueue:queue fmap:^(id _) {
-      return [client sendEnvironment:launch.environment];
+      NSMutableDictionary<NSString *, NSString *> *environment = [launch.environment mutableCopy];
+      environment[@"NSUnbufferedIO"] = @"YES";
+      return [client sendEnvironment:environment];
     }]
     onQueue:queue fmap:^(id _) {
       return [client sendArguments:[@[remoteAppPath] arrayByAddingObjectsFromArray:launch.arguments]];
