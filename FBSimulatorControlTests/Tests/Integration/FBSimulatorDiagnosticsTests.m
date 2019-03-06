@@ -83,25 +83,4 @@
   }];
 }
 
-- (void)testCreateStdErrDiagnosticForSimulator
-{
-  FBSimulator *simulator = [self assertObtainsSimulator];
-  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration defaultOutputToFile];
-  FBApplicationLaunchConfiguration *appLaunch = [self.tableSearchAppLaunch withOutput:output];
-
-  NSError *error = nil;
-  FBDiagnostic *stdErrDiagnostic = [[appLaunch createStdErrDiagnosticForSimulator:simulator] await:&error];
-  XCTAssertNil(error);
-
-  FBDiagnostic *stdOutDiagnostic = [[appLaunch createStdOutDiagnosticForSimulator:simulator] await:&error];
-  XCTAssertNil(error);
-
-  XCTAssertNotNil(stdErrDiagnostic.asPath);
-  XCTAssertNotNil(stdOutDiagnostic.asPath);
-
-  NSFileManager *fileManager = [NSFileManager defaultManager];
-  XCTAssertTrue([fileManager fileExistsAtPath:stdErrDiagnostic.asPath]);
-  XCTAssertTrue([fileManager fileExistsAtPath:stdOutDiagnostic.asPath]);
-}
-
 @end

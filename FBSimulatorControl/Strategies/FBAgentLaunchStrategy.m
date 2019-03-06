@@ -58,8 +58,8 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 - (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch
 {
   FBSimulator *simulator = self.simulator;
-  return [[agentLaunch
-    createOutputForSimulator:simulator]
+  return [[agentLaunch.output
+    createOutputForTarget:simulator]
     onQueue:simulator.workQueue fmap:^(NSArray<FBProcessOutput *> *outputs) {
       FBProcessOutput *stdOut = outputs[0];
       FBProcessOutput *stdErr = outputs[1];

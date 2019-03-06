@@ -13,6 +13,10 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBProcessOutput;
+
+@protocol FBiOSTarget;
+
 /**
  The Marker File Path if a File is to be output to a default location.
  */
@@ -22,6 +26,8 @@ extern NSString *const FBProcessOutputToFileDefaultLocation;
  The Output Configuration for a Process.
  */
 @interface FBProcessOutputConfiguration : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+
+#pragma mark Initializers
 
 /**
  The Designated Initializer
@@ -61,6 +67,8 @@ extern NSString *const FBProcessOutputToFileDefaultLocation;
  */
 - (nullable instancetype)withStdErr:(id)stdErr error:(NSError **)error;
 
+#pragma mark Properties
+
 /**
  The Output Configuration for stdout.
  Must be one of the following:
@@ -80,6 +88,16 @@ extern NSString *const FBProcessOutputToFileDefaultLocation;
  - FBDataConsumer for consuming the output.
  */
 @property (nonatomic, strong, readonly) id stdErr;
+
+#pragma mark Public Methods
+
+/**
+ Creates a Process Output for a Target.
+
+ @param target the target to create the output for.
+ @return a Future that wraps an Array of the [stdout, stderr].
+ */
+- (FBFuture<NSArray<FBProcessOutput *> *> *)createOutputForTarget:(id<FBiOSTarget>)target;
 
 @end
 

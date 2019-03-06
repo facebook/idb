@@ -88,7 +88,7 @@
       return [FBFuture futureWithResult:NSNull.null];
     }]
     onQueue:simulator.workQueue fmap:^(id _) {
-      return [appLaunch createOutputForSimulator:simulator];
+      return [appLaunch.output createOutputForTarget:simulator];
     }]
     onQueue:simulator.workQueue fmap:^(NSArray<FBProcessOutput *> *outputs) {
       return [FBFuture futureWithFutures:@[
