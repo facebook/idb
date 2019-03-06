@@ -377,6 +377,20 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return nil;
 }
 
+- (FBFuture<NSNull *> *)detach
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (id)contents
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+#pragma mark FBProcessOutput implementation
+
 - (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile
 {
   return [[self
@@ -386,13 +400,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
     }];
 }
 
-- (FBFuture<NSNull *> *)detach
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (id)contents
+- (FBFuture<id<FBDataConsumer>> *)providedThroughConsumer
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -428,11 +436,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return [self attachToFileHandle];
 }
 
-- (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile
-{
-  return [FBFuture futureWithResult:[[FBProcessFileOutput_DirectToFile alloc] initWithFilePath:@"/dev/null"]];
-}
-
 - (FBFuture<NSNull *> *)detach
 {
   return [FBFuture futureWithResult:NSNull.null];
@@ -441,6 +444,18 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 - (NSNull *)contents
 {
   return NSNull.null;
+}
+
+#pragma mark FBProcessOutput Implementation
+
+- (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile
+{
+  return [FBFuture futureWithResult:[[FBProcessFileOutput_DirectToFile alloc] initWithFilePath:@"/dev/null"]];
+}
+
+- (FBFuture<id<FBDataConsumer>> *)providedThroughConsumer
+{
+  return [FBFuture futureWithResult:FBNullDataConsumer.new];
 }
 
 #pragma mark NSObject
@@ -499,16 +514,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   }];
 }
 
-- (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile
-{
-  return [[[self
-    makeFifoOutput]
-    onQueue:self.workQueue map:^ id<FBProcessFileOutput> (NSString *fifoPath) {
-      return [[FBProcessFileOutput_Consumer alloc] initWithConsumer:self.consumer filePath:fifoPath queue:FBProcessOutput.createWorkQueue];
-    }]
-    nameFormat:@"Relay %@ to file", self.description];
-}
-
 - (FBFuture<NSNull *> *)detach
 {
   return [[[[self.reader.finishedReading
@@ -530,6 +535,23 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 - (id<FBDataConsumer>)contents
 {
   return self.consumer;
+}
+
+#pragma mark FBProcessOutput Implementation
+
+- (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile
+{
+  return [[[self
+    makeFifoOutput]
+    onQueue:self.workQueue map:^ id<FBProcessFileOutput> (NSString *fifoPath) {
+      return [[FBProcessFileOutput_Consumer alloc] initWithConsumer:self.consumer filePath:fifoPath queue:FBProcessOutput.createWorkQueue];
+    }]
+    nameFormat:@"Relay %@ to file", self.description];
+}
+
+- (FBFuture<id<FBDataConsumer>> *)providedThroughConsumer
+{
+  return [FBFuture futureWithResult:self.consumer];
 }
 
 #pragma mark NSObject
@@ -638,14 +660,21 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
     nameFormat:@"Detach from %@", self.description];
 }
 
+- (NSString *)contents
+{
+  return self.filePath;
+}
+
+#pragma mark FBProcessOutput Implementation
+
 - (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile
 {
   return [FBFuture futureWithResult:[[FBProcessFileOutput_DirectToFile alloc] initWithFilePath:self.filePath]];
 }
 
-- (NSString *)contents
+- (FBFuture<id<FBDataConsumer>> *)providedThroughConsumer
 {
-  return self.filePath;
+  return (FBFuture<id<FBDataConsumer>> *) [FBFileWriter asyncWriterForFilePath:self.filePath];
 }
 
 #pragma mark NSObject

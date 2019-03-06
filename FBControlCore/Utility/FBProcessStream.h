@@ -67,6 +67,28 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
+ Process Output that can be provided through a file.
+ */
+@protocol FBProcessOutput <NSObject>
+
+/**
+ Allows the reciever to be written to via a file instead of via a file handle.
+ This is desirable to use when interacting with an API that doesn't support writing to a file handle.
+
+ @return A Future wrapping a FBProcessFileOutput instance.
+ */
+- (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile;
+
+/**
+ Allows the reciever to be written to via a Data Consumer.
+
+ @return A Future wrapping a FBDataConsumer instance.
+ */
+- (FBFuture<id<FBDataConsumer>> *)providedThroughConsumer;
+
+@end
+
+/**
  The Termination Handle Type for Process Output.
  */
 extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
@@ -74,7 +96,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
 /**
  A container object for the output of a process.
  */
-@interface FBProcessOutput<WrappedType> : NSObject <FBStandardStream>
+@interface FBProcessOutput<WrappedType> : NSObject <FBStandardStream, FBProcessOutput>
 
 #pragma mark Initializers
 
@@ -140,16 +162,6 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
  The File Handle.
  */
 @property (nonatomic, strong, readonly) WrappedType contents;
-
-#pragma mark Public Methods
-
-/**
- Allows the reciever to be written to via a file instead of via a file handle.
- This is desirable to use when interacting with an API that doesn't support writing to a file handle.
-
- @return A Future wrapping a FBProcessFileOutput instance.
- */
-- (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile;
 
 @end
 
