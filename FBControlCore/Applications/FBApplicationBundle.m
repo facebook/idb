@@ -30,17 +30,23 @@
 + (nullable instancetype)applicationWithPath:(NSString *)path error:(NSError **)error
 {
   if (!path) {
-    return [[FBControlCoreError describe:@"Path is nil for Application"] fail:error];
+    return [[FBControlCoreError
+      describe:@"Nil file path provided for application"]
+      fail:error];
   }
   NSString *appName = [self appNameForPath:path];
   if (!appName) {
-    return [[FBControlCoreError describeFormat:@"Could not obtain app name for path %@", path] fail:error];
-  }
-  NSString *bundleID = [self bundleIDForAppAtPath:path];
-  if (!bundleID) {
-    return [[FBControlCoreError describeFormat:@"Could not obtain Bundle ID for app at path %@", path] fail:error];
+    return [[FBControlCoreError
+      describeFormat:@"Could not obtain app name for path %@", path]
+      fail:error];
   }
   NSError *innerError = nil;
+  NSString *bundleID = [self infoPlistKey:@"CFBundleIdentifier" forAppAtPath:path error:&innerError];
+  if (!bundleID) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not obtain Bundle ID for app at path %@: %@", path, innerError]
+      fail:error];
+  }
   FBBinaryDescriptor *binary = [self binaryForApplicationPath:path error:&innerError];
   if (!binary) {
     return [[[FBControlCoreError describeFormat:@"Could not obtain binary for app at path %@", path] causedBy:innerError] fail:error];
@@ -52,35 +58,34 @@
 
 + (FBBinaryDescriptor *)binaryForApplicationPath:(NSString *)applicationPath error:(NSError **)error
 {
-  NSString *binaryPath = [self binaryPathForAppAtPath:applicationPath];
+  NSError *innerError = nil;
+  NSString *binaryPath = [self binaryPathForAppAtPath:applicationPath error:&innerError];
   if (!binaryPath) {
-    return [[FBControlCoreError describeFormat:@"Could not obtain binary path for application at path %@", applicationPath] fail:error];
+    return [[FBControlCoreError
+      describeFormat:@"Could not obtain binary path for application at path %@: %@", applicationPath, innerError]
+      fail:error];
   }
 
-  NSError *innerError = nil;
   FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:binaryPath error:&innerError];
   if (!binary) {
-    return [[[FBControlCoreError describeFormat:@"Could not obtain binary info for binary at path %@", binaryPath] causedBy:innerError] fail:error];
+    return [[[FBControlCoreError
+      describeFormat:@"Could not obtain binary info for binary at path %@", binaryPath]
+      causedBy:innerError]
+      fail:error];
   }
   return binary;
 }
 
 + (NSString *)appNameForPath:(NSString *)appPath
 {
-  NSDictionary *infoPlist = [NSDictionary dictionaryWithContentsOfFile:[self infoPlistPathForAppAtPath:appPath]];
+  NSDictionary *infoPlist = [NSDictionary dictionaryWithContentsOfFile:[self infoPlistPathForAppAtPath:appPath error:nil]];
   NSString *bundleName = infoPlist[@"CFBundleName"];
   return bundleName ?: appPath.lastPathComponent.stringByDeletingPathExtension;
 }
 
-+ (NSString *)binaryNameForAppAtPath:(NSString *)appPath
++ (NSString *)binaryPathForAppAtPath:(NSString *)appPath error:(NSError **)error
 {
-  NSDictionary *infoPlist = [NSDictionary dictionaryWithContentsOfFile:[self infoPlistPathForAppAtPath:appPath]];
-  return infoPlist[@"CFBundleExecutable"];
-}
-
-+ (NSString *)binaryPathForAppAtPath:(NSString *)appPath
-{
-  NSString *binaryName = [self binaryNameForAppAtPath:appPath];
+  NSString *binaryName = [self infoPlistKey:@"CFBundleExecutable" forAppAtPath:appPath error:error];
   if (!binaryName) {
     return nil;
   }
@@ -97,13 +102,28 @@
   return nil;
 }
 
-+ (NSString *)bundleIDForAppAtPath:(NSString *)appPath
++ (NSString *)infoPlistKey:(NSString *)key forAppAtPath:(NSString *)appPath error:(NSError **)error
 {
-  NSDictionary *infoPlist = [NSDictionary dictionaryWithContentsOfFile:[self infoPlistPathForAppAtPath:appPath]];
-  return infoPlist[@"CFBundleIdentifier"];
+  NSString *infoPlistPath = [self infoPlistPathForAppAtPath:appPath error:error];
+  if (!infoPlistPath) {
+    return nil;
+  }
+  NSDictionary<NSString *, NSString *> *infoPlist = [NSDictionary dictionaryWithContentsOfFile:infoPlistPath];
+  if (!infoPlist) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not load Info.plist at path %@", infoPlistPath]
+      fail:error];
+  }
+  NSString *value = infoPlist[key];
+  if (!value) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not load key %@ in Info.plist, values %@", key, [FBCollectionInformation oneLineDescriptionFromArray:infoPlist.allKeys]]
+      fail:error];
+  }
+  return value;
 }
 
-+ (NSString *)infoPlistPathForAppAtPath:(NSString *)appPath
++ (NSString *)infoPlistPathForAppAtPath:(NSString *)appPath error:(NSError **)error
 {
   NSArray *paths = @[
     [appPath stringByAppendingPathComponent:@"info.plist"],
@@ -115,7 +135,9 @@
       return path;
     }
   }
-  return nil;
+  return [[FBControlCoreError
+    describeFormat:@"Could not find an Info.plist at any of the expected locations %@", [FBCollectionInformation oneLineDescriptionFromArray:paths]]
+    fail:error];
 }
 
 @end
