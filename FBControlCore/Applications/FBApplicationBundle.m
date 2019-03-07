@@ -125,18 +125,46 @@
 
 + (NSString *)infoPlistPathForAppAtPath:(NSString *)appPath error:(NSError **)error
 {
-  NSArray *paths = @[
+  NSArray<NSString *> *searchPaths = @[
     [appPath stringByAppendingPathComponent:@"info.plist"],
     [[appPath stringByAppendingPathComponent:@"Contents"] stringByAppendingPathComponent:@"Info.plist"]
   ];
+  NSArray<NSString *> *plists = @[
+    @"info.plist",
+    @"Info.plist"
+  ];
 
-  for (NSString *path in paths) {
-    if ([NSFileManager.defaultManager fileExistsAtPath:path]) {
-      return path;
+  for (NSString *searchPath in searchPaths) {
+    for (NSString *plist in plists) {
+      NSString *path = [searchPath stringByAppendingPathComponent:plist];
+      if ([NSFileManager.defaultManager fileExistsAtPath:path]) {
+        return path;
+      }
     }
   }
+
+  BOOL isDirectory = NO;
+  if (![NSFileManager.defaultManager fileExistsAtPath:appPath isDirectory:&isDirectory]) {
+    return [[FBControlCoreError
+      describeFormat:@"No Info.plist could be found as %@ does not exist", appPath]
+      fail:error];
+  }
+  if (!isDirectory) {
+    return [[FBControlCoreError
+      describeFormat:@"No Info.plist could be found in %@ as it's not an app path, which must be a directory", appPath]
+      fail:error];
+  }
+  NSMutableArray<NSString *> *allPaths = NSMutableArray.array;
+  for (NSString *searchPath in searchPaths) {
+    NSArray<NSString *> *contents = [NSFileManager.defaultManager contentsOfDirectoryAtPath:searchPath error:nil];
+    if (!contents) {
+      continue;
+    }
+    [allPaths addObjectsFromArray:contents];
+  }
+
   return [[FBControlCoreError
-    describeFormat:@"Could not find an Info.plist at any of the expected locations %@", [FBCollectionInformation oneLineDescriptionFromArray:paths]]
+    describeFormat:@"Could not find an Info.plist at any of the expected locations %@, files that do exist %@", [FBCollectionInformation oneLineDescriptionFromArray:searchPaths], [FBCollectionInformation oneLineDescriptionFromArray:allPaths]]
     fail:error];
 }
 
