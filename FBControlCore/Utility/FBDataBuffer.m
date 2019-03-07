@@ -18,13 +18,6 @@
 
 @end
 
-@interface FBDataBuffer_Consumable : FBDataBuffer_Accumilating <FBConsumableBuffer>
-
-@property (nonatomic, copy, nullable, readwrite) NSData *notificationTerminal;
-@property (nonatomic, strong, nullable, readwrite) FBMutableFuture<NSData *> *notification;
-
-@end
-
 @implementation FBDataBuffer_Accumilating
 
 #pragma mark Initializers
@@ -45,16 +38,6 @@
   _eofHasBeenReceivedFuture = FBMutableFuture.future;
 
   return self;
-}
-
-+ (NSData *)newlineTerminal
-{
-  static dispatch_once_t onceToken;
-  static NSData *data = nil;
-  dispatch_once(&onceToken, ^{
-    data = [NSData dataWithBytes:"\n" length:1];
-  });
-  return data;
 }
 
 #pragma mark NSObject
@@ -108,7 +91,53 @@
 
 @end
 
+@interface FBDataBuffer_Consumable_Forwarder : NSObject
+
+@property (nonatomic, copy, readonly) NSData *terminal;
+@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+@property (nonatomic, strong, nullable, readonly) dispatch_queue_t queue;
+
+@end
+
+@implementation FBDataBuffer_Consumable_Forwarder
+
+- (instancetype)initWithTerminal:(NSData *)terminal consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _terminal = terminal;
+  _consumer = consumer;
+  _queue = queue;
+
+  return self;
+}
+
+@end
+
+@interface FBDataBuffer_Consumable : FBDataBuffer_Accumilating <FBConsumableBuffer>
+
+@property (nonatomic, strong, nullable, readwrite) FBDataBuffer_Consumable_Forwarder *forwarder;
+
+@end
+
 @implementation FBDataBuffer_Consumable
+
+#pragma mark Initializers
+
+- (instancetype)initWithForwarder:(FBDataBuffer_Consumable_Forwarder *)forwarder;
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _forwarder = forwarder;
+
+  return self;
+}
 
 #pragma mark NSObject
 
@@ -152,7 +181,7 @@
 
 - (nullable NSData *)consumeLineData
 {
-  return [self consumeUntil:FBDataBuffer_Accumilating.newlineTerminal];
+  return [self consumeUntil:FBDataBuffer.newlineTerminal];
 }
 
 - (nullable NSString *)consumeLineString
@@ -164,22 +193,47 @@
   return [[NSString alloc] initWithData:lineData encoding:NSUTF8StringEncoding];
 }
 
-- (FBFuture<NSString *> *)consumeAndNotifyWhen:(NSData *)terminal
+- (BOOL)consume:(id<FBDataConsumer>)consumer untilTerminal:(NSData *)terminal error:(NSError **)error
+{
+  return [self consume:consumer onQueue:nil untilTerminal:terminal error:error];
+}
+
+- (BOOL)consume:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue untilTerminal:(NSData *)terminal error:(NSError **)error
 {
   @synchronized (self) {
-    if (self.notificationTerminal) {
+    if (self.forwarder) {
       return [[FBControlCoreError
         describe:@"Cannot listen for the two terminals at the same time"]
-        failFuture];
+        failBool:error];
     }
-    NSData *partial = [self consumeUntil:terminal];
-    if (partial) {
-      return [FBFuture futureWithResult:partial];
-    }
-    self.notificationTerminal = terminal;
-    self.notification = FBMutableFuture.future;
-    return self.notification;
+    self.forwarder = [[FBDataBuffer_Consumable_Forwarder alloc] initWithTerminal:terminal consumer:consumer queue:queue];
+    [self runForwarder];
   }
+  return YES;
+}
+
+- (nullable id<FBDataConsumer>)removeForwardingConsumer
+{
+  FBDataBuffer_Consumable_Forwarder *forwarder = self.forwarder;
+  self.forwarder = nil;
+  return forwarder.consumer;
+}
+
+- (FBFuture<NSData *> *)consumeAndNotifyWhen:(NSData *)terminal
+{
+  FBMutableFuture<NSData *> *future = FBMutableFuture.future;
+  id<FBDataConsumer> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
+    [self removeForwardingConsumer];
+    [future resolveWithResult:data];
+  }];
+
+  NSError *error = nil;
+  BOOL success = [self consume:consumer untilTerminal:terminal error:&error];
+  if (!success) {
+    return [FBFuture futureWithError:error];
+  }
+  [self runForwarder];
+  return future;
 }
 
 #pragma mark FBDataConsumer
@@ -188,16 +242,30 @@
 {
   [super consumeData:data];
   @synchronized (self) {
-    if (!self.notificationTerminal) {
-      return;
+    [self runForwarder];
+  }
+}
+
+#pragma mark Private
+
+- (void)runForwarder
+{
+  FBDataBuffer_Consumable_Forwarder *forwarder = self.forwarder;
+  if (!forwarder) {
+    return;
+  }
+  NSData *partial = [self consumeUntil:forwarder.terminal];
+  dispatch_queue_t queue = forwarder.queue;
+  id<FBDataConsumer> consumer = forwarder.consumer;
+  while (partial) {
+    if (queue) {
+      dispatch_async(queue, ^{
+        [consumer consumeData:partial];
+      });
+    } else {
+      [consumer consumeData:partial];
     }
-    NSData *partial = [self consumeUntil:self.notificationTerminal];
-    if (!partial) {
-      return;
-    }
-    [self.notification resolveWithResult:partial];
-    self.notification = nil;
-    self.notificationTerminal = nil;
+    partial = [self consumeUntil:forwarder.terminal];
   }
 }
 
@@ -219,7 +287,26 @@
 
 + (id<FBConsumableBuffer>)consumableBuffer
 {
-  return [FBDataBuffer_Consumable new];
+  return [self consumableBufferForwardingToConsumer:nil onQueue:nil terminal:nil];
+}
+
++ (id<FBConsumableBuffer>)consumableBufferForwardingToConsumer:(id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(NSData *)terminal
+{
+  FBDataBuffer_Consumable_Forwarder *forwarder = nil;
+  if (consumer) {
+    forwarder = [[FBDataBuffer_Consumable_Forwarder alloc] initWithTerminal:terminal consumer:consumer queue:queue];
+  }
+  return [[FBDataBuffer_Consumable alloc] initWithForwarder:forwarder];
+}
+
++ (NSData *)newlineTerminal
+{
+  static dispatch_once_t onceToken;
+  static NSData *data = nil;
+  dispatch_once(&onceToken, ^{
+    data = [NSData dataWithBytes:"\n" length:1];
+  });
+  return data;
 }
 
 @end

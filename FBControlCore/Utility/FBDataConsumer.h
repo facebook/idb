@@ -102,6 +102,15 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBBlockDataConsumer : NSObject
 
 /**
+ Creates a consumer that delivers data when available.
+ Data will be delivered synchronously.
+
+ @param consumer the block to call when new data is available
+ @return a new consumer.
+ */
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)synchronousDataConsumerWithBlock:(void (^)(NSData *))consumer;
+
+/**
  Creates a Consumer of lines from a block.
  Lines will be delivered synchronously.
 

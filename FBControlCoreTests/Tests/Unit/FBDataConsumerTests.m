@@ -31,7 +31,7 @@
   XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
 }
 
-- (void)testLineConsumer
+- (void)testLineBufferedConsumer
 {
   NSMutableArray<NSString *> *lines = [NSMutableArray array];
   id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer synchronousLineConsumerWithBlock:^(NSString *line) {
@@ -44,6 +44,24 @@
   XCTAssertEqualObjects(lines, (@[@"FOO", @"BAR"]));
   [consumer consumeEndOfFile];
   XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
+}
+
+- (void)testUnbufferedConsumer
+{
+  NSMutableData *actual = NSMutableData.data;
+  id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *incremental) {
+    [actual appendData:incremental];
+  }];
+
+  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
+  [consumer consumeData:[@"FOO" dataUsingEncoding:NSUTF8StringEncoding]];
+  [consumer consumeData:[@"BAR" dataUsingEncoding:NSUTF8StringEncoding]];
+  [consumer consumeData:[@"BAZ" dataUsingEncoding:NSUTF8StringEncoding]];
+  [consumer consumeEndOfFile];
+  XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
+
+  NSData *expected = [@"FOOBARBAZ" dataUsingEncoding:NSUTF8StringEncoding];
+  XCTAssertEqualObjects(expected, actual);
 }
 
 - (void)testLineBufferConsumption
