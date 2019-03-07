@@ -107,12 +107,20 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
   if (!bridgeBinary) {
     return [FBFuture futureWithError:error];
   }
+  id<FBControlCoreLogger> logger = [simulator.logger withName:@"SimulatorBridge"];
+  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
+    configurationWithStdOut:[FBLoggingDataConsumer consumerWithLogger:logger]
+    stdErr:[FBLoggingDataConsumer consumerWithLogger:logger]
+    error:&error];
+  if (!output) {
+    return [FBFuture futureWithError:error];
+  }
 
   FBAgentLaunchConfiguration *config = [FBAgentLaunchConfiguration
     configurationWithBinary:bridgeBinary
     arguments:@[portName]
     environment:@{}
-    output:FBProcessOutputConfiguration.outputToDevNull];
+    output:output];
 
   return [simulator launchAgent:config];
 }
@@ -269,12 +277,20 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
 
 - (FBFuture<id<SimulatorBridge>> *)interactWithBridge
 {
-  if (!self.bridge) {
+  id<SimulatorBridge> bridge = self.bridge;
+  if (!bridge) {
     return [[FBSimulatorError
       describeFormat:@"Cannot interact with bridge as it has been destroyed"]
       failFuture];
   }
-  return [FBFuture futureWithResult:self.bridge];
+  NSDistantObject *distantObject = (NSDistantObject *) bridge;
+  if (!distantObject.connectionForProxy.isValid) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot interact with bridge as the connection is invalid"]
+      failFuture];
+  }
+
+  return [FBFuture futureWithResult:bridge];
 }
 
 + (NSArray<NSDictionary<NSString *, id> *> *)jsonSerializableAccessibility:(NSArray *)data
