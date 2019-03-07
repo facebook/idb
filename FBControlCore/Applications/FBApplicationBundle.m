@@ -126,8 +126,8 @@
 + (NSString *)infoPlistPathForAppAtPath:(NSString *)appPath error:(NSError **)error
 {
   NSArray<NSString *> *searchPaths = @[
-    [appPath stringByAppendingPathComponent:@"info.plist"],
-    [[appPath stringByAppendingPathComponent:@"Contents"] stringByAppendingPathComponent:@"Info.plist"]
+    appPath,
+    [appPath stringByAppendingPathComponent:@"Contents"]
   ];
   NSArray<NSString *> *plists = @[
     @"info.plist",
