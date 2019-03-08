@@ -17,8 +17,6 @@
 #import <DTXConnectionServices/DTXTransport.h>
 #import <DTXConnectionServices/DTXSocketTransport.h>
 
-#import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
-
 #import <objc/runtime.h>
 
 #import <FBControlCore/FBCrashLogCommands.h>

@@ -18,8 +18,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
-
 #import <objc/runtime.h>
 
 #import "XCTestBootstrapError.h"

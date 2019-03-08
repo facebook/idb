@@ -30,70 +30,9 @@
   return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../SharedFrameworks/DTXConnectionServices.framework" requiredClassNames:@[@"DTXConnection", @"DTXRemoteInvocationReceipt"]];
 }
 
-+ (nonnull instancetype)DVTFoundation
-{
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../SharedFrameworks/DVTFoundation.framework" requiredClassNames:@[@"DVTDevice"]];
-}
-
-+ (nonnull instancetype)IDEFoundation
-{
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../Frameworks/IDEFoundation.framework" requiredClassNames:@[@"IDEFoundationTestInitializer"]];
-}
-
-+ (nonnull instancetype)IDEiOSSupportCore
-{
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../PlugIns/IDEiOSSupportCore.ideplugin"
-    requiredClassNames:@[@"DVTiPhoneSimulator"]
-    requiredFrameworks:@[
-      FBWeakFramework.DevToolsFoundation,
-      FBWeakFramework.DevToolsSupport,
-      FBWeakFramework.DevToolsCore,
-  ]];
-}
-
-+ (nonnull instancetype)DevToolsFoundation
-{
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../PlugIns/Xcode3Core.ideplugin/Contents/Frameworks/DevToolsFoundation.framework"];
-}
-
-+ (nonnull instancetype)DevToolsSupport
-{
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../PlugIns/Xcode3Core.ideplugin/Contents/Frameworks/DevToolsSupport.framework"];
-}
-
-+ (nonnull instancetype)DevToolsCore
-{
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../PlugIns/Xcode3Core.ideplugin/Contents/Frameworks/DevToolsCore.framework"];
-}
-
 + (nonnull instancetype)XCTest
 {
   return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework" requiredClassNames:@[@"XCTestConfiguration"]];
-}
-
-+ (nonnull instancetype)IBAutolayoutFoundation
-{
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../Frameworks/IBAutolayoutFoundation.framework"];
-}
-
-+ (nonnull instancetype)IDEKit
-{
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../Frameworks/IDEKit.framework"];
-}
-
-+ (nonnull instancetype)IDESourceEditor
-{
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../PlugIns/IDESourceEditor.ideplugin"];
-}
-
-+ (nonnull instancetype)DFRSupportKit
-{
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../Frameworks/DFRSupportKit.framework"];
-}
-
-+ (nonnull instancetype)DVTKit
-{
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../SharedFrameworks/DVTKit.framework"];
 }
 
 + (instancetype)MobileDevice

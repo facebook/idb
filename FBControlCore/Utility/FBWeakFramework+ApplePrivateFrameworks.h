@@ -20,14 +20,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)CoreSimulator;
 + (instancetype)SimulatorKit;
 + (instancetype)DTXConnectionServices;
-+ (instancetype)DVTFoundation;
-+ (instancetype)IDEFoundation;
-+ (instancetype)IDEiOSSupportCore;
-+ (instancetype)IBAutolayoutFoundation;
-+ (instancetype)IDEKit;
-+ (instancetype)IDESourceEditor;
-+ (instancetype)DFRSupportKit;
-+ (instancetype)DVTKit;
 
 /**
  XCTest framework for MacOSX

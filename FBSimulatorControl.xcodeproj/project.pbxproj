@@ -1072,22 +1072,6 @@
 		AA46BF5E1D6DDC6A00C41DAF /* FBTestManagerContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerContext.h; sourceTree = "<group>"; };
 		AA46BF5F1D6DDC6A00C41DAF /* FBTestManagerContext.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerContext.m; sourceTree = "<group>"; };
 		AA4876491BAC7399007F7D23 /* FBSimulatorControl-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "FBSimulatorControl-Info.plist"; sourceTree = "<group>"; };
-		AA4879861BAC74DD007F7D23 /* DTiPhoneSimulatorApplicationSpecifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTiPhoneSimulatorApplicationSpecifier.h; sourceTree = "<group>"; };
-		AA4879871BAC74DD007F7D23 /* DTiPhoneSimulatorApplicationSpecifier_BundleIdentifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTiPhoneSimulatorApplicationSpecifier_BundleIdentifier.h; sourceTree = "<group>"; };
-		AA4879881BAC74DD007F7D23 /* DTiPhoneSimulatorApplicationSpecifier_Path.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTiPhoneSimulatorApplicationSpecifier_Path.h; sourceTree = "<group>"; };
-		AA4879891BAC74DD007F7D23 /* DTiPhoneSimulatorApplicationSpecifier_ToolPath.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTiPhoneSimulatorApplicationSpecifier_ToolPath.h; sourceTree = "<group>"; };
-		AA48798A1BAC74DD007F7D23 /* DTiPhoneSimulatorSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTiPhoneSimulatorSession.h; sourceTree = "<group>"; };
-		AA48798B1BAC74DD007F7D23 /* DTiPhoneSimulatorSessionConfig.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTiPhoneSimulatorSessionConfig.h; sourceTree = "<group>"; };
-		AA48798C1BAC74DD007F7D23 /* DTiPhoneSimulatorSessionDelegate-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "DTiPhoneSimulatorSessionDelegate-Protocol.h"; sourceTree = "<group>"; };
-		AA48798D1BAC74DD007F7D23 /* DTiPhoneSimulatorSystemRoot.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTiPhoneSimulatorSystemRoot.h; sourceTree = "<group>"; };
-		AA48798E1BAC74DD007F7D23 /* DVTInvalidation-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "DVTInvalidation-Protocol.h"; sourceTree = "<group>"; };
-		AA48798F1BAC74DD007F7D23 /* DVTiPhoneSimulatorCoreSimMessenger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTiPhoneSimulatorCoreSimMessenger.h; sourceTree = "<group>"; };
-		AA4879901BAC74DD007F7D23 /* DVTiPhoneSimulatorDistNoteMessenger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTiPhoneSimulatorDistNoteMessenger.h; sourceTree = "<group>"; };
-		AA4879911BAC74DD007F7D23 /* DVTiPhoneSimulatorMessenger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTiPhoneSimulatorMessenger.h; sourceTree = "<group>"; };
-		AA4879921BAC74DD007F7D23 /* SimDevice-DVTAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDevice-DVTAdditions.h"; sourceTree = "<group>"; };
-		AA4879931BAC74DD007F7D23 /* SimDeviceSet-DVTAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceSet-DVTAdditions.h"; sourceTree = "<group>"; };
-		AA4879941BAC74DD007F7D23 /* SimDeviceType-DVTAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceType-DVTAdditions.h"; sourceTree = "<group>"; };
-		AA4879951BAC74DD007F7D23 /* SimRuntime-DVTAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimRuntime-DVTAdditions.h"; sourceTree = "<group>"; };
 		AA496F641FD2D4190052BC12 /* FBSimulatorContainerApplicationLifecycleStrategy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBSimulatorContainerApplicationLifecycleStrategy.h; sourceTree = "<group>"; };
 		AA496F651FD2D4190052BC12 /* FBSimulatorContainerApplicationLifecycleStrategy.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorContainerApplicationLifecycleStrategy.m; sourceTree = "<group>"; };
 		AA4A7E2B1DD9F4EB001F9D8E /* FBFileReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBFileReader.h; sourceTree = "<group>"; };
@@ -1546,19 +1530,6 @@
 		EE4F0DC01C91B85800608E89 /* DTXSharedMemoryTransport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXSharedMemoryTransport.h; sourceTree = "<group>"; };
 		EE4F0DC11C91B85800608E89 /* DTXSocketTransport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXSocketTransport.h; sourceTree = "<group>"; };
 		EE4F0DC21C91B85800608E89 /* DTXTransport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXTransport.h; sourceTree = "<group>"; };
-		EE4F0DC41C91B85800608E89 /* _IDETestResultsProcessor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _IDETestResultsProcessor.h; sourceTree = "<group>"; };
-		EE4F0DC51C91B85800608E89 /* CDStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDStructures.h; sourceTree = "<group>"; };
-		EE4F0DC61C91B85800608E89 /* DVTArchitecture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTArchitecture.h; sourceTree = "<group>"; };
-		EE4F0DC71C91B85800608E89 /* DVTDevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTDevice.h; sourceTree = "<group>"; };
-		EE4F0DC81C91B85800608E89 /* DVTDeviceManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTDeviceManager.h; sourceTree = "<group>"; };
-		EE4F0DC91C91B85800608E89 /* DVTDeviceType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTDeviceType.h; sourceTree = "<group>"; };
-		EE4F0DCA1C91B85800608E89 /* DVTLogAspect.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTLogAspect.h; sourceTree = "<group>"; };
-		EE4F0DCB1C91B85800608E89 /* DVTPlatform.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTPlatform.h; sourceTree = "<group>"; };
-		EE4F0DCC1C91B85800608E89 /* DVTSDK.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTSDK.h; sourceTree = "<group>"; };
-		EE4F0DCE1C91B85800608E89 /* CDStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDStructures.h; sourceTree = "<group>"; };
-		EE4F0DCF1C91B85800608E89 /* DVTAbstractiOSDevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTAbstractiOSDevice.h; sourceTree = "<group>"; };
-		EE4F0DD01C91B85800608E89 /* DVTiOSDevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTiOSDevice.h; sourceTree = "<group>"; };
-		EE4F0DD11C91B85800608E89 /* DVTiPhoneSimulator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTiPhoneSimulator.h; sourceTree = "<group>"; };
 		EE4F0DD31C91B85800608E89 /* CDStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDStructures.h; sourceTree = "<group>"; };
 		EE4F0DD41C91B85800608E89 /* XCTestConfiguration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTestConfiguration.h; sourceTree = "<group>"; };
 		EE4F0DD51C91B85800608E89 /* XCTestDriverInterface-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTestDriverInterface-Protocol.h"; sourceTree = "<group>"; };
@@ -2072,38 +2043,12 @@
 				EE87FA3D2008C04C002716FE /* AXRuntime */,
 				AA39D7EF1D5B0B2600A0840F /* CoreSimulator */,
 				EE4F0D9F1C91B85800608E89 /* DTXConnectionServices */,
-				EE4F0DC31C91B85800608E89 /* DVTFoundation */,
-				AA4879851BAC74DD007F7D23 /* DVTiPhoneSimulatorRemoteClient */,
-				EE4F0DCD1C91B85800608E89 /* IDEiOSSupportCore */,
 				AAEB58F11E2CC6F7005BC408 /* SimulatorApp */,
 				AA791BA31C63668C00AE49EB /* SimulatorBridge */,
 				AA2DDC221C283F40000689C6 /* SimulatorKit */,
 				EE4F0DD21C91B85800608E89 /* XCTest */,
 			);
 			path = PrivateHeaders;
-			sourceTree = "<group>";
-		};
-		AA4879851BAC74DD007F7D23 /* DVTiPhoneSimulatorRemoteClient */ = {
-			isa = PBXGroup;
-			children = (
-				AA4879861BAC74DD007F7D23 /* DTiPhoneSimulatorApplicationSpecifier.h */,
-				AA4879871BAC74DD007F7D23 /* DTiPhoneSimulatorApplicationSpecifier_BundleIdentifier.h */,
-				AA4879881BAC74DD007F7D23 /* DTiPhoneSimulatorApplicationSpecifier_Path.h */,
-				AA4879891BAC74DD007F7D23 /* DTiPhoneSimulatorApplicationSpecifier_ToolPath.h */,
-				AA48798A1BAC74DD007F7D23 /* DTiPhoneSimulatorSession.h */,
-				AA48798B1BAC74DD007F7D23 /* DTiPhoneSimulatorSessionConfig.h */,
-				AA48798C1BAC74DD007F7D23 /* DTiPhoneSimulatorSessionDelegate-Protocol.h */,
-				AA48798D1BAC74DD007F7D23 /* DTiPhoneSimulatorSystemRoot.h */,
-				AA48798E1BAC74DD007F7D23 /* DVTInvalidation-Protocol.h */,
-				AA48798F1BAC74DD007F7D23 /* DVTiPhoneSimulatorCoreSimMessenger.h */,
-				AA4879901BAC74DD007F7D23 /* DVTiPhoneSimulatorDistNoteMessenger.h */,
-				AA4879911BAC74DD007F7D23 /* DVTiPhoneSimulatorMessenger.h */,
-				AA4879921BAC74DD007F7D23 /* SimDevice-DVTAdditions.h */,
-				AA4879931BAC74DD007F7D23 /* SimDeviceSet-DVTAdditions.h */,
-				AA4879941BAC74DD007F7D23 /* SimDeviceType-DVTAdditions.h */,
-				AA4879951BAC74DD007F7D23 /* SimRuntime-DVTAdditions.h */,
-			);
-			path = DVTiPhoneSimulatorRemoteClient;
 			sourceTree = "<group>";
 		};
 		AA51E48F1BA1CA3C0053141E /* Tests */ = {
@@ -2929,33 +2874,6 @@
 				EE4F0DC21C91B85800608E89 /* DTXTransport.h */,
 			);
 			path = DTXConnectionServices;
-			sourceTree = "<group>";
-		};
-		EE4F0DC31C91B85800608E89 /* DVTFoundation */ = {
-			isa = PBXGroup;
-			children = (
-				EE4F0DC41C91B85800608E89 /* _IDETestResultsProcessor.h */,
-				EE4F0DC51C91B85800608E89 /* CDStructures.h */,
-				EE4F0DC61C91B85800608E89 /* DVTArchitecture.h */,
-				EE4F0DC71C91B85800608E89 /* DVTDevice.h */,
-				EE4F0DC81C91B85800608E89 /* DVTDeviceManager.h */,
-				EE4F0DC91C91B85800608E89 /* DVTDeviceType.h */,
-				EE4F0DCA1C91B85800608E89 /* DVTLogAspect.h */,
-				EE4F0DCB1C91B85800608E89 /* DVTPlatform.h */,
-				EE4F0DCC1C91B85800608E89 /* DVTSDK.h */,
-			);
-			path = DVTFoundation;
-			sourceTree = "<group>";
-		};
-		EE4F0DCD1C91B85800608E89 /* IDEiOSSupportCore */ = {
-			isa = PBXGroup;
-			children = (
-				EE4F0DCE1C91B85800608E89 /* CDStructures.h */,
-				EE4F0DCF1C91B85800608E89 /* DVTAbstractiOSDevice.h */,
-				EE4F0DD01C91B85800608E89 /* DVTiOSDevice.h */,
-				EE4F0DD11C91B85800608E89 /* DVTiPhoneSimulator.h */,
-			);
-			path = IDEiOSSupportCore;
 			sourceTree = "<group>";
 		};
 		EE4F0DD21C91B85800608E89 /* XCTest */ = {
