@@ -1129,48 +1129,6 @@
 		AA5CB9131E8A45200099F048 /* FBApplicationLaunchConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBApplicationLaunchConfiguration.m; sourceTree = "<group>"; };
 		AA5D012D2003F38A005FF117 /* FBProcessStream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBProcessStream.h; sourceTree = "<group>"; };
 		AA5D012E2003F38B005FF117 /* FBProcessStream.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProcessStream.m; sourceTree = "<group>"; };
-		AA5DF5C51CEA1EE400CF3876 /* _MDKLocalizationHelper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _MDKLocalizationHelper.h; sourceTree = "<group>"; };
-		AA5DF5C61CEA1EE400CF3876 /* _MDKNotificationServiceHelper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _MDKNotificationServiceHelper.h; sourceTree = "<group>"; };
-		AA5DF5C71CEA1EE400CF3876 /* CDStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDStructures.h; sourceTree = "<group>"; };
-		AA5DF5C91CEA1EE400CF3876 /* MANetworkService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MANetworkService.h; sourceTree = "<group>"; };
-		AA5DF5CB1CEA1EE400CF3876 /* MDKAFCFileDescriptor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCFileDescriptor.h; sourceTree = "<group>"; };
-		AA5DF5CD1CEA1EE400CF3876 /* MDKAFCGetConnectionInfoOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCGetConnectionInfoOperation.h; sourceTree = "<group>"; };
-		AA5DF5CF1CEA1EE400CF3876 /* MDKAFCGetDeviceInfoOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCGetDeviceInfoOperation.h; sourceTree = "<group>"; };
-		AA5DF5D11CEA1EE400CF3876 /* MDKAFCGetFileHashOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCGetFileHashOperation.h; sourceTree = "<group>"; };
-		AA5DF5D31CEA1EE400CF3876 /* MDKAFCGetFileInfoOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCGetFileInfoOperation.h; sourceTree = "<group>"; };
-		AA5DF5D51CEA1EE400CF3876 /* MDKAFCGetSizeOfPathContentsOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCGetSizeOfPathContentsOperation.h; sourceTree = "<group>"; };
-		AA5DF5D71CEA1EE400CF3876 /* MDKAFCLinkPathOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCLinkPathOperation.h; sourceTree = "<group>"; };
-		AA5DF5D91CEA1EE400CF3876 /* MDKAFCMakeDirectoryOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCMakeDirectoryOperation.h; sourceTree = "<group>"; };
-		AA5DF5DB1CEA1EE400CF3876 /* MDKAFCOpenFileOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCOpenFileOperation.h; sourceTree = "<group>"; };
-		AA5DF5DD1CEA1EE400CF3876 /* MDKAFCOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCOperation.h; sourceTree = "<group>"; };
-		AA5DF5DF1CEA1EE400CF3876 /* MDKAFCReadDirectoryOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCReadDirectoryOperation.h; sourceTree = "<group>"; };
-		AA5DF5E11CEA1EE400CF3876 /* MDKAFCRemovePathOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCRemovePathOperation.h; sourceTree = "<group>"; };
-		AA5DF5E31CEA1EE400CF3876 /* MDKAFCRenamePathOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCRenamePathOperation.h; sourceTree = "<group>"; };
-		AA5DF5E51CEA1EE400CF3876 /* MDKAFCService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCService.h; sourceTree = "<group>"; };
-		AA5DF5E71CEA1EE400CF3876 /* MDKAFCSetConnectionOptionsOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCSetConnectionOptionsOperation.h; sourceTree = "<group>"; };
-		AA5DF5E91CEA1EE400CF3876 /* MDKAFCSetModTimeForPathOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKAFCSetModTimeForPathOperation.h; sourceTree = "<group>"; };
-		AA5DF5EB1CEA1EE400CF3876 /* MDKATCMessage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKATCMessage.h; sourceTree = "<group>"; };
-		AA5DF5ED1CEA1EE400CF3876 /* MDKATHostConnection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKATHostConnection.h; sourceTree = "<group>"; };
-		AA5DF5EF1CEA1EE400CF3876 /* MDKManagedConfigService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKManagedConfigService.h; sourceTree = "<group>"; };
-		AA5DF5F11CEA1EE400CF3876 /* MDKMobileDevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKMobileDevice.h; sourceTree = "<group>"; };
-		AA5DF5F31CEA1EE400CF3876 /* MDKMobileDeviceNotifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKMobileDeviceNotifier.h; sourceTree = "<group>"; };
-		AA5DF5F51CEA1EE400CF3876 /* MDKMobileInstallService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKMobileInstallService.h; sourceTree = "<group>"; };
-		AA5DF5F71CEA1EE400CF3876 /* MDKMobileProvisioningService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKMobileProvisioningService.h; sourceTree = "<group>"; };
-		AA5DF5F91CEA1EE400CF3876 /* MDKMobileSync.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKMobileSync.h; sourceTree = "<group>"; };
-		AA5DF5FB1CEA1EE400CF3876 /* MDKNotificationService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKNotificationService.h; sourceTree = "<group>"; };
-		AA5DF5FD1CEA1EE400CF3876 /* MDKProvisioningProfile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKProvisioningProfile.h; sourceTree = "<group>"; };
-		AA5DF5FE1CEA1EE400CF3876 /* MDKRestorableBuild.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKRestorableBuild.h; sourceTree = "<group>"; };
-		AA5DF5FF1CEA1EE400CF3876 /* MDKRestorableDevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKRestorableDevice.h; sourceTree = "<group>"; };
-		AA5DF6001CEA1EE400CF3876 /* MDKRestorableDeviceNotifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKRestorableDeviceNotifier.h; sourceTree = "<group>"; };
-		AA5DF6011CEA1EE400CF3876 /* MDKServiceConnection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKServiceConnection.h; sourceTree = "<group>"; };
-		AA5DF6021CEA1EE400CF3876 /* MDKSpringBoardService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKSpringBoardService.h; sourceTree = "<group>"; };
-		AA5DF6031CEA1EE400CF3876 /* MDKSyslogRelayService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDKSyslogRelayService.h; sourceTree = "<group>"; };
-		AA5DF6041CEA1EE400CF3876 /* MobileActivationError.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MobileActivationError.h; sourceTree = "<group>"; };
-		AA5DF6051CEA1EE400CF3876 /* NSCopying-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSCopying-Protocol.h"; sourceTree = "<group>"; };
-		AA5DF6061CEA1EE400CF3876 /* NSObject-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSObject-Protocol.h"; sourceTree = "<group>"; };
-		AA5DF6071CEA1EE400CF3876 /* NSURLSessionDataDelegate-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSURLSessionDataDelegate-Protocol.h"; sourceTree = "<group>"; };
-		AA5DF6081CEA1EE400CF3876 /* NSURLSessionDelegate-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSURLSessionDelegate-Protocol.h"; sourceTree = "<group>"; };
-		AA5DF6091CEA1EE400CF3876 /* NSURLSessionTaskDelegate-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSURLSessionTaskDelegate-Protocol.h"; sourceTree = "<group>"; };
 		AA5F38001F47B1F400B02DEC /* FBXCTestProcessExecutor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBXCTestProcessExecutor.h; sourceTree = "<group>"; };
 		AA6062E41EE4A62900E2EFEE /* FBSimulatorXCTestProcessExecutor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorXCTestProcessExecutor.h; sourceTree = "<group>"; };
 		AA6062E51EE4A62900E2EFEE /* FBSimulatorXCTestProcessExecutor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorXCTestProcessExecutor.m; sourceTree = "<group>"; };
@@ -2117,7 +2075,6 @@
 				EE4F0DC31C91B85800608E89 /* DVTFoundation */,
 				AA4879851BAC74DD007F7D23 /* DVTiPhoneSimulatorRemoteClient */,
 				EE4F0DCD1C91B85800608E89 /* IDEiOSSupportCore */,
-				AA5DF5C41CEA1EE400CF3876 /* MobileDeviceKit */,
 				AAEB58F11E2CC6F7005BC408 /* SimulatorApp */,
 				AA791BA31C63668C00AE49EB /* SimulatorBridge */,
 				AA2DDC221C283F40000689C6 /* SimulatorKit */,
@@ -2205,55 +2162,6 @@
 				D76C2AD91F0E7A8A000EF13D /* FBiOSTargetFuture.m */,
 			);
 			path = Actions;
-			sourceTree = "<group>";
-		};
-		AA5DF5C41CEA1EE400CF3876 /* MobileDeviceKit */ = {
-			isa = PBXGroup;
-			children = (
-				AA5DF5C51CEA1EE400CF3876 /* _MDKLocalizationHelper.h */,
-				AA5DF5C61CEA1EE400CF3876 /* _MDKNotificationServiceHelper.h */,
-				AA5DF5C71CEA1EE400CF3876 /* CDStructures.h */,
-				AA5DF5C91CEA1EE400CF3876 /* MANetworkService.h */,
-				AA5DF5CB1CEA1EE400CF3876 /* MDKAFCFileDescriptor.h */,
-				AA5DF5CD1CEA1EE400CF3876 /* MDKAFCGetConnectionInfoOperation.h */,
-				AA5DF5CF1CEA1EE400CF3876 /* MDKAFCGetDeviceInfoOperation.h */,
-				AA5DF5D11CEA1EE400CF3876 /* MDKAFCGetFileHashOperation.h */,
-				AA5DF5D31CEA1EE400CF3876 /* MDKAFCGetFileInfoOperation.h */,
-				AA5DF5D51CEA1EE400CF3876 /* MDKAFCGetSizeOfPathContentsOperation.h */,
-				AA5DF5D71CEA1EE400CF3876 /* MDKAFCLinkPathOperation.h */,
-				AA5DF5D91CEA1EE400CF3876 /* MDKAFCMakeDirectoryOperation.h */,
-				AA5DF5DB1CEA1EE400CF3876 /* MDKAFCOpenFileOperation.h */,
-				AA5DF5DD1CEA1EE400CF3876 /* MDKAFCOperation.h */,
-				AA5DF5DF1CEA1EE400CF3876 /* MDKAFCReadDirectoryOperation.h */,
-				AA5DF5E11CEA1EE400CF3876 /* MDKAFCRemovePathOperation.h */,
-				AA5DF5E31CEA1EE400CF3876 /* MDKAFCRenamePathOperation.h */,
-				AA5DF5E51CEA1EE400CF3876 /* MDKAFCService.h */,
-				AA5DF5E71CEA1EE400CF3876 /* MDKAFCSetConnectionOptionsOperation.h */,
-				AA5DF5E91CEA1EE400CF3876 /* MDKAFCSetModTimeForPathOperation.h */,
-				AA5DF5EB1CEA1EE400CF3876 /* MDKATCMessage.h */,
-				AA5DF5ED1CEA1EE400CF3876 /* MDKATHostConnection.h */,
-				AA5DF5EF1CEA1EE400CF3876 /* MDKManagedConfigService.h */,
-				AA5DF5F11CEA1EE400CF3876 /* MDKMobileDevice.h */,
-				AA5DF5F31CEA1EE400CF3876 /* MDKMobileDeviceNotifier.h */,
-				AA5DF5F51CEA1EE400CF3876 /* MDKMobileInstallService.h */,
-				AA5DF5F71CEA1EE400CF3876 /* MDKMobileProvisioningService.h */,
-				AA5DF5F91CEA1EE400CF3876 /* MDKMobileSync.h */,
-				AA5DF5FB1CEA1EE400CF3876 /* MDKNotificationService.h */,
-				AA5DF5FD1CEA1EE400CF3876 /* MDKProvisioningProfile.h */,
-				AA5DF5FE1CEA1EE400CF3876 /* MDKRestorableBuild.h */,
-				AA5DF5FF1CEA1EE400CF3876 /* MDKRestorableDevice.h */,
-				AA5DF6001CEA1EE400CF3876 /* MDKRestorableDeviceNotifier.h */,
-				AA5DF6011CEA1EE400CF3876 /* MDKServiceConnection.h */,
-				AA5DF6021CEA1EE400CF3876 /* MDKSpringBoardService.h */,
-				AA5DF6031CEA1EE400CF3876 /* MDKSyslogRelayService.h */,
-				AA5DF6041CEA1EE400CF3876 /* MobileActivationError.h */,
-				AA5DF6051CEA1EE400CF3876 /* NSCopying-Protocol.h */,
-				AA5DF6061CEA1EE400CF3876 /* NSObject-Protocol.h */,
-				AA5DF6071CEA1EE400CF3876 /* NSURLSessionDataDelegate-Protocol.h */,
-				AA5DF6081CEA1EE400CF3876 /* NSURLSessionDelegate-Protocol.h */,
-				AA5DF6091CEA1EE400CF3876 /* NSURLSessionTaskDelegate-Protocol.h */,
-			);
-			path = MobileDeviceKit;
 			sourceTree = "<group>";
 		};
 		AA633F8A1CFD788F00A59C5F /* Configuration */ = {

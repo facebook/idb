@@ -35,12 +35,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)XCTest;
 
 /**
- Frameworks bundled with the 'Apple Configuration' App
- */
-+ (instancetype)ConfigurationUtilityKit;
-+ (instancetype)ConfigurationProfile;
-
-/**
  System Private Frameworks
  */
 + (instancetype)MobileDevice;
