@@ -11,7 +11,6 @@
 #import <objc/message.h>
 #import <objc/runtime.h>
 
-#import "dyld-interposing.h"
 #import "ReporterEvents.h"
 #import "XCTestPrivate.h"
 
