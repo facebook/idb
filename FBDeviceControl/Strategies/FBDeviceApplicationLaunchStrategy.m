@@ -8,6 +8,8 @@
 #import "FBDeviceApplicationLaunchStrategy.h"
 
 #import "FBAMDServiceConnection.h"
+#import "FBDevice.h"
+#import "FBDeviceApplicationProcess.h"
 #import "FBDeviceControlError.h"
 #import "FBGDBClient.h"
 
@@ -15,6 +17,7 @@ static NSTimeInterval LaunchTimeout = 60;
 
 @interface FBDeviceApplicationLaunchStrategy ()
 
+@property (nonatomic, strong, readonly) FBDevice *device;
 @property (nonatomic, strong, readonly) FBAMDServiceConnection *connection;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
@@ -25,18 +28,19 @@ static NSTimeInterval LaunchTimeout = 60;
 
 #pragma mark Initializers
 
-+ (instancetype)strategyWithDebugConnection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger
++ (instancetype)strategyWithDevice:(FBDevice *)device debugConnection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithDebugConnection:connection logger:logger];
+  return [[self alloc] initWithDevice:device debugConnection:connection logger:logger];
 }
 
-- (instancetype)initWithDebugConnection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithDevice:(FBDevice *)device debugConnection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _device = device;
   _connection = connection;
   _logger = logger;
   _writeQueue = dispatch_queue_create("com.facebook.fbdevicecontrol.app_launch_commands", DISPATCH_QUEUE_SERIAL);
@@ -46,12 +50,18 @@ static NSTimeInterval LaunchTimeout = 60;
 
 #pragma mark Public Methods
 
-- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)launch remoteAppPath:(NSString *)remoteAppPath
+- (FBFuture<FBDeviceApplicationProcess *> *)launchApplication:(FBApplicationLaunchConfiguration *)launch remoteAppPath:(NSString *)remoteAppPath
 {
   return [[FBGDBClient
     clientForServiceConnection:self.connection queue:self.writeQueue logger:self.logger]
     onQueue:self.writeQueue fmap:^(FBGDBClient *client) {
-      return [FBDeviceApplicationLaunchStrategy launchApplication:launch remoteAppPath:remoteAppPath client:client queue:self.writeQueue logger:self.logger];
+      FBFuture<NSNumber *> *launchFuture = [FBDeviceApplicationLaunchStrategy
+        launchApplication:launch
+        remoteAppPath:remoteAppPath
+        client:client
+        queue:self.writeQueue
+        logger:self.logger];
+      return [FBDeviceApplicationLaunchStrategy launchApplication:launch device:self.device client:client launchFuture:launchFuture];
     }];
 }
 
@@ -81,6 +91,15 @@ static NSTimeInterval LaunchTimeout = 60;
       [client sendContinue];
     }]
     timeout:LaunchTimeout waitingFor:@"Timed out waiting for launch to complete"];
+}
+
++ (FBFuture<FBDeviceApplicationProcess *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch device:(FBDevice *)device client:(FBGDBClient *)client launchFuture:(FBFuture<NSNumber *> *)launchFuture
+{
+  return [[appLaunch.output
+    createOutputForTarget:device]
+    onQueue:device.workQueue fmap:^(NSArray<FBProcessOutput *> *outputs) {
+      return [FBDeviceApplicationProcess processWithDevice:device configuration:appLaunch gdbClient:client stdOut:outputs[0] stdErr:outputs[1] launchFuture:launchFuture];
+    }];
 }
 
 @end

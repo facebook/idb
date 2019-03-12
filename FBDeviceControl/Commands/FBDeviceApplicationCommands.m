@@ -15,6 +15,7 @@
 #import "FBDevice+Private.h"
 #import "FBDevice.h"
 #import "FBDeviceApplicationLaunchStrategy.h"
+#import "FBDeviceApplicationProcess.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceDebuggerCommands.h"
 
@@ -167,7 +168,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 - (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   __block NSString *remoteAppPath = nil;
-  return [[[self
+  return [[[[self
     launchableRemoteApplicationPathForConfiguration:configuration]
     onQueue:self.device.workQueue pushTeardown:^(NSString *result) {
       remoteAppPath = result;
@@ -177,8 +178,11 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
     }]
     onQueue:self.device.workQueue pop:^(FBAMDServiceConnection *connection) {
       return [[FBDeviceApplicationLaunchStrategy
-        strategyWithDebugConnection:connection logger:self.device.logger]
+        strategyWithDevice:self.device debugConnection:connection logger:self.device.logger]
         launchApplication:configuration remoteAppPath:remoteAppPath];
+    }]
+    onQueue:self.device.workQueue map:^(FBDeviceApplicationProcess *process) {
+      return @(process.processIdentifier);
     }];
 }
 

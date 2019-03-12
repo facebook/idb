@@ -14,6 +14,23 @@
 
 static NSString *const Terminator = @"#";
 
+static char fromHex(unichar c1, unichar c2)
+{
+  int value = 0;
+  if (c1 <= '9') {
+    value = c1 - '0';
+  } else {
+    value = c1 - 'a' + 10;
+  }
+  value <<= 4;
+  if (c2 <= '9') {
+    value |= c2 - '0';
+  } else {
+    value |= c2 - 'a' + 10;
+  }
+  return (char) value;
+}
+
 static NSData *wrapCommandInSums(NSString *input)
 {
   NSInteger checksum = 0;
@@ -30,6 +47,16 @@ static NSString *hexEncode(NSString *input)
   for (NSUInteger index = 0; index < input.length; index++) {
     unichar character = [input characterAtIndex:index];
     [output appendFormat:@"%02x", character];
+  }
+  return output;
+}
+
+static NSString *hexDecode(NSString *input)
+{
+  NSMutableString *output = [NSMutableString string];
+  for (NSUInteger index = 0; index < (input.length / 2); index++) {
+    char character = fromHex([input characterAtIndex:(index * 2)], [input characterAtIndex:((index * 2) +1 )]);
+    [output appendFormat:@"%c", character];
   }
   return output;
 }
@@ -100,13 +127,17 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
   return @(value);
 }
 
-@interface FBGDBClient ()
+@interface FBGDBClient () <FBDataConsumer>
 
 @property (nonatomic, strong, readonly) id<FBDataConsumer> writer;
 @property (nonatomic, strong, readonly) FBFileReader *reader;
 @property (nonatomic, strong, readonly) id<FBConsumableBuffer> buffer;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *exitCodeFuture;
+
+@property (nonatomic, strong, nullable, readonly) id<FBDataConsumer> stdoutConsumer;
+@property (nonatomic, strong, nullable, readonly) id<FBDataConsumer> stderrConsumer;
 
 @end
 
@@ -148,6 +179,7 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
   _buffer = buffer;
   _queue = queue;
   _logger = logger;
+  _exitCodeFuture = FBMutableFuture.future;
 
   return self;
 }
@@ -200,6 +232,28 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
   return [self sendNow:@"c"];
 }
 
+- (FBFuture<NSNull *> *)consumeStdOut:(id<FBDataConsumer>)stdOut stdErr:(id<FBDataConsumer>)stdErr
+{
+  return [FBFuture onQueue:self.queue resolveValue:^(NSError **error) {
+    return [self.buffer consume:self onQueue:self.queue untilTerminal:[Terminator dataUsingEncoding:NSASCIIStringEncoding] error:error] ? NSNull.null : nil;
+  }];
+}
+
+- (FBFuture<NSNumber *> *)exitCode
+{
+  return self.exitCodeFuture;
+}
+
++ (NSString *)hexDecode:(NSString *)input
+{
+  return hexDecode(input);
+}
+
++ (NSString *)hexEncode:(NSString *)input
+{
+  return hexEncode(input);
+}
+
 #pragma mark Private
 
 - (FBFuture<NSNull *> *)sendUntilOK:(NSString *)command
@@ -250,6 +304,31 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 - (void)_sendRaw:(NSData *)data
 {
   [self.writer consumeData:data];
+}
+
+#pragma mark FBDataConsumer Implementation
+
+- (void)consumeData:(NSData *)data
+{
+  NSString *packet = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
+  NSScanner *scanner = [NSScanner scannerWithString:packet];
+  if (![scanner scanUpToString:@"$" intoString:nil] || ![scanner scanString:@"$" intoString:nil]) {
+    return;
+  }
+  if ([scanner scanString:@"O" intoString:nil]) {
+    NSString *output = hexDecode([scanner.string substringFromIndex:scanner.scanLocation]);
+    NSData *payload = [output dataUsingEncoding:NSUTF8StringEncoding];
+    [self.stdoutConsumer consumeData:payload];
+  } else if ([scanner scanString:@"W" intoString:nil]) {
+    unsigned int signal = 0;
+    [scanner scanHexInt:&signal];
+    [self.exitCodeFuture resolveWithResult:@(signal)];
+  }
+}
+
+- (void)consumeEndOfFile
+{
+
 }
 
 @end

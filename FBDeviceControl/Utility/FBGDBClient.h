@@ -76,6 +76,36 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)noAckMode;
 
+/**
+ Consumes stdout and stderr via data consumers.
+
+ @param stdOut the stdout to redirect.
+ @param stdErr the stderr to redirect.
+ @return a future resolves when consumption has started.
+ */
+- (FBFuture<NSNull *> *)consumeStdOut:(id<FBDataConsumer>)stdOut stdErr:(id<FBDataConsumer>)stdErr;
+
+/**
+ A future that resolves with the process exit code.
+ */
+- (FBFuture<NSNumber *> *)exitCode;
+
+/**
+ Decodes to a hex string, converting it to a regular string
+
+ @param input the input hex string
+ @return a string
+ */
++ (NSString *)hexDecode:(NSString *)input;
+
+/**
+ Encodes to a hex string
+
+ @param input a regular string
+ @return a hex string
+ */
++ (NSString *)hexEncode:(NSString *)input;
+
 @end
 
 NS_ASSUME_NONNULL_END
