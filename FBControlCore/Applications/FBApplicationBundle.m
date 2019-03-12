@@ -76,9 +76,7 @@
 
 + (NSString *)appNameForPath:(NSString *)appPath
 {
-  NSDictionary *infoPlist = [NSDictionary dictionaryWithContentsOfFile:[self infoPlistPathForAppAtPath:appPath error:nil]];
-  NSString *bundleName = infoPlist[@"CFBundleName"];
-  return bundleName ?: appPath.lastPathComponent.stringByDeletingPathExtension;
+  return [self infoPlistKey:@"CFBundleName" forAppAtPath:appPath error:nil] ?: appPath.lastPathComponent.stringByDeletingPathExtension;
 }
 
 + (NSString *)binaryPathForAppAtPath:(NSString *)appPath error:(NSError **)error
