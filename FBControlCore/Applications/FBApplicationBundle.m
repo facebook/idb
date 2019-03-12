@@ -108,14 +108,16 @@
   }
   NSDictionary<NSString *, NSString *> *infoPlist = [NSDictionary dictionaryWithContentsOfFile:infoPlistPath];
   if (!infoPlist) {
-    return [[FBControlCoreError
+    return [[[FBControlCoreError
       describeFormat:@"Could not load Info.plist at path %@", infoPlistPath]
+      noLogging]
       fail:error];
   }
   NSString *value = infoPlist[key];
   if (!value) {
-    return [[FBControlCoreError
+    return [[[FBControlCoreError
       describeFormat:@"Could not load key %@ in Info.plist, values %@", key, [FBCollectionInformation oneLineDescriptionFromArray:infoPlist.allKeys]]
+      noLogging]
       fail:error];
   }
   return value;
@@ -143,13 +145,15 @@
 
   BOOL isDirectory = NO;
   if (![NSFileManager.defaultManager fileExistsAtPath:appPath isDirectory:&isDirectory]) {
-    return [[FBControlCoreError
+    return [[[FBControlCoreError
       describeFormat:@"No Info.plist could be found as %@ does not exist", appPath]
+      noLogging]
       fail:error];
   }
   if (!isDirectory) {
-    return [[FBControlCoreError
+    return [[[FBControlCoreError
       describeFormat:@"No Info.plist could be found in %@ as it's not an app path, which must be a directory", appPath]
+      noLogging]
       fail:error];
   }
   NSMutableArray<NSString *> *allPaths = NSMutableArray.array;
@@ -161,8 +165,9 @@
     [allPaths addObjectsFromArray:contents];
   }
 
-  return [[FBControlCoreError
+  return [[[FBControlCoreError
     describeFormat:@"Could not find an Info.plist at any of the expected locations %@, files that do exist %@", [FBCollectionInformation oneLineDescriptionFromArray:searchPaths], [FBCollectionInformation oneLineDescriptionFromArray:allPaths]]
+    noLogging]
     fail:error];
 }
 
