@@ -6,7 +6,7 @@ A macOS library for managing, booting and interacting with multiple iOS Simulato
 ## Features
 - Enables 'Multisim' for iOS: Booting of multiple Simulators on the same host OS.
 - Runs independently of Xcode and `xcodebuild`. Uses the toolchain defined by `xcode-select`.
-- Boots iPhone & iPad Simulators for iOS 8, 9 & 10.
+- Boots iPhone & iPad Simulators.
 - Launches both 'Agent' and 'Application' processes, with Arguments and Environment.
 - Can boot Simulators via Xcode's `Simulator.app` or by launching 'Directly' in `CoreSimulator`.
 - 'Direct Launch' supports video recording, screenshot fetching & interfacing with the `SimulatorBridge`.
@@ -22,7 +22,7 @@ A macOS library for managing, booting and interacting with multiple iOS Simulato
 ## About
 The original use-case for `FBSimulatorControl` was to boot Simulators to run End-to-End tests with `WebDriverAgent`. As `FBSimulatorControl` is a macOS framework, it can be linked to from inside any macOS Library, Application, or `xctest` target. There may be additional use-cases that you may find beyond UI Test Automation.
 
-`FBSimulatorControl` works by linking with the private `DVTFoundation`, `CoreSimulator` and `DVTiPhoneSimulatorRemoteClient` frameworks that are present inside the Xcode bundle. Doing this allows  `FBSimulatorControl` to talk directly to the same APIs that Xcode and `simctl` do. This, combined with launching the Simulator binaries directly, means that multiple Simulators can be launched simultaneously. Test targets can be made that don't depend on any Application targets, or that launch multiple Application targets. This enables running against pre-built and archived Application binaries, rather than a binary that is built by a Test Target.
+`FBSimulatorControl` works by linking with the private `CoreSimulator` and `MobileDevice` frameworks that are present inside the Xcode bundle. Doing this allows  `FBSimulatorControl` to talk directly to the same APIs that Xcode and `simctl` do. This, combined with launching the Simulator binaries directly, means that multiple Simulators can be launched simultaneously. Test targets can be made that don't depend on any Application targets, or that launch multiple Application targets. This enables running against pre-built and archived Application binaries, rather than a binary that is built by a Test Target.
 
 As `FBSimulatorControl` nears a stable version, the API may change but can be considered mostly stable.
 
