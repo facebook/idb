@@ -15,7 +15,7 @@
 
 @interface FBSimpleSubject : FBSingleItemSubject
 
-- (instancetype)initWithName:(FBEventName)name type:(FBEventType)type subject:(FBEventReporterSubject *)subject;
+- (instancetype)initWithEventName:(FBEventName)eventName eventType:(FBEventType)eventType subject:(FBEventReporterSubject *)subject;
 
 @end
 
@@ -63,11 +63,14 @@
 
 @implementation FBEventReporterSubject
 
+@synthesize eventName = _eventName;
+@synthesize eventType = _eventType;
+
 #pragma mark Initializers
 
 + (instancetype)subjectWithName:(FBEventName)name type:(FBEventType)type subject:(id<FBEventReporterSubject>)subject
 {
-  return [[FBSimpleSubject alloc] initWithName:name type:type subject:subject];
+  return [[FBSimpleSubject alloc] initWithEventName:name eventType:type subject:subject];
 }
 
 + (instancetype)subjectWithName:(FBEventName)name type:(FBEventType)type value:(id<FBJSONSerializable>)value
@@ -122,6 +125,24 @@
   return [[FBCompositeSubject alloc] initWithArray:subjects];
 }
 
+- (instancetype)init
+{
+  return [self initWithEventName:nil eventType:nil];
+}
+
+- (instancetype)initWithEventName:(FBEventName)eventName eventType:(FBEventType)eventType
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _eventName = eventName;
+  _eventType = eventType;
+
+  return self;
+}
+
 #pragma mark FBEventReporterSubject Protocol Implementation
 
 - (id)jsonSerializableRepresentation
@@ -163,8 +184,6 @@
 
 @interface FBSimpleSubject ()
 
-@property (nonatomic, copy, readonly) FBEventName eventName;
-@property (nonatomic, copy, readonly) FBEventType eventType;
 @property (nonatomic, retain, readonly) FBEventReporterSubject *subject;
 
 @end
@@ -172,17 +191,13 @@
 
 @implementation FBSimpleSubject
 
-- (instancetype)initWithName:(FBEventName)name
-                        type:(FBEventType)type
-                     subject:(FBEventReporterSubject *)subject
+- (instancetype)initWithEventName:(FBEventName)eventName eventType:(FBEventType)eventType subject:(FBEventReporterSubject *)subject
 {
-  self = [super init];
+  self = [super initWithEventName:eventName eventType:eventType];
   if (!self) {
     return nil;
   }
 
-  _eventName = name;
-  _eventType = type;
   _subject = subject;
 
   return self;
@@ -285,8 +300,6 @@
 @interface FBiOSTargetWithSubject ()
 
 @property (nonatomic, copy, readonly) FBiOSTargetSubject *targetSubject;
-@property (nonatomic, copy, readonly) FBEventName eventName;
-@property (nonatomic, copy, readonly) FBEventType eventType;
 @property (nonatomic, retain, readonly) FBEventReporterSubject *subject;
 @property (nonatomic, retain, readonly) NSDate *timestamp;
 
@@ -294,19 +307,14 @@
 
 @implementation FBiOSTargetWithSubject
 
-- (instancetype)initWithTargetSubject:(FBiOSTargetSubject *)targetSubject
-                            eventName:(FBEventName)eventName
-                            eventType:(FBEventType)eventType
-                              subject:(FBEventReporterSubject *)subject
+- (instancetype)initWithTargetSubject:(FBiOSTargetSubject *)targetSubject eventName:(FBEventName)eventName eventType:(FBEventType)eventType subject:(FBEventReporterSubject *)subject
 {
-  self = [super init];
+  self = [super initWithEventName:eventName eventType:eventType];
   if (!self) {
     return nil;
   }
 
   _targetSubject = targetSubject;
-  _eventName = eventName;
-  _eventType = eventType;
   _subject = subject;
   _timestamp = [NSDate date];
 

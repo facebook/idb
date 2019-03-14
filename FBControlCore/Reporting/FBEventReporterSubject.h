@@ -24,6 +24,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) NSArray<id<FBEventReporterSubject>> *subSubjects;
 
+/**
+ The Event Name, if present
+ */
+@property (nonatomic, copy, nullable, readonly) FBEventName eventName;
+
+/**
+ The Event Type, if present
+ */
+@property (nonatomic, copy, nullable, readonly) FBEventType eventType;
+
 @end
 
 /**
