@@ -9,11 +9,11 @@
 #import <FBControlCore/FBControlCore.h>
 #import <asl.h>
 
-@interface FBSubjectTests : XCTestCase
+@interface FBEventReporterSubjectTests : XCTestCase
 
 @end
 
-@implementation FBSubjectTests
+@implementation FBEventReporterSubjectTests
 
 - (void)checkJsonFields:(id)json name:(FBEventName)name type:(FBEventType)type
 {

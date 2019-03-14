@@ -554,7 +554,7 @@
 		D76C2AE51F13F2E8000EF13D /* FBEventConstants.m in Sources */ = {isa = PBXBuildFile; fileRef = D76C2AE31F13F2E8000EF13D /* FBEventConstants.m */; };
 		D76C2AEE1F13F61E000EF13D /* FBEventReporterSubject.h in Headers */ = {isa = PBXBuildFile; fileRef = D76C2AEC1F13F61E000EF13D /* FBEventReporterSubject.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D76C2AEF1F13F61E000EF13D /* FBEventReporterSubject.m in Sources */ = {isa = PBXBuildFile; fileRef = D76C2AED1F13F61E000EF13D /* FBEventReporterSubject.m */; };
-		D76C2AF11F13F62D000EF13D /* FBSubjectTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D76C2AF01F13F62D000EF13D /* FBSubjectTests.m */; };
+		D76C2AF11F13F62D000EF13D /* FBEventReporterSubjectTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D76C2AF01F13F62D000EF13D /* FBEventReporterSubjectTests.m */; };
 		D76C2AF41F13F783000EF13D /* FBEventInterpreter.h in Headers */ = {isa = PBXBuildFile; fileRef = D76C2AF21F13F783000EF13D /* FBEventInterpreter.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D76C2AF51F13F783000EF13D /* FBEventInterpreter.m in Sources */ = {isa = PBXBuildFile; fileRef = D76C2AF31F13F783000EF13D /* FBEventInterpreter.m */; };
 		D76C2AF71F13F79C000EF13D /* FBEventInterpreterTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D76C2AF61F13F79C000EF13D /* FBEventInterpreterTests.m */; };
@@ -1457,7 +1457,7 @@
 		D76C2AE31F13F2E8000EF13D /* FBEventConstants.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = FBEventConstants.m; path = Reporting/FBEventConstants.m; sourceTree = "<group>"; };
 		D76C2AEC1F13F61E000EF13D /* FBEventReporterSubject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FBEventReporterSubject.h; path = Reporting/FBEventReporterSubject.h; sourceTree = "<group>"; };
 		D76C2AED1F13F61E000EF13D /* FBEventReporterSubject.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = FBEventReporterSubject.m; path = Reporting/FBEventReporterSubject.m; sourceTree = "<group>"; };
-		D76C2AF01F13F62D000EF13D /* FBSubjectTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSubjectTests.m; sourceTree = "<group>"; };
+		D76C2AF01F13F62D000EF13D /* FBEventReporterSubjectTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBEventReporterSubjectTests.m; sourceTree = "<group>"; };
 		D76C2AF21F13F783000EF13D /* FBEventInterpreter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FBEventInterpreter.h; path = Reporting/FBEventInterpreter.h; sourceTree = "<group>"; };
 		D76C2AF31F13F783000EF13D /* FBEventInterpreter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = FBEventInterpreter.m; path = Reporting/FBEventInterpreter.m; sourceTree = "<group>"; };
 		D76C2AF61F13F79C000EF13D /* FBEventInterpreterTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBEventInterpreterTests.m; sourceTree = "<group>"; };
@@ -1825,6 +1825,7 @@
 				AA6B1DD11FC5FCFA009DDDAE /* FBDataConsumerTests.m */,
 				AA2076AD1F0B7541001F180C /* FBDiagnosticTests.m */,
 				D76C2AF61F13F79C000EF13D /* FBEventInterpreterTests.m */,
+				D76C2AF01F13F62D000EF13D /* FBEventReporterSubjectTests.m */,
 				AA758B4820E3BB0B0064EC18 /* FBFutureContextManagerTests.m */,
 				AA08487D1F3F49D600A4BA60 /* FBFutureTests.m */,
 				AA2076AF1F0B7541001F180C /* FBiOSActionRouterTests.m */,
@@ -1840,7 +1841,6 @@
 				AA2076B51F0B7541001F180C /* FBProcessLaunchConfigurationTests.m */,
 				AA2076B61F0B7541001F180C /* FBProcessOutputConfigurationTests.m */,
 				AAE4D0091F70FABF005EA6C3 /* FBSettingsApprovalTests.m */,
-				D76C2AF01F13F62D000EF13D /* FBSubjectTests.m */,
 				AA2076B71F0B7541001F180C /* FBUploadBufferTests.m */,
 				AA8F5E1C1F272AB900FAAC0F /* FBXcodeDirectoryTests.m */,
 			);
@@ -4051,7 +4051,7 @@
 				AA2076BB1F0B7542001F180C /* FBiOSTargetConfigurationTests.m in Sources */,
 				AA2076B91F0B7542001F180C /* FBTaskTests.m in Sources */,
 				AA805F891F0D154800AB31DE /* FBLogTailConfigurationTests.m in Sources */,
-				D76C2AF11F13F62D000EF13D /* FBSubjectTests.m in Sources */,
+				D76C2AF11F13F62D000EF13D /* FBEventReporterSubjectTests.m in Sources */,
 				AA2076BD1F0B7542001F180C /* FBCrashLogInfoTests.m in Sources */,
 				EE87FA432008D906002716FE /* AXTraitsTest.m in Sources */,
 				AA2076C41F0B7542001F180C /* FBLocalizationOverrideTests.m in Sources */,
