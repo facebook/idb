@@ -52,6 +52,7 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBFutureContextManager.h>
 #import <FBControlCore/FBInstalledApplication.h>
+#import <FBControlCore/FBInstrumentsOperation.h>
 #import <FBControlCore/FBiOSActionReader.h>
 #import <FBControlCore/FBiOSActionRouter.h>
 #import <FBControlCore/FBiOSTarget.h>
