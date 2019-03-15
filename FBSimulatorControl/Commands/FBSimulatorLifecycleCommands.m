@@ -189,17 +189,17 @@
 
 #pragma mark URLs
 
-- (BOOL)openURL:(NSURL *)url error:(NSError **)error
+- (FBFuture<NSNull *> *)openURL:(NSURL *)url
 {
   NSParameterAssert(url);
-  NSError *innerError = nil;
-  if (![self.simulator.device openURL:url error:&innerError]) {
+  NSError *error = nil;
+  if (![self.simulator.device openURL:url error:&error]) {
     return [[[FBSimulatorError
       describeFormat:@"Failed to open URL %@ on simulator %@", url, self.simulator]
-      causedBy:innerError]
-      failBool:error];
+      causedBy:error]
+      failFuture];
   }
-  return YES;
+  return [FBFuture futureWithResult:[NSNull null]];
 }
 
 @end

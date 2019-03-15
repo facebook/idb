@@ -140,10 +140,9 @@ NS_ASSUME_NONNULL_BEGIN
  Opens the provided URL on the Simulator.
 
  @param url the URL to open.
- @param error an error out for any error that occurs.
- @return the reciever, for chaining.
+ @return Future that resolves when the url is opened
  */
-- (BOOL)openURL:(NSURL *)url error:(NSError **)error;
+- (FBFuture<NSNull *> *)openURL:(NSURL *)url;
 
 @end
 
