@@ -84,10 +84,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Brings the Simulator window to front, with a descriptive message in the event of a failure.
 
- @param error a descriptive error for any error that occurred.
- @return YES if successful, NO otherwise.
+ @return A future that resolves when successful
  */
-- (BOOL)focusWithError:(NSError **)error;
+- (FBFuture<NSNull *> *)focus;
 
 #pragma mark Connection
 

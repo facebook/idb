@@ -106,16 +106,19 @@
 
 #pragma mark Focus
 
-- (BOOL)focusWithError:(NSError **)error
+- (FBFuture<NSNull *> *)focus
 {
   NSArray *apps = NSWorkspace.sharedWorkspace.runningApplications;
   NSPredicate *matchingPid = [NSPredicate predicateWithFormat:@"processIdentifier = %@", @(self.simulator.containerApplication.processIdentifier)];
   NSRunningApplication *app = [apps filteredArrayUsingPredicate:matchingPid].firstObject;
   if (!app) {
-    return [[FBSimulatorError describeFormat:@"Simulator application for %@ is not running", self.simulator.udid] failBool:error];
+    return [[FBSimulatorError describeFormat:@"Simulator application for %@ is not running", self.simulator.udid] failFuture];
   }
-
-  return [app activateWithOptions:NSApplicationActivateIgnoringOtherApps];
+  if ([app activateWithOptions:NSApplicationActivateIgnoringOtherApps]) {
+    return [FBFuture futureWithResult:NSNull.null];
+  } {
+    return [FBFuture futureWithError:[FBSimulatorError errorForDescription:@"Failed to focus"]];
+  }
 }
 
 #pragma mark Connection
