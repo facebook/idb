@@ -243,7 +243,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
     }];
 }
 
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point
+- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(NSPoint)point
 {
   return [[[self
     interactWithBridge]
