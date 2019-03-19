@@ -7,6 +7,16 @@
 
 #import "FBInstrumentsOperation.h"
 
+#import "FBCollectionInformation.h"
+#import "FBControlCoreError.h"
+#import "FBControlCoreLogger.h"
+#import "FBDataConsumer.h"
+#import "FBFuture.h"
+#import "FBInstrumentsConfiguration.h"
+#import "FBiOSTarget.h"
+#import "FBTask+Helpers.h"
+#import "FBTaskBuilder.h"
+
 static const NSTimeInterval InterruptBackoffTimeout = 600.0; // When stopping instruments with SIGINT, wait this long before SIGKILLing it
 static const NSTimeInterval InstrumentsStartupDelay = 15.0;  // Wait this long to ensure instruments started properly
 static const NSTimeInterval InstrumentsStartupTimeout = 60.0; // Fail instruments startup after this amount of time
@@ -76,13 +86,20 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
 
 #pragma mark Initializers
 
-+ (FBFuture<FBInstrumentsOperation *> *)operationWithTarget:(id<FBiOSTarget>)target instrumentName:(NSString *)instrumentName targetApplication:(NSString *)application environmentVariables:(NSDictionary<NSString *, NSString *> *)variables appArguments:(NSArray<NSString *> *)appArguments duration:(NSTimeInterval)duration logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBInstrumentsOperation *> *)operationWithTarget:(id<FBiOSTarget>)target configuration:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   // The instruments cli is unreliable and sometimes stops recording right after starting
   // To make it reliable, we retry it until it either succeeds or we timeout
   return [[FBFuture
     onQueue:target.asyncQueue resolveUntil:^ FBFuture * {
-      return [self operationWithTargetInternal:target instrumentName:instrumentName targetApplication:application environmentVariables:variables appArguments:appArguments duration:duration logger:logger];
+      return [self
+        operationWithTargetInternal:target
+        instrumentName:configuration.instrumentName
+        targetApplication:configuration.targetApplication
+        environmentVariables:configuration.environment
+        appArguments:configuration.arguments
+        duration:configuration.duration
+        logger:logger];
     }]
     timeout:InstrumentsStartupTimeout waitingFor:@"Successful instruments startup"];
 }

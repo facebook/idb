@@ -7,11 +7,13 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
+#import <FBControlCore/FBiOSTargetFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBInstrumentsConfiguration;
 @class FBTask;
+
 @protocol FBControlCoreLogger;
 @protocol FBiOSTarget;
 
@@ -29,18 +31,13 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments;
 
 /**
  Constructs an 'instruments' operation, of indefinite length.
- The
 
  @param target the target to run against.
- @param instrumentName the name of the instrument.
- @param application Bundle ID for the target application.
- @param variables Environment variables to be applied while profiling.
- @param appArguments Command-line argument to be passed to the app being profiled.
- @param duration the duration of the instrument operation.
+ @param configuration the configuration to use.
  @param logger the logger to log to.
  @return a running instruments operation.
  */
-+ (FBFuture<FBInstrumentsOperation *> *)operationWithTarget:(id<FBiOSTarget>)target instrumentName:(NSString *)instrumentName targetApplication:(nullable NSString *)application environmentVariables:(NSDictionary<NSString *, NSString *> *)variables appArguments:(NSArray<NSString *> *)appArguments duration:(NSTimeInterval)duration logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<FBInstrumentsOperation *> *)operationWithTarget:(id<FBiOSTarget>)target configuration:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Properties
 
