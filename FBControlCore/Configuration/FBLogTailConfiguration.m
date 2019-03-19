@@ -26,6 +26,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
   }
 
   _arguments = arguments;
+  
   return self;
 }
 
@@ -104,7 +105,7 @@ static NSString *const KeyArguments = @"arguments";
   FBiOSTargetFutureType futureType = self.class.futureType;
   return [[commands
     tailLog:self.arguments consumer:consumer]
-    onQueue:target.workQueue map:^(id<FBiOSTargetContinuation> baseAwaitable) {
+    onQueue:target.workQueue map:^(id<FBLogTailOperation> baseAwaitable) {
       return FBiOSTargetContinuationRenamed(baseAwaitable, futureType);
     }];
 }

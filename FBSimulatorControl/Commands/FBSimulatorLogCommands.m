@@ -15,6 +15,41 @@
 #import "FBSimulatorAgentOperation.h"
 #import "FBSimulatorError.h"
 
+@interface FBSimulatorLogTailOperation : NSObject <FBLogTailOperation>
+
+@property (nonatomic, strong, readonly) FBSimulatorAgentOperation *operation;
+
+@end
+
+@implementation FBSimulatorLogTailOperation
+
+@synthesize consumer = _consumer;
+
+- (instancetype)initWithOperation:(FBSimulatorAgentOperation *)operation consumer:(id<FBDataConsumer>)consumer
+{
+  self = [self init];
+  if (!self) {
+    return nil;
+  }
+
+  _operation = operation;
+  _consumer = consumer;
+
+  return self;
+}
+
+- (FBiOSTargetFutureType)futureType
+{
+  return FBiOSTargetFutureTypeLogTail;
+}
+
+- (FBFuture<NSNull *> *)completed
+{
+  return self.operation.completed;
+}
+
+@end
+
 @interface FBSimulatorLogCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
@@ -44,9 +79,13 @@
 
 #pragma mark Public
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
+- (FBFuture<id<FBLogTailOperation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
-  return (FBFuture<id<FBiOSTargetContinuation>> *) [self startLogCommand:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer];
+  return (FBFuture<id<FBLogTailOperation>> *) [[self
+    startLogCommand:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer]
+    onQueue:self.simulator.workQueue map:^(FBSimulatorAgentOperation *operation) {
+      return [[FBSimulatorLogTailOperation alloc] initWithOperation:operation consumer:consumer];
+    }];
 }
 
 - (FBFuture<NSArray<NSString *> *> *)logLinesWithArguments:(NSArray<NSString *> *)arguments

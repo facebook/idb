@@ -16,20 +16,19 @@
 
 #pragma mark Protocol Adaptor
 
-@interface FBDeviceLogTerminationContinuation : NSObject <FBiOSTargetContinuation>
-
-- (instancetype)initWithReader:(FBFileReader *)reader completed:(FBMutableFuture<NSNull *> *)completed;
+@interface FBDeviceLogOperation : NSObject <FBLogTailOperation>
 
 @property (nonatomic, strong, readonly) FBFileReader *reader;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *completed;
 
 @end
 
-@implementation FBDeviceLogTerminationContinuation
+@implementation FBDeviceLogOperation
 
 @synthesize completed = _completed;
+@synthesize consumer = _consumer;
 
-- (instancetype)initWithReader:(FBFileReader *)reader completed:(FBMutableFuture<NSNull *> *)completed
+- (instancetype)initWithReader:(FBFileReader *)reader consumer:(id<FBDataConsumer>)consumer completed:(FBMutableFuture<NSNull *> *)completed
 {
   self = [self init];
   if (!self) {
@@ -37,6 +36,7 @@
   }
 
   _reader = reader;
+  _consumer = consumer;
   _completed = completed;
 
   return self;
@@ -85,7 +85,7 @@
   return [[FBDeviceControlError describeFormat:@"%@ is unimplemented", NSStringFromSelector(_cmd)] failFuture];
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
+- (FBFuture<id<FBLogTailOperation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
   if (arguments.count == 0) {
     NSString *unsupportedArgumentsMessage = [NSString stringWithFormat:@"[FBDeviceLogCommands][rdar://38452839] Unsupported arguments: %@", arguments];
@@ -102,7 +102,7 @@
       return [[reader startReading] mapReplace:reader];
     }]
     onQueue:queue enter:^(FBFileReader *reader, FBMutableFuture<NSNull *> *teardown) {
-      return [[FBDeviceLogTerminationContinuation alloc] initWithReader:reader completed:teardown];
+      return [[FBDeviceLogOperation alloc] initWithReader:reader consumer:consumer completed:teardown];
     }];
 }
 

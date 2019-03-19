@@ -16,6 +16,18 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBDataConsumer;
 
 /**
+ A logging operation
+ */
+@protocol FBLogTailOperation <FBiOSTargetContinuation>
+
+/**
+ The consumer of the operation.
+ */
+@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+
+@end
+
+/**
  Commands for obtaining logs.
  */
 @protocol FBLogCommands <NSObject, FBiOSTargetCommand>
@@ -27,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the consumer to attach
  @return a Future that will complete when the log command has started successfully. The wrapped Awaitable can then be cancelled, or awaited until it is finished.
  */
-- (FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer;
+- (FBFuture<id<FBLogTailOperation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer;
 
 /**
  Runs the log command, returning the results as an array of strings.
