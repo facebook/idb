@@ -16,15 +16,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 
 /**
- Enumerations for possible header magic numbers in files & data.
- */
-typedef enum {
-  FBFileHeaderMagicUnknown = 0,
-  FBFileHeaderMagicTAR = 1,
-  FBFileHeaderMagicIPA = 2,
-} FBFileHeaderMagic;
-
-/**
  A value for an extracted application.
  */
 @interface FBExtractedApplication : NSObject
@@ -75,14 +66,6 @@ typedef enum {
  @return if the path is an application path.
  */
 + (BOOL)isApplicationAtPath:(NSString *)path;
-
-/**
- Check if given NSData is an ipa or a tar
-
- @param data the data to check.
- @return the header magic if one could be deduced.
- */
-+ (FBFileHeaderMagic)headerMagicForData:(NSData *)data;
 
 @end
 

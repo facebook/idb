@@ -14,6 +14,7 @@
 #import <FBControlCore/FBApplicationInstallConfiguration.h>
 #import <FBControlCore/FBApplicationLaunchConfiguration.h>
 #import <FBControlCore/FBArchitecture.h>
+#import <FBControlCore/FBArchiveOperations.h>
 #import <FBControlCore/FBASLParser.h>
 #import <FBControlCore/FBBatchLogSearch.h>
 #import <FBControlCore/FBBinaryDescriptor.h>

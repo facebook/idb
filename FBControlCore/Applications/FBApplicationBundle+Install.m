@@ -7,6 +7,7 @@
 
 #import "FBApplicationBundle+Install.h"
 
+#import "FBArchiveOperations.h"
 #import "FBBinaryDescriptor.h"
 #import "FBBinaryParser.h"
 #import "FBCollectionInformation.h"
@@ -110,44 +111,7 @@ static BOOL deleteDirectory(NSURL *path)
     && isDirectory;
 }
 
-// The Magic Header for Zip Files is two chars 'PK'. As a short this is as below.
-static unsigned short const ZipFileMagicHeader = 0x4b50;
-// The Magic Header for Tar Files
-static unsigned short const TarFileMagicHeader = 0x8b1f;
-
-+ (FBFileHeaderMagic)headerMagicForData:(NSData *)data
-{
-  unsigned short magic = 0;
-  [data getBytes:&magic length:sizeof(short)];
-  if (magic == ZipFileMagicHeader) {
-    return FBFileHeaderMagicIPA;
-  } else if (magic == TarFileMagicHeader) {
-    return FBFileHeaderMagicTAR;
-  }
-  return FBFileHeaderMagicUnknown;
-}
-
 #pragma mark Private
-
-+ (BOOL)isIPAAtPath:(NSString *)path error:(NSError **)error
-{
-  // IPAs are Zip files. Zip Files always have a magic header in their first 4 bytes.
-  FILE *file = fopen(path.UTF8String, "r");
-  if (!file) {
-    return [[FBControlCoreError
-      describeFormat:@"Failed to open %@ for reading", path]
-      failBool:error];
-  }
-  short magic = 0;
-  if (!fread(&magic, sizeof(short), 1, file)) {
-    fclose(file);
-    return [[FBControlCoreError
-      describeFormat:@"Could not read file %@ for magic zip header", path]
-      failBool:error];
-  }
-  fclose(file);
-  return magic == ZipFileMagicHeader;
-}
 
 + (FBFutureContext<NSString *> *)findOrExtractApplicationAtPath:(NSString *)path extractPath:(NSURL *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
@@ -157,7 +121,7 @@ static unsigned short const TarFileMagicHeader = 0x8b1f;
   }
   // The other case is that this is an IPA, check it is before extacting.
   NSError *error = nil;
-  if (![FBApplicationBundle isIPAAtPath:path error:&error]) {
+  if ([FBArchiveOperations headerMagicForFile:path] != FBFileHeaderMagicIPA) {
     return [[[FBControlCoreError
       describeFormat:@"File at path %@ is neither an IPA nor an .app", path]
       causedBy:error]
@@ -170,24 +134,9 @@ static unsigned short const TarFileMagicHeader = 0x8b1f;
       causedBy:error]
       failFutureContext];
   }
-  // Run the unzip command.
-  return [[[[[[[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/unzip"]
-    withArguments:@[@"-o", @"-d", extractPath.path, path]]
-    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
-    withStdErrToLogger:logger.debug]
-    withStdOutToLogger:logger.debug]
-    runUntilCompletion]
-    onQueue:queue contextualTeardown:^(id _, FBFutureState __) {
-      [logger logFormat:@"Removing extracted directory %@", extractPath];
-      NSError *innerError = nil;
-      if ([NSFileManager.defaultManager removeItemAtURL:extractPath error:&innerError]) {
-        [logger logFormat:@"Removed extracted directory %@", extractPath];
-      } else {
-        [logger logFormat:@"Failed to remove extracted directory %@ with error %@", extractPath, innerError];
-      }
-    }]
-    onQueue:queue pend:^(FBTask *task) {
+  return [[FBArchiveOperations
+    extractZipArchiveAtPath:path toPath:extractPath.path queue:queue logger:logger]
+    onQueue:queue pend:^(id _) {
       return [FBApplicationBundle findAppPathFromDirectory:extractPath];
     }];
 }
