@@ -133,7 +133,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param duration the duration of the test case.
  @param logs the logs from the test case.
  */
-- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(nullable NSArray *)logs;
+- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(nullable NSArray<NSString *> *)logs;
 
 /**
  Called when the test plan fails for some global issue not specific to any one test

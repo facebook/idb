@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <XCTestBootstrap/FBConsumableXCTestReporter.h>
 #import <XCTestBootstrap/FBJSONTestReporter.h>
 #import <XCTestBootstrap/FBListTestStrategy.h>
-#import <XCTestBootstrap/FBXCTestProcess.h>
+#import <XCTestBootstrap/FBLogicReporterAdapter.h>
 #import <XCTestBootstrap/FBLogicTestRunStrategy.h>
 #import <XCTestBootstrap/FBMacDevice.h>
 #import <XCTestBootstrap/FBMacTestPreparationStrategy.h>
@@ -36,10 +37,10 @@
 #import <XCTestBootstrap/FBXCTestConfiguration.h>
 #import <XCTestBootstrap/FBXCTestLogger.h>
 #import <XCTestBootstrap/FBXCTestManagerLoggingForwarder.h>
+#import <XCTestBootstrap/FBXCTestProcess.h>
 #import <XCTestBootstrap/FBXCTestProcessExecutor.h>
 #import <XCTestBootstrap/FBXCTestReporter.h>
 #import <XCTestBootstrap/FBXCTestReporterAdapter.h>
-#import <XCTestBootstrap/FBLogicReporterAdapter.h>
 #import <XCTestBootstrap/FBXCTestRunner.h>
 #import <XCTestBootstrap/FBXCTestRunStrategy.h>
 #import <XCTestBootstrap/FBXCTestShimConfiguration.h>
