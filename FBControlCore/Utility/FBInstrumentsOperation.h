@@ -46,6 +46,16 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments;
  */
 @property (nonatomic, copy, readonly) NSURL *traceFile;
 
+/**
+ The configuration of the operation.
+ */
+@property (nonatomic, strong, readonly) FBInstrumentsConfiguration *configuration;
+
+/**
+ The logger to use.
+ */
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+
 #pragma mark Public Methods
 
 /**

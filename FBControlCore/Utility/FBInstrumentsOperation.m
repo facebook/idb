@@ -78,7 +78,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
 
 @property (nonatomic, strong, readonly) FBTask *task;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -92,31 +91,24 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
   // To make it reliable, we retry it until it either succeeds or we timeout
   return [[FBFuture
     onQueue:target.asyncQueue resolveUntil:^ FBFuture * {
-      return [self
-        operationWithTargetInternal:target
-        instrumentName:configuration.instrumentName
-        targetApplication:configuration.targetApplication
-        environmentVariables:configuration.environment
-        appArguments:configuration.arguments
-        duration:configuration.duration
-        logger:logger];
+      return [self operationWithTargetInternal:target configuration:configuration logger:logger];
     }]
     timeout:InstrumentsStartupTimeout waitingFor:@"Successful instruments startup"];
 }
 
-+ (FBFuture<FBInstrumentsOperation *> *)operationWithTargetInternal:(id<FBiOSTarget>)target instrumentName:(NSString *)instrumentName targetApplication:(NSString *)application environmentVariables:(NSDictionary<NSString *, NSString *> *)variables appArguments:(NSArray<NSString *> *)appArguments duration:(NSTimeInterval)duration logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBInstrumentsOperation *> *)operationWithTargetInternal:(id<FBiOSTarget>)target configuration:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.instruments", DISPATCH_QUEUE_SERIAL);
-  NSString *fileName = [[@[instrumentName, NSUUID.UUID.UUIDString] componentsJoinedByString:@"_"] stringByAppendingPathExtension:@"trace"];
+  NSString *fileName = [[@[configuration.instrumentName, NSUUID.UUID.UUIDString] componentsJoinedByString:@"_"] stringByAppendingPathExtension:@"trace"];
   NSString *filePath = [target.auxillaryDirectory stringByAppendingPathComponent:fileName];
-  NSString *durationMilliseconds = [@(duration * 1000) stringValue];
-  NSMutableArray<NSString *> *arguments = [@[@"-w", target.udid, @"-D", filePath, @"-t", instrumentName, @"-l",  durationMilliseconds, @"-v"] mutableCopy];
-  if (application) {
-    [arguments addObject:application];
-    for (NSString *key in variables) {
-      [arguments addObjectsFromArray:@[@"-e", key, [variables objectForKey:key]]];
+  NSString *durationMilliseconds = [@(configuration.duration * 1000) stringValue];
+  NSMutableArray<NSString *> *arguments = [@[@"-w", target.udid, @"-D", filePath, @"-t", configuration.instrumentName, @"-l",  durationMilliseconds, @"-v"] mutableCopy];
+  if (configuration.targetApplication) {
+    [arguments addObject:configuration.targetApplication];
+    for (NSString *key in configuration.environment) {
+      [arguments addObjectsFromArray:@[@"-e", key, configuration.environment[key]]];
     }
-    [arguments addObjectsFromArray:appArguments];
+    [arguments addObjectsFromArray:configuration.arguments];
   }
   [logger logFormat:@"Starting instruments with arguments: %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
   FBInstrumentsConsumer *instrumentsConsumer = [[FBInstrumentsConsumer alloc] init];
@@ -143,11 +135,11 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
     onQueue:target.asyncQueue map:^ FBInstrumentsOperation * (FBTask *task) {
       [logger logFormat:@"Started Instruments %@", task];
       NSURL *traceFile = [NSURL fileURLWithPath:filePath];
-      return [[FBInstrumentsOperation alloc] initWithTask:task traceFile:traceFile queue:queue logger:logger];
+      return [[FBInstrumentsOperation alloc] initWithTask:task traceFile:traceFile configuration:configuration queue:queue logger:logger];
     }];
 }
 
-- (instancetype)initWithTask:(FBTask *)task traceFile:(NSURL *)traceFile queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithTask:(FBTask *)task traceFile:(NSURL *)traceFile configuration:(FBInstrumentsConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -156,6 +148,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
 
   _task = task;
   _traceFile = traceFile;
+  _configuration = configuration;
   _queue = queue;
   _logger = logger;
 
