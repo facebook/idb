@@ -7,6 +7,7 @@
 
 #import "FBArchiveOperations.h"
 
+#import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 #import "FBTask.h"
 #import "FBTaskBuilder.h"
@@ -15,23 +16,43 @@
 
 + (FBFutureContext<NSString *> *)extractZipArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  return [[[[[[[[FBTaskBuilder
+  FBFuture<NSString *> *future = [[[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/unzip"]
     withArguments:@[@"-o", @"-d", extractPath, path]]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
     withStdErrToLogger:logger.debug]
     withStdOutToLogger:logger.debug]
     runUntilCompletion]
-    mapReplace:extractPath]
-    onQueue:queue contextualTeardown:^(id _, FBFutureState __) {
-      [logger logFormat:@"Removing extracted directory %@", extractPath];
-      NSError *innerError = nil;
-      if ([NSFileManager.defaultManager removeItemAtPath:extractPath error:&innerError]) {
-        [logger logFormat:@"Removed extracted directory %@", extractPath];
-      } else {
-        [logger logFormat:@"Failed to remove extracted directory %@ with error %@", extractPath, innerError];
-      }
-    }];
+    mapReplace:extractPath];
+  return [self wrapFutureInRemoval:future queue:queue logger:logger];
+}
+
++ (FBFutureContext<NSString *> *)extractTarArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  FBFuture<NSString *> *future = [[[[[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/tar"]
+    withArguments:@[@"-C", extractPath, @"-vzxpf", path]]
+    withStdErrToLogger:logger.debug]
+    withStdOutToLogger:logger.debug]
+    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
+    runUntilCompletion]
+    mapReplace:extractPath];
+  return [self wrapFutureInRemoval:future queue:queue logger:logger];
+}
+
++ (FBFutureContext<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  FBFileHeaderMagic magic = [self headerMagicForFile:path];
+  switch (magic) {
+    case FBFileHeaderMagicIPA:
+      return [self extractZipArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
+    case FBFileHeaderMagicTAR:
+      return [self extractTarArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
+    default:
+      return [[FBControlCoreError
+        describeFormat:@"File at path %@ is not determined to be an archive", path]
+        failFutureContext];
+  }
 }
 
 // The Magic Header for Zip Files is two chars 'PK'. As a short this is as below.
@@ -72,6 +93,19 @@ static unsigned short const TarFileMagicHeader = 0x8b1f;
     return FBFileHeaderMagicTAR;
   }
   return FBFileHeaderMagicUnknown;
+}
+
++ (FBFutureContext<NSString *> *)wrapFutureInRemoval:(FBFuture<NSString *> *)future queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  return [future onQueue:queue contextualTeardown:^(NSString *extractPath, FBFutureState __) {
+    [logger logFormat:@"Removing extracted directory %@", extractPath];
+    NSError *innerError = nil;
+    if ([NSFileManager.defaultManager removeItemAtPath:extractPath error:&innerError]) {
+      [logger logFormat:@"Removed extracted directory %@", extractPath];
+    } else {
+      [logger logFormat:@"Failed to remove extracted directory %@ with error %@", extractPath, innerError];
+    }
+  }];
 }
 
 @end

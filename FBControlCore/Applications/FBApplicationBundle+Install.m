@@ -119,15 +119,8 @@ static BOOL deleteDirectory(NSURL *path)
   if ([FBApplicationBundle isApplicationAtPath:path]) {
     return [FBFutureContext futureContextWithResult:path];
   }
-  // The other case is that this is an IPA, check it is before extacting.
-  NSError *error = nil;
-  if ([FBArchiveOperations headerMagicForFile:path] != FBFileHeaderMagicIPA) {
-    return [[[FBControlCoreError
-      describeFormat:@"File at path %@ is neither an IPA nor an .app", path]
-      causedBy:error]
-      failFutureContext];
-  }
   // Create the path to extract into, if it doesn't exist yet.
+  NSError *error = nil;
   if (![NSFileManager.defaultManager createDirectoryAtURL:extractPath withIntermediateDirectories:YES attributes:nil error:&error]) {
     return [[[FBControlCoreError
       describeFormat:@"Could not create temporary directory for IPA extraction %@", extractPath]
@@ -135,7 +128,7 @@ static BOOL deleteDirectory(NSURL *path)
       failFutureContext];
   }
   return [[FBArchiveOperations
-    extractZipArchiveAtPath:path toPath:extractPath.path queue:queue logger:logger]
+    extractArchiveAtPath:path toPath:extractPath.path queue:queue logger:logger]
     onQueue:queue pend:^(id _) {
       return [FBApplicationBundle findAppPathFromDirectory:extractPath];
     }];
