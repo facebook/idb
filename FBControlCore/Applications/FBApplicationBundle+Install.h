@@ -23,13 +23,13 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Public Methods
 
 /**
- Obtains an extracted version of an Application based on a file path.
- When the context is torn down, any extracted path will be deleted.
+ Obtains an extracted version of an Application based on a the file path of an archive.
+ When the context is torn down, the temporary extracted path will be deleted.
 
  @param queue the queue to extract on.
  @param path the path of the .app or .ipa
  @param logger the (optional) logger to log to.
- @return a future wrapping the extracted application.
+ @return a future context wrapping the extracted application.
  */
 + (FBFutureContext<FBApplicationBundle *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path logger:(nullable id<FBControlCoreLogger>)logger;
 

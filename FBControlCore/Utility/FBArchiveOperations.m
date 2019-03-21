@@ -14,9 +14,9 @@
 
 @implementation FBArchiveOperations
 
-+ (FBFutureContext<NSString *> *)extractZipArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSString *> *)extractZipArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  FBFuture<NSString *> *future = [[[[[[[FBTaskBuilder
+  return [[[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/unzip"]
     withArguments:@[@"-o", @"-d", extractPath, path]]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
@@ -24,12 +24,11 @@
     withStdOutToLogger:logger.debug]
     runUntilCompletion]
     mapReplace:extractPath];
-  return [self wrapFutureInRemoval:future queue:queue logger:logger];
 }
 
-+ (FBFutureContext<NSString *> *)extractTarArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSString *> *)extractTarArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  FBFuture<NSString *> *future = [[[[[[[FBTaskBuilder
+  return [[[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/tar"]
     withArguments:@[@"-C", extractPath, @"-vzxpf", path]]
     withStdErrToLogger:logger.debug]
@@ -37,10 +36,9 @@
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
     runUntilCompletion]
     mapReplace:extractPath];
-  return [self wrapFutureInRemoval:future queue:queue logger:logger];
 }
 
-+ (FBFutureContext<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   FBFileHeaderMagic magic = [self headerMagicForFile:path];
   switch (magic) {
@@ -51,7 +49,7 @@
     default:
       return [[FBControlCoreError
         describeFormat:@"File at path %@ is not determined to be an archive", path]
-        failFutureContext];
+        failFuture];
   }
 }
 
@@ -93,19 +91,6 @@ static unsigned short const TarFileMagicHeader = 0x8b1f;
     return FBFileHeaderMagicTAR;
   }
   return FBFileHeaderMagicUnknown;
-}
-
-+ (FBFutureContext<NSString *> *)wrapFutureInRemoval:(FBFuture<NSString *> *)future queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
-{
-  return [future onQueue:queue contextualTeardown:^(NSString *extractPath, FBFutureState __) {
-    [logger logFormat:@"Removing extracted directory %@", extractPath];
-    NSError *innerError = nil;
-    if ([NSFileManager.defaultManager removeItemAtPath:extractPath error:&innerError]) {
-      [logger logFormat:@"Removed extracted directory %@", extractPath];
-    } else {
-      [logger logFormat:@"Failed to remove extracted directory %@ with error %@", extractPath, innerError];
-    }
-  }];
 }
 
 @end
