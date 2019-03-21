@@ -171,12 +171,20 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
 #pragma mark Initializers
 
 /**
- An Output Container that connects a File Consumer to a Pipe.
- The 'contents' field will contain an opaque consumer that can be written to.
+ An input container that provides a data consumer.
+ The 'contents' field will contain an opaque consumer that can be written to externally.
 
- @return a Process Output instance.
+ @return a FBProcessInput instance wrapping a data consumer.
  */
-+ (FBProcessInput<id<FBDataConsumer>> *)inputProducingConsumer;
++ (FBProcessInput<id<FBDataConsumer>> *)inputFromConsumer;
+
+/**
+ An input container that provides an NSOutputStream.
+ The 'contents' field will contain an NSOutputStream that can be written to.
+
+ @return a FBProcessInput instance wrapping an NSOutputStream.
+ */
++ (FBProcessInput<NSOutputStream *> *)inputFromStream;
 
 /**
  An Input container that connects data to the iput.

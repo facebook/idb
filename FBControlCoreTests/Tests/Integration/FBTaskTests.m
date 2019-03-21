@@ -227,6 +227,33 @@
   XCTAssertEqualObjects(expected, task.stdOut);
 }
 
+- (void)testInputStream
+{
+  NSString *expected = @"FOO BAR BAZ";
+
+  FBProcessInput<NSOutputStream *> *input = FBProcessInput.inputFromStream;
+  NSOutputStream *stream = input.contents;
+
+  FBTask *task = [[[[[FBTaskBuilder
+    withLaunchPath:@"/bin/cat" arguments:@[]]
+    withStdIn:input]
+    withStdOutInMemoryAsString]
+    withStdErrToDevNull]
+    startSynchronously];
+
+  XCTAssertTrue([stream isKindOfClass:NSOutputStream.class]);
+  XCTAssertTrue([task.stdIn isKindOfClass:NSOutputStream.class]);
+  [stream write:(const uint8_t *)expected.UTF8String maxLength:strlen(expected.UTF8String)];
+  [stream close];
+
+  NSError *error = nil;
+  BOOL waitSuccess = [task.completed awaitWithTimeout:2 error:&error] != nil;
+  XCTAssertNil(error);
+  XCTAssertTrue(waitSuccess);
+
+  XCTAssertEqualObjects(expected, task.stdOut);
+}
+
 - (void)testInputFromData
 {
   NSData *expected = [@"FOO BAR BAZ" dataUsingEncoding:NSUTF8StringEncoding];

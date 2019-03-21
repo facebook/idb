@@ -101,9 +101,15 @@
 
 #pragma mark stdin
 
+- (instancetype)withStdIn:(FBProcessInput *)input
+{
+  self.stdIn = input;
+  return self;
+}
+
 - (instancetype)withStdInConnected
 {
-  self.stdIn = [FBProcessInput inputProducingConsumer];
+  self.stdIn = [FBProcessInput inputFromConsumer];
   return self;
 }
 

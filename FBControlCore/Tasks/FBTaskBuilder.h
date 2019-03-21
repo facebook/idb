@@ -15,6 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBDataConsumer;
 
 @class FBFuture;
+@class FBProcessInput;
 
 /**
  An interface to building FBTask instances.
@@ -89,6 +90,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)withAcceptableTerminationStatusCodes:(NSSet<NSNumber *> *)statusCodes;
 
 #pragma mark stdin
+
+/**
+ Passes an process input to stdin.
+
+ @param input the input to pass
+ @return the reciver, for chaining.
+ */
+- (FBTaskBuilder<id, StdOutType, StdErrType> *)withStdIn:(FBProcessInput *)input;
 
 /**
  Creates a Data Consumer for stdin.
