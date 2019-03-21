@@ -109,15 +109,11 @@ static NSString *const KeyCodesign = @"codesign";
 {
   return [[[FBApplicationBundle
     onQueue:target.asyncQueue findOrExtractApplicationAtPath:self.applicationPath logger:target.logger]
-    onQueue:target.workQueue pop:^FBFuture *(FBExtractedApplication *extractedApplication) {
+    onQueue:target.workQueue pop:^(FBApplicationBundle *applicationBundle) {
       if (self.codesign) {
-        return [[FBCodesignProvider.codeSignCommandWithAdHocIdentity
-          recursivelySignBundleAtPath:extractedApplication.bundle.path]
-          mapReplace:extractedApplication];
+        return [FBCodesignProvider.codeSignCommandWithAdHocIdentity recursivelySignBundleAtPath:applicationBundle.path];
       }
-      return [[target
-        installApplicationWithPath:extractedApplication.bundle.path]
-        mapReplace:extractedApplication];
+      return [target installApplicationWithPath:applicationBundle.path];
     }]
     mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
 }

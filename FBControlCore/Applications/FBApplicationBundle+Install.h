@@ -16,23 +16,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 
 /**
- A value for an extracted application.
- */
-@interface FBExtractedApplication : NSObject
-
-/**
- The extracted Application Bundle.
- */
-@property (nonatomic, copy, readonly) FBApplicationBundle *bundle;
-
-/**
- The location of the extracted application on disk.
- */
-@property (nonatomic, copy, readonly) NSURL *extractedPath;
-
-@end
-
-/**
  A Bundle Descriptor specialized to Applications
  */
 @interface FBApplicationBundle (Install)
@@ -48,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the (optional) logger to log to.
  @return a future wrapping the extracted application.
  */
-+ (FBFutureContext<FBExtractedApplication *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBFutureContext<FBApplicationBundle *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Copy additional framework to Application path.

@@ -18,23 +18,6 @@
 #import "FBTask.h"
 #import "FBTaskBuilder.h"
 
-@implementation FBExtractedApplication
-
-- (instancetype)initWithBundle:(FBApplicationBundle *)bundle extractedPath:(NSURL *)extractedPath
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _bundle = bundle;
-  _extractedPath = extractedPath;
-
-  return self;
-}
-
-@end
-
 static BOOL deleteDirectory(NSURL *path)
 {
   if (path == nil) {
@@ -47,7 +30,7 @@ static BOOL deleteDirectory(NSURL *path)
 
 #pragma mark Public
 
-+ (FBFutureContext<FBExtractedApplication *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path logger:(id<FBControlCoreLogger>)logger;
++ (FBFutureContext<FBApplicationBundle *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path logger:(id<FBControlCoreLogger>)logger;
 {
   NSURL *extractPath = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString] isDirectory:YES];
   return [[FBApplicationBundle
@@ -58,8 +41,7 @@ static BOOL deleteDirectory(NSURL *path)
       if (!bundle) {
         return [FBFuture futureWithError:error];
       }
-      FBExtractedApplication *application = [[FBExtractedApplication alloc] initWithBundle:bundle extractedPath:extractPath];
-      return [FBFuture futureWithResult:application];
+      return [FBFuture futureWithResult:bundle];
   }];
 }
 
