@@ -107,7 +107,7 @@ static NSString *const KeyCodesign = @"codesign";
 
 - (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
-  return [[[[FBApplicationBundle
+  return [[[FBApplicationBundle
     onQueue:target.asyncQueue findOrExtractApplicationAtPath:self.applicationPath logger:target.logger]
     onQueue:target.workQueue pop:^FBFuture *(FBExtractedApplication *extractedApplication) {
       if (self.codesign) {
@@ -118,11 +118,6 @@ static NSString *const KeyCodesign = @"codesign";
       return [[target
         installApplicationWithPath:extractedApplication.bundle.path]
         mapReplace:extractedApplication];
-    }]
-    onQueue:target.workQueue notifyOfCompletion:^(FBFuture<FBExtractedApplication *> *future) {
-      if (future.result) {
-        [NSFileManager.defaultManager removeItemAtURL:future.result.extractedPath error:nil];
-      }
     }]
     mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
 }

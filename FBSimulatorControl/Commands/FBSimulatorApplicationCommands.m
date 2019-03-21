@@ -48,15 +48,10 @@
 
 - (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
 {
-  return [[[FBApplicationBundle
+  return [[FBApplicationBundle
     onQueue:self.simulator.asyncQueue findOrExtractApplicationAtPath:path logger:self.simulator.logger]
     onQueue:self.simulator.workQueue pop:^(FBExtractedApplication *extractedApplication) {
       return [[self installExtractedApplicationWithPath:extractedApplication.bundle.path] mapReplace:extractedApplication];
-    }]
-    onQueue:self.simulator.asyncQueue notifyOfCompletion:^(FBFuture<FBExtractedApplication *> *future) {
-      if (future.result.extractedPath) {
-        [NSFileManager.defaultManager removeItemAtURL:future.result.extractedPath error:nil];
-      }
     }];
 }
 
