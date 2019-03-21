@@ -7,13 +7,14 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBBundleDescriptor.h>
 #import <FBControlCore/FBApplicationBundle.h>
 #import <FBControlCore/FBFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBControlCoreLogger;
+
+@class FBProcessInput;
 
 /**
  A Bundle Descriptor specialized to Applications
@@ -32,6 +33,17 @@ NS_ASSUME_NONNULL_BEGIN
  @return a future context wrapping the extracted application.
  */
 + (FBFutureContext<FBApplicationBundle *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path logger:(nullable id<FBControlCoreLogger>)logger;
+
+/**
+ Obtains an extracted version of an Application based on a file path.
+ When the context is torn down, the temporary extracted path will be deleted.
+
+ @param queue the queue to extract on.
+ @param input the input to pipe from
+ @param logger the (optional) logger to log to.
+ @return a future context wrapping the extracted application.
+ */
++ (FBFutureContext<FBApplicationBundle *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationFromInput:(FBProcessInput *)input logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Copy additional framework to Application path.

@@ -46,6 +46,18 @@ static BOOL deleteDirectory(NSURL *path)
     }];
 }
 
++ (FBFutureContext<FBApplicationBundle *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationFromInput:(FBProcessInput *)input  logger:(id<FBControlCoreLogger>)logger
+{
+  return [[[self
+    temporaryExtractPathWithQueue:queue logger:logger]
+    onQueue:queue pend:^(NSURL *extractPath) {
+      return [[FBArchiveOperations extractTarArchiveFromStream:input toPath:extractPath.path queue:queue logger:logger] mapReplace:extractPath];
+    }]
+    onQueue:queue pend:^(NSURL *extractPath) {
+      return [FBApplicationBundle findAppPathFromDirectory:extractPath];
+    }];
+}
+
 + (NSString *)copyFrameworkToApplicationAtPath:(NSString *)appPath frameworkPath:(NSString *)frameworkPath
 {
   if (![FBApplicationBundle isApplicationAtPath:appPath]) {

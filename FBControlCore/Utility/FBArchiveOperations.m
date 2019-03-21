@@ -38,6 +38,19 @@
     mapReplace:extractPath];
 }
 
++ (FBFuture<NSString *> *)extractTarArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  return [[[[[[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/tar"]
+    withArguments:@[@"-C", extractPath, @"-vzxpf", @"-"]]
+    withStdIn:stream]
+    withStdErrToLogger:logger.debug]
+    withStdOutToLogger:logger.debug]
+    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
+    runUntilCompletion]
+    mapReplace:extractPath];
+}
+
 + (FBFuture<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   FBFileHeaderMagic magic = [self headerMagicForFile:path];
