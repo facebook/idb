@@ -104,13 +104,6 @@
     return [self stopRecording];
   }];
 }
-#pragma mark Private
-
-+ (dispatch_time_t)convertTimeIntervalToDispatchTime:(NSTimeInterval)timeInterval
-{
-  int64_t timeoutInt = ((int64_t) timeInterval) * ((int64_t) NSEC_PER_SEC);
-  return dispatch_time(DISPATCH_TIME_NOW, timeoutInt);
-}
 
 @end
 

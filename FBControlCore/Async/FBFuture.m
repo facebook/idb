@@ -35,7 +35,7 @@ static FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
   }
 }
 
-static dispatch_time_t FBFutureCreateDispatchTime(NSTimeInterval inDuration)
+dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuration)
 {
   return dispatch_time(DISPATCH_TIME_NOW, (int64_t)(inDuration * NSEC_PER_SEC));
 }
@@ -271,7 +271,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 + (FBFuture *)futureWithDelay:(NSTimeInterval)delay future:(FBFuture *)future
 {
   FBMutableFuture *delayed = FBMutableFuture.future;
-  dispatch_after(FBFutureCreateDispatchTime(delay), FBFuture.internalQueue, ^{
+  dispatch_after(FBCreateDispatchTimeFromDuration(delay), FBFuture.internalQueue, ^{
     [delayed resolveFromFuture:future];
   });
   return [delayed onQueue:FBFuture.internalQueue respondToCancellation:^{
@@ -325,7 +325,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
     const NSTimeInterval interval = 0.1;
     const dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
 
-    dispatch_source_set_timer(timer, FBFutureCreateDispatchTime(interval), (uint64_t)(interval * NSEC_PER_SEC), (uint64_t)(interval * NSEC_PER_SEC / 10));
+    dispatch_source_set_timer(timer, FBCreateDispatchTimeFromDuration(interval), (uint64_t)(interval * NSEC_PER_SEC), (uint64_t)(interval * NSEC_PER_SEC / 10));
     dispatch_source_set_event_handler(timer, ^{
       if (future.state != FBFutureStateRunning) {
         dispatch_cancel(timer);

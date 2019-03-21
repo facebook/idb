@@ -23,6 +23,8 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
   FBFutureStateCancelled = 4,  /* The Future has been cancelled */
 };
 
+extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuration);
+
 /**
  A Future Operation
  */
