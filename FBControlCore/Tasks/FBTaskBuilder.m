@@ -99,91 +99,7 @@
   return self;
 }
 
-#pragma mark Input/Output
-
-- (instancetype)withStdOutInMemoryAsData
-{
-  self.stdOut = [FBProcessOutput outputToMutableData:NSMutableData.data];
-  return self;
-}
-
-- (instancetype)withStdErrInMemoryAsData
-{
-  self.stdErr = [FBProcessOutput outputToMutableData:NSMutableData.data];
-  return self;
-}
-
-- (instancetype)withStdOutInMemoryAsString
-{
-  self.stdOut = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
-  return self;
-}
-
-- (instancetype)withStdErrInMemoryAsString
-{
-  self.stdErr = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
-  return self;
-}
-
-- (instancetype)withStdOutPath:(NSString *)stdOutPath
-{
-  NSParameterAssert(stdOutPath);
-  self.stdOut = [FBProcessOutput outputForFilePath:stdOutPath];
-  return self;
-}
-
-- (instancetype)withStdErrPath:(NSString *)stdErrPath
-{
-  NSParameterAssert(stdErrPath);
-  self.stdErr = [FBProcessOutput outputForFilePath:stdErrPath];
-  return self;
-}
-
-- (instancetype)withStdOutToDevNull
-{
-  self.stdOut = nil;
-  return self;
-}
-
-- (instancetype)withStdErrToDevNull
-{
-  self.stdErr = nil;
-  return self;
-}
-
-- (instancetype)withStdOutConsumer:(id<FBDataConsumer>)consumer
-{
-  self.stdOut = [FBProcessOutput outputForDataConsumer:consumer];
-  return self;
-}
-
-- (instancetype)withStdErrConsumer:(id<FBDataConsumer>)consumer
-{
-  self.stdErr = [FBProcessOutput outputForDataConsumer:consumer];
-  return self;
-}
-
-- (instancetype)withStdOutLineReader:(void (^)(NSString *))reader
-{
-  return [self withStdOutConsumer:[FBBlockDataConsumer asynchronousLineConsumerWithBlock:reader]];
-}
-
-- (instancetype)withStdErrLineReader:(void (^)(NSString *))reader
-{
-  return [self withStdErrConsumer:[FBBlockDataConsumer asynchronousLineConsumerWithBlock:reader]];
-}
-
-- (instancetype)withStdOutToLogger:(id<FBControlCoreLogger>)logger
-{
-  self.stdOut = [FBProcessOutput outputForLogger:logger];
-  return self;
-}
-
-- (instancetype)withStdErrToLogger:(id<FBControlCoreLogger>)logger
-{
-  self.stdErr = [FBProcessOutput outputForLogger:logger];
-  return self;
-}
+#pragma mark stdin
 
 - (instancetype)withStdInConnected
 {
@@ -194,6 +110,94 @@
 - (instancetype)withStdInFromData:(NSData *)data
 {
   self.stdIn = [FBProcessInput inputFromData:data];
+  return self;
+}
+
+#pragma mark stdout
+
+- (instancetype)withStdOutInMemoryAsData
+{
+  self.stdOut = [FBProcessOutput outputToMutableData:NSMutableData.data];
+  return self;
+}
+
+- (instancetype)withStdOutInMemoryAsString
+{
+  self.stdOut = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
+  return self;
+}
+
+- (instancetype)withStdOutPath:(NSString *)stdOutPath
+{
+  NSParameterAssert(stdOutPath);
+  self.stdOut = [FBProcessOutput outputForFilePath:stdOutPath];
+  return self;
+}
+
+- (instancetype)withStdOutToDevNull
+{
+  self.stdOut = nil;
+  return self;
+}
+
+- (instancetype)withStdOutConsumer:(id<FBDataConsumer>)consumer
+{
+  self.stdOut = [FBProcessOutput outputForDataConsumer:consumer];
+  return self;
+}
+
+- (instancetype)withStdOutLineReader:(void (^)(NSString *))reader
+{
+  return [self withStdOutConsumer:[FBBlockDataConsumer asynchronousLineConsumerWithBlock:reader]];
+}
+
+- (instancetype)withStdOutToLogger:(id<FBControlCoreLogger>)logger
+{
+  self.stdOut = [FBProcessOutput outputForLogger:logger];
+  return self;
+}
+
+#pragma mark stderr
+
+- (instancetype)withStdErrInMemoryAsData
+{
+  self.stdErr = [FBProcessOutput outputToMutableData:NSMutableData.data];
+  return self;
+}
+
+- (instancetype)withStdErrInMemoryAsString
+{
+  self.stdErr = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
+  return self;
+}
+
+- (instancetype)withStdErrPath:(NSString *)stdErrPath
+{
+  NSParameterAssert(stdErrPath);
+  self.stdErr = [FBProcessOutput outputForFilePath:stdErrPath];
+  return self;
+}
+
+- (instancetype)withStdErrToDevNull
+{
+  self.stdErr = nil;
+  return self;
+}
+
+- (instancetype)withStdErrConsumer:(id<FBDataConsumer>)consumer
+{
+  self.stdErr = [FBProcessOutput outputForDataConsumer:consumer];
+  return self;
+}
+
+- (instancetype)withStdErrLineReader:(void (^)(NSString *))reader
+{
+  return [self withStdErrConsumer:[FBBlockDataConsumer asynchronousLineConsumerWithBlock:reader]];
+}
+
+- (instancetype)withStdErrToLogger:(id<FBControlCoreLogger>)logger
+{
+  self.stdErr = [FBProcessOutput outputForLogger:logger];
   return self;
 }
 
