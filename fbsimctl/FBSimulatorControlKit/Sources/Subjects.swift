@@ -33,6 +33,9 @@ extension FBJSONSerializable {
 }
 
 @objc class RecordSubject: NSObject, EventReporterSubject {
+  var eventName: FBEventName?
+  var eventType: FBEventType?
+    
   let record: Record
 
   init(_ record: Record) {
@@ -71,6 +74,9 @@ extension FBJSONSerializable {
 }
 
 @objc class ListenSubject: NSObject, EventReporterSubject {
+  var eventName: FBEventName?
+  var eventType: FBEventType?
+    
   let interface: ListenInterface
 
   init(_ interface: ListenInterface) {
