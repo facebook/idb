@@ -122,36 +122,40 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)movePath:(NSString *)originPath toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID
 {
   return [[self
     dataContainerPathForBundleID:bundleID]
     onQueue:self.simulator.asyncQueue fmap:^(NSString *dataContainer) {
       NSError *error;
-      NSString *fullOriginPath = [dataContainer stringByAppendingPathComponent:originPath];
       NSString *fullDestinationPath = [dataContainer stringByAppendingPathComponent:destinationPath];
-      if (![NSFileManager.defaultManager moveItemAtPath:fullOriginPath toPath:fullDestinationPath error:&error]) {
-        return [[[FBSimulatorError
-          describeFormat:@"Could not move item at %@ to %@", fullOriginPath, fullDestinationPath]
-          causedBy:error]
-          failFuture];
+      for (NSString *originPath in originPaths) {
+        NSString *fullOriginPath = [dataContainer stringByAppendingPathComponent:originPath];
+        if (![NSFileManager.defaultManager moveItemAtPath:fullOriginPath toPath:fullDestinationPath error:&error]) {
+          return [[[FBSimulatorError
+                    describeFormat:@"Could not move item at %@ to %@", fullOriginPath, fullDestinationPath]
+                   causedBy:error]
+                  failFuture];
+        }
       }
       return [FBFuture futureWithResult:NSNull.null];
     }];
 }
 
-- (FBFuture<NSNull *> *)removePath:(NSString *)path inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths inContainerOfApplication:(NSString *)bundleID
 {
   return [[self
     dataContainerPathForBundleID:bundleID]
     onQueue:self.simulator.asyncQueue fmap:^(NSString *dataContainer) {
-      NSString *fullPath = [dataContainer stringByAppendingPathComponent:path];
       NSError *error;
-      if (![NSFileManager.defaultManager removeItemAtPath:fullPath error:&error]) {
-        return [[[FBSimulatorError
-          describeFormat:@"Could not remove item at path %@", fullPath]
-          causedBy:error]
-          failFuture];
+      for (NSString *path in paths) {
+        NSString *fullPath = [dataContainer stringByAppendingPathComponent:path];
+        if (![NSFileManager.defaultManager removeItemAtPath:fullPath error:&error]) {
+          return [[[FBSimulatorError
+                    describeFormat:@"Could not remove item at path %@", fullPath]
+                   causedBy:error]
+                  failFuture];
+        }
       }
       return [FBFuture futureWithResult:NSNull.null];
     }];

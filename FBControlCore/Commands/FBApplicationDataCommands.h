@@ -62,21 +62,21 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Move data within the container to a different path
- @param originPath relative path to the container where data resides
+ @param originPaths relative paths to the container where data resides
  @param destinationPath relative path where the data will be moved to
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)movePath:(NSString *)originPath toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID;
 
 /**
  Remove path within the container
 
- @param path relative path to the container where data resides
+ @param paths relative paths to the container where data resides
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)removePath:(NSString *)path inContainerOfApplication:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths inContainerOfApplication:(NSString *)bundleID;
 
 /**
  List directory within the container

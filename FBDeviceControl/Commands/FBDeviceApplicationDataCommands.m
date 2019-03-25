@@ -97,23 +97,27 @@
   }];
 }
 
-- (FBFuture<NSNull *> *)movePath:(NSString *)originPath toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID
 {
   return [self handleWithAFCSessionForBundleID:bundleID operationBlock:^ NSNull * (FBAFCConnection *afc, NSError **error) {
-    BOOL success = [afc renamePath:originPath destination:destinationPath error:error];
-    if (!success) {
-      return nil;
+    for (NSString *originPath in originPaths) {
+      BOOL success = [afc renamePath:originPath destination:destinationPath error:error];
+      if (!success) {
+        return nil;
+      }
     }
     return NSNull.null;
   }];
 }
 
-- (FBFuture<NSNull *> *)removePath:(NSString *)path inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths inContainerOfApplication:(NSString *)bundleID
 {
   return [self handleWithAFCSessionForBundleID:bundleID operationBlock:^ NSNull * (FBAFCConnection *afc, NSError **error) {
-    BOOL success = [afc removePath:path recursively:YES error:error];
-    if (!success) {
-      return nil;
+    for (NSString *path in paths) {
+      BOOL success = [afc removePath:path recursively:YES error:error];
+      if (!success) {
+        return nil;
+      }
     }
     return NSNull.null;
   }];
