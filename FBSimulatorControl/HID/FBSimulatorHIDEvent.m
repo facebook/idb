@@ -25,6 +25,8 @@ static NSString *const EventClassStringButton = @"button";
 static NSString *const EventClassStringKeyboard = @"keyboard";
 static NSString *const EventClassStringDelay = @"delay";
 
+const double DEFAULT_SWIPE_DELTA = 10.0;
+
 @interface FBSimulatorHIDEvent ()
 
 + (FBSimulatorHIDDirection)directionFromDirectionString:(NSString *)DirectionString;
@@ -645,6 +647,9 @@ static NSString *const KeyDuration = @"duration";
 {
   NSMutableArray<FBSimulatorHIDEvent *> *events = [NSMutableArray array];
   double distance = sqrt(pow(yEnd - yStart, 2) + pow(xEnd - xStart, 2));
+  if (delta <= 0.0) {
+    delta = DEFAULT_SWIPE_DELTA;
+  }
   int steps = (int)(distance / delta);
 
   double dx = (xEnd - xStart) / steps;

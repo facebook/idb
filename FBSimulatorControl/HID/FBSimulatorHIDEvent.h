@@ -17,6 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
  The Action Type for the HID.
  */
 extern FBiOSTargetFutureType const FBiOSTargetFutureTypeHID;
+extern double const DEFAULT_SWIPE_DELTA;
 
 /**
  A Value representing a call to the HID System.
