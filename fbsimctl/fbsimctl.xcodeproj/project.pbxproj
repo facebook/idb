@@ -440,6 +440,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = AA93B7A71BE8351000CF6A56;
@@ -634,6 +635,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAC179691E52F33E00BAE9F2 /* FBSimulatorControlKit-Debug.xcconfig */;
 			buildSettings = {
+				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
 		};
@@ -641,6 +643,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAC1796A1E52F33E00BAE9F2 /* FBSimulatorControlKit-Release.xcconfig */;
 			buildSettings = {
+				SWIFT_VERSION = 4.0;
 			};
 			name = Release;
 		};

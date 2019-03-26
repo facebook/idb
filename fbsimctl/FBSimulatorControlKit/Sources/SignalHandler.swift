@@ -8,6 +8,10 @@
 import Foundation
 
 @objc class SignalInfo: NSObject, EventReporterSubject {
+    var eventName: FBEventName?
+    
+    var eventType: FBEventType?
+    
   let signo: Int32
   let name: String
 
