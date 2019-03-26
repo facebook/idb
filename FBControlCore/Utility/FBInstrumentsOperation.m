@@ -19,7 +19,7 @@
 
 static const NSTimeInterval InterruptBackoffTimeout = 600.0; // When stopping instruments with SIGINT, wait this long before SIGKILLing it
 static const NSTimeInterval InstrumentsStartupDelay = 15.0;  // Wait this long to ensure instruments started properly
-static const NSTimeInterval InstrumentsStartupTimeout = 60.0; // Fail instruments startup after this amount of time
+static const NSTimeInterval InstrumentsStartupTimeout = 120.0; // Fail instruments startup after this amount of time
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
 
