@@ -20,7 +20,7 @@
 #import "FBiOSTarget.h"
 #import "FBiOSTargetDiagnostics.h"
 #import "NSPredicate+FBControlCore.h"
-#import "NSRunLoop+FBControlCore.h"
+#import "FBFuture+Sync.h"
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeSearch = @"search";
 

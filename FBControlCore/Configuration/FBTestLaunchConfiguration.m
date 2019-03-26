@@ -12,7 +12,7 @@
 #import "FBControlCoreError.h"
 #import "FBiOSTarget.h"
 #import "FBXCTestCommands.h"
-#import "NSRunLoop+FBControlCore.h"
+#import "FBFuture+Sync.h"
 
 @implementation FBTestLaunchConfiguration
 

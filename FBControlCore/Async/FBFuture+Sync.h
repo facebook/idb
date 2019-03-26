@@ -34,24 +34,18 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable id)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilExists:( id (^)(void) )untilExists;
 
-/**
- Spins the Run Loop until the group completes, or a timeout is reached.
-
- @param timeout the Timeout in Seconds.
- @param group the group to wait on.
- @return YES if the group completed before the timeout, NO otherwise.
- */
-- (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout notifiedBy:(dispatch_group_t)group onQueue:(dispatch_queue_t)queue;
-
 @end
 
 /**
- Helpers for awaiting the completion of an FBFuture from a Run Loop.
+ Helpers for extracting the value from an FBFuture.
+ Since FBFuture only exposes callback mounting in it's main interface, this allows callers to wait for a value to appear asynchronously.
  */
-@interface FBFuture<T> (NSRunLoop)
+@interface FBFuture<T> (Sync)
 
 /**
  Await the Future, with no Timeout.
+ This will spin the run loop whilst waiting for the Future to resolve.
+ For threads and queues that don't have a Run Loop, one will be created in accordance with +[NSRunLoop currentRunLoop].
 
  @param error an error outparam if the Future resolves with an error.
  @return the the Future's result if successful, nil otherwise.
@@ -60,6 +54,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Await the Future with the provided timeout.
+ This will spin the run loop whilst waiting for the Future to resolve.
+ For threads and queues that don't have a Run Loop, one will be created in accordance with +[NSRunLoop currentRunLoop].
 
  @param timeout the timeout in seconds to wait.
  @param error an error outparam if the Future resolves with an error, or the Future is not resolved within the timeout.

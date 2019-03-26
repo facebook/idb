@@ -5,10 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "NSRunLoop+FBControlCore.h"
-
-#import <libkern/OSAtomic.h>
-#import <objc/runtime.h>
+#import "FBFuture+Sync.h"
 
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
@@ -57,18 +54,6 @@ static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
     return nil;
   }
   return value;
-}
-
-- (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout notifiedBy:(dispatch_group_t)group onQueue:(dispatch_queue_t)queue
-{
-  __block volatile uint32_t didFinish = 0;
-  dispatch_group_notify(group, queue, ^{
-    OSAtomicOr32Barrier(1, &didFinish);
-  });
-
-  return [self spinRunLoopWithTimeout:timeout untilTrue:^ BOOL {
-    return didFinish == 1;
-  }];
 }
 
 - (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError **)error

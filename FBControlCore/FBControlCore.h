@@ -102,4 +102,4 @@
 #import <FBControlCore/FBXcodeDirectory.h>
 #import <FBControlCore/FBXCTestCommands.h>
 #import <FBControlCore/NSPredicate+FBControlCore.h>
-#import <FBControlCore/NSRunLoop+FBControlCore.h>
+#import <FBControlCore/FBFuture+Sync.h>

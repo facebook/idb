@@ -11,7 +11,7 @@
 
 #import "FBProcessInfo.h"
 #import "FBControlCoreError.h"
-#import "NSRunLoop+FBControlCore.h"
+#import "FBFuture+Sync.h"
 #import "FBBinaryDescriptor.h"
 #import "FBDispatchSourceNotifier.h"
 
