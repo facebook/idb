@@ -44,12 +44,23 @@
   return [processes copy];
 }
 
+- (BOOL)processIdentifierExists:(pid_t)processIdentifier error:(NSError **)error
+{
+  FBProcessInfo *actual = [self processInfoFor:processIdentifier];
+  if (!actual) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not find the with pid %d", processIdentifier]
+      failBool:error];
+  }
+  return YES;
+}
+
 - (BOOL)processExists:(FBProcessInfo *)process error:(NSError **)error
 {
   FBProcessInfo *actual = [self processInfoFor:process.processIdentifier];
   if (!actual) {
     return [[FBControlCoreError
-      describeFormat:@"Could not find the processs for %@ with pid %d", process.shortDescription, process.processIdentifier]
+      describeFormat:@"Could not find the with pid %d", process.processIdentifier]
       failBool:error];
   }
   if (![process.launchPath isEqualToString:actual.launchPath]) {
@@ -60,10 +71,10 @@
   return YES;
 }
 
-- (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForProcessToDie:(FBProcessInfo *)process
+- (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForProcessIdentifierToDie:(pid_t)processIdentifier
 {
-  return [FBFuture onQueue:queue resolveWhen:^BOOL{
-    FBProcessInfo *polledProcess = [self processInfoFor:process.processIdentifier];
+  return [FBFuture onQueue:queue resolveWhen:^ BOOL {
+    FBProcessInfo *polledProcess = [self processInfoFor:processIdentifier];
     return polledProcess == nil;
   }];
 }
