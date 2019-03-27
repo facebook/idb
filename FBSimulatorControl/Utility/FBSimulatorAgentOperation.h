@@ -57,12 +57,6 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent;
 @property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdErr;
 
 /**
- The Process Info of the launched process.
- This may be nil in the event that the process was short lived and the process info could not be obtained.
- */
-@property (nonatomic, copy, nullable, readonly) FBProcessInfo *processInfo;
-
-/**
  A Future representation of the completion of the agent process.
  The value of the future is the stat_loc value from waitpid(2).
  */
