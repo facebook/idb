@@ -77,7 +77,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
       NSFileHandle *stdErrHandle = fileHandles[1];
 
       // Launch the Process
-      FBMutableFuture<NSNumber *> *processStatusFuture = FBMutableFuture.future;
+      FBMutableFuture<NSNumber *> *processStatusFuture = [FBMutableFuture futureWithNameFormat:@"Process completion of %@ on %@", agentLaunch.agentBinary.path, simulator.udid];
       FBFuture<NSNumber *> *launchFuture = [FBAgentLaunchStrategy
         launchAgentWithSimulator:simulator
         launchPath:agentLaunch.agentBinary.path
@@ -147,7 +147,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
     stdErr:stdErr];
 
   // The Process launches and terminates synchronously
-  FBMutableFuture<NSNumber *> *launchFuture = [FBMutableFuture future];
+  FBMutableFuture<NSNumber *> *launchFuture = [FBMutableFuture futureWithNameFormat:@"Launch of %@ on %@", launchPath, simulator.udid];
   [simulator.device
     spawnAsyncWithPath:launchPath
     options:options

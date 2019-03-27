@@ -53,14 +53,15 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
   _stdOut = stdOut;
   _stdErr = stdErr;
   _processIdentifier = processIdentifier;
-  _processStatus = [processStatusFuture
+  _processStatus = [[processStatusFuture
     onQueue:simulator.workQueue chain:^ FBFuture<NSNumber *> * (FBFuture<NSNumber *> *future) {
       FBFuture<NSNull *> *teardown = future.result
         ? [self processDidTerminate:future.result.intValue]
         : [self processWasCancelled];
       return [teardown fmapReplace:future];
-    }];
-  _exitCode = [processStatusFuture
+    }]
+    nameFormat:@"Completion of agent process %d", processIdentifier];
+  _exitCode = [[processStatusFuture
     onQueue:simulator.asyncQueue map:^(NSNumber *statLocNumber) {
       int stat_loc = statLocNumber.intValue;
       if (WIFEXITED(stat_loc)) {
@@ -68,7 +69,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
       } else {
         return @(WTERMSIG(stat_loc));
       }
-    }];
+    }]
+    nameFormat:@"Exit code of agent process %d", processIdentifier];
   _processInfoFuture = processInfoFuture;
 
   return self;
