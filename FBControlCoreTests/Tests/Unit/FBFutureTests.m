@@ -346,48 +346,58 @@
   XCTAssertEqualObjects(chainFuture.result, @4);
 }
 
-- (void)testChainValueThenCancel
+- (void)testChainingToHandleCancellation
 {
-  XCTestExpectation *completion = [[XCTestExpectation alloc] initWithDescription:@"Completion is called"];
+  XCTestExpectation *completion = [[XCTestExpectation alloc] initWithDescription:@"completion is called"];
+  XCTestExpectation *chained = [[XCTestExpectation alloc] initWithDescription:@"chain is called"];
+  XCTestExpectation *remapped = [[XCTestExpectation alloc] initWithDescription:@"fmap on handling cancellation"];
 
   FBMutableFuture<NSNumber *> *baseFuture = FBMutableFuture.future;
   FBFuture<NSNumber *> *chainFuture = [[[baseFuture
     onQueue:self.queue chain:^(FBFuture *future) {
-      XCTFail(@"Chain Should Not be called for cancelled future");
+      [chained fulfill];
       return [FBFuture futureWithResult:@2];
     }]
     onQueue:self.queue fmap:^(id _) {
-     XCTFail(@"fmap Should Not be called for cancelled future");
-     return [FBFuture futureWithResult:@3];
+      [remapped fulfill];
+      return [FBFuture futureWithResult:@3];
     }]
     onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
-      XCTAssertEqual(future.state, FBFutureStateCancelled);
+      XCTAssertEqual(future.state, FBFutureStateDone);
+      XCTAssertEqual(future.result, @3);
       [completion fulfill];
     }];
   dispatch_async(self.queue, ^{
     [baseFuture cancel];
   });
 
-  [self waitForExpectations:@[completion] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
-  XCTAssertEqual(chainFuture.state, FBFutureStateCancelled);
+  [self waitForExpectations:@[completion, chained, remapped] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  XCTAssertEqual(chainFuture.state, FBFutureStateDone);
+  XCTAssertEqual(chainFuture.result, @3);
 }
 
-- (void)testChainedCancellation
+- (void)testUnhandledCancellationWillPropogate
 {
-  XCTestExpectation *chain = [[XCTestExpectation alloc] initWithDescription:@"chain is called"];
-  XCTestExpectation *completion = [[XCTestExpectation alloc] initWithDescription:@"Completion is called"];
+  XCTestExpectation *firstChain = [[XCTestExpectation alloc] initWithDescription:@"first chain is called"];
+  XCTestExpectation *secondChain = [[XCTestExpectation alloc] initWithDescription:@"second chain is called"];
+  XCTestExpectation *completion = [[XCTestExpectation alloc] initWithDescription:@"completion is called"];
 
   FBMutableFuture<NSNumber *> *baseFuture = FBMutableFuture.future;
-  FBFuture<NSNumber *> *chainFuture = [[[baseFuture
+  FBFuture<NSNumber *> *chainFuture = [[[[baseFuture
     onQueue:self.queue chain:^(FBFuture *_) {
-      [chain fulfill];
+      [firstChain fulfill];
       FBMutableFuture *future = FBMutableFuture.future;
       [future cancel];
       return future;
     }]
-    onQueue:self.queue chain:^(id _) {
-      XCTFail(@"chain Should Not be called for cancelled future");
-      return [FBFuture futureWithResult:@3];
+    onQueue:self.queue chain:^(FBFuture *future) {
+      XCTAssertEqual(future.state, FBFutureStateCancelled);
+      [secondChain fulfill];
+      return future;
+    }]
+    onQueue:self.queue fmap:^(id _) {
+      XCTFail(@"fmap should not be called");
+      return FBMutableFuture.future;
     }]
     onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
       XCTAssertEqual(future.state, FBFutureStateCancelled);
@@ -397,7 +407,7 @@
     [baseFuture resolveWithResult:@0];
   });
 
-  [self waitForExpectations:@[chain, completion] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  [self waitForExpectations:@[firstChain, secondChain, completion] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
   XCTAssertEqual(chainFuture.state, FBFutureStateCancelled);
 }
 

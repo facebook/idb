@@ -171,7 +171,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
 /**
  Chain Futures based on any non-cancellation resolution of the reciever.
- Cancellation will be instantly propogated.
+ All completion events are called in the chained future block (Done, Error, Cancelled).
 
  @param queue the queue to chain on.
  @param chain the chaining handler, called on all completion events.
