@@ -64,7 +64,27 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable T)awaitWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
 
 /**
- Block until the Future is completed.
+ Block until the Future is completed and return whether is succeeded.
+ This will use dispatch internally and should *never* be called from the main thread/queue, or any thread/queue that needs to be serviced for the Future to resolve.
+ This is useful if the value returned by the future is not significant for the caller, only that it succeeded.
+
+ @param error an error outparam if the Future resolves with an error.
+ @return YES if the future completes successfully, NO otherwise.
+ */
+- (BOOL)succeeds:(NSError **)error;
+
+/**
+ Block until the Future is completed and return whether is succeeded.
+ This will use dispatch internally and should *never* be called from the main thread/queue, or any thread/queue that needs to be serviced for the Future to resolve.
+ This is useful if the value returned by the future is not significant for the caller, only that it succeeded.
+
+ @param error an error outparam if the Future resolves with an error or times out.
+ @return YES if the future completes successfully, NO otherwise.
+ */
+- (BOOL)onQueue:(dispatch_queue_t)queue timeout:(dispatch_time_t)timeout succeeds:(NSError **)error;
+
+/**
+ Block until the Future is completed and return the result.
  This will use dispatch internally and should *never* be called from the main thread/queue, or any thread/queue that needs to be serviced for the Future to resolve.
 
  @param error an error outparam if the Future resolves with an error.
@@ -73,12 +93,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable T)block:(NSError **)error;
 
 /**
- Block until the Future is completed.
+ Block until the Future is completed and return the result.
  This will use dispatch internally and should *never* be called from the main thread/queue, or any thread/queue that needs to be serviced for the Future to resolve.
 
  @param queue the queue to serialize on.
  @param timeout the timeout in dispatch_time to wait
- @param error an error outparam if the Future resolves with an error.
+ @param error an error outparam if the Future resolves with an error or times out.
  @return the the Future's result if successful, nil otherwise.
  */
 - (nullable T)onQueue:(dispatch_queue_t)queue timeout:(dispatch_time_t)timeout block:(NSError **)error;

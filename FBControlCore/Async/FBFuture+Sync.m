@@ -91,6 +91,11 @@ static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
 
 static NSTimeInterval const ForeverTimeout = DBL_MAX;
 
+static dispatch_queue_t blockQueue()
+{
+  return dispatch_queue_create("com.facebook.fbfuture.block", DISPATCH_QUEUE_SERIAL);
+}
+
 @implementation FBFuture (NSRunLoop)
 
 - (nullable id)await:(NSError **)error
@@ -103,9 +108,23 @@ static NSTimeInterval const ForeverTimeout = DBL_MAX;
   return [NSRunLoop.currentRunLoop awaitCompletionOfFuture:self timeout:timeout error:error];
 }
 
+- (BOOL)succeeds:(NSError **)error
+{
+  return [self onQueue:blockQueue() timeout:DISPATCH_TIME_FOREVER succeeds:error];
+}
+
+- (BOOL)onQueue:(dispatch_queue_t)queue timeout:(dispatch_time_t)timeout succeeds:(NSError **)error
+{
+  id value = [self onQueue:queue timeout:timeout block:error];
+  if (!value) {
+    return NO;
+  }
+  return YES;
+}
+
 - (nullable id)block:(NSError **)error
 {
-  return [self onQueue:dispatch_queue_create("com.facebook.fbfuture.block", DISPATCH_QUEUE_SERIAL) timeout:DISPATCH_TIME_FOREVER block:error];
+  return [self onQueue:blockQueue() timeout:DISPATCH_TIME_FOREVER block:error];
 }
 
 - (nullable id)onQueue:(dispatch_queue_t)queue timeout:(dispatch_time_t)timeout block:(NSError **)error
