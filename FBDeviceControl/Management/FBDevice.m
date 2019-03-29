@@ -224,6 +224,7 @@
       FBDeviceScreenshotCommands.class,
       FBDeviceVideoRecordingCommands.class,
       FBDeviceXCTestCommands.class,
+      FBInstrumentsCommands.class,
     ];
   });
   return commandClasses;

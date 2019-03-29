@@ -239,6 +239,8 @@
 		AA6062EF1EE4A96D00E2EFEE /* FBMacXCTestProcessExecutor.m in Sources */ = {isa = PBXBuildFile; fileRef = AA6062ED1EE4A96D00E2EFEE /* FBMacXCTestProcessExecutor.m */; };
 		AA6062F21EE4B59900E2EFEE /* FBLogicTestRunStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA6062F01EE4B59900E2EFEE /* FBLogicTestRunStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA6062F31EE4B59900E2EFEE /* FBLogicTestRunStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA6062F11EE4B59900E2EFEE /* FBLogicTestRunStrategy.m */; };
+		AA6155DB224BB53F007D1C22 /* FBInstrumentsCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AA6155DA224BB4D0007D1C22 /* FBInstrumentsCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA6155DD224BB60A007D1C22 /* FBInstrumentsCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AA6155DC224BB60A007D1C22 /* FBInstrumentsCommands.m */; };
 		AA63FD741D00A3D5000B3842 /* FBiOSTargetQuery.h in Headers */ = {isa = PBXBuildFile; fileRef = AA63FD721D00A3D5000B3842 /* FBiOSTargetQuery.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA63FD751D00A3D5000B3842 /* FBiOSTargetQuery.m in Sources */ = {isa = PBXBuildFile; fileRef = AA63FD731D00A3D5000B3842 /* FBiOSTargetQuery.m */; };
 		AA66FEDB1F83FFCB00047AA5 /* FBEventReporter.m in Sources */ = {isa = PBXBuildFile; fileRef = AA66FED91F83FFCB00047AA5 /* FBEventReporter.m */; };
@@ -1144,6 +1146,8 @@
 		AA6062ED1EE4A96D00E2EFEE /* FBMacXCTestProcessExecutor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBMacXCTestProcessExecutor.m; sourceTree = "<group>"; };
 		AA6062F01EE4B59900E2EFEE /* FBLogicTestRunStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBLogicTestRunStrategy.h; sourceTree = "<group>"; };
 		AA6062F11EE4B59900E2EFEE /* FBLogicTestRunStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBLogicTestRunStrategy.m; sourceTree = "<group>"; };
+		AA6155DA224BB4D0007D1C22 /* FBInstrumentsCommands.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBInstrumentsCommands.h; sourceTree = "<group>"; };
+		AA6155DC224BB60A007D1C22 /* FBInstrumentsCommands.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBInstrumentsCommands.m; sourceTree = "<group>"; };
 		AA633F8B1CFD788F00A59C5F /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		AA63FD721D00A3D5000B3842 /* FBiOSTargetQuery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetQuery.h; sourceTree = "<group>"; };
 		AA63FD731D00A3D5000B3842 /* FBiOSTargetQuery.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetQuery.m; sourceTree = "<group>"; };
@@ -1760,6 +1764,8 @@
 				AA4D30721E799C1900A9FBD0 /* FBBitmapStreamingCommands.h */,
 				AA0CA38620643C6800347424 /* FBCrashLogCommands.h */,
 				AA2E38E021E626B10065C800 /* FBDebuggerCommands.h */,
+				AA6155DA224BB4D0007D1C22 /* FBInstrumentsCommands.h */,
+				AA6155DC224BB60A007D1C22 /* FBInstrumentsCommands.m */,
 				AA4424CA1F4C11A9006B5E5D /* FBiOSTargetCommandForwarder.h */,
 				AA4424CB1F4C11A9006B5E5D /* FBiOSTargetCommandForwarder.m */,
 				AA805F7E1F0D0E0000AB31DE /* FBLogCommands.h */,
@@ -3378,6 +3384,7 @@
 				AA8F5E1A1F2727BF00FAAC0F /* FBXcodeDirectory.h in Headers */,
 				EE87FA402008C088002716FE /* AXTraits.h in Headers */,
 				AA0080D71DB4CCFD009A25CB /* FBProcessTerminationStrategy.h in Headers */,
+				AA6155DB224BB53F007D1C22 /* FBInstrumentsCommands.h in Headers */,
 				8BD1AF4B212DB04E001F65E1 /* FBiOSTargetSet.h in Headers */,
 				AA9B24D81D07F9BB00CEE14F /* FBiOSTargetPredicates.h in Headers */,
 				AA2CD5A01F87C7640030C56D /* FBListApplicationsConfiguration.h in Headers */,
@@ -3618,6 +3625,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = B401C979EFB6AC4600000000 /* mainGroup */;
@@ -4048,6 +4056,7 @@
 				AA308FF720E37F9A00503C90 /* FBFutureContextManager.m in Sources */,
 				D76C2AEF1F13F61E000EF13D /* FBEventReporterSubject.m in Sources */,
 				AA14B5601DF8017900085855 /* FBiOSTargetDiagnostics.m in Sources */,
+				AA6155DD224BB60A007D1C22 /* FBInstrumentsCommands.m in Sources */,
 				EEBD60951C908F8500298A07 /* FBCollectionInformation.m in Sources */,
 				AAF026F11F25ED1A0091FDAB /* FBSocketServer.m in Sources */,
 				AA4B4B211F3DAADD005BD475 /* FBApplicationInstallConfiguration.m in Sources */,
