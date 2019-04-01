@@ -66,6 +66,17 @@
   }
 }
 
++ (FBFuture<FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *> *)gzipPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  return [[[[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/gzip"]
+    withArguments:@[@"--to-stdout", @"--verbose", path]]
+    withStdErrToLogger:logger]
+    withStdOutToInputStream]
+    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
+    start];
+}
+
 // The Magic Header for Zip Files is two chars 'PK'. As a short this is as below.
 static unsigned short const ZipFileMagicHeader = 0x4b50;
 // The Magic Header for Tar Files
