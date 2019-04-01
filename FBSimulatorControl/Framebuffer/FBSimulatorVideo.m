@@ -40,7 +40,7 @@
 @interface FBSimulatorVideo_SimCtl : FBSimulatorVideo
 
 @property (nonatomic, strong, readonly) FBAppleSimctlCommandExecutor *simctlExecutor;
-@property (nonatomic, strong, readwrite) FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *recordingStarted;
+@property (nonatomic, strong, readwrite) FBFuture<FBTask<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *recordingStarted;
 
 - (instancetype)initWithWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor logger:(id<FBControlCoreLogger>)logger;
 
@@ -192,8 +192,8 @@
   // Create the task
   self.recordingStarted = [[[[self.simctlExecutor
     taskBuilderWithCommand:@"io" arguments:@[@"recordVideo", @"--type=mp4", filePath]]
-    withStdOutInMemoryAsString]
-    withStdErrInMemoryAsString]
+    withStdOutToLogger:self.logger]
+    withStdErrToLogger:self.logger]
     start];
 
   return [self.recordingStarted mapReplace:NSNull.null];
@@ -202,7 +202,7 @@
 - (FBFuture<NSNull *> *)stopRecording
 {
   // Fail early if there's no task running.
-  FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *recordingStarted = self.recordingStarted;
+  FBFuture<FBTask<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *recordingStarted = self.recordingStarted;
   if (!recordingStarted) {
     return [[FBSimulatorError
       describe:@"Cannot Stop Recording, there is no recording task started"]
@@ -223,9 +223,12 @@
 
   // Stop for real be interrupting the task itself.
   FBFuture<NSNull *> *completed = [[[recordingTask
-    sendSignal:SIGTERM backingOfToKillWithTimeout:10]
-    mapReplace:NSNull.null]
-    logCompletion:self.logger withPurpose:@"The video recording task"];
+    sendSignal:SIGINT backingOfToKillWithTimeout:10]
+    logCompletion:self.logger withPurpose:@"The video recording task terminated"]
+    onQueue:self.queue map:^(NSNumber *result) {
+      self.recordingStarted = nil;
+      return NSNull.null;
+    }];
   [self.completedFuture resolveFromFuture:completed];
 
   return completed;
