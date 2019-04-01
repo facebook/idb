@@ -77,6 +77,34 @@
     start];
 }
 
++ (FBFuture<FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *> *)createTarForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  BOOL isDirectory;
+  if (![NSFileManager.defaultManager fileExistsAtPath:path isDirectory:&isDirectory]) {
+    return [[FBControlCoreError
+      describeFormat:@"File %@ doesn't exist", path]
+      failFuture];
+  }
+
+  NSString *directory;
+  NSString *fileName;
+  if (isDirectory) {
+    directory = path;
+    fileName = @".";
+  } else {
+    directory = path.stringByDeletingLastPathComponent;
+    fileName = path.lastPathComponent;
+  }
+
+  return [[[[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/tar"]
+    withArguments:@[@"-vcf", @"-", @"-C", directory, fileName]]
+    withStdErrToLogger:logger]
+    withStdOutToInputStream]
+    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
+    start];
+}
+
 // The Magic Header for Zip Files is two chars 'PK'. As a short this is as below.
 static unsigned short const ZipFileMagicHeader = 0x4b50;
 // The Magic Header for Tar Files
