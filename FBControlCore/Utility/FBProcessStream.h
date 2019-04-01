@@ -114,6 +114,13 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
 + (FBProcessOutput<NSString *> *)outputForFilePath:(NSString *)filePath;
 
 /**
+ An Output Container for an Input Stream
+
+ @return a Process Output instance.
+ */
++ (FBProcessOutput<NSInputStream *> *)outputToInputStream;
+
+/**
  An Output Container that passes to Data Consumer.
 
  @param dataConsumer the file consumer to write to.

@@ -146,6 +146,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBTaskBuilder<StdInType, NSNull *, StdErrType> *)withStdOutToDevNull;
 
 /**
+ Redirects stdout to an input stream.
+
+ @return the reciever, for chaining.
+ */
+- (FBTaskBuilder<StdInType, NSInputStream *, StdErrType> *)withStdOutToInputStream;
+
+/**
  Redirects stdout data to the consumer.
 
  @param consumer the consumer to consume the data.
