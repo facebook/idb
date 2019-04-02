@@ -5,16 +5,34 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "NSRunLoop+FBControlCore.h"
-
-#import <libkern/OSAtomic.h>
-#import <objc/runtime.h>
+#import "FBFuture+Sync.h"
 
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"
 #import "FBFuture.h"
+
+static id ExtractResult(FBFuture *future, NSTimeInterval timeout, BOOL completed, NSError **error)
+{
+  if (!completed) {
+    return [[FBControlCoreError
+      describeFormat:@"Timed out waiting for future %@ in %f seconds", future, timeout]
+      fail:error];
+  }
+  if (future.error) {
+    if (error) {
+      *error = future.error;
+    }
+    return nil;
+  }
+  if (future.state == FBFutureStateCancelled) {
+    return [[FBControlCoreError
+      describeFormat:@"Future %@ was cancelled", future]
+      fail:error];
+  }
+  return future.result;
+}
 
 @implementation NSRunLoop (FBControlCore)
 
@@ -59,18 +77,6 @@ static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
   return value;
 }
 
-- (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout notifiedBy:(dispatch_group_t)group onQueue:(dispatch_queue_t)queue
-{
-  __block volatile uint32_t didFinish = 0;
-  dispatch_group_notify(group, queue, ^{
-    OSAtomicOr32Barrier(1, &didFinish);
-  });
-
-  return [self spinRunLoopWithTimeout:timeout untilTrue:^ BOOL {
-    return didFinish == 1;
-  }];
-}
-
 - (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   [NSRunLoop updateRunLoopIsAwaiting:YES];
@@ -78,37 +84,58 @@ static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
     return future.hasCompleted;
   }];
   [NSRunLoop updateRunLoopIsAwaiting:NO];
-  if (!completed) {
-    return [[FBControlCoreError
-      describeFormat:@"Timed out waiting for future %@ in %f seconds", future, timeout]
-      fail:error];
-  }
-  if (future.error) {
-    if (error) {
-      *error = future.error;
-    }
-    return nil;
-  }
-  if (future.state == FBFutureStateCancelled) {
-    return [[FBControlCoreError
-      describeFormat:@"Future %@ was cancelled", future]
-      fail:error];
-  }
-  return future.result;
+  return ExtractResult(future, timeout, completed, error);
 }
 
 @end
+
+static NSTimeInterval const ForeverTimeout = DBL_MAX;
+
+static dispatch_queue_t blockQueue()
+{
+  return dispatch_queue_create("com.facebook.fbfuture.block", DISPATCH_QUEUE_SERIAL);
+}
 
 @implementation FBFuture (NSRunLoop)
 
 - (nullable id)await:(NSError **)error
 {
-  return [self awaitWithTimeout:DBL_MAX error:error];
+  return [self awaitWithTimeout:ForeverTimeout error:error];
 }
 
 - (nullable id)awaitWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   return [NSRunLoop.currentRunLoop awaitCompletionOfFuture:self timeout:timeout error:error];
+}
+
+- (BOOL)succeeds:(NSError **)error
+{
+  return [self onQueue:blockQueue() timeout:DISPATCH_TIME_FOREVER succeeds:error];
+}
+
+- (BOOL)onQueue:(dispatch_queue_t)queue timeout:(dispatch_time_t)timeout succeeds:(NSError **)error
+{
+  id value = [self onQueue:queue timeout:timeout block:error];
+  if (!value) {
+    return NO;
+  }
+  return YES;
+}
+
+- (nullable id)block:(NSError **)error
+{
+  return [self onQueue:blockQueue() timeout:DISPATCH_TIME_FOREVER block:error];
+}
+
+- (nullable id)onQueue:(dispatch_queue_t)queue timeout:(dispatch_time_t)timeout block:(NSError **)error
+{
+  dispatch_group_t group = dispatch_group_create();
+  dispatch_group_enter(group);
+  [self onQueue:queue notifyOfCompletion:^(FBFuture *future) {
+    dispatch_group_leave(group);
+  }];
+  BOOL completed = dispatch_group_wait(group, timeout) == 0;
+  return ExtractResult(self, timeout, completed, error);
 }
 
 @end

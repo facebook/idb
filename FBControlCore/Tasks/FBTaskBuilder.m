@@ -146,6 +146,12 @@
   return self;
 }
 
+- (instancetype)withStdOutToInputStream
+{
+  self.stdOut = [FBProcessOutput outputToInputStream];
+  return self;
+}
+
 - (instancetype)withStdOutConsumer:(id<FBDataConsumer>)consumer
 {
   self.stdOut = [FBProcessOutput outputForDataConsumer:consumer];

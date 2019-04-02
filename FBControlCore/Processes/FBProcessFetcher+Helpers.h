@@ -50,6 +50,15 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A that determines if the provided process is currently running.
 
+ @param processIdentifier the process identifier of the process.
+ @param error an error out for any error that occurs
+ @return YES if a matching process is found, NO otherwise.
+ */
+- (BOOL)processIdentifierExists:(pid_t)processIdentifier error:(NSError **)error;
+
+/**
+ A that determines if the provided process is currently running.
+
  @param process the Process to look for
  @param error an error out for any error that occurs
  @return YES if a matching process is found, NO otherwise.
@@ -57,13 +66,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)processExists:(FBProcessInfo *)process error:(NSError **)error;
 
 /**
- Uses the reciever to wait for the termination of a process.
+ Uses the reciever to wait for the termination of a process identifier.
 
  @param queue the queue to poll on.
- @param process the process to wait for.
+ @param processIdentifier the pid of the process to wait for.
  @return a Future that resolves when the process dies.
  */
-- (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForProcessToDie:(FBProcessInfo *)process;
+- (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForProcessIdentifierToDie:(pid_t)processIdentifier;
 
 /**
  Returns an Array of NSRunningApplications for the provided array of FBProcessInfo.

@@ -15,7 +15,7 @@
 #import "FBLaunchedProcess.h"
 #import "FBProcessStream.h"
 #import "FBTaskConfiguration.h"
-#import "NSRunLoop+FBControlCore.h"
+#import "FBFuture+Sync.h"
 
 NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 

@@ -40,7 +40,8 @@
 @interface FBSimulatorVideo_SimCtl : FBSimulatorVideo
 
 @property (nonatomic, strong, readonly) FBAppleSimctlCommandExecutor *simctlExecutor;
-@property (nonatomic, strong, readwrite) FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *recordingStarted;
+@property (nonatomic, strong, nullable, readwrite) FBFuture<FBTask<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *recordingStarted;
+@property (nonatomic, copy, nullable, readwrite) NSString *filePath;
 
 - (instancetype)initWithWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor logger:(id<FBControlCoreLogger>)logger;
 
@@ -192,9 +193,10 @@
   // Create the task
   self.recordingStarted = [[[[self.simctlExecutor
     taskBuilderWithCommand:@"io" arguments:@[@"recordVideo", @"--type=mp4", filePath]]
-    withStdOutInMemoryAsString]
-    withStdErrInMemoryAsString]
+    withStdOutToLogger:self.logger]
+    withStdErrToLogger:self.logger]
     start];
+  self.filePath = filePath;
 
   return [self.recordingStarted mapReplace:NSNull.null];
 }
@@ -202,7 +204,7 @@
 - (FBFuture<NSNull *> *)stopRecording
 {
   // Fail early if there's no task running.
-  FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *recordingStarted = self.recordingStarted;
+  FBFuture<FBTask<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *recordingStarted = self.recordingStarted;
   if (!recordingStarted) {
     return [[FBSimulatorError
       describe:@"Cannot Stop Recording, there is no recording task started"]
@@ -214,6 +216,8 @@
       describe:@"Cannot Stop Recording, the recording task hasn't started"]
       failFuture];
   }
+  NSString *filePath = self.filePath;
+  self.filePath = nil;
 
   // Grab the task and see if it died already.
   if (recordingTask.completed.hasCompleted) {
@@ -223,12 +227,37 @@
 
   // Stop for real be interrupting the task itself.
   FBFuture<NSNull *> *completed = [[[recordingTask
-    sendSignal:SIGTERM backingOfToKillWithTimeout:10]
-    mapReplace:NSNull.null]
-    logCompletion:self.logger withPurpose:@"The video recording task"];
+    sendSignal:SIGINT backingOfToKillWithTimeout:10]
+    logCompletion:self.logger withPurpose:@"The video recording task terminated"]
+    onQueue:self.queue fmap:^(NSNumber *result) {
+      self.recordingStarted = nil;
+      return [FBSimulatorVideo_SimCtl confirmFileHasBeenWritten:filePath queue:self.queue];
+    }];
   [self.completedFuture resolveFromFuture:completed];
 
   return completed;
+}
+
+static NSTimeInterval const SimctlResolveFileTimeout = 5.0;
+
+// simctl, may exit before the underlying video file has been written out to disk.
+// This is unfortunate as we can't guarantee that video file is valid until this happens.
+// Therefore, we must check (with some timeout) for the existence of the file on disk.
+// It's not simply enough to check that the file exists, we must also check that it has a nonzero size.
+// The reason for this is that simctl itself (since Xcode 10) isn't doing the writing, this is instead delegated to SimStreamProcessorService.
+// Since this writing is asynchronous with simctl, it's possible that it isn't written out when simctl has terminated.
++ (FBFuture<NSNull *> *)confirmFileHasBeenWritten:(NSString *)filePath queue:(dispatch_queue_t)queue
+{
+  return [[FBFuture
+    onQueue:queue resolveWhen:^{
+      NSDictionary<NSString *, id> *fileAttributes = [NSFileManager.defaultManager attributesOfItemAtPath:filePath error:nil];
+      NSUInteger fileSize = [fileAttributes[NSFileSize] unsignedIntegerValue];
+      if (fileSize > 0) {
+        return YES;
+      }
+      return NO;
+    }]
+    timeout:SimctlResolveFileTimeout waitingFor:@"simctl to write file to %@", filePath];
 }
 
 @end

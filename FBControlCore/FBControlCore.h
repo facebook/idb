@@ -31,9 +31,9 @@
 #import <FBControlCore/FBControlCoreFrameworkLoader.h>
 #import <FBControlCore/FBControlCoreGlobalConfiguration.h>
 #import <FBControlCore/FBControlCoreLogger.h>
+//#import <FBControlCore/FBCrashLog.h>
 #import <FBControlCore/FBCrashLogCommands.h>
 #import <FBControlCore/FBCrashLogInfo.h>
-//#import <FBControlCore/FBCrashLog.h>
 #import <FBControlCore/FBCrashLogNotifier.h>
 #import <FBControlCore/FBCrashLogStore.h>
 #import <FBControlCore/FBDataBuffer.h>
@@ -51,9 +51,11 @@
 #import <FBControlCore/FBFileManager.h>
 #import <FBControlCore/FBFileReader.h>
 #import <FBControlCore/FBFileWriter.h>
+#import <FBControlCore/FBFuture+Sync.h>
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBFutureContextManager.h>
 #import <FBControlCore/FBInstalledApplication.h>
+#import <FBControlCore/FBInstrumentsCommands.h>
 #import <FBControlCore/FBInstrumentsConfiguration.h>
 #import <FBControlCore/FBInstrumentsOperation.h>
 #import <FBControlCore/FBiOSActionReader.h>
@@ -102,4 +104,3 @@
 #import <FBControlCore/FBXcodeDirectory.h>
 #import <FBControlCore/FBXCTestCommands.h>
 #import <FBControlCore/NSPredicate+FBControlCore.h>
-#import <FBControlCore/NSRunLoop+FBControlCore.h>

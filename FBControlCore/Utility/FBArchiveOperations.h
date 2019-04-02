@@ -8,6 +8,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFuture.h>
+#import <FBControlCore/FBTask.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -71,6 +72,29 @@ typedef enum {
  @return a Future wrapping the extracted tar destination.
  */
 + (FBFuture<NSString *> *)extractTarArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+
+/**
+ Creates a gzips archive, returning an task that has an NSInputStream attached to stdout.
+ Read the input stream to obtain all of the gzip output of the file.
+
+ @param path the path to archive.
+ @param queue the queue to do work on
+ @param logger the logger to log to.
+ @return a A Future containing a task with an NSInputStream attached to stdout.
+ */
++ (FBFuture<FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *> *)gzipPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+
+/**
+ Creates a tar archive, returning an task that has an NSInputStream attached to stdout.
+ Read the input stream to obtain all of the tar output of the file.
+ The output is not gzipped.
+
+ @param path the path to archive.
+ @param queue the queue to do work on
+ @param logger the logger to log to.
+ @return a A Future containing a task with an NSInputStream attached to stdout.
+ */
++ (FBFuture<FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *> *)createTarForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Get the header magic from some data.

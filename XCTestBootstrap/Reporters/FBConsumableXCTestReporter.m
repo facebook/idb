@@ -91,9 +91,9 @@
 
 @property (nonatomic, strong, readonly) NSMutableArray<FBTestRunUpdate *> *finishedTests;
 
-@property (nonatomic, copy, readwrite) NSString *currentBundleName;
-@property (nonatomic, strong, readwrite) FBTestRunUpdate *currentTest;
-@property (nonatomic, copy, readwrite) NSString *globalErrorMessage;
+@property (nonatomic, strong, nullable, readwrite) FBTestRunUpdate *currentTest;
+@property (nonatomic, copy, nullable, readwrite) NSString *currentBundleName;
+@property (nonatomic, copy, nullable, readwrite) NSString *globalErrorMessage;
 
 @end
 
@@ -113,79 +113,97 @@
 
 - (NSArray<FBTestRunUpdate *> *)consumeCurrentResults
 {
-  if (_globalErrorMessage) {
-    FBTestRunUpdate *testRunInfo = [[FBTestRunUpdate alloc]
-      initWithBundleName:nil
-      className:nil
-      methodName:nil
-      duration:0.0
-      passed:NO
-      crashed:NO
-      failureInfo:[[FBTestRunFailureInfo alloc] initWithMessage:_globalErrorMessage file:nil line:0]];
-    return @[testRunInfo];
+  @synchronized (self) {
+    if (_globalErrorMessage) {
+      FBTestRunUpdate *testRunInfo = [[FBTestRunUpdate alloc]
+        initWithBundleName:nil
+        className:nil
+        methodName:nil
+        duration:0.0
+        passed:NO
+        crashed:NO
+        failureInfo:[[FBTestRunFailureInfo alloc] initWithMessage:_globalErrorMessage file:nil line:0]];
+      return @[testRunInfo];
+    }
+    NSArray<FBTestRunUpdate *> *currentResults = self.finishedTests.mutableCopy;
+    [self.finishedTests removeAllObjects];
+    return currentResults;
   }
-  NSArray<FBTestRunUpdate *> *currentResults = self.finishedTests.mutableCopy;
-  [self.finishedTests removeAllObjects];
-  return currentResults;
 }
 
 - (void)testPlanDidFailWithMessage:(NSString *)message
 {
-  self.globalErrorMessage = message;
+  @synchronized (self) {
+    self.globalErrorMessage = message;
+  }
 }
 
 - (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line
 {
-  self.currentTest.failureInfo = [[FBTestRunFailureInfo alloc] initWithMessage:message file:file line:line];
+  @synchronized (self) {
+    self.currentTest.failureInfo = [[FBTestRunFailureInfo alloc] initWithMessage:message file:file line:line];
+  }
 }
 
 - (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration
 {
-  [self testCaseDidFinishForTestClass:testClass method:method withStatus:status duration:duration logs:nil];
+  @synchronized (self) {
+    [self testCaseDidFinishForTestClass:testClass method:method withStatus:status duration:duration logs:nil];
+  }
 }
 
 - (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(NSArray<NSString *> *)logs
 {
-  self.currentTest.passed = (status == FBTestReportStatusPassed);
-  self.currentTest.duration = duration;
-  [self.currentTest.mutableLogs addObjectsFromArray:logs];
-  [self.finishedTests addObject:self.currentTest];
+  @synchronized (self) {
+    self.currentTest.passed = (status == FBTestReportStatusPassed);
+    self.currentTest.duration = duration;
+    [self.currentTest.mutableLogs addObjectsFromArray:logs];
+    [self.finishedTests addObject:self.currentTest];
+  }
 }
 
 - (void)testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
 {
-  self.currentTest = [[FBTestRunUpdate alloc]
-    initWithBundleName:self.currentBundleName
-    className:testClass
-    methodName:method
-    duration:0.0
-    passed:NO
-    crashed:NO
-    failureInfo:nil];
+  @synchronized (self) {
+    self.currentTest = [[FBTestRunUpdate alloc]
+      initWithBundleName:self.currentBundleName
+      className:testClass
+      methodName:method
+      duration:0.0
+      passed:NO
+      crashed:NO
+      failureInfo:nil];
+  }
 }
 
 - (void)testCase:(NSString *)testClass method:(NSString *)method willStartActivity:(FBActivityRecord *)activity
 {
-  FBTestRunTestActivity *testActivity = [[FBTestRunTestActivity alloc] initWithTitle:activity.title duration:activity.duration uuid:activity.uuid.UUIDString];
-  [self.currentTest.mutableActivityLogs addObject:testActivity];
+  @synchronized (self) {
+    FBTestRunTestActivity *testActivity = [[FBTestRunTestActivity alloc] initWithTitle:activity.title duration:activity.duration uuid:activity.uuid.UUIDString];
+    [self.currentTest.mutableActivityLogs addObject:testActivity];
+  }
 }
 
 - (void)testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime
 {
-  self.currentBundleName = testSuite;
+  @synchronized (self) {
+    self.currentBundleName = testSuite;
+  }
 }
 
 - (void)didCrashDuringTest:(NSError *)error
 {
-  // The test bundle can crash before any test has started.
-  FBTestRunUpdate *currentTest = self.currentTest;
-  if (!currentTest){
-    return;
+  @synchronized (self) {
+    // The test bundle can crash before any test has started.
+    FBTestRunUpdate *currentTest = self.currentTest;
+    if (!currentTest){
+      return;
+    }
+    currentTest.passed = NO;
+    currentTest.crashed = YES;
+    currentTest.failureInfo = [[FBTestRunFailureInfo alloc] initWithMessage:error.description file:nil line:0];
+    [self.finishedTests addObject:currentTest];
   }
-  currentTest.passed = NO;
-  currentTest.crashed = YES;
-  currentTest.failureInfo = [[FBTestRunFailureInfo alloc] initWithMessage:error.description file:nil line:0];
-  [self.finishedTests addObject:currentTest];
 }
 
 #pragma mark - Unused

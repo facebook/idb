@@ -9,7 +9,7 @@
 
 #import <objc/runtime.h>
 
-#import "NSRunLoop+FBControlCore.h"
+#import "FBFuture+Sync.h"
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeApplicationLaunch = @"applaunch";
 

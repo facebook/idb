@@ -15,7 +15,7 @@
 #import "FBiOSTargetFuture.h"
 #import "FBSocketConnectionManager.h"
 #import "FBUploadBuffer.h"
-#import "NSRunLoop+FBControlCore.h"
+#import "FBFuture+Sync.h"
 #import "FBDataBuffer.h"
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader";

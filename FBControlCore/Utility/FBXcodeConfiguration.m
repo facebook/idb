@@ -11,7 +11,7 @@
 
 #import "FBTaskBuilder.h"
 #import "FBXcodeDirectory.h"
-#import "NSRunLoop+FBControlCore.h"
+#import "FBFuture+Sync.h"
 
 @implementation FBXcodeConfiguration
 

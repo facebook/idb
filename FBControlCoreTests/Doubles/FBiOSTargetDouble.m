@@ -174,4 +174,9 @@
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
+- (FBFuture<FBInstrumentsOperation *> *)startInstrument:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
+{
+  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
+}
+
 @end

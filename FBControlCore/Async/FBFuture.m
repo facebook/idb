@@ -552,10 +552,6 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 {
   FBMutableFuture *chained = FBMutableFuture.future;
   [self onQueue:queue notifyOfCompletion:^(FBFuture *future) {
-    if (future.state == FBFutureStateCancelled) {
-      [chained cancel];
-      return;
-    }
     FBFuture *next = chain(future);
     NSCAssert([next isKindOfClass:FBFuture.class], @"chained value is not a Future, got %@", next);
     [next onQueue:queue notifyOfCompletion:^(FBFuture *final) {
