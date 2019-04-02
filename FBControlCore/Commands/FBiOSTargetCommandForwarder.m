@@ -57,12 +57,14 @@
     if (![class instancesRespondToSelector:selector]) {
       continue;
     }
-    return [self obtainCommandForClass:class];
+    id<FBiOSTargetCommand> command = [self obtainCommandForClass:class];
+    [self.target.logger.debug logFormat:@"Executing %@", NSStringFromSelector(selector)];
+    return command;
   }
   return [super forwardingTargetForSelector:selector];
 }
 
-- (id)obtainCommandForClass:(Class)class
+- (id<FBiOSTargetCommand>)obtainCommandForClass:(Class)class
 {
   NSString *key = NSStringFromClass(class);
   if (self.memoizedCommands[key]){
@@ -76,7 +78,7 @@
   return instance;
 }
 
-- (id)createCommandForClass:(id)class
+- (id<FBiOSTargetCommand>)createCommandForClass:(Class)class
 {
   NSParameterAssert([class conformsToProtocol:@protocol(FBiOSTargetCommand)]);
   return [class commandsWithTarget:self.target];
