@@ -192,11 +192,6 @@
   return [FBFuture futureWithResult:@(self.bundleIDToRunningTask[bundleID].processIdentifier)];
 }
 
-- (BOOL)requiresTestDaemonMediationForTestHostConnection
-{
-  return YES;
-}
-
 #pragma mark Not supported
 
 - (nonnull NSString *)consoleString

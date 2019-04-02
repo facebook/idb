@@ -262,11 +262,6 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
     }];
 }
 
-- (BOOL)requiresTestDaemonMediationForTestHostConnection
-{
-  return YES;
-}
-
 #pragma mark Private
 
 - (FBFuture<FBTask *> *)_startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger

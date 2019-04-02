@@ -53,11 +53,6 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestOperation;
  */
 - (FBFutureContext<NSNumber *> *)transportForTestManagerService;
 
-/**
- Determines whether device supports testing with test manager daemon
- */
-- (BOOL)requiresTestDaemonMediationForTestHostConnection;
-
 @end
 
 NS_ASSUME_NONNULL_END

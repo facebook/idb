@@ -188,9 +188,4 @@
   return nil;
 }
 
-- (BOOL)requiresTestDaemonMediationForTestHostConnection
-{
-  return YES;
-}
-
 @end

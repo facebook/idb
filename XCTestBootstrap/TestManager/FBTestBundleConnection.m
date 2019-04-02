@@ -426,14 +426,6 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
     [self concludeWithResult:[FBTestBundleResult failedInError:error]];
     return nil;
   }
-  if (!self.target.requiresTestDaemonMediationForTestHostConnection) {
-    XCTestBootstrapError *error = [[XCTestBootstrapError
-      describe:@"Test Bundle Connection cannot handle a Device that doesn't require daemon mediation"]
-      code:XCTestBootstrapErrorCodeStartupFailure];
-    [self concludeWithResult:[FBTestBundleResult failedInError:error]];
-    return nil;
-  }
-
   [self.logger logFormat:@"Test Bundle is Ready"];
   self.state = FBTestBundleConnectionStateTestBundleReady;
   [self.connectFuture resolveWithResult:FBTestBundleResult.success];
