@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 typedef enum {
   FBFileHeaderMagicUnknown = 0,
-  FBFileHeaderMagicTAR = 1,
+  FBFileHeaderMagicGZIP = 1,
   FBFileHeaderMagicIPA = 2,
 } FBFileHeaderMagic;
 

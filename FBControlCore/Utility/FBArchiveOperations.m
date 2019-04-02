@@ -57,7 +57,7 @@
   switch (magic) {
     case FBFileHeaderMagicIPA:
       return [self extractZipArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
-    case FBFileHeaderMagicTAR:
+    case FBFileHeaderMagicGZIP:
       return [self extractGzippedTarArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
     default:
       return [[FBControlCoreError
@@ -140,7 +140,7 @@ static unsigned short const TarFileMagicHeader = 0x8b1f;
   if (magic == ZipFileMagicHeader) {
     return FBFileHeaderMagicIPA;
   } else if (magic == TarFileMagicHeader) {
-    return FBFileHeaderMagicTAR;
+    return FBFileHeaderMagicGZIP;
   }
   return FBFileHeaderMagicUnknown;
 }
