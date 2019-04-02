@@ -26,7 +26,7 @@
     mapReplace:extractPath];
 }
 
-+ (FBFuture<NSString *> *)extractTarArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSString *> *)extractGzippedTarArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [[[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/tar"]
@@ -38,7 +38,7 @@
     mapReplace:extractPath];
 }
 
-+ (FBFuture<NSString *> *)extractTarArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSString *> *)extractGzippedTarArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [[[[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/tar"]
@@ -58,7 +58,7 @@
     case FBFileHeaderMagicIPA:
       return [self extractZipArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
     case FBFileHeaderMagicTAR:
-      return [self extractTarArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
+      return [self extractGzippedTarArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
     default:
       return [[FBControlCoreError
         describeFormat:@"File at path %@ is not determined to be an archive", path]
@@ -77,7 +77,7 @@
     start];
 }
 
-+ (FBFuture<FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *> *)createTarForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *> *)createGzippedTarForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   BOOL isDirectory;
   if (![NSFileManager.defaultManager fileExistsAtPath:path isDirectory:&isDirectory]) {
@@ -98,7 +98,7 @@
 
   return [[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/tar"]
-    withArguments:@[@"-vcf", @"-", @"-C", directory, fileName]]
+    withArguments:@[@"-zvcf", @"-", @"-C", directory, fileName]]
     withStdErrToLogger:logger]
     withStdOutToInputStream]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]

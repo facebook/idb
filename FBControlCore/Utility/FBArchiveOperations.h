@@ -40,7 +40,7 @@ typedef enum {
 + (FBFuture<NSString *> *)extractZipArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 /**
- Extracts a tar archive to a directory.
+ Extracts a gzipped tar archive to a directory.
 
  @param path the path of the tar archive
  @param extractPath the extraction path.
@@ -48,11 +48,11 @@ typedef enum {
  @param logger the logger to log to.
  @return a Future wrapping the extracted tar destination.
  */
-+ (FBFuture<NSString *> *)extractTarArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<NSString *> *)extractGzippedTarArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Extracts an archive to a directory.
- Will determine which command to use to perform the extraction.
+ Will determine whether this is a gzipped tar or a zip file and use the appropriate implementation for extraction.
 
  @param path the path of the archive.
  @param extractPath the extraction path.
@@ -63,7 +63,7 @@ typedef enum {
 + (FBFuture<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 /**
- Extracts a tar archive to a directory.
+ Extracts a gzipped tar archive to a directory.
 
  @param stream the stream of the tar archive.
  @param extractPath the extraction path
@@ -71,7 +71,7 @@ typedef enum {
  @param logger the logger to log to
  @return a Future wrapping the extracted tar destination.
  */
-+ (FBFuture<NSString *> *)extractTarArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<NSString *> *)extractGzippedTarArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Creates a gzips archive, returning an task that has an NSInputStream attached to stdout.
@@ -85,16 +85,15 @@ typedef enum {
 + (FBFuture<FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *> *)gzipPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 /**
- Creates a tar archive, returning an task that has an NSInputStream attached to stdout.
- Read the input stream to obtain all of the tar output of the file.
- The output is not gzipped.
+ Creates a gzipped tar archive, returning an task that has an NSInputStream attached to stdout.
+ Read the input stream to obtain the gzipped tar output.
 
  @param path the path to archive.
  @param queue the queue to do work on
  @param logger the logger to log to.
  @return a A Future containing a task with an NSInputStream attached to stdout.
  */
-+ (FBFuture<FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *> *)createTarForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *> *)createGzippedTarForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Get the header magic from some data.
