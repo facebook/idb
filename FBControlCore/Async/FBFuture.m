@@ -491,7 +491,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return state;
 }
 
-#pragma mark FBFuture
+#pragma mark Cancellation
 
 - (FBFuture<NSNull *> *)cancel
 {
@@ -509,6 +509,19 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
     return self.resolvedCancellation;
   }
 }
+
+- (instancetype)onQueue:(dispatch_queue_t)queue respondToCancellation:(FBFuture<NSNull *> *(^)(void))handler
+{
+  NSParameterAssert(queue);
+  NSParameterAssert(handler);
+
+  @synchronized(self) {
+    [self.cancelResponders addObject:[[FBFuture_Cancellation alloc] initWithQueue:queue handler:handler]];
+    return self;
+  }
+}
+
+#pragma mark Completion Notification
 
 - (instancetype)onQueue:(dispatch_queue_t)queue notifyOfCompletion:(void (^)(FBFuture *))handler
 {
@@ -536,17 +549,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   }];
 }
 
-
-- (instancetype)onQueue:(dispatch_queue_t)queue respondToCancellation:(FBFuture<NSNull *> *(^)(void))handler
-{
-  NSParameterAssert(queue);
-  NSParameterAssert(handler);
-
-  @synchronized(self) {
-    [self.cancelResponders addObject:[[FBFuture_Cancellation alloc] initWithQueue:queue handler:handler]];
-    return self;
-  }
-}
+#pragma mark Deriving new Futures
 
 - (FBFuture *)onQueue:(dispatch_queue_t)queue chain:(FBFuture *(^)(FBFuture *))chain
 {
@@ -628,25 +631,6 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   }];
 }
 
-- (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(id, FBFutureState))action
-{
-  FBFutureContext_Teardown *teardown = [[FBFutureContext_Teardown alloc] initWithFuture:self queue:queue action:action];
-  return [[FBFutureContext alloc] initWithFuture:self teardowns:@[teardown].mutableCopy];
-}
-
-- (FBFutureContext *)onQueue:(dispatch_queue_t)queue pushTeardown:(FBFutureContext *(^)(id))fmap
-{
-  NSMutableArray<FBFutureContext_Teardown *> *teardowns = NSMutableArray.array;
-  FBFuture *future = [self onQueue:queue fmap:^(id value) {
-    FBFutureContext *chained = fmap(value);
-    for (FBFutureContext_Teardown *teardown in chained.teardowns) {
-      [teardowns addObject:[[FBFutureContext_Teardown alloc] initWithFuture:chained.future queue:teardown.queue action:teardown.action]];
-    }
-    return chained.future;
-  }];
-  return [[FBFutureContext alloc] initWithFuture:future teardowns:teardowns];
-}
-
 - (FBFuture *)mapReplace:(id)replacement
 {
   return [self onQueue:FBFuture.internalQueue map:^(id _) {
@@ -692,17 +676,28 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   }];
 }
 
-- (FBFuture *)logCompletion:(id<FBControlCoreLogger>)logger withPurpose:(NSString *)format, ...
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
+#pragma mark Creating Context
 
-  return [self onQueue:FBFuture.internalQueue notifyOfCompletion:^(FBFuture *resolved) {
-    [logger logFormat:@"Complted %@ with state '%@'", string, resolved];
-  }];
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(id, FBFutureState))action
+{
+  FBFutureContext_Teardown *teardown = [[FBFutureContext_Teardown alloc] initWithFuture:self queue:queue action:action];
+  return [[FBFutureContext alloc] initWithFuture:self teardowns:@[teardown].mutableCopy];
 }
+
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue pushTeardown:(FBFutureContext *(^)(id))fmap
+{
+  NSMutableArray<FBFutureContext_Teardown *> *teardowns = NSMutableArray.array;
+  FBFuture *future = [self onQueue:queue fmap:^(id value) {
+    FBFutureContext *chained = fmap(value);
+    for (FBFutureContext_Teardown *teardown in chained.teardowns) {
+      [teardowns addObject:[[FBFutureContext_Teardown alloc] initWithFuture:chained.future queue:teardown.queue action:teardown.action]];
+    }
+    return chained.future;
+  }];
+  return [[FBFutureContext alloc] initWithFuture:future teardowns:teardowns];
+}
+
+#pragma mark Metadata
 
 - (FBFuture *)named:(NSString *)name
 {
@@ -718,6 +713,18 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   va_end(args);
 
   return [self named:name];
+}
+
+- (FBFuture *)logCompletion:(id<FBControlCoreLogger>)logger withPurpose:(NSString *)format, ...
+{
+  va_list args;
+  va_start(args, format);
+  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
+  va_end(args);
+
+  return [self onQueue:FBFuture.internalQueue notifyOfCompletion:^(FBFuture *resolved) {
+    [logger logFormat:@"Complted %@ with state '%@'", string, resolved];
+  }];
 }
 
 #pragma mark - Properties

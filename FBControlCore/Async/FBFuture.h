@@ -122,7 +122,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  */
 + (FBFuture<T> *)race:(NSArray<FBFuture<T> *> *)futures NS_SWIFT_NAME(init(race:));
 
-#pragma mark Public Methods
+#pragma mark Cancellation
 
 /**
  Cancels the asynchronous operation.
@@ -135,6 +135,22 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @return a Future that resolves when cancellation of all handlers has been processed.
  */
 - (FBFuture<NSNull *> *)cancel;
+
+/**
+ Respond to the cancellation of the reciever.
+ Since the cancellation handler can itself return a future, asynchronous cancellation is permitted.
+ This can be called multiple times for the same Future if multiple cleanup operations need to occur.
+
+ Make sure that the future that is returned from this block is itself not the same reference as the reciever.
+ Otherwise the `cancel` call will itself resolve as 'cancelled'.
+
+ @param queue the queue to notify on.
+ @param handler the block to invoke if cancelled.
+ @return the Reciever, for chaining.
+ */
+- (instancetype)onQueue:(dispatch_queue_t)queue respondToCancellation:(FBFuture<NSNull *> *(^)(void))handler;
+
+#pragma mark Completion Notification
 
 /**
  Notifies of the resolution of the Future.
@@ -155,19 +171,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  */
 - (instancetype)onQueue:(dispatch_queue_t)queue doOnResolved:(void (^)(T))handler;
 
-/**
- Respond to the cancellation of the reciever.
- Since the cancellation handler can itself return a future, asynchronous cancellation is permitted.
- This can be called multiple times for the same Future if multiple cleanup operations need to occur.
-
- Make sure that the future that is returned from this block is itself not the same reference as the reciever.
- Otherwise the `cancel` call will itself resolve as 'cancelled'.
-
- @param queue the queue to notify on.
- @param handler the block to invoke if cancelled.
- @return the Reciever, for chaining.
- */
-- (instancetype)onQueue:(dispatch_queue_t)queue respondToCancellation:(FBFuture<NSNull *> *(^)(void))handler;
+#pragma mark Deriving new Futures
 
 /**
  Chain Futures based on any non-cancellation resolution of the reciever.
@@ -205,28 +209,6 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @return a Future that will attempt to handle the error
  */
 - (FBFuture *)onQueue:(dispatch_queue_t)queue handleError:(FBFuture * (^)(NSError *))handler;
-
-/**
- Creates an 'context object' that allows for the value contained by a future to be torn-down when the context is done.
- This is useful for resource cleanup, where closing a resource needs to be managed.
- The teardown will always be called, regardless of the terminating condition of any chained future.
- The state passed in the teardown callback is the state of the resolved future from any chaining that may happen.
- The teardown will only be called if the reciever has resolved, as this is how the context value is resolved.
-
- @param queue the queue to perform the teardown on.
- @param action the teardown action to invoke. This block will be executed after the context object is done. This also includes the state that the resultant future ended in.
- @return a 'context object' that manages the tear-down of the reciever's value.
- */
-- (FBFutureContext<T> *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(T, FBFutureState))action;
-
-/**
- Creates an 'context object' from a block.
-
- @param queue the queue to perform the teardown on.
- @param fmap the 'context object' to add.
- @return a 'contex object' that manages the tear-down of the reciever's value.
- */
-- (FBFutureContext *)onQueue:(dispatch_queue_t)queue pushTeardown:(FBFutureContext *(^)(T))fmap;
 
 /**
  Cancels the receiver if it doesn't resolve within the timeout.
@@ -278,13 +260,31 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  */
 - (FBFuture<T> *)rephraseFailure:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
 
-/**
- A helper to log completion of the future.
+#pragma mark Creating Context
 
- @param logger the logger to log to.
- @param format a description of the future.
+/**
+ Creates an 'context object' that allows for the value contained by a future to be torn-down when the context is done.
+ This is useful for resource cleanup, where closing a resource needs to be managed.
+ The teardown will always be called, regardless of the terminating condition of any chained future.
+ The state passed in the teardown callback is the state of the resolved future from any chaining that may happen.
+ The teardown will only be called if the reciever has resolved, as this is how the context value is resolved.
+
+ @param queue the queue to perform the teardown on.
+ @param action the teardown action to invoke. This block will be executed after the context object is done. This also includes the state that the resultant future ended in.
+ @return a 'context object' that manages the tear-down of the reciever's value.
  */
-- (FBFuture<T> *)logCompletion:(id<FBControlCoreLogger>)logger withPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(2,3);
+- (FBFutureContext<T> *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(T, FBFutureState))action;
+
+/**
+ Creates an 'context object' from a block.
+
+ @param queue the queue to perform the teardown on.
+ @param fmap the 'context object' to add.
+ @return a 'contex object' that manages the tear-down of the reciever's value.
+ */
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue pushTeardown:(FBFutureContext *(^)(T))fmap;
+
+#pragma mark Metadata
 
 /**
  Rename the future.
@@ -301,6 +301,15 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @return the reciever, for chaining.
  */
 - (FBFuture<T> *)nameFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+
+/**
+ A helper to log completion of the future.
+
+ @param logger the logger to log to.
+ @param format a description of the future.
+ @return the reciever, for chaining
+ */
+- (FBFuture<T> *)logCompletion:(id<FBControlCoreLogger>)logger withPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(2,3);
 
 #pragma mark Properties
 
