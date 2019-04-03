@@ -70,7 +70,7 @@ NSArray<NSString *> *FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType target
   return [strings copy];
 }
 
-extern FBiOSTargetType FBiOSTargetTypeFromTargetTypeStrings(NSArray<NSString *> *targetTypeStrings)
+FBiOSTargetType FBiOSTargetTypeFromTargetTypeStrings(NSArray<NSString *> *targetTypeStrings)
 {
   FBiOSTargetType targetType = FBiOSTargetTypeNone;
   for (NSString *string in targetTypeStrings) {
@@ -89,7 +89,7 @@ extern FBiOSTargetType FBiOSTargetTypeFromTargetTypeStrings(NSArray<NSString *> 
   return targetType;
 }
 
-extern NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right)
+NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right)
 {
   NSComparisonResult comparison = [@(left.targetType) compare:@(right.targetType)];
   if (comparison != NSOrderedSame) {

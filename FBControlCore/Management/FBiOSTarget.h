@@ -162,6 +162,9 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 
 @end
 
+#if defined __cplusplus
+extern "C" {
+#endif
 /**
  The canonical string representation of the state enum.
  */
@@ -175,7 +178,7 @@ extern FBiOSTargetState FBiOSTargetStateFromStateString(FBiOSTargetStateString s
 /**
  The canonical string representations of the target type Option Set.
  */
-NSArray<NSString *> *FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType targetType);
+extern NSArray<NSString *> *FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType targetType);
 
 /**
  The canonical enum representation of the state string.
@@ -186,5 +189,9 @@ extern FBiOSTargetType FBiOSTargetTypeFromTargetTypeStrings(NSArray<NSString *> 
  A Default Comparison Function that can be called for different implementations of FBiOSTarget.
  */
 extern NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right);
+
+#if defined __cplusplus
+};
+#endif
 
 NS_ASSUME_NONNULL_END
