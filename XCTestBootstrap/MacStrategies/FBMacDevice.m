@@ -438,4 +438,10 @@
   return nil;
 }
 
+- (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(nonnull FBApplicationBundle *)application port:(in_port_t)port
+{
+  NSAssert(NO, @"-[%@ %@] is not yet supported", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
 @end

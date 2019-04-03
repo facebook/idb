@@ -28,6 +28,7 @@
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorCrashLogCommands.h"
+#import "FBSimulatorDebuggerCommands.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
@@ -302,6 +303,7 @@
       FBSimulatorApplicationDataCommands.class,
       FBSimulatorBridgeCommands.class,
       FBSimulatorCrashLogCommands.class,
+      FBSimulatorDebuggerCommands.class,
       FBSimulatorKeychainCommands.class,
       FBSimulatorLaunchCtlCommands.class,
       FBSimulatorLifecycleCommands.class,

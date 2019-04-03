@@ -25,6 +25,11 @@
   return directory;
 }
 
++ (NSString *)contentsDirectory
+{
+  return [[self developerDirectory] stringByDeletingLastPathComponent];
+}
+
 + (nullable NSString *)appleConfiguratorApplicationPath
 {
   static NSString *path = nil;

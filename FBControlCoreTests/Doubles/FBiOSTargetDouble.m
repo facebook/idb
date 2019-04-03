@@ -174,4 +174,9 @@
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
+- (nonnull FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(nonnull FBApplicationBundle *)application port:(in_port_t)port
+{
+  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
+}
+
 @end

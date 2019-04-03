@@ -28,6 +28,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, class) NSString *developerDirectory;
 
 /**
+ The File Path to of Xcode's /Xcode.app/Contents directory.
+ */
+@property (nonatomic, copy, readonly, class) NSString *contentsDirectory;
+
+/**
  The Version Number for the Xcode defined by the Developer Directory.
  */
 @property (nonatomic, copy, readonly, class) NSDecimalNumber *xcodeVersionNumber;
