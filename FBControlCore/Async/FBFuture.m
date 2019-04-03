@@ -510,6 +510,17 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   }
 }
 
+- (instancetype)shieldCancellation
+{
+  @synchronized (self) {
+    if (self.state != FBFutureStateRunning) {
+      return self;
+    }
+    [self.cancelResponders removeAllObjects];
+    return self;
+  }
+}
+
 - (instancetype)onQueue:(dispatch_queue_t)queue respondToCancellation:(FBFuture<NSNull *> *(^)(void))handler
 {
   NSParameterAssert(queue);
