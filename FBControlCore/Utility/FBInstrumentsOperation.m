@@ -180,7 +180,12 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [self.task.completed mapReplace:NSNull.null];
+  return [[[self.task.completed
+    mapReplace:NSNull.null]
+    shieldCancellation]
+    onQueue:self.queue respondToCancellation:^{
+      return [[self stop] mapReplace:NSNull.null];
+    }];
 }
 
 @end
