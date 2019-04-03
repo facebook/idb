@@ -57,10 +57,10 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
 
 #pragma mark FBDebuggerCommands Implementation
 
-- (FBFuture<id<FBDebugServer>> *)launchDebugServerForApplicationWithPath:(NSString *)path port:(in_port_t)port
+- (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(FBApplicationBundle *)application port:(in_port_t)port
 {
   return [[self
-    lldbBootstrapCommandsForApplicationAtPath:path port:port]
+    lldbBootstrapCommandsForApplicationAtPath:application.path port:port]
     onQueue:self.device.workQueue fmap:^(NSArray<NSString *> *commands) {
       return [FBDeviceDebugServer debugServerForServiceConnection:[self connectToDebugServer] port:port lldbBootstrapCommands:commands queue:self.device.workQueue logger:self.device.logger];
     }];
