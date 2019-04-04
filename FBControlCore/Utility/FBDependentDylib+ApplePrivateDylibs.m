@@ -38,10 +38,30 @@
   NSDecimalNumber *xcode90 = [NSDecimalNumber decimalNumberWithString:@"9.0"];
   BOOL atLeastXcode90 = [xcodeVersion compare:xcode90] != NSOrderedAscending;
 
+  NSDecimalNumber *xcode102 = [NSDecimalNumber decimalNumberWithString:@"10.2"];
+  BOOL atLeastXcode102 = [xcodeVersion compare:xcode102] != NSOrderedAscending;
   // dylibs not required prior to Xcode 8.3.3
   NSArray *dylibs = @[];
-
-  if (atLeastXcode90) {
+if ( atLeastXcode102) {
+    dylibs =     @[
+       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftCore.dylib"],
+       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftDarwin.dylib"],
+       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftObjectiveC.dylib"],
+       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftDispatch.dylib"],
+       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftCoreFoundation.dylib"],
+       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftIOKit.dylib"],
+       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftCoreGraphics.dylib"],
+       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftFoundation.dylib"],
+       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftXPC.dylib"],
+       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftos.dylib"],
+       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftMetal.dylib"],
+       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftCoreImage.dylib"],
+       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftQuartzCore.dylib"],
+       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftCoreData.dylib"],
+       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftAppKit.dylib"]
+       ];
+    
+} else if (atLeastXcode90) {
     dylibs =
     @[
       [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftCore.dylib"],
