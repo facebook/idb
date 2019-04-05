@@ -15,6 +15,10 @@ FBJSONKey const FBJSONKeyTarget = @"target";
 FBJSONKey const FBJSONKeyTimestamp = @"timestamp";
 FBJSONKey const FBJSONKeyErrorMessage = @"error_message";
 FBJSONKey const FBJSONKeyCallArguments = @"call_arguments";
+FBJSONKey const FBJSONKeyMessage = @"message";
+FBJSONKey const FBJSONKeyDuration = @"duration";
+FBJSONKey const FBJSONKeyArgument = @"argument";
+FBJSONKey const FBJSONKeyArguments = @"arguments";
 
 FBEventName const FBEventNameApprove = @"approve";
 FBEventName const FBEventNameClearKeychain = @"clear_keychain";
@@ -54,7 +58,12 @@ FBEventName const FBEventNameUninstall = @"uninstall";
 FBEventName const FBEventNameUpload = @"upload";
 FBEventName const FBEventNameWaitingForDebugger = @"waiting_for_debugger";
 FBEventName const FBEventNameWatchdogOverride = @"watchdog_override";
+FBEventName const FBEventNameLaunched = @"launched";
+FBEventName const FBEventNameTerminated = @"terminated";
+FBEventName const FBEventNameInvokeCall = @"call";
 
 FBEventType const FBEventTypeStarted = @"started";
 FBEventType const FBEventTypeEnded = @"ended";
 FBEventType const FBEventTypeDiscrete = @"discrete";
+FBEventType const FBEventTypeSuccess = @"success";
+FBEventType const FBEventTypeFailure = @"failure";
