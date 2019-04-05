@@ -42,25 +42,25 @@
   BOOL atLeastXcode102 = [xcodeVersion compare:xcode102] != NSOrderedAscending;
   // dylibs not required prior to Xcode 8.3.3
   NSArray *dylibs = @[];
-if ( atLeastXcode102) {
-    dylibs =     @[
-       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftCore.dylib"],
-       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftDarwin.dylib"],
-       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftObjectiveC.dylib"],
-       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftDispatch.dylib"],
-       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftCoreFoundation.dylib"],
-       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftIOKit.dylib"],
-       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftCoreGraphics.dylib"],
-       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftFoundation.dylib"],
-       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftXPC.dylib"],
-       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftos.dylib"],
-       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftMetal.dylib"],
-       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftCoreImage.dylib"],
-       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftQuartzCore.dylib"],
-       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftCoreData.dylib"],
-       [FBDependentDylib dependentWithRelativePath:@"../../../../../../usr/lib/swift/libswiftAppKit.dylib"]
-       ];
-    
+if (atLeastXcode102) {
+    dylibs =
+    @[
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftCore.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftDarwin.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftObjectiveC.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftDispatch.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftCoreFoundation.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftIOKit.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftCoreGraphics.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftFoundation.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftXPC.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftos.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftMetal.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftCoreImage.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftQuartzCore.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftCoreData.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftAppKit.dylib"]
+     ];
 } else if (atLeastXcode90) {
     dylibs =
     @[

@@ -28,6 +28,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)dependentWithRelativePath:(NSString *)relativePath;
 
+/**
+ Creates and returns FBDependentDylib with the given path.
+ 
+ @param absolutePath absolute path to Swift libs directory
+ @return an FBDependentDylib instance
+ */
++ (instancetype)dependentWithAbsolutePath:(NSString *)absolutePath;
 
 /**
  Loads the framework using dlopen.

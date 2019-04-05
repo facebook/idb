@@ -42,6 +42,20 @@
   return self;
 }
 
++ (instancetype)dependentWithAbsolutePath:(NSString *)absolutePath
+{
+    return [[FBDependentDylib alloc] initWithAbsolutePath:absolutePath];
+}
+
+- (instancetype)initWithAbsolutePath:(NSString *)absolutePath
+{
+    self = [super init];
+    if (self) {
+        _path = [absolutePath stringByStandardizingPath];
+    }
+    return self;
+}
+
 #pragma mark Public
 
 - (BOOL)loadWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
