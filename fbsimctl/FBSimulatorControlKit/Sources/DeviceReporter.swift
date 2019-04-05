@@ -9,9 +9,9 @@ import FBDeviceControl
 import Foundation
 
 open class DeviceReporter: iOSReporter {
-  open unowned let device: FBDevice
-  open let reporter: EventReporter
-  open let format: FBiOSTargetFormat
+  public unowned let device: FBDevice
+  public let reporter: EventReporter
+  public let format: FBiOSTargetFormat
 
   init(device: FBDevice, format: FBiOSTargetFormat, reporter: EventReporter) {
     self.device = device

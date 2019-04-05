@@ -12,7 +12,7 @@ import Foundation
  */
 public protocol iOSReporter: class {
   var reporter: EventReporter { get }
-  unowned var target: FBiOSTarget { get }
+  var target: FBiOSTarget { get }
   var format: FBiOSTargetFormat { get }
 }
 

@@ -9,9 +9,9 @@ import FBSimulatorControl
 import Foundation
 
 open class SimulatorReporter: NSObject, FBSimulatorEventSink, iOSReporter {
-  open unowned let simulator: FBSimulator
-  open let reporter: EventReporter
-  open let format: FBiOSTargetFormat
+  public unowned let simulator: FBSimulator
+  public let reporter: EventReporter
+  public let format: FBiOSTargetFormat
 
   init(simulator: FBSimulator, format: FBiOSTargetFormat, reporter: EventReporter) {
     self.simulator = simulator

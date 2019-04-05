@@ -5,16 +5,16 @@ before_install:
 matrix:
   include:
     - os: osx
-      osx_image: xcode10.1
+      osx_image: xcode10.2
       env: TARGET=framework COMMAND=test FBSIMULATORCONTROL_DEVICE_SET=custom FBSIMULATORCONTROL_LAUNCH_TYPE=direct
     - os: osx
-      osx_image: xcode10.1
+      osx_image: xcode10.2
       env: TARGET=fbsimctl COMMAND=test
     - os: osx
-      osx_image: xcode10.1
+      osx_image: xcode10.2
       env: TARGET=fbsimctl COMMAND=e2e-test
     - os: osx
-      osx_image: xcode10.1
+      osx_image: xcode10.2
       env: TARGET=fbxctest COMMAND=test
 script: ./build.sh
 branches:
