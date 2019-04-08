@@ -75,6 +75,7 @@
 #import <FBControlCore/FBListApplicationsConfiguration.h>
 #import <FBControlCore/FBLocalizationOverride.h>
 #import <FBControlCore/FBLogCommands.h>
+#import <FBControlCore/FBLoggingWrapper.h>
 #import <FBControlCore/FBLogSearch.h>
 #import <FBControlCore/FBLogTailConfiguration.h>
 #import <FBControlCore/FBProcessFetcher+Helpers.h>

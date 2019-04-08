@@ -243,6 +243,8 @@
 		AA6155DD224BB60A007D1C22 /* FBInstrumentsCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AA6155DC224BB60A007D1C22 /* FBInstrumentsCommands.m */; };
 		AA63FD741D00A3D5000B3842 /* FBiOSTargetQuery.h in Headers */ = {isa = PBXBuildFile; fileRef = AA63FD721D00A3D5000B3842 /* FBiOSTargetQuery.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA63FD751D00A3D5000B3842 /* FBiOSTargetQuery.m in Sources */ = {isa = PBXBuildFile; fileRef = AA63FD731D00A3D5000B3842 /* FBiOSTargetQuery.m */; };
+		AA65BECC225780ED000D380B /* FBLoggingWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = AA65BECA225780EC000D380B /* FBLoggingWrapper.m */; };
+		AA65BECD225780ED000D380B /* FBLoggingWrapper.h in Headers */ = {isa = PBXBuildFile; fileRef = AA65BECB225780EC000D380B /* FBLoggingWrapper.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA66FEDB1F83FFCB00047AA5 /* FBEventReporter.m in Sources */ = {isa = PBXBuildFile; fileRef = AA66FED91F83FFCB00047AA5 /* FBEventReporter.m */; };
 		AA66FEDC1F83FFD700047AA5 /* FBEventReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA66FEDA1F83FFCB00047AA5 /* FBEventReporter.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA682B1A1CEC9E8B009B6ECA /* FBDeviceSet.h in Headers */ = {isa = PBXBuildFile; fileRef = AA682B181CEC9E8B009B6ECA /* FBDeviceSet.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1153,6 +1155,8 @@
 		AA633F8B1CFD788F00A59C5F /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		AA63FD721D00A3D5000B3842 /* FBiOSTargetQuery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetQuery.h; sourceTree = "<group>"; };
 		AA63FD731D00A3D5000B3842 /* FBiOSTargetQuery.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetQuery.m; sourceTree = "<group>"; };
+		AA65BECA225780EC000D380B /* FBLoggingWrapper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBLoggingWrapper.m; sourceTree = "<group>"; };
+		AA65BECB225780EC000D380B /* FBLoggingWrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBLoggingWrapper.h; sourceTree = "<group>"; };
 		AA66FED91F83FFCB00047AA5 /* FBEventReporter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = FBEventReporter.m; path = Reporting/FBEventReporter.m; sourceTree = "<group>"; };
 		AA66FEDA1F83FFCB00047AA5 /* FBEventReporter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = FBEventReporter.h; path = Reporting/FBEventReporter.h; sourceTree = "<group>"; };
 		AA682B181CEC9E8B009B6ECA /* FBDeviceSet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceSet.h; sourceTree = "<group>"; };
@@ -3098,6 +3102,8 @@
 				AAF2FA6022396D4C00F1185C /* FBInstrumentsOperation.m */,
 				AA391AD01CEF4CBC00817691 /* FBLocalizationOverride.h */,
 				AA391AD11CEF4CBC00817691 /* FBLocalizationOverride.m */,
+				AA65BECB225780EC000D380B /* FBLoggingWrapper.h */,
+				AA65BECA225780EC000D380B /* FBLoggingWrapper.m */,
 				AA5D012D2003F38A005FF117 /* FBProcessStream.h */,
 				AA5D012E2003F38B005FF117 /* FBProcessStream.m */,
 				AAC706F31EFD2E4100BF8303 /* FBScale.h */,
@@ -3363,6 +3369,7 @@
 				AA4424CC1F4C11A9006B5E5D /* FBiOSTargetCommandForwarder.h in Headers */,
 				AAC706F51EFD2E4100BF8303 /* FBScale.h in Headers */,
 				AA805F871F0D14D800AB31DE /* FBLogTailConfiguration.h in Headers */,
+				AA65BECD225780ED000D380B /* FBLoggingWrapper.h in Headers */,
 				AA0F63431F25E81D00C2C763 /* FBSocketConnectionManager.h in Headers */,
 				AA9485E42074B38C00716117 /* FBControlCoreLogger+OSLog.h in Headers */,
 				EEBD60681C9062E900298A07 /* FBProcessFetcher.h in Headers */,
@@ -4074,6 +4081,7 @@
 				AA0080D81DB4CCFD009A25CB /* FBProcessTerminationStrategy.m in Sources */,
 				AA4AF526224A9515008DDDC0 /* FBCrashLog.m in Sources */,
 				AADC72F02012BF7A001060E5 /* FBAccessibilityTraits.m in Sources */,
+				AA65BECC225780ED000D380B /* FBLoggingWrapper.m in Sources */,
 				AA0F63441F25E81D00C2C763 /* FBSocketConnectionManager.m in Sources */,
 				EEBD60771C9062E900298A07 /* FBBinaryParser.m in Sources */,
 				AAF2FA6222396D4D00F1185C /* FBInstrumentsOperation.m in Sources */,
