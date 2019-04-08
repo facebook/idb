@@ -34,12 +34,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithDeviceSetPath:(NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options
++ (instancetype)configurationWithDeviceSetPath:(NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
 {
-  return [[self alloc] initWithDeviceSetPath:deviceSetPath options:options];
+  return [[self alloc] initWithDeviceSetPath:deviceSetPath options:options logger:(logger ?: FBControlCoreGlobalConfiguration.defaultLogger) reporter:reporter];
 }
 
-- (instancetype)initWithDeviceSetPath:(NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options
+- (instancetype)initWithDeviceSetPath:(NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
 {
   self = [super init];
   if (!self) {
@@ -48,6 +48,8 @@
 
   _deviceSetPath = deviceSetPath;
   _options = options;
+  _logger = logger;
+  _reporter = reporter;
 
   return self;
 }
@@ -56,9 +58,7 @@
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  return [self.class
-    configurationWithDeviceSetPath:self.deviceSetPath
-    options:self.options];
+  return self;
 }
 
 #pragma mark NSObject

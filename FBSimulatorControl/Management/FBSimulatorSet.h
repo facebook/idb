@@ -38,12 +38,13 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param configuration the configuration to use. Must not be nil.
  @param deviceSet the Device Set to wrap.
- @param logger the logger to use to verbosely describe what is going on. May be nil.
- @param error any error that occurred during the creation of the pool.
  @param delegate the delegate notifies of any changes to the state of the simulators in the set
+ @param logger the logger to use to verbosely describe what is going on. May be nil.
+ @param reporter the event reporter to report to.
+ @param error any error that occurred during the creation of the pool.
  @return a new FBSimulatorSet.
  */
-+ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error delegate:(nullable id<FBiOSTargetSetDelegate>)delegate;
++ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet delegate:(nullable id<FBiOSTargetSetDelegate>)delegate logger:(nullable id<FBControlCoreLogger>)logger reporter:(nullable id<FBEventReporter>)reporter error:(NSError **)error;
 
 #pragma mark Querying
 
@@ -158,7 +159,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Logger to use.
  */
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
+
+/**
+ The event reporter to use.
+ */
+@property (nonatomic, strong, nullable, readonly) id<FBEventReporter> reporter;
 
 /**
  Returns the configuration for the reciever.

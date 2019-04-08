@@ -48,8 +48,8 @@
   FBSimulatorControlTests_SimDeviceSet_Double *deviceSet = [FBSimulatorControlTests_SimDeviceSet_Double new];
   deviceSet.availableDevices = [simDevices copy];
 
-  FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:nil options:0];
-  _set = [FBSimulatorSet setWithConfiguration:configuration deviceSet:(id)deviceSet logger:nil error:nil delegate:nil];
+  FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:nil options:0 logger:nil reporter:nil];
+  _set = [FBSimulatorSet setWithConfiguration:configuration deviceSet:(id)deviceSet delegate:nil logger:nil reporter:nil error:nil];
 
   NSArray<FBSimulator *> *simulators = _set.allSimulators;
   XCTAssertEqual(simulators.count, simDevices.count);

@@ -65,10 +65,12 @@
   NSArray<FBSimulatorControlConfiguration *> *values = @[
     [FBSimulatorControlConfiguration
       configurationWithDeviceSetPath:nil
-      options:FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart],
+      options:FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart
+      logger:nil reporter:nil],
     [FBSimulatorControlConfiguration
       configurationWithDeviceSetPath:@"/foo/bar"
-      options:FBSimulatorManagementOptionsKillAllOnFirstStart | FBSimulatorManagementOptionsKillAllOnFirstStart]
+      options:FBSimulatorManagementOptionsKillAllOnFirstStart | FBSimulatorManagementOptionsKillAllOnFirstStart
+      logger:nil reporter:nil]
   ];
   [self assertEqualityOfCopy:values];
   [self assertJSONSerialization:values];

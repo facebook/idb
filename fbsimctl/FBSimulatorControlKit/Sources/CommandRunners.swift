@@ -13,8 +13,8 @@ extension Configuration {
   func buildSimulatorControl() throws -> FBSimulatorControl {
     let logger = FBControlCoreGlobalConfiguration.defaultLogger
     try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
-    let controlConfiguration = FBSimulatorControlConfiguration(deviceSetPath: deviceSetPath, options: managementOptions)
-    return try FBSimulatorControl.withConfiguration(controlConfiguration, logger: logger)
+    let controlConfiguration = FBSimulatorControlConfiguration(deviceSetPath: deviceSetPath, options: managementOptions, logger: logger, reporter: nil)
+    return try FBSimulatorControl.withConfiguration(controlConfiguration)
   }
 
   func buildDeviceControl() throws -> FBDeviceSet? {

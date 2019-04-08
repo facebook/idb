@@ -29,10 +29,12 @@
   NSString *setPath = [workingDirectory stringByAppendingPathComponent:@"sim"];
   FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
     configurationWithDeviceSetPath:setPath
-    options:FBSimulatorManagementOptionsDeleteAllOnFirstStart];
+    options:FBSimulatorManagementOptionsDeleteAllOnFirstStart
+    logger:logger
+    reporter:nil];
 
   NSError *innerError = nil;
-  FBSimulatorControl *simulatorControl = [FBSimulatorControl withConfiguration:controlConfiguration logger:logger error:&innerError];
+  FBSimulatorControl *simulatorControl = [FBSimulatorControl withConfiguration:controlConfiguration error:&innerError];
   if (!simulatorControl) {
     return [FBXCTestError failWithError:innerError errorOut:error];
   }

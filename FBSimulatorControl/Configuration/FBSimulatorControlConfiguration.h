@@ -9,7 +9,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBApplicationBundle ;
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  Options that apply to each FBSimulatorControl instance.
@@ -21,8 +21,6 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
   FBSimulatorManagementOptionsIgnoreSpuriousKillFail = 1 << 3, /** Don't fail Pool creation when failing to kill spurious Simulators */
   FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices = 1 << 4, /** Kills CoreSimulatorService daemons from the non-current Xcode version when creating a Pool */
 };
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Value object with the information required to create a Simulator Pool.
@@ -36,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param deviceSetPath the Path to the Device Set. If nil, the default Device Set will be used.
  @return a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithDeviceSetPath:(nullable NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options;
++ (instancetype)configurationWithDeviceSetPath:(nullable NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options logger:(nullable id<FBControlCoreLogger>)logger reporter:(nullable id<FBEventReporter>)reporter;
 
 /**
  The Location of the SimDeviceSet. If no path is provided, the default device set will be used.
@@ -47,6 +45,16 @@ NS_ASSUME_NONNULL_BEGIN
  The Options for Simulator Management.
  */
 @property (nonatomic, assign, readonly) FBSimulatorManagementOptions options;
+
+/**
+ The Logger to use for logging.
+ */
+@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
+
+/**
+ The Event Reporter to use for reporting events.
+ */
+@property (nonatomic, strong, nullable, readonly) id<FBEventReporter> reporter;
 
 @end
 

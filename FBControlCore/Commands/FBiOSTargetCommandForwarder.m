@@ -51,15 +51,23 @@
 
 #pragma mark Forwarding
 
+- (BOOL)respondsToSelector:(SEL)selector
+{
+  for (Class class in self.commandClasses) {
+    if ([class instancesRespondToSelector:selector]) {
+      return YES;
+    }
+  }
+  return NO;
+}
+
 - (id)forwardingTargetForSelector:(SEL)selector
 {
   for (Class class in self.commandClasses) {
     if (![class instancesRespondToSelector:selector]) {
       continue;
     }
-    id<FBiOSTargetCommand> command = [self obtainCommandForClass:class];
-    [self.target.logger.debug logFormat:@"Executing %@", NSStringFromSelector(selector)];
-    return command;
+    return [self obtainCommandForClass:class];
   }
   return [super forwardingTargetForSelector:selector];
 }

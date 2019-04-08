@@ -13,7 +13,7 @@
 
 @interface FBSimulatorSet ()
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logger delegate:(id<FBiOSTargetSetDelegate>)delegate;
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet delegate:(id<FBiOSTargetSetDelegate>)delegate logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter;
 
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 @property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;

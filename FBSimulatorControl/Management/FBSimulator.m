@@ -64,11 +64,12 @@
     set:set
     processFetcher:set.processFetcher
     auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device configuration:configuration]
-    logger:set.logger]
+    logger:set.logger
+    reporter:set.reporter]
     attachEventSinkCompositionWithLaunchdSimProcess:launchdSimProcess containerApplicationProcess:containerApplicationProcess];
 }
 
-- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set processFetcher:(FBSimulatorProcessFetcher *)processFetcher auxillaryDirectory:(NSString *)auxillaryDirectory logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set processFetcher:(FBSimulatorProcessFetcher *)processFetcher auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
 {
   self = [super init];
   if (!self) {
@@ -81,7 +82,10 @@
   _processFetcher = processFetcher;
   _auxillaryDirectory = auxillaryDirectory;
   _logger = [logger withName:device.UDID.UUIDString];
-  _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBSimulator.commandResponders statefulCommands:FBSimulator.statefulCommands];
+  _forwarder = [FBLoggingWrapper
+    wrap:[FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBSimulator.commandResponders statefulCommands:FBSimulator.statefulCommands]
+    eventReporter:reporter
+    logger:self.logger];
 
   return self;
 }
@@ -280,6 +284,11 @@
 - (id)forwardingTargetForSelector:(SEL)selector
 {
   return [self.forwarder forwardingTargetForSelector:selector];
+}
+
+- (void)forwardInvocation:(NSInvocation *)invocation
+{
+  [self.forwarder forwardInvocation:invocation];
 }
 
 + (NSArray<Class> *)commandResponders

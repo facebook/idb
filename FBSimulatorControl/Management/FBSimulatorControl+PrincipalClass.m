@@ -34,24 +34,18 @@
 
 + (nullable instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
 {
-  return [self withConfiguration:configuration logger:FBControlCoreGlobalConfiguration.defaultLogger error:error];
-}
-
-+ (nullable instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
-{
   NSError *innerError = nil;
-  FBSimulatorServiceContext *serviceContext = [FBSimulatorServiceContext sharedServiceContextWithLogger:logger];
+  FBSimulatorServiceContext *serviceContext = [FBSimulatorServiceContext sharedServiceContextWithLogger:configuration.logger];
   SimDeviceSet *deviceSet = [serviceContext createDeviceSetWithConfiguration:configuration error:&innerError];
   if (!deviceSet) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
-  FBSimulatorSet *set = [FBSimulatorSet setWithConfiguration:configuration deviceSet:deviceSet logger:[logger withName:@"simulator_set"] error:&innerError delegate:nil];
+  FBSimulatorSet *set = [FBSimulatorSet setWithConfiguration:configuration deviceSet:deviceSet delegate:nil logger:[configuration.logger withName:@"simulator_set"] reporter:configuration.reporter error:&innerError];
   if (!set) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
-  return [[FBSimulatorControl alloc] initWithConfiguration:configuration serviceContext:serviceContext set:set logger:logger];
+  return [[FBSimulatorControl alloc] initWithConfiguration:configuration serviceContext:serviceContext set:set logger:configuration.logger];
 }
-
 
 - (nullable instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration serviceContext:(nullable FBSimulatorServiceContext *)serviceContext set:(FBSimulatorSet *)set logger:(id<FBControlCoreLogger>)logger
 {
