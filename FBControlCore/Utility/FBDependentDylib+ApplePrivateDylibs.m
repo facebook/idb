@@ -38,10 +38,30 @@
   NSDecimalNumber *xcode90 = [NSDecimalNumber decimalNumberWithString:@"9.0"];
   BOOL atLeastXcode90 = [xcodeVersion compare:xcode90] != NSOrderedAscending;
 
+  NSDecimalNumber *xcode102 = [NSDecimalNumber decimalNumberWithString:@"10.2"];
+  BOOL atLeastXcode102 = [xcodeVersion compare:xcode102] != NSOrderedAscending;
   // dylibs not required prior to Xcode 8.3.3
   NSArray *dylibs = @[];
-
-  if (atLeastXcode90) {
+if (atLeastXcode102) {
+    dylibs =
+    @[
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftCore.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftDarwin.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftObjectiveC.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftDispatch.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftCoreFoundation.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftIOKit.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftCoreGraphics.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftFoundation.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftXPC.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftos.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftMetal.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftCoreImage.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftQuartzCore.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftCoreData.dylib"],
+       [FBDependentDylib dependentWithAbsolutePath:@"/usr/lib/swift/libswiftAppKit.dylib"]
+     ];
+} else if (atLeastXcode90) {
     dylibs =
     @[
       [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftCore.dylib"],
