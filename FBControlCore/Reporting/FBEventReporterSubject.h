@@ -34,6 +34,26 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, nullable, readonly) FBEventType eventType;
 
+/**
+ A JSON Serializable form of the argument.
+ */
+@property (nonatomic, copy, nullable, readonly) NSDictionary<NSString *, NSString *> *argument;
+
+/**
+ A JSON Serializable form of the arguments
+ */
+@property (nonatomic, copy, nullable, readonly) NSArray<NSString *> *arguments;
+
+/**
+ A duration if present.
+ */
+@property (nonatomic, copy, nullable, readonly) NSNumber *duration;
+
+/**
+ A message, if present
+ */
+@property (nonatomic, copy, nullable, readonly) NSString *message;
+
 @end
 
 /**
@@ -131,6 +151,74 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Event Reporter Subject.
  */
 + (instancetype)compositeSubjectWithArray:(NSArray<id<FBEventReporterSubject>> *)subjects NS_SWIFT_NAME(init(subjects:));
+
+/**
+ Construct a sample for logging an event.
+
+ @param eventName the event name
+ @return a scuba sample
+ */
++ (id<FBEventReporterSubject>)subjectForEvent:(FBEventName)eventName;
+
+/**
+ Construct a sample for a started call.
+
+ @param call the name of the invoked call
+ @param argument a key-value representation of the argument to the call.
+ @return a scuba sample
+ */
++ (id<FBEventReporterSubject>)subjectForStartedCall:(NSString *)call argument:(NSDictionary<NSString *, NSString *> *)argument;
+
+/**
+ Construct a sample for a successful call.
+
+ @param call the name of the invoked call
+ @param duration the duration of the call.
+ @param argument a key-value representation of the argument to the call.
+ @return a scuba sample
+ */
++ (id<FBEventReporterSubject>)subjectForSuccessfulCall:(NSString *)call duration:(NSTimeInterval)duration argument:(NSDictionary<NSString *, NSString *> *)argument;
+
+/**
+ Construct a sample for a failing call.
+
+ @param call the name of the invoked call
+ @param duration the duration of the call.
+ @param message the failure message.
+ @param argument a key-value representation of the argument to the call.
+ @return a scuba sample
+ */
++ (id<FBEventReporterSubject>)subjectForFailingCall:(NSString *)call duration:(NSTimeInterval)duration message:(nullable NSString *)message argument:(NSDictionary<NSString *, NSString *> *)argument;
+
+/**
+ Construct a sample for a started call.
+
+ @param call the name of the invoked call
+ @param arguments the arguments to the invoked call
+ @return a scuba sample
+ */
++ (id<FBEventReporterSubject>)subjectForStartedCall:(NSString *)call arguments:(NSArray<NSString *> *)arguments;
+
+/**
+ Construct a sample for a successful call.
+
+ @param call the name of the invoked call
+ @param duration the duration of the call.
+ @param arguments the arguments to the invoked call
+ @return a scuba sample
+ */
++ (id<FBEventReporterSubject>)subjectForSuccessfulCall:(NSString *)call duration:(NSTimeInterval)duration arguments:(NSArray<NSString *> *)arguments;
+
+/**
+ Construct a sample for a failing call.
+
+ @param call the name of the invoked call
+ @param duration the duration of the call.
+ @param message the failure message.
+ @param arguments the arguments to the invoked call
+ @return a scuba sample
+ */
++ (id<FBEventReporterSubject>)subjectForFailingCall:(NSString *)call duration:(NSTimeInterval)duration message:(NSString *)message arguments:(NSArray<NSString *> *)arguments;
 
 @end
 

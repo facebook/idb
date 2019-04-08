@@ -9,6 +9,13 @@
 
 #import "FBCollectionInformation.h"
 
+@interface FBEventReporterSubject ()
+
+- (instancetype)initWithEventName:(FBEventName)eventName eventType:(FBEventType)eventType;
+- (instancetype)initWithEventName:(FBEventName)eventName eventType:(FBEventType)eventType argument:(NSDictionary<NSString *, NSString *> *)argument arguments:(NSArray<NSString *> *)arguments duration:(NSNumber *)duration message:(NSString *)message;
+
+@end
+
 @interface FBSingleItemSubject : FBEventReporterSubject
 
 @end
@@ -61,10 +68,19 @@
 
 @end
 
+@interface FBCallSubject : FBEventReporterSubject
+
+@end
+
 @implementation FBEventReporterSubject
 
 @synthesize eventName = _eventName;
 @synthesize eventType = _eventType;
+@synthesize argument = _argument;
+@synthesize arguments = _arguments;
+@synthesize duration = _duration;
+@synthesize message = _message;
+
 
 #pragma mark Initializers
 
@@ -125,12 +141,52 @@
   return [[FBCompositeSubject alloc] initWithArray:subjects];
 }
 
++ (instancetype)subjectForEvent:(FBEventName)eventName
+{
+  return [[FBCallSubject alloc] initWithEventName:eventName eventType:FBEventTypeDiscrete argument:nil arguments:nil duration:nil message:nil];
+}
+
++ (instancetype)subjectForStartedCall:(NSString *)call argument:(NSDictionary<NSString *, NSString *> *)argument
+{
+  return [[FBCallSubject alloc] initWithEventName:call eventType:FBEventTypeStarted argument:argument arguments:nil duration:nil message:nil];
+}
+
++ (instancetype)subjectForSuccessfulCall:(NSString *)call duration:(NSTimeInterval)duration argument:(NSDictionary<NSString *, NSString *> *)argument
+{
+  return [[FBCallSubject alloc] initWithEventName:call eventType:FBEventTypeSuccess argument:argument arguments:nil duration:[self durationMilliseconds:duration] message:nil];
+}
+
++ (instancetype)subjectForFailingCall:(NSString *)call duration:(NSTimeInterval)duration message:(NSString *)message argument:(NSDictionary<NSString *, NSString *> *)argument
+{
+  return [[FBCallSubject alloc] initWithEventName:call eventType:FBEventTypeFailure argument:argument arguments:nil duration:[self durationMilliseconds:duration] message:message];
+}
+
++ (instancetype)subjectForStartedCall:(NSString *)call arguments:(NSArray<NSString *> *)arguments
+{
+  return [[FBCallSubject alloc] initWithEventName:call eventType:FBEventTypeStarted argument:nil arguments:arguments duration:nil message:nil];
+}
+
++ (instancetype)subjectForSuccessfulCall:(NSString *)call duration:(NSTimeInterval)duration arguments:(NSArray<NSString *> *)arguments
+{
+  return [[FBCallSubject alloc] initWithEventName:call eventType:FBEventTypeSuccess argument:nil arguments:arguments duration:[self durationMilliseconds:duration] message:nil];
+}
+
++ (instancetype)subjectForFailingCall:(NSString *)call duration:(NSTimeInterval)duration message:(NSString *)message arguments:(NSArray<NSString *> *)arguments
+{
+  return [[FBCallSubject alloc] initWithEventName:call eventType:FBEventTypeFailure argument:nil arguments:arguments duration:[self durationMilliseconds:duration] message:message];
+}
+
 - (instancetype)init
 {
   return [self initWithEventName:nil eventType:nil];
 }
 
 - (instancetype)initWithEventName:(FBEventName)eventName eventType:(FBEventType)eventType
+{
+  return [self initWithEventName:eventName eventType:eventType argument:nil arguments:nil duration:nil message:nil];
+}
+
+- (instancetype)initWithEventName:(FBEventName)eventName eventType:(FBEventType)eventType argument:(NSDictionary<NSString *, NSString *> *)argument arguments:(NSArray<NSString *> *)arguments duration:(NSNumber *)duration message:(NSString *)message
 {
   self = [super init];
   if (!self) {
@@ -139,6 +195,10 @@
 
   _eventName = eventName;
   _eventType = eventType;
+  _argument = argument;
+  _arguments = arguments;
+  _duration = duration;
+  _message = message;
 
   return self;
 }
@@ -169,6 +229,14 @@
 - (NSArray<id<FBEventReporterSubject>> *)subSubjects
 {
   return  @[self];
+}
+
+#pragma mark Private
+
++ (NSNumber *)durationMilliseconds:(NSTimeInterval)timeInterval
+{
+  NSUInteger milliseconds = (NSUInteger) (timeInterval * 1000);
+  return @(milliseconds);
 }
 
 @end
@@ -500,6 +568,24 @@
 - (NSString *)description
 {
   return [FBCollectionInformation oneLineDescriptionFromArray:self.strings];
+}
+
+@end
+
+@implementation FBCallSubject
+
+#pragma mark FBEventReporterSubject
+
+- (id)jsonSerializableRepresentation
+{
+  return @{
+    FBJSONKeyEventName: self.eventName,
+    FBJSONKeyEventType: self.eventType,
+    FBJSONKeyDuration: self.duration ?: NSNull.null,
+    FBJSONKeyMessage: self.message ?: NSNull.null,
+    FBJSONKeyArgument: self.argument ?: NSNull.null,
+    FBJSONKeyArguments: self.arguments ?: NSNull.null,
+  };
 }
 
 @end
