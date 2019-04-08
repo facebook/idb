@@ -16,25 +16,8 @@
 #import "FBSimulator.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorPool.h"
 
 @implementation FBSimulatorPredicates
-
-#pragma mark Pools
-
-+ (NSPredicate *)allocatedByPool:(FBSimulatorPool *)pool
-{
-  return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *simulator, NSDictionary *_) {
-    return [pool simulatorIsAllocated:simulator];
-  }];
-}
-
-+ (NSPredicate *)unallocatedByPool:(FBSimulatorPool *)pool
-{
-  return [NSCompoundPredicate andPredicateWithSubpredicates:@[
-    [NSCompoundPredicate notPredicateWithSubpredicate:[self allocatedByPool:pool]],
-  ]];
-}
 
 + (NSPredicate *)launched
 {

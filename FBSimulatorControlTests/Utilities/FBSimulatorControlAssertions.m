@@ -22,7 +22,7 @@
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
-  [[simulator.pool freeSimulator:simulator] await:&error];
+  [[simulator erase] await:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
   [self assertSimulatorShutdown:simulator];
@@ -89,8 +89,8 @@
       describeFormat:@"Configuration %@ does not meet the runtime requirements with error %@", configuration, error]
       failFuture];
   }
-  return [[self.control.pool
-    allocateSimulatorWithConfiguration:configuration options:self.allocationOptions]
+  return [[self.control.set
+    createSimulatorWithConfiguration:configuration]
     onQueue:dispatch_get_main_queue() chain:^(FBFuture *future) {
       if (future.error) {
         XCTFail(@"Error in device allocation %@", future.error);

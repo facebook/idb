@@ -119,7 +119,6 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 {
   self.continueAfterFailure = NO;
   self.managementOptions = FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart | FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
-  self.allocationOptions = FBSimulatorAllocationOptionsReuse | FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsEraseOnAllocate;
   self.simulatorConfiguration = [FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhoneSE];
   self.bootConfiguration = FBSimulatorControlTestCase.defaultBootConfiguration;
   self.deviceSetPath = FBSimulatorControlTestCase.defaultDeviceSetPath;
@@ -127,7 +126,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 
 - (void)tearDown
 {
-  [[self.control.pool.set killAll] await:nil];
+  [[self.control.set killAll] await:nil];
   _control = nil;
 }
 

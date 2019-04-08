@@ -11,10 +11,9 @@
 
 #import <FBSimulatorControl/FBSimulator.h>
 
-@class FBSimulatorConfiguration;
-@class FBSimulatorPool;
-
 NS_ASSUME_NONNULL_BEGIN
+
+@class FBSimulatorConfiguration;
 
 /**
  Predicates for filtering collections of available Simulators.
@@ -22,22 +21,6 @@ NS_ASSUME_NONNULL_BEGIN
  All Prediates operate on collections of FBSimulator instances.
  */
 @interface FBSimulatorPredicates : FBiOSTargetPredicates
-
-/**
- Predicate for Simulators that are allocated in a specific Pool.
-
- @param pool the Pool to match against. Must not be nil.
- @return an NSPredicate.
- */
-+ (NSPredicate *)allocatedByPool:(FBSimulatorPool *)pool;
-
-/**
- Predicate for Simulators that are managed by a pool but not allocated.
-
- @param pool the Pool to match against. Must not be nil.
- @return an NSPredicate.
- */
-+ (NSPredicate *)unallocatedByPool:(FBSimulatorPool *)pool;
 
 /**
  Predicate for Simulators that are launched.

@@ -39,7 +39,6 @@
 #import "FBSimulatorMediaCommands.h"
 #import "FBSimulatorMutableState.h"
 #import "FBSimulatorNotificationEventSink.h"
-#import "FBSimulatorPool.h"
 #import "FBSimulatorScreenshotCommands.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorSettingsCommands.h"
@@ -205,14 +204,6 @@
 - (NSString *)dataDirectory
 {
   return self.device.dataPath;
-}
-
-- (BOOL)isAllocated
-{
-  if (!self.pool) {
-    return NO;
-  }
-  return [self.pool.allocatedSimulators containsObject:self];
 }
 
 - (FBProcessInfo *)launchdProcess

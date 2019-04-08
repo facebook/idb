@@ -10,9 +10,9 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import "CoreSimulatorDoubles.h"
-#import "FBSimulatorPoolTestCase.h"
+#import "FBSimulatorSetTestCase.h"
 
-@interface FBSimulatorSetTests : FBSimulatorPoolTestCase
+@interface FBSimulatorSetTests : FBSimulatorSetTestCase
 
 @end
 
@@ -20,7 +20,7 @@
 
 - (void)testInflatesSimulators
 {
-  [self createPoolWithExistingSimDeviceSpecs:@[
+  [self createSetWithExistingSimDeviceSpecs:@[
     @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBiOSTargetStateCreating)},
     @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBiOSTargetStateShutdown)},
     @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBiOSTargetStateBooted)},
@@ -77,7 +77,7 @@
 
 - (void)testReferencesForSimulatorsAreTheSame
 {
-  [self createPoolWithExistingSimDeviceSpecs:@[
+  [self createSetWithExistingSimDeviceSpecs:@[
     @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBiOSTargetStateCreating)},
     @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBiOSTargetStateShutdown)},
     @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBiOSTargetStateBooted)},

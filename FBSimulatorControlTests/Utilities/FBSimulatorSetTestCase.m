@@ -5,25 +5,20 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBSimulatorPoolTestCase.h"
+#import "FBSimulatorSetTestCase.h"
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import "CoreSimulatorDoubles.h"
 #import "FBSimulatorControlFixtures.h"
 
-@interface FBSimulatorPoolTestCase ()
+@interface FBSimulatorSetTestCase ()
 
 @end
 
-@implementation FBSimulatorPoolTestCase
+@implementation FBSimulatorSetTestCase
 
-- (void)teardown
-{
-  _pool = nil;
-}
-
-- (NSArray<FBSimulator *> *)createPoolWithExistingSimDeviceSpecs:(NSArray<NSDictionary<NSString *, id> *> *)simulatorSpecs
+- (NSArray<FBSimulator *> *)createSetWithExistingSimDeviceSpecs:(NSArray<NSDictionary<NSString *, id> *> *)simulatorSpecs
 {
   NSMutableArray<SimDevice *> *simDevices = [NSMutableArray array];
   for (NSDictionary<NSString *, id> *simulatorSpec in simulatorSpecs) {
@@ -55,7 +50,6 @@
 
   FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:nil options:0];
   _set = [FBSimulatorSet setWithConfiguration:configuration deviceSet:(id)deviceSet logger:nil error:nil delegate:nil];
-  _pool = [[FBSimulatorPool alloc] initWithSet:_set logger:nil];
 
   NSArray<FBSimulator *> *simulators = _set.allSimulators;
   XCTAssertEqual(simulators.count, simDevices.count);
@@ -68,15 +62,6 @@
   }
 
   return simulators;
-}
-
-- (void)mockAllocationOfSimulatorsUDIDs:(NSArray<NSString *> *)deviceUDIDs
-{
-  NSDictionary<NSString *, FBSimulator *> *simulatorsByUDID = [NSDictionary dictionaryWithObjects:self.set.allSimulators forKeys:[self.set.allSimulators valueForKey:@"udid"]];
-  for (NSString *udid in deviceUDIDs) {
-    [self.pool.allocatedUDIDs addObject:udid];
-    [simulatorsByUDID[udid] setPool:self.pool];
-  }
 }
 
 @end

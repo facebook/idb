@@ -13,7 +13,6 @@
 
 #import "CoreSimulatorDoubles.h"
 #import "FBSimulatorControlTestCase.h"
-#import "FBSimulatorPoolTestCase.h"
 #import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlAssertions.h"
 

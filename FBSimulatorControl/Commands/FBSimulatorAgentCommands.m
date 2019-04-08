@@ -16,7 +16,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
-#import "FBSimulatorPool.h"
 #import "FBSimulatorProcessFetcher.h"
 
 @interface FBSimulatorAgentCommands ()

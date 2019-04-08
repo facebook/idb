@@ -20,7 +20,6 @@
 #import "FBSimulatorServiceContext.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorPool.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorControlFrameworkLoader.h"
 
@@ -64,7 +63,6 @@
   _configuration = configuration;
   _serviceContext = serviceContext;
   _set = set;
-  _pool = [FBSimulatorPool poolWithSet:set logger:logger];
 
   return self;
 }

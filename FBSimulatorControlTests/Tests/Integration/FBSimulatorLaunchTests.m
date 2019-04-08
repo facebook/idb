@@ -85,7 +85,7 @@
   XCTAssertNil(error);
   XCTAssertTrue(simulators);
 
-  XCTAssertEqual(self.control.pool.allocatedSimulators.count, 3u);
+  XCTAssertEqual(self.control.set.allSimulators.count, 3u);
   FBSimulator *simulator1 = simulators[0];
   FBSimulator *simulator2 = simulators[1];
   FBSimulator *simulator3 = simulators[2];
@@ -115,9 +115,9 @@
   XCTAssertTrue(success);
 
   FBFuture *freeFuture = [FBFuture futureWithFutures:@[
-    [simulator1.pool freeSimulator:simulator1],
-    [simulator2.pool freeSimulator:simulator2],
-    [simulator3.pool freeSimulator:simulator3],
+    [simulator1 erase],
+    [simulator2 erase],
+    [simulator3 erase],
   ]];
   success = [freeFuture await:&error] != nil;
   XCTAssertNil(error);
@@ -126,7 +126,6 @@
   for (FBSimulator *simulator in simulators) {
     [self assertSimulatorShutdown:simulator];
   }
-  XCTAssertEqual(self.control.pool.allocatedSimulators.count, 0u);
 }
 
 - (void)testLaunchesSafariApplication

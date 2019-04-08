@@ -11,9 +11,9 @@
 
 #import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlFixtures.h"
-#import "FBSimulatorPoolTestCase.h"
+#import "FBSimulatorSetTestCase.h"
 
-@interface FBSimulatorSetQueryingTests : FBSimulatorPoolTestCase
+@interface FBSimulatorSetQueryingTests : FBSimulatorSetTestCase
 
 @property (nonatomic, copy, readwrite) NSArray<FBSimulator *> *simulators;
 
@@ -24,7 +24,7 @@
 - (void)setUp
 {
   // Assumes that the orderding of the input is the same as the ordering as -[FBSimulatorSet allSimulators]
-  self.simulators = [self createPoolWithExistingSimDeviceSpecs:@[
+  self.simulators = [self createSetWithExistingSimDeviceSpecs:@[
     @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBiOSTargetStateCreating), @"os" : FBOSVersionNameiOS_8_0},
     @{@"name" : FBDeviceModeliPad2, @"state" : @(FBiOSTargetStateBooted), @"os" : FBOSVersionNameiOS_8_0},
     @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBiOSTargetStateShutdown), @"os" : FBOSVersionNameiOS_9_0},

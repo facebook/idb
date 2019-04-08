@@ -32,12 +32,11 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBProcessInfo;
 @class FBSimulatorConfiguration;
 @class FBSimulatorDiagnostics;
-@class FBSimulatorPool;
 @class FBSimulatorSet;
 @class SimDevice;
 
 /**
- Defines the High-Level Properties and Methods that exist on any Simulator returned from `FBSimulatorPool`.
+ An implementation of FBiOSTarget for iOS Simulators.
  */
 @interface FBSimulator : NSObject <FBiOSTarget, FBCrashLogCommands, FBScreenshotCommands, FBSimulatorAgentCommands, FBSimulatorApplicationCommands, FBApplicationDataCommands, FBSimulatorBridgeCommands, FBSimulatorKeychainCommands, FBSimulatorSettingsCommands, FBSimulatorXCTestCommands, FBSimulatorLifecycleCommands, FBSimulatorLaunchCtlCommands, FBSimulatorMediaCommands>
 
@@ -55,11 +54,6 @@ NS_ASSUME_NONNULL_BEGIN
  The Simulator Set that the Simulator belongs to.
  */
 @property (nonatomic, weak, readonly, nullable) FBSimulatorSet *set;
-
-/**
- The Pool to which the Simulator belongs, if Any.
- */
-@property (nonatomic, weak, readonly, nullable) FBSimulatorPool *pool;
 
 /**
  Where the events for the Simulator should be sent.

@@ -8,15 +8,14 @@
 #import <XCTest/XCTest.h>
 
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
-#import <FBSimulatorControl/FBSimulatorPool.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
 @class FBSimulatorBootConfiguration;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControl;
 @class FBSimulatorControlNotificationAssertions;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  Environment Keys and Values for how the Simulator should be launched.
@@ -41,11 +40,6 @@ extern NSString *const FBSimulatorControlTestsLaunchTypeDirect;
  The Per-TestCase Management Options for created FBSimulatorControl instances.
  */
 @property (nonatomic, assign, readwrite) FBSimulatorManagementOptions managementOptions;
-
-/**
- The Per Test Case Allocation Options for created allocated Simulators/Sessions.
- */
-@property (nonatomic, assign, readwrite) FBSimulatorAllocationOptions allocationOptions;
 
 /**
  A default Simulator Configuration.

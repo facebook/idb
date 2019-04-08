@@ -41,7 +41,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use to verbosely describe what is going on. May be nil.
  @param error any error that occurred during the creation of the pool.
  @param delegate the delegate notifies of any changes to the state of the simulators in the set
- @return a new FBSimulatorPool.
+ @return a new FBSimulatorSet.
  */
 + (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error delegate:(nullable id<FBiOSTargetSetDelegate>)delegate;
 

@@ -73,9 +73,7 @@
 - (FBFuture<FBSimulator *> *)fetchSimulatorForLogicTest:(FBXCTestDestinationiPhoneSimulator *)destination
 {
   FBSimulatorConfiguration *configuration = [FBXCTestSimulatorFetcher configurationForDestination:destination];
-  return [self.simulatorControl.pool
-    allocateSimulatorWithConfiguration:configuration
-    options:FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsDeleteOnFree];
+  return [self.simulatorControl.set createSimulatorWithConfiguration:configuration];
 }
 
 - (FBFuture<FBSimulator *> *)fetchSimulatorForApplicationTest:(FBXCTestDestinationiPhoneSimulator *)destination
@@ -93,7 +91,7 @@
 
 - (FBFuture<NSNull *> *)returnSimulator:(FBSimulator *)simulator
 {
-  return [self.simulatorControl.pool freeSimulator:simulator];
+  return [[self.simulatorControl.set deleteSimulator:simulator] mapReplace:NSNull.null];
 }
 
 #pragma mark Private

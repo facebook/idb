@@ -45,9 +45,8 @@ Since the Frameworks upon which `FBSimulatorControl` depends are loaded lazily, 
 [The tests](FBSimulatorControlTests/Tests) should provide you with some basic guidance for using the API. `FBSimulatorControl` has an umbrella header that can be imported to give access to the entire API.
 
 For a high level overview:
-- `FBSimulatorControl` is the Principal Class. It is the first object that you should create with `+[FBSimulatorControl withConfiguration:error:]`. It creates a `FBSimulatorPool` upon creation.
+- `FBSimulatorControl` is the Principal Class. It is the first object that you should create with `+[FBSimulatorControl withConfiguration:error:]`. It creates a `FBSimulatorSet` upon creation.
 - `FBSimulatorSet` wraps `SimDeviceSet` and provides a resiliant CRUD API for Deleting, Creating and Erasing Simulators.
-- `FBSimulatorPool` builds on `FBSimulatorSet` by providing an 'Allocation' API that allows Simulators to be reserved and re-used within the Framework.
 - `FBSimulator` is a reference type that represents an individual Simulator. It has a number of convenience methods for accessing information about a Simulator. Many of the possible actions you can perform on a Simulator are present on instances of this class.
 - `FBSimulatorDiagnostics` is a facade around available diagnostics for a Simulator. It fetches static logs such as the System Log on-demand and receives new logs from components such as `FBFramebufferVideo`.
 - Configuration objects: `FBApplicationLaunchConfiguration`, `FBAgentLaunchConfiguration`, `FBSimulatorApplication`, `FBSimulatorControlConfiguration`, `FBSimulatorConfiguration` & `FBSimulatorBootConfiguration`.

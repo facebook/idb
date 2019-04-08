@@ -55,8 +55,6 @@
 #import <FBSimulatorControl/FBSimulatorMediaCommands.h>
 #import <FBSimulatorControl/FBSimulatorMutableState.h>
 #import <FBSimulatorControl/FBSimulatorNotificationEventSink.h>
-#import <FBSimulatorControl/FBSimulatorPool+Private.h>
-#import <FBSimulatorControl/FBSimulatorPool.h>
 #import <FBSimulatorControl/FBSimulatorPredicates.h>
 #import <FBSimulatorControl/FBSimulatorProcessFetcher.h>
 #import <FBSimulatorControl/FBSimulatorScreenshotCommands.h>

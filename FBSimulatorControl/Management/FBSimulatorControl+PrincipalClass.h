@@ -7,17 +7,14 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBSimulatorPool.h>
+NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationBundle;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
-@class FBSimulatorPool;
 @class FBSimulatorServiceContext;
 @class FBSimulatorSet;
 @protocol FBControlCoreLogger;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Root Class for the FBSimulatorControl Framework.
@@ -51,11 +48,6 @@ NS_ASSUME_NONNULL_BEGIN
  The Set of Simulators managed by FBSimulatorControl.
  */
 @property (nonatomic, strong, readonly) FBSimulatorSet *set;
-
-/**
- The Pool adds conveniences to the management of the Simulator Set.
- */
-@property (nonatomic, strong, readonly) FBSimulatorPool *pool;
 
 /**
  The Service Context.
