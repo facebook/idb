@@ -211,22 +211,34 @@
 
 #pragma mark Destructive Methods
 
-- (FBFuture<NSArray<FBSimulator *> *> *)killSimulator:(FBSimulator *)simulator
+- (FBFuture<FBSimulator *> *)killSimulator:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
-  return [self.simulatorTerminationStrategy killSimulators:@[simulator]];
+  return [[self.simulatorTerminationStrategy
+    killSimulators:@[simulator]]
+    onQueue:self.workQueue map:^(NSArray<FBSimulator *> *result) {
+      return [result firstObject];
+    }];
 }
 
-- (FBFuture<NSArray<FBSimulator *> *> *)eraseSimulator:(FBSimulator *)simulator
+- (FBFuture<FBSimulator *> *)eraseSimulator:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
-  return [self.eraseStrategy eraseSimulators:@[simulator]];
+  return [[self.eraseStrategy
+    eraseSimulators:@[simulator]]
+    onQueue:self.workQueue map:^(NSArray<FBSimulator *> *result) {
+      return [result firstObject];
+    }];
 }
 
-- (FBFuture<NSArray<NSString *> *> *)deleteSimulator:(FBSimulator *)simulator
+- (FBFuture<NSString *> *)deleteSimulator:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
-  return [self.deletionStrategy deleteSimulators:@[simulator]];
+  return [[self.deletionStrategy
+    deleteSimulators:@[simulator]]
+    onQueue:self.workQueue map:^(NSArray<NSString *> *result) {
+      return [result firstObject];
+    }];
 }
 
 - (FBFuture<NSArray<FBSimulator *> *> *)killAll:(NSArray<FBSimulator *> *)simulators
