@@ -14,6 +14,21 @@
 
 @implementation FBArchiveOperations
 
++ (FBFuture<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  FBFileHeaderMagic magic = [self headerMagicForFile:path];
+  switch (magic) {
+    case FBFileHeaderMagicIPA:
+      return [self extractZipArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
+    case FBFileHeaderMagicGZIP:
+      return [self extractGzippedTarArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
+    default:
+      return [[FBControlCoreError
+        describeFormat:@"File at path %@ is not determined to be an archive", path]
+        failFuture];
+  }
+}
+
 + (FBFuture<NSString *> *)extractZipArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [[[[[[[FBTaskBuilder
@@ -51,22 +66,20 @@
     mapReplace:extractPath];
 }
 
-+ (FBFuture<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSString *> *)extractGzipFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  FBFileHeaderMagic magic = [self headerMagicForFile:path];
-  switch (magic) {
-    case FBFileHeaderMagicIPA:
-      return [self extractZipArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
-    case FBFileHeaderMagicGZIP:
-      return [self extractGzippedTarArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
-    default:
-      return [[FBControlCoreError
-        describeFormat:@"File at path %@ is not determined to be an archive", path]
-        failFuture];
-  }
+  return [[[[[[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/gunzip"]
+    withArguments:@[@"-v", @"--to-stdout"]]
+    withStdIn:stream]
+    withStdErrToLogger:logger.debug]
+    withStdOutPath:extractPath]
+    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
+    runUntilCompletion]
+    mapReplace:extractPath];
 }
 
-+ (FBFuture<FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *> *)gzipPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *> *)createGzipForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/gzip"]
@@ -79,31 +92,30 @@
 
 + (FBFuture<FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *> *)createGzippedTarForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  BOOL isDirectory;
-  if (![NSFileManager.defaultManager fileExistsAtPath:path isDirectory:&isDirectory]) {
-    return [[FBControlCoreError
-      describeFormat:@"File %@ doesn't exist", path]
-      failFuture];
+  NSError *error = nil;
+  FBTaskBuilder<NSNull *, NSData *, id<FBControlCoreLogger>> *builder = [self createGzippedTarTaskBuilderForPath:path queue:queue logger:logger error:&error];
+  if (!builder) {
+    return [FBFuture futureWithError:error];
   }
-
-  NSString *directory;
-  NSString *fileName;
-  if (isDirectory) {
-    directory = path;
-    fileName = @".";
-  } else {
-    directory = path.stringByDeletingLastPathComponent;
-    fileName = path.lastPathComponent;
-  }
-
-  return [[[[[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/tar"]
-    withArguments:@[@"-zvcf", @"-", @"-C", directory, fileName]]
-    withStdErrToLogger:logger]
+  return [[builder
     withStdOutToInputStream]
-    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
     start];
 }
+
++ (FBFuture<NSData *> *)createGzippedTarDataForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  NSError *error = nil;
+  FBTaskBuilder<NSNull *, NSData *, id<FBControlCoreLogger>> *builder = [self createGzippedTarTaskBuilderForPath:path queue:queue logger:logger error:&error];
+  if (!builder) {
+    return [FBFuture futureWithError:error];
+  }
+  return [[builder
+    start]
+    onQueue:queue map:^(FBTask<NSNull *, NSData *, id<FBControlCoreLogger>> *result) {
+      return [result stdOut];
+    }];
+}
+
 
 // The Magic Header for Zip Files is two chars 'PK'. As a short this is as below.
 static unsigned short const ZipFileMagicHeader = 0x4b50;
@@ -143,6 +155,32 @@ static unsigned short const TarFileMagicHeader = 0x8b1f;
     return FBFileHeaderMagicGZIP;
   }
   return FBFileHeaderMagicUnknown;
+}
+
++ (FBTaskBuilder<NSNull *, NSData *, id<FBControlCoreLogger>> *)createGzippedTarTaskBuilderForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  BOOL isDirectory;
+  if (![NSFileManager.defaultManager fileExistsAtPath:path isDirectory:&isDirectory]) {
+    return [[FBControlCoreError
+      describeFormat:@"File %@ doesn't exist", path]
+      fail:error];
+  }
+
+  NSString *directory;
+  NSString *fileName;
+  if (isDirectory) {
+    directory = path;
+    fileName = @".";
+  } else {
+    directory = path.stringByDeletingLastPathComponent;
+    fileName = path.lastPathComponent;
+  }
+
+  return [[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/tar"]
+    withArguments:@[@"-zvcf", @"-", @"-C", directory, fileName]]
+    withStdErrToLogger:logger]
+    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]];
 }
 
 @end
