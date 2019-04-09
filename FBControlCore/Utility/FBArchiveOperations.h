@@ -52,7 +52,8 @@ typedef enum {
 + (FBFuture<NSString *> *)extractZipArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 /**
- Extracts a gzipped tar archive to a directory.
+ Extracts a tar archive to a directory.
+ The archive itself may or may not be gzipped. Regular tars as well as gzipped tars are both handled.
 
  @param path the path of the tar archive
  @param extractPath the extraction path.
@@ -60,10 +61,11 @@ typedef enum {
  @param logger the logger to log to.
  @return a Future wrapping the extracted tar destination.
  */
-+ (FBFuture<NSString *> *)extractGzippedTarArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<NSString *> *)extractTarArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 /**
- Extracts a gzipped tar archive to a directory.
+ Extracts a tar archive to a directory.
+ The archive itself may or may not be gzipped. Regular tars as well as gzipped tars are both handled.
 
  @param stream the stream of the tar archive.
  @param extractPath the extraction path
@@ -71,10 +73,11 @@ typedef enum {
  @param logger the logger to log to
  @return a Future wrapping the extracted tar destination.
  */
-+ (FBFuture<NSString *> *)extractGzippedTarArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<NSString *> *)extractTarArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 /**
- Extracts a gzip from a stream to a file.
+ Extracts a gzip from a stream to a single file.
+ A plain gzip wrapping a single file is preferred when there's only a single file to transfer.
 
  @param stream the stream of the gzip archive.
  @param extractPath the extraction path.
@@ -86,6 +89,7 @@ typedef enum {
 
 /**
  Creates a gzips archive, returning an task that has an NSInputStream attached to stdout.
+ A plain gzip wrapping a single file is preferred when there's only a single file to transfer.
  Read the input stream to obtain all of the gzip output of the file.
 
  @param path the path to archive.

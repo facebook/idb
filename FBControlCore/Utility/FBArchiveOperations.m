@@ -21,7 +21,7 @@
     case FBFileHeaderMagicIPA:
       return [self extractZipArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
     case FBFileHeaderMagicGZIP:
-      return [self extractGzippedTarArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
+      return [self extractTarArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
     default:
       return [[FBControlCoreError
         describeFormat:@"File at path %@ is not determined to be an archive", path]
@@ -41,7 +41,7 @@
     mapReplace:extractPath];
 }
 
-+ (FBFuture<NSString *> *)extractGzippedTarArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSString *> *)extractTarArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [[[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/tar"]
@@ -53,7 +53,7 @@
     mapReplace:extractPath];
 }
 
-+ (FBFuture<NSString *> *)extractGzippedTarArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSString *> *)extractTarArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [[[[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/tar"]
