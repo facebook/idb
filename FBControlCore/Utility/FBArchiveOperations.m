@@ -110,7 +110,7 @@
     return [FBFuture futureWithError:error];
   }
   return [[builder
-    start]
+    runUntilCompletion]
     onQueue:queue map:^(FBTask<NSNull *, NSData *, id<FBControlCoreLogger>> *result) {
       return [result stdOut];
     }];
@@ -176,9 +176,10 @@ static unsigned short const TarFileMagicHeader = 0x8b1f;
     fileName = path.lastPathComponent;
   }
 
-  return [[[[FBTaskBuilder
+  return [[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/tar"]
     withArguments:@[@"-zvcf", @"-", @"-C", directory, fileName]]
+    withStdOutInMemoryAsData]
     withStdErrToLogger:logger]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]];
 }
