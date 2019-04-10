@@ -1,7 +1,7 @@
 language: objective-c
 before_install:
   - brew install python3
-  - gem install xcpretty --no-ri --no-doc
+  - gem install xcpretty --no-document
 matrix:
   include:
     - os: osx
