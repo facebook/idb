@@ -45,4 +45,9 @@
   [self.consumer consumeData:data];
 }
 
+- (void)addMetadata:(NSDictionary<NSString *, NSString *> *)metadata
+{
+
+}
+
 @end

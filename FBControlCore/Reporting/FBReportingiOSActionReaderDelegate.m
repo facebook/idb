@@ -115,6 +115,11 @@
   [self.reporter report:subject];
 }
 
+- (void)addMetadata:(NSDictionary<NSString *, NSString *> *)metadata
+{
+
+}
+
 - (id<FBEventInterpreter>)interpreter
 {
   return self.reporter.interpreter;

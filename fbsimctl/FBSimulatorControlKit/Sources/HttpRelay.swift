@@ -86,6 +86,9 @@ enum ResponseKeys: String {
       return HttpResponse.ok(json.data)
     }
   }
+
+  func addMetadata(_ metadata: [String : String]) {
+  }
 }
 
 extension ActionPerformer {

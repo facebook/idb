@@ -29,6 +29,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)report:(id<FBEventReporterSubject>)subject;
 
 /**
+ Add metadata to attach to each report.
+
+ @param metadata Metadata to append
+ */
+- (void)addMetadata:(NSDictionary<NSString *, NSString *> *)metadata;
+
+/**
  The Event Interpreter.
  */
 @property (nonatomic, strong, readonly) id<FBEventInterpreter> interpreter;
