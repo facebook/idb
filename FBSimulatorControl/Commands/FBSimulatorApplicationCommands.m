@@ -65,14 +65,11 @@
     }];
 }
 
-- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
+- (FBFuture<FBSimulatorApplicationOperation *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
-  return [[[FBApplicationLaunchStrategy
+  return [[FBApplicationLaunchStrategy
     strategyWithSimulator:self.simulator]
-    launchApplication:configuration]
-    onQueue:self.simulator.workQueue map:^(FBSimulatorApplicationOperation *operation) {
-      return @(operation.processIdentifier);
-    }];
+    launchApplication:configuration];
 }
 
 - (FBFuture<NSNull *> *)killApplicationWithBundleID:(NSString *)bundleID
