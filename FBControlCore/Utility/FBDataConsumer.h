@@ -118,6 +118,25 @@ NS_ASSUME_NONNULL_BEGIN
 + (id<FBDataConsumer, FBDataConsumerLifecycle>)synchronousLineConsumerWithBlock:(void (^)(NSString *))consumer;
 
 /**
+ Creates a consumer that delivers data when available.
+ Data will be delivered asynchronously to the provided queue.
+
+ @param queue the queue to consume on.
+ @param consumer the block to call when new data is available
+ @return a new consumer.
+ */
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousDataConsumerOnQueue:(dispatch_queue_t)queue consumer:(void (^)(NSData *))consumer;
+
+/**
+ Creates a consumer that delivers data when available.
+ Data will be delivered asynchronously to a private queue.
+
+ @param consumer the block to call when a line has been consumed.
+ @return a new consumer.
+ */
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousDataConsumerWithBlock:(void (^)(NSData *))consumer;
+
+/**
  Creates a Consumer of lines from a block.
  Lines will be delivered asynchronously to a private queue.
 
