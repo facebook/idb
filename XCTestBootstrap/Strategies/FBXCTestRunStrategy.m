@@ -66,8 +66,8 @@
         withTestRunnerConfiguration:runnerConfiguration];
       return [[self.iosTarget
         launchApplication:applicationConfiguration]
-        onQueue:self.iosTarget.workQueue map:^(id<FBLaunchedProcess> process) {
-          return @[@(process.processIdentifier), runnerConfiguration];
+        onQueue:self.iosTarget.workQueue map:^(NSNumber *processIdentifier) {
+          return @[processIdentifier, runnerConfiguration];
         }];
     }]
     onQueue:self.iosTarget.workQueue fmap:^(NSArray<id> *tuple) {

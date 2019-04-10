@@ -7,10 +7,8 @@
 
 #import "FBSimulatorApplicationOperation.h"
 
-#import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorEventSink.h"
-#import "FBSimulatorProcessFetcher.h"
 
 @interface FBSimulatorApplicationOperation ()
 
@@ -76,9 +74,6 @@
   return [future
     onQueue:simulator.workQueue respondToCancellation:^{
       [notifier terminate];
-      [[FBProcessTerminationStrategy
-        strategyWithProcessFetcher:simulator.processFetcher.processFetcher workQueue:simulator.workQueue logger:simulator.logger]
-        killProcessIdentifier:processIdentifier];
       return [FBFuture futureWithResult:NSNull.null];
     }];
 }
@@ -95,13 +90,6 @@
 - (FBiOSTargetFutureType)futureType
 {
   return FBiOSTargetFutureTypeApplicationLaunch;
-}
-
-#pragma mark FBLaunchedProcess
-
-- (FBFuture<NSNull *> *)exitCode
-{
-  return [self.completed mapReplace:@0];
 }
 
 #pragma mark NSObject

@@ -43,7 +43,7 @@
   return [self.iosTarget installedApplicationWithBundleID:bundleID];
 }
 
-- (FBFuture<id<FBLaunchedProcess>> *)installAndLaunchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path
+- (FBFuture<NSNumber *> *)installAndLaunchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path
 {
   if (!path) {
     return [[FBControlCoreError
@@ -72,7 +72,7 @@
 - (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path
 {
   // Check if path points to installed app
-  return [[[self
+  return [[self
     installedAppWithBundleID:configuration.bundleID]
     onQueue:self.iosTarget.workQueue chain:^(FBFuture<FBInstalledApplication *> *future) {
       FBInstalledApplication *app = future.result;
@@ -80,9 +80,6 @@
         return [self.iosTarget launchApplication:configuration];
       }
       return [self installAndLaunchApplication:configuration atPath:path];
-    }]
-    onQueue:self.iosTarget.workQueue map:^(id<FBLaunchedProcess> process) {
-      return @(process.processIdentifier);
     }];
 }
 

@@ -94,8 +94,8 @@
     output:FBProcessOutputConfiguration.outputToDevNull];
   return [[[self.simulator
     launchApplication:configuration]
-    onQueue:self.simulator.workQueue fmap:^(id<FBLaunchedProcess> process) {
-      return [self debugServerTaskForPort:port processIdentifier:process.processIdentifier];
+    onQueue:self.simulator.workQueue fmap:^(NSNumber *processIdentifier) {
+      return [self debugServerTaskForPort:port processIdentifier:processIdentifier.intValue];
     }]
     onQueue:self.simulator.workQueue map:^(FBTask<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *task) {
       NSArray<NSString *> *lldbBootstrapCommands = @[
