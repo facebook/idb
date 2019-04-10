@@ -232,6 +232,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 }
 
+- (void)addMetadata:(NSDictionary<NSString *, NSString *> *)metadata
+{
+
+}
+
 - (id<FBEventInterpreter>)interpreter
 {
   return nil;
