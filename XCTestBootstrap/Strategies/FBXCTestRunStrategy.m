@@ -66,17 +66,17 @@
         withTestRunnerConfiguration:runnerConfiguration];
       return [[self.iosTarget
         launchApplication:applicationConfiguration]
-        onQueue:self.iosTarget.workQueue map:^(NSNumber *processIdentifier) {
-          return @[processIdentifier, runnerConfiguration];
+        onQueue:self.iosTarget.workQueue map:^(id<FBLaunchedProcess> process) {
+          return @[process, runnerConfiguration];
         }];
     }]
     onQueue:self.iosTarget.workQueue fmap:^(NSArray<id> *tuple) {
-      NSNumber *processIdentifier = tuple[0];
+      id<FBLaunchedProcess> applicationProcess = tuple[0];
       FBTestRunnerConfiguration *runnerConfiguration = tuple[1];
 
       // Make the Context for the Test Manager.
       FBTestManagerContext *context = [FBTestManagerContext
-        contextWithTestRunnerPID:processIdentifier.intValue
+        contextWithTestRunnerPID:applicationProcess.processIdentifier
         testRunnerBundleID:runnerConfiguration.testRunner.bundleID
         sessionIdentifier:runnerConfiguration.sessionIdentifier];
 

@@ -165,10 +165,10 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
     failFuture];
 }
 
-- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
+- (FBFuture<id<FBLaunchedProcess>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   __block NSString *remoteAppPath = nil;
-  return [[[[self
+  return [[[self
     launchableRemoteApplicationPathForConfiguration:configuration]
     onQueue:self.device.workQueue pushTeardown:^(NSString *result) {
       remoteAppPath = result;
@@ -180,9 +180,6 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
       return [[FBDeviceApplicationLaunchStrategy
         strategyWithDevice:self.device debugConnection:connection logger:self.device.logger]
         launchApplication:configuration remoteAppPath:remoteAppPath];
-    }]
-    onQueue:self.device.workQueue map:^(FBDeviceApplicationProcess *process) {
-      return @(process.processIdentifier);
     }];
 }
 

@@ -53,7 +53,8 @@
   OCMockObject *iOSTarget = [OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)];
   [[[iOSTarget stub] andReturn:dispatch_get_main_queue()] workQueue];
   [[[iOSTarget stub] andReturn:[FBFuture futureWithResult:@13]] processIDWithBundleID:OCMArg.any];
-  [(id<FBApplicationCommands>)[[iOSTarget stub] andReturn:[FBFuture futureWithResult:@YES]] launchApplication:[OCMArg any]];
+  OCMockObject<FBLaunchedProcess> *processMock = [OCMockObject niceMockForProtocol:@protocol(FBLaunchedProcess)];
+  [(id<FBApplicationCommands>)[[iOSTarget stub] andReturn:[FBFuture futureWithResult:processMock]] launchApplication:[OCMArg any]];
 
   FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithIOSTarget:(id)iOSTarget testPrepareStrategy:prepareTestMock reporter:nil logger:nil];
   XCTAssertNoThrow([[strategy startTestManagerWithApplicationLaunchConfiguration:self.applicationLaunchConfiguration] await:nil]);
@@ -73,7 +74,8 @@
   OCMockObject<FBiOSTarget> *iosTargetMock = [OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)];
   [[[iosTargetMock stub] andReturn:dispatch_get_main_queue()] workQueue];
   [[[iosTargetMock stub] andReturn:[FBFuture futureWithResult:@13]] processIDWithBundleID:OCMArg.any];
-  [(id<FBApplicationCommands>)[[iosTargetMock expect] andReturn:[FBFuture futureWithResult:@YES]] launchApplication:launchConfiguration];
+  OCMockObject<FBLaunchedProcess> *processMock = [OCMockObject niceMockForProtocol:@protocol(FBLaunchedProcess)];
+  [(id<FBApplicationCommands>)[[iosTargetMock expect] andReturn:[FBFuture futureWithResult:processMock]] launchApplication:launchConfiguration];
 
   id testRunnerMock = [OCMockObject niceMockForClass:FBProductBundle.class];
   [[[testRunnerMock stub] andReturn:@"com.bundle"] bundleID];
