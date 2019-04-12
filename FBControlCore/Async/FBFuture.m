@@ -734,7 +734,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   va_end(args);
 
   return [self onQueue:FBFuture.internalQueue notifyOfCompletion:^(FBFuture *resolved) {
-    [logger logFormat:@"Complted %@ with state '%@'", string, resolved];
+    [logger logFormat:@"Completed %@ with state '%@'", string, resolved];
   }];
 }
 
