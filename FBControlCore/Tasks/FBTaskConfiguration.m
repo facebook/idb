@@ -11,7 +11,7 @@
 
 @implementation FBTaskConfiguration
 
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes stdOut:(FBProcessOutput *)stdOut stdErr:(FBProcessOutput *)stdErr stdIn:(FBProcessInput *)stdIn
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes stdOut:(FBProcessOutput *)stdOut stdErr:(FBProcessOutput *)stdErr stdIn:(FBProcessInput *)stdIn logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -25,6 +25,7 @@
   _stdOut = stdOut;
   _stdErr = stdErr;
   _stdIn = stdIn;
+  _logger = logger;
 
   return self;
 }

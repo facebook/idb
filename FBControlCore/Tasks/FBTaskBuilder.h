@@ -231,6 +231,23 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBTaskBuilder<StdInType, StdOutType, id<FBControlCoreLogger>> *)withStdErrToLogger:(id<FBControlCoreLogger>)logger;
 
+#pragma mark Loggers
+
+/**
+ Enables logging of the task lifecycle
+
+ @param logger the logger to log to.
+ @return the reciever for chaining.
+ */
+- (instancetype)withLoggingTo:(id<FBControlCoreLogger>)logger;
+
+/**
+ Disables logging of the task lifecycle
+
+ @return the reciever for chaining.
+ */
+- (instancetype)withNoLogging;
+
 #pragma mark Building
 
 /**

@@ -8,7 +8,6 @@
 #import "FBTask.h"
 
 #import "FBControlCoreError.h"
-#import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"
 #import "FBDataConsumer.h"
 #import "FBFileWriter.h"
@@ -49,10 +48,10 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   task.environment = configuration.environment;
   task.launchPath = configuration.launchPath;
   task.arguments = configuration.arguments;
-  return [[self alloc] initWithTask:task];
+  return [[self alloc] initWithTask:task logger:configuration.logger];
 }
 
-- (instancetype)initWithTask:(NSTask *)task
+- (instancetype)initWithTask:(NSTask *)task logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -61,7 +60,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
   _task = task;
   _exitCode = FBMutableFuture.future;
-  _logger = [[FBControlCoreGlobalConfiguration defaultLogger] withName:[NSString stringWithFormat:@"FBTask_%@", [task.launchPath lastPathComponent]]];
+  _logger = logger;
 
   return self;
 }
