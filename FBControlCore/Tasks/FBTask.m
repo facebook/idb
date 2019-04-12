@@ -107,12 +107,12 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
     [exitCode resolveWithResult:@(task.terminationStatus)];
   };
 
-  NSString *arguments = [self.task.arguments componentsJoinedByString:@" "];
   if (logger.level >= FBControlCoreLogLevelDebug) {
-    [self.logger logFormat:@"Running %@ %@ with environment %@",
+    [self.logger.debug logFormat:
+      @"Running %@ %@",
       self.task.launchPath,
-      arguments,
-      self.task.environment];
+      [self.task.arguments componentsJoinedByString:@" "]
+    ];
   }
   [self.task launch];
 }
