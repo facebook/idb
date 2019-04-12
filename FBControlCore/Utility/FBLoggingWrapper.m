@@ -93,9 +93,11 @@
 + (id<FBEventReporterSubject>)subjectAfterCompletion:(FBFuture *)future methodName:(NSString *)methodName descriptionOfArguments:(NSArray<NSString *> *)descriptionOfArguments startDate:(NSDate *)startDate logger:(id<FBControlCoreLogger>)logger
 {
   NSTimeInterval duration = [NSDate.date timeIntervalSinceDate:startDate];
-  if (future.error) {
-    [logger.debug logFormat:@"%@ failed with: %@", methodName, future.error];
-    return [FBEventReporterSubject subjectForFailingCall:methodName duration:duration message:future.error.description arguments:descriptionOfArguments];
+  NSError *error = future.error;
+  if (error) {
+    NSString *message = error.localizedDescription;
+    [logger.debug logFormat:@"%@ failed with: %@", methodName, message];
+    return [FBEventReporterSubject subjectForFailingCall:methodName duration:duration message:message arguments:descriptionOfArguments];
   } else {
     [logger.debug logFormat:@"%@ succeeded", methodName];
     return [FBEventReporterSubject subjectForSuccessfulCall:methodName duration:duration arguments:descriptionOfArguments];
