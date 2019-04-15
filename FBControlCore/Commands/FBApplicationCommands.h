@@ -80,12 +80,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID;
 
 /**
- Returns the running Applications on the target.
- The returned mapping is a mapping of Bundle ID to Process Info.
+ Returns the Applications running on the target.
 
- @return A future wrapping a Mapping of Running Applications.
+ @return A future wrapping a mapping of Bundle ID to Process ID.
  */
-- (FBFuture<NSDictionary<NSString *, FBProcessInfo *> *> *)runningApplications;
+- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningApplications;
 
 /**
  Returns PID of application with given bundleID
