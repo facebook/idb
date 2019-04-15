@@ -47,7 +47,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 {
   return [[[[[[[FBTaskBuilder
     withLaunchPath:BSDTarPath]
-    withArguments:@[@"-vzxp", @"-C", extractPath, @"-f", path]]
+    withArguments:@[@"-vzxp", @"--fast-read", @"-C", extractPath, @"-f", path]]
     withStdErrToLogger:logger.debug]
     withStdOutToLogger:logger.debug]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
@@ -59,7 +59,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 {
   return [[[[[[[[FBTaskBuilder
     withLaunchPath:BSDTarPath]
-    withArguments:@[@"-vzxp", @"-C", extractPath, @"-f", @"-"]]
+    withArguments:@[@"-vzxp", @"--fast-read", @"-C", extractPath, @"-f", @"-"]]
     withStdIn:stream]
     withStdErrToLogger:logger.debug]
     withStdOutToLogger:logger.debug]
