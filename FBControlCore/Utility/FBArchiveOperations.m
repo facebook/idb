@@ -12,6 +12,8 @@
 #import "FBTask.h"
 #import "FBTaskBuilder.h"
 
+static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
+
 @implementation FBArchiveOperations
 
 + (FBFuture<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
@@ -44,7 +46,7 @@
 + (FBFuture<NSString *> *)extractTarArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [[[[[[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/tar"]
+    withLaunchPath:BSDTarPath]
     withArguments:@[@"-C", extractPath, @"-vzxpf", path]]
     withStdErrToLogger:logger.debug]
     withStdOutToLogger:logger.debug]
@@ -56,7 +58,7 @@
 + (FBFuture<NSString *> *)extractTarArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [[[[[[[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/tar"]
+    withLaunchPath:BSDTarPath]
     withArguments:@[@"-C", extractPath, @"-vzxpf", @"-"]]
     withStdIn:stream]
     withStdErrToLogger:logger.debug]
@@ -187,7 +189,7 @@ static unsigned short const TarFileMagicHeader = 0x8b1f;
   }
 
   return [[[[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/tar"]
+    withLaunchPath:BSDTarPath]
     withArguments:@[@"-zvcf", @"-", @"-C", directory, fileName]]
     withStdOutInMemoryAsData]
     withStdErrToLogger:logger]
