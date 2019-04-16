@@ -27,6 +27,7 @@
 + (id)nameForDeviceFamilyObject:(id)arg1;
 - (void)showTodayViewForExtensions:(id)arg1 pid:(int)arg2;
 - (id)serviceHubProcessControlChannel;
+- (id)makeServiceHubProcessControlChannelForLauncher:(unsigned long long)arg1;
 - (id)iconImage;
 - (id)deviceClassForDisplay;
 - (BOOL)supportsBuildingThinnedResources;
