@@ -92,6 +92,7 @@
 - (void)_resourceControlChannel:(id)arg1 completionBlock:(CDUnknownBlockType)arg2;
 - (void)showTodayViewForExtensions:(id)arg1 pid:(int)arg2;
 - (id)serviceHubProcessControlChannel;
+- (id)makeServiceHubProcessControlChannelForLauncher:(unsigned long long)arg1;
 - (void)terminateWatchAppForCompanionIdentifier:(id)arg1 options:(id)arg2 completionSemaphore:(id)arg3;
 - (BOOL)_shouldAttemptToRetryWatchAppLaunchAttemptForLaunchError:(id)arg1;
 - (void)_attemptToLaunchWatchAppForCompanionIdentifier:(id)arg1 options:(id)arg2 completionblock:(CDUnknownBlockType)arg3 attempt:(unsigned long long)arg4;
