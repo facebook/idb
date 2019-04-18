@@ -116,7 +116,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The wrapped 'Apple File Conduit'.
  */
-@property (nonatomic, assign, readonly) AFCConnectionRef connection;
+@property (nonatomic, assign, readonly, nullable) AFCConnectionRef connection;
 
 /**
  The Calls to use.

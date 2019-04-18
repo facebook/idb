@@ -223,6 +223,7 @@
 
 + (nonnull instancetype)commandsWithTarget:(nonnull id<FBiOSTarget>)target
 {
+  NSAssert(nil, @"commandsWithTarget is not yet supported");
   return nil;
 }
 

@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The file that the test failed on.
  */
-@property (nonatomic, copy, readonly) NSString *file;
+@property (nonatomic, copy, readonly, nullable) NSString *file;
 
 /**
  The line number of the file that the test failed on.
@@ -63,17 +63,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The bundle name of the test.
  */
-@property (nonatomic, copy, readonly) NSString *bundleName;
+@property (nonatomic, copy, readonly, nullable) NSString *bundleName;
 
 /**
  The class name of the test.
  */
-@property (nonatomic, copy, readonly) NSString *className;
+@property (nonatomic, copy, readonly, nullable) NSString *className;
 
 /**
  The method name of the test.
  */
-@property (nonatomic, copy, readonly) NSString *methodName;
+@property (nonatomic, copy, readonly, nullable) NSString *methodName;
 
 /**
  The logs associated with the test.

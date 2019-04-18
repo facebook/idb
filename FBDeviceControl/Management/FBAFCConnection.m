@@ -95,7 +95,7 @@ const char *DoubleDot = "..";
   NSMutableArray<NSString *> *dirs = [NSMutableArray array];
   while (YES) {
     char *listing = nil;
-    result = self.calls.DirectoryRead(self.connection, directory, &listing);
+    self.calls.DirectoryRead(self.connection, directory, &listing);
     if (!listing) {
       break;
     }

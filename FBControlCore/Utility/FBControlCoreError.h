@@ -46,7 +46,7 @@ extern NSString *const FBControlCoreErrorDomain;
 - (BOOL)failBool:(NSError **)error;
 - (unsigned int)failUInt:(NSError **)error;
 - (CGRect)failRect:(NSError **)error;
-- (void *)failPointer:(NSError **)error;
+- (nullable void *)failPointer:(NSError **)error;
 - (nullable id)fail:(NSError **)error;
 - (FBFuture *)failFuture;
 - (FBFutureContext *)failFutureContext;

@@ -112,7 +112,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return prepared product bundle if the operation succeeds, otherwise nil.
  */
-- (FBProductBundle *)buildWithError:(NSError **)error;
+- (nullable FBProductBundle *)buildWithError:(NSError **)error;
 
 /**
  Make a Product Bundle from an FBInstalledApplication.

@@ -63,7 +63,7 @@ typedef CFTypeRef AMDServiceConnectionRef;
 /**
  The Wrapped Connection.
  */
-@property (nonatomic, assign, readonly) AMDServiceConnectionRef connection;
+@property (nonatomic, assign, readonly, nullable) AMDServiceConnectionRef connection;
 
 /**
  The Device to use.

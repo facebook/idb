@@ -119,7 +119,7 @@
     if (description.length > 100) {
       description = [NSString stringWithFormat:@"%@...", [description substringToIndex:100]];
     }
-    [descriptions addObject:[self descriptionForAgumentAtIndex:index inInvoation:invocation]];
+    [descriptions addObject:description];
   }
   return descriptions;
 }

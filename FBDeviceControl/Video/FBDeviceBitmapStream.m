@@ -22,7 +22,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   size_t frameSize = CVPixelBufferGetDataSize(pixelBuffer);
   size_t rowSize = CVPixelBufferGetBytesPerRow(pixelBuffer);
   OSType pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
-  NSString *pixelFormatString = (__bridge NSString *) UTCreateStringForOSType(pixelFormat);
+  NSString *pixelFormatString = (__bridge_transfer NSString *) UTCreateStringForOSType(pixelFormat);
 
   return @{
     @"width" : @(width),
