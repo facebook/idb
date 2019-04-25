@@ -1,0 +1,678 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D7D6DF892265DE4E00B01F14 /* FBControlCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */; };
+		D7D6DF8B2265DE4E00B01F14 /* FBDeviceControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF8A2265DE4E00B01F14 /* FBDeviceControl.framework */; };
+		D7D6DF8D2265DE4E00B01F14 /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF8C2265DE4E00B01F14 /* FBSimulatorControl.framework */; };
+		D7D6DF8F2265DE4E00B01F14 /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */; };
+		D7D6DF9A2265DF2B00B01F14 /* idb.proto in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DF992265DF2B00B01F14 /* idb.proto */; };
+		D7D6DF9D2265E04800B01F14 /* libidbGRPC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF942265DF2200B01F14 /* libidbGRPC.a */; };
+		D7D6DFA52265E76200B01F14 /* libgrpc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DFA22265E76200B01F14 /* libgrpc.a */; };
+		D7D6DFA62265E76200B01F14 /* libprotobuf.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DFA32265E76200B01F14 /* libprotobuf.a */; };
+		D7D6DFA72265E76200B01F14 /* libgrpc++.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DFA42265E76200B01F14 /* libgrpc++.a */; };
+		D7D6DFF62265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFAA2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m */; };
+		D7D6DFF72265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFAB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h */; };
+		D7D6DFF82265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFAC2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h */; };
+		D7D6DFF92265F0DF00B01F14 /* FBDeltaUpdateManager+Log.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFAD2265F0DF00B01F14 /* FBDeltaUpdateManager+Log.m */; };
+		D7D6DFFA2265F0DF00B01F14 /* FBDeltaUpdateManager.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFAE2265F0DF00B01F14 /* FBDeltaUpdateManager.m */; };
+		D7D6DFFB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFAF2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.m */; };
+		D7D6DFFC2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFB02265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h */; };
+		D7D6DFFD2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFB12265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m */; };
+		D7D6DFFE2265F0DF00B01F14 /* FBDeltaUpdateManager.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFB22265F0DF00B01F14 /* FBDeltaUpdateManager.h */; };
+		D7D6DFFF2265F0DF00B01F14 /* FBDeltaUpdateManager+Log.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFB32265F0DF00B01F14 /* FBDeltaUpdateManager+Log.h */; };
+		D7D6E0002265F0DF00B01F14 /* FBBootManager.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFB42265F0DF00B01F14 /* FBBootManager.h */; };
+		D7D6E0052265F0DF00B01F14 /* FBIDBError.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */; };
+		D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFBC2265F0DF00B01F14 /* FBIDBError.m */; };
+		D7D6E0072265F0DF00B01F14 /* FBIDBPortsConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */; };
+		D7D6E0082265F0DF00B01F14 /* FBIDBConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFBF2265F0DF00B01F14 /* FBIDBConfiguration.m */; };
+		D7D6E00B2265F0DF00B01F14 /* FBIDBConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFC32265F0DF00B01F14 /* FBIDBConfiguration.h */; };
+		D7D6E00C2265F0DF00B01F14 /* FBIDBPortsConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFC42265F0DF00B01F14 /* FBIDBPortsConfiguration.m */; };
+		D7D6E00D2265F0DF00B01F14 /* FBIDBServiceHandler.mm in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFC62265F0DF00B01F14 /* FBIDBServiceHandler.mm */; };
+		D7D6E00E2265F0DF00B01F14 /* FBIDBCompanionServer.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFC72265F0DF00B01F14 /* FBIDBCompanionServer.h */; };
+		D7D6E00F2265F0DF00B01F14 /* FBIDBCommandExecutor.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFC82265F0DF00B01F14 /* FBIDBCommandExecutor.m */; };
+		D7D6E0102265F0DF00B01F14 /* FBGRPCServer.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFC92265F0DF00B01F14 /* FBGRPCServer.h */; };
+		D7D6E0112265F0DF00B01F14 /* FBGRPCServer.mm in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFCA2265F0DF00B01F14 /* FBGRPCServer.mm */; };
+		D7D6E0122265F0DF00B01F14 /* FBIDBCommandExecutor.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFCB2265F0DF00B01F14 /* FBIDBCommandExecutor.h */; };
+		D7D6E0132265F0DF00B01F14 /* FBIDBCompanionServer.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFCC2265F0DF00B01F14 /* FBIDBCompanionServer.m */; };
+		D7D6E0142265F0DF00B01F14 /* FBIDBServiceHandler.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFCD2265F0DF00B01F14 /* FBIDBServiceHandler.h */; };
+		D7D6E0272265F0DF00B01F14 /* FBBootManager.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFE22265F0DF00B01F14 /* FBBootManager.m */; };
+		D7D6E0282265F0DF00B01F14 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFE32265F0DF00B01F14 /* main.m */; };
+		D7D6E0292265F0DF00B01F14 /* FBTemporaryDirectory.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFE82265F0DF00B01F14 /* FBTemporaryDirectory.m */; };
+		D7D6E02A2265F0DF00B01F14 /* FBXCTestDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFE92265F0DF00B01F14 /* FBXCTestDescriptor.m */; };
+		D7D6E02B2265F0DF00B01F14 /* FBBundleStorageManager.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFEA2265F0DF00B01F14 /* FBBundleStorageManager.h */; };
+		D7D6E02C2265F0DF00B01F14 /* FBiOSTargetProvider.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFEB2265F0DF00B01F14 /* FBiOSTargetProvider.m */; };
+		D7D6E02D2265F0DF00B01F14 /* FBStorageUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFEC2265F0DF00B01F14 /* FBStorageUtils.m */; };
+		D7D6E02E2265F0DF00B01F14 /* FBTestApplicationsPair.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFED2265F0DF00B01F14 /* FBTestApplicationsPair.h */; };
+		D7D6E02F2265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFEE2265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.h */; };
+		D7D6E0302265F0DF00B01F14 /* FBBundleStorageManager.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFEF2265F0DF00B01F14 /* FBBundleStorageManager.m */; };
+		D7D6E0312265F0DF00B01F14 /* FBXCTestDescriptor.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFF02265F0DF00B01F14 /* FBXCTestDescriptor.h */; };
+		D7D6E0322265F0DF00B01F14 /* FBTemporaryDirectory.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFF12265F0DF00B01F14 /* FBTemporaryDirectory.h */; };
+		D7D6E0332265F0DF00B01F14 /* FBiOSTargetProvider.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFF22265F0DF00B01F14 /* FBiOSTargetProvider.h */; };
+		D7D6E0342265F0DF00B01F14 /* FBStorageUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFF32265F0DF00B01F14 /* FBStorageUtils.h */; };
+		D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */; };
+		D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXBuildRule section */
+		D7D6DF9C2265DF4E00B01F14 /* PBXBuildRule */ = {
+			isa = PBXBuildRule;
+			compilerSpec = com.apple.compilers.proxy.script;
+			filePatterns = "*.proto";
+			fileType = pattern.proxy;
+			isEditable = 1;
+			outputFiles = (
+				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).pb.h",
+				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).pb.cc",
+				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).grpc.pb.h",
+				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).grpc.pb.cc",
+			);
+			script = "# Generate grpc code from .proto\nprotoc --proto_path=$INPUT_FILE_DIR --cpp_out=$DERIVED_FILE_DIR --grpc_out=$DERIVED_FILE_DIR --plugin=protoc-gen-grpc=/usr/local/bin/grpc_cpp_plugin $INPUT_FILE_PATH\n\n# Copy headers\nmkdir -p ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\ncp -a ${DERIVED_FILES_DIR}/*.h ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\n";
+		};
+/* End PBXBuildRule section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D7D6DF102265DDEC00B01F14 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		D7D6DF122265DDEC00B01F14 /* idb_companion */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = idb_companion; sourceTree = BUILT_PRODUCTS_DIR; };
+		D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBControlCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D7D6DF8A2265DE4E00B01F14 /* FBDeviceControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBDeviceControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D7D6DF8C2265DE4E00B01F14 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = XCTestBootstrap.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D7D6DF942265DF2200B01F14 /* libidbGRPC.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libidbGRPC.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		D7D6DF992265DF2B00B01F14 /* idb.proto */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.protobuf; path = idb.proto; sourceTree = "<group>"; };
+		D7D6DFA22265E76200B01F14 /* libgrpc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgrpc.a; path = /usr/local/lib/libgrpc.a; sourceTree = "<group>"; };
+		D7D6DFA32265E76200B01F14 /* libprotobuf.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libprotobuf.a; path = /usr/local/lib/libprotobuf.a; sourceTree = "<group>"; };
+		D7D6DFA42265E76200B01F14 /* libgrpc++.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libgrpc++.a"; path = "/usr/local/lib/libgrpc++.a"; sourceTree = "<group>"; };
+		D7D6DFAA2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBDeltaUpdateManager+Video.m"; sourceTree = "<group>"; };
+		D7D6DFAB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBDeltaUpdateManager+XCTest.h"; sourceTree = "<group>"; };
+		D7D6DFAC2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBDeltaUpdateManager+Instruments.h"; sourceTree = "<group>"; };
+		D7D6DFAD2265F0DF00B01F14 /* FBDeltaUpdateManager+Log.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBDeltaUpdateManager+Log.m"; sourceTree = "<group>"; };
+		D7D6DFAE2265F0DF00B01F14 /* FBDeltaUpdateManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeltaUpdateManager.m; sourceTree = "<group>"; };
+		D7D6DFAF2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBDeltaUpdateManager+XCTest.m"; sourceTree = "<group>"; };
+		D7D6DFB02265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBDeltaUpdateManager+Video.h"; sourceTree = "<group>"; };
+		D7D6DFB12265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBDeltaUpdateManager+Instruments.m"; sourceTree = "<group>"; };
+		D7D6DFB22265F0DF00B01F14 /* FBDeltaUpdateManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeltaUpdateManager.h; sourceTree = "<group>"; };
+		D7D6DFB32265F0DF00B01F14 /* FBDeltaUpdateManager+Log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBDeltaUpdateManager+Log.h"; sourceTree = "<group>"; };
+		D7D6DFB42265F0DF00B01F14 /* FBBootManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBBootManager.h; sourceTree = "<group>"; };
+		D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBError.h; sourceTree = "<group>"; };
+		D7D6DFBC2265F0DF00B01F14 /* FBIDBError.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBError.m; sourceTree = "<group>"; };
+		D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBPortsConfiguration.h; sourceTree = "<group>"; };
+		D7D6DFBF2265F0DF00B01F14 /* FBIDBConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBConfiguration.m; sourceTree = "<group>"; };
+		D7D6DFC32265F0DF00B01F14 /* FBIDBConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBConfiguration.h; sourceTree = "<group>"; };
+		D7D6DFC42265F0DF00B01F14 /* FBIDBPortsConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBPortsConfiguration.m; sourceTree = "<group>"; };
+		D7D6DFC62265F0DF00B01F14 /* FBIDBServiceHandler.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = FBIDBServiceHandler.mm; sourceTree = "<group>"; };
+		D7D6DFC72265F0DF00B01F14 /* FBIDBCompanionServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBCompanionServer.h; sourceTree = "<group>"; };
+		D7D6DFC82265F0DF00B01F14 /* FBIDBCommandExecutor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBCommandExecutor.m; sourceTree = "<group>"; };
+		D7D6DFC92265F0DF00B01F14 /* FBGRPCServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBGRPCServer.h; sourceTree = "<group>"; };
+		D7D6DFCA2265F0DF00B01F14 /* FBGRPCServer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = FBGRPCServer.mm; sourceTree = "<group>"; };
+		D7D6DFCB2265F0DF00B01F14 /* FBIDBCommandExecutor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBCommandExecutor.h; sourceTree = "<group>"; };
+		D7D6DFCC2265F0DF00B01F14 /* FBIDBCompanionServer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBCompanionServer.m; sourceTree = "<group>"; };
+		D7D6DFCD2265F0DF00B01F14 /* FBIDBServiceHandler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBServiceHandler.h; sourceTree = "<group>"; };
+		D7D6DFE22265F0DF00B01F14 /* FBBootManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBBootManager.m; sourceTree = "<group>"; };
+		D7D6DFE32265F0DF00B01F14 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		D7D6DFE62265F0DF00B01F14 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D7D6DFE82265F0DF00B01F14 /* FBTemporaryDirectory.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTemporaryDirectory.m; sourceTree = "<group>"; };
+		D7D6DFE92265F0DF00B01F14 /* FBXCTestDescriptor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestDescriptor.m; sourceTree = "<group>"; };
+		D7D6DFEA2265F0DF00B01F14 /* FBBundleStorageManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBBundleStorageManager.h; sourceTree = "<group>"; };
+		D7D6DFEB2265F0DF00B01F14 /* FBiOSTargetProvider.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetProvider.m; sourceTree = "<group>"; };
+		D7D6DFEC2265F0DF00B01F14 /* FBStorageUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBStorageUtils.m; sourceTree = "<group>"; };
+		D7D6DFED2265F0DF00B01F14 /* FBTestApplicationsPair.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestApplicationsPair.h; sourceTree = "<group>"; };
+		D7D6DFEE2265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetStateChangeNotifier.h; sourceTree = "<group>"; };
+		D7D6DFEF2265F0DF00B01F14 /* FBBundleStorageManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBBundleStorageManager.m; sourceTree = "<group>"; };
+		D7D6DFF02265F0DF00B01F14 /* FBXCTestDescriptor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestDescriptor.h; sourceTree = "<group>"; };
+		D7D6DFF12265F0DF00B01F14 /* FBTemporaryDirectory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTemporaryDirectory.h; sourceTree = "<group>"; };
+		D7D6DFF22265F0DF00B01F14 /* FBiOSTargetProvider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetProvider.h; sourceTree = "<group>"; };
+		D7D6DFF32265F0DF00B01F14 /* FBStorageUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBStorageUtils.h; sourceTree = "<group>"; };
+		D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestApplicationsPair.m; sourceTree = "<group>"; };
+		D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetStateChangeNotifier.m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D7D6DF0F2265DDEC00B01F14 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D7D6DF892265DE4E00B01F14 /* FBControlCore.framework in Frameworks */,
+				D7D6DF8B2265DE4E00B01F14 /* FBDeviceControl.framework in Frameworks */,
+				D7D6DF8D2265DE4E00B01F14 /* FBSimulatorControl.framework in Frameworks */,
+				D7D6DFA72265E76200B01F14 /* libgrpc++.a in Frameworks */,
+				D7D6DFA52265E76200B01F14 /* libgrpc.a in Frameworks */,
+				D7D6DF9D2265E04800B01F14 /* libidbGRPC.a in Frameworks */,
+				D7D6DFA62265E76200B01F14 /* libprotobuf.a in Frameworks */,
+				D7D6DF8F2265DE4E00B01F14 /* XCTestBootstrap.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D7D6DF922265DF2200B01F14 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D7D6DF092265DDEC00B01F14 = {
+			isa = PBXGroup;
+			children = (
+				D7D6DFA82265F0DF00B01F14 /* idb_companion */,
+				D7D6DF982265DF2B00B01F14 /* proto */,
+				D7D6DF132265DDEC00B01F14 /* Products */,
+				D7D6DF872265DE4E00B01F14 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		D7D6DF132265DDEC00B01F14 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D7D6DF122265DDEC00B01F14 /* idb_companion */,
+				D7D6DF942265DF2200B01F14 /* libidbGRPC.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D7D6DF872265DE4E00B01F14 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */,
+				D7D6DF8A2265DE4E00B01F14 /* FBDeviceControl.framework */,
+				D7D6DF8C2265DE4E00B01F14 /* FBSimulatorControl.framework */,
+				D7D6DFA42265E76200B01F14 /* libgrpc++.a */,
+				D7D6DFA22265E76200B01F14 /* libgrpc.a */,
+				D7D6DFA32265E76200B01F14 /* libprotobuf.a */,
+				D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		D7D6DF982265DF2B00B01F14 /* proto */ = {
+			isa = PBXGroup;
+			children = (
+				D7D6DF992265DF2B00B01F14 /* idb.proto */,
+			);
+			path = proto;
+			sourceTree = "<group>";
+		};
+		D7D6DFA82265F0DF00B01F14 /* idb_companion */ = {
+			isa = PBXGroup;
+			children = (
+				D7D6DFBD2265F0DF00B01F14 /* Configuration */,
+				D7D6DFA92265F0DF00B01F14 /* Delta */,
+				D7D6DFB52265F0DF00B01F14 /* Reporting */,
+				D7D6DFC52265F0DF00B01F14 /* Server */,
+				D7D6DFE72265F0DF00B01F14 /* Utility */,
+				D7D6DFB42265F0DF00B01F14 /* FBBootManager.h */,
+				D7D6DFE22265F0DF00B01F14 /* FBBootManager.m */,
+				D7D6DFE62265F0DF00B01F14 /* Info.plist */,
+				D7D6DFE32265F0DF00B01F14 /* main.m */,
+			);
+			path = idb_companion;
+			sourceTree = "<group>";
+		};
+		D7D6DFA92265F0DF00B01F14 /* Delta */ = {
+			isa = PBXGroup;
+			children = (
+				D7D6DFAC2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h */,
+				D7D6DFB12265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m */,
+				D7D6DFB32265F0DF00B01F14 /* FBDeltaUpdateManager+Log.h */,
+				D7D6DFAD2265F0DF00B01F14 /* FBDeltaUpdateManager+Log.m */,
+				D7D6DFB02265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h */,
+				D7D6DFAA2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m */,
+				D7D6DFAB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h */,
+				D7D6DFAF2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.m */,
+				D7D6DFB22265F0DF00B01F14 /* FBDeltaUpdateManager.h */,
+				D7D6DFAE2265F0DF00B01F14 /* FBDeltaUpdateManager.m */,
+			);
+			path = Delta;
+			sourceTree = "<group>";
+		};
+		D7D6DFB52265F0DF00B01F14 /* Reporting */ = {
+			isa = PBXGroup;
+			children = (
+				D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */,
+				D7D6DFBC2265F0DF00B01F14 /* FBIDBError.m */,
+			);
+			path = Reporting;
+			sourceTree = "<group>";
+		};
+		D7D6DFBD2265F0DF00B01F14 /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				D7D6DFC32265F0DF00B01F14 /* FBIDBConfiguration.h */,
+				D7D6DFBF2265F0DF00B01F14 /* FBIDBConfiguration.m */,
+				D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */,
+				D7D6DFC42265F0DF00B01F14 /* FBIDBPortsConfiguration.m */,
+			);
+			path = Configuration;
+			sourceTree = "<group>";
+		};
+		D7D6DFC52265F0DF00B01F14 /* Server */ = {
+			isa = PBXGroup;
+			children = (
+				D7D6DFC92265F0DF00B01F14 /* FBGRPCServer.h */,
+				D7D6DFCA2265F0DF00B01F14 /* FBGRPCServer.mm */,
+				D7D6DFCB2265F0DF00B01F14 /* FBIDBCommandExecutor.h */,
+				D7D6DFC82265F0DF00B01F14 /* FBIDBCommandExecutor.m */,
+				D7D6DFC72265F0DF00B01F14 /* FBIDBCompanionServer.h */,
+				D7D6DFCC2265F0DF00B01F14 /* FBIDBCompanionServer.m */,
+				D7D6DFCD2265F0DF00B01F14 /* FBIDBServiceHandler.h */,
+				D7D6DFC62265F0DF00B01F14 /* FBIDBServiceHandler.mm */,
+			);
+			path = Server;
+			sourceTree = "<group>";
+		};
+		D7D6DFE72265F0DF00B01F14 /* Utility */ = {
+			isa = PBXGroup;
+			children = (
+				D7D6DFEA2265F0DF00B01F14 /* FBBundleStorageManager.h */,
+				D7D6DFEF2265F0DF00B01F14 /* FBBundleStorageManager.m */,
+				D7D6DFF22265F0DF00B01F14 /* FBiOSTargetProvider.h */,
+				D7D6DFEB2265F0DF00B01F14 /* FBiOSTargetProvider.m */,
+				D7D6DFEE2265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.h */,
+				D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */,
+				D7D6DFF32265F0DF00B01F14 /* FBStorageUtils.h */,
+				D7D6DFEC2265F0DF00B01F14 /* FBStorageUtils.m */,
+				D7D6DFF12265F0DF00B01F14 /* FBTemporaryDirectory.h */,
+				D7D6DFE82265F0DF00B01F14 /* FBTemporaryDirectory.m */,
+				D7D6DFED2265F0DF00B01F14 /* FBTestApplicationsPair.h */,
+				D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */,
+				D7D6DFF02265F0DF00B01F14 /* FBXCTestDescriptor.h */,
+				D7D6DFE92265F0DF00B01F14 /* FBXCTestDescriptor.m */,
+			);
+			path = Utility;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		D7D6DF902265DF2200B01F14 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D7D6DF9E2265E35300B01F14 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D7D6E0002265F0DF00B01F14 /* FBBootManager.h in Headers */,
+				D7D6E02B2265F0DF00B01F14 /* FBBundleStorageManager.h in Headers */,
+				D7D6DFF82265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h in Headers */,
+				D7D6DFFF2265F0DF00B01F14 /* FBDeltaUpdateManager+Log.h in Headers */,
+				D7D6DFFC2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h in Headers */,
+				D7D6DFF72265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h in Headers */,
+				D7D6DFFE2265F0DF00B01F14 /* FBDeltaUpdateManager.h in Headers */,
+				D7D6E0102265F0DF00B01F14 /* FBGRPCServer.h in Headers */,
+				D7D6E0122265F0DF00B01F14 /* FBIDBCommandExecutor.h in Headers */,
+				D7D6E00E2265F0DF00B01F14 /* FBIDBCompanionServer.h in Headers */,
+				D7D6E00B2265F0DF00B01F14 /* FBIDBConfiguration.h in Headers */,
+				D7D6E0052265F0DF00B01F14 /* FBIDBError.h in Headers */,
+				D7D6E0072265F0DF00B01F14 /* FBIDBPortsConfiguration.h in Headers */,
+				D7D6E0142265F0DF00B01F14 /* FBIDBServiceHandler.h in Headers */,
+				D7D6E0332265F0DF00B01F14 /* FBiOSTargetProvider.h in Headers */,
+				D7D6E02F2265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.h in Headers */,
+				D7D6E0342265F0DF00B01F14 /* FBStorageUtils.h in Headers */,
+				D7D6E0322265F0DF00B01F14 /* FBTemporaryDirectory.h in Headers */,
+				D7D6E02E2265F0DF00B01F14 /* FBTestApplicationsPair.h in Headers */,
+				D7D6E0312265F0DF00B01F14 /* FBXCTestDescriptor.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		D7D6DF112265DDEC00B01F14 /* idb_companion */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D7D6DF192265DDEC00B01F14 /* Build configuration list for PBXNativeTarget "idb_companion" */;
+			buildPhases = (
+				D7D6DF0E2265DDEC00B01F14 /* Sources */,
+				D7D6DF9E2265E35300B01F14 /* Headers */,
+				D7D6DF0F2265DDEC00B01F14 /* Frameworks */,
+				D7D6DF102265DDEC00B01F14 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = idb_companion;
+			productName = idb_companion;
+			productReference = D7D6DF122265DDEC00B01F14 /* idb_companion */;
+			productType = "com.apple.product-type.tool";
+		};
+		D7D6DF932265DF2200B01F14 /* idbGRPC */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D7D6DF952265DF2300B01F14 /* Build configuration list for PBXNativeTarget "idbGRPC" */;
+			buildPhases = (
+				D7D6DF912265DF2200B01F14 /* Sources */,
+				D7D6DF902265DF2200B01F14 /* Headers */,
+				D7D6DF922265DF2200B01F14 /* Frameworks */,
+				D7D6DF9B2265DF3900B01F14 /* ShellScript */,
+			);
+			buildRules = (
+				D7D6DF9C2265DF4E00B01F14 /* PBXBuildRule */,
+			);
+			dependencies = (
+			);
+			name = idbGRPC;
+			productName = idbGRPC;
+			productReference = D7D6DF942265DF2200B01F14 /* libidbGRPC.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D7D6DF0A2265DDEC00B01F14 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1020;
+				ORGANIZATIONNAME = Facebook;
+				TargetAttributes = {
+					D7D6DF112265DDEC00B01F14 = {
+						CreatedOnToolsVersion = 10.2;
+					};
+					D7D6DF932265DF2200B01F14 = {
+						CreatedOnToolsVersion = 10.2;
+					};
+				};
+			};
+			buildConfigurationList = D7D6DF0D2265DDEC00B01F14 /* Build configuration list for PBXProject "idb_companion" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = D7D6DF092265DDEC00B01F14;
+			productRefGroup = D7D6DF132265DDEC00B01F14 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D7D6DF112265DDEC00B01F14 /* idb_companion */,
+				D7D6DF932265DF2200B01F14 /* idbGRPC */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D7D6DF9B2265DF3900B01F14 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D7D6DF0E2265DDEC00B01F14 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D7D6E0272265F0DF00B01F14 /* FBBootManager.m in Sources */,
+				D7D6E0302265F0DF00B01F14 /* FBBundleStorageManager.m in Sources */,
+				D7D6DFFD2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m in Sources */,
+				D7D6DFF92265F0DF00B01F14 /* FBDeltaUpdateManager+Log.m in Sources */,
+				D7D6DFF62265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m in Sources */,
+				D7D6DFFB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.m in Sources */,
+				D7D6DFFA2265F0DF00B01F14 /* FBDeltaUpdateManager.m in Sources */,
+				D7D6E0112265F0DF00B01F14 /* FBGRPCServer.mm in Sources */,
+				D7D6E00F2265F0DF00B01F14 /* FBIDBCommandExecutor.m in Sources */,
+				D7D6E0132265F0DF00B01F14 /* FBIDBCompanionServer.m in Sources */,
+				D7D6E0082265F0DF00B01F14 /* FBIDBConfiguration.m in Sources */,
+				D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */,
+				D7D6E00C2265F0DF00B01F14 /* FBIDBPortsConfiguration.m in Sources */,
+				D7D6E00D2265F0DF00B01F14 /* FBIDBServiceHandler.mm in Sources */,
+				D7D6E02C2265F0DF00B01F14 /* FBiOSTargetProvider.m in Sources */,
+				D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */,
+				D7D6E02D2265F0DF00B01F14 /* FBStorageUtils.m in Sources */,
+				D7D6E0292265F0DF00B01F14 /* FBTemporaryDirectory.m in Sources */,
+				D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */,
+				D7D6E02A2265F0DF00B01F14 /* FBXCTestDescriptor.m in Sources */,
+				D7D6E0282265F0DF00B01F14 /* main.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D7D6DF912265DF2200B01F14 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D7D6DF9A2265DF2B00B01F14 /* idb.proto in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		D7D6DF172265DDEC00B01F14 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		D7D6DF182265DDEC00B01F14 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		D7D6DF1A2265DDEC00B01F14 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = "";
+				HEADER_SEARCH_PATHS = (
+					/usr/local/include,
+					"$(BUILT_PRODUCTS_DIR)/**",
+				);
+				INFOPLIST_FILE = "$(SRCROOT)/idb_companion/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+			};
+			name = Debug;
+		};
+		D7D6DF1B2265DDEC00B01F14 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = "";
+				HEADER_SEARCH_PATHS = (
+					/usr/local/include,
+					"$(BUILT_PRODUCTS_DIR)/**",
+				);
+				INFOPLIST_FILE = "$(SRCROOT)/idb_companion/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+			};
+			name = Release;
+		};
+		D7D6DF962265DF2300B01F14 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+				HEADER_SEARCH_PATHS = " /usr/local/include";
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		D7D6DF972265DF2300B01F14 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+				HEADER_SEARCH_PATHS = " /usr/local/include";
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D7D6DF0D2265DDEC00B01F14 /* Build configuration list for PBXProject "idb_companion" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D7D6DF172265DDEC00B01F14 /* Debug */,
+				D7D6DF182265DDEC00B01F14 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D7D6DF192265DDEC00B01F14 /* Build configuration list for PBXNativeTarget "idb_companion" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D7D6DF1A2265DDEC00B01F14 /* Debug */,
+				D7D6DF1B2265DDEC00B01F14 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D7D6DF952265DF2300B01F14 /* Build configuration list for PBXNativeTarget "idbGRPC" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D7D6DF962265DF2300B01F14 /* Debug */,
+				D7D6DF972265DF2300B01F14 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D7D6DF0A2265DDEC00B01F14 /* Project object */;
+}

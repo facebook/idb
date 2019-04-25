@@ -1,0 +1,622 @@
+syntax = "proto3";
+
+package idb;
+
+// The idb companion service definition.
+service CompanionService {
+  rpc accessibility_info (AccessibilityInfoRequest) returns (AccessibilityInfoResponse) {}
+  rpc add_media (stream AddMediaRequest) returns (AddMediaResponse) {}
+  rpc approve (ApproveRequest) returns (ApproveResponse) {}
+  rpc boot (BootRequest) returns (BootResponse) {}
+  rpc clear_keychain (ClearKeychainRequest) returns (ClearKeychainResponse) {}
+  rpc connect (ConnectRequest) returns (ConnectResponse) {}
+  rpc contacts_update (ContactsUpdateRequest) returns (ContactsUpdateResponse) {}
+  rpc crash_delete (CrashLogQuery) returns (CrashLogResponse) {}
+  rpc crash_list (CrashLogQuery) returns (CrashLogResponse) {}
+  rpc crash_show (CrashShowRequest) returns (CrashShowResponse) {}
+  rpc debugserver (stream DebugServerRequest) returns (stream DebugServerResponse) {}
+  rpc describe (TargetDescriptionRequest) returns (TargetDescriptionResponse) {}
+  rpc disconnect (DisconnectRequest) returns (DisconnectResponse) {}
+  rpc focus (FocusRequest) returns (FocusResponse) {}
+  rpc hid (stream HIDEvent) returns (HIDResponse) {}
+  rpc install (stream InstallRequest) returns (InstallResponse) {}
+  rpc instruments_run (stream InstrumentsRunRequest) returns (stream InstrumentsRunResponse) {}
+  rpc launch (stream LaunchRequest) returns (stream LaunchResponse) {}
+  rpc list_apps (ListAppsRequest) returns (ListAppsResponse) {}
+  rpc list_targets (ListTargetsRequest) returns (ListTargetsResponse) {}
+  rpc log (LogRequest) returns (stream LogResponse) {}
+  rpc ls (LsRequest) returns (LsResponse) {}
+  rpc mkdir (MkdirRequest) returns (MkdirResponse) {}
+  rpc mv (MvRequest) returns (MvResponse) {}
+  rpc open_url (OpenUrlRequest) returns (OpenUrlRequest) {}
+  rpc pull (PullRequest) returns (stream PullResponse) {}
+  rpc push (stream PushRequest) returns (PushResponse) {}
+  rpc record (stream RecordRequest) returns (stream RecordResponse) {}
+  rpc rm (RmRequest) returns (RmResponse) {}
+  rpc screenshot (ScreenshotRequest) returns (ScreenshotResponse) {}
+  rpc set_location (SetLocationRequest) returns (SetLocationResponse) {}
+  rpc terminate (TerminateRequest) returns (TerminateResponse) {}
+  rpc uninstall (UninstallRequest) returns (UninstallResponse) {}
+  rpc xctest_list_bundles (XctestListBundlesRequest) returns (XctestListBundlesResponse) {}
+  rpc xctest_list_tests (XctestListTestsRequest) returns (XctestListTestsResponse) {}
+  rpc xctest_run (XctestRunRequest) returns (stream XctestRunResponse) {}
+}
+
+message Payload {
+  oneof source {
+    string file_path = 1;
+    bytes data = 2;
+  }
+}
+
+message ListAppsRequest {
+}
+
+message ListAppsResponse {
+  repeated InstalledAppInfo apps = 1;
+}
+
+message InstalledAppInfo {
+  string bundle_id = 1;
+  string name = 2;
+  repeated string architectures = 3;
+  string install_type = 4;
+  enum AppProcessState {
+    UNKNOWN = 0;
+    NOT_RUNNING = 1;
+    RUNNING = 2;
+  }
+  AppProcessState process_state = 5;
+  bool debuggable = 6;
+}
+
+message InstallRequest {
+  enum Destination {
+    APP = 0;
+    XCTEST = 1;
+    DYLIB = 2;
+  }
+  oneof value {
+    Destination destination = 1;
+    Payload payload = 2;
+    string name_hint = 3;
+  }
+}
+
+message InstallResponse {
+  string bundle_id = 1;
+}
+
+message ScreenshotRequest {
+}
+
+message ScreenshotResponse {
+  bytes image_data = 1;
+  string image_format = 2;
+}
+
+message FocusRequest {
+}
+
+message FocusResponse {
+}
+
+message Point {
+  double x = 1;
+  double y = 2;
+}
+
+message AccessibilityInfoRequest {
+  Point point = 2;
+}
+
+message AccessibilityInfoResponse {
+  string json = 1;
+}
+
+message ApproveRequest {
+  enum Permission {
+    PHOTOS = 0;
+    CAMERA = 1;
+    CONTACTS = 2;
+  }
+  string bundle_id = 1;
+  repeated Permission permissions = 2;
+}
+
+message ApproveResponse {
+}
+
+message ClearKeychainRequest {
+}
+
+message ClearKeychainResponse {
+}
+
+message SetLocationRequest {
+  Location location = 1;
+}
+
+message Location {
+  double latitude = 1;
+  double longitude = 2;
+}
+
+message SetLocationResponse {
+}
+
+message UninstallRequest {
+  string bundle_id = 1;
+}
+
+message UninstallResponse {
+}
+
+message TerminateRequest {
+  string bundle_id = 1;
+}
+
+message TerminateResponse {
+}
+
+message OpenUrlRequest {
+  string url = 1;
+}
+
+message OpenUrlResponse {
+}
+
+message ContactsUpdateRequest {
+  Payload payload = 1;
+}
+
+message ContactsUpdateResponse {
+}
+
+message CrashShowRequest {
+  string name = 1;
+}
+
+message CrashLogInfo {
+  string name = 1;
+  string bundle_id = 2;
+  string process_name = 3;
+  string parent_process_name = 4;
+  uint64 process_identifier = 5;
+  uint64 parent_process_identifier = 6;
+  uint64 timestamp = 7;
+}
+
+message CrashShowResponse {
+  CrashLogInfo info = 1;
+  string contents = 2;
+}
+
+message CrashLogQuery {
+  uint64 since = 1;
+  uint64 before = 2;
+  string bundle_id = 3;
+  string name = 4;
+}
+
+message CrashLogResponse {
+  repeated CrashLogInfo list = 1;
+}
+
+message TargetDescriptionRequest {
+}
+
+message TargetDescriptionResponse {
+  TargetDescription target_description = 1;
+}
+
+message HIDEvent {
+  enum HIDDirection {
+    DOWN = 0;
+    UP = 1;
+  }
+
+  message HIDTouch {
+    Point point = 1;
+  }
+
+  enum HIDButtonType {
+    APPLE_PAY = 0;
+    HOME = 1;
+    LOCK = 2;
+    SIDE_BUTTON = 3;
+    SIRI = 4;
+  }
+
+  message HIDButton {
+    HIDButtonType button = 1;
+  }
+
+  message HIDKey {
+    uint64 keycode = 1;
+  }
+
+  message HIDPressAction {
+    oneof action {
+      HIDTouch touch = 1;
+      HIDButton button = 2;
+      HIDKey key = 3;
+    }
+  }
+
+  message HIDPress {
+    HIDPressAction action = 1;
+    HIDDirection direction = 2;
+  }
+
+  message HIDSwipe {
+    Point start = 1;
+    Point end = 2;
+    double delta = 5;
+  }
+
+  message HIDDelay {
+    double duration = 1;
+  }
+
+  oneof event {
+    HIDPress press = 1;
+    HIDSwipe swipe = 2;
+    HIDDelay delay = 3;
+  }
+}
+
+message HIDResponse {
+}
+
+message XctestListBundlesRequest {
+}
+
+message XctestListBundlesResponse {
+  message Bundles {
+    string name = 1;
+    string bundle_id = 2;
+    repeated string architectures = 3;
+  }
+  repeated Bundles bundles = 1;
+}
+
+message XctestListTestsRequest {
+  string bundle_name = 1;
+}
+
+message XctestListTestsResponse {
+  repeated string names = 1;
+}
+
+message XctestRunRequest {
+  message Logic {
+  }
+  message Application {
+    string app_bundle_id = 1;
+  }
+  message UI {
+    string app_bundle_id = 1;
+    string test_host_app_bundle_id = 2;
+  }
+  message Mode {
+    oneof mode {
+      Logic logic = 1;
+      Application application = 2;
+      UI ui = 3;
+    }
+  }
+  Mode mode = 1;
+  string test_bundle_id = 2;
+  repeated string tests_to_run = 3;
+  repeated string tests_to_skip = 4;
+  repeated string arguments = 5;
+  map<string, string> environment = 6;
+  uint64 timeout = 7;
+}
+
+message XctestRunResponse {
+  message TestRunInfo {
+    message TestRunFailureInfo {
+      string failure_message = 1;
+      string file = 2;
+      uint64 line = 3;
+    }
+    message TestActivity {
+      string title = 1;
+      double duration = 2;
+      string uuid = 3;
+    }
+    enum Status {
+      PASSED = 0;
+      FAILED = 1;
+      CRASHED = 2;
+    }
+    Status status = 1;
+    string bundle_name = 2;
+    string class_name = 3;
+    string method_name = 4;
+    double duration = 5;
+    TestRunFailureInfo failure_info = 6;
+    repeated string logs = 7;
+    repeated TestActivity activityLogs = 8;
+  }
+  enum Status {
+    RUNNING = 0;
+    TERMINATED_NORMALLY = 1;
+    TERMINATED_ABNORMALLY = 2;
+  }
+  Status status = 1;
+  repeated TestRunInfo results = 2;
+  repeated string log_output = 3;
+  Payload result_bundle = 4;
+}
+
+message MkdirRequest {
+  string bundle_id = 1;
+  string path = 2;
+}
+
+message MkdirResponse {
+}
+
+message MvRequest {
+  string bundle_id = 1;
+  repeated string src_paths = 2;
+  string dst_path = 3;
+}
+
+message MvResponse {
+}
+
+message RmRequest {
+  string bundle_id = 1;
+  repeated string paths = 2;
+}
+
+message RmResponse {
+}
+
+message LsRequest {
+  string bundle_id = 1;
+  string path = 2;
+}
+
+message PullRequest {
+  string bundle_id = 1;
+  string src_path = 2;
+  string dst_path = 3;
+}
+
+message PullResponse {
+  Payload payload = 1;
+}
+
+message FileInfo {
+  string path = 1;
+}
+
+message LsResponse {
+  repeated FileInfo files = 1;
+}
+
+message ConnectionAddress {
+  string host = 1;
+  uint64 port = 2;
+  uint64 grpc_port = 3;
+}
+
+message ConnectionDestination {
+  oneof destination {
+    ConnectionAddress address = 1;
+    string target_udid = 2;
+  }
+}
+
+message DisconnectRequest {
+  ConnectionDestination destination = 1;
+  bool is_daemon = 2;
+}
+
+message DisconnectResponse {
+}
+
+message ConnectRequest {
+  map<string, string> metadata = 1;
+  ConnectionDestination destination = 2;
+  bool is_daemon = 3;
+  string local_file_path = 4;
+}
+
+message CompanionInfo {
+  string udid = 1;
+  string host = 2;
+  uint64 port = 3;
+  bool is_local = 4;
+  uint64 grpc_port = 5;
+}
+
+message ScreenDimensions {
+  uint64 width = 1;
+  uint64 height = 2;
+  double density = 3;
+  uint64 width_points = 4;
+  uint64 height_points = 5;
+}
+
+message TargetDescription {
+  string udid = 1;
+  string name = 2;
+  ScreenDimensions screen_dimensions = 3;
+  string state = 4;
+  string target_type = 5;
+  string os_version = 6;
+  string architecture = 7;
+  CompanionInfo companion_info = 8;
+  string daemon_host = 9;
+  uint64 daemon_port = 10;
+}
+
+message DaemonInfo {
+  string host = 1;
+  uint64 port = 2;
+  repeated TargetDescription targets = 3;
+}
+
+message ConnectResponse {
+   CompanionInfo companion = 1;
+   DaemonInfo daemon = 2;
+}
+
+message ListTargetsRequest {
+}
+
+message ListTargetsResponse {
+  repeated TargetDescription targets = 1;
+}
+
+message BootRequest{
+}
+
+message BootResponse{
+}
+
+message LogRequest {
+  repeated string arguments = 1;
+}
+
+message LogResponse {
+  bytes output = 1;
+}
+
+message RecordRequest {
+  message Start {
+    string file_path = 1;
+  }
+  message Stop {
+  }
+  oneof control {
+    Start start = 1;
+    Stop stop = 2;
+  }
+}
+
+message RecordResponse {
+  oneof output {
+    bytes log_output = 1;
+    Payload payload = 2;
+  }
+}
+
+message LaunchRequest {
+  message Start {
+    string bundle_id = 1;
+    map<string, string> env = 2;
+    repeated string app_args = 3;
+    bool foreground_if_running = 4;
+    bool wait_for = 5;
+  }
+  message Stop {
+
+  }
+  oneof control {
+    Start start = 1;
+    Stop stop = 2;
+  }
+}
+
+message LaunchResponse {
+  message Pipe {
+    bytes data = 1;
+  }
+  enum Interface {
+    STDOUT = 0;
+    STDERR = 1;
+  }
+  Interface interface = 1;
+  Pipe pipe = 2;
+}
+
+message PushRequest {
+  message Inner {
+    string bundle_id = 1;
+    string dst_path = 2;
+  }
+  oneof value {
+    Payload payload = 1;
+    Inner inner = 2;
+  }
+}
+
+message PushResponse {
+}
+
+message AddMediaRequest {
+  Payload payload = 1;
+}
+
+message AddMediaResponse {
+}
+
+message InstrumentsRunRequest {
+  message Start {
+    string file_path = 1;
+    string template_name = 2;
+    string app_bundle_id = 3;
+    map<string, string> environment = 4;
+    repeated string arguments = 5;
+  }
+  message Stop {
+    repeated string post_process_arguments = 1;
+  }
+  oneof control {
+    Start start = 1;
+    Stop stop = 2;
+  }
+}
+
+message InstrumentsRunResponse {
+  enum State {
+    UNKNOWN = 0;
+    RUNNING_INSTRUMENTS = 1;
+    POST_PROCESSING = 2;
+  }
+  oneof output {
+    bytes log_output = 1;
+    Payload payload = 2;
+    State state = 3;
+  }
+}
+
+message DebugServerRequest {
+  message Start {
+    string bundle_id = 1;
+  }
+  message Status {
+  }
+  message Stop {
+
+  }
+  message Pipe {
+    bytes data = 1;
+  }
+  oneof control {
+    Start start = 1;
+    Stop stop = 2;
+    Status status = 3;
+    Pipe pipe = 4;
+  }
+}
+
+message DebugServerResponse {
+  message Pipe {
+    bytes data = 1;
+  }
+  message Status {
+    repeated string lldb_bootstrap_commands = 1;
+  }
+  oneof control {
+    Status status = 1;
+    Pipe pipe = 2;
+  }
+}
