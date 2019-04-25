@@ -285,7 +285,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
     // xctest framework to app's rpath so it can be found by dyld when we load test bundle later.
     [FBApplicationBundle copyFrameworkToApplicationAtPath:_runnerAppPath frameworkPath:xcTestFrameworkPath];
 
-    FBApplicationBundle *appBundle = [FBApplicationBundle bundleFromPath:_runnerAppPath error:nil];
+    FBApplicationBundle *appBundle = [FBApplicationBundle applicationWithPath:_runnerAppPath error:nil];
     return [FBXCTestProcess
       startWithLaunchPath:appBundle.binary.path
       arguments:@[]

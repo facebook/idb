@@ -45,7 +45,7 @@
 - (FBFuture<NSNull *> *)execute
 {
   NSError *error = nil;
-  FBApplicationBundle *testRunnerApp = [FBApplicationBundle bundleFromPath:self.configuration.runnerAppPath error:&error];
+  FBApplicationBundle *testRunnerApp = [FBApplicationBundle applicationWithPath:self.configuration.runnerAppPath error:&error];
   if (!testRunnerApp) {
     [self.logger logFormat:@"Failed to open test runner application: %@", error];
     return [FBFuture futureWithError:error];
@@ -53,7 +53,7 @@
 
   FBApplicationBundle *testTargetApp;
   if (self.configuration.testTargetAppPath) {
-    testTargetApp = [FBApplicationBundle bundleFromPath:self.configuration.testTargetAppPath error:&error];
+    testTargetApp = [FBApplicationBundle applicationWithPath:self.configuration.testTargetAppPath error:&error];
     if (!testTargetApp) {
       [self.logger logFormat:@"Failed to open test target application: %@", error];
       return [FBFuture futureWithError:error];

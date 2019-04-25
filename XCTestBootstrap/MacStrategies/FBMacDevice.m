@@ -278,7 +278,7 @@
   for (NSString *bundleID in self.bundleIDToProductMap) {
     FBProductBundle *productBundle = self.bundleIDToProductMap[bundleID];
     NSError *error;
-    FBApplicationBundle *bundle = [FBApplicationBundle bundleFromPath:productBundle.path error:&error];
+    FBApplicationBundle *bundle = [FBApplicationBundle applicationWithPath:productBundle.path error:&error];
     if (!bundle) {
       return [FBFuture futureWithError:error];
     }
@@ -291,7 +291,7 @@
 {
   FBProductBundle *productBundle = self.bundleIDToProductMap[bundleID];
   NSError *error;
-  FBApplicationBundle *bundle = [FBApplicationBundle bundleFromPath:productBundle.path error:&error];
+  FBApplicationBundle *bundle = [FBApplicationBundle applicationWithPath:productBundle.path error:&error];
   if (!bundle) {
     return [FBFuture futureWithError:error];
   }

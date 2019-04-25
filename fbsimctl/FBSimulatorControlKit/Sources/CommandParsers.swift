@@ -102,7 +102,7 @@ extension Parser {
     let desc = PrimitiveDesc(name: "application", desc: "Path to an application.")
     return Parser<FBApplicationBundle>.single(desc) { token in
       do {
-        return try FBApplicationBundle.bundle(fromPath: token)
+        return try FBApplicationBundle.application(withPath: token)
       } catch let error as NSError {
         throw ParseError.custom("Could not get an app \(token) \(error.description)")
       }

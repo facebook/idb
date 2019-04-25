@@ -247,7 +247,7 @@ static NSString *const KeyDataContainer = @"DataContainer";
       fail:error];
   }
 
-  FBApplicationBundle *bundle = [FBApplicationBundle bundleFromPath:appPath error:error];
+  FBApplicationBundle *bundle = [FBApplicationBundle applicationWithPath:appPath error:error];
   if (!bundle) {
     return nil;
   }
@@ -295,7 +295,7 @@ static NSString *const KeyDataContainer = @"DataContainer";
 - (FBFuture<FBApplicationBundle *> *)confirmCompatibilityOfApplicationAtPath:(NSString *)path
 {
   NSError *error = nil;
-  FBApplicationBundle *application = [FBApplicationBundle bundleFromPath:path error:&error];
+  FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:path error:&error];
   if (!application) {
     return [[[FBSimulatorError
       describeFormat:@"Could not determine Application information for path %@", path]

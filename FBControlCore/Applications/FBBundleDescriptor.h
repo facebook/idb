@@ -16,8 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBFileManager;
 
 /**
- Concrete value wrapper around a Bundle on disk.
- Unlike NSBundle, FBBundleDescriptor is serializable. It represents the meta-information about a bundle, not the reified bundle instance itself.
+ Concrete value wrapper around a Application artifact.
  */
 @interface FBBundleDescriptor : NSObject <NSCopying, FBJSONSerializable, FBDebugDescribeable>
 
@@ -43,16 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param binary the Path to the binary inside the Application. May be nil.
  @return a new FBBundleDescriptor instance, if all arguments are non-nil. Nil otherwise
  */
-+ (nullable instancetype)bundleWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(nullable FBBinaryDescriptor *)binary;
-
-/**
- An initializer for FBBundleDescriptor that obtains information by inspecting the Info.plist.
-
- @param path the path of the bundle to use.
- @param error an error out for any error that occurs
- @return a new FBBundleDescriptor instance if one could be constructed, nil otherwise.
- */
-+ (nullable instancetype)bundleFromPath:(NSString *)path error:(NSError **)error;
++ (nullable instancetype)withName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBBinaryDescriptor *)binary;
 
 #pragma mark Public Methods
 

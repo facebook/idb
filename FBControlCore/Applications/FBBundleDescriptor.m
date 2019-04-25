@@ -10,11 +10,8 @@
 #import "FBBinaryDescriptor.h"
 #import "FBFileManager.h"
 #import "FBControlCoreError.h"
-#import "FBCollectionInformation.h"
 
 @implementation FBBundleDescriptor
-
-#pragma mark Initializers
 
 - (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(nullable FBBinaryDescriptor *)binary
 {
@@ -35,39 +32,12 @@
   return self;
 }
 
-+ (nullable instancetype)bundleWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBBinaryDescriptor *)binary
++ (nullable instancetype)withName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBBinaryDescriptor *)binary
 {
   if (!name || !path || !bundleID) {
     return nil;
   }
   return [[self alloc] initWithName:name path:path bundleID:bundleID binary:binary];
-}
-
-+ (nullable instancetype)bundleFromPath:(NSString *)path error:(NSError **)error
-{
-  if (!path) {
-    return [[FBControlCoreError
-      describe:@"Nil file path provided for bundle path"]
-      fail:error];
-  }
-  NSString *bundleName = [self bundleNameForPath:path];
-  if (!bundleName) {
-    return [[FBControlCoreError
-      describeFormat:@"Could not obtain bundle name for path %@", path]
-      fail:error];
-  }
-  NSError *innerError = nil;
-  NSString *bundleID = [self infoPlistKey:@"CFBundleIdentifier" forBundleAtPath:path error:&innerError];
-  if (!bundleID) {
-    return [[FBControlCoreError
-      describeFormat:@"Could not obtain Bundle ID for bundle at path %@: %@", path, innerError]
-      fail:error];
-  }
-  FBBinaryDescriptor *binary = [self binaryForBundlePath:path error:&innerError];
-  if (!binary) {
-    return [[[FBControlCoreError describeFormat:@"Could not obtain binary for bundle at path %@", path] causedBy:innerError] fail:error];
-  }
-  return [[self alloc] initWithName:bundleName path:path bundleID:bundleID binary:binary];
 }
 
 #pragma mark NSCopying
@@ -178,123 +148,5 @@
     bundleID:self.bundleID
     binary:self.binary];
 }
-
-#pragma mark Private
-
-+ (FBBinaryDescriptor *)binaryForBundlePath:(NSString *)bundlePath error:(NSError **)error
-{
-  NSError *innerError = nil;
-  NSString *binaryPath = [self binaryPathForBundleAtPath:bundlePath error:&innerError];
-  if (!binaryPath) {
-    return [[FBControlCoreError
-      describeFormat:@"Could not obtain binary path for bundle path %@: %@", bundlePath, innerError]
-      fail:error];
-  }
-
-  FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:binaryPath error:&innerError];
-  if (!binary) {
-    return [[[FBControlCoreError
-      describeFormat:@"Could not obtain binary info for binary at path %@", binaryPath]
-      causedBy:innerError]
-      fail:error];
-  }
-  return binary;
-}
-
-+ (NSString *)bundleNameForPath:(NSString *)bundlePath
-{
-  return [self infoPlistKey:@"CFBundleName" forBundleAtPath:bundlePath error:nil] ?: bundlePath.lastPathComponent.stringByDeletingPathExtension;
-}
-
-+ (NSString *)binaryPathForBundleAtPath:(NSString *)bundlePath error:(NSError **)error
-{
-  NSString *binaryName = [self infoPlistKey:@"CFBundleExecutable" forBundleAtPath:bundlePath error:error];
-  if (!binaryName) {
-    return nil;
-  }
-  NSArray *paths = @[
-    [bundlePath stringByAppendingPathComponent:binaryName],
-    [[bundlePath stringByAppendingPathComponent:@"Contents/MacOS"] stringByAppendingPathComponent:binaryName]
-  ];
-
-  for (NSString *path in paths) {
-    if ([NSFileManager.defaultManager fileExistsAtPath:path]) {
-      return path;
-    }
-  }
-  return nil;
-}
-
-+ (NSString *)infoPlistKey:(NSString *)key forBundleAtPath:(NSString *)bundlePath error:(NSError **)error
-{
-  NSString *infoPlistPath = [self infoPlistPathForBundleAtPath:bundlePath error:error];
-  if (!infoPlistPath) {
-    return nil;
-  }
-  NSDictionary<NSString *, NSString *> *infoPlist = [NSDictionary dictionaryWithContentsOfFile:infoPlistPath];
-  if (!infoPlist) {
-    return [[[FBControlCoreError
-      describeFormat:@"Could not load Info.plist at path %@", infoPlistPath]
-      noLogging]
-      fail:error];
-  }
-  NSString *value = infoPlist[key];
-  if (!value) {
-    return [[[FBControlCoreError
-      describeFormat:@"Could not load key %@ in Info.plist, values %@", key, [FBCollectionInformation oneLineDescriptionFromArray:infoPlist.allKeys]]
-      noLogging]
-      fail:error];
-  }
-  return value;
-}
-
-+ (NSString *)infoPlistPathForBundleAtPath:(NSString *)bundlePath error:(NSError **)error
-{
-  NSArray<NSString *> *searchPaths = @[
-    bundlePath,
-    [bundlePath stringByAppendingPathComponent:@"Contents"]
-  ];
-  NSArray<NSString *> *plists = @[
-    @"info.plist",
-    @"Info.plist"
-  ];
-
-  for (NSString *searchPath in searchPaths) {
-    for (NSString *plist in plists) {
-      NSString *path = [searchPath stringByAppendingPathComponent:plist];
-      if ([NSFileManager.defaultManager fileExistsAtPath:path]) {
-        return path;
-      }
-    }
-  }
-
-  BOOL isDirectory = NO;
-  if (![NSFileManager.defaultManager fileExistsAtPath:bundlePath isDirectory:&isDirectory]) {
-    return [[[FBControlCoreError
-      describeFormat:@"No Info.plist could be found as %@ does not exist", bundlePath]
-      noLogging]
-      fail:error];
-  }
-  if (!isDirectory) {
-    return [[[FBControlCoreError
-      describeFormat:@"No Info.plist could be found in %@ as it's not an bundle path, which must be a directory", bundlePath]
-      noLogging]
-      fail:error];
-  }
-  NSMutableArray<NSString *> *allPaths = NSMutableArray.array;
-  for (NSString *searchPath in searchPaths) {
-    NSArray<NSString *> *contents = [NSFileManager.defaultManager contentsOfDirectoryAtPath:searchPath error:nil];
-    if (!contents) {
-      continue;
-    }
-    [allPaths addObjectsFromArray:contents];
-  }
-
-  return [[[FBControlCoreError
-    describeFormat:@"Could not find an Info.plist at any of the expected locations %@, files that do exist %@", [FBCollectionInformation oneLineDescriptionFromArray:searchPaths], [FBCollectionInformation oneLineDescriptionFromArray:allPaths]]
-    noLogging]
-    fail:error];
-}
-
 
 @end
