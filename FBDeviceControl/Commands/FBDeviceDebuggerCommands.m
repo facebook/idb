@@ -113,7 +113,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
 - (FBFuture<FBApplicationBundle *> *)applicationBundleForPath:(NSString *)path
 {
   return [FBFuture resolveValue:^(NSError **error) {
-    return [FBApplicationBundle applicationWithPath:path error:error];
+    return [FBApplicationBundle bundleFromPath:path error:error];
   }];
 }
 
