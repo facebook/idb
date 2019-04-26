@@ -84,3 +84,6 @@ Facebook has adopted a Code of Conduct that we expect project participants to ad
 ## Contributing Guide
 
 Read our contributing guide (https://github.com/facebook/Docusaurus/blob/master/CONTRIBUTING.md) to learn about our development process, how to propose bugfixes and improvements, and how to build and test your changes to Docusaurus.
+
+## License
+[`idb` is MIT-licensed](LICENSE).
