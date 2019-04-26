@@ -70,7 +70,6 @@ from idb.cli.commands.xctest_list import ListXctestsCommand
 from idb.cli.commands.xctest_list_bundle import ListTestBundleCommand
 from idb.cli.commands.xctest_run import RunXctestCommand
 from idb.common.types import IdbException
-from idb.fb.thrift.asyncio.daemon.ttypes import DaemonServiceException
 
 
 COROUTINE_DRAIN_TIMEOUT = 2
