@@ -28,6 +28,7 @@ def remove_daemon_pid(pid: int) -> None:
 def _write_daemon_pids(pids: List[int]) -> None:
     with open(IDB_DAEMON_PID_PATH, "w") as pid_file:
         json.dump(pids, pid_file)
+        pid_file.flush()
 
 
 def _has_saved_pids() -> bool:
@@ -46,7 +47,9 @@ def _get_daemon_pids() -> List[int]:
 
 def _clear_saved_daemon_pids() -> None:
     if os.path.exists(IDB_DAEMON_PID_PATH):
-        os.remove(IDB_DAEMON_PID_PATH)
+        # Empty the file
+        with open(IDB_DAEMON_PID_PATH, 'wb', buffering=0) as pid_file:
+            pid_file.flush()
 
 
 async def kill_saved_pids() -> None:
