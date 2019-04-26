@@ -77,13 +77,13 @@ Find the full documentation for this project at [fbidb.io](http://fbidb.io/)
 
 We've released idb because it's a big part of how we scale iOS automation at Facebook. We hope that others will be able to benefit from the project where they may have needs that aren't currently serviced by the standard Xcode toolchain.
 
-## Code of Conduct (https://code.fb.com/codeofconduct)
+## Code of Conduct 
 
-Facebook has adopted a Code of Conduct that we expect project participants to adhere to. Please read the full text (https://code.fb.com/codeofconduct) so that you can understand what actions will and will not be tolerated.
+Facebook has adopted a Code of Conduct that we expect project participants to adhere to. Please [read the full text](https://code.fb.com/codeofconduct) so that you can understand what actions will and will not be tolerated.
 
 ## Contributing Guide
 
-Read our contributing guide (https://github.com/facebook/Docusaurus/blob/master/CONTRIBUTING.md) to learn about our development process, how to propose bugfixes and improvements, and how to build and test your changes to Docusaurus.
+Read our [contributing guide](.github/CONTRIBUTING.md) to learn about our development process. 
 
 ## License
 [`idb` is MIT-licensed](LICENSE).
