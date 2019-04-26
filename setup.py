@@ -41,7 +41,7 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
 
 
 setuptools.setup(
-    name="idb",
+    name="fb-idb",
     version="0.0.1",
     author="Facebook",
     author_email="callumryan@fb.com",
@@ -52,7 +52,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     license="MIT",
     classifiers=[
-        "Programming Language :: Python :: 3 :: 6",
+        "Programming Language :: Python :: 3.6",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
