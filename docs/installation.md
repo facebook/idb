@@ -3,13 +3,29 @@ id: installation
 title: Installation
 ---
 
-## brew and pip
+idb is made up of 2 parts, each of which needs to be installed separately.
+### idb companion
+Each target (simulator/device) will have a companion process attached allowing idb to communicate remotely.
 
-idb is made up of 2 parts. and so they both need to be installed in two seperate steps.
+The idb companion can be installed via brew or built from [source](https://github.com/facebook/idb)
+```
+brew tap facebook/fb
+brew install idb-companion
+```
+Note: Instructions on how to install brew can be found [here](https://brew.sh)
+
+### idb client
+A cli tool and python client is provided to interact with idb.
+
+It can be installed via pip:
 
 ```
-brew install idb_companion
-pip install idb
+pip3.6 install idb
 ```
 
-make sure both commands succeed and then you're good to go! head over to the [guided tour](guided-tour.md) to try idb out
+Note: The idb client requires python 3.6 or greater to be installed.
+
+Note: Instructions on how to install pip can be found [here](https://pip.pypa.io/en/stable/installing/)
+
+
+Make sure both parts of idb are installed successfully and then you're good to go! head over to the [guided tour](guided-tour.md) to try idb out

@@ -4,7 +4,7 @@ title: Guided Tour
 ---
 ## This is a quick start guide to show you a glimpse of what idb can do.
 
-if you haven't installed idb already please refer to [installation].
+if you haven't installed idb already please refer to [installation](installation.md).
 
 Let's start with finding out what simulators/devices are available on your mac.
 ```
@@ -19,9 +19,9 @@ idb boot UDID
 
 you can then try any of the commands below and make sure you pass --udid to run them with the correct simulator.
 ```
-idb log
-idb record
 idb launch com.apple.Maps
+idb record
+idb log
 ```
 
 Now let's try to run tests.
