@@ -60,7 +60,7 @@ from idb.cli.commands.list_apps import ListAppsCommand
 from idb.cli.commands.list_targets import ListTargetsCommand
 from idb.cli.commands.log import LogCommand
 from idb.cli.commands.open_url import OpenUrlCommand
-from idb.cli.commands.record import RecordGifCommand, RecordVideoCommand
+from idb.cli.commands.record import RecordVideoCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
 from idb.cli.commands.set_location import SetLocationCommand
 from idb.cli.commands.terminate import TerminateCommand
@@ -128,9 +128,8 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         CommandGroup(
             name="record",
             description="Record what the screen is doing",
-            commands=[RecordGifCommand(), RecordVideoCommand()],
+            commands=[RecordVideoCommand()],
         ),
-        RecordGifCommand(),
         RecordVideoCommand(),
         DeprecatedPushCommand(),
         DeprecatedPullCommand(),

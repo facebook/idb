@@ -381,11 +381,6 @@ idb record video OUTPUT_MP4
 ```
 Starts recording the targets screen, outputting the content to the specified path. The recording can be stopped by pressing `^C`.
 
-```
-idb record gif GIF_PATH
-```
-Gifs can also be recorded. The frame-rate of the produced gif can be controlled with `--fps`.
-
 ### Log
 ```
 idb log

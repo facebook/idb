@@ -247,9 +247,6 @@ class IdbClientBase:
     async def approve(self, bundle_id: str, permissions: Set[str]) -> None:
         pass
 
-    async def record_gif(self, stop: asyncio.Event, output_file: str, fps: int) -> str:
-        pass
-
     async def record_video(self, stop: asyncio.Event, output_file: str) -> None:
         pass
 
