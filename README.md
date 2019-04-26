@@ -1,4 +1,7 @@
 # idb
+
+![idb logo](docs/assets/idb_logo_color.jpg)
+
 The “iOS Development Bridge” or `idb`, is a command line interface for automating iOS Simulators and Devices for development. It has three main goals:
 
 * *Remote Automation.* `idb` has a “companion” that runs on macOS and a python client and cli that runs anywhere. This enables scenarios such as a “Device Lab” within a Data Center or fanning out commands to large numbers of iOS Simulators.
