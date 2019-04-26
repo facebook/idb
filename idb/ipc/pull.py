@@ -20,10 +20,12 @@ async def daemon(client: CompanionClient, request: PullRequest) -> PullResponse:
     destination = request.dst_path
     async with client.stub.pull.open() as stream:
         if not client.is_local:
+            # not sending the destination to remote companion
+            # so it streams the file back
             request = PullRequest(
                 bundle_id=request.bundle_id,
                 src_path=request.src_path,
-                dst_path=None,  # not sending the destination to remote companion so it streams the file back
+                dst_path=None,
             )
         await stream.send_message(request, end=True)
         if client.is_local:

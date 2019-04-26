@@ -10,13 +10,15 @@ import idb.grpc.ipc_loader as ipc_loader
 from grpclib.client import Channel
 from idb.common.companion import CompanionClient
 from idb.grpc.idb_grpc import CompanionServiceStub
+from idb.common.types import IdbClientBase
 
 
-# this is to silence the channel not closed warning https://github.com/vmagamedov/grpclib/issues/58 is fixed
+# this is to silence the channel not closed warning
+# https://github.com/vmagamedov/grpclib/issues/58
 warnings.filterwarnings(action="ignore", category=ResourceWarning)
 
 
-class IdbGRPCClient:
+class IdbGRPCClient(IdbClientBase):
     def __init__(
         self,
         port: int,
@@ -26,7 +28,9 @@ class IdbGRPCClient:
     ) -> None:
         self.port: int = port
         self.host: str = host
-        self.logger = logger if logger else logging.getLogger("idb_grpc_client")
+        self.logger: logging.Logger = (
+            logger if logger else logging.getLogger("idb_grpc_client")
+        )
         self.target_udid = target_udid
         # TODO: T39585325
         self.channel = Channel(host, port, loop=asyncio.get_event_loop())
@@ -36,7 +40,7 @@ class IdbGRPCClient:
         ):
             setattr(self, call_name, f)
 
-    def provide_client(self):
+    def provide_client(self) -> CompanionClient:
         return CompanionClient(
             stub=self.stub, is_local=True, udid=self.target_udid, logger=self.logger
         )

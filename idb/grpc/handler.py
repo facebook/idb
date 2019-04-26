@@ -3,7 +3,7 @@
 
 import logging
 import warnings
-from typing import Optional
+from typing import Optional, Dict
 
 import idb.grpc.ipc_loader as ipc_loader
 from idb.common.boot_manager import BootManager
@@ -15,7 +15,8 @@ from idb.grpc.idb_grpc import CompanionServiceBase
 
 # Don't let the abstractmetod machineary mess raise at runtime
 CompanionServiceBase.__abstractmethods__ = frozenset([])
-# this is to silence the channel not closed warning https://github.com/vmagamedov/grpclib/issues/58 is fixed
+# this is to silence the channel not closed warning
+# https://github.com/vmagamedov/grpclib/issues/58
 warnings.filterwarnings(action="ignore", category=ResourceWarning)
 
 
@@ -26,7 +27,9 @@ class GRPCHandler(CompanionServiceBase):
         boot_manager: BootManager,
         logger: Optional[logging.Logger] = None,
     ) -> None:
-        self.logger = logger if logger else logging.getLogger("idb_daemon")
+        self.logger: logging.Logger = (
+            logger if logger else logging.getLogger("idb_daemon")
+        )
         self.companion_manager = companion_manager
         self.boot_manager = boot_manager
         for (call_name, f) in ipc_loader.daemon_calls(
@@ -35,7 +38,7 @@ class GRPCHandler(CompanionServiceBase):
         ):
             setattr(self, call_name, f)
 
-    def get_udid(self, metadata) -> Optional[str]:
+    def get_udid(self, metadata: Dict[str, str]) -> Optional[str]:
         return metadata.get("udid")
 
     async def provide_client(self, udid: Optional[str]) -> CompanionClient:

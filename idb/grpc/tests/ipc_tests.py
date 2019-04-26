@@ -19,7 +19,7 @@ from idb.grpc.ipc_loader import (
 from idb.utils.testing import TestCase
 
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class IpcTests(TestCase):

@@ -58,7 +58,7 @@ class CompanionManager:
         else:
             self._udid_target_map[companion.udid] = TargetDescription(
                 udid=companion.udid,
-                name=None,
+                name="",
                 state=None,
                 target_type=None,
                 os_version=None,
@@ -111,7 +111,7 @@ class CompanionManager:
             for target in self._udid_target_map.values()
         ]
 
-    def update_target(self, target: TargetDescription):
+    def update_target(self, target: TargetDescription) -> None:
         self._udid_target_map[target.udid] = target
 
     def has_default_companion(self) -> bool:
@@ -161,7 +161,8 @@ class CompanionManager:
             yield await self._get_companion_info(address, metadata, timeout)
         except OSError as error:
             raise Exception(
-                f"Failed to connect to companion at {address.host}:{address.port} found error {error}"
+                f"Failed to connect to companion at "
+                f"{address.host}:{address.port} found error {error}"
             )
 
     async def _get_companion_info(

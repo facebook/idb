@@ -5,9 +5,16 @@ import asyncio
 import importlib
 from argparse import ArgumentParser, Namespace
 from logging import Logger
-from typing import Any, List
+from typing import List, TYPE_CHECKING
+from types import ModuleType
+
 
 from idb.common.types import LoggingMetadata, IdbClientBase, Server
+
+
+if TYPE_CHECKING:
+    from idb.manager.companion import CompanionManager
+    from idb.common.boot_manager import BootManager
 
 
 def package_exists(package_name: str) -> bool:
@@ -18,7 +25,7 @@ def package_exists(package_name: str) -> bool:
 
 
 PLUGIN_PACKAGE_NAMES = ["idb.fb.plugin"]
-PLUGINS: List[Any] = [
+PLUGINS: List[ModuleType] = [
     importlib.import_module(package.name)
     for package in [
         importlib.util.find_spec(package_name)
@@ -33,19 +40,23 @@ def on_launch(logger: Logger) -> None:
     for plugin in PLUGINS:
         if not hasattr(plugin, "on_launch"):
             continue
-        plugin.on_launch(logger)
+        plugin.on_launch(logger)  # pyre-ignore
 
 
 async def on_close(logger: Logger) -> None:
     await asyncio.gather(
-        *[plugin.on_close(logger) for plugin in PLUGINS if hasattr(plugin, "on_close")]
+        *[
+            plugin.on_close(logger)  # pyre-ignore
+            for plugin in PLUGINS
+            if hasattr(plugin, "on_close")
+        ]
     )
 
 
 async def before_invocation(name: str, metadata: LoggingMetadata) -> None:
     await asyncio.gather(
         *[
-            plugin.before_invocation(name=name, metadata=metadata)
+            plugin.before_invocation(name=name, metadata=metadata)  # pyre-ignore
             for plugin in PLUGINS
             if hasattr(plugin, "before_invocation")
         ]
@@ -55,7 +66,11 @@ async def before_invocation(name: str, metadata: LoggingMetadata) -> None:
 async def after_invocation(name: str, duration: int, metadata: LoggingMetadata) -> None:
     await asyncio.gather(
         *[
-            plugin.after_invocation(name=name, duration=duration, metadata=metadata)
+            plugin.after_invocation(  # pyre-ignore
+                name=name,
+                duration=duration,
+                metadata=metadata,
+            )
             for plugin in PLUGINS
             if hasattr(plugin, "after_invocation")
         ]
@@ -67,7 +82,7 @@ async def failed_invocation(
 ) -> None:
     await asyncio.gather(
         *[
-            plugin.failed_invocation(
+            plugin.failed_invocation(  # pyre-ignore
                 name=name, duration=duration, exception=exception, metadata=metadata
             )
             for plugin in PLUGINS
@@ -108,8 +123,8 @@ def resolve_metadata(logger: Logger) -> LoggingMetadata:
 
 async def resolve_servers(
     args: Namespace,
-    companion_manager: Any,
-    boot_manager: Any,
+    companion_manager: "CompanionManager",
+    boot_manager: "BootManager",
     logger: Logger,
     servers: List[Server],
 ) -> List[Server]:

@@ -14,4 +14,4 @@ async def list_test_bundle(client: CompanionClient, test_bundle_id: str) -> List
     return [name for name in response.names]
 
 
-CLIENT_PROPERTIES = [list_test_bundle]
+CLIENT_PROPERTIES = [list_test_bundle]  # pyre-ignore

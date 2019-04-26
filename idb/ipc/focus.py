@@ -5,5 +5,5 @@ from idb.common.companion import CompanionClient
 from idb.grpc.idb_pb2 import FocusRequest
 
 
-async def client(client: CompanionClient):
+async def client(client: CompanionClient) -> None:
     await client.stub.focus(FocusRequest())

@@ -2,12 +2,13 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 import asyncio
-from typing import Dict
+from typing import Dict, Optional
 
 from logging import Logger
 
 from idb.grpc.handler import GRPCHandler
 from idb.common.types import Server
+from idb.utils.typing import none_throws
 from idb.common.socket import ports_from_sockets
 from grpclib.server import Server as GRPC_Server
 
@@ -18,6 +19,6 @@ class GRPCServer(GRPC_Server, Server):
         self.logger = logger
 
     @property
-    def ports(self) -> Dict[str, int]:
-        (ipv4, ipv6) = ports_from_sockets(self._server.sockets)
+    def ports(self) -> Dict[str, Optional[int]]:
+        (ipv4, ipv6) = ports_from_sockets(none_throws(self._server).sockets)
         return {"ipv4_grpc_port": ipv4, "ipv6_grpc_port": ipv6}

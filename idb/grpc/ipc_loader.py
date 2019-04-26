@@ -18,6 +18,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    TypeVar,
 )
 
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
@@ -26,7 +27,7 @@ from idb.common.companion import CompanionClient
 from idb.manager.companion import CompanionManager
 from idb.grpc.stream import Stream
 from idb.common.logging import log_call
-from idb.common.types import IdbException
+from idb.common.types import IdbException, LoggingMetadata
 from idb.grpc.idb_grpc import CompanionServiceStub
 
 
@@ -63,18 +64,20 @@ class DaemonContext(NamedTuple):
 CompanionProvider = Callable[[Optional[str]], Awaitable[CompanionClient]]
 DaemonContextProvider = Callable[[], Awaitable[DaemonContext]]
 DaemonProvider = Callable[[], CompanionClient]
+_T = TypeVar("_T")
+_U = TypeVar("_U")
 
 
-CLIENT_METADATA = {"component": "client", "rpc_protocol": "grpc"}
-DAEMON_METADATA = {"component": "daemon", "rpc_protocol": "grpc"}
+CLIENT_METADATA: LoggingMetadata = {"component": "client", "rpc_protocol": "grpc"}
+DAEMON_METADATA: LoggingMetadata = {"component": "daemon", "rpc_protocol": "grpc"}
 
 
-class MetadataStubInjector:
-    def __init__(self, stub: CompanionServiceStub, metadata: Dict[str, str]):
+class MetadataStubInjector(CompanionServiceStub):
+    def __init__(self, stub: CompanionServiceStub, metadata: Dict[str, str]) -> None:
         self._stub = stub
         self._metadata = metadata
 
-    def __getattr__(self, name: str) -> Any:
+    def __getattr__(self, name: str) -> Any:  # pyre-ignore
         if not hasattr(self._stub, name):
             return getattr(super(), name)
 
@@ -82,10 +85,10 @@ class MetadataStubInjector:
         metadata = self._metadata
 
         class StubTrampoline:
-            def open(self, *args, **kwargs):
+            def open(self, *args: Any, **kwargs: Any) -> Any:  # pyre-ignore
                 return call.open(*args, **kwargs, metadata=metadata)
 
-            def __call__(self, *args, **kwargs):
+            def __call__(self, *args: Any, **kwargs: Any) -> Any:  # pyre-ignore
                 return call(*args, **kwargs, metadata=metadata)
 
         return StubTrampoline()
@@ -94,7 +97,7 @@ class MetadataStubInjector:
 def _trampoline_client(
     daemon_provider: DaemonProvider, call: Callable, name: str
 ) -> Callable:
-    def _make_client():
+    def _make_client() -> CompanionClient:
         client = daemon_provider()
         return CompanionClient(
             stub=MetadataStubInjector(
@@ -107,7 +110,7 @@ def _trampoline_client(
 
     @log_call(name=name, metadata=CLIENT_METADATA)
     @wraps(call)
-    async def _tramp(*args, **kwargs):
+    async def _tramp(*args: Any, **kwargs: Any) -> Any:  # pyre-ignore
         try:
             return await call(_make_client(), *args, **kwargs)
         except GRPCError as e:
@@ -117,7 +120,7 @@ def _trampoline_client(
 
     @log_call(name=name, metadata=CLIENT_METADATA)
     @wraps(call)
-    async def _tramp_gen(*args, **kwargs):
+    async def _tramp_gen(*args: Any, **kwargs: Any) -> Any:  # pyre-ignore
         try:
             async for item in call(_make_client(), *args, **kwargs):
                 yield item
@@ -132,9 +135,13 @@ def _trampoline_client(
         return _tramp
 
 
-def _default_daemon(name: str):
+def _default_daemon(
+    name: str,
+) -> Callable[[CompanionClient, Stream[_T, _U]], Awaitable[None]]:
     async def _pipe_to_companion(
-        in_stream: Stream, out_stream: Stream, started_future: asyncio.Future
+        in_stream: Stream[_T, _U],
+        out_stream: Stream[_U, _T],
+        started_future: asyncio.Future,
     ) -> None:
         async for message in in_stream:
             await out_stream.send_message(message)
@@ -143,13 +150,18 @@ def _default_daemon(name: str):
         await out_stream.end()
 
     async def _pipe_to_client(
-        in_stream: Stream, out_stream: Stream, started_future: asyncio.Future
+        in_stream: Stream[_U, _T],
+        out_stream: Stream[_T, _U],
+        started_future: asyncio.Future,
     ) -> None:
         await started_future
         async for message in in_stream:
             await out_stream.send_message(message)
 
-    async def _default_daemon_imp(client: CompanionClient, stream: Stream) -> None:
+    async def _default_daemon_imp(
+        client: CompanionClient,
+        stream: Stream[_T, _U],
+    ) -> None:
         method = getattr(client.stub, name)
         async with method.open() as out_stream:
             started_future = asyncio.Future()
@@ -167,9 +179,9 @@ def _trampoline_daemon(
     call: Callable,
     name: str,
 ) -> Callable:
-    @log_call(name=name, metadata=DAEMON_METADATA)  # pyre-fixme[6]
+    @log_call(name=name, metadata=DAEMON_METADATA)
     @wraps(call)
-    async def _tramp(stream: Stream, *args, **kwargs) -> None:
+    async def _tramp(stream: Stream[_T, _U], *args: Any, **kwargs: Any) -> None:
         partial_call = call
         if _takes_client(call):
             client = await companion_provider(stream.metadata.get("udid"))
@@ -209,7 +221,7 @@ def _takes_context(method: Callable) -> bool:
 
 
 def _has_parameter(
-    method: Callable, name: str, parameter_type: Optional[Type[Any]] = None
+    method: Callable, name: str, parameter_type: Optional[Type[_T]] = None
 ) -> bool:
     parameters = list(signature(method).parameters.items())
     return any(

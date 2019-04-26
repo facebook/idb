@@ -16,7 +16,9 @@ Start = RecordRequest.Start
 Stop = RecordRequest.Stop
 
 
-async def _generate_bytes(stream) -> AsyncIterator[bytes]:
+async def _generate_bytes(
+    stream: AsyncIterator[RecordResponse],
+) -> AsyncIterator[bytes]:
     async for response in stream:
         data = response.payload.data
         yield data
@@ -72,4 +74,4 @@ async def record_video(
         await stream.recv_message()
 
 
-CLIENT_PROPERTIES = [record_video]
+CLIENT_PROPERTIES = [record_video]  # pyre-ignore

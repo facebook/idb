@@ -2,8 +2,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 import json
-from argparse import Namespace
-from typing import Any
+from argparse import ArgumentParser, Namespace
+
 
 from idb.cli.commands.base import TargetCommand
 from idb.client.client import IdbClient
@@ -18,7 +18,7 @@ class InstallXctestCommand(TargetCommand):
     def name(self) -> str:
         return "install"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "test_bundle_path", help="Bundle path of the test bundle", type=str
         )

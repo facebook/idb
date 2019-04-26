@@ -10,7 +10,7 @@ from idb.common.xctest import extract_paths_from_xctestrun
 
 
 class XCTestsTestCase(TestCase):
-    async def test_extract_paths_from_xctestrun(self):
+    async def test_extract_paths_from_xctestrun(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = os.path.join(tmp_dir, "test.plist")
             with open(file_path, "wb+") as f:

@@ -47,7 +47,7 @@ def _extract_bundle_id(args: Namespace) -> str:
 
 
 def _convert_args(args: Namespace) -> Tuple[Namespace, str]:
-    def convert_value(value: Any) -> Any:
+    def convert_value(value: Any) -> Any:  # pyre-ignore
         if isinstance(value, List):
             return [convert_value(x) for x in value]
         return value.path if isinstance(value, BundleWithPath) else value
@@ -98,7 +98,7 @@ class FSListCommand(FSCommand):
     def aliases(self) -> List[str]:
         return ["ls"]
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "path", help="Source path", default="./", type=BundleWithPath.parse
         )
@@ -124,7 +124,7 @@ class FSMkdirCommand(FSCommand):
     def name(self) -> str:
         return "mkdir"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         super().add_parser_arguments(parser)
         parser.add_argument(
             "path", help="Path to directory to create", type=BundleWithPath.parse
@@ -149,7 +149,7 @@ class FSMoveCommand(FSCommand):
     def aliases(self) -> List[str]:
         return ["mv"]
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "src",
             help="Source paths relative to Container",
@@ -182,7 +182,7 @@ class FSRemoveCommand(FSCommand):
     def aliases(self) -> List[str]:
         return ["rm"]
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "path",
             help="Path of item to remove (A directory will be recursively deleted)",
@@ -206,7 +206,7 @@ class FSPushCommand(FSCommand):
     def name(self) -> str:
         return "push"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "src_paths", help="Path of file(s) to copy to the target", nargs="+"
         )
@@ -259,7 +259,7 @@ class DeprecatedPushCommand(TargetCommand):
     def name(self) -> str:
         return "push"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "src_paths", help="Path of file(s) to copy to the target", nargs="+"
         )

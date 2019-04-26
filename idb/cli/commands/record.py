@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-from argparse import Namespace
-from typing import Any, List
+from argparse import ArgumentParser, Namespace
+from typing import List
 
 from idb.cli.commands.base import TargetCommand
 from idb.client.client import IdbClient
@@ -22,7 +22,7 @@ class RecordVideoCommand(TargetCommand):
     def aliases(self) -> List[str]:
         return ["record-video"]
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("output_file", help="mp4 file to output the video to")
         super().add_parser_arguments(parser)
 
@@ -45,7 +45,7 @@ class RecordGifCommand(TargetCommand):
     def aliases(self) -> List[str]:
         return ["record-gif"]
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("output_file", help="gif file to output the recording to")
         parser.add_argument(
             "--fps", help="fps at which you want to record the gif", type=int, default=1

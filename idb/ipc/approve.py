@@ -2,13 +2,13 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 
-from typing import Set
+from typing import Set, Dict  # noqa F401
 
 from idb.common.companion import CompanionClient
 from idb.grpc.idb_pb2 import ApproveRequest
 
 
-MAP = {
+MAP = {  # type: Dict[str, ApproveRequest.Permission]
     "photos": ApproveRequest.PHOTOS,
     "camera": ApproveRequest.CAMERA,
     "contacts": ApproveRequest.CONTACTS,

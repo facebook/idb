@@ -79,13 +79,14 @@ COROUTINE_DRAIN_TIMEOUT = 2
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] - %(name)s - %(message)s"
 )
-logger = logging.getLogger()
+logger: logging.Logger = logging.getLogger()
 
 
 async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
     # Setup parser
     parser = argparse.ArgumentParser(
-        description="idb cli: versatile tool to communicate with an iOS target (simulator/device)",
+        description="idb cli: versatile tool "
+        "to communicate with an iOS target (simulator/device)",
         formatter_class=argparse.RawTextHelpFormatter,
     )
     commands: List[Command] = [
@@ -204,7 +205,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         await drain_coroutines(pending)
 
 
-async def drain_coroutines(pending: Set[asyncio.Task]):
+async def drain_coroutines(pending: Set[asyncio.Task]) -> None:
     if not pending:
         return
     logger.debug(f"Shutting down {len(pending)} coroutines")

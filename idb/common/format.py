@@ -120,7 +120,7 @@ def human_format_target_info(target: TargetDescription) -> str:
 
 
 def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
-    data = {
+    data: Dict[str, Any] = {
         "name": target.name,
         "udid": target.udid,
         "state": target.state,

@@ -6,18 +6,18 @@ import inspect
 import logging
 import time
 from types import TracebackType
-from typing import Any, AsyncContextManager, Optional, Tuple, Type
+from typing import Any, AsyncContextManager, Optional, Tuple, Type, Collection
 
 import idb.common.plugin as plugin
 from idb.common.types import LoggingMetadata
 from idb.utils.typing import none_throws
 
 
-logger = logging.getLogger("idb")
+logger: logging.Logger = logging.getLogger("idb")
 
 
 def _initial_info(
-    args, metadata: Optional[LoggingMetadata]
+    args: Collection[Any], metadata: Optional[LoggingMetadata]  # pyre-ignore
 ) -> Tuple[LoggingMetadata, int]:
     _metadata: LoggingMetadata = metadata or {}
     if len(args):
@@ -33,7 +33,7 @@ class log_call(AsyncContextManager[None]):
         self, name: Optional[str] = None, metadata: Optional[LoggingMetadata] = None
     ) -> None:
         self.name = name
-        self.metadata = metadata or {}
+        self.metadata: LoggingMetadata = metadata or {}
         self.start: Optional[int] = None
 
     async def __aenter__(self) -> None:
@@ -65,11 +65,11 @@ class log_call(AsyncContextManager[None]):
             )
         return False
 
-    def __call__(self, function) -> Any:
+    def __call__(self, function) -> Any:  # pyre-ignore
         _name = self.name or function.__name__
 
         @functools.wraps(function)
-        async def _async_wrapper(*args, **kwargs):
+        async def _async_wrapper(*args: Any, **kwargs: Any) -> Any:  # pyre-ignore
             logger.debug(f"{_name} called")
             (_metadata, start) = _initial_info(args, self.metadata)
             await plugin.before_invocation(name=_name, metadata=_metadata)
@@ -93,7 +93,7 @@ class log_call(AsyncContextManager[None]):
                 raise ex
 
         @functools.wraps(function)
-        async def _async_gen_wrapper(*args, **kwargs):
+        async def _async_gen_wrapper(*args, **kwargs) -> Any:  # pyre-ignore
             logger.debug(f"{_name} started")
             (_metadata, start) = _initial_info(args, self.metadata)
             await plugin.before_invocation(name=_name, metadata=_metadata)

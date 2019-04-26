@@ -2,20 +2,30 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 from unittest import mock
+from typing import TypeVar, AsyncContextManager, Optional, Type
+from types import TracebackType
 
 from idb.common.types import Address, CompanionInfo, TargetDescription
 from idb.manager.companion import CompanionManager
 from idb.utils.testing import TestCase, ignoreTaskLeaks
 
 
-class AsyncContextManagerDouble:
-    def __init__(self, value):
+_T = TypeVar("_T")
+
+
+class AsyncContextManagerDouble(AsyncContextManager[_T]):
+    def __init__(self, value: _T) -> None:
         self.value = value
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> _T:
         return self.value
 
-    async def __aexit__(self, *args):
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> None:
         pass
 
 
@@ -66,16 +76,17 @@ class CompanionManagerTest(TestCase):
         )
         assert companion_manager._udid_target_map["asdasda"].companion_info
 
-    async def test_closes_spawner_on_close(self):
+    async def test_closes_spawner_on_close(self) -> None:
         companion_manager = CompanionManager(
             companion_path=None, logger=mock.MagicMock()
         )
-        companion_manager.companion_spawner = mock.Mock()
+        spawner = mock.Mock()
+        companion_manager.companion_spawner = spawner
         companion_manager.channel = mock.Mock()
         companion_manager.close()
-        companion_manager.companion_spawner.close.assert_called_once()
+        spawner.close.assert_called_once()
 
-    async def test_remove_companion_by_address(self):
+    async def test_remove_companion_by_address(self) -> None:
         companion_manager = CompanionManager(
             companion_path=None, logger=mock.MagicMock()
         )
@@ -89,7 +100,7 @@ class CompanionManagerTest(TestCase):
         self.assertEqual(len(companion_manager._udid_companion_map), 0)
         self.assertEqual(len(companion_manager._udid_target_map), 0)
 
-    async def test_remove_companion_by_udid(self):
+    async def test_remove_companion_by_udid(self) -> None:
         companion_manager = CompanionManager(
             companion_path=None, logger=mock.MagicMock()
         )
@@ -101,7 +112,7 @@ class CompanionManagerTest(TestCase):
         self.assertEqual(len(companion_manager._udid_companion_map), 0)
         self.assertEqual(len(companion_manager._udid_target_map), 0)
 
-    async def test_get_default_companion(self):
+    async def test_get_default_companion(self) -> None:
         companion_manager = CompanionManager(
             companion_path=None, logger=mock.MagicMock()
         )
@@ -120,7 +131,7 @@ class CompanionManagerTest(TestCase):
         )
         self.assertFalse(companion_manager.has_default_companion())
 
-    async def test_get_existing_companion(self):
+    async def test_get_existing_companion(self) -> None:
         companion_manager = CompanionManager(
             companion_path=None, logger=mock.MagicMock()
         )
@@ -130,7 +141,7 @@ class CompanionManagerTest(TestCase):
         ) as yielded_compainion:
             self.assertEqual(yielded_compainion, TEST_COMPANION)
 
-    async def test_creates_default_companion(self):
+    async def test_creates_default_companion(self) -> None:
         companion_manager = CompanionManager(
             companion_path=None, logger=mock.MagicMock()
         )

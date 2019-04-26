@@ -29,21 +29,21 @@ class DaemonSpawnerTests(TestCase):
         self.spawner = DaemonSpawner(port=DEFAULT_DAEMON_PORT, host=DEFAULT_DAEMON_HOST)
         self.spawner.daemon_pids = []
 
-    async def test_start_daemon_if_needed_override(self):
+    async def test_start_daemon_if_needed_override(self) -> None:
         self.spawner.port = DEFAULT_DAEMON_PORT + 1
         self.spawner.host = "someHost"
         self.spawner._spawn_daemon = AsyncMock()
         await self.spawner.start_daemon_if_needed()
         self.spawner._spawn_daemon.assert_not_called()
 
-    async def test_start_daemon_if_needed_port_open(self):
+    async def test_start_daemon_if_needed_port_open(self) -> None:
         self.spawner._spawn_daemon = AsyncMock()
         with mock.patch("idb.client.daemon_spawner.networking") as networking_mock:
             networking_mock.is_port_open.return_value = False
             await self.spawner.start_daemon_if_needed()
             self.spawner._spawn_daemon.assert_called_once_with()
 
-    async def test_start_daemon_if_needed_force(self):
+    async def test_start_daemon_if_needed_force(self) -> None:
         with mock.patch(
             "idb.client.daemon_spawner.kill_saved_pids", AsyncMock()
         ) as kill:
@@ -54,13 +54,13 @@ class DaemonSpawnerTests(TestCase):
                 kill.assert_called_once_with()
                 self.spawner._spawn_daemon.assert_called_once_with()
 
-    async def test_kill_no_pids(self):
+    async def test_kill_no_pids(self) -> None:
         _clear_saved_daemon_pids()
         with mock.patch("idb.client.daemon_spawner.os.kill") as kill:
             await kill_saved_pids()
             kill.assert_not_called()
 
-    async def test_kill_with_pids(self):
+    async def test_kill_with_pids(self) -> None:
         _clear_saved_daemon_pids()
         with mock.patch(
             "idb.client.daemon_pid_saver._get_daemon_pids", return_value=[1, 2]
@@ -71,7 +71,7 @@ class DaemonSpawnerTests(TestCase):
                     [mock.call(1, signal.SIGTERM), mock.call(2, signal.SIGTERM)]
                 )
 
-    async def test_save_daemon_pids(self):
+    async def test_save_daemon_pids(self) -> None:
         _clear_saved_daemon_pids()
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = os.path.join(temp_dir, IDB_DAEMON_PID_PATH)
@@ -79,7 +79,7 @@ class DaemonSpawnerTests(TestCase):
             with open(file_path, "r") as file:
                 self.assertEqual(json.load(file), [1, 2])
 
-    async def test_get_daemon_pids(self):
+    async def test_get_daemon_pids(self) -> None:
         _clear_saved_daemon_pids()
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = os.path.join(temp_dir, IDB_DAEMON_PID_PATH)
@@ -87,13 +87,13 @@ class DaemonSpawnerTests(TestCase):
                 json.dump([1, 2], file)
             self.assertEqual([1, 2], _get_daemon_pids())
 
-    async def test_spawn_daemon(self):
+    async def test_spawn_daemon(self) -> None:
         await self.spawn_daemon(on_darwin=False)
 
-    async def test_spawn_daemon_darwin(self):
+    async def test_spawn_daemon_darwin(self) -> None:
         await self.spawn_daemon(on_darwin=True)
 
-    async def spawn_daemon(self, on_darwin: bool):
+    async def spawn_daemon(self, on_darwin: bool) -> None:
         _clear_saved_daemon_pids()
         with tempfile.TemporaryDirectory() as temp_dir:
             self.spawner._log_file_path = mock.Mock(return_value=temp_dir + "/daemon")
@@ -118,12 +118,12 @@ class DaemonSpawnerTests(TestCase):
                 )
                 self.assertEqual(_get_daemon_pids(), [123])
 
-    async def test_read_daemon_output_json(self):
+    async def test_read_daemon_output_json(self) -> None:
         stream = mock.Mock()
         stream.readline = AsyncMock(return_value=json.dumps({}).encode("utf-8"))
         await self.spawner._read_daemon_output(stream)
 
-    async def test_read_daemon_output_garbage(self):
+    async def test_read_daemon_output_garbage(self) -> None:
         stream = mock.Mock()
         stream.readline = AsyncMock(return_value="trash".encode("utf-8"))
         with self.assertRaises(DaemonSpawnerException):

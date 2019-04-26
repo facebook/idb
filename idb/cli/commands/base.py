@@ -6,7 +6,7 @@ import logging
 import os
 from abc import ABCMeta, abstractmethod
 from argparse import ArgumentParser, Namespace
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from idb.common.logging import log_call
 import idb.common.plugin as plugin
@@ -97,9 +97,9 @@ class BaseCommand(Command, metaclass=ABCMeta):
     def __init__(self) -> None:
         super().__init__()
         # Will inherit log levels when the log level is set on the base logger in run()
-        self.logger = logging.getLogger(self.name)
+        self.logger: logging.Logger = logging.getLogger(self.name)
 
-    def add_parser_arguments(self, parser) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--log",
             dest="log_level",
@@ -130,7 +130,7 @@ class BaseCommand(Command, metaclass=ABCMeta):
 
 
 class ConnectingCommand(BaseCommand):
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         plugin.on_connecting_parser(parser=parser, logger=self.logger)
         parser.add_argument(
             "--daemon-host",
@@ -171,7 +171,7 @@ class ConnectingCommand(BaseCommand):
 
 
 class TargetCommand(ConnectingCommand):
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--udid",
             help="Udid of target, can also be set with the IDB_UDID env var",

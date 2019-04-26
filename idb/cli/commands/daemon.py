@@ -3,8 +3,8 @@
 
 import json
 import os
-from argparse import Namespace
-from typing import Any, Optional, Dict
+from argparse import ArgumentParser, Namespace
+from typing import Optional, Dict
 
 from idb.common.signal import signal_handler_event
 from idb.cli.commands.base import BaseCommand
@@ -23,7 +23,7 @@ class DaemonCommand(BaseCommand):
     def name(self) -> str:
         return "daemon"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--daemon-port",
             help="Port for the daemon to listen on",

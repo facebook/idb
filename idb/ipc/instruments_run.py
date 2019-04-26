@@ -116,4 +116,4 @@ async def run_instruments(
         return trace_path
 
 
-CLIENT_PROPERTIES = [run_instruments]
+CLIENT_PROPERTIES = [run_instruments]  # pyre-ignore

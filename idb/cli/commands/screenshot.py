@@ -2,9 +2,10 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 import sys
-from argparse import Namespace
+from argparse import ArgumentParser, Namespace
 from contextlib import contextmanager
-from typing import Any
+from typing import IO, Iterator
+
 
 from idb.cli.commands.base import TargetCommand
 from idb.client.client import IdbClient
@@ -19,7 +20,7 @@ class ScreenshotCommand(TargetCommand):
     def name(self) -> str:
         return "screenshot"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "dest_path",
             help="The destination file path to write to or - (dash) to write to stdout",
@@ -34,7 +35,7 @@ class ScreenshotCommand(TargetCommand):
 
 
 @contextmanager
-def screenshot_file(path):
+def screenshot_file(path: str) -> Iterator[IO[bytes]]:
     if path == "-":
         yield sys.stdout.buffer
         return

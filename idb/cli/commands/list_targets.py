@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-from argparse import Namespace
-from typing import Any
+from argparse import ArgumentParser, Namespace
+
 
 from idb.cli.commands.base import ConnectingCommand
 from idb.client.client import IdbClient
@@ -18,7 +18,7 @@ class ListTargetsCommand(ConnectingCommand):
     def name(self) -> str:
         return "list-targets"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:

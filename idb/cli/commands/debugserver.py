@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-from argparse import Namespace
-from typing import Any
+from argparse import ArgumentParser, Namespace
+
 
 from idb.cli.commands.base import TargetCommand
 from idb.client.client import IdbClient
@@ -17,7 +17,7 @@ class DebugServerStartCommand(TargetCommand):
     def name(self) -> str:
         return "start"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         super().add_parser_arguments(parser)
         parser.add_argument("bundle_id", help="The bundle id to debug")
 

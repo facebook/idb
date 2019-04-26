@@ -18,8 +18,8 @@ DEFAULT_GIF_FILE_NAME = "screenshot.gif"
 
 
 class GIFHelper:
-    def __init__(self):
-        self._logger = logging.getLogger("GIFHelper")
+    def __init__(self) -> None:
+        self._logger: logging.Logger = logging.getLogger("GIFHelper")
 
     def save_image_to_tmp_folder(self, image_data: bytes, udid: Optional[str]) -> None:
         try:

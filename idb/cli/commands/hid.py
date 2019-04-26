@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-from argparse import Namespace
-from typing import Any
+from argparse import ArgumentParser, Namespace
+
 
 from idb.cli.commands.base import TargetCommand
 from idb.client.client import IdbClient
@@ -18,7 +18,7 @@ class TapCommand(TargetCommand):
     def name(self) -> str:
         return "tap"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("x", help="The x-coordinate", type=int)
         parser.add_argument("y", help="The y-coordinate", type=int)
         parser.add_argument("--duration", help="Press duration", type=float)
@@ -37,7 +37,7 @@ class ButtonCommand(TargetCommand):
     def name(self) -> str:
         return "button"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "button",
             help="The button name",
@@ -62,7 +62,7 @@ class KeyCommand(TargetCommand):
     def name(self) -> str:
         return "key"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("key", help="The key code", type=int)
         parser.add_argument("--duration", help="Press duration", type=float)
         super().add_parser_arguments(parser)
@@ -80,7 +80,7 @@ class KeySequenceCommand(TargetCommand):
     def name(self) -> str:
         return "key-sequence"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "key_sequence",
             help="list of space separated key codes string (i.e. 1 2 3))",
@@ -101,7 +101,7 @@ class TextCommand(TargetCommand):
     def name(self) -> str:
         return "text"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("text", help="Text to input", type=str)
         super().add_parser_arguments(parser)
 
@@ -118,7 +118,7 @@ class SwipeCommand(TargetCommand):
     def name(self) -> str:
         return "swipe"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "x_start", help="The x-coordinate of the swipe start point", type=int
         )

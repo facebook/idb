@@ -3,6 +3,7 @@
 
 import json
 from unittest import mock
+from typing import List
 
 from idb.common.types import TargetDescription
 from idb.daemon.companion_tailer import CompanionTailer
@@ -12,8 +13,8 @@ from idb.utils.testing import AsyncMock, TestCase, ignoreTaskLeaks
 
 @ignoreTaskLeaks
 class CompanionTailerTest(TestCase):
-    async def test_spawn_companion(self):
-        tailer = CompanionTailer("idb_path", None)
+    async def test_spawn_companion(self) -> None:
+        tailer = CompanionTailer("idb_path", mock.Mock())
         tailer._log_file_path = mock.Mock()
         with mock.patch(
             "idb.daemon.companion_tailer.asyncio.create_subprocess_exec",
@@ -28,18 +29,19 @@ class CompanionTailerTest(TestCase):
             )
             self.assertEqual(tailer.process, process_mock)
 
-    async def test_close(self):
-        tailer = CompanionTailer("idb_path", None)
-        tailer.process = mock.Mock()
+    async def test_close(self) -> None:
+        tailer = CompanionTailer("idb_path", mock.Mock())
+        process_mock = mock.Mock()
+        tailer.process = process_mock
         tailer._reading_forever_fut = mock.Mock()
         tailer.close()
-        tailer.process.terminate.assert_called_once()
+        process_mock.terminate.assert_called_once()
         tailer._reading_forever_fut.cancel.assert_called_once()
 
-    async def test_read_stream(self):
+    async def test_read_stream(self) -> None:
         class StreamMock:
             i = 0
-            lines = [
+            lines: List[bytes] = [
                 json.dumps(
                     {
                         "udid": "udid",
@@ -53,14 +55,14 @@ class CompanionTailerTest(TestCase):
                 json.dumps({"initial_state_ended": True}).encode("utf-8"),
             ]
 
-            async def readline(self):
+            async def readline(self) -> bytes:
                 result = self.lines[self.i]
                 self.i += 1
                 return result
 
         manager = CompanionManager(None, mock.MagicMock())
         tailer = CompanionTailer("idb_path", manager)
-        await tailer._read_stream(StreamMock())
+        await tailer._read_stream(StreamMock())  # pyre-ignore
         self.assertEqual(
             manager._udid_target_map,
             {

@@ -10,7 +10,7 @@ from idb.utils.testing import AsyncMock, TestCase, ignoreTaskLeaks
 
 @ignoreTaskLeaks
 class CompanionSpawnerTest(TestCase):
-    async def test_spawn_companion(self):
+    async def test_spawn_companion(self) -> None:
         spawner = CompanionSpawner("idb_path")
         spawner._log_file_path = mock.Mock()
         udid = "someUdid"
@@ -38,7 +38,7 @@ class CompanionSpawnerTest(TestCase):
             self.assertEqual(port, 1234)
             self.assertEqual(spawner.companion_processes, [process_mock])
 
-    async def test_close(self):
+    async def test_close(self) -> None:
         spawner = CompanionSpawner("idb_path")
         spawner.companion_processes = [mock.Mock() for _ in range(3)]
         spawner.close()

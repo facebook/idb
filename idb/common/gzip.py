@@ -10,7 +10,7 @@ from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws
 
 
-READ_CHUNK_SIZE = 1024 * 1024 * 4  # 4Mb, the default max read for gRPC
+READ_CHUNK_SIZE: int = 1024 * 1024 * 4  # 4Mb, the default max read for gRPC
 
 
 @asynccontextmanager  # noqa T484

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-from argparse import REMAINDER, Namespace
+from argparse import ArgumentParser, REMAINDER, Namespace
 from idb.common.signal import signal_handler_event
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from idb.cli.commands.base import TargetCommand
 from idb.client.client import IdbClient
@@ -18,7 +18,7 @@ class LogCommand(TargetCommand):
     def name(self) -> str:
         return "log"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "log_arguments",
             help="""\

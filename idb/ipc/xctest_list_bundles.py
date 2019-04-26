@@ -20,4 +20,4 @@ async def list_xctests(client: CompanionClient) -> List[InstalledTestInfo]:
     ]
 
 
-CLIENT_PROPERTIES = [list_xctests]
+CLIENT_PROPERTIES = [list_xctests]  # pyre-ignore

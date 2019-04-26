@@ -7,11 +7,12 @@ import logging
 import os
 from asyncio import StreamReader
 from asyncio.futures import Future
-from typing import Dict
+from typing import Dict, Optional
 
 from idb.common.constants import IDB_LOGS_PATH
-from idb.common.types import Server, TargetDescription
 from idb.manager.companion import CompanionManager
+from idb.common.types import Server, TargetDescription
+from idb.utils.typing import none_throws
 
 
 class CompanionTailerException(Exception):
@@ -21,11 +22,11 @@ class CompanionTailerException(Exception):
 class CompanionTailer(Server):
     def __init__(self, notifier_path: str, companion_manager: CompanionManager) -> None:
         self.notifier_path = notifier_path
-        self._reading_forever_fut: Future
+        self._reading_forever_fut: Future[None]
         self.companion_manager = companion_manager
-        self.process = None
+        self.process: Optional[asyncio.subprocess.Process] = None
 
-    async def _read_stream(self, stream: StreamReader):
+    async def _read_stream(self, stream: StreamReader) -> None:
         while True:
             line = await stream.readline()
             if line:
@@ -58,13 +59,13 @@ class CompanionTailer(Server):
         os.makedirs(name=IDB_LOGS_PATH, exist_ok=True)
         return IDB_LOGS_PATH + "/notifier"
 
-    async def notifierProcess(self):
+    async def notifierProcess(self) -> asyncio.subprocess.Process:
         cmd = [self.notifier_path, "--notify", "1"]
         with open(self._log_file_path(), "a") as log_file:
             process = await asyncio.create_subprocess_exec(
                 *cmd, stdout=asyncio.subprocess.PIPE, stderr=log_file
             )
-            await self._read_stream(process.stdout)
+            await self._read_stream(none_throws(process.stdout))
             return process
 
     async def start(self) -> None:
@@ -75,14 +76,13 @@ class CompanionTailer(Server):
         self.process = await self.notifierProcess()
         if self.process:
             self._reading_forever_fut = asyncio.ensure_future(
-                self._read_stream(stream=self.process.stdout)
+                self._read_stream(stream=none_throws(self.process.stdout))
             )
 
     def close(self) -> None:
         logging.debug("Stopping companion tailer")
         self._reading_forever_fut.cancel()
         if self.process:
-            # pyre-fixme[16]: Optional type has no attribute `terminate`.
             self.process.terminate()
 
     async def wait_closed(self) -> None:

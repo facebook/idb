@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-from typing import AsyncIterable, AsyncIterator, Iterable, List, Optional, Tuple
+from typing import AsyncIterable, AsyncIterator, Dict, Iterable, List, Optional, Tuple
 
 from idb.common.companion import CompanionClient
 from idb.grpc.stream import drain_to_stream
@@ -103,7 +103,7 @@ def key_press_shifted_to_events(keycode: int) -> List[HIDEvent]:
     ]
 
 
-KEY_MAP = {
+KEY_MAP: Dict[str, List[HIDEvent]] = {
     "a": key_press_to_events(4),
     "b": key_press_to_events(5),
     "c": key_press_to_events(6),
@@ -271,4 +271,4 @@ async def hid(client: CompanionClient, event_iterator: AsyncIterable[HIDEvent]) 
         await stream.recv_message()
 
 
-CLIENT_PROPERTIES = [tap, button, key, key_sequence, text, swipe, hid]
+CLIENT_PROPERTIES = [tap, button, key, key_sequence, text, swipe, hid]  # pyre-ignore

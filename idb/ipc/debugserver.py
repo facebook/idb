@@ -39,4 +39,8 @@ async def debugserver_status(client: CompanionClient) -> Optional[List[str]]:
     return commands
 
 
-CLIENT_PROPERTIES = [debugserver_start, debugserver_status, debugserver_stop]
+CLIENT_PROPERTIES = [  # pyre-ignore
+    debugserver_start,
+    debugserver_status,
+    debugserver_stop,
+]

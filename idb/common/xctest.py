@@ -35,7 +35,7 @@ def extract_paths_from_xctestrun(path: str) -> List[str]:
     result = [path]
     test_root = os.path.dirname(path)
     with open(path, "rb") as f:
-        xctestrun_dict: Dict = plistlib.load(f, use_builtin_types=True)
+        xctestrun_dict: Dict[str, Any] = plistlib.load(f, use_builtin_types=True)
         for _test_id, test_dict in xctestrun_dict.items():
             result.append(test_dict["TestHostPath"].replace("__TESTROOT__", test_root))
     return result

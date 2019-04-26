@@ -2,8 +2,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 import json
-from argparse import Namespace
-from typing import Any, Union
+from argparse import ArgumentParser, Namespace
+from typing import Union
 
 from idb.cli.commands.base import ConnectingCommand
 from idb.client.client import IdbClient
@@ -37,7 +37,7 @@ class ConnectCommand(ConnectingCommand):
     def name(self) -> str:
         return "connect"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "companion",
             help="Host the companion is running on. or the UDID of the target",

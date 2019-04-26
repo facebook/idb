@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-from argparse import REMAINDER, Namespace
+from argparse import ArgumentParser, REMAINDER, Namespace
 from typing import List, Optional, Set
 
 from idb.cli.commands.base import Command, CompositeCommand, TargetCommand
@@ -18,12 +18,12 @@ class CommonRunXcTestCommand(TargetCommand):
             " any environment\nvariables prefixed with IDB_"
         )
 
-    def add_parser_positional_arguments(self, parser) -> None:
+    def add_parser_positional_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "test_bundle_id", help="Bundle id of the test to launch", type=str
         )
 
-    def add_parser_arguments(self, parser) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         self.add_parser_positional_arguments(parser)
         parser.add_argument(
             "--result-bundle-path",
@@ -83,13 +83,13 @@ class RunXcTestAppCommand(CommonRunXcTestCommand):
     def name(self) -> str:
         return "app"
 
-    def add_parser_positional_arguments(self, parser) -> None:
+    def add_parser_positional_arguments(self, parser: ArgumentParser) -> None:
         super().add_parser_positional_arguments(parser)
         parser.add_argument(
             "app_bundle_id", help="Bundle id of the app to test", type=str
         )
 
-    def add_parser_arguments(self, parser) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         super().add_parser_arguments(parser)
         parser.add_argument(
             "--tests-to-run",
@@ -118,7 +118,7 @@ class RunXcTestUICommand(RunXcTestAppCommand):
     def name(self) -> str:
         return "ui"
 
-    def add_parser_positional_arguments(self, parser) -> None:
+    def add_parser_positional_arguments(self, parser: ArgumentParser) -> None:
         super().add_parser_positional_arguments(parser)
         parser.add_argument(
             "test_host_app_bundle_id",
@@ -132,7 +132,7 @@ class RunXcTestLogicCommand(CommonRunXcTestCommand):
     def name(self) -> str:
         return "logic"
 
-    def add_parser_arguments(self, parser) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         super().add_parser_arguments(parser)
         parser.add_argument(
             "--test-to-run",
@@ -170,8 +170,7 @@ class RunXctestCommand(CompositeCommand):
         return "run"
 
     async def run(self, args: Namespace, context: Optional[Namespace] = None) -> None:
-        # pyre-fixme: Expected `Namespace` but got `Optional[Namespace]`
-        await super().run(args, context)
+        await super().run(args, context)  # pyre-ignore
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         await self.run(args)

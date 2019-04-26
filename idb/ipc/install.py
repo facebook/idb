@@ -4,7 +4,7 @@
 import os
 from logging import Logger
 from pathlib import Path
-from typing import Any, AsyncIterator
+from typing import AsyncIterator
 
 import aiofiles
 import idb.common.gzip as gzip
@@ -18,7 +18,7 @@ from idb.grpc.idb_pb2 import InstallRequest, InstallResponse, Payload
 from idb.utils.typing import none_throws
 
 
-Destination = Any
+Destination = InstallRequest.Destination
 
 
 async def _generate_ipa_chunks(
@@ -132,4 +132,4 @@ async def daemon(
         await stream.send_message(response, end=True)
 
 
-CLIENT_PROPERTIES = [install, install_xctest, install_dylib]
+CLIENT_PROPERTIES = [install, install_xctest, install_dylib]  # pyre-ignore

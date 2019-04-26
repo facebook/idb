@@ -5,15 +5,13 @@ from typing import Dict, Optional
 
 from idb.common.companion import CompanionClient
 from idb.grpc.ipc_loader import DaemonContext
-from idb.common.types import Address, ConnectionDestination, ConnectResponse, DaemonInfo
+from idb.common.types import ConnectionDestination, ConnectResponse
 from idb.grpc.idb_pb2 import (
     ConnectRequest as GrpcConnectRequest,
     ConnectResponse as GrpcConnectResponse,
-    DaemonInfo as GrpcDaemonInfo,
 )
 from idb.ipc.mapping.companion import companion_to_grpc, companion_to_py
 from idb.ipc.mapping.destination import destination_to_grpc, destination_to_py
-from idb.ipc.mapping.target import target_to_grpc, target_to_py
 from idb.utils.typing import none_throws
 
 

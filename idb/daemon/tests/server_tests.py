@@ -9,7 +9,7 @@ from idb.utils.testing import TestCase, ignoreTaskLeaks
 
 @ignoreTaskLeaks
 class ServerTest(TestCase):
-    def test_close(self):
+    def test_close(self) -> None:
         first = mock.MagicMock()
         second = mock.MagicMock()
         server = CompositeServer(servers=[first, second], logger=mock.MagicMock())

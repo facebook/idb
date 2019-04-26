@@ -142,4 +142,4 @@ async def run_xctest(
                 yield result
 
 
-CLIENT_PROPERTIES = [run_xctest]
+CLIENT_PROPERTIES = [run_xctest]  # pyre-ignore

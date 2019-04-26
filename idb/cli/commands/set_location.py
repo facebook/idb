@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-from argparse import Namespace
-from typing import Any
+from argparse import ArgumentParser, Namespace
+
 
 from idb.cli.commands.base import TargetCommand
 from idb.client.client import IdbClient
@@ -17,7 +17,7 @@ class SetLocationCommand(TargetCommand):
     def name(self) -> str:
         return "set-location"
 
-    def add_parser_arguments(self, parser: Any) -> None:
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("latitude", help="Latitude to set", type=float)
         parser.add_argument("longitude", help="Longitude to set", type=float)
         super().add_parser_arguments(parser)

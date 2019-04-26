@@ -15,7 +15,6 @@ from typing import (
     Dict,
     Tuple,
     AsyncIterator,
-    Any,
 )
 
 LoggingMetadata = Dict[str, Optional[Union[str, List[str], int, float]]]
@@ -154,7 +153,7 @@ class InstalledTestInfo(NamedTuple):
 
 
 class IdbClientBase:
-    async def list_apps(self):
+    async def list_apps(self) -> List[InstalledAppInfo]:
         pass
 
     async def launch(
@@ -185,9 +184,6 @@ class IdbClientBase:
     ) -> AsyncIterator[TestRunInfo]:
         yield
 
-    def get_xctest_type(self, path: str):
-        pass
-
     async def install(self, bundle_path: str) -> str:
         pass
 
@@ -210,10 +206,10 @@ class IdbClientBase:
     async def disconnect(self, destination: Union[Address, str]) -> None:
         pass
 
-    async def list_targets(self):
+    async def list_targets(self) -> List[TargetDescription]:
         pass
 
-    async def list_xctests(self):
+    async def list_xctests(self) -> List[InstalledTestInfo]:
         pass
 
     async def terminate(self, bundle_id: str) -> None:
@@ -323,10 +319,10 @@ class IdbClientBase:
     ) -> Tuple[Optional[bytes], Optional[str]]:
         pass
 
-    async def crash_list(self, query: CrashLogQuery):
+    async def crash_list(self, query: CrashLogQuery) -> List[CrashLogInfo]:
         pass
 
-    async def crash_delete(self, query: CrashLogQuery):
+    async def crash_delete(self, query: CrashLogQuery) -> List[CrashLogInfo]:
         pass
 
     async def add_metadata(self, metadata: Optional[Dict[str, str]]) -> None:
@@ -338,7 +334,7 @@ class IdbClientBase:
     async def focus(self) -> None:
         pass
 
-    async def tail_logs_contextmanager(self) -> AsyncIterator[Any]:
+    async def tail_logs_contextmanager(self) -> AsyncIterator[str]:
         yield
 
     async def debugserver_start(self, bundle_id: str) -> List[str]:

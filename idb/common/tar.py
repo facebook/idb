@@ -16,12 +16,12 @@ class TarException(BaseException):
     pass
 
 
-def _has_executable(exe):
+def _has_executable(exe: str) -> bool:
     return any((os.path.exists(os.path.join(path, exe)) for path in os.get_exec_path()))
 
 
 COMPRESSION_COMMAND = "pigz -c" if _has_executable("pigz") else "gzip -4"
-READ_CHUNK_SIZE = 1024 * 1024 * 4  # 4Mb, the default max read for gRPC
+READ_CHUNK_SIZE: int = 1024 * 1024 * 4  # 4Mb, the default max read for gRPC
 
 
 @asynccontextmanager  # noqa T484
@@ -84,7 +84,8 @@ async def create_tar(
         tar_contents = (await process.communicate())[0]
         if process.returncode != 0:
             raise TarException(
-                "Failed to create tar file, tar command exited with non-zero exit code {process.returncode}"
+                "Failed to create tar file, "
+                "tar command exited with non-zero exit code {process.returncode}"
             )
         return tar_contents
 

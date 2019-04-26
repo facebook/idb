@@ -2,7 +2,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 from logging import Logger
-from typing import AsyncIterator, Dict, Generic, Optional, TypeVar
+from typing import Any, AsyncIterator, Dict, Generic, Optional, TypeVar
 
 from idb.utils.typing import none_throws
 
@@ -12,7 +12,7 @@ _TRecv = TypeVar("_TRecv")
 
 
 class Stream(Generic[_TSend, _TRecv], AsyncIterator[_TRecv]):
-    metadata: Dict[str, str]
+    metadata: Dict[str, str]  # pyre-ignore
 
     async def recv_message(self) -> Optional[_TRecv]:
         ...
@@ -37,6 +37,8 @@ async def drain_to_stream(
         return response
 
 
-async def generate_bytes(stream) -> AsyncIterator[bytes]:
+async def generate_bytes(
+    stream: AsyncIterator[Any],  # pyre-ignore
+) -> AsyncIterator[bytes]:
     async for response in stream:
         yield response.payload.data

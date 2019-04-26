@@ -20,4 +20,4 @@ async def tail_logs(
                 return
 
 
-CLIENT_PROPERTIES = [tail_logs]
+CLIENT_PROPERTIES = [tail_logs]  # pyre-ignore
