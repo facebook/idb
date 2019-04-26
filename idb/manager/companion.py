@@ -201,7 +201,7 @@ class CompanionManager:
             raise Exception("Please provide a UDID for your target")
         elif self.companion_spawner and target_udid in self._udid_target_map:
             self._logger.debug(f"spawning a companion for {target_udid}")
-            host, port = await self.companion_spawner.spawn_companion(
+            port = await self.companion_spawner.spawn_companion(
                 target_udid=target_udid
             )
             # overriding host here with localhost as spawning
@@ -209,7 +209,7 @@ class CompanionManager:
             host = "localhost"
             self._logger.info(f"companion started at {host}:{port}")
             async with self.create_companion_for_target_with_address(
-                address=Address(host=host, port=port),
+                address=Address(host=host, port=port, grpc_port=port),
                 metadata=metadata,
                 timeout=timeout,
             ) as companion:

@@ -21,11 +21,11 @@ class CompanionSpawnerTest(TestCase):
             process_mock = mock.Mock()
             process_mock.stdout.readline = AsyncMock(
                 return_value=json.dumps(
-                    {"hostname": "myHost", "thrift_port": 1234}
+                    {"hostname": "myHost", "grpc_port": 1234}
                 ).encode("utf-8")
             )
             exec_mock.return_value = process_mock
-            host, port = await spawner.spawn_companion(udid)
+            port = await spawner.spawn_companion(udid)
             exec_mock.assert_called_once_with(
                 "idb_path",
                 "--udid",
@@ -34,7 +34,6 @@ class CompanionSpawnerTest(TestCase):
                 stdin=mock.ANY,
                 stderr=mock.ANY,
             )
-            self.assertEqual(host, "myHost")
             self.assertEqual(port, 1234)
             self.assertEqual(spawner.companion_processes, [process_mock])
 

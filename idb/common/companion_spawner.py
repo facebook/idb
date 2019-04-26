@@ -21,8 +21,7 @@ class CompanionSpawner:
         self.companion_path = companion_path
         self.companion_processes: List[Process] = []
 
-    async def _read_stream(self, stream: StreamReader) -> Tuple[str, int]:
-        hostname = ""
+    async def _read_stream(self, stream: StreamReader) -> int:
         port = 0
         while True:
             line = await stream.readline()
@@ -30,18 +29,17 @@ class CompanionSpawner:
                 update = json.loads(line.decode())
                 if update:
                     logging.debug(f"got update from companion {update}")
-                    hostname = update["hostname"]
-                    port = update["thrift_port"]
+                    port = update["grpc_port"]
                     break
             else:
                 break
-        return hostname, port
+        return port
 
     def _log_file_path(self, target_udid: str) -> str:
         os.makedirs(name=IDB_LOGS_PATH, exist_ok=True)
         return IDB_LOGS_PATH + "/" + target_udid
 
-    async def spawn_companion(self, target_udid: str) -> Tuple[str, int]:
+    async def spawn_companion(self, target_udid: str) -> int:
         if not self.companion_path:
             raise CompanionSpawnerException(
                 f"couldn't instantiate a companion for {target_udid} because\
