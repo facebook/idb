@@ -230,11 +230,17 @@ def _has_parameter(
             parameter_name == name
             and (
                 parameter_type is None
-                or isinstance(parameter.annotation, parameter_type.__class__)
+                or is_subclass(parameter.annotation, parameter_type)
             )
             for parameter_name, parameter in parameters
         )
     )
+
+
+def is_subclass(obj: Type[_T], target_type: Type[_U]) -> bool:
+    obj = getattr(obj, "__origin__", obj) or obj
+    target_type = getattr(target_type, "__origin__", target_type) or target_type
+    return issubclass(obj, target_type)
 
 
 def _get_rpc_modules(base_package: str = BASE_PACKAGE) -> List[ModuleType]:
