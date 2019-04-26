@@ -22,8 +22,8 @@ LoggingMetadata = Dict[str, Optional[Union[str, List[str], int, float]]]
 
 class Address(NamedTuple):
     host: str
-    port: int
-    grpc_port: Optional[int] = None
+    grpc_port: int
+    port: Optional[int] = None
 
 
 class AppProcessState(Enum):

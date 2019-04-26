@@ -2,7 +2,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 import json
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser, Namespace, SUPPRESS
 from typing import Union
 
 from idb.cli.commands.base import ConnectingCommand
@@ -16,8 +16,10 @@ def get_destination(args: Namespace) -> Union[Address, str]:
     companion_host = args.companion if not target_udid else None
     if target_udid:
         return target_udid
-    elif args.port and companion_host:
+    elif args.port and args.grpc_port and companion_host:
         return Address(host=companion_host, port=args.port, grpc_port=args.grpc_port)
+    elif args.port and companion_host:
+        return Address(host=companion_host, grpc_port=args.port)
     else:
         raise ConnectCommandException(
             "provide either a UDID or the host and port of the companion"
@@ -52,7 +54,7 @@ class ConnectCommand(ConnectingCommand):
         )
         parser.add_argument(
             "grpc_port",
-            help="Port the companion is running grpc on",
+            help=SUPPRESS,
             type=int,
             nargs="?",
             default=None,

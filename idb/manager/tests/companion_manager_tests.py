@@ -94,7 +94,7 @@ class CompanionManagerTest(TestCase):
         self.assertEqual(len(companion_manager._udid_companion_map), 1)
         self.assertEqual(len(companion_manager._udid_target_map), 1)
         result = companion_manager.remove_companion(
-            Address(host=TEST_COMPANION.host, port=TEST_COMPANION.port)
+            Address(host=TEST_COMPANION.host, port=TEST_COMPANION.port, grpc_port=TEST_COMPANION.grpc_port)
         )
         self.assertEqual(result, TEST_COMPANION)
         self.assertEqual(len(companion_manager._udid_companion_map), 0)

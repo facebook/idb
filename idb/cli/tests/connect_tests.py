@@ -20,7 +20,7 @@ class TestParser(TestCase):
         address = get_destination(args=namespace)
         assert isinstance(address, Address)
         self.assertEqual(address.host, host)
-        self.assertEqual(address.port, port)
+        self.assertEqual(address.grpc_port, port)
 
     async def test_get_destination_from_host_and_port_and_grpc_port(self) -> None:
         namespace = Namespace()

@@ -15,7 +15,7 @@ def get_destination(args: Namespace) -> Union[Address, str]:
     if target_udid:
         return target_udid
     elif args.port and companion_host:
-        return Address(host=companion_host, port=args.port)
+        return Address(host=companion_host, grpc_port=args.port)
     else:
         raise DisconnectCommandException(
             "provide either a UDID or the host and port of the companion"

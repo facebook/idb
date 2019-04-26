@@ -73,7 +73,7 @@ class TestParser(TestCase):
         grpc_port = 1235
         await cli_main(cmd_input=["connect", host, str(port), str(grpc_port)])
         self.client_mock().connect.assert_called_once_with(
-            destination=(host, port, grpc_port), metadata=ANY
+            destination=(host, grpc_port, port), metadata=ANY
         )
 
     async def test_connect_with_udid(self) -> None:
