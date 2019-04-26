@@ -20,7 +20,7 @@ A cli tool and python client is provided to interact with idb.
 It can be installed via pip:
 
 ```
-pip3.6 install idb
+pip3.6 install fb-idb
 ```
 
 Note: The idb client requires python 3.6 or greater to be installed.

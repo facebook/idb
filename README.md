@@ -28,7 +28,7 @@ A cli tool and python client is provided to interact with `idb`.
 
 It can be installed via pip:
 ```
-pip3.6 install idb
+pip3.6 install fb-idb
 ```
 Note: The idb client requires python 3.6 or greater to be installed.
 
@@ -68,7 +68,7 @@ Head over [here](fbidb.io) for more details on what you can do with idb and the 
 
 `idb` is made up of 2 parts.
 
-To build the python part make sure you are in the root of ther repo and run:
+To build the python part make sure you are in the root of the repo and run:
 
 ```
 pip3 install .
@@ -90,13 +90,13 @@ Find the full documentation for this project at [fbidb.io](http://fbidb.io/)
 
 We've released `idb` because it's a big part of how we scale iOS automation at Facebook. We hope that others will be able to benefit from the project where they may have needs that aren't currently serviced by the standard Xcode toolchain.
 
-## Code of Conduct 
+## Code of Conduct
 
 Facebook has adopted a Code of Conduct that we expect project participants to adhere to. Please [read the full text](https://code.fb.com/codeofconduct) so that you can understand what actions will and will not be tolerated.
 
 ## Contributing Guide
 
-Read our [contributing guide](.github/CONTRIBUTING.md) to learn about our development process. 
+Read our [contributing guide](.github/CONTRIBUTING.md) to learn about our development process.
 
 ## License
 
