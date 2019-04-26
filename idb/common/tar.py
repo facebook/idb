@@ -103,8 +103,13 @@ async def generate_tar(
         while not reader.at_eof():
             data = await reader.read(READ_CHUNK_SIZE)
             if not data:
-                return
+                break
             yield data
+        returncode = await process.wait()
+        if returncode != 0:
+            raise TarException(
+                "Failed to generate tar file, tar command exited with non-zero exit code {returncode}"
+            )
 
 
 async def drain_untar(generator: AsyncIterator[bytes], output_path: str) -> None:
