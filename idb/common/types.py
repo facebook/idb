@@ -48,7 +48,7 @@ class CompanionInfo(NamedTuple):
     host: str
     port: int
     is_local: bool
-    grpc_port: Optional[int]
+    grpc_port: int
 
 
 class ScreenDimensions(NamedTuple):
