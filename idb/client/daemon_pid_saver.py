@@ -48,7 +48,7 @@ def _get_daemon_pids() -> List[int]:
 def _clear_saved_daemon_pids() -> None:
     if os.path.exists(IDB_DAEMON_PID_PATH):
         # Empty the file
-        with open(IDB_DAEMON_PID_PATH, 'wb', buffering=0) as pid_file:
+        with open(IDB_DAEMON_PID_PATH, "wb", buffering=0) as pid_file:
             pid_file.flush()
 
 

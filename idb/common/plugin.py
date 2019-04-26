@@ -67,9 +67,7 @@ async def after_invocation(name: str, duration: int, metadata: LoggingMetadata) 
     await asyncio.gather(
         *[
             plugin.after_invocation(  # pyre-ignore
-                name=name,
-                duration=duration,
-                metadata=metadata,
+                name=name, duration=duration, metadata=metadata
             )
             for plugin in PLUGINS
             if hasattr(plugin, "after_invocation")

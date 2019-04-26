@@ -6,16 +6,7 @@ from enum import Enum
 from io import StringIO
 from abc import ABCMeta
 
-from typing import (
-    List,
-    NamedTuple,
-    Optional,
-    Set,
-    Union,
-    Dict,
-    Tuple,
-    AsyncIterator,
-)
+from typing import List, NamedTuple, Optional, Set, Union, Dict, Tuple, AsyncIterator
 
 LoggingMetadata = Dict[str, Optional[Union[str, List[str], int, float]]]
 

@@ -17,7 +17,7 @@ from idb.client.daemon_pid_saver import (
 from idb.client.daemon_spawner import DaemonSpawner, DaemonSpawnerException
 from idb.common.constants import (
     DEFAULT_DAEMON_HOST,
-    DEFAULT_DAEMON_PORT,
+    DEFAULT_DAEMON_GRPC_PORT,
     IDB_DAEMON_PID_PATH,
 )
 from idb.utils.testing import AsyncMock, TestCase, ignoreTaskLeaks
@@ -26,11 +26,13 @@ from idb.utils.testing import AsyncMock, TestCase, ignoreTaskLeaks
 @ignoreTaskLeaks
 class DaemonSpawnerTests(TestCase):
     def setUp(self) -> None:
-        self.spawner = DaemonSpawner(port=DEFAULT_DAEMON_PORT, host=DEFAULT_DAEMON_HOST)
+        self.spawner = DaemonSpawner(
+            port=DEFAULT_DAEMON_GRPC_PORT, host=DEFAULT_DAEMON_HOST
+        )
         self.spawner.daemon_pids = []
 
     async def test_start_daemon_if_needed_override(self) -> None:
-        self.spawner.port = DEFAULT_DAEMON_PORT + 1
+        self.spawner.port = DEFAULT_DAEMON_GRPC_PORT
         self.spawner.host = "someHost"
         self.spawner._spawn_daemon = AsyncMock()
         await self.spawner.start_daemon_if_needed()

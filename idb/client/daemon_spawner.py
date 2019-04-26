@@ -12,7 +12,11 @@ from typing import List
 
 import idb.common.networking as networking
 from idb.client.daemon_pid_saver import kill_saved_pids, save_daemon_pid
-from idb.common.constants import DEFAULT_DAEMON_HOST, DEFAULT_DAEMON_PORT, IDB_LOGS_PATH
+from idb.common.constants import (
+    DEFAULT_DAEMON_HOST,
+    DEFAULT_DAEMON_GRPC_PORT,
+    IDB_LOGS_PATH,
+)
 from idb.utils.typing import none_throws
 
 
@@ -26,7 +30,7 @@ class DaemonSpawner:
         self.host: str = host
 
     async def start_daemon_if_needed(self, force_kill: bool = False) -> None:
-        if self.port != DEFAULT_DAEMON_PORT or self.host != DEFAULT_DAEMON_HOST:
+        if self.port != DEFAULT_DAEMON_GRPC_PORT or self.host != DEFAULT_DAEMON_HOST:
             # don't spawn a daemon if there's any overrides
             return
         if not networking.is_port_open(self.host, self.port):

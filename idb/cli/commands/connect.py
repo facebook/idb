@@ -53,11 +53,7 @@ class ConnectCommand(ConnectingCommand):
             default=None,
         )
         parser.add_argument(
-            "grpc_port",
-            help=SUPPRESS,
-            type=int,
-            nargs="?",
-            default=None,
+            "grpc_port", help=SUPPRESS, type=int, nargs="?", default=None
         )
         super().add_parser_arguments(parser)
 

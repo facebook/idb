@@ -63,7 +63,7 @@ class DaemonContext(NamedTuple):
 
 CompanionProvider = Callable[[Optional[str]], Awaitable[CompanionClient]]
 DaemonContextProvider = Callable[[], Awaitable[DaemonContext]]
-DaemonProvider = Callable[[], CompanionClient]
+DaemonProvider = Callable[[], Awaitable[CompanionClient]]
 _T = TypeVar("_T")
 _U = TypeVar("_U")
 
@@ -97,8 +97,8 @@ class MetadataStubInjector(CompanionServiceStub):
 def _trampoline_client(
     daemon_provider: DaemonProvider, call: Callable, name: str
 ) -> Callable:
-    def _make_client() -> CompanionClient:
-        client = daemon_provider()
+    async def _make_client() -> CompanionClient:
+        client = await daemon_provider()
         return CompanionClient(
             stub=MetadataStubInjector(
                 stub=client.stub, metadata={"udid": client.udid} if client.udid else {}
@@ -112,7 +112,8 @@ def _trampoline_client(
     @wraps(call)
     async def _tramp(*args: Any, **kwargs: Any) -> Any:  # pyre-ignore
         try:
-            return await call(_make_client(), *args, **kwargs)
+            client = await _make_client()
+            return await call(client, *args, **kwargs)
         except GRPCError as e:
             raise IdbException(e.message) from e  # noqa B306
         except (ProtocolError, StreamTerminatedError) as e:
@@ -122,7 +123,8 @@ def _trampoline_client(
     @wraps(call)
     async def _tramp_gen(*args: Any, **kwargs: Any) -> Any:  # pyre-ignore
         try:
-            async for item in call(_make_client(), *args, **kwargs):
+            client = await _make_client()
+            async for item in call(client, *args, **kwargs):
                 yield item
         except GRPCError as e:
             raise IdbException(e.message) from e  # noqa B306
@@ -159,8 +161,7 @@ def _default_daemon(
             await out_stream.send_message(message)
 
     async def _default_daemon_imp(
-        client: CompanionClient,
-        stream: Stream[_T, _U],
+        client: CompanionClient, stream: Stream[_T, _U]
     ) -> None:
         method = getattr(client.stub, name)
         async with method.open() as out_stream:
