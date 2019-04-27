@@ -5,7 +5,7 @@
 import asyncio
 from typing import AsyncIterator, List, Optional
 
-from idb.common.companion import CompanionClient
+from idb.grpc.types import CompanionClient
 from idb.grpc.idb_pb2 import LogRequest
 
 

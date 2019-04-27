@@ -3,7 +3,7 @@
 
 from typing import Dict, Optional
 
-from idb.common.companion import CompanionClient
+from idb.grpc.types import CompanionClient
 from idb.grpc.ipc_loader import DaemonContext
 from idb.common.types import ConnectionDestination, ConnectResponse
 from idb.grpc.idb_pb2 import (

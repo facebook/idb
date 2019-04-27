@@ -11,7 +11,7 @@ import idb.common.gzip as gzip
 import idb.common.tar as tar
 from grpclib.const import Status
 from grpclib.exceptions import GRPCError
-from idb.common.companion import CompanionClient
+from idb.grpc.types import CompanionClient
 from idb.grpc.stream import Stream, drain_to_stream
 from idb.common.xctest import xctest_paths_to_tar
 from idb.grpc.idb_pb2 import InstallRequest, InstallResponse, Payload

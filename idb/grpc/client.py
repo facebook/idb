@@ -8,7 +8,7 @@ from typing import Dict, Optional
 
 import idb.grpc.ipc_loader as ipc_loader
 from grpclib.client import Channel
-from idb.common.companion import CompanionClient
+from idb.grpc.types import CompanionClient
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.common.types import IdbClientBase
 from idb.client.daemon_spawner import DaemonSpawner

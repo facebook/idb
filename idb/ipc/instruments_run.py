@@ -7,7 +7,7 @@ import os
 from logging import Logger
 from typing import AsyncIterator, Dict, List, Optional
 
-from idb.common.companion import CompanionClient
+from idb.grpc.types import CompanionClient
 from idb.grpc.stream import Stream
 from idb.common.tar import drain_untar
 from idb.grpc.idb_pb2 import InstrumentsRunRequest, InstrumentsRunResponse

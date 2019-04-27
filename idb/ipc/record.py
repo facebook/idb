@@ -5,7 +5,7 @@
 import asyncio
 from typing import AsyncIterator
 
-from idb.common.companion import CompanionClient
+from idb.grpc.types import CompanionClient
 from idb.grpc.stream import Stream
 from idb.common.gzip import drain_gzip_decompress
 from idb.grpc.idb_pb2 import Payload, RecordRequest, RecordResponse

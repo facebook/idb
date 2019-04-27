@@ -3,7 +3,7 @@
 
 from typing import AsyncIterable, AsyncIterator, Dict, Iterable, List, Optional, Tuple
 
-from idb.common.companion import CompanionClient
+from idb.grpc.types import CompanionClient
 from idb.grpc.stream import drain_to_stream
 from idb.common.types import HIDButtonType
 from idb.grpc.idb_pb2 import HIDEvent, Point

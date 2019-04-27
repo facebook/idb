@@ -5,7 +5,7 @@
 from io import StringIO
 from typing import AsyncIterator, Dict, List, Optional, Set
 
-from idb.common.companion import CompanionClient
+from idb.grpc.types import CompanionClient
 from idb.common.constants import TESTS_POLL_INTERVAL
 from idb.common.types import TestActivity, TestRunFailureInfo, TestRunInfo
 from idb.grpc.idb_pb2 import XctestRunRequest, XctestRunResponse

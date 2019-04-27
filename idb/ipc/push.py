@@ -3,7 +3,7 @@
 
 from typing import List
 
-from idb.common.companion import CompanionClient
+from idb.grpc.types import CompanionClient
 from idb.grpc.stream import Stream, drain_to_stream
 from idb.common.stream import stream_map
 from idb.common.tar import generate_tar

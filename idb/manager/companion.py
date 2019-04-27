@@ -7,7 +7,7 @@ from logging import Logger
 from typing import AsyncContextManager, Dict, List, Optional
 
 from grpclib.client import Channel
-from idb.common.companion import CompanionClient
+from idb.grpc.types import CompanionClient
 from idb.common.companion_spawner import CompanionSpawner
 from idb.common.types import (
     Address,
@@ -201,9 +201,7 @@ class CompanionManager:
             raise Exception("Please provide a UDID for your target")
         elif self.companion_spawner and target_udid in self._udid_target_map:
             self._logger.debug(f"spawning a companion for {target_udid}")
-            port = await self.companion_spawner.spawn_companion(
-                target_udid=target_udid
-            )
+            port = await self.companion_spawner.spawn_companion(target_udid=target_udid)
             # overriding host here with localhost as spawning
             # the companion only works locally
             host = "localhost"

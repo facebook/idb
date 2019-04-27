@@ -7,7 +7,7 @@ from typing import Optional, Dict
 
 import idb.grpc.ipc_loader as ipc_loader
 from idb.common.boot_manager import BootManager
-from idb.common.companion import CompanionClient
+from idb.grpc.types import CompanionClient
 from idb.manager.companion import CompanionManager
 from idb.grpc.ipc_loader import DaemonContext
 from idb.grpc.idb_grpc import CompanionServiceBase

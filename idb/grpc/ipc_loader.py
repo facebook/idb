@@ -23,7 +23,7 @@ from typing import (
 
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.common.boot_manager import BootManager
-from idb.common.companion import CompanionClient
+from idb.grpc.types import CompanionClient
 from idb.manager.companion import CompanionManager
 from idb.grpc.stream import Stream
 from idb.common.logging import log_call
