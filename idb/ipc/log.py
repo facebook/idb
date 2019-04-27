@@ -17,6 +17,7 @@ async def tail_logs(
         async for message in stream:
             yield message.output.decode()
             if stop.is_set():
+                await stream.cancel()
                 return
 
 
