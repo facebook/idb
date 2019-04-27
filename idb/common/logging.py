@@ -5,6 +5,7 @@ import functools
 import inspect
 import logging
 import time
+from concurrent.futures import CancelledError
 from types import TracebackType
 from typing import Any, AsyncContextManager, Optional, Tuple, Type, Collection
 
@@ -82,6 +83,15 @@ class log_call(AsyncContextManager[None]):
                     metadata=_metadata,
                 )
                 return value
+            except CancelledError as ex:
+                logger.debug(f"{_name} cancelled")
+                _metadata["cancelled"] = True
+                await plugin.after_invocation(
+                    name=_name,
+                    duration=int((time.time() - start) * 1000),
+                    metadata=_metadata,
+                )
+                raise ex
             except Exception as ex:
                 logger.exception(f"{_name} failed")
                 await plugin.failed_invocation(
@@ -106,6 +116,15 @@ class log_call(AsyncContextManager[None]):
                     duration=int((time.time() - start) * 1000),
                     metadata=_metadata,
                 )
+            except CancelledError as ex:
+                logger.debug(f"{_name} cancelled")
+                _metadata["cancelled"] = True
+                await plugin.after_invocation(
+                    name=_name,
+                    duration=int((time.time() - start) * 1000),
+                    metadata=_metadata,
+                )
+                raise ex
             except Exception as ex:
                 logger.exception(f"{_name} failed")
                 await plugin.failed_invocation(
