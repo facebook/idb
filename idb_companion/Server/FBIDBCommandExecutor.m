@@ -108,7 +108,7 @@
 
 - (FBFuture<NSString *> *)xctest_install_file_path:(NSString *)filePath
 {
-  return [self installXctest:[self.temporaryDirectory withTarExtractedFromFile:filePath]];
+  return [self installXctestFilePath:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]]];
 }
 
 - (FBFuture<NSString *> *)xctest_install_stream:(FBProcessInput *)stream
@@ -574,6 +574,19 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }
     return [FBFuture futureWithResult:testBundleID];
   }];
+}
+
+- (FBFuture<NSString *> *)installXctestFilePath:(FBFutureContext<NSURL *> *)bundle
+{
+  return [bundle
+    onQueue:self.target.workQueue pop:^(NSURL *xctestURL) {
+      NSError *error = nil;
+      NSString *testBundleID = [self.bundleStorageManager.xctest saveBundleOrTestRun:xctestURL error:&error];
+      if (!testBundleID) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:testBundleID];
+    }];
 }
 
 - (FBFuture<NSString *> *)installDylib:(FBFutureContext<NSURL *> *)extractedDylib

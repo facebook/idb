@@ -54,6 +54,15 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable NSString *)saveBundleOrTestRunFromBaseDirectory:(NSURL *)baseDirectory error:(NSError **)error;
 
 /**
+ Saves a file
+
+ @param file the file containing a bundle
+ @param error an error out for any error that occurs.
+ @return the bundle id of the installed test, or nil if failed
+ */
+- (nullable NSString *)saveBundleOrTestRun:(NSURL *)filePath error:(NSError **)error;
+
+/**
  Get descriptors for all installed test bundles and xctestrun files.
 
  @param error Set if getting this bundle failed

@@ -118,31 +118,46 @@
 
   NSString *bundleIdentifier = nil;
   if (xctestBundleURL) {
-    FBBundleDescriptor *bundle = [FBApplicationBundle applicationWithPath:xctestBundleURL.path error:&xctestBundleError];
-    if (!bundle) {
-      return [[FBIDBError
-        describeFormat:@"Could not get bundle information from provided .xctest bundle %@", xctestBundleError]
-        fail:error];
-    }
-    bundleIdentifier = [self saveBundle:bundle error:&xctestBundleError];
-    if (!bundleIdentifier) {
-      return [[FBIDBError
-        describeFormat:@"Failed to save xctest bundle %@: %@", bundle, xctestBundleError]
-        fail:error];
-    }
+    bundleIdentifier = [self saveBundleOrTestRun:xctestBundleURL error:&xctestBundleError];
   }
   if (xctestrunURL) {
-    bundleIdentifier = [self saveTestRun:xctestrunURL error:&xctestrunError];
-    if (!bundleIdentifier) {
-      return [[FBIDBError
-        describeFormat:@"Failed to save xctestrun file %@: %@", xctestBundleURL, xctestrunError]
-        fail:error];
-    }
+    bundleIdentifier = [self saveBundleOrTestRun:xctestrunURL error:&xctestrunError];
   }
   if (!bundleIdentifier) {
     return [[FBIDBError
       describeFormat:@".xctest bundle (%@) or .xctestrun (%@) file was not saved", xctestBundleURL, xctestrunURL]
       fail:error];
+  }
+  return bundleIdentifier;
+}
+
+- (nullable NSString *)saveBundleOrTestRun:(NSURL *)filePath error:(NSError **)error
+{
+  // save .xctest or .xctestrun
+  NSString *bundleIdentifier = nil;
+  NSError *xctestBundleError = nil;
+  NSError *xctestrunError = nil;
+  if ([filePath.pathExtension isEqualToString:@"xctest"]) {
+    FBBundleDescriptor *bundle = [FBApplicationBundle applicationWithPath:filePath.path error:&xctestBundleError];
+    if (!bundle) {
+      return [[FBIDBError
+               describeFormat:@"Could not get bundle information from provided .xctest bundle %@", xctestBundleError]
+              fail:error];
+    }
+    bundleIdentifier = [self saveBundle:bundle error:&xctestBundleError];
+    if (!bundleIdentifier) {
+      return [[FBIDBError
+               describeFormat:@"Failed to save xctest bundle %@: %@", bundle, xctestBundleError]
+              fail:error];
+    }
+  }
+  if ([filePath.pathExtension isEqualToString:@"xctestrun"]) {
+    bundleIdentifier = [self saveTestRun:filePath error:&xctestrunError];
+    if (!bundleIdentifier) {
+      return [[FBIDBError
+               describeFormat:@"Failed to save xctestrun file %@: %@", filePath, xctestrunError]
+              fail:error];
+    }
   }
   return bundleIdentifier;
 }
