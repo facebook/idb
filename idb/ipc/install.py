@@ -120,7 +120,9 @@ async def daemon(
     async with client.stub.install.open() as forward_stream:
         await forward_stream.send_message(destination_message)
         if client.is_local:
-            response = await forward_stream.send_message(payload_message)
+            await forward_stream.send_message(payload_message)
+            await forward_stream.end()
+            response = none_throws(await forward_stream.recv_message())
         else:
             response = await drain_to_stream(
                 stream=forward_stream,
