@@ -192,7 +192,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         print(str(e))
         return 1
     except IdbException as e:
-        logger.critical(e.args[0])
+        print(e.args[0])
         return 1
     except Exception:
         logger.exception("Exception thrown in main")

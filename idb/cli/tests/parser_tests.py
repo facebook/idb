@@ -278,7 +278,7 @@ class TestParser(TestCase):
 
     def xctest_run_namespace(self, command: str, test_bundle_id: str) -> Namespace:
         namespace = Namespace()
-        namespace.log_level = "INFO"
+        namespace.log_level = "WARNING"
         namespace.root_command = "xctest"
         namespace.xctest = "run"
         namespace.udid = None
@@ -390,7 +390,7 @@ class TestParser(TestCase):
             namespace = Namespace()
             namespace.daemon_port = port
             namespace.daemon_grpc_port = grpc_port
-            namespace.log_level = "INFO"
+            namespace.log_level = "WARNING"
             namespace.root_command = "daemon"
             namespace.json = False
             namespace.reply_fd = None
@@ -410,7 +410,7 @@ class TestParser(TestCase):
         with patch("idb.cli.commands.log.LogCommand._run_impl", new=mock, create=True):
             await cli_main(cmd_input=["log", "--udid", "1234"])
             namespace = Namespace()
-            namespace.log_level = "INFO"
+            namespace.log_level = "WARNING"
             namespace.root_command = "log"
             namespace.udid = "1234"
             namespace.json = False
@@ -427,7 +427,7 @@ class TestParser(TestCase):
         with patch("idb.cli.commands.log.LogCommand._run_impl", new=mock, create=True):
             await cli_main(cmd_input=["log", "--", "--style", "json"])
             namespace = Namespace()
-            namespace.log_level = "INFO"
+            namespace.log_level = "WARNING"
             namespace.root_command = "log"
             namespace.udid = None
             namespace.json = False
@@ -475,7 +475,7 @@ class TestParser(TestCase):
             output_file = "video.mp4"
             await cli_main(cmd_input=["record-video", output_file])
             namespace = Namespace()
-            namespace.log_level = "INFO"
+            namespace.log_level = "WARNING"
             namespace.root_command = "record-video"
             namespace.udid = None
             namespace.json = False

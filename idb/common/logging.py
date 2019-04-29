@@ -12,6 +12,8 @@ from typing import Any, AsyncContextManager, Optional, Tuple, Type, Collection
 import idb.common.plugin as plugin
 from idb.common.types import LoggingMetadata
 from idb.utils.typing import none_throws
+from grpclib.exceptions import GRPCError
+from grpclib.const import Status
 
 
 logger: logging.Logger = logging.getLogger("idb")
@@ -31,11 +33,15 @@ def _initial_info(
 
 class log_call(AsyncContextManager[None]):
     def __init__(
-        self, name: Optional[str] = None, metadata: Optional[LoggingMetadata] = None
+        self,
+        name: Optional[str] = None,
+        metadata: Optional[LoggingMetadata] = None,
+        translate_exceptions: bool = False,
     ) -> None:
         self.name = name
         self.metadata: LoggingMetadata = metadata or {}
         self.start: Optional[int] = None
+        self.translate_exceptions = translate_exceptions
 
     async def __aenter__(self) -> None:
         name = none_throws(self.name)
@@ -52,7 +58,7 @@ class log_call(AsyncContextManager[None]):
         name = none_throws(self.name)
         duration = int((time.time() - none_throws(self.start)) * 1000)
         if exception:
-            logger.error(f"{name} failed")
+            logger.debug(f"{name} failed")
             await plugin.failed_invocation(
                 name=name,
                 duration=duration,
@@ -91,16 +97,16 @@ class log_call(AsyncContextManager[None]):
                     duration=int((time.time() - start) * 1000),
                     metadata=_metadata,
                 )
-                raise ex
+                raise self.translate_exception(ex)
             except Exception as ex:
-                logger.exception(f"{_name} failed")
+                logger.debug(f"{_name} failed")
                 await plugin.failed_invocation(
                     name=_name,
                     duration=int((time.time() - start) * 1000),
                     exception=ex,
                     metadata=_metadata,
                 )
-                raise ex
+                raise self.translate_exception(ex)
 
         @functools.wraps(function)
         async def _async_gen_wrapper(*args, **kwargs) -> Any:  # pyre-ignore
@@ -124,18 +130,23 @@ class log_call(AsyncContextManager[None]):
                     duration=int((time.time() - start) * 1000),
                     metadata=_metadata,
                 )
-                raise ex
+                raise self.translate_exception(ex)
             except Exception as ex:
-                logger.exception(f"{_name} failed")
+                logger.debug(f"{_name} failed")
                 await plugin.failed_invocation(
                     name=_name,
                     duration=int((time.time() - start) * 1000),
                     exception=ex,
                     metadata=_metadata,
                 )
-                raise ex
+                raise self.translate_exception(ex)
 
         if inspect.isasyncgenfunction(function):
             return _async_gen_wrapper
         else:
             return _async_wrapper
+
+    def translate_exception(self, exception: Exception) -> Exception:
+        if self.translate_exceptions and not isinstance(exception, GRPCError):
+            return GRPCError(Status.INTERNAL, exception.args[0])
+        return exception

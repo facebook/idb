@@ -180,7 +180,7 @@ def _trampoline_daemon(
     call: Callable,
     name: str,
 ) -> Callable:
-    @log_call(name=name, metadata=DAEMON_METADATA)
+    @log_call(name=name, metadata=DAEMON_METADATA, translate_exceptions=True)
     @wraps(call)
     async def _tramp(stream: Stream[_T, _U], *args: Any, **kwargs: Any) -> None:
         partial_call = call

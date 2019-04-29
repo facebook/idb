@@ -104,7 +104,7 @@ class BaseCommand(Command, metaclass=ABCMeta):
             "--log",
             dest="log_level",
             choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-            default="INFO",
+            default="WARNING",
             help="Set the logging level",
         )
         parser.add_argument(
