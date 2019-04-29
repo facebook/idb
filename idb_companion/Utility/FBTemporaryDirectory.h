@@ -48,28 +48,31 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFutureContext<NSURL *> *)withGzipExtractedFromStream:(FBProcessInput *)input name:(NSString *)name;
 
 /**
- Extracts a tar file to a temporary location.
+ Extracts archive data to a temporary location.
+ For the supported archives see -[FBArchiveOperations extractArchiveFromStream:toPath:queue:logger:]
 
  @param tarData NSData representation of the tar to extract
  @return a Context Future containing the root of the extraction tar
  */
-- (FBFutureContext<NSURL *> *)withTarExtracted:(NSData *)tarData;
+- (FBFutureContext<NSURL *> *)withArchiveExtracted:(NSData *)tarData;
 
 /**
- Extracts a tar stream to a temporary location.
+ Extracts a archive stream to a temporary location.
+ For the supported archives see -[FBArchiveOperations extractArchiveFromStream:toPath:queue:logger:]
 
  @param input stream containing tar data
  @return a Context Future containing the root of the extraction tar
  */
-- (FBFutureContext<NSURL *> *)withTarExtractedFromStream:(FBProcessInput *)input;
+- (FBFutureContext<NSURL *> *)withArchiveExtractedFromStream:(FBProcessInput *)input;
 
 /**
- Extracts a tar file to a temporary location.
+ Extracts an archive file to a temporary location.
+ For the supported archives see -[FBArchiveOperations extractArchiveAtPath:toPath:queue:logger:]
 
  @param filePath the file path to extract
  @return a Context Future containing the root of the extraction tar
  */
-- (FBFutureContext<NSURL *> *)withTarExtractedFromFile:(NSString *)filePath;
+- (FBFutureContext<NSURL *> *)withArchiveExtractedFromFile:(NSString *)filePath;
 
 /**
  Extracts a tar file to a temporary location or returns filePaths if non-null.
@@ -98,15 +101,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Context Future containing paths to the files within the dir
  */
 - (FBFutureContext<NSArray<NSURL *> *> *)filesFromSubdirs:(FBFutureContext<NSURL *> *)extractionDirContext;
-
-/**
- Extracts an app from a tar file or an IPA file to a temporary location
- /...
-
- @param data NSData representation of the tar to extract
- @return a Context Future containing the path to the app in a temporary directory
- */
-- (FBFutureContext<NSURL *> *)filePathFromData:(nullable NSData *)data;
 
 #pragma mark Temporary Directory
 

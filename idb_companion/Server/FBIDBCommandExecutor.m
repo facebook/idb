@@ -94,9 +94,9 @@
 - (FBFuture<NSString *> *)install_binary:(NSData *)data
 {
   FBFutureContext<FBApplicationBundle *> *bundle = [[self.temporaryDirectory
-    filePathFromData:data]
-    onQueue:self.target.asyncQueue push:^FBFutureContext *(NSURL *fileURL) {
-      return [FBApplicationBundle onQueue:self.target.asyncQueue findOrExtractApplicationAtPath:fileURL.path logger:self.logger];
+    withArchiveExtracted:data]
+    onQueue:self.target.asyncQueue pend:^(NSURL *tempDirectory) {
+      return [FBApplicationBundle findAppPathFromDirectory:tempDirectory];
     }];
   return [self installExtractedApplication:bundle];
 }
@@ -113,12 +113,12 @@
 
 - (FBFuture<NSString *> *)xctest_install_stream:(FBProcessInput *)stream
 {
-  return [self installXctest:[self.temporaryDirectory withTarExtractedFromStream:stream]];
+  return [self installXctest:[self.temporaryDirectory withArchiveExtractedFromStream:stream]];
 }
 
 - (FBFuture<NSString *> *)xctest_install_binary:(NSData *)tarData
 {
-  return [self installXctest:[self.temporaryDirectory withTarExtracted:tarData]];
+  return [self installXctest:[self.temporaryDirectory withArchiveExtracted:tarData]];
 }
 
 - (FBFuture<NSString *> *)install_dylib_file_path:(NSString *)filePath
@@ -193,7 +193,7 @@
 - (FBFuture<NSNull *> *)pushFileFromTar:(NSData *)tarData toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID
 {
   return [[self.temporaryDirectory
-    withTarExtracted:tarData]
+    withArchiveExtracted:tarData]
     onQueue:self.target.workQueue pop:^FBFuture *(NSURL *extractionDirectory) {
       NSError *error;
       NSArray<NSURL *> *paths = [NSFileManager.defaultManager contentsOfDirectoryAtURL:extractionDirectory includingPropertiesForKeys:@[NSURLIsDirectoryKey] options:0 error:&error];
@@ -298,7 +298,7 @@
 - (FBFuture<NSNull *> *)updateContacts:(NSData *)dbTarData
 {
   return [[self.
-    temporaryDirectory withTarExtracted:dbTarData]
+    temporaryDirectory withArchiveExtracted:dbTarData]
     onQueue:self.target.workQueue pop:^(NSURL *tempDirectory) {
       return [self.settingsCommands onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorSettingsCommands> commands) {
         return [commands updateContacts:tempDirectory.path];

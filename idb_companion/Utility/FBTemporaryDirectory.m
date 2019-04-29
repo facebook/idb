@@ -72,12 +72,12 @@
     }];
 }
 
-- (FBFutureContext<NSURL *> *)withTarExtracted:(NSData *)tarData
+- (FBFutureContext<NSURL *> *)withArchiveExtracted:(NSData *)tarData
 {
-  return [self withTarExtractedFromStream:[FBProcessInput inputFromData:tarData]];
+  return [self withArchiveExtractedFromStream:[FBProcessInput inputFromData:tarData]];
 }
 
-- (FBFutureContext<NSURL *> *)withTarExtractedFromStream:(FBProcessInput *)input
+- (FBFutureContext<NSURL *> *)withArchiveExtractedFromStream:(FBProcessInput *)input
 {
   return [[self
     withTemporaryDirectory]
@@ -86,7 +86,7 @@
     }];
 }
 
-- (FBFutureContext<NSURL *> *)withTarExtractedFromFile:(NSString *)filePath
+- (FBFutureContext<NSURL *> *)withArchiveExtractedFromFile:(NSString *)filePath
 {
   return [[self
     withTemporaryDirectory]
@@ -105,7 +105,7 @@
     return [[FBFuture futureWithResult:urls] onQueue:self.queue contextualTeardown:^(id _, FBFutureState __) {}];
   }
 
-  return [self filesFromSubdirs:[self withTarExtracted:tarData]];
+  return [self filesFromSubdirs:[self withArchiveExtracted:tarData]];
 }
 
 - (FBFutureContext<NSArray<NSURL *> *> *)filesFromSubdirs:(FBFutureContext<NSURL *> *)extractionDirContext
@@ -122,35 +122,6 @@
       return [FBFuture futureWithFutures:filesInTar];
     }];
 }
-
-- (FBFutureContext<NSURL *> *)filePathFromData:(nullable NSData *)data
-{
-  switch ([FBArchiveOperations headerMagicForData:data]) {
-    case FBFileHeaderMagicIPA:
-      return [[self
-        withTemporaryDirectory]
-        onQueue:self.queue pend:^FBFuture<NSURL *> *(NSURL *tempDir) {
-          NSURL *fileURL = [tempDir URLByAppendingPathComponent:@"app.ipa"];
-          [data writeToURL:fileURL atomically:YES];
-          return [FBFuture futureWithResult:fileURL];
-        }];
-      break;
-    case FBFileHeaderMagicGZIP:
-      return [[self
-        withTarExtracted:data]
-        onQueue:self.queue pend:^(NSURL *tempDirectory) {
-          return [[FBStorageUtils
-            findUniqueFileInDirectory:tempDirectory onQueue:self.queue]
-            onQueue:self.queue fmap:^(NSURL *fileURL) {
-              return [FBFuture futureWithResult:fileURL];
-            }];
-      }];
-      break;
-    case FBFileHeaderMagicUnknown:
-      return [[FBIDBError describeFormat:@"Could not find .app or .ipa in data"] failFutureContext];
-  }
-}
-
 
 #pragma mark Temporary Directory
 

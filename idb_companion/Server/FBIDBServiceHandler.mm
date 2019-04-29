@@ -133,7 +133,7 @@ static FBFuture<NSArray<NSURL *> *> *filepaths_from_stream(const idb::Payload in
 static FBFutureContext<NSArray<NSURL *> *> *filepaths_from_tar(FBTemporaryDirectory *temporaryDirectory, FBProcessInput<NSOutputStream *> *input, bool extract_from_subdir, id<FBControlCoreLogger> logger)
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.idb.processinput", DISPATCH_QUEUE_SERIAL);
-  FBFutureContext<NSURL *> *tarContext = [temporaryDirectory withTarExtractedFromStream:input];
+  FBFutureContext<NSURL *> *tarContext = [temporaryDirectory withArchiveExtractedFromStream:input];
   if (extract_from_subdir) {
     // Extract from subdirectories
     return [temporaryDirectory filesFromSubdirs:tarContext];
