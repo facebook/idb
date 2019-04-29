@@ -5,8 +5,9 @@
 import asyncio
 from typing import AsyncIterator, List, Optional
 
-from idb.grpc.types import CompanionClient
 from idb.grpc.idb_pb2 import LogRequest
+from idb.grpc.stream import cancel_wrapper
+from idb.grpc.types import CompanionClient
 
 
 async def tail_logs(
@@ -14,11 +15,8 @@ async def tail_logs(
 ) -> AsyncIterator[str]:
     async with client.stub.log.open() as stream:
         await stream.send_message(LogRequest(arguments=arguments), end=True)
-        async for message in stream:
+        async for message in cancel_wrapper(stream=stream, stop=stop):
             yield message.output.decode()
-            if stop.is_set():
-                await stream.cancel()
-                return
 
 
 CLIENT_PROPERTIES = [tail_logs]  # pyre-ignore
