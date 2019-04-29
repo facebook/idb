@@ -91,46 +91,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     }];
 }
 
-
-// The Magic Header for Zip Files is two chars 'PK'. As a short this is as below.
-static unsigned short const ZipFileMagicHeader = 0x4b50;
-// The Magic Header for Tar Files
-static unsigned short const TarFileMagicHeader = 0x8b1f;
-
-+ (FBFileHeaderMagic)headerMagicForData:(NSData *)data
-{
-  unsigned short magic = 0;
-  [data getBytes:&magic length:sizeof(short)];
-  return [self magicForShort:magic];
-}
-
-+ (FBFileHeaderMagic)headerMagicForFile:(NSString *)path
-{
-  // IPAs are Zip files. Zip Files always have a magic header in their first 4 bytes.
-  FILE *file = fopen(path.UTF8String, "r");
-  if (!file) {
-    return FBFileHeaderMagicUnknown;
-  }
-  unsigned short magic = 0;
-  if (!fread(&magic, sizeof(short), 1, file)) {
-    fclose(file);
-    return FBFileHeaderMagicUnknown;
-  }
-  fclose(file);
-  return [self magicForShort:magic];
-}
-
 #pragma mark Private
-
-+ (FBFileHeaderMagic)magicForShort:(unsigned short)magic
-{
-  if (magic == ZipFileMagicHeader) {
-    return FBFileHeaderMagicIPA;
-  } else if (magic == TarFileMagicHeader) {
-    return FBFileHeaderMagicGZIP;
-  }
-  return FBFileHeaderMagicUnknown;
-}
 
 + (FBTaskBuilder<NSNull *, NSData *, id<FBControlCoreLogger>> *)createGzippedTarTaskBuilderForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {

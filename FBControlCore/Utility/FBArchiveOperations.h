@@ -15,15 +15,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBProcessInput;
 
 /**
- Enumerations for possible header magic numbers in files & data.
- */
-typedef enum {
-  FBFileHeaderMagicUnknown = 0,
-  FBFileHeaderMagicGZIP = 1,
-  FBFileHeaderMagicIPA = 2,
-} FBFileHeaderMagic;
-
-/**
  Operations of Zip/Tar Archives
  */
 @interface FBArchiveOperations : NSObject
@@ -102,22 +93,6 @@ typedef enum {
  @return a A Future containing the tar output.
  */
 + (FBFuture<NSData *> *)createGzippedTarDataForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
-
-/**
- Get the header magic from some data.
-
- @param data the data to check.
- @return the header magic if one could be deduced.
- */
-+ (FBFileHeaderMagic)headerMagicForData:(NSData *)data;
-
-/**
- Get the header magic from a file
-
- @param path the file to checked
- @return the header magic if one could be deduced.
- */
-+ (FBFileHeaderMagic)headerMagicForFile:(NSString *)path;
 
 @end
 
