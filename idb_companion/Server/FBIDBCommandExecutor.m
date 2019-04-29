@@ -103,7 +103,7 @@
 
 - (FBFuture<NSString *> *)install_stream:(FBProcessInput *)input
 {
-  return [self installExtractedApplication:[FBApplicationBundle onQueue:self.target.asyncQueue findOrExtractApplicationFromInput:input logger:self.logger]];
+  return [self installExtractedApplication:[FBApplicationBundle onQueue:self.target.asyncQueue extractApplicationFromInput:input logger:self.logger]];
 }
 
 - (FBFuture<NSString *> *)xctest_install_file_path:(NSString *)filePath

@@ -38,7 +38,7 @@
     }];
 }
 
-+ (FBFutureContext<FBApplicationBundle *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationFromInput:(FBProcessInput *)input  logger:(id<FBControlCoreLogger>)logger
++ (FBFutureContext<FBApplicationBundle *> *)onQueue:(dispatch_queue_t)queue extractApplicationFromInput:(FBProcessInput *)input  logger:(id<FBControlCoreLogger>)logger
 {
   return [[[self
     temporaryExtractPathWithQueue:queue logger:logger]
