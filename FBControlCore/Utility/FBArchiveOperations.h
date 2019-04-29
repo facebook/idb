@@ -29,51 +29,34 @@ typedef enum {
 @interface FBArchiveOperations : NSObject
 
 /**
- Extracts an archive to a directory.
- Will determine whether this is a gzipped tar or a zip file and use the appropriate implementation for extraction.
+ Extracts a tar, or zip file archive to a directory.
+ The file can be a:
+ - An uncompressed tar.
+ - A gzipped tar.
+ - A zip.
 
- @param path the path of the archive.
- @param extractPath the extraction path.
- @param queue the queue to do work on.
- @param logger the logger to log to.
- @return a Future wrapping the extracted zip/tar destination.
- */
-+ (FBFuture<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
-
-/**
- Extracts a zip archive to a directory.
-
- @param path the path of the zip archive.
- @param extractPath the extraction path.
- @param queue the queue to do work on.
- @param logger the logger to log to.
- @return a Future wrapping the extracted zip destination.
- */
-+ (FBFuture<NSString *> *)extractZipArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
-
-/**
- Extracts a tar archive to a directory.
- The archive itself may or may not be gzipped. Regular tars as well as gzipped tars are both handled.
-
- @param path the path of the tar archive
+ @param path the path to the archive.
  @param extractPath the extraction path.
  @param queue the queue to do work on.
  @param logger the logger to log to.
  @return a Future wrapping the extracted tar destination.
  */
-+ (FBFuture<NSString *> *)extractTarArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 /**
- Extracts a tar archive to a directory.
- The archive itself may or may not be gzipped. Regular tars as well as gzipped tars are both handled.
+ Extracts a tar, or zip stream archive to a directory.
+ The stream can be a:
+ - An uncompressed tar.
+ - A gzipped tar.
+ - A zip.
 
- @param stream the stream of the tar archive.
+ @param stream the stream of the archive.
  @param extractPath the extraction path
  @param queue the queue to do work on
  @param logger the logger to log to
  @return a Future wrapping the extracted tar destination.
  */
-+ (FBFuture<NSString *> *)extractTarArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<NSString *> *)extractArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Extracts a gzip from a stream to a single file.

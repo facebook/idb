@@ -82,7 +82,7 @@
   return [[self
     withTemporaryDirectory]
     onQueue:self.queue pend:^(NSURL *tempDir) {
-      return [[FBArchiveOperations extractTarArchiveFromStream:input toPath:tempDir.path queue:self.queue logger:self.logger] mapReplace:tempDir];
+      return [[FBArchiveOperations extractArchiveFromStream:input toPath:tempDir.path queue:self.queue logger:self.logger] mapReplace:tempDir];
     }];
 }
 
@@ -91,7 +91,7 @@
   return [[self
     withTemporaryDirectory]
     onQueue:self.queue pend:^(NSURL *tempDir) {
-      return [[FBArchiveOperations extractTarArchiveAtPath:filePath toPath:tempDir.path queue:self.queue logger:self.logger] mapReplace:tempDir];
+      return [[FBArchiveOperations extractArchiveAtPath:filePath toPath:tempDir.path queue:self.queue logger:self.logger] mapReplace:tempDir];
     }];
 }
 

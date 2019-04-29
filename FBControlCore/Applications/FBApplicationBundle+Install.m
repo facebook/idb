@@ -43,7 +43,7 @@
   return [[[self
     temporaryExtractPathWithQueue:queue logger:logger]
     onQueue:queue pend:^(NSURL *extractPath) {
-      return [[FBArchiveOperations extractTarArchiveFromStream:input toPath:extractPath.path queue:queue logger:logger] mapReplace:extractPath];
+      return [[FBArchiveOperations extractArchiveFromStream:input toPath:extractPath.path queue:queue logger:logger] mapReplace:extractPath];
     }]
     onQueue:queue pend:^(NSURL *extractPath) {
       return [FBApplicationBundle findAppPathFromDirectory:extractPath];

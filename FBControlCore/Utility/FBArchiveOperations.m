@@ -18,33 +18,6 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 
 + (FBFuture<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  FBFileHeaderMagic magic = [self headerMagicForFile:path];
-  switch (magic) {
-    case FBFileHeaderMagicIPA:
-      return [self extractZipArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
-    case FBFileHeaderMagicGZIP:
-      return [self extractTarArchiveAtPath:path toPath:extractPath queue:queue logger:logger];
-    default:
-      return [[FBControlCoreError
-        describeFormat:@"File at path %@ is not determined to be an archive", path]
-        failFuture];
-  }
-}
-
-+ (FBFuture<NSString *> *)extractZipArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
-{
-  return [[[[[[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/unzip"]
-    withArguments:@[@"-o", @"-d", extractPath, path]]
-    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
-    withStdErrToLogger:logger.debug]
-    withStdOutToLogger:logger.debug]
-    runUntilCompletion]
-    mapReplace:extractPath];
-}
-
-+ (FBFuture<NSString *> *)extractTarArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
-{
   return [[[[[[[FBTaskBuilder
     withLaunchPath:BSDTarPath]
     withArguments:@[@"-vzxp", @"-C", extractPath, @"-f", path]]
@@ -55,7 +28,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     mapReplace:extractPath];
 }
 
-+ (FBFuture<NSString *> *)extractTarArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSString *> *)extractArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [[[[[[[[FBTaskBuilder
     withLaunchPath:BSDTarPath]
