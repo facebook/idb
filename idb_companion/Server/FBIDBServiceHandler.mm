@@ -23,6 +23,8 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
+#pragma mark Private Functions
+
 static NSString *nsstring_from_c_string(const ::std::string& string)
 {
   return [NSString stringWithUTF8String:string.c_str()];
@@ -411,6 +413,29 @@ static idb::DebugServerResponse translate_debugserver_status(id<FBDebugServer> d
   }
   return response;
 }
+
+static idb::TargetDescription description_of_target(id<FBiOSTarget> target, FBIDBPortsConfiguration *portsConfig)
+{
+  idb::TargetDescription description;
+  description.set_udid(target.udid.UTF8String);
+  description.set_name(target.name.UTF8String);
+  idb::ScreenDimensions *screenDimensions = description.mutable_screen_dimensions();
+  screenDimensions->set_width(target.screenInfo.widthPixels);
+  screenDimensions->set_height(target.screenInfo.heightPixels);
+  screenDimensions->set_density(target.screenInfo.scale);
+  screenDimensions->set_width_points(target.screenInfo.widthPixels / target.screenInfo.scale);
+  screenDimensions->set_height_points(target.screenInfo.heightPixels / target.screenInfo.scale);
+  description.set_state(FBiOSTargetStateStringFromState(target.state).UTF8String);
+  description.set_target_type(FBiOSTargetTypeStringsFromTargetType(target.targetType)[0].UTF8String);
+  description.set_target_type(target.osVersion.name.UTF8String);
+  description.set_target_type(target.architecture.UTF8String);
+  idb::CompanionInfo *companionInfo = description.mutable_companion_info();
+  companionInfo->set_host(NSProcessInfo.processInfo.hostName.UTF8String);
+  companionInfo->set_grpc_port(portsConfig.grpcPort);
+  return description;
+}
+
+#pragma mark Public Methods
 
 FBIDBServiceHandler::FBIDBServiceHandler(FBIDBCommandExecutor *commandExecutor, id<FBiOSTarget> target, id<FBEventReporter> eventReporter, FBIDBPortsConfiguration *portsConfig)
 {
@@ -1082,28 +1107,6 @@ Status FBIDBServiceHandler::connect(grpc::ServerContext *context, const idb::Con
 
 Status FBIDBServiceHandler::list_targets(grpc::ServerContext *context, const idb::ListTargetsRequest *request, idb::ListTargetsResponse *response)
 {
-  idb::TargetDescription *description = response->add_targets();
-  description_of_target(description);
+  response->add_targets()->MergeFrom(description_of_target(_target, _portsConfig));
   return Status::OK;
-}
-
-void FBIDBServiceHandler::description_of_target(idb::TargetDescription *description)
-{
-  description->set_udid(_target.udid.UTF8String);
-  description->set_name(_target.name.UTF8String);
-  idb::ScreenDimensions screenDimensions;
-  screenDimensions.set_width(_target.screenInfo.widthPixels);
-  screenDimensions.set_height(_target.screenInfo.heightPixels);
-  screenDimensions.set_density(_target.screenInfo.scale);
-  screenDimensions.set_width_points(_target.screenInfo.widthPixels / _target.screenInfo.scale);
-  screenDimensions.set_height_points(_target.screenInfo.heightPixels / _target.screenInfo.scale);
-  description->set_allocated_screen_dimensions(&screenDimensions);
-  description->set_state(FBiOSTargetStateStringFromState(_target.state).UTF8String);
-  description->set_target_type(FBiOSTargetTypeStringsFromTargetType(_target.targetType)[0].UTF8String);
-  description->set_target_type(_target.osVersion.name.UTF8String);
-  description->set_target_type(_target.architecture.UTF8String);
-  idb::CompanionInfo companionInfo;
-  companionInfo.set_host(NSProcessInfo.processInfo.hostName.UTF8String);
-  companionInfo.set_grpc_port(_portsConfig.grpcPort);
-  description->set_allocated_companion_info(&companionInfo);
 }

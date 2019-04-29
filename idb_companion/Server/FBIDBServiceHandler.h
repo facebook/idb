@@ -22,7 +22,6 @@ private:
   id<FBEventReporter> _eventReporter;
   FBIDBPortsConfiguration *_portsConfig;
   FBFuture<NSString *> *install_future(const idb::InstallRequest_Destination destination, const idb::Payload payload, grpc::ServerReader<idb::InstallRequest> *reader);
-  void description_of_target(idb::TargetDescription *description);
   FBFuture<NSString *> *install_future(const idb::InstallRequest_Destination destination, grpc::ServerReader<idb::InstallRequest> *reader);
 
 public:
