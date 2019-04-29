@@ -56,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Saves a file
 
- @param file the file containing a bundle
+ @param filePath the file containing a bundle
  @param error an error out for any error that occurs.
  @return the bundle id of the installed test, or nil if failed
  */
