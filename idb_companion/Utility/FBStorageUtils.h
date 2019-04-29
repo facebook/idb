@@ -51,14 +51,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param queue the queue to use.
  @return a Future wrapping the unique file.
  */
-+ (FBFuture<NSURL *> *)getUniqueFileInDirectory:(NSURL *)directory onQueue:(dispatch_queue_t)queue;
++ (FBFuture<NSURL *> *)findUniqueFileInDirectory:(NSURL *)directory onQueue:(dispatch_queue_t)queue;
 
 /**
  Obtains all files within a directory
 
  @return a Future wrapping the list of files.
  */
-+ (FBFuture<NSArray<NSURL *> *> *)getFilesInDirectory:(NSURL *)directory;
++ (FBFuture<NSArray<NSURL *> *> *)filesInDirectory:(NSURL *)directory;
 
 @end
 

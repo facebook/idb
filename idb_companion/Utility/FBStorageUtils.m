@@ -51,10 +51,10 @@
   return matchingFiles;
 }
 
-+ (FBFuture<NSURL *> *)getUniqueFileInDirectory:(NSURL *)directory onQueue:(dispatch_queue_t)queue
++ (FBFuture<NSURL *> *)findUniqueFileInDirectory:(NSURL *)directory onQueue:(dispatch_queue_t)queue
 {
   return [[self
-    getFilesInDirectory:directory]
+    filesInDirectory:directory]
     onQueue:queue fmap:^FBFuture<NSURL *> *(NSArray<NSURL *> *filesInDirectory) {
       if (filesInDirectory.count != 1) {
         return [[FBIDBError describeFormat:@"Expected one top level file, found %lu", filesInDirectory.count] failFuture];
@@ -63,7 +63,7 @@
   }];
 }
 
-+ (FBFuture<NSArray<NSURL *> *> *)getFilesInDirectory:(NSURL *)directory
++ (FBFuture<NSArray<NSURL *> *> *)filesInDirectory:(NSURL *)directory
 {
   NSError *error;
   NSArray<NSURL *> *filesInTar = [NSFileManager.defaultManager contentsOfDirectoryAtURL:directory includingPropertiesForKeys:@[NSURLIsDirectoryKey] options:0 error:&error];
