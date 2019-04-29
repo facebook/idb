@@ -59,7 +59,7 @@
 
 - (void)forwardInvocation:(NSInvocation *)invocation
 {
-  if ([self.mediator respondsToSelector:invocation.selector]) {
+  if ([self.mediator respondsToSelector:invocation.selector] || self.mediator == nil) {
     [invocation invokeWithTarget:self.mediator];
   } else {
     [super forwardInvocation:invocation];
