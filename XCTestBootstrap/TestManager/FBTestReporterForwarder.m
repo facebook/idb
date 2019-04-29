@@ -49,7 +49,7 @@
 
 - (BOOL)respondsToSelector:(SEL)selector
 {
-  return [super respondsToSelector:selector] || [self.mediator respondsToSelector:selector];
+  return [super respondsToSelector:selector] || [self.mediator respondsToSelector:selector] || self.mediator == nil;
 }
 
 - (NSMethodSignature *)methodSignatureForSelector:(SEL)selector
