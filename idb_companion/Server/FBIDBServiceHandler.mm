@@ -924,7 +924,7 @@ Status FBIDBServiceHandler::push(grpc::ServerContext *context, grpc::ServerReade
   return Status::OK;
 }
 
-Status FBIDBServiceHandler::pull(::grpc::ServerContext *context, const ::idb::PullRequest *request, grpc::ServerWriter<::idb::PullResponse> *stream)
+Status FBIDBServiceHandler::pull(ServerContext *context, const ::idb::PullRequest *request, grpc::ServerWriter<::idb::PullResponse> *stream)
 {
   NSString *path = nsstring_from_c_string(request->src_path());
   NSError *error = nil;
