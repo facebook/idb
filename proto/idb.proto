@@ -46,6 +46,7 @@ message Payload {
   oneof source {
     string file_path = 1;
     bytes data = 2;
+    string url = 3;
   }
 }
 
