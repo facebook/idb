@@ -139,13 +139,14 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, copy, readonly) NSSet<NSNumber *> *acceptableStatusCodes;
+@property (nonatomic, copy, readonly) NSString *configurationDescription;
+@property (nonatomic, copy, readonly) NSString *programName;
 
 @property (nonatomic, strong, nullable, readwrite) id<FBTaskProcess> process;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdOutSlot;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdErrSlot;
 @property (nonatomic, strong, nullable, readwrite) FBProcessInput *stdInSlot;
 
-@property (nonatomic, copy, readwrite) NSString *configurationDescription;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *errorFuture;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startedTeardownFuture;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *completedTeardownFuture;
@@ -160,11 +161,11 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 {
   id<FBTaskProcess> process = [FBTaskProcess_NSTask fromConfiguration:configuration];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
-  FBTask *task = [[self alloc] initWithProcess:process stdOut:configuration.stdOut stdErr:configuration.stdErr stdIn:configuration.stdIn queue:queue acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
+  FBTask *task = [[self alloc] initWithProcess:process stdOut:configuration.stdOut stdErr:configuration.stdErr stdIn:configuration.stdIn queue:queue acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description programName:configuration.launchPath.lastPathComponent];
   return [task launchTask];
 }
 
-- (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(FBProcessOutput *)stdOut stdErr:(FBProcessOutput *)stdErr stdIn:(FBProcessInput *)stdIn queue:(dispatch_queue_t)queue acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
+- (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(FBProcessOutput *)stdOut stdErr:(FBProcessOutput *)stdErr stdIn:(FBProcessInput *)stdIn queue:(dispatch_queue_t)queue acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription programName:(NSString *)programName
 {
   self = [super init];
   if (!self) {
@@ -178,6 +179,8 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   _stdInSlot = stdIn;
   _queue = queue;
   _configurationDescription = configurationDescription;
+  _programName = programName;
+
   _errorFuture = FBMutableFuture.future;
   _startedTeardownFuture = FBMutableFuture.future;
   _completedTeardownFuture = FBMutableFuture.future;
@@ -287,7 +290,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
     teardownProcess]
     onQueue:self.queue fmap:^(NSNumber *exitCode) {
       if (![self.acceptableStatusCodes containsObject:exitCode]) {
-        NSError *error = [self errorForMessage:[NSString stringWithFormat:@"Returned non-zero status code %d", self.process.terminationStatus]];
+        NSError *error = [self errorForMessage:[NSString stringWithFormat:@"%@ Returned non-zero status code %d", self.programName, self.process.terminationStatus]];
         [self.errorFuture resolveWithError:error];
       }
       return [self teardownResources];
