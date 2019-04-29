@@ -2,6 +2,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 import os
+import urllib.parse
 from logging import Logger
 from pathlib import Path
 from typing import AsyncIterator
@@ -11,10 +12,10 @@ import idb.common.gzip as gzip
 import idb.common.tar as tar
 from grpclib.const import Status
 from grpclib.exceptions import GRPCError
-from idb.grpc.types import CompanionClient
-from idb.grpc.stream import Stream, drain_to_stream
 from idb.common.xctest import xctest_paths_to_tar
 from idb.grpc.idb_pb2 import InstallRequest, InstallResponse, Payload
+from idb.grpc.stream import Stream, drain_to_stream
+from idb.grpc.types import CompanionClient
 from idb.utils.typing import none_throws
 
 
@@ -83,10 +84,14 @@ def _generate_binary_chunks(
 async def _install_to_destination(
     client: CompanionClient, path: str, destination: Destination
 ) -> str:
-    abs_path = str(Path(path).resolve(strict=True))
+    url = urllib.parse.urlparse(path)
+    if url.scheme:
+        payload = Payload(url=path)
+    else:
+        payload = Payload(file_path=str(Path(path).resolve(strict=True)))
     async with client.stub.install.open() as stream:
         await stream.send_message(InstallRequest(destination=destination))
-        await stream.send_message(InstallRequest(payload=Payload(file_path=abs_path)))
+        await stream.send_message(InstallRequest(payload=payload))
         await stream.end()
         response = await stream.recv_message()
         return response.bundle_id
@@ -116,10 +121,11 @@ async def daemon(
     destination_message = none_throws(await stream.recv_message())
     payload_message = none_throws(await stream.recv_message())
     file_path = payload_message.payload.file_path
+    url = payload_message.payload.url
     destination = destination_message.destination
     async with client.stub.install.open() as forward_stream:
         await forward_stream.send_message(destination_message)
-        if client.is_local:
+        if client.is_local or len(url):
             await forward_stream.send_message(payload_message)
             await forward_stream.end()
             response = none_throws(await forward_stream.recv_message())
