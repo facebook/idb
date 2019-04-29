@@ -22,9 +22,9 @@
     return nil;
   }
   if (files.count != 1) {
-    return [[FBIDBError describe:
-             [NSString stringWithFormat:@"%lu files with extension .%@ in %@", (unsigned long)files.count, extension, url]]
-            fail:error];
+    return [[FBIDBError
+      describeFormat:@"%lu files with extension .%@ in %@", (unsigned long)files.count, extension, url]
+      fail:error];
   }
 
   return files.anyObject;

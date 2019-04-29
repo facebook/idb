@@ -49,8 +49,9 @@
   NSString *targetArch = self.target.architecture;
 
   if (![bundleArchs containsObject:targetArch]) {
-    NSString *errorString = [NSString stringWithFormat:@"Targets architecture %@ not in the bundles supported architectures: %@", targetArch, bundleArchs.allObjects];
-    return [FBIDBError failBoolWithErrorMessage:errorString errorOut:error];
+    return [[FBIDBError
+      describeFormat:@"Targets architecture %@ not in the bundles supported architectures: %@", targetArch, bundleArchs.allObjects]
+      failBool:error];
   }
 
   return YES;

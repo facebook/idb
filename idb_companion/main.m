@@ -12,6 +12,7 @@
 #import "FBBootManager.h"
 #import "FBIDBCompanionServer.h"
 #import "FBIDBConfiguration.h"
+#import "FBIDBError.h"
 #import "FBIDBPortsConfiguration.h"
 #import "FBiOSTargetProvider.h"
 #import "FBiOSTargetStateChangeNotifier.h"
@@ -73,7 +74,7 @@ static FBFuture<NSNull *> *TargetOfflineFuture(id<FBiOSTarget> target, id<FBCont
   return [[FBFuture
     onQueue:target.workQueue resolveWhen:^ BOOL {
       if (target.state != FBiOSTargetStateBooted) {
-        [logger.error log:[NSString stringWithFormat:@"Target with udid %@ is no longer booted, it is in state %@", target.udid, FBiOSTargetStateStringFromState(target.state)]];
+        [logger.error logFormat:@"Target with udid %@ is no longer booted, it is in state %@", target.udid, FBiOSTargetStateStringFromState(target.state)];
         return YES;
       }
       return NO;
@@ -134,8 +135,9 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
     return [FBFuture futureWithResult:[[FBBootManager bootManagerForLogger:logger] boot:boot]];
   }
 
-  NSString *errorMessage = [NSString stringWithFormat:@"Please select the companion mode you want. \n--udid for attaching to a specific target. \n--boot to boot a specific target. or \n--notify to notify idb daemon of targets available \n\n%s", kUsageHelpMessage];
-  return [FBFuture futureWithError:[FBControlCoreError errorForDescription:errorMessage]];
+  return [[FBIDBError
+    describeFormat:@"Please select the companion mode you want. \n--udid for attaching to a specific target. \n--boot to boot a specific target. or \n--notify to notify idb daemon of targets available \n\n%s", kUsageHelpMessage]
+    failFuture];
 }
 
 static FBFuture<NSNumber *> *signalHandlerFuture(int signalCode, NSString *exitMessage, id<FBControlCoreLogger> logger)
