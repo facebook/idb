@@ -18,14 +18,6 @@
 #import "FBTask.h"
 #import "FBTaskBuilder.h"
 
-static BOOL deleteDirectory(NSURL *path)
-{
-  if (path == nil) {
-    return YES;
-  }
-  return [[NSFileManager defaultManager] removeItemAtURL:path error:nil];
-}
-
 @implementation FBApplicationBundle (Install)
 
 #pragma mark Public
@@ -56,6 +48,28 @@ static BOOL deleteDirectory(NSURL *path)
     onQueue:queue pend:^(NSURL *extractPath) {
       return [FBApplicationBundle findAppPathFromDirectory:extractPath];
     }];
+}
+
++ (FBFuture<FBApplicationBundle *> *)findAppPathFromDirectory:(NSURL *)directory
+{
+  NSDirectoryEnumerator *directoryEnumerator = [NSFileManager.defaultManager
+    enumeratorAtURL:directory
+    includingPropertiesForKeys:@[NSURLIsDirectoryKey]
+    options:0
+    errorHandler:nil];
+  NSSet *applicationURLs = [NSSet set];
+  for (NSURL *fileURL in directoryEnumerator) {
+    if ([FBApplicationBundle isApplicationAtPath:fileURL.path]) {
+      applicationURLs = [applicationURLs setByAddingObject:fileURL];
+      [directoryEnumerator skipDescendants];
+    }
+  }
+  if (applicationURLs.count != 1) {
+    return [[FBControlCoreError
+      describeFormat:@"Expected only one Application in IPA, found %lu", applicationURLs.count]
+      failFuture];
+  }
+  return [self extractedApplicationAtPath:[applicationURLs.allObjects.firstObject path] directory:directory];
 }
 
 + (NSString *)copyFrameworkToApplicationAtPath:(NSString *)appPath frameworkPath:(NSString *)frameworkPath
@@ -131,29 +145,6 @@ static BOOL deleteDirectory(NSURL *path)
         [logger logFormat:@"Failed to remove extracted directory %@ with error %@", temporaryPath, innerError];
       }
     }];
-}
-
-+ (FBFuture<FBApplicationBundle *> *)findAppPathFromDirectory:(NSURL *)directory
-{
-  NSDirectoryEnumerator *directoryEnumerator = [NSFileManager.defaultManager
-    enumeratorAtURL:directory
-    includingPropertiesForKeys:@[NSURLIsDirectoryKey]
-    options:0
-    errorHandler:nil];
-  NSSet *applicationURLs = [NSSet set];
-  for (NSURL *fileURL in directoryEnumerator) {
-    if ([FBApplicationBundle isApplicationAtPath:fileURL.path]) {
-      applicationURLs = [applicationURLs setByAddingObject:fileURL];
-      [directoryEnumerator skipDescendants];
-    }
-  }
-  if (applicationURLs.count != 1) {
-    deleteDirectory(directory);
-    return [[FBControlCoreError
-      describeFormat:@"Expected only one Application in IPA, found %lu", applicationURLs.count]
-      failFuture];
-  }
-  return [self extractedApplicationAtPath:[applicationURLs.allObjects.firstObject path] directory:directory];
 }
 
 + (FBFuture<FBApplicationBundle *> *)extractedApplicationAtPath:(NSString *)appPath directory:(NSURL *)directory

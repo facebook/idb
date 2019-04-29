@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param queue the queue to extract on.
  @param path the path of the .app or .ipa
  @param logger the (optional) logger to log to.
- @return a future context wrapping the extracted application.
+ @return a future context the application bundle.
  */
 + (FBFutureContext<FBApplicationBundle *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path logger:(nullable id<FBControlCoreLogger>)logger;
 
@@ -41,9 +41,18 @@ NS_ASSUME_NONNULL_BEGIN
  @param queue the queue to extract on.
  @param input the input to pipe from
  @param logger the (optional) logger to log to.
- @return a future context wrapping the extracted application.
+ @return a future context wrapping the application bundle.
  */
 + (FBFutureContext<FBApplicationBundle *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationFromInput:(FBProcessInput *)input logger:(nullable id<FBControlCoreLogger>)logger;
+
+/**
+ Attempts to find an app path from a directory.
+ This can be used to inspect an extracted archive and attempt to find a .app inside it.
+
+ @param directory the directory to search.
+ @return a future wrapping the application bundle.
+ */
++ (FBFuture<FBApplicationBundle *> *)findAppPathFromDirectory:(NSURL *)directory;
 
 /**
  Copy additional framework to Application path.
