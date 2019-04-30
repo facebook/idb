@@ -3458,8 +3458,8 @@
 				AAC8B2261CEC51120034A865 /* Sources */,
 				AAC8B2271CEC51120034A865 /* Frameworks */,
 				AAC8B2281CEC51120034A865 /* Headers */,
-				AAC8B2291CEC51120034A865 /* Resources */,
 				AA98ECAB1D0559D900916AED /* CopyFiles */,
+				AAC8B2291CEC51120034A865 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -3498,8 +3498,8 @@
 				1870857F0000000000000000 /* Sources */,
 				4F426D880000000000000000 /* Frameworks */,
 				E54FBF041BA8A63900ACDD15 /* Headers */,
-				AA017F571BD7786200F45E9D /* Resources */,
 				AA98ECA81D0559B200916AED /* CopyFiles */,
+				AA017F571BD7786200F45E9D /* Resources */,
 			);
 			buildRules = (
 			);
@@ -3519,8 +3519,8 @@
 				EE4F0D2B1C91B7DA00608E89 /* Sources */,
 				EE4F0D2C1C91B7DA00608E89 /* Frameworks */,
 				EE4F0D2D1C91B7DA00608E89 /* Headers */,
-				EE4F0D2E1C91B7DA00608E89 /* Resources */,
 				AA98ECAF1D0559F800916AED /* CopyFiles */,
+				EE4F0D2E1C91B7DA00608E89 /* Resources */,
 			);
 			buildRules = (
 			);
