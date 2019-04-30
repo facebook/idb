@@ -11,8 +11,8 @@
 const siteConfig = {
   title: 'idb', // Title for your website.
   tagline: 'iOS debug bridge',
-  url: 'https://facebook.github.io',
-  baseUrl: '/idb/',
+  url: 'https://fbidb.io',
+  baseUrl: '/',
   projectName: 'idb',
   organizationName: 'facebook',
   headerLinks: [

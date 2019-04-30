@@ -39,7 +39,7 @@ pip3.6 install fb-idb
 ```
 Note: The idb client requires python 3.6 or greater to be installed.
 
-Please refer to [fbidb.io](http://fbidb.io/) for detailed installation instructions and a guided tour of idb.
+Please refer to [fbidb.io](www.fbidb.io/) for detailed installation instructions and a guided tour of idb.
 
 Once installed, just run the list-targets command which will show you all the simulators installed on your system:
 
@@ -69,7 +69,7 @@ com.apple.mobilesafari | MobileSafari | system | x86_64 | Not running | Not Debu
 $ idb launch com.apple.mobilesafari
 ```
 
-Head over [here](fbidb.io) for more details on what you can do with idb and the full list of commands.
+Head over [here](www.fbidb.io) for more details on what you can do with idb and the full list of commands.
 
 ## Building from Source
 
@@ -91,7 +91,7 @@ This will open an xcode project that you can build and run.
 
 ## Documentation
 
-Find the full documentation for this project at [fbidb.io](http://fbidb.io/)
+Find the full documentation for this project at [fbidb.io](www.fbidb.io/)
 
 ## Contributing
 
