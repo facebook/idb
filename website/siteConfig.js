@@ -10,7 +10,7 @@
 
 const siteConfig = {
   title: 'idb', // Title for your website.
-  tagline: 'iOS debug bridge',
+  tagline: 'iOS Development Bridge',
   url: 'https://fbidb.io',
   baseUrl: '/',
   projectName: 'idb',
