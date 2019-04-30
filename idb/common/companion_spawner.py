@@ -45,7 +45,13 @@ class CompanionSpawner:
                 f"couldn't instantiate a companion for {target_udid} because\
                  the companion_path is not available"
             )
-        cmd: List[str] = [self.companion_path, "--udid", target_udid]
+        cmd: List[str] = [
+            self.companion_path,
+            "--udid",
+            target_udid,
+            "--grpc-port",
+            "0",
+        ]
 
         with open(self._log_file_path(target_udid), "a") as log_file:
             process = await asyncio.create_subprocess_exec(

@@ -30,6 +30,8 @@ class CompanionSpawnerTest(TestCase):
                 "idb_path",
                 "--udid",
                 "someUdid",
+                "--grpc-port",
+                "0",
                 stdout=mock.ANY,
                 stdin=mock.ANY,
                 stderr=mock.ANY,
