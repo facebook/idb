@@ -48,7 +48,7 @@ async def generate_bytes(
         yield response.payload.data
 
 
-async def cancel_wrapper(
+async def stop_wrapper(
     stream: Stream[_TSend, _TRecv], stop: asyncio.Event
 ) -> AsyncIterator[_TRecv]:
     stop_future = asyncio.ensure_future(stop.wait())
@@ -59,7 +59,15 @@ async def cancel_wrapper(
         )
         if stop_future in done:
             read.cancel()
-            await stream.cancel()
             return
         else:
             yield read.result()
+
+
+async def cancel_wrapper(
+    stream: Stream[_TSend, _TRecv], stop: asyncio.Event
+) -> AsyncIterator[_TRecv]:
+    async for event in stop_wrapper(stream, stop):
+        yield event
+    if stop.is_set():
+        await stream.cancel()

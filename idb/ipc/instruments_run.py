@@ -7,10 +7,10 @@ import os
 from logging import Logger
 from typing import AsyncIterator, Dict, List, Optional
 
-from idb.grpc.types import CompanionClient
-from idb.grpc.stream import Stream
 from idb.common.tar import drain_untar
 from idb.grpc.idb_pb2 import InstrumentsRunRequest, InstrumentsRunResponse
+from idb.grpc.stream import Stream, stop_wrapper
+from idb.grpc.types import CompanionClient
 from idb.utils.typing import none_throws
 
 
@@ -98,9 +98,10 @@ async def run_instruments(
         if started:
             started.set()
         client.logger.info("Instruments has started, waiting for stop")
-        await _drain_until_stop(
-            stream=stream, stop=asyncio.ensure_future(stop.wait()), logger=client.logger
-        )
+        async for response in stop_wrapper(stream=stream, stop=stop):
+            output = response.log_output
+            if len(output):
+                client.logger.info(output.decode())
         client.logger.info("Stopping instruments")
         await stream.send_message(
             InstrumentsRunRequest(
