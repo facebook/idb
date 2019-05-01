@@ -39,7 +39,7 @@ pip3.6 install fb-idb
 ```
 Note: The idb client requires python 3.6 or greater to be installed.
 
-Please refer to [fbidb.io](www.fbidb.io/) for detailed installation instructions and a guided tour of idb.
+Please refer to [fbidb.io](https://www.fbidb.io/) for detailed installation instructions and a guided tour of idb.
 
 Once installed, just run the list-targets command which will show you all the simulators installed on your system:
 
