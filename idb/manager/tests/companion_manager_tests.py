@@ -152,5 +152,5 @@ class CompanionManagerTest(TestCase):
         add_companion(companion_manager, TEST_COMPANION)
         async with companion_manager.create_companion_for_target_with_udid(
             None, None
-        ) as yielded_compainion:
-            self.assertEqual(yielded_compainion, TEST_COMPANION)
+        ) as yielded_companion:
+            self.assertEqual(yielded_companion, TEST_COMPANION)

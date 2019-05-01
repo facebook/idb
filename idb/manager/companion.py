@@ -124,12 +124,13 @@ class CompanionManager:
         self, target_udid: Optional[str], timeout: Optional[float] = None
     ) -> Optional[CompanionInfo]:
         self._logger.debug(f"fetching companion for {target_udid}")
-        if target_udid and target_udid in self._udid_companion_map:
-            return self._udid_companion_map[target_udid]
+        if target_udid:
+            if target_udid in self._udid_companion_map:
+                return self._udid_companion_map[target_udid]
+            self._logger.debug(f"no companion available for {target_udid}")
         elif self.has_default_companion():
             self._logger.info("using default companion")
             return self.get_default_companion()
-        self._logger.debug(f"no companion available for {target_udid}")
         return None
 
     @asynccontextmanager  # noqa T484
