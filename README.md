@@ -69,7 +69,7 @@ com.apple.mobilesafari | MobileSafari | system | x86_64 | Not running | Not Debu
 $ idb launch com.apple.mobilesafari
 ```
 
-Head over [here](www.fbidb.io) for more details on what you can do with idb and the full list of commands.
+Head over [here](https://www.fbidb.io) for more details on what you can do with idb and the full list of commands.
 
 ## Building from Source
 
@@ -91,7 +91,7 @@ This will open an xcode project that you can build and run.
 
 ## Documentation
 
-Find the full documentation for this project at [fbidb.io](www.fbidb.io/)
+Find the full documentation for this project at [fbidb.io](https://www.fbidb.io/)
 
 ## Contributing
 
