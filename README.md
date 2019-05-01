@@ -10,7 +10,7 @@ The “iOS Development Bridge” or `idb`, is a command line interface for autom
 
 `idb` is largely built from the `FBSimulatorControl` and `FBDeviceControl` Frameworks, contained within this repository. These Frameworks can be used independently of `idb`, but `idb` is likely to provide the simplest install and the most sensible defaults for most users.
 
-We will be giving a talk about `idb` at F8 on [Wednesday 1st May 2019](https://www.f8.com/schedule). You can watch the [live-stream of the event here](https://www.f8.com/watch), a recording will be released shortly afterwards.
+We've given a talk about `idb` at F8, so that you can learn a bit more about what `idb` is and why we built it. A [recording of the talk is available here](https://developers.facebook.com/videos/2019/reliable-code-at-scale/).
 
 ## Quick Start
 **Under Construction**
