@@ -24,6 +24,8 @@
 @property (nonatomic, strong, readonly) id<FBEventReporter> eventReporter;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *serverTerminated;
 
+@property (nonatomic, assign, readwrite) in_port_t selectedPort;
+
 @end
 
 using grpc::Server;
@@ -68,20 +70,23 @@ using namespace std;
   dispatch_queue_t queue = dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
   FBMutableFuture<NSNull *> *serverStarted = FBMutableFuture.future;
   dispatch_async(queue, ^(void){
+    [self.logger logFormat:@"Starting GRPC server on port %u", self.ports.grpcPort];
     string server_address("0.0.0.0:" + std::to_string(self.ports.grpcPort));
     FBIDBServiceHandler service = FBIDBServiceHandler(self.commandExecutor, self.target, self.eventReporter, self.ports);
+    int selectedPort = self.ports.grpcPort;
     unique_ptr<Server> server(ServerBuilder()
-      .AddListeningPort(server_address, grpc::InsecureServerCredentials())
+      .AddListeningPort(server_address, grpc::InsecureServerCredentials(), &selectedPort)
       .RegisterService(&service)
       .SetResourceQuota(ResourceQuota("idb_resource.quota").SetMaxThreads(10))
       .SetMaxReceiveMessageSize(16777216) // 16MB (16 * 1024 * 1024). Default is 4MB (4 * 1024 * 1024)
       .BuildAndStart()
     );
+    self.selectedPort = selectedPort;
 
     [serverStarted resolveWithResult:NSNull.null];
-    [self.logger.info logFormat:@"Started GRPC server on port %u", self.ports.grpcPort];
+    [self.logger.info logFormat:@"Started GRPC server on port %u", selectedPort];
     server->Wait();
-    [self.logger.info logFormat:@"GRPC server is no longer running on port %u", self.ports.grpcPort];
+    [self.logger.info logFormat:@"GRPC server is no longer running on port %u", selectedPort];
     [self.serverTerminated resolveWithResult:NSNull.null];
   });
   return serverStarted;
@@ -99,7 +104,7 @@ using namespace std;
 
 - (id)jsonSerializableRepresentation
 {
-  return @{@"grpc_port": @(self.ports.grpcPort)};
+  return @{@"grpc_port": @(self.selectedPort)};
 }
 
 @end

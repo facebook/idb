@@ -7,6 +7,8 @@
 
 #import "FBIDBPortsConfiguration.h"
 
+static NSString *const GrpcPortKey = @"-grpc-port";
+
 @implementation FBIDBPortsConfiguration
 
 #pragma mark Initializers
@@ -37,8 +39,7 @@
 
 - (in_port_t)grpcPort
 {
-  return [self.userDefaults integerForKey:@"-grpc-port"] ?: 10882;
+  return [self.userDefaults stringForKey:GrpcPortKey] ? [self.userDefaults integerForKey:GrpcPortKey] : 10882;
 }
-
 
 @end
