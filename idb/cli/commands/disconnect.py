@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser, Namespace, SUPPRESS
 from typing import Union
 
 from idb.cli.commands.base import ConnectingCommand
 from idb.client.client import IdbClient
 from idb.common.types import Address, IdbException
+from idb.common.udid import is_udid
 
 
 def get_destination(args: Namespace) -> Union[Address, str]:
-    target_udid = args.companion if "-" in args.companion else None
-    companion_host = args.companion if not target_udid else None
-    if target_udid:
-        return target_udid
-    elif args.port and companion_host:
-        return Address(host=companion_host, grpc_port=args.port)
+    if is_udid(args.companion):
+        return args.companion
+    elif args.port and args.grpc_port and args.companion:
+        return Address(host=args.companion, port=args.port, grpc_port=args.grpc_port)
+    elif args.port and args.companion:
+        return Address(host=args.companion, grpc_port=args.port)
     else:
         raise DisconnectCommandException(
             "provide either a UDID or the host and port of the companion"
@@ -47,6 +48,9 @@ class DisconnectCommand(ConnectingCommand):
             type=int,
             nargs="?",
             default=None,
+        )
+        parser.add_argument(
+            "grpc_port", help=SUPPRESS, type=int, nargs="?", default=None
         )
         super().add_parser_arguments(parser)
 

@@ -78,7 +78,7 @@ class TestParser(TestCase):
 
     async def test_connect_with_udid(self) -> None:
         self.client_mock().connect = AsyncMock()
-        udid = "AAAA-AAAA"
+        udid = "0B3311FA-234C-4665-950F-37544F690B61"
         await cli_main(cmd_input=["connect", udid])
         self.client_mock().connect.assert_called_once_with(
             destination=udid, metadata=ANY
@@ -95,7 +95,7 @@ class TestParser(TestCase):
 
     async def test_disconnect_with_udid(self) -> None:
         self.client_mock().disconnect = AsyncMock()
-        udid = "AAAA-AAAA"
+        udid = "0B3311FA-234C-4665-950F-37544F690B61"
         await cli_main(cmd_input=["disconnect", udid])
         self.client_mock().disconnect.assert_called_once_with(destination=udid)
 
