@@ -2,13 +2,13 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 
-from typing import Set, Dict  # noqa F401
+from typing import Set, Dict, Any
 
 from idb.grpc.types import CompanionClient
 from idb.grpc.idb_pb2 import ApproveRequest
 
 
-MAP = {  # type: Dict[str, ApproveRequest.Permission]
+MAP: Dict[str, Any] = {
     "photos": ApproveRequest.PHOTOS,
     "camera": ApproveRequest.CAMERA,
     "contacts": ApproveRequest.CONTACTS,
@@ -18,7 +18,6 @@ MAP = {  # type: Dict[str, ApproveRequest.Permission]
 async def client(
     client: CompanionClient, bundle_id: str, permissions: Set[str]
 ) -> None:
-    print(f"Sending {[MAP[permission] for permission in permissions]}")
     await client.stub.approve(
         ApproveRequest(
             bundle_id=bundle_id,
