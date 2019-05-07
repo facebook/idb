@@ -23,7 +23,7 @@ $ brew install carthage
 # Build fbsimctl and place it in the 'output' directory
 $ ./build.sh fbsimctl build output
 # Lists all Simulators & Devices
-$ ./output/fbsimctl list
+$ ./output/bin/fbsimctl list
 ```
 
 The `output` directory can be relocated on disk wherever you wish, the directory contains all the necessary dependencies in the directory. You can zip the package up and move it anywhere, or add the directory to your shell's `PATH`.
