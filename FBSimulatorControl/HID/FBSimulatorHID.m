@@ -142,7 +142,7 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
         causedBy:innerError]
         failFuture];
     }
-    return [FBFuture futureWithResult:@(result)];
+    return [FBFuture futureWithResult:@(registrationPort)];
   }];
 }
 
