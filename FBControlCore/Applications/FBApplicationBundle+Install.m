@@ -72,45 +72,6 @@
   return [self extractedApplicationAtPath:[applicationURLs.allObjects.firstObject path] directory:directory];
 }
 
-+ (NSString *)copyFrameworkToApplicationAtPath:(NSString *)appPath frameworkPath:(NSString *)frameworkPath
-{
-  if (![FBApplicationBundle isApplicationAtPath:appPath]) {
-    return nil;
-  }
-
-  NSError *error = nil;
-  NSFileManager *fileManager= [NSFileManager defaultManager];
-
-  NSString *frameworksDir = [appPath stringByAppendingPathComponent:@"Frameworks"];
-  BOOL isDirectory = NO;
-  if ([fileManager fileExistsAtPath:frameworksDir isDirectory:&isDirectory]) {
-    if (!isDirectory) {
-      return [[FBControlCoreError
-        describeFormat:@"%@ is not a directory", frameworksDir]
-        fail:nil];
-    }
-  } else {
-    if (![fileManager createDirectoryAtPath:frameworksDir withIntermediateDirectories:NO attributes:nil error:&error]) {
-      return [[FBControlCoreError
-        describeFormat:@"Create framework directory %@ failed", frameworksDir]
-        fail:&error];
-    }
-  }
-
-  NSString *toPath = [frameworksDir stringByAppendingPathComponent:[frameworkPath lastPathComponent]];
-  if ([[NSFileManager defaultManager] fileExistsAtPath:toPath]) {
-    return appPath;
-  }
-
-  if (![fileManager copyItemAtPath:frameworkPath toPath:toPath  error:&error]) {
-    return [[FBControlCoreError
-      describeFormat:@"Error copying framework %@ to app %@.", frameworkPath, appPath]
-      fail:&error];
-  }
-
-  return appPath;
-}
-
 + (BOOL)isApplicationAtPath:(NSString *)path
 {
   BOOL isDirectory = NO;

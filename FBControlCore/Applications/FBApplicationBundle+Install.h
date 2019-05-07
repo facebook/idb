@@ -58,15 +58,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (FBFuture<FBApplicationBundle *> *)findAppPathFromDirectory:(NSURL *)directory;
 
 /**
- Copy additional framework to Application path.
-
- @param appPath the path of the .app.
- @param frameworkPath the path of the framework.
- @return a future wrapping the application path.
- */
-+ (NSString *)copyFrameworkToApplicationAtPath:(NSString *)appPath frameworkPath:(NSString *)frameworkPath;
-
-/**
  Check if given path is an application path.
 
  @param path the path to check.
