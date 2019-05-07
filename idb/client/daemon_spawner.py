@@ -13,8 +13,8 @@ from typing import List
 import idb.common.networking as networking
 from idb.client.daemon_pid_saver import kill_saved_pids, save_daemon_pid
 from idb.common.constants import (
-    DEFAULT_DAEMON_HOST,
     DEFAULT_DAEMON_GRPC_PORT,
+    DEFAULT_DAEMON_HOST,
     IDB_LOGS_PATH,
 )
 from idb.utils.typing import none_throws

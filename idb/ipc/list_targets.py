@@ -3,11 +3,11 @@
 
 from typing import List
 
-from idb.manager.companion import CompanionClient
-from idb.grpc.ipc_loader import DaemonContext
 from idb.common.types import TargetDescription
 from idb.grpc.idb_pb2 import ListTargetsRequest, ListTargetsResponse
+from idb.grpc.ipc_loader import DaemonContext
 from idb.ipc.mapping.target import target_to_grpc, target_to_py
+from idb.manager.companion import CompanionClient
 
 
 async def client(client: CompanionClient) -> List[TargetDescription]:

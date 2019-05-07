@@ -2,8 +2,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 
-from idb.grpc.types import CompanionClient
 from idb.grpc.idb_pb2 import Location, SetLocationRequest
+from idb.grpc.types import CompanionClient
 
 
 async def client(client: CompanionClient, latitude: float, longitude: float) -> None:

@@ -7,7 +7,6 @@ from logging import Logger
 from typing import AsyncContextManager, Dict, List, Optional
 
 from grpclib.client import Channel
-from idb.grpc.types import CompanionClient
 from idb.common.companion_spawner import CompanionSpawner
 from idb.common.types import (
     Address,
@@ -17,6 +16,7 @@ from idb.common.types import (
 )
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import ConnectRequest
+from idb.grpc.types import CompanionClient
 from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws
 

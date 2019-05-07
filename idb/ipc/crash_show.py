@@ -2,8 +2,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 from idb.common.types import CrashLog
-from idb.grpc.types import CompanionClient
 from idb.grpc.idb_pb2 import CrashShowRequest
+from idb.grpc.types import CompanionClient
 from idb.ipc.mapping.crash import _to_crash_log
 
 

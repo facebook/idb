@@ -4,8 +4,8 @@
 from typing import Optional, Tuple
 
 from idb.common.types import AccessibilityInfo
-from idb.grpc.types import CompanionClient
 from idb.grpc.idb_pb2 import AccessibilityInfoRequest, Point
+from idb.grpc.types import CompanionClient
 
 
 async def client(

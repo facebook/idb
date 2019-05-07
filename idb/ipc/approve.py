@@ -2,10 +2,10 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 
-from typing import Set, Dict, Any
+from typing import Any, Dict, Set
 
-from idb.grpc.types import CompanionClient
 from idb.grpc.idb_pb2 import ApproveRequest
+from idb.grpc.types import CompanionClient
 
 
 MAP: Dict[str, Any] = {

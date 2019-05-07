@@ -3,9 +3,9 @@
 
 from typing import List
 
-from idb.grpc.types import CompanionClient
 from idb.common.types import FileEntryInfo
 from idb.grpc.idb_pb2 import LsRequest, LsResponse
+from idb.grpc.types import CompanionClient
 
 
 async def client(

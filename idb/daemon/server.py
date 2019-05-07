@@ -2,18 +2,18 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 import asyncio
+from argparse import Namespace
+from logging import Logger
+from typing import Dict, List
 
 import idb.common.plugin as plugin
-from typing import List, Dict
-from logging import Logger
+from idb.common.boot_manager import BootManager
+from idb.common.logging import log_call
 from idb.common.types import Server
-from idb.manager.companion import CompanionManager
 from idb.daemon.companion_tailer import CompanionTailer
 from idb.grpc.handler import GRPCHandler
 from idb.grpc.server import GRPCServer
-from idb.common.logging import log_call
-from argparse import Namespace
-from idb.common.boot_manager import BootManager
+from idb.manager.companion import CompanionManager
 
 
 class CompositeServer(Server):

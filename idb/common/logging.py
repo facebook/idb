@@ -7,13 +7,13 @@ import logging
 import time
 from concurrent.futures import CancelledError
 from types import TracebackType
-from typing import Any, AsyncContextManager, Optional, Tuple, Type, Collection
+from typing import Any, AsyncContextManager, Collection, Optional, Tuple, Type
 
 import idb.common.plugin as plugin
+from grpclib.const import Status
+from grpclib.exceptions import GRPCError
 from idb.common.types import LoggingMetadata
 from idb.utils.typing import none_throws
-from grpclib.exceptions import GRPCError
-from grpclib.const import Status
 
 
 logger: logging.Logger = logging.getLogger("idb")

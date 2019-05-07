@@ -3,14 +3,14 @@
 
 import logging
 import warnings
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 import idb.grpc.ipc_loader as ipc_loader
 from idb.common.boot_manager import BootManager
+from idb.grpc.idb_grpc import CompanionServiceBase
+from idb.grpc.ipc_loader import DaemonContext
 from idb.grpc.types import CompanionClient
 from idb.manager.companion import CompanionManager
-from idb.grpc.ipc_loader import DaemonContext
-from idb.grpc.idb_grpc import CompanionServiceBase
 
 
 # Don't let the abstractmetod machineary mess raise at runtime

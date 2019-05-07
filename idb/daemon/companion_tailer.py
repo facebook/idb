@@ -10,8 +10,8 @@ from asyncio.futures import Future
 from typing import Dict, Optional
 
 from idb.common.constants import IDB_LOGS_PATH
-from idb.manager.companion import CompanionManager
 from idb.common.types import Server, TargetDescription
+from idb.manager.companion import CompanionManager
 from idb.utils.typing import none_throws
 
 

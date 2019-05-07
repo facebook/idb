@@ -3,9 +3,9 @@
 
 from typing import List
 
-from idb.grpc.types import CompanionClient
 from idb.common.types import AppProcessState, InstalledAppInfo
 from idb.grpc.idb_pb2 import ListAppsRequest
+from idb.grpc.types import CompanionClient
 
 
 async def client(client: CompanionClient) -> List[InstalledAppInfo]:

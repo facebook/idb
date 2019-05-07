@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-from idb.grpc.types import CompanionClient
-from idb.grpc.idb_pb2 import PullRequest, PullResponse, Payload
-from idb.grpc.stream import generate_bytes
-
 from idb.common.tar import drain_untar
+from idb.grpc.idb_pb2 import Payload, PullRequest, PullResponse
+from idb.grpc.stream import generate_bytes
+from idb.grpc.types import CompanionClient
 
 
 async def client(

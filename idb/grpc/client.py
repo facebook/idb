@@ -8,10 +8,11 @@ from typing import Dict, Optional
 
 import idb.grpc.ipc_loader as ipc_loader
 from grpclib.client import Channel
-from idb.grpc.types import CompanionClient
-from idb.grpc.idb_grpc import CompanionServiceStub
-from idb.common.types import IdbClientBase
 from idb.client.daemon_spawner import DaemonSpawner
+from idb.common.types import IdbClientBase
+from idb.grpc.idb_grpc import CompanionServiceStub
+from idb.grpc.types import CompanionClient
+
 
 # this is to silence the channel not closed warning
 # https://github.com/vmagamedov/grpclib/issues/58

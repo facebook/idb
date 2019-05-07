@@ -3,8 +3,8 @@
 
 from typing import List
 
-from idb.grpc.types import CompanionClient
 from idb.grpc.idb_pb2 import MvRequest, MvResponse
+from idb.grpc.types import CompanionClient
 
 
 async def client(

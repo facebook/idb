@@ -2,15 +2,14 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 import asyncio
+from logging import Logger
 from typing import Dict, Optional
 
-from logging import Logger
-
-from idb.grpc.handler import GRPCHandler
-from idb.common.types import Server
-from idb.utils.typing import none_throws
-from idb.common.socket import ports_from_sockets
 from grpclib.server import Server as GRPC_Server
+from idb.common.socket import ports_from_sockets
+from idb.common.types import Server
+from idb.grpc.handler import GRPCHandler
+from idb.utils.typing import none_throws
 
 
 class GRPCServer(GRPC_Server, Server):

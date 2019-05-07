@@ -3,11 +3,11 @@
 
 from typing import List
 
-from idb.grpc.types import CompanionClient
-from idb.grpc.stream import Stream, drain_to_stream
 from idb.common.stream import stream_map
 from idb.common.tar import generate_tar
 from idb.grpc.idb_pb2 import AddMediaRequest, AddMediaResponse, Payload
+from idb.grpc.stream import Stream, drain_to_stream
+from idb.grpc.types import CompanionClient
 
 
 async def client(client: CompanionClient, file_paths: List[str]) -> None:

@@ -7,7 +7,7 @@ import logging
 import os
 from asyncio import StreamReader
 from asyncio.subprocess import Process
-from typing import List, Tuple
+from typing import List
 
 from idb.common.constants import IDB_LOGS_PATH
 

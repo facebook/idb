@@ -3,9 +3,9 @@
 
 from grpclib.const import Status
 from grpclib.exceptions import GRPCError
-from idb.grpc.types import CompanionClient
-from idb.grpc.ipc_loader import DaemonContext
 from idb.grpc.idb_pb2 import BootRequest, BootResponse
+from idb.grpc.ipc_loader import DaemonContext
+from idb.grpc.types import CompanionClient
 from idb.utils.typing import none_throws
 
 

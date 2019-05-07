@@ -3,8 +3,8 @@
 
 from typing import List
 
-from idb.grpc.types import CompanionClient
 from idb.grpc.idb_pb2 import RmRequest, RmResponse
+from idb.grpc.types import CompanionClient
 
 
 async def client(client: CompanionClient, bundle_id: str, paths: List[str]) -> None:

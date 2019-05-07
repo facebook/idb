@@ -5,11 +5,10 @@ import asyncio
 import importlib
 from argparse import ArgumentParser, Namespace
 from logging import Logger
-from typing import List, TYPE_CHECKING
 from types import ModuleType
+from typing import TYPE_CHECKING, List
 
-
-from idb.common.types import LoggingMetadata, IdbClientBase, Server
+from idb.common.types import IdbClientBase, LoggingMetadata, Server
 
 
 if TYPE_CHECKING:

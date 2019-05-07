@@ -5,9 +5,9 @@ import asyncio
 import sys
 from typing import Dict, List, Optional
 
-from idb.grpc.types import CompanionClient
-from idb.grpc.stream import Stream
 from idb.grpc.idb_pb2 import LaunchRequest, LaunchResponse
+from idb.grpc.stream import Stream
+from idb.grpc.types import CompanionClient
 
 
 Start = LaunchRequest.Start

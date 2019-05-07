@@ -3,14 +3,14 @@
 
 
 from io import StringIO
+from logging import Logger
 from typing import AsyncIterator, Dict, List, Optional, Set
 
-from idb.grpc.types import CompanionClient
 from idb.common.constants import TESTS_POLL_INTERVAL
+from idb.common.tar import untar
 from idb.common.types import TestActivity, TestRunFailureInfo, TestRunInfo
 from idb.grpc.idb_pb2 import XctestRunRequest, XctestRunResponse
-from idb.common.tar import untar
-from logging import Logger
+from idb.grpc.types import CompanionClient
 
 
 Mode = XctestRunRequest.Mode

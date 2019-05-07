@@ -3,8 +3,8 @@
 
 from typing import List
 
-from idb.manager.companion import CompanionClient
 from idb.grpc.idb_pb2 import XctestListTestsRequest
+from idb.manager.companion import CompanionClient
 
 
 async def list_test_bundle(client: CompanionClient, test_bundle_id: str) -> List[str]:

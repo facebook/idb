@@ -3,9 +3,9 @@
 
 from typing import List
 
-from idb.manager.companion import CompanionClient
 from idb.common.types import InstalledTestInfo
 from idb.grpc.idb_pb2 import XctestListBundlesRequest
+from idb.manager.companion import CompanionClient
 
 
 async def list_xctests(client: CompanionClient) -> List[InstalledTestInfo]:

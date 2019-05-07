@@ -2,11 +2,11 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 import asyncio
+from abc import ABCMeta
 from enum import Enum
 from io import StringIO
-from abc import ABCMeta
+from typing import AsyncIterator, Dict, List, NamedTuple, Optional, Set, Tuple, Union
 
-from typing import List, NamedTuple, Optional, Set, Union, Dict, Tuple, AsyncIterator
 
 LoggingMetadata = Dict[str, Optional[Union[str, List[str], int, float]]]
 

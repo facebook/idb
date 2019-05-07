@@ -5,10 +5,10 @@
 import asyncio
 from typing import AsyncIterator
 
-from idb.grpc.types import CompanionClient
-from idb.grpc.stream import Stream
 from idb.common.gzip import drain_gzip_decompress
 from idb.grpc.idb_pb2 import Payload, RecordRequest, RecordResponse
+from idb.grpc.stream import Stream
+from idb.grpc.types import CompanionClient
 from idb.utils.typing import none_throws
 
 

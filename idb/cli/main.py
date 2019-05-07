@@ -8,6 +8,7 @@ import logging
 import sys
 from typing import List, Optional, Set
 
+import idb.common.plugin as plugin
 from idb.cli.commands.accessibility import (
     AccessibilityInfoAllCommand,
     AccessibilityInfoAtPointCommand,
@@ -51,7 +52,6 @@ from idb.cli.commands.hid import (
     TapCommand,
     TextCommand,
 )
-import idb.common.plugin as plugin
 from idb.cli.commands.install import InstallAppCommand, InstallDylibCommand
 from idb.cli.commands.instruments import InstrumentsCommand
 from idb.cli.commands.kill import KillCommand
