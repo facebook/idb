@@ -44,12 +44,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) pid_t processIdentifier;
 
 /**
- The Launched Process Info.
- This may be nil in the event that the process was short lived and the process info could not be obtained.
- */
-@property (nonatomic, copy, readonly) FBProcessInfo *processInfo;
-
-/**
  The stderr of the launched process.
  */
 @property (nonatomic, strong, readonly) id<FBProcessFileOutput> stdOut;
