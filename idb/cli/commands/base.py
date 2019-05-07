@@ -35,7 +35,7 @@ class Command(metaclass=ABCMeta):
         raise Exception("subclass")
 
     @abstractmethod
-    async def run(self, args: Namespace, context: Namespace) -> None:
+    async def run(self, args: Namespace) -> None:
         raise Exception("subclass")
 
     @property
@@ -89,8 +89,8 @@ class CompositeCommand(Command, metaclass=ABCMeta):
         assert subcmd is not None, "subcommand %r doesn't exist" % subcmd_name
         return subcmd
 
-    async def run(self, args: Namespace, context: Namespace) -> None:
-        return await self._get_subcommand_for_args(args).run(args, context)
+    async def run(self, args: Namespace) -> None:
+        return await self._get_subcommand_for_args(args).run(args)
 
 
 class BaseCommand(Command, metaclass=ABCMeta):
@@ -114,7 +114,7 @@ class BaseCommand(Command, metaclass=ABCMeta):
             help="Create json structured output",
         )
 
-    async def run(self, args: Namespace, context: Optional[Namespace] = None) -> None:
+    async def run(self, args: Namespace) -> None:
         # Set the log level on the base logger
         logging.getLogger().setLevel(args.log_level)
         name = self.__class__.__name__

@@ -169,8 +169,5 @@ class RunXctestCommand(CompositeCommand):
     def name(self) -> str:
         return "run"
 
-    async def run(self, args: Namespace, context: Optional[Namespace] = None) -> None:
-        await super().run(args, context)  # pyre-ignore
-
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         await self.run(args)

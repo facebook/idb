@@ -313,7 +313,7 @@ class TestParser(TestCase):
             namespace.force = False
             namespace.timeout = XCTEST_TIMEOUT
             namespace.grpc = False
-            mock.assert_called_once_with(namespace, Namespace())
+            mock.assert_called_once_with(namespace)
 
     async def test_xctest_run_ui(self) -> None:
         mock = AsyncMock()
@@ -340,7 +340,7 @@ class TestParser(TestCase):
             namespace.force = False
             namespace.timeout = XCTEST_TIMEOUT
             namespace.grpc = False
-            mock.assert_called_once_with(namespace, Namespace())
+            mock.assert_called_once_with(namespace)
 
     async def test_xctest_run_logic(self) -> None:
         mock = AsyncMock()
@@ -356,7 +356,7 @@ class TestParser(TestCase):
             namespace.timeout = XCTEST_TIMEOUT
             namespace.force = False
             namespace.grpc = False
-            mock.assert_called_once_with(namespace, Namespace())
+            mock.assert_called_once_with(namespace)
 
     async def test_xctest_list(self) -> None:
         self.client_mock().list_xctests = AsyncMock(return_value=[])
