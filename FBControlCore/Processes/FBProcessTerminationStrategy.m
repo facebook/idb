@@ -55,22 +55,22 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
   // Terminate and return if successful.
   if ([application terminate]) {
     [self.logger.debug logFormat:@"Terminated %@ with Application Termination", process.shortDescription];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
   // If the App is already terminated, everything is ok.
   if (application.isTerminated) {
     [self.logger.debug logFormat:@"Application %@ is Terminated", process.shortDescription];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
   // I find your lack of termination disturbing.
   if ([application forceTerminate]) {
     [self.logger.debug logFormat:@"Terminated %@ with Forced Application Termination", process.shortDescription];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
   // If the App is already terminated, everything is ok.
   if (application.isTerminated) {
     [self.logger.debug logFormat:@"Application %@ terminated after Forced Application Termination", process.shortDescription];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
   return [[[[FBControlCoreError
     describeFormat:@"Could not terminate Application %@", application]
@@ -141,7 +141,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
   BOOL checkDeath = (self.configuration.options & FBProcessTerminationStrategyOptionsCheckDeathAfterSignal) == FBProcessTerminationStrategyOptionsCheckDeathAfterSignal;
   if (!checkDeath) {
     [self.logger.debug logFormat:@"Killed %d", processIdentifier];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
 
   // It may take some time for the process to have truly died, so wait for it to be so.
@@ -155,7 +155,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
     onQueue:self.workQueue chain:^FBFuture *(FBFuture *future) {
       if (future.result) {
         [self.logger.debug logFormat:@"Process %d terminated", processIdentifier];
-        return [FBFuture futureWithResult:NSNull.null];
+        return FBFuture.empty;
       }
       BOOL backoff = (self.configuration.options & FBProcessTerminationStrategyOptionsBackoffToSIGKILL) == FBProcessTerminationStrategyOptionsBackoffToSIGKILL;
       if (self.configuration.signo == SIGKILL || !backoff) {

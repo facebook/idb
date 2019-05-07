@@ -169,12 +169,12 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   return [FBFuture onQueue:self.writeQueue resolve:^{
     if ([self.framebuffer isConsumerAttached:self]) {
       [self.logger logFormat:@"Already attached %@ as a consumer", self];
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }
     // If we have a surface now, we can start rendering, so mount the surface.
     IOSurfaceRef surface = [self.framebuffer attachConsumer:self onQueue:self.writeQueue];
     [self didChangeIOSurface:surface];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }];
 }
 

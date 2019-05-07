@@ -119,7 +119,7 @@ static NSString *const KeyEvents = @"events";
 - (FBFuture<NSNull *> *)performEvents:(NSArray<FBSimulatorHIDEvent *> *)events onHid:(FBSimulatorHID *)hid
 {
   if (events.count == 0) {
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
   FBSimulatorHIDEvent *event = events.firstObject;
   NSArray<FBSimulatorHIDEvent *> *next = events.count == 1 ? @[] : [events subarrayWithRange:NSMakeRange(1, events.count - 1)];
@@ -545,7 +545,7 @@ static NSString *const KeyDuration = @"duration";
 
 - (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
 {
-  return [FBFuture futureWithDelay:self.duration future:[FBFuture futureWithResult:NSNull.null]];
+  return [FBFuture futureWithDelay:self.duration future:FBFuture.empty];
 }
 
 - (NSString *)description

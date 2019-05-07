@@ -82,7 +82,7 @@
         causedBy:error]
         failFuture];
      }
-     return [FBFuture futureWithResult:NSNull.null];
+     return FBFuture.empty;
    }];
 }
 

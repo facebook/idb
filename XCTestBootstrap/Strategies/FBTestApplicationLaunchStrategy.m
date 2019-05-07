@@ -54,7 +54,7 @@
     isApplicationInstalledWithBundleID:configuration.bundleID]
     onQueue:self.iosTarget.workQueue fmap:^FBFuture<NSNull *> *(NSNumber *isInstalled) {
       if (!isInstalled.boolValue) {
-        return [FBFuture futureWithResult:NSNull.null];
+        return FBFuture.empty;
       }
       return [self.iosTarget uninstallApplicationWithBundleID:configuration.bundleID];
     }];

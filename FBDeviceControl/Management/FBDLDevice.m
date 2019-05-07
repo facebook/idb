@@ -566,7 +566,7 @@ static NSString *ScreenshotReplyMessageType = @"ScreenShotReply";
 
   return [future onQueue:queue respondToCancellation:^{
     [notificationCenter removeObserver:observer];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }];
 }
 

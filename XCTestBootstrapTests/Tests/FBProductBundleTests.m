@@ -94,7 +94,7 @@
   NSBundle *bundle = [NSBundle bundleForClass:self.class];
 
   OCMockObject<FBCodesignProvider> *codesignerMock = [OCMockObject mockForProtocol:@protocol(FBCodesignProvider)];
-  [[[codesignerMock expect] andReturn:[FBFuture futureWithResult:NSNull.null]] signBundleAtPath:bundle.bundlePath];
+  [[[codesignerMock expect] andReturn:FBFuture.empty] signBundleAtPath:bundle.bundlePath];
 
   NSError *error;
   [[[[FBProductBundleBuilder builder]

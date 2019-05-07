@@ -678,7 +678,7 @@
     future]
     onQueue:self.queue respondToCancellation:^{
       [respondCalled fulfill];
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }];
 
   [[future
@@ -699,7 +699,7 @@
     future]
     onQueue:self.queue respondToCancellation:^{
       [respondCalled fulfill];
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }];
 
   FBFuture<NSNull *> *cancelledFirstTime = [future cancel];
@@ -717,11 +717,11 @@
     future]
     onQueue:self.queue respondToCancellation:^{
       [firstCancelCalled fulfill];
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }]
     onQueue:self.queue respondToCancellation:^{
       [secondCancelCalled fulfill];
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }]
     onQueue:self.queue notifyOfCompletion:^(FBFuture<NSNull *> *completionFuture) {
       XCTAssertEqual(completionFuture.state, FBFutureStateCancelled);
@@ -740,7 +740,7 @@
   [[baseFuture
     onQueue:self.queue respondToCancellation:^{
       XCTFail(@"Cancellation should not have been called");
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }]
     onQueue:self.queue notifyOfCompletion:^(FBFuture<NSNull *> *completionFuture) {
       XCTAssertEqual(completionFuture.state, FBFutureStateDone);

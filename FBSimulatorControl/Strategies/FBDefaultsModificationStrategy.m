@@ -100,7 +100,7 @@
   // Stop the service, if booted.
   FBFuture<NSNull *> *stopFuture = state == FBiOSTargetStateBooted
     ? [[simulator stopServiceWithName:serviceName] mapReplace:NSNull.null]
-    : [FBFuture futureWithResult:NSNull.null];
+    : FBFuture.empty;
 
   // The path to amend.
   NSString *fullPath = [self.simulator.dataDirectory stringByAppendingPathComponent:relativePath];
@@ -113,7 +113,7 @@
       // Re-start the Service if booted.
       return state == FBiOSTargetStateBooted
         ? [[simulator startServiceWithName:serviceName] mapReplace:NSNull.null]
-        : [FBFuture futureWithResult:NSNull.null];
+        : FBFuture.empty;
     }];
 }
 

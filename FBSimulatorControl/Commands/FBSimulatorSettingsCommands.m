@@ -45,7 +45,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
 - (FBFuture<NSNull *> *)overridingLocalization:(FBLocalizationOverride *)localizationOverride
 {
   if (!localizationOverride) {
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
 
   return [[FBLocalizationDefaultsModificationStrategy
@@ -116,7 +116,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
     }
   }
 
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 - (FBFuture<NSNull *> *)setupKeyboard

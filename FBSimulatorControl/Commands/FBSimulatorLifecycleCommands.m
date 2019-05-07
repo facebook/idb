@@ -99,7 +99,7 @@
     return [[FBSimulatorError describeFormat:@"Simulator application for %@ is not running", self.simulator.udid] failFuture];
   }
   if ([app activateWithOptions:NSApplicationActivateIgnoringOtherApps]) {
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   } {
     return [FBFuture futureWithError:[FBSimulatorError errorForDescription:@"Failed to focus"]];
   }
@@ -137,7 +137,7 @@
   FBSimulatorConnection *connection = self.connection;
   if (!connection) {
     [logger.debug logFormat:@"Simulator %@ does not have an active connection", simulator.shortDescription];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
 
   NSDate *date = NSDate.date;

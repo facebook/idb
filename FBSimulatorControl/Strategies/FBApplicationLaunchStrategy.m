@@ -83,7 +83,7 @@
           return [[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process];
         }
       }
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }]
     onQueue:simulator.workQueue fmap:^(id _) {
       return [appLaunch.output createOutputForTarget:simulator];

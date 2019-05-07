@@ -260,13 +260,13 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 {
   return [[self
     sendAndGetResponse:command]
-    onQueue:self.queue fmap:^(NSString *response) {
+    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *response) {
       if (![response isEqualToString:@"OK"]) {
         return [[FBDeviceControlError
           describeFormat:@"Response '%@' is not equal to 'OK'", response]
           failFuture];
       }
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }];
 }
 
@@ -284,7 +284,7 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 - (FBFuture<NSNull *> *)sendMultiUntilOK:(NSArray<NSString *> *)commands
 {
   if (commands.count == 0) {
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
   NSString *command = [commands firstObject];
   return [[self

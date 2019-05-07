@@ -120,7 +120,7 @@
   XCTAssertEqual(self.prepareCalled, 1u);
   XCTAssertEqual(self.teardownCalled, 0u);
 
-  [[FBFuture futureWithDelay:0.25 future:[FBFuture futureWithResult:NSNull.null]] await:nil];
+  [[FBFuture futureWithDelay:0.25 future:FBFuture.empty] await:nil];
 
   XCTAssertEqual(self.prepareCalled, 1u);
   XCTAssertEqual(self.teardownCalled, 1u);
@@ -342,7 +342,7 @@
 - (FBFuture<NSNull *> *)teardown:(id)context logger:(id<FBControlCoreLogger>)logger
 {
   self.teardownCalled++;
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 @end

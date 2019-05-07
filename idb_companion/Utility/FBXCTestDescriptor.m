@@ -128,7 +128,7 @@
   if (request.isLogicTest) {
     //Logic tests don't use an app to run
     //killing them is unnecessary for us.
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
 
   // Kill all Running Applications to get back to a clean slate.
@@ -248,7 +248,7 @@
 - (FBFuture<NSNull *> *)setupWithRequest:(id<FBXCTestRunRequest>)request target:(id<FBiOSTarget>)target
 {
   _targetAuxillaryDirectory = target.auxillaryDirectory;
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 - (FBFuture<FBTestApplicationsPair *> *)testAppPairForRequest:(id<FBXCTestRunRequest>)request target:(id<FBiOSTarget>)target

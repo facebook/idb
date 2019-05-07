@@ -442,7 +442,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSNull *> *)detach
 {
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 - (NSNull *)contents
@@ -508,7 +508,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
       self.pipe = nil;
 
       [pipe.fileHandleForWriting closeFile];
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }]
     nameFormat:@"Detach %@", self.description];
 }
@@ -540,7 +540,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 {
   // Don't remove the pipe behind the back of any reader.
   // The pipe will be deallocated when the stream has been fully drained.
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 #pragma mark Private
@@ -762,7 +762,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 - (FBFuture<NSNull *> *)detach
 {
   return [[FBFuture
-    onQueue:self.workQueue resolve:^{
+    onQueue:self.workQueue resolve:^ FBFuture<NSNull *> * {
       NSFileHandle *fileHandle = self.fileHandle;
       if (!fileHandle) {
         return [[FBControlCoreError
@@ -771,7 +771,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
       }
       self.fileHandle = nil;
       [fileHandle closeFile];
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }]
     nameFormat:@"Detach from %@", self.description];
 }
@@ -977,7 +977,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 - (FBFuture<NSNull *> *)detach
 {
   return [[FBFuture
-    onQueue:self.workQueue resolve:^{
+    onQueue:self.workQueue resolve:^ FBFuture<NSNull *> * {
       NSPipe *pipe = self.pipe;
       if (!pipe) {
         return [[FBControlCoreError
@@ -988,7 +988,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
       [pipe.fileHandleForWriting closeFile];
       self.pipe = nil;
 
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }]
     nameFormat:@"Detach %@", self.description];
 }

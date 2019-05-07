@@ -108,7 +108,7 @@ static NSTimeInterval BootVerificationStallInterval = 1.5; // 60s
       describeFormat:@"Not booted, status is %@", bootInfo]
       failFuture];
   }
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 - (void)updateBootInfo:(SimDeviceBootInfo *)bootInfo
@@ -203,7 +203,7 @@ static NSTimeInterval BootVerificationStallInterval = 1.5; // 60s
 {
   return [[self.simulator
     listServices]
-    onQueue:self.simulator.asyncQueue fmap:^(NSDictionary<NSString *, id> *services) {
+    onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSNull *> * (NSDictionary<NSString *, id> *services) {
       NSDictionary<id, NSString *> *processIdentifiers = [NSDictionary
         dictionaryWithObjects:self.requiredServiceNames
         forKeys:[services objectsForKeys:self.requiredServiceNames notFoundMarker:NSNull.null]];
@@ -212,7 +212,7 @@ static NSTimeInterval BootVerificationStallInterval = 1.5; // 60s
           describeFormat:@"Service %@ has not started", processIdentifiers[NSNull.null]]
           failFuture];
       }
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }];
 }
 

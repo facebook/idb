@@ -51,7 +51,7 @@
 
   NSError *error;
   if ([self uploadMedia:mediaFilePaths error:&error]) {
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   } else {
     return [FBFuture futureWithError:error];
   }

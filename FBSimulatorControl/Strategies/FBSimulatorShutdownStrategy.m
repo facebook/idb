@@ -62,7 +62,7 @@
   // Calling shutdown when already shutdown should be avoided (if detected).
   if (simulator.state == FBiOSTargetStateShutdown) {
     [logger.debug logFormat:@"Shutdown of %@ succeeded as it is already shutdown", simulator.udid];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
 
   // Xcode 7 has a 'Creating' step that we should wait on before confirming the simulator is ready.
@@ -121,7 +121,7 @@
     timeout:FBControlCoreGlobalConfiguration.regularTimeout waitingFor:@"Simulator to resolve state %@", FBiOSTargetStateStringShutdown]
     onQueue:simulator.workQueue chain:^FBFuture<NSNull *> *(FBFuture *future) {
       if (future.result) {
-        return [FBFuture futureWithResult:NSNull.null];
+        return FBFuture.empty;
       }
       return [FBSimulatorShutdownStrategy eraseSimulator:simulator];
     }];

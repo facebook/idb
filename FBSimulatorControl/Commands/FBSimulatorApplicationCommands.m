@@ -119,7 +119,7 @@
     onQueue:self.simulator.workQueue fmap:^(FBInstalledApplication *_) {
       return [[self.simulator killApplicationWithBundleID:bundleID] fallback:NSNull.null];
     }]
-    onQueue:self.simulator.workQueue fmap:^(id _) {
+    onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (id _) {
       NSError *error = nil;
       if (![self.simulator.device uninstallApplication:bundleID withOptions:nil error:&error]) {
         return [[[FBSimulatorError
@@ -127,7 +127,7 @@
           causedBy:error]
           failFuture];
       }
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }];
 }
 
@@ -270,7 +270,7 @@ static NSString *const KeyDataContainer = @"DataContainer";
 
       NSError *error = nil;
       if ([self.simulator.device installApplication:appURL withOptions:options error:&error]) {
-        return [FBFuture futureWithResult:NSNull.null];
+        return FBFuture.empty;
       }
 
       // Retry install if the first attempt failed with 'Failed to load Info.plist...'.
@@ -281,7 +281,7 @@ static NSString *const KeyDataContainer = @"DataContainer";
         [self.simulator.logger log:@"Retrying install due to reinstall bug"];
         error = nil;
         if ([self.simulator.device installApplication:appURL withOptions:options error:&error]) {
-          return [FBFuture futureWithResult:NSNull.null];
+          return FBFuture.empty;
         }
       }
 

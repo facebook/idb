@@ -108,7 +108,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch = @"launch_xctest";
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 - (FBiOSTargetFutureType)futureType

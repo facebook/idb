@@ -90,7 +90,7 @@ static NSTimeInterval const SampleTimeoutSubtraction = SampleDuration + 1;
 + (FBFuture<NSNumber *> *)onQueue:(dispatch_queue_t)queue timeoutFuture:(NSTimeInterval)timeout processIdentifier:(pid_t)processIdentifier
 {
   return [[FBFuture
-    futureWithDelay:timeout future:[FBFuture futureWithResult:NSNull.null]]
+    futureWithDelay:timeout future:FBFuture.empty]
     onQueue:queue fmap:^(id _) {
       return [FBXCTestProcess onQueue:queue timeoutErrorWithTimeout:timeout processIdentifier:processIdentifier];
     }];

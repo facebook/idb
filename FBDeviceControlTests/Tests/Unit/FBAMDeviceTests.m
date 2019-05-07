@@ -159,7 +159,7 @@ static NSMutableArray<NSString *> *sEvents;
 - (void)testConnectToDeviceWithSuccess
 {
   FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue() pop:^(FBAMDevice *result) {
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }];
 
   NSError *error = nil;
@@ -297,7 +297,7 @@ static NSMutableArray<NSString *> *sEvents;
   ];
   XCTAssertEqualObjects(expected, actual);
 
-  [[FBFuture futureWithDelay:0.5 future:[FBFuture futureWithResult:NSNull.null]] await:nil];
+  [[FBFuture futureWithDelay:0.5 future:FBFuture.empty] await:nil];
   actual = [FBAMDeviceTests.events copy];
   expected = @[
     @"connect",

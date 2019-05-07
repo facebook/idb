@@ -208,12 +208,12 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
 {
   return [[self
     interactWithBridge]
-    onQueue:self.workQueue fmap:^(NSProxy<SimulatorBridge> *bridge) {
+    onQueue:self.workQueue fmap:^ FBFuture<NSNull *> * (NSProxy<SimulatorBridge> *bridge) {
       if ([bridge respondsToSelector:@selector(enableAccessibility)]) {
         [bridge performSelector:@selector(enableAccessibility)];
       }
       if (![bridge respondsToSelector:@selector(accessibilityEnabled)]) {
-        return [FBFuture futureWithResult:NSNull.null];
+        return FBFuture.empty;
       }
       NSNumber *enabled = [bridge performSelector:@selector(accessibilityEnabled)];
       if (enabled.boolValue != YES) {
@@ -221,7 +221,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
           describeFormat:@"Could not enable accessibility for bridge '%@'", bridge]
           failFuture];
       }
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }];
 }
 
@@ -267,7 +267,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
     interactWithBridge]
     onQueue:self.workQueue fmap:^(id<SimulatorBridge>bridge) {
       [bridge setLocationWithLatitude:latitude andLongitude:longitude];
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }];
 }
 

@@ -123,7 +123,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
     start]
     // Wait a few seconds for instruments to startup. If it fails, kill it
     onQueue:target.asyncQueue fmap:^ FBFuture * (FBTask *task) {
-      FBFuture *timerFuture = [[FBFuture futureWithResult:NSNull.null] delay:InstrumentsStartupDelay];
+      FBFuture *timerFuture = [FBFuture.empty delay:InstrumentsStartupDelay];
       return [[[FBFuture
         race:@[instrumentsConsumer.hasStoppedRecording, timerFuture]]
         onQueue:target.asyncQueue handleError:^ FBFuture * (NSError *error) {

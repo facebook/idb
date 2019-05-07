@@ -257,7 +257,7 @@
   }
 
   // Create the Framebuffer (if required to do so).
-  FBFuture *framebufferFuture = [FBFuture futureWithResult:NSNull.null];
+  FBFuture *framebufferFuture = FBFuture.empty;
   if ([self.options shouldCreateFramebuffer:self.configuration]) {
     // If we require a Framebuffer, but don't have one provided, we should use the default one.
     FBFramebufferConfiguration *configuration = self.configuration.framebuffer;
@@ -363,7 +363,7 @@
       causedBy:error]
       failFuture];
   }
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 @end
@@ -475,7 +475,7 @@
 {
   // Return early if we shouldn't launch the Application
   if (![self.options shouldLaunchSimulatorApplication:self.configuration simulator:self.simulator]) {
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
 
   // Fetch the Boot Arguments & Environment
@@ -499,7 +499,7 @@
     onQueue:self.simulator.workQueue fmap:^(NSNull *_) {
       return [self.simulator resolveState:FBiOSTargetStateBooted];
     }]
-    onQueue:self.simulator.workQueue fmap:^(NSNull *_) {
+    onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (NSNull *_) {
       FBProcessInfo *containerApplication = [self.simulator.processFetcher simulatorApplicationProcessForSimDevice:self.simulator.device];
       if (!containerApplication) {
         return [[FBSimulatorError
@@ -507,7 +507,7 @@
           failFuture];
       }
       [self.simulator.eventSink containerApplicationDidLaunch:containerApplication];
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }];
 }
 
@@ -569,7 +569,7 @@
 {
   // Return early depending on Simulator state.
   if (self.simulator.state == FBiOSTargetStateBooted) {
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
   if (self.simulator.state != FBiOSTargetStateShutdown) {
     return [[[FBSimulatorError

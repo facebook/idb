@@ -245,9 +245,9 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 {
   return [[FBFuture
     futureWithFutures:@[
-      [self.stdInSlot attachToPipeOrFileHandle] ?: [FBFuture futureWithResult:NSNull.null],
-      [self.stdOutSlot attachToPipeOrFileHandle] ?: [FBFuture futureWithResult:NSNull.null],
-      [self.stdErrSlot attachToPipeOrFileHandle] ?: [FBFuture futureWithResult:NSNull.null],
+      [self.stdInSlot attachToPipeOrFileHandle] ?: (FBFuture<id> *) FBFuture.empty,
+      [self.stdOutSlot attachToPipeOrFileHandle] ?: (FBFuture<id> *) FBFuture.empty,
+      [self.stdErrSlot attachToPipeOrFileHandle] ?: (FBFuture<id> *) FBFuture.empty,
     ]]
     onQueue:self.queue map:^(NSArray<id> *pipes) {
       // Mount all the relevant std streams.
@@ -282,7 +282,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
     [self.errorFuture resolveWithError:[self errorForMessage:errorMessage]];
   }
   if (self.completedTeardownFuture.hasCompleted) {
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
 
   [self.startedTeardownFuture resolveWithResult:NSNull.null];
@@ -297,7 +297,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
     }]
     onQueue:self.queue chain:^(id _) {
       [self.completedTeardownFuture resolveWithResult:NSNull.null];
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }];
 }
 
@@ -313,9 +313,9 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 {
   return [[FBFuture
     futureWithFutures:@[
-      [self.stdOutSlot detach] ?: [FBFuture futureWithResult:NSNull.null],
-      [self.stdErrSlot detach] ?: [FBFuture futureWithResult:NSNull.null],
-      [self.stdInSlot detach] ?: [FBFuture futureWithResult:NSNull.null],
+      [self.stdOutSlot detach] ?: FBFuture.empty,
+      [self.stdErrSlot detach] ?: FBFuture.empty,
+      [self.stdInSlot detach] ?: FBFuture.empty,
     ]]
     mapReplace:NSNull.null];
 }

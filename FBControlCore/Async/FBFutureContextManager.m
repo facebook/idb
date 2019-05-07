@@ -213,7 +213,7 @@
 
   __weak typeof(self) weakSelf = self;
   self.teardownTimeout = [[FBFuture
-    futureWithDelay:timeout future:[FBFuture futureWithResult:NSNull.null]]
+    futureWithDelay:timeout future:FBFuture.empty]
     onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
       if (!future.result) {
         return;

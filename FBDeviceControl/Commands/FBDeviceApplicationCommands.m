@@ -83,7 +83,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
   // the app is installed first (FB_AMDeviceLookupApplications)
   return [[self.device.amDevice
     connectToDeviceWithPurpose:@"uninstall_%@", bundleID]
-    onQueue:self.device.workQueue pop:^(FBAMDevice *device) {
+    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (FBAMDevice *device) {
       [self.device.logger logFormat:@"Uninstalling Application %@", bundleID];
       int status = self.device.amDevice.calls.SecureUninstallApplication(
         0,
@@ -100,7 +100,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
           failFuture];
       }
       [self.device.logger logFormat:@"Uninstalled Application %@", bundleID];
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }];
 }
 
@@ -187,22 +187,23 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 
 - (FBFuture<NSNull *> *)transferAppURL:(NSURL *)appURL options:(NSDictionary *)options
 {
-  return [FBFuture onQueue:self.device.workQueue resolve:^ {
-    int status = self.device.amDevice.calls.SecureTransferPath(
-      0,
-      self.device.amDevice.amDevice,
-      (__bridge CFURLRef _Nonnull)(appURL),
-      (__bridge CFDictionaryRef _Nonnull)(options),
-      (AMDeviceProgressCallback) TransferCallback,
-      (__bridge void *) (self.device.amDevice)
-    );
-    if (status != 0) {
-      NSString *internalMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
-      return [[FBDeviceControlError
-        describeFormat:@"Failed to transfer '%@' with error (%@)", appURL, internalMessage]
-        failFuture];
-    }
-    return [FBFuture futureWithResult:NSNull.null];
+  return [FBFuture
+    onQueue:self.device.workQueue resolve:^ FBFuture<NSNull *> * {
+      int status = self.device.amDevice.calls.SecureTransferPath(
+        0,
+        self.device.amDevice.amDevice,
+        (__bridge CFURLRef _Nonnull)(appURL),
+        (__bridge CFDictionaryRef _Nonnull)(options),
+        (AMDeviceProgressCallback) TransferCallback,
+        (__bridge void *) (self.device.amDevice)
+      );
+      if (status != 0) {
+        NSString *internalMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to transfer '%@' with error (%@)", appURL, internalMessage]
+          failFuture];
+      }
+      return FBFuture.empty;
   }];
 }
 
@@ -210,7 +211,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 {
   return [[self.device.amDevice
     connectToDeviceWithPurpose:@"install"]
-    onQueue:self.device.workQueue pop:^(FBAMDevice *device) {
+    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (FBAMDevice *device) {
       [self.device.logger logFormat:@"Installing Application %@", appURL];
       int status = self.device.amDevice.calls.SecureInstallApplication(
         0,
@@ -227,7 +228,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
           failFuture];
       }
       [self.device.logger logFormat:@"Installed Application %@", appURL];
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }];
 }
 

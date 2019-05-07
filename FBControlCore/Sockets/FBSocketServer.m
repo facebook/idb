@@ -63,7 +63,7 @@
   self.acceptSource = nil;
   [self.socketHandle closeFile];
   self.socketHandle = nil;
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 - (FBFutureContext<NSNull *> *)startListeningContext
@@ -137,7 +137,7 @@
   getsockname(socketHandle, (struct sockaddr*)(&address), &addresslen);
   _port = ntohs(address.sin6_port);
 
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 - (BOOL)accept:(int)socketHandle clientQueue:(dispatch_queue_t)clientQueue error:(NSError **)error

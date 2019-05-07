@@ -104,8 +104,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
   // Tear down the other resources.
   return [[FBFuture
     futureWithFutures:@[
-      [self.stdOut detach] ?: [FBFuture futureWithResult:NSNull.null],
-      [self.stdErr detach] ?: [FBFuture futureWithResult:NSNull.null],
+      [self.stdOut detach] ?: FBFuture.empty,
+      [self.stdErr detach] ?: FBFuture.empty,
     ]]
     mapReplace:NSNull.null];
 }

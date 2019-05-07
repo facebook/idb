@@ -122,6 +122,14 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  */
 + (FBFuture<T> *)race:(NSArray<FBFuture<T> *> *)futures NS_SWIFT_NAME(init(race:));
 
+/**
+ A resolved future, with an insignificant value.
+ This can be used to communicate "success", where an errored future would indicate failure.
+
+ @return a new Future that's resolved with an NSNull value.
+ */
++ (FBFuture<NSNull *> *)empty;
+
 #pragma mark Cancellation
 
 /**

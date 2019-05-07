@@ -429,7 +429,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
 
   [logger log:@"Disconnected from AMDevice"];
 
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 - (NSString *)contextName

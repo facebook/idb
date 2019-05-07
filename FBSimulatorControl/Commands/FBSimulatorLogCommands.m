@@ -112,14 +112,14 @@
       // Re-Map from Launch to Exit
       return [operation processStatus];
     }]
-    onQueue:self.simulator.asyncQueue fmap:^(NSNumber *statLoc){
+    onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSNull *> * (NSNumber *statLoc){
       // Check the exit code.
       int value = statLoc.intValue;
       int exitCode = WEXITSTATUS(value);
       if (exitCode != 0) {
         return [FBFuture futureWithError:[FBSimulatorError errorForFormat:@"log exited with code %d, arguments %@", exitCode, arguments]];
       }
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
   }];
 }
 

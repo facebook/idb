@@ -276,7 +276,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   });
   return [delayed onQueue:FBFuture.internalQueue respondToCancellation:^{
     [future cancel];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }];
 }
 
@@ -458,6 +458,12 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return compositeFuture;
 }
 
++ (FBFuture<NSNull *> *)empty
+{
+  FBMutableFuture *future = [FBMutableFuture futureWithName:@"Empty"];
+  return [future resolveWithResult:NSNull.null];
+}
+
 - (instancetype)init
 {
   return [self initWithName:nil];
@@ -500,7 +506,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
       return self.resolvedCancellation;
     }
     if (self.state != FBFutureStateRunning) {
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }
   }
   NSArray<FBFuture_Cancellation *> *cancelResponders = [self resolveAsCancelled];
@@ -591,7 +597,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   __weak typeof(self) weakSelf = self;
   return [chained onQueue:FBFuture.internalQueue respondToCancellation:^{
     [weakSelf cancel];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }];
 }
 
@@ -623,7 +629,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   __weak typeof(self) weakSelf = self;
   return [chained onQueue:FBFuture.internalQueue respondToCancellation:^{
     [weakSelf cancel];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }];
 }
 
@@ -866,7 +872,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 {
   NSString *name = [NSString stringWithFormat:@"Cancellation of %@", originalName];
   if (cancelResponders.count == 0) {
-    return [[FBFuture futureWithResult:NSNull.null] named:name];
+    return [FBFuture.empty named:name];
   } else if (cancelResponders.count == 1) {
     FBFuture_Cancellation *cancelResponder = cancelResponders[0];
     return [[FBFuture onQueue:cancelResponder.queue resolve:cancelResponder.handler] named:name];

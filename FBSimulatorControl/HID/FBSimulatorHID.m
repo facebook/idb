@@ -289,10 +289,10 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
       failFuture];
   }
   if (self.replyPort != 0) {
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
 
-  return [FBFuture onQueue:self.queue resolve:^{
+  return [FBFuture onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
     // Attempt to perform the handshake.
     mach_msg_size_t size = 0x400;
     mach_msg_timeout_t timeout = ((unsigned int) FBControlCoreGlobalConfiguration.regularTimeout) * 1000;
@@ -312,7 +312,7 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
     // We have the registration port, so we can now set it.
     self.replyPort = handshakeHeader->msgh_remote_port;
     free(handshakeHeader);
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }];
 }
 
@@ -359,7 +359,7 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
       describeFormat:@"The mach_msg_send failed with error %d", result]
       failFuture];
   }
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 @end
@@ -408,7 +408,7 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
       describe:@"Cannot Connect, HID client has already been disposed of"]
       failFuture];
   }
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 - (void)disconnect

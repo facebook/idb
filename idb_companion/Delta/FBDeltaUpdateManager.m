@@ -110,7 +110,7 @@
     return;
   }
   self.timer = [[FBFuture
-    futureWithDelay:self.expiration.unsignedIntegerValue future:[FBFuture futureWithResult:NSNull.null]]
+    futureWithDelay:self.expiration.unsignedIntegerValue future:FBFuture.empty]
     onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
       if (!future.result) {
         return;

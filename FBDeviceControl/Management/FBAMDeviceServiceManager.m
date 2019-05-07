@@ -68,7 +68,7 @@
     return [FBFuture futureWithError:error];
   } else {
     [logger logFormat:@"Closed House Arrest service for '%@'", self.bundleID];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
 }
 

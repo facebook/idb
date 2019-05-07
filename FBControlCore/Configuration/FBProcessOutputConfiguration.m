@@ -155,7 +155,7 @@ static NSString *StdErrKey = @"stderr";
 {
   NSString *output = [self performSelector:selector];
   if (![output isKindOfClass:NSString.class]) {
-    return [FBFuture futureWithResult:NSNull.null];
+    return (FBFuture<id> *) FBFuture.empty;
   }
 
   SEL diagnosticSelector = NSSelectorFromString([NSString stringWithFormat:@"%@:", NSStringFromSelector(selector)]);

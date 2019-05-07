@@ -86,7 +86,7 @@
   if (![device terminateApplicationWithID:bundleID error:&error]) {
     return [FBFuture futureWithError:error];
   }
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 @end

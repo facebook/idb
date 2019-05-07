@@ -111,7 +111,7 @@
   XCTAssertTrue([task.stdOut conformsToProtocol:@protocol(FBDataConsumer)]);
   XCTAssertGreaterThan(task.processIdentifier, 1);
 
-  [[[FBFuture futureWithResult:NSNull.null] delay:2] await:nil];
+  [[FBFuture.empty delay:2] await:nil];
   XCTAssertEqual(lines.count, 8u);
   XCTAssertEqualObjects(lines[0], @"0   CoreFoundation                      0x0138ba14 __exceptionPreprocess + 180");
 }

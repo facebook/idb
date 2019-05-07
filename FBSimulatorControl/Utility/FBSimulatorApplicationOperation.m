@@ -79,7 +79,7 @@
       [[FBProcessTerminationStrategy
         strategyWithProcessFetcher:simulator.processFetcher.processFetcher workQueue:simulator.workQueue logger:simulator.logger]
         killProcessIdentifier:processIdentifier];
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }];
 }
 

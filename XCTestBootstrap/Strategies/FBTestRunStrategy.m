@@ -111,13 +111,13 @@
   return [[[[[runner
     connectAndStart]
     onQueue:self.target.workQueue fmap:^(FBTestManager *manager) {
-      FBFuture *startedVideoRecording = self.configuration.videoRecordingPath != nil
-        ? [self.target startRecordingToFile:self.configuration.videoRecordingPath]
-        : [FBFuture futureWithResult:NSNull.null];
+      FBFuture<id> *startedVideoRecording = self.configuration.videoRecordingPath != nil
+        ? (FBFuture<id> *) [self.target startRecordingToFile:self.configuration.videoRecordingPath]
+        : (FBFuture<id> *) FBFuture.empty;
 
-      FBFuture *startedTailLog = self.configuration.osLogPath != nil
-        ? [self _startTailLogToFile:self.configuration.osLogPath]
-        : [FBFuture futureWithResult:NSNull.null];
+      FBFuture<id> *startedTailLog = self.configuration.osLogPath != nil
+        ? (FBFuture<id> *) [self _startTailLogToFile:self.configuration.osLogPath]
+        : (FBFuture<id> *) FBFuture.empty;
 
       return [FBFuture futureWithFutures:@[[FBFuture futureWithResult:manager], startedVideoRecording, startedTailLog]];
     }]
@@ -131,13 +131,13 @@
     onQueue:self.target.workQueue fmap:^(FBTestManagerResult *result) {
       FBFuture *stoppedVideoRecording = self.configuration.videoRecordingPath != nil
         ? [self.target stopRecording]
-        : [FBFuture futureWithResult:NSNull.null];
+        : FBFuture.empty;
       FBFuture *stopTailLog = tailLogContinuation != nil
         ? [tailLogContinuation.completed cancel]
-        : [FBFuture futureWithResult:NSNull.null];
+        : FBFuture.empty;
       return [FBFuture futureWithFutures:@[[FBFuture futureWithResult:result], stoppedVideoRecording, stopTailLog]];
     }]
-    onQueue:self.target.workQueue fmap:^(NSArray<id> *results) {
+    onQueue:self.target.workQueue fmap:^ FBFuture<NSNull *> * (NSArray<id> *results) {
       FBTestManagerResult *result = results[0];
       if (self.configuration.videoRecordingPath != nil) {
         [self.reporter didRecordVideoAtPath:self.configuration.videoRecordingPath];
@@ -160,7 +160,7 @@
         [self.logger logFormat:@"Failed to execute test bundle %@", result.error];
         return [FBFuture futureWithError:result.error];
       }
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }];
 }
 
@@ -200,7 +200,7 @@
   id<FBDataConsumer> logFileWriter = [FBFileWriter syncWriterForFilePath:logFilePath error:&error];
   if (logFileWriter == nil) {
     [self.logger logFormat:@"Could not create log file at %@: %@", self.configuration.osLogPath, error];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
 
   return [self.target tailLog:@[@"--style", @"syslog", @"--level", @"debug"] consumer:logFileWriter];

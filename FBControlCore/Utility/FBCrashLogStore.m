@@ -183,7 +183,7 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
 
   return [future onQueue:queue respondToCancellation:^{
     [notificationCenter removeObserver:observer];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }];
 }
 

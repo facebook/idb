@@ -167,7 +167,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 + (FBFuture<NSNull *> *)fromQueue:(dispatch_queue_t)queue waitForDebuggerToBeAttached:(BOOL)waitFor forProcessIdentifier:(pid_t)processIdentifier reporter:(id<FBLogicXCTestReporter>)reporter
 {
   if (!waitFor) {
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
 
   // Report from the current queue, but wait in a special queue.
@@ -180,7 +180,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
       waitid(P_PID, (id_t)processIdentifier, NULL, WCONTINUED);
       [reporter debuggerAttached];
 
-      return [FBFuture futureWithResult:NSNull.null];
+      return FBFuture.empty;
     }]
     onQueue:queue map:^(id _) {
       [reporter debuggerAttached];

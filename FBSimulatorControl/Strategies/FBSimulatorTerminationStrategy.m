@@ -143,7 +143,7 @@
       }];
   } else {
     [self.logger.debug logFormat:@"Simulator %@ does not have a running Simulator.app Process", simulator.shortDescription];
-    simulatorAppProcessKillFuture = [FBFuture futureWithResult:NSNull.null];
+    simulatorAppProcessKillFuture = FBFuture.empty;
   }
 
   // Shutdown will:

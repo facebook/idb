@@ -222,7 +222,7 @@
   // Grab the task and see if it died already.
   if (recordingTask.completed.hasCompleted) {
     [self.logger logFormat:@"Stop Recording requested, but it's completed with output '%@' '%@', perhaps the video is damaged", recordingTask.stdOut, recordingTask.stdErr];
-    return [FBFuture futureWithResult:NSNull.null];
+    return FBFuture.empty;
   }
 
   // Stop for real be interrupting the task itself.

@@ -170,7 +170,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
     }
   });
   self.state = FBFileReaderStateReading;
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 - (FBFuture<NSNumber *> *)stopReadingNow

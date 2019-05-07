@@ -141,7 +141,7 @@
   self.bridge = nil;
   [self.simulator.eventSink connectionDidDisconnect:self expected:YES];
 
-  return [FBFuture futureWithResult:NSNull.null];
+  return FBFuture.empty;
 }
 
 @end
