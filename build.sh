@@ -228,13 +228,13 @@ Supported Commands:
   framework test
     Build then Test the FBSimulatorControl.framework.
   fbsimctl build <output-directory>
-    Build the fbsimctl exectutable. Optionally copies the executable and it's dependencies to <output-directory>
+    Build the fbsimctl exectutable. Optionally copies the executable and its dependencies to <output-directory>
   fbsimctl test
     Build the FBSimulatorControlKit.framework and runs the tests.
   fbsimctl e2e-test
     Build the fbsimctl executable and run fbsimctl's e2e tests against it. Requires python3.
   fbxctest build <output-directory>
-    Build the xctest exectutable. Optionally copies the executable and it's dependencies to <output-directory>
+    Build the xctest exectutable. Optionally copies the executable and its dependencies to <output-directory>
   fbxctest test
     Builds the FBXCTestKit.framework and runs the tests.
 EOF

@@ -156,7 +156,7 @@ Supported Commands:
   framework build <output-directory>
     Build the frameworks. Optionally copies the Framework to <output-directory>
   idb_companion build <output-directory>
-    Build the idb companion exectutable. Optionally copies the executable and it's dependencies to <output-directory>
+    Build the idb companion exectutable. Optionally copies the executable and its dependencies to <output-directory>
 EOF
 }
 
