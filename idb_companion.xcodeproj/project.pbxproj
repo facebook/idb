@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AAAD2B9B22819C0F0043D2DE /* FBBootManager.m in Sources */ = {isa = PBXBuildFile; fileRef = AAAD2B9922819C0F0043D2DE /* FBBootManager.m */; };
+		AAAD2B9C22819C0F0043D2DE /* FBBootManager.h in Headers */ = {isa = PBXBuildFile; fileRef = AAAD2B9A22819C0F0043D2DE /* FBBootManager.h */; };
 		D72CB1C52277837000265160 /* FBDataDownloadInput.h in Headers */ = {isa = PBXBuildFile; fileRef = D72CB1C32277837000265160 /* FBDataDownloadInput.h */; };
 		D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */ = {isa = PBXBuildFile; fileRef = D72CB1C42277837000265160 /* FBDataDownloadInput.m */; };
 		D7D6DF892265DE4E00B01F14 /* FBControlCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */; };
@@ -28,7 +30,6 @@
 		D7D6DFFD2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFB12265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m */; };
 		D7D6DFFE2265F0DF00B01F14 /* FBDeltaUpdateManager.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFB22265F0DF00B01F14 /* FBDeltaUpdateManager.h */; };
 		D7D6DFFF2265F0DF00B01F14 /* FBDeltaUpdateManager+Log.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFB32265F0DF00B01F14 /* FBDeltaUpdateManager+Log.h */; };
-		D7D6E0002265F0DF00B01F14 /* FBBootManager.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFB42265F0DF00B01F14 /* FBBootManager.h */; };
 		D7D6E0052265F0DF00B01F14 /* FBIDBError.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */; };
 		D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFBC2265F0DF00B01F14 /* FBIDBError.m */; };
 		D7D6E0072265F0DF00B01F14 /* FBIDBPortsConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */; };
@@ -43,7 +44,6 @@
 		D7D6E0122265F0DF00B01F14 /* FBIDBCommandExecutor.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFCB2265F0DF00B01F14 /* FBIDBCommandExecutor.h */; };
 		D7D6E0132265F0DF00B01F14 /* FBIDBCompanionServer.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFCC2265F0DF00B01F14 /* FBIDBCompanionServer.m */; };
 		D7D6E0142265F0DF00B01F14 /* FBIDBServiceHandler.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFCD2265F0DF00B01F14 /* FBIDBServiceHandler.h */; };
-		D7D6E0272265F0DF00B01F14 /* FBBootManager.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFE22265F0DF00B01F14 /* FBBootManager.m */; };
 		D7D6E0282265F0DF00B01F14 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFE32265F0DF00B01F14 /* main.m */; };
 		D7D6E0292265F0DF00B01F14 /* FBTemporaryDirectory.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFE82265F0DF00B01F14 /* FBTemporaryDirectory.m */; };
 		D7D6E02A2265F0DF00B01F14 /* FBXCTestDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFE92265F0DF00B01F14 /* FBXCTestDescriptor.m */; };
@@ -91,6 +91,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AAAD2B9922819C0F0043D2DE /* FBBootManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBBootManager.m; sourceTree = "<group>"; };
+		AAAD2B9A22819C0F0043D2DE /* FBBootManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBBootManager.h; sourceTree = "<group>"; };
 		D72CB1C32277837000265160 /* FBDataDownloadInput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDataDownloadInput.h; sourceTree = "<group>"; };
 		D72CB1C42277837000265160 /* FBDataDownloadInput.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDataDownloadInput.m; sourceTree = "<group>"; };
 		D7D6DF122265DDEC00B01F14 /* idb_companion */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = idb_companion; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -113,7 +115,6 @@
 		D7D6DFB12265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBDeltaUpdateManager+Instruments.m"; sourceTree = "<group>"; };
 		D7D6DFB22265F0DF00B01F14 /* FBDeltaUpdateManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeltaUpdateManager.h; sourceTree = "<group>"; };
 		D7D6DFB32265F0DF00B01F14 /* FBDeltaUpdateManager+Log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBDeltaUpdateManager+Log.h"; sourceTree = "<group>"; };
-		D7D6DFB42265F0DF00B01F14 /* FBBootManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBBootManager.h; sourceTree = "<group>"; };
 		D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBError.h; sourceTree = "<group>"; };
 		D7D6DFBC2265F0DF00B01F14 /* FBIDBError.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBError.m; sourceTree = "<group>"; };
 		D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBPortsConfiguration.h; sourceTree = "<group>"; };
@@ -128,7 +129,6 @@
 		D7D6DFCB2265F0DF00B01F14 /* FBIDBCommandExecutor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBCommandExecutor.h; sourceTree = "<group>"; };
 		D7D6DFCC2265F0DF00B01F14 /* FBIDBCompanionServer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBCompanionServer.m; sourceTree = "<group>"; };
 		D7D6DFCD2265F0DF00B01F14 /* FBIDBServiceHandler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBServiceHandler.h; sourceTree = "<group>"; };
-		D7D6DFE22265F0DF00B01F14 /* FBBootManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBBootManager.m; sourceTree = "<group>"; };
 		D7D6DFE32265F0DF00B01F14 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		D7D6DFE62265F0DF00B01F14 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D7D6DFE82265F0DF00B01F14 /* FBTemporaryDirectory.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTemporaryDirectory.m; sourceTree = "<group>"; };
@@ -222,8 +222,6 @@
 				D7D6DFB52265F0DF00B01F14 /* Reporting */,
 				D7D6DFC52265F0DF00B01F14 /* Server */,
 				D7D6DFE72265F0DF00B01F14 /* Utility */,
-				D7D6DFB42265F0DF00B01F14 /* FBBootManager.h */,
-				D7D6DFE22265F0DF00B01F14 /* FBBootManager.m */,
 				D7D6DFE62265F0DF00B01F14 /* Info.plist */,
 				D7D6DFE32265F0DF00B01F14 /* main.m */,
 			);
@@ -285,6 +283,8 @@
 		D7D6DFE72265F0DF00B01F14 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
+				AAAD2B9A22819C0F0043D2DE /* FBBootManager.h */,
+				AAAD2B9922819C0F0043D2DE /* FBBootManager.m */,
 				D7D6DFEA2265F0DF00B01F14 /* FBBundleStorageManager.h */,
 				D7D6DFEF2265F0DF00B01F14 /* FBBundleStorageManager.m */,
 				D72CB1C32277837000265160 /* FBDataDownloadInput.h */,
@@ -319,12 +319,12 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D7D6E0002265F0DF00B01F14 /* FBBootManager.h in Headers */,
 				D7D6E02B2265F0DF00B01F14 /* FBBundleStorageManager.h in Headers */,
 				D7D6DFF82265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h in Headers */,
 				D7D6DFFF2265F0DF00B01F14 /* FBDeltaUpdateManager+Log.h in Headers */,
 				D7D6DFFC2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h in Headers */,
 				D7D6DFF72265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h in Headers */,
+				AAAD2B9C22819C0F0043D2DE /* FBBootManager.h in Headers */,
 				D7D6DFFE2265F0DF00B01F14 /* FBDeltaUpdateManager.h in Headers */,
 				D7D6E0102265F0DF00B01F14 /* FBGRPCServer.h in Headers */,
 				D72CB1C52277837000265160 /* FBDataDownloadInput.h in Headers */,
@@ -443,7 +443,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D7D6E0272265F0DF00B01F14 /* FBBootManager.m in Sources */,
 				D7D6E0302265F0DF00B01F14 /* FBBundleStorageManager.m in Sources */,
 				D7D6DFFD2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m in Sources */,
 				D7D6DFF92265F0DF00B01F14 /* FBDeltaUpdateManager+Log.m in Sources */,
@@ -455,6 +454,7 @@
 				D7D6E0132265F0DF00B01F14 /* FBIDBCompanionServer.m in Sources */,
 				D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */,
 				D7D6E0082265F0DF00B01F14 /* FBIDBConfiguration.m in Sources */,
+				AAAD2B9B22819C0F0043D2DE /* FBBootManager.m in Sources */,
 				D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */,
 				D7D6E00C2265F0DF00B01F14 /* FBIDBPortsConfiguration.m in Sources */,
 				D7D6E00D2265F0DF00B01F14 /* FBIDBServiceHandler.mm in Sources */,
