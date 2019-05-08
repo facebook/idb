@@ -5,7 +5,7 @@ import os
 import urllib.parse
 from logging import Logger
 from pathlib import Path
-from typing import AsyncIterator
+from typing import IO, AsyncIterator, Union
 
 import aiofiles
 import idb.common.gzip as gzip
@@ -19,7 +19,9 @@ from idb.grpc.types import CompanionClient
 from idb.utils.typing import none_throws
 
 
+CHUNK_SIZE = 1024
 Destination = InstallRequest.Destination
+Bundle = Union[str, IO[bytes]]
 
 
 async def _generate_ipa_chunks(
@@ -28,11 +30,11 @@ async def _generate_ipa_chunks(
     logger.debug(f"Generating Chunks for .ipa {ipa_path}")
     async with aiofiles.open(ipa_path, "r+b") as file:
         while True:
-            chunk = await file.read(1024)
-            yield InstallRequest(payload=Payload(data=chunk))
+            chunk = await file.read(CHUNK_SIZE)
             if not chunk:
                 logger.debug(f"Finished generating .ipa chunks for {ipa_path}")
                 return
+            yield InstallRequest(payload=Payload(data=chunk))
 
 
 async def _generate_app_chunks(
@@ -63,6 +65,19 @@ async def _generate_dylib_chunks(
     logger.debug(f"Finished generating chunks {path}")
 
 
+async def _generate_io_chunks(
+    io: IO[bytes], logger: Logger
+) -> AsyncIterator[InstallRequest]:
+    logger.debug("Generating io chunks")
+    while True:
+        chunk = io.read(CHUNK_SIZE)
+        if not chunk:
+            logger.debug(f"Finished generating byte chunks")
+            return
+        yield InstallRequest(payload=Payload(data=chunk))
+    logger.debug("Finished generating io chunks")
+
+
 def _generate_binary_chunks(
     path: str, destination: Destination, logger: Logger
 ) -> AsyncIterator[InstallRequest]:
@@ -82,36 +97,48 @@ def _generate_binary_chunks(
 
 
 async def _install_to_destination(
-    client: CompanionClient, path: str, destination: Destination
+    client: CompanionClient, bundle: Bundle, destination: Destination
 ) -> str:
-    url = urllib.parse.urlparse(path)
-    if url.scheme:
-        payload = Payload(url=path)
+    if isinstance(bundle, str):
+        # Treat as a file path / url
+        url = urllib.parse.urlparse(bundle)
+        if url.scheme:
+            payload = Payload(url=bundle)
+        else:
+            payload = Payload(file_path=str(Path(bundle).resolve(strict=True)))
+        async with client.stub.install.open() as stream:
+            await stream.send_message(InstallRequest(destination=destination))
+            await stream.send_message(InstallRequest(payload=payload))
+            await stream.end()
+            response = await stream.recv_message()
+            return response.bundle_id
     else:
-        payload = Payload(file_path=str(Path(path).resolve(strict=True)))
-    async with client.stub.install.open() as stream:
-        await stream.send_message(InstallRequest(destination=destination))
-        await stream.send_message(InstallRequest(payload=payload))
-        await stream.end()
-        response = await stream.recv_message()
-        return response.bundle_id
+        # Treat as a binary object (tar of .app or .ipa)
+        async with client.stub.install.open() as stream:
+            await stream.send_message(InstallRequest(destination=destination))
+            response = await drain_to_stream(
+                stream=stream,
+                generator=_generate_io_chunks(io=bundle, logger=client.logger),
+                logger=client.logger,
+            )
+            return response.bundle_id
 
 
-async def install(client: CompanionClient, bundle_path: str) -> str:
+async def install(client: CompanionClient, bundle: Bundle) -> str:
     return await _install_to_destination(
-        client=client, path=bundle_path, destination=InstallRequest.APP
+        client=client, bundle=bundle, destination=InstallRequest.APP
     )
 
 
-async def install_xctest(client: CompanionClient, bundle_path: str) -> str:
+async def install_xctest(client: CompanionClient, bundle: Bundle) -> str:
     return await _install_to_destination(
-        client=client, path=bundle_path, destination=InstallRequest.XCTEST
+        client=client, bundle=bundle, destination=InstallRequest.XCTEST
     )
 
 
-async def install_dylib(client: CompanionClient, dylib_path: str) -> str:
+async def install_dylib(client: CompanionClient, dylib: Bundle) -> str:
     return await _install_to_destination(
-        client=client, path=dylib_path, destination=InstallRequest.DYLIB
+        client=client, bundle=dylib, destination=InstallRequest.DYLIB
     )
 
 
@@ -122,6 +149,7 @@ async def daemon(
     payload_message = none_throws(await stream.recv_message())
     file_path = payload_message.payload.file_path
     url = payload_message.payload.url
+    data = payload_message.payload.data
     destination = destination_message.destination
     async with client.stub.install.open() as forward_stream:
         await forward_stream.send_message(destination_message)
@@ -129,7 +157,7 @@ async def daemon(
             await forward_stream.send_message(payload_message)
             await forward_stream.end()
             response = none_throws(await forward_stream.recv_message())
-        else:
+        elif file_path:
             response = await drain_to_stream(
                 stream=forward_stream,
                 generator=_generate_binary_chunks(
@@ -137,6 +165,13 @@ async def daemon(
                 ),
                 logger=client.logger,
             )
+        elif data:
+            await forward_stream.send_message(payload_message)
+            response = await drain_to_stream(
+                stream=forward_stream, generator=stream, logger=client.logger
+            )
+        else:
+            raise Exception(f"Unrecognised payload message")
         await stream.send_message(response, end=True)
 
 
