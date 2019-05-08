@@ -3,6 +3,7 @@
 
 from typing import Dict, Optional
 
+import idb.common.plugin as plugin
 from idb.common.types import ConnectionDestination, ConnectResponse
 from idb.grpc.idb_pb2 import (
     ConnectRequest as GrpcConnectRequest,
@@ -21,6 +22,9 @@ async def client(
     metadata: Optional[Dict[str, str]] = None,
 ) -> ConnectResponse:
     client.logger.debug(f"Connecting to {destination} with meta {metadata}")
+    metadata = plugin.append_companion_metadata(
+        logger=client.logger, metadata=metadata or {}
+    )
     response = await client.stub.connect(
         GrpcConnectRequest(
             destination=destination_to_grpc(destination), metadata=metadata

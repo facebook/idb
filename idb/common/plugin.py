@@ -6,7 +6,7 @@ import importlib
 from argparse import ArgumentParser, Namespace
 from logging import Logger
 from types import ModuleType
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Dict, List
 
 from idb.common.types import IdbClientBase, LoggingMetadata, Server
 
@@ -115,6 +115,17 @@ def resolve_metadata(logger: Logger) -> LoggingMetadata:
             continue
         resolved = plugin_resolver(logger=logger)
         metadata.update(resolved)
+    return metadata
+
+
+def append_companion_metadata(
+    logger: Logger, metadata: Dict[str, str]
+) -> Dict[str, str]:
+    for plugin in PLUGINS:
+        method = getattr(plugin, "append_companion_metadata", None)
+        if not method:
+            continue
+        metadata = method(logger=logger, metadata=metadata)
     return metadata
 
 
