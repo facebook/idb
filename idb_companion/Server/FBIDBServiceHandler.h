@@ -24,8 +24,11 @@ private:
   FBFuture<NSString *> *install_future(const idb::InstallRequest_Destination destination, grpc::ServerReader<idb::InstallRequest> *reader);
 
 public:
+  // Constructors
   FBIDBServiceHandler(FBIDBCommandExecutor *commandExecutor, id<FBiOSTarget> target, id<FBEventReporter> eventReporter, FBIDBPortsConfiguration *portsConfig);
   FBIDBServiceHandler(const FBIDBServiceHandler &c);
+
+  // Handled Methods
   Status accessibility_info(ServerContext *context, const idb::AccessibilityInfoRequest *request, idb::AccessibilityInfoResponse *response);
   Status add_media(ServerContext *context,grpc::ServerReader<idb::AddMediaRequest> *reader, idb::AddMediaResponse *response);
   Status approve(ServerContext *context, const idb::ApproveRequest *request, idb::ApproveResponse *response);

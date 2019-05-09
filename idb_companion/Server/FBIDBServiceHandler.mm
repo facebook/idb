@@ -436,7 +436,7 @@ static idb::TargetDescription description_of_target(id<FBiOSTarget> target, FBID
   return description;
 }
 
-#pragma mark Public Methods
+#pragma mark Constructors
 
 FBIDBServiceHandler::FBIDBServiceHandler(FBIDBCommandExecutor *commandExecutor, id<FBiOSTarget> target, id<FBEventReporter> eventReporter, FBIDBPortsConfiguration *portsConfig)
 {
@@ -454,8 +454,10 @@ FBIDBServiceHandler::FBIDBServiceHandler(const FBIDBServiceHandler &c)
   _portsConfig = c._portsConfig;
 }
 
+#pragma mark Handled Methods
+
 FBFuture<NSString *> *FBIDBServiceHandler::install_future(const idb::InstallRequest_Destination destination, grpc::ServerReader<idb::InstallRequest> *reader)
-{
+{@autoreleasepool{
   idb::InstallRequest request;
   reader->Read(&request);
   idb::Payload payload;
@@ -510,10 +512,10 @@ FBFuture<NSString *> *FBIDBServiceHandler::install_future(const idb::InstallRequ
     default:
       return nil;
   }
-}
+}}
 
 Status FBIDBServiceHandler::list_apps(ServerContext *context, const idb::ListAppsRequest *request, idb::ListAppsResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   NSSet<NSString *> *persistedBundleIDs = _commandExecutor.bundleStorageManager.application.persistedApplicationBundleIDs;
   NSDictionary<FBInstalledApplication *, id> *apps = [[_commandExecutor list_apps] block:&error];
@@ -537,20 +539,20 @@ Status FBIDBServiceHandler::list_apps(ServerContext *context, const idb::ListApp
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::open_url(ServerContext *context, const idb::OpenUrlRequest *request, idb::OpenUrlRequest *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   [[_commandExecutor openUrl:nsstring_from_c_string(request->url())] block:&error];
   if (error) {
     return Status(grpc::StatusCode::INTERNAL, [error.localizedDescription UTF8String]);
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::install(ServerContext *context, grpc::ServerReader<idb::InstallRequest> *reader, idb::InstallResponse *response)
-{
+{@autoreleasepool{
   idb::InstallRequest request;
   reader->Read(&request);
   idb::InstallRequest_Destination destination = request.destination();
@@ -565,10 +567,10 @@ Status FBIDBServiceHandler::install(ServerContext *context, grpc::ServerReader<i
   }
   response->set_bundle_id(bundleID.UTF8String ?: "");
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::screenshot(ServerContext *context, const idb::ScreenshotRequest *request, idb::ScreenshotResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   NSData *screenshot = [[_commandExecutor takeScreenshot:FBScreenshotFormatPNG] block:&error];
   if (error) {
@@ -576,20 +578,20 @@ Status FBIDBServiceHandler::screenshot(ServerContext *context, const idb::Screen
   }
   response->set_image_data(screenshot.bytes, screenshot.length);
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::focus(ServerContext *context, const idb::FocusRequest *request, idb::FocusResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   [[_commandExecutor focus] block:&error];
   if (error) {
     return Status(grpc::StatusCode::INTERNAL, [error.localizedDescription UTF8String]);
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::accessibility_info(ServerContext *context, const idb::AccessibilityInfoRequest *request, idb::AccessibilityInfoResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   NSValue *point = nil;
   if (request->has_point()) {
@@ -609,30 +611,30 @@ Status FBIDBServiceHandler::accessibility_info(ServerContext *context, const idb
   NSString *json = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
   response->set_json([json UTF8String]);
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::uninstall(ServerContext *context, const idb::UninstallRequest *request, idb::UninstallResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   [[_commandExecutor uninstallApplication:nsstring_from_c_string(request->bundle_id())] block:&error];
   if (error) {
     return Status(grpc::StatusCode::INTERNAL, [error.localizedDescription UTF8String]);
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::mkdir(grpc::ServerContext *context, const idb::MkdirRequest *request, idb::MkdirResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   [[_commandExecutor createDirectory:nsstring_from_c_string(request->path()) inContainerOfApplication:nsstring_from_c_string(request->bundle_id())] block:&error];
   if (error) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::mv(grpc::ServerContext *context, const idb::MvRequest *request, idb::MvResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   NSMutableArray<NSString *> *originalPaths = NSMutableArray.array;
   for (int j = 0; j < request->src_paths_size(); j++) {
@@ -643,10 +645,10 @@ Status FBIDBServiceHandler::mv(grpc::ServerContext *context, const idb::MvReques
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::rm(grpc::ServerContext *context, const idb::RmRequest *request, idb::RmResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   NSMutableArray<NSString *> *paths = NSMutableArray.array;
   for (int j = 0; j < request->paths_size(); j++) {
@@ -657,10 +659,10 @@ Status FBIDBServiceHandler::rm(grpc::ServerContext *context, const idb::RmReques
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::ls(grpc::ServerContext *context, const idb::LsRequest *request, idb::LsResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   NSArray<NSString *> *paths = [[_commandExecutor listPath:nsstring_from_c_string(request->path()) inContainerOfApplication:nsstring_from_c_string(request->bundle_id())] block:&error];
   if (error) {
@@ -673,10 +675,10 @@ Status FBIDBServiceHandler::ls(grpc::ServerContext *context, const idb::LsReques
   }
 
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::approve(ServerContext *context, const idb::ApproveRequest *request, idb::ApproveResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   NSDictionary<NSNumber *, FBSettingsApprovalService> *mapping = @{
     @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_PHOTOS): FBSettingsApprovalServicePhotos,
@@ -693,28 +695,28 @@ Status FBIDBServiceHandler::approve(ServerContext *context, const idb::ApproveRe
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::clear_keychain(ServerContext *context, const idb::ClearKeychainRequest *request, idb::ClearKeychainResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   [[_commandExecutor clearKeychain] block:&error];
   if (error) {
     return Status(grpc::StatusCode::INTERNAL, [error.localizedDescription UTF8String]);
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::terminate(ServerContext *context, const idb::TerminateRequest *request, idb::TerminateResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   [[_commandExecutor killApplication:nsstring_from_c_string(request->bundle_id())] block:&error];
 
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::hid(grpc::ServerContext *context, grpc::ServerReader<idb::HIDEvent> *reader, idb::HIDResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   idb::HIDEvent grpcEvent;
   while (reader->Read(&grpcEvent)) {
@@ -728,20 +730,20 @@ Status FBIDBServiceHandler::hid(grpc::ServerContext *context, grpc::ServerReader
     }
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::set_location(ServerContext *context, const idb::SetLocationRequest *request, idb::SetLocationResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   [[_commandExecutor setLocation:request->location().latitude() longitude:request->location().longitude()] block:&error];
   if (error) {
     return Status(grpc::StatusCode::INTERNAL, [error.localizedDescription UTF8String]);
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::contacts_update(ServerContext *context, const idb::ContactsUpdateRequest *request, idb::ContactsUpdateResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   std::string data = request->payload().data();
   [[_commandExecutor updateContacts:[NSData dataWithBytes:data.c_str() length:data.length()]] block:&error];
@@ -749,10 +751,10 @@ Status FBIDBServiceHandler::contacts_update(ServerContext *context, const idb::C
     return Status(grpc::StatusCode::INTERNAL, [error.localizedDescription UTF8String]);
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerReaderWriter<idb::LaunchResponse, idb::LaunchRequest> *stream)
-{
+{@autoreleasepool{
   idb::LaunchRequest request;
   stream->Read(&request);
   idb::LaunchRequest_Start start = request.start();
@@ -797,10 +799,10 @@ Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerRea
   stream->Read(&request);
   [[process.exitCode cancel] block:nil];
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::crash_list(ServerContext *context, const idb::CrashLogQuery *request, idb::CrashLogResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   NSPredicate *predicate = nspredicate_from_crash_log_query(request);
   NSArray<FBCrashLogInfo *> *crashes = [[_commandExecutor crash_list:predicate] block:&error];
@@ -809,10 +811,10 @@ Status FBIDBServiceHandler::crash_list(ServerContext *context, const idb::CrashL
   }
   fill_crash_log_response(response, crashes);
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::crash_show(ServerContext *context, const idb::CrashShowRequest *request, idb::CrashShowResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   NSString *name = nsstring_from_c_string(request->name());
   if (!name){
@@ -827,10 +829,10 @@ Status FBIDBServiceHandler::crash_show(ServerContext *context, const idb::CrashS
   fill_crash_log_info(info, crash.info);
   response->set_contents(crash.contents.UTF8String);
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::crash_delete(ServerContext *context, const idb::CrashLogQuery *request, idb::CrashLogResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   NSPredicate *predicate = nspredicate_from_crash_log_query(request);
   NSArray<FBCrashLogInfo *> *crashes = [[_commandExecutor crash_delete:predicate] block:&error];
@@ -839,10 +841,10 @@ Status FBIDBServiceHandler::crash_delete(ServerContext *context, const idb::Cras
   }
   fill_crash_log_response(response, crashes);
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::xctest_list_bundles(ServerContext *context, const idb::XctestListBundlesRequest *request, idb::XctestListBundlesResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   NSSet<id<FBXCTestDescriptor>> *descriptors = [[_commandExecutor listXctests] block:&error];
   if (!descriptors) {
@@ -857,10 +859,10 @@ Status FBIDBServiceHandler::xctest_list_bundles(ServerContext *context, const id
     }
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::xctest_list_tests(ServerContext *context, const idb::XctestListTestsRequest *request, idb::XctestListTestsResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   NSArray<NSString *> *tests = [[_commandExecutor listTestsInBundle:nsstring_from_c_string(request->bundle_name())] block:&error];
   if (!tests) {
@@ -870,10 +872,10 @@ Status FBIDBServiceHandler::xctest_list_tests(ServerContext *context, const idb:
     response->add_names(test.UTF8String);
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::XctestRunRequest *request, grpc::ServerWriter<idb::XctestRunResponse> *response)
-{
+{@autoreleasepool{
   id<FBXCTestRunRequest> xctestRunRequest = convert_xctest_request(request);
   if (xctestRunRequest == nil) {
     return Status(grpc::StatusCode::INTERNAL, "Failed to convert xctest request");
@@ -896,10 +898,10 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
     usleep(1000 * 200);
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::log(ServerContext *context, const idb::LogRequest *request, grpc::ServerWriter<idb::LogResponse> *response)
-{
+{@autoreleasepool{
   NSArray<NSString *> *arguments = extract_string_array(request->arguments());
   FBMutableFuture<NSNull *> *clientClosed = FBMutableFuture.future;
   id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
@@ -920,10 +922,10 @@ Status FBIDBServiceHandler::log(ServerContext *context, const idb::LogRequest *r
   FBFuture<NSNull *> *completed = [FBFuture race:@[clientClosed, operation.completed]];
   [completed block:nil];
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::record(grpc::ServerContext *context, grpc::ServerReaderWriter<idb::RecordResponse, idb::RecordRequest> *stream)
-{
+{@autoreleasepool{
   idb::RecordRequest initial;
   stream->Read(&initial);
   NSError *error = nil;
@@ -943,10 +945,10 @@ Status FBIDBServiceHandler::record(grpc::ServerContext *context, grpc::ServerRea
   } else {
     return drain_writer([FBArchiveOperations createGzipForPath:filePath queue:dispatch_queue_create("com.facebook.idb.record", DISPATCH_QUEUE_SERIAL) logger:_target.logger], stream);
   }
-}
+}}
 
 Status FBIDBServiceHandler::push(grpc::ServerContext *context, grpc::ServerReader<idb::PushRequest> *reader, idb::PushResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   idb::PushRequest request;
   reader->Read(&request);
@@ -962,10 +964,10 @@ Status FBIDBServiceHandler::push(grpc::ServerContext *context, grpc::ServerReade
     return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::pull(ServerContext *context, const ::idb::PullRequest *request, grpc::ServerWriter<::idb::PullResponse> *stream)
-{
+{@autoreleasepool{
   NSString *path = nsstring_from_c_string(request->src_path());
   NSError *error = nil;
   if (request->dst_path().length() > 0) {
@@ -987,9 +989,10 @@ Status FBIDBServiceHandler::pull(ServerContext *context, const ::idb::PullReques
                          logger:_target.logger],
                         stream);
   }
-}
+}}
+
 Status FBIDBServiceHandler::describe(ServerContext *context, const idb::TargetDescriptionRequest *request, idb::TargetDescriptionResponse *response)
-{
+{@autoreleasepool{
   FBiOSTargetScreenInfo *screenInfo = _target.screenInfo;
   idb::TargetDescription *description = response->mutable_target_description();
   if (screenInfo) {
@@ -1006,10 +1009,10 @@ Status FBIDBServiceHandler::describe(ServerContext *context, const idb::TargetDe
   description->set_os_version(_target.osVersion.name.UTF8String);
   description->set_architecture(_target.architecture.UTF8String);
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::add_media(grpc::ServerContext *context, grpc::ServerReader<idb::AddMediaRequest> *reader, idb::AddMediaResponse *response)
-{
+{@autoreleasepool{
   NSError *error = nil;
   [[filepaths_from_reader(_commandExecutor.temporaryDirectory, reader, true, _target.logger) onQueue:_target.asyncQueue pop:^FBFuture<NSNull *> *(NSArray<NSURL *> *files) {
     return [_commandExecutor addMedia:files];
@@ -1018,10 +1021,10 @@ Status FBIDBServiceHandler::add_media(grpc::ServerContext *context, grpc::Server
     return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
   }
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::ServerReaderWriter<idb::InstrumentsRunResponse, idb::InstrumentsRunRequest> *stream)
-{
+{@autoreleasepool{
   idb::InstrumentsRunRequest request;
   stream->Read(&request);
   FBInstrumentsConfiguration *configuration = translate_instruments_configuration(request.start());
@@ -1066,10 +1069,10 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
   } else {
     return drain_writer([FBArchiveOperations createGzippedTarForPath:processed.path queue:writeQueue logger:_target.logger], stream);
   }
-}
+}}
 
 Status FBIDBServiceHandler::debugserver(grpc::ServerContext *context, grpc::ServerReaderWriter<idb::DebugServerResponse, idb::DebugServerRequest> *stream)
-{
+{@autoreleasepool{
   idb::DebugServerRequest request;
   stream->Read(&request);
 
@@ -1101,15 +1104,15 @@ Status FBIDBServiceHandler::debugserver(grpc::ServerContext *context, grpc::Serv
       return Status(grpc::StatusCode::UNIMPLEMENTED, NULL);
     }
   }
-}
+}}
 
 Status FBIDBServiceHandler::disconnect(grpc::ServerContext *context, const idb::DisconnectRequest *request, idb::DisconnectResponse *response)
-{
+{@autoreleasepool{
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::connect(grpc::ServerContext *context, const idb::ConnectRequest *request, idb::ConnectResponse *response)
-{
+{@autoreleasepool{
   [_eventReporter addMetadata:extract_str_dict(request->metadata())];
 
   BOOL isLocal = [NSFileManager.defaultManager fileExistsAtPath:nsstring_from_c_string(request->local_file_path())];
@@ -1118,10 +1121,10 @@ Status FBIDBServiceHandler::connect(grpc::ServerContext *context, const idb::Con
   response->mutable_companion()->set_host(NSProcessInfo.processInfo.hostName.UTF8String);
   response->mutable_companion()->set_grpc_port(_portsConfig.grpcPort);
   return Status::OK;
-}
+}}
 
 Status FBIDBServiceHandler::list_targets(grpc::ServerContext *context, const idb::ListTargetsRequest *request, idb::ListTargetsResponse *response)
-{
+{@autoreleasepool{
   response->add_targets()->MergeFrom(description_of_target(_target, _portsConfig));
   return Status::OK;
-}
+}}
