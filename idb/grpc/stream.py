@@ -71,3 +71,25 @@ async def cancel_wrapper(
         yield event
     if stop.is_set():
         await stream.cancel()
+
+
+async def pipe_to_companion(
+    in_stream: Stream[_TSend, _TRecv],
+    out_stream: Stream[_TRecv, _TSend],
+    started_future: asyncio.Future,
+) -> None:
+    async for message in in_stream:
+        await out_stream.send_message(message)
+        if not started_future.done():
+            started_future.set_result(None)
+    await out_stream.end()
+
+
+async def pipe_to_client(
+    in_stream: Stream[_TRecv, _TSend],
+    out_stream: Stream[_TSend, _TRecv],
+    started_future: asyncio.Future,
+) -> None:
+    await started_future
+    async for message in in_stream:
+        await out_stream.send_message(message)
