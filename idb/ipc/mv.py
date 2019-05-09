@@ -3,7 +3,7 @@
 
 from typing import List
 
-from idb.grpc.idb_pb2 import MvRequest, MvResponse
+from idb.grpc.idb_pb2 import MvRequest
 from idb.grpc.types import CompanionClient
 
 
@@ -13,7 +13,3 @@ async def client(
     await client.stub.mv(
         MvRequest(bundle_id=bundle_id, src_paths=src_paths, dst_path=dest_path)
     )
-
-
-async def daemon(client: CompanionClient, request: MvRequest) -> MvResponse:
-    return await client.stub.mv(request)
