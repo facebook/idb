@@ -10,8 +10,8 @@ from idb.common.constants import TESTS_POLL_INTERVAL
 from idb.common.tar import untar
 from idb.common.types import TestActivity, TestRunFailureInfo, TestRunInfo
 from idb.grpc.idb_pb2 import XctestRunRequest, XctestRunResponse
+from idb.grpc.stream import Stream
 from idb.grpc.types import CompanionClient
-
 
 Mode = XctestRunRequest.Mode
 Logic = XctestRunRequest.Logic
@@ -112,7 +112,6 @@ async def run_xctest(
     result_bundle_path: Optional[str] = None,
     idb_log_buffer: Optional[StringIO] = None,
     timeout: Optional[int] = None,
-    poll_interval_sec: float = TESTS_POLL_INTERVAL,
 ) -> AsyncIterator[TestRunInfo]:
     async with client.stub.xctest_run.open() as stream:
         request = _make_request(
@@ -142,4 +141,15 @@ async def run_xctest(
                 yield result
 
 
-CLIENT_PROPERTIES = [run_xctest]  # pyre-ignore
+async def daemon(
+    client: CompanionClient, stream: Stream[XctestRunRequest, XctestRunResponse]
+) -> None:
+    async with client.stub.xctest_run.open() as out_stream:
+        async for message in stream:
+            await out_stream.send_message(message)
+        await out_stream.end()
+        async for response in out_stream:
+            await stream.send_message(response)
+
+
+CLIENT_PROPERTIES = [run_xctest]
