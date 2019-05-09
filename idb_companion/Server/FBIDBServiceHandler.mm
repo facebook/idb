@@ -801,44 +801,44 @@ Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerRea
 
 Status FBIDBServiceHandler::crash_list(ServerContext *context, const idb::CrashLogQuery *request, idb::CrashLogResponse *response)
 {
-    NSError *error = nil;
-    NSPredicate *predicate = nspredicate_from_crash_log_query(request);
-    NSArray<FBCrashLogInfo *> *crashes = [[_commandExecutor crash_list:predicate] block:&error];
-    if (error) {
-       return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
-    }
-    fill_crash_log_response(response, crashes);
-    return Status::OK;
+  NSError *error = nil;
+  NSPredicate *predicate = nspredicate_from_crash_log_query(request);
+  NSArray<FBCrashLogInfo *> *crashes = [[_commandExecutor crash_list:predicate] block:&error];
+  if (error) {
+     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+  fill_crash_log_response(response, crashes);
+  return Status::OK;
 }
 
 Status FBIDBServiceHandler::crash_show(ServerContext *context, const idb::CrashShowRequest *request, idb::CrashShowResponse *response)
 {
-    NSError *error = nil;
-    NSString *name = nsstring_from_c_string(request->name());
-    if (!name){
-        return Status(grpc::StatusCode::INTERNAL, @"Missing crash name".UTF8String);
-    }
-    NSPredicate *predicate = [FBCrashLogInfo predicateForName:name];
-    FBCrashLog *crash = [[_commandExecutor crash_show:predicate] block:&error];
-    if (error) {
-        return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
-    }
-    idb::CrashLogInfo *info = response->mutable_info();
-    fill_crash_log_info(info, crash.info);
-    response->set_contents(crash.contents.UTF8String);
-    return Status::OK;
+  NSError *error = nil;
+  NSString *name = nsstring_from_c_string(request->name());
+  if (!name){
+      return Status(grpc::StatusCode::INTERNAL, @"Missing crash name".UTF8String);
+  }
+  NSPredicate *predicate = [FBCrashLogInfo predicateForName:name];
+  FBCrashLog *crash = [[_commandExecutor crash_show:predicate] block:&error];
+  if (error) {
+      return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+  idb::CrashLogInfo *info = response->mutable_info();
+  fill_crash_log_info(info, crash.info);
+  response->set_contents(crash.contents.UTF8String);
+  return Status::OK;
 }
 
 Status FBIDBServiceHandler::crash_delete(ServerContext *context, const idb::CrashLogQuery *request, idb::CrashLogResponse *response)
 {
-    NSError *error = nil;
-    NSPredicate *predicate = nspredicate_from_crash_log_query(request);
-    NSArray<FBCrashLogInfo *> *crashes = [[_commandExecutor crash_delete:predicate] block:&error];
-    if (error) {
-        return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
-    }
-    fill_crash_log_response(response, crashes);
-    return Status::OK;
+  NSError *error = nil;
+  NSPredicate *predicate = nspredicate_from_crash_log_query(request);
+  NSArray<FBCrashLogInfo *> *crashes = [[_commandExecutor crash_delete:predicate] block:&error];
+  if (error) {
+      return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+  fill_crash_log_response(response, crashes);
+  return Status::OK;
 }
 
 Status FBIDBServiceHandler::xctest_list_bundles(ServerContext *context, const idb::XctestListBundlesRequest *request, idb::XctestListBundlesResponse *response)
