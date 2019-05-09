@@ -137,39 +137,10 @@ def _trampoline_client(
         return _tramp
 
 
-def _default_daemon(
-    name: str,
-) -> Callable[[CompanionClient, Stream[_T, _U]], Awaitable[None]]:
-    async def _pipe_to_companion(
-        in_stream: Stream[_T, _U],
-        out_stream: Stream[_U, _T],
-        started_future: asyncio.Future,
-    ) -> None:
-        async for message in in_stream:
-            await out_stream.send_message(message)
-            if not started_future.done():
-                started_future.set_result(None)
-        await out_stream.end()
-
-    async def _pipe_to_client(
-        in_stream: Stream[_U, _T],
-        out_stream: Stream[_T, _U],
-        started_future: asyncio.Future,
-    ) -> None:
-        await started_future
-        async for message in in_stream:
-            await out_stream.send_message(message)
-
-    async def _default_daemon_imp(
-        client: CompanionClient, stream: Stream[_T, _U]
-    ) -> None:
+def _default_daemon(name: str,) -> Callable[[CompanionClient, Any], Awaitable[None]]:
+    async def _default_daemon_imp(client: CompanionClient, request: Any) -> Any:
         method = getattr(client.stub, name)
-        async with method.open() as out_stream:
-            started_future = asyncio.Future()
-            await asyncio.gather(
-                _pipe_to_companion(stream, out_stream, started_future),
-                _pipe_to_client(out_stream, stream, started_future),
-            )
+        return await method(request)
 
     return _default_daemon_imp
 
