@@ -627,7 +627,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return [[super
     attachToPipeOrFileHandle]
     onQueue:self.workQueue fmap:^(NSPipe *pipe) {
-    self.reader = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:self.consumer logger:self.logger];
+      self.reader = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:self.consumer logger:self.logger];
       return [[[self.reader
         startReading]
         mapReplace:self.pipe]
@@ -643,6 +643,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
       return [self.reader stopReading];
     }]
     onQueue:self.workQueue chain:^(FBFuture *future) {
+      self.reader = nil;
       return [super detach];
     }]
     nameFormat:@"Detach %@", self.description];
