@@ -66,7 +66,7 @@ using namespace std;
 - (FBFuture<NSNull *> *)start
 {
   putenv((char *)"GRPC_TRACE=all");
-  putenv((char *)"GRPC_VERBOSITY=DEBUG");
+  putenv((char *)"GRPC_VERBOSITY=ERROR");
   dispatch_queue_t queue = dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
   FBMutableFuture<NSNull *> *serverStarted = FBMutableFuture.future;
   dispatch_async(queue, ^(void){
