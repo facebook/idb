@@ -140,25 +140,26 @@
 
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath inContainerOfApplication:(NSString *)bundleID
 {
-  return [[self targetDataCommands]
-          onQueue:self.target.workQueue fmap:^(id<FBApplicationDataCommands> targetApplicationData) {
-            return [targetApplicationData
-                    createDirectory:directoryPath inContainerOfApplication:bundleID];
-          }];
+  return [[self
+    targetDataCommands]
+    onQueue:self.target.workQueue fmap:^(id<FBApplicationDataCommands> targetApplicationData) {
+      return [targetApplicationData createDirectory:directoryPath inContainerOfApplication:bundleID];
+    }];
 }
 
 - (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityInfoAtPoint:(nullable NSValue *)value
 {
-  return [[[self connectToSimulatorConnection]
-   onQueue:self.target.workQueue fmap:^(FBSimulatorConnection *connection) {
-     return [connection connectToBridge];
-   }]
-  onQueue:self.target.workQueue fmap:^ FBFuture * (FBSimulatorBridge *bridge) {
-    if (value) {
-      return [bridge accessibilityElementAtPoint:value.pointValue];
-    } else {
-      return [bridge accessibilityElements];
-    }
+  return [[[self
+    connectToSimulatorConnection]
+    onQueue:self.target.workQueue fmap:^(FBSimulatorConnection *connection) {
+      return [connection connectToBridge];
+    }]
+    onQueue:self.target.workQueue fmap:^ FBFuture * (FBSimulatorBridge *bridge) {
+      if (value) {
+        return [bridge accessibilityElementAtPoint:value.pointValue];
+      } else {
+        return [bridge accessibilityElements];
+      }
   }];
 }
 
@@ -178,16 +179,18 @@
 
 - (FBFuture<NSNull *> *)addMedia:(NSArray<NSURL *> *)filePaths
 {
-  return [self.mediaCommands onQueue:self.target.asyncQueue fmap:^FBFuture *(id<FBSimulatorMediaCommands> commands) {
-    return [commands addMedia:filePaths];
-  }];
+  return [self.mediaCommands
+    onQueue:self.target.asyncQueue fmap:^FBFuture *(id<FBSimulatorMediaCommands> commands) {
+      return [commands addMedia:filePaths];
+    }];
 }
 
 - (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID
 {
-  return [self.targetDataCommands onQueue:self.target.workQueue fmap:^(id<FBApplicationDataCommands> commands) {
-    return [commands movePaths:originPaths toPath:destinationPath inContainerOfApplication:bundleID];
-  }];
+  return [self.targetDataCommands
+    onQueue:self.target.workQueue fmap:^(id<FBApplicationDataCommands> commands) {
+      return [commands movePaths:originPaths toPath:destinationPath inContainerOfApplication:bundleID];
+    }];
 }
 
 - (FBFuture<NSNull *> *)pushFileFromTar:(NSData *)tarData toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID
@@ -206,19 +209,22 @@
 
 - (FBFuture<NSNull *> *)pushFiles:(NSArray<NSURL *> *)paths toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID
 {
-  return [FBFuture onQueue:self.target.asyncQueue resolve:^FBFuture<NSNull *> *{
-    return [[self targetDataCommands] onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> targetApplicationsData) {
-      return [targetApplicationsData copyItemsAtURLs:paths toContainerPath:destinationPath inBundleID:bundleID];
-    }];
+  return [FBFuture
+    onQueue:self.target.asyncQueue resolve:^FBFuture<NSNull *> *{
+      return [[self targetDataCommands]
+        onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> targetApplicationsData) {
+          return [targetApplicationsData copyItemsAtURLs:paths toContainerPath:destinationPath inBundleID:bundleID];
+        }];
   }];
 }
 
 - (FBFuture<NSString *> *)pullFilePath:(NSString *)path inContainerOfApplication:(NSString *)bundleID destinationPath:(NSString *)destinationPath
 {
   return [[self.targetDataCommands
-           onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> commands) {
-             return [commands copyDataFromContainerOfApplication:bundleID atContainerPath:path toDestinationPath:destinationPath];
-           }] fmapReplace:[FBFuture futureWithResult:destinationPath]];
+    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> commands) {
+      return [commands copyDataFromContainerOfApplication:bundleID atContainerPath:path toDestinationPath:destinationPath];
+    }]
+    fmapReplace:[FBFuture futureWithResult:destinationPath]];
 }
 
 - (FBFuture<NSData *> *)pullFile:(NSString *)path inContainerOfApplication:(NSString *)bundleID
@@ -241,64 +247,72 @@
 
 - (FBFuture<NSNull *> *)hid:(FBSimulatorHIDEvent *)event
 {
-  return [self.connectToHID onQueue:self.target.workQueue fmap:^FBFuture *(FBSimulatorHID *hid) {
-    return [event performOnHID:hid];
-  }];
+  return [self.connectToHID
+    onQueue:self.target.workQueue fmap:^FBFuture *(FBSimulatorHID *hid) {
+      return [event performOnHID:hid];
+    }];
 }
 
 - (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths inContainerOfApplication:(NSString *)bundleID
 {
-  return [self.targetDataCommands onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> commands) {
-    return [commands removePaths:paths inContainerOfApplication:bundleID];
-  }];
+  return [self.targetDataCommands
+    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> commands) {
+      return [commands removePaths:paths inContainerOfApplication:bundleID];
+    }];
 }
 
 - (FBFuture<NSArray<NSString *> *> *)listPath:(NSString *)path inContainerOfApplication:(NSString *)bundleID
 {
-  return [self.targetDataCommands onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> commands) {
-    return [commands contentsOfDirectory:path inContainerOfApplication:bundleID];
-  }];
+  return [self.targetDataCommands
+    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> commands) {
+      return [commands contentsOfDirectory:path inContainerOfApplication:bundleID];
+    }];
 }
 
 - (FBFuture<NSNull *> *)setLocation:(double)latitude longitude:(double)longitude
 {
-  return [self.connectToSimulatorBridge onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(FBSimulatorBridge *bridge) {
-    return [bridge setLocationWithLatitude:latitude longitude:longitude];
-  }];
+  return [self.connectToSimulatorBridge
+    onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(FBSimulatorBridge *bridge) {
+      return [bridge setLocationWithLatitude:latitude longitude:longitude];
+    }];
 }
 
 - (FBFuture<NSNull *> *)clearKeychain
 {
-  return [self.keychainCommands onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorKeychainCommands> commands) {
-    return [commands clearKeychain];
-  }];
+  return [self.keychainCommands
+    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorKeychainCommands> commands) {
+      return [commands clearKeychain];
+    }];
 }
 
 - (FBFuture<NSNull *> *)approve:(NSSet<FBSettingsApprovalService> *)services forApplication:(NSString *)bundleID
 {
-  return [self.settingsCommands onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorSettingsCommands> commands) {
-    return [commands grantAccess:[NSSet setWithObject:bundleID] toServices:services];
-  }];
+  return [self.settingsCommands
+    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorSettingsCommands> commands) {
+      return [commands grantAccess:[NSSet setWithObject:bundleID] toServices:services];
+    }];
 }
 
 - (FBFuture<NSNull *> *)openUrl:(NSString *)url
 {
-  return [self.lifecycleCommands onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorLifecycleCommands> commands) {
-    return [commands openURL:[NSURL URLWithString:url]];
-  }];
+  return [self.lifecycleCommands
+    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorLifecycleCommands> commands) {
+      return [commands openURL:[NSURL URLWithString:url]];
+    }];
 }
 
 - (FBFuture<NSNull *> *)focus
 {
-  return [self.lifecycleCommands onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorLifecycleCommands> commands) {
-    return [commands focus];
-  }];
+  return [self.lifecycleCommands
+    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorLifecycleCommands> commands) {
+      return [commands focus];
+    }];
 }
 
 - (FBFuture<NSNull *> *)updateContacts:(NSData *)dbTarData
 {
-  return [[self.
-    temporaryDirectory withArchiveExtracted:dbTarData]
+  return [[self.temporaryDirectory
+    withArchiveExtracted:dbTarData]
     onQueue:self.target.workQueue pop:^(NSURL *tempDirectory) {
       return [self.settingsCommands onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorSettingsCommands> commands) {
         return [commands updateContacts:tempDirectory.path];
@@ -412,8 +426,9 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 - (FBFuture<id<FBApplicationDataCommands>> *)targetDataCommands
 {
   if (![self.target conformsToProtocol:@protocol(FBApplicationDataCommands)]) {
-    return [[FBControlCoreError describe:@"Target doesn't conform to FBApplicationDataCommands protocol"]
-            failFuture];
+    return [[FBControlCoreError
+      describe:@"Target doesn't conform to FBApplicationDataCommands protocol"]
+      failFuture];
   }
   return [FBFuture futureWithResult:self.target];
 }
@@ -423,8 +438,8 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
     return [[FBIDBError
-             describeFormat:@"Target doesn't conform to FBSimulatorLifecycleCommands protocol %@", self.target]
-            failFuture];
+      describeFormat:@"Target doesn't conform to FBSimulatorLifecycleCommands protocol %@", self.target]
+      failFuture];
   }
   return [FBFuture futureWithResult:commands];
 }
@@ -434,8 +449,8 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   id<FBSimulatorMediaCommands> commands = (id<FBSimulatorMediaCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBSimulatorMediaCommands)]) {
     return [[FBIDBError
-             describeFormat:@"Target doesn't conform to FBSimulatorMediaCommands protocol %@", self.target]
-            failFuture];
+      describeFormat:@"Target doesn't conform to FBSimulatorMediaCommands protocol %@", self.target]
+      failFuture];
   }
   return [FBFuture futureWithResult:commands];
 }
@@ -445,8 +460,8 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   id<FBSimulatorKeychainCommands> commands = (id<FBSimulatorKeychainCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBSimulatorKeychainCommands)]) {
     return [[FBIDBError
-             describeFormat:@"Target doesn't conform to FBSimulatorKeychainCommands protocol %@", self.target]
-            failFuture];
+      describeFormat:@"Target doesn't conform to FBSimulatorKeychainCommands protocol %@", self.target]
+      failFuture];
   }
   return [FBFuture futureWithResult:commands];
 }
@@ -456,8 +471,8 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   id<FBSimulatorSettingsCommands> commands = (id<FBSimulatorSettingsCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBSimulatorSettingsCommands)]) {
     return [[FBIDBError
-             describeFormat:@"Target doesn't conform to FBSimulatorSettingsCommands protocol %@", self.target]
-            failFuture];
+      describeFormat:@"Target doesn't conform to FBSimulatorSettingsCommands protocol %@", self.target]
+      failFuture];
   }
   return [FBFuture futureWithResult:commands];
 }
@@ -469,8 +484,8 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       NSError *error = nil;
       if (![FBSimulatorControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworks:self.target.logger error:&error]) {
         return [[FBIDBError
-                 describeFormat:@"SimulatorKit is required for HID interactions: %@", error]
-                failFuture];
+          describeFormat:@"SimulatorKit is required for HID interactions: %@", error]
+          failFuture];
       }
       return [commands connect];
     }];
@@ -478,14 +493,17 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 - (FBFuture<FBSimulatorBridge *> *)connectToSimulatorBridge
 {
-  return [[self connectToSimulatorConnection] onQueue:self.target.workQueue fmap:^(FBSimulatorConnection *connection) {
-    return [connection connectToBridge];
-  }];
+  return [[self
+    connectToSimulatorConnection]
+    onQueue:self.target.workQueue fmap:^(FBSimulatorConnection *connection) {
+      return [connection connectToBridge];
+    }];
 }
 
 - (FBFuture<FBSimulatorHID *> *)connectToHID
 {
-  return [[self connectToSimulatorConnection]
+  return [[self
+    connectToSimulatorConnection]
     onQueue:self.target.workQueue fmap:^(FBSimulatorConnection *connection) {
       return [connection connectToHID];
     }];
@@ -518,49 +536,49 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 - (FBFuture<NSArray<FBCrashLogInfo *> *> *)crash_list:(NSPredicate *)predicate
 {
-    return [[self.target
-              crashes:predicate useCache:NO]
-             onQueue:self.target.asyncQueue map:^(NSArray<FBCrashLogInfo *> *crashes) {
-                 return crashes;
-             }];
+  return [[self.target
+    crashes:predicate useCache:NO]
+    onQueue:self.target.asyncQueue map:^(NSArray<FBCrashLogInfo *> *crashes) {
+      return crashes;
+    }];
 }
 
 - (FBFuture<FBCrashLog *> *)crash_show:(NSPredicate *)predicate
 {
-    return [[self.target
-              crashes:predicate useCache:YES]
-             onQueue:self.target.asyncQueue fmap:^(NSArray<FBCrashLogInfo *> *crashes) {
-                 if (crashes.count > 1) {
-                     return [[FBIDBError
-                              describeFormat:@"More than one crash log matching %@", predicate]
-                             failFuture];
-                 }
-                 if (crashes.count == 0) {
-                     return [[FBIDBError
-                              describeFormat:@"No crashes matching %@", predicate]
-                             failFuture];
-                 }
-                 FBCrashLogInfo *info = crashes.firstObject;
-                 NSError *error = nil;
-                 NSString *contents = [NSString stringWithContentsOfFile:info.crashPath encoding:NSUTF8StringEncoding error:&error];
-                 if (!contents) {
-                     return [[[FBIDBError
-                               describeFormat:@"Failed to read crash log for %@", info]
-                              causedBy:error]
-                             failFuture];
-                 }
-                 FBCrashLog *crash = [FBCrashLog fromInfo:info contents:contents];
-                 return [FBFuture futureWithResult:crash];
-             }];
+  return [[self.target
+    crashes:predicate useCache:YES]
+    onQueue:self.target.asyncQueue fmap:^(NSArray<FBCrashLogInfo *> *crashes) {
+      if (crashes.count > 1) {
+         return [[FBIDBError
+          describeFormat:@"More than one crash log matching %@", predicate]
+          failFuture];
+      }
+      if (crashes.count == 0) {
+        return [[FBIDBError
+          describeFormat:@"No crashes matching %@", predicate]
+          failFuture];
+      }
+      FBCrashLogInfo *info = crashes.firstObject;
+      NSError *error = nil;
+      NSString *contents = [NSString stringWithContentsOfFile:info.crashPath encoding:NSUTF8StringEncoding error:&error];
+      if (!contents) {
+        return [[[FBIDBError
+          describeFormat:@"Failed to read crash log for %@", info]
+          causedBy:error]
+          failFuture];
+      }
+      FBCrashLog *crash = [FBCrashLog fromInfo:info contents:contents];
+      return [FBFuture futureWithResult:crash];
+    }];
 }
 
 - (FBFuture<NSArray<FBCrashLogInfo *> *> *)crash_delete:(NSPredicate *)predicate
 {
-    return [[self.target
-              pruneCrashes:predicate]
-             onQueue:self.target.asyncQueue map:^(NSArray<FBCrashLogInfo *> *crashes) {
-                 return crashes;
-             }];
+  return [[self.target
+    pruneCrashes:predicate]
+    onQueue:self.target.asyncQueue map:^(NSArray<FBCrashLogInfo *> *crashes) {
+      return crashes;
+    }];
 }
 
 - (FBFuture<NSString *> *)installXctest:(FBFutureContext<NSURL *> *)extractedXctest
