@@ -6,7 +6,7 @@
  */
 
 #import <Foundation/Foundation.h>
-#import <UIKit/UIKit.h>
+
 
 static NSString *const ShimulatorCrashAfter = @"SHIMULATOR_CRASH_AFTER";
 
@@ -20,10 +20,17 @@ static void PerformCrashAfter(void)
   [NSFileManager.defaultManager performSelector:@selector(stringWithFormat:) withObject:@"NOPE" afterDelay:timeInterval];
 }
 
+static void PrintProcessInfo(void)
+{
+  NSProcessInfo *processInfo = NSProcessInfo.processInfo;
+  NSLog(@"Arguments [%@]", [processInfo.arguments componentsJoinedByString:@" "]);
+}
+
 __attribute__((constructor)) static void EntryPoint()
 {
   NSLog(@"Start of Shimulator");
 
+  PrintProcessInfo();
   PerformCrashAfter();
 
   NSLog(@"End of Shimulator");
