@@ -13,7 +13,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-typedef FBDeltaUpdateManager<NSData *, id<FBLogTailOperation>, NSArray<NSString *> *> FBLogUpdateManager;
+typedef FBDeltaUpdateManager<NSData *, id<FBLogOperation>, NSArray<NSString *> *> FBLogUpdateManager;
 
 /**
  A container for log sessions.

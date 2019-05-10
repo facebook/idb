@@ -21,11 +21,11 @@ NSTimeInterval const FBLogSessionTimeout = 60.0;
     expiration:@(FBLogSessionTimeout)
     capacity:nil
     logger:target.logger
-    create:^ FBFuture<id<FBLogTailOperation>> * (NSArray<NSString *> *arguments) {
+    create:^ FBFuture<id<FBLogOperation>> * (NSArray<NSString *> *arguments) {
       id<FBConsumableBuffer> lineBuffer = FBDataBuffer.consumableBuffer;
       return [target tailLog:arguments consumer:lineBuffer];
     }
-    delta:^ FBFuture<NSData *> * (id<FBLogTailOperation> operation, NSString *identifier, BOOL *done) {
+    delta:^ FBFuture<NSData *> * (id<FBLogOperation> operation, NSString *identifier, BOOL *done) {
       id<FBConsumableBuffer> lineBuffer = (id<FBConsumableBuffer>) operation.consumer;
       NSData *data = [lineBuffer consumeCurrentData];
       return [FBFuture futureWithResult:data];

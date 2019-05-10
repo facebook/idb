@@ -15,13 +15,13 @@
 #import "FBSimulatorAgentOperation.h"
 #import "FBSimulatorError.h"
 
-@interface FBSimulatorLogTailOperation : NSObject <FBLogTailOperation>
+@interface FBSimulatorLogOperation : NSObject <FBLogOperation>
 
 @property (nonatomic, strong, readonly) FBSimulatorAgentOperation *operation;
 
 @end
 
-@implementation FBSimulatorLogTailOperation
+@implementation FBSimulatorLogOperation
 
 @synthesize consumer = _consumer;
 
@@ -79,12 +79,12 @@
 
 #pragma mark Public
 
-- (FBFuture<id<FBLogTailOperation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
+- (FBFuture<id<FBLogOperation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
-  return (FBFuture<id<FBLogTailOperation>> *) [[self
+  return (FBFuture<id<FBLogOperation>> *) [[self
     startLogCommand:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer]
     onQueue:self.simulator.workQueue map:^(FBSimulatorAgentOperation *operation) {
-      return [[FBSimulatorLogTailOperation alloc] initWithOperation:operation consumer:consumer];
+      return [[FBSimulatorLogOperation alloc] initWithOperation:operation consumer:consumer];
     }];
 }
 

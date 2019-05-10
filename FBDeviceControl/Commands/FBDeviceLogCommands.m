@@ -16,7 +16,7 @@
 
 #pragma mark Protocol Adaptor
 
-@interface FBDeviceLogOperation : NSObject <FBLogTailOperation>
+@interface FBDeviceLogOperation : NSObject <FBLogOperation>
 
 @property (nonatomic, strong, readonly) FBFileReader *reader;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *completed;
@@ -85,7 +85,7 @@
   return [[FBDeviceControlError describeFormat:@"%@ is unimplemented", NSStringFromSelector(_cmd)] failFuture];
 }
 
-- (FBFuture<id<FBLogTailOperation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
+- (FBFuture<id<FBLogOperation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
   if (arguments.count == 0) {
     NSString *unsupportedArgumentsMessage = [NSString stringWithFormat:@"[FBDeviceLogCommands][rdar://38452839] Unsupported arguments: %@", arguments];

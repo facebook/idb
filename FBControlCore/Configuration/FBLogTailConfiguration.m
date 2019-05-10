@@ -105,7 +105,7 @@ static NSString *const KeyArguments = @"arguments";
   FBiOSTargetFutureType futureType = self.class.futureType;
   return [[commands
     tailLog:self.arguments consumer:consumer]
-    onQueue:target.workQueue map:^(id<FBLogTailOperation> baseAwaitable) {
+    onQueue:target.workQueue map:^(id<FBLogOperation> baseAwaitable) {
       return FBiOSTargetContinuationRenamed(baseAwaitable, futureType);
     }];
 }

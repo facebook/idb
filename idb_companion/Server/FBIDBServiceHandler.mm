@@ -915,7 +915,7 @@ Status FBIDBServiceHandler::log(ServerContext *context, const idb::LogRequest *r
     }
   }];
   NSError *error = nil;
-  id<FBLogTailOperation> operation = [[_target tailLog:arguments consumer:consumer] block:&error];
+  id<FBLogOperation> operation = [[_target tailLog:arguments consumer:consumer] block:&error];
   if (!operation) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
