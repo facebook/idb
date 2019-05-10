@@ -6,7 +6,7 @@ import sys
 from typing import Dict, List, Optional
 
 from idb.grpc.idb_pb2 import LaunchRequest, LaunchResponse
-from idb.grpc.stream import Stream
+from idb.grpc.stream import Stream, join_streams
 from idb.grpc.types import CompanionClient
 
 
@@ -31,6 +31,13 @@ async def _end_stream(
 ) -> None:
     await stop.wait()
     await stream.send_message(LaunchRequest(stop=Stop()), end=True)
+
+
+async def daemon(
+    client: CompanionClient, stream: Stream[LaunchRequest, LaunchResponse]
+) -> None:
+    async with client.stub.launch.open() as out_stream:
+        await join_streams(stream, out_stream)
 
 
 async def client(

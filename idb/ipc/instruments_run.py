@@ -9,7 +9,7 @@ from typing import AsyncIterator, Dict, List, Optional
 
 from idb.common.tar import drain_untar
 from idb.grpc.idb_pb2 import InstrumentsRunRequest, InstrumentsRunResponse
-from idb.grpc.stream import Stream, pipe_to_client, pipe_to_companion, stop_wrapper
+from idb.grpc.stream import Stream, join_streams, stop_wrapper
 from idb.grpc.types import CompanionClient
 from idb.utils.typing import none_throws
 
@@ -121,12 +121,8 @@ async def daemon(
     client: CompanionClient,
     stream: Stream[InstrumentsRunRequest, InstrumentsRunResponse],
 ) -> None:
-    started_future = asyncio.Future()
     async with client.stub.instruments_run.open() as out_stream:
-        await asyncio.gather(
-            pipe_to_companion(stream, out_stream, started_future),
-            pipe_to_client(out_stream, stream, started_future),
-        )
+        await join_streams(stream, out_stream)
 
 
 CLIENT_PROPERTIES = [run_instruments]  # pyre-ignore

@@ -4,8 +4,8 @@
 from typing import AsyncIterable, AsyncIterator, Dict, Iterable, List, Optional, Tuple
 
 from idb.common.types import HIDButtonType
-from idb.grpc.idb_pb2 import HIDEvent, Point
-from idb.grpc.stream import drain_to_stream
+from idb.grpc.idb_pb2 import HIDEvent, HIDResponse, Point
+from idb.grpc.stream import Stream, drain_to_stream
 from idb.grpc.types import CompanionClient
 
 
@@ -269,6 +269,16 @@ async def hid(client: CompanionClient, event_iterator: AsyncIterable[HIDEvent]) 
             stream=stream, generator=event_iterator, logger=client.logger
         )
         await stream.recv_message()
+
+
+async def daemon(
+    client: CompanionClient, stream: Stream[HIDEvent, HIDResponse]
+) -> None:
+    async with client.stub.hid.open() as companion:
+        response = await drain_to_stream(
+            stream=companion, generator=stream, logger=client.logger
+        )
+        await stream.send_message(response)
 
 
 CLIENT_PROPERTIES = [tap, button, key, key_sequence, text, swipe, hid]  # pyre-ignore
