@@ -153,7 +153,16 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
     options:options
     terminationQueue:simulator.workQueue
     terminationHandler:^(int stat_loc) {
+      // Notify that we're done with the process
       [processStatusFuture resolveWithResult:@(stat_loc)];
+      // Close any open file handles that we have.
+      // This is important because otherwise any reader will stall forever.
+      // The SimDevice APIs do not automatically close any file descriptor passed into them, so we need to do this on it's behalf.
+      // This would not be an issue if using simctl directly, as the stdout/stderr of the simctl process would close when the simctl process terminates.
+      // However, using the simctl approach, we don't get the pid of the spawned process, this is merely logged internally.
+      // Failing to close this end of the file descriptor would lead to the write-end of any pipe to not be closed and therefore it would leak.
+      [stdOut closeFile];
+      [stdErr closeFile];
     }
     completionQueue:simulator.workQueue
     completionHandler:^(NSError *innerError, pid_t processIdentifier){
