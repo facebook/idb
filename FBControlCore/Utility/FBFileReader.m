@@ -125,7 +125,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
     futureWithNameFormat:@"Finished reading of %@", self.targeting]
     resolveFromFuture:self.ioChannelFinishedReadOperation]
     onQueue:self.readQueue respondToCancellation:^{
-     return [self stopReadingNow];
+      return [self stopReadingNow];
     }];
 }
 
