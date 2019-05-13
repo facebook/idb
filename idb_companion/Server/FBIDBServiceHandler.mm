@@ -476,6 +476,8 @@ FBFuture<NSString *> *FBIDBServiceHandler::install_future(const idb::InstallRequ
           return [_commandExecutor install_stream:stream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor xctest_install_stream:stream];
+        case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
+          return [_commandExecutor install_dsym_stream:stream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
           return [_commandExecutor install_dylib_stream:stream name:name];
         default:
@@ -490,6 +492,8 @@ FBFuture<NSString *> *FBIDBServiceHandler::install_future(const idb::InstallRequ
           return [_commandExecutor install_stream:download.input];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor xctest_install_stream:download.input];
+        case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
+          return [_commandExecutor install_dsym_stream:download.input];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
           return [_commandExecutor install_dylib_stream:download.input name:name];
         default:
@@ -503,6 +507,8 @@ FBFuture<NSString *> *FBIDBServiceHandler::install_future(const idb::InstallRequ
           return [_commandExecutor install_file_path:filePath];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor xctest_install_file_path:filePath];
+        case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
+          return [_commandExecutor install_dsym_file_path:filePath];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
           return [_commandExecutor install_dylib_file_path:filePath];
         default:

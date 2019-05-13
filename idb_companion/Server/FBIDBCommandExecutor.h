@@ -161,6 +161,22 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSString *> *)install_dylib_stream:(FBProcessInput *)input name:(NSString *)name;
 
+/**
+ Installs a dSYM from a file path.
+
+ @param input the input to pipe.
+ @return A future that resolves with the dSYM Name
+ */
+- (FBFuture<NSString *> *)install_dsym_file_path:(NSString *)filePath;
+
+/**
+ Installs dSYM(s) from a zip stream.
+
+ @param input the input to pipe.
+ @return A future that resolves with the directory containing the dSYM(s)
+ */
+- (FBFuture<NSString *> *)install_dsym_stream:(FBProcessInput *)input;
+
 #pragma mark Public Methods
 
 /**

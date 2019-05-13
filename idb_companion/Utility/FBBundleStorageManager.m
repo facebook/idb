@@ -436,6 +436,19 @@
 
 @end
 
+@implementation FBDsymStorage
+
+- (nullable NSString *)saveDsymFromFile:(NSURL *)url error:(NSError **)error
+{
+  NSURL *destination = [self.basePath URLByAppendingPathComponent:url.lastPathComponent];
+  if (![NSFileManager.defaultManager copyItemAtURL:url toURL:destination error:error]) {
+    return nil;
+  }
+  return destination.lastPathComponent;
+}
+
+@end
+
 @implementation FBBundleStorageManager
 
 #pragma mark Initializers
@@ -467,18 +480,24 @@
   if (!applicationBasePath) {
     return nil;
   }
-
   FBApplicationBundleStorage *application = [[FBApplicationBundleStorage alloc] initWithTarget:target basePath:applicationBasePath queue:queue logger:logger];
+
   NSURL *dylibBasePath = [self prepareStoragePathWithName:@"idb-dylibs" target:target error:error];
   if (!dylibBasePath) {
     return nil;
   }
   FBDylibStorage *dylib = [[FBDylibStorage alloc] initWithTarget:target basePath:dylibBasePath queue:queue logger:logger];
 
-  return [[self alloc] initWithXctest:xctest application:application dylib:dylib];
+  NSURL *dsymBasePath = [self prepareStoragePathWithName:@"idb-dsyms" target:target error:error];
+  if (!dsymBasePath) {
+    return nil;
+  }
+  FBDsymStorage *dsym = [[FBDsymStorage alloc] initWithTarget:target basePath:dsymBasePath queue:queue logger:logger];
+
+  return [[self alloc] initWithXctest:xctest application:application dylib:dylib dsym:dsym];
 }
 
-- (instancetype)initWithXctest:(FBXCTestBundleStorage *)xctest application:(FBApplicationBundleStorage *)application dylib:(FBDylibStorage *)dylib
+- (instancetype)initWithXctest:(FBXCTestBundleStorage *)xctest application:(FBApplicationBundleStorage *)application dylib:(FBDylibStorage *)dylib dsym:(FBDsymStorage *)dsym
 {
   self = [super init];
   if (!self) {
@@ -488,6 +507,7 @@
   _xctest = xctest;
   _application = application;
   _dylib = dylib;
+  _dsym = dsym;
 
   return self;
 }

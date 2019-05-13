@@ -124,6 +124,22 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
+ Class to manage storage of dsym files that can be used to symbolicate call stacks
+ */
+@interface FBDsymStorage : FBBundleStorage
+
+/**
+ Relocates the dsym into storage.
+
+ @param url the dsym url to relocate.
+ @param error an error out for any error that occurs
+ @return the path of the relocated file(s).
+ */
+- (nullable NSString *)saveDsymFromFile:(NSURL *)url error:(NSError **)error;
+
+@end
+
+/**
  Class to manage storing of test and application bundles in the target's aux directory
  Test bundles are stored under TARGET_AUX_DIR/idb-test-bundles/TEST_BUNDLE_ID/TEST_BUNDLE.xctest
  Application bundles are stored under TARGET_AUX_DIR/idb-applications/APPLICATION_BUNDLE_ID
@@ -158,6 +174,11 @@ NS_ASSUME_NONNULL_BEGIN
  The dylib storage.
  */
 @property (nonatomic, strong, readonly) FBDylibStorage *dylib;
+
+/**
+ The dSYM storage.
+ */
+@property (nonatomic, strong, readonly) FBDsymStorage *dsym;
 
 @end
 

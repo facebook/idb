@@ -131,6 +131,16 @@
   return [self installDylib:[self.temporaryDirectory withGzipExtractedFromStream:input name:name]];
 }
 
+- (FBFuture<NSString *> *)install_dsym_file_path:(NSString *)filePath
+{
+  return [self installDsym:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]]];
+}
+
+- (FBFuture<NSString *> *)install_dsym_stream:(FBProcessInput *)input
+{
+  return [self installDsym:[self.temporaryDirectory withArchiveExtractedFromStream:input]];
+}
+
 #pragma mark Public Methods
 
 - (FBFuture<NSData *> *)takeScreenshot:(FBScreenshotFormat)format
@@ -604,6 +614,19 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
         return [FBFuture futureWithError:error];
       }
       return [FBFuture futureWithResult:testBundleID];
+    }];
+}
+
+- (FBFuture<NSString *> *)installDsym:(FBFutureContext<NSURL *> *)extractedDsym
+{
+  return [extractedDsym
+    onQueue:self.target.workQueue pop:^(NSURL *dsym) {
+      NSError *error = nil;
+      NSString *dsymPath = [self.bundleStorageManager.dsym saveDsymFromFile:dsym error:&error];
+      if (!dsymPath) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:dsymPath];
     }];
 }
 
