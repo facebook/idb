@@ -5,7 +5,8 @@
       "installation",
       "guided-tour",
       "architecture",
-      "commands"
+      "commands",
+      "test_execution"
     ]
   }
 }
