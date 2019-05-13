@@ -4,6 +4,7 @@
 from typing import List, Optional
 
 from idb.grpc.idb_pb2 import DebugServerRequest, DebugServerResponse
+from idb.grpc.stream import Stream, join_streams
 from idb.grpc.types import CompanionClient
 
 
@@ -37,6 +38,13 @@ async def debugserver_status(client: CompanionClient) -> Optional[List[str]]:
     if not len(commands):
         return None
     return commands
+
+
+async def daemon(
+    client: CompanionClient, stream: Stream[DebugServerRequest, DebugServerResponse]
+) -> None:
+    async with client.stub.debugserver.open() as out_stream:
+        await join_streams(stream, out_stream)
 
 
 CLIENT_PROPERTIES = [  # pyre-ignore
