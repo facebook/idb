@@ -8,11 +8,11 @@ from abc import ABCMeta, abstractmethod
 from argparse import ArgumentParser, Namespace
 from typing import Dict, List, Optional
 
-from idb.common.logging import log_call
 import idb.common.plugin as plugin
 from idb.client.client import IdbClient
-from idb.grpc.client import IdbGRPCClient
 from idb.common.constants import DEFAULT_DAEMON_GRPC_PORT, DEFAULT_DAEMON_HOST
+from idb.common.logging import log_call
+from idb.grpc.client import IdbGRPCClient
 
 
 class Command(metaclass=ABCMeta):
@@ -158,8 +158,8 @@ class ConnectingCommand(BaseCommand):
             logger=self.logger,
         )
         client = IdbClient(
-            resolve=functools.partial(  # pyre-fixme[6]
-                plugin.resolve_client, args, self.logger, grpc_client  # pyre-fixme[6]
+            resolve=functools.partial(
+                plugin.resolve_client, args, self.logger, grpc_client
             ),
             logger=self.logger,
         )

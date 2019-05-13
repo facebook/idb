@@ -93,8 +93,12 @@ class MetadataStubInjector(CompanionServiceStub):
         return StubTrampoline()
 
 
+# pyre-fixme[3]: Return annotation cannot contain `Any`.
 def _trampoline_client(
-    daemon_provider: DaemonProvider, call: Callable, name: str
+    daemon_provider: DaemonProvider,
+    # pyre-fixme[2]: Parameter annotation cannot contain `Any`.
+    call: Callable,
+    name: str,
 ) -> Callable:
     async def _make_client() -> CompanionClient:
         client = await daemon_provider()
@@ -136,7 +140,10 @@ def _trampoline_client(
         return _tramp
 
 
+# pyre-fixme[3]: Return annotation cannot contain `Any`.
 def _default_daemon(name: str,) -> Callable[[CompanionClient, Any], Awaitable[None]]:
+    # pyre-fixme[3]: Return annotation cannot be `Any`.
+    # pyre-fixme[2]: Parameter annotation cannot be `Any`.
     async def _default_daemon_imp(client: CompanionClient, request: Any) -> Any:
         method = getattr(client.stub, name)
         return await method(request)
@@ -144,9 +151,11 @@ def _default_daemon(name: str,) -> Callable[[CompanionClient, Any], Awaitable[No
     return _default_daemon_imp
 
 
+# pyre-fixme[3]: Return annotation cannot contain `Any`.
 def _trampoline_daemon(
     companion_provider: CompanionProvider,
     context_provider: DaemonContextProvider,
+    # pyre-fixme[2]: Parameter annotation cannot contain `Any`.
     call: Callable,
     name: str,
 ) -> Callable:
@@ -179,20 +188,26 @@ def _trampoline_daemon(
     return _tramp
 
 
+# pyre-fixme[2]: Parameter annotation cannot contain `Any`.
 def _takes_stream(method: Callable) -> bool:
     return _has_parameter(method=method, name="stream", parameter_type=Stream)
 
 
+# pyre-fixme[2]: Parameter annotation cannot contain `Any`.
 def _takes_client(method: Callable) -> bool:
     return _has_parameter(method=method, name="client", parameter_type=CompanionClient)
 
 
+# pyre-fixme[2]: Parameter annotation cannot contain `Any`.
 def _takes_context(method: Callable) -> bool:
     return _has_parameter(method=method, name="context", parameter_type=DaemonContext)
 
 
 def _has_parameter(
-    method: Callable, name: str, parameter_type: Optional[Type[_T]] = None
+    # pyre-fixme[2]: Parameter annotation cannot contain `Any`.
+    method: Callable,
+    name: str,
+    parameter_type: Optional[Type[_T]] = None,
 ) -> bool:
     parameters = list(signature(method).parameters.items())
     return any(
@@ -228,6 +243,7 @@ def _get_module_name(module: ModuleType) -> str:
     return module.__name__.split(".")[-1]
 
 
+# pyre-fixme[3]: Return annotation cannot contain `Any`.
 def client_calls(daemon_provider: DaemonProvider) -> List[Tuple[str, Callable]]:
     return [
         (
@@ -238,6 +254,7 @@ def client_calls(daemon_provider: DaemonProvider) -> List[Tuple[str, Callable]]:
     ]
 
 
+# pyre-fixme[3]: Return annotation cannot contain `Any`.
 def _client_implementations() -> List[Tuple[str, Callable]]:
     properties = []
     for module in _get_rpc_modules():
@@ -248,6 +265,7 @@ def _client_implementations() -> List[Tuple[str, Callable]]:
     return properties
 
 
+# pyre-fixme[3]: Return annotation cannot contain `Any`.
 def daemon_calls(
     companion_provider: CompanionProvider, context_provider: DaemonContextProvider
 ) -> List[Tuple[str, Callable]]:
@@ -265,6 +283,7 @@ def daemon_calls(
     ]
 
 
+# pyre-fixme[3]: Return annotation cannot contain `Any`.
 def _daemon_implementations() -> List[Tuple[str, Callable]]:
     functions = []
     for module in _get_rpc_modules():

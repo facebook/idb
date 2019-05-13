@@ -11,11 +11,11 @@ def signal_handler_event(name: str) -> asyncio.Event:
     stop = asyncio.Event()
 
     def signal_handler(sig: signal.Signals) -> None:
-        print(f"\nStopping {name}", file=stderr)  # pyre-ignore
+        print(f"\nStopping {name}", file=stderr)
         stop.set()
 
     for sig in [signal.SIGTERM, signal.SIGINT]:
         loop.add_signal_handler(sig, lambda: signal_handler(sig))
 
-    print(f"Running {name} until ^C", file=stderr)  # pyre-ignore
+    print(f"Running {name} until ^C", file=stderr)
     return stop

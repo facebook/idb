@@ -28,6 +28,7 @@ class IpcTests(TestCase):
             with self.subTest(name):
                 self._test_client_method(client, name)
 
+    # pyre-fixme[2]: Parameter annotation cannot contain `Any`.
     def _test_client_method(self, client: Callable, name: str) -> None:
         self.assertTrue(client is not None, f"{name} should have a client method")
         self.assertTrue(
@@ -44,6 +45,7 @@ class IpcTests(TestCase):
             with self.subTest(name):
                 self._test_deamon_method(daemon, name)
 
+    # pyre-fixme[2]: Parameter annotation cannot contain `Any`.
     def _test_deamon_method(self, daemon: Callable, name: str) -> None:
         sig = signature(daemon)
         self.assertTrue(

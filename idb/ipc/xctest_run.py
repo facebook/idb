@@ -13,6 +13,7 @@ from idb.grpc.idb_pb2 import XctestRunRequest, XctestRunResponse
 from idb.grpc.stream import Stream
 from idb.grpc.types import CompanionClient
 
+
 Mode = XctestRunRequest.Mode
 Logic = XctestRunRequest.Logic
 Application = XctestRunRequest.Application
@@ -152,4 +153,5 @@ async def daemon(
             await stream.send_message(response)
 
 
+# pyre-fixme[5]: Global expression must be annotated.
 CLIENT_PROPERTIES = [run_xctest]
