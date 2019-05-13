@@ -78,6 +78,7 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
         [searchPaths addObject:environmentDefinedDirectory];
       }
       [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"lib"]];
+      [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"bin"]];
       [searchPaths addObject:[NSBundle bundleForClass:self].resourcePath];
 
       NSMutableArray<FBFuture<NSString *> *> *futures = NSMutableArray.array;
