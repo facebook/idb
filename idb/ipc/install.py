@@ -65,6 +65,15 @@ async def _generate_dylib_chunks(
     logger.debug(f"Finished generating chunks {path}")
 
 
+async def _generate_dsym_chunks(
+    path: str, logger: Logger
+) -> AsyncIterator[InstallRequest]:
+    logger.debug(f"Generating chunks for {path}")
+    async for chunk in tar.generate_tar([path]):
+        yield InstallRequest(payload=Payload(data=chunk))
+    logger.debug(f"Finished generating chunks {path}")
+
+
 async def _generate_io_chunks(
     io: IO[bytes], logger: Logger
 ) -> AsyncIterator[InstallRequest]:
@@ -90,6 +99,8 @@ def _generate_binary_chunks(
         return _generate_xctest_chunks(path=path, logger=logger)
     elif destination == InstallRequest.DYLIB:
         return _generate_dylib_chunks(path=path, logger=logger)
+    elif destination == InstallRequest.DSYM:
+        return _generate_dsym_chunks(path=path, logger=logger)
     raise GRPCError(
         status=Status(Status.FAILED_PRECONDITION),
         message=f"install invalid for {path} {destination}",
@@ -142,6 +153,12 @@ async def install_dylib(client: CompanionClient, dylib: Bundle) -> str:
     )
 
 
+async def install_dsym(client: CompanionClient, dsym: Bundle) -> str:
+    return await _install_to_destination(
+        client=client, bundle=dsym, destination=InstallRequest.DSYM
+    )
+
+
 async def daemon(
     client: CompanionClient, stream: Stream[InstallResponse, InstallRequest]
 ) -> None:
@@ -175,4 +192,5 @@ async def daemon(
         await stream.send_message(response, end=True)
 
 
-CLIENT_PROPERTIES = [install, install_xctest, install_dylib]  # pyre-ignore
+# pyre-ignore
+CLIENT_PROPERTIES = [install, install_xctest, install_dsym, install_dylib]

@@ -52,7 +52,11 @@ from idb.cli.commands.hid import (
     TapCommand,
     TextCommand,
 )
-from idb.cli.commands.install import InstallAppCommand, InstallDylibCommand
+from idb.cli.commands.install import (
+    InstallAppCommand,
+    InstallDsymCommand,
+    InstallDylibCommand,
+)
 from idb.cli.commands.instruments import InstrumentsCommand
 from idb.cli.commands.kill import KillCommand
 from idb.cli.commands.launch import LaunchCommand
@@ -92,6 +96,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
     commands: List[Command] = [
         DescribeCommand(),
         InstallAppCommand(),
+        InstallDsymCommand(),
         InstallDylibCommand(),
         UninstallCommand(),
         ListAppsCommand(),

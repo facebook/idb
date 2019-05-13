@@ -184,6 +184,9 @@ class IdbClientBase:
     async def install_dylib(self, dylib_path: str) -> str:
         pass
 
+    async def install_dsym(self, dsym_path: str) -> str:
+        pass
+
     async def install_xctest(self, bundle_path: str) -> str:
         pass
 

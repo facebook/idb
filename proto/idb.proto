@@ -76,6 +76,7 @@ message InstallRequest {
     APP = 0;
     XCTEST = 1;
     DYLIB = 2;
+    DSYM = 3;
   }
   oneof value {
     Destination destination = 1;
