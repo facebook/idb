@@ -6,4 +6,5 @@
 <url> <loc>https://fbidb.io/docs/guided-tour</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://fbidb.io/docs/guided-tour" /> </url>
 <url> <loc>https://fbidb.io/docs/installation</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://fbidb.io/docs/installation" /> </url>
 <url> <loc>https://fbidb.io/docs/overview</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://fbidb.io/docs/overview" /> </url>
+<url> <loc>https://fbidb.io/docs/test_execution</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://fbidb.io/docs/test_execution" /> </url>
 </urlset>
