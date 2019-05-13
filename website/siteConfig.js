@@ -26,7 +26,7 @@ const siteConfig = {
     primaryColor: '#181452',
     secondaryColor: '#fd1b43',
   },
-  copyright: `Copyright © ${new Date().getFullYear()} Your Name or Your Company Name`,
+  copyright: `Copyright © ${new Date().getFullYear()} Facebook, Inc. and its affiliates`,
 
   highlight: {
     theme: 'default',
