@@ -642,7 +642,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSNull *> *)detach
 {
-  return [[[[[FBFuture
+  return [[[FBFuture
     onQueue:self.workQueue resolve:^ FBFuture<NSNumber *> * {
       FBFileReader *reader = self.reader;
       if (!reader) {
@@ -651,15 +651,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
           failFuture];
       }
       // Since detach may be called before the reader has finished reading asynchronously,
-      // we should attempt to wait for this to happen naturally.
-      // If this doesn't happen naturally, then we need to force this by calling -[FBFileReader stopReading]
-      return [reader finishedReading];
-    }]
-    timeout:ProcessDetachDrainTimeout waitingFor:@"Process Reading to Finish"]
-    onQueue:self.workQueue handleError:^(NSError *_) {
-      // Since waiting for finishedReading timed out, we need to cancel the in-flight read operation.
-      // This is not mandatory if finishedReading has resolved.
-      return [self.reader stopReading];
+      // we should attempt to wait for this to happen naturally and then use the backoff API.
+      return [reader finishedReadingWithTimeout:ProcessDetachDrainTimeout];
     }]
     onQueue:self.workQueue chain:^(FBFuture *future) {
       self.reader = nil;

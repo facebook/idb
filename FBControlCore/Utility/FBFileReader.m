@@ -118,6 +118,18 @@ static NSString *StateStringFromState(FBFileReaderState state)
   }];
 }
 
+- (FBFuture<NSNumber *> *)finishedReadingWithTimeout:(NSTimeInterval)timeout
+{
+  return [[[self
+    finishedReading]
+    timeout:timeout waitingFor:@"Process Reading to Finish"]
+    onQueue:self.readQueue handleError:^(NSError *_) {
+      // Since waiting for finishedReading timed out, we need to cancel the in-flight read operation.
+      // This is not mandatory if finishedReading has resolved, which is why we use handleError.
+      return [self stopReadingNow];
+    }];
+}
+
 - (FBFuture<NSNumber *> *)finishedReading
 {
   // We don't re-alias ioChannelFinishedReadOperation as if it's externally cancelled, we want the ioChannelFinishedReadOperation to resolve normally

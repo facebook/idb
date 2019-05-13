@@ -84,6 +84,13 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
  */
 - (FBFuture<NSNumber *> *)stopReading;
 
+/**
+ Waits for the reader to finish reading, backing off to a forcing of stopping reading in the event of a timeout.
+
+ @param timeout the timeout to wait before calling `stopReading`
+ */
+- (FBFuture<NSNumber *> *)finishedReadingWithTimeout:(NSTimeInterval)timeout;
+
 #pragma mark Properties
 
 /**
