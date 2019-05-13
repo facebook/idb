@@ -85,8 +85,8 @@ logger: logging.Logger = logging.getLogger()
 async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
     # Setup parser
     parser = argparse.ArgumentParser(
-        description="idb cli: versatile tool "
-        "to communicate with an iOS target (simulator/device)",
+        description="idb: a versatile tool to communicate with iOS Simulators and Devices",
+        epilog="See Also: https://www.fbidb.io/docs/guided-tour",
         formatter_class=argparse.RawTextHelpFormatter,
     )
     commands: List[Command] = [
