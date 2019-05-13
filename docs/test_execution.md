@@ -3,8 +3,6 @@ id: test_execution
 title: Test Execution
 ---
 
-# Test Execution in idb
-
 Test execution is a well-supported feature of `idb`. Supporting `xctest run` as a primitive means that `idb` can be used in automated scenarios such as continuous integration or IDEs.
 
 There are three areas that `idb` aims to solve on top of Xcode and `xcodebuild`:
