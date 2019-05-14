@@ -113,6 +113,7 @@ async def run_xctest(
     result_bundle_path: Optional[str] = None,
     idb_log_buffer: Optional[StringIO] = None,
     timeout: Optional[int] = None,
+    poll_interval_sec: float = TESTS_POLL_INTERVAL,
 ) -> AsyncIterator[TestRunInfo]:
     async with client.stub.xctest_run.open() as stream:
         request = _make_request(
