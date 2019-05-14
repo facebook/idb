@@ -18,15 +18,55 @@
 
 NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
+/**
+ A protocol for abstracting over implementations of subprocesses.
+ */
 @protocol FBTaskProcess <NSObject, FBLaunchedProcess>
 
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *exitCode;
+/**
+ The designated initializer
 
+ @param configuration the configuration of the task.
+ @return a new FBTaskProcess Instance.
+ */
++ (instancetype)processWithConfiguration:(FBTaskConfiguration *)configuration;
+
+/**
+ Launch the process.
+ */
 - (void)launch;
+
+/**
+ Mount stdout into the process.
+ stdOut may be an NSPipe or NSFileHandle.
+ Should be called before `launch`
+ */
 - (void)mountStandardOut:(id)stdOut;
+
+/**
+ Mount stderr into the process.
+ stdErr may be an NSPipe or NSFileHandle.
+ Should be called before `launch`
+ */
 - (void)mountStandardErr:(id)stdErr;
+
+/**
+ Mount stdin into the process.
+ stdIn may be an NSPipe or NSFileHandle.
+ Should be called before `launch`
+ */
 - (void)mountStandardIn:(id)stdIn;
+
+/**
+ Send a signal to the process.
+ Returns a future with the resolved exit code of the process.
+ */
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo;
+
+/**
+ A future that resolves with the exit code of the process.
+ */
+@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *exitCode;
 
 @end
 
@@ -41,7 +81,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @synthesize exitCode = _exitCode;
 
-+ (instancetype)fromConfiguration:(FBTaskConfiguration *)configuration
++ (instancetype)processWithConfiguration:(FBTaskConfiguration *)configuration
 {
   NSTask *task = [[NSTask alloc] init];
   task.environment = configuration.environment;
@@ -148,7 +188,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 + (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBTaskConfiguration *)configuration
 {
-  id<FBTaskProcess> process = [FBTaskProcess_NSTask fromConfiguration:configuration];
+  id<FBTaskProcess> process = [FBTaskProcess_NSTask processWithConfiguration:configuration];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
   FBTask *task = [[self alloc] initWithProcess:process stdOut:configuration.stdOut stdErr:configuration.stdErr stdIn:configuration.stdIn queue:queue acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description programName:configuration.launchPath.lastPathComponent];
   return [task launchTask];
