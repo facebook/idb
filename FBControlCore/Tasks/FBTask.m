@@ -27,35 +27,12 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
  The designated initializer
 
  @param configuration the configuration of the task.
+@param stdIn the stdin to mount.
+ @param stdOut the stdout to mount.
+ @param stdErr the stderr to mount.
  @return a new FBTaskProcess Instance.
  */
-+ (instancetype)processWithConfiguration:(FBTaskConfiguration *)configuration;
-
-/**
- Launch the process.
- */
-- (void)launch;
-
-/**
- Mount stdout into the process.
- stdOut may be an NSPipe or NSFileHandle.
- Should be called before `launch`
- */
-- (void)mountStandardOut:(id)stdOut;
-
-/**
- Mount stderr into the process.
- stdErr may be an NSPipe or NSFileHandle.
- Should be called before `launch`
- */
-- (void)mountStandardErr:(id)stdErr;
-
-/**
- Mount stdin into the process.
- stdIn may be an NSPipe or NSFileHandle.
- Should be called before `launch`
- */
-- (void)mountStandardIn:(id)stdIn;
++ (FBFuture<id<FBTaskProcess>> *)processWithConfiguration:(FBTaskConfiguration *)configuration stdIn:(nullable id)stdIn stdOut:(nullable id)stdOut stdErr:(nullable id)stdErr;
 
 /**
  Send a signal to the process.
@@ -63,34 +40,57 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
  */
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo;
 
-/**
- A future that resolves with the exit code of the process.
- */
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *exitCode;
-
 @end
 
 @interface FBTaskProcess_NSTask : NSObject <FBTaskProcess>
 
-@property (nonatomic, strong, readwrite) NSTask *task;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) NSTask *task;
 
 @end
 
 @implementation FBTaskProcess_NSTask
 
+@synthesize processIdentifier = _processIdentifier;
 @synthesize exitCode = _exitCode;
 
-+ (instancetype)processWithConfiguration:(FBTaskConfiguration *)configuration
++ (FBFuture<id<FBTaskProcess>> *)processWithConfiguration:(FBTaskConfiguration *)configuration stdIn:(id)stdIn stdOut:(id)stdOut stdErr:(id)stdErr
 {
   NSTask *task = [[NSTask alloc] init];
   task.environment = configuration.environment;
   task.launchPath = configuration.launchPath;
   task.arguments = configuration.arguments;
-  return [[self alloc] initWithTask:task logger:configuration.logger];
+  if (stdOut) {
+    task.standardOutput = stdOut;
+  }
+  if (stdErr) {
+    task.standardError = stdErr;
+  }
+  if (stdIn) {
+    task.standardInput = stdIn;
+  }
+  id<FBControlCoreLogger> logger = configuration.logger;
+  FBMutableFuture<NSNumber *> *exitCode = FBMutableFuture.future;
+  task.terminationHandler = ^(NSTask *innerTask) {
+    if (logger.level >= FBControlCoreLogLevelDebug) {
+      [logger logFormat:@"Task finished with exit code %d", innerTask.terminationStatus];
+    }
+    [exitCode resolveWithResult:@(innerTask.terminationStatus)];
+  };
+
+  if (logger.level >= FBControlCoreLogLevelDebug) {
+    [logger.debug logFormat:
+      @"Running %@ %@",
+      task.launchPath,
+      [task.arguments componentsJoinedByString:@" "]
+    ];
+  }
+  [task launch];
+
+  id<FBTaskProcess> process = [[self alloc] initWithTask:task processIdentifier:task.processIdentifier exitCode:exitCode];
+  return [FBFuture futureWithResult:process];
 }
 
-- (instancetype)initWithTask:(NSTask *)task logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithTask:(NSTask *)task processIdentifier:(pid_t)processIdentifier exitCode:(FBFuture<NSNumber *> *)exitCode
 {
   self = [super init];
   if (!self) {
@@ -98,56 +98,15 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   }
 
   _task = task;
-  _exitCode = FBMutableFuture.future;
-  _logger = logger;
+  _processIdentifier = processIdentifier;
+  _exitCode = exitCode;
 
   return self;
 }
 
-- (pid_t)processIdentifier
-{
-  return self.task.processIdentifier;
-}
-
-- (void)mountStandardOut:(id)stdOut
-{
-  self.task.standardOutput = stdOut;
-}
-
-- (void)mountStandardErr:(id)stdErr
-{
-  self.task.standardError = stdErr;
-}
-
-- (void)mountStandardIn:(id)stdIn
-{
-  self.task.standardInput = stdIn;
-}
-
-- (void)launch
-{
-  FBMutableFuture<NSNumber *> *exitCode = (FBMutableFuture *) self.exitCode;
-  id<FBControlCoreLogger> logger = self.logger;
-  self.task.terminationHandler = ^(NSTask *task) {
-    if (logger.level >= FBControlCoreLogLevelDebug) {
-      [logger logFormat:@"Task finished with exit code %d", task.terminationStatus];
-    }
-    [exitCode resolveWithResult:@(task.terminationStatus)];
-  };
-
-  if (logger.level >= FBControlCoreLogLevelDebug) {
-    [self.logger.debug logFormat:
-      @"Running %@ %@",
-      self.task.launchPath,
-      [self.task.arguments componentsJoinedByString:@" "]
-    ];
-  }
-  [self.task launch];
-}
-
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo
 {
-  pid_t processIdentifier = self.processIdentifier;
+  pid_t processIdentifier = self.task.processIdentifier;
   switch (signo) {
     case SIGTERM:
       [self.task terminate];
@@ -188,10 +147,41 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 + (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBTaskConfiguration *)configuration
 {
-  id<FBTaskProcess> process = [FBTaskProcess_NSTask processWithConfiguration:configuration];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
-  FBTask *task = [[self alloc] initWithProcess:process stdOut:configuration.stdOut stdErr:configuration.stdErr stdIn:configuration.stdIn queue:queue acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description programName:configuration.launchPath.lastPathComponent];
-  return [task launchTask];
+  return [[[FBFuture
+    futureWithFutures:@[
+      [configuration.stdIn attachToPipeOrFileHandle] ?: (FBFuture<id> *) FBFuture.empty,
+      [configuration.stdOut attachToPipeOrFileHandle] ?: (FBFuture<id> *) FBFuture.empty,
+      [configuration.stdErr attachToPipeOrFileHandle] ?: (FBFuture<id> *) FBFuture.empty,
+    ]]
+    onQueue:queue fmap:^(NSArray<id> *pipes) {
+      // Mount all the relevant std streams.
+      id stdIn = pipes[0];
+      if (![stdIn isKindOfClass:NSFileHandle.class] && ![stdIn isKindOfClass:NSPipe.class]) {
+        stdIn = nil;
+      }
+      id stdOut = pipes[1];
+      if (![stdOut isKindOfClass:NSFileHandle.class] && ![stdOut isKindOfClass:NSPipe.class]) {
+        stdOut = nil;
+      }
+      id stdErr = pipes[2];
+      if (![stdErr isKindOfClass:NSFileHandle.class] && ![stdErr isKindOfClass:NSPipe.class]) {
+        stdErr = nil;
+      }
+      // Everything is setup, launch the process now.
+      return [FBTaskProcess_NSTask processWithConfiguration:configuration stdIn:stdIn stdOut:stdOut stdErr:stdErr];
+    }]
+    onQueue:queue map:^(id<FBTaskProcess> process) {
+      return [[self alloc]
+        initWithProcess:process
+        stdOut:configuration.stdOut
+        stdErr:configuration.stdErr
+        stdIn:configuration.stdIn
+        queue:queue
+        acceptableStatusCodes:configuration.acceptableStatusCodes
+        configurationDescription:configuration.description
+        programName:configuration.launchPath.lastPathComponent];
+    }];
 }
 
 - (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(FBProcessOutput *)stdOut stdErr:(FBProcessOutput *)stdErr stdIn:(FBProcessInput *)stdIn queue:(dispatch_queue_t)queue acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription programName:(NSString *)programName
@@ -269,36 +259,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 }
 
 #pragma mark Private
-
-- (FBFuture<FBTask *> *)launchTask
-{
-  return [[FBFuture
-    futureWithFutures:@[
-      [self.stdInSlot attachToPipeOrFileHandle] ?: (FBFuture<id> *) FBFuture.empty,
-      [self.stdOutSlot attachToPipeOrFileHandle] ?: (FBFuture<id> *) FBFuture.empty,
-      [self.stdErrSlot attachToPipeOrFileHandle] ?: (FBFuture<id> *) FBFuture.empty,
-    ]]
-    onQueue:self.queue map:^(NSArray<id> *pipes) {
-      // Mount all the relevant std streams.
-      id stdIn = pipes[0];
-      if ([stdIn isKindOfClass:NSFileHandle.class] || [stdIn isKindOfClass:NSPipe.class]) {
-        [self.process mountStandardIn:stdIn];
-      }
-      id stdOut = pipes[1];
-      if ([stdOut isKindOfClass:NSFileHandle.class] || [stdOut isKindOfClass:NSPipe.class]) {
-        [self.process mountStandardOut:stdOut];
-      }
-      id stdErr = pipes[2];
-      if ([stdErr isKindOfClass:NSFileHandle.class] || [stdErr isKindOfClass:NSPipe.class]) {
-        [self.process mountStandardErr:stdErr];
-      }
-
-      // Everything is setup, launch the process now.
-      [self.process launch];
-
-      return self;
-    }];
-}
 
 - (FBFuture<NSNull *> *)terminateWithErrorMessage:(nullable NSString *)errorMessage
 {
