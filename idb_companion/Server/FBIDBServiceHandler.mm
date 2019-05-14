@@ -240,8 +240,10 @@ static idb::XctestRunResponse convert_xctest_delta(const FBXCTestDelta *delta, d
   if (logOutput) {
     response.add_log_output(logOutput.UTF8String);
   }
-  NSString *resultBundlePath = nil;
-  if (resultBundlePath) {
+  NSString *resultBundlePath = delta.resultBundlePath;
+  // Only send result bundle when finished to avoid unnecessary packing for every delta update
+  if ((delta.state == FBIDBTestManagerStateTerminatedNormally || delta.state == FBIDBTestManagerStateTerminatedAbnormally)
+   && resultBundlePath) {
     NSError *error = nil;
     NSData *data = [[FBArchiveOperations createGzippedTarDataForPath:resultBundlePath queue:queue logger:logger] block:&error];
     if (!data) {
