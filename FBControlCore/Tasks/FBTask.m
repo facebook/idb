@@ -20,8 +20,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @protocol FBTaskProcess <NSObject, FBLaunchedProcess>
 
-@property (nonatomic, assign, readonly) int terminationStatus;
-@property (nonatomic, assign, readonly) BOOL isRunning;
+@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *exitCode;
 
 - (void)launch;
 - (void)mountStandardOut:(id)stdOut;
@@ -68,16 +67,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 - (pid_t)processIdentifier
 {
   return self.task.processIdentifier;
-}
-
-- (int)terminationStatus
-{
-  return self.task.terminationStatus;
-}
-
-- (BOOL)isRunning
-{
-  return self.task.isRunning;
 }
 
 - (void)mountStandardOut:(id)stdOut
@@ -142,7 +131,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 @property (nonatomic, copy, readonly) NSString *configurationDescription;
 @property (nonatomic, copy, readonly) NSString *programName;
 
-@property (nonatomic, strong, nullable, readwrite) id<FBTaskProcess> process;
+@property (nonatomic, strong, readwrite) id<FBTaskProcess> process;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdOutSlot;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdErrSlot;
 @property (nonatomic, strong, nullable, readwrite) FBProcessInput *stdInSlot;
@@ -290,7 +279,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
     teardownProcess]
     onQueue:self.queue fmap:^(NSNumber *exitCode) {
       if (![self.acceptableStatusCodes containsObject:exitCode]) {
-        NSError *error = [self errorForMessage:[NSString stringWithFormat:@"%@ Returned non-zero status code %d", self.programName, self.process.terminationStatus]];
+        NSError *error = [self errorForMessage:[NSString stringWithFormat:@"%@ Returned non-zero status code %@", self.programName, exitCode]];
         [self.errorFuture resolveWithError:error];
       }
       return [self teardownResources];
@@ -303,7 +292,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 - (FBFuture<NSNumber *> *)teardownProcess
 {
-  if (self.process.isRunning) {
+  if (self.process.exitCode.state == FBFutureStateRunning) {
     return [self.process sendSignal:SIGTERM];
   }
   return self.process.exitCode;
