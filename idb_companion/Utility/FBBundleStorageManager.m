@@ -100,6 +100,9 @@
 
 @end
 
+static NSString *const XctestExtension = @"xctest";
+static NSString *const XctestRunExtension = @"xctestrun";
+
 @implementation FBXCTestBundleStorage
 
 #pragma mark Public
@@ -109,8 +112,8 @@
   // Find .xctest or .xctestrun in directory.
   NSError *xctestBundleError = nil;
   NSError *xctestrunError = nil;
-  NSURL *xctestBundleURL = [FBStorageUtils findFileWithExtension:@"xctest" atURL:baseDirectory error:&xctestBundleError];
-  NSURL *xctestrunURL = [FBStorageUtils findFileWithExtension:@"xctestrun" atURL:baseDirectory error:&xctestrunError];
+  NSURL *xctestBundleURL = [FBStorageUtils findFileWithExtension:XctestExtension atURL:baseDirectory error:&xctestBundleError];
+  NSURL *xctestrunURL = [FBStorageUtils findFileWithExtension:XctestRunExtension atURL:baseDirectory error:&xctestrunError];
   if (!xctestBundleURL && !xctestrunURL) {
     return [[FBIDBError
       describeFormat:@"Neither a .xctest bundle or .xctestrun file provided: %@ %@", xctestBundleError, xctestrunError]
@@ -141,10 +144,10 @@
 - (nullable NSString *)saveBundleOrTestRun:(NSURL *)filePath error:(NSError **)error
 {
   // save .xctest or .xctestrun
-  if ([filePath.pathExtension isEqualToString:@"xctest"]) {
+  if ([filePath.pathExtension isEqualToString:XctestExtension]) {
     return [self saveTestBundle:filePath error:error];
   }
-  if ([filePath.pathExtension isEqualToString:@"xctestrun"]) {
+  if ([filePath.pathExtension isEqualToString:XctestRunExtension]) {
     return [self saveTestRun:filePath error:error];
   }
   return [[FBControlCoreError
@@ -211,18 +214,18 @@
 
 - (NSSet<NSURL *> *)listTestBundlesWithError:(NSError **)error
 {
-  return [self listXCTestContentsWithExtension:@"xctest" error:error];
+  return [self listXCTestContentsWithExtension:XctestExtension error:error];
 }
 
 - (NSSet<NSURL *> *)listXCTestRunFilesWithError:(NSError **)error
 {
-  return [self listXCTestContentsWithExtension:@"xctestrun" error:error];
+  return [self listXCTestContentsWithExtension:XctestRunExtension error:error];
 }
 
 - (NSURL *)xctestBundleWithID:(NSString *)bundleID error:(NSError **)error
 {
   NSURL *directory = [self.basePath URLByAppendingPathComponent:bundleID];
-  return [FBStorageUtils findFileWithExtension:@"xctest" atURL:directory error:error];
+  return [FBStorageUtils findFileWithExtension:XctestExtension atURL:directory error:error];
 }
 
 - (NSSet<NSURL *> *)listXCTestContentsWithExtension:(NSString *)extention error:(NSError **)error
