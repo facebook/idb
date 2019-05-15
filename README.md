@@ -83,6 +83,8 @@ pip3 install .
 
 To build the objective-c/c++ part:
 
+Make sure you have installed gRPC dependencies: ```brew tap grpc/grpc && brew install grpc```
+
 ```
 open idb_companion.xcworkspace
 ```
