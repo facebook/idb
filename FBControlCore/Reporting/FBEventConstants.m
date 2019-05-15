@@ -13,7 +13,6 @@ FBJSONKey const FBJSONKeyLevel = @"level";
 FBJSONKey const FBJSONKeySubject = @"subject";
 FBJSONKey const FBJSONKeyTarget = @"target";
 FBJSONKey const FBJSONKeyTimestamp = @"timestamp";
-FBJSONKey const FBJSONKeyErrorMessage = @"error_message";
 FBJSONKey const FBJSONKeyCallArguments = @"call_arguments";
 FBJSONKey const FBJSONKeyMessage = @"message";
 FBJSONKey const FBJSONKeyDuration = @"duration";

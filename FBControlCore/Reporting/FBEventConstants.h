@@ -18,7 +18,6 @@ extern FBJSONKey const FBJSONKeyLevel;
 extern FBJSONKey const FBJSONKeySubject;
 extern FBJSONKey const FBJSONKeyTarget;
 extern FBJSONKey const FBJSONKeyTimestamp;
-extern FBJSONKey const FBJSONKeyErrorMessage;
 extern FBJSONKey const FBJSONKeyCallArguments;
 extern FBJSONKey const FBJSONKeyMessage;
 extern FBJSONKey const FBJSONKeyDuration;
