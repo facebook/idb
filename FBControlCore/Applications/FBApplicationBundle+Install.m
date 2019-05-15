@@ -111,7 +111,7 @@
 + (FBFuture<FBApplicationBundle *> *)extractedApplicationAtPath:(NSString *)appPath directory:(NSURL *)directory
 {
   NSError *error = nil;
-  FBApplicationBundle *bundle = [FBApplicationBundle applicationWithPath:appPath error:&error];
+  FBApplicationBundle *bundle = [FBApplicationBundle bundleFromPath:appPath error:&error];
   if (!bundle) {
     return [FBFuture futureWithError:error];
   }

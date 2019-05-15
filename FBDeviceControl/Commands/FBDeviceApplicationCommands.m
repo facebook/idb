@@ -280,9 +280,10 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
     signerIdentity:(app[FBApplicationInstallInfoKeySignerIdentity] ? : @"")];
 
   FBApplicationBundle *bundle = [FBApplicationBundle
-    applicationWithName:bundleName
+    bundleWithName:bundleName
     path:path
-    bundleID:bundleID];
+    bundleID:bundleID
+    binary:nil];
 
   return [FBInstalledApplication
     installedApplicationWithBundle:bundle

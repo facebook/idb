@@ -173,7 +173,7 @@
 
   // Get info out of xctest bundles
   for (NSURL *testURL in testURLS) {
-    FBApplicationBundle *bundle = [FBApplicationBundle applicationWithPath:testURL.path error:error];
+    FBApplicationBundle *bundle = [FBApplicationBundle bundleFromPath:testURL.path error:error];
     if (!bundle) {
       if (error) {
         [self.logger.error log:(*error).description];
@@ -279,8 +279,8 @@
         [self.logger.error log:@"Using UseDestinationArtifacts requires FB_TestBundleIdentifier"];
         continue;
       }
-      FBApplicationBundle *testBundle = [FBApplicationBundle applicationWithName:testIdentifier path:@"" bundleID:testIdentifier];
-      FBApplicationBundle *hostBundle = [FBApplicationBundle applicationWithName:hostIdentifier path:@"" bundleID:hostIdentifier];
+      FBApplicationBundle *testBundle = [FBApplicationBundle bundleWithName:testIdentifier path:@"" bundleID:testIdentifier binary:nil];
+      FBApplicationBundle *hostBundle = [FBApplicationBundle bundleWithName:hostIdentifier path:@"" bundleID:hostIdentifier binary:nil];
       id<FBXCTestDescriptor> descriptor = [[FBXCodebuildTestRunDescriptor alloc] initWithURL:xcTestRunURL name:testName testBundle:testBundle testHostBundle:hostBundle];
       [descriptors addObject:descriptor];
       continue;
@@ -299,12 +299,12 @@
       withString:testHostPath];
 
     // Get the bundles for test host and test app
-    FBApplicationBundle *testHostBundle = [FBApplicationBundle applicationWithPath:testHostPath error:&error];
+    FBApplicationBundle *testHostBundle = [FBApplicationBundle bundleFromPath:testHostPath error:&error];
     if (!testHostBundle) {
       [self.logger.error log:error.description];
       continue;
     }
-    FBApplicationBundle *testBundle = [FBApplicationBundle applicationWithPath:testBundlePath error:&error];
+    FBApplicationBundle *testBundle = [FBApplicationBundle bundleFromPath:testBundlePath error:&error];
     if (!testBundle) {
       [self.logger.error log:error.description];
       continue;
@@ -318,8 +318,8 @@
 
 - (NSString *)saveTestBundle:(NSURL *)testBundleURL error:(NSError **)error
 {
-  // This is currently assuming the Test Bundle is "Appish" in that it contains a CFBundleName, this needs fixing.
-  FBBundleDescriptor *bundle = [FBApplicationBundle applicationWithPath:testBundleURL.path error:error];
+  // This is currently assuming the Test Bundle is contains a CFBundleName, this needs fixing.
+  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:testBundleURL.path error:error];
   if (!bundle) {
     return nil;
   }
@@ -391,7 +391,7 @@
     if (!appPath) {
       [self.logger logFormat:@"Could not find app in path %@", directory];
     }
-    FBApplicationBundle *bundle = [FBApplicationBundle applicationWithPath:appPath.path error:&error];
+    FBApplicationBundle *bundle = [FBApplicationBundle bundleFromPath:appPath.path error:&error];
     if (!bundle) {
       [self.logger logFormat:@"Failed to get bundle info for app installed at path %@", appPath];
     }
