@@ -142,22 +142,22 @@
     FBBundleDescriptor *bundle = [FBApplicationBundle applicationWithPath:filePath.path error:&xctestBundleError];
     if (!bundle) {
       return [[FBIDBError
-               describeFormat:@"Could not get bundle information from provided .xctest bundle %@", xctestBundleError]
-              fail:error];
+        describeFormat:@"Could not get bundle information from provided .xctest bundle %@", xctestBundleError]
+        fail:error];
     }
     bundleIdentifier = [self saveBundle:bundle error:&xctestBundleError];
     if (!bundleIdentifier) {
       return [[FBIDBError
-               describeFormat:@"Failed to save xctest bundle %@: %@", bundle, xctestBundleError]
-              fail:error];
+        describeFormat:@"Failed to save xctest bundle %@: %@", bundle, xctestBundleError]
+        fail:error];
     }
   }
   if ([filePath.pathExtension isEqualToString:@"xctestrun"]) {
     bundleIdentifier = [self saveTestRun:filePath error:&xctestrunError];
     if (!bundleIdentifier) {
       return [[FBIDBError
-               describeFormat:@"Failed to save xctestrun file %@: %@", filePath, xctestrunError]
-              fail:error];
+        describeFormat:@"Failed to save xctestrun file %@: %@", filePath, xctestrunError]
+        fail:error];
     }
   }
   return bundleIdentifier;

@@ -45,18 +45,20 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Public Methods
 
 /**
- Saves the relevant files from an extracted directory.
+ Stores a test bundle, based on a containing directory.
+ This is useful when the test bundle is extracted to a temporary directory, because it came from an archive.
 
- @param baseDirectory the directory containing a bundle
+ @param baseDirectory the directory containing the test bundle.
  @param error an error out for any error that occurs.
  @return the bundle id of the installed test, or nil if failed
  */
 - (nullable NSString *)saveBundleOrTestRunFromBaseDirectory:(NSURL *)baseDirectory error:(NSError **)error;
 
 /**
- Saves a file
+ Stores a test bundle, based on the file path of the actual test bundle.
+ This is useful when the test bundle is from an existing and local file path, instead of passed in an archive.
 
- @param filePath the file containing a bundle
+ @param filePath the file path of the bundle.
  @param error an error out for any error that occurs.
  @return the bundle id of the installed test, or nil if failed
  */
