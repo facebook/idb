@@ -110,13 +110,27 @@ static NSString *const XctestRunExtension = @"xctestrun";
 - (nullable NSString *)saveBundleOrTestRunFromBaseDirectory:(NSURL *)baseDirectory error:(NSError **)error
 {
   // Find .xctest or .xctestrun in directory.
-  NSError *xctestBundleError = nil;
-  NSError *xctestrunError = nil;
-  NSURL *xctestBundleURL = [FBStorageUtils findFileWithExtension:XctestExtension atURL:baseDirectory error:&xctestBundleError];
-  NSURL *xctestrunURL = [FBStorageUtils findFileWithExtension:XctestRunExtension atURL:baseDirectory error:&xctestrunError];
+  NSDictionary<NSString *, NSSet<NSURL *> *> *buckets = [FBStorageUtils bucketFilesWithExtensions:[NSSet setWithArray:@[XctestExtension, XctestRunExtension]] inDirectory:baseDirectory error:error];
+  if (!buckets) {
+    return nil;
+  }
+  NSArray<NSURL *> *bucket = buckets[XctestExtension].allObjects;
+  NSURL *xctestBundleURL = bucket.firstObject;
+  if (bucket.count > 1) {
+    return [[FBControlCoreError
+      describeFormat:@"Multiple files with .xctest extension: %@", [FBCollectionInformation oneLineDescriptionFromArray:bucket]]
+      fail:error];
+  }
+  bucket = buckets[XctestRunExtension].allObjects;
+  NSURL *xctestrunURL = bucket.firstObject;
+  if (bucket.count > 1) {
+    return [[FBControlCoreError
+      describeFormat:@"Multiple files with .xctestrun extension: %@", [FBCollectionInformation oneLineDescriptionFromArray:bucket]]
+      fail:error];
+  }
   if (!xctestBundleURL && !xctestrunURL) {
     return [[FBIDBError
-      describeFormat:@"Neither a .xctest bundle or .xctestrun file provided: %@ %@", xctestBundleError, xctestrunError]
+      describeFormat:@"Neither a .xctest bundle or .xctestrun file provided: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:buckets]]
       fail:error];
   }
 
