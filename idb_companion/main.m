@@ -95,7 +95,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
     if (!target) {
       return [FBFuture futureWithError:error];
     }
-    [reporter addMetadata:@{@"udid": udid, @"target_udid": udid}];
+    [reporter addMetadata:@{@"udid": udid}];
     [reporter report:[FBEventReporterSubject subjectForEvent:FBEventNameLaunched]];
 
     // Start up the companion
