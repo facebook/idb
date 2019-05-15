@@ -119,10 +119,16 @@
 
   NSString *bundleIdentifier = nil;
   if (xctestBundleURL) {
-    bundleIdentifier = [self saveBundleOrTestRun:xctestBundleURL error:&xctestBundleError];
+    bundleIdentifier = [self saveTestBundle:xctestBundleURL error:error];
+    if (!bundleIdentifier) {
+      return nil;
+    }
   }
   if (xctestrunURL) {
-    bundleIdentifier = [self saveBundleOrTestRun:xctestrunURL error:&xctestrunError];
+    bundleIdentifier = [self saveTestRun:xctestrunURL error:error];
+    if (!bundleIdentifier) {
+      return nil;
+    }
   }
   if (!bundleIdentifier) {
     return [[FBIDBError
