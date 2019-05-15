@@ -15,6 +15,34 @@
 
 #pragma mark Finding Files
 
++ (NSDictionary<NSString *, NSSet<NSURL *> *> *)bucketFilesWithExtensions:(NSSet<NSString *> *)extensions inDirectory:(NSURL *)directory error:(NSError **)error
+{
+  NSMutableDictionary<NSString *, NSMutableSet<NSURL *> *> *files = NSMutableDictionary.dictionary;
+  for (NSString *extension in extensions) {
+    files[extension] = NSMutableSet.set;
+  }
+
+  NSArray<NSURL *> *contents = [NSFileManager.defaultManager
+    contentsOfDirectoryAtURL:directory
+    includingPropertiesForKeys:nil
+    options:NSDirectoryEnumerationSkipsSubdirectoryDescendants
+    error:error];
+
+  if (!contents) {
+    return nil;
+  }
+  for (NSURL *file in contents) {
+    NSString *extension = file.pathExtension;
+    if (![extensions containsObject:extension]) {
+      continue;
+    }
+    NSMutableSet<NSURL *> *bucket = files[extension];
+    [bucket addObject:file];
+  }
+
+  return files;
+}
+
 + (NSURL *)findFileWithExtension:(NSString *)extension atURL:(NSURL *)url error:(NSError **)error
 {
   NSSet<NSURL *> *files = [self findFilesWithExtension:extension atURL:url error:error];
@@ -32,23 +60,7 @@
 
 + (NSSet<NSURL *> *)findFilesWithExtension:(NSString *)extension atURL:(NSURL *)url error:(NSError **)error
 {
-  NSArray<NSURL *> *dirFiles =
-  [[NSFileManager defaultManager] contentsOfDirectoryAtURL:url
-                                includingPropertiesForKeys:nil
-                                                   options:NSDirectoryEnumerationSkipsSubdirectoryDescendants
-                                                     error:error];
-  if (!dirFiles) {
-    return nil;
-  }
-
-  NSMutableSet<NSURL *> *matchingFiles = [NSMutableSet set];
-  for (NSURL *file in dirFiles) {
-    if ([[file pathExtension] isEqualToString:extension]) {
-      [matchingFiles addObject:file];
-    }
-  }
-
-  return matchingFiles;
+  return [self bucketFilesWithExtensions:[NSSet setWithObject:extension] inDirectory:url error:error][extension];
 }
 
 + (FBFuture<NSURL *> *)findUniqueFileInDirectory:(NSURL *)directory onQueue:(dispatch_queue_t)queue

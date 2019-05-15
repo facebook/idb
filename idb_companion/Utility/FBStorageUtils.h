@@ -20,6 +20,17 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Finding Files
 
 /**
+ Finds files with given extensions and buckets them.
+ Note this doesn't recurse into subdirectories.
+
+ @param extension File extensions to find e.g. doc / zip / ...
+ @param directory The directory to search in.
+ @param error Error set if there was not exactly one matching file
+ @return A mapping of extensions to found files.
+ */
++ (nullable NSDictionary<NSString *, NSSet<NSURL *> *> *)bucketFilesWithExtensions:(NSSet<NSString *> *)extensions inDirectory:(NSURL *)directory error:(NSError **)error;
+
+/**
  Find a file with a given extension in the given directory.
  Note this doesn't recurse into subdirectories and will error if more
  than one matching file exists
