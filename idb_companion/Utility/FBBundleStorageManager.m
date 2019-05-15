@@ -135,32 +135,15 @@
 - (nullable NSString *)saveBundleOrTestRun:(NSURL *)filePath error:(NSError **)error
 {
   // save .xctest or .xctestrun
-  NSString *bundleIdentifier = nil;
-  NSError *xctestBundleError = nil;
-  NSError *xctestrunError = nil;
   if ([filePath.pathExtension isEqualToString:@"xctest"]) {
-    FBBundleDescriptor *bundle = [FBApplicationBundle applicationWithPath:filePath.path error:&xctestBundleError];
-    if (!bundle) {
-      return [[FBIDBError
-        describeFormat:@"Could not get bundle information from provided .xctest bundle %@", xctestBundleError]
-        fail:error];
-    }
-    bundleIdentifier = [self saveBundle:bundle error:&xctestBundleError];
-    if (!bundleIdentifier) {
-      return [[FBIDBError
-        describeFormat:@"Failed to save xctest bundle %@: %@", bundle, xctestBundleError]
-        fail:error];
-    }
+    return [self saveTestBundle:filePath error:error];
   }
   if ([filePath.pathExtension isEqualToString:@"xctestrun"]) {
-    bundleIdentifier = [self saveTestRun:filePath error:&xctestrunError];
-    if (!bundleIdentifier) {
-      return [[FBIDBError
-        describeFormat:@"Failed to save xctestrun file %@: %@", filePath, xctestrunError]
-        fail:error];
-    }
+    return [self saveTestRun:filePath error:error];
   }
-  return bundleIdentifier;
+  return [[FBControlCoreError
+    describeFormat:@"The path extension (%@) of the provided bundle (%@) is not .xctest or .xctestrun", filePath.pathExtension, filePath]
+    fail:error];
 }
 
 - (NSSet<id<FBXCTestDescriptor>> *)listTestDescriptorsWithError:(NSError **)error
@@ -325,6 +308,16 @@
   }
 
   return descriptors;
+}
+
+- (NSString *)saveTestBundle:(NSURL *)testBundleURL error:(NSError **)error
+{
+  // This is currently assuming the Test Bundle is "Appish" in that it contains a CFBundleName, this needs fixing.
+  FBBundleDescriptor *bundle = [FBApplicationBundle applicationWithPath:testBundleURL.path error:error];
+  if (!bundle) {
+    return nil;
+  }
+  return [self saveBundle:bundle error:error];
 }
 
 - (NSString *)saveTestRun:(NSURL *)XCTestRunURL error:(NSError **)error
