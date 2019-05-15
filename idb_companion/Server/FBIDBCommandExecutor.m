@@ -145,7 +145,11 @@
 
 - (FBFuture<NSData *> *)takeScreenshot:(FBScreenshotFormat)format
 {
-  return [self.target takeScreenshot:format];
+  return [[self
+    screenshotCommands]
+    onQueue:self.target.workQueue fmap:^(id<FBScreenshotCommands> commands) {
+        return [commands takeScreenshot:format];
+    }];
 }
 
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath inContainerOfApplication:(NSString *)bundleID
@@ -441,6 +445,18 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       failFuture];
   }
   return [FBFuture futureWithResult:self.target];
+}
+
+
+- (FBFuture<id<FBScreenshotCommands>> *)screenshotCommands
+{
+  id<FBScreenshotCommands> commands = (id<FBScreenshotCommands>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBScreenshotCommands)]) {
+    return [[FBIDBError
+             describeFormat:@"Target doesn't conform to FBScreenshotCommands protocol %@", self.target]
+            failFuture];
+  }
+  return [FBFuture futureWithResult:commands];
 }
 
 - (FBFuture<id<FBSimulatorLifecycleCommands>> *)lifecycleCommands
