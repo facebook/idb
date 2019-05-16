@@ -14,6 +14,7 @@ from idb.cli.commands.accessibility import (
     AccessibilityInfoAtPointCommand,
 )
 from idb.cli.commands.add_media import AddMediaCommand
+from idb.cli.commands.app import AppInstallCommand
 from idb.cli.commands.approve import ApproveCommand
 from idb.cli.commands.base import Command, CommandGroup
 from idb.cli.commands.boot import BootCommand
@@ -33,6 +34,8 @@ from idb.cli.commands.debugserver import (
 )
 from idb.cli.commands.describe import DescribeCommand
 from idb.cli.commands.disconnect import DisconnectCommand
+from idb.cli.commands.dsym import DsymInstallCommand
+from idb.cli.commands.dylib import DylibInstallCommand
 from idb.cli.commands.file import (
     DeprecatedPullCommand,
     DeprecatedPushCommand,
@@ -51,11 +54,6 @@ from idb.cli.commands.hid import (
     SwipeCommand,
     TapCommand,
     TextCommand,
-)
-from idb.cli.commands.install import (
-    InstallAppCommand,
-    InstallDsymCommand,
-    InstallDylibCommand,
 )
 from idb.cli.commands.instruments import InstrumentsCommand
 from idb.cli.commands.kill import KillCommand
@@ -97,9 +95,9 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
     )
     commands: List[Command] = [
         DescribeCommand(),
-        InstallAppCommand(),
-        InstallDsymCommand(),
-        InstallDylibCommand(),
+        AppInstallCommand(),
+        DsymInstallCommand(),
+        DylibInstallCommand(),
         UninstallCommand(),
         ListAppsCommand(),
         LaunchCommand(),
