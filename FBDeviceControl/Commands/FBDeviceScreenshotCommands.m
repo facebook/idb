@@ -8,6 +8,7 @@
 #import "FBDeviceScreenshotCommands.h"
 
 #import "FBDevice.h"
+#import "FBDevice+Private.h"
 #import "FBDLDevice.h"
 
 @interface FBDeviceScreenshotCommands ()
@@ -42,7 +43,7 @@
 - (FBFuture<NSData *> *)takeScreenshot:(FBScreenshotFormat)format
 {
   return [[FBDLDevice
-    deviceWithUDID:self.device.udid timeout:FBControlCoreGlobalConfiguration.regularTimeout]
+    deviceWithAMDevice:self.device.amDevice timeout:FBControlCoreGlobalConfiguration.regularTimeout]
     onQueue:self.device.workQueue fmap:^(FBDLDevice *dlDevice) {
       return [dlDevice screenshotData];
     }];

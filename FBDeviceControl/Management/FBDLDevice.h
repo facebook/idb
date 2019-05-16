@@ -11,6 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBAMDevice;
+
 /**
  An Object-Wrapper for a DLDevice Opaque Struct from DeviceLink.framework
  */
@@ -19,13 +21,13 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Initializers
 
 /**
- Obtains a Device with the given identifier.
+ Obtains a Device from the given AMDevice.
 
- @param udid the udid to obtain.
+ @param amDevice the udid to obtain.
  @param timeout the timeout in seconds to wait for the device to appear.
  @return a Future, wrapping the device.
  */
-+ (FBFuture<FBDLDevice *> *)deviceWithUDID:(NSString *)udid timeout:(NSTimeInterval)timeout;
++ (FBFuture<FBDLDevice *> *)deviceWithAMDevice:(FBAMDevice *)amDevice timeout:(NSTimeInterval)timeout;
 
 #pragma mark Properties
 

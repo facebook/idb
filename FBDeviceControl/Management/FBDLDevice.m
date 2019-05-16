@@ -12,6 +12,7 @@
 #include <dlfcn.h>
 
 #import "FBDeviceControlError.h"
+#import "FBAMDevice.h"
 
 #pragma mark Notifications
 
@@ -444,16 +445,16 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
 
 #pragma mark Initializers
 
-+ (FBFuture<FBDLDevice *> *)deviceWithUDID:(NSString *)udid timeout:(NSTimeInterval)timeout
++ (FBFuture<FBDLDevice *> *)deviceWithAMDevice:(FBAMDevice *)amDevice timeout:(NSTimeInterval)timeout
 {
   FBDLDeviceManager *manager = FBDLDeviceManager.sharedManager;
-  FBDLDevice *device = manager.currentDevices[udid];
+  FBDLDevice *device = manager.currentDevices[amDevice.udid];
   if (device) {
     return [FBFuture futureWithResult:device];
   }
   return [[FBDLDevice
-    oneshotDeviceAttachedNotificationForUDID:udid onQueue:manager.queue]
-    timeout:timeout waitingFor:@"the device %@ to appear", udid];
+    oneshotDeviceAttachedNotificationForUDID:amDevice.udid onQueue:manager.queue]
+    timeout:timeout waitingFor:@"the device %@ to appear", amDevice];
 }
 
 - (instancetype)initWithDLDevice:(DLDevice *)dlDevice manager:(FBDLDeviceManager *)manager queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
