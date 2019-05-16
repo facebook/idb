@@ -60,12 +60,14 @@
   }
   NSString *bundleName = [self bundleNameForBundle:bundle];
   NSString *identifier = [bundle bundleIdentifier];
-  if (!identifier && !fallbackIdentifier) {
-    return [[FBControlCoreError
-      describeFormat:@"Could not obtain Bundle ID for bundle at path %@", path]
-      fail:error];
+  if (!identifier) {
+    if (!fallbackIdentifier) {
+      return [[FBControlCoreError
+        describeFormat:@"Could not obtain Bundle ID for bundle at path %@", path]
+        fail:error];
+    }
+    identifier = bundleName;
   }
-  identifier = bundleName;
   FBBinaryDescriptor *binary = [self binaryForBundle:bundle error:error];
   if (!binary) {
     return nil;
