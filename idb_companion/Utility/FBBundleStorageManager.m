@@ -87,13 +87,14 @@
     return nil;
   }
 
-
   // Copy over bundle
   NSURL *sourceBundlePath = [NSURL fileURLWithPath:bundle.path];
   NSURL *destinationBundlePath = [storageDirectory URLByAppendingPathComponent:sourceBundlePath.lastPathComponent];
+  [self.logger logFormat:@"Persisting %@ to %@", bundle.identifier, destinationBundlePath];
   if (![NSFileManager.defaultManager copyItemAtURL:sourceBundlePath toURL:destinationBundlePath error:error]) {
     return nil;
   }
+  [self.logger logFormat:@"Persisted %@", bundle.identifier];
 
   return bundle.identifier;
 }
