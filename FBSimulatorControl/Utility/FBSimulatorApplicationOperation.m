@@ -59,17 +59,10 @@
 
 + (FBFuture<NSNull *> *)terminationFutureForSimulator:(FBSimulator *)simulator processIdentifier:(pid_t)processIdentifier
 {
-  FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
-  FBDispatchSourceNotifier *notifier = nil;
-  notifier = [FBDispatchSourceNotifier
-    processTerminationNotifierForProcessIdentifier:processIdentifier
-    queue:simulator.asyncQueue
-    handler:^(FBDispatchSourceNotifier *_) {
-      [future resolveWithResult:NSNull.null];
-    }];
-  return [future
+  return [[[FBDispatchSourceNotifier
+    processTerminationFutureNotifierForProcessIdentifier:processIdentifier]
+    mapReplace:NSNull.null]
     onQueue:simulator.workQueue respondToCancellation:^{
-      [notifier terminate];
       [[FBProcessTerminationStrategy
         strategyWithProcessFetcher:simulator.processFetcher.processFetcher workQueue:simulator.workQueue logger:simulator.logger]
         killProcessIdentifier:processIdentifier];

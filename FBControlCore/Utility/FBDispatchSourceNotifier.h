@@ -7,6 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBFuture.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -17,13 +19,12 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Constructors
 
 /**
- Creates and returns an `FBDispatchSourceNotifier` that will call the `handler` when the provided `processIdentifier` quits
+ A future that resolves when the given process identifier terminates.
 
- @param processIdentifier the Process Identifier of the Process to Monitor
- @param queue the queue to call back on.
- @param handler the handler to call when the process exits
+ @param processIdentifier the process identifier to observe.
+ @return a Future that resolves when the process identifier terminates, with the process identifier.
  */
-+ (instancetype)processTerminationNotifierForProcessIdentifier:(pid_t)processIdentifier queue:(dispatch_queue_t)queue handler:(void (^)(FBDispatchSourceNotifier *))handler;
++ (FBFuture<NSNumber *> *)processTerminationFutureNotifierForProcessIdentifier:(pid_t)processIdentifier;
 
 /**
  Creates and returns an `FBDispatchSourceNotifier` that will call the `handler` at a provided timing interval.
