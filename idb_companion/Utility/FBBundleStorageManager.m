@@ -190,7 +190,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
   // Get info out of xctest bundles
   for (NSURL *testURL in testURLS) {
-    FBApplicationBundle *bundle = [FBApplicationBundle bundleWithFallbackIdentifierFromPath:testURL.path error:error];
+    FBBundleDescriptor *bundle = [FBBundleDescriptor bundleWithFallbackIdentifierFromPath:testURL.path error:error];
     if (!bundle) {
       if (error) {
         [self.logger.error log:(*error).description];
@@ -296,7 +296,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
         [self.logger.error log:@"Using UseDestinationArtifacts requires FB_TestBundleIdentifier"];
         continue;
       }
-      FBApplicationBundle *testBundle = [[FBApplicationBundle alloc] initWithName:testIdentifier identifier:testIdentifier path:@"" binary:nil];
+      FBBundleDescriptor *testBundle = [[FBBundleDescriptor alloc] initWithName:testIdentifier identifier:testIdentifier path:@"" binary:nil];
       FBApplicationBundle *hostBundle = [[FBApplicationBundle alloc] initWithName:hostIdentifier identifier:hostIdentifier path:@"" binary:nil];
       id<FBXCTestDescriptor> descriptor = [[FBXCodebuildTestRunDescriptor alloc] initWithURL:xcTestRunURL name:testName testBundle:testBundle testHostBundle:hostBundle];
       [descriptors addObject:descriptor];
@@ -321,7 +321,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
       [self.logger.error log:error.description];
       continue;
     }
-    FBApplicationBundle *testBundle = [FBApplicationBundle bundleFromPath:testBundlePath error:&error];
+    FBBundleDescriptor *testBundle = [FBBundleDescriptor bundleFromPath:testBundlePath error:&error];
     if (!testBundle) {
       [self.logger.error log:error.description];
       continue;

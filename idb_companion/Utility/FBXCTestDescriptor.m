@@ -55,7 +55,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithURL:(NSURL *)url name:(NSString *)name testBundle:(FBApplicationBundle *)testBundle
+- (instancetype)initWithURL:(NSURL *)url name:(NSString *)name testBundle:(FBBundleDescriptor *)testBundle
 {
   self = [super init];
 
