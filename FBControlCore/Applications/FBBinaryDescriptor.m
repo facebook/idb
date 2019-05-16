@@ -14,11 +14,11 @@
 
 @implementation FBBinaryDescriptor
 
-- (instancetype)initWithName:(NSString *)name path:(NSString *)path architectures:(NSSet *)architectures
+- (instancetype)initWithName:(NSString *)name architectures:(NSSet<FBBinaryArchitecture> *)architectures path:(NSString *)path
 {
   NSParameterAssert(name);
-  NSParameterAssert(path);
   NSParameterAssert(architectures);
+  NSParameterAssert(path);
 
   self = [super init];
   if (!self) {
@@ -26,25 +26,38 @@
   }
 
   _name = name;
-  _path = path;
   _architectures = architectures;
+  _path = path;
 
   return self;
 }
 
-+ (nullable instancetype)withName:(NSString *)name path:(NSString *)path architectures:(NSSet *)architectures
++ (nullable instancetype)binaryWithPath:(NSString *)binaryPath error:(NSError **)error;
 {
-  if (!name || !path || !architectures) {
-    return nil;
+  NSError *innerError = nil;
+  if (![NSFileManager.defaultManager fileExistsAtPath:binaryPath]) {
+    return [[FBControlCoreError
+      describeFormat:@"Binary does not exist at path %@", binaryPath]
+      fail:error];
   }
-  return [[self alloc] initWithName:name path:path architectures:architectures];
+
+  NSSet<FBBinaryArchitecture> *archs = [FBBinaryParser architecturesForBinaryAtPath:binaryPath error:&innerError];
+  if (archs.count < 1) {
+    return [FBControlCoreError failWithError:innerError errorOut:error];
+  }
+
+  return [[FBBinaryDescriptor alloc]
+    initWithName:[self binaryNameForBinaryPath:binaryPath]
+    architectures:archs
+    path:binaryPath];
 }
 
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  return [[FBBinaryDescriptor alloc] initWithName:self.name path:self.path architectures:self.architectures];
+  // Is immutable.
+  return self;
 }
 
 #pragma mark NSObject
@@ -55,8 +68,8 @@
     return NO;
   }
   return [object.name isEqual:self.name] &&
-  [object.path isEqual:self.path] &&
-  [object.architectures isEqual:self.architectures];
+    [object.path isEqual:self.path] &&
+    [object.architectures isEqual:self.architectures];
 }
 
 - (NSUInteger)hash
@@ -100,30 +113,6 @@
     @"path" : self.path,
     @"architectures" : self.architectures.allObjects,
   };
-}
-
-@end
-
-@implementation FBBinaryDescriptor (Helpers)
-
-+ (nullable instancetype)binaryWithPath:(NSString *)binaryPath error:(NSError **)error;
-{
-  NSError *innerError = nil;
-  if (![NSFileManager.defaultManager fileExistsAtPath:binaryPath]) {
-    return [[FBControlCoreError
-      describeFormat:@"Binary does not exist at path %@", binaryPath]
-      fail:error];
-  }
-
-  NSSet *archs = [FBBinaryParser architecturesForBinaryAtPath:binaryPath error:&innerError];
-  if (archs.count < 1) {
-    return [FBControlCoreError failWithError:innerError errorOut:error];
-  }
-
-  return [FBBinaryDescriptor
-    withName:[self binaryNameForBinaryPath:binaryPath]
-    path:binaryPath
-    architectures:archs];
 }
 
 #pragma mark Private
