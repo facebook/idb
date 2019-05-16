@@ -57,23 +57,6 @@
   return YES;
 }
 
-#pragma mark Private
-
-- (BOOL)prepareDirectoryWithURL:(NSURL *)url error:(NSError **)error
-{
-  // Clear old test
-  if ([NSFileManager.defaultManager fileExistsAtPath:url.path]) {
-    if (![NSFileManager.defaultManager removeItemAtURL:url error:error]) {
-      return NO;
-    }
-  }
-  // Recreate directory
-  if (![NSFileManager.defaultManager createDirectoryAtURL:url withIntermediateDirectories:YES attributes:nil error:error]) {
-    return NO;
-  }
-  return YES;
-}
-
 - (nullable NSString *)saveBundle:(FBBundleDescriptor *)bundle error:(NSError **)error
 {
   // Check that the bundle matches the architecture of the target.
@@ -97,6 +80,34 @@
   [self.logger logFormat:@"Persisted %@", bundle.identifier];
 
   return bundle.identifier;
+}
+
+- (nullable NSString *)saveFile:(NSURL *)url error:(NSError **)error
+{
+  NSURL *destination = [self.basePath URLByAppendingPathComponent:url.lastPathComponent];
+  [self.logger logFormat:@"Persisting %@ to %@", url.lastPathComponent, destination];
+  if (![NSFileManager.defaultManager copyItemAtURL:url toURL:destination error:error]) {
+    return nil;
+  }
+  [self.logger logFormat:@"Persisted %@", destination.lastPathComponent];
+  return destination.lastPathComponent;
+}
+
+#pragma mark Private
+
+- (BOOL)prepareDirectoryWithURL:(NSURL *)url error:(NSError **)error
+{
+  // Clear old test
+  if ([NSFileManager.defaultManager fileExistsAtPath:url.path]) {
+    if (![NSFileManager.defaultManager removeItemAtURL:url error:error]) {
+      return NO;
+    }
+  }
+  // Recreate directory
+  if (![NSFileManager.defaultManager createDirectoryAtURL:url withIntermediateDirectories:YES attributes:nil error:error]) {
+    return NO;
+  }
+  return YES;
 }
 
 @end
@@ -454,15 +465,6 @@ static NSString *const XctestRunExtension = @"xctestrun";
 @end
 
 @implementation FBDsymStorage
-
-- (nullable NSString *)saveDsymFromFile:(NSURL *)url error:(NSError **)error
-{
-  NSURL *destination = [self.basePath URLByAppendingPathComponent:url.lastPathComponent];
-  if (![NSFileManager.defaultManager copyItemAtURL:url toURL:destination error:error]) {
-    return nil;
-  }
-  return destination.lastPathComponent;
-}
 
 @end
 

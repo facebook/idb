@@ -123,22 +123,22 @@
 
 - (FBFuture<NSString *> *)install_dylib_file_path:(NSString *)filePath
 {
-  return [self installDylib:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]]];
+  return [self install:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.bundleStorageManager.dylib];
 }
 
 - (FBFuture<NSString *> *)install_dylib_stream:(FBProcessInput *)input name:(NSString *)name
 {
-  return [self installDylib:[self.temporaryDirectory withGzipExtractedFromStream:input name:name]];
+  return [self install:[self.temporaryDirectory withGzipExtractedFromStream:input name:name] intoStorage:self.bundleStorageManager.dylib];
 }
 
 - (FBFuture<NSString *> *)install_dsym_file_path:(NSString *)filePath
 {
-  return [self installDsym:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]]];
+  return [self install:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.bundleStorageManager.dsym];
 }
 
 - (FBFuture<NSString *> *)install_dsym_stream:(FBProcessInput *)input
 {
-  return [self installDsym:[self.temporaryDirectory withArchiveExtractedFromStream:input]];
+  return [self install:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.bundleStorageManager.dsym];
 }
 
 #pragma mark Public Methods
@@ -633,29 +633,16 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
-- (FBFuture<NSString *> *)installDsym:(FBFutureContext<NSURL *> *)extractedDsym
+- (FBFuture<NSString *> *)install:(FBFutureContext<NSURL *> *)extractedDsym intoStorage:(FBBundleStorage *)storage
 {
   return [extractedDsym
     onQueue:self.target.workQueue pop:^(NSURL *dsym) {
       NSError *error = nil;
-      NSString *dsymPath = [self.bundleStorageManager.dsym saveDsymFromFile:dsym error:&error];
+      NSString *dsymPath = [storage saveFile:dsym error:&error];
       if (!dsymPath) {
         return [FBFuture futureWithError:error];
       }
       return [FBFuture futureWithResult:dsymPath];
-    }];
-}
-
-- (FBFuture<NSString *> *)installDylib:(FBFutureContext<NSURL *> *)extractedDylib
-{
-  return [extractedDylib
-    onQueue:self.target.workQueue pop:^(NSURL *dylib) {
-      NSError *error = nil;
-      NSString *dylibName = [self.bundleStorageManager.dylib saveDylibFromFile:dylib error:&error];
-      if (!dylibName) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:dylibName];
     }];
 }
 

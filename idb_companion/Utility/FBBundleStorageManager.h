@@ -35,6 +35,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable NSString *)saveBundle:(FBBundleDescriptor *)bundle error:(NSError **)error;
 
+/**
+ Relocates the file into storage.
+
+ @param url the url to relocate.
+ @param error an error out for any error that occurs
+ @return the path of the relocated file.
+ */
+- (nullable NSString *)saveFile:(NSURL *)url error:(NSError **)error;
+
 @end
 
 /**
@@ -107,15 +116,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBDylibStorage : FBBundleStorage
 
 /**
- Relocates the dylib into storage.
-
- @param url the dylib url to relocate.
- @param error an error out for any error that occurs
- @return the path of the relocated file.
- */
-- (nullable NSString *)saveDylibFromFile:(NSURL *)url error:(NSError **)error;
-
-/**
  Interpolate the stored dylibs so that they can be replaced.
 
  @param environment the environment to interpolate.
@@ -129,15 +129,6 @@ NS_ASSUME_NONNULL_BEGIN
  Class to manage storage of dsym files that can be used to symbolicate call stacks
  */
 @interface FBDsymStorage : FBBundleStorage
-
-/**
- Relocates the dsym into storage.
-
- @param url the dsym url to relocate.
- @param error an error out for any error that occurs
- @return the path of the relocated file(s).
- */
-- (nullable NSString *)saveDsymFromFile:(NSURL *)url error:(NSError **)error;
 
 @end
 
