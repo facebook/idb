@@ -1,13 +1,83 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-from argparse import ArgumentParser, REMAINDER, Namespace
+import json
+from argparse import REMAINDER, ArgumentParser, Namespace
 from typing import List, Optional, Set
 
 from idb.cli.commands.base import Command, CompositeCommand, TargetCommand
 from idb.client.client import IdbClient
-from idb.common.format import human_format_test_info, json_format_test_info
+from idb.common.format import (
+    human_format_installed_test_info,
+    human_format_test_info,
+    json_format_installed_test_info,
+    json_format_test_info,
+)
 from idb.common.misc import get_env_with_idb_prefix
+
+
+class XctestInstallCommand(TargetCommand):
+    @property
+    def description(self) -> str:
+        return "Install an xctest"
+
+    @property
+    def name(self) -> str:
+        return "install"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "test_bundle_path", help="Bundle path of the test bundle", type=str
+        )
+        super().add_parser_arguments(parser)
+
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+        test_bundle_id = await client.install_xctest(args.test_bundle_path)
+        if args.json:
+            print(json.dumps({"installedTestBundleId": test_bundle_id}))
+        else:
+            print(f"Installed: {test_bundle_id}")
+
+
+class XctestsListBundlesCommand(TargetCommand):
+    @property
+    def description(self) -> str:
+        return "List the installed test bundles"
+
+    @property
+    def name(self) -> str:
+        return "list"
+
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+        tests = await client.list_xctests()
+        formatter = human_format_installed_test_info
+        if args.json:
+            formatter = json_format_installed_test_info
+        for test in tests:
+            print(formatter(test))
+
+
+class XctestListTestsCommand(TargetCommand):
+    @property
+    def description(self) -> str:
+        return "List the tests inside an installed test bundle"
+
+    @property
+    def name(self) -> str:
+        return "list-bundle"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "test_bundle_id", help="Bundle id of the test bundle to list", type=str
+        )
+        super().add_parser_arguments(parser)
+
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+        tests = await client.list_test_bundle(test_bundle_id=args.test_bundle_id)
+        if args.json:
+            print(json.dumps(tests))
+        else:
+            print("\n".join(tests))
 
 
 class CommonRunXcTestCommand(TargetCommand):
@@ -78,7 +148,7 @@ class CommonRunXcTestCommand(TargetCommand):
         return None
 
 
-class RunXcTestAppCommand(CommonRunXcTestCommand):
+class XcestRunAppCommand(CommonRunXcTestCommand):
     @property
     def name(self) -> str:
         return "app"
@@ -113,7 +183,7 @@ class RunXcTestAppCommand(CommonRunXcTestCommand):
         return set(args.tests_to_skip) if args.tests_to_skip else None
 
 
-class RunXcTestUICommand(RunXcTestAppCommand):
+class XctestRunUICommand(XcestRunAppCommand):
     @property
     def name(self) -> str:
         return "ui"
@@ -127,7 +197,7 @@ class RunXcTestUICommand(RunXcTestAppCommand):
         )
 
 
-class RunXcTestLogicCommand(CommonRunXcTestCommand):
+class XctestRunLogicCommand(CommonRunXcTestCommand):
     @property
     def name(self) -> str:
         return "logic"
@@ -146,12 +216,12 @@ class RunXcTestLogicCommand(CommonRunXcTestCommand):
         return set(args.test_to_run) if args.test_to_run else None
 
 
-class RunXctestCommand(CompositeCommand):
+class XctestRunCommand(CompositeCommand):
     def __init__(self) -> None:
         self._subcommands: List[Command] = [
-            RunXcTestAppCommand(),
-            RunXcTestUICommand(),
-            RunXcTestLogicCommand(),
+            XcestRunAppCommand(),
+            XctestRunUICommand(),
+            XctestRunLogicCommand(),
         ]
 
     @property

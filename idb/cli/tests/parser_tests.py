@@ -3,8 +3,8 @@
 
 import asyncio
 from argparse import Namespace
-from unittest.mock import ANY, MagicMock, patch
 from typing import Any
+from unittest.mock import ANY, MagicMock, patch
 
 from idb.cli.main import gen_main as cli_main
 from idb.common.constants import XCTEST_TIMEOUT
@@ -301,7 +301,7 @@ class TestParser(TestCase):
         mock = AsyncMock()
         mock.return_value = []
         with patch(
-            "idb.cli.commands.xctest_run.RunXcTestAppCommand.run", new=mock, create=True
+            "idb.cli.commands.xctest.XcestRunAppCommand.run", new=mock, create=True
         ):
             test_bundle_id = "com.me.tests"
             app_under_test_id = "com.me.app"
@@ -319,7 +319,7 @@ class TestParser(TestCase):
         mock = AsyncMock()
         mock.return_value = []
         with patch(
-            "idb.cli.commands.xctest_run.RunXcTestUICommand.run", new=mock, create=True
+            "idb.cli.commands.xctest.XctestRunUICommand.run", new=mock, create=True
         ):
             test_bundle_id = "com.me.tests"
             app_under_test_id = "com.me.app"
@@ -346,9 +346,7 @@ class TestParser(TestCase):
         mock = AsyncMock()
         mock.return_value = []
         with patch(
-            "idb.cli.commands.xctest_run.CommonRunXcTestCommand.run",
-            new=mock,
-            create=True,
+            "idb.cli.commands.xctest.CommonRunXcTestCommand.run", new=mock, create=True
         ):
             test_bundle_id = "com.me.tests"
             await cli_main(cmd_input=["xctest", "run", "logic", test_bundle_id])

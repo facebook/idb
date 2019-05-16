@@ -69,10 +69,12 @@ from idb.cli.commands.screenshot import ScreenshotCommand
 from idb.cli.commands.set_location import SetLocationCommand
 from idb.cli.commands.terminate import TerminateCommand
 from idb.cli.commands.uninstall import UninstallCommand
-from idb.cli.commands.xctest_install import InstallXctestCommand
-from idb.cli.commands.xctest_list import ListXctestsCommand
-from idb.cli.commands.xctest_list_bundle import ListTestBundleCommand
-from idb.cli.commands.xctest_run import RunXctestCommand
+from idb.cli.commands.xctest import (
+    XctestInstallCommand,
+    XctestListTestsCommand,
+    XctestRunCommand,
+    XctestsListBundlesCommand,
+)
 from idb.common.types import IdbException
 
 
@@ -106,10 +108,10 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
             name="xctest",
             description="Operations with xctest on target",
             commands=[
-                InstallXctestCommand(),
-                ListXctestsCommand(),
-                ListTestBundleCommand(),
-                RunXctestCommand(),
+                XctestInstallCommand(),
+                XctestsListBundlesCommand(),
+                XctestListTestsCommand(),
+                XctestRunCommand(),
             ],
         ),
         CommandGroup(
