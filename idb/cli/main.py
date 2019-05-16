@@ -98,7 +98,6 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
     commands: List[Command] = [
         DescribeCommand(),
         AppInstallCommand(),
-        DsymInstallCommand(),
         DylibInstallCommand(),
         AppUninstallCommand(),
         ListAppsCommand(),
@@ -181,6 +180,9 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
                 DebugServerStopCommand(),
                 DebugServerStatusCommand(),
             ],
+        ),
+        CommandGroup(
+            name="dsym", description="dsym commands", commands=[DsymInstallCommand()]
         ),
     ]
     sorted_commands = sorted(commands, key=lambda command: command.name)

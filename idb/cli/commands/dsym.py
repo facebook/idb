@@ -15,7 +15,7 @@ class DsymInstallCommand(TargetCommand):
 
     @property
     def name(self) -> str:
-        return "install-dsym"
+        return "install"
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("dsym_path", help="Path to dSYM(s) to install", type=str)
