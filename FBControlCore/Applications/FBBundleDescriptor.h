@@ -35,17 +35,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(nullable FBBinaryDescriptor *)binary;
 
 /**
- An initializer for FBBundleDescriptor that checks the nullability of the arguments
-
- @param name the Name of the Application. See CFBundleName. Must not be nil.
- @param path The Path to the Application Bundle. May be nil.
- @param bundleID the Bundle ID of the Application. May be nil.
- @param binary the Path to the binary inside the Application. May be nil.
- @return a new FBBundleDescriptor instance, if all arguments are non-nil. Nil otherwise
- */
-+ (nullable instancetype)bundleWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(nullable FBBinaryDescriptor *)binary;
-
-/**
  An initializer for FBBundleDescriptor that obtains information by inspecting the Info.plist.
 
  @param path the path of the bundle to use.

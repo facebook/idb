@@ -35,14 +35,6 @@
   return self;
 }
 
-+ (nullable instancetype)bundleWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBBinaryDescriptor *)binary
-{
-  if (!name || !path || !bundleID) {
-    return nil;
-  }
-  return [[self alloc] initWithName:name path:path bundleID:bundleID binary:binary];
-}
-
 + (nullable instancetype)bundleFromPath:(NSString *)path error:(NSError **)error
 {
   if (!path) {

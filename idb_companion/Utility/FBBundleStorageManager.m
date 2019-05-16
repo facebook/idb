@@ -296,8 +296,8 @@ static NSString *const XctestRunExtension = @"xctestrun";
         [self.logger.error log:@"Using UseDestinationArtifacts requires FB_TestBundleIdentifier"];
         continue;
       }
-      FBApplicationBundle *testBundle = [FBApplicationBundle bundleWithName:testIdentifier path:@"" bundleID:testIdentifier binary:nil];
-      FBApplicationBundle *hostBundle = [FBApplicationBundle bundleWithName:hostIdentifier path:@"" bundleID:hostIdentifier binary:nil];
+      FBApplicationBundle *testBundle = [[FBApplicationBundle alloc] initWithName:testIdentifier path:@"" bundleID:testIdentifier binary:nil];
+      FBApplicationBundle *hostBundle = [[FBApplicationBundle alloc] initWithName:hostIdentifier path:@"" bundleID:hostIdentifier binary:nil];
       id<FBXCTestDescriptor> descriptor = [[FBXCodebuildTestRunDescriptor alloc] initWithURL:xcTestRunURL name:testName testBundle:testBundle testHostBundle:hostBundle];
       [descriptors addObject:descriptor];
       continue;
