@@ -49,6 +49,7 @@
 		8BD1AF4B212DB04E001F65E1 /* FBiOSTargetSet.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BD1AF46212DACDE001F65E1 /* FBiOSTargetSet.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0080D71DB4CCFD009A25CB /* FBProcessTerminationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0080D51DB4CCFD009A25CB /* FBProcessTerminationStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0080D81DB4CCFD009A25CB /* FBProcessTerminationStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0080D61DB4CCFD009A25CB /* FBProcessTerminationStrategy.m */; };
+		AA0121E2228D8DCC00D0BEF8 /* FBDLDefines.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0121E1228D8DCC00D0BEF8 /* FBDLDefines.h */; };
 		AA017F581BD7787300F45E9D /* libShimulator.dylib in Resources */ = {isa = PBXBuildFile; fileRef = AA017F4C1BD7784700F45E9D /* libShimulator.dylib */; };
 		AA01A1211D7896AD0030236F /* FBFramebufferConnectStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA01A11F1D7896AD0030236F /* FBFramebufferConnectStrategy.h */; };
 		AA01A1221D7896AD0030236F /* FBFramebufferConnectStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA01A1201D7896AD0030236F /* FBFramebufferConnectStrategy.m */; };
@@ -833,6 +834,7 @@
 		8BD1AF46212DACDE001F65E1 /* FBiOSTargetSet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetSet.h; sourceTree = "<group>"; };
 		AA0080D51DB4CCFD009A25CB /* FBProcessTerminationStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBProcessTerminationStrategy.h; sourceTree = "<group>"; };
 		AA0080D61DB4CCFD009A25CB /* FBProcessTerminationStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProcessTerminationStrategy.m; sourceTree = "<group>"; };
+		AA0121E1228D8DCC00D0BEF8 /* FBDLDefines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDLDefines.h; sourceTree = "<group>"; };
 		AA017F4C1BD7784700F45E9D /* libShimulator.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libShimulator.dylib; sourceTree = "<group>"; };
 		AA01A11F1D7896AD0030236F /* FBFramebufferConnectStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBFramebufferConnectStrategy.h; sourceTree = "<group>"; };
 		AA01A1201D7896AD0030236F /* FBFramebufferConnectStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFramebufferConnectStrategy.m; sourceTree = "<group>"; };
@@ -2526,6 +2528,7 @@
 				AA682B181CEC9E8B009B6ECA /* FBDeviceSet.h */,
 				AA682B191CEC9E8B009B6ECA /* FBDeviceSet.m */,
 				AAFAC45E1CF36E530029F19A /* FBDeviceSet+Private.h */,
+				AA0121E1228D8DCC00D0BEF8 /* FBDLDefines.h */,
 				AABD19A01FFCE8750043771C /* FBDLDevice.h */,
 				AABD199F1FFCE8750043771C /* FBDLDevice.m */,
 			);
@@ -3137,6 +3140,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA682B201CECD49B009B6ECA /* FBAMDevice.h in Headers */,
+				AA0121E2228D8DCC00D0BEF8 /* FBDLDefines.h in Headers */,
 				AAC6086621E344EF00280C96 /* FBDeviceDebugServer.h in Headers */,
 				AABD72AC1E64A957004D6EBE /* FBDeviceXCTestCommands.h in Headers */,
 				AA4E5610222D86DB00C95DC4 /* FBGDBClient.h in Headers */,

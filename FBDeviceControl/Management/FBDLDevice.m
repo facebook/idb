@@ -13,6 +13,7 @@
 
 #import "FBDeviceControlError.h"
 #import "FBAMDevice.h"
+#import "FBDLDefines.h"
 
 #pragma mark Notifications
 
@@ -24,104 +25,6 @@ FB_DLDeviceNotificationName const FB_DLDeviceNotificationNameDetached = @"FB_DLD
 typedef NSString *FB_DLDeviceNotificationUserInfoKey NS_STRING_ENUM;
 
 FB_DLDeviceNotificationUserInfoKey const FB_DLDeviceNotificationUserInfoKeyDLDevice = @"FB_DLDeviceNotificationUserInfoKeyDLDevice";
-
-#pragma mark DeviceLink Structures
-
-/**
- Derived from DLDeviceListenerSet* functions.
- Has a size of 0x38/56.
- */
-typedef struct {
-  void *attachedCallback; // 0x0
-  void *detachedCallback; // 0x8
-  void *stoppedCallback; // 0x10
-  void *context; // 0x18
-  void *unknown0; // 0x20
-  CFArrayRef callbackArray; // 0x28
-  void *unknown1; // 0x30
-} DLDeviceListener;
-
-/**
- Derived from DLDeviceGet* functions.
- Has a size of 0x20/32
- */
-typedef struct {
-  CFDictionaryRef info; // 0x0
-  CFArrayRef endpoints; // 0x8
-  CFTypeRef amDevice; // 0x10
-  void *unknown0; // 0x18
-} DLDevice;
-
-/**
- Derived from DLCreateDeviceLinkConnection.
- */
-typedef struct {
-  void *incomingConnectionCallback; // 0x0
-  void *connectionMadeCallback; // 0x8
-  void *connectionFailedCallback; // 0x10
-  void *acceptFailedCallback; // 0x18
-  void *disconnectCallback; // 0x20
-  void *connectionLostCallback; // 0x28
-  void *processMessageCallback; // 0x30
-  void *pingCallback; // 0x38
-  void *requestFileCallback; // 0x40
-  void *sendFileCallback; // 0x48
-  void *context; // 0x50. This value is not set so is assumed to be a context pointer
-  void *deviceReadyCallback; // 0x58
-  intptr_t padding[14]; // 0x60 - 0xd0
-} DLDeviceConnectionCallbacks;
-
-/**
- Derived from DLDeviceConnection functions.
- Has a combined size of 208/0xd0.
- */
-typedef struct {
-  void *padding0[5]; // 0x0 - 0x20
-  DLDeviceConnectionCallbacks *callbacks; // 0x28
-  void *padding1[3]; // 0x30 - 0x40
-  CFStringRef name; // 0x48
-  CFMessagePortRef receivePort; // 0x50
-  void *padding3; // 0x58
-  CFMessagePortRef sendPort; // 0x60
-  void *unknown12; // 0x68
-  void *unknown13; // 0x70
-  void *unknown14; // 0x78
-  void *condition; // 0x80
-  void *unknown17; // 0x88
-  void *unknown18; // 0x90
-  void *unknown19; // 0x98
-  CFNumberRef number0; // 0xa0
-  CFNumberRef number1; // 0xa8
-  void *unknown20; // 0xb0
-  void *unknown21; // 0xb8
-  void *unknown22; // 0xc0
-  void *unknown23; // 0xc8
-} DLDeviceConnection;
-
-#pragma mark DeviceLink APIs
-
-// Management
-void * (*FB_DLCopyConnectedDeviceArray)(DLDeviceListener *deviceListener);
-DLDeviceListener * (*FB_DLDeviceListenerCreateWithCallbacks)(void *deviceAttachedCallback, void *deviceDetachedCallback, void *deviceListenerStoppedCallback, void *context);
-void * (*FB_DLDeviceWaitForAttachedDevice)(DLDeviceListener *deviceListener, CFStringRef udid);
-
-// Getters
-NSString * (*FB_DLDeviceCreateDescription)(DLDevice *device, DLDeviceListener *deviceListener);
-NSString * (*FB_DLDeviceGetUDID)(DLDevice *device);
-void * (*FB_DLDeviceGetWithUDID)(DLDeviceListener *deviceListener, CFStringRef udid);
-
-// Setters
-void *(*FB_DLDeviceListenerSetContext)(DLDeviceListener *listener, void *context);
-
-// Connections
-int (*FB_DLCreateDeviceLinkConnectionForComputer)(int arg0, DLDeviceConnectionCallbacks *callback, int arg2, DLDeviceConnection **connectionOut, CFStringRef *errorDescriptionOut);
-int (*FB_DLConnectToServiceOnDevice)(DLDeviceConnection *connection, DLDevice *device, CFStringRef serviceName, CFStringRef *errorDescriptionOut);
-int (*FB_DLProcessMessage)(DLDeviceConnection *connection, CFDictionaryRef requestDictionary, CFStringRef *errorDescriptionOut);
-int (*FB_DLDisconnect)(DLDeviceConnection *connection, CFStringRef message, CFStringRef *errorDescriptionOut);
-
-// Memory Management
-void *(*FB_DLDeviceRetain)(DLDevice *device);
-void  (*FB_DLDeviceRelease)(DLDevice *device);
 
 #pragma mark Objective-C Interfaces
 
@@ -159,6 +62,8 @@ void  (*FB_DLDeviceRelease)(DLDevice *device);
 @property (nonatomic, strong, readwrite) FBDLDeviceConnection_Context *connectionContext;
 
 - (instancetype)initWithDLDevice:(DLDevice *)dlDevice manager:(FBDLDeviceManager *)manager queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+
++ (DLDeviceCalls)defaultCalls;
 
 @end
 
@@ -219,7 +124,7 @@ static void FB_DLDeviceConnectionDestroy(DLDeviceConnection *connection)
   FBDLDevice *context = FB_DLDeviceConnectionGetDevice(connection);
   [context.logger log:@"Disconnecting from Connection"];
   CFStringRef errorDescription = nil;
-  int code = FB_DLDisconnect(connection, (__bridge CFStringRef) @"Done", &errorDescription);
+  int code = FBDLDevice.defaultCalls.Disconnect(connection, (__bridge CFStringRef) @"Done", &errorDescription);
   if (code != 0) {
     [context.logger logFormat:@"Disconnect Failed %d: %@", code, errorDescription];
   }
@@ -259,7 +164,7 @@ static void FB_DeviceReadyCallback(DLDeviceConnection *connection)
     return;
   }
   CFStringRef errorDescription = nil;
-  int status = FB_DLProcessMessage(connection, (__bridge CFDictionaryRef) device.connectionContext.request, &errorDescription);
+  int status = FBDLDevice.defaultCalls.ProcessMessage(connection, (__bridge CFDictionaryRef) device.connectionContext.request, &errorDescription);
   [device.logger logFormat:@"Processed Message %@ with status %d", context, status];
   if (status != 0) {
     NSError *error = [[FBDeviceControlError describeFormat:@"Process Messsage Failed with %d: %@.", status, errorDescription] build];
@@ -291,24 +196,6 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
 
 #pragma mark Framework Loading
 
-+ (void)loadDLDeviceSymbols
-{
-  void *handle = [[NSBundle bundleWithIdentifier:@"com.apple.DeviceLinkX"] dlopenExecutablePath];
-  FB_DLConnectToServiceOnDevice = FBGetSymbolFromHandle(handle, "DLConnectToServiceOnDevice");
-  FB_DLCopyConnectedDeviceArray = FBGetSymbolFromHandle(handle, "DLCopyConnectedDeviceArray");
-  FB_DLCreateDeviceLinkConnectionForComputer = FBGetSymbolFromHandle(handle, "DLCreateDeviceLinkConnectionForComputer");
-  FB_DLDeviceCreateDescription = FBGetSymbolFromHandle(handle, "DLDeviceCreateDescription");
-  FB_DLDeviceGetUDID = FBGetSymbolFromHandle(handle, "DLDeviceGetUDID");
-  FB_DLDeviceGetWithUDID = FBGetSymbolFromHandle(handle, "DLDeviceGetWithUDID");
-  FB_DLDeviceListenerCreateWithCallbacks = FBGetSymbolFromHandle(handle, "DLDeviceListenerCreateWithCallbacks");
-  FB_DLDeviceListenerSetContext = FBGetSymbolFromHandle(handle, "DLDeviceListenerSetContext");
-  FB_DLDeviceRelease = FBGetSymbolFromHandle(handle, "DLDeviceRelease");
-  FB_DLDeviceRetain = FBGetSymbolFromHandle(handle, "DLDeviceRetain");
-  FB_DLDeviceWaitForAttachedDevice = FBGetSymbolFromHandle(handle, "DLDeviceListenerCreateWithCallbacks");
-  FB_DLDisconnect = FBGetSymbolFromHandle(handle, "DLDisconnect");
-  FB_DLProcessMessage = FBGetSymbolFromHandle(handle, "DLProcessMessage");
-}
-
 + (void)setDeviceLinkLogLevel:(int)logLevel
 {
   // In the logging facility, logs are not written using os_log.
@@ -322,7 +209,7 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
 + (instancetype)createDeviceManagerWithLogger:(id<FBControlCoreLogger>)logger
 {
   // The context is initially empty and then set in DLDeviceListenerSetContext.
-  DLDeviceListener *listener = FB_DLDeviceListenerCreateWithCallbacks(
+  DLDeviceListener *listener = FBDLDevice.defaultCalls.ListenerCreateWithCallbacks(
     FB_DeviceAttachedCallback,
     FB_DeviceDetachedCallback,
     NULL,
@@ -330,7 +217,7 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
   );
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbdevicecontrol.dldevice", DISPATCH_QUEUE_SERIAL);
   FBDLDeviceManager *manager = [[FBDLDeviceManager alloc] initWithListener:listener queue:queue logger:logger];
-  FB_DLDeviceListenerSetContext(listener, (__bridge void *)(manager));
+  FBDLDevice.defaultCalls.ListenerSetContext(listener, (__bridge void *)(manager));
   return manager;
 }
 
@@ -340,7 +227,6 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
   static FBDLDeviceManager *manager;
   dispatch_once(&onceToken, ^{
     [FBDLDeviceManager setDeviceLinkLogLevel:10];
-    [FBDLDeviceManager loadDLDeviceSymbols];
     id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
     manager = [FBDLDeviceManager createDeviceManagerWithLogger:logger];
   });
@@ -367,7 +253,7 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
 
 - (void)deviceAttached:(DLDevice *)dlDevice logger:(id<FBControlCoreLogger>)logger
 {
-  logger = [logger withName:FB_DLDeviceGetUDID(dlDevice)];
+  logger = [logger withName:FBDLDevice.defaultCalls.GetUDID(dlDevice)];
   FBDLDevice *device = [[FBDLDevice alloc] initWithDLDevice:dlDevice manager:self queue:self.queue logger:logger];
   self.currentDevices[device.udid] = device;
   [NSNotificationCenter.defaultCenter postNotificationName:FB_DLDeviceNotificationNameAttached object:device.udid userInfo:@{
@@ -378,7 +264,7 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
 
 - (void)deviceDetached:(DLDevice *)dlDevice
 {
-  NSString *udid = FB_DLDeviceGetUDID(dlDevice);
+  NSString *udid = FBDLDevice.defaultCalls.GetUDID(dlDevice);
   FBDLDevice *device = self.currentDevices[udid];
   if (!device) {
     [self.logger logFormat:@"Could not find existing device attachment for %@", udid];
@@ -399,7 +285,7 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
 
   DLDeviceConnection *connection = nil;
   CFStringRef errorDescription = nil;
-  int code = FB_DLCreateDeviceLinkConnectionForComputer(0x1, callbacks, 0x0, &connection, &errorDescription);
+  int code = FBDLDevice.defaultCalls.CreateDeviceLinkConnectionForComputer(0x1, callbacks, 0x0, &connection, &errorDescription);
   if (code != 0) {
     FB_DLDeviceConnectionCallbacksDestroy(callbacks);
     [[FBDeviceControlError
@@ -422,7 +308,7 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
 
   // Start the connection, setting the context.
   CFStringRef errorDescription = nil;
-  int code = FB_DLConnectToServiceOnDevice(connection, device.dlDevice, (__bridge CFStringRef) serviceName, &errorDescription);
+  int code = FBDLDevice.defaultCalls.ConnectToServiceOnDevice(connection, device.dlDevice, (__bridge CFStringRef) serviceName, &errorDescription);
   if (code != 0) {
     FB_DLDeviceConnectionDestroy(connection);
     return [[FBDeviceControlError
@@ -464,11 +350,11 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
     return nil;
   }
 
-  FB_DLDeviceRetain(dlDevice);
+  FBDLDevice.defaultCalls.Retain(dlDevice);
   _dlDevice = dlDevice;
   _manager = manager;
   _queue = queue;
-  _udid = [FB_DLDeviceGetUDID(_dlDevice) copy];
+  _udid = [FBDLDevice.defaultCalls.GetUDID(_dlDevice) copy];
   _logger = logger;
 
   return self;
@@ -478,13 +364,13 @@ static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDev
 
 - (void)dealloc
 {
-  FB_DLDeviceRelease(_dlDevice);
+  FBDLDevice.defaultCalls.Release(_dlDevice);
   _dlDevice = nil;
 }
 
 - (NSString *)description
 {
-  return FB_DLDeviceCreateDescription(_dlDevice, self.manager.listener);
+  return FBDLDevice.defaultCalls.CreateDescription(_dlDevice, self.manager.listener);
 }
 
 #pragma mark Public
@@ -569,6 +455,33 @@ static NSString *ScreenshotReplyMessageType = @"ScreenShotReply";
     [notificationCenter removeObserver:observer];
     return FBFuture.empty;
   }];
+}
+
++ (DLDeviceCalls)defaultCalls
+{
+  static dispatch_once_t onceToken;
+  static DLDeviceCalls defaultCalls;
+  dispatch_once(&onceToken, ^{
+    [self populateDeviceLinkSymbols:&defaultCalls];
+  });
+  return defaultCalls;
+}
+
++ (void)populateDeviceLinkSymbols:(DLDeviceCalls *)calls
+{
+  void *handle = [[NSBundle bundleWithIdentifier:@"com.apple.DeviceLinkX"] dlopenExecutablePath];
+  calls->ConnectToServiceOnDevice = FBGetSymbolFromHandle(handle, "DLConnectToServiceOnDevice");
+  calls->CopyConnectedDeviceArray = FBGetSymbolFromHandle(handle, "DLCopyConnectedDeviceArray");
+  calls->CreateDeviceLinkConnectionForComputer = FBGetSymbolFromHandle(handle, "DLCreateDeviceLinkConnectionForComputer");
+  calls->CreateDescription = FBGetSymbolFromHandle(handle, "DLDeviceCreateDescription");
+  calls->GetUDID = FBGetSymbolFromHandle(handle, "DLDeviceGetUDID");
+  calls->GetWithUDID = FBGetSymbolFromHandle(handle, "DLDeviceGetWithUDID");
+  calls->ListenerCreateWithCallbacks = FBGetSymbolFromHandle(handle, "DLDeviceListenerCreateWithCallbacks");
+  calls->ListenerSetContext = FBGetSymbolFromHandle(handle, "DLDeviceListenerSetContext");
+  calls->Release = FBGetSymbolFromHandle(handle, "DLDeviceRelease");
+  calls->Retain = FBGetSymbolFromHandle(handle, "DLDeviceRetain");
+  calls->Disconnect = FBGetSymbolFromHandle(handle, "DLDisconnect");
+  calls->ProcessMessage = FBGetSymbolFromHandle(handle, "DLProcessMessage");
 }
 
 @end
