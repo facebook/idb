@@ -9,6 +9,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+typedef NSString *FBBinaryArchitecture NS_STRING_ENUM;
+
+extern FBBinaryArchitecture const FBBinaryArchitecturei386;
+extern FBBinaryArchitecture const FBBinaryArchitecturex86_64;
+extern FBBinaryArchitecture const FBBinaryArchitectureArm;
+extern FBBinaryArchitecture const FBBinaryArchitectureArm64;
+
 /**
  Parsers the Mach-O Header of a binary.
  */
@@ -21,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurred.
  @return a Set of archs if any could be found, nil on error.
  */
-+ (nullable NSSet<NSString *> *)architecturesForBinaryAtPath:(NSString *)binaryPath error:(NSError **)error;
++ (nullable NSSet<FBBinaryArchitecture> *)architecturesForBinaryAtPath:(NSString *)binaryPath error:(NSError **)error;
 
 @end
 

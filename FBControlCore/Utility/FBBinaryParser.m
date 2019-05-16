@@ -16,13 +16,18 @@
 
 #import "FBControlCoreError.h"
 
-static inline NSString *ArchitectureForCPUType(cpu_type_t cpuType)
+FBBinaryArchitecture const FBBinaryArchitecturei386 = @"i386";
+FBBinaryArchitecture const FBBinaryArchitecturex86_64 = @"x86_64";
+FBBinaryArchitecture const FBBinaryArchitectureArm = @"arm";
+FBBinaryArchitecture const FBBinaryArchitectureArm64 = @"arm64";
+
+static inline FBBinaryArchitecture ArchitectureForCPUType(cpu_type_t cpuType)
 {
   NSDictionary *lookup = @{
-    @(CPU_TYPE_I386) : @"i386",
-    @(CPU_TYPE_X86_64) : @"x86_64",
-    @(CPU_TYPE_ARM) : @"arm" ,
-    @(CPU_TYPE_ARM64) : @"arm64"
+    @(CPU_TYPE_I386) : FBBinaryArchitecturei386,
+    @(CPU_TYPE_X86_64) : FBBinaryArchitecturex86_64,
+    @(CPU_TYPE_ARM) : FBBinaryArchitectureArm,
+    @(CPU_TYPE_ARM64) : FBBinaryArchitectureArm64,
   };
   return lookup[@(cpuType)];
 }
@@ -161,7 +166,7 @@ static inline NSArray *ReadArchs(FILE *file, uint32_t magic)
 
 @implementation FBBinaryParser
 
-+ (NSSet<NSString *> *)architecturesForBinaryAtPath:(NSString *)binaryPath error:(NSError **)error
++ (NSSet<FBBinaryArchitecture> *)architecturesForBinaryAtPath:(NSString *)binaryPath error:(NSError **)error
 {
   FILE *file = fopen(binaryPath.UTF8String, "rb");
   if (file == NULL) {
