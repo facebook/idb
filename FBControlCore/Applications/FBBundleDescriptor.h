@@ -44,6 +44,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable instancetype)bundleFromPath:(NSString *)path error:(NSError **)error;
 
+/**
+ An initializer for FBBundleDescriptor that obtains information by inflating via NSBundle.
+ This does not require that a CFBundleIdentifier is set in the bundle's Info.plist.
+
+ @param path the path of the bundle to use.
+ @param error an error out for any error that occurs
+ @return a new FBBundleDescriptor instance if one could be constructed, nil otherwise.
+ */
++ (nullable instancetype)bundleWithFallbackIdentifierFromPath:(NSString *)path error:(NSError **)error;
+
 #pragma mark Public Methods
 
 /**

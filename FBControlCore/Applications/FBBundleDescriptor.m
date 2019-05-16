@@ -35,7 +35,17 @@
   return self;
 }
 
-+ (nullable instancetype)bundleFromPath:(NSString *)path error:(NSError **)error
++ (instancetype)bundleFromPath:(NSString *)path error:(NSError **)error
+{
+  return [self bundleFromPath:path fallbackIdentifier:NO error:error];
+}
+
++ (instancetype)bundleWithFallbackIdentifierFromPath:(NSString *)path error:(NSError **)error
+{
+  return [self bundleFromPath:path fallbackIdentifier:YES error:error];
+}
+
++ (instancetype)bundleFromPath:(NSString *)path fallbackIdentifier:(BOOL)fallbackIdentifier error:(NSError **)error
 {
   if (!path) {
     return [[FBControlCoreError
@@ -50,11 +60,12 @@
   }
   NSString *bundleName = [self bundleNameForBundle:bundle];
   NSString *identifier = [bundle bundleIdentifier];
-  if (!identifier) {
+  if (!identifier && !fallbackIdentifier) {
     return [[FBControlCoreError
       describeFormat:@"Could not obtain Bundle ID for bundle at path %@", path]
       fail:error];
   }
+  identifier = bundleName;
   FBBinaryDescriptor *binary = [self binaryForBundle:bundle error:error];
   if (!binary) {
     return nil;

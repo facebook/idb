@@ -190,7 +190,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
   // Get info out of xctest bundles
   for (NSURL *testURL in testURLS) {
-    FBApplicationBundle *bundle = [FBApplicationBundle bundleFromPath:testURL.path error:error];
+    FBApplicationBundle *bundle = [FBApplicationBundle bundleWithFallbackIdentifierFromPath:testURL.path error:error];
     if (!bundle) {
       if (error) {
         [self.logger.error log:(*error).description];
@@ -335,8 +335,8 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
 - (NSString *)saveTestBundle:(NSURL *)testBundleURL error:(NSError **)error
 {
-  // This is currently assuming the Test Bundle is contains a CFBundleName, this needs fixing.
-  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:testBundleURL.path error:error];
+  // Test Bundles don't always have a bundle id, so fallback to another name if it's not there.
+  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleWithFallbackIdentifierFromPath:testBundleURL.path error:error];
   if (!bundle) {
     return nil;
   }
