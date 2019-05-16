@@ -15,7 +15,7 @@ class DylibInstallCommand(TargetCommand):
 
     @property
     def name(self) -> str:
-        return "install-dylib"
+        return "install"
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("dylib_path", help="Path to the dylib to install", type=str)

@@ -364,7 +364,7 @@ Brings a simulators window to the foreground.
 
 ### Install a .dylib
 ```
-idb install-dylib test.dylib
+idb dylib install test.dylib
 ```
 Installs a `.dylib` on the target. This can then be injected into apps on launch.
 
