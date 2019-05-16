@@ -13,6 +13,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBAMDevice.h"
+#import "FBDLDevice.h"
 #import "FBDeviceApplicationCommands.h"
 #import "FBDeviceApplicationDataCommands.h"
 #import "FBDeviceControlError.h"
@@ -31,6 +32,7 @@
 @implementation FBDevice
 
 @synthesize logger = _logger;
+@synthesize dlDevice = _dlDevice;
 
 #pragma mark Initializers
 
@@ -206,6 +208,15 @@
 - (FBiOSTargetScreenInfo *)screenInfo
 {
   return nil;
+}
+
+- (FBDLDevice *)dlDevice
+{
+  if (_dlDevice) {
+    return _dlDevice;
+  }
+  _dlDevice = [FBDLDevice deviceWithAMDevice:_amDevice];
+  return _dlDevice;
 }
 
 #pragma mark Forwarding

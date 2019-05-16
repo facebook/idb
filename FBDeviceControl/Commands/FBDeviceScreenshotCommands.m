@@ -42,9 +42,9 @@
 
 - (FBFuture<NSData *> *)takeScreenshot:(FBScreenshotFormat)format
 {
-  return [[FBDLDevice
-    deviceWithAMDevice:self.device.amDevice timeout:FBControlCoreGlobalConfiguration.regularTimeout]
-    onQueue:self.device.workQueue fmap:^(FBDLDevice *dlDevice) {
+  return [FBFuture
+    onQueue:self.device.workQueue resolve:^{
+      FBDLDevice *dlDevice = self.device.dlDevice;
       return [dlDevice screenshotData];
     }];
 }

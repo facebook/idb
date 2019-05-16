@@ -21,13 +21,13 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Initializers
 
 /**
- Obtains a Device from the given AMDevice.
+ The Designated Intitializer.
+ Should only be called once per AMDevice.
 
- @param amDevice the udid to obtain.
- @param timeout the timeout in seconds to wait for the device to appear.
+ @param amDevice the FBAMDevice to wrap in a DLDevice.
  @return a Future, wrapping the device.
  */
-+ (FBFuture<FBDLDevice *> *)deviceWithAMDevice:(FBAMDevice *)amDevice timeout:(NSTimeInterval)timeout;
++ (FBDLDevice *)deviceWithAMDevice:(FBAMDevice *)amDevice;
 
 #pragma mark Properties
 

@@ -10,6 +10,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBAMDevice;
+@class FBDLDevice;
 @class FBDeviceVideoRecordingCommands;
 @class FBDeviceXCTestCommands;
 @class FBiOSTargetCommandForwarder;
@@ -18,6 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, readonly) FBiOSTargetCommandForwarder *forwarder;
 @property (nonatomic, strong, readonly) FBAMDevice *amDevice;
+@property (nonatomic, strong, readonly) FBDLDevice *dlDevice;
 
 - (instancetype)initWithSet:(FBDeviceSet *)set amDevice:(FBAMDevice *)device logger:(id<FBControlCoreLogger>)logger;
 
