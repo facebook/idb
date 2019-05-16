@@ -26,10 +26,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer.
 
- @param name the Name of the Application. See CFBundleName. Must not be nil.
- @param path The Path to the Application Bundle. Must not be nil.
- @param bundleID the Bundle ID of the Application. Must not be nil.
- @param binary the Path to the binary inside the Application. Must not be nil.
+ @param name the name of the bundle. See CFBundleName. Must not be nil.
+ @param path the path of the bundle. Must not be nil.
+ @param bundleID the bundle identifier of the bundle. Must not be nil.
+ @param binary the executable image contained within the bundle. May be be nil.
  @return a new FBBundleDescriptor instance.
  */
 - (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(nullable FBBinaryDescriptor *)binary;
@@ -58,22 +58,22 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Properties
 
 /**
- The name of the Application. See CFBundleName.
+ The name of the bundle (CFBundleName).
  */
 @property (nonatomic, copy, readonly) NSString *name;
 
 /**
- The File Path to the Application.
- */
-@property (nonatomic, copy, readonly) NSString *path;
-
-/**
- The Bundle Identifier of the Application. See CFBundleIdentifier.
+ The identifier of the bundle (CFBundleIdentifier).
  */
 @property (nonatomic, copy, readonly) NSString *bundleID;
 
 /**
- The Executable Binary contained within the Application's Bundle.
+ The path of the bundle on the filesystem.
+ */
+@property (nonatomic, copy, readonly) NSString *path;
+
+/**
+ The executable image contained within the bundle.
  */
 @property (nonatomic, copy, readonly, nullable) FBBinaryDescriptor *binary;
 
