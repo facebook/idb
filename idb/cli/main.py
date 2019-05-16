@@ -14,7 +14,11 @@ from idb.cli.commands.accessibility import (
     AccessibilityInfoAtPointCommand,
 )
 from idb.cli.commands.add_media import AddMediaCommand
-from idb.cli.commands.app import AppInstallCommand
+from idb.cli.commands.app import (
+    AppInstallCommand,
+    AppTerminateCommand,
+    AppUninstallCommand,
+)
 from idb.cli.commands.approve import ApproveCommand
 from idb.cli.commands.base import Command, CommandGroup
 from idb.cli.commands.boot import BootCommand
@@ -65,8 +69,6 @@ from idb.cli.commands.open_url import OpenUrlCommand
 from idb.cli.commands.record import RecordVideoCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
 from idb.cli.commands.set_location import SetLocationCommand
-from idb.cli.commands.terminate import TerminateCommand
-from idb.cli.commands.uninstall import UninstallCommand
 from idb.cli.commands.xctest import (
     XctestInstallCommand,
     XctestListTestsCommand,
@@ -98,10 +100,10 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         AppInstallCommand(),
         DsymInstallCommand(),
         DylibInstallCommand(),
-        UninstallCommand(),
+        AppUninstallCommand(),
         ListAppsCommand(),
         LaunchCommand(),
-        TerminateCommand(),
+        AppTerminateCommand(),
         CommandGroup(
             name="xctest",
             description="Operations with xctest on target",
