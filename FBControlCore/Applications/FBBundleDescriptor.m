@@ -42,22 +42,22 @@
       describe:@"Nil file path provided for bundle path"]
       fail:error];
   }
-  NSString *bundleName = [self bundleNameForPath:path];
-  if (!bundleName) {
+  NSBundle *bundle = [NSBundle bundleWithPath:path];
+  if (!bundle) {
     return [[FBControlCoreError
-      describeFormat:@"Could not obtain bundle name for path %@", path]
+      describeFormat:@"Failed to load bundle at path %@", path]
       fail:error];
   }
-  NSError *innerError = nil;
-  NSString *identifier = [self infoPlistKey:@"CFBundleIdentifier" forBundleAtPath:path error:&innerError];
+  NSString *bundleName = [self bundleNameForBundle:bundle];
+  NSString *identifier = [bundle bundleIdentifier];
   if (!identifier) {
     return [[FBControlCoreError
-      describeFormat:@"Could not obtain Bundle ID for bundle at path %@: %@", path, innerError]
+      describeFormat:@"Could not obtain Bundle ID for bundle at path %@", path]
       fail:error];
   }
-  FBBinaryDescriptor *binary = [self binaryForBundlePath:path error:&innerError];
+  FBBinaryDescriptor *binary = [self binaryForBundle:bundle error:error];
   if (!binary) {
-    return [[[FBControlCoreError describeFormat:@"Could not obtain binary for bundle at path %@", path] causedBy:innerError] fail:error];
+    return nil;
   }
   return [[self alloc] initWithName:bundleName identifier:identifier path:path binary:binary];
 }
@@ -170,120 +170,21 @@
 
 #pragma mark Private
 
-+ (FBBinaryDescriptor *)binaryForBundlePath:(NSString *)bundlePath error:(NSError **)error
++ (FBBinaryDescriptor *)binaryForBundle:(NSBundle *)bundle error:(NSError **)error
 {
-  NSError *innerError = nil;
-  NSString *binaryPath = [self binaryPathForBundleAtPath:bundlePath error:&innerError];
+  NSString *binaryPath = [bundle executablePath];
   if (!binaryPath) {
     return [[FBControlCoreError
-      describeFormat:@"Could not obtain binary path for bundle path %@: %@", bundlePath, innerError]
+      describeFormat:@"Could not obtain binary path for bundle %@", bundle]
       fail:error];
   }
 
-  FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:binaryPath error:&innerError];
-  if (!binary) {
-    return [[[FBControlCoreError
-      describeFormat:@"Could not obtain binary info for binary at path %@", binaryPath]
-      causedBy:innerError]
-      fail:error];
-  }
-  return binary;
+  return [FBBinaryDescriptor binaryWithPath:binaryPath error:error];
 }
 
-+ (NSString *)bundleNameForPath:(NSString *)bundlePath
++ (NSString *)bundleNameForBundle:(NSBundle *)bundle
 {
-  return [self infoPlistKey:@"CFBundleName" forBundleAtPath:bundlePath error:nil] ?: bundlePath.lastPathComponent.stringByDeletingPathExtension;
+  return bundle.infoDictionary[@"CFBundleName"] ?: bundle.infoDictionary[@"CFBundleExecutable"] ?: bundle.bundlePath.stringByDeletingPathExtension.lastPathComponent;
 }
-
-+ (NSString *)binaryPathForBundleAtPath:(NSString *)bundlePath error:(NSError **)error
-{
-  NSString *binaryName = [self infoPlistKey:@"CFBundleExecutable" forBundleAtPath:bundlePath error:error];
-  if (!binaryName) {
-    return nil;
-  }
-  NSArray<NSString *> *paths = @[
-    [bundlePath stringByAppendingPathComponent:binaryName],
-    [[bundlePath stringByAppendingPathComponent:@"Contents/MacOS"] stringByAppendingPathComponent:binaryName]
-  ];
-
-  for (NSString *path in paths) {
-    if ([NSFileManager.defaultManager fileExistsAtPath:path]) {
-      return path;
-    }
-  }
-  return nil;
-}
-
-+ (NSString *)infoPlistKey:(NSString *)key forBundleAtPath:(NSString *)bundlePath error:(NSError **)error
-{
-  NSString *infoPlistPath = [self infoPlistPathForBundleAtPath:bundlePath error:error];
-  if (!infoPlistPath) {
-    return nil;
-  }
-  NSDictionary<NSString *, NSString *> *infoPlist = [NSDictionary dictionaryWithContentsOfFile:infoPlistPath];
-  if (!infoPlist) {
-    return [[[FBControlCoreError
-      describeFormat:@"Could not load Info.plist at path %@", infoPlistPath]
-      noLogging]
-      fail:error];
-  }
-  NSString *value = infoPlist[key];
-  if (!value) {
-    return [[[FBControlCoreError
-      describeFormat:@"Could not load key %@ in Info.plist, values %@", key, [FBCollectionInformation oneLineDescriptionFromArray:infoPlist.allKeys]]
-      noLogging]
-      fail:error];
-  }
-  return value;
-}
-
-+ (NSString *)infoPlistPathForBundleAtPath:(NSString *)bundlePath error:(NSError **)error
-{
-  NSArray<NSString *> *searchPaths = @[
-    bundlePath,
-    [bundlePath stringByAppendingPathComponent:@"Contents"]
-  ];
-  NSArray<NSString *> *plists = @[
-    @"info.plist",
-    @"Info.plist"
-  ];
-
-  for (NSString *searchPath in searchPaths) {
-    for (NSString *plist in plists) {
-      NSString *path = [searchPath stringByAppendingPathComponent:plist];
-      if ([NSFileManager.defaultManager fileExistsAtPath:path]) {
-        return path;
-      }
-    }
-  }
-
-  BOOL isDirectory = NO;
-  if (![NSFileManager.defaultManager fileExistsAtPath:bundlePath isDirectory:&isDirectory]) {
-    return [[[FBControlCoreError
-      describeFormat:@"No Info.plist could be found as %@ does not exist", bundlePath]
-      noLogging]
-      fail:error];
-  }
-  if (!isDirectory) {
-    return [[[FBControlCoreError
-      describeFormat:@"No Info.plist could be found in %@ as it's not an bundle path, which must be a directory", bundlePath]
-      noLogging]
-      fail:error];
-  }
-  NSMutableArray<NSString *> *allPaths = NSMutableArray.array;
-  for (NSString *searchPath in searchPaths) {
-    NSArray<NSString *> *contents = [NSFileManager.defaultManager contentsOfDirectoryAtPath:searchPath error:nil];
-    if (!contents) {
-      continue;
-    }
-    [allPaths addObjectsFromArray:contents];
-  }
-
-  return [[[FBControlCoreError
-    describeFormat:@"Could not find an Info.plist at any of the expected locations %@, files that do exist %@", [FBCollectionInformation oneLineDescriptionFromArray:searchPaths], [FBCollectionInformation oneLineDescriptionFromArray:allPaths]]
-    noLogging]
-    fail:error];
-}
-
 
 @end

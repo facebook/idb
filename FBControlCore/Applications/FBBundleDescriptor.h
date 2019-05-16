@@ -35,7 +35,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithName:(NSString *)name identifier:(NSString *)identifier path:(NSString *)path binary:(nullable FBBinaryDescriptor *)binary;
 
 /**
- An initializer for FBBundleDescriptor that obtains information by inspecting the Info.plist.
+ An initializer for FBBundleDescriptor that obtains information by inflating via NSBundle.
+ This requires that a CFBundleIdentifier is set in the bundle's Info.plist.
 
  @param path the path of the bundle to use.
  @param error an error out for any error that occurs
