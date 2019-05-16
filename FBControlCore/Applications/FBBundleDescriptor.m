@@ -66,11 +66,8 @@
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  return [[self.class alloc]
-    initWithName:self.name
-    path:self.path
-    bundleID:self.bundleID
-    binary:self.binary];
+  // Is immutable
+  return self;
 }
 
 #pragma mark NSObject
