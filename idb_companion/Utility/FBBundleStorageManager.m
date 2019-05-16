@@ -82,7 +82,7 @@
   }
 
   // Where the bundle will be copied to.
-  NSURL *storageDirectory = [self.basePath URLByAppendingPathComponent:bundle.bundleID];
+  NSURL *storageDirectory = [self.basePath URLByAppendingPathComponent:bundle.identifier];
   if (![self prepareDirectoryWithURL:storageDirectory error:error]) {
     return nil;
   }
@@ -95,7 +95,7 @@
     return nil;
   }
 
-  return bundle.bundleID;
+  return bundle.identifier;
 }
 
 @end
@@ -296,8 +296,8 @@ static NSString *const XctestRunExtension = @"xctestrun";
         [self.logger.error log:@"Using UseDestinationArtifacts requires FB_TestBundleIdentifier"];
         continue;
       }
-      FBApplicationBundle *testBundle = [[FBApplicationBundle alloc] initWithName:testIdentifier path:@"" bundleID:testIdentifier binary:nil];
-      FBApplicationBundle *hostBundle = [[FBApplicationBundle alloc] initWithName:hostIdentifier path:@"" bundleID:hostIdentifier binary:nil];
+      FBApplicationBundle *testBundle = [[FBApplicationBundle alloc] initWithName:testIdentifier identifier:testIdentifier path:@"" binary:nil];
+      FBApplicationBundle *hostBundle = [[FBApplicationBundle alloc] initWithName:hostIdentifier identifier:hostIdentifier path:@"" binary:nil];
       id<FBXCTestDescriptor> descriptor = [[FBXCodebuildTestRunDescriptor alloc] initWithURL:xcTestRunURL name:testName testBundle:testBundle testHostBundle:hostBundle];
       [descriptors addObject:descriptor];
       continue;

@@ -16,11 +16,11 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(nullable FBBinaryDescriptor *)binary
+- (instancetype)initWithName:(NSString *)name identifier:(NSString *)identifier path:(NSString *)path binary:(nullable FBBinaryDescriptor *)binary
 {
   NSParameterAssert(name);
   NSParameterAssert(path);
-  NSParameterAssert(bundleID);
+  NSParameterAssert(identifier);
 
   self = [super init];
   if (!self) {
@@ -28,8 +28,8 @@
   }
 
   _name = name;
+  _identifier = identifier;
   _path = path;
-  _bundleID = bundleID;
   _binary = binary;
 
   return self;
@@ -49,8 +49,8 @@
       fail:error];
   }
   NSError *innerError = nil;
-  NSString *bundleID = [self infoPlistKey:@"CFBundleIdentifier" forBundleAtPath:path error:&innerError];
-  if (!bundleID) {
+  NSString *identifier = [self infoPlistKey:@"CFBundleIdentifier" forBundleAtPath:path error:&innerError];
+  if (!identifier) {
     return [[FBControlCoreError
       describeFormat:@"Could not obtain Bundle ID for bundle at path %@: %@", path, innerError]
       fail:error];
@@ -59,7 +59,7 @@
   if (!binary) {
     return [[[FBControlCoreError describeFormat:@"Could not obtain binary for bundle at path %@", path] causedBy:innerError] fail:error];
   }
-  return [[self alloc] initWithName:bundleName path:path bundleID:bundleID binary:binary];
+  return [[self alloc] initWithName:bundleName identifier:identifier path:path binary:binary];
 }
 
 #pragma mark NSCopying
@@ -79,13 +79,13 @@
   }
   return [object.name isEqual:self.name] &&
          [object.path isEqual:self.path] &&
-         [object.bundleID isEqual:self.bundleID] &&
+         [object.identifier isEqual:self.identifier] &&
          [object.binary isEqual:self.binary];
 }
 
 - (NSUInteger)hash
 {
-  return self.name.hash | self.path.hash | self.bundleID.hash | self.binary.hash;
+  return self.name.hash | self.path.hash | self.identifier.hash | self.binary.hash;
 }
 
 #pragma mark FBDebugDescribeable
@@ -100,7 +100,7 @@
   return [NSString stringWithFormat:
     @"Name: %@ | ID: %@",
     self.name,
-    self.bundleID
+    self.identifier
   ];
 }
 
@@ -121,7 +121,7 @@
   NSMutableDictionary *result = [[NSMutableDictionary alloc] init];
 
   result[@"name"] = self.name;
-  result[@"bundle_id"] = self.bundleID;
+  result[@"bundle_id"] = self.identifier;
   result[@"path"] = self.path;
   if (self.binary) {
     result[@"binary"] = self.binary.jsonSerializableRepresentation;
@@ -163,8 +163,8 @@
 
   return [[self.class alloc]
     initWithName:self.name
+    identifier:self.identifier
     path:targetBundlePath
-    bundleID:self.bundleID
     binary:self.binary];
 }
 

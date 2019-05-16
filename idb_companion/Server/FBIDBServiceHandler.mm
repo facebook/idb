@@ -529,7 +529,7 @@ Status FBIDBServiceHandler::list_apps(ServerContext *context, const idb::ListApp
   NSDictionary<FBInstalledApplication *, id> *apps = [[_commandExecutor list_apps] block:&error];
   for (FBInstalledApplication *app in apps.allKeys) {
     idb::InstalledAppInfo *appInfo = response->add_apps();
-    appInfo->set_bundle_id(app.bundle.bundleID.UTF8String ?: "");
+    appInfo->set_bundle_id(app.bundle.identifier.UTF8String ?: "");
     appInfo->set_name(app.bundle.name.UTF8String ?: "");
     appInfo->set_install_type([FBInstalledApplication stringFromApplicationInstallType:app.installType].UTF8String);
     for (NSString *architecture in app.bundle.binary.architectures) {
@@ -541,7 +541,7 @@ Status FBIDBServiceHandler::list_apps(ServerContext *context, const idb::ListApp
     } else {
       appInfo->set_process_state(idb::InstalledAppInfo_AppProcessState_UNKNOWN);
     }
-    appInfo->set_debuggable(app.installType == FBApplicationInstallTypeUserDevelopment && [persistedBundleIDs containsObject:app.bundle.bundleID]);
+    appInfo->set_debuggable(app.installType == FBApplicationInstallTypeUserDevelopment && [persistedBundleIDs containsObject:app.bundle.identifier]);
   }
   if (error) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);

@@ -72,8 +72,8 @@
 - (FBFuture<NSNull *> *)startTestWithTestRunnerApp:(FBApplicationBundle *)testRunnerApp testTargetApp:(FBApplicationBundle *)testTargetApp
 {
   FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-    configurationWithBundleID:testRunnerApp.bundleID
-    bundleName:testRunnerApp.bundleID
+    configurationWithBundleID:testRunnerApp.identifier
+    bundleName:testRunnerApp.identifier
     arguments:@[]
     environment:self.configuration.processUnderTestEnvironment
     output:FBProcessOutputConfiguration.outputToDevNull
@@ -86,7 +86,7 @@
   if (testTargetApp) {
     testLaunchConfiguration = [[[testLaunchConfiguration
      withTargetApplicationPath:testTargetApp.path]
-     withTargetApplicationBundleID:testTargetApp.bundleID]
+     withTargetApplicationBundleID:testTargetApp.identifier]
      withUITesting:YES];
   }
 
@@ -169,7 +169,7 @@
 - (void)_saveTestArtifactsOfTestRunnerApp:(FBApplicationBundle *)testRunnerApp withFilenameMatchGlobs:(NSArray<NSString *> *)filenameGlobs
 {
   NSArray<FBDiagnostic *> *diagnostics = [[[FBDiagnosticQuery
-    filesInApplicationOfBundleID:testRunnerApp.bundleID withFilenames:@[] withFilenameGlobs:filenameGlobs]
+    filesInApplicationOfBundleID:testRunnerApp.identifier withFilenames:@[] withFilenameGlobs:filenameGlobs]
     run:self.target]
     await:nil];
 

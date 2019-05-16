@@ -67,7 +67,7 @@
       NSDictionary<NSString *, NSNumber *> *running = results[1];
       NSMutableDictionary<FBInstalledApplication *, id> *listing = NSMutableDictionary.dictionary;
       for (FBInstalledApplication *application in installed) {
-        listing[application] = running[application.bundle.bundleID] ?: NSNull.null;
+        listing[application] = running[application.bundle.identifier] ?: NSNull.null;
       }
       return listing;
     }];
@@ -556,7 +556,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       } else {
         [self.logger logFormat:@"Failed to persist application %@", error];
       }
-      return [FBFuture futureWithResult:appBundle.bundleID];
+      return [FBFuture futureWithResult:appBundle.identifier];
     }];
 }
 

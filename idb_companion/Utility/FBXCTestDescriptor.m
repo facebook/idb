@@ -81,7 +81,7 @@
 
 - (NSString *)testBundleID
 {
-  return self.testBundle.bundleID;
+  return self.testBundle.identifier;
 }
 
 - (NSSet *)architectures
@@ -172,7 +172,7 @@
 - (FBTestLaunchConfiguration *)testConfigWithRunRequest:(id<FBXCTestRunRequest>)request testApps:(FBTestApplicationsPair *)testApps
 {
   if (request.isUITest) {
-    FBApplicationLaunchConfiguration *runnerLaunchConfig = [self appLaunchConfigForBundleID:testApps.testHostApp.bundle.bundleID env:request.environment args:request.arguments];
+    FBApplicationLaunchConfiguration *runnerLaunchConfig = [self appLaunchConfigForBundleID:testApps.testHostApp.bundle.identifier env:request.environment args:request.arguments];
 
     // Test config
     return [[[[[[[FBTestLaunchConfiguration
@@ -180,7 +180,7 @@
       withUITesting:YES]
       withApplicationLaunchConfiguration:runnerLaunchConfig]
       withTargetApplicationPath:testApps.applicationUnderTest.bundle.path]
-      withTargetApplicationBundleID:testApps.applicationUnderTest.bundle.bundleID]
+      withTargetApplicationBundleID:testApps.applicationUnderTest.bundle.identifier]
       withTestsToRun:request.testsToRun]
       withTestsToSkip:request.testsToSkip];
   } else {
@@ -235,7 +235,7 @@
 
 - (NSString *)testBundleID
 {
-  return self.testBundle.bundleID;
+  return self.testBundle.identifier;
 }
 
 - (NSSet *)architectures

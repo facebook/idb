@@ -264,7 +264,7 @@ static NSString *const KeyDataContainer = @"DataContainer";
     confirmCompatibilityOfApplicationAtPath:path]
     onQueue:self.simulator.workQueue fmap:^FBFuture *(FBApplicationBundle *application) {
       NSDictionary *options = @{
-        @"CFBundleIdentifier": application.bundleID
+        @"CFBundleIdentifier": application.identifier
       };
       NSURL *appURL = [NSURL fileURLWithPath:application.path];
 
@@ -304,7 +304,7 @@ static NSString *const KeyDataContainer = @"DataContainer";
   }
 
   return [[self.simulator
-    installedApplicationWithBundleID:application.bundleID]
+    installedApplicationWithBundleID:application.identifier]
     onQueue:self.simulator.workQueue chain:^FBFuture *(FBFuture<FBInstalledApplication *> *future) {
       FBInstalledApplication *installed = future.result;
       if (installed && installed.installType == FBApplicationInstallTypeSystem) {

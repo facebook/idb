@@ -141,7 +141,7 @@ extension Parser {
   public static var ofBundleIDOrApplicationDescriptor: Parser<(String, FBApplicationBundle?)> {
     return Parser<(String, FBApplicationBundle?)>
       .alternative([
-        Parser.ofApplication.fmap { (app) -> (String, FBApplicationBundle?) in (app.bundleID, app) },
+        Parser.ofApplication.fmap { (app) -> (String, FBApplicationBundle?) in (app.identifier, app) },
         Parser.ofBundleID.fmap { (bundleId) -> (String, FBApplicationBundle?) in (bundleId, nil) },
       ])
   }

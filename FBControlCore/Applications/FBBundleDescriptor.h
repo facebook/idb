@@ -27,12 +27,12 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Initializer.
 
  @param name the name of the bundle. See CFBundleName. Must not be nil.
+ @param identifier the bundle identifier of the bundle. Must not be nil.
  @param path the path of the bundle. Must not be nil.
- @param bundleID the bundle identifier of the bundle. Must not be nil.
  @param binary the executable image contained within the bundle. May be be nil.
  @return a new FBBundleDescriptor instance.
  */
-- (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(nullable FBBinaryDescriptor *)binary;
+- (instancetype)initWithName:(NSString *)name identifier:(NSString *)identifier path:(NSString *)path binary:(nullable FBBinaryDescriptor *)binary;
 
 /**
  An initializer for FBBundleDescriptor that obtains information by inspecting the Info.plist.
@@ -65,7 +65,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The identifier of the bundle (CFBundleIdentifier).
  */
-@property (nonatomic, copy, readonly) NSString *bundleID;
+@property (nonatomic, copy, readonly) NSString *identifier;
 
 /**
  The path of the bundle on the filesystem.

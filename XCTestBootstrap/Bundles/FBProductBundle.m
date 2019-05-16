@@ -150,7 +150,7 @@
 {
   return [[[[[self builder]
     withBundlePath:installedApplication.bundle.path]
-    withBundleID:installedApplication.bundle.bundleID]
+    withBundleID:installedApplication.bundle.identifier]
     withBinaryName:installedApplication.bundle.name]
     buildWithError:error];
 }

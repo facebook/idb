@@ -125,7 +125,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
       return [FBFuture futureWithFutures:@[
         [self platformSelectCommand],
         [FBDeviceDebuggerCommands localTargetForApplicationAtPath:path],
-        [self remoteTargetForBundleID:bundle.bundleID],
+        [self remoteTargetForBundleID:bundle.identifier],
         [FBDeviceDebuggerCommands processConnectForPort:port],
       ]];
     }];
