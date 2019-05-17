@@ -190,6 +190,9 @@ class IdbClientBase:
     async def install_xctest(self, bundle_path: str) -> str:
         pass
 
+    async def install_framework(self, framework_path: str) -> str:
+        pass
+
     async def connect(
         self,
         destination: Union[Address, str],

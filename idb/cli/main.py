@@ -51,6 +51,7 @@ from idb.cli.commands.file import (
     FSRemoveCommand,
 )
 from idb.cli.commands.focus import FocusCommand
+from idb.cli.commands.framework import FrameworkInstallCommand
 from idb.cli.commands.hid import (
     ButtonCommand,
     KeyCommand,
@@ -185,6 +186,11 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         ),
         CommandGroup(
             name="dylib", description="dylib commands", commands=[DylibInstallCommand()]
+        ),
+        CommandGroup(
+            name="framework",
+            description="framework commands",
+            commands=[FrameworkInstallCommand()],
         ),
     ]
     sorted_commands = sorted(commands, key=lambda command: command.name)
