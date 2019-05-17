@@ -144,7 +144,9 @@
   }
   FBInstalledApplication *application = [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:&error];
   if (!application) {
-    return [[FBFuture futureWithError:error] rephraseFailure:@"Application with bundle id '%@' is not installed", bundleID];
+    return [[FBSimulatorError
+      describeFormat:@"Application Info %@ could not be parsed: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:appInfo], error]
+      failFuture];
   }
   return [FBFuture futureWithResult:application];
 }

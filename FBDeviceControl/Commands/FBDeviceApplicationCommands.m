@@ -127,9 +127,11 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
   return [[self
     installedApplicationsData:FBDeviceApplicationCommands.installedApplicationLookupAttributes]
     onQueue:self.device.asyncQueue fmap:^FBFuture *(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *applicationData) {
-      NSDictionary <NSString *, id> *app = applicationData[bundleID];
+      NSDictionary<NSString *, id> *app = applicationData[bundleID];
       if (!app) {
-        return [[FBDeviceControlError describeFormat:@"Application with bundle ID: %@ is not installed", bundleID] failFuture];
+        return [[FBDeviceControlError
+          describeFormat:@"Application with bundle ID: %@ is not installed. Installed apps %@ ", bundleID, [FBCollectionInformation oneLineDescriptionFromArray:applicationData.allKeys]]
+          failFuture];
       }
       FBInstalledApplication *application = [FBDeviceApplicationCommands installedApplicationFromDictionary:app];
       return [FBFuture futureWithResult:application];
