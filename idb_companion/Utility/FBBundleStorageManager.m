@@ -475,7 +475,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
 + (NSURL *)prepareStoragePathWithName:(NSString *)name target:(id<FBiOSTarget>)target error:(NSError **)error
 {
   NSError *innerError = nil;
-  NSURL *xctestBasePath = [[NSURL fileURLWithPath:target.auxillaryDirectory] URLByAppendingPathComponent:@"idb-test-bundles"];
+  NSURL *xctestBasePath = [[NSURL fileURLWithPath:target.auxillaryDirectory] URLByAppendingPathComponent:name];
   if (![NSFileManager.defaultManager createDirectoryAtURL:xctestBasePath withIntermediateDirectories:YES attributes:nil error:&innerError]) {
     return [[[FBIDBError
       describeFormat:@"Failed to create xctest storage location %@", xctestBasePath]
@@ -489,29 +489,29 @@ static NSString *const XctestRunExtension = @"xctestrun";
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.idb.bundle_storage", DISPATCH_QUEUE_SERIAL);
 
-  NSURL *xctestBasePath = [self prepareStoragePathWithName:@"idb-test-bundles" target:target error:error];
-  if (!xctestBasePath) {
+  NSURL *basePath = [self prepareStoragePathWithName:@"idb-test-bundles" target:target error:error];
+  if (!basePath) {
     return nil;
   }
-  FBXCTestBundleStorage *xctest = [[FBXCTestBundleStorage alloc] initWithTarget:target basePath:xctestBasePath queue:queue logger:logger];
+  FBXCTestBundleStorage *xctest = [[FBXCTestBundleStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
 
-  NSURL *applicationBasePath = [self prepareStoragePathWithName:@"idb-applications" target:target error:error];
-  if (!applicationBasePath) {
+  basePath = [self prepareStoragePathWithName:@"idb-applications" target:target error:error];
+  if (!basePath) {
     return nil;
   }
-  FBApplicationBundleStorage *application = [[FBApplicationBundleStorage alloc] initWithTarget:target basePath:applicationBasePath queue:queue logger:logger];
+  FBApplicationBundleStorage *application = [[FBApplicationBundleStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
 
-  NSURL *dylibBasePath = [self prepareStoragePathWithName:@"idb-dylibs" target:target error:error];
-  if (!dylibBasePath) {
+  basePath = [self prepareStoragePathWithName:@"idb-dylibs" target:target error:error];
+  if (!basePath) {
     return nil;
   }
-  FBDylibStorage *dylib = [[FBDylibStorage alloc] initWithTarget:target basePath:dylibBasePath queue:queue logger:logger];
+  FBDylibStorage *dylib = [[FBDylibStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
 
-  NSURL *dsymBasePath = [self prepareStoragePathWithName:@"idb-dsyms" target:target error:error];
-  if (!dsymBasePath) {
+  basePath = [self prepareStoragePathWithName:@"idb-dsyms" target:target error:error];
+  if (!basePath) {
     return nil;
   }
-  FBDsymStorage *dsym = [[FBDsymStorage alloc] initWithTarget:target basePath:dsymBasePath queue:queue logger:logger];
+  FBDsymStorage *dsym = [[FBDsymStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
 
   return [[self alloc] initWithXctest:xctest application:application dylib:dylib dsym:dsym];
 }
