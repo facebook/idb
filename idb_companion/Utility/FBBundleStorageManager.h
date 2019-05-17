@@ -115,14 +115,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBDylibStorage : FBBundleStorage
 
-/**
- Interpolate the stored dylibs so that they can be replaced.
-
- @param environment the environment to interpolate.
- @return a dictionary with the replacements defined
- */
-- (NSDictionary<NSString *, NSString *> *)interpolateDylibReplacements:(NSDictionary<NSString *, NSString *> *)environment;
-
 @end
 
 /**
@@ -177,6 +169,16 @@ NS_ASSUME_NONNULL_BEGIN
  The Frameworks storage.
  */
 @property (nonatomic, strong, readonly) FBBundleStorage *framework;
+
+#pragma mark Public Methods
+
+/**
+ Interpolate any replacements
+
+ @param environment the environment to interpolate.
+ @return a dictionary with the replacements defined
+ */
+- (NSDictionary<NSString *, NSString *> *)interpolateEnvironmentReplacements:(NSDictionary<NSString *, NSString *> *)environment;
 
 @end
 

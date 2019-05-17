@@ -433,35 +433,6 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
 @implementation FBDylibStorage
 
-- (nullable NSString *)saveDylibFromFile:(NSURL *)url error:(NSError **)error
-{
-  NSURL *destination = [self.basePath URLByAppendingPathComponent:url.lastPathComponent];
-  if (![NSFileManager.defaultManager copyItemAtURL:url toURL:destination error:error]) {
-    return nil;
-  }
-  return destination.lastPathComponent;
-}
-
-- (NSDictionary<NSString *, NSString *> *)interpolateDylibReplacements:(NSDictionary<NSString *, NSString *> *)environment
-{
-  NSString *insertLibraries = environment[@"DYLD_INSERT_LIBRARIES"];
-  if (!insertLibraries) {
-    return environment;
-  }
-  NSArray<NSString *> *pathsToInterpolate = [insertLibraries componentsSeparatedByString:@":"];
-  NSMutableDictionary<NSString *, NSString *> *nameToPath = NSMutableDictionary.dictionary;
-  for (NSURL *url in [NSFileManager.defaultManager contentsOfDirectoryAtURL:self.basePath includingPropertiesForKeys:nil options:0 error:nil]) {
-    nameToPath[url.lastPathComponent] = url.path;
-  }
-  NSMutableArray<NSString *> *interpolatedPaths = NSMutableArray.array;
-  for (NSString *path in pathsToInterpolate) {
-    [interpolatedPaths addObject:(nameToPath[path] ?: path)];
-  }
-  NSMutableDictionary<NSString *, NSString *> *interpolatedEnvironment = [environment mutableCopy];
-  interpolatedEnvironment[@"DYLD_INSERT_LIBRARIES"] = [interpolatedPaths componentsJoinedByString:@":"];
-  return interpolatedEnvironment;
-}
-
 @end
 
 @implementation FBDsymStorage
@@ -536,6 +507,36 @@ static NSString *const XctestRunExtension = @"xctestrun";
   _framework = framework;
 
   return self;
+}
+
+#pragma mark Public Methods
+
+- (NSDictionary<NSString *, NSString *> *)interpolateEnvironmentReplacements:(NSDictionary<NSString *, NSString *> *)environment
+{
+  NSString *insertLibraries = environment[@"DYLD_INSERT_LIBRARIES"];
+  if (!insertLibraries) {
+    return environment;
+  }
+  NSArray<NSString *> *pathsToInterpolate = [insertLibraries componentsSeparatedByString:@":"];
+  NSDictionary<NSString *, NSString *> *nameToPath = [self replacementMapping];
+  NSMutableArray<NSString *> *interpolatedPaths = NSMutableArray.array;
+  for (NSString *path in pathsToInterpolate) {
+    [interpolatedPaths addObject:(nameToPath[path] ?: path)];
+  }
+  NSMutableDictionary<NSString *, NSString *> *interpolatedEnvironment = [environment mutableCopy];
+  interpolatedEnvironment[@"DYLD_INSERT_LIBRARIES"] = [interpolatedPaths componentsJoinedByString:@":"];
+  return interpolatedEnvironment;
+}
+
+- (NSDictionary<NSString *, NSString *> *)replacementMapping
+{
+  NSMutableDictionary<NSString *, NSString *> *nameToPath = NSMutableDictionary.dictionary;
+  for (NSURL *basePath in @[self.dylib.basePath, self.framework.basePath]) {
+    for (NSURL *url in [NSFileManager.defaultManager contentsOfDirectoryAtURL:basePath includingPropertiesForKeys:nil options:0 error:nil]) {
+      nameToPath[url.lastPathComponent] = url.path;
+    }
+  }
+  return nameToPath;
 }
 
 @end
