@@ -63,26 +63,31 @@
   return [self bucketFilesWithExtensions:[NSSet setWithObject:extension] inDirectory:url error:error][extension];
 }
 
-+ (FBFuture<NSURL *> *)findUniqueFileInDirectory:(NSURL *)directory onQueue:(dispatch_queue_t)queue
++ (NSURL *)findUniqueFileInDirectory:(NSURL *)directory error:(NSError **)error
 {
-  return [[self
-    filesInDirectory:directory]
-    onQueue:queue fmap:^FBFuture<NSURL *> *(NSArray<NSURL *> *filesInDirectory) {
-      if (filesInDirectory.count != 1) {
-        return [[FBIDBError describeFormat:@"Expected one top level file, found %lu", filesInDirectory.count] failFuture];
-      }
-      return [FBFuture futureWithResult:filesInDirectory[0]];
-  }];
+  NSArray<NSURL *> *filesInDirectory = [self filesInDirectory:directory error:error];
+  if (!filesInDirectory) {
+    return nil;
+  }
+  if (filesInDirectory.count != 1) {
+    return [[FBIDBError
+      describeFormat:@"Expected one top level file, found %lu: %@", filesInDirectory.count, [FBCollectionInformation oneLineDescriptionFromArray:filesInDirectory]]
+      fail:error];
+  }
+  return filesInDirectory[0];
 }
 
-+ (FBFuture<NSArray<NSURL *> *> *)filesInDirectory:(NSURL *)directory
++ (NSArray<NSURL *> *)filesInDirectory:(NSURL *)directory error:(NSError **)error
 {
-  NSError *error;
-  NSArray<NSURL *> *filesInTar = [NSFileManager.defaultManager contentsOfDirectoryAtURL:directory includingPropertiesForKeys:@[NSURLIsDirectoryKey] options:0 error:&error];
-  if (filesInTar == nil) {
-    return [[[FBIDBError describeFormat:@"Failed to list files in directory"] causedBy:error] failFuture];
+  NSError *innerError;
+  NSArray<NSURL *> *filesInDirectory = [NSFileManager.defaultManager contentsOfDirectoryAtURL:directory includingPropertiesForKeys:@[NSURLIsDirectoryKey] options:0 error:&innerError];
+  if (filesInDirectory == nil) {
+    return [[[FBIDBError
+      describeFormat:@"Failed to list files in directory %@", directory]
+      causedBy:innerError]
+      fail:error];
   }
-  return [FBFuture futureWithResult:filesInTar];
+  return filesInDirectory;
 }
 
 @end

@@ -110,16 +110,21 @@
 
 - (FBFutureContext<NSArray<NSURL *> *> *)filesFromSubdirs:(FBFutureContext<NSURL *> *)extractionDirContext
 {
-  return [[extractionDirContext
-    onQueue:self.queue pend:^FBFuture<NSArray<NSURL *> *> * (NSURL *extractionDir) {
-      return [FBStorageUtils filesInDirectory:extractionDir];
-    }]
-    onQueue:self.queue pend:^FBFuture<NSArray<NSURL *> *> *(NSArray<NSURL *> *subfolders) {
-      NSMutableArray<FBFuture<NSURL *> *> *filesInTar = [NSMutableArray arrayWithCapacity:subfolders.count];
-      for (NSURL *subfolder in subfolders) {
-        [filesInTar addObject:[FBStorageUtils findUniqueFileInDirectory:subfolder onQueue:self.queue]];
+  return [extractionDirContext
+    onQueue:self.queue pend:^ FBFuture<NSArray<NSURL *> *> * (NSURL *extractionDir) {
+      NSError *error = nil;
+      NSArray<NSURL *> *subfolders = [FBStorageUtils filesInDirectory:extractionDir error:&error];
+      if (!subfolders) {
+        return [FBFuture futureWithError:error];
       }
-      return [FBFuture futureWithFutures:filesInTar];
+      NSMutableArray<NSURL *> *filesInTar = [NSMutableArray arrayWithCapacity:subfolders.count];
+      for (NSURL *subfolder in subfolders) {
+        NSURL *file = [FBStorageUtils findUniqueFileInDirectory:subfolder error:&error];
+        if (!file) {
+          return [FBFuture futureWithError:error];
+        }
+      }
+      return [FBFuture futureWithResult:filesInTar];
     }];
 }
 

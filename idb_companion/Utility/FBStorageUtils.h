@@ -53,23 +53,21 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable NSSet<NSURL *> *)findFilesWithExtension:(NSString *)extension atURL:(NSURL *)url error:(NSError **)error;
 
-#pragma mark Private
-
 /**
  Finds a unique file within a directory.
 
  @param directory the directory to search in.
  @param queue the queue to use.
- @return a Future wrapping the unique file.
+ @return a the URL if a unique file could be foudn.
  */
-+ (FBFuture<NSURL *> *)findUniqueFileInDirectory:(NSURL *)directory onQueue:(dispatch_queue_t)queue;
++ (nullable NSURL *)findUniqueFileInDirectory:(NSURL *)directory error:(NSError **)error;
 
 /**
  Obtains all files within a directory
 
  @return a Future wrapping the list of files.
  */
-+ (FBFuture<NSArray<NSURL *> *> *)filesInDirectory:(NSURL *)directory;
++ (nullable NSArray<NSURL *> *)filesInDirectory:(NSURL *)directory error:(NSError **)error;
 
 @end
 
