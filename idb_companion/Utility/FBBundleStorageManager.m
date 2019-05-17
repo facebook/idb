@@ -513,10 +513,16 @@ static NSString *const XctestRunExtension = @"xctestrun";
   }
   FBDsymStorage *dsym = [[FBDsymStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
 
-  return [[self alloc] initWithXctest:xctest application:application dylib:dylib dsym:dsym];
+  basePath = [self prepareStoragePathWithName:@"idb-frameworks" target:target error:error];
+  if (!basePath) {
+    return nil;
+  }
+  FBBundleStorage *framework = [[FBBundleStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
+
+  return [[self alloc] initWithXctest:xctest application:application dylib:dylib dsym:dsym framework:framework];
 }
 
-- (instancetype)initWithXctest:(FBXCTestBundleStorage *)xctest application:(FBApplicationBundleStorage *)application dylib:(FBDylibStorage *)dylib dsym:(FBDsymStorage *)dsym
+- (instancetype)initWithXctest:(FBXCTestBundleStorage *)xctest application:(FBApplicationBundleStorage *)application dylib:(FBDylibStorage *)dylib dsym:(FBDsymStorage *)dsym framework:(FBBundleStorage *)framework
 {
   self = [super init];
   if (!self) {
@@ -527,6 +533,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   _application = application;
   _dylib = dylib;
   _dsym = dsym;
+  _framework = framework;
 
   return self;
 }

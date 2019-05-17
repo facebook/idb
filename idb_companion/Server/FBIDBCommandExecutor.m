@@ -123,22 +123,32 @@
 
 - (FBFuture<NSString *> *)install_dylib_file_path:(NSString *)filePath
 {
-  return [self install:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.bundleStorageManager.dylib];
+  return [self installFile:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.bundleStorageManager.dylib];
 }
 
 - (FBFuture<NSString *> *)install_dylib_stream:(FBProcessInput *)input name:(NSString *)name
 {
-  return [self install:[self.temporaryDirectory withGzipExtractedFromStream:input name:name] intoStorage:self.bundleStorageManager.dylib];
+  return [self installFile:[self.temporaryDirectory withGzipExtractedFromStream:input name:name] intoStorage:self.bundleStorageManager.dylib];
+}
+
+- (FBFuture<NSString *> *)install_framework_file_path:(NSString *)filePath
+{
+  return [self installBundle:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.bundleStorageManager.framework];
+}
+
+- (FBFuture<NSString *> *)install_framework_stream:(FBProcessInput *)input
+{
+  return [self installBundle:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.bundleStorageManager.framework];
 }
 
 - (FBFuture<NSString *> *)install_dsym_file_path:(NSString *)filePath
 {
-  return [self install:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.bundleStorageManager.dsym];
+  return [self installFile:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.bundleStorageManager.dsym];
 }
 
 - (FBFuture<NSString *> *)install_dsym_stream:(FBProcessInput *)input
 {
-  return [self install:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.bundleStorageManager.dsym];
+  return [self installFile:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.bundleStorageManager.dsym];
 }
 
 #pragma mark Public Methods
@@ -633,12 +643,29 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
-- (FBFuture<NSString *> *)install:(FBFutureContext<NSURL *> *)extractedDsym intoStorage:(FBBundleStorage *)storage
+- (FBFuture<NSString *> *)installFile:(FBFutureContext<NSURL *> *)extractedFileContext intoStorage:(FBBundleStorage *)storage
 {
-  return [extractedDsym
-    onQueue:self.target.workQueue pop:^(NSURL *dsym) {
+  return [extractedFileContext
+    onQueue:self.target.workQueue pop:^(NSURL *extractedFile) {
       NSError *error = nil;
-      NSString *dsymPath = [storage saveFile:dsym error:&error];
+      NSString *dsymPath = [storage saveFile:extractedFile error:&error];
+      if (!dsymPath) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:dsymPath];
+    }];
+}
+
+- (FBFuture<NSString *> *)installBundle:(FBFutureContext<NSURL *> *)extractedDirectoryContext intoStorage:(FBBundleStorage *)storage
+{
+  return [extractedDirectoryContext
+    onQueue:self.target.workQueue pop:^(NSURL *extractedDirectory) {
+      NSError *error = nil;
+      FBBundleDescriptor *bundle = [FBStorageUtils bundleInDirectory:extractedDirectory error:&error];
+      if (!bundle) {
+        return [FBFuture futureWithError:error];
+      }
+      NSString *dsymPath = [storage saveBundle:bundle error:&error];
       if (!dsymPath) {
         return [FBFuture futureWithError:error];
       }

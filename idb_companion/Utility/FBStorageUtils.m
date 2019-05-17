@@ -90,4 +90,13 @@
   return filesInDirectory;
 }
 
++ (FBBundleDescriptor *)bundleInDirectory:(NSURL *)directory error:(NSError **)error
+{
+  NSURL *uniqueFile = [self findUniqueFileInDirectory:directory error:error];
+  if (!uniqueFile) {
+    return nil;
+  }
+  return [FBBundleDescriptor bundleFromPath:uniqueFile.path error:error];
+}
+
 @end

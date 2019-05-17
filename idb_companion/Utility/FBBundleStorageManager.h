@@ -173,6 +173,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, readonly) FBDsymStorage *dsym;
 
+/**
+ The Frameworks storage.
+ */
+@property (nonatomic, strong, readonly) FBBundleStorage *framework;
+
 @end
 
 NS_ASSUME_NONNULL_END

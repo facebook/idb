@@ -69,6 +69,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable NSArray<NSURL *> *)filesInDirectory:(NSURL *)directory error:(NSError **)error;
 
+/**
+ Attempt to find a bundle in a directory.
+
+ @param directory the directory to search.
+ @param error an error out for any error that occurs.
+ */
++ (nullable FBBundleDescriptor *)bundleInDirectory:(NSURL *)directory error:(NSError **)error;
+
 @end
 
 NS_ASSUME_NONNULL_END
