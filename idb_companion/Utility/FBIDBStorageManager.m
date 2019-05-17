@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBBundleStorageManager.h"
+#import "FBIDBStorageManager.h"
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
@@ -13,16 +13,7 @@
 #import "FBStorageUtils.h"
 #import "FBXCTestDescriptor.h"
 
-@interface FBBundleStorage ()
-
-@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
-@property (nonatomic, strong, readonly) NSURL *basePath;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-
-@end
-
-@implementation FBBundleStorage
+@implementation FBIDBStorage
 
 #pragma mark Initializers
 
@@ -40,6 +31,25 @@
 
   return self;
 }
+
+@end
+
+@implementation FBFileStorage
+
+- (nullable NSString *)saveFile:(NSURL *)url error:(NSError **)error
+{
+  NSURL *destination = [self.basePath URLByAppendingPathComponent:url.lastPathComponent];
+  [self.logger logFormat:@"Persisting %@ to %@", url.lastPathComponent, destination];
+  if (![NSFileManager.defaultManager copyItemAtURL:url toURL:destination error:error]) {
+    return nil;
+  }
+  [self.logger logFormat:@"Persisted %@", destination.lastPathComponent];
+  return destination.lastPathComponent;
+}
+
+@end
+
+@implementation FBBundleStorage
 
 #pragma mark Public
 
@@ -80,17 +90,6 @@
   [self.logger logFormat:@"Persisted %@", bundle.identifier];
 
   return bundle.identifier;
-}
-
-- (nullable NSString *)saveFile:(NSURL *)url error:(NSError **)error
-{
-  NSURL *destination = [self.basePath URLByAppendingPathComponent:url.lastPathComponent];
-  [self.logger logFormat:@"Persisting %@ to %@", url.lastPathComponent, destination];
-  if (![NSFileManager.defaultManager copyItemAtURL:url toURL:destination error:error]) {
-    return nil;
-  }
-  [self.logger logFormat:@"Persisted %@", destination.lastPathComponent];
-  return destination.lastPathComponent;
 }
 
 #pragma mark Private
@@ -431,15 +430,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
 @end
 
-@implementation FBDylibStorage
-
-@end
-
-@implementation FBDsymStorage
-
-@end
-
-@implementation FBBundleStorageManager
+@implementation FBIDBStorageManager
 
 #pragma mark Initializers
 
@@ -476,13 +467,13 @@ static NSString *const XctestRunExtension = @"xctestrun";
   if (!basePath) {
     return nil;
   }
-  FBDylibStorage *dylib = [[FBDylibStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
+  FBFileStorage *dylib = [[FBFileStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
 
   basePath = [self prepareStoragePathWithName:@"idb-dsyms" target:target error:error];
   if (!basePath) {
     return nil;
   }
-  FBDsymStorage *dsym = [[FBDsymStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
+  FBBundleStorage *dsym = [[FBBundleStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
 
   basePath = [self prepareStoragePathWithName:@"idb-frameworks" target:target error:error];
   if (!basePath) {
@@ -493,7 +484,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   return [[self alloc] initWithXctest:xctest application:application dylib:dylib dsym:dsym framework:framework];
 }
 
-- (instancetype)initWithXctest:(FBXCTestBundleStorage *)xctest application:(FBApplicationBundleStorage *)application dylib:(FBDylibStorage *)dylib dsym:(FBDsymStorage *)dsym framework:(FBBundleStorage *)framework
+- (instancetype)initWithXctest:(FBXCTestBundleStorage *)xctest application:(FBApplicationBundleStorage *)application dylib:(FBFileStorage *)dylib dsym:(FBBundleStorage *)dsym framework:(FBBundleStorage *)framework
 {
   self = [super init];
   if (!self) {
@@ -513,18 +504,16 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
 - (NSDictionary<NSString *, NSString *> *)interpolateEnvironmentReplacements:(NSDictionary<NSString *, NSString *> *)environment
 {
-  NSString *insertLibraries = environment[@"DYLD_INSERT_LIBRARIES"];
-  if (!insertLibraries) {
-    return environment;
-  }
-  NSArray<NSString *> *pathsToInterpolate = [insertLibraries componentsSeparatedByString:@":"];
   NSDictionary<NSString *, NSString *> *nameToPath = [self replacementMapping];
-  NSMutableArray<NSString *> *interpolatedPaths = NSMutableArray.array;
-  for (NSString *path in pathsToInterpolate) {
-    [interpolatedPaths addObject:(nameToPath[path] ?: path)];
+  NSMutableDictionary<NSString *, NSString *> *interpolatedEnvironment = [NSMutableDictionary dictionaryWithCapacity:environment.count];
+  for (NSString *name in environment.allKeys) {
+    NSString *value = environment[name];
+    for (NSString *interpolationName in nameToPath.allKeys) {
+      NSString *interpolationValue = nameToPath[interpolationName];
+      value = [value stringByReplacingOccurrencesOfString:interpolationName withString:interpolationValue];
+    }
+    interpolatedEnvironment[name] = value;
   }
-  NSMutableDictionary<NSString *, NSString *> *interpolatedEnvironment = [environment mutableCopy];
-  interpolatedEnvironment[@"DYLD_INSERT_LIBRARIES"] = [interpolatedPaths componentsJoinedByString:@":"];
   return interpolatedEnvironment;
 }
 

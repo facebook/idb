@@ -9,7 +9,7 @@
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
-#import "FBBundleStorageManager.h"
+#import "FBIDBStorageManager.h"
 #import "FBIDBError.h"
 #import "FBIDBPortsConfiguration.h"
 #import "FBStorageUtils.h"
@@ -28,12 +28,12 @@
 #pragma mark Initializers
 
 
-+ (instancetype)commandExecutorForTarget:(id<FBiOSTarget>)target bundleStorageManager:(FBBundleStorageManager *)bundleStorageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(id<FBControlCoreLogger>)logger
++ (instancetype)commandExecutorForTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithTarget:target bundleStorageManager:bundleStorageManager temporaryDirectory:temporaryDirectory ports:ports logger:[logger withName:@"grpc_handler"]];
+  return [[self alloc] initWithTarget:target storageManager:storageManager temporaryDirectory:temporaryDirectory ports:ports logger:[logger withName:@"grpc_handler"]];
 }
 
-- (instancetype)initWithTarget:(id<FBiOSTarget>)target bundleStorageManager:(FBBundleStorageManager *)bundleStorageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -41,13 +41,13 @@
   }
 
   _target = target;
-  _bundleStorageManager = bundleStorageManager;
+  _storageManager = storageManager;
   _temporaryDirectory = temporaryDirectory;
   _ports = ports;
   _logger = logger;
   _logManager = [FBDeltaUpdateManager logManagerWithTarget:target];
   _instrumentsManager = [FBDeltaUpdateManager instrumentsManagerWithTarget:target];
-  _testManager = [FBDeltaUpdateManager xctestManagerWithTarget:self.target bundleStorage:bundleStorageManager.xctest temporaryDirectory:temporaryDirectory];
+  _testManager = [FBDeltaUpdateManager xctestManagerWithTarget:self.target bundleStorage:storageManager.xctest temporaryDirectory:temporaryDirectory];
   _videoManager = [FBDeltaUpdateManager videoManagerForTarget:self.target];
 
   return self;
@@ -123,32 +123,32 @@
 
 - (FBFuture<NSString *> *)install_dylib_file_path:(NSString *)filePath
 {
-  return [self installFile:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.bundleStorageManager.dylib];
+  return [self installFile:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.storageManager.dylib];
 }
 
 - (FBFuture<NSString *> *)install_dylib_stream:(FBProcessInput *)input name:(NSString *)name
 {
-  return [self installFile:[self.temporaryDirectory withGzipExtractedFromStream:input name:name] intoStorage:self.bundleStorageManager.dylib];
+  return [self installFile:[self.temporaryDirectory withGzipExtractedFromStream:input name:name] intoStorage:self.storageManager.dylib];
 }
 
 - (FBFuture<NSString *> *)install_framework_file_path:(NSString *)filePath
 {
-  return [self installBundle:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.bundleStorageManager.framework];
+  return [self installBundle:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.storageManager.framework];
 }
 
 - (FBFuture<NSString *> *)install_framework_stream:(FBProcessInput *)input
 {
-  return [self installBundle:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.bundleStorageManager.framework];
+  return [self installBundle:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.storageManager.framework];
 }
 
 - (FBFuture<NSString *> *)install_dsym_file_path:(NSString *)filePath
 {
-  return [self installFile:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.bundleStorageManager.dsym];
+  return [self installBundle:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.storageManager.dsym];
 }
 
 - (FBFuture<NSString *> *)install_dsym_stream:(FBProcessInput *)input
 {
-  return [self installFile:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.bundleStorageManager.dsym];
+  return [self installBundle:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.storageManager.dsym];
 }
 
 #pragma mark Public Methods
@@ -348,7 +348,7 @@
 {
   return [FBFuture onQueue:self.target.workQueue resolve:^{
     NSError *error;
-    NSSet<id<FBXCTestDescriptor>> *testDescriptors = [self.bundleStorageManager.xctest listTestDescriptorsWithError:&error];
+    NSSet<id<FBXCTestDescriptor>> *testDescriptors = [self.storageManager.xctest listTestDescriptorsWithError:&error];
     if (testDescriptors == nil) {
       return [FBFuture futureWithError:error];
     }
@@ -362,7 +362,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 {
   return [FBFuture onQueue:self.target.workQueue resolve:^ FBFuture<NSArray<NSString *> *> * {
     NSError *error = nil;
-    id<FBXCTestDescriptor> testDescriptor = [self.bundleStorageManager.xctest testDescriptorWithID:bundleID error:&error];
+    id<FBXCTestDescriptor> testDescriptor = [self.storageManager.xctest testDescriptorWithID:bundleID error:&error];
     if (!testDescriptor) {
       return [FBFuture futureWithError:error];
     }
@@ -402,7 +402,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 - (FBFuture<id<FBLaunchedProcess>> *)launch_app:(FBApplicationLaunchConfiguration *)configuration
 {
-  return [self.target launchApplication:[configuration withEnvironment:[self.bundleStorageManager interpolateEnvironmentReplacements:configuration.environment]]];
+  return [self.target launchApplication:[configuration withEnvironment:[self.storageManager interpolateEnvironmentReplacements:configuration.environment]]];
 }
 
 - (FBFuture<FBDeltaUpdateSession<FBXCTestDelta *> *> *)xctest_run:(id<FBXCTestRunRequest>)request
@@ -553,7 +553,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
         return [FBFuture futureWithError:[FBControlCoreError errorForDescription:@"No app bundle could be extracted"]];
       }
       NSError *error = nil;
-      if (![self.bundleStorageManager.application checkArchitecture:appBundle error:&error]) {
+      if (![self.storageManager.application checkArchitecture:appBundle error:&error]) {
         return [FBFuture futureWithError:error];
       }
       return [[self.target installApplicationWithPath:appBundle.path] mapReplace:appBundle];
@@ -561,7 +561,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     onQueue:self.target.workQueue pop:^(FBApplicationBundle *appBundle){
       [self.logger logFormat:@"Persisting application bundle %@", appBundle];
       NSError *error = nil;
-      if ([self.bundleStorageManager.application saveBundle:appBundle error:&error]) {
+      if ([self.storageManager.application saveBundle:appBundle error:&error]) {
         [self.logger logFormat:@"Persisted application bundle %@", appBundle];
       } else {
         [self.logger logFormat:@"Failed to persist application %@", error];
@@ -622,7 +622,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [extractedXctest
     onQueue:self.target.workQueue pop:^(NSURL *extractionDirectory) {
     NSError *error = nil;
-    NSString *testBundleID = [self.bundleStorageManager.xctest saveBundleOrTestRunFromBaseDirectory:extractionDirectory error:&error];
+    NSString *testBundleID = [self.storageManager.xctest saveBundleOrTestRunFromBaseDirectory:extractionDirectory error:&error];
     if (!testBundleID) {
       return [FBFuture futureWithError:error];
     }
@@ -635,7 +635,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [bundle
     onQueue:self.target.workQueue pop:^(NSURL *xctestURL) {
       NSError *error = nil;
-      NSString *testBundleID = [self.bundleStorageManager.xctest saveBundleOrTestRun:xctestURL error:&error];
+      NSString *testBundleID = [self.storageManager.xctest saveBundleOrTestRun:xctestURL error:&error];
       if (!testBundleID) {
         return [FBFuture futureWithError:error];
       }
@@ -643,7 +643,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
-- (FBFuture<NSString *> *)installFile:(FBFutureContext<NSURL *> *)extractedFileContext intoStorage:(FBBundleStorage *)storage
+- (FBFuture<NSString *> *)installFile:(FBFutureContext<NSURL *> *)extractedFileContext intoStorage:(FBFileStorage *)storage
 {
   return [extractedFileContext
     onQueue:self.target.workQueue pop:^(NSURL *extractedFile) {
@@ -682,7 +682,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
           describeFormat:@"Debug server is already running"]
           failFuture];
       }
-      NSDictionary<NSString *, FBApplicationBundle *> *persisted = self.bundleStorageManager.application.persistedApplications;
+      NSDictionary<NSString *, FBApplicationBundle *> *persisted = self.storageManager.application.persistedApplications;
       FBApplicationBundle *bundle = persisted[bundleID];
       if (!bundle) {
         return [[FBIDBError

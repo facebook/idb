@@ -10,7 +10,7 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBDeviceControl/FBDeviceControl.h>
 
-#import "FBBundleStorageManager.h"
+#import "FBIDBStorageManager.h"
 #import "FBIDBError.h"
 #import "FBStorageUtils.h"
 #import "FBTemporaryDirectory.h"

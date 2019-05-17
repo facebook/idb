@@ -7,7 +7,7 @@
 
 #import "FBIDBCompanionServer.h"
 
-#import "FBBundleStorageManager.h"
+#import "FBIDBStorageManager.h"
 #import "FBGRPCServer.h"
 #import "FBIDBCommandExecutor.h"
 #import "FBIDBError.h"
@@ -26,14 +26,14 @@
 
 + (instancetype)companionForTarget:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports eventReporter:(id<FBEventReporter>)eventReporter logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  FBBundleStorageManager *bundleStorageManager = [FBBundleStorageManager managerForTarget:target logger:logger error:error];
-  if (!bundleStorageManager) {
+  FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:error];
+  if (!storageManager) {
     return nil;
   }
   // Command Executor
   FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
     commandExecutorForTarget:target
-    bundleStorageManager:bundleStorageManager
+    storageManager:storageManager
     temporaryDirectory:temporaryDirectory
     ports:ports
     logger:target.logger];

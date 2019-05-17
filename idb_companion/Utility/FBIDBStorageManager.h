@@ -12,11 +12,57 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- Base class for bundle storage.
+ The base class for storage in idb.
  */
-@interface FBBundleStorage : NSObject
+@interface FBIDBStorage : NSObject
+
+#pragma mark Properties
+
+/**
+ The target that is being stored against.
+ */
+@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
+
+/**
+ The base path of the storage.
+ */
+@property (nonatomic, strong, readonly) NSURL *basePath;
+
+/**
+ The logger to use.
+ */
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+
+/**
+ The queue to use.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+
+@end
+
+/**
+ Storage for files
+ */
+@interface FBFileStorage : FBIDBStorage
 
 #pragma mark Public Methods
+
+/**
+ Relocates the file into storage.
+
+ @param url the url to relocate.
+ @param error an error out for any error that occurs
+ @return the path of the relocated file.
+ */
+- (nullable NSString *)saveFile:(NSURL *)url error:(NSError **)error;
+
+@end
+
+/**
+ Base class for bundle storage.
+ */
+@interface FBBundleStorage : FBIDBStorage
+
 
 /**
  Checks the bundle is supported on the current target
@@ -34,15 +80,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  */
 - (nullable NSString *)saveBundle:(FBBundleDescriptor *)bundle error:(NSError **)error;
-
-/**
- Relocates the file into storage.
-
- @param url the url to relocate.
- @param error an error out for any error that occurs
- @return the path of the relocated file.
- */
-- (nullable NSString *)saveFile:(NSURL *)url error:(NSError **)error;
 
 @end
 
@@ -111,25 +148,10 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- Class to manage storage of dynamic libraries that can be used for injection into processes
+ Class to manage storing of artifacts for a particular target
+ Each kind of stored artifact is placed in a separate directory and managed by a separate class.
  */
-@interface FBDylibStorage : FBBundleStorage
-
-@end
-
-/**
- Class to manage storage of dsym files that can be used to symbolicate call stacks
- */
-@interface FBDsymStorage : FBBundleStorage
-
-@end
-
-/**
- Class to manage storing of test and application bundles in the target's aux directory
- Test bundles are stored under TARGET_AUX_DIR/idb-test-bundles/TEST_BUNDLE_ID/TEST_BUNDLE.xctest
- Application bundles are stored under TARGET_AUX_DIR/idb-applications/APPLICATION_BUNDLE_ID
- */
-@interface FBBundleStorageManager : NSObject
+@interface FBIDBStorageManager : NSObject
 
 #pragma mark Initializers
 
@@ -139,7 +161,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param target Target to store the test bundles in
  @param logger FBControlCoreLogger to use
  @param error an error out for any error that occurs in creating the storage
- @return a FBTestBundleStorageManager instance on success, nil otherwise.
+ @return a FBTeststorageManager instance on success, nil otherwise.
  */
 + (nullable instancetype)managerForTarget:(id<FBiOSTarget>)target logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
@@ -158,12 +180,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The dylib storage.
  */
-@property (nonatomic, strong, readonly) FBDylibStorage *dylib;
+@property (nonatomic, strong, readonly) FBFileStorage *dylib;
 
 /**
  The dSYM storage.
  */
-@property (nonatomic, strong, readonly) FBDsymStorage *dsym;
+@property (nonatomic, strong, readonly) FBBundleStorage *dsym;
 
 /**
  The Frameworks storage.

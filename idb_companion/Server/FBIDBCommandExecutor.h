@@ -18,8 +18,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBBundleStorageManager;
 @class FBIDBPortsConfiguration;
+@class FBIDBStorageManager;
 @class FBTemporaryDirectory;
 
 @interface FBIDBCommandExecutor : NSObject
@@ -30,20 +30,20 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Initializer.
 
  @param target the target to run against.
- @param bundleStorageManager storage for all bundles
+ @param storageManager storage for all bundles
  @param temporaryDirectory the temporary directory to use.
  @param ports the ports to use.
  @param logger a logger to log to.
  @return a new FBIDBCommandExecutor instance
  */
-+ (instancetype)commandExecutorForTarget:(id<FBiOSTarget>)target bundleStorageManager:(FBBundleStorageManager *)bundleStorageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)commandExecutorForTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Properties
 
 /**
  For storage of all bundles
  */
-@property (nonatomic, strong, readonly) FBBundleStorageManager *bundleStorageManager;
+@property (nonatomic, strong, readonly) FBIDBStorageManager *storageManager;
 
 /**
  The xctest manager
