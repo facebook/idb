@@ -92,6 +92,32 @@
   return bundle.identifier;
 }
 
+#pragma mark Properties
+
+- (NSSet<NSString *> *)persistedBundleIDs
+{
+  return [NSSet setWithArray:([NSFileManager.defaultManager contentsOfDirectoryAtPath:self.basePath.path error:nil] ?: @[])];
+}
+
+- (NSDictionary<NSString *, FBBundleDescriptor *> *)persistedBundles
+{
+  NSMutableDictionary<NSString *, FBBundleDescriptor *> *mapping = [NSMutableDictionary dictionary];
+  for (NSURL *directory in [NSFileManager.defaultManager enumeratorAtURL:self.basePath includingPropertiesForKeys:nil options:NSDirectoryEnumerationSkipsSubdirectoryDescendants errorHandler:nil]) {
+    NSString *key = directory.lastPathComponent;
+    NSError *error = nil;
+    NSURL *bundlePath = [FBStorageUtils findUniqueFileInDirectory:directory error:nil];
+    if (!bundlePath) {
+      continue;
+    }
+    FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:bundlePath.path error:&error];
+    if (!bundle) {
+      [self.logger logFormat:@"Failed to get bundle info for bundle at path %@", bundlePath];
+    }
+    mapping[key] = bundle;
+  }
+  return mapping;
+}
+
 #pragma mark Private
 
 - (BOOL)prepareDirectoryWithURL:(NSURL *)url error:(NSError **)error
@@ -400,36 +426,6 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
 @end
 
-@implementation FBApplicationBundleStorage
-
-#pragma mark Properties
-
-- (NSSet<NSString *> *)persistedApplicationBundleIDs
-{
-  return [NSSet setWithArray:([NSFileManager.defaultManager contentsOfDirectoryAtPath:self.basePath.path error:nil] ?: @[])];
-}
-
-- (NSDictionary<NSString *, FBBundleDescriptor *> *)persistedApplications
-{
-  NSMutableDictionary<NSString *, FBBundleDescriptor *> *mapping = [NSMutableDictionary dictionary];
-  for (NSURL *directory in [NSFileManager.defaultManager enumeratorAtURL:self.basePath includingPropertiesForKeys:nil options:NSDirectoryEnumerationSkipsSubdirectoryDescendants errorHandler:nil]) {
-    NSString *key = directory.lastPathComponent;
-    NSError *error = nil;
-    NSURL *appPath = [FBStorageUtils findFileWithExtension:@"app" atURL:directory error:&error];
-    if (!appPath) {
-      [self.logger logFormat:@"Could not find app in path %@", directory];
-    }
-    FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:appPath.path error:&error];
-    if (!bundle) {
-      [self.logger logFormat:@"Failed to get bundle info for app installed at path %@", appPath];
-    }
-    mapping[key] = bundle;
-  }
-  return mapping;
-}
-
-@end
-
 @implementation FBIDBStorageManager
 
 #pragma mark Initializers
@@ -461,7 +457,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   if (!basePath) {
     return nil;
   }
-  FBApplicationBundleStorage *application = [[FBApplicationBundleStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
+  FBBundleStorage *application = [[FBBundleStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
 
   basePath = [self prepareStoragePathWithName:@"idb-dylibs" target:target error:error];
   if (!basePath) {
@@ -484,7 +480,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   return [[self alloc] initWithXctest:xctest application:application dylib:dylib dsym:dsym framework:framework];
 }
 
-- (instancetype)initWithXctest:(FBXCTestBundleStorage *)xctest application:(FBApplicationBundleStorage *)application dylib:(FBFileStorage *)dylib dsym:(FBBundleStorage *)dsym framework:(FBBundleStorage *)framework
+- (instancetype)initWithXctest:(FBXCTestBundleStorage *)xctest application:(FBBundleStorage *)application dylib:(FBFileStorage *)dylib dsym:(FBBundleStorage *)dsym framework:(FBBundleStorage *)framework
 {
   self = [super init];
   if (!self) {
@@ -516,6 +512,8 @@ static NSString *const XctestRunExtension = @"xctestrun";
   }
   return interpolatedEnvironment;
 }
+
+#pragma mark Private
 
 - (NSDictionary<NSString *, NSString *> *)replacementMapping
 {

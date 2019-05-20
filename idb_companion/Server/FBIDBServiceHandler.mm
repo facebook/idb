@@ -531,7 +531,7 @@ FBFuture<NSString *> *FBIDBServiceHandler::install_future(const idb::InstallRequ
 Status FBIDBServiceHandler::list_apps(ServerContext *context, const idb::ListAppsRequest *request, idb::ListAppsResponse *response)
 {@autoreleasepool{
   NSError *error = nil;
-  NSSet<NSString *> *persistedBundleIDs = _commandExecutor.storageManager.application.persistedApplicationBundleIDs;
+  NSSet<NSString *> *persistedBundleIDs = _commandExecutor.storageManager.application.persistedBundleIDs;
   NSDictionary<FBInstalledApplication *, id> *apps = [[_commandExecutor list_apps] block:&error];
   for (FBInstalledApplication *app in apps.allKeys) {
     idb::InstalledAppInfo *appInfo = response->add_apps();

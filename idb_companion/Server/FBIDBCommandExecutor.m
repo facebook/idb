@@ -682,7 +682,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
           describeFormat:@"Debug server is already running"]
           failFuture];
       }
-      NSDictionary<NSString *, FBBundleDescriptor *> *persisted = self.storageManager.application.persistedApplications;
+      NSDictionary<NSString *, FBBundleDescriptor *> *persisted = self.storageManager.application.persistedBundles;
       FBBundleDescriptor *bundle = persisted[bundleID];
       if (!bundle) {
         return [[FBIDBError

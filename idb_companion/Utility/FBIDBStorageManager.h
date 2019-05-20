@@ -63,6 +63,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBBundleStorage : FBIDBStorage
 
+#pragma mark Public Methods
 
 /**
  Checks the bundle is supported on the current target
@@ -80,6 +81,18 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  */
 - (nullable NSString *)saveBundle:(FBBundleDescriptor *)bundle error:(NSError **)error;
+
+#pragma mark Properties
+
+/**
+ The Bundle IDs of all installed bundles.
+ */
+@property (nonatomic, copy, readonly) NSSet<NSString *> *persistedBundleIDs;
+
+/**
+ A mapping of Bundle IDs to bundles.
+ */
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, FBBundleDescriptor *> *persistedBundles;
 
 @end
 
@@ -129,25 +142,6 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- Bundle storage for applications.
- */
-@interface FBApplicationBundleStorage : FBBundleStorage
-
-#pragma mark Public Methods
-
-/**
- The bundle ids of all persisted applications
- */
-@property (nonatomic, copy, readonly) NSSet<NSString *> *persistedApplicationBundleIDs;
-
-/**
- A mapping of bundle ids to persisted applications
- */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, FBBundleDescriptor *> *persistedApplications;
-
-@end
-
-/**
  Class to manage storing of artifacts for a particular target
  Each kind of stored artifact is placed in a separate directory and managed by a separate class.
  */
@@ -175,7 +169,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The application bundle storage
  */
-@property (nonatomic, strong, readonly) FBApplicationBundleStorage *application;
+@property (nonatomic, strong, readonly) FBBundleStorage *application;
 
 /**
  The dylib storage.
