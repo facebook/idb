@@ -32,6 +32,17 @@
   return self;
 }
 
+#pragma mark Properties
+
+- (NSDictionary<NSString *, NSString *> *)replacementMapping
+{
+  NSMutableDictionary<NSString *, NSString *> *replacementMapping = NSMutableDictionary.dictionary;
+  for (NSURL *url in [NSFileManager.defaultManager contentsOfDirectoryAtURL:self.basePath includingPropertiesForKeys:nil options:0 error:nil]) {
+    replacementMapping[url.lastPathComponent] = url.path;
+  }
+  return replacementMapping;
+}
+
 @end
 
 @implementation FBFileStorage
@@ -116,6 +127,17 @@
     mapping[key] = bundle;
   }
   return mapping;
+}
+
+- (NSDictionary<NSString *, NSString *> *)replacementMapping
+{
+  NSDictionary<NSString *, FBBundleDescriptor *> *persistedBundles = self.persistedBundles;
+  NSMutableDictionary<NSString *, NSString *> *replacementMapping = NSMutableDictionary.dictionary;
+  for (NSString *name in persistedBundles) {
+    FBBundleDescriptor *bundle = persistedBundles[name];
+    replacementMapping[bundle.name] = bundle.path;
+  }
+  return replacementMapping;
 }
 
 #pragma mark Private
@@ -517,13 +539,11 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
 - (NSDictionary<NSString *, NSString *> *)replacementMapping
 {
-  NSMutableDictionary<NSString *, NSString *> *nameToPath = NSMutableDictionary.dictionary;
-  for (NSURL *basePath in @[self.dylib.basePath, self.framework.basePath]) {
-    for (NSURL *url in [NSFileManager.defaultManager contentsOfDirectoryAtURL:basePath includingPropertiesForKeys:nil options:0 error:nil]) {
-      nameToPath[url.lastPathComponent] = url.path;
-    }
+  NSMutableDictionary<NSString *, NSString *> *combined = NSMutableDictionary.dictionary;
+  for (NSDictionary<NSString *, NSString *> *replacementMapping in @[self.dylib.replacementMapping, self.framework.replacementMapping, self.dsym.replacementMapping]) {
+    [combined addEntriesFromDictionary:replacementMapping];
   }
-  return nameToPath;
+  return combined;
 }
 
 @end

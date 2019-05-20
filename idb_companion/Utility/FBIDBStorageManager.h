@@ -38,6 +38,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
+/**
+ A mapping of storage name to local path replacement.
+ */
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *replacementMapping;
+
 @end
 
 /**
