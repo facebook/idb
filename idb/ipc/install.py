@@ -19,7 +19,7 @@ from idb.grpc.types import CompanionClient
 from idb.utils.typing import none_throws
 
 
-CHUNK_SIZE = 1024
+CHUNK_SIZE = 16384
 Destination = InstallRequest.Destination
 Bundle = Union[str, IO[bytes]]
 
