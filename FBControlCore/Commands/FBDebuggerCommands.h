@@ -13,7 +13,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBApplicationBundle;
+@class FBBundleDescriptor;
 
 /**
  A protocol for a running debug server.
@@ -36,11 +36,11 @@ NS_ASSUME_NONNULL_BEGIN
  Starts a gdb debug server for a given bundle id.
  The server is then bound on the TCP port provided.
 
- @param application the FBApplicationBundle instance for the application to debug. This *must* be present on the host's filesystem.
+ @param application the FBBundleDescriptor instance for the application to debug. This *must* be present on the host's filesystem.
  @param port the TCP port to bind on the debug server on.
  @return a future that resolves with a debug server.
  */
-- (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(FBApplicationBundle *)application port:(in_port_t)port;
+- (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(FBBundleDescriptor *)application port:(in_port_t)port;
 
 @end
 

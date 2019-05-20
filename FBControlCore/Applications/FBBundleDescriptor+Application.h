@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBApplicationBundle.h>
+#import <FBControlCore/FBBundleDescriptor.h>
 #import <FBControlCore/FBFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -17,9 +17,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBProcessInput;
 
 /**
- A Bundle Descriptor specialized to Applications
+ Operations on FBBundleDescriptor, for applications.
  */
-@interface FBApplicationBundle (Install)
+@interface FBBundleDescriptor (Application)
 
 #pragma mark Public Methods
 
@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the (optional) logger to log to.
  @return a future context the application bundle.
  */
-+ (FBFutureContext<FBApplicationBundle *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBFutureContext<FBBundleDescriptor *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Obtains an extracted version of an Application based on a stream of archive data.
@@ -46,7 +46,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the (optional) logger to log to.
  @return a future context wrapping the application bundle.
  */
-+ (FBFutureContext<FBApplicationBundle *> *)onQueue:(dispatch_queue_t)queue extractApplicationFromInput:(FBProcessInput *)input logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBFutureContext<FBBundleDescriptor *> *)onQueue:(dispatch_queue_t)queue extractApplicationFromInput:(FBProcessInput *)input logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Attempts to find an app path from a directory.
@@ -55,7 +55,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param directory the directory to search.
  @return a future wrapping the application bundle.
  */
-+ (FBFuture<FBApplicationBundle *> *)findAppPathFromDirectory:(NSURL *)directory;
++ (FBFuture<FBBundleDescriptor *> *)findAppPathFromDirectory:(NSURL *)directory;
 
 /**
  Check if given path is an application path.

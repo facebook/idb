@@ -143,7 +143,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A mapping of bundle ids to persisted applications
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, FBApplicationBundle *> *persistedApplications;
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, FBBundleDescriptor *> *persistedApplications;
 
 @end
 

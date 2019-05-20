@@ -14,7 +14,7 @@
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>
 
 #import "FBSimulator.h"
-#import "FBApplicationBundle+Simulator.h"
+#import "FBBundleDescriptor+Simulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorAgentOperation.h"
 
@@ -43,7 +43,7 @@ static NSString *const KeyType = @"type";
 
 + (nullable FBBinaryDescriptor *)simulatorBridgeBinaryWithError:(NSError **)error
 {
-  FBApplicationBundle *simulatorApp = [FBApplicationBundle xcodeSimulator];
+  FBBundleDescriptor *simulatorApp = [FBBundleDescriptor xcodeSimulator];
   NSString *path = [simulatorApp.path stringByAppendingPathComponent:@"Contents/Resources/Platforms/iphoneos/usr/libexec/SimulatorBridge"];
   return [FBBinaryDescriptor binaryWithPath:path error:error];
 }

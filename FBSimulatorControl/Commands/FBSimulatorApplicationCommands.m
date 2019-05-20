@@ -49,9 +49,9 @@
 
 - (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
 {
-  return [[[FBApplicationBundle
+  return [[[FBBundleDescriptor
     onQueue:self.simulator.asyncQueue findOrExtractApplicationAtPath:path logger:self.simulator.logger]
-    onQueue:self.simulator.workQueue pop:^(FBApplicationBundle *bundle) {
+    onQueue:self.simulator.workQueue pop:^(FBBundleDescriptor *bundle) {
       return [self installExtractedApplicationWithPath:bundle.path];
     }]
     mapReplace:NSNull.null];
@@ -249,7 +249,7 @@ static NSString *const KeyDataContainer = @"DataContainer";
       fail:error];
   }
 
-  FBApplicationBundle *bundle = [FBApplicationBundle bundleFromPath:appPath error:error];
+  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:appPath error:error];
   if (!bundle) {
     return nil;
   }
@@ -264,7 +264,7 @@ static NSString *const KeyDataContainer = @"DataContainer";
 {
   return [[self
     confirmCompatibilityOfApplicationAtPath:path]
-    onQueue:self.simulator.workQueue fmap:^FBFuture *(FBApplicationBundle *application) {
+    onQueue:self.simulator.workQueue fmap:^FBFuture *(FBBundleDescriptor *application) {
       NSDictionary *options = @{
         @"CFBundleIdentifier": application.identifier
       };
@@ -294,10 +294,10 @@ static NSString *const KeyDataContainer = @"DataContainer";
     }];
 }
 
-- (FBFuture<FBApplicationBundle *> *)confirmCompatibilityOfApplicationAtPath:(NSString *)path
+- (FBFuture<FBBundleDescriptor *> *)confirmCompatibilityOfApplicationAtPath:(NSString *)path
 {
   NSError *error = nil;
-  FBApplicationBundle *application = [FBApplicationBundle bundleFromPath:path error:&error];
+  FBBundleDescriptor *application = [FBBundleDescriptor bundleFromPath:path error:&error];
   if (!application) {
     return [[[FBSimulatorError
       describeFormat:@"Could not determine Application information for path %@", path]

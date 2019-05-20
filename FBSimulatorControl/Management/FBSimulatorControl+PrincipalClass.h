@@ -9,7 +9,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBApplicationBundle;
+@class FBBundleDescriptor;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
 @class FBSimulatorServiceContext;

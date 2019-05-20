@@ -208,7 +208,7 @@
 @synthesize name = _name;
 @synthesize testBundle = _testBundle;
 
-- (instancetype)initWithURL:(NSURL *)url name:(NSString *)name testBundle:(FBApplicationBundle *)testBundle testHostBundle:(FBApplicationBundle *)testHostBundle
+- (instancetype)initWithURL:(NSURL *)url name:(NSString *)name testBundle:(FBBundleDescriptor *)testBundle testHostBundle:(FBBundleDescriptor *)testHostBundle
 {
   self = [super init];
 

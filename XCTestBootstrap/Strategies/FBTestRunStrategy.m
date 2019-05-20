@@ -45,15 +45,15 @@
 - (FBFuture<NSNull *> *)execute
 {
   NSError *error = nil;
-  FBApplicationBundle *testRunnerApp = [FBApplicationBundle bundleFromPath:self.configuration.runnerAppPath error:&error];
+  FBBundleDescriptor *testRunnerApp = [FBBundleDescriptor bundleFromPath:self.configuration.runnerAppPath error:&error];
   if (!testRunnerApp) {
     [self.logger logFormat:@"Failed to open test runner application: %@", error];
     return [FBFuture futureWithError:error];
   }
 
-  FBApplicationBundle *testTargetApp;
+  FBBundleDescriptor *testTargetApp;
   if (self.configuration.testTargetAppPath) {
-    testTargetApp = [FBApplicationBundle bundleFromPath:self.configuration.testTargetAppPath error:&error];
+    testTargetApp = [FBBundleDescriptor bundleFromPath:self.configuration.testTargetAppPath error:&error];
     if (!testTargetApp) {
       [self.logger logFormat:@"Failed to open test target application: %@", error];
       return [FBFuture futureWithError:error];
@@ -69,7 +69,7 @@
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)startTestWithTestRunnerApp:(FBApplicationBundle *)testRunnerApp testTargetApp:(FBApplicationBundle *)testTargetApp
+- (FBFuture<NSNull *> *)startTestWithTestRunnerApp:(FBBundleDescriptor *)testRunnerApp testTargetApp:(FBBundleDescriptor *)testTargetApp
 {
   FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
     configurationWithBundleID:testRunnerApp.identifier
@@ -166,7 +166,7 @@
 
 // Save test artifacts matches certain filename globs that are populated during test run
 // to a temporary folder so it can be obtained by external tools if needed.
-- (void)_saveTestArtifactsOfTestRunnerApp:(FBApplicationBundle *)testRunnerApp withFilenameMatchGlobs:(NSArray<NSString *> *)filenameGlobs
+- (void)_saveTestArtifactsOfTestRunnerApp:(FBBundleDescriptor *)testRunnerApp withFilenameMatchGlobs:(NSArray<NSString *> *)filenameGlobs
 {
   NSArray<FBDiagnostic *> *diagnostics = [[[FBDiagnosticQuery
     filesInApplicationOfBundleID:testRunnerApp.identifier withFilenames:@[] withFilenameGlobs:filenameGlobs]

@@ -8,7 +8,7 @@
 #import <FBSimulatorControl/FBAccessibilityFetch.h>
 #import <FBSimulatorControl/FBAgentLaunchConfiguration+Simulator.h>
 #import <FBSimulatorControl/FBAgentLaunchStrategy.h>
-#import <FBSimulatorControl/FBApplicationBundle+Simulator.h>
+#import <FBSimulatorControl/FBBundleDescriptor+Simulator.h>
 #import <FBSimulatorControl/FBApplicationLaunchStrategy.h>
 #import <FBSimulatorControl/FBCompositeSimulatorEventSink.h>
 #import <FBSimulatorControl/FBContactsUpdateConfiguration.h>

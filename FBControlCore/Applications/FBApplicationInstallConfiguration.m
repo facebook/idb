@@ -7,8 +7,8 @@
 
 #import "FBApplicationInstallConfiguration.h"
 
-#import "FBApplicationBundle+Install.h"
-#import "FBApplicationBundle.h"
+#import "FBBundleDescriptor+Application.h"
+#import "FBBundleDescriptor.h"
 #import "FBCodesignProvider.h"
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
@@ -107,9 +107,9 @@ static NSString *const KeyCodesign = @"codesign";
 
 - (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
-  return [[[FBApplicationBundle
+  return [[[FBBundleDescriptor
     onQueue:target.asyncQueue findOrExtractApplicationAtPath:self.applicationPath logger:target.logger]
-    onQueue:target.workQueue pop:^(FBApplicationBundle *applicationBundle) {
+    onQueue:target.workQueue pop:^(FBBundleDescriptor *applicationBundle) {
       if (self.codesign) {
         return [FBCodesignProvider.codeSignCommandWithAdHocIdentity recursivelySignBundleAtPath:applicationBundle.path];
       }

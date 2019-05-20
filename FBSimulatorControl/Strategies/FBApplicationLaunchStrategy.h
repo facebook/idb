@@ -11,8 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBApplicationBundle;
 @class FBApplicationLaunchConfiguration;
+@class FBBundleDescriptor;
 @class FBProcessInfo;
 @class FBSimulator;
 @class FBSimulatorApplicationOperation;

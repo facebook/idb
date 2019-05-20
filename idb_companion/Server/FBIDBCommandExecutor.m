@@ -88,22 +88,22 @@
 
 - (FBFuture<NSString *> *)install_file_path:(NSString *)filePath
 {
-  return [self installExtractedApplication:[FBApplicationBundle onQueue:self.target.asyncQueue findOrExtractApplicationAtPath:filePath logger:self.logger]];
+  return [self installExtractedApplication:[FBBundleDescriptor onQueue:self.target.asyncQueue findOrExtractApplicationAtPath:filePath logger:self.logger]];
 }
 
 - (FBFuture<NSString *> *)install_binary:(NSData *)data
 {
-  FBFutureContext<FBApplicationBundle *> *bundle = [[self.temporaryDirectory
+  FBFutureContext<FBBundleDescriptor *> *bundle = [[self.temporaryDirectory
     withArchiveExtracted:data]
     onQueue:self.target.asyncQueue pend:^(NSURL *tempDirectory) {
-      return [FBApplicationBundle findAppPathFromDirectory:tempDirectory];
+      return [FBBundleDescriptor findAppPathFromDirectory:tempDirectory];
     }];
   return [self installExtractedApplication:bundle];
 }
 
 - (FBFuture<NSString *> *)install_stream:(FBProcessInput *)input
 {
-  return [self installExtractedApplication:[FBApplicationBundle onQueue:self.target.asyncQueue extractApplicationFromInput:input logger:self.logger]];
+  return [self installExtractedApplication:[FBBundleDescriptor onQueue:self.target.asyncQueue extractApplicationFromInput:input logger:self.logger]];
 }
 
 - (FBFuture<NSString *> *)xctest_install_file_path:(NSString *)filePath
@@ -414,7 +414,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 {
   return [[self
     debugserver_prepare:bundleID]
-    onQueue:self.target.workQueue fmap:^(FBApplicationBundle *application) {
+    onQueue:self.target.workQueue fmap:^(FBBundleDescriptor *application) {
       return [self.target launchDebugServerForHostApplication:application port:self.ports.debugserverPort];
     }];
 }
@@ -545,10 +545,10 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
-- (FBFuture<NSString *> *)installExtractedApplication:(FBFutureContext<FBApplicationBundle *> *)extractedApplication
+- (FBFuture<NSString *> *)installExtractedApplication:(FBFutureContext<FBBundleDescriptor *> *)extractedApplication
 {
   return [[extractedApplication
-    onQueue:self.target.workQueue pend:^(FBApplicationBundle *appBundle){
+    onQueue:self.target.workQueue pend:^(FBBundleDescriptor *appBundle){
       if (!appBundle) {
         return [FBFuture futureWithError:[FBControlCoreError errorForDescription:@"No app bundle could be extracted"]];
       }
@@ -558,7 +558,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       }
       return [[self.target installApplicationWithPath:appBundle.path] mapReplace:appBundle];
     }]
-    onQueue:self.target.workQueue pop:^(FBApplicationBundle *appBundle){
+    onQueue:self.target.workQueue pop:^(FBBundleDescriptor *appBundle){
       [self.logger logFormat:@"Persisting application bundle %@", appBundle];
       NSError *error = nil;
       if ([self.storageManager.application saveBundle:appBundle error:&error]) {
@@ -673,17 +673,17 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
-- (FBFuture<FBApplicationBundle *> *)debugserver_prepare:(NSString *)bundleID
+- (FBFuture<FBBundleDescriptor *> *)debugserver_prepare:(NSString *)bundleID
 {
   return [FBFuture
-    onQueue:self.target.workQueue resolve:^ FBFuture<FBApplicationBundle *> * {
+    onQueue:self.target.workQueue resolve:^ FBFuture<FBBundleDescriptor *> * {
       if (self.debugServer) {
         return [[FBControlCoreError
           describeFormat:@"Debug server is already running"]
           failFuture];
       }
-      NSDictionary<NSString *, FBApplicationBundle *> *persisted = self.storageManager.application.persistedApplications;
-      FBApplicationBundle *bundle = persisted[bundleID];
+      NSDictionary<NSString *, FBBundleDescriptor *> *persisted = self.storageManager.application.persistedApplications;
+      FBBundleDescriptor *bundle = persisted[bundleID];
       if (!bundle) {
         return [[FBIDBError
           describeFormat:@"%@ not persisted application and is therefore not debuggable. Suitable applications: %@", bundleID, [FBCollectionInformation oneLineDescriptionFromArray:persisted.allKeys]]

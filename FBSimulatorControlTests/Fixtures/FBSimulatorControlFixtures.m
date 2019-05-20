@@ -15,10 +15,10 @@
 
 @implementation FBSimulatorControlFixtures
 
-+ (FBApplicationBundle *)tableSearchApplicationWithError:(NSError **)error
++ (FBBundleDescriptor *)tableSearchApplicationWithError:(NSError **)error
 {
   NSString *path = [[NSBundle bundleForClass:self] pathForResource:@"TableSearch" ofType:@"app"];
-  return [FBApplicationBundle bundleFromPath:path error:error];
+  return [FBBundleDescriptor bundleFromPath:path error:error];
 }
 
 + (NSString *)photo0Path
@@ -76,10 +76,10 @@
     withUITesting:NO];
 }
 
-- (FBApplicationBundle *)tableSearchApplication
+- (FBBundleDescriptor *)tableSearchApplication
 {
   NSError *error = nil;
-  FBApplicationBundle *value = [FBSimulatorControlFixtures tableSearchApplicationWithError:&error];
+  FBBundleDescriptor *value = [FBSimulatorControlFixtures tableSearchApplicationWithError:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(value);
   return value;
@@ -90,7 +90,7 @@ static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
 
 - (FBApplicationLaunchConfiguration *)tableSearchAppLaunch
 {
-  FBApplicationBundle *application = self.tableSearchApplication;
+  FBBundleDescriptor *application = self.tableSearchApplication;
   if (!application) {
     return nil;
   }

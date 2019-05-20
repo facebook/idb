@@ -308,7 +308,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
         continue;
       }
       FBBundleDescriptor *testBundle = [[FBBundleDescriptor alloc] initWithName:testIdentifier identifier:testIdentifier path:@"" binary:nil];
-      FBApplicationBundle *hostBundle = [[FBApplicationBundle alloc] initWithName:hostIdentifier identifier:hostIdentifier path:@"" binary:nil];
+      FBBundleDescriptor *hostBundle = [[FBBundleDescriptor alloc] initWithName:hostIdentifier identifier:hostIdentifier path:@"" binary:nil];
       id<FBXCTestDescriptor> descriptor = [[FBXCodebuildTestRunDescriptor alloc] initWithURL:xcTestRunURL name:testName testBundle:testBundle testHostBundle:hostBundle];
       [descriptors addObject:descriptor];
       continue;
@@ -327,7 +327,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
       withString:testHostPath];
 
     // Get the bundles for test host and test app
-    FBApplicationBundle *testHostBundle = [FBApplicationBundle bundleFromPath:testHostPath error:&error];
+    FBBundleDescriptor *testHostBundle = [FBBundleDescriptor bundleFromPath:testHostPath error:&error];
     if (!testHostBundle) {
       [self.logger.error log:error.description];
       continue;
@@ -409,9 +409,9 @@ static NSString *const XctestRunExtension = @"xctestrun";
   return [NSSet setWithArray:([NSFileManager.defaultManager contentsOfDirectoryAtPath:self.basePath.path error:nil] ?: @[])];
 }
 
-- (NSDictionary<NSString *, FBApplicationBundle *> *)persistedApplications
+- (NSDictionary<NSString *, FBBundleDescriptor *> *)persistedApplications
 {
-  NSMutableDictionary<NSString *, FBApplicationBundle *> *mapping = [NSMutableDictionary dictionary];
+  NSMutableDictionary<NSString *, FBBundleDescriptor *> *mapping = [NSMutableDictionary dictionary];
   for (NSURL *directory in [NSFileManager.defaultManager enumeratorAtURL:self.basePath includingPropertiesForKeys:nil options:NSDirectoryEnumerationSkipsSubdirectoryDescendants errorHandler:nil]) {
     NSString *key = directory.lastPathComponent;
     NSError *error = nil;
@@ -419,7 +419,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
     if (!appPath) {
       [self.logger logFormat:@"Could not find app in path %@", directory];
     }
-    FBApplicationBundle *bundle = [FBApplicationBundle bundleFromPath:appPath.path error:&error];
+    FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:appPath.path error:&error];
     if (!bundle) {
       [self.logger logFormat:@"Failed to get bundle info for app installed at path %@", appPath];
     }

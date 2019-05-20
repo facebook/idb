@@ -11,7 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBApplicationBundle;
+@class FBBundleDescriptor;
 
 /**
  The Installed Type of the Application.
@@ -60,7 +60,7 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdenti
  @param installType the Install Type.
  @return a new Installed Application Instance.
  */
-+ (instancetype)installedApplicationWithBundle:(FBApplicationBundle *)bundle installType:(FBApplicationInstallType)installType;
++ (instancetype)installedApplicationWithBundle:(FBBundleDescriptor *)bundle installType:(FBApplicationInstallType)installType;
 
 /**
  The Designated Initializer.
@@ -70,14 +70,14 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdenti
  @param dataContainer the Data Container Path.
  @return a new Installed Application Instance.
  */
-+ (instancetype)installedApplicationWithBundle:(FBApplicationBundle *)bundle installType:(FBApplicationInstallType)installType dataContainer:(nullable NSString *)dataContainer;
++ (instancetype)installedApplicationWithBundle:(FBBundleDescriptor *)bundle installType:(FBApplicationInstallType)installType dataContainer:(nullable NSString *)dataContainer;
 
 #pragma mark Properties
 
 /**
  The Application Bundle.
  */
-@property (nonatomic, copy, readonly) FBApplicationBundle *bundle;
+@property (nonatomic, copy, readonly) FBBundleDescriptor *bundle;
 
 /**
  The Install Type of the Application.

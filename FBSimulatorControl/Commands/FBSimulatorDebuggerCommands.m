@@ -85,7 +85,7 @@
 
 #pragma mark FBDebuggerCommands
 
-- (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(FBApplicationBundle *)application port:(in_port_t)port
+- (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(FBBundleDescriptor *)application port:(in_port_t)port
 {
   FBApplicationLaunchConfiguration *configuration = [FBApplicationLaunchConfiguration
     configurationWithApplication:application arguments:@[]

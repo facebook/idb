@@ -176,7 +176,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The app bundle into which the test bundle is injected
  */
-@property (nonatomic, strong, readonly) FBApplicationBundle *testHostBundle;
+@property (nonatomic, strong, readonly) FBBundleDescriptor *testHostBundle;
 
 #pragma mark Public Methods
 
@@ -189,7 +189,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param testHostBundle the the bundle into which the test bundle is injected
  @return a new FBXCTestDescriptor instance.
  */
-- (instancetype)initWithURL:(NSURL *)url name:(NSString *)name testBundle:(FBBundleDescriptor *)testBundle testHostBundle:(FBApplicationBundle *)testHostBundle;
+- (instancetype)initWithURL:(NSURL *)url name:(NSString *)name testBundle:(FBBundleDescriptor *)testBundle testHostBundle:(FBBundleDescriptor *)testHostBundle;
 
 @end
 

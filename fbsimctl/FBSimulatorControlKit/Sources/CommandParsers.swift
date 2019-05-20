@@ -98,11 +98,11 @@ extension Parser {
     }
   }
 
-  public static var ofApplication: Parser<FBApplicationBundle> {
+  public static var ofApplication: Parser<FBBundleDescriptor> {
     let desc = PrimitiveDesc(name: "application", desc: "Path to an application.")
-    return Parser<FBApplicationBundle>.single(desc) { token in
+    return Parser<FBBundleDescriptor>.single(desc) { token in
       do {
-        return try FBApplicationBundle.bundle(fromPath: token)
+        return try FBBundleDescriptor.bundle(fromPath: token)
       } catch let error as NSError {
         throw ParseError.custom("Could not get an app \(token) \(error.description)")
       }
@@ -138,11 +138,11 @@ extension Parser {
     }
   }
 
-  public static var ofBundleIDOrApplicationDescriptor: Parser<(String, FBApplicationBundle?)> {
-    return Parser<(String, FBApplicationBundle?)>
+  public static var ofBundleIDOrApplicationDescriptor: Parser<(String, FBBundleDescriptor?)> {
+    return Parser<(String, FBBundleDescriptor?)>
       .alternative([
-        Parser.ofApplication.fmap { (app) -> (String, FBApplicationBundle?) in (app.identifier, app) },
-        Parser.ofBundleID.fmap { (bundleId) -> (String, FBApplicationBundle?) in (bundleId, nil) },
+        Parser.ofApplication.fmap { (app) -> (String, FBBundleDescriptor?) in (app.identifier, app) },
+        Parser.ofBundleID.fmap { (bundleId) -> (String, FBBundleDescriptor?) in (bundleId, nil) },
       ])
   }
 
@@ -1096,7 +1096,7 @@ struct FBSimulatorBootConfigurationParser {
  applied to FBProcessLaunchConfiguration as it is a non-final class.
  */
 struct FBProcessLaunchConfigurationParsers {
-  static var appLaunchAndApplicationDescriptorParser: Parser<(FBApplicationLaunchConfiguration, FBApplicationBundle?)> {
+  static var appLaunchAndApplicationDescriptorParser: Parser<(FBApplicationLaunchConfiguration, FBBundleDescriptor?)> {
     return Parser
       .ofFourSequenced(
         FBProcessOutputConfigurationParser.parser,

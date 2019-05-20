@@ -23,14 +23,14 @@
 - (void)testCanFetchSimulatorApplications
 {
   FBSimulator *simulator = [self assertObtainsSimulator];
-  XCTAssertNotNil([FBApplicationBundle systemApplicationNamed:@"MobileSafari" simulator:simulator error:nil]);
-  XCTAssertNotNil([FBApplicationBundle systemApplicationNamed:@"Camera" simulator:simulator error:nil]);
-  XCTAssertNotNil([FBApplicationBundle systemApplicationNamed:@"Maps" simulator:simulator error:nil]);
+  XCTAssertNotNil([FBBundleDescriptor systemApplicationNamed:@"MobileSafari" simulator:simulator error:nil]);
+  XCTAssertNotNil([FBBundleDescriptor systemApplicationNamed:@"Camera" simulator:simulator error:nil]);
+  XCTAssertNotNil([FBBundleDescriptor systemApplicationNamed:@"Maps" simulator:simulator error:nil]);
 }
 
 - (void)testCreatesSampleApplication
 {
-  FBApplicationBundle *application = self.tableSearchApplication;
+  FBBundleDescriptor *application = self.tableSearchApplication;
   XCTAssertEqualObjects(application.identifier, @"com.example.apple-samplecode.TableSearch");
   XCTAssertEqualObjects(application.binary.architectures, ([NSSet setWithArray:@[@"i386", @"x86_64"]]));
 }

@@ -65,7 +65,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Fetches a list of the Installed Applications.
- The returned FBApplicationBundle object is fully JSON Serializable.
+ The returned FBBundleDescriptor object is fully JSON Serializable.
 
  @return A future wrapping a List of Installed Applications.
  */

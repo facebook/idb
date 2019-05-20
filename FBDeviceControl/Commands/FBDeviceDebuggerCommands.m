@@ -57,7 +57,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
 
 #pragma mark FBDebuggerCommands Implementation
 
-- (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(FBApplicationBundle *)application port:(in_port_t)port
+- (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(FBBundleDescriptor *)application port:(in_port_t)port
 {
   return [[self
     lldbBootstrapCommandsForApplicationAtPath:application.path port:port]
@@ -110,10 +110,10 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
     }];
 }
 
-- (FBFuture<FBApplicationBundle *> *)applicationBundleForPath:(NSString *)path
+- (FBFuture<FBBundleDescriptor *> *)applicationBundleForPath:(NSString *)path
 {
   return [FBFuture resolveValue:^(NSError **error) {
-    return [FBApplicationBundle bundleFromPath:path error:error];
+    return [FBBundleDescriptor bundleFromPath:path error:error];
   }];
 }
 
@@ -121,7 +121,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
 {
   return [[self
     applicationBundleForPath:path]
-    onQueue:self.device.workQueue fmap:^(FBApplicationBundle *bundle) {
+    onQueue:self.device.workQueue fmap:^(FBBundleDescriptor *bundle) {
       return [FBFuture futureWithFutures:@[
         [self platformSelectCommand],
         [FBDeviceDebuggerCommands localTargetForApplicationAtPath:path],

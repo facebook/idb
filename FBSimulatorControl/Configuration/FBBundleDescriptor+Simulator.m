@@ -5,14 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBApplicationBundle+Simulator.h"
+#import "FBBundleDescriptor+Simulator.h"
 
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimRuntime.h>
 
 #import "FBSimulator+Private.h"
 
-@implementation FBApplicationBundle (Simulator)
+@implementation FBBundleDescriptor (Simulator)
 
 #pragma mark Private
 
@@ -24,7 +24,7 @@
 + (instancetype)xcodeSimulator;
 {
   NSError *error = nil;
-  FBApplicationBundle *application = [self bundleFromPath:self.pathForSimulatorApplication error:&error];
+  FBBundleDescriptor *application = [self bundleFromPath:self.pathForSimulatorApplication error:&error];
   NSAssert(application, @"Expected to be able to build an Application, got an error %@", application);
   return application;
 }

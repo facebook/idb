@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBApplicationBundle+Install.h"
+#import "FBBundleDescriptor+Application.h"
 
 #import "FBArchiveOperations.h"
 #import "FBBinaryDescriptor.h"
@@ -18,14 +18,14 @@
 #import "FBTask.h"
 #import "FBTaskBuilder.h"
 
-@implementation FBApplicationBundle (Install)
+@implementation FBBundleDescriptor (Application)
 
 #pragma mark Public
 
-+ (FBFutureContext<FBApplicationBundle *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path  logger:(id<FBControlCoreLogger>)logger
++ (FBFutureContext<FBBundleDescriptor *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path  logger:(id<FBControlCoreLogger>)logger
 {
   // If it's an App, we don't need to do anything, just return early.
-  if ([FBApplicationBundle isApplicationAtPath:path]) {
+  if ([FBBundleDescriptor isApplicationAtPath:path]) {
     return [FBFutureContext futureContextWithFuture:[self extractedApplicationAtPath:path directory:nil]];
   }
   return [[[self
@@ -34,11 +34,11 @@
       return [[FBArchiveOperations extractArchiveAtPath:path toPath:extractPath.path queue:queue logger:logger] mapReplace:extractPath];
     }]
     onQueue:queue pend:^(NSURL *extractPath) {
-      return [FBApplicationBundle findAppPathFromDirectory:extractPath];
+      return [FBBundleDescriptor findAppPathFromDirectory:extractPath];
     }];
 }
 
-+ (FBFutureContext<FBApplicationBundle *> *)onQueue:(dispatch_queue_t)queue extractApplicationFromInput:(FBProcessInput *)input  logger:(id<FBControlCoreLogger>)logger
++ (FBFutureContext<FBBundleDescriptor *> *)onQueue:(dispatch_queue_t)queue extractApplicationFromInput:(FBProcessInput *)input  logger:(id<FBControlCoreLogger>)logger
 {
   return [[[self
     temporaryExtractPathWithQueue:queue logger:logger]
@@ -46,11 +46,11 @@
       return [[FBArchiveOperations extractArchiveFromStream:input toPath:extractPath.path queue:queue logger:logger] mapReplace:extractPath];
     }]
     onQueue:queue pend:^(NSURL *extractPath) {
-      return [FBApplicationBundle findAppPathFromDirectory:extractPath];
+      return [FBBundleDescriptor findAppPathFromDirectory:extractPath];
     }];
 }
 
-+ (FBFuture<FBApplicationBundle *> *)findAppPathFromDirectory:(NSURL *)directory
++ (FBFuture<FBBundleDescriptor *> *)findAppPathFromDirectory:(NSURL *)directory
 {
   NSDirectoryEnumerator *directoryEnumerator = [NSFileManager.defaultManager
     enumeratorAtURL:directory
@@ -59,7 +59,7 @@
     errorHandler:nil];
   NSSet *applicationURLs = [NSSet set];
   for (NSURL *fileURL in directoryEnumerator) {
-    if ([FBApplicationBundle isApplicationAtPath:fileURL.path]) {
+    if ([FBBundleDescriptor isApplicationAtPath:fileURL.path]) {
       applicationURLs = [applicationURLs setByAddingObject:fileURL];
       [directoryEnumerator skipDescendants];
     }
@@ -108,10 +108,10 @@
     }];
 }
 
-+ (FBFuture<FBApplicationBundle *> *)extractedApplicationAtPath:(NSString *)appPath directory:(NSURL *)directory
++ (FBFuture<FBBundleDescriptor *> *)extractedApplicationAtPath:(NSString *)appPath directory:(NSURL *)directory
 {
   NSError *error = nil;
-  FBApplicationBundle *bundle = [FBApplicationBundle bundleFromPath:appPath error:&error];
+  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:appPath error:&error];
   if (!bundle) {
     return [FBFuture futureWithError:error];
   }

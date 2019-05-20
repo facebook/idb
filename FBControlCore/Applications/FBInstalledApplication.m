@@ -7,7 +7,7 @@
 
 #import "FBInstalledApplication.h"
 
-#import "FBApplicationBundle.h"
+#import "FBBundleDescriptor.h"
 
 FBApplicationInstallTypeString const FBApplicationInstallTypeStringUnknown = @"unknown";
 FBApplicationInstallTypeString const FBApplicationInstallTypeStringSystem = @"system";
@@ -26,17 +26,17 @@ FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdentity = @"
 
 #pragma mark Initializers
 
-+ (instancetype)installedApplicationWithBundle:(FBApplicationBundle *)bundle installType:(FBApplicationInstallType)installType
++ (instancetype)installedApplicationWithBundle:(FBBundleDescriptor *)bundle installType:(FBApplicationInstallType)installType
 {
   return [self installedApplicationWithBundle:bundle installType:installType dataContainer:nil];
 }
 
-+ (instancetype)installedApplicationWithBundle:(FBApplicationBundle *)bundle installType:(FBApplicationInstallType)installType dataContainer:(NSString *)dataContainer
++ (instancetype)installedApplicationWithBundle:(FBBundleDescriptor *)bundle installType:(FBApplicationInstallType)installType dataContainer:(NSString *)dataContainer
 {
   return [[self alloc] initWithBundle:bundle installType:installType dataContainer:dataContainer];
 }
 
-- (instancetype)initWithBundle:(FBApplicationBundle *)bundle installType:(FBApplicationInstallType)installType dataContainer:(NSString *)dataContainer
+- (instancetype)initWithBundle:(FBBundleDescriptor *)bundle installType:(FBApplicationInstallType)installType dataContainer:(NSString *)dataContainer
 {
   self = [super init];
   if (!self) {

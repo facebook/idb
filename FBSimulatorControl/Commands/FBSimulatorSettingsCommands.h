@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 extern FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval;
 
-@class FBApplicationBundle;
+@class FBBundleDescriptor;
 @class FBLocalizationOverride;
 @class FBSimulator;
 

@@ -46,7 +46,7 @@ static NSString *const KeyLaunchMode = @"launch_mode";
 
 @implementation FBApplicationLaunchConfiguration
 
-+ (instancetype)configurationWithApplication:(FBApplicationBundle *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output
++ (instancetype)configurationWithApplication:(FBBundleDescriptor *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output
 {
   return [self configurationWithBundleID:application.identifier bundleName:application.name arguments:arguments environment:environment output:output launchMode:FBApplicationLaunchModeFailIfRunning];
 }

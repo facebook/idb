@@ -274,7 +274,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
 - (FBFuture<id<FBLaunchedProcess>> *)listTestProcessWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor logger:(id<FBControlCoreLogger>)logger
 {
-  if ([FBApplicationBundle isApplicationAtPath:_runnerAppPath]) {
+  if ([FBBundleDescriptor isApplicationAtPath:_runnerAppPath]) {
     // List test for app test bundle, so we use app binary instead of xctest to load test bundle.
     NSString *xcTestFrameworkPath =
     [[FBXcodeConfiguration.developerDirectory
@@ -285,7 +285,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
     // xctest framework to app's rpath so it can be found by dyld when we load test bundle later.
     [FBListTestConfiguration copyFrameworkToApplicationAtPath:_runnerAppPath frameworkPath:xcTestFrameworkPath error:nil];
 
-    FBApplicationBundle *appBundle = [FBApplicationBundle bundleFromPath:_runnerAppPath error:nil];
+    FBBundleDescriptor *appBundle = [FBBundleDescriptor bundleFromPath:_runnerAppPath error:nil];
     return [FBXCTestProcess
       startWithLaunchPath:appBundle.binary.path
       arguments:@[]
@@ -337,7 +337,7 @@ NSString *const KeyWorkingDirectory = @"working_directory";
 
 + (NSString *)copyFrameworkToApplicationAtPath:(NSString *)appPath frameworkPath:(NSString *)frameworkPath error:(NSError **)error
 {
-  if (![FBApplicationBundle isApplicationAtPath:appPath]) {
+  if (![FBBundleDescriptor isApplicationAtPath:appPath]) {
     return nil;
   }
 

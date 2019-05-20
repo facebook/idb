@@ -108,7 +108,7 @@
 - (void)testFromInstalledApplication
 {
   FBInstalledApplication *application = [FBInstalledApplication
-    installedApplicationWithBundle:[[FBApplicationBundle alloc] initWithName:@"FooApp" identifier:@"com.foo.app" path:@"/Foo.app" binary:nil]
+    installedApplicationWithBundle:[[FBBundleDescriptor alloc] initWithName:@"FooApp" identifier:@"com.foo.app" path:@"/Foo.app" binary:nil]
     installType:FBApplicationInstallTypeUser
     dataContainer:@"/tmp/container"];
   NSError *error = nil;

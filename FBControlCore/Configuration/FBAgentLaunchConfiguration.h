@@ -10,8 +10,8 @@
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
 #import <FBControlCore/FBJSONConversion.h>
 
-@class FBApplicationBundle;
 @class FBBinaryDescriptor;
+@class FBBundleDescriptor;
 @class FBProcessOutputConfiguration;
 
 NS_ASSUME_NONNULL_BEGIN

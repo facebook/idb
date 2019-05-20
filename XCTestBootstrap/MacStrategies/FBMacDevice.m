@@ -278,7 +278,7 @@
   for (NSString *bundleID in self.bundleIDToProductMap) {
     FBProductBundle *productBundle = self.bundleIDToProductMap[bundleID];
     NSError *error;
-    FBApplicationBundle *bundle = [FBApplicationBundle bundleFromPath:productBundle.path error:&error];
+    FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:productBundle.path error:&error];
     if (!bundle) {
       return [FBFuture futureWithError:error];
     }
@@ -291,7 +291,7 @@
 {
   FBProductBundle *productBundle = self.bundleIDToProductMap[bundleID];
   NSError *error;
-  FBApplicationBundle *bundle = [FBApplicationBundle bundleFromPath:productBundle.path error:&error];
+  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:productBundle.path error:&error];
   if (!bundle) {
     return [FBFuture futureWithError:error];
   }
@@ -439,7 +439,7 @@
   return nil;
 }
 
-- (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(nonnull FBApplicationBundle *)application port:(in_port_t)port
+- (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(nonnull FBBundleDescriptor *)application port:(in_port_t)port
 {
   NSAssert(NO, @"-[%@ %@] is not yet supported", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;

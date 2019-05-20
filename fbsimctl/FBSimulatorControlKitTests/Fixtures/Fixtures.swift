@@ -13,8 +13,8 @@ import XCTest
 }
 
 struct Fixtures {
-  static var application: FBApplicationBundle {
-    return FBApplicationBundle.xcodeSimulator()
+  static var application: FBBundleDescriptor {
+    return FBBundleDescriptor.xcodeSimulator()
   }
 
   static var binary: FBBinaryDescriptor {
