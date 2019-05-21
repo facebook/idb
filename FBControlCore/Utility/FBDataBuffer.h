@@ -112,6 +112,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSData *> *)consumeAndNotifyWhen:(NSData *)terminal;
 
+/**
+ Consumes based upon a fixed-length header, that can be parsed.
+ The value derived from the parsing of the header defines the remainder of the data to read.
+
+ @param headerLength the fixed-length of the header.
+ @param derivedLength the derived length of the payload
+ @return a Future wrapping the payload, based on the derived length.
+ */
+- (FBFuture<NSData *> *)consumeHeaderLength:(NSUInteger)headerLength derivedLength:(NSUInteger(^)(NSData *))derivedLength;
+
 @end
 
 /**

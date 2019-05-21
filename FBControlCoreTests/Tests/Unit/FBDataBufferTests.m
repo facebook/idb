@@ -176,4 +176,34 @@
   [self waitForExpectations:@[doneExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
+- (void)testHeaderConsumption
+{
+  id<FBNotifyingBuffer> consumer = FBDataBuffer.notifyingBuffer;
+  dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+  XCTestExpectation *doneExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved All"];
+
+  NSData *payloadData = [@"FOO BAR BAZ" dataUsingEncoding:NSUTF8StringEncoding];
+  NSUInteger payloadLength = payloadData.length;
+  NSData *headerData = [[NSData alloc] initWithBytes:&payloadLength length:sizeof(NSUInteger)];
+
+  [[consumer
+    consumeHeaderLength:sizeof(NSUInteger) derivedLength:^(NSData *data) {
+      XCTAssertEqual(data.length, sizeof(NSUInteger));
+      NSUInteger readPayloadLength = 0;
+      [data getBytes:&readPayloadLength length:sizeof(NSUInteger)];
+      XCTAssertEqual(readPayloadLength, payloadLength);
+      return readPayloadLength;
+    }]
+    onQueue:queue doOnResolved:^(NSData *result) {
+      XCTAssertEqualObjects(result, payloadData);
+      [doneExpectation fulfill];
+    }];
+
+  [consumer consumeData:headerData];
+  [consumer consumeData:payloadData];
+  [consumer consumeEndOfFile];
+
+  [self waitForExpectations:@[doneExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
 @end
