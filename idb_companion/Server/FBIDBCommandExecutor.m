@@ -143,12 +143,12 @@
 
 - (FBFuture<NSString *> *)install_dsym_file_path:(NSString *)filePath
 {
-  return [self installBundle:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.storageManager.dsym];
+  return [self installFile:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.storageManager.dsym];
 }
 
 - (FBFuture<NSString *> *)install_dsym_stream:(FBProcessInput *)input
 {
-  return [self installBundle:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.storageManager.dsym];
+  return [self installFile:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.storageManager.dsym];
 }
 
 #pragma mark Public Methods
@@ -648,11 +648,11 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [extractedFileContext
     onQueue:self.target.workQueue pop:^(NSURL *extractedFile) {
       NSError *error = nil;
-      NSString *dsymPath = [storage saveFile:extractedFile error:&error];
-      if (!dsymPath) {
+      NSString *filePath = [storage saveFile:extractedFile error:&error];
+      if (!filePath) {
         return [FBFuture futureWithError:error];
       }
-      return [FBFuture futureWithResult:dsymPath];
+      return [FBFuture futureWithResult:filePath];
     }];
 }
 
@@ -665,11 +665,11 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       if (!bundle) {
         return [FBFuture futureWithError:error];
       }
-      NSString *dsymPath = [storage saveBundle:bundle error:&error];
-      if (!dsymPath) {
+      NSString *bundlePath = [storage saveBundle:bundle error:&error];
+      if (!bundlePath) {
         return [FBFuture futureWithError:error];
       }
-      return [FBFuture futureWithResult:dsymPath];
+      return [FBFuture futureWithResult:bundlePath];
     }];
 }
 
