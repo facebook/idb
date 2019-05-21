@@ -1068,7 +1068,7 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
   if (![operation.stop succeeds:&error]) {
     return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
   }
-  NSArray<NSString *> *postProcessArguments = extract_string_array(request.stop().post_process_arguments());
+  NSArray<NSString *> *postProcessArguments = [_commandExecutor.storageManager interpolateArgumentReplacements:extract_string_array(request.stop().post_process_arguments())];
   dispatch_sync(writeQueue, ^{
     idb::InstrumentsRunResponse response;
     response.set_state(idb::InstrumentsRunResponse::State::InstrumentsRunResponse_State_POST_PROCESSING);

@@ -201,6 +201,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (NSDictionary<NSString *, NSString *> *)interpolateEnvironmentReplacements:(NSDictionary<NSString *, NSString *> *)environment;
 
+/**
+ Interpolate any bundle names in the arguments with bundle paths.
+
+ @param arguments the arguments to interpolate.
+ @return an array with the replacement defined
+ */
+- (nullable NSArray<NSString *> *)interpolateArgumentReplacements:(nullable NSArray<NSString *> *)arguments;
+
 @end
 
 NS_ASSUME_NONNULL_END

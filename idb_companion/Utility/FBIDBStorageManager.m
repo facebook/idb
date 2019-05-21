@@ -535,12 +535,22 @@ static NSString *const XctestRunExtension = @"xctestrun";
   return interpolatedEnvironment;
 }
 
+- (NSArray<NSString *> *)interpolateArgumentReplacements:(NSArray<NSString *> *)arguments
+{
+  NSDictionary<NSString *, NSString *> *nameToPath = [self replacementMapping];
+  NSMutableArray<NSString *> *interpolatedArguments = [NSMutableArray arrayWithArray:arguments];
+  [arguments enumerateObjectsUsingBlock:^(NSString *argument, NSUInteger idx, BOOL *stop) {
+    [interpolatedArguments replaceObjectAtIndex:idx withObject:nameToPath[argument] ?: argument];
+  }];
+  return interpolatedArguments;
+}
+
 #pragma mark Private
 
 - (NSDictionary<NSString *, NSString *> *)replacementMapping
 {
   NSMutableDictionary<NSString *, NSString *> *combined = NSMutableDictionary.dictionary;
-  for (NSDictionary<NSString *, NSString *> *replacementMapping in @[self.dylib.replacementMapping, self.framework.replacementMapping, self.dsym.replacementMapping]) {
+  for (NSDictionary<NSString *, NSString *> *replacementMapping in @[self.application.replacementMapping, self.dylib.replacementMapping, self.framework.replacementMapping, self.dsym.replacementMapping]) {
     [combined addEntriesFromDictionary:replacementMapping];
   }
   return combined;
