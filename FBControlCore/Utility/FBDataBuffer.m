@@ -115,7 +115,7 @@
 
 @end
 
-@interface FBDataBuffer_Consumable : FBDataBuffer_Accumilating <FBConsumableBuffer>
+@interface FBDataBuffer_Consumable : FBDataBuffer_Accumilating <FBConsumableBuffer, FBNotifyingBuffer>
 
 @property (nonatomic, strong, nullable, readwrite) FBDataBuffer_Consumable_Forwarder *forwarder;
 
@@ -191,11 +191,6 @@
   return [[NSString alloc] initWithData:lineData encoding:NSUTF8StringEncoding];
 }
 
-- (BOOL)consume:(id<FBDataConsumer>)consumer untilTerminal:(NSData *)terminal error:(NSError **)error
-{
-  return [self consume:consumer onQueue:nil untilTerminal:terminal error:error];
-}
-
 - (BOOL)consume:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue untilTerminal:(NSData *)terminal error:(NSError **)error
 {
   @synchronized (self) {
@@ -208,13 +203,6 @@
     [self runForwarder];
   }
   return YES;
-}
-
-- (nullable id<FBDataConsumer>)removeForwardingConsumer
-{
-  FBDataBuffer_Consumable_Forwarder *forwarder = self.forwarder;
-  self.forwarder = nil;
-  return forwarder.consumer;
 }
 
 - (FBFuture<NSData *> *)consumeAndNotifyWhen:(NSData *)terminal
@@ -245,6 +233,18 @@
 }
 
 #pragma mark Private
+
+- (nullable id<FBDataConsumer>)removeForwardingConsumer
+{
+  FBDataBuffer_Consumable_Forwarder *forwarder = self.forwarder;
+  self.forwarder = nil;
+  return forwarder.consumer;
+}
+
+- (BOOL)consume:(id<FBDataConsumer>)consumer untilTerminal:(NSData *)terminal error:(NSError **)error
+{
+  return [self consume:consumer onQueue:nil untilTerminal:terminal error:error];
+}
 
 - (void)runForwarder
 {
@@ -288,7 +288,12 @@
   return [self consumableBufferForwardingToConsumer:nil onQueue:nil terminal:nil];
 }
 
-+ (id<FBConsumableBuffer>)consumableBufferForwardingToConsumer:(id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(NSData *)terminal
++ (id<FBNotifyingBuffer>)notifyingBuffer
+{
+  return [self consumableBufferForwardingToConsumer:nil onQueue:nil terminal:nil];
+}
+
++ (id<FBNotifyingBuffer>)consumableBufferForwardingToConsumer:(id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(NSData *)terminal
 {
   FBDataBuffer_Consumable_Forwarder *forwarder = nil;
   if (consumer) {

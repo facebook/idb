@@ -30,8 +30,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  The mutating methods of a buffer.
+ All of the methods at this protocol level define synchronous consumption.
  */
 @protocol FBConsumableBuffer <FBAccumulatingBuffer>
+
+#pragma mark Polling Operations
 
 /**
  Consume the remainder of the buffer available, returning it as Data.
@@ -73,16 +76,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable NSString *)consumeLineString;
 
-/**
- Forwards to another data consumer, notifying every time a terminal is passed.
- The consumer is called synchronously on the queue.
+@end
 
- @param consumer the consumer to forward to.
- @param terminal the terminal to use.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+/**
+ A Consumable buffer that also allows forwarding and notifying.
  */
-- (BOOL)consume:(id<FBDataConsumer>)consumer untilTerminal:(NSData *)terminal error:(NSError **)error;
+@protocol FBNotifyingBuffer <FBConsumableBuffer>
+
 
 /**
  Forwards to another data consumer, notifying every time a terminal is passed.
@@ -95,13 +95,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if successful, NO otherwise.
  */
 - (BOOL)consume:(id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue untilTerminal:(NSData *)terminal error:(NSError **)error;
-
-/**
- Removes the forwarding consumer, if one is present.
-
- @return the consumer, if present.
- */
-- (nullable id<FBDataConsumer>)removeForwardingConsumer;
 
 /**
  Notifies when there has been consumption to a terminal
@@ -120,25 +113,32 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBDataBuffer : NSObject
 
 /**
- A line buffer that is only mutated through consuming data.
+ A data buffer that is only mutated through consuming data.
 
  @return a FBDataBuffer implementation.
  */
 + (id<FBAccumulatingBuffer>)accumulatingBuffer;
 
 /**
- A line buffer that is only mutated through consuming data.
+ A data buffer that is only mutated through consuming data.
 
  @return a FBDataBuffer implementation.
  */
 + (id<FBAccumulatingBuffer>)accumulatingBufferForMutableData:(NSMutableData *)data;
 
 /**
- A line buffer that is appended to by consuming data and can be drained.
+ A data buffer that is appended to by consuming data and can be drained.
 
  @return a FBConsumableBuffer implementation.
  */
 + (id<FBConsumableBuffer>)consumableBuffer;
+
+/**
+ A data buffer that can forward and notify.
+
+ @return a FBNotifyingBuffer implementation.
+ */
++ (id<FBNotifyingBuffer>)notifyingBuffer;
 
 /**
  A line buffer that is appended to by consuming data that will be automatically drained by forwarding to another consumer.
@@ -148,7 +148,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param terminal the terminal separator.
  @return a FBConsumableBuffer implementation.
  */
-+ (id<FBConsumableBuffer>)consumableBufferForwardingToConsumer:(nullable id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(nullable NSData *)terminal;
++ (id<FBNotifyingBuffer>)consumableBufferForwardingToConsumer:(nullable id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(nullable NSData *)terminal;
 
 /**
  NSData for a newline.

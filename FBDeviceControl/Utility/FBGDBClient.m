@@ -131,7 +131,7 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 
 @property (nonatomic, strong, readonly) id<FBDataConsumer> writer;
 @property (nonatomic, strong, readonly) FBFileReader *reader;
-@property (nonatomic, strong, readonly) id<FBConsumableBuffer> buffer;
+@property (nonatomic, strong, readonly) id<FBNotifyingBuffer> buffer;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *exitCodeFuture;
@@ -153,7 +153,7 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
   if (!writer) {
     return [FBFuture futureWithError:error];
   }
-  id<FBConsumableBuffer> outputBuffer = FBDataBuffer.consumableBuffer;
+  id<FBNotifyingBuffer> outputBuffer = FBDataBuffer.notifyingBuffer;
   id<FBDataConsumer> output = [FBCompositeDataConsumer consumerWithConsumers:@[
     outputBuffer,
     [FBLoggingDataConsumer consumerWithLogger:[logger withName:@"RECV"]],
@@ -167,7 +167,7 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 }
 
 
-- (instancetype)initWithWriter:(id<FBDataConsumer>)writer reader:(FBFileReader *)reader buffer:(id<FBConsumableBuffer>)buffer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithWriter:(id<FBDataConsumer>)writer reader:(FBFileReader *)reader buffer:(id<FBNotifyingBuffer>)buffer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {

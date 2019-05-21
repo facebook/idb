@@ -139,9 +139,9 @@
   XCTAssertTrue(composite.eofHasBeenReceived.hasCompleted);
 }
 
-- (void)testFutureConsumption
+- (void)testFutureTerminalConsumption
 {
-  id<FBConsumableBuffer> consumer = [FBDataBuffer consumableBuffer];
+  id<FBNotifyingBuffer> consumer = FBDataBuffer.notifyingBuffer;
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
   XCTestExpectation *doneExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved All"];
 
@@ -161,6 +161,5 @@
 
   [self waitForExpectations:@[doneExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
-
 
 @end
