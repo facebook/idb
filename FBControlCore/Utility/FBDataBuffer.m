@@ -89,7 +89,7 @@
 
 @end
 
-@interface FBDataBuffer_Consumable_Forwarder : NSObject
+@interface FBDataBuffer_Terminal_Forwarder : NSObject
 
 @property (nonatomic, copy, readonly) NSData *terminal;
 @property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
@@ -97,7 +97,7 @@
 
 @end
 
-@implementation FBDataBuffer_Consumable_Forwarder
+@implementation FBDataBuffer_Terminal_Forwarder
 
 - (instancetype)initWithTerminal:(NSData *)terminal consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue
 {
@@ -113,11 +113,28 @@
   return self;
 }
 
+- (void)run:(id<FBConsumableBuffer>)buffer
+{
+  NSData *partial = [buffer consumeUntil:self.terminal];
+  dispatch_queue_t queue = self.queue;
+  id<FBDataConsumer> consumer = self.consumer;
+  while (partial) {
+    if (queue) {
+      dispatch_async(queue, ^{
+        [consumer consumeData:partial];
+      });
+    } else {
+      [consumer consumeData:partial];
+    }
+    partial = [buffer consumeUntil:self.terminal];
+  }
+}
+
 @end
 
 @interface FBDataBuffer_Consumable : FBDataBuffer_Accumilating <FBConsumableBuffer, FBNotifyingBuffer>
 
-@property (nonatomic, strong, nullable, readwrite) FBDataBuffer_Consumable_Forwarder *forwarder;
+@property (nonatomic, strong, nullable, readwrite) FBDataBuffer_Terminal_Forwarder *forwarder;
 
 @end
 
@@ -125,7 +142,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithForwarder:(FBDataBuffer_Consumable_Forwarder *)forwarder;
+- (instancetype)initWithForwarder:(FBDataBuffer_Terminal_Forwarder *)forwarder;
 {
   self = [super init];
   if (!self) {
@@ -213,8 +230,8 @@
         describe:@"Cannot listen for the two terminals at the same time"]
         failBool:error];
     }
-    self.forwarder = [[FBDataBuffer_Consumable_Forwarder alloc] initWithTerminal:terminal consumer:consumer queue:queue];
-    [self runForwarder];
+    self.forwarder = [[FBDataBuffer_Terminal_Forwarder alloc] initWithTerminal:terminal consumer:consumer queue:queue];
+    [self.forwarder run:self];
   }
   return YES;
 }
@@ -228,11 +245,9 @@
   }];
 
   NSError *error = nil;
-  BOOL success = [self consume:consumer untilTerminal:terminal error:&error];
-  if (!success) {
+  if (![self consume:consumer untilTerminal:terminal error:&error]) {
     return [FBFuture futureWithError:error];
   }
-  [self runForwarder];
   return future;
 }
 
@@ -242,7 +257,7 @@
 {
   [super consumeData:data];
   @synchronized (self) {
-    [self runForwarder];
+    [self.forwarder run:self];
   }
 }
 
@@ -250,7 +265,7 @@
 
 - (nullable id<FBDataConsumer>)removeForwardingConsumer
 {
-  FBDataBuffer_Consumable_Forwarder *forwarder = self.forwarder;
+  FBDataBuffer_Terminal_Forwarder *forwarder = self.forwarder;
   self.forwarder = nil;
   return forwarder.consumer;
 }
@@ -258,27 +273,6 @@
 - (BOOL)consume:(id<FBDataConsumer>)consumer untilTerminal:(NSData *)terminal error:(NSError **)error
 {
   return [self consume:consumer onQueue:nil untilTerminal:terminal error:error];
-}
-
-- (void)runForwarder
-{
-  FBDataBuffer_Consumable_Forwarder *forwarder = self.forwarder;
-  if (!forwarder) {
-    return;
-  }
-  NSData *partial = [self consumeUntil:forwarder.terminal];
-  dispatch_queue_t queue = forwarder.queue;
-  id<FBDataConsumer> consumer = forwarder.consumer;
-  while (partial) {
-    if (queue) {
-      dispatch_async(queue, ^{
-        [consumer consumeData:partial];
-      });
-    } else {
-      [consumer consumeData:partial];
-    }
-    partial = [self consumeUntil:forwarder.terminal];
-  }
 }
 
 @end
@@ -309,9 +303,9 @@
 
 + (id<FBNotifyingBuffer>)consumableBufferForwardingToConsumer:(id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(NSData *)terminal
 {
-  FBDataBuffer_Consumable_Forwarder *forwarder = nil;
+  FBDataBuffer_Terminal_Forwarder *forwarder = nil;
   if (consumer) {
-    forwarder = [[FBDataBuffer_Consumable_Forwarder alloc] initWithTerminal:terminal consumer:consumer queue:queue];
+    forwarder = [[FBDataBuffer_Terminal_Forwarder alloc] initWithTerminal:terminal consumer:consumer queue:queue];
   }
   return [[FBDataBuffer_Consumable alloc] initWithForwarder:forwarder];
 }
