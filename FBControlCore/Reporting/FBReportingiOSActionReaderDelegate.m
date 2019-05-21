@@ -40,9 +40,9 @@
   FBEventName eventName;
   if ([[[action class] futureType] isEqualToString:FBiOSTargetFutureTypeApplicationLaunch]) {
     eventName = FBEventNameLaunch;
-  } else if ([[[action class] futureType] isEqualToString:FBiOSTargetFutureTypeApplicationLaunch]) {
-    eventName = FBEventNameLaunch;
-  }else if ([[[action class] futureType] isEqualToString:FBiOSTargetFutureTypeApplicationLaunch]) {
+  } else if ([[[action class] futureType] isEqualToString:FBiOSTargetFutureTypeAgentLaunch]) {
+    eventName = FBEventNameLaunchAgent;
+  } else if ([[[action class] futureType] isEqualToString:FBiOSTargetFutureTypeTestLaunch]) {
     eventName = FBEventNameLaunchXCTest;
   } else {
     eventName = [[action class] futureType];
