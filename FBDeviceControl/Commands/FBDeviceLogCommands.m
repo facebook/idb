@@ -92,12 +92,14 @@
     [consumer consumeData:[unsupportedArgumentsMessage dataUsingEncoding:NSUTF8StringEncoding]];
     [self.device.logger log:unsupportedArgumentsMessage];
   }
+  id<FBControlCoreLogger> logger = self.device.logger;
 
   dispatch_queue_t queue = self.device.asyncQueue;
   return [[[self.device.amDevice
     startService:@"com.apple.syslog_relay"]
     onQueue:queue pend:^(FBAMDServiceConnection *connection) {
-      NSFileHandle *handle = [[NSFileHandle alloc] initWithFileDescriptor:connection.socket closeOnDealloc:YES];
+      [logger logFormat:@"Reading log data from %@", connection];
+      NSFileHandle *handle = [[NSFileHandle alloc] initWithFileDescriptor:connection.socket closeOnDealloc:NO]; // The socket file descriptor is torn down by the service teardown.
       FBFileReader *reader = [FBFileReader readerWithFileHandle:handle consumer:consumer logger:nil];
       return [[reader startReading] mapReplace:reader];
     }]
