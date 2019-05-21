@@ -31,6 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The mutating methods of a buffer.
  All of the methods at this protocol level define synchronous consumption.
+ All of the methods defined at this level are fully synchronized, so they can be called at the same time as append functions at the FBDataConsumer level.
  */
 @protocol FBConsumableBuffer <FBAccumulatingBuffer>
 

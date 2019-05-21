@@ -244,30 +244,34 @@
 
 - (nullable NSData *)consumeLength:(NSUInteger)length
 {
-  if (length > self.buffer.length) {
-    return nil;
+  @synchronized (self) {
+    if (length > self.buffer.length) {
+      return nil;
+    }
+    NSRange range = NSMakeRange(0, length);
+    NSData *data = [self.buffer subdataWithRange:range];
+    if (!data) {
+      return nil;
+    }
+    [self.buffer replaceBytesInRange:range withBytes:"" length:0];
+    return data;
   }
-  NSRange range = NSMakeRange(0, length);
-  NSData *data = [self.buffer subdataWithRange:range];
-  if (!data) {
-    return nil;
-  }
-  [self.buffer replaceBytesInRange:range withBytes:"" length:0];
-  return data;
 }
 
 - (nullable NSData *)consumeUntil:(NSData *)terminal
 {
-  if (self.buffer.length == 0) {
-    return nil;
+  @synchronized (self) {
+    if (self.buffer.length == 0) {
+      return nil;
+    }
+    NSRange terminalRange = [self.buffer rangeOfData:terminal options:0 range:NSMakeRange(0, self.buffer.length)];
+    if (terminalRange.location == NSNotFound) {
+      return nil;
+    }
+    NSData *data = [self.buffer subdataWithRange:NSMakeRange(0, terminalRange.location)];
+    [self.buffer replaceBytesInRange:NSMakeRange(0, terminalRange.location + terminal.length) withBytes:"" length:0];
+    return data;
   }
-  NSRange terminalRange = [self.buffer rangeOfData:terminal options:0 range:NSMakeRange(0, self.buffer.length)];
-  if (terminalRange.location == NSNotFound) {
-    return nil;
-  }
-  NSData *data = [self.buffer subdataWithRange:NSMakeRange(0, terminalRange.location)];
-  [self.buffer replaceBytesInRange:NSMakeRange(0, terminalRange.location + terminal.length) withBytes:"" length:0];
-  return data;
 }
 
 - (nullable NSData *)consumeLineData
