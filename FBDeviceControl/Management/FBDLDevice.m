@@ -20,9 +20,11 @@
 
 @interface FBDLDeviceConnection_Context : NSObject
 
-@property (nonatomic, strong, readonly) FBMutableFuture<NSDictionary<NSString *, id> *> *completion;
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *request;
+@property (nonatomic, strong, readonly) FBDLDevice *device;
 @property (nonatomic, copy, readonly) NSString *serviceName;
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *request;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSDictionary<NSString *, id> *> *completion;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -33,7 +35,6 @@
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @property (nonatomic, assign, readwrite) DLDeviceConnection *connection;
-@property (nonatomic, strong, readwrite) FBDLDeviceConnection_Context *connectionContext;
 
 - (instancetype)initWithDLDevice:(DLDevice *)dlDevice queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
@@ -43,16 +44,18 @@
 
 @implementation FBDLDeviceConnection_Context
 
-- (instancetype)initWithCompletion:(FBMutableFuture<NSDictionary<NSString *, id> *> *)completion request:(NSDictionary<NSString *, id> *)request serviceName:(NSString *)serviceName
+- (instancetype)initWithDevice:(FBDLDevice *)device serviceName:(NSString *)serviceName request:(NSDictionary<NSString *, id> *)request completion:(FBMutableFuture<NSDictionary<NSString *, id> *> *)completion logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _completion = completion;
-  _request = request;
+  _device = device;
   _serviceName = serviceName;
+  _request = request;
+  _completion = completion;
+  _logger = logger;
 
   return self;
 }
@@ -66,10 +69,29 @@
 
 #pragma mark Connection/Device Lifecycle
 
-static FBDLDevice *FB_DLDeviceConnectionGetDevice(DLDeviceConnection *connection)
+static FBDLDeviceConnection_Context *FB_DLDeviceConnectionGetContext(DLDeviceConnection *connection)
 {
-  FBDLDevice *device = (__bridge FBDLDevice *) (connection->callbacks->context);
-  return device;
+  FBDLDeviceConnection_Context *context = (__bridge FBDLDeviceConnection_Context *) (connection->callbacks->context);
+  return context;
+}
+
+static BOOL FB_DLDeviceConnectionSetContext(DLDeviceConnection *connection, FBDLDeviceConnection_Context *context)
+{
+  if (context) {
+    if (connection->callbacks->context != NULL) {
+      return NO;
+    }
+    connection->callbacks->context = (void *) CFBridgingRetain(context);
+    return YES;
+  } else {
+    if (connection->callbacks->context != NULL) {
+      CFTypeRef existing = connection->callbacks->context;
+      connection->callbacks->context = NULL;
+      CFRelease(existing);
+    }
+    connection->callbacks->context = NULL;
+    return YES;
+  }
 }
 
 static void FB_DLDeviceConnectionCallbacksDestroy(DLDeviceConnectionCallbacks *callbacks)
@@ -79,7 +101,7 @@ static void FB_DLDeviceConnectionCallbacksDestroy(DLDeviceConnectionCallbacks *c
 
 static void FB_DLDeviceConnectionDestroy(DLDeviceConnection *connection)
 {
-  FBDLDevice *context = FB_DLDeviceConnectionGetDevice(connection);
+  FBDLDeviceConnection_Context *context = FB_DLDeviceConnectionGetContext(connection);
   [context.logger log:@"Disconnecting from Connection"];
   CFStringRef errorDescription = nil;
   int code = FBDLDevice.defaultCalls.Disconnect(connection, (__bridge CFStringRef) @"Done", &errorDescription);
@@ -98,38 +120,33 @@ static NSString *FB_DLDeviceConnectionDescribe(DLDeviceConnection *connection)
 
 static void FB_DeviceReadyCallback(DLDeviceConnection *connection)
 {
-  FBDLDevice *device = FB_DLDeviceConnectionGetDevice(connection);
-  FBDLDeviceConnection_Context *context = device.connectionContext;
-  if (!context) {
-    [device.logger logFormat:@"No active request for device %@.", device];
-    return;
-  }
+  FBDLDeviceConnection_Context *context = FB_DLDeviceConnectionGetContext(connection);
   CFStringRef errorDescription = nil;
-  int status = FBDLDevice.defaultCalls.ProcessMessage(connection, (__bridge CFDictionaryRef) device.connectionContext.request, &errorDescription);
-  [device.logger logFormat:@"Processed Message %@ with status %d", context, status];
+  int status = FBDLDevice.defaultCalls.ProcessMessage(connection, (__bridge CFDictionaryRef) context.request, &errorDescription);
+  [context.logger logFormat:@"Processed Message %@ with status %d", context, status];
   if (status != 0) {
     NSError *error = [[FBDeviceControlError describeFormat:@"Process Messsage Failed with %d: %@.", status, errorDescription] build];
-    [device.connectionContext.completion resolveWithError:error];
+    [context.completion resolveWithError:error];
     FB_DLDeviceConnectionDestroy(connection);
   }
 }
 
 static void FB_ProcessMessageCallback(DLDeviceConnection *connection, NSDictionary<NSString *, id> *message)
 {
-  FBDLDevice *device = FB_DLDeviceConnectionGetDevice(connection);
-  [device.connectionContext.completion resolveWithResult:message];
-  [device.logger logFormat:@"Callback for %@. Considering it done.", device.connectionContext];
-  device.connectionContext = nil;
+  FBDLDeviceConnection_Context *context = FB_DLDeviceConnectionGetContext(connection);
+  [context.completion resolveWithResult:message];
+  [context.logger logFormat:@"Callback for %@. Considering it done.", context.device];
+  FB_DLDeviceConnectionSetContext(connection, NULL);
 }
 
 #pragma mark Connection Context
 
-static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(FBDLDevice *device)
+static DLDeviceConnectionCallbacks *FB_DLDeviceConnectionCallbacksCreate(void)
 {
   DLDeviceConnectionCallbacks *callbacks = calloc(1, sizeof(DLDeviceConnectionCallbacks));
   callbacks->processMessageCallback = FB_ProcessMessageCallback;
   callbacks->deviceReadyCallback = FB_DeviceReadyCallback;
-  callbacks->context = (__bridge void *)(device);
+  callbacks->context = NULL;
   return callbacks;
 }
 
@@ -240,7 +257,7 @@ static NSString *ScreenshotReplyMessageType = @"ScreenShotReply";
 
 - (nullable DLDeviceConnection *)createConnectionWithError:(NSError **)error
 {
-  DLDeviceConnectionCallbacks *callbacks = FB_DLDeviceConnectionCallbacksCreate(self);
+  DLDeviceConnectionCallbacks *callbacks = FB_DLDeviceConnectionCallbacksCreate();
 
   DLDeviceConnection *connection = nil;
   CFStringRef errorDescription = nil;
@@ -258,17 +275,27 @@ static NSString *ScreenshotReplyMessageType = @"ScreenShotReply";
 - (FBFuture<NSDictionary<NSString *, id> *> *)onConnection:(DLDeviceConnection *)connection service:(NSString *)serviceName performRequest:(NSDictionary<NSString *, id> *)request
 {
   // Don't allow more than one request on the same connection.
-  FBDLDeviceConnection_Context *context = FB_DLDeviceConnectionGetDevice(connection).connectionContext;
+  FBDLDeviceConnection_Context *context = FB_DLDeviceConnectionGetContext(connection);
   if (context) {
     return [[FBDeviceControlError
       describeFormat:@"There is already an active request %@ on connection", context]
       failFuture];
   }
 
-  // Start the connection, setting the context.
+  // Set the context on the connection
+  FBMutableFuture<NSDictionary<NSString *, id> *> *completion = FBMutableFuture.future;
+  context = [[FBDLDeviceConnection_Context alloc] initWithDevice:self serviceName:serviceName request:request completion:completion logger:self.logger];
+  if (!FB_DLDeviceConnectionSetContext(connection, context)) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to set context"]
+      failFuture];
+  }
+
+  // Connect to the service
   CFStringRef errorDescription = nil;
   int code = FBDLDevice.defaultCalls.ConnectToServiceOnDevice(connection, self.dlDevice, (__bridge CFStringRef) serviceName, &errorDescription);
   if (code != 0) {
+    FB_DLDeviceConnectionSetContext(connection, NULL);
     FB_DLDeviceConnectionDestroy(connection);
     return [[FBDeviceControlError
       describeFormat:@"Got Error %d: %@ from DLConnectToServiceOnDevice", code, errorDescription]
@@ -276,9 +303,7 @@ static NSString *ScreenshotReplyMessageType = @"ScreenShotReply";
   }
 
   // Update the context to the current request.
-  FBMutableFuture<NSDictionary<NSString *, id> *> *completion = FBMutableFuture.future;
-  self.connectionContext = [[FBDLDeviceConnection_Context alloc] initWithCompletion:completion request:request serviceName:serviceName];
-  [self.logger logFormat:@"Started Request for %@", self.connectionContext];
+  [self.logger logFormat:@"Started Request for %@", context];
 
   return completion;
 }
