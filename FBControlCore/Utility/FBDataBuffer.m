@@ -168,13 +168,13 @@
   if (self.buffer.length == 0) {
     return nil;
   }
-  NSRange newlineRange = [self.buffer rangeOfData:terminal options:0 range:NSMakeRange(0, self.buffer.length)];
-  if (newlineRange.location == NSNotFound) {
+  NSRange terminalRange = [self.buffer rangeOfData:terminal options:0 range:NSMakeRange(0, self.buffer.length)];
+  if (terminalRange.location == NSNotFound) {
     return nil;
   }
-  NSData *lineData = [self.buffer subdataWithRange:NSMakeRange(0, newlineRange.location)];
-  [self.buffer replaceBytesInRange:NSMakeRange(0, newlineRange.location + terminal.length) withBytes:"" length:0];
-  return lineData;
+  NSData *data = [self.buffer subdataWithRange:NSMakeRange(0, terminalRange.location)];
+  [self.buffer replaceBytesInRange:NSMakeRange(0, terminalRange.location + terminal.length) withBytes:"" length:0];
+  return data;
 }
 
 - (nullable NSData *)consumeLineData
