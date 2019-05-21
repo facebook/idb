@@ -163,6 +163,20 @@
   return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 }
 
+- (nullable NSData *)consumeLength:(NSUInteger)length
+{
+  if (length > self.buffer.length) {
+    return nil;
+  }
+  NSRange range = NSMakeRange(0, length);
+  NSData *data = [self.buffer subdataWithRange:range];
+  if (!data) {
+    return nil;
+  }
+  [self.buffer replaceBytesInRange:range withBytes:"" length:0];
+  return data;
+}
+
 - (nullable NSData *)consumeUntil:(NSData *)terminal
 {
   if (self.buffer.length == 0) {

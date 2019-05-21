@@ -139,6 +139,20 @@
   XCTAssertTrue(composite.eofHasBeenReceived.hasCompleted);
 }
 
+- (void)testLengthBasedConsumption
+{
+  id<FBConsumableBuffer> consumer = FBDataBuffer.consumableBuffer;
+
+  [consumer consumeData:[@"FOOBARRBAZZZ" dataUsingEncoding:NSUTF8StringEncoding]];
+  [consumer consumeEndOfFile];
+
+  XCTAssertEqualObjects([consumer consumeLength:3], [@"FOO" dataUsingEncoding:NSUTF8StringEncoding]);
+  XCTAssertEqualObjects([consumer consumeLength:4], [@"BARR" dataUsingEncoding:NSUTF8StringEncoding]);
+  XCTAssertEqualObjects([consumer consumeLength:5], [@"BAZZZ" dataUsingEncoding:NSUTF8StringEncoding]);
+  XCTAssertNil([consumer consumeLength:4]);
+  XCTAssertEqualObjects([consumer consumeCurrentData], NSData.data);
+}
+
 - (void)testFutureTerminalConsumption
 {
   id<FBNotifyingBuffer> consumer = FBDataBuffer.notifyingBuffer;

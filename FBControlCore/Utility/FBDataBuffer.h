@@ -52,6 +52,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable NSString *)consumeCurrentString;
 
+/*/
+ Consumes an amount of data from the buffer.
+
+ @param length the length of data to consume.
+ @return all the data if there's enough, nil otherwise.
+ */
+- (nullable NSData *)consumeLength:(NSUInteger)length;
+
 /**
  Consumes until data recieved.
 
