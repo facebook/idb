@@ -102,7 +102,7 @@
     for (NSString *filePath in filePaths) {
       [urls addObject:[NSURL fileURLWithPath:filePath]];
     }
-    return [[FBFuture futureWithResult:urls] onQueue:self.queue contextualTeardown:^(id _, FBFutureState __) {}];
+    return [FBFutureContext futureContextWithResult:urls];
   }
 
   return [self filesFromSubdirs:[self withArchiveExtracted:tarData]];
