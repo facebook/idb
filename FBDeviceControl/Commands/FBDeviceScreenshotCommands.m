@@ -7,9 +7,14 @@
 
 #import "FBDeviceScreenshotCommands.h"
 
-#import "FBDevice.h"
+#import "FBAMDevice+Private.h"
+#import "FBAMDevice.h"
 #import "FBDevice+Private.h"
+#import "FBDevice.h"
+#import "FBDeviceControlError.h"
+#import "FBDeviceLinkClient.h"
 #import "FBDLDevice.h"
+#import "FBServiceConnectionClient.h"
 
 @interface FBDeviceScreenshotCommands ()
 
@@ -40,12 +45,29 @@
 
 #pragma mark FBScreenshotCommands
 
+static NSString *const ScreenShotDataKey = @"ScreenShotData";
+
 - (FBFuture<NSData *> *)takeScreenshot:(FBScreenshotFormat)format
 {
-  return [FBFuture
-    onQueue:self.device.workQueue resolve:^{
-      FBDLDevice *dlDevice = self.device.dlDevice;
-      return [dlDevice screenshotData];
+  return [[[[[self.device.amDevice
+    startService:@"com.apple.mobile.screenshotr"]
+    onQueue:self.device.workQueue push:^(FBAMDServiceConnection *connection) {
+      return [FBServiceConnectionClient clientForServiceConnection:connection logger:self.device.logger];
+    }]
+    onQueue:self.device.workQueue pend:^(FBServiceConnectionClient *rawClient) {
+      return [FBDeviceLinkClient deviceLinkClientWithServiceConnectionClient:rawClient];
+    }]
+    onQueue:self.device.workQueue pop:^(FBDeviceLinkClient *client) {
+      return [client processMessage:@{@"MessageType": @"ScreenShotRequest"}];
+    }]
+    onQueue:self.device.asyncQueue fmap:^(NSDictionary<id, id> *response) {
+      NSData *screenshotData = response[ScreenShotDataKey];
+      if (![screenshotData isKindOfClass:NSData.class]) {
+        return [[FBDeviceControlError
+          describeFormat:@"%@ is not an NSData for %@", screenshotData, ScreenShotDataKey]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:screenshotData];
     }];
 }
 
