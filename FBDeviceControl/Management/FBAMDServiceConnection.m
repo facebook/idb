@@ -60,8 +60,9 @@
   [self.logger logFormat:@"Invalidating Connection %@", connectionDescription];
   int status = self.calls.ServiceConnectionInvalidate(self.connection);
   if (status != 0) {
+    NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
     return [[FBDeviceControlError
-      describeFormat:@"Failed to invalidate connection %@ with error %d", connectionDescription, status]
+      describeFormat:@"Failed to invalidate connection %@ with error %@", connectionDescription, errorDescription]
       failBool:error];
   }
   [self.logger logFormat:@"Invalidated connection %@", connectionDescription];
