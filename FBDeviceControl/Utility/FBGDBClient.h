@@ -9,6 +9,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <FBDeviceControl/FBServiceConnectionClient.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBAMDServiceConnection;
@@ -18,19 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
  Some of the information here comes from the gdb remote protocol spec from the llvm project https://github.com/llvm-mirror/lldb/blob/master/docs/lldb-gdb-remote.txt
  There's also more information in the GDB protocol spec https://sourceware.org/gdb/onlinedocs/gdb/General-Query-Packets.html
  */
-@interface FBGDBClient : NSObject
-
-#pragma mark Initializers
-
-/**
- Makes a GDBClient from an existing service connection to the debugserver.
-
- @param connection the debugserver connection to use.
- @param queue the queue to serialize work on.
- @param logger the logger to log to.
- @return a Future wrapping the GDB Client.
- */
-+ (FBFuture<FBGDBClient *> *)clientForServiceConnection:(FBAMDServiceConnection *)connection queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+@interface FBGDBClient : FBServiceConnectionClient
 
 #pragma mark Public Methods
 

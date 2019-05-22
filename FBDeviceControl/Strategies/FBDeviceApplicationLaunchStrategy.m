@@ -20,7 +20,7 @@ static NSTimeInterval LaunchTimeout = 60;
 @property (nonatomic, strong, readonly) FBDevice *device;
 @property (nonatomic, strong, readonly) FBAMDServiceConnection *connection;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
 
@@ -43,7 +43,7 @@ static NSTimeInterval LaunchTimeout = 60;
   _device = device;
   _connection = connection;
   _logger = logger;
-  _writeQueue = dispatch_queue_create("com.facebook.fbdevicecontrol.app_launch_commands", DISPATCH_QUEUE_SERIAL);
+  _queue = dispatch_queue_create("com.facebook.fbdevicecontrol.app_launch_commands", DISPATCH_QUEUE_SERIAL);
 
   return self;
 }
@@ -53,13 +53,13 @@ static NSTimeInterval LaunchTimeout = 60;
 - (FBFuture<FBDeviceApplicationProcess *> *)launchApplication:(FBApplicationLaunchConfiguration *)launch remoteAppPath:(NSString *)remoteAppPath
 {
   return [[FBGDBClient
-    clientForServiceConnection:self.connection queue:self.writeQueue logger:self.logger]
-    onQueue:self.writeQueue fmap:^(FBGDBClient *client) {
+    clientForServiceConnection:self.connection logger:self.logger]
+    onQueue:self.queue pop:^(FBGDBClient *client) {
       FBFuture<NSNumber *> *launchFuture = [FBDeviceApplicationLaunchStrategy
         launchApplication:launch
         remoteAppPath:remoteAppPath
         client:client
-        queue:self.writeQueue
+        queue:self.queue
         logger:self.logger];
       return [FBDeviceApplicationLaunchStrategy launchApplication:launch device:self.device client:client launchFuture:launchFuture];
     }];

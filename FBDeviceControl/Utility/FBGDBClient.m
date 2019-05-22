@@ -129,13 +129,7 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 
 @interface FBGDBClient () <FBDataConsumer>
 
-@property (nonatomic, strong, readonly) id<FBDataConsumer> writer;
-@property (nonatomic, strong, readonly) FBFileReader *reader;
-@property (nonatomic, strong, readonly) id<FBNotifyingBuffer> buffer;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *exitCodeFuture;
-
 @property (nonatomic, strong, nullable, readonly) id<FBDataConsumer> stdoutConsumer;
 @property (nonatomic, strong, nullable, readonly) id<FBDataConsumer> stderrConsumer;
 
@@ -145,40 +139,13 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 
 #pragma mark Initializers
 
-+ (FBFuture<FBGDBClient *> *)clientForServiceConnection:(FBAMDServiceConnection *)connection queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConnection:(FBAMDServiceConnection *)connection writer:(id<FBDataConsumer>)writer reader:(FBFileReader *)reader buffer:(id<FBNotifyingBuffer>)buffer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  NSError *error = nil;
-  NSFileHandle *fileHandle = [[NSFileHandle alloc] initWithFileDescriptor:connection.socket closeOnDealloc:NO];
-  id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:fileHandle error:&error];
-  if (!writer) {
-    return [FBFuture futureWithError:error];
-  }
-  id<FBNotifyingBuffer> outputBuffer = FBDataBuffer.notifyingBuffer;
-  id<FBDataConsumer> output = [FBCompositeDataConsumer consumerWithConsumers:@[
-    outputBuffer,
-    [FBLoggingDataConsumer consumerWithLogger:[logger withName:@"RECV"]],
-  ]];
-  FBFileReader *reader = [FBFileReader readerWithFileHandle:fileHandle consumer:output logger:nil];
-  return [[reader
-    startReading]
-    onQueue:queue map:^(id _) {
-      return [[self alloc] initWithWriter:writer reader:reader buffer:outputBuffer queue:queue logger:logger];
-    }];
-}
-
-
-- (instancetype)initWithWriter:(id<FBDataConsumer>)writer reader:(FBFileReader *)reader buffer:(id<FBNotifyingBuffer>)buffer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
-{
-  self = [super init];
+  self = [super initWithConnection:connection writer:writer reader:reader buffer:buffer queue:queue logger:logger];
   if (!self) {
     return nil;
   }
 
-  _writer = writer;
-  _reader = reader;
-  _buffer = buffer;
-  _queue = queue;
-  _logger = logger;
   _exitCodeFuture = FBMutableFuture.future;
 
   return self;
@@ -213,11 +180,11 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 - (FBFuture<NSNull *> *)noAckMode
 {
   NSData *ack = [@"+" dataUsingEncoding:NSASCIIStringEncoding];
-  [self _sendRaw:ack];
+  [self sendRaw:ack];
   return [[self
     sendUntilOK:@"QStartNoAckMode"]
     onQueue:self.queue map:^(id _) {
-      [self _sendRaw:ack];
+      [self sendRaw:ack];
       return NSNull.null;
     }];
 }
@@ -298,12 +265,7 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 - (void)sendNow:(NSString *)command
 {
   [self.logger logFormat:@"SEND: %@", command];
-  [self _sendRaw:wrapCommandInSums(command)];
-}
-
-- (void)_sendRaw:(NSData *)data
-{
-  [self.writer consumeData:data];
+  [self sendRaw:wrapCommandInSums(command)];
 }
 
 #pragma mark FBDataConsumer Implementation

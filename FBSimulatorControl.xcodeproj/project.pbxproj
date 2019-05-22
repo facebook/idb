@@ -502,6 +502,8 @@
 		AADDED301D6D81F80011EE15 /* FBSimulatorProcessFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = AADDED2E1D6D81F80011EE15 /* FBSimulatorProcessFetcher.m */; };
 		AADDED331D6D87D30011EE15 /* FBServiceManagement.m in Sources */ = {isa = PBXBuildFile; fileRef = AADDED311D6D87D30011EE15 /* FBServiceManagement.m */; };
 		AADDED341D6D87D30011EE15 /* FBServiceManagement.h in Headers */ = {isa = PBXBuildFile; fileRef = AADDED321D6D87D30011EE15 /* FBServiceManagement.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AAE119622293EF3500173417 /* FBServiceConnectionClient.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE119602293EF3500173417 /* FBServiceConnectionClient.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AAE119632293EF3500173417 /* FBServiceConnectionClient.m in Sources */ = {isa = PBXBuildFile; fileRef = AAE119612293EF3500173417 /* FBServiceConnectionClient.m */; };
 		AAE248021DF8978700E0949D /* FBDeviceVideoRecordingCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE248001DF8978700E0949D /* FBDeviceVideoRecordingCommands.h */; };
 		AAE248031DF8978700E0949D /* FBDeviceVideoRecordingCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AAE248011DF8978700E0949D /* FBDeviceVideoRecordingCommands.m */; };
 		AAE42AA81D2D77D800DCD0EA /* FBSimulatorBridge.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE42AA61D2D77D800DCD0EA /* FBSimulatorBridge.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1413,6 +1415,8 @@
 		AADDED2E1D6D81F80011EE15 /* FBSimulatorProcessFetcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorProcessFetcher.m; sourceTree = "<group>"; };
 		AADDED311D6D87D30011EE15 /* FBServiceManagement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBServiceManagement.m; sourceTree = "<group>"; };
 		AADDED321D6D87D30011EE15 /* FBServiceManagement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBServiceManagement.h; sourceTree = "<group>"; };
+		AAE119602293EF3500173417 /* FBServiceConnectionClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBServiceConnectionClient.h; sourceTree = "<group>"; };
+		AAE119612293EF3500173417 /* FBServiceConnectionClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBServiceConnectionClient.m; sourceTree = "<group>"; };
 		AAE248001DF8978700E0949D /* FBDeviceVideoRecordingCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceVideoRecordingCommands.h; sourceTree = "<group>"; };
 		AAE248011DF8978700E0949D /* FBDeviceVideoRecordingCommands.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceVideoRecordingCommands.m; sourceTree = "<group>"; };
 		AAE42AA61D2D77D800DCD0EA /* FBSimulatorBridge.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorBridge.h; sourceTree = "<group>"; };
@@ -2540,6 +2544,8 @@
 				AAC8B2501CEC51520034A865 /* FBDeviceControlFrameworkLoader.m */,
 				AA4E560E222D86DB00C95DC4 /* FBGDBClient.h */,
 				AA4E560D222D86DA00C95DC4 /* FBGDBClient.m */,
+				AAE119602293EF3500173417 /* FBServiceConnectionClient.h */,
+				AAE119612293EF3500173417 /* FBServiceConnectionClient.m */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -3140,6 +3146,7 @@
 				AA4E5610222D86DB00C95DC4 /* FBGDBClient.h in Headers */,
 				AA97C7FB20D90D98002B8564 /* FBAMDevice+Private.h in Headers */,
 				AAC8B2591CEC51520034A865 /* FBDeviceControlFrameworkLoader.h in Headers */,
+				AAE119622293EF3500173417 /* FBServiceConnectionClient.h in Headers */,
 				AA9D9AF521DCC51700329509 /* FBDeveloperDiskImage.h in Headers */,
 				AA3E44401F14AE2C00F333D2 /* FBDeviceApplicationCommands.h in Headers */,
 				AA758B4C20E3C0720064EC18 /* FBAMDeviceServiceManager.h in Headers */,
@@ -3868,6 +3875,7 @@
 				AA3E44411F14AE2C00F333D2 /* FBDeviceApplicationCommands.m in Sources */,
 				AAC6086221DFB28E00280C96 /* FBDeviceApplicationLaunchStrategy.m in Sources */,
 				AAC8B2521CEC51520034A865 /* FBDevice.m in Sources */,
+				AAE119632293EF3500173417 /* FBServiceConnectionClient.m in Sources */,
 				AAC6086521E344EF00280C96 /* FBDeviceDebugServer.m in Sources */,
 				AA4D30711E79983700A9FBD0 /* FBDeviceBitmapStream.m in Sources */,
 				AA280F4E1E714779006BB9E0 /* FBDeviceVideo.m in Sources */,
