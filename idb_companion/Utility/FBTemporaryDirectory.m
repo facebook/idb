@@ -161,6 +161,7 @@
       } else {
         [self.logger logFormat:@"Failed to delete Temp Dir %@: %@", tempDirectory, innerError];
       }
+      return FBFuture.empty;
     }];
 }
 
@@ -179,6 +180,7 @@
       } else {
         [self.logger logFormat:@"Failed to delete Temp File %@: %@", tempFile, innerError];
       }
+      return FBFuture.empty;
     }];
 }
 

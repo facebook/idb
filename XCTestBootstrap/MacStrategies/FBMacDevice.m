@@ -179,6 +179,7 @@
   }
   return [[FBFuture futureWithResult:transport] onQueue:self.workQueue contextualTeardown:^(id _, FBFutureState __) {
     [transport closeFile];
+    return FBFuture.empty;
   }];
 }
 

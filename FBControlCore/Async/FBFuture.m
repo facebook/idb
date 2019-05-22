@@ -114,13 +114,13 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 @property (nonatomic, strong, readonly) FBFuture *future;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) void (^action)(id, FBFutureState);
+@property (nonatomic, strong, readonly) FBFuture<NSNull *> * (^action)(id, FBFutureState);
 
 @end
 
 @implementation FBFutureContext_Teardown
 
-- (instancetype)initWithFuture:(FBFuture *)future queue:(dispatch_queue_t)queue action:(void (^)(id, FBFutureState))action
+- (instancetype)initWithFuture:(FBFuture *)future queue:(dispatch_queue_t)queue action:(FBFuture<NSNull *> * (^)(id, FBFutureState))action
 {
   self = [super init];
   if (!self) {
@@ -134,18 +134,23 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return self;
 }
 
-- (void)performTeardown:(FBFutureState)endState
+- (FBFuture<NSNull *> *)performTeardown:(FBFutureState)endState
 {
   NSAssert(self.future.state != FBFutureStateRunning, @"Performing teardown on an unresolved future is not-permitted.");
-  void (^action)(id, FBFutureState) = self.action;
+  FBFuture<NSNull *> * (^action)(id, FBFutureState) = self.action;
+  FBMutableFuture<NSNull *> *teardownCompleted = FBMutableFuture.future;
 
   // By this point the future will actually be resolved.
   // The reason for this notifyOfCompletion, is that we can use it for the queue-bounce to the queue that the action is expected to be called on.
   [self.future onQueue:self.queue notifyOfCompletion:^(FBFuture *resolved) {
     if (resolved.result) {
-      action(resolved.result, endState);
+      FBFuture<NSNull *> *resolvedTeardownCompleted = action(resolved.result, endState);
+      [teardownCompleted resolveFromFuture:resolvedTeardownCompleted];
+    } else {
+      [teardownCompleted resolveWithResult:NSNull.null];
     }
   }];
+  return teardownCompleted;
 }
 
 @end
@@ -197,9 +202,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return [[self.future
     onQueue:queue fmap:pop]
     onQueue:queue notifyOfCompletion:^(FBFuture *resolved) {
-      for (FBFutureContext_Teardown *teardown in teardowns.reverseObjectEnumerator) {
-        [teardown performTeardown:resolved.state];
-      }
+      [FBFutureContext popTeardowns:teardowns.reverseObjectEnumerator state:resolved.state];
     }];
 }
 
@@ -221,7 +224,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return nextContext;
 }
 
-- (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(id, FBFutureState))action
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:( FBFuture<NSNull *> * (^)(id, FBFutureState) )action
 {
   FBFutureContext_Teardown *teardown = [[FBFutureContext_Teardown alloc] initWithFuture:self.future queue:queue action:action];
   [self.teardowns addObject:teardown];
@@ -240,6 +243,21 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   }];
 
   return started;
+}
+
+#pragma mark Private
+
++ (FBFuture<NSNull *> *)popTeardowns:(NSEnumerator<FBFutureContext_Teardown *> *)teardowns state:(FBFutureState)state
+{
+  FBFutureContext_Teardown *teardown = teardowns.nextObject;
+  if (!teardown) {
+    return FBFuture.empty;
+  }
+  return [[teardown
+    performTeardown:state]
+    onQueue:teardown.queue chain:^(id _) {
+      return [self popTeardowns:teardowns state:state];
+    }];
 }
 
 @end
@@ -698,7 +716,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 #pragma mark Creating Context
 
-- (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(id, FBFutureState))action
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:( FBFuture<NSNull *> * (^)(id, FBFutureState))action
 {
   FBFutureContext_Teardown *teardown = [[FBFutureContext_Teardown alloc] initWithFuture:self queue:queue action:action];
   return [[FBFutureContext alloc] initWithFuture:self teardowns:@[teardown].mutableCopy];

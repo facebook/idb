@@ -99,6 +99,7 @@
       } else {
         [logger logFormat:@"%lu More consumers waiting or running, not tearing down", remainingConsumers];
       }
+      return FBFuture.empty;
     }];
 }
 

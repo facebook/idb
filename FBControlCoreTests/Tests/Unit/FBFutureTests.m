@@ -823,6 +823,7 @@
       XCTAssertEqual(state, FBFutureStateDone);
       teardownCalled = YES;
       [teardownExpectation fulfill];
+      return FBFuture.empty;
     }]
     onQueue:self.queue pend:^(id value) {
       XCTAssertEqualObjects(value, @1);
@@ -862,6 +863,7 @@
       XCTAssertEqual(state, FBFutureStateDone);
       outerTeardownCalled = YES;
       [outerTeardownExpectation fulfill];
+      return [FBFuture.empty delay:1];
     }]
     onQueue:self.queue push:^(id value) {
       XCTAssertEqualObjects(value, @1);
@@ -871,6 +873,7 @@
         XCTAssertEqual(innerState, FBFutureStateDone);
         innerTeardownCalled = YES;
         [innerTeardownExpectation fulfill];
+        return FBFuture.empty;
       }];
     }]
     onQueue:self.queue pop:^(id value) {
@@ -907,6 +910,7 @@
       XCTAssertEqual(state, FBFutureStateDone);
       initialTeardownCalled = YES;
       [initialTeardownExpectation fulfill];
+      return [FBFuture empty];
     }]
     onQueue:self.queue contextualTeardown:^(id value, FBFutureState state){
       XCTAssertTrue(popCalled);
@@ -915,6 +919,7 @@
       XCTAssertEqual(state, FBFutureStateDone);
       subsequentTeardownCalled = YES;
       [subsequentTeardownExpectation fulfill];
+      return [FBFuture.empty delay:1];
     }]
     onQueue:self.queue pop:^(id value) {
       XCTAssertFalse(initialTeardownCalled);
@@ -950,12 +955,14 @@
         XCTAssertEqual(state, FBFutureStateFailed);
         outerTeardownCalled = YES;
         [outerTeardownExpectation fulfill];
+        return FBFuture.empty;
     }]
     onQueue:self.queue push:^(id value) {
       pushCalled = YES;
       XCTAssertEqualObjects(value, @1);
       return [[FBFuture futureWithError:error] onQueue:self.queue contextualTeardown:^(id innerValue, FBFutureState innerState) {
         XCTFail(@"Should not resolve error teardown");
+        return FBFuture.empty;
       }];
     }]
     onQueue:self.queue pop:^(id result) {
@@ -988,6 +995,7 @@
           XCTAssertEqual(state, FBFutureStateDone);
           [innerTeardownExpectation fulfill];
           teardownCalled = YES;
+          return FBFuture.empty;
         }];
     }]
     onQueue:self.queue pop:^(id value) {
@@ -1012,6 +1020,7 @@
       XCTAssertEqualObjects(value, @1);
       teardownCalled = YES;
       [teardownExpectation fulfill];
+      return FBFuture.empty;
     }]
     onQueue:self.queue enter:^(id value, FBMutableFuture<NSNull *> *innerTeardown) {
       XCTAssertEqualObjects(value, @1);

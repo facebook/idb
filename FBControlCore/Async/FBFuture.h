@@ -289,9 +289,9 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
  @param queue the queue to perform the teardown on.
  @param action the teardown action to invoke. This block will be executed after the context object is done. This also includes the state that the resultant future ended in.
- @return a 'context object' that manages the tear-down of the reciever's value.
+ @return a 'context object' that manages the tear-down of the reciever's value. This teardown can be asynchronous, and is indicated via the return-value of the contextualTeardown block,
  */
-- (FBFutureContext<T> *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(T, FBFutureState))action;
+- (FBFutureContext<T> *)onQueue:(dispatch_queue_t)queue contextualTeardown:( FBFuture<NSNull *> * (^)(T, FBFutureState))action;
 
 /**
  Creates an 'context object' from a block.
@@ -422,14 +422,26 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 /**
  Wraps a Future in such a way that teardown work can be deferred.
  This is useful when the Future wraps some kind of resource that requires cleanup.
- The completion of some chained future is used as the trigger to determine that cleanup should be performed.
+ Upon completion of the future that the context wraps, a teardown action associated with the context is then performed.
 
  From this class:
  - A Future can be obtained that will completed before the teardown work does.
- - Additional chaining is possible, deferring the teardown further.
+ - Additional chaining is possible, deferring teardown, or adding to a stack of teardowns.
 
- The API intentionally mirrors some of the methods in FBFuture.
- The Nominal types are different so that it is impossible to get FBFuture and FBFutureContext mixed up.
+ The API intentionally mirrors some of the methods in FBFuture, so that it can used in equivalent places.
+ The nominal types of FBFuture and FBFutureContext so that it hard to confuse chaining on between them.
+
+ Like cancellation on a Future, teardown is also permitted to be asynchronous. This is important where resources are allocated on top of each other.
+ For example this can be useful to have set-up and tear-down actions performed in the order they are added to the teardown stack:
+ 1) A socket is created.
+ 2) A file read operation is made on the socket.
+ 3) The file read operation is used, and then finishes.
+ 4) The file read operation is stopped.
+ 5) The socket is closed.
+
+ In this case it's important that #4 has finished it's teardown work before #5 completes.
+ This is achieved by a teardown action returning a future that completes when the work of #4 is completely done.
+ Async teardown is completely optional, if the ordering is not significant, then the action can return an empty future to not defer any teardown work lower in the stack.
  */
 @interface FBFutureContext <T : id> : NSObject
 
@@ -499,7 +511,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param action the teardown action
  @return a context with the teardown applied.
  */
-- (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:(void(^)(T, FBFutureState))action;
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:( FBFuture<NSNull *> * (^)(T, FBFutureState))action;
 
 /**
  Extracts the wrapped context, so that it can be torn-down at a later time.

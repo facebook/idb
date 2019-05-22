@@ -71,7 +71,7 @@
   return [[self
     startListening]
     onQueue:self.delegate.queue contextualTeardown:^(NSNull *_, FBFutureState __) {
-      [self stopListening];
+      return [self stopListening];
     }];
 }
 

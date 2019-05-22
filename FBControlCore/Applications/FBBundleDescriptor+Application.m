@@ -105,6 +105,7 @@
       } else {
         [logger logFormat:@"Failed to remove extracted directory %@ with error %@", temporaryPath, innerError];
       }
+      return FBFuture.empty;
     }];
 }
 

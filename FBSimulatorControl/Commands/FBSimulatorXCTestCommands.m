@@ -122,6 +122,7 @@
     futureWithResult:@(testManagerSocket.fileDescriptor)]
     onQueue:self.simulator.workQueue contextualTeardown:^(id _, FBFutureState __) {
       [testManagerSocket closeFile];
+      return FBFuture.empty;
     }];
 }
 

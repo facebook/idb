@@ -358,6 +358,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
           } else {
             [self.logger logFormat:@"Invalidated service %@", service];
           }
+          return FBFuture.empty;
         }];
     }];
 }
