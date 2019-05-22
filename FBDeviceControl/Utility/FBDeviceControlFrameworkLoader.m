@@ -23,7 +23,6 @@
 {
   return [super initWithName:@"FBDeviceControl" frameworks:@[
     FBWeakFramework.MobileDevice,
-    FBWeakFramework.DeviceLink,
   ]];
 }
 

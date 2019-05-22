@@ -13,7 +13,6 @@
 #import "FBDevice.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceLinkClient.h"
-#import "FBDLDevice.h"
 #import "FBServiceConnectionClient.h"
 
 @interface FBDeviceScreenshotCommands ()
