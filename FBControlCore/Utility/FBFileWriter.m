@@ -169,7 +169,7 @@
 - (void)consumeEndOfFile
 {
   [self.eofHasBeenReceivedMutable resolveWithResult:NSNull.null];
-  [self.fileHandle closeFile];
+  // NSFileHandle has semantics for file closing in `closeOnDealloc`. For these cases where this is YES, the File Descriptor will be closed.
   self.fileHandle = nil;
 }
 
@@ -262,7 +262,7 @@
 
 - (void)ioChannelDidCloseWithError:(int)errorCode
 {
-  [self.fileHandle closeFile];
+  // NSFileHandle has semantics for file closing in `closeOnDealloc`. For these cases where this is YES, the File Descriptor will be closed.
   self.fileHandle = nil;
   self.io = nil;
 }
