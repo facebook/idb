@@ -136,8 +136,11 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
 - (void)performTeardown:(FBFutureState)endState
 {
+  NSAssert(self.future.state != FBFutureStateRunning, @"Performing teardown on an unresolved future is not-permitted.");
   void (^action)(id, FBFutureState) = self.action;
 
+  // By this point the future will actually be resolved.
+  // The reason for this notifyOfCompletion, is that we can use it for the queue-bounce to the queue that the action is expected to be called on.
   [self.future onQueue:self.queue notifyOfCompletion:^(FBFuture *resolved) {
     if (resolved.result) {
       action(resolved.result, endState);
