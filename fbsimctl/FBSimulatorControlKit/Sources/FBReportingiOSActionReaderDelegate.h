@@ -7,9 +7,9 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSActionReader.h>
-#import <FBControlCore/FBEventInterpreter.h>
-#import <FBControlCore/FBUploadBuffer.h>
+#import <FBControlCore/FBControlCore.h>
+
+#import <FBSimulatorControlKit/FBiOSActionReader.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

@@ -7,13 +7,6 @@
 
 #import "FBiOSActionRouter.h"
 
-#import "FBListApplicationsConfiguration.h"
-#import "FBCollectionInformation.h"
-#import "FBControlCoreError.h"
-#import "FBiOSTarget.h"
-#import "FBiOSTargetFuture.h"
-#import "FBJSONConversion.h"
-#import "FBApplicationLaunchConfiguration.h"
 #import "FBUploadBuffer.h"
 
 @implementation FBiOSActionRouter

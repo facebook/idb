@@ -9,6 +9,14 @@
 /* Begin PBXBuildFile section */
 		27B700E21D9D27F30067A882 /* ParserDescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274F22E01D9BCFCD00A7C072 /* ParserDescription.swift */; };
 		27B700E41D9D40A90067A882 /* ParserDescriptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B700E31D9D40A90067A882 /* ParserDescriptionTests.swift */; };
+		AA07E85C2295806100453C8D /* FBiOSActionRouter.m in Sources */ = {isa = PBXBuildFile; fileRef = AA07E8582295806100453C8D /* FBiOSActionRouter.m */; };
+		AA07E85D2295806100453C8D /* FBiOSActionRouter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA07E8592295806100453C8D /* FBiOSActionRouter.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA07E85E2295806100453C8D /* FBiOSActionReader.h in Headers */ = {isa = PBXBuildFile; fileRef = AA07E85A2295806100453C8D /* FBiOSActionReader.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA07E85F2295806100453C8D /* FBiOSActionReader.m in Sources */ = {isa = PBXBuildFile; fileRef = AA07E85B2295806100453C8D /* FBiOSActionReader.m */; };
+		AA07E866229580D200453C8D /* FBReportingiOSActionReaderDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = AA07E864229580D200453C8D /* FBReportingiOSActionReaderDelegate.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA07E867229580D200453C8D /* FBReportingiOSActionReaderDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = AA07E865229580D200453C8D /* FBReportingiOSActionReaderDelegate.m */; };
+		AA07E86A2295834300453C8D /* FBUploadBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = AA07E8682295834300453C8D /* FBUploadBuffer.m */; };
+		AA07E86B2295834300453C8D /* FBUploadBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = AA07E8692295834300453C8D /* FBUploadBuffer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA099CB71DB697000078BF1E /* JSONTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA099CB61DB697000078BF1E /* JSONTests.swift */; };
 		AA0DE44E1C68894000B4D2AF /* HttpRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */; };
 		AA1B7F571C2866410038C6A5 /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; };
@@ -105,6 +113,14 @@
 /* Begin PBXFileReference section */
 		274F22E01D9BCFCD00A7C072 /* ParserDescription.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ParserDescription.swift; sourceTree = "<group>"; };
 		27B700E31D9D40A90067A882 /* ParserDescriptionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ParserDescriptionTests.swift; sourceTree = "<group>"; };
+		AA07E8582295806100453C8D /* FBiOSActionRouter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSActionRouter.m; sourceTree = "<group>"; };
+		AA07E8592295806100453C8D /* FBiOSActionRouter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSActionRouter.h; sourceTree = "<group>"; };
+		AA07E85A2295806100453C8D /* FBiOSActionReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSActionReader.h; sourceTree = "<group>"; };
+		AA07E85B2295806100453C8D /* FBiOSActionReader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSActionReader.m; sourceTree = "<group>"; };
+		AA07E864229580D200453C8D /* FBReportingiOSActionReaderDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBReportingiOSActionReaderDelegate.h; sourceTree = "<group>"; };
+		AA07E865229580D200453C8D /* FBReportingiOSActionReaderDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBReportingiOSActionReaderDelegate.m; sourceTree = "<group>"; };
+		AA07E8682295834300453C8D /* FBUploadBuffer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBUploadBuffer.m; sourceTree = "<group>"; };
+		AA07E8692295834300453C8D /* FBUploadBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBUploadBuffer.h; sourceTree = "<group>"; };
 		AA099CB61DB697000078BF1E /* JSONTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSONTests.swift; sourceTree = "<group>"; };
 		AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HttpRelay.swift; sourceTree = "<group>"; };
 		AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Bridging.swift; sourceTree = "<group>"; };
@@ -212,6 +228,14 @@
 				AACF9F521C46E5C100B17E82 /* Environment.swift */,
 				AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */,
 				AA83D5EA1C58E368003B253E /* Events.swift */,
+				AA07E85A2295806100453C8D /* FBiOSActionReader.h */,
+				AA07E85B2295806100453C8D /* FBiOSActionReader.m */,
+				AA07E8592295806100453C8D /* FBiOSActionRouter.h */,
+				AA07E8582295806100453C8D /* FBiOSActionRouter.m */,
+				AA07E864229580D200453C8D /* FBReportingiOSActionReaderDelegate.h */,
+				AA07E865229580D200453C8D /* FBReportingiOSActionReaderDelegate.m */,
+				AA07E8692295834300453C8D /* FBUploadBuffer.h */,
+				AA07E8682295834300453C8D /* FBUploadBuffer.m */,
 				AA1B7F611C2867EE0038C6A5 /* Help.swift */,
 				AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */,
 				AAA6C3AA1D08899600720BF6 /* iOSReporter.swift */,
@@ -348,8 +372,12 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA07E866229580D200453C8D /* FBReportingiOSActionReaderDelegate.h in Headers */,
 				AA1B7F6E1C2867EE0038C6A5 /* Bridging.h in Headers */,
+				AA07E85E2295806100453C8D /* FBiOSActionReader.h in Headers */,
+				AA07E85D2295806100453C8D /* FBiOSActionRouter.h in Headers */,
 				AAE35AC51C2865C10073CC70 /* FBSimulatorControlKit.h in Headers */,
+				AA07E86B2295834300453C8D /* FBUploadBuffer.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -431,7 +459,7 @@
 					};
 					AAE35ACA1C2865C10073CC70 = {
 						CreatedOnToolsVersion = 7.2;
-						LastSwiftMigration = 0800;
+						LastSwiftMigration = 1020;
 					};
 				};
 			};
@@ -440,6 +468,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = AA93B7A71BE8351000CF6A56;
@@ -503,11 +532,15 @@
 				AA1B7F6D1C2867EE0038C6A5 /* CommandParsers.swift in Sources */,
 				AA1B7F6C1C2867EE0038C6A5 /* Command.swift in Sources */,
 				AA0DE44E1C68894000B4D2AF /* HttpRelay.swift in Sources */,
+				AA07E867229580D200453C8D /* FBReportingiOSActionReaderDelegate.m in Sources */,
 				AA5AA62C1CCE003900EC0298 /* ActionPerformer.swift in Sources */,
 				AA384EE01CB4F1FC00476BB8 /* AbstractTypes.swift in Sources */,
+				AA07E86A2295834300453C8D /* FBUploadBuffer.m in Sources */,
 				AA1B7F761C2867EE0038C6A5 /* SignalHandler.swift in Sources */,
 				AA1B7F741C2867EE0038C6A5 /* Relay.swift in Sources */,
+				AA07E85C2295806100453C8D /* FBiOSActionRouter.m in Sources */,
 				AAB97CAB1CCE8EAD0056A3C2 /* CommandRunners.swift in Sources */,
+				AA07E85F2295806100453C8D /* FBiOSActionReader.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -648,8 +681,12 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AA7D2F611D33867D00C7C6CF /* FBSimulatorControlKitTests.xcconfig */;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -657,8 +694,12 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AA7D2F611D33867D00C7C6CF /* FBSimulatorControlKitTests.xcconfig */;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};

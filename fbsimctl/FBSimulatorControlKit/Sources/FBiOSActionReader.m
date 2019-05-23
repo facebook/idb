@@ -7,16 +7,8 @@
 
 #import "FBiOSActionReader.h"
 
-#import "FBControlCoreError.h"
-#import "FBFileReader.h"
-#import "FBFileWriter.h"
-#import "FBiOSActionRouter.h"
-#import "FBiOSTarget.h"
-#import "FBiOSTargetFuture.h"
-#import "FBSocketConnectionManager.h"
 #import "FBUploadBuffer.h"
-#import "FBFuture+Sync.h"
-#import "FBDataBuffer.h"
+#import "FBiOSActionRouter.h"
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader";
 

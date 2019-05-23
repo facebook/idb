@@ -58,8 +58,6 @@
 #import <FBControlCore/FBInstrumentsCommands.h>
 #import <FBControlCore/FBInstrumentsConfiguration.h>
 #import <FBControlCore/FBInstrumentsOperation.h>
-#import <FBControlCore/FBiOSActionReader.h>
-#import <FBControlCore/FBiOSActionRouter.h>
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBiOSTargetConfiguration.h>
@@ -85,7 +83,6 @@
 #import <FBControlCore/FBProcessOutputConfiguration.h>
 #import <FBControlCore/FBProcessStream.h>
 #import <FBControlCore/FBProcessTerminationStrategy.h>
-#import <FBControlCore/FBReportingiOSActionReaderDelegate.h>
 #import <FBControlCore/FBScale.h>
 #import <FBControlCore/FBScreenshotCommands.h>
 #import <FBControlCore/FBServiceManagement.h>
@@ -97,7 +94,6 @@
 #import <FBControlCore/FBTask.h>
 #import <FBControlCore/FBTaskBuilder.h>
 #import <FBControlCore/FBTestLaunchConfiguration.h>
-#import <FBControlCore/FBUploadBuffer.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
 #import <FBControlCore/FBWeakFramework+ApplePrivateFrameworks.h>
 #import <FBControlCore/FBWeakFrameworkLoader.h>
