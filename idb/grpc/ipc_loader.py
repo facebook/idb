@@ -179,9 +179,13 @@ def _trampoline_daemon(
             partial_call = partial(partial_call, context=context)
 
         if _takes_stream(call):
+            # pyre-fixme[29]: `Union[Callable[..., Any], Callable[[*(Any), **(Any)],
+            #  Any]]` is not a function.
             await partial_call(stream=stream)
         else:
             request = await stream.recv_message()
+            # pyre-fixme[29]: `Union[Callable[..., Any], Callable[[*(Any), **(Any)],
+            #  Any]]` is not a function.
             response = await partial_call(request=request)
             await stream.send_message(response)
 
@@ -243,7 +247,6 @@ def _get_module_name(module: ModuleType) -> str:
     return module.__name__.split(".")[-1]
 
 
-# pyre-fixme[3]: Return annotation cannot contain `Any`.
 def client_calls(daemon_provider: DaemonProvider) -> List[Tuple[str, Callable]]:
     return [
         (
@@ -254,7 +257,6 @@ def client_calls(daemon_provider: DaemonProvider) -> List[Tuple[str, Callable]]:
     ]
 
 
-# pyre-fixme[3]: Return annotation cannot contain `Any`.
 def _client_implementations() -> List[Tuple[str, Callable]]:
     properties = []
     for module in _get_rpc_modules():
@@ -265,7 +267,6 @@ def _client_implementations() -> List[Tuple[str, Callable]]:
     return properties
 
 
-# pyre-fixme[3]: Return annotation cannot contain `Any`.
 def daemon_calls(
     companion_provider: CompanionProvider, context_provider: DaemonContextProvider
 ) -> List[Tuple[str, Callable]]:
@@ -283,7 +284,6 @@ def daemon_calls(
     ]
 
 
-# pyre-fixme[3]: Return annotation cannot contain `Any`.
 def _daemon_implementations() -> List[Tuple[str, Callable]]:
     functions = []
     for module in _get_rpc_modules():
