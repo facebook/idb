@@ -74,7 +74,7 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
 
   id<FBControlCoreLogger> baseLogger = [FBControlCoreLogger compositeLoggerWithLoggers:@[
     [[FBControlCoreLogger systemLoggerWritingToStderr:YES withDebugLogging:YES] withDateFormatEnabled:YES],
-    [[FBControlCoreLogger loggerToFileHandle:fileHandle] withDateFormatEnabled:YES],
+    [[FBControlCoreLogger loggerToFileDescriptor:fileHandle.fileDescriptor closeOnEndOfFile:NO] withDateFormatEnabled:YES],
   ]];
 
   return [[self alloc] initWithBaseLogger:baseLogger logDirectory:directory];

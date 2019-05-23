@@ -95,6 +95,14 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
   return NO;
 }
 
+- (int)failInt:(NSError **)error
+{
+  if (error) {
+    *error = [self build];
+  }
+  return 0;
+}
+
 - (unsigned int)failUInt:(NSError **)error
 {
   if (error) {

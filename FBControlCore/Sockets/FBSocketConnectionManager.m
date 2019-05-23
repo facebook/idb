@@ -48,7 +48,7 @@
 - (FBFuture<NSNull *> *)startConsuming
 {
   NSError *error = nil;
-  _writer = [FBFileWriter asyncWriterWithFileHandle:self.fileHandle error:&error];
+  _writer = [FBFileWriter asyncWriterWithFileDescriptor:self.fileHandle.fileDescriptor closeOnEndOfFile:YES error:&error];
   if (!_writer) {
     [self teardown];
     return [FBFuture futureWithError:error];

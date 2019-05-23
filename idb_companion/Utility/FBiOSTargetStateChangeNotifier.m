@@ -30,7 +30,7 @@
 
 + (instancetype)stdoutNotifierWithLogger:(id<FBControlCoreLogger>)logger
 {
-  id<FBDataConsumer> consumer = [FBFileWriter syncWriterWithFileHandle:NSFileHandle.fileHandleWithStandardOutput];
+  id<FBDataConsumer> consumer = [FBFileWriter syncWriterWithFileDescriptor:STDOUT_FILENO closeOnEndOfFile:NO];
   return [self notifierWithConsumer:consumer notifierForLogger:logger];
 }
 

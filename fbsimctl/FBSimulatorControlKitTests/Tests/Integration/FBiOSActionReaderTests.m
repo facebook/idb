@@ -55,7 +55,7 @@ NS_ASSUME_NONNULL_BEGIN
 
   self.pipe = NSPipe.pipe;
   self.reader = [FBiOSActionReader fileReaderForRouter:self.router delegate:self readHandle:self.pipe.fileHandleForReading writeHandle:self.pipe.fileHandleForWriting];
-  self.consumer = [FBFileWriter syncWriterWithFileHandle:self.pipe.fileHandleForWriting];
+  self.consumer = [FBFileWriter syncWriterWithFileDescriptor:self.pipe.fileHandleForWriting.fileDescriptor closeOnEndOfFile:YES];
 
   NSError *error;
   BOOL success = [[self.reader startListening] await:&error] != nil;

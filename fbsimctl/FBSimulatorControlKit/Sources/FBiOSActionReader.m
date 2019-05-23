@@ -381,7 +381,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
   }
 
   _reader = [FBFileReader readerWithFileHandle:readHandle consumer:self logger:nil];
-  _writer = [FBFileWriter syncWriterWithFileHandle:writeHandle];
+  _writer = [FBFileWriter syncWriterWithFileDescriptor:writeHandle.fileDescriptor closeOnEndOfFile:YES];
   _mediator = [[FBiOSActionReaderMediator alloc] initWithReader:self router:self.router delegate:self.delegate writeBack:self.writer];
 
   return self;

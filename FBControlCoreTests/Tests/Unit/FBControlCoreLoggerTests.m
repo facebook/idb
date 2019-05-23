@@ -22,7 +22,7 @@
   [[NSFileManager defaultManager] createFileAtPath:temporaryFilePath contents:nil attributes:nil];
   NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:temporaryFilePath];
 
-  id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToFileHandle:fileHandle];
+  id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToFileDescriptor:fileHandle.fileDescriptor closeOnEndOfFile:NO];
   [logger log:@"Some content"];
   [fileHandle synchronizeFile];
   [fileHandle closeFile];

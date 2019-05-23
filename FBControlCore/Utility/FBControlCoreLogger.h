@@ -122,12 +122,13 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 + (id<FBControlCoreLogger>)loggerToConsumer:(id<FBDataConsumer>)consumer;
 
 /**
- Log to a File Handle.
+ Log to a File Descriptor.
 
- @param fileHandle the file handle to write to.
+ @param fileDescriptor the file descriptor to write to.
+ @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
  @return a logger instance.
  */
-+ (id<FBControlCoreLogger>)loggerToFileHandle:(NSFileHandle *)fileHandle;
++ (id<FBControlCoreLogger>)loggerToFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile;
 
 /**
  Strips the newline and returns a nullable string if the string shouldn't be logged.

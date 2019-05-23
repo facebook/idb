@@ -299,7 +299,7 @@
   // In contexts where we run without mirroring enabled.
   return [self compositeLoggerWithLoggers:@[
     systemLogger,
-    [self loggerToFileHandle:NSFileHandle.fileHandleWithStandardError],
+    [self loggerToFileDescriptor:STDERR_FILENO closeOnEndOfFile:NO],
   ]];
 }
 
@@ -315,9 +315,9 @@
   return [[FBControlCoreLogger_Consumer alloc] initWithConsumer:consumer name:nil dateFormatter:nil];
 }
 
-+ (id<FBControlCoreLogger>)loggerToFileHandle:(NSFileHandle *)fileHandle
++ (id<FBControlCoreLogger>)loggerToFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile
 {
-  id<FBDataConsumer> consumer = [FBFileWriter syncWriterWithFileHandle:fileHandle];
+  id<FBDataConsumer> consumer = [FBFileWriter syncWriterWithFileDescriptor:fileDescriptor closeOnEndOfFile:closeOnEndOfFile];
   return [[FBControlCoreLogger_Consumer alloc] initWithConsumer:consumer name:nil dateFormatter:nil];
 }
 

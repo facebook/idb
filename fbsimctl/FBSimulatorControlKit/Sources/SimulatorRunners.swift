@@ -14,7 +14,7 @@ extension FileOutput {
     case .path(let path):
       return try FBFileWriter.syncWriter(forFilePath: path)
     case .standardOut:
-      return FBFileWriter.syncWriter(with: FileHandle.standardOutput)
+      return FBFileWriter.syncWriter(withFileDescriptor: FileHandle.standardOutput.fileDescriptor, closeOnEndOfFile: false)
     }
   }
 }

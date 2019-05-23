@@ -44,8 +44,8 @@
 {
   return [[[FBFuture
     futureWithFutures:@[
-      [FBFileWriter asyncDispatchDataWriterWithFileHandle:self.source],
-      [FBFileWriter asyncDispatchDataWriterWithFileHandle:self.sink],
+      [FBFileWriter asyncDispatchDataWriterWithFileDescriptor:self.source.fileDescriptor closeOnEndOfFile:NO],
+      [FBFileWriter asyncDispatchDataWriterWithFileDescriptor:self.sink.fileDescriptor closeOnEndOfFile:NO],
     ]]
     onQueue:self.queue fmap:^(NSArray<id<FBDispatchDataConsumer>> *consumers) {
       self.sourceWriter = consumers[0];

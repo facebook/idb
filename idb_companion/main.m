@@ -59,11 +59,11 @@ static id<FBControlCoreLogger> CreateRootLogger(NSUserDefaults *defaults)
       exit(1);
     }
 
-    NSFileHandle *logFileHandle = [NSFileHandle fileHandleForUpdatingAtPath:logFileURL.path];
+    int fileDescriptor = open(logFileURL.path.UTF8String, O_WRONLY | O_APPEND | O_CREAT);
     [logger logFormat:@"All logs will be written to %@", logFileURL.path];
     logger = [FBControlCoreLogger compositeLoggerWithLoggers:@[
       logger,
-      [FBControlCoreLogger loggerToFileHandle:logFileHandle],
+      [FBControlCoreLogger loggerToFileDescriptor:fileDescriptor closeOnEndOfFile:YES],
     ]];
   }
   return [logger withDateFormatEnabled:YES];

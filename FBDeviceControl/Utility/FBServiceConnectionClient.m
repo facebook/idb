@@ -25,9 +25,7 @@
 + (FBFutureContext<FBServiceConnectionClient *> *)clientForServiceConnection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger
 {
   NSError *error = nil;
-  // The lifetime of the file descriptor is dictated by the lifetime of the FBAMDServiceConnection, as-such we shouldn't close the file descriptor as this will affect the read/write operations on this socket.
-  NSFileHandle *fileHandle = [[NSFileHandle alloc] initWithFileDescriptor:connection.socket closeOnDealloc:NO];
-  id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:fileHandle error:&error];
+  id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileDescriptor:connection.socket closeOnEndOfFile:NO error:&error];
   if (!writer) {
     return [FBFutureContext futureContextWithError:error];
   }
@@ -37,6 +35,7 @@
     [FBLoggingDataConsumer consumerWithLogger:[logger withName:@"RECV"]],
   ]];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBDeviceControl.ServiceConnection.client", DISPATCH_QUEUE_SERIAL);
+  NSFileHandle *fileHandle = [[NSFileHandle alloc] initWithFileDescriptor:connection.socket closeOnDealloc:NO];
   FBFileReader *reader = [FBFileReader readerWithFileHandle:fileHandle consumer:output logger:nil];
   return [[[reader
     startReading]

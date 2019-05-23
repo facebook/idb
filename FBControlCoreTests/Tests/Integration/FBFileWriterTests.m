@@ -23,7 +23,7 @@
   // Setup
   NSPipe *pipe = NSPipe.pipe;
   NSError *error = nil;
-  id<FBDataConsumer, FBDataConsumerLifecycle> writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:&error];
+  id<FBDataConsumer, FBDataConsumerLifecycle> writer = [FBFileWriter asyncWriterWithFileDescriptor:pipe.fileHandleForWriting.fileDescriptor closeOnEndOfFile:YES error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(writer);
 
@@ -50,7 +50,7 @@
   NSError *error = nil;
   NSString *filePath = [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
   NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:filePath];
-  id<FBDataConsumer, FBDataConsumerLifecycle> writer = [FBFileWriter asyncWriterWithFileHandle:fileHandle error:&error];
+  id<FBDataConsumer, FBDataConsumerLifecycle> writer = [FBFileWriter asyncWriterWithFileDescriptor:fileHandle.fileDescriptor closeOnEndOfFile:YES error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(writer);
 

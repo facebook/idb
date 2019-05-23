@@ -11,10 +11,12 @@
 
 @interface FBFileWriter ()
 
-@property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
+@property (nonatomic, assign, readonly) int fileDescriptor;
+@property (nonatomic, assign, readonly) BOOL closeOnEndOfFile;
+
 @property (nonatomic, strong, readwrite) FBMutableFuture<NSNull *> *eofHasBeenReceivedMutable;
 
-- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle;
+- (instancetype)initWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile;
 
 @end
 
@@ -31,7 +33,7 @@
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 @property (nonatomic, strong, readwrite) dispatch_io_t io;
 
-- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle writeQueue:(dispatch_queue_t)writeQueue;
+- (instancetype)initWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile writeQueue:(dispatch_queue_t)writeQueue;
 
 - (BOOL)startReadingWithError:(NSError **)error;
 
@@ -46,74 +48,75 @@
   return dispatch_queue_create("com.facebook.fbcontrolcore.fbfilewriter", DISPATCH_QUEUE_SERIAL);;
 }
 
-+ (nullable NSFileHandle *)fileHandleForPath:(NSString *)filePath error:(NSError **)error
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)nullWriter
+{
+  return [FBDataConsumerAdaptor dataConsumerForDispatchDataConsumer:[[FBFileWriter_Null alloc] init]];
+}
+
++ (int)fileDescriptorForPath:(NSString *)filePath error:(NSError **)error
 {
   if (![NSFileManager.defaultManager fileExistsAtPath:filePath]) {
     [[NSData data] writeToFile:filePath atomically:YES];
   }
-  NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:filePath];
-  if (!fileHandle) {
+  int fileDescriptor = open(filePath.UTF8String, O_WRONLY);
+  if (!fileDescriptor) {
     return [[FBControlCoreError
-      describeFormat:@"A file handle for path %@ could not be opened", filePath]
-      fail:error];
+      describeFormat:@"A file handle for path %@ could not be opened: %s", filePath, strerror(errno)]
+      failInt:error];
   }
-  return fileHandle;
+  return fileDescriptor;
 }
 
-+ (FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *)asyncDispatchDataWriterWithFileHandle:(NSFileHandle *)fileHandle
++ (FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *)asyncDispatchDataWriterWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile
 {
   NSError *error = nil;
-  FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileHandle:fileHandle writeQueue:self.createWorkQueue];
+  FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileDescriptor:fileDescriptor closeOnEndOfFile:closeOnEndOfFile writeQueue:self.createWorkQueue];
   if (![writer startReadingWithError:&error]) {
     return [FBFuture futureWithError:error];
   }
   return [FBFuture futureWithResult:writer];
 }
 
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)nullWriter
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)syncWriterWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile
 {
-  return [FBDataConsumerAdaptor dataConsumerForDispatchDataConsumer:[[FBFileWriter_Null alloc] init]];
+  return [FBDataConsumerAdaptor dataConsumerForDispatchDataConsumer:[[FBFileWriter_Sync alloc] initWithFileDescriptor:fileDescriptor closeOnEndOfFile:closeOnEndOfFile]];
 }
 
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)syncWriterWithFileHandle:(NSFileHandle *)fileHandle
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)asyncWriterWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile queue:(dispatch_queue_t)queue error:(NSError **)error
 {
-  return [FBDataConsumerAdaptor dataConsumerForDispatchDataConsumer:[[FBFileWriter_Sync alloc] initWithFileHandle:fileHandle]];
-}
-
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle queue:(dispatch_queue_t)queue error:(NSError **)error
-{
-  FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileHandle:fileHandle writeQueue:queue];
+  FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileDescriptor:fileDescriptor closeOnEndOfFile:closeOnEndOfFile writeQueue:queue];
   if (![writer startReadingWithError:error]) {
     return nil;
   }
   return [FBDataConsumerAdaptor dataConsumerForDispatchDataConsumer:writer];
 }
 
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle error:(NSError **)error
++ (id<FBDataConsumer, FBDataConsumerLifecycle>)asyncWriterWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile error:(NSError **)error
 {
   dispatch_queue_t queue = self.createWorkQueue;
-  return [self asyncWriterWithFileHandle:fileHandle queue:queue error:error];
+  return [self asyncWriterWithFileDescriptor:fileDescriptor closeOnEndOfFile:closeOnEndOfFile queue:queue error:error];
 }
 
 + (id<FBDataConsumer, FBDataConsumerLifecycle>)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error
 {
-  NSFileHandle *fileHandle = [self fileHandleForPath:filePath error:error];
-  if (!fileHandle) {
+  int fileDescriptor = [self fileDescriptorForPath:filePath error:error];
+  if (!fileDescriptor) {
     return nil;
   }
-  return [FBFileWriter syncWriterWithFileHandle:fileHandle];
+  return [FBFileWriter syncWriterWithFileDescriptor:fileDescriptor closeOnEndOfFile:YES];
 }
 
 + (FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *)asyncWriterForFilePath:(NSString *)filePath
 {
   dispatch_queue_t queue = self.createWorkQueue;
-  return [[FBFuture
-    onQueue:queue resolveValue:^(NSError **error) {
-      return [FBFileWriter fileHandleForPath:filePath error:error];
-    }]
-    onQueue:queue fmap:^(NSFileHandle *fileHandle) {
-      FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileHandle:fileHandle writeQueue:queue];
+  return [FBFuture
+    onQueue:queue resolve:^() {
       NSError *error = nil;
+      int fileDescriptor = [self fileDescriptorForPath:filePath error:&error];
+      if (!fileDescriptor) {
+        return [FBFuture futureWithError:error];
+      }
+      FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileDescriptor:fileDescriptor closeOnEndOfFile:YES writeQueue:queue];
       if (![writer startReadingWithError:&error]) {
         return [FBFuture futureWithError:error];
       }
@@ -121,14 +124,15 @@
     }];
 }
 
-- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle
+- (instancetype)initWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _fileHandle = fileHandle;
+  _fileDescriptor = fileDescriptor;
+  _closeOnEndOfFile = closeOnEndOfFile;
   _eofHasBeenReceivedMutable = [FBMutableFuture futureWithName:@"EOF Recieved"];
 
   return self;
@@ -163,14 +167,18 @@
 
 - (void)consumeData:(dispatch_data_t)data
 {
-  [self.fileHandle writeData:[FBDataConsumerAdaptor adaptDispatchData:data]];
+  dispatch_data_apply(data, ^ bool (dispatch_data_t region, size_t offset, const void *buffer, size_t size) {
+    write(self.fileDescriptor, buffer, size);
+    return true;
+  });
 }
 
 - (void)consumeEndOfFile
 {
   [self.eofHasBeenReceivedMutable resolveWithResult:NSNull.null];
-  // NSFileHandle has semantics for file closing in `closeOnDealloc`. For these cases where this is YES, the File Descriptor will be closed.
-  self.fileHandle = nil;
+  if (self.closeOnEndOfFile) {
+    close(self.fileDescriptor);
+  }
 }
 
 - (FBFuture<NSNull *> *)eofHasBeenReceived
@@ -184,9 +192,9 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle writeQueue:(dispatch_queue_t)writeQueue
+- (instancetype)initWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile writeQueue:(dispatch_queue_t)writeQueue
 {
-  self = [super initWithFileHandle:fileHandle];
+  self = [super initWithFileDescriptor:fileDescriptor closeOnEndOfFile:closeOnEndOfFile];
   if (!self) {
     return nil;
   }
@@ -246,12 +254,12 @@
   // 10) The cleanup handler is *never* called and the FD is therefore never closed.
   // This isn't a problem in practice if different FDs are splayed, but repeating FDs representing different dispatch channels will cause this problem.
   __weak typeof(self) weakSelf = self;
-  self.io = dispatch_io_create(DISPATCH_IO_STREAM, self.fileHandle.fileDescriptor, self.writeQueue, ^(int errorCode) {
+  self.io = dispatch_io_create(DISPATCH_IO_STREAM, self.fileDescriptor, self.writeQueue, ^(int errorCode) {
     [weakSelf ioChannelDidCloseWithError:errorCode];
   });
   if (!self.io) {
     return [[FBControlCoreError
-      describeFormat:@"A IO Channel could not be created for fd %d", self.fileHandle.fileDescriptor]
+      describeFormat:@"A IO Channel could not be created for fd %d", self.fileDescriptor]
       failBool:error];
   }
 
@@ -262,9 +270,10 @@
 
 - (void)ioChannelDidCloseWithError:(int)errorCode
 {
-  // NSFileHandle has semantics for file closing in `closeOnDealloc`. For these cases where this is YES, the File Descriptor will be closed.
-  self.fileHandle = nil;
   self.io = nil;
+  if (self.closeOnEndOfFile) {
+    close(self.fileDescriptor);
+  }
 }
 
 @end

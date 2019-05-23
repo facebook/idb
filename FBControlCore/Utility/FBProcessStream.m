@@ -187,7 +187,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
       return [self.output attachToFileHandle];
     }]
     onQueue:self.queue map:^ id<FBDataConsumer>  (NSFileHandle *fileHandle) {
-      return [FBFileWriter syncWriterWithFileHandle:fileHandle];
+      return [FBFileWriter syncWriterWithFileDescriptor:fileHandle.fileDescriptor closeOnEndOfFile:YES];
     }]
     onQueue:self.queue fmap:^ FBFuture<id<FBProcessFileOutput>> * (id<FBDataConsumer> writer) {
       self.writer = writer;
@@ -974,7 +974,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
       NSPipe *pipe = NSPipe.pipe;
       NSError *error = nil;
-      id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:&error];
+      id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileDescriptor:pipe.fileHandleForWriting.fileDescriptor closeOnEndOfFile:YES error:&error];
       if (!writer) {
         return [[FBControlCoreError
           describeFormat:@"Failed to create a writer for pipe %@", error]
@@ -1029,13 +1029,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
     attachToPipeOrFileHandle]
     onQueue:self.workQueue fmap:^(NSPipe *pipe) {
       NSError *error = nil;
-      // FBFileWriter will not automatically close a file when it recieves a consumeEndOfFile from a pipe's read handle.
-      // The reason for this is the writer may be used in a context (i.e. sockets) where closing of the file shouldn't occur automatically.
-      // Instead we can wrap the underlying write handle in an NSFileHandle that does close on deallocation of the writer, which will close the write end of the pipe.
-      // We can't just close the file on the last write, since an async writer may have an in-flight dispatch channel open on the file descriptor.
-      // Closing an file descriptor that has an in-flight dispatch channel open will cause a crash in the internals of libdistpatch.
-      NSFileHandle *writeHandle = [[NSFileHandle alloc] initWithFileDescriptor:pipe.fileHandleForWriting.fileDescriptor closeOnDealloc:YES];
-      id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:writeHandle error:&error];
+      id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileDescriptor:pipe.fileHandleForWriting.fileDescriptor closeOnEndOfFile:YES error:&error];
       if (!writer) {
         return [[FBControlCoreError
           describeFormat:@"Failed to create a writer for pipe %@", error]

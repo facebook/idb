@@ -240,11 +240,11 @@ public extension Writer {
 public typealias FileHandleWriter = FBDataConsumer
 public extension FBFileWriter {
   static var stdOutWriter: FileHandleWriter {
-    return FBFileWriter.syncWriter(with: FileHandle.standardOutput)
+    return FBFileWriter.syncWriter(withFileDescriptor: FileHandle.standardOutput.fileDescriptor, closeOnEndOfFile: false)
   }
 
   static var stdErrWriter: FileHandleWriter {
-    return FBFileWriter.syncWriter(with: FileHandle.standardError)
+    return FBFileWriter.syncWriter(withFileDescriptor: FileHandle.standardError.fileDescriptor, closeOnEndOfFile: false)
   }
 }
 
