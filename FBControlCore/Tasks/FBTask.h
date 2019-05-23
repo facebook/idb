@@ -41,15 +41,17 @@ extern NSString *const FBTaskErrorDomain;
  The future returned will resolve when the process has terminated and can be ignored if not required.
 
  @param signo the signal number to send.
- @return a Future that resolves when the process has termintated.
+ @return a successful Future that resolves to the signal number when the process has terminated.
  */
-- (FBFuture *)sendSignal:(int)signo;
+- (FBFuture<NSNumber *> *)sendSignal:(int)signo;
 
 #pragma mark Accessors
 
 /**
  A future that resolves with the exit code when the process has finished.
  Cancelling this future will send a SIGTERM to the launched process.
+ If the process exited with an exit code different than the acceptable
+ values then the future will resolve to failure otherwise it will resolve to success.
  Any errors will also be surfaced in this future.
  */
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *completed;

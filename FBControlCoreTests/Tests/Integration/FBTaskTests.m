@@ -332,10 +332,10 @@
   XCTAssertEqual(task.exitCode.state, FBFutureStateRunning);
 
   NSError *error = nil;
-  BOOL success = [[task sendSignal:SIGINT] await:&error] != nil;
+  FBFuture *future = [task sendSignal:SIGINT];
+  BOOL success = [future await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  XCTAssertEqual(task.completed.state, FBFutureStateDone);
   XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
   XCTAssertEqualObjects(task.exitCode.result, @(SIGINT));
 }
@@ -353,7 +353,7 @@
   BOOL success = [[task sendSignal:SIGKILL] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  XCTAssertEqual(task.completed.state, FBFutureStateDone);
+  XCTAssertEqual(task.completed.state, FBFutureStateFailed);
   XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
   XCTAssertEqualObjects(task.exitCode.result, @(SIGKILL));
 }
@@ -375,9 +375,9 @@
   XCTAssertEqual(task.exitCode.result, @(SIGKILL));
 
   success = [task.completed await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-  XCTAssertEqual(task.completed.state, FBFutureStateDone);
+  XCTAssertNotNil(error);
+  XCTAssertFalse(success);
+  XCTAssertEqual(task.completed.state, FBFutureStateFailed);
 }
 
 - (void)testPipingInputToSuccessivelyRunTasksSucceeds
