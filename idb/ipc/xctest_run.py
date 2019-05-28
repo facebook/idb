@@ -154,5 +154,4 @@ async def daemon(
             await stream.send_message(response)
 
 
-# pyre-fixme[5]: Global expression must be annotated.
-CLIENT_PROPERTIES = [run_xctest]
+CLIENT_PROPERTIES = [run_xctest]  # pyre-ignore
