@@ -226,19 +226,24 @@
   }
 
   // Stop for real be interrupting the task itself.
-  FBFuture<NSNull *> *completed = [[[recordingTask
+  FBFuture<NSNull *> *completed = [[[[recordingTask
     sendSignal:SIGINT backingOfToKillWithTimeout:10]
     logCompletion:self.logger withPurpose:@"The video recording task terminated"]
     onQueue:self.queue fmap:^(NSNumber *result) {
       self.recordingStarted = nil;
       return [FBSimulatorVideo_SimCtl confirmFileHasBeenWritten:filePath queue:self.queue];
+    }]
+    onQueue:self.queue handleError:^(NSError *error) {
+      [self.logger logFormat:@"Failed confirm video file been written %@", error];
+      return [FBFuture futureWithResult:NSNull.null];
     }];
+
   [self.completedFuture resolveFromFuture:completed];
 
   return completed;
 }
 
-static NSTimeInterval const SimctlResolveFileTimeout = 5.0;
+static NSTimeInterval const SimctlResolveFileTimeout = 10;
 
 // simctl, may exit before the underlying video file has been written out to disk.
 // This is unfortunate as we can't guarantee that video file is valid until this happens.
