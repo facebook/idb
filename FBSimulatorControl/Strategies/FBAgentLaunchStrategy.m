@@ -70,11 +70,11 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
   FBSimulator *simulator = self.simulator;
 
   return [[FBFuture
-    futureWithFutures:@[[stdOut attachToFileHandle], [stdErr attachToFileHandle]]]
-    onQueue:simulator.workQueue fmap:^(NSArray<NSFileHandle *> *fileHandles) {
+    futureWithFutures:@[[stdOut attach], [stdErr attach]]]
+    onQueue:simulator.workQueue fmap:^(NSArray<FBProcessStreamAttachment *> *attachments) {
       // Extract the File Handles
-      NSFileHandle *stdOutHandle = fileHandles[0];
-      NSFileHandle *stdErrHandle = fileHandles[1];
+      FBProcessStreamAttachment *stdOutAttachment = attachments[0];
+      FBProcessStreamAttachment *stdErrAttachment = attachments[1];
 
       // Launch the Process
       FBMutableFuture<NSNumber *> *processStatusFuture = [FBMutableFuture futureWithNameFormat:@"Process completion of %@ on %@", agentLaunch.agentBinary.path, simulator.udid];
@@ -84,8 +84,8 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
         arguments:agentLaunch.arguments
         environment:agentLaunch.environment
         waitForDebugger:NO
-        stdOut:stdOutHandle
-        stdErr:stdErrHandle
+        stdOut:stdOutAttachment.fileHandle
+        stdErr:stdErrAttachment.fileHandle
         processStatusFuture:processStatusFuture];
 
       // Wrap in the container object

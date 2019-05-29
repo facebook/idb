@@ -17,6 +17,25 @@
 
 static NSTimeInterval ProcessDetachDrainTimeout = 4;
 
+#pragma mark FBProcessStreamAttachment
+
+@implementation FBProcessStreamAttachment
+
+- (instancetype)initWithPipe:(NSPipe *)pipe fileHandle:(NSFileHandle *)fileHandle
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _pipe = pipe;
+  _fileHandle = fileHandle;
+
+  return self;
+}
+
+@end
+
 #pragma mark FBProcessFileOutput
 
 @interface FBProcessFileOutput_DirectToFile : NSObject <FBProcessFileOutput>
@@ -178,16 +197,16 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 - (FBFuture<NSNull *> *)startReading
 {
   return [[[[[FBFuture
-    onQueue:self.queue resolve:^ FBFuture<NSFileHandle *> * {
+    onQueue:self.queue resolve:^ FBFuture<FBProcessStreamAttachment *> * {
       if (self.writer || self.nested) {
         return [[FBControlCoreError
           describe:@"Cannot call startReading twice"]
           failFuture];
       }
-      return [self.output attachToFileHandle];
+      return [self.output attach];
     }]
-    onQueue:self.queue map:^ id<FBDataConsumer>  (NSFileHandle *fileHandle) {
-      return [FBFileWriter syncWriterWithFileDescriptor:fileHandle.fileDescriptor closeOnEndOfFile:YES];
+    onQueue:self.queue map:^ id<FBDataConsumer>  (FBProcessStreamAttachment *attachment) {
+      return [FBFileWriter syncWriterWithFileDescriptor:attachment.fileHandle.fileDescriptor closeOnEndOfFile:YES];
     }]
     onQueue:self.queue fmap:^ FBFuture<id<FBProcessFileOutput>> * (id<FBDataConsumer> writer) {
       self.writer = writer;
@@ -369,13 +388,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 #pragma mark FBStandardStream
 
-- (FBFuture<NSFileHandle *> *)attachToFileHandle
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (FBFuture<id> *)attachToPipeOrFileHandle
+- (FBFuture<FBProcessStreamAttachment *> *)attach
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -430,14 +443,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 #pragma mark FBStandardStream
 
-- (FBFuture<NSFileHandle *> *)attachToFileHandle
+- (FBFuture<FBProcessStreamAttachment *> *)attach
 {
-  return [FBFuture futureWithResult:NSFileHandle.fileHandleWithNullDevice];
-}
-
-- (FBFuture<NSFileHandle *> *)attachToPipeOrFileHandle
-{
-  return [self attachToFileHandle];
+  return [FBFuture futureWithResult:[[FBProcessStreamAttachment alloc] initWithPipe:nil fileHandle:NSFileHandle.fileHandleWithNullDevice]];
 }
 
 - (FBFuture<NSNull *> *)detach
@@ -475,17 +483,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 #pragma mark FBStandardStream
 
-- (FBFuture<NSFileHandle *> *)attachToFileHandle
-{
-  return [[[self
-    attachToPipeOrFileHandle]
-    onQueue:self.workQueue map:^(NSPipe *pipe) {
-      return pipe.fileHandleForWriting;
-    }]
-    nameFormat:@"Attach to file handle %@", self.description];
-}
-
-- (FBFuture<NSPipe *> *)attachToPipeOrFileHandle
+- (FBFuture<FBProcessStreamAttachment *> *)attach
 {
   return [FBFuture
     onQueue:self.workQueue resolve:^{
@@ -496,7 +494,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
       }
 
       self.pipe = NSPipe.pipe;
-      return [FBFuture futureWithResult:self.pipe];
+      return [FBFuture futureWithResult:[[FBProcessStreamAttachment alloc] initWithPipe:self.pipe fileHandle:self.pipe.fileHandleForWriting]];
     }];
 }
 
@@ -612,30 +610,20 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 #pragma mark FBStandardStream
 
-- (FBFuture<NSFileHandle *> *)attachToFileHandle
-{
-  return [[[self
-    attachToPipeOrFileHandle]
-    onQueue:self.workQueue map:^(NSPipe *pipe) {
-      return pipe.fileHandleForWriting;
-    }]
-    nameFormat:@"Attach to file handle %@", self.description];
-}
-
-- (FBFuture<NSPipe *> *)attachToPipeOrFileHandle
+- (FBFuture<FBProcessStreamAttachment *> *)attach
 {
   return [[super
-    attachToPipeOrFileHandle]
-    onQueue:self.workQueue fmap:^(NSPipe *pipe) {
+    attach]
+    onQueue:self.workQueue fmap:^(FBProcessStreamAttachment *attachment) {
       if (self.reader) {
         return [[FBControlCoreError
           describeFormat:@"Cannot attach to %@ twice", self]
           failFuture];
       }
-      self.reader = [FBFileReader readerWithFileDescriptor:pipe.fileHandleForReading.fileDescriptor closeOnEndOfFile:NO consumer:self.consumer logger:self.logger];
+      self.reader = [FBFileReader readerWithFileDescriptor:attachment.pipe.fileHandleForReading.fileDescriptor closeOnEndOfFile:NO consumer:self.consumer logger:self.logger];
       return [[[self.reader
         startReading]
-        mapReplace:self.pipe]
+        mapReplace:attachment]
         nameFormat:@"Attach to pipe %@", self.description];
     }];
 }
@@ -741,7 +729,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 #pragma mark FBStandardStream
 
-- (FBFuture<NSFileHandle *> *)attachToFileHandle
+- (FBFuture<FBProcessStreamAttachment *> *)attach
 {
   return [[FBFuture
     onQueue:self.workQueue resolve:^{
@@ -757,14 +745,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
           failFuture];
       }
       self.fileHandle = [NSFileHandle fileHandleForWritingAtPath:self.filePath];
-      return [FBFuture futureWithResult:self.fileHandle];
+      return [FBFuture futureWithResult:[[FBProcessStreamAttachment alloc] initWithPipe:nil fileHandle:self.fileHandle]];
     }]
     nameFormat:@"Attach to %@", self.description];
-}
-
-- (FBFuture<NSFileHandle *> *)attachToPipeOrFileHandle
-{
-  return [self attachToFileHandle];
 }
 
 - (FBFuture<NSNull *> *)detach
@@ -947,17 +930,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 #pragma mark FBStandardStream
 
-- (FBFuture<NSFileHandle *> *)attachToFileHandle
-{
-  return [[[self
-    attachToPipeOrFileHandle]
-    onQueue:self.workQueue map:^(NSPipe *pipe) {
-      return pipe.fileHandleForReading;
-    }]
-    nameFormat:@"Attach %@ to file handle", self.description];
-}
-
-- (FBFuture<NSPipe *> *)attachToPipeOrFileHandle
+- (FBFuture<FBProcessStreamAttachment *> *)attach
 {
   return [[FBFuture
     onQueue:self.workQueue resolve:^{
@@ -977,7 +950,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
       }
       self.pipe = pipe;
       dispatch_group_leave(self.pipeGroup);
-      return [FBFuture futureWithResult:pipe];
+      return [FBFuture futureWithResult:[[FBProcessStreamAttachment alloc] initWithPipe:pipe fileHandle:pipe.fileHandleForWriting]];
     }]
     nameFormat:@"Attach %@ to pipe", self.description];
 }
@@ -1018,20 +991,20 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return self;
 }
 
-- (FBFuture<NSPipe *> *)attachToPipeOrFileHandle
+- (FBFuture<FBProcessStreamAttachment *> *)attach
 {
   return [[[super
-    attachToPipeOrFileHandle]
-    onQueue:self.workQueue fmap:^(NSPipe *pipe) {
+    attach]
+    onQueue:self.workQueue fmap:^(FBProcessStreamAttachment *attachment) {
       NSError *error = nil;
-      id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileDescriptor:pipe.fileHandleForWriting.fileDescriptor closeOnEndOfFile:YES error:&error];
+      id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileDescriptor:attachment.fileHandle.fileDescriptor closeOnEndOfFile:YES error:&error];
       if (!writer) {
         return [[FBControlCoreError
           describeFormat:@"Failed to create a writer for pipe %@", error]
           failFuture];
       }
       self.writer = writer;
-      return [FBFuture futureWithResult:pipe];
+      return [FBFuture futureWithResult:attachment];
     }]
     nameFormat:@"Attach %@ to pipe", self.description];
 }
@@ -1085,14 +1058,14 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 #pragma mark FBStandardStream
 
-- (FBFuture<NSPipe *> *)attachToPipeOrFileHandle
+- (FBFuture<FBProcessStreamAttachment *> *)attach
 {
   return [[[super
-    attachToPipeOrFileHandle]
-    onQueue:self.workQueue map:^(NSPipe *pipe) {
+    attach]
+    onQueue:self.workQueue map:^(FBProcessStreamAttachment *attachment) {
       [self.writer consumeData:self.data];
       [self.writer consumeEndOfFile];
-      return pipe;
+      return attachment;
     }]
     nameFormat:@"Attach %@ to pipe", self.description];
 }

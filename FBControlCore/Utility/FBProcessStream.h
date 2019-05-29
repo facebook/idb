@@ -14,24 +14,35 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ An attached standard stream object.
+ */
+@interface FBProcessStreamAttachment : NSObject
+
+/**
+ The pipe to attach to, if backed by a pipe.
+ Prefer using this over fileHandle if present.
+ */
+@property (nonatomic, readonly, strong, nullable) NSPipe *pipe;
+
+/**
+ The file handle to attach to.
+ This will always be present.
+ */
+@property (nonatomic, readonly, strong) NSFileHandle *fileHandle;
+
+@end
+
+/**
  A Protocol that wraps the standard stream stdout, stderr, stdin
  */
 @protocol FBStandardStream <NSObject>
 
 /**
- Attaches to the output, returning a NSFileHandle for writing to.
+ Attaches to the output, returning an FBProcessStreamAttachment.
 
- @return A Future wrapping the File Handle.
+ @return A Future wrapping the FBProcessStreamAttachment.
  */
-- (FBFuture<NSFileHandle *> *)attachToFileHandle;
-
-/**
- Attaches to the output, returning a NSPipe or NSFileHandle for writing to.
- This method will prefer returning a NSPipe since this is more affordant for the NSTask API.
-
- @return A Future wrapping the Pipe or File Handle.
- */
-- (FBFuture<id> *)attachToPipeOrFileHandle;
+- (FBFuture<FBProcessStreamAttachment *> *)attach;
 
 /**
  Tears down the output.

@@ -32,7 +32,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
  @param stdErr the stderr to mount.
  @return a new FBTaskProcess Instance.
  */
-+ (FBFuture<id<FBTaskProcess>> *)processWithConfiguration:(FBTaskConfiguration *)configuration stdIn:(nullable id)stdIn stdOut:(nullable id)stdOut stdErr:(nullable id)stdErr;
++ (FBFuture<id<FBTaskProcess>> *)processWithConfiguration:(FBTaskConfiguration *)configuration stdIn:(FBProcessStreamAttachment *)stdIn stdOut:(FBProcessStreamAttachment *)stdOut stdErr:(FBProcessStreamAttachment *)stdErr;
 
 /**
  Send a signal to the process.
@@ -53,20 +53,20 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 @synthesize processIdentifier = _processIdentifier;
 @synthesize exitCode = _exitCode;
 
-+ (FBFuture<id<FBTaskProcess>> *)processWithConfiguration:(FBTaskConfiguration *)configuration stdIn:(id)stdIn stdOut:(id)stdOut stdErr:(id)stdErr
++ (FBFuture<id<FBTaskProcess>> *)processWithConfiguration:(FBTaskConfiguration *)configuration stdIn:(FBProcessStreamAttachment *)stdIn stdOut:(FBProcessStreamAttachment *)stdOut stdErr:(FBProcessStreamAttachment *)stdErr
 {
   NSTask *task = [[NSTask alloc] init];
   task.environment = configuration.environment;
   task.launchPath = configuration.launchPath;
   task.arguments = configuration.arguments;
   if (stdOut) {
-    task.standardOutput = stdOut;
+    task.standardOutput = stdOut.pipe ?: stdOut.fileHandle;
   }
   if (stdErr) {
-    task.standardError = stdErr;
+    task.standardError = stdErr.pipe ?: stdErr.fileHandle;
   }
   if (stdIn) {
-    task.standardInput = stdIn;
+    task.standardInput = stdIn.pipe ?: stdIn.fileHandle;
   }
   id<FBControlCoreLogger> logger = configuration.logger;
   FBMutableFuture<NSNumber *> *exitCode = FBMutableFuture.future;
@@ -149,22 +149,22 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
   return [[[FBFuture
     futureWithFutures:@[
-      [configuration.stdIn attachToPipeOrFileHandle] ?: (FBFuture<id> *) FBFuture.empty,
-      [configuration.stdOut attachToPipeOrFileHandle] ?: (FBFuture<id> *) FBFuture.empty,
-      [configuration.stdErr attachToPipeOrFileHandle] ?: (FBFuture<id> *) FBFuture.empty,
+      (FBFuture<id> *) [configuration.stdIn attach] ?: (FBFuture<id> *) FBFuture.empty,
+      (FBFuture<id> *) [configuration.stdOut attach] ?: (FBFuture<id> *) FBFuture.empty,
+      (FBFuture<id> *) [configuration.stdErr attach] ?: (FBFuture<id> *) FBFuture.empty,
     ]]
     onQueue:queue fmap:^(NSArray<id> *pipes) {
       // Mount all the relevant std streams.
       id stdIn = pipes[0];
-      if (![stdIn isKindOfClass:NSFileHandle.class] && ![stdIn isKindOfClass:NSPipe.class]) {
+      if (![stdIn isKindOfClass:FBProcessStreamAttachment.class]) {
         stdIn = nil;
       }
       id stdOut = pipes[1];
-      if (![stdOut isKindOfClass:NSFileHandle.class] && ![stdOut isKindOfClass:NSPipe.class]) {
+      if (![stdOut isKindOfClass:FBProcessStreamAttachment.class]) {
         stdOut = nil;
       }
       id stdErr = pipes[2];
-      if (![stdErr isKindOfClass:NSFileHandle.class] && ![stdErr isKindOfClass:NSPipe.class]) {
+      if (![stdErr isKindOfClass:FBProcessStreamAttachment.class]) {
         stdErr = nil;
       }
       // Everything is setup, launch the process now.

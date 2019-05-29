@@ -21,12 +21,13 @@
 
   FBProcessOutput *output = [FBProcessOutput outputForDataConsumer:consumer];
   NSError *error = nil;
-  NSPipe *pipe = [[output attachToPipeOrFileHandle] await:&error];
+  FBProcessStreamAttachment *attachment = [[output attach] await:&error];
   XCTAssertNil(error);
-  XCTAssertTrue([pipe isKindOfClass:NSPipe.class]);
+  XCTAssertTrue([attachment.pipe isKindOfClass:NSPipe.class]);
+  XCTAssertEqual(attachment.pipe.fileHandleForWriting, attachment.fileHandle);
 
-  [pipe.fileHandleForWriting writeData:[@"HELLO WORLD\n" dataUsingEncoding:NSUTF8StringEncoding]];
-  [pipe.fileHandleForWriting writeData:[@"HELLO AGAIN"  dataUsingEncoding:NSUTF8StringEncoding]];
+  [attachment.pipe.fileHandleForWriting writeData:[@"HELLO WORLD\n" dataUsingEncoding:NSUTF8StringEncoding]];
+  [attachment.pipe.fileHandleForWriting writeData:[@"HELLO AGAIN"  dataUsingEncoding:NSUTF8StringEncoding]];
 
   [[output detach] await:&error];
   XCTAssertNil(error);
@@ -79,18 +80,18 @@
 
   dispatch_queue_t concurrentQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
   dispatch_group_t group = dispatch_group_create();
-  __block FBFuture<id> *firstAttempt = nil;
-  __block FBFuture<NSFileHandle *> *secondAttempt = nil;
-  __block FBFuture<id> *thirdAttempt = nil;
+  __block FBFuture<FBProcessStreamAttachment *> *firstAttempt = nil;
+  __block FBFuture<FBProcessStreamAttachment *> *secondAttempt = nil;
+  __block FBFuture<FBProcessStreamAttachment *> *thirdAttempt = nil;
 
   dispatch_group_async(group, concurrentQueue, ^{
-    firstAttempt = [output attachToPipeOrFileHandle];
+    firstAttempt = [output attach];
   });
   dispatch_group_async(group, concurrentQueue, ^{
-    secondAttempt = [output attachToFileHandle];
+    secondAttempt = [output attach];
   });
   dispatch_group_async(group, concurrentQueue, ^{
-    thirdAttempt = [output attachToPipeOrFileHandle];
+    thirdAttempt = [output attach];
   });
   dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
 
