@@ -108,7 +108,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
 /**
  An Output Container for a File Path.
 
- @param filePath the File Path to write to.
+ @param filePath the File Path to write to, may not be nil.
  @return a Process Output instance.
  */
 + (FBProcessOutput<NSString *> *)outputForFilePath:(NSString *)filePath;

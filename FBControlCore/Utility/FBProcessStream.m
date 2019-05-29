@@ -244,7 +244,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 @interface FBProcessOutput_FilePath : FBProcessOutput
 
-@property (nonatomic, copy, nullable, readonly) NSString *filePath;
+@property (nonatomic, copy, readonly) NSString *filePath;
 @property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
 
 - (instancetype)initWithFilePath:(NSString *)filePath;
@@ -749,11 +749,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
         return [[FBControlCoreError
           describeFormat:@"Cannot attach when already attached to file %@", self.fileHandle]
           failFuture];
-      }
-
-      if (!self.filePath) {
-        self.fileHandle = NSFileHandle.fileHandleWithNullDevice;
-        return [FBFuture futureWithResult:self.fileHandle];
       }
 
       if (![NSFileManager.defaultManager createFileAtPath:self.filePath contents:nil attributes:nil]) {
