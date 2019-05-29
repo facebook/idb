@@ -25,6 +25,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 
 /**
  Reads a file in the background, forwarding to a consumer.
+ Closing of a file descriptor when reading has finished is also provided, where relevant.
  */
 @interface FBFileReader : NSObject
 
@@ -32,32 +33,31 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 
 /**
  Creates a file reader from a NSFileHandle.
- The file handle passed in will be retained by the reader until reading has finished.
- The semantics of the closing of the underlying file descriptor are handled by NSFileHandle.
- File descriptors can be automatically closed when they are deallocated by creating a NSFileHandle with `closeOnDealloc:`.
 
- @param fileHandle the file handle to read from. It will be closed when the reader stops.
+ @param fileDescriptor the file descriptor to write to.
+ @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
  @param consumer the consumer to forward to.
  @param logger the logger to use.
  @return a file reader.
  */
-+ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)readerWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Creates a File Reader of Dispatch Data from a File Handle.
 
- @param fileHandle the file handle to read from. It will be closed when the reader stops.
+ @param fileDescriptor the file descriptor to write to.
+ @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
  @param consumer the consumer to forward to.
  @param logger the logger to use.
  @return a File Reader.
  */
-+ (instancetype)dispatchDataReaderWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBDispatchDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)dispatchDataReaderWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile consumer:(id<FBDispatchDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Creates a file reader for a file at path.
  A file handle will be internally created, and closed when reading has finished.
 
- @param filePath the File Path to read from.
+ @param filePath the file path to read from.
  @param consumer the consumer to forward to.
  @param logger the logger to use.
  @return a File Reader, that is available when the underlying file handle has been opened.

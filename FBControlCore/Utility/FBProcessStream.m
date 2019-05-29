@@ -632,7 +632,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
           describeFormat:@"Cannot attach to %@ twice", self]
           failFuture];
       }
-      self.reader = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:self.consumer logger:self.logger];
+      self.reader = [FBFileReader readerWithFileDescriptor:pipe.fileHandleForReading.fileDescriptor closeOnEndOfFile:NO consumer:self.consumer logger:self.logger];
       return [[[self.reader
         startReading]
         mapReplace:self.pipe]

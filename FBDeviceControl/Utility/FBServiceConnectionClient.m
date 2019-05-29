@@ -35,8 +35,7 @@
     [FBLoggingDataConsumer consumerWithLogger:[logger withName:@"RECV"]],
   ]];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBDeviceControl.ServiceConnection.client", DISPATCH_QUEUE_SERIAL);
-  NSFileHandle *fileHandle = [[NSFileHandle alloc] initWithFileDescriptor:connection.socket closeOnDealloc:NO];
-  FBFileReader *reader = [FBFileReader readerWithFileHandle:fileHandle consumer:output logger:nil];
+  FBFileReader *reader = [FBFileReader readerWithFileDescriptor:connection.socket closeOnEndOfFile:NO consumer:output logger:nil];
   return [[[reader
     startReading]
     onQueue:queue map:^(id _) {

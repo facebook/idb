@@ -99,8 +99,7 @@
     startService:@"com.apple.syslog_relay"]
     onQueue:queue pend:^(FBAMDServiceConnection *connection) {
       [logger logFormat:@"Reading log data from %@", connection];
-      NSFileHandle *handle = [[NSFileHandle alloc] initWithFileDescriptor:connection.socket closeOnDealloc:NO]; // The socket file descriptor is torn down by the service teardown.
-      FBFileReader *reader = [FBFileReader readerWithFileHandle:handle consumer:consumer logger:nil];
+      FBFileReader *reader = [FBFileReader readerWithFileDescriptor:connection.socket closeOnEndOfFile:NO consumer:consumer logger:nil];
       return [[reader startReading] mapReplace:reader];
     }]
     onQueue:queue enter:^(FBFileReader *reader, FBMutableFuture<NSNull *> *teardown) {

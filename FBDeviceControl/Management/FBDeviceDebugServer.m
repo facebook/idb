@@ -50,8 +50,8 @@
     onQueue:self.queue fmap:^(NSArray<id<FBDispatchDataConsumer>> *consumers) {
       self.sourceWriter = consumers[0];
       self.sinkWriter = consumers[1];
-      self.sourceReader = [FBFileReader dispatchDataReaderWithFileHandle:self.source consumer:consumers[1] logger:nil];
-      self.sinkReader = [FBFileReader dispatchDataReaderWithFileHandle:self.sink consumer:consumers[0] logger:nil];
+      self.sourceReader = [FBFileReader dispatchDataReaderWithFileDescriptor:self.source.fileDescriptor closeOnEndOfFile:NO consumer:consumers[1] logger:nil];
+      self.sinkReader = [FBFileReader dispatchDataReaderWithFileDescriptor:self.sink.fileDescriptor closeOnEndOfFile:NO consumer:consumers[0] logger:nil];
       return [FBFuture futureWithFutures:@[
         [self.sourceReader startReading],
         [self.sinkReader startReading],
