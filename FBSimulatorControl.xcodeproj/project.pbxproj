@@ -610,8 +610,6 @@
 		EE9E1E491D6CB2CC00860830 /* FBProcessLaunchConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = EE9E1E441D6CB2CC00860830 /* FBProcessLaunchConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EE9E1E4A1D6CB2CC00860830 /* FBProcessLaunchConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = EE9E1E451D6CB2CC00860830 /* FBProcessLaunchConfiguration.m */; };
 		EEBD60181C90628F00298A07 /* FBControlCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; };
-		EEBD605B1C9062E900298A07 /* FBASLParser.h in Headers */ = {isa = PBXBuildFile; fileRef = EEBD602C1C9062E900298A07 /* FBASLParser.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		EEBD605C1C9062E900298A07 /* FBASLParser.m in Sources */ = {isa = PBXBuildFile; fileRef = EEBD602D1C9062E900298A07 /* FBASLParser.m */; };
 		EEBD605D1C9062E900298A07 /* FBCrashLogInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = EEBD602E1C9062E900298A07 /* FBCrashLogInfo.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EEBD605E1C9062E900298A07 /* FBCrashLogInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = EEBD602F1C9062E900298A07 /* FBCrashLogInfo.m */; };
 		EEBD605F1C9062E900298A07 /* FBDiagnostic.h in Headers */ = {isa = PBXBuildFile; fileRef = EEBD60301C9062E900298A07 /* FBDiagnostic.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1554,8 +1552,6 @@
 		EEBD600E1C90628F00298A07 /* FBControlCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = FBControlCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		EEBD60171C90628F00298A07 /* FBControlCoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FBControlCoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EEBD60271C9062CB00298A07 /* FBControlCoreTests-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "FBControlCoreTests-Info.plist"; sourceTree = "<group>"; };
-		EEBD602C1C9062E900298A07 /* FBASLParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBASLParser.h; sourceTree = "<group>"; };
-		EEBD602D1C9062E900298A07 /* FBASLParser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBASLParser.m; sourceTree = "<group>"; };
 		EEBD602E1C9062E900298A07 /* FBCrashLogInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCrashLogInfo.h; sourceTree = "<group>"; };
 		EEBD602F1C9062E900298A07 /* FBCrashLogInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCrashLogInfo.m; sourceTree = "<group>"; };
 		EEBD60301C9062E900298A07 /* FBDiagnostic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDiagnostic.h; sourceTree = "<group>"; };
@@ -2936,8 +2932,6 @@
 		EEBD602B1C9062E900298A07 /* Diagnostics */ = {
 			isa = PBXGroup;
 			children = (
-				EEBD602C1C9062E900298A07 /* FBASLParser.h */,
-				EEBD602D1C9062E900298A07 /* FBASLParser.m */,
 				AAAD5F791D5475DE008D3870 /* FBBatchLogSearch.h */,
 				AAAD5F7A1D5475DE008D3870 /* FBBatchLogSearch.m */,
 				AA4AF525224A9515008DDDC0 /* FBCrashLog.h */,
@@ -3289,7 +3283,6 @@
 				EEBD60761C9062E900298A07 /* FBBinaryParser.h in Headers */,
 				AADC72F12012BF7A001060E5 /* FBAccessibilityTraits.h in Headers */,
 				AAD0DE031CEB064200C28B58 /* FBSubstringUtilities.h in Headers */,
-				EEBD605B1C9062E900298A07 /* FBASLParser.h in Headers */,
 				7352B4DE1F44C16C00B6D0EA /* FBControlCoreError+Process.h in Headers */,
 				AA308FF620E37F9A00503C90 /* FBFutureContextManager.h in Headers */,
 				AACA33581C96F8D100DC9704 /* FBFileFinder.h in Headers */,
@@ -3994,7 +3987,6 @@
 				AA9AAAEC1DE4C3F60056B127 /* FBProcessOutputConfiguration.m in Sources */,
 				73E0A9751F4F361800A216AD /* FBBundleDescriptor+Application.m in Sources */,
 				EEBD605E1C9062E900298A07 /* FBCrashLogInfo.m in Sources */,
-				EEBD605C1C9062E900298A07 /* FBASLParser.m in Sources */,
 				AAD0DE041CEB064200C28B58 /* FBSubstringUtilities.m in Sources */,
 				AA23F1D422424D9B00F504CC /* FBArchiveOperations.m in Sources */,
 				AA9485E52074B38C00716117 /* FBControlCoreLogger+OSLog.m in Sources */,
