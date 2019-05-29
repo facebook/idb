@@ -3,68 +3,49 @@
 
 from typing import AsyncIterable, AsyncIterator, Dict, Iterable, List, Optional, Tuple
 
-from idb.common.types import HIDButtonType
-from idb.grpc.idb_pb2 import HIDEvent, HIDResponse, Point
+from idb.common.types import (
+    HIDButton,
+    HIDButtonType,
+    HIDDelay,
+    HIDDirection,
+    HIDEvent,
+    HIDKey,
+    HIDPress,
+    HIDPressAction,
+    HIDSwipe,
+    HIDTouch,
+    Point,
+)
+from idb.grpc.idb_pb2 import HIDEvent as GrpcHIDEvent, HIDResponse
 from idb.grpc.stream import Stream, drain_to_stream
 from idb.grpc.types import CompanionClient
-
-
-HIDButton = HIDEvent.HIDButton
-HIDDelay = HIDEvent.HIDDelay
-HIDKey = HIDEvent.HIDKey
-HIDPress = HIDEvent.HIDPress
-HIDPressAction = HIDEvent.HIDPressAction
-HIDSwipe = HIDEvent.HIDSwipe
-HIDTouch = HIDEvent.HIDTouch
+from idb.ipc.mapping.hid import event_to_grpc
 
 
 def tap_to_events(x: int, y: int, duration: Optional[float] = None) -> List[HIDEvent]:
-    return _press_with_duration(
-        HIDPressAction(touch=HIDTouch(point=Point(x=x, y=y))), duration=duration
-    )
+    return _press_with_duration(HIDTouch(point=Point(x=x, y=y)), duration=duration)
 
 
 def button_press_to_events(
     button: HIDButtonType, duration: Optional[float] = None
 ) -> List[HIDEvent]:
-    # Need to convert between the py enum that starts at 1 and the grpc enum
-    # that starts at 0
-    return _press_with_duration(
-        HIDPressAction(button=HIDButton(button=_translate_button_type(button))),
-        duration=duration,
-    )
-
-
-def _translate_button_type(button: HIDButtonType) -> HIDEvent.HIDButtonType:
-    if button == HIDButtonType.APPLE_PAY:
-        return HIDEvent.APPLE_PAY
-    elif button == HIDButtonType.HOME:
-        return HIDEvent.HOME
-    elif button == HIDButtonType.LOCK:
-        return HIDEvent.LOCK
-    elif button == HIDButtonType.SIDE_BUTTON:
-        return HIDEvent.SIDE_BUTTON
-    elif button == HIDButtonType.SIRI:
-        return HIDEvent.SIRI
-    raise Exception(f"Unexpected button type {button}")
+    return _press_with_duration(HIDButton(button=button), duration=duration)
 
 
 def key_press_to_events(
     keycode: int, duration: Optional[float] = None
 ) -> List[HIDEvent]:
-    return _press_with_duration(
-        HIDPressAction(key=HIDKey(keycode=keycode)), duration=duration
-    )
+    return _press_with_duration(HIDKey(keycode=keycode), duration=duration)
 
 
 def _press_with_duration(
     action: HIDPressAction, duration: Optional[float] = None
 ) -> List[HIDEvent]:
     events = []
-    events.append(HIDEvent(press=HIDPress(action=action, direction=HIDEvent.DOWN)))
+    events.append(HIDPress(action=action, direction=HIDDirection.DOWN))
     if duration:
-        events.append(HIDEvent(delay=HIDDelay(duration=duration)))
-    events.append(HIDEvent(press=HIDPress(action=action, direction=HIDEvent.UP)))
+        events.append(HIDDelay(duration=duration))
+    events.append(HIDPress(action=action, direction=HIDDirection.UP))
     return events
 
 
@@ -75,23 +56,15 @@ def swipe_to_events(
 ) -> List[HIDEvent]:
     start = Point(x=p_start[0], y=p_start[1])
     end = Point(x=p_end[0], y=p_end[1])
-    return [HIDEvent(swipe=HIDSwipe(start=start, end=end, delta=delta))]
+    return [HIDSwipe(start=start, end=end, delta=delta)]
 
 
 def _key_down_event(keycode: int) -> HIDEvent:
-    return HIDEvent(
-        press=HIDPress(
-            action=HIDPressAction(key=HIDKey(keycode=keycode)), direction=HIDEvent.DOWN
-        )
-    )
+    return HIDPress(action=HIDKey(keycode=keycode), direction=HIDDirection.DOWN)
 
 
 def _key_up_event(keycode: int) -> HIDEvent:
-    return HIDEvent(
-        press=HIDPress(
-            action=HIDPressAction(key=HIDKey(keycode=keycode)), direction=HIDEvent.UP
-        )
-    )
+    return HIDPress(action=HIDKey(keycode=keycode), direction=HIDDirection.UP)
 
 
 def key_press_shifted_to_events(keycode: int) -> List[HIDEvent]:
@@ -265,14 +238,15 @@ async def key_sequence(client: CompanionClient, key_sequence: List[int]) -> None
 
 async def hid(client: CompanionClient, event_iterator: AsyncIterable[HIDEvent]) -> None:
     async with client.stub.hid.open() as stream:
+        grpc_event_iterator = (event_to_grpc(event) async for event in event_iterator)
         await drain_to_stream(
-            stream=stream, generator=event_iterator, logger=client.logger
+            stream=stream, generator=grpc_event_iterator, logger=client.logger
         )
         await stream.recv_message()
 
 
 async def daemon(
-    client: CompanionClient, stream: Stream[HIDEvent, HIDResponse]
+    client: CompanionClient, stream: Stream[GrpcHIDEvent, HIDResponse]
 ) -> None:
     async with client.stub.hid.open() as companion:
         response = await drain_to_stream(

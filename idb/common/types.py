@@ -5,7 +5,17 @@ import asyncio
 from abc import ABCMeta
 from enum import Enum
 from io import StringIO
-from typing import AsyncIterator, Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import (
+    AsyncIterable,
+    AsyncIterator,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 
 LoggingMetadata = Dict[str, Optional[Union[str, List[str], int, float]]]
@@ -141,6 +151,49 @@ class InstalledTestInfo(NamedTuple):
     bundle_id: str
     name: Optional[str]
     architectures: Optional[Set[str]]
+
+
+class HIDDirection(Enum):
+    DOWN = 0
+    UP = 1
+
+
+class Point(NamedTuple):
+    x: float
+    y: float
+
+
+class HIDTouch(NamedTuple):
+    point: Point
+
+
+class HIDButton(NamedTuple):
+    button: HIDButtonType
+
+
+class HIDKey(NamedTuple):
+    keycode: int
+
+
+HIDPressAction = Union[HIDTouch, HIDButton, HIDKey]
+
+
+class HIDPress(NamedTuple):
+    action: HIDPressAction
+    direction: HIDDirection
+
+
+class HIDSwipe(NamedTuple):
+    start: Point
+    end: Point
+    delta: Optional[float]
+
+
+class HIDDelay(NamedTuple):
+    duration: float
+
+
+HIDEvent = Union[HIDPress, HIDSwipe, HIDDelay]
 
 
 class IdbClientBase:
@@ -350,6 +403,9 @@ class IdbClientBase:
         pass
 
     async def rm(self, bundle_id: str, paths: List[str]) -> None:
+        pass
+
+    async def hid(self, event_iterator: AsyncIterable[HIDEvent]) -> None:
         pass
 
 
