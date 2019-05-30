@@ -151,9 +151,9 @@
         [self _saveTestArtifactsOfTestRunnerApp:testRunnerApp withFilenameMatchGlobs:self.configuration.testArtifactsFilenameGlobs];
       }
 
-      if (result.crashDiagnostic) {
+      if (result.crash) {
         return [[FBXCTestError
-          describeFormat:@"The Application Crashed during the Test Run\n%@", result.crashDiagnostic.asString]
+          describeFormat:@"The Application Crashed during the Test Run\n%@", result.crash]
           failFuture];
       }
       if (result.error) {

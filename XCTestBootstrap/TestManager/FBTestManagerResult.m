@@ -26,7 +26,7 @@
   return nil;
 }
 
-- (FBDiagnostic *)crashDiagnostic
+- (FBCrashLogInfo *)crash
 {
   return nil;
 }
@@ -53,7 +53,7 @@
   return nil;
 }
 
-- (FBDiagnostic *)crashDiagnostic
+- (FBCrashLogInfo *)crash
 {
   return nil;
 }
@@ -95,7 +95,7 @@
     build];
 }
 
-- (FBDiagnostic *)crashDiagnostic
+- (FBCrashLogInfo *)crash
 {
   return nil;
 }
@@ -108,19 +108,21 @@
 @end
 
 @interface FBTestManagerResult_TestHostCrashed : FBTestManagerResult
-@property (nonatomic, strong, readonly) FBDiagnostic *underlyingCrashDiagnostic;
+
+@property (nonatomic, strong, readonly) FBCrashLogInfo *underlyingCrash;
+
 @end
 
 @implementation FBTestManagerResult_TestHostCrashed
 
-- (instancetype)initWithCrashDiagnostic:(FBDiagnostic *)crashDiagnostic
+- (instancetype)initWithCrashDiagnostic:(FBCrashLogInfo *)crash
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _underlyingCrashDiagnostic = crashDiagnostic;
+  _underlyingCrash = crash;
 
   return self;
 }
@@ -133,13 +135,13 @@
 - (NSError *)error
 {
   return [[XCTestBootstrapError
-    describeFormat:@"The Test Host Crashed: %@", self.underlyingCrashDiagnostic]
+    describeFormat:@"The Test Host Crashed: %@", self.underlyingCrash]
     build];
 }
 
-- (FBDiagnostic *)crashDiagnostic
+- (FBCrashLogInfo *)crash
 {
-  return self.underlyingCrashDiagnostic;
+  return self.underlyingCrash;
 }
 
 - (NSString *)description
@@ -177,7 +179,7 @@
   return self.underlyingError;
 }
 
-- (FBDiagnostic *)crashDiagnostic
+- (FBCrashLogInfo *)crash
 {
   return nil;
 }
@@ -211,8 +213,8 @@
 + (instancetype)bundleConnectionFailed:(FBTestBundleResult *)bundleResult
 {
   NSParameterAssert(bundleResult.didEndSuccessfully == NO);
-  if (bundleResult.diagnostic) {
-    return [[FBTestManagerResult_TestHostCrashed alloc] initWithCrashDiagnostic:bundleResult.diagnostic];
+  if (bundleResult.crash) {
+    return [[FBTestManagerResult_TestHostCrashed alloc] initWithCrashDiagnostic:bundleResult.crash];
   }
   NSParameterAssert(bundleResult.error);
   return [[FBTestManagerResult_InternalError alloc] initWithError:bundleResult.error];
@@ -244,7 +246,7 @@
   return nil;
 }
 
-- (FBDiagnostic *)crashDiagnostic
+- (FBCrashLogInfo *)crash
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;

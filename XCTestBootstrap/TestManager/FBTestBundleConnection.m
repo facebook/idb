@@ -317,8 +317,7 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
       findCrashedProcessLog]
       onQueue:self.target.workQueue notifyOfCompletion:^(FBFuture<FBCrashLogInfo *> *future) {
         if (future.result) {
-          FBDiagnostic *diagnostics = [future.result toDiagnostic:FBDiagnosticBuilder.builder];
-          [self concludeWithResult:[FBTestBundleResult bundleCrashedDuringTestRun:diagnostics]];
+          [self concludeWithResult:[FBTestBundleResult bundleCrashedDuringTestRun:future.result]];
         } else {
           XCTestBootstrapError *error = [[XCTestBootstrapError
             describeFormat:@"Lost connection to test process with state '%@' with error: %@", state, future.error]

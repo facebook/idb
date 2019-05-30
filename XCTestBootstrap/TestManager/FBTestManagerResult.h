@@ -7,12 +7,12 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBDiagnostic;
+NS_ASSUME_NONNULL_BEGIN
+
+@class FBCrashLogInfo;
 @class FBTestBundleResult;
 @class FBTestDaemonResult;
 @class XCTestBootstrapError;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Value Representing the end-result of a Test Run.
@@ -79,7 +79,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Diagnostic for the Crash of a Test Host, if relevant.
  */
-@property (nonatomic, strong, nullable, readonly) FBDiagnostic *crashDiagnostic;
+@property (nonatomic, strong, nullable, readonly) FBCrashLogInfo *crash;
 
 @end
 

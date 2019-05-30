@@ -47,7 +47,7 @@
   return nil;
 }
 
-- (FBDiagnostic *)diagnostic
+- (FBCrashLogInfo *)crash
 {
   return nil;
 }

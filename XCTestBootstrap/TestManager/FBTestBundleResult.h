@@ -9,7 +9,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBDiagnostic;
+@class FBCrashLogInfo;
 @class XCTestBootstrapError;
 
 /**
@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Result that represents a Test Bundle crashing during a test run.
  */
-+ (instancetype)bundleCrashedDuringTestRun:(FBDiagnostic *)diagnostic;
++ (instancetype)bundleCrashedDuringTestRun:(FBCrashLogInfo *)crash;
 
 /**
  A Failure Result.
@@ -50,7 +50,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Diagnostic for a crash.
  */
-@property (nonatomic, strong, nullable, readonly) FBDiagnostic *diagnostic;
+@property (nonatomic, strong, nullable, readonly) FBCrashLogInfo *crash;
 
 @end
 
