@@ -7,65 +7,65 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		27B700E21D9D27F30067A882 /* ParserDescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274F22E01D9BCFCD00A7C072 /* ParserDescription.swift */; };
 		27B700E41D9D40A90067A882 /* ParserDescriptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B700E31D9D40A90067A882 /* ParserDescriptionTests.swift */; };
-		AA07E85C2295806100453C8D /* FBiOSActionRouter.m in Sources */ = {isa = PBXBuildFile; fileRef = AA07E8582295806100453C8D /* FBiOSActionRouter.m */; };
-		AA07E85D2295806100453C8D /* FBiOSActionRouter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA07E8592295806100453C8D /* FBiOSActionRouter.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA07E85E2295806100453C8D /* FBiOSActionReader.h in Headers */ = {isa = PBXBuildFile; fileRef = AA07E85A2295806100453C8D /* FBiOSActionReader.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA07E85F2295806100453C8D /* FBiOSActionReader.m in Sources */ = {isa = PBXBuildFile; fileRef = AA07E85B2295806100453C8D /* FBiOSActionReader.m */; };
-		AA07E866229580D200453C8D /* FBReportingiOSActionReaderDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = AA07E864229580D200453C8D /* FBReportingiOSActionReaderDelegate.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA07E867229580D200453C8D /* FBReportingiOSActionReaderDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = AA07E865229580D200453C8D /* FBReportingiOSActionReaderDelegate.m */; };
-		AA07E86A2295834300453C8D /* FBUploadBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = AA07E8682295834300453C8D /* FBUploadBuffer.m */; };
-		AA07E86B2295834300453C8D /* FBUploadBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = AA07E8692295834300453C8D /* FBUploadBuffer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA099CB71DB697000078BF1E /* JSONTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA099CB61DB697000078BF1E /* JSONTests.swift */; };
-		AA0DE44E1C68894000B4D2AF /* HttpRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */; };
 		AA1B7F571C2866410038C6A5 /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; };
 		AA1B7F591C2866570038C6A5 /* FBSimulatorControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AA1B7F6B1C2867EE0038C6A5 /* Bridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */; };
-		AA1B7F6C1C2867EE0038C6A5 /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5D1C2867EE0038C6A5 /* Command.swift */; };
-		AA1B7F6D1C2867EE0038C6A5 /* CommandParsers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */; };
-		AA1B7F6E1C2867EE0038C6A5 /* Bridging.h in Headers */ = {isa = PBXBuildFile; fileRef = AA1B7F5F1C2867EE0038C6A5 /* Bridging.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA1B7F6F1C2867EE0038C6A5 /* Bridging.m in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F601C2867EE0038C6A5 /* Bridging.m */; };
-		AA1B7F701C2867EE0038C6A5 /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F611C2867EE0038C6A5 /* Help.swift */; };
-		AA1B7F731C2867EE0038C6A5 /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F641C2867EE0038C6A5 /* Parser.swift */; };
-		AA1B7F741C2867EE0038C6A5 /* Relay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F651C2867EE0038C6A5 /* Relay.swift */; };
-		AA1B7F751C2867EE0038C6A5 /* Runners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F661C2867EE0038C6A5 /* Runners.swift */; };
-		AA1B7F761C2867EE0038C6A5 /* SignalHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */; };
-		AA23910E1D1922EE00905C7F /* CLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA23910D1D1922EE00905C7F /* CLI.swift */; };
 		AA2AFD751C294158000123BA /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD741C294158000123BA /* TestHelpers.swift */; };
-		AA384EE01CB4F1FC00476BB8 /* AbstractTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA384EDF1CB4F1FC00476BB8 /* AbstractTypes.swift */; };
-		AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
-		AA3DB6401CB3A971000BE7A1 /* SimulatorReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3DB63F1CB3A971000BE7A1 /* SimulatorReporter.swift */; };
 		AA3F8BDE1D70AD40002197D3 /* GCDWebServers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA3F8BDD1D70AD40002197D3 /* GCDWebServers.framework */; };
-		AA54EF721C4814BA006D5118 /* Arguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF711C4814BA006D5118 /* Arguments.swift */; };
-		AA54EF751C48275B006D5118 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF741C48275B006D5118 /* JSON.swift */; };
-		AA5AA62C1CCE003900EC0298 /* ActionPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5AA62B1CCE003900EC0298 /* ActionPerformer.swift */; };
-		AA6046901C7A96E500639DD5 /* SimulatorRunners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA60468E1C7A96E500639DD5 /* SimulatorRunners.swift */; };
 		AA719E4C1D672DBD00947611 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA719E4B1D672DBD00947611 /* Foundation.framework */; };
 		AA719E4D1D672DCA00947611 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA719E4B1D672DBD00947611 /* Foundation.framework */; };
-		AA75CD161D243F73003C45B0 /* DeviceReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA75CD151D243F73003C45B0 /* DeviceReporter.swift */; };
 		AA75CD1A1D244152003C45B0 /* FBDeviceControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA75CD171D244100003C45B0 /* FBDeviceControl.framework */; };
 		AA75CD1B1D244198003C45B0 /* FBDeviceControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AA75CD171D244100003C45B0 /* FBDeviceControl.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AA78DCD61C4E9A09006FAB41 /* EventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */; };
-		AA83D5EC1C58E368003B253E /* Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5EA1C58E368003B253E /* Events.swift */; };
+		AA852416229E87CF00FC7D36 /* Bridging.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8523EC229E87CF00FC7D36 /* Bridging.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA852417229E87CF00FC7D36 /* FBiOSActionReader.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8523ED229E87CF00FC7D36 /* FBiOSActionReader.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA852419229E87CF00FC7D36 /* FBiOSActionRouter.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8523EF229E87CF00FC7D36 /* FBiOSActionRouter.m */; };
+		AA85241A229E87CF00FC7D36 /* FBUploadBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8523F0229E87CF00FC7D36 /* FBUploadBuffer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA85241B229E87CF00FC7D36 /* FBReportingiOSActionReaderDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8523F1229E87CF00FC7D36 /* FBReportingiOSActionReaderDelegate.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA85241C229E87CF00FC7D36 /* FBiOSActionReader.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8523F2229E87CF00FC7D36 /* FBiOSActionReader.m */; };
+		AA85241D229E87CF00FC7D36 /* Bridging.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8523F3229E87CF00FC7D36 /* Bridging.m */; };
+		AA85241E229E87CF00FC7D36 /* FBReportingiOSActionReaderDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8523F4229E87CF00FC7D36 /* FBReportingiOSActionReaderDelegate.m */; };
+		AA85241F229E87CF00FC7D36 /* FBUploadBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8523F5229E87CF00FC7D36 /* FBUploadBuffer.m */; };
+		AA852420229E87CF00FC7D36 /* FBiOSActionRouter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8523F6229E87CF00FC7D36 /* FBiOSActionRouter.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA852422229E87CF00FC7D36 /* ActionPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA8523F9229E87CF00FC7D36 /* ActionPerformer.swift */; };
+		AA852423229E87CF00FC7D36 /* Runners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA8523FA229E87CF00FC7D36 /* Runners.swift */; };
+		AA852424229E87CF00FC7D36 /* DeviceReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA8523FB229E87CF00FC7D36 /* DeviceReporter.swift */; };
+		AA852425229E87CF00FC7D36 /* CommandParsers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA8523FC229E87CF00FC7D36 /* CommandParsers.swift */; };
+		AA852426229E87CF00FC7D36 /* SignalHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA8523FD229E87CF00FC7D36 /* SignalHandler.swift */; };
+		AA852427229E87CF00FC7D36 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA8523FE229E87CF00FC7D36 /* Environment.swift */; };
+		AA852428229E87CF00FC7D36 /* iOSRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA8523FF229E87CF00FC7D36 /* iOSRunner.swift */; };
+		AA852429229E87CF00FC7D36 /* HttpRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA852400229E87CF00FC7D36 /* HttpRelay.swift */; };
+		AA85242A229E87CF00FC7D36 /* CLIBootstrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA852401229E87CF00FC7D36 /* CLIBootstrapper.swift */; };
+		AA85242B229E87CF00FC7D36 /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA852402229E87CF00FC7D36 /* Help.swift */; };
+		AA85242C229E87CF00FC7D36 /* DeviceRunners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA852403229E87CF00FC7D36 /* DeviceRunners.swift */; };
+		AA85242D229E87CF00FC7D36 /* Arguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA852404229E87CF00FC7D36 /* Arguments.swift */; };
+		AA85242F229E87CF00FC7D36 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA852406229E87CF00FC7D36 /* JSON.swift */; };
+		AA852430229E87CF00FC7D36 /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA852407229E87CF00FC7D36 /* Command.swift */; };
+		AA852431229E87CF00FC7D36 /* SimulatorRunners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA852408229E87CF00FC7D36 /* SimulatorRunners.swift */; };
+		AA852432229E87CF00FC7D36 /* Subjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA852409229E87CF00FC7D36 /* Subjects.swift */; };
+		AA852433229E87CF00FC7D36 /* AbstractTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA85240A229E87CF00FC7D36 /* AbstractTypes.swift */; };
+		AA852434229E87CF00FC7D36 /* Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA85240B229E87CF00FC7D36 /* Events.swift */; };
+		AA852435229E87CF00FC7D36 /* SimulatorReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA85240C229E87CF00FC7D36 /* SimulatorReporter.swift */; };
+		AA852436229E87CF00FC7D36 /* ParserDescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA85240D229E87CF00FC7D36 /* ParserDescription.swift */; };
+		AA852437229E87CF00FC7D36 /* Bridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA85240E229E87CF00FC7D36 /* Bridging.swift */; };
+		AA852438229E87CF00FC7D36 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA85240F229E87CF00FC7D36 /* Defaults.swift */; };
+		AA852439229E87CF00FC7D36 /* CommandRunners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA852410229E87CF00FC7D36 /* CommandRunners.swift */; };
+		AA85243A229E87CF00FC7D36 /* CLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA852411229E87CF00FC7D36 /* CLI.swift */; };
+		AA85243B229E87CF00FC7D36 /* EventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA852412229E87CF00FC7D36 /* EventReporter.swift */; };
+		AA85243C229E87CF00FC7D36 /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA852413229E87CF00FC7D36 /* Parser.swift */; };
+		AA85243D229E87CF00FC7D36 /* iOSReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA852414229E87CF00FC7D36 /* iOSReporter.swift */; };
+		AA85243E229E87CF00FC7D36 /* Relay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA852415229E87CF00FC7D36 /* Relay.swift */; };
 		AA8F94241D74AFE500DB0F14 /* GCDWebServers.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AA3F8BDD1D70AD40002197D3 /* GCDWebServers.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		AAA6C3AB1D08899600720BF6 /* iOSReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA6C3AA1D08899600720BF6 /* iOSReporter.swift */; };
-		AAA6C3AF1D0953F400720BF6 /* iOSRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA6C3AE1D0953F400720BF6 /* iOSRunner.swift */; };
 		AAA6EC531C933DAE0083A62C /* Fixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA6EC521C933DAE0083A62C /* Fixtures.swift */; };
 		AAA6EC561C933DDA0083A62C /* photo0.png in Resources */ = {isa = PBXBuildFile; fileRef = AAA6EC541C933DDA0083A62C /* photo0.png */; };
 		AAA6EC571C933DDA0083A62C /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = AAA6EC551C933DDA0083A62C /* video0.mp4 */; };
 		AAA6EC591C96A5DD0083A62C /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = AAA6EC581C96A5DD0083A62C /* main.m */; };
-		AAAD4A2F1CB3AF6C00B2068C /* Subjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAD4A2E1CB3AF6C00B2068C /* Subjects.swift */; };
-		AAB97CAB1CCE8EAD0056A3C2 /* CommandRunners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAB97CAA1CCE8EAD0056A3C2 /* CommandRunners.swift */; };
-		AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
 		AAE35AC51C2865C10073CC70 /* FBSimulatorControlKit.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE35AC41C2865C10073CC70 /* FBSimulatorControlKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAE35ACC1C2865C10073CC70 /* FBSimulatorControlKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */; };
-		AAE9E9551D23B4140033EF28 /* DeviceRunners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE9E9541D23B4140033EF28 /* DeviceRunners.swift */; };
 		AAFD4A361CC5082D00FF38FA /* CommandParsersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFD4A341CC5082D00FF38FA /* CommandParsersTests.swift */; };
 		AAFD4A371CC5082D00FF38FA /* EnvironmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFD4A351CC5082D00FF38FA /* EnvironmentTests.swift */; };
 		AAFD4A391CC5084600FF38FA /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFD4A381CC5084600FF38FA /* IntegrationTests.swift */; };
 		AAFE7AB11C92F01300D92E46 /* FBSimulatorControlKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */; };
-		AAFE7AB31C92F19D00D92E46 /* CLIBootstrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFE7AB21C92F19D00D92E46 /* CLIBootstrapper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -111,69 +111,69 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		274F22E01D9BCFCD00A7C072 /* ParserDescription.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ParserDescription.swift; sourceTree = "<group>"; };
 		27B700E31D9D40A90067A882 /* ParserDescriptionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ParserDescriptionTests.swift; sourceTree = "<group>"; };
-		AA07E8582295806100453C8D /* FBiOSActionRouter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSActionRouter.m; sourceTree = "<group>"; };
-		AA07E8592295806100453C8D /* FBiOSActionRouter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSActionRouter.h; sourceTree = "<group>"; };
-		AA07E85A2295806100453C8D /* FBiOSActionReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSActionReader.h; sourceTree = "<group>"; };
-		AA07E85B2295806100453C8D /* FBiOSActionReader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSActionReader.m; sourceTree = "<group>"; };
-		AA07E864229580D200453C8D /* FBReportingiOSActionReaderDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBReportingiOSActionReaderDelegate.h; sourceTree = "<group>"; };
-		AA07E865229580D200453C8D /* FBReportingiOSActionReaderDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBReportingiOSActionReaderDelegate.m; sourceTree = "<group>"; };
-		AA07E8682295834300453C8D /* FBUploadBuffer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBUploadBuffer.m; sourceTree = "<group>"; };
-		AA07E8692295834300453C8D /* FBUploadBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBUploadBuffer.h; sourceTree = "<group>"; };
 		AA099CB61DB697000078BF1E /* JSONTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSONTests.swift; sourceTree = "<group>"; };
-		AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HttpRelay.swift; sourceTree = "<group>"; };
-		AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Bridging.swift; sourceTree = "<group>"; };
-		AA1B7F5D1C2867EE0038C6A5 /* Command.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Command.swift; sourceTree = "<group>"; };
-		AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = CommandParsers.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
-		AA1B7F5F1C2867EE0038C6A5 /* Bridging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Bridging.h; sourceTree = "<group>"; };
-		AA1B7F601C2867EE0038C6A5 /* Bridging.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Bridging.m; sourceTree = "<group>"; };
-		AA1B7F611C2867EE0038C6A5 /* Help.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Help.swift; sourceTree = "<group>"; };
-		AA1B7F641C2867EE0038C6A5 /* Parser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
-		AA1B7F651C2867EE0038C6A5 /* Relay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Relay.swift; sourceTree = "<group>"; };
-		AA1B7F661C2867EE0038C6A5 /* Runners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Runners.swift; sourceTree = "<group>"; };
-		AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SignalHandler.swift; sourceTree = "<group>"; };
-		AA23910D1D1922EE00905C7F /* CLI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLI.swift; sourceTree = "<group>"; };
 		AA2AFD741C294158000123BA /* TestHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
-		AA384EDF1CB4F1FC00476BB8 /* AbstractTypes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AbstractTypes.swift; sourceTree = "<group>"; };
-		AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
-		AA3DB63F1CB3A971000BE7A1 /* SimulatorReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimulatorReporter.swift; sourceTree = "<group>"; };
 		AA3F8BDD1D70AD40002197D3 /* GCDWebServers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GCDWebServers.framework; path = Carthage/Build/Mac/GCDWebServers.framework; sourceTree = "<group>"; };
-		AA54EF711C4814BA006D5118 /* Arguments.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Arguments.swift; sourceTree = "<group>"; };
-		AA54EF741C48275B006D5118 /* JSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
-		AA5AA62B1CCE003900EC0298 /* ActionPerformer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActionPerformer.swift; sourceTree = "<group>"; };
-		AA60468E1C7A96E500639DD5 /* SimulatorRunners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimulatorRunners.swift; sourceTree = "<group>"; };
 		AA719E4B1D672DBD00947611 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
-		AA75CD151D243F73003C45B0 /* DeviceReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeviceReporter.swift; sourceTree = "<group>"; };
 		AA75CD171D244100003C45B0 /* FBDeviceControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBDeviceControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventReporter.swift; sourceTree = "<group>"; };
 		AA7D2F5E1D33807F00C7C6CF /* FBSimulatorControlKit.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBSimulatorControlKit.xcconfig; sourceTree = "<group>"; };
 		AA7D2F5F1D33844000C7C6CF /* fbsimctl.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = fbsimctl.xcconfig; sourceTree = "<group>"; };
 		AA7D2F611D33867D00C7C6CF /* FBSimulatorControlKitTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBSimulatorControlKitTests.xcconfig; sourceTree = "<group>"; };
-		AA83D5EA1C58E368003B253E /* Events.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Events.swift; sourceTree = "<group>"; };
+		AA8523EC229E87CF00FC7D36 /* Bridging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Bridging.h; sourceTree = "<group>"; };
+		AA8523ED229E87CF00FC7D36 /* FBiOSActionReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSActionReader.h; sourceTree = "<group>"; };
+		AA8523EF229E87CF00FC7D36 /* FBiOSActionRouter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSActionRouter.m; sourceTree = "<group>"; };
+		AA8523F0229E87CF00FC7D36 /* FBUploadBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBUploadBuffer.h; sourceTree = "<group>"; };
+		AA8523F1229E87CF00FC7D36 /* FBReportingiOSActionReaderDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBReportingiOSActionReaderDelegate.h; sourceTree = "<group>"; };
+		AA8523F2229E87CF00FC7D36 /* FBiOSActionReader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSActionReader.m; sourceTree = "<group>"; };
+		AA8523F3229E87CF00FC7D36 /* Bridging.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Bridging.m; sourceTree = "<group>"; };
+		AA8523F4229E87CF00FC7D36 /* FBReportingiOSActionReaderDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBReportingiOSActionReaderDelegate.m; sourceTree = "<group>"; };
+		AA8523F5229E87CF00FC7D36 /* FBUploadBuffer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBUploadBuffer.m; sourceTree = "<group>"; };
+		AA8523F6229E87CF00FC7D36 /* FBiOSActionRouter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSActionRouter.h; sourceTree = "<group>"; };
+		AA8523F9229E87CF00FC7D36 /* ActionPerformer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActionPerformer.swift; sourceTree = "<group>"; };
+		AA8523FA229E87CF00FC7D36 /* Runners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Runners.swift; sourceTree = "<group>"; };
+		AA8523FB229E87CF00FC7D36 /* DeviceReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeviceReporter.swift; sourceTree = "<group>"; };
+		AA8523FC229E87CF00FC7D36 /* CommandParsers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandParsers.swift; sourceTree = "<group>"; };
+		AA8523FD229E87CF00FC7D36 /* SignalHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SignalHandler.swift; sourceTree = "<group>"; };
+		AA8523FE229E87CF00FC7D36 /* Environment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
+		AA8523FF229E87CF00FC7D36 /* iOSRunner.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iOSRunner.swift; sourceTree = "<group>"; };
+		AA852400229E87CF00FC7D36 /* HttpRelay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HttpRelay.swift; sourceTree = "<group>"; };
+		AA852401229E87CF00FC7D36 /* CLIBootstrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLIBootstrapper.swift; sourceTree = "<group>"; };
+		AA852402229E87CF00FC7D36 /* Help.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Help.swift; sourceTree = "<group>"; };
+		AA852403229E87CF00FC7D36 /* DeviceRunners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeviceRunners.swift; sourceTree = "<group>"; };
+		AA852404229E87CF00FC7D36 /* Arguments.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Arguments.swift; sourceTree = "<group>"; };
+		AA852406229E87CF00FC7D36 /* JSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
+		AA852407229E87CF00FC7D36 /* Command.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Command.swift; sourceTree = "<group>"; };
+		AA852408229E87CF00FC7D36 /* SimulatorRunners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimulatorRunners.swift; sourceTree = "<group>"; };
+		AA852409229E87CF00FC7D36 /* Subjects.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Subjects.swift; sourceTree = "<group>"; };
+		AA85240A229E87CF00FC7D36 /* AbstractTypes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AbstractTypes.swift; sourceTree = "<group>"; };
+		AA85240B229E87CF00FC7D36 /* Events.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Events.swift; sourceTree = "<group>"; };
+		AA85240C229E87CF00FC7D36 /* SimulatorReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimulatorReporter.swift; sourceTree = "<group>"; };
+		AA85240D229E87CF00FC7D36 /* ParserDescription.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ParserDescription.swift; sourceTree = "<group>"; };
+		AA85240E229E87CF00FC7D36 /* Bridging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Bridging.swift; sourceTree = "<group>"; };
+		AA85240F229E87CF00FC7D36 /* Defaults.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
+		AA852410229E87CF00FC7D36 /* CommandRunners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandRunners.swift; sourceTree = "<group>"; };
+		AA852411229E87CF00FC7D36 /* CLI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLI.swift; sourceTree = "<group>"; };
+		AA852412229E87CF00FC7D36 /* EventReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventReporter.swift; sourceTree = "<group>"; };
+		AA852413229E87CF00FC7D36 /* Parser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
+		AA852414229E87CF00FC7D36 /* iOSReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iOSReporter.swift; sourceTree = "<group>"; };
+		AA852415229E87CF00FC7D36 /* Relay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Relay.swift; sourceTree = "<group>"; };
 		AA93B7B01BE8351000CF6A56 /* fbsimctl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fbsimctl; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		AAA6C3AA1D08899600720BF6 /* iOSReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iOSReporter.swift; sourceTree = "<group>"; };
-		AAA6C3AE1D0953F400720BF6 /* iOSRunner.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iOSRunner.swift; sourceTree = "<group>"; };
 		AAA6EC521C933DAE0083A62C /* Fixtures.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Fixtures.swift; sourceTree = "<group>"; };
 		AAA6EC541C933DDA0083A62C /* photo0.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = photo0.png; sourceTree = "<group>"; };
 		AAA6EC551C933DDA0083A62C /* video0.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = video0.mp4; sourceTree = "<group>"; };
 		AAA6EC581C96A5DD0083A62C /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		AAAD4A2E1CB3AF6C00B2068C /* Subjects.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Subjects.swift; sourceTree = "<group>"; };
-		AAB97CAA1CCE8EAD0056A3C2 /* CommandRunners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandRunners.swift; sourceTree = "<group>"; };
 		AAC179691E52F33E00BAE9F2 /* FBSimulatorControlKit-Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "FBSimulatorControlKit-Debug.xcconfig"; sourceTree = "<group>"; };
 		AAC1796A1E52F33E00BAE9F2 /* FBSimulatorControlKit-Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "FBSimulatorControlKit-Release.xcconfig"; sourceTree = "<group>"; };
-		AACF9F521C46E5C100B17E82 /* Environment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
 		AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = FBSimulatorControlKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAE35AC41C2865C10073CC70 /* FBSimulatorControlKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControlKit.h; sourceTree = "<group>"; };
 		AAE35AC61C2865C10073CC70 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AAE35ACB1C2865C10073CC70 /* FBSimulatorControlKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FBSimulatorControlKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAE35AD21C2865C10073CC70 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		AAE9E9541D23B4140033EF28 /* DeviceRunners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeviceRunners.swift; sourceTree = "<group>"; };
 		AAFD4A341CC5082D00FF38FA /* CommandParsersTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = CommandParsersTests.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		AAFD4A351CC5082D00FF38FA /* EnvironmentTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EnvironmentTests.swift; sourceTree = "<group>"; };
 		AAFD4A381CC5084600FF38FA /* IntegrationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IntegrationTests.swift; sourceTree = "<group>"; };
-		AAFE7AB21C92F19D00D92E46 /* CLIBootstrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLIBootstrapper.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -208,51 +208,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		AA1B7F5A1C2867EE0038C6A5 /* Sources */ = {
-			isa = PBXGroup;
-			children = (
-				AA384EDF1CB4F1FC00476BB8 /* AbstractTypes.swift */,
-				AA5AA62B1CCE003900EC0298 /* ActionPerformer.swift */,
-				AA54EF711C4814BA006D5118 /* Arguments.swift */,
-				AA1B7F5F1C2867EE0038C6A5 /* Bridging.h */,
-				AA1B7F601C2867EE0038C6A5 /* Bridging.m */,
-				AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */,
-				AA23910D1D1922EE00905C7F /* CLI.swift */,
-				AAFE7AB21C92F19D00D92E46 /* CLIBootstrapper.swift */,
-				AA1B7F5D1C2867EE0038C6A5 /* Command.swift */,
-				AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */,
-				AAB97CAA1CCE8EAD0056A3C2 /* CommandRunners.swift */,
-				AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */,
-				AA75CD151D243F73003C45B0 /* DeviceReporter.swift */,
-				AAE9E9541D23B4140033EF28 /* DeviceRunners.swift */,
-				AACF9F521C46E5C100B17E82 /* Environment.swift */,
-				AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */,
-				AA83D5EA1C58E368003B253E /* Events.swift */,
-				AA07E85A2295806100453C8D /* FBiOSActionReader.h */,
-				AA07E85B2295806100453C8D /* FBiOSActionReader.m */,
-				AA07E8592295806100453C8D /* FBiOSActionRouter.h */,
-				AA07E8582295806100453C8D /* FBiOSActionRouter.m */,
-				AA07E864229580D200453C8D /* FBReportingiOSActionReaderDelegate.h */,
-				AA07E865229580D200453C8D /* FBReportingiOSActionReaderDelegate.m */,
-				AA07E8692295834300453C8D /* FBUploadBuffer.h */,
-				AA07E8682295834300453C8D /* FBUploadBuffer.m */,
-				AA1B7F611C2867EE0038C6A5 /* Help.swift */,
-				AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */,
-				AAA6C3AA1D08899600720BF6 /* iOSReporter.swift */,
-				AAA6C3AE1D0953F400720BF6 /* iOSRunner.swift */,
-				AA54EF741C48275B006D5118 /* JSON.swift */,
-				AA1B7F641C2867EE0038C6A5 /* Parser.swift */,
-				274F22E01D9BCFCD00A7C072 /* ParserDescription.swift */,
-				AA1B7F651C2867EE0038C6A5 /* Relay.swift */,
-				AA1B7F661C2867EE0038C6A5 /* Runners.swift */,
-				AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */,
-				AA3DB63F1CB3A971000BE7A1 /* SimulatorReporter.swift */,
-				AA60468E1C7A96E500639DD5 /* SimulatorRunners.swift */,
-				AAAD4A2E1CB3AF6C00B2068C /* Subjects.swift */,
-			);
-			path = Sources;
-			sourceTree = "<group>";
-		};
 		AA2AFD701C29412C000123BA /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
@@ -268,6 +223,58 @@
 				AAFD4A331CC5082D00FF38FA /* Unit */,
 			);
 			path = Tests;
+			sourceTree = "<group>";
+		};
+		AA8523EB229E87CF00FC7D36 /* Objective-C */ = {
+			isa = PBXGroup;
+			children = (
+				AA8523EC229E87CF00FC7D36 /* Bridging.h */,
+				AA8523F3229E87CF00FC7D36 /* Bridging.m */,
+				AA8523ED229E87CF00FC7D36 /* FBiOSActionReader.h */,
+				AA8523F2229E87CF00FC7D36 /* FBiOSActionReader.m */,
+				AA8523F6229E87CF00FC7D36 /* FBiOSActionRouter.h */,
+				AA8523EF229E87CF00FC7D36 /* FBiOSActionRouter.m */,
+				AA8523F1229E87CF00FC7D36 /* FBReportingiOSActionReaderDelegate.h */,
+				AA8523F4229E87CF00FC7D36 /* FBReportingiOSActionReaderDelegate.m */,
+				AA8523F0229E87CF00FC7D36 /* FBUploadBuffer.h */,
+				AA8523F5229E87CF00FC7D36 /* FBUploadBuffer.m */,
+			);
+			path = "Objective-C";
+			sourceTree = "<group>";
+		};
+		AA8523F8229E87CF00FC7D36 /* Swift */ = {
+			isa = PBXGroup;
+			children = (
+				AA85240A229E87CF00FC7D36 /* AbstractTypes.swift */,
+				AA8523F9229E87CF00FC7D36 /* ActionPerformer.swift */,
+				AA852404229E87CF00FC7D36 /* Arguments.swift */,
+				AA85240E229E87CF00FC7D36 /* Bridging.swift */,
+				AA852411229E87CF00FC7D36 /* CLI.swift */,
+				AA852401229E87CF00FC7D36 /* CLIBootstrapper.swift */,
+				AA852407229E87CF00FC7D36 /* Command.swift */,
+				AA8523FC229E87CF00FC7D36 /* CommandParsers.swift */,
+				AA852410229E87CF00FC7D36 /* CommandRunners.swift */,
+				AA85240F229E87CF00FC7D36 /* Defaults.swift */,
+				AA8523FB229E87CF00FC7D36 /* DeviceReporter.swift */,
+				AA852403229E87CF00FC7D36 /* DeviceRunners.swift */,
+				AA8523FE229E87CF00FC7D36 /* Environment.swift */,
+				AA852412229E87CF00FC7D36 /* EventReporter.swift */,
+				AA85240B229E87CF00FC7D36 /* Events.swift */,
+				AA852402229E87CF00FC7D36 /* Help.swift */,
+				AA852400229E87CF00FC7D36 /* HttpRelay.swift */,
+				AA852414229E87CF00FC7D36 /* iOSReporter.swift */,
+				AA8523FF229E87CF00FC7D36 /* iOSRunner.swift */,
+				AA852406229E87CF00FC7D36 /* JSON.swift */,
+				AA852413229E87CF00FC7D36 /* Parser.swift */,
+				AA85240D229E87CF00FC7D36 /* ParserDescription.swift */,
+				AA852415229E87CF00FC7D36 /* Relay.swift */,
+				AA8523FA229E87CF00FC7D36 /* Runners.swift */,
+				AA8523FD229E87CF00FC7D36 /* SignalHandler.swift */,
+				AA85240C229E87CF00FC7D36 /* SimulatorReporter.swift */,
+				AA852408229E87CF00FC7D36 /* SimulatorRunners.swift */,
+				AA852409229E87CF00FC7D36 /* Subjects.swift */,
+			);
+			path = Swift;
 			sourceTree = "<group>";
 		};
 		AA93B7A71BE8351000CF6A56 = {
@@ -329,7 +336,8 @@
 				AAC179691E52F33E00BAE9F2 /* FBSimulatorControlKit-Debug.xcconfig */,
 				AAC1796A1E52F33E00BAE9F2 /* FBSimulatorControlKit-Release.xcconfig */,
 				AA7D2F5E1D33807F00C7C6CF /* FBSimulatorControlKit.xcconfig */,
-				AA1B7F5A1C2867EE0038C6A5 /* Sources */,
+				AA8523EB229E87CF00FC7D36 /* Objective-C */,
+				AA8523F8229E87CF00FC7D36 /* Swift */,
 			);
 			path = FBSimulatorControlKit;
 			sourceTree = "<group>";
@@ -372,12 +380,12 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA07E866229580D200453C8D /* FBReportingiOSActionReaderDelegate.h in Headers */,
-				AA1B7F6E1C2867EE0038C6A5 /* Bridging.h in Headers */,
-				AA07E85E2295806100453C8D /* FBiOSActionReader.h in Headers */,
-				AA07E85D2295806100453C8D /* FBiOSActionRouter.h in Headers */,
+				AA85241B229E87CF00FC7D36 /* FBReportingiOSActionReaderDelegate.h in Headers */,
+				AA852420229E87CF00FC7D36 /* FBiOSActionRouter.h in Headers */,
+				AA852417229E87CF00FC7D36 /* FBiOSActionReader.h in Headers */,
+				AA85241A229E87CF00FC7D36 /* FBUploadBuffer.h in Headers */,
+				AA852416229E87CF00FC7D36 /* Bridging.h in Headers */,
 				AAE35AC51C2865C10073CC70 /* FBSimulatorControlKit.h in Headers */,
-				AA07E86B2295834300453C8D /* FBUploadBuffer.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -508,39 +516,39 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AAFE7AB31C92F19D00D92E46 /* CLIBootstrapper.swift in Sources */,
-				AA54EF721C4814BA006D5118 /* Arguments.swift in Sources */,
-				27B700E21D9D27F30067A882 /* ParserDescription.swift in Sources */,
-				AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */,
-				AA75CD161D243F73003C45B0 /* DeviceReporter.swift in Sources */,
-				AAAD4A2F1CB3AF6C00B2068C /* Subjects.swift in Sources */,
-				AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */,
-				AA1B7F6F1C2867EE0038C6A5 /* Bridging.m in Sources */,
-				AAA6C3AB1D08899600720BF6 /* iOSReporter.swift in Sources */,
-				AA6046901C7A96E500639DD5 /* SimulatorRunners.swift in Sources */,
-				AA54EF751C48275B006D5118 /* JSON.swift in Sources */,
-				AAA6C3AF1D0953F400720BF6 /* iOSRunner.swift in Sources */,
-				AA78DCD61C4E9A09006FAB41 /* EventReporter.swift in Sources */,
-				AA3DB6401CB3A971000BE7A1 /* SimulatorReporter.swift in Sources */,
-				AA83D5EC1C58E368003B253E /* Events.swift in Sources */,
-				AA1B7F701C2867EE0038C6A5 /* Help.swift in Sources */,
-				AAE9E9551D23B4140033EF28 /* DeviceRunners.swift in Sources */,
-				AA1B7F731C2867EE0038C6A5 /* Parser.swift in Sources */,
-				AA1B7F6B1C2867EE0038C6A5 /* Bridging.swift in Sources */,
-				AA23910E1D1922EE00905C7F /* CLI.swift in Sources */,
-				AA1B7F751C2867EE0038C6A5 /* Runners.swift in Sources */,
-				AA1B7F6D1C2867EE0038C6A5 /* CommandParsers.swift in Sources */,
-				AA1B7F6C1C2867EE0038C6A5 /* Command.swift in Sources */,
-				AA0DE44E1C68894000B4D2AF /* HttpRelay.swift in Sources */,
-				AA07E867229580D200453C8D /* FBReportingiOSActionReaderDelegate.m in Sources */,
-				AA5AA62C1CCE003900EC0298 /* ActionPerformer.swift in Sources */,
-				AA384EE01CB4F1FC00476BB8 /* AbstractTypes.swift in Sources */,
-				AA07E86A2295834300453C8D /* FBUploadBuffer.m in Sources */,
-				AA1B7F761C2867EE0038C6A5 /* SignalHandler.swift in Sources */,
-				AA1B7F741C2867EE0038C6A5 /* Relay.swift in Sources */,
-				AA07E85C2295806100453C8D /* FBiOSActionRouter.m in Sources */,
-				AAB97CAB1CCE8EAD0056A3C2 /* CommandRunners.swift in Sources */,
-				AA07E85F2295806100453C8D /* FBiOSActionReader.m in Sources */,
+				AA85242D229E87CF00FC7D36 /* Arguments.swift in Sources */,
+				AA85241F229E87CF00FC7D36 /* FBUploadBuffer.m in Sources */,
+				AA852427229E87CF00FC7D36 /* Environment.swift in Sources */,
+				AA85243B229E87CF00FC7D36 /* EventReporter.swift in Sources */,
+				AA85243E229E87CF00FC7D36 /* Relay.swift in Sources */,
+				AA85243D229E87CF00FC7D36 /* iOSReporter.swift in Sources */,
+				AA852428229E87CF00FC7D36 /* iOSRunner.swift in Sources */,
+				AA852434229E87CF00FC7D36 /* Events.swift in Sources */,
+				AA85241E229E87CF00FC7D36 /* FBReportingiOSActionReaderDelegate.m in Sources */,
+				AA85241C229E87CF00FC7D36 /* FBiOSActionReader.m in Sources */,
+				AA852419229E87CF00FC7D36 /* FBiOSActionRouter.m in Sources */,
+				AA852433229E87CF00FC7D36 /* AbstractTypes.swift in Sources */,
+				AA852425229E87CF00FC7D36 /* CommandParsers.swift in Sources */,
+				AA852426229E87CF00FC7D36 /* SignalHandler.swift in Sources */,
+				AA852437229E87CF00FC7D36 /* Bridging.swift in Sources */,
+				AA85243A229E87CF00FC7D36 /* CLI.swift in Sources */,
+				AA852422229E87CF00FC7D36 /* ActionPerformer.swift in Sources */,
+				AA852431229E87CF00FC7D36 /* SimulatorRunners.swift in Sources */,
+				AA852435229E87CF00FC7D36 /* SimulatorReporter.swift in Sources */,
+				AA852429229E87CF00FC7D36 /* HttpRelay.swift in Sources */,
+				AA852430229E87CF00FC7D36 /* Command.swift in Sources */,
+				AA85242F229E87CF00FC7D36 /* JSON.swift in Sources */,
+				AA852436229E87CF00FC7D36 /* ParserDescription.swift in Sources */,
+				AA85242C229E87CF00FC7D36 /* DeviceRunners.swift in Sources */,
+				AA85243C229E87CF00FC7D36 /* Parser.swift in Sources */,
+				AA852439229E87CF00FC7D36 /* CommandRunners.swift in Sources */,
+				AA852432229E87CF00FC7D36 /* Subjects.swift in Sources */,
+				AA852424229E87CF00FC7D36 /* DeviceReporter.swift in Sources */,
+				AA852423229E87CF00FC7D36 /* Runners.swift in Sources */,
+				AA85242A229E87CF00FC7D36 /* CLIBootstrapper.swift in Sources */,
+				AA852438229E87CF00FC7D36 /* Defaults.swift in Sources */,
+				AA85242B229E87CF00FC7D36 /* Help.swift in Sources */,
+				AA85241D229E87CF00FC7D36 /* Bridging.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
