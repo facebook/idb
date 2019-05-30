@@ -594,17 +594,12 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
           describeFormat:@"No crashes matching %@", predicate]
           failFuture];
       }
-      FBCrashLogInfo *info = crashes.firstObject;
       NSError *error = nil;
-      NSString *contents = [NSString stringWithContentsOfFile:info.crashPath encoding:NSUTF8StringEncoding error:&error];
-      if (!contents) {
-        return [[[FBIDBError
-          describeFormat:@"Failed to read crash log for %@", info]
-          causedBy:error]
-          failFuture];
+      FBCrashLog *log = [crashes.firstObject obtainCrashLogWithError:&error];
+      if (!log) {
+        return [FBFuture futureWithError:error];
       }
-      FBCrashLog *crash = [FBCrashLog fromInfo:info contents:contents];
-      return [FBFuture futureWithResult:crash];
+      return [FBFuture futureWithResult:log];
     }];
 }
 

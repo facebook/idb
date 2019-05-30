@@ -372,7 +372,11 @@ static NSString *const FBDiagnosticQueryCrashesSystem = @"system";
     onQueue:target.asyncQueue map:^(NSArray<FBCrashLogInfo *> *crashes) {
       NSMutableArray<FBDiagnostic *> *diagnostics = [NSMutableArray array];
       for (FBCrashLogInfo *crash in crashes) {
-        [diagnostics addObject:[crash toDiagnostic:FBDiagnosticBuilder.builder]];
+        FBDiagnostic *diagnostic = [[[FBDiagnosticBuilder.builder
+          updateShortName:crash.crashPath.lastPathComponent]
+          updatePath:crash.crashPath]
+          build];
+        [diagnostics addObject:diagnostic];
       }
       return diagnostics;
     }];

@@ -7,7 +7,7 @@
 
 #import "FBCrashLogNotifier.h"
 
-#import "FBCrashLogInfo.h"
+#import "FBCrashLog.h"
 #import "FBCrashLogStore.h"
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"

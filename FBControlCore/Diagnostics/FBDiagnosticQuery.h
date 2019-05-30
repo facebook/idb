@@ -8,10 +8,12 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBiOSTargetFuture.h>
-#import <FBControlCore/FBCrashLogInfo.h>
+#import <FBControlCore/FBCrashLog.h>
 #import <FBControlCore/NSPredicate+FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+@class FBDiagnostic;
 
 /**
  The Action Type for a Diagnostic Query.

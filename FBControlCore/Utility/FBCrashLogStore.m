@@ -7,7 +7,7 @@
 
 #import "FBCrashLogStore.h"
 
-#import "FBCrashLogInfo.h"
+#import "FBCrashLog.h"
 #import "FBControlCoreLogger.h"
 
 typedef NSString *FBCrashLogNotificationName NS_STRING_ENUM;

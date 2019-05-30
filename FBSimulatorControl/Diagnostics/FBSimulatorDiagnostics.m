@@ -83,8 +83,11 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
   return [FBConcurrentCollectionOperations
     filterMap:[self launchdSimSubprocessCrashesPathsAfterDate:date]
     predicate:predicate
-    map:^ FBDiagnostic * (FBCrashLogInfo *logInfo) {
-      return [logInfo toDiagnostic:self.baseLogBuilder];
+    map:^ FBDiagnostic * (FBCrashLogInfo *crash) {
+      return [[[self.baseLogBuilder
+        updateShortName:crash.crashPath.lastPathComponent]
+        updatePath:crash.crashPath]
+        build];
     }];
 }
 
