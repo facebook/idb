@@ -19,7 +19,7 @@
 
 @property (nonatomic, strong, readonly) id<FBSocketConsumer> consumer;
 
-@property (nonatomic, strong, nullable, readonly) NSFileHandle *fileHandle;
+@property (nonatomic, assign, readonly) int fileDescriptor;
 @property (nonatomic, strong, nullable, readonly) FBFileReader *reader;
 @property (nonatomic, strong, nullable, readonly) id<FBDataConsumer> writer;
 
@@ -30,14 +30,14 @@
 
 @implementation FBSocketConnectionManager_Connection
 
-- (instancetype)initWithConsumer:(id<FBSocketConsumer>)consumer fileHandle:(NSFileHandle *)fileHandle completionQueue:(dispatch_queue_t)completionQueue completionHandler:(void(^)(void))completionHandler
+- (instancetype)initWithConsumer:(id<FBSocketConsumer>)consumer fileDescriptor:(int)fileDescriptor completionQueue:(dispatch_queue_t)completionQueue completionHandler:(void(^)(void))completionHandler
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _fileHandle = fileHandle;
+  _fileDescriptor = fileDescriptor;
   _consumer = consumer;
   _completionQueue = completionQueue;
   _completionHandler = completionHandler;
@@ -48,12 +48,12 @@
 - (FBFuture<NSNull *> *)startConsuming
 {
   NSError *error = nil;
-  _writer = [FBFileWriter asyncWriterWithFileDescriptor:self.fileHandle.fileDescriptor closeOnEndOfFile:YES error:&error];
+  _writer = [FBFileWriter asyncWriterWithFileDescriptor:self.fileDescriptor closeOnEndOfFile:YES error:&error];
   if (!_writer) {
     [self teardown];
     return [FBFuture futureWithError:error];
   }
-  _reader = [FBFileReader readerWithFileDescriptor:self.fileHandle.fileDescriptor closeOnEndOfFile:NO consumer:self logger:nil];
+  _reader = [FBFileReader readerWithFileDescriptor:self.fileDescriptor closeOnEndOfFile:NO consumer:self logger:nil];
   return [[_reader
     startReading]
     onQueue:dispatch_get_main_queue() chain:^(FBFuture<NSNull *> *future) {
@@ -138,22 +138,22 @@
 
 #pragma mark FBSocketServerDelegate
 
-- (void)socketServer:(FBSocketServer *)server clientConnected:(struct in6_addr)address handle:(NSFileHandle *)fileHandle
+- (void)socketServer:(FBSocketServer *)server clientConnected:(struct in6_addr)address fileDescriptor:(int)fileDescriptor
 {
   // Create the Consumer.
   id<FBSocketConsumer> consumer = [self.delegate consumerWithClientAddress:address];
   __weak typeof(self) weakSelf = self;
 
   // Create the Connection
-  FBSocketConnectionManager_Connection *connection = [[FBSocketConnectionManager_Connection alloc] initWithConsumer:consumer fileHandle:fileHandle completionQueue:self.queue completionHandler:^{
-    [weakSelf.connections removeObjectForKey:@(fileHandle.fileDescriptor)];
+  FBSocketConnectionManager_Connection *connection = [[FBSocketConnectionManager_Connection alloc] initWithConsumer:consumer fileDescriptor:fileDescriptor completionQueue:self.queue completionHandler:^{
+    [weakSelf.connections removeObjectForKey:@(fileDescriptor)];
   }];
   // Bail early if the connection could not be consumed
   if (![[connection startConsuming] await:nil]) {
     return;
   }
   // Retain the connection, it will be released in the completion.
-  self.connections[@(fileHandle.fileDescriptor)] = connection;
+  self.connections[@(fileDescriptor)] = connection;
 }
 
 @end

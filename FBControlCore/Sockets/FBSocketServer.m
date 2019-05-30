@@ -154,8 +154,7 @@
 
   // Notify the Delegate the queue it wished to be notified on.
   dispatch_async(clientQueue, ^{
-    NSFileHandle *fileHandle = [[NSFileHandle alloc] initWithFileDescriptor:acceptHandle closeOnDealloc:YES];
-    [self.delegate socketServer:self clientConnected:address.sin6_addr handle:fileHandle];
+    [self.delegate socketServer:self clientConnected:address.sin6_addr fileDescriptor:acceptHandle];
   });
   return YES;
 }

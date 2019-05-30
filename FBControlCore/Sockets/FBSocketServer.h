@@ -71,14 +71,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Called when the socket server has a new client connected.
- The File Handle return will close on deallocation so it is up to consumers to retain it if it needs to use it.
+ The File Descriptor will not be automatically be closed, so it's up to implementors to ensure that this happens so file descriptors do not leak.
  If you wish to reject the connection, close the file handle immediately.
 
  @param server the socket server.
  @param address the IP Address of the connected client.
- @param fileHandle the file handle of the connected socket.
+ @param fileDescriptor the file descriptor of the connected socket.
  */
-- (void)socketServer:(FBSocketServer *)server clientConnected:(struct in6_addr)address handle:(NSFileHandle *)fileHandle;
+- (void)socketServer:(FBSocketServer *)server clientConnected:(struct in6_addr)address fileDescriptor:(int)fileDescriptor;
 
 /**
  The Queue on which the Delegate will be called.
