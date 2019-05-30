@@ -188,7 +188,7 @@
   NSString *binaryPath = [bundle executablePath];
   if (!binaryPath) {
     return [[FBControlCoreError
-      describeFormat:@"Could not obtain binary path for bundle %@", bundle]
+      describeFormat:@"Could not obtain binary path for bundle %@", bundle.bundlePath]
       fail:error];
   }
 
