@@ -7,8 +7,6 @@
 
 #import "FBProcessOutputConfiguration.h"
 
-#import <FBControlCore/FBControlCore.h>
-
 NSString *const FBProcessOutputToFileDefaultLocation = @"FBProcessOutputToFileDefaultLocation";
 
 @implementation FBProcessOutputConfiguration
@@ -135,46 +133,22 @@ static NSString *StdErrKey = @"stderr";
 
 - (FBFuture<FBProcessOutput *> *)createOutputForTarget:(id<FBiOSTarget>)target selector:(SEL)selector
 {
-  return [[self
-    createDiagnosticForSelector:selector target:target]
-    onQueue:target.workQueue fmap:^FBFuture *(id maybeDiagnostic) {
-      if ([maybeDiagnostic isKindOfClass:FBDiagnostic.class]) {
-        FBDiagnostic *diagnostic = maybeDiagnostic;
-        NSString *path = diagnostic.asPath;
-        return [FBFuture futureWithResult:[FBProcessOutput outputForFilePath:path]];
+  id output = [self performSelector:selector];
+  if ([output isKindOfClass:NSString.class]) {
+    NSString *path = output;
+      if (![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {
+        return [[FBControlCoreError
+          describeFormat:@"Could not create '%@' at path '%@' for config '%@'", NSStringFromSelector(selector), path, self]
+          failFuture];
       }
-      id<FBDataConsumer> consumer = [self performSelector:selector];
-      if (![consumer conformsToProtocol:@protocol(FBDataConsumer)]) {
-        return [FBFuture futureWithResult:FBProcessOutput.outputForNullDevice];
-      }
-      return [FBFuture futureWithResult:[FBProcessOutput outputForDataConsumer:consumer]];
-    }];
-}
-
-- (FBFuture<id> *)createDiagnosticForSelector:(SEL)selector target:(id<FBiOSTarget>)target
-{
-  NSString *output = [self performSelector:selector];
-  if (![output isKindOfClass:NSString.class]) {
-    return (FBFuture<id> *) FBFuture.empty;
+      return [FBFuture futureWithResult:[FBProcessOutput outputForFilePath:path]];
   }
+  id<FBDataConsumer> consumer = [self performSelector:selector];
+  if ([consumer conformsToProtocol:@protocol(FBDataConsumer)]) {
+    return [FBFuture futureWithResult:[FBProcessOutput outputForDataConsumer:consumer]];
 
-  SEL diagnosticSelector = NSSelectorFromString([NSString stringWithFormat:@"%@:", NSStringFromSelector(selector)]);
-  FBDiagnostic *diagnostic = [target.diagnostics performSelector:diagnosticSelector withObject:self];
-  FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:diagnostic];
-
-  NSString *path = [output isEqualToString:FBProcessOutputToFileDefaultLocation] ? [builder createPath] : output;
-
-  [builder updateStorageDirectory:[path stringByDeletingLastPathComponent]];
-
-  if (![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {
-    return [[FBControlCoreError
-      describeFormat:@"Could not create '%@' at path '%@' for config '%@'", NSStringFromSelector(selector), path, self]
-      failFuture];
   }
-
-  [builder updatePath:path];
-
-  return [FBFuture futureWithResult:[builder build]];
+  return [FBFuture futureWithResult:FBProcessOutput.outputForNullDevice];
 }
 
 #pragma clang diagnostic pop
