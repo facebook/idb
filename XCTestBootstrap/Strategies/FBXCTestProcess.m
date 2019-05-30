@@ -119,9 +119,9 @@ static NSTimeInterval const SampleTimeoutSubtraction = SampleDuration + 1;
     onQueue:queue crashLogsForTerminationOfProcess:processIdentifier since:startDate notifier:notifier crashLogWaitTime:crashLogWaitTime]
     rephraseFailure:@"xctest process (%d) exited abnormally (exit code %d) with no crash log", processIdentifier, exitCode]
     onQueue:queue fmap:^(FBCrashLogInfo *crashInfo) {
-      FBDiagnostic *diagnosticCrash = [crashInfo toDiagnostic:FBDiagnosticBuilder.builder];
+      NSString *crashString = [NSString stringWithContentsOfFile:crashInfo.crashPath encoding:NSUTF8StringEncoding error:nil];
       return [[FBXCTestError
-        describeFormat:@"xctest process crashed\n %@", diagnosticCrash.asString]
+        describeFormat:@"xctest process crashed\n %@", crashString]
         failFuture];
     }];
 }
