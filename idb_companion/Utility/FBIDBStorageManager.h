@@ -191,6 +191,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, readonly) FBBundleStorage *framework;
 
+/**
+ The logger to use.
+ */
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+
 #pragma mark Public Methods
 
 /**

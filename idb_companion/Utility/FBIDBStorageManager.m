@@ -499,10 +499,10 @@ static NSString *const XctestRunExtension = @"xctestrun";
   }
   FBBundleStorage *framework = [[FBBundleStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
 
-  return [[self alloc] initWithXctest:xctest application:application dylib:dylib dsym:dsym framework:framework];
+  return [[self alloc] initWithXctest:xctest application:application dylib:dylib dsym:dsym framework:framework logger:logger];
 }
 
-- (instancetype)initWithXctest:(FBXCTestBundleStorage *)xctest application:(FBBundleStorage *)application dylib:(FBFileStorage *)dylib dsym:(FBFileStorage *)dsym framework:(FBBundleStorage *)framework
+- (instancetype)initWithXctest:(FBXCTestBundleStorage *)xctest application:(FBBundleStorage *)application dylib:(FBFileStorage *)dylib dsym:(FBFileStorage *)dsym framework:(FBBundleStorage *)framework logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -514,6 +514,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   _dylib = dylib;
   _dsym = dsym;
   _framework = framework;
+  _logger = logger;
 
   return self;
 }
@@ -522,7 +523,9 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
 - (NSDictionary<NSString *, NSString *> *)interpolateEnvironmentReplacements:(NSDictionary<NSString *, NSString *> *)environment
 {
+  [self.logger logFormat:@"Original environment: %@", environment];
   NSDictionary<NSString *, NSString *> *nameToPath = [self replacementMapping];
+  [self.logger logFormat:@"Existing replacement mapping: %@", nameToPath];
   NSMutableDictionary<NSString *, NSString *> *interpolatedEnvironment = [NSMutableDictionary dictionaryWithCapacity:environment.count];
   for (NSString *name in environment.allKeys) {
     NSString *value = environment[name];
@@ -532,16 +535,20 @@ static NSString *const XctestRunExtension = @"xctestrun";
     }
     interpolatedEnvironment[name] = value;
   }
+  [self.logger logFormat:@"Interpolated environment: %@", interpolatedEnvironment];
   return interpolatedEnvironment;
 }
 
 - (NSArray<NSString *> *)interpolateArgumentReplacements:(NSArray<NSString *> *)arguments
 {
+  [self.logger logFormat:@"Original arguments: %@", arguments];
   NSDictionary<NSString *, NSString *> *nameToPath = [self replacementMapping];
+  [self.logger logFormat:@"Existing replacement mapping: %@", nameToPath];
   NSMutableArray<NSString *> *interpolatedArguments = [NSMutableArray arrayWithArray:arguments];
   [arguments enumerateObjectsUsingBlock:^(NSString *argument, NSUInteger idx, BOOL *stop) {
     [interpolatedArguments replaceObjectAtIndex:idx withObject:nameToPath[argument] ?: argument];
   }];
+  [self.logger logFormat:@"Interpolated arguments: %@", interpolatedArguments];
   return interpolatedArguments;
 }
 
