@@ -67,6 +67,8 @@
   NSString *methodName = [self.class methodName:invocation];
   NSArray<NSString *> *descriptionOfArguments = [self.class descriptionOfArguments:invocation];
   id<FBEventReporterSubject> beforeSubject = [self.class subjectForBeforeInvocation:methodName descriptionOfArguments:descriptionOfArguments logger:self.logger];
+  [self.eventReporter report:beforeSubject];
+
   // Invoke on the Future Handler on the appropriate queue.
   [invocation invokeWithTarget:self.wrappedObject];
   void *returnValue = NULL;
@@ -75,7 +77,6 @@
 
   if ([future isKindOfClass:FBFuture.class]) {
     [future onQueue:self.queue notifyOfCompletion:^(FBFuture *completedFuture) {
-      [self.eventReporter report:beforeSubject];
       id<FBEventReporterSubject> afterSubject = [self.class subjectAfterCompletion:completedFuture methodName:methodName descriptionOfArguments:descriptionOfArguments startDate:startDate logger:self.logger];
       [self.eventReporter report:afterSubject];
     }];
