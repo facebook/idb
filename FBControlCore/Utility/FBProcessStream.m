@@ -500,12 +500,28 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSNull *> *)detach
 {
-  return [[FBFuture
-    onQueue:self.workQueue resolve:^{
-      NSPipe *pipe = self.pipe;
-      self.pipe = nil;
+  return [[self
+    closeWriteEndOfPipe]
+    nameFormat:@"Detach %@", self];
+}
 
+#pragma mark Private
+
+- (FBFuture<NSNull *> *)closeWriteEndOfPipe
+{
+  return [[FBFuture
+    onQueue:self.workQueue resolve:^ FBFuture<NSNull *> * {
+      NSPipe *pipe = self.pipe;
+      if (!pipe) {
+        return [[FBControlCoreError
+          describe:@"Cannot detach when not attached"]
+          failFuture];
+      }
+
+      // Close the pipe but don't deallocate it.
+      // The may be readers of the read end.
       [pipe.fileHandleForWriting closeFile];
+
       return FBFuture.empty;
     }]
     nameFormat:@"Detach %@", self.description];
@@ -536,9 +552,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSNull *> *)detach
 {
-  // Don't remove the pipe behind the back of any reader.
-  // The pipe will be deallocated when the stream has been fully drained.
-  return FBFuture.empty;
+  return [[self
+    closeWriteEndOfPipe]
+    nameFormat:@"Detach %@", self];
 }
 
 #pragma mark Private
