@@ -574,12 +574,9 @@ Status FBIDBServiceHandler::install(ServerContext *context, grpc::ServerReader<i
   NSError *error = nil;
   NSString *bundleID = [install_future(destination, reader) block:&error];
   if (!bundleID) {
-    if (error) {
-      return Status(grpc::StatusCode::INTERNAL, [error.localizedDescription UTF8String]);
-    }
-    return Status(grpc::StatusCode::INTERNAL, "");
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String ?: "An internal error occured when installing");
   }
-  response->set_bundle_id(bundleID.UTF8String ?: "");
+  response->set_bundle_id(bundleID.UTF8String);
   return Status::OK;
 }}
 
