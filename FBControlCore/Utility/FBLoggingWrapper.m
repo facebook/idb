@@ -63,11 +63,20 @@
 
 - (void)runInvocation:(NSInvocation *)invocation
 {
+  // Extract information about the start of the call.
   NSDate *startDate = NSDate.date;
   NSString *methodName = [self.class methodName:invocation];
   NSArray<NSString *> *descriptionOfArguments = [self.class descriptionOfArguments:invocation];
   id<FBEventReporterSubject> beforeSubject = [self.class subjectForBeforeInvocation:methodName descriptionOfArguments:descriptionOfArguments logger:self.logger];
   [self.eventReporter report:beforeSubject];
+
+  // Extract the first method argument and retain it, if it exists
+  id firstMethodArgument = nil;
+  if (invocation.methodSignature.numberOfArguments > 2 && strcmp([invocation.methodSignature getArgumentTypeAtIndex:2], "@") == 0) {
+      __unsafe_unretained id argument = nil;
+    [invocation getArgument:&argument atIndex:2];
+    firstMethodArgument = argument;
+  }
 
   // Invoke on the Future Handler on the appropriate queue.
   [invocation invokeWithTarget:self.wrappedObject];
@@ -75,9 +84,10 @@
   [invocation getReturnValue:&returnValue];
   FBFuture *future = (__bridge FBFuture *)(returnValue);
 
+  // Log the end of the call when the future resolves.
   if ([future isKindOfClass:FBFuture.class]) {
     [future onQueue:self.queue notifyOfCompletion:^(FBFuture *completedFuture) {
-      id<FBEventReporterSubject> afterSubject = [self.class subjectAfterCompletion:completedFuture methodName:methodName descriptionOfArguments:descriptionOfArguments startDate:startDate logger:self.logger];
+      id<FBEventReporterSubject> afterSubject = [self.class subjectAfterCompletion:completedFuture methodName:methodName descriptionOfArguments:descriptionOfArguments startDate:startDate firstMethodArgument:firstMethodArgument logger:self.logger];
       [self.eventReporter report:afterSubject];
     }];
   }
@@ -91,17 +101,21 @@
   return [FBEventReporterSubject subjectForStartedCall:methodName arguments:descriptionOfArguments];
 }
 
-+ (id<FBEventReporterSubject>)subjectAfterCompletion:(FBFuture *)future methodName:(NSString *)methodName descriptionOfArguments:(NSArray<NSString *> *)descriptionOfArguments startDate:(NSDate *)startDate logger:(id<FBControlCoreLogger>)logger
++ (id<FBEventReporterSubject>)subjectAfterCompletion:(FBFuture *)future methodName:(NSString *)methodName descriptionOfArguments:(NSArray<NSString *> *)descriptionOfArguments startDate:(NSDate *)startDate firstMethodArgument:(id)firstMethodArgument logger:(id<FBControlCoreLogger>)logger
 {
   NSTimeInterval duration = [NSDate.date timeIntervalSinceDate:startDate];
   NSError *error = future.error;
+  NSNumber *size = nil;
+  if ([firstMethodArgument respondsToSelector:@selector(bytesTransferred)]) {
+    size = @([firstMethodArgument bytesTransferred]);
+  }
   if (error) {
     NSString *message = error.localizedDescription;
     [logger.debug logFormat:@"%@ failed with: %@", methodName, message];
-    return [FBEventReporterSubject subjectForFailingCall:methodName duration:duration message:message arguments:descriptionOfArguments];
+    return [FBEventReporterSubject subjectForFailingCall:methodName duration:duration message:message size:size arguments:descriptionOfArguments];
   } else {
     [logger.debug logFormat:@"%@ succeeded", methodName];
-    return [FBEventReporterSubject subjectForSuccessfulCall:methodName duration:duration arguments:descriptionOfArguments];
+    return [FBEventReporterSubject subjectForSuccessfulCall:methodName duration:duration size:size arguments:descriptionOfArguments];
   }
 }
 

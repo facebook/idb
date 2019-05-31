@@ -14,6 +14,7 @@ import Foundation
   var arguments: [String]?
   var duration: NSNumber?
   var message: String?
+  var size: NSNumber?
 
   let signo: Int32
   let name: String

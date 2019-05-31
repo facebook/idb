@@ -39,6 +39,7 @@ extension FBJSONSerializable {
   var arguments: [String]?
   var duration: NSNumber?
   var message: String?
+  var size: NSNumber?
 
   let record: Record
 
@@ -84,6 +85,7 @@ extension FBJSONSerializable {
   var arguments: [String]?
   var duration: NSNumber?
   var message: String?
+  var size: NSNumber?
 
   let interface: ListenInterface
 

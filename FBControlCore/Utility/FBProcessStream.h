@@ -54,6 +54,18 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
+ Provides information about the state of a stream
+ */
+@protocol FBStandardStreamTransfer <NSObject>
+
+/**
+ The number of bytes transferred.
+ */
+@property (nonatomic, assign, readonly) ssize_t bytesTransferred;
+
+@end
+
+/**
  Process Output that can be provided through a file.
  */
 @protocol FBProcessFileOutput <NSObject>

@@ -876,15 +876,18 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 @end
 
-@interface FBProcessInput_InputStream : FBProcessInput
+@class NSOutputStream_FBProcessInput;
 
-@property (nonatomic, strong, readonly) NSOutputStream *stream;
+@interface FBProcessInput_InputStream : FBProcessInput <FBStandardStreamTransfer>
+
+@property (nonatomic, strong, readonly) NSOutputStream_FBProcessInput *stream;
 
 @end
 
 @interface NSOutputStream_FBProcessInput : NSOutputStream
 
 @property (nonatomic, weak, readonly) FBProcessInput_InputStream *input;
+@property (atomic, assign, readwrite) ssize_t bytesWritten;
 
 - (instancetype)initWithInput:(FBProcessInput_InputStream *)input;
 
@@ -1112,6 +1115,11 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return @"Input to NSOutputStream";
 }
 
+- (ssize_t)bytesTransferred
+{
+  return self.stream.bytesWritten;
+}
+
 @end
 
 @implementation NSOutputStream_FBProcessInput
@@ -1126,6 +1134,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   }
 
   _input = input;
+  _bytesWritten = 0;
 
   return self;
 }
@@ -1140,7 +1149,9 @@ static NSTimeInterval const StreamOpenTimeout = 5.0;
   if (fileDescriptor == 0) {
     return -1;
   }
-  return write(fileDescriptor, buffer, len);
+  ssize_t result = write(fileDescriptor, buffer, len);
+  self.bytesWritten += result;
+  return result;
 }
 
 - (void)open
