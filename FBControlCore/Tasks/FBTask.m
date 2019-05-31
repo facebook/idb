@@ -135,9 +135,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdErrSlot;
 @property (nonatomic, strong, nullable, readwrite) FBProcessInput *stdInSlot;
 
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startedTeardownFuture;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *completedTeardownFuture;
-
 @end
 
 @implementation FBTask
@@ -199,12 +196,12 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   _configurationDescription = configurationDescription;
   _programName = programName;
 
-  _startedTeardownFuture = FBMutableFuture.future;
-  _completedTeardownFuture = FBMutableFuture.future;
-
-  _completed = [[process.exitCode
+  // Do not propogate cancellation of completed to the exit code future.
+  FBMutableFuture<NSNumber *> *shieldedExitCode = FBMutableFuture.future;
+  [shieldedExitCode resolveFromFuture:self.exitCode];
+  _completed = [[shieldedExitCode
     onQueue:self.queue chain:^ FBFuture<NSNumber *> * (FBFuture<NSNumber *> *future) {
-      return [self terminateWithErrorMessage:future.error.localizedDescription] ;
+      return [self terminateWithErrorMessage:future.error.localizedDescription];
     }]
     named:self.configurationDescription];
 
@@ -252,39 +249,23 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 #pragma mark Private
 
-- (FBFuture *)terminateWithErrorMessage:(nullable NSString *)errorMessage
+- (FBFuture<NSNumber *> *)terminateWithErrorMessage:(nullable NSString *)errorMessage
 {
-  __block NSError *error = nil;
-  if (self.completedTeardownFuture.hasCompleted && !self.startedTeardownFuture.hasCompleted) {
-    return [[FBControlCoreError
-      describeFormat:@"Cannot call %@ as teardown is in progress", NSStringFromSelector(_cmd)]
-      failFuture];
-  }
-  if (errorMessage) {
-    error = [[[FBControlCoreError describe:errorMessage] inDomain:FBTaskErrorDomain] build];
-  }
-  if (self.completedTeardownFuture.hasCompleted) {
-    return FBFuture.empty;
-  }
-  [self.startedTeardownFuture resolveWithResult:NSNull.null];
   return [[[self
-    teardownProcess]
-    onQueue:self.queue fmap:^(NSNumber *exitCode) {
-      if (![self.acceptableStatusCodes containsObject:exitCode]) {
-        error = [[[FBControlCoreError describeFormat:@"%@ Returned non-zero status code %@",
-                   self.programName,
-                   exitCode]
-                  inDomain:FBTaskErrorDomain]
-                 build];
-      }
-      return [self teardownResources];
+    teardownProcess] // Wait for the process to exit, terminating it if necessary.
+    onQueue:self.queue chain:^(FBFuture<NSNumber *> *exitCodeFuture) {
+      // Then tear-down the resources, this should happen regardless of the exit status.
+      return [[self teardownResources] fmapReplace:exitCodeFuture];
     }]
-    onQueue:self.queue chain:^FBFuture *(id _) {
-      [self.completedTeardownFuture resolveWithResult:NSNull.null];
-      if (error) {
-        return [FBFuture futureWithError:error];
+    onQueue:self.queue fmap:^(NSNumber *exitCode) {
+      // Then check whether the exit code honours the acceptable codes.
+      if (![self.acceptableStatusCodes containsObject:exitCode]) {
+        return [[[FBControlCoreError
+          describeFormat:@"%@ Returned non-zero status code %@", self.programName, exitCode]
+          inDomain:FBTaskErrorDomain]
+          failFuture];
       }
-      return FBFuture.empty;
+      return [FBFuture futureWithResult:exitCode];
     }];
 }
 
