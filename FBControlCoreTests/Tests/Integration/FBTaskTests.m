@@ -337,42 +337,6 @@
   XCTAssertEqualObjects(expected, task.stdOut);
 }
 
-- (void)testCancellationIsSignalling
-{
-  FBTask *task = [[FBTaskBuilder
-    withLaunchPath:@"/bin/sleep" arguments:@[@"1000000"]]
-    startSynchronously];
-
-  XCTAssertEqual(task.completed.state, FBFutureStateRunning);
-  XCTAssertEqual(task.exitCode.state, FBFutureStateRunning);
-
-  NSError *error = nil;
-  BOOL success = [[task.completed cancel] await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-  XCTAssertEqual(task.completed.state, FBFutureStateCancelled);
-  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
-  XCTAssertEqualObjects(task.exitCode.result, @(SIGTERM));
-}
-
-- (void)testSendingSIGINT
-{
-  FBTask *task = [[FBTaskBuilder
-    withLaunchPath:@"/bin/sleep" arguments:@[@"1000000"]]
-    startSynchronously];
-
-  XCTAssertEqual(task.completed.state, FBFutureStateRunning);
-  XCTAssertEqual(task.exitCode.state, FBFutureStateRunning);
-
-  NSError *error = nil;
-  FBFuture *future = [task sendSignal:SIGINT];
-  BOOL success = [future await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
-  XCTAssertEqualObjects(task.exitCode.result, @(SIGINT));
-}
-
 - (void)testSendingSIGKILL
 {
   FBTask *task = [[FBTaskBuilder
