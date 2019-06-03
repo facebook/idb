@@ -646,8 +646,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 - (FBFuture<NSNull *> *)detach
 {
-  return [[[FBFuture
-    onQueue:self.workQueue resolve:^ FBFuture<NSNumber *> * {
+  return [[[[super
+    detach]
+    onQueue:self.workQueue fmap:^ FBFuture<NSNumber *> * (id _){
       FBFileReader *reader = self.reader;
       if (!reader) {
         return [[FBControlCoreError
