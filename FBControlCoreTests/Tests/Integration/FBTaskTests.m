@@ -41,6 +41,39 @@
   return future.result;
 }
 
+- (void)testTrueExit
+{
+  FBFuture *futureTask = [[FBTaskBuilder
+    withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"true"]]
+    runUntilCompletion];
+  FBTask *task = [self runAndWaitForTaskFuture:futureTask];
+
+  XCTAssertEqualObjects(task.exitCode.result, @0);
+}
+
+- (void)testFalseExit
+{
+  FBFuture *futureTask = [[[FBTaskBuilder
+    withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"false"]]
+    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@1]]
+    runUntilCompletion];
+
+  FBTask *task = [self runAndWaitForTaskFuture:futureTask];
+  XCTAssertEqualObjects(task.exitCode.result, @1);
+}
+
+- (void)testFalseExitWithStatusCodeError
+{
+  NSError *error = nil;
+  id result = [[[FBTaskBuilder
+    withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"false"]]
+    runUntilCompletion]
+    await:&error];
+
+  XCTAssertNil(result);
+  XCTAssertNotNil(error);
+}
+
 - (void)testBase64Matches
 {
   NSString *filePath = FBControlCoreFixtures.assetsdCrashPathWithCustomDeviceSet;
