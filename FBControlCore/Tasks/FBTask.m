@@ -214,10 +214,9 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 {
   return [[FBFuture
     onQueue:self.queue resolve:^{
-    return [self.process sendSignal:signo];
-  }] onQueue:self.queue chain:^FBFuture *(FBFuture *future) {
-    return [FBFuture futureWithResult:[NSNumber numberWithInt:signo]];
-  }];
+      return [self.process sendSignal:signo];
+    }]
+    mapReplace:@(signo)];
 }
 
 #pragma mark Accessors
