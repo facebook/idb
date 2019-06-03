@@ -7,6 +7,8 @@
 
 #import "FBTask.h"
 
+#include <spawn.h>
+
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 #import "FBDataConsumer.h"
@@ -14,7 +16,6 @@
 #import "FBLaunchedProcess.h"
 #import "FBProcessStream.h"
 #import "FBTaskConfiguration.h"
-#import "FBFuture+Sync.h"
 
 NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
@@ -42,63 +43,155 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @end
 
-@interface FBTaskProcess_NSTask : NSObject <FBTaskProcess>
+static BOOL AddOutputFileActions(posix_spawn_file_actions_t *fileActions, FBProcessStreamAttachment *attachment, int targetFileDescriptor, NSError **error)
+{
+  if (!attachment) {
+    return YES;
+  }
+  // dup the write end of the pipe to the target file descriptor i.e. stdout
+  // Files do not need to be closed in the launched process as POSIX_SPAWN_CLOEXEC_DEFAULT does this for us.
+  int sourceFileDescriptor = attachment.pipe ? attachment.pipe.fileHandleForWriting.fileDescriptor : attachment.fileHandle.fileDescriptor;
+  int status = posix_spawn_file_actions_adddup2(fileActions, sourceFileDescriptor, targetFileDescriptor);
+  if (status != 0) {
+    return [[FBControlCoreError
+      describeFormat:@"Failed to dup input %d, to %d: %s", sourceFileDescriptor, targetFileDescriptor, strerror(status)]
+      failBool:error];
+  }
+  return YES;
+}
 
-@property (nonatomic, strong, readonly) NSTask *task;
+static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProcessStreamAttachment *attachment, int targetFileDescriptor, NSError **error)
+{
+  if (!attachment) {
+    return YES;
+  }
+  // dup the read end of the pipe to the target file descriptor i.e. stdin
+  // Files do not need to be closed in the launched process as POSIX_SPAWN_CLOEXEC_DEFAULT does this for us.
+  int sourceFileDescriptor = attachment.pipe ? attachment.pipe.fileHandleForReading.fileDescriptor : attachment.fileHandle.fileDescriptor;
+  int status = posix_spawn_file_actions_adddup2(fileActions, sourceFileDescriptor, targetFileDescriptor);
+  if (status != 0) {
+    return [[FBControlCoreError
+      describeFormat:@"Failed to dup input %d, to %d: %s", sourceFileDescriptor, targetFileDescriptor, strerror(status)]
+      failBool:error];
+  }
+  return YES;
+}
+
+@interface FBTaskProcess_PosixSpawn : NSObject <FBTaskProcess>
+
+@property (nonatomic, strong, readonly) FBTaskConfiguration *configuration;
+@property (nonatomic, strong, nullable, readwrite) id stdIn;
+@property (nonatomic, strong, nullable, readwrite) id stdOut;
+@property (nonatomic, strong, nullable, readwrite) id stdErr;
 
 @end
 
-@implementation FBTaskProcess_NSTask
+@implementation FBTaskProcess_PosixSpawn
 
-@synthesize processIdentifier = _processIdentifier;
 @synthesize exitCode = _exitCode;
+@synthesize processIdentifier = _processIdentifier;
 
 + (FBFuture<id<FBTaskProcess>> *)processWithConfiguration:(FBTaskConfiguration *)configuration stdIn:(FBProcessStreamAttachment *)stdIn stdOut:(FBProcessStreamAttachment *)stdOut stdErr:(FBProcessStreamAttachment *)stdErr
 {
-  NSTask *task = [[NSTask alloc] init];
-  task.environment = configuration.environment;
-  task.launchPath = configuration.launchPath;
-  task.arguments = configuration.arguments;
-  if (stdOut) {
-    task.standardOutput = stdOut.pipe ?: stdOut.fileHandle;
+  // Convert the arguments to the argv expected by posix_spawn
+  NSArray<NSString *> *arguments = configuration.arguments;
+  char *argv[arguments.count + 2]; // 0th arg is launch path, last arg is NULL
+  argv[0] = (char *) configuration.launchPath.UTF8String;
+  argv[arguments.count + 1] = NULL;
+  for (NSUInteger index = 0; index < arguments.count; index++) {
+    argv[index + 1] = (char *) arguments[index].UTF8String; // Offset by the launch path arg.
   }
-  if (stdErr) {
-    task.standardError = stdErr.pipe ?: stdErr.fileHandle;
-  }
-  if (stdIn) {
-    task.standardInput = stdIn.pipe ?: stdIn.fileHandle;
-  }
-  id<FBControlCoreLogger> logger = configuration.logger;
-  FBMutableFuture<NSNumber *> *exitCode = FBMutableFuture.future;
-  task.terminationHandler = ^(NSTask *innerTask) {
-    if (logger.level >= FBControlCoreLogLevelDebug) {
-      [logger logFormat:@"Task finished with exit code %d", innerTask.terminationStatus];
-    }
-    [exitCode resolveWithResult:@(innerTask.terminationStatus)];
-  };
 
-  if (logger.level >= FBControlCoreLogLevelDebug) {
-    [logger.debug logFormat:
-      @"Running %@ %@",
-      task.launchPath,
-      [task.arguments componentsJoinedByString:@" "]
-    ];
+  // Convert the environment to the envp expected by posix_spawn
+  NSDictionary<NSString *, NSString *> *environment = configuration.environment;
+  NSArray<NSString *> *environmentNames = environment.allKeys;
+  char *envp[(environment.count * 2) + 1];
+  envp[environment.count * 2] = NULL;
+  for (NSUInteger index = 0; index < environmentNames.count; index++) {
+    NSString *name = environmentNames[index];
+    NSString *value = environment[name];
+    envp[(index * 2)] = (char *) name.UTF8String;
+    envp[(index * 2) + 1] = (char *) value.UTF8String;
   }
-  [task launch];
 
-  id<FBTaskProcess> process = [[self alloc] initWithTask:task processIdentifier:task.processIdentifier exitCode:exitCode];
+  // Convert the file descriptors
+  posix_spawn_file_actions_t fileActions;
+  posix_spawn_file_actions_init(&fileActions);
+
+  NSError *error = nil;
+  if (!AddInputFileActions(&fileActions, stdIn, STDIN_FILENO, &error)) {
+    return [FBFuture futureWithError:error];
+  }
+  if (!AddOutputFileActions(&fileActions, stdOut, STDOUT_FILENO, &error)) {
+    return [FBFuture futureWithError:error];
+  }
+  if (!AddOutputFileActions(&fileActions, stdErr, STDERR_FILENO, &error)) {
+    return [FBFuture futureWithError:error];
+  }
+
+  // Make the spawn attributes
+  posix_spawnattr_t spawnAttributes;
+  posix_spawnattr_init(&spawnAttributes);
+
+  // Closes all file descriptors in the child that aren't duped. This prevents any file descriptors other than the ones we define being inherited by children.
+  posix_spawnattr_setflags(&spawnAttributes, POSIX_SPAWN_CLOEXEC_DEFAULT);
+
+  pid_t processIdentifier;
+  int status = posix_spawn(&processIdentifier, argv[0], &fileActions, &spawnAttributes, argv, envp);
+  posix_spawn_file_actions_destroy(&fileActions);
+  posix_spawnattr_destroy(&spawnAttributes);
+  if (status != 0) {
+    return [[FBControlCoreError
+      describeFormat:@"Failed to launch %@ with error %s", configuration, strerror(status)]
+      failFuture];
+  }
+
+  FBFuture<NSNumber *> *exitCode = [self exitCodeFutureForProcessIdentifier:processIdentifier logger:configuration.logger];
+  id<FBTaskProcess> process = [[self alloc] initWithProcessIdentifier:processIdentifier stdIn:stdIn stdOut:stdOut stdErr:stdErr exitCode:exitCode];
   return [FBFuture futureWithResult:process];
 }
 
-- (instancetype)initWithTask:(NSTask *)task processIdentifier:(pid_t)processIdentifier exitCode:(FBFuture<NSNumber *> *)exitCode
++ (FBFuture<NSNumber *> *)exitCodeFutureForProcessIdentifier:(pid_t)processIdentifier logger:(id<FBControlCoreLogger>)logger
+{
+  FBMutableFuture<NSNumber *> *exitCode = FBMutableFuture.future;
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task.posix_spawn.wait", DISPATCH_QUEUE_SERIAL);
+  dispatch_source_t source = dispatch_source_create(
+    DISPATCH_SOURCE_TYPE_PROC,
+    (uintptr_t) processIdentifier,
+    DISPATCH_PROC_EXIT,
+    queue
+  );
+  dispatch_source_set_event_handler(source, ^{
+    int status = 0;
+    if (waitpid(processIdentifier, &status, WNOHANG) == -1) {
+      [logger logFormat:@"Failed to get the exit status with waitpid: %s", strerror(errno)];
+    }
+    if (WIFEXITED(status)) {
+      [exitCode resolveWithResult:@(WEXITSTATUS(status))];
+    } else if (WIFSIGNALED(status)) {
+      [exitCode resolveWithResult:@(WTERMSIG(status))];
+    } else {
+      [exitCode resolveWithResult:@(status)];
+    }
+    // We only need a single notification and the dispatch_source must be retained until we resolve the future.
+    // Cancelling the source at the end will release the source as the event handler will no longer be referenced.
+    dispatch_cancel(source);
+  });
+  dispatch_resume(source);
+  return exitCode;
+}
+
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier stdIn:(id)stdIn stdOut:(id)stdOut stdErr:(id)stdErr exitCode:(FBFuture<NSNumber *> *)exitCode
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _task = task;
   _processIdentifier = processIdentifier;
+  _stdIn = stdIn;
+  _stdOut = stdOut;
+  _stdErr = stdErr;
   _exitCode = exitCode;
 
   return self;
@@ -106,18 +199,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo
 {
-  pid_t processIdentifier = self.task.processIdentifier;
-  switch (signo) {
-    case SIGTERM:
-      [self.task terminate];
-      break;
-    case SIGINT:
-      [self.task interrupt];
-      break;
-    default:
-      kill(processIdentifier, signo);
-      break;
-  }
+  kill(self.processIdentifier, signo);
   return self.exitCode;
 }
 
@@ -165,7 +247,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
         stdErr = nil;
       }
       // Everything is setup, launch the process now.
-      return [FBTaskProcess_NSTask processWithConfiguration:configuration stdIn:stdIn stdOut:stdOut stdErr:stdErr];
+      return [FBTaskProcess_PosixSpawn processWithConfiguration:configuration stdIn:stdIn stdOut:stdOut stdErr:stdErr];
     }]
     onQueue:queue map:^(id<FBTaskProcess> process) {
       return [[self alloc]
