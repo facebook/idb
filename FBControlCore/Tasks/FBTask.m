@@ -199,11 +199,26 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   // Do not propogate cancellation of completed to the exit code future.
   FBMutableFuture<NSNumber *> *shieldedExitCode = FBMutableFuture.future;
   [shieldedExitCode resolveFromFuture:self.exitCode];
-  _completed = [[shieldedExitCode
+  _completed = [[[shieldedExitCode
     onQueue:self.queue chain:^ FBFuture<NSNumber *> * (FBFuture<NSNumber *> *future) {
-      return [self terminateWithErrorMessage:future.error.localizedDescription];
+      // We have a cancellation responder, so de-duplicate the handling of it.
+      if (future.state == FBFutureStateCancelled) {
+        return future;
+      }
+      return [self terminate];
     }]
-    named:self.configurationDescription];
+    named:self.configurationDescription]
+    onQueue:self.queue respondToCancellation:^{
+      // Respond to cancellation in the handler, instead of in chain.
+      // This means that the caller can be notified of the full teardown with the value of -[FBFuture cancel]
+      return [[self
+        terminate]
+        onQueue:self.queue chain:^(id _) {
+          // Avoid any kind of error in a cancellation handler.
+          return FBFuture.empty;
+        }];
+    }];
+
 
   return self;
 }
@@ -248,7 +263,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 #pragma mark Private
 
-- (FBFuture<NSNumber *> *)terminateWithErrorMessage:(nullable NSString *)errorMessage
+- (FBFuture<NSNumber *> *)terminate
 {
   return [[[self
     teardownProcess] // Wait for the process to exit, terminating it if necessary.
