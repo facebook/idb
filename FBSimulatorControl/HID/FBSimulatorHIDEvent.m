@@ -250,7 +250,7 @@ static NSString *const KeyY = @"y";
 
 - (NSUInteger)hash
 {
-  return self.direction | ((NSUInteger) self.x ^ (NSUInteger) self.y);
+  return (NSUInteger) self.direction | ((NSUInteger) self.x ^ (NSUInteger) self.y);
 }
 
 @end
@@ -355,7 +355,7 @@ static NSString *const ButtonSiri = @"siri";
 
 - (NSUInteger)hash
 {
-  return self.type ^ self.button;
+  return (NSUInteger) self.type ^ (NSUInteger) self.button;
 }
 
 + (NSString *)buttonStringFromButton:(FBSimulatorHIDButton)button
@@ -488,7 +488,7 @@ static NSString *const KeyKeycode = @"keycode";
 
 - (NSUInteger)hash
 {
-  return self.direction ^ self.keyCode;
+  return (NSUInteger) self.direction ^ (NSUInteger) self.keyCode;
 }
 
 @end

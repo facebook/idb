@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An Enumeration for the Direction of the Event.
  */
-typedef NS_ENUM(NSUInteger, FBSimulatorHIDDirection) {
+typedef NS_ENUM(int, FBSimulatorHIDDirection) {
   FBSimulatorHIDDirectionDown = 1,
   FBSimulatorHIDDirectionUp = 2,
 };
@@ -21,7 +21,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorHIDDirection) {
 /**
  An Enumeration Representing a button press.
  */
-typedef NS_ENUM(NSUInteger, FBSimulatorHIDButton) {
+typedef NS_ENUM(int, FBSimulatorHIDButton) {
   FBSimulatorHIDButtonApplePay = 1,
   FBSimulatorHIDButtonHomeButton = 2,
   FBSimulatorHIDButtonLock = 3,

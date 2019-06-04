@@ -213,7 +213,7 @@ IndigoMessage *(*IndigoHIDMessageForMouseNSEvent)(CGPoint *point0, CGPoint *poin
 
 #pragma mark Event Generation
 
-+ (IndigoMessage *)keyboardMessageWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode messageSizeOut:(size_t *)messageSizeOut
++ (IndigoMessage *)keyboardMessageWithDirection:(FBSimulatorHIDDirection)direction keyCode:(int)keycode messageSizeOut:(size_t *)messageSizeOut
 {
   IndigoMessage *message = IndigoHIDMessageForKeyboardArbitrary((int) keycode, direction);
   if (messageSizeOut) {
