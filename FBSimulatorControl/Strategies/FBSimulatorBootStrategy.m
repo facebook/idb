@@ -159,34 +159,10 @@
 
 @end
 
-@interface FBCoreSimulatorBootOptions_Xcode7 : NSObject <FBCoreSimulatorBootOptions>
-@end
-
 @interface FBCoreSimulatorBootOptions_Xcode8 : NSObject <FBCoreSimulatorBootOptions>
 @end
 
 @interface FBCoreSimulatorBootOptions_Xcode9_10 : NSObject <FBCoreSimulatorBootOptions>
-@end
-
-@implementation FBCoreSimulatorBootOptions_Xcode7
-
-- (BOOL)shouldCreateFramebuffer:(FBSimulatorBootConfiguration *)configuration
-{
-  // A Framebuffer is required in Xcode 7 currently, otherwise any interface that uses the Mach Interface for 'Host Support' will fail/hang.
-  return YES;
-}
-
-- (NSDictionary<NSString *, id> *)bootOptions:(FBSimulatorBootConfiguration *)configuration
-{
-  // The 'register-head-services' option will attach the existing 'frameBufferService' when the Simulator is booted.
-  // Simulator.app behaves similarly, except we can't peek at the Framebuffer as it is in a protected process since Xcode 7.
-  // Prior to Xcode 6 it was possible to shim into the Simulator process but codesigning now prevents this https://gist.github.com/lawrencelomax/27bdc4e8a433a601008f
-
-  return @{
-    @"register-head-services" : @YES,
-  };
-}
-
 @end
 
 @implementation FBCoreSimulatorBootOptions_Xcode8
@@ -529,10 +505,8 @@
 {
   if (FBXcodeConfiguration.isXcode9OrGreater) {
     return [FBCoreSimulatorBootOptions_Xcode9_10 new];
-  } else if (FBXcodeConfiguration.isXcode8OrGreater) {
-    return [FBCoreSimulatorBootOptions_Xcode8 new];
   } else {
-    return [FBCoreSimulatorBootOptions_Xcode7 new];
+    return [FBCoreSimulatorBootOptions_Xcode8 new];
   }
 }
 
