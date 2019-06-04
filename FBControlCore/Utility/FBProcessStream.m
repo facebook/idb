@@ -915,18 +915,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
           describeFormat:@"Cannot Attach Twice"]
           failFuture];
       }
-
-      NSPipe *pipe = NSPipe.pipe;
-      NSError *error = nil;
-      id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileDescriptor:pipe.fileHandleForWriting.fileDescriptor closeOnEndOfFile:YES error:&error];
-      if (!writer) {
-        return [[FBControlCoreError
-          describeFormat:@"Failed to create a writer for pipe %@", error]
-          failFuture];
-      }
-      self.pipe = pipe;
+      self.pipe = NSPipe.pipe;
       dispatch_group_leave(self.pipeGroup);
-      return [FBFuture futureWithResult:[[FBProcessStreamAttachment alloc] initWithPipe:pipe fileHandle:pipe.fileHandleForWriting]];
+      return [FBFuture futureWithResult:[[FBProcessStreamAttachment alloc] initWithPipe:self.pipe fileHandle:self.pipe.fileHandleForWriting]];
     }]
     nameFormat:@"Attach %@ to pipe", self.description];
 }
