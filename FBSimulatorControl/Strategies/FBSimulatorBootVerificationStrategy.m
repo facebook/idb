@@ -237,25 +237,17 @@ static NSTimeInterval BootVerificationStallInterval = 1.5; // 60s
         @"com.apple.SpringBoard",
       ];
     }
-    if (FBXcodeConfiguration.isXcode8OrGreater ) {
       return @[
         @"com.apple.backboardd",
         @"com.apple.mobile.installd",
         @"com.apple.SimulatorBridge",
         @"com.apple.SpringBoard",
       ];
-    }
   }
   if (family == FBControlCoreProductFamilyAppleWatch || family == FBControlCoreProductFamilyAppleTV) {
-    if (FBXcodeConfiguration.isXcode8OrGreater) {
-      return @[
-        @"com.apple.mobileassetd",
-        @"com.apple.nsurlsessiond",
-      ];
-    }
     return @[
       @"com.apple.mobileassetd",
-      @"com.apple.networkd",
+      @"com.apple.nsurlsessiond",
     ];
   }
   return @[];

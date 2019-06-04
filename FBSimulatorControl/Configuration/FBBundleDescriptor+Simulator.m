@@ -42,7 +42,7 @@
 
 + (NSString *)pathForSimulatorApplication
 {
-  NSString *simulatorBinaryName = FBXcodeConfiguration.isXcode7OrGreater ? @"Simulator" : @"iOS Simulator";
+  NSString *simulatorBinaryName =  @"Simulator";
   return [[FBXcodeConfiguration.developerDirectory
     stringByAppendingPathComponent:@"Applications"]
     stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.app", simulatorBinaryName]];

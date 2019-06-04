@@ -85,16 +85,6 @@
   return formatter;
 }
 
-+ (BOOL)isXcode7OrGreater
-{
-  return [FBXcodeConfiguration.xcodeVersionNumber compare:[NSDecimalNumber decimalNumberWithString:@"7.0"]] != NSOrderedAscending;
-}
-
-+ (BOOL)isXcode8OrGreater
-{
-  return [FBXcodeConfiguration.xcodeVersionNumber compare:[NSDecimalNumber decimalNumberWithString:@"8.0"]] != NSOrderedAscending;
-}
-
 + (BOOL)isXcode9OrGreater
 {
   return [FBXcodeConfiguration.xcodeVersionNumber compare:[NSDecimalNumber decimalNumberWithString:@"9.0"]] != NSOrderedAscending;
@@ -105,22 +95,13 @@
   return [FBXcodeConfiguration.xcodeVersionNumber compare:[NSDecimalNumber decimalNumberWithString:@"10.0"]] != NSOrderedAscending;
 }
 
-+ (BOOL)supportsCustomDeviceSets
-{
-  // Prior to Xcode 7, 'iOS Simulator.app' calls `+[SimDeviceSet defaultSet]` directly
-  // This means that the '-DeviceSetPath' won't do anything for Simulators booted with prior to Xcode 7.
-  // It should be possible to fix this by injecting a shim that swizzles this method in these Xcode versions.
-  return self.isXcode7OrGreater;
-}
-
 + (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Developer Directory %@ | Xcode Version %@ | iOS SDK Version %@ | Supports Custom Device Sets %d",
+    @"Developer Directory %@ | Xcode Version %@ | iOS SDK Version %@",
     self.developerDirectory,
     self.xcodeVersionNumber,
-    self.iosSDKVersionNumber,
-    self.supportsCustomDeviceSets
+    self.iosSDKVersionNumber
   ];
 }
 

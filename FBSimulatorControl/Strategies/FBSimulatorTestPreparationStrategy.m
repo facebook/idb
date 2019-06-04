@@ -59,7 +59,7 @@
   NSAssert(self.testLaunchConfiguration.testBundlePath, @"Path to test bundle is needed to load bundles");
 
   // Check the bundle is codesigned (if required).
-  if (FBXcodeConfiguration.isXcode8OrGreater && FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid) {
+  if (FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid) {
     return [[[self.codesign
       cdHashForBundleAtPath:self.testLaunchConfiguration.testBundlePath]
       rephraseFailure:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", self.testLaunchConfiguration.testBundlePath]

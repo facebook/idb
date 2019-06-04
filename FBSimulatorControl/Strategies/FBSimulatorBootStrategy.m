@@ -369,9 +369,6 @@
 
   NSString *setPath = simulator.set.deviceSet.setPath;
   if (setPath) {
-    if (!FBXcodeConfiguration.supportsCustomDeviceSets) {
-      return [[[FBSimulatorError describe:@"Cannot use custom Device Set on current platform"] inSimulator:simulator] fail:error];
-    }
     [arguments addObjectsFromArray:@[@"-DeviceSetPath", setPath]];
   }
   return [arguments copy];

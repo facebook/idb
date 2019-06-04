@@ -41,7 +41,7 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 + (NSDictionary<NSString *, NSNumber *> *)canonicalShimNameToCodesigningRequired
 {
   return @{
-    KeySimulatorTestShim: @(FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid && FBXcodeConfiguration.isXcode8OrGreater),
+    KeySimulatorTestShim: @(FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid),
     KeyMacQueryShim: @NO,
     KeyMacTestShim: @NO,
   };

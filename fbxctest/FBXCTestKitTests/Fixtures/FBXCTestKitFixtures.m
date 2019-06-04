@@ -98,9 +98,6 @@
 
 - (nullable NSString *)signTestBundle:(NSString *)bundlePath;
 {
-  if (!FBXcodeConfiguration.isXcode8OrGreater) {
-    return bundlePath;
-  }
   id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
   if ([[codesign cdHashForBundleAtPath:bundlePath] await:nil]) {
     return bundlePath;

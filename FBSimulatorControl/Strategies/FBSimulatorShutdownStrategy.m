@@ -81,13 +81,7 @@
   if (FBXcodeConfiguration.isXcode9OrGreater) {
     return 164;
   }
-  if (FBXcodeConfiguration.isXcode8OrGreater) {
-    return 163;
-  }
-  if (FBXcodeConfiguration.isXcode7OrGreater) {
-    return 159;
-  }
-  return 146;
+  return 163;
 }
 
 + (FBFuture<NSNull *> *)shutdownSimulator:(FBSimulator *)simulator
