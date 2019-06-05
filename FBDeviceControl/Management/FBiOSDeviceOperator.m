@@ -319,10 +319,20 @@
       failBool:error];
   }
 
-  if (![self.device.dvtDevice makeServiceHubProcessControlChannelForLauncher:0]) {
-    return [[FBDeviceControlError
-      describe:@"Failed to create HUB control channel"]
-      failBool:error];
+  SEL selector = @selector(makeServiceHubProcessControlChannelForLauncher:);
+
+  if ([self.device.dvtDevice respondsToSelector:selector]) {
+    if (![self.device.dvtDevice makeServiceHubProcessControlChannelForLauncher:0]) {
+      return [[FBDeviceControlError
+               describe:@"Failed to create HUB control channel"]
+              failBool:error];
+    }
+  } else {
+    if (![self.device.dvtDevice serviceHubProcessControlChannel]) {
+      return [[FBDeviceControlError
+               describe:@"Failed to create HUB control channel"]
+              failBool:error];
+    }
   }
   return YES;
 }
@@ -499,7 +509,14 @@
   id result = [FBRunLoopSpinner spinUntilBlockFinished:^id{
     __block id responseObject;
 
-    DTXChannel *channel = [self.device.dvtDevice makeServiceHubProcessControlChannelForLauncher:0];
+    SEL selector = @selector(makeServiceHubProcessControlChannelForLauncher:);
+    DTXChannel *channel;
+    if ([self.device.dvtDevice respondsToSelector:selector]) {
+      channel = [self.device.dvtDevice makeServiceHubProcessControlChannelForLauncher:0];
+    } else {
+      channel = [self.device.dvtDevice serviceHubProcessControlChannel];
+    }
+
     DTXMessage *message = [[objc_lookUpClass("DTXMessage") alloc] initWithSelector:aSelector firstArg:arg remainingObjectArgs:(__bridge id)(*arguments)];
     [channel sendControlSync:message replyHandler:^(DTXMessage *responseMessage){
       if (responseMessage.errorStatus) {
