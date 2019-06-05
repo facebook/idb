@@ -257,6 +257,10 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 @end
 
+@interface FBProcessOutput_Null : FBProcessOutput
+
+@end
+
 @interface FBProcessOutput_FilePath : FBProcessOutput
 
 @property (nonatomic, copy, readonly) NSString *filePath;
@@ -327,7 +331,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 + (FBProcessOutput<NSNull *> *)outputForNullDevice
 {
-  return [[FBProcessOutput_FilePath alloc] initWithFilePath:@"/dev/null"];
+  return [[FBProcessOutput_Null alloc] init];
 }
 
 + (FBProcessOutput<NSString *> *)outputForFilePath:(NSString *)filePath
@@ -431,6 +435,46 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
       failFuture];
   }
   return [FBFuture futureWithResult:fifoPath];
+}
+
+@end
+
+@implementation FBProcessOutput_Null
+
+#pragma mark FBStandardStream
+
+- (FBFuture<FBProcessStreamAttachment *> *)attach
+{
+  return [FBFuture futureWithResult:[[FBProcessStreamAttachment alloc] initWithPipe:nil fileHandle:NSFileHandle.fileHandleWithNullDevice]];
+}
+
+- (FBFuture<NSNull *> *)detach
+{
+  return FBFuture.empty;
+}
+
+- (NSNull *)contents
+{
+  return NSNull.null;
+}
+
+#pragma mark FBProcessOutput Implementation
+
+- (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile
+{
+  return [FBFuture futureWithResult:[[FBProcessFileOutput_DirectToFile alloc] initWithFilePath:@"/dev/null"]];
+}
+
+- (FBFuture<id<FBDataConsumer>> *)providedThroughConsumer
+{
+  return [FBFuture futureWithResult:FBNullDataConsumer.new];
+}
+
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return @"Null Output";
 }
 
 @end
