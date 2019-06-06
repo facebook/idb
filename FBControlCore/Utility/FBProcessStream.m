@@ -636,7 +636,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
           describeFormat:@"Cannot attach to %@ twice", self]
           failFuture];
       }
-      self.reader = [FBFileReader readerWithFileDescriptor:attachment.pipe.fileHandleForReading.fileDescriptor closeOnEndOfFile:YES consumer:self.consumer logger:self.logger];
+      self.reader = [FBFileReader readerWithFileDescriptor:self.pipe.fileHandleForReading.fileDescriptor closeOnEndOfFile:YES consumer:self.consumer logger:self.logger];
       return [[[self.reader
         startReading]
         mapReplace:attachment]
@@ -961,7 +961,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
       }
       self.pipe = NSPipe.pipe;
       dispatch_group_leave(self.pipeGroup);
-      return [FBFuture futureWithResult:[[FBProcessStreamAttachment alloc] initWithPipe:self.pipe fileHandle:self.pipe.fileHandleForWriting]];
+      return [FBFuture futureWithResult:[[FBProcessStreamAttachment alloc] initWithPipe:self.pipe fileHandle:self.pipe.fileHandleForReading]];
     }]
     nameFormat:@"Attach %@ to pipe", self.description];
 }
@@ -1008,7 +1008,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
     attach]
     onQueue:self.workQueue fmap:^(FBProcessStreamAttachment *attachment) {
       NSError *error = nil;
-      id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileDescriptor:attachment.fileHandle.fileDescriptor closeOnEndOfFile:YES error:&error];
+      id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileDescriptor:self.pipe.fileHandleForWriting.fileDescriptor closeOnEndOfFile:YES error:&error];
       if (!writer) {
         return [[FBControlCoreError
           describeFormat:@"Failed to create a writer for pipe %@", error]
