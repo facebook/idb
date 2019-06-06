@@ -84,8 +84,8 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
         arguments:agentLaunch.arguments
         environment:agentLaunch.environment
         waitForDebugger:NO
-        stdOut:stdOutAttachment.fileHandle
-        stdErr:stdErrAttachment.fileHandle
+        stdOut:stdOutAttachment
+        stdErr:stdErrAttachment
         processStatusFuture:processStatusFuture];
 
       // Wrap in the container object
@@ -134,7 +134,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
 #pragma mark Private
 
-+ (FBFuture<NSNumber *> *)launchAgentWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr processStatusFuture:(FBMutableFuture<NSNumber *> *)processStatusFuture
++ (FBFuture<NSNumber *> *)launchAgentWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr processStatusFuture:(FBMutableFuture<NSNumber *> *)processStatusFuture
 {
   // Get the Options
   NSDictionary<NSString *, id> *options = [FBAgentLaunchStrategy
@@ -161,8 +161,8 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
       // This would not be an issue if using simctl directly, as the stdout/stderr of the simctl process would close when the simctl process terminates.
       // However, using the simctl approach, we don't get the pid of the spawned process, this is merely logged internally.
       // Failing to close this end of the file descriptor would lead to the write-end of any pipe to not be closed and therefore it would leak.
-      [stdOut closeFile];
-      [stdErr closeFile];
+      [stdOut.fileHandle closeFile];
+      [stdErr.fileHandle closeFile];
     }
     completionQueue:simulator.workQueue
     completionHandler:^(NSError *innerError, pid_t processIdentifier){
@@ -175,16 +175,16 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
   return launchFuture;
 }
 
-+ (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr
++ (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr
 {
   // argv[0] should be launch path of the process. SimDevice does not do this automatically, so we need to add it.
   arguments = [@[launchPath] arrayByAddingObjectsFromArray:arguments];
   NSMutableDictionary<NSString *, id> *options = [FBProcessLaunchConfiguration launchOptionsWithArguments:arguments environment:environment waitForDebugger:waitForDebugger];
   if (stdOut){
-    options[@"stdout"] = @([stdOut fileDescriptor]);
+    options[@"stdout"] = @(stdOut.fileHandle.fileDescriptor);
   }
   if (stdErr) {
-    options[@"stderr"] = @([stdErr fileDescriptor]);
+    options[@"stderr"] = @(stdErr.fileHandle.fileDescriptor);
   }
   if (simulator.state != FBiOSTargetStateBooted) {
     options[@"standalone"] = @YES;
