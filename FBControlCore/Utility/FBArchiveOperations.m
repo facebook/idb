@@ -21,7 +21,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
   return [[[[[[[FBTaskBuilder
     withLaunchPath:BSDTarPath]
     withArguments:@[@"-vzxp", @"-C", extractPath, @"-f", path]]
-    withStdErrToLogger:logger.debug]
+    withStdErrToLoggerAndErrorMessage:logger.debug]
     withStdOutToLogger:logger.debug]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
     runUntilCompletion]
@@ -34,7 +34,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     withLaunchPath:BSDTarPath]
     withArguments:@[@"-vzxp", @"-C", extractPath, @"-f", @"-"]]
     withStdIn:stream]
-    withStdErrToLogger:logger.debug]
+    withStdErrToLoggerAndErrorMessage:logger.debug]
     withStdOutToLogger:logger.debug]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
     runUntilCompletion]
@@ -47,28 +47,28 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     withLaunchPath:@"/usr/bin/gunzip"]
     withArguments:@[@"-v", @"--to-stdout"]]
     withStdIn:stream]
-    withStdErrToLogger:logger.debug]
+    withStdErrToLoggerAndErrorMessage:logger.debug]
     withStdOutPath:extractPath]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
     runUntilCompletion]
     mapReplace:extractPath];
 }
 
-+ (FBFuture<FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *> *)createGzipForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *)createGzipForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  return [[[[[[FBTaskBuilder
+  return (FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *) [[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/gzip"]
     withArguments:@[@"--to-stdout", @"--verbose", path]]
-    withStdErrToLogger:logger]
+    withStdErrToLoggerAndErrorMessage:logger]
     withStdOutToInputStream]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
     start];
 }
 
-+ (FBFuture<FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *> *)createGzippedTarForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *)createGzippedTarForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   NSError *error = nil;
-  FBTaskBuilder<NSNull *, NSData *, id<FBControlCoreLogger>> *builder = [self createGzippedTarTaskBuilderForPath:path queue:queue logger:logger error:&error];
+  FBTaskBuilder<NSNull *, NSData *, id> *builder = [self createGzippedTarTaskBuilderForPath:path queue:queue logger:logger error:&error];
   if (!builder) {
     return [FBFuture futureWithError:error];
   }
@@ -80,7 +80,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 + (FBFuture<NSData *> *)createGzippedTarDataForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   NSError *error = nil;
-  FBTaskBuilder<NSNull *, NSData *, id<FBControlCoreLogger>> *builder = [self createGzippedTarTaskBuilderForPath:path queue:queue logger:logger error:&error];
+  FBTaskBuilder<NSNull *, NSData *, id> *builder = [self createGzippedTarTaskBuilderForPath:path queue:queue logger:logger error:&error];
   if (!builder) {
     return [FBFuture futureWithError:error];
   }
@@ -93,7 +93,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 
 #pragma mark Private
 
-+ (FBTaskBuilder<NSNull *, NSData *, id<FBControlCoreLogger>> *)createGzippedTarTaskBuilderForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (FBTaskBuilder<NSNull *, NSData *, id> *)createGzippedTarTaskBuilderForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   BOOL isDirectory;
   if (![NSFileManager.defaultManager fileExistsAtPath:path isDirectory:&isDirectory]) {
@@ -122,11 +122,11 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     }
   }
 
-  return [[[[[FBTaskBuilder
+  return (FBTaskBuilder<NSNull *, NSData *, id> *) [[[[[FBTaskBuilder
     withLaunchPath:BSDTarPath]
     withArguments:@[@"-zvc", @"-f", @"-", @"-C", directory, fileName]]
     withStdOutInMemoryAsData]
-    withStdErrToLogger:logger]
+    withStdErrToLoggerAndErrorMessage:logger]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]];
 }
 

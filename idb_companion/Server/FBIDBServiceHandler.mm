@@ -34,10 +34,10 @@ static NSString *nsstring_from_c_string(const ::std::string& string)
 static int BufferOutputSize = 16384; //  # 16Kb
 
 template <class T>
-static Status drain_writer(FBFuture<FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *> *taskFuture, grpc::internal::WriterInterface<T> *stream)
+static Status drain_writer(FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *taskFuture, grpc::internal::WriterInterface<T> *stream)
 {
   NSError *error = nil;
-  FBTask<NSNull *, NSInputStream *, id<FBControlCoreLogger>> *task = [taskFuture block:&error];
+  FBTask<NSNull *, NSInputStream *, id> *task = [taskFuture block:&error];
   if (!task) {
     return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
   }
