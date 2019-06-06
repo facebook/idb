@@ -29,6 +29,28 @@
   XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
 }
 
+- (void)testLineBufferAccumulationWithCapacity
+{
+  id<FBAccumulatingBuffer> consumer = [FBDataBuffer accumulatingBufferWithCapacity:3];
+  [consumer consumeData:[@"F" dataUsingEncoding:NSUTF8StringEncoding]];
+  XCTAssertEqualObjects(consumer.lines, @[@"F"]);
+  [consumer consumeData:[@"O" dataUsingEncoding:NSUTF8StringEncoding]];
+  XCTAssertEqualObjects(consumer.lines, @[@"FO"]);
+  [consumer consumeData:[@"O" dataUsingEncoding:NSUTF8StringEncoding]];
+  XCTAssertEqualObjects(consumer.lines, @[@"FOO"]);
+
+  [consumer consumeData:[@"B" dataUsingEncoding:NSUTF8StringEncoding]];
+  XCTAssertEqualObjects(consumer.lines, @[@"OOB"]);
+
+  [consumer consumeData:[@"AR" dataUsingEncoding:NSUTF8StringEncoding]];
+  XCTAssertEqualObjects(consumer.lines, @[@"BAR"]);
+  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
+
+  [consumer consumeEndOfFile];
+  XCTAssertEqualObjects(consumer.lines, @[@"BAR"]);
+  XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
+}
+
 - (void)testLineBufferedConsumer
 {
   NSMutableArray<NSString *> *lines = [NSMutableArray array];

@@ -140,6 +140,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  A data buffer that is only mutated through consuming data.
+ Has a capacity set, if the capacity is reached, the bytes will be dropped from the beginning of the buffer.
+
+ @param capacity the capacity in bytes of the buffer.
+ @return a FBDataBuffer implementation.
+ */
++ (id<FBAccumulatingBuffer>)accumulatingBufferWithCapacity:(size_t)capacity;
+
+/**
+ A data buffer that is only mutated through consuming data.
 
  @return a FBDataBuffer implementation.
  */

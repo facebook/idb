@@ -12,6 +12,7 @@
 @interface FBDataBuffer_Accumilating : NSObject <FBDataConsumer, FBAccumulatingBuffer>
 
 @property (nonatomic, strong, readwrite) NSMutableData *buffer;
+@property (nonatomic, assign, readonly) size_t capacity;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *eofHasBeenReceivedFuture;
 
 @end
@@ -22,10 +23,10 @@
 
 - (instancetype)init
 {
-  return [self initWithBackingBuffer:NSMutableData.new];
+  return [self initWithBackingBuffer:NSMutableData.new capacity:0];
 }
 
-- (instancetype)initWithBackingBuffer:(NSMutableData *)buffer
+- (instancetype)initWithBackingBuffer:(NSMutableData *)buffer capacity:(size_t)capacity
 {
   self = [super init];
   if (!self) {
@@ -33,6 +34,7 @@
   }
 
   _buffer = buffer;
+  _capacity = capacity;
   _eofHasBeenReceivedFuture = FBMutableFuture.future;
 
   return self;
@@ -68,7 +70,15 @@
 {
   @synchronized (self) {
     NSAssert(self.eofHasBeenReceived.hasCompleted == NO, @"Cannot consume data after eof recieved");
-    [self.buffer appendData:data];
+    if (self.capacity == 0) {
+      [self.buffer appendData:data];
+    } else {
+      NSInteger overrun = (NSInteger) self.buffer.length + (NSInteger) data.length - (NSInteger) self.capacity;
+      if (overrun > 0) {
+        [self.buffer replaceBytesInRange:NSMakeRange(0, (NSUInteger) overrun) withBytes:NULL length:0];
+      }
+      [self.buffer appendData:data];
+    }
   }
 }
 
@@ -374,9 +384,15 @@
   return [FBDataBuffer_Accumilating new];
 }
 
++ (id<FBAccumulatingBuffer>)accumulatingBufferWithCapacity:(size_t)capacity
+{
+  NSParameterAssert(capacity > 0);
+  return [[FBDataBuffer_Accumilating alloc] initWithBackingBuffer:NSMutableData.data capacity:capacity];
+}
+
 + (id<FBAccumulatingBuffer>)accumulatingBufferForMutableData:(NSMutableData *)data
 {
-  return [[FBDataBuffer_Accumilating alloc] initWithBackingBuffer:data];
+  return [[FBDataBuffer_Accumilating alloc] initWithBackingBuffer:data capacity:0];
 }
 
 + (id<FBConsumableBuffer>)consumableBuffer
