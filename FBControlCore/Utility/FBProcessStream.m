@@ -661,7 +661,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
     }]
     onQueue:self.workQueue chain:^(FBFuture *future) {
       self.reader = nil;
-      return [super detach];
+      return future;
     }]
     nameFormat:@"Detach %@", self.description];
 }
