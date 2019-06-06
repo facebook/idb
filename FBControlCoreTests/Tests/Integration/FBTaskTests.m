@@ -74,6 +74,28 @@
   XCTAssertNotNil(error);
 }
 
+- (void)testEnvironment
+{
+  NSDictionary<NSString *, NSString *> *environment = @{
+    @"FOO0": @"BAR0",
+    @"FOO1": @"BAR1",
+    @"FOO2": @"BAR2",
+    @"FOO3": @"BAR3",
+    @"FOO4": @"BAR4",
+  };
+  FBFuture *futureTask = [[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/env"]
+    withEnvironment:environment]
+    runUntilCompletion];
+
+  FBTask *task = [self runAndWaitForTaskFuture:futureTask];
+  XCTAssertEqualObjects(task.exitCode.result, @0);
+  for (NSString *key in environment.allKeys) {
+    NSString *expected = [NSString stringWithFormat:@"%@=%@", key, environment[key]];
+    XCTAssertTrue([task.stdOut containsString:expected]);
+  }
+}
+
 - (void)testBase64Matches
 {
   NSString *filePath = FBControlCoreFixtures.assetsdCrashPathWithCustomDeviceSet;
