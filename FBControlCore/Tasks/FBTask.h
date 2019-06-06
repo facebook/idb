@@ -12,6 +12,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+static const size_t FBTaskOutputErrorMessageLength = 200;
+
 @class FBTaskConfiguration;
 
 /**

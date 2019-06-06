@@ -9,10 +9,11 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBDataBuffer.h"
 #import "FBDataConsumer.h"
+#import "FBProcessStream.h"
 #import "FBTask.h"
 #import "FBTaskConfiguration.h"
-#import "FBProcessStream.h"
 
 @interface FBTaskBuilder ()
 
@@ -171,6 +172,12 @@
   return self;
 }
 
+- (instancetype)withStdOutToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger
+{
+  self.stdOut = [FBProcessOutput outputForDataConsumer:[FBDataBuffer accumulatingBufferWithCapacity:FBTaskOutputErrorMessageLength] logger:logger];
+  return self;
+}
+
 #pragma mark stderr
 
 - (instancetype)withStdErrInMemoryAsData
@@ -212,6 +219,12 @@
 - (instancetype)withStdErrToLogger:(id<FBControlCoreLogger>)logger
 {
   self.stdErr = [FBProcessOutput outputForLogger:logger];
+  return self;
+}
+
+- (instancetype)withStdErrToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger
+{
+  self.stdErr = [FBProcessOutput outputForDataConsumer:[FBDataBuffer accumulatingBufferWithCapacity:FBTaskOutputErrorMessageLength] logger:logger];
   return self;
 }
 

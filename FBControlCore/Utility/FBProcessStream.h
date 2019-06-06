@@ -144,13 +144,13 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
 + (FBProcessOutput<NSInputStream *> *)outputToInputStream;
 
 /**
- An Output Container that passes to Data Consumer.
+ An Output Container that passes to both a data consumer and a logger.
 
  @param dataConsumer the file consumer to write to.
  @param logger the logger to log to.
  @return a Process Output instance.
  */
-+ (FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(id<FBDataConsumer>)dataConsumer logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(id<FBDataConsumer>)dataConsumer logger:(id<FBControlCoreLogger>)logger;
 
 /**
  An Output Container that passes to Data Consumer.

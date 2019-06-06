@@ -11,6 +11,7 @@
 
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
+#import "FBDataBuffer.h"
 #import "FBDataConsumer.h"
 #import "FBFileWriter.h"
 #import "FBLaunchedProcess.h"
@@ -355,8 +356,13 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     onQueue:self.queue fmap:^(NSNumber *exitCode) {
       // Then check whether the exit code honours the acceptable codes.
       if (![self.acceptableStatusCodes containsObject:exitCode]) {
+        NSString *message = [NSString stringWithFormat:@"%@ Returned non-zero status code %@", self.programName, exitCode];
+        if ([self.stdErrSlot.contents conformsToProtocol:@protocol(FBAccumulatingBuffer)]) {
+          NSData *outputData = [self.stdErrSlot.contents data];
+          message = [message stringByAppendingFormat:@": %@", [[NSString alloc] initWithData:outputData encoding:NSUTF8StringEncoding]];
+        }
         return [[[FBControlCoreError
-          describeFormat:@"%@ Returned non-zero status code %@", self.programName, exitCode]
+          describe:message]
           inDomain:FBTaskErrorDomain]
           failFuture];
       }

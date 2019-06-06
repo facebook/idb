@@ -344,7 +344,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return [[FBProcessOutput_InputStream alloc] init];
 }
 
-+ (FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(id<FBDataConsumer>)dataConsumer logger:(nullable id<FBControlCoreLogger>)logger
++ (FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(id<FBDataConsumer>)dataConsumer logger:(id<FBControlCoreLogger>)logger
 {
   return [[FBProcessOutput_Consumer alloc] initWithConsumer:dataConsumer logger:logger];
 }
@@ -636,7 +636,20 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
           describeFormat:@"Cannot attach to %@ twice", self]
           failFuture];
       }
-      self.reader = [FBFileReader readerWithFileDescriptor:self.pipe.fileHandleForReading.fileDescriptor closeOnEndOfFile:YES consumer:self.consumer logger:self.logger];
+
+      // FBFileReader consumes the read end, the write end is passed out in the attachment.
+      // The super's attach creates the pipe and the detach closes the write end.
+      id<FBDataConsumer> consumer = self.consumer;
+      id<FBControlCoreLogger> logger = self.logger;
+      if (logger) {
+        consumer = [FBCompositeDataConsumer consumerWithConsumers:@[
+          consumer,
+          [FBLoggingDataConsumer consumerWithLogger:logger],
+        ]];
+      }
+
+      // FBProcessOuput consumes the read end, the write end is passed out in the attachment.
+      self.reader = [FBFileReader readerWithFileDescriptor:self.pipe.fileHandleForReading.fileDescriptor closeOnEndOfFile:YES consumer:consumer logger:self.logger];
       return [[[self.reader
         startReading]
         mapReplace:attachment]

@@ -11,6 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBAccumulatingBuffer;
 @protocol FBControlCoreLogger;
 @protocol FBDataConsumer;
 
@@ -176,6 +177,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBTaskBuilder<StdInType, id<FBControlCoreLogger>, StdErrType> *)withStdOutToLogger:(id<FBControlCoreLogger>)logger;
 
+/**
+ Redirects stdout to the provided logger and prints the output in any error message that occurs.
+
+ @param logger the logger to use for logging lines.
+ @return the reciver, for chaining.
+ */
+- (FBTaskBuilder<StdInType, id<FBAccumulatingBuffer>, StdErrType> *)withStdOutToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger;
+
 #pragma mark stderr
 
 /**
@@ -230,6 +239,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return the reciver, for chaining.
  */
 - (FBTaskBuilder<StdInType, StdOutType, id<FBControlCoreLogger>> *)withStdErrToLogger:(id<FBControlCoreLogger>)logger;
+
+/**
+ Redirects stderr to the provided logger and prints the output in any error message that occurs.
+
+ @param logger the logger to use for logging lines.
+ @return the reciver, for chaining.
+ */
+- (FBTaskBuilder<StdInType, StdOutType, id<FBAccumulatingBuffer>> *)withStdErrToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Loggers
 
