@@ -123,24 +123,27 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
 - (FBFuture<NSNull *> *)completeLaunchedProcess:(id<FBLaunchedProcess>)process shimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBDataConsumerLifecycle>)shimConsumer
 {
+  id<FBControlCoreLogger> logger = self.logger;
   id<FBLogicXCTestReporter> reporter = self.reporter;
   dispatch_queue_t queue = self.executor.workQueue;
 
   return [[[[[FBLogicTestRunStrategy
     fromQueue:queue waitForDebuggerToBeAttached:self.configuration.waitForDebugger forProcessIdentifier:process.processIdentifier reporter:reporter]
     onQueue:queue fmap:^(id _) {
+      [logger logFormat:@"Starting to read shim output from location %@", shimOutput.filePath];
       return [shimOutput startReading];
     }]
     onQueue:queue fmap:^(FBFileReader *reader) {
+      [logger logFormat:@"Shim output at %@ has been opened for reading, waiting for xctest process to exit", shimOutput.filePath];
       return [FBLogicTestRunStrategy onQueue:queue waitForExit:process closingOutput:shimOutput consumer:shimConsumer];
     }]
     onQueue:queue handleError:^(NSError *error) {
-      [self.logger logFormat:@"Abnormal exit of xctest process %@", error];
-      [self.reporter didCrashDuringTest:error];
+      [logger logFormat:@"Abnormal exit of xctest process %@", error];
+      [reporter didCrashDuringTest:error];
       return [FBFuture futureWithError:error];
     }]
     onQueue:queue map:^(id _) {
-      [self.logger log:@"Normal exit of xctest process"];
+      [logger log:@"Normal exit of xctest process"];
       [reporter didFinishExecutingTestPlan];
       return NSNull.null;
     }];
