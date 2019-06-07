@@ -104,7 +104,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
 + (FBFuture<FBInstrumentsOperation *> *)operationWithTargetInternal:(id<FBiOSTarget>)target configuration:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.instruments", DISPATCH_QUEUE_SERIAL);
-  NSString *fileName = [[@[configuration.instrumentName, NSUUID.UUID.UUIDString] componentsJoinedByString:@"_"] stringByAppendingPathExtension:@"trace"];
+  NSString *fileName = [[[[configuration.instrumentName componentsSeparatedByString:@" "] arrayByAddingObject:NSUUID.UUID.UUIDString] componentsJoinedByString:@"_"] stringByAppendingPathExtension:@"trace"];
   NSString *filePath = [target.auxillaryDirectory stringByAppendingPathComponent:fileName];
   NSString *durationMilliseconds = [@(configuration.duration * 1000) stringValue];
   NSMutableArray<NSString *> *arguments = [@[@"-w", target.udid, @"-D", filePath, @"-t", configuration.instrumentName, @"-l",  durationMilliseconds, @"-v"] mutableCopy];
