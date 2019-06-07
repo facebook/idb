@@ -24,6 +24,7 @@ def _initial_info(
 ) -> Tuple[LoggingMetadata, int]:
     _metadata: LoggingMetadata = metadata or {}
     if len(args):
+        # pyre-fixme[16]: `Collection` has no attribute `__getitem__`.
         self_meta: Optional[LoggingMetadata] = getattr(args[0], "metadata", None)
         if self_meta:
             _metadata.update(self_meta)

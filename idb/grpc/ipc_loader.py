@@ -179,13 +179,9 @@ def _trampoline_daemon(
             partial_call = partial(partial_call, context=context)
 
         if _takes_stream(call):
-            # pyre-fixme[29]: `Union[Callable[..., Any], Callable[[*(Any), **(Any)],
-            #  Any]]` is not a function.
             await partial_call(stream=stream)
         else:
             request = await stream.recv_message()
-            # pyre-fixme[29]: `Union[Callable[..., Any], Callable[[*(Any), **(Any)],
-            #  Any]]` is not a function.
             response = await partial_call(request=request)
             await stream.send_message(response)
 
