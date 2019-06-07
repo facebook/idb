@@ -44,10 +44,13 @@
 
   [consumer consumeData:[@"AR" dataUsingEncoding:NSUTF8StringEncoding]];
   XCTAssertEqualObjects(consumer.lines, @[@"BAR"]);
+
+  [consumer consumeData:[@"ALONGSTRINGBUTIWANTAHIT" dataUsingEncoding:NSUTF8StringEncoding]];
+  XCTAssertEqualObjects(consumer.lines, @[@"HIT"]);
   XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
 
   [consumer consumeEndOfFile];
-  XCTAssertEqualObjects(consumer.lines, @[@"BAR"]);
+  XCTAssertEqualObjects(consumer.lines, @[@"HIT"]);
   XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
 }
 

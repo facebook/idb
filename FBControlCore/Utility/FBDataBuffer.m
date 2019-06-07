@@ -70,14 +70,12 @@
 {
   @synchronized (self) {
     NSAssert(self.eofHasBeenReceived.hasCompleted == NO, @"Cannot consume data after eof recieved");
-    if (self.capacity == 0) {
-      [self.buffer appendData:data];
-    } else {
-      NSInteger overrun = (NSInteger) self.buffer.length + (NSInteger) data.length - (NSInteger) self.capacity;
+    [self.buffer appendData:data];
+    if (self.capacity > 0) {
+      NSInteger overrun = (NSInteger) self.buffer.length - (NSInteger) self.capacity;
       if (overrun > 0) {
         [self.buffer replaceBytesInRange:NSMakeRange(0, (NSUInteger) overrun) withBytes:NULL length:0];
       }
-      [self.buffer appendData:data];
     }
   }
 }
