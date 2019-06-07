@@ -161,8 +161,8 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
       // This would not be an issue if using simctl directly, as the stdout/stderr of the simctl process would close when the simctl process terminates.
       // However, using the simctl approach, we don't get the pid of the spawned process, this is merely logged internally.
       // Failing to close this end of the file descriptor would lead to the write-end of any pipe to not be closed and therefore it would leak.
-      [stdOut.fileHandle closeFile];
-      [stdErr.fileHandle closeFile];
+      close(stdOut.fileDescriptor);
+      close(stdErr.fileDescriptor);
     }
     completionQueue:simulator.workQueue
     completionHandler:^(NSError *innerError, pid_t processIdentifier){
@@ -181,10 +181,10 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
   arguments = [@[launchPath] arrayByAddingObjectsFromArray:arguments];
   NSMutableDictionary<NSString *, id> *options = [FBProcessLaunchConfiguration launchOptionsWithArguments:arguments environment:environment waitForDebugger:waitForDebugger];
   if (stdOut){
-    options[@"stdout"] = @(stdOut.fileHandle.fileDescriptor);
+    options[@"stdout"] = @(stdOut.fileDescriptor);
   }
   if (stdErr) {
-    options[@"stderr"] = @(stdErr.fileHandle.fileDescriptor);
+    options[@"stderr"] = @(stdErr.fileDescriptor);
   }
   if (simulator.state != FBiOSTargetStateBooted) {
     options[@"standalone"] = @YES;

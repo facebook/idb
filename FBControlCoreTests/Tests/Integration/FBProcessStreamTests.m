@@ -23,11 +23,13 @@
   NSError *error = nil;
   FBProcessStreamAttachment *attachment = [[output attach] await:&error];
   XCTAssertNil(error);
-  XCTAssertTrue([attachment.pipe isKindOfClass:NSPipe.class]);
-  XCTAssertEqual(attachment.pipe.fileHandleForWriting, attachment.fileHandle);
+  XCTAssertTrue(attachment.fileDescriptor);
+  XCTAssertEqual(attachment.mode, FBProcessStreamAttachmentModeOutput);
 
-  [attachment.pipe.fileHandleForWriting writeData:[@"HELLO WORLD\n" dataUsingEncoding:NSUTF8StringEncoding]];
-  [attachment.pipe.fileHandleForWriting writeData:[@"HELLO AGAIN"  dataUsingEncoding:NSUTF8StringEncoding]];
+  NSData *data = [@"HELLO WORLD\n" dataUsingEncoding:NSUTF8StringEncoding];
+  write(attachment.fileDescriptor, data.bytes, data.length);
+  data = [@"HELLO AGAIN" dataUsingEncoding:NSUTF8StringEncoding];
+  write(attachment.fileDescriptor, data.bytes, data.length);
 
   [[output detach] await:&error];
   XCTAssertNil(error);

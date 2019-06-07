@@ -114,7 +114,6 @@
   NSString *filePath = FBControlCoreFixtures.assetsdCrashPathWithCustomDeviceSet;
   NSString *expected = [[NSData dataWithContentsOfFile:filePath] base64EncodedStringWithOptions:0];
 
-
   FBFuture *futureTask = [[FBTaskBuilder
     withLaunchPath:@"/usr/bin/base64" arguments:@[@"-i", filePath]]
     runUntilCompletion];
@@ -311,6 +310,7 @@
 
   XCTAssertTrue([stream isKindOfClass:NSOutputStream.class]);
   XCTAssertTrue([task.stdIn isKindOfClass:NSOutputStream.class]);
+  [stream open];
   [stream write:(const uint8_t *)expected.UTF8String maxLength:strlen(expected.UTF8String)];
   [stream close];
 
@@ -334,6 +334,7 @@
 
   NSInputStream *stream = task.stdOut;
   XCTAssertTrue([stream isKindOfClass:NSInputStream.class]);
+  [stream open];
 
   NSMutableData *output = NSMutableData.data;
   while (true) {

@@ -49,9 +49,10 @@ static BOOL AddOutputFileActions(posix_spawn_file_actions_t *fileActions, FBProc
   if (!attachment) {
     return YES;
   }
+  NSCParameterAssert(attachment.mode == FBProcessStreamAttachmentModeOutput);
   // dup the write end of the pipe to the target file descriptor i.e. stdout
   // Files do not need to be closed in the launched process as POSIX_SPAWN_CLOEXEC_DEFAULT does this for us.
-  int sourceFileDescriptor = attachment.pipe ? attachment.pipe.fileHandleForWriting.fileDescriptor : attachment.fileHandle.fileDescriptor;
+  int sourceFileDescriptor = attachment.fileDescriptor;
   int status = posix_spawn_file_actions_adddup2(fileActions, sourceFileDescriptor, targetFileDescriptor);
   if (status != 0) {
     return [[FBControlCoreError
@@ -66,9 +67,10 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   if (!attachment) {
     return YES;
   }
+  NSCParameterAssert(attachment.mode == FBProcessStreamAttachmentModeInput);
   // dup the read end of the pipe to the target file descriptor i.e. stdin
   // Files do not need to be closed in the launched process as POSIX_SPAWN_CLOEXEC_DEFAULT does this for us.
-  int sourceFileDescriptor = attachment.pipe ? attachment.pipe.fileHandleForReading.fileDescriptor : attachment.fileHandle.fileDescriptor;
+  int sourceFileDescriptor = attachment.fileDescriptor;
   int status = posix_spawn_file_actions_adddup2(fileActions, sourceFileDescriptor, targetFileDescriptor);
   if (status != 0) {
     return [[FBControlCoreError

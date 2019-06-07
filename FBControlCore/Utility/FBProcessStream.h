@@ -13,22 +13,30 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
+  FBProcessStreamAttachmentModeInput = 0,
+  FBProcessStreamAttachmentModeOutput = 1,
+};
+
 /**
  An attached standard stream object.
  */
 @interface FBProcessStreamAttachment : NSObject
 
 /**
- The pipe to attach to, if backed by a pipe.
- Prefer using this over fileHandle if present.
+ The file descriptor to attach to.
  */
-@property (nonatomic, readonly, strong, nullable) NSPipe *pipe;
+@property (nonatomic, assign, readonly) int fileDescriptor;
 
 /**
- The file handle to attach to.
- This will always be present.
+ Whether the implementor should close when it reaches the end of it's stream.
  */
-@property (nonatomic, readonly, strong) NSFileHandle *fileHandle;
+@property (nonatomic, assign, readonly) BOOL closeOnEndOfFile;
+
+/**
+ Whether the attachment represents an input or an output.
+ */
+@property (nonatomic, assign, readonly) FBProcessStreamAttachmentMode mode;
 
 @end
 
