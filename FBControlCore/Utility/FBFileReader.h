@@ -32,7 +32,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 #pragma mark Initializers
 
 /**
- Creates a file reader from a NSFileHandle.
+ Creates a reader of NSData from a file descriptor.
 
  @param fileDescriptor the file descriptor to write to.
  @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
@@ -43,7 +43,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 + (instancetype)readerWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
- Creates a File Reader of Dispatch Data from a File Handle.
+ Creates a reader of dispatch data from a file descriptor.
 
  @param fileDescriptor the file descriptor to write to.
  @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
@@ -54,7 +54,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 + (instancetype)dispatchDataReaderWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile consumer:(id<FBDispatchDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
- Creates a file reader for a file at path.
+ Creates a reader of NSData from a file at a path on the filesystem.
  A file handle will be internally created, and closed when reading has finished.
 
  @param filePath the file path to read from.
