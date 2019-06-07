@@ -47,8 +47,8 @@ static NSString *XcodebuildDestinationTimeoutSecs = @"180"; // How long xcodebui
     withLaunchPath:xcodeBuildPath arguments:arguments]
     withEnvironment:environment];
   if (logger) {
-    [builder withStdOutToLogger:logger];
-    [builder withStdErrToLogger:logger];
+    [builder withStdOutToLoggerAndErrorMessage:logger];
+    [builder withStdErrToLoggerAndErrorMessage:logger];
   }
   return [[builder
     start]
