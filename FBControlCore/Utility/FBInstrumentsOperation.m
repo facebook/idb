@@ -18,7 +18,7 @@
 #import "FBTaskBuilder.h"
 
 static const NSTimeInterval InterruptBackoffTimeout = 600.0; // When stopping instruments with SIGINT, wait this long before SIGKILLing it
-static const NSTimeInterval InstrumentsStartupDelay = 25.0;  // Wait this long to ensure instruments started properly
+static const NSTimeInterval InstrumentsStartupDelay = 15.0;  // Wait this long to ensure instruments started properly
 static const NSTimeInterval InstrumentsStartupTimeout = 360.0; // Fail instruments startup after this amount of time
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
@@ -26,6 +26,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
 @interface FBInstrumentsConsumer : NSObject <FBDataConsumer>
 
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *hasStoppedRecording;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *hasStartedLoadingTemplate;
 @property (nonatomic, strong, readonly) NSMutableArray<NSString *> *logs;
 @property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
 
@@ -43,10 +44,14 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
   }
 
   _hasStoppedRecording = FBMutableFuture.future;
+  _hasStartedLoadingTemplate = FBMutableFuture.future;
   _logs = [NSMutableArray array];
   _consumer = [FBBlockDataConsumer asynchronousLineConsumerWithBlock:^(NSString *logLine) {
     if (![logLine isEqualToString:@""]) {
       [self.logs addObject:logLine];
+    }
+    if ([logLine containsString:@"Loading template"]) {
+      [self.hasStartedLoadingTemplate resolveWithResult:NSNull.null];
     }
     if ([logLine containsString:@"Instruments Trace Complete"]) {
       if (![self.hasStoppedRecording hasCompleted]) {
@@ -121,15 +126,19 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
     withStdOutToLogger:compositeLogger]
     withStdErrToLogger:compositeLogger]
     start]
-    // Wait a few seconds for instruments to startup. If it fails, kill it
     onQueue:target.asyncQueue fmap:^ FBFuture * (FBTask *task) {
-      FBFuture *timerFuture = [FBFuture.empty delay:InstrumentsStartupDelay];
-      return [[[FBFuture
-        race:@[instrumentsConsumer.hasStoppedRecording, timerFuture]]
-        onQueue:target.asyncQueue handleError:^ FBFuture * (NSError *error) {
-          return [[task sendSignal:SIGTERM] fmapReplace:[FBFuture futureWithError:error]];
-        }]
-        mapReplace:task];
+      return [instrumentsConsumer.hasStartedLoadingTemplate
+        onQueue:target.asyncQueue fmap:^ FBFuture * (id _) {
+        [logger logFormat:@"Waiting for %f seconds for Instruments to start properly", InstrumentsStartupDelay];
+        // Wait a few seconds for instruments to startup. If it fails, kill it
+        FBFuture *timerFuture = [FBFuture.empty delay:InstrumentsStartupDelay];
+        return [[[FBFuture
+          race:@[instrumentsConsumer.hasStoppedRecording, timerFuture]]
+          onQueue:target.asyncQueue handleError:^ FBFuture * (NSError *error) {
+            return [[task sendSignal:SIGTERM] fmapReplace:[FBFuture futureWithError:error]];
+          }]
+          mapReplace:task];
+        }];
     }]
     // Yay instruments started properly
     onQueue:target.asyncQueue map:^ FBInstrumentsOperation * (FBTask *task) {
