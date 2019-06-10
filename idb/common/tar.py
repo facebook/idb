@@ -38,11 +38,11 @@ async def _create_tar_command(
                 temp_subdir = os.path.join(temp_dir, sub_dir_name)
                 os.symlink(os.path.dirname(path), temp_subdir)
                 path_to_file = os.path.join(sub_dir_name, os.path.basename(path))
-                tar_args.append(f"-C {temp_dir} {path_to_file}")
+                tar_args.append(f"-C '{temp_dir}' '{path_to_file}'")
         else:
             tar_args.extend(
                 [
-                    f"-C {os.path.dirname(path)} {os.path.basename(path)}"
+                    f"-C '{os.path.dirname(path)}' '{os.path.basename(path)}'"
                     for path in paths
                 ]
             )
@@ -59,7 +59,7 @@ async def _create_untar_command(
     output_path: str,
 ) -> AsyncContextManager[asyncio.subprocess.Process]:
     process = await asyncio.create_subprocess_shell(
-        f"tar -C {output_path} -vxzpf -",
+        f"tar -C '{output_path}' -vxzpf -",
         stdin=asyncio.subprocess.PIPE,
         stderr=sys.stderr,
         stdout=sys.stderr,
