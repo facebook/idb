@@ -13,7 +13,7 @@
 @interface FBServiceConnectionClient ()
 
 @property (nonatomic, strong, readonly) FBAMDServiceConnection *connection;
-@property (nonatomic, strong, readonly) id<FBDataConsumer> writer;
+@property (nonatomic, strong, readonly) id<FBDataConsumer, FBDataConsumerLifecycle> writer;
 @property (nonatomic, strong, readonly) FBFileReader *reader;
 
 @end
@@ -25,7 +25,7 @@
 + (FBFutureContext<FBServiceConnectionClient *> *)clientForServiceConnection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger
 {
   NSError *error = nil;
-  id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileDescriptor:connection.socket closeOnEndOfFile:NO error:&error];
+  id<FBDataConsumer, FBDataConsumerLifecycle> writer = [FBFileWriter asyncWriterWithFileDescriptor:connection.socket closeOnEndOfFile:NO error:&error];
   if (!writer) {
     return [FBFutureContext futureContextWithError:error];
   }
@@ -47,7 +47,7 @@
 }
 
 
-- (instancetype)initWithConnection:(FBAMDServiceConnection *)connection writer:(id<FBDataConsumer>)writer reader:(FBFileReader *)reader buffer:(id<FBNotifyingBuffer>)buffer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConnection:(FBAMDServiceConnection *)connection writer:(id<FBDataConsumer, FBDataConsumerLifecycle>)writer reader:(FBFileReader *)reader buffer:(id<FBNotifyingBuffer>)buffer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -82,11 +82,14 @@
 - (FBFuture<NSNull *> *)teardown
 {
   [self.logger logFormat:@"Stopping reading of %@", self.connection];
-  return [[self.reader
+  return [[[self.reader
     stopReading]
-    onQueue:self.queue map:^(id _) {
+    onQueue:self.queue fmap:^(id _) {
       [self.logger logFormat:@"Stopped reading of %@, stopping writing", self.connection];
       [self.writer consumeEndOfFile];
+      return self.writer.eofHasBeenReceived;
+    }]
+    onQueue:self.queue map:^(id _) {
       [self.logger logFormat:@"Stopped writing %@", self.connection];
       return NSNull.null;
     }];
