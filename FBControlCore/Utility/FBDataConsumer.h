@@ -55,8 +55,8 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBDataConsumerLifecycle <NSObject>
 
 /**
- A Future that resolves when an end-of-file has been recieved and any asynchronous teardown work performed.
- At this point, consumers are safe to assume that the resource that the writer is wrapping is safe to use.
+ A Future that resolves when an end-of-file has been recieved.
+ This is helpful for ensuring that all consumer lines have been drained.
  */
 @property (nonatomic, strong, readonly) FBFuture<NSNull *> *eofHasBeenReceived;
 

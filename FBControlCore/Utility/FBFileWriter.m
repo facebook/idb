@@ -216,6 +216,7 @@
 - (void)consumeEndOfFile
 {
   NSParameterAssert(self.io);
+  [self.eofHasBeenReceivedMutable resolveWithResult:NSNull.null];
 
   // We can't close the file handle right now since there may still be pending IO operations on the channel.
   // The safe place to do this is within the dispatch_io_create cleanup_handler callback.
@@ -238,8 +239,6 @@
 {
   NSParameterAssert(!self.io);
 
-  FBMutableFuture<NSNull *> *eofHasBeenReceived = self.eofHasBeenReceivedMutable;
-
   // If there is an error creating the IO Object, the errorCode will be delivered asynchronously.
   // Having a self -> IO -> self cycle shouldn't be a problem in theory, since the cleanup handler should get when IO is done.
   // However, it appears that having the cycle in place here means that the cleanup handler is *never* called in the following circumstance:
@@ -257,10 +256,6 @@
   __weak typeof(self) weakSelf = self;
   self.io = dispatch_io_create(DISPATCH_IO_STREAM, self.fileDescriptor, self.writeQueue, ^(int errorCode) {
     [weakSelf ioChannelDidCloseWithError:errorCode];
-
-    // Since writing is asynchronous, we don't want to vend futures that show that all work on a file descriptor has finished.
-    // Instead we should wait until the io channel is fully closed, this only occurs in this callback.
-    [eofHasBeenReceived resolveWithResult:NSNull.null];
   });
   if (!self.io) {
     return [[FBControlCoreError
