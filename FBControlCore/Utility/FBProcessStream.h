@@ -71,6 +71,11 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
  */
 @property (nonatomic, assign, readonly) ssize_t bytesTransferred;
 
+/**
+ An error, if any has occured in the streaming of data to the input.
+ */
+@property (nonatomic, strong, nullable, readonly) NSError *streamError;
+
 @end
 
 /**
@@ -195,7 +200,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
 #pragma mark Properties
 
 /**
- The File Handle.
+ The wrapped contents of the stream.
  */
 @property (nonatomic, strong, readonly) WrappedType contents;
 
@@ -235,7 +240,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
 #pragma mark Properties
 
 /**
- The File Handle.
+ The wrapped contents of the stream.
  */
 @property (nonatomic, strong, readonly) WrappedType contents;
 

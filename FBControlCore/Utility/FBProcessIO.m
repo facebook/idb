@@ -90,7 +90,15 @@
       [self.stdOut detach] ?: FBFuture.empty,
       [self.stdErr detach] ?: FBFuture.empty,
     ]]
-    mapReplace:NSNull.null];
+    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (id _) {
+      for (id stream in @[self.stdIn ?: NSNull.null, self.stdOut ?: NSNull.null, self.stdErr ?: NSNull.null]) {
+        NSError *error = [FBProcessIO extractErrorFromStream:stream];
+        if (error) {
+          return [FBFuture futureWithError:error];
+        }
+      }
+      return FBFuture.empty;
+    }];
 }
 
 #pragma mark Private
@@ -105,6 +113,14 @@
     onQueue:self.queue handleError:^(NSError *error) {
       return [FBFuture futureWithResult:error];
     }];
+}
+
++ (NSError *)extractErrorFromStream:(id)stream
+{
+  if (![stream conformsToProtocol:@protocol(FBStandardStreamTransfer)]) {
+      return nil;
+  }
+  return ((id<FBStandardStreamTransfer>) stream).streamError;
 }
 
 - (FBFuture<NSNull *> *)detachRepropogate:(NSError *)error

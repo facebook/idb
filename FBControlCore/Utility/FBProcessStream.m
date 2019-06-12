@@ -946,6 +946,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *writeFuture;
 @property (nonatomic, assign, readwrite) int fileDescriptor;
 @property (atomic, assign, readwrite) ssize_t bytesWritten;
+@property (atomic, copy, nullable, readwrite) NSString *errorMessage;
+@property (atomic, assign, readwrite) NSStreamStatus status;
 
 - (instancetype)initWithWriteFuture:(FBFuture<NSNumber *> *)writeFuture;
 
@@ -1040,6 +1042,11 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 - (id<FBDataConsumer>)contents
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (NSError *)streamError
+{
   return nil;
 }
 
@@ -1189,9 +1196,16 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   return @"Input to NSOutputStream";
 }
 
+#pragma mark FBStandardStreamTransfer
+
 - (ssize_t)bytesTransferred
 {
   return self.stream.bytesWritten;
+}
+
+- (NSError *)streamError
+{
+  return self.stream.streamError;
 }
 
 @end
@@ -1212,6 +1226,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   _writeFuture = writeFuture;
   _fileDescriptor = 0;
   _bytesWritten = 0;
+  _errorMessage = nil;
+  _status = NSStreamStatusNotOpen;
 
   return self;
 }
@@ -1222,17 +1238,37 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 {
   int fileDescriptor = self.fileDescriptor;
   if (!fileDescriptor) {
+    NSStreamStatus status = self.status;
+    if (status == NSStreamStatusNotOpen) {
+      [self resolveError:@"Pipe for writing is not open"];
+    } else if (status == NSStreamStatusClosed) {
+      [self resolveError:@"Pipe for writing is closed"];
+    } else {
+      [self resolveError:@"Pipe for writing is does not exist"];
+    }
     return -1;
   }
+  self.status = NSStreamStatusWriting;
   ssize_t result = write(self.fileDescriptor, buffer, len);
+  self.status = NSStreamStatusOpen;
+  if (result == -1) {
+    [self resolveError:[[NSString alloc] initWithCString:strerror(errno) encoding:NSASCIIStringEncoding]];
+    return -1;
+  }
   self.bytesWritten += result;
   return result;
 }
 
 - (void)open
 {
+  if (self.streamStatus != NSStreamStatusNotOpen) {
+    [self resolveError:[NSString stringWithFormat:@"Stream status is not NSStreamStatusNotOpen is %lu", self.streamStatus]];
+    return;
+  }
+  self.status = NSStreamStatusOpening;
   NSNumber *fileDescriptor = [self.writeFuture block:nil];
   self.fileDescriptor = fileDescriptor.intValue;
+  self.status = NSStreamStatusOpen;
 }
 
 - (void)close
@@ -1240,12 +1276,40 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
   if (self.fileDescriptor) {
     close(self.fileDescriptor);
     self.fileDescriptor = 0;
+    self.status = NSStreamStatusClosed;
   }
 }
 
 - (BOOL)hasSpaceAvailable
 {
   return YES;
+}
+
+- (NSError *)streamError
+{
+  NSString *errorMessage = self.errorMessage;
+  if (!errorMessage) {
+    return nil;
+  }
+  return [[FBControlCoreError
+    describe:errorMessage]
+    build];
+}
+
+- (NSStreamStatus)streamStatus
+{
+  return self.status;
+}
+
+#pragma mark Private
+
+- (void)resolveError:(NSString *)errorMessage
+{
+  if (self.errorMessage) {
+    return;
+  }
+  self.errorMessage = errorMessage;
+  self.status = NSStreamStatusError;
 }
 
 @end
