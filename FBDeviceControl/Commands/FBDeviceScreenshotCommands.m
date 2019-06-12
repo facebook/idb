@@ -9,6 +9,7 @@
 
 #import "FBAMDevice+Private.h"
 #import "FBAMDevice.h"
+#import "FBAMDServiceConnection.h"
 #import "FBDevice+Private.h"
 #import "FBDevice.h"
 #import "FBDeviceControlError.h"
@@ -51,7 +52,7 @@ static NSString *const ScreenShotDataKey = @"ScreenShotData";
   return [[[[[self.device.amDevice
     startService:@"com.apple.mobile.screenshotr"]
     onQueue:self.device.workQueue push:^(FBAMDServiceConnection *connection) {
-      return [FBServiceConnectionClient clientForServiceConnection:connection logger:self.device.logger];
+      return [connection makeClientWithLogger:self.device.logger];
     }]
     onQueue:self.device.workQueue pend:^(FBServiceConnectionClient *rawClient) {
       return [FBDeviceLinkClient deviceLinkClientWithServiceConnectionClient:rawClient];

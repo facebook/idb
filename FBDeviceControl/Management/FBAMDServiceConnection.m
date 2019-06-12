@@ -8,6 +8,7 @@
 #import "FBAMDServiceConnection.h"
 
 #import "FBDeviceControlError.h"
+#import "FBServiceConnectionClient.h"
 
 @implementation FBAMDServiceConnection
 
@@ -70,6 +71,11 @@
   CFRelease(_connection);
   _connection = NULL;
   return YES;
+}
+
+- (FBFutureContext<FBServiceConnectionClient *> *)makeClientWithLogger:(id<FBControlCoreLogger>)logger
+{
+  return [FBServiceConnectionClient clientForServiceConnection:self logger:logger];
 }
 
 #pragma mark Properties

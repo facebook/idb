@@ -9,18 +9,27 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import <FBDeviceControl/FBServiceConnectionClient.h>
-
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBAMDServiceConnection;
+@class FBServiceConnectionClient;
 
 /**
  A GDB Client implementation.
  Some of the information here comes from the gdb remote protocol spec from the llvm project https://github.com/llvm-mirror/lldb/blob/master/docs/lldb-gdb-remote.txt
  There's also more information in the GDB protocol spec https://sourceware.org/gdb/onlinedocs/gdb/General-Query-Packets.html
  */
-@interface FBGDBClient : FBServiceConnectionClient
+@interface FBGDBClient : NSObject
+
+#pragma mark Initializers
+
+/**
+ Makes a GDBClient from an existing service connection.
+
+ @param client the service connection client to use.
+ @return a GDBClient instance.
+ */
+- (instancetype)initWithClient:(FBServiceConnectionClient *)client;
 
 #pragma mark Public Methods
 
@@ -95,6 +104,13 @@ NS_ASSUME_NONNULL_BEGIN
  @return a hex string
  */
 + (NSString *)hexEncode:(NSString *)input;
+
+#pragma mark Properties
+
+/**
+ The wrapped service connection client.
+ */
+@property (nonatomic, strong, readonly) FBServiceConnectionClient *client;
 
 @end
 

@@ -52,16 +52,17 @@ static NSTimeInterval LaunchTimeout = 60;
 
 - (FBFuture<FBDeviceApplicationProcess *> *)launchApplication:(FBApplicationLaunchConfiguration *)launch remoteAppPath:(NSString *)remoteAppPath
 {
-  return [[FBGDBClient
-    clientForServiceConnection:self.connection logger:self.logger]
-    onQueue:self.queue pop:^(FBGDBClient *client) {
+  return [[self.connection
+    makeClientWithLogger:self.logger]
+    onQueue:self.queue pop:^(FBServiceConnectionClient *client) {
+      FBGDBClient *gdbClient = [[FBGDBClient alloc] initWithClient:client];
       FBFuture<NSNumber *> *launchFuture = [FBDeviceApplicationLaunchStrategy
         launchApplication:launch
         remoteAppPath:remoteAppPath
-        client:client
+        client:gdbClient
         queue:self.queue
         logger:self.logger];
-      return [FBDeviceApplicationLaunchStrategy launchApplication:launch device:self.device client:client launchFuture:launchFuture];
+      return [FBDeviceApplicationLaunchStrategy launchApplication:launch device:self.device client:gdbClient launchFuture:launchFuture];
     }];
 }
 

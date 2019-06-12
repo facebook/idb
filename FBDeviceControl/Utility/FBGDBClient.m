@@ -7,8 +7,9 @@
 
 #import "FBGDBClient.h"
 
-#import "FBDeviceControlError.h"
 #import "FBAMDServiceConnection.h"
+#import "FBDeviceControlError.h"
+#import "FBServiceConnectionClient.h"
 
 // We can replicate what Xcode does by logging the lldb output by setting in ~/.lldbinit `log enable -f /tmp/gdb_remote_packets.log gdb-remote packets`
 
@@ -139,13 +140,14 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 
 #pragma mark Initializers
 
-- (instancetype)initWithConnection:(FBAMDServiceConnection *)connection writer:(id<FBDataConsumer>)writer reader:(FBFileReader *)reader buffer:(id<FBNotifyingBuffer>)buffer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithClient:(FBServiceConnectionClient *)client
 {
-  self = [super initWithConnection:connection writer:writer reader:reader buffer:buffer queue:queue logger:logger];
+  self = [super init];
   if (!self) {
     return nil;
   }
 
+  _client = client;
   _exitCodeFuture = FBMutableFuture.future;
 
   return self;
@@ -167,7 +169,7 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 {
   return [[self
     sendAndGetResponse:@"qProcessInfo"]
-    onQueue:self.queue fmap:^(NSString *response) {
+    onQueue:self.client.queue fmap:^(NSString *response) {
       NSError *error = nil;
       NSNumber *pid = processIdentifierFromResponse(response, &error);
       if (!pid) {
@@ -180,11 +182,11 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 - (FBFuture<NSNull *> *)noAckMode
 {
   NSData *ack = [@"+" dataUsingEncoding:NSASCIIStringEncoding];
-  [self sendRaw:ack];
+  [self.client sendRaw:ack];
   return [[self
     sendUntilOK:@"QStartNoAckMode"]
-    onQueue:self.queue map:^(id _) {
-      [self sendRaw:ack];
+    onQueue:self.client.queue map:^(id _) {
+      [self.client sendRaw:ack];
       return NSNull.null;
     }];
 }
@@ -201,8 +203,8 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 
 - (FBFuture<NSNull *> *)consumeStdOut:(id<FBDataConsumer>)stdOut stdErr:(id<FBDataConsumer>)stdErr
 {
-  return [FBFuture onQueue:self.queue resolveValue:^(NSError **error) {
-    return [self.buffer consume:self onQueue:self.queue untilTerminal:[Terminator dataUsingEncoding:NSASCIIStringEncoding] error:error] ? NSNull.null : nil;
+  return [FBFuture onQueue:self.client.queue resolveValue:^(NSError **error) {
+    return [self.client.buffer consume:self onQueue:self.client.queue untilTerminal:[Terminator dataUsingEncoding:NSASCIIStringEncoding] error:error] ? NSNull.null : nil;
   }];
 }
 
@@ -227,7 +229,7 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 {
   return [[self
     sendAndGetResponse:command]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *response) {
+    onQueue:self.client.queue fmap:^ FBFuture<NSNull *> * (NSString *response) {
       if (![response isEqualToString:@"OK"]) {
         return [[FBDeviceControlError
           describeFormat:@"Response '%@' is not equal to 'OK'", response]
@@ -240,9 +242,9 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 - (FBFuture<NSString *> *)sendAndGetResponse:(NSString *)command
 {
   [self sendNow:command];
-  return [[self.buffer
+  return [[self.client.buffer
     consumeAndNotifyWhen:[Terminator dataUsingEncoding:NSASCIIStringEncoding]]
-    onQueue:self.queue map:^(NSData *data) {
+    onQueue:self.client.queue map:^(NSData *data) {
       NSString *response = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
       return trimResponse(response);
     }];
@@ -256,7 +258,7 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
   NSString *command = [commands firstObject];
   return [[self
     sendUntilOK:command]
-    onQueue:self.queue fmap:^(id _) {
+    onQueue:self.client.queue fmap:^(id _) {
       NSArray<NSString *> *next = [commands subarrayWithRange:NSMakeRange(1, commands.count - 1)];
       return [self sendMultiUntilOK:next];
     }];
@@ -264,8 +266,8 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
 
 - (void)sendNow:(NSString *)command
 {
-  [self.logger logFormat:@"SEND: %@", command];
-  [self sendRaw:wrapCommandInSums(command)];
+  [self.client.logger logFormat:@"SEND: %@", command];
+  [self.client sendRaw:wrapCommandInSums(command)];
 }
 
 #pragma mark FBDataConsumer Implementation

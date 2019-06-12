@@ -29,20 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a Future wrapping the FBServiceConnectionClient Client.
  */
-+ (FBFutureContext<id> *)clientForServiceConnection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger;
-
-/**
- The Designated Initializer.
- Do not use directly, use +[FBServiceConnectionClient clientForServiceConnection:queue:logger] instead.
-
- @param connection the service connection connection to use.
- @param writer the writer to use.
- @param reader the reader to use.
- @param buffer the buffer to use.
- @param queue the queue to use.
- @param logger the logger to use.
- */
-- (instancetype)initWithConnection:(FBAMDServiceConnection *)connection writer:(id<FBDataConsumer>)writer reader:(FBFileReader *)reader buffer:(id<FBNotifyingBuffer>)buffer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (FBFutureContext<FBServiceConnectionClient *> *)clientForServiceConnection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 
