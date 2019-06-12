@@ -108,7 +108,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
   NSString *filePath = [target.auxillaryDirectory stringByAppendingPathComponent:fileName];
   NSString *durationMilliseconds = [@(configuration.duration * 1000) stringValue];
   NSMutableArray<NSString *> *arguments = [@[@"-w", target.udid, @"-D", filePath, @"-t", configuration.instrumentName, @"-l",  durationMilliseconds, @"-v"] mutableCopy];
-  if (configuration.targetApplication) {
+  if (configuration.targetApplication && [configuration.targetApplication length] > 0) {
     [arguments addObject:configuration.targetApplication];
     for (NSString *key in configuration.environment) {
       [arguments addObjectsFromArray:@[@"-e", key, configuration.environment[key]]];
