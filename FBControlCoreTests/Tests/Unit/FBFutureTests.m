@@ -191,6 +191,36 @@
   XCTAssertEqualObjects(compositeFuture.result, (@[]));
 }
 
+- (void)testCompositeFailure
+{
+  NSError *error = [NSError errorWithDomain:@"foo" code:2 userInfo:nil];
+  FBMutableFuture<id> *pending = FBMutableFuture.future;
+  FBFuture<NSArray<NSNumber *> *> *compositeFuture = [FBFuture futureWithFutures:@[
+    [FBFuture futureWithResult:@0],
+    pending,
+    [FBMutableFuture futureWithError:error],
+  ]];
+
+  XCTAssertEqual(compositeFuture.state, FBFutureStateFailed);
+  XCTAssertEqualObjects(compositeFuture.error, error);
+  XCTAssertEqual(pending.state, FBFutureStateRunning);
+}
+
+- (void)testCompositeCancellation
+{
+  FBMutableFuture<id> *pending = FBMutableFuture.future;
+  FBMutableFuture<id> *cancelled = FBMutableFuture.future;
+  [cancelled cancel];
+  FBFuture<NSArray<NSNumber *> *> *compositeFuture = [FBFuture futureWithFutures:@[
+    [FBFuture futureWithResult:@0],
+    pending,
+    cancelled,
+  ]];
+
+  XCTAssertEqual(compositeFuture.state, FBFutureStateCancelled);
+  XCTAssertEqual(pending.state, FBFutureStateRunning);
+}
+
 - (void)testFmappedSuccess
 {
   XCTestExpectation *step1 = [[XCTestExpectation alloc] initWithDescription:@"fmap 1 is called"];

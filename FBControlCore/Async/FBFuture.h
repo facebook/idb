@@ -103,12 +103,13 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 + (instancetype)onQueue:(dispatch_queue_t)queue resolve:( FBFuture *(^)(void) )resolve;
 
 /**
- Constructs a Future from an Array of Futures.
+ Constructs a future from an array of futures.
  The future will resolve when all futures in the array have resolved.
- If any future results in an error, the first one will be progated and results of succeful
+ If any future resolves in an error, the first error will be propogated. Any pending futures will not be cancelled.
+ If any future resolves in cancellation, the cancellation will be propogated. Any pending futures will not be cancelled.
 
  @param futures the futures to compose.
- @return a new Future with the resolved results of all the composed futures.
+ @return a new future with the resolved results of all the composed futures.
  */
 + (FBFuture<NSArray<T> *> *)futureWithFutures:(NSArray<FBFuture<T> *> *)futures;
 
