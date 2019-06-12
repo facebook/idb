@@ -510,6 +510,8 @@
 		AAE5A08F1EDF926100A1A811 /* FBXCTestReporterAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = AAE5A08D1EDF926100A1A811 /* FBXCTestReporterAdapter.m */; };
 		AAE90BC21D2A4578004EE9E5 /* FBSimulatorControlFrameworkLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE90BC01D2A4578004EE9E5 /* FBSimulatorControlFrameworkLoader.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAE90BC31D2A4578004EE9E5 /* FBSimulatorControlFrameworkLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = AAE90BC11D2A4578004EE9E5 /* FBSimulatorControlFrameworkLoader.m */; };
+		AAE93BDB22A7E503001FB8CC /* FBProcessIO.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE93BD922A7E503001FB8CC /* FBProcessIO.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AAE93BDC22A7E503001FB8CC /* FBProcessIO.m in Sources */ = {isa = PBXBuildFile; fileRef = AAE93BDA22A7E503001FB8CC /* FBProcessIO.m */; };
 		AAE9A10020512453000A3F32 /* FBCrashLogNotifier.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE9A0FE20512453000A3F32 /* FBCrashLogNotifier.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAE9A10120512453000A3F32 /* FBCrashLogNotifier.m in Sources */ = {isa = PBXBuildFile; fileRef = AAE9A0FF20512453000A3F32 /* FBCrashLogNotifier.m */; };
 		AAEA171D1E005CD7001BD35A /* CoreMediaIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAEA171C1E005CD7001BD35A /* CoreMediaIO.framework */; };
@@ -1405,6 +1407,8 @@
 		AAE5A08D1EDF926100A1A811 /* FBXCTestReporterAdapter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestReporterAdapter.m; sourceTree = "<group>"; };
 		AAE90BC01D2A4578004EE9E5 /* FBSimulatorControlFrameworkLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControlFrameworkLoader.h; sourceTree = "<group>"; };
 		AAE90BC11D2A4578004EE9E5 /* FBSimulatorControlFrameworkLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControlFrameworkLoader.m; sourceTree = "<group>"; };
+		AAE93BD922A7E503001FB8CC /* FBProcessIO.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBProcessIO.h; sourceTree = "<group>"; };
+		AAE93BDA22A7E503001FB8CC /* FBProcessIO.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBProcessIO.m; sourceTree = "<group>"; };
 		AAE9A0FE20512453000A3F32 /* FBCrashLogNotifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBCrashLogNotifier.h; sourceTree = "<group>"; };
 		AAE9A0FF20512453000A3F32 /* FBCrashLogNotifier.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBCrashLogNotifier.m; sourceTree = "<group>"; };
 		AAEA171C1E005CD7001BD35A /* CoreMediaIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMediaIO.framework; path = System/Library/Frameworks/CoreMediaIO.framework; sourceTree = SDKROOT; };
@@ -3037,6 +3041,8 @@
 				AA391AD11CEF4CBC00817691 /* FBLocalizationOverride.m */,
 				AA65BECB225780EC000D380B /* FBLoggingWrapper.h */,
 				AA65BECA225780EC000D380B /* FBLoggingWrapper.m */,
+				AAE93BD922A7E503001FB8CC /* FBProcessIO.h */,
+				AAE93BDA22A7E503001FB8CC /* FBProcessIO.m */,
 				AA5D012D2003F38A005FF117 /* FBProcessStream.h */,
 				AA5D012E2003F38B005FF117 /* FBProcessStream.m */,
 				AAC706F31EFD2E4100BF8303 /* FBScale.h */,
@@ -3334,6 +3340,7 @@
 				AA0F6F2A1CA3DCF700926518 /* FBWeakFrameworkLoader.h in Headers */,
 				AA5D012F2003F38B005FF117 /* FBProcessStream.h in Headers */,
 				73E0A9741F4F361800A216AD /* FBBundleDescriptor+Application.h in Headers */,
+				AAE93BDB22A7E503001FB8CC /* FBProcessIO.h in Headers */,
 				AABCA13B222A7C360015DBAB /* FBDataBuffer.h in Headers */,
 				EEBD60821C9062E900298A07 /* FBControlCoreLogger.h in Headers */,
 				AA4AF522224A9461008DDDC0 /* FBFuture+Sync.h in Headers */,
@@ -3957,6 +3964,7 @@
 				EEBD60671C9062E900298A07 /* FBProcessFetcher+Helpers.m in Sources */,
 				EEBD60811C9062E900298A07 /* FBControlCoreGlobalConfiguration.m in Sources */,
 				AA9B24D91D07F9BB00CEE14F /* FBiOSTargetPredicates.m in Sources */,
+				AAE93BDC22A7E503001FB8CC /* FBProcessIO.m in Sources */,
 				EEBD606E1C9062E900298A07 /* FBTask.m in Sources */,
 				AAE9A10120512453000A3F32 /* FBCrashLogNotifier.m in Sources */,
 				AA08487C1F3F499800A4BA60 /* FBFuture.m in Sources */,

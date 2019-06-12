@@ -7,11 +7,12 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBProcessStream.h>
-
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBProcessIO;
+
 @protocol FBControlCoreLogger;
+
 /**
  A Configuration for an FBTask.
  */
@@ -20,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a Task Configuration with the provided parameters.
  */
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr stdIn:(nullable FBProcessInput *)stdIn logger:(nullable id<FBControlCoreLogger>)logger;
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCode io:(FBProcessIO *)io logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  The Launch Path of the Process to launch.
@@ -43,19 +44,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSSet<NSNumber *> *acceptableStatusCodes;
 
 /**
-The FBProcessOutput for stdout.
+The FBProcessIO object.
  */
-@property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdOut;
-
-/**
- The FBProcessOutput for stderr.
- */
-@property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdErr;
-
-/**
- The FBProcessInput for stdin.
- */
-@property (nonatomic, strong, nullable, readonly) FBProcessInput *stdIn;
+@property (nonatomic, strong, nullable, readonly) FBProcessIO *io;
 
 /**
  The logger to log to.

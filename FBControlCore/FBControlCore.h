@@ -7,8 +7,6 @@
 
 #import <FBControlCore/FBAccessibilityTraits.h>
 #import <FBControlCore/FBAgentLaunchConfiguration.h>
-#import <FBControlCore/FBBundleDescriptor+Application.h>
-#import <FBControlCore/FBBundleDescriptor.h>
 #import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBApplicationDataCommands.h>
 #import <FBControlCore/FBApplicationInstallConfiguration.h>
@@ -21,6 +19,8 @@
 #import <FBControlCore/FBBitmapStream.h>
 #import <FBControlCore/FBBitmapStreamConfiguration.h>
 #import <FBControlCore/FBBitmapStreamingCommands.h>
+#import <FBControlCore/FBBundleDescriptor+Application.h>
+#import <FBControlCore/FBBundleDescriptor.h>
 #import <FBControlCore/FBBundleDescriptor.h>
 #import <FBControlCore/FBCodesignProvider.h>
 #import <FBControlCore/FBCollectionInformation.h>
@@ -30,8 +30,8 @@
 #import <FBControlCore/FBControlCoreFrameworkLoader.h>
 #import <FBControlCore/FBControlCoreGlobalConfiguration.h>
 #import <FBControlCore/FBControlCoreLogger.h>
-#import <FBControlCore/FBCrashLogCommands.h>
 #import <FBControlCore/FBCrashLog.h>
+#import <FBControlCore/FBCrashLogCommands.h>
 #import <FBControlCore/FBCrashLogNotifier.h>
 #import <FBControlCore/FBCrashLogStore.h>
 #import <FBControlCore/FBDataBuffer.h>
@@ -77,6 +77,7 @@
 #import <FBControlCore/FBProcessFetcher+Helpers.h>
 #import <FBControlCore/FBProcessFetcher.h>
 #import <FBControlCore/FBProcessInfo.h>
+#import <FBControlCore/FBProcessIO.h>
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
 #import <FBControlCore/FBProcessOutputConfiguration.h>
 #import <FBControlCore/FBProcessStream.h>

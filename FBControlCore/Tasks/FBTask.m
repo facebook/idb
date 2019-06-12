@@ -15,6 +15,7 @@
 #import "FBDataConsumer.h"
 #import "FBFileWriter.h"
 #import "FBLaunchedProcess.h"
+#import "FBProcessIO.h"
 #import "FBProcessStream.h"
 #import "FBTaskConfiguration.h"
 
@@ -29,12 +30,10 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
  The designated initializer
 
  @param configuration the configuration of the task.
- @param stdIn the stdin to mount.
- @param stdOut the stdout to mount.
- @param stdErr the stderr to mount.
+ @param io the io attachment.
  @return a new FBTaskProcess Instance.
  */
-+ (FBFuture<id<FBTaskProcess>> *)processWithConfiguration:(FBTaskConfiguration *)configuration stdIn:(FBProcessStreamAttachment *)stdIn stdOut:(FBProcessStreamAttachment *)stdOut stdErr:(FBProcessStreamAttachment *)stdErr;
++ (FBFuture<id<FBTaskProcess>> *)processWithConfiguration:(FBTaskConfiguration *)configuration io:(FBProcessIOAttachment *)io;
 
 /**
  Send a signal to the process.
@@ -94,7 +93,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 @synthesize exitCode = _exitCode;
 @synthesize processIdentifier = _processIdentifier;
 
-+ (FBFuture<id<FBTaskProcess>> *)processWithConfiguration:(FBTaskConfiguration *)configuration stdIn:(FBProcessStreamAttachment *)stdIn stdOut:(FBProcessStreamAttachment *)stdOut stdErr:(FBProcessStreamAttachment *)stdErr
++ (FBFuture<id<FBTaskProcess>> *)processWithConfiguration:(FBTaskConfiguration *)configuration io:(FBProcessIOAttachment *)io
 {
   // Convert the arguments to the argv expected by posix_spawn
   NSArray<NSString *> *arguments = configuration.arguments;
@@ -121,13 +120,13 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   posix_spawn_file_actions_init(&fileActions);
 
   NSError *error = nil;
-  if (!AddInputFileActions(&fileActions, stdIn, STDIN_FILENO, &error)) {
+  if (!AddInputFileActions(&fileActions, io.stdIn, STDIN_FILENO, &error)) {
     return [FBFuture futureWithError:error];
   }
-  if (!AddOutputFileActions(&fileActions, stdOut, STDOUT_FILENO, &error)) {
+  if (!AddOutputFileActions(&fileActions, io.stdOut, STDOUT_FILENO, &error)) {
     return [FBFuture futureWithError:error];
   }
-  if (!AddOutputFileActions(&fileActions, stdErr, STDERR_FILENO, &error)) {
+  if (!AddOutputFileActions(&fileActions, io.stdErr, STDERR_FILENO, &error)) {
     return [FBFuture futureWithError:error];
   }
 
@@ -158,7 +157,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   }
 
   FBFuture<NSNumber *> *exitCode = [self exitCodeFutureForProcessIdentifier:processIdentifier logger:configuration.logger];
-  id<FBTaskProcess> process = [[self alloc] initWithProcessIdentifier:processIdentifier stdIn:stdIn stdOut:stdOut stdErr:stdErr exitCode:exitCode];
+  id<FBTaskProcess> process = [[self alloc] initWithProcessIdentifier:processIdentifier exitCode:exitCode];
   return [FBFuture futureWithResult:process];
 }
 
@@ -192,7 +191,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   return exitCode;
 }
 
-- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier stdIn:(id)stdIn stdOut:(id)stdOut stdErr:(id)stdErr exitCode:(FBFuture<NSNumber *> *)exitCode
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier exitCode:(FBFuture<NSNumber *> *)exitCode
 {
   self = [super init];
   if (!self) {
@@ -200,9 +199,6 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   }
 
   _processIdentifier = processIdentifier;
-  _stdIn = stdIn;
-  _stdOut = stdOut;
-  _stdErr = stdErr;
   _exitCode = exitCode;
 
   return self;
@@ -224,9 +220,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 @property (nonatomic, copy, readonly) NSString *programName;
 
 @property (nonatomic, strong, readwrite) id<FBTaskProcess> process;
-@property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdOutSlot;
-@property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdErrSlot;
-@property (nonatomic, strong, nullable, readwrite) FBProcessInput *stdInSlot;
+@property (nonatomic, strong, nullable, readwrite) FBProcessIO *io;
 
 @end
 
@@ -237,35 +231,16 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 + (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBTaskConfiguration *)configuration
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
-  return [[[FBFuture
-    futureWithFutures:@[
-      (FBFuture<id> *) [configuration.stdIn attach] ?: (FBFuture<id> *) FBFuture.empty,
-      (FBFuture<id> *) [configuration.stdOut attach] ?: (FBFuture<id> *) FBFuture.empty,
-      (FBFuture<id> *) [configuration.stdErr attach] ?: (FBFuture<id> *) FBFuture.empty,
-    ]]
-    onQueue:queue fmap:^(NSArray<id> *pipes) {
-      // Mount all the relevant std streams.
-      id stdIn = pipes[0];
-      if (![stdIn isKindOfClass:FBProcessStreamAttachment.class]) {
-        stdIn = nil;
-      }
-      id stdOut = pipes[1];
-      if (![stdOut isKindOfClass:FBProcessStreamAttachment.class]) {
-        stdOut = nil;
-      }
-      id stdErr = pipes[2];
-      if (![stdErr isKindOfClass:FBProcessStreamAttachment.class]) {
-        stdErr = nil;
-      }
+  return [[[configuration.io
+    attach]
+    onQueue:queue fmap:^(FBProcessIOAttachment *attachment) {
       // Everything is setup, launch the process now.
-      return [FBTaskProcess_PosixSpawn processWithConfiguration:configuration stdIn:stdIn stdOut:stdOut stdErr:stdErr];
+      return [FBTaskProcess_PosixSpawn processWithConfiguration:configuration io:attachment];
     }]
     onQueue:queue map:^(id<FBTaskProcess> process) {
       return [[self alloc]
         initWithProcess:process
-        stdOut:configuration.stdOut
-        stdErr:configuration.stdErr
-        stdIn:configuration.stdIn
+        io:configuration.io
         queue:queue
         acceptableStatusCodes:configuration.acceptableStatusCodes
         configurationDescription:configuration.description
@@ -273,7 +248,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     }];
 }
 
-- (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(FBProcessOutput *)stdOut stdErr:(FBProcessOutput *)stdErr stdIn:(FBProcessInput *)stdIn queue:(dispatch_queue_t)queue acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription programName:(NSString *)programName
+- (instancetype)initWithProcess:(id<FBTaskProcess>)process io:(FBProcessIO *)io queue:(dispatch_queue_t)queue acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription programName:(NSString *)programName
 {
   self = [super init];
   if (!self) {
@@ -282,9 +257,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
   _process = process;
   _acceptableStatusCodes = acceptableStatusCodes;
-  _stdOutSlot = stdOut;
-  _stdErrSlot = stdErr;
-  _stdInSlot = stdIn;
+  _io = io;
   _queue = queue;
   _configurationDescription = configurationDescription;
   _programName = programName;
@@ -339,19 +312,19 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   return self.process.processIdentifier;
 }
 
+- (nullable id)stdIn
+{
+  return [self.io.stdIn contents];
+}
+
 - (nullable id)stdOut
 {
-  return [self.stdOutSlot contents];
+  return [self.io.stdOut contents];
 }
 
 - (nullable id)stdErr
 {
-  return [self.stdErrSlot contents];
-}
-
-- (nullable id)stdIn
-{
-  return [self.stdInSlot contents];
+  return [self.io.stdErr contents];
 }
 
 #pragma mark Private
@@ -362,14 +335,14 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     teardownProcess] // Wait for the process to exit, terminating it if necessary.
     onQueue:self.queue chain:^(FBFuture<NSNumber *> *exitCodeFuture) {
       // Then tear-down the resources, this should happen regardless of the exit status.
-      return [[self teardownResources] fmapReplace:exitCodeFuture];
+      return [[self.io detach] fmapReplace:exitCodeFuture];
     }]
     onQueue:self.queue fmap:^(NSNumber *exitCode) {
       // Then check whether the exit code honours the acceptable codes.
       if (![self.acceptableStatusCodes containsObject:exitCode]) {
         NSString *message = [NSString stringWithFormat:@"%@ Returned non-zero status code %@", self.programName, exitCode];
-        if ([self.stdErrSlot.contents conformsToProtocol:@protocol(FBAccumulatingBuffer)]) {
-          NSData *outputData = [self.stdErrSlot.contents data];
+        if ([self.stdErr conformsToProtocol:@protocol(FBAccumulatingBuffer)]) {
+          NSData *outputData = [self.stdErr data];
           message = [message stringByAppendingFormat:@": %@", [[NSString alloc] initWithData:outputData encoding:NSUTF8StringEncoding]];
         }
         return [[[FBControlCoreError
@@ -387,17 +360,6 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     return [self.process sendSignal:SIGTERM];
   }
   return self.process.exitCode;
-}
-
-- (FBFuture<NSNull *> *)teardownResources
-{
-  return [[FBFuture
-    futureWithFutures:@[
-      [self.stdOutSlot detach] ?: FBFuture.empty,
-      [self.stdErrSlot detach] ?: FBFuture.empty,
-      [self.stdInSlot detach] ?: FBFuture.empty,
-    ]]
-    mapReplace:NSNull.null];
 }
 
 #pragma mark NSObject

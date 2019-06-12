@@ -11,6 +11,7 @@
 
 #import "FBDataBuffer.h"
 #import "FBDataConsumer.h"
+#import "FBProcessIO.h"
 #import "FBProcessStream.h"
 #import "FBTask.h"
 #import "FBTaskConfiguration.h"
@@ -267,9 +268,7 @@
     arguments:self.arguments
     environment:self.environment
     acceptableStatusCodes:self.acceptableStatusCodes
-    stdOut:self.stdOut
-    stdErr:self.stdErr
-    stdIn:self.stdIn
+    io:[[FBProcessIO alloc] initWithStdIn:self.stdIn stdOut:self.stdOut stdErr:self.stdErr]
     logger:self.logger];
 }
 
