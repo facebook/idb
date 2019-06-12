@@ -72,8 +72,8 @@
   }
   [self reportInitialState];
 
-  // The notifier never terminates
-  return [FBFuture futureWithResult:FBMutableFuture.future];
+  // The notifier never terminates, fallback here is a terrible hack to retain self
+  return [[FBFuture futureWithResult:FBMutableFuture.future] fallback:self];
 }
 
 #pragma mark Private
