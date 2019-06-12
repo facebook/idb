@@ -90,12 +90,12 @@ extern NSString *const FBProcessOutputToFileDefaultLocation;
 #pragma mark Public Methods
 
 /**
- Creates a Process Output for a Target.
+ Creates the IO wrapper object for a given target
 
  @param target the target to create the output for.
- @return a Future that wraps an Array of the [stdout, stderr].
+ @return a Future that wraps the IO.
  */
-- (FBFuture<NSArray<FBProcessOutput *> *> *)createOutputForTarget:(id<FBiOSTarget>)target;
+- (FBFuture<FBProcessIO *> *)createIOForTarget:(id<FBiOSTarget>)target;
 
 @end
 

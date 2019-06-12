@@ -68,12 +68,16 @@ NSString *const FBProcessOutputToFileDefaultLocation = @"FBProcessOutputToFileDe
 
 #pragma mark Public Methods
 
-- (FBFuture<NSArray<FBProcessOutput *> *> *)createOutputForTarget:(id<FBiOSTarget>)target
+- (FBFuture<FBProcessIO *> *)createIOForTarget:(id<FBiOSTarget>)target
 {
-  return [FBFuture futureWithFutures:@[
-    [self createOutputForTarget:target selector:@selector(stdOut)],
-    [self createOutputForTarget:target selector:@selector(stdErr)],
-  ]];
+  return [[FBFuture
+    futureWithFutures:@[
+      [self createOutputForTarget:target selector:@selector(stdOut)],
+      [self createOutputForTarget:target selector:@selector(stdErr)],
+    ]]
+    onQueue:target.asyncQueue map:^(NSArray<FBProcessOutput *> *outputs) {
+      return [[FBProcessIO alloc] initWithStdIn:nil stdOut:outputs[0] stdErr:outputs[1]];
+    }];
 }
 
 #pragma mark NSCopying

@@ -96,9 +96,9 @@ static NSTimeInterval LaunchTimeout = 60;
 + (FBFuture<FBDeviceApplicationProcess *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch device:(FBDevice *)device client:(FBGDBClient *)client launchFuture:(FBFuture<NSNumber *> *)launchFuture
 {
   return [[appLaunch.output
-    createOutputForTarget:device]
-    onQueue:device.workQueue fmap:^(NSArray<FBProcessOutput *> *outputs) {
-      return [FBDeviceApplicationProcess processWithDevice:device configuration:appLaunch gdbClient:client stdOut:outputs[0] stdErr:outputs[1] launchFuture:launchFuture];
+    createIOForTarget:device]
+    onQueue:device.workQueue fmap:^(FBProcessIO *io) {
+      return [FBDeviceApplicationProcess processWithDevice:device configuration:appLaunch gdbClient:client stdOut:io.stdOut stdErr:io.stdErr launchFuture:launchFuture];
     }];
 }
 

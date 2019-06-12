@@ -71,12 +71,12 @@
       [self confirmApplicationLaunchState:appLaunch.bundleID launchMode:appLaunch.launchMode],
     ]]
     onQueue:simulator.workQueue fmap:^(id _) {
-      return [appLaunch.output createOutputForTarget:simulator];
+      return [appLaunch.output createIOForTarget:simulator];
     }]
-    onQueue:simulator.workQueue fmap:^(NSArray<FBProcessOutput *> *outputs) {
+    onQueue:simulator.workQueue fmap:^(FBProcessIO *io) {
       return [FBFuture futureWithFutures:@[
-          [outputs[0] providedThroughFile],
-          [outputs[1] providedThroughFile],
+          [io.stdOut providedThroughFile],
+          [io.stdErr providedThroughFile],
       ]];
     }]
     onQueue:simulator.workQueue fmap:^ FBFuture<FBSimulatorApplicationOperation *> * (NSArray<id<FBProcessFileOutput>> *outputs) {

@@ -57,25 +57,19 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 {
   FBSimulator *simulator = self.simulator;
   return [[agentLaunch.output
-    createOutputForTarget:simulator]
-    onQueue:simulator.workQueue fmap:^(NSArray<FBProcessOutput *> *outputs) {
-      FBProcessOutput *stdOut = outputs[0];
-      FBProcessOutput *stdErr = outputs[1];
-      return [self launchAgent:agentLaunch stdOut:stdOut stdErr:stdErr];
+    createIOForTarget:simulator]
+    onQueue:simulator.workQueue fmap:^(FBProcessIO *io) {
+      return [self launchAgent:agentLaunch io:io];
     }];
 }
 
-- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch stdOut:(FBProcessOutput *)stdOut stdErr:(FBProcessOutput *)stdErr
+- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch io:(FBProcessIO *)io
 {
   FBSimulator *simulator = self.simulator;
 
-  return [[FBFuture
-    futureWithFutures:@[[stdOut attach], [stdErr attach]]]
-    onQueue:simulator.workQueue fmap:^(NSArray<FBProcessStreamAttachment *> *attachments) {
-      // Extract the File Handles
-      FBProcessStreamAttachment *stdOutAttachment = attachments[0];
-      FBProcessStreamAttachment *stdErrAttachment = attachments[1];
-
+  return [[io
+    attach]
+    onQueue:simulator.workQueue fmap:^(FBProcessIOAttachment *attachment) {
       // Launch the Process
       FBMutableFuture<NSNumber *> *processStatusFuture = [FBMutableFuture futureWithNameFormat:@"Process completion of %@ on %@", agentLaunch.agentBinary.path, simulator.udid];
       FBFuture<NSNumber *> *launchFuture = [FBAgentLaunchStrategy
@@ -84,16 +78,16 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
         arguments:agentLaunch.arguments
         environment:agentLaunch.environment
         waitForDebugger:NO
-        stdOut:stdOutAttachment
-        stdErr:stdErrAttachment
+        stdOut:attachment.stdOut
+        stdErr:attachment.stdErr
         processStatusFuture:processStatusFuture];
 
       // Wrap in the container object
       return [[FBSimulatorAgentOperation
         operationWithSimulator:simulator
         configuration:agentLaunch
-        stdOut:stdOut
-        stdErr:stdErr
+        stdOut:io.stdOut
+        stdErr:io.stdErr
         launchFuture:launchFuture
         processStatusFuture:processStatusFuture]
         onQueue:self.simulator.workQueue notifyOfCompletion:^(FBFuture<FBSimulatorAgentOperation *> *future) {
@@ -115,8 +109,9 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
 - (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBAgentLaunchConfiguration *)agentLaunch consumer:(id<FBDataConsumer>)consumer
 {
+  FBProcessIO *io = [[FBProcessIO alloc] initWithStdIn:nil stdOut:[FBProcessOutput outputForDataConsumer:consumer] stdErr:FBProcessOutput.outputForNullDevice];
   return [[self
-    launchAgent:agentLaunch stdOut:[FBProcessOutput outputForDataConsumer:consumer] stdErr:FBProcessOutput.outputForNullDevice]
+    launchAgent:agentLaunch io:io]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorAgentOperation *operation) {
       return [operation exitCode];
     }];
