@@ -11,7 +11,7 @@
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorLifecycleCommands.h"
 
-FBiOSTargetFutureType const FBiOSTargetFutureTypeAcessibilityFetch = @"accessibility_fetch";
+FBiOSTargetFutureType const FBiOSTargetFutureTypeAccessibilityFetch = @"accessibility_fetch";
 
 @implementation FBAccessibilityFetch
 
@@ -19,7 +19,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeAcessibilityFetch = @"accessibi
 
 + (FBiOSTargetFutureType)futureType
 {
-  return FBiOSTargetFutureTypeAcessibilityFetch;
+  return FBiOSTargetFutureTypeAccessibilityFetch;
 }
 
 - (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
@@ -66,7 +66,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeAcessibilityFetch = @"accessibi
 
 - (NSString *)description
 {
-  return FBiOSTargetFutureTypeAcessibilityFetch;
+  return FBiOSTargetFutureTypeAccessibilityFetch;
 }
 
 - (BOOL)isEqual:(FBAccessibilityFetch *)object
