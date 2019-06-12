@@ -775,13 +775,13 @@ Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerRea
   if (start.wait_for()) {
     dispatch_queue_t writeQueue = dispatch_queue_create("com.facebook.idb.launch.write", DISPATCH_QUEUE_SERIAL);
     id<FBDataConsumerLifecycle> consumer = pipe_output(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDOUT, writeQueue, stream);
-    [completions addObject:consumer.eofHasBeenReceived];
+    [completions addObject:consumer.finishedConsuming];
     output = [output withStdOut:consumer error:&error];
     if (!output) {
       return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
     }
     consumer = pipe_output(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDERR, writeQueue, stream);
-    [completions addObject:consumer.eofHasBeenReceived];
+    [completions addObject:consumer.finishedConsuming];
     output = [output withStdErr:consumer error:&error];
     if (!output) {
       return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);

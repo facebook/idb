@@ -22,11 +22,11 @@
   [consumer consumeData:[@"BAR" dataUsingEncoding:NSUTF8StringEncoding]];
 
   XCTAssertEqualObjects(consumer.data, [@"FOOBAR" dataUsingEncoding:NSUTF8StringEncoding]);
-  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
 
   [consumer consumeEndOfFile];
   XCTAssertEqualObjects(consumer.data, [@"FOOBAR" dataUsingEncoding:NSUTF8StringEncoding]);
-  XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
 }
 
 - (void)testLineBufferAccumulationWithCapacity
@@ -47,11 +47,11 @@
 
   [consumer consumeData:[@"ALONGSTRINGBUTIWANTAHIT" dataUsingEncoding:NSUTF8StringEncoding]];
   XCTAssertEqualObjects(consumer.lines, @[@"HIT"]);
-  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
 
   [consumer consumeEndOfFile];
   XCTAssertEqualObjects(consumer.lines, @[@"HIT"]);
-  XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
 }
 
 - (void)testLineBufferedConsumer
@@ -61,12 +61,12 @@
     [lines addObject:line];
   }];
 
-  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
   [consumer consumeData:[@"FOO\n" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"BAR\n" dataUsingEncoding:NSUTF8StringEncoding]];
   XCTAssertEqualObjects(lines, (@[@"FOO", @"BAR"]));
   [consumer consumeEndOfFile];
-  XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
 }
 
 - (void)testUnbufferedConsumer
@@ -76,12 +76,12 @@
     [actual appendData:incremental];
   }];
 
-  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
   [consumer consumeData:[@"FOO" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"BAR" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"BAZ" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeEndOfFile];
-  XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
 
   NSData *expected = [@"FOOBARBAZ" dataUsingEncoding:NSUTF8StringEncoding];
   XCTAssertEqualObjects(expected, actual);
@@ -94,41 +94,41 @@
 
   XCTAssertNil(consumer.consumeLineData);
   XCTAssertNil(consumer.consumeLineString);
-  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
 
   [consumer consumeData:[@"BAR\n" dataUsingEncoding:NSUTF8StringEncoding]];
 
   XCTAssertEqualObjects(consumer.consumeLineString, @"FOOBAR");
-  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
 
   [consumer consumeData:[@"BANG\nBAZ" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"\nHELLO\nHERE" dataUsingEncoding:NSUTF8StringEncoding]];
 
   XCTAssertEqualObjects(consumer.consumeCurrentString, @"BANG\nBAZ\nHELLO\nHERE");
-  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
 
   [consumer consumeData:[@"GOODBYE" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"\nFOR\nNOW" dataUsingEncoding:NSUTF8StringEncoding]];
 
   XCTAssertEqualObjects(consumer.consumeCurrentData, [@"GOODBYE\nFOR\nNOW" dataUsingEncoding:NSUTF8StringEncoding]);
-  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
 
   [consumer consumeData:[@"ILIED" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"$$SOZ\n" dataUsingEncoding:NSUTF8StringEncoding]];
 
   XCTAssertEqualObjects([consumer consumeUntil:[@"$$" dataUsingEncoding:NSUTF8StringEncoding]], [@"ILIED" dataUsingEncoding:NSUTF8StringEncoding]);
   XCTAssertEqualObjects(consumer.consumeLineString, @"SOZ");
-  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
 
   [consumer consumeData:[@"BACKAGAIN" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"\nTHIS\nIS\nTHE\nTAIL" dataUsingEncoding:NSUTF8StringEncoding]];
 
   XCTAssertEqualObjects(consumer.consumeLineData, [@"BACKAGAIN" dataUsingEncoding:NSUTF8StringEncoding]);
-  XCTAssertFalse(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
 
   [consumer consumeEndOfFile];
 
-  XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
   XCTAssertEqualObjects(consumer.consumeLineString, @"THIS");
   XCTAssertEqualObjects(consumer.consumeLineData, [@"IS" dataUsingEncoding:NSUTF8StringEncoding]);
   XCTAssertEqualObjects(consumer.consumeLineString, @"THE");
@@ -148,20 +148,20 @@
   [composite consumeData:[@"FOO" dataUsingEncoding:NSUTF8StringEncoding]];
 
   XCTAssertNil(consumable.consumeLineString);
-  XCTAssertFalse(composite.eofHasBeenReceived.hasCompleted);
+  XCTAssertFalse(composite.finishedConsuming.hasCompleted);
 
   [composite consumeData:[@"BAR\n" dataUsingEncoding:NSUTF8StringEncoding]];
 
   XCTAssertEqualObjects(consumable.consumeLineString, @"FOOBAR");
   XCTAssertNil(consumable.consumeLineString);
-  XCTAssertFalse(consumable.eofHasBeenReceived.hasCompleted);
-  XCTAssertFalse(accumilating.eofHasBeenReceived.hasCompleted);
-  XCTAssertFalse(composite.eofHasBeenReceived.hasCompleted);
+  XCTAssertFalse(consumable.finishedConsuming.hasCompleted);
+  XCTAssertFalse(accumilating.finishedConsuming.hasCompleted);
+  XCTAssertFalse(composite.finishedConsuming.hasCompleted);
 
   [composite consumeEndOfFile];
-  XCTAssertTrue(consumable.eofHasBeenReceived.hasCompleted);
-  XCTAssertTrue(accumilating.eofHasBeenReceived.hasCompleted);
-  XCTAssertTrue(composite.eofHasBeenReceived.hasCompleted);
+  XCTAssertTrue(consumable.finishedConsuming.hasCompleted);
+  XCTAssertTrue(accumilating.finishedConsuming.hasCompleted);
+  XCTAssertTrue(composite.finishedConsuming.hasCompleted);
 }
 
 - (void)testLengthBasedConsumption

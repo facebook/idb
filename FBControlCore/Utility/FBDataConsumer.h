@@ -50,15 +50,15 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- Allows observation of a data consumer to observe.
+ Observation of a Data Consumer's lifecycle
  */
 @protocol FBDataConsumerLifecycle <NSObject>
 
 /**
- A Future that resolves when an end-of-file has been recieved and any asynchronous teardown work performed.
- At this point, consumers are safe to assume that the resource that the writer is wrapping is safe to use.
+ A Future that resolves when an there is no more data to write and any underlying resource managed by the consumer is released.
+ At this point, consumers are safe to assume that any resource that the writer is wrapping is safe to use.
  */
-@property (nonatomic, strong, readonly) FBFuture<NSNull *> *eofHasBeenReceived;
+@property (nonatomic, strong, readonly) FBFuture<NSNull *> *finishedConsuming;
 
 @end
 

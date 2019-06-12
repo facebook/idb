@@ -14,7 +14,7 @@
 @property (nonatomic, assign, readonly) int fileDescriptor;
 @property (nonatomic, assign, readonly) BOOL closeOnEndOfFile;
 
-@property (nonatomic, strong, readwrite) FBMutableFuture<NSNull *> *eofHasBeenReceivedMutable;
+@property (nonatomic, strong, readwrite) FBMutableFuture<NSNull *> *finishedConsumingMutable;
 
 - (instancetype)initWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile;
 
@@ -133,7 +133,7 @@
 
   _fileDescriptor = fileDescriptor;
   _closeOnEndOfFile = closeOnEndOfFile;
-  _eofHasBeenReceivedMutable = [FBMutableFuture futureWithName:@"EOF Recieved"];
+  _finishedConsumingMutable = [FBMutableFuture futureWithName:@"EOF Recieved"];
 
   return self;
 }
@@ -151,12 +151,12 @@
 
 - (void)consumeEndOfFile
 {
-  [self.eofHasBeenReceivedMutable resolveWithResult:NSNull.null];
+  [self.finishedConsumingMutable resolveWithResult:NSNull.null];
 }
 
-- (FBFuture<NSNull *> *)eofHasBeenReceived
+- (FBFuture<NSNull *> *)finishedConsuming
 {
-  return self.eofHasBeenReceivedMutable;
+  return self.finishedConsumingMutable;
 }
 
 @end
@@ -175,15 +175,15 @@
 
 - (void)consumeEndOfFile
 {
-  [self.eofHasBeenReceivedMutable resolveWithResult:NSNull.null];
+  [self.finishedConsumingMutable resolveWithResult:NSNull.null];
   if (self.closeOnEndOfFile) {
     close(self.fileDescriptor);
   }
 }
 
-- (FBFuture<NSNull *> *)eofHasBeenReceived
+- (FBFuture<NSNull *> *)finishedConsuming
 {
-  return self.eofHasBeenReceivedMutable;
+  return self.finishedConsumingMutable;
 }
 
 @end
@@ -227,9 +227,9 @@
   });
 }
 
-- (FBFuture<NSNull *> *)eofHasBeenReceived
+- (FBFuture<NSNull *> *)finishedConsuming
 {
-  return self.eofHasBeenReceivedMutable;
+  return self.finishedConsumingMutable;
 }
 
 #pragma mark Private
@@ -238,7 +238,7 @@
 {
   NSParameterAssert(!self.io);
 
-  FBMutableFuture<NSNull *> *eofHasBeenReceived = self.eofHasBeenReceivedMutable;
+  FBMutableFuture<NSNull *> *finishedConsuming = self.finishedConsumingMutable;
 
   // If there is an error creating the IO Object, the errorCode will be delivered asynchronously.
   // Having a self -> IO -> self cycle shouldn't be a problem in theory, since the cleanup handler should get when IO is done.
@@ -260,7 +260,7 @@
 
     // Since writing is asynchronous, we don't want to vend futures that show that all work on a file descriptor has finished.
     // Instead we should wait until the io channel is fully closed, this only occurs in this callback.
-    [eofHasBeenReceived resolveWithResult:NSNull.null];
+    [finishedConsuming resolveWithResult:NSNull.null];
   });
   if (!self.io) {
     return [[FBControlCoreError

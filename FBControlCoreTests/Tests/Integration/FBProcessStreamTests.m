@@ -34,7 +34,7 @@
   [[output detach] await:&error];
   XCTAssertNil(error);
 
-  XCTAssertTrue(consumer.eofHasBeenReceived.hasCompleted);
+  XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
 }
 
 - (void)testViaFifo
@@ -56,7 +56,7 @@
   [fileHandle writeData:[@"HELLO AGAIN" dataUsingEncoding:NSUTF8StringEncoding]];
   [fileHandle closeFile];
 
-  success = [buffer.eofHasBeenReceived await:&error] != nil;
+  success = [buffer.finishedConsuming await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

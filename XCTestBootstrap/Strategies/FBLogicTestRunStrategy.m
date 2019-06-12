@@ -161,7 +161,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
       return [[FBFuture
         futureWithFutures:@[
           [output stopReading],
-          [consumer eofHasBeenReceived],
+          [consumer finishedConsuming],
         ]]
         timeout:EndOfFileFromStopReadingTimeout waitingFor:@"recieve and end-of-file after fifo has been stopped, as the process has already exited with code %@", exitCode];
     }];

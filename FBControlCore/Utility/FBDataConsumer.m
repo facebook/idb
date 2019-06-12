@@ -90,9 +90,9 @@
   [self.consumer consumeEndOfFile];
 }
 
-- (FBFuture<NSNull *> *)eofHasBeenReceived
+- (FBFuture<NSNull *> *)finishedConsuming
 {
-  return self.consumer.eofHasBeenReceived;
+  return self.consumer.finishedConsuming;
 }
 
 @end
@@ -210,7 +210,7 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
 
 @interface FBBlockDataConsumer_Unbuffered : FBBlockDataConsumer
 
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *eofHasBeenReceivedFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finishedConsumingFuture;
 
 @end
 
@@ -287,7 +287,7 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
 
 #pragma mark FBDataConsumerLifecycle
 
-- (FBFuture<NSNull *> *)eofHasBeenReceived
+- (FBFuture<NSNull *> *)finishedConsuming
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -329,9 +329,9 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
 
 #pragma mark FBDataConsumerLifecycle
 
-- (FBFuture<NSNull *> *)eofHasBeenReceived
+- (FBFuture<NSNull *> *)finishedConsuming
 {
-  return self.buffer.eofHasBeenReceived;
+  return self.buffer.finishedConsuming;
 }
 
 @end
@@ -347,7 +347,7 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
     return nil;
   }
 
-  _eofHasBeenReceivedFuture = FBMutableFuture.future;
+  _finishedConsumingFuture = FBMutableFuture.future;
 
   return self;
 }
@@ -365,15 +365,15 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
 {
   @synchronized (self) {
     [self.dispatcher consumeEndOfFile];
-    [self.eofHasBeenReceivedFuture resolveWithResult:NSNull.null];
+    [self.finishedConsumingFuture resolveWithResult:NSNull.null];
   }
 }
 
 #pragma mark FBDataConsumerLifecycle
 
-- (FBFuture<NSNull *> *)eofHasBeenReceived
+- (FBFuture<NSNull *> *)finishedConsuming
 {
-  return self.eofHasBeenReceivedFuture;
+  return self.finishedConsumingFuture;
 }
 
 @end
@@ -424,7 +424,7 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
 @interface FBCompositeDataConsumer ()
 
 @property (nonatomic, copy, readonly) NSArray<id<FBDataConsumer>> *consumers;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *eofHasBeenReceivedFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finishedConsumingFuture;
 
 @end
 
@@ -445,7 +445,7 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
   }
 
   _consumers = consumers;
-  _eofHasBeenReceivedFuture = FBMutableFuture.future;
+  _finishedConsumingFuture = FBMutableFuture.future;
 
   return self;
 }
@@ -471,14 +471,14 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
   for (id<FBDataConsumer> consumer in self.consumers) {
     [consumer consumeEndOfFile];
   }
-  [self.eofHasBeenReceivedFuture resolveWithResult:NSNull.null];
+  [self.finishedConsumingFuture resolveWithResult:NSNull.null];
 }
 
 #pragma mark FBDataConsumerLifecycle
 
-- (FBFuture<NSNull *> *)eofHasBeenReceived
+- (FBFuture<NSNull *> *)finishedConsuming
 {
-  return self.eofHasBeenReceivedFuture;
+  return self.finishedConsumingFuture;
 }
 
 @end

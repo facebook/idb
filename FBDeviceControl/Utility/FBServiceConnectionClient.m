@@ -87,7 +87,7 @@
     onQueue:self.queue fmap:^(id _) {
       [self.logger logFormat:@"Stopped reading of %@, stopping writing", self.connection];
       [self.writer consumeEndOfFile];
-      return self.writer.eofHasBeenReceived;
+      return self.writer.finishedConsuming;
     }]
     onQueue:self.queue map:^(id _) {
       [self.logger logFormat:@"Stopped writing %@", self.connection];

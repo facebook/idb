@@ -156,7 +156,7 @@
     }
     return [FBFuture futureWithFutures:@[
       [output stopReading],
-      [consumer eofHasBeenReceived],
+      [consumer finishedConsuming],
     ]];
   }];
 }

@@ -36,7 +36,7 @@
 
   // Close the writer by consuming the end of file
   [writer consumeEndOfFile];
-  BOOL success = [writer.eofHasBeenReceived await:&error] != nil;
+  BOOL success = [writer.finishedConsuming await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
@@ -93,7 +93,7 @@
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
-  success = [consumer.eofHasBeenReceived await:&error] != nil;
+  success = [consumer.finishedConsuming await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }

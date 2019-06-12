@@ -13,7 +13,7 @@
 
 @property (nonatomic, strong, readwrite) NSMutableData *buffer;
 @property (nonatomic, assign, readonly) size_t capacity;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *eofHasBeenReceivedFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finishedConsumingFuture;
 
 @end
 
@@ -35,7 +35,7 @@
 
   _buffer = buffer;
   _capacity = capacity;
-  _eofHasBeenReceivedFuture = FBMutableFuture.future;
+  _finishedConsumingFuture = FBMutableFuture.future;
 
   return self;
 }
@@ -69,7 +69,7 @@
 - (void)consumeData:(NSData *)data
 {
   @synchronized (self) {
-    NSAssert(self.eofHasBeenReceived.hasCompleted == NO, @"Cannot consume data after eof recieved");
+    NSAssert(self.finishedConsuming.hasCompleted == NO, @"Cannot consume data after eof recieved");
     [self.buffer appendData:data];
     if (self.capacity > 0) {
       NSInteger overrun = (NSInteger) self.buffer.length - (NSInteger) self.capacity;
@@ -83,16 +83,16 @@
 - (void)consumeEndOfFile
 {
   @synchronized (self) {
-    NSAssert(self.eofHasBeenReceived.hasCompleted == NO, @"Cannot consume eof after eof recieved");
-    [self.eofHasBeenReceivedFuture resolveWithResult:NSNull.null];
+    NSAssert(self.finishedConsuming.hasCompleted == NO, @"Cannot consume eof after eof recieved");
+    [self.finishedConsumingFuture resolveWithResult:NSNull.null];
   }
 }
 
 #pragma mark FBDataConsumerLifecycle
 
-- (FBFuture<NSNull *> *)eofHasBeenReceived
+- (FBFuture<NSNull *> *)finishedConsuming
 {
-  return self.eofHasBeenReceivedFuture;
+  return self.finishedConsumingFuture;
 }
 
 @end
