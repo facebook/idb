@@ -16,6 +16,6 @@ extension EventName {
   static let boot = EventName(rawValue: FBiOSTargetFutureType.boot.rawValue)
   static let hid = EventName(rawValue: FBiOSTargetFutureType.HID.rawValue)
   static let approve = EventName(rawValue: FBiOSTargetFutureType.approval.rawValue)
-  static let accessibilityFetch = EventName(rawValue: FBiOSTargetFutureType.acessibilityFetch.rawValue)
+  static let accessibilityFetch = EventName(rawValue: FBiOSTargetFutureType.accessibilityFetch.rawValue)
   static let logTail = EventName(rawValue: FBiOSTargetFutureType.logTail.rawValue)
 }
