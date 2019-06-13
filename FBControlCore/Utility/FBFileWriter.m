@@ -55,10 +55,7 @@
 
 + (int)fileDescriptorForPath:(NSString *)filePath error:(NSError **)error
 {
-  if (![NSFileManager.defaultManager fileExistsAtPath:filePath]) {
-    [[NSData data] writeToFile:filePath atomically:YES];
-  }
-  int fileDescriptor = open(filePath.UTF8String, O_WRONLY);
+  int fileDescriptor = open(filePath.UTF8String, O_WRONLY | O_CREAT);
   if (!fileDescriptor) {
     return [[FBControlCoreError
       describeFormat:@"A file handle for path %@ could not be opened: %s", filePath, strerror(errno)]
