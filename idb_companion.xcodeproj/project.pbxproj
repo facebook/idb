@@ -25,13 +25,11 @@
 		D7D6DFF62265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFAA2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m */; };
 		D7D6DFF72265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFAB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h */; };
 		D7D6DFF82265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFAC2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h */; };
-		D7D6DFF92265F0DF00B01F14 /* FBDeltaUpdateManager+Log.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFAD2265F0DF00B01F14 /* FBDeltaUpdateManager+Log.m */; };
 		D7D6DFFA2265F0DF00B01F14 /* FBDeltaUpdateManager.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFAE2265F0DF00B01F14 /* FBDeltaUpdateManager.m */; };
 		D7D6DFFB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFAF2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.m */; };
 		D7D6DFFC2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFB02265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h */; };
 		D7D6DFFD2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFB12265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m */; };
 		D7D6DFFE2265F0DF00B01F14 /* FBDeltaUpdateManager.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFB22265F0DF00B01F14 /* FBDeltaUpdateManager.h */; };
-		D7D6DFFF2265F0DF00B01F14 /* FBDeltaUpdateManager+Log.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFB32265F0DF00B01F14 /* FBDeltaUpdateManager+Log.h */; };
 		D7D6E0052265F0DF00B01F14 /* FBIDBError.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */; };
 		D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFBC2265F0DF00B01F14 /* FBIDBError.m */; };
 		D7D6E0072265F0DF00B01F14 /* FBIDBPortsConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */; };
@@ -110,13 +108,11 @@
 		D7D6DFAA2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBDeltaUpdateManager+Video.m"; sourceTree = "<group>"; };
 		D7D6DFAB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBDeltaUpdateManager+XCTest.h"; sourceTree = "<group>"; };
 		D7D6DFAC2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBDeltaUpdateManager+Instruments.h"; sourceTree = "<group>"; };
-		D7D6DFAD2265F0DF00B01F14 /* FBDeltaUpdateManager+Log.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBDeltaUpdateManager+Log.m"; sourceTree = "<group>"; };
 		D7D6DFAE2265F0DF00B01F14 /* FBDeltaUpdateManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeltaUpdateManager.m; sourceTree = "<group>"; };
 		D7D6DFAF2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBDeltaUpdateManager+XCTest.m"; sourceTree = "<group>"; };
 		D7D6DFB02265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBDeltaUpdateManager+Video.h"; sourceTree = "<group>"; };
 		D7D6DFB12265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBDeltaUpdateManager+Instruments.m"; sourceTree = "<group>"; };
 		D7D6DFB22265F0DF00B01F14 /* FBDeltaUpdateManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeltaUpdateManager.h; sourceTree = "<group>"; };
-		D7D6DFB32265F0DF00B01F14 /* FBDeltaUpdateManager+Log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBDeltaUpdateManager+Log.h"; sourceTree = "<group>"; };
 		D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBError.h; sourceTree = "<group>"; };
 		D7D6DFBC2265F0DF00B01F14 /* FBIDBError.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBError.m; sourceTree = "<group>"; };
 		D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBPortsConfiguration.h; sourceTree = "<group>"; };
@@ -233,8 +229,6 @@
 			children = (
 				D7D6DFAC2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h */,
 				D7D6DFB12265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m */,
-				D7D6DFB32265F0DF00B01F14 /* FBDeltaUpdateManager+Log.h */,
-				D7D6DFAD2265F0DF00B01F14 /* FBDeltaUpdateManager+Log.m */,
 				D7D6DFB02265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h */,
 				D7D6DFAA2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m */,
 				D7D6DFAB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h */,
@@ -320,7 +314,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				D7D6DFF82265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h in Headers */,
-				D7D6DFFF2265F0DF00B01F14 /* FBDeltaUpdateManager+Log.h in Headers */,
 				D7D6DFFC2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h in Headers */,
 				D7D6DFF72265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h in Headers */,
 				AAAD2B9C22819C0F0043D2DE /* FBBootManager.h in Headers */,
@@ -444,7 +437,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				D7D6DFFD2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m in Sources */,
-				D7D6DFF92265F0DF00B01F14 /* FBDeltaUpdateManager+Log.m in Sources */,
 				D7D6DFF62265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m in Sources */,
 				D7D6DFFB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.m in Sources */,
 				D7D6DFFA2265F0DF00B01F14 /* FBDeltaUpdateManager.m in Sources */,

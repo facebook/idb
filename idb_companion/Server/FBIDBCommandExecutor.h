@@ -11,7 +11,6 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import "FBDeltaUpdateManager+Instruments.h"
-#import "FBDeltaUpdateManager+Log.h"
 #import "FBDeltaUpdateManager+Video.h"
 #import "FBDeltaUpdateManager+XCTest.h"
 #import "FBXCTestDescriptor.h"
@@ -54,11 +53,6 @@ NS_ASSUME_NONNULL_BEGIN
  The video manager
  */
 @property (nonatomic, strong, readonly) FBVideoUpdateManager *videoManager;
-
-/**
- The log manager
- */
-@property (nonatomic, strong, readonly) FBLogUpdateManager *logManager;
 
 /**
  The instruments manager
