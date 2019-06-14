@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-from argparse import ArgumentParser, REMAINDER, Namespace
-from idb.common.signal import signal_handler_event
+from argparse import REMAINDER, ArgumentParser, Namespace
 from typing import List, Optional
 
 from idb.cli.commands.base import TargetCommand
 from idb.client.client import IdbClient
+from idb.common.signal import signal_handler_event
 
 
 class LogCommand(TargetCommand):
@@ -61,3 +61,18 @@ log stream --predicate examples:
             log_arguments = log_arguments[1:]
 
         return log_arguments
+
+
+class CompanionLogCommand(TargetCommand):
+    @property
+    def description(self) -> str:
+        return "Obtain logs from the companion"
+
+    @property
+    def name(self) -> str:
+        return "log"
+
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+        async for chunk in client.tail_companion_logs(stop=signal_handler_event("log")):
+            print(chunk, end="")
+        print("")

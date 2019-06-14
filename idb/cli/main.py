@@ -65,7 +65,7 @@ from idb.cli.commands.kill import KillCommand
 from idb.cli.commands.launch import LaunchCommand
 from idb.cli.commands.list_apps import ListAppsCommand
 from idb.cli.commands.list_targets import ListTargetsCommand
-from idb.cli.commands.log import LogCommand
+from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.open_url import OpenUrlCommand
 from idb.cli.commands.record import RecordVideoCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
@@ -191,6 +191,11 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
             name="framework",
             description="framework commands",
             commands=[FrameworkInstallCommand()],
+        ),
+        CommandGroup(
+            name="companion",
+            description="commands related to the companion",
+            commands=[CompanionLogCommand()],
         ),
     ]
     sorted_commands = sorted(commands, key=lambda command: command.name)

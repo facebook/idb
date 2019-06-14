@@ -279,6 +279,9 @@ class IdbClientBase:
     ) -> AsyncIterator[str]:
         yield
 
+    async def tail_companion_logs(self, stop: asyncio.Event) -> AsyncIterator[str]:
+        yield
+
     async def push(self, src_paths: List[str], bundle_id: str, dest_path: str) -> None:
         pass
 
