@@ -475,9 +475,9 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
       FBProcessInput<NSOutputStream *> *stream = pipe_to_input(payload, reader);
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_stream:stream];
+          return [_commandExecutor install_app_stream:stream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
-          return [_commandExecutor xctest_install_stream:stream];
+          return [_commandExecutor install_xctest_app_stream:stream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
           return [_commandExecutor install_dsym_stream:stream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
@@ -493,9 +493,9 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
       FBDataDownloadInput *download = [FBDataDownloadInput dataDownloadWithURL:url logger:_target.logger];
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_stream:download.input];
+          return [_commandExecutor install_app_stream:download.input];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
-          return [_commandExecutor xctest_install_stream:download.input];
+          return [_commandExecutor install_xctest_app_stream:download.input];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
           return [_commandExecutor install_dsym_stream:download.input];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
@@ -510,9 +510,9 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
       NSString *filePath = nsstring_from_c_string(payload.file_path());
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_file_path:filePath];
+          return [_commandExecutor install_app_file_path:filePath];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
-          return [_commandExecutor xctest_install_file_path:filePath];
+          return [_commandExecutor install_xctest_app_file_path:filePath];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
           return [_commandExecutor install_dsym_file_path:filePath];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:

@@ -75,22 +75,22 @@
 - (FBFuture<FBInstalledArtifact *> *)install:(nullable NSData *)appData filePath:(nullable NSString *)filePath
 {
   if (filePath) {
-    return [self install_file_path:filePath];
+    return [self install_app_file_path:filePath];
   }
   if (appData) {
-    return [self install_binary:appData];
+    return [self install_app_binary:appData];
   }
   return [[FBIDBError
     describeFormat:@"no filepath or data found for install"]
     failFuture];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_file_path:(NSString *)filePath
+- (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath
 {
   return [self installExtractedApplication:[FBBundleDescriptor onQueue:self.target.asyncQueue findOrExtractApplicationAtPath:filePath logger:self.logger]];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_binary:(NSData *)data
+- (FBFuture<FBInstalledArtifact *> *)install_app_binary:(NSData *)data
 {
   FBFutureContext<FBBundleDescriptor *> *bundle = [[self.temporaryDirectory
     withArchiveExtracted:data]
@@ -100,22 +100,22 @@
   return [self installExtractedApplication:bundle];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_stream:(FBProcessInput *)input
+- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input
 {
   return [self installExtractedApplication:[FBBundleDescriptor onQueue:self.target.asyncQueue extractApplicationFromInput:input logger:self.logger]];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)xctest_install_file_path:(NSString *)filePath
+- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_file_path:(NSString *)filePath
 {
   return [self installXctestFilePath:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]]];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)xctest_install_stream:(FBProcessInput *)stream
+- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_stream:(FBProcessInput *)stream
 {
   return [self installXctest:[self.temporaryDirectory withArchiveExtractedFromStream:stream]];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)xctest_install_binary:(NSData *)tarData
+- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_binary:(NSData *)tarData
 {
   return [self installXctest:[self.temporaryDirectory withArchiveExtracted:tarData]];
 }

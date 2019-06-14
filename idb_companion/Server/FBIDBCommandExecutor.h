@@ -97,7 +97,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param filePath the path to a file on disk with the file.
  @return A future that resolves with the App Bundle Id
  */
-- (FBFuture<FBInstalledArtifact *> *)install_file_path:(NSString *)filePath;
+- (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath;
 
 /**
  Install an App via a Data stream.
@@ -105,7 +105,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param input the input to pipe.
  @return A future that resolves with the App Bundle Id
  */
-- (FBFuture<FBInstalledArtifact *> *)install_stream:(FBProcessInput *)input;
+- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input;
 
 /**
  Deprecated.
@@ -114,7 +114,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param appData tar or zip app data.
  @return A future that resolves with the App Bundle Id
  */
-- (FBFuture<FBInstalledArtifact *> *)install_binary:(NSData *)appData;
+- (FBFuture<FBInstalledArtifact *> *)install_app_binary:(NSData *)appData;
 
 /**
  Installs an xctest bundle by file path.
@@ -122,7 +122,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param filePath the local file path of the xctest bundle
  @return a Future that resolves with the xctest identifier.
  */
-- (FBFuture<FBInstalledArtifact *> *)xctest_install_file_path:(NSString *)filePath;
+- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_file_path:(NSString *)filePath;
 
 /**
  Installs an xctest bundle by a stream of tar data
@@ -130,7 +130,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param input a tar stream of the xctest data.
  @return a Future that resolves with the xctest identifier.
  */
-- (FBFuture<FBInstalledArtifact *> *)xctest_install_stream:(FBProcessInput *)input;
+- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_stream:(FBProcessInput *)input;
 
 /**
  Deprecated.
@@ -139,7 +139,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param tarData a tar blob of the xctest data.
  @return a Future that resolves with the xctest identifier.
  */
-- (FBFuture<FBInstalledArtifact *> *)xctest_install_binary:(NSData *)tarData;
+- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_binary:(NSData *)tarData;
 
 /**
  Installs a dylib from a file path.
