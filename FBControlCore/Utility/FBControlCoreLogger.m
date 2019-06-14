@@ -77,13 +77,7 @@
 
 @end
 
-@interface FBControlCoreLogger_Composite : NSObject <FBControlCoreLogger>
-
-@property (nonatomic, strong, readonly) NSArray<id<FBControlCoreLogger>> *loggers;
-
-@end
-
-@implementation FBControlCoreLogger_Composite
+@implementation FBCompositeLogger
 
 - (instancetype)initWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers
 {
@@ -163,7 +157,7 @@
   for (id<FBControlCoreLogger> logger in self.loggers) {
     [loggers addObject:[logger performSelector:selector]];
   }
-  return [[FBControlCoreLogger_Composite alloc] initWithLoggers:[loggers copy]];
+  return [[self.class alloc] initWithLoggers:loggers];
 }
 
 - (id<FBControlCoreLogger>)loggerByApplyingSelector:(SEL)selector object:(id)object
@@ -172,7 +166,7 @@
   for (id<FBControlCoreLogger> logger in self.loggers) {
     [loggers addObject:[logger performSelector:selector withObject:object]];
   }
-  return [[FBControlCoreLogger_Composite alloc] initWithLoggers:[loggers copy]];
+  return [[self.class alloc] initWithLoggers:loggers];
 }
 
 #pragma clang diagnostic pop
@@ -305,9 +299,9 @@
 
 #pragma clang diagnostic pop
 
-+ (id<FBControlCoreLogger>)compositeLoggerWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers
++ (FBCompositeLogger *)compositeLoggerWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers
 {
-  return [[FBControlCoreLogger_Composite alloc] initWithLoggers:loggers];
+  return [[FBCompositeLogger alloc] initWithLoggers:loggers];
 }
 
 + (id<FBControlCoreLogger>)loggerToConsumer:(id<FBDataConsumer>)consumer

@@ -11,6 +11,7 @@
 
 #import "FBIDBStorageManager.h"
 #import "FBIDBError.h"
+#import "FBIDBLogger.h"
 #import "FBIDBPortsConfiguration.h"
 #import "FBStorageUtils.h"
 #import "FBTemporaryDirectory.h"
@@ -18,7 +19,7 @@
 @interface FBIDBCommandExecutor ()
 
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) FBIDBLogger *logger;
 @property (nonatomic, strong, readonly) FBIDBPortsConfiguration *ports;
 
 @end
@@ -28,12 +29,12 @@
 #pragma mark Initializers
 
 
-+ (instancetype)commandExecutorForTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(id<FBControlCoreLogger>)logger
++ (instancetype)commandExecutorForTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(FBIDBLogger *)logger
 {
   return [[self alloc] initWithTarget:target storageManager:storageManager temporaryDirectory:temporaryDirectory ports:ports logger:[logger withName:@"grpc_handler"]];
 }
 
-- (instancetype)initWithTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(FBIDBLogger *)logger
 {
   self = [super init];
   if (!self) {

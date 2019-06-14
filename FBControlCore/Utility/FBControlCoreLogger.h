@@ -91,6 +91,30 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 @end
 
 /**
+  A composite logger that logs to many loggers
+ */
+@interface FBCompositeLogger : NSObject <FBControlCoreLogger>
+
+#pragma mark Initializers
+
+/**
+ The Designated Initializer.
+
+ @param loggers the loggers to log to.
+ @return a composite logger.
+ */
+- (instancetype)initWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers;
+
+#pragma mark Properties
+
+/**
+  The loggers to log to.
+ */
+@property (nonatomic, strong, readonly) NSArray<id<FBControlCoreLogger>> *loggers;
+
+@end
+
+/**
  Implementations of Loggers.
  */
 @interface FBControlCoreLogger : NSObject
@@ -111,7 +135,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param loggers the loggers to compose.
  @return the composite logger.
  */
-+ (id<FBControlCoreLogger>)compositeLoggerWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers;
++ (FBCompositeLogger *)compositeLoggerWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers;
 
 /**
  Log to a Consumer.

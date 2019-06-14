@@ -13,6 +13,7 @@
 #import "FBIDBCompanionServer.h"
 #import "FBIDBConfiguration.h"
 #import "FBIDBError.h"
+#import "FBIDBLogger.h"
 #import "FBIDBPortsConfiguration.h"
 #import "FBiOSTargetProvider.h"
 #import "FBiOSTargetStateChangeNotifier.h"
@@ -35,40 +36,6 @@ static BOOL shouldPrintUsage(void) {
   return [NSProcessInfo.processInfo.arguments containsObject:@"--help"];
 }
 
-static id<FBControlCoreLogger> CreateRootLogger(NSUserDefaults *defaults)
-{
-  id<FBControlCoreLogger> logger = [FBControlCoreLogger systemLoggerWritingToStderr:YES withDebugLogging:YES];
-
-  NSError *error;
-  NSUserDefaults *userDefaults = NSUserDefaults.standardUserDefaults;
-  NSString *logFilePath = [userDefaults stringForKey:@"-log-file-path"];
-  if (logFilePath) {
-    NSURL *logFileURL = [NSURL fileURLWithPath:logFilePath];
-    if (![[NSFileManager defaultManager] createDirectoryAtURL:logFileURL.URLByDeletingLastPathComponent
-                                  withIntermediateDirectories:YES
-                                                   attributes:@{}
-                                                        error:&error]) {
-      [logger.error logFormat:@"Couldn't create log file path %@", error];
-      exit(1);
-    }
-
-    if (![[NSFileManager defaultManager] createFileAtPath:logFileURL.path
-                                                 contents:nil
-                                               attributes:@{}]) {
-      [logger.error log:@"Couldn't create log file"];
-      exit(1);
-    }
-
-    int fileDescriptor = open(logFileURL.path.UTF8String, O_WRONLY | O_APPEND | O_CREAT);
-    [logger logFormat:@"All logs will be written to %@", logFileURL.path];
-    logger = [FBControlCoreLogger compositeLoggerWithLoggers:@[
-      logger,
-      [FBControlCoreLogger loggerToFileDescriptor:fileDescriptor closeOnEndOfFile:YES],
-    ]];
-  }
-  return [logger withDateFormatEnabled:YES];
-}
-
 static FBFuture<NSNull *> *TargetOfflineFuture(id<FBiOSTarget> target, id<FBControlCoreLogger> logger)
 {
   return [[FBFuture
@@ -82,7 +49,7 @@ static FBFuture<NSNull *> *TargetOfflineFuture(id<FBiOSTarget> target, id<FBCont
     mapReplace:NSNull.null];
 }
 
-static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, const char *argv[], NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger) {
+static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, const char *argv[], NSUserDefaults *userDefaults, FBIDBLogger *logger) {
   NSString *udid = [userDefaults stringForKey:@"-udid"];
   BOOL notify = [userDefaults boolForKey:@"-notify"];
   NSString *boot = [userDefaults stringForKey:@"-boot"];
@@ -167,8 +134,7 @@ int main(int argc, const char *argv[]) {
 
   @autoreleasepool {
     NSUserDefaults *userDefaults = NSUserDefaults.standardUserDefaults;
-    FBControlCoreGlobalConfiguration.defaultLogger = CreateRootLogger(userDefaults);
-    id<FBControlCoreLogger> logger = [FBControlCoreGlobalConfiguration.defaultLogger withName:@"main"];
+    FBIDBLogger *logger = [FBIDBLogger loggerWithUserDefaults:userDefaults];
     [logger.info logFormat:@"IDB Companion Built at %s %s", __DATE__, __TIME__];
     [logger.info logFormat:@"Invoked with args=%@ env=%@", [FBCollectionInformation oneLineDescriptionFromArray:NSProcessInfo.processInfo.arguments], [FBCollectionInformation oneLineDescriptionFromDictionary:NSProcessInfo.processInfo.environment]];
 

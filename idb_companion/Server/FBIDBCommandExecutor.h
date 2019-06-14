@@ -17,6 +17,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBBundleStorageManager;
+@class FBIDBLogger;
 @class FBIDBPortsConfiguration;
 @class FBIDBStorageManager;
 @class FBTemporaryDirectory;
@@ -35,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger a logger to log to.
  @return a new FBIDBCommandExecutor instance
  */
-+ (instancetype)commandExecutorForTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)commandExecutorForTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(FBIDBLogger *)logger;
 
 #pragma mark Properties
 

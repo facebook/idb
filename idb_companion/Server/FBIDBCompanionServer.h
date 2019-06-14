@@ -11,6 +11,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBIDBCommandExecutor;
+@class FBIDBLogger;
 @class FBIDBPortsConfiguration;
 @class FBTemporaryDirectory;
 
@@ -28,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return an instance of the server.
  */
-+ (instancetype)serverWithPorts:(FBIDBPortsConfiguration *)ports target:(id<FBiOSTarget>)target commandExecutor:(FBIDBCommandExecutor *)commandExecutor eventReporter:(id<FBEventReporter>)eventReporter logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)serverWithPorts:(FBIDBPortsConfiguration *)ports target:(id<FBiOSTarget>)target commandExecutor:(FBIDBCommandExecutor *)commandExecutor eventReporter:(id<FBEventReporter>)eventReporter logger:(FBIDBLogger *)logger;
 
 /**
  Starts the server.

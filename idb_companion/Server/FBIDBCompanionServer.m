@@ -13,6 +13,7 @@
 #import "FBIDBError.h"
 #import "FBIDBPortsConfiguration.h"
 #import "FBIDBCommandExecutor.h"
+#import "FBIDBLogger.h"
 
 @interface FBIDBCompanionServer ()
 
@@ -24,7 +25,7 @@
 
 #pragma mark Initializers
 
-+ (instancetype)companionForTarget:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports eventReporter:(id<FBEventReporter>)eventReporter logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (instancetype)companionForTarget:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports eventReporter:(id<FBEventReporter>)eventReporter logger:(FBIDBLogger *)logger error:(NSError **)error
 {
   FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:error];
   if (!storageManager) {
@@ -36,10 +37,10 @@
     storageManager:storageManager
     temporaryDirectory:temporaryDirectory
     ports:ports
-    logger:target.logger];
+    logger:logger];
   commandExecutor = [FBLoggingWrapper wrap:commandExecutor eventReporter:eventReporter logger:nil];
 
-  return [self serverWithPorts:ports target:target commandExecutor:commandExecutor eventReporter:eventReporter logger:target.logger];
+  return [self serverWithPorts:ports target:target commandExecutor:commandExecutor eventReporter:eventReporter logger:logger];
 }
 
 + (instancetype)serverWithPorts:(FBIDBPortsConfiguration *)ports target:(id<FBiOSTarget>)target commandExecutor:(FBIDBCommandExecutor *)commandExecutor eventReporter:(id<FBEventReporter>)eventReporter logger:(id<FBControlCoreLogger>)logger
