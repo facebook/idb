@@ -28,7 +28,6 @@
 
 #pragma mark Initializers
 
-
 + (instancetype)commandExecutorForTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(FBIDBLogger *)logger
 {
   return [[self alloc] initWithTarget:target storageManager:storageManager temporaryDirectory:temporaryDirectory ports:ports logger:[logger withName:@"grpc_handler"]];
@@ -73,7 +72,7 @@
     }];
 }
 
-- (FBFuture<NSString *> *)install:(nullable NSData *)appData filePath:(nullable NSString *)filePath
+- (FBFuture<FBInstalledArtifact *> *)install:(nullable NSData *)appData filePath:(nullable NSString *)filePath
 {
   if (filePath) {
     return [self install_file_path:filePath];
@@ -86,12 +85,12 @@
     failFuture];
 }
 
-- (FBFuture<NSString *> *)install_file_path:(NSString *)filePath
+- (FBFuture<FBInstalledArtifact *> *)install_file_path:(NSString *)filePath
 {
   return [self installExtractedApplication:[FBBundleDescriptor onQueue:self.target.asyncQueue findOrExtractApplicationAtPath:filePath logger:self.logger]];
 }
 
-- (FBFuture<NSString *> *)install_binary:(NSData *)data
+- (FBFuture<FBInstalledArtifact *> *)install_binary:(NSData *)data
 {
   FBFutureContext<FBBundleDescriptor *> *bundle = [[self.temporaryDirectory
     withArchiveExtracted:data]
@@ -101,52 +100,52 @@
   return [self installExtractedApplication:bundle];
 }
 
-- (FBFuture<NSString *> *)install_stream:(FBProcessInput *)input
+- (FBFuture<FBInstalledArtifact *> *)install_stream:(FBProcessInput *)input
 {
   return [self installExtractedApplication:[FBBundleDescriptor onQueue:self.target.asyncQueue extractApplicationFromInput:input logger:self.logger]];
 }
 
-- (FBFuture<NSString *> *)xctest_install_file_path:(NSString *)filePath
+- (FBFuture<FBInstalledArtifact *> *)xctest_install_file_path:(NSString *)filePath
 {
   return [self installXctestFilePath:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]]];
 }
 
-- (FBFuture<NSString *> *)xctest_install_stream:(FBProcessInput *)stream
+- (FBFuture<FBInstalledArtifact *> *)xctest_install_stream:(FBProcessInput *)stream
 {
   return [self installXctest:[self.temporaryDirectory withArchiveExtractedFromStream:stream]];
 }
 
-- (FBFuture<NSString *> *)xctest_install_binary:(NSData *)tarData
+- (FBFuture<FBInstalledArtifact *> *)xctest_install_binary:(NSData *)tarData
 {
   return [self installXctest:[self.temporaryDirectory withArchiveExtracted:tarData]];
 }
 
-- (FBFuture<NSString *> *)install_dylib_file_path:(NSString *)filePath
+- (FBFuture<FBInstalledArtifact *> *)install_dylib_file_path:(NSString *)filePath
 {
   return [self installFile:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.storageManager.dylib];
 }
 
-- (FBFuture<NSString *> *)install_dylib_stream:(FBProcessInput *)input name:(NSString *)name
+- (FBFuture<FBInstalledArtifact *> *)install_dylib_stream:(FBProcessInput *)input name:(NSString *)name
 {
   return [self installFile:[self.temporaryDirectory withGzipExtractedFromStream:input name:name] intoStorage:self.storageManager.dylib];
 }
 
-- (FBFuture<NSString *> *)install_framework_file_path:(NSString *)filePath
+- (FBFuture<FBInstalledArtifact *> *)install_framework_file_path:(NSString *)filePath
 {
   return [self installBundle:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.storageManager.framework];
 }
 
-- (FBFuture<NSString *> *)install_framework_stream:(FBProcessInput *)input
+- (FBFuture<FBInstalledArtifact *> *)install_framework_stream:(FBProcessInput *)input
 {
   return [self installBundle:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.storageManager.framework];
 }
 
-- (FBFuture<NSString *> *)install_dsym_file_path:(NSString *)filePath
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath
 {
   return [self installFile:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.storageManager.dsym];
 }
 
-- (FBFuture<NSString *> *)install_dsym_stream:(FBProcessInput *)input
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input
 {
   return [self installFile:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.storageManager.dsym];
 }
@@ -545,7 +544,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
-- (FBFuture<NSString *> *)installExtractedApplication:(FBFutureContext<FBBundleDescriptor *> *)extractedApplication
+- (FBFuture<FBInstalledArtifact *> *)installExtractedApplication:(FBFutureContext<FBBundleDescriptor *> *)extractedApplication
 {
   return [[extractedApplication
     onQueue:self.target.workQueue pend:^(FBBundleDescriptor *appBundle){
@@ -612,46 +611,46 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
-- (FBFuture<NSString *> *)installXctest:(FBFutureContext<NSURL *> *)extractedXctest
+- (FBFuture<FBInstalledArtifact *> *)installXctest:(FBFutureContext<NSURL *> *)extractedXctest
 {
   return [extractedXctest
     onQueue:self.target.workQueue pop:^(NSURL *extractionDirectory) {
-    NSError *error = nil;
-    NSString *testBundleID = [self.storageManager.xctest saveBundleOrTestRunFromBaseDirectory:extractionDirectory error:&error];
-    if (!testBundleID) {
-      return [FBFuture futureWithError:error];
-    }
-    return [FBFuture futureWithResult:testBundleID];
+      NSError *error = nil;
+      FBInstalledArtifact *artifact = [self.storageManager.xctest saveBundleOrTestRunFromBaseDirectory:extractionDirectory error:&error];
+      if (!artifact) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:artifact];
   }];
 }
 
-- (FBFuture<NSString *> *)installXctestFilePath:(FBFutureContext<NSURL *> *)bundle
+- (FBFuture<FBInstalledArtifact *> *)installXctestFilePath:(FBFutureContext<NSURL *> *)bundle
 {
   return [bundle
     onQueue:self.target.workQueue pop:^(NSURL *xctestURL) {
       NSError *error = nil;
-      NSString *testBundleID = [self.storageManager.xctest saveBundleOrTestRun:xctestURL error:&error];
-      if (!testBundleID) {
+      FBInstalledArtifact *artifact = [self.storageManager.xctest saveBundleOrTestRun:xctestURL error:&error];
+      if (!artifact) {
         return [FBFuture futureWithError:error];
       }
-      return [FBFuture futureWithResult:testBundleID];
+      return [FBFuture futureWithResult:artifact];
     }];
 }
 
-- (FBFuture<NSString *> *)installFile:(FBFutureContext<NSURL *> *)extractedFileContext intoStorage:(FBFileStorage *)storage
+- (FBFuture<FBInstalledArtifact *> *)installFile:(FBFutureContext<NSURL *> *)extractedFileContext intoStorage:(FBFileStorage *)storage
 {
   return [extractedFileContext
     onQueue:self.target.workQueue pop:^(NSURL *extractedFile) {
       NSError *error = nil;
-      NSString *filePath = [storage saveFile:extractedFile error:&error];
-      if (!filePath) {
+      FBInstalledArtifact *artifact = [storage saveFile:extractedFile error:&error];
+      if (!artifact) {
         return [FBFuture futureWithError:error];
       }
-      return [FBFuture futureWithResult:filePath];
+      return [FBFuture futureWithResult:artifact];
     }];
 }
 
-- (FBFuture<NSString *> *)installBundle:(FBFutureContext<NSURL *> *)extractedDirectoryContext intoStorage:(FBBundleStorage *)storage
+- (FBFuture<FBInstalledArtifact *> *)installBundle:(FBFutureContext<NSURL *> *)extractedDirectoryContext intoStorage:(FBBundleStorage *)storage
 {
   return [extractedDirectoryContext
     onQueue:self.target.workQueue pop:^(NSURL *extractedDirectory) {
@@ -660,11 +659,11 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       if (!bundle) {
         return [FBFuture futureWithError:error];
       }
-      NSString *bundlePath = [storage saveBundle:bundle error:&error];
-      if (!bundlePath) {
+      FBInstalledArtifact *artifact = [storage saveBundle:bundle error:&error];
+      if (!artifact) {
         return [FBFuture futureWithError:error];
       }
-      return [FBFuture futureWithResult:bundlePath];
+      return [FBFuture futureWithResult:artifact];
     }];
 }
 

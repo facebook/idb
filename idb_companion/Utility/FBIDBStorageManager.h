@@ -12,6 +12,18 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ A wrapper around an installed artifact
+ */
+@interface FBInstalledArtifact : NSObject
+
+/**
+ The name of the installed artifact.
+ */
+@property (nonatomic, copy, readonly) NSString *name;
+
+@end
+
+/**
  The base class for storage in idb.
  */
 @interface FBIDBStorage : NSObject
@@ -57,9 +69,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param url the url to relocate.
  @param error an error out for any error that occurs
- @return the path of the relocated file.
+ @return the installed artifact info.
  */
-- (nullable NSString *)saveFile:(NSURL *)url error:(NSError **)error;
+- (nullable FBInstalledArtifact *)saveFile:(NSURL *)url error:(NSError **)error;
 
 @end
 
@@ -84,8 +96,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param bundle the bundle to persist.
  @param error an error out for any error that occurs.
+ @return the installed artifact info.
  */
-- (nullable NSString *)saveBundle:(FBBundleDescriptor *)bundle error:(NSError **)error;
+- (nullable FBInstalledArtifact *)saveBundle:(FBBundleDescriptor *)bundle error:(NSError **)error;
 
 #pragma mark Properties
 
@@ -116,7 +129,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the bundle id of the installed test, or nil if failed
  */
-- (nullable NSString *)saveBundleOrTestRunFromBaseDirectory:(NSURL *)baseDirectory error:(NSError **)error;
+- (nullable FBInstalledArtifact *)saveBundleOrTestRunFromBaseDirectory:(NSURL *)baseDirectory error:(NSError **)error;
 
 /**
  Stores a test bundle, based on the file path of the actual test bundle.
@@ -126,7 +139,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the bundle id of the installed test, or nil if failed
  */
-- (nullable NSString *)saveBundleOrTestRun:(NSURL *)filePath error:(NSError **)error;
+- (nullable FBInstalledArtifact *)saveBundleOrTestRun:(NSURL *)filePath error:(NSError **)error;
 
 /**
  Get descriptors for all installed test bundles and xctestrun files.

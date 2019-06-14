@@ -458,7 +458,7 @@ FBIDBServiceHandler::FBIDBServiceHandler(const FBIDBServiceHandler &c)
 
 #pragma mark Handled Methods
 
-FBFuture<NSString *> *FBIDBServiceHandler::install_future(const idb::InstallRequest_Destination destination, grpc::ServerReader<idb::InstallRequest> *reader)
+FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::InstallRequest_Destination destination, grpc::ServerReader<idb::InstallRequest> *reader)
 {@autoreleasepool{
   idb::InstallRequest request;
   reader->Read(&request);
@@ -572,11 +572,11 @@ Status FBIDBServiceHandler::install(ServerContext *context, grpc::ServerReader<i
   idb::InstallRequest_Destination destination = request.destination();
 
   NSError *error = nil;
-  NSString *bundleID = [install_future(destination, reader) block:&error];
-  if (!bundleID) {
+  FBInstalledArtifact *artifact = [install_future(destination, reader) block:&error];
+  if (!artifact) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String ?: "An internal error occured when installing");
   }
-  response->set_bundle_id(bundleID.UTF8String);
+  response->set_bundle_id(artifact.name.UTF8String);
   return Status::OK;
 }}
 

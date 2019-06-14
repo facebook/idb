@@ -13,6 +13,22 @@
 #import "FBStorageUtils.h"
 #import "FBXCTestDescriptor.h"
 
+@implementation FBInstalledArtifact
+
+- (instancetype)initWithName:(NSString *)name
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _name = name;
+
+  return self;
+}
+
+@end
+
 @implementation FBIDBStorage
 
 #pragma mark Initializers
@@ -47,7 +63,7 @@
 
 @implementation FBFileStorage
 
-- (nullable NSString *)saveFile:(NSURL *)url error:(NSError **)error
+- (nullable FBInstalledArtifact *)saveFile:(NSURL *)url error:(NSError **)error
 {
   NSURL *destination = [self.basePath URLByAppendingPathComponent:url.lastPathComponent];
   [self.logger logFormat:@"Persisting %@ to %@", url.lastPathComponent, destination];
@@ -55,7 +71,7 @@
     return nil;
   }
   [self.logger logFormat:@"Persisted %@", destination.lastPathComponent];
-  return destination.lastPathComponent;
+  return [[FBInstalledArtifact alloc] initWithName:destination.lastPathComponent];
 }
 
 @end
@@ -78,7 +94,7 @@
   return YES;
 }
 
-- (nullable NSString *)saveBundle:(FBBundleDescriptor *)bundle error:(NSError **)error
+- (nullable FBInstalledArtifact *)saveBundle:(FBBundleDescriptor *)bundle error:(NSError **)error
 {
   // Check that the bundle matches the architecture of the target.
   if (![self checkArchitecture:bundle error:error]) {
@@ -100,7 +116,7 @@
   }
   [self.logger logFormat:@"Persisted %@", bundle.identifier];
 
-  return bundle.identifier;
+  return [[FBInstalledArtifact alloc] initWithName:bundle.identifier];
 }
 
 #pragma mark Properties
@@ -166,7 +182,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
 #pragma mark Public
 
-- (nullable NSString *)saveBundleOrTestRunFromBaseDirectory:(NSURL *)baseDirectory error:(NSError **)error
+- (FBInstalledArtifact *)saveBundleOrTestRunFromBaseDirectory:(NSURL *)baseDirectory error:(NSError **)error
 {
   // Find .xctest or .xctestrun in directory.
   NSDictionary<NSString *, NSSet<NSURL *> *> *buckets = [FBStorageUtils bucketFilesWithExtensions:[NSSet setWithArray:@[XctestExtension, XctestRunExtension]] inDirectory:baseDirectory error:error];
@@ -193,28 +209,28 @@ static NSString *const XctestRunExtension = @"xctestrun";
       fail:error];
   }
 
-  NSString *bundleIdentifier = nil;
+  FBInstalledArtifact *artifact = nil;
   if (xctestBundleURL) {
-    bundleIdentifier = [self saveTestBundle:xctestBundleURL error:error];
-    if (!bundleIdentifier) {
+    artifact = [self saveTestBundle:xctestBundleURL error:error];
+    if (!artifact) {
       return nil;
     }
   }
   if (xctestrunURL) {
-    bundleIdentifier = [self saveTestRun:xctestrunURL error:error];
-    if (!bundleIdentifier) {
+    artifact = [self saveTestRun:xctestrunURL error:error];
+    if (!artifact) {
       return nil;
     }
   }
-  if (!bundleIdentifier) {
+  if (!artifact) {
     return [[FBIDBError
       describeFormat:@".xctest bundle (%@) or .xctestrun (%@) file was not saved", xctestBundleURL, xctestrunURL]
       fail:error];
   }
-  return bundleIdentifier;
+  return artifact;
 }
 
-- (nullable NSString *)saveBundleOrTestRun:(NSURL *)filePath error:(NSError **)error
+- (FBInstalledArtifact *)saveBundleOrTestRun:(NSURL *)filePath error:(NSError **)error
 {
   // save .xctest or .xctestrun
   if ([filePath.pathExtension isEqualToString:XctestExtension]) {
@@ -392,7 +408,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   return descriptors;
 }
 
-- (NSString *)saveTestBundle:(NSURL *)testBundleURL error:(NSError **)error
+- (FBInstalledArtifact *)saveTestBundle:(NSURL *)testBundleURL error:(NSError **)error
 {
   // Test Bundles don't always have a bundle id, so fallback to another name if it's not there.
   FBBundleDescriptor *bundle = [FBBundleDescriptor bundleWithFallbackIdentifierFromPath:testBundleURL.path error:error];
@@ -402,7 +418,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   return [self saveBundle:bundle error:error];
 }
 
-- (NSString *)saveTestRun:(NSURL *)XCTestRunURL error:(NSError **)error
+- (FBInstalledArtifact *)saveTestRun:(NSURL *)XCTestRunURL error:(NSError **)error
 {
   // Delete old xctestrun with the same id if it exists
   NSArray<id<FBXCTestDescriptor>> *descriptors = [self getXCTestRunDescriptorsFromURL:XCTestRunURL];
@@ -443,7 +459,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
     }
   }
 
-  return [descriptor testBundleID];
+  return [[FBInstalledArtifact alloc] initWithName:[descriptor testBundleID]];
 }
 
 @end

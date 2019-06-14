@@ -21,7 +21,7 @@ private:
   id<FBiOSTarget> _target;
   id<FBEventReporter> _eventReporter;
   FBIDBPortsConfiguration *_portsConfig;
-  FBFuture<NSString *> *install_future(const idb::InstallRequest_Destination destination, grpc::ServerReader<idb::InstallRequest> *reader);
+  FBFuture<FBInstalledArtifact *> *install_future(const idb::InstallRequest_Destination destination, grpc::ServerReader<idb::InstallRequest> *reader);
 
 public:
   // Constructors
