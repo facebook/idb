@@ -485,7 +485,12 @@ message BootResponse{
 }
 
 message LogRequest {
+  enum Source {
+    TARGET = 0;
+    COMPANION = 1;
+  }
   repeated string arguments = 1;
+  Source source = 2;
 }
 
 message LogResponse {

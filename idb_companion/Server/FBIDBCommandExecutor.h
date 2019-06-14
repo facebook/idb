@@ -457,6 +457,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<id<FBDebugServer>> *)debugserver_stop;
 
+/**
+ Tails logs from the companion to a consumer
+
+ @param consumer the consumer to use.
+ @return a Future wrapping the log operation.
+ */
+- (FBFuture<id<FBLogOperation>> *)tail_companion_logs:(id<FBDataConsumer>)consumer;
+
 @end
 
 NS_ASSUME_NONNULL_END

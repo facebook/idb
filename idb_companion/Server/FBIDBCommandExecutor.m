@@ -689,4 +689,9 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   }];
 }
 
+- (FBFuture<id<FBLogOperation>> *)tail_companion_logs:(id<FBDataConsumer>)consumer
+{
+  return [self.logger tailToConsumer:consumer];
+}
+
 @end
