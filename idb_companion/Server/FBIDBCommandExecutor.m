@@ -152,7 +152,7 @@
 
 #pragma mark Public Methods
 
-- (FBFuture<NSData *> *)takeScreenshot:(FBScreenshotFormat)format
+- (FBFuture<NSData *> *)take_screenshot:(FBScreenshotFormat)format
 {
   return [[self
     screenshotCommands]
@@ -161,7 +161,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)create_directory:(NSString *)directoryPath in_container_of_application:(NSString *)bundleID
 {
   return [[self
     targetDataCommands]
@@ -170,7 +170,7 @@
     }];
 }
 
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityInfoAtPoint:(nullable NSValue *)value
+- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibility_info_at_point:(nullable NSValue *)value
 {
   return [[[self
     connectToSimulatorConnection]
@@ -186,21 +186,21 @@
   }];
 }
 
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityInfo
+- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibility_info
 {
-  return [self accessibilityInfoAtPoint:nil];
+  return [self accessibility_info_at_point:nil];
 }
 
-- (FBFuture<NSNull *> *)addMediaFromTar:(nullable NSData *)tarData orFilePath:(nullable NSArray<NSString *> *)filePaths
+- (FBFuture<NSNull *> *)add_media_from_tar:(nullable NSData *)tarData or_file_path:(nullable NSArray<NSString *> *)filePaths
 {
   return [[self.temporaryDirectory
     withFilesInTar:tarData orFilePaths:filePaths]
     onQueue:self.target.workQueue pop:^(NSArray<NSURL *> *mediaFileURLs) {
-      return [self addMedia:mediaFileURLs];
+      return [self add_media:mediaFileURLs];
     }];
 }
 
-- (FBFuture<NSNull *> *)addMedia:(NSArray<NSURL *> *)filePaths
+- (FBFuture<NSNull *> *)add_media:(NSArray<NSURL *> *)filePaths
 {
   return [self.mediaCommands
     onQueue:self.target.asyncQueue fmap:^FBFuture *(id<FBSimulatorMediaCommands> commands) {
@@ -208,7 +208,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)move_paths:(NSArray<NSString *> *)originPaths to_path:(NSString *)destinationPath in_container_of_application:(NSString *)bundleID
 {
   return [self.targetDataCommands
     onQueue:self.target.workQueue fmap:^(id<FBApplicationDataCommands> commands) {
@@ -216,7 +216,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)pushFileFromTar:(NSData *)tarData toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)push_file_from_tar:(NSData *)tarData to_path:(NSString *)destinationPath in_container_of_application:(NSString *)bundleID
 {
   return [[self.temporaryDirectory
     withArchiveExtracted:tarData]
@@ -226,11 +226,11 @@
       if (!paths) {
         return [FBFuture futureWithError:error];
       }
-      return [self pushFiles:paths toPath:destinationPath inContainerOfApplication:bundleID];
+      return [self push_files:paths to_path:destinationPath in_container_of_application:bundleID];
    }];
 }
 
-- (FBFuture<NSNull *> *)pushFiles:(NSArray<NSURL *> *)paths toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)push_files:(NSArray<NSURL *> *)paths to_path:(NSString *)destinationPath in_container_of_application:(NSString *)bundleID
 {
   return [FBFuture
     onQueue:self.target.asyncQueue resolve:^FBFuture<NSNull *> *{
@@ -241,7 +241,7 @@
   }];
 }
 
-- (FBFuture<NSString *> *)pullFilePath:(NSString *)path inContainerOfApplication:(NSString *)bundleID destinationPath:(NSString *)destinationPath
+- (FBFuture<NSString *> *)pull_file_path:(NSString *)path in_container_of_application:(NSString *)bundleID destination_path:(NSString *)destinationPath
 {
   return [[self.targetDataCommands
     onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> commands) {
@@ -250,7 +250,7 @@
     fmapReplace:[FBFuture futureWithResult:destinationPath]];
 }
 
-- (FBFuture<NSData *> *)pullFile:(NSString *)path inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSData *> *)pull_file:(NSString *)path in_container_of_application:(NSString *)bundleID
 {
   __block NSString *tempPath;
 
@@ -276,7 +276,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)remove_paths:(NSArray<NSString *> *)paths in_container_of_application:(NSString *)bundleID
 {
   return [self.targetDataCommands
     onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> commands) {
@@ -284,7 +284,7 @@
     }];
 }
 
-- (FBFuture<NSArray<NSString *> *> *)listPath:(NSString *)path inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSArray<NSString *> *> *)list_path:(NSString *)path in_container_of_application:(NSString *)bundleID
 {
   return [self.targetDataCommands
     onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> commands) {
@@ -292,7 +292,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)setLocation:(double)latitude longitude:(double)longitude
+- (FBFuture<NSNull *> *)set_location:(double)latitude longitude:(double)longitude
 {
   return [self.connectToSimulatorBridge
     onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(FBSimulatorBridge *bridge) {
@@ -300,7 +300,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)clearKeychain
+- (FBFuture<NSNull *> *)clear_keychain
 {
   return [self.keychainCommands
     onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorKeychainCommands> commands) {
@@ -308,7 +308,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)approve:(NSSet<FBSettingsApprovalService> *)services forApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)approve:(NSSet<FBSettingsApprovalService> *)services for_application:(NSString *)bundleID
 {
   return [self.settingsCommands
     onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorSettingsCommands> commands) {
@@ -316,7 +316,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)openUrl:(NSString *)url
+- (FBFuture<NSNull *> *)open_url:(NSString *)url
 {
   return [self.lifecycleCommands
     onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorLifecycleCommands> commands) {
@@ -332,7 +332,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)updateContacts:(NSData *)dbTarData
+- (FBFuture<NSNull *> *)update_contacts:(NSData *)dbTarData
 {
   return [[self.temporaryDirectory
     withArchiveExtracted:dbTarData]
@@ -343,7 +343,7 @@
     }];
 }
 
-- (FBFuture<NSSet<id<FBXCTestDescriptor>> *> *)listXctests
+- (FBFuture<NSSet<id<FBXCTestDescriptor>> *> *)list_test_bundles
 {
   return [FBFuture onQueue:self.target.workQueue resolve:^{
     NSError *error;
@@ -357,7 +357,7 @@
 
 static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
-- (FBFuture<NSArray<NSString *> *> *)listTestsInBundle:(NSString *)bundleID
+- (FBFuture<NSArray<NSString *> *> *)list_tests_in_bundle:(NSString *)bundleID
 {
   return [FBFuture onQueue:self.target.workQueue resolve:^ FBFuture<NSArray<NSString *> *> * {
     NSError *error = nil;
@@ -369,24 +369,24 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   }];
 }
 
-- (FBFuture<NSNull *> *)uninstallApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)uninstall_application:(NSString *)bundleID
 {
   return [self.target uninstallApplicationWithBundleID:bundleID];
 }
 
-- (FBFuture<NSNull *> *)killApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)kill_application:(NSString *)bundleID
 {
   return [self.target killApplicationWithBundleID:bundleID];
 }
 
-- (FBFuture<NSNull *> *)startVideoRecording
+- (FBFuture<NSNull *> *)video_recording_start
 {
   return [[self.videoManager
     startSession:NSNull.null]
     mapReplace:NSNull.null];
 }
 
-- (FBFuture<NSData *> *)stopVideoRecording
+- (FBFuture<NSData *> *)video_recording_stop
 {
   return [[self.videoManager
     sessionWithIdentifier:nil]

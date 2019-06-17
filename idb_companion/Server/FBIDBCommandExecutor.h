@@ -196,7 +196,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param format the format of the data.
  @return A Future, wrapping Data of the provided format.
  */
-- (FBFuture<NSData *> *)takeScreenshot:(FBScreenshotFormat)format;
+- (FBFuture<NSData *> *)take_screenshot:(FBScreenshotFormat)format;
 
 /**
  Creates a directory
@@ -205,7 +205,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the bundle id of the app.
  @return A Future that resolves when the directory is created.
  */
-- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath inContainerOfApplication:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)create_directory:(NSString *)directoryPath in_container_of_application:(NSString *)bundleID;
 
 /**
  Returns the accessibility info of a point on the screen
@@ -213,7 +213,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param point location on the screen (NSValue<NSPoint> *), returns info for the whole screen if nil
  @return A Future that resolves with the accessibility info
  */
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityInfoAtPoint:(nullable NSValue *)point;
+- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibility_info_at_point:(nullable NSValue *)point;
 
 
 /**
@@ -221,7 +221,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A Future that resolves with the accessibility info
  */
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityInfo;
+- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibility_info;
 
 /**
  Adds all the media files (photos, videos, ...) contained in the tar or specified by the files paths to the target
@@ -231,7 +231,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param filePaths local file paths to the media files
  @return A Future that resolves when complete
  */
-- (FBFuture<NSNull *> *)addMediaFromTar:(nullable NSData *)tarData orFilePath:(nullable NSArray<NSString *> *)filePaths;
+- (FBFuture<NSNull *> *)add_media_from_tar:(nullable NSData *)tarData or_file_path:(nullable NSArray<NSString *> *)filePaths;
 
 /**
  Adds media files (photos, videos, ...) to the target
@@ -239,7 +239,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param filePaths local file paths to the media files
  @return A Future that resolves when complete
  */
-- (FBFuture<NSNull *> *)addMedia:(NSArray<NSURL *> *)filePaths;
+- (FBFuture<NSNull *> *)add_media:(NSArray<NSURL *> *)filePaths;
 
 /**
  Move data within the container to a different path
@@ -249,7 +249,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)move_paths:(NSArray<NSString *> *)originPaths to_path:(NSString *)destinationPath in_container_of_application:(NSString *)bundleID;
 
 /**
  Push files to an applications container from a tar
@@ -259,8 +259,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)pushFileFromTar:(NSData *)tarData toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID;
-
+- (FBFuture<NSNull *> *)push_file_from_tar:(NSData *)tarData to_path:(NSString *)destinationPath in_container_of_application:(NSString *)bundleID;
 
 /**
  Push files to an applications container
@@ -270,8 +269,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)pushFiles:(NSArray<NSURL *> *)paths toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID;
-
+- (FBFuture<NSNull *> *)push_files:(NSArray<NSURL *> *)paths to_path:(NSString *)destinationPath in_container_of_application:(NSString *)bundleID;
 
 /**
  Pull a file from an applications container
@@ -281,7 +279,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param destinationPath path to write the file to.
  @return A future that resolves the path the file is copied to.
  */
-- (FBFuture<NSString *> *)pullFilePath:(NSString *)path inContainerOfApplication:(NSString *)bundleID destinationPath:(nullable NSString *)destinationPath;
+- (FBFuture<NSString *> *)pull_file_path:(NSString *)path in_container_of_application:(NSString *)bundleID destination_path:(nullable NSString *)destinationPath;
 
 /**
  Pull a file from an applications container
@@ -290,7 +288,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves the content of that file.
  */
-- (FBFuture<NSData *> *)pullFile:(NSString *)path inContainerOfApplication:(NSString *)bundleID;
+- (FBFuture<NSData *> *)pull_file:(NSString *)path in_container_of_application:(NSString *)bundleID;
 
 /**
  Remove path within the container
@@ -299,7 +297,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths inContainerOfApplication:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)remove_paths:(NSArray<NSString *> *)paths in_container_of_application:(NSString *)bundleID;
 
 /**
  Lists path within the container
@@ -308,7 +306,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves with the list of files.
  */
-- (FBFuture<NSArray<NSString *> *> *)listPath:(NSString *)path inContainerOfApplication:(NSString *)bundleID;
+- (FBFuture<NSArray<NSString *> *> *)list_path:(NSString *)path in_container_of_application:(NSString *)bundleID;
 
 /**
  Perform a hid event on the target
@@ -327,14 +325,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param longitude the longitude of the location.
  @return a Future that resolves when the location has been sent.
  */
-- (FBFuture<NSNull *> *)setLocation:(double)latitude longitude:(double)longitude;
+- (FBFuture<NSNull *> *)set_location:(double)latitude longitude:(double)longitude;
 
 /**
  Cleans the keychain of the target.
 
  @return A future that resolves when the keychain has been cleared.
  */
-- (FBFuture<NSNull *> *)clearKeychain;
+- (FBFuture<NSNull *> *)clear_keychain;
 
 /**
  Approves the given services for an app
@@ -343,8 +341,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID app to approve services for
  @return a Future that resolves when complete.
  */
-- (FBFuture<NSNull *> *)approve:(NSSet<FBSettingsApprovalService> *)services forApplication:(NSString *)bundleID;
-
+- (FBFuture<NSNull *> *)approve:(NSSet<FBSettingsApprovalService> *)services for_application:(NSString *)bundleID;
 
 /**
  Open a url on the target
@@ -352,7 +349,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param url url to open
  @return a Future that resolves when complete.
  */
-- (FBFuture<NSNull *> *)openUrl:(NSString *)url;
+- (FBFuture<NSNull *> *)open_url:(NSString *)url;
 
 /**
  Focus the simulator window
@@ -367,22 +364,21 @@ NS_ASSUME_NONNULL_BEGIN
  @param dbTarData a tar of the db file
  @return a Future that resolves when complete.
  */
-- (FBFuture<NSNull *> *)updateContacts:(NSData *)dbTarData;
+- (FBFuture<NSNull *> *)update_contacts:(NSData *)dbTarData;
 
 /**
  List the xctests installed
 
  @return a Future that resolves with a set of tests.
  */
-- (FBFuture<NSSet<id<FBXCTestDescriptor>> *> *)listXctests;
-
+- (FBFuture<NSSet<id<FBXCTestDescriptor>> *> *)list_test_bundles;
 
 /**
  List the tests in an installed bundle
 
  @return a Future that resolves with names of tests in the bundle.
  */
-- (FBFuture<NSArray<NSString *> *> *)listTestsInBundle:(NSString *)bundleID;
+- (FBFuture<NSArray<NSString *> *> *)list_tests_in_bundle:(NSString *)bundleID;
 
 /**
  Uninstall an application
@@ -390,7 +386,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID bundle id of the application to uninstall
  @return a Future that resolves when complete.
  */
-- (FBFuture<NSNull *> *)uninstallApplication:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)uninstall_application:(NSString *)bundleID;
 
 /**
  Kill an application
@@ -398,21 +394,21 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID bundle id of the application to kill
  @return a Future that resolves when complete.
  */
-- (FBFuture<NSNull *> *)killApplication:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)kill_application:(NSString *)bundleID;
 
 /**
  Start recording video of the targets screen
 
  @return a Future that resolves when started.
  */
-- (FBFuture<NSNull *> *)startVideoRecording;
+- (FBFuture<NSNull *> *)video_recording_start;
 
 /**
  Stop recording video of the targets screen
 
  @return a Future that resolves with the video file.
  */
-- (FBFuture<NSData *> *)stopVideoRecording;
+- (FBFuture<NSData *> *)video_recording_stop;
 
 /**
  Launch an application
@@ -422,8 +418,28 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<id<FBLaunchedProcess>> *)launch_app:(FBApplicationLaunchConfiguration *)configuration;
 
+/**
+ Lists Crashes according to a predicate
+
+ @param predicate the predicate to use.
+ @return a Future that resolves with the log info.
+ */
 - (FBFuture<NSArray<FBCrashLogInfo *> *> *)crash_list:(NSPredicate *)predicate;
+
+/**
+ Obtains crash log info
+
+ @param predicate the predicate to use.
+ @return a Future that resolves with the log.
+ */
 - (FBFuture<FBCrashLog *> *)crash_show:(NSPredicate *)predicate;
+
+/**
+ Deletes crash log info
+
+ @param predicate the predicate to use.
+ @return a Future that resolves with the logs of the deleted crashes.
+ */
 - (FBFuture<NSArray<FBCrashLogInfo *> *> *)crash_delete:(NSPredicate *)predicate;
 
 /**
