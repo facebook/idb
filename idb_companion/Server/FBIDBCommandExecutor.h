@@ -190,8 +190,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input;
 
-#pragma mark Public Methods
-
 /**
  Takes a Screenshot
 

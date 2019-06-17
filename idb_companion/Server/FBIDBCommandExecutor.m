@@ -444,6 +444,74 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
+- (FBFuture<NSArray<FBCrashLogInfo *> *> *)crash_list:(NSPredicate *)predicate
+{
+  return [[self.target
+    crashes:predicate useCache:NO]
+    onQueue:self.target.asyncQueue map:^(NSArray<FBCrashLogInfo *> *crashes) {
+      return crashes;
+    }];
+}
+
+- (FBFuture<FBCrashLog *> *)crash_show:(NSPredicate *)predicate
+{
+  return [[self.target
+    crashes:predicate useCache:YES]
+    onQueue:self.target.asyncQueue fmap:^(NSArray<FBCrashLogInfo *> *crashes) {
+      if (crashes.count > 1) {
+         return [[FBIDBError
+          describeFormat:@"More than one crash log matching %@", predicate]
+          failFuture];
+      }
+      if (crashes.count == 0) {
+        return [[FBIDBError
+          describeFormat:@"No crashes matching %@", predicate]
+          failFuture];
+      }
+      NSError *error = nil;
+      FBCrashLog *log = [crashes.firstObject obtainCrashLogWithError:&error];
+      if (!log) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:log];
+    }];
+}
+
+- (FBFuture<NSArray<FBCrashLogInfo *> *> *)crash_delete:(NSPredicate *)predicate
+{
+  return [[self.target
+    pruneCrashes:predicate]
+    onQueue:self.target.asyncQueue map:^(NSArray<FBCrashLogInfo *> *crashes) {
+      return crashes;
+    }];
+}
+
+- (FBFuture<FBBundleDescriptor *> *)debugserver_prepare:(NSString *)bundleID
+{
+  return [FBFuture
+    onQueue:self.target.workQueue resolve:^ FBFuture<FBBundleDescriptor *> * {
+      if (self.debugServer) {
+        return [[FBControlCoreError
+          describeFormat:@"Debug server is already running"]
+          failFuture];
+      }
+      NSDictionary<NSString *, FBBundleDescriptor *> *persisted = self.storageManager.application.persistedBundles;
+      FBBundleDescriptor *bundle = persisted[bundleID];
+      if (!bundle) {
+        return [[FBIDBError
+          describeFormat:@"%@ not persisted application and is therefore not debuggable. Suitable applications: %@", bundleID, [FBCollectionInformation oneLineDescriptionFromArray:persisted.allKeys]]
+          failFuture];
+      }
+
+      return [FBFuture futureWithResult:bundle];
+  }];
+}
+
+- (FBFuture<id<FBLogOperation>> *)tail_companion_logs:(id<FBDataConsumer>)consumer
+{
+  return [self.logger tailToConsumer:consumer];
+}
+
 #pragma mark Private Methods
 
 - (FBFuture<id<FBApplicationDataCommands>> *)targetDataCommands
@@ -568,48 +636,6 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
-- (FBFuture<NSArray<FBCrashLogInfo *> *> *)crash_list:(NSPredicate *)predicate
-{
-  return [[self.target
-    crashes:predicate useCache:NO]
-    onQueue:self.target.asyncQueue map:^(NSArray<FBCrashLogInfo *> *crashes) {
-      return crashes;
-    }];
-}
-
-- (FBFuture<FBCrashLog *> *)crash_show:(NSPredicate *)predicate
-{
-  return [[self.target
-    crashes:predicate useCache:YES]
-    onQueue:self.target.asyncQueue fmap:^(NSArray<FBCrashLogInfo *> *crashes) {
-      if (crashes.count > 1) {
-         return [[FBIDBError
-          describeFormat:@"More than one crash log matching %@", predicate]
-          failFuture];
-      }
-      if (crashes.count == 0) {
-        return [[FBIDBError
-          describeFormat:@"No crashes matching %@", predicate]
-          failFuture];
-      }
-      NSError *error = nil;
-      FBCrashLog *log = [crashes.firstObject obtainCrashLogWithError:&error];
-      if (!log) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:log];
-    }];
-}
-
-- (FBFuture<NSArray<FBCrashLogInfo *> *> *)crash_delete:(NSPredicate *)predicate
-{
-  return [[self.target
-    pruneCrashes:predicate]
-    onQueue:self.target.asyncQueue map:^(NSArray<FBCrashLogInfo *> *crashes) {
-      return crashes;
-    }];
-}
-
 - (FBFuture<FBInstalledArtifact *> *)installXctest:(FBFutureContext<NSURL *> *)extractedXctest
 {
   return [extractedXctest
@@ -664,32 +690,6 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       }
       return [FBFuture futureWithResult:artifact];
     }];
-}
-
-- (FBFuture<FBBundleDescriptor *> *)debugserver_prepare:(NSString *)bundleID
-{
-  return [FBFuture
-    onQueue:self.target.workQueue resolve:^ FBFuture<FBBundleDescriptor *> * {
-      if (self.debugServer) {
-        return [[FBControlCoreError
-          describeFormat:@"Debug server is already running"]
-          failFuture];
-      }
-      NSDictionary<NSString *, FBBundleDescriptor *> *persisted = self.storageManager.application.persistedBundles;
-      FBBundleDescriptor *bundle = persisted[bundleID];
-      if (!bundle) {
-        return [[FBIDBError
-          describeFormat:@"%@ not persisted application and is therefore not debuggable. Suitable applications: %@", bundleID, [FBCollectionInformation oneLineDescriptionFromArray:persisted.allKeys]]
-          failFuture];
-      }
-
-      return [FBFuture futureWithResult:bundle];
-  }];
-}
-
-- (FBFuture<id<FBLogOperation>> *)tail_companion_logs:(id<FBDataConsumer>)consumer
-{
-  return [self.logger tailToConsumer:consumer];
 }
 
 @end
