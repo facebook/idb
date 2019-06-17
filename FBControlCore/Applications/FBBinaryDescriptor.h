@@ -8,9 +8,15 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBJSONConversion.h>
-#import <FBControlCore/FBBinaryParser.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+typedef NSString *FBBinaryArchitecture NS_STRING_ENUM;
+
+extern FBBinaryArchitecture const FBBinaryArchitecturei386;
+extern FBBinaryArchitecture const FBBinaryArchitecturex86_64;
+extern FBBinaryArchitecture const FBBinaryArchitectureArm;
+extern FBBinaryArchitecture const FBBinaryArchitectureArm64;
 
 /**
  Concrete value wrapper around a binary artifact.

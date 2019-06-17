@@ -65,7 +65,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable instancetype)relocateBundleIntoDirectory:(NSString *)destinationDirectory fileManager:(id<FBFileManager>)fileManager error:(NSError **)error;
 
-
 #pragma mark Properties
 
 /**
