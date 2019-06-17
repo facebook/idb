@@ -560,12 +560,11 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     onQueue:self.target.workQueue pop:^(FBBundleDescriptor *appBundle){
       [self.logger logFormat:@"Persisting application bundle %@", appBundle];
       NSError *error = nil;
-      if ([self.storageManager.application saveBundle:appBundle error:&error]) {
-        [self.logger logFormat:@"Persisted application bundle %@", appBundle];
-      } else {
-        [self.logger logFormat:@"Failed to persist application %@", error];
+      FBInstalledArtifact *artifact = [self.storageManager.application saveBundle:appBundle error:&error];
+      if (!artifact) {
+        return [FBFuture futureWithError:error];
       }
-      return [FBFuture futureWithResult:appBundle.identifier];
+      return [FBFuture futureWithResult:artifact];
     }];
 }
 
