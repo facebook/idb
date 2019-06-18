@@ -86,39 +86,29 @@ static inline uint32_t GetMagic(FILE *file)
   return magic;
 }
 
-static inline FBBinaryArchitecture ReadArch32(FILE *file, uint32_t magic)
+static inline struct mach_header ReadHeader32(FILE *file, uint32_t magic)
 {
+  // Read the header from the current location.
   struct mach_header header;
   fread(&header, sizeof(struct mach_header), 1, file);
   if (IsSwap(magic)) {
     swap_mach_header(&header, 0);
   }
-  return ArchitectureForCPUType(header.cputype);
+  return header;
 }
 
-static inline FBBinaryArchitecture ReadArch64(FILE *file, uint32_t magic)
+static inline struct mach_header_64 ReadHeader64(FILE *file, uint32_t magic)
 {
-  // Read the header from the start of the file.
+  // Read the header from the current location.
   struct mach_header_64 header;
   fread(&header, sizeof(header), 1, file);
   if (IsSwap(magic)) {
     swap_mach_header_64(&header, 0);
   }
-  return ArchitectureForCPUType(header.cputype);
+  return header;
 }
 
-static inline FBBinaryArchitecture ReadArch(FILE *file, uint32_t magic)
-{
-  if (IsMagic32(magic)) {
-    return ReadArch32(file, magic);
-  }
-  if (IsMagic64(magic)) {
-    return ReadArch64(file, magic);
-  }
-  return nil;
-}
-
-static inline NSArray<FBBinaryArchitecture> *ReadArchsFat(FILE *file, uint32_t fatMagic)
+static inline struct fat_header ReadFatHeader(FILE *file, uint32_t fatMagic)
 {
   // Get the Fat Header.
   struct fat_header header;
@@ -126,8 +116,14 @@ static inline NSArray<FBBinaryArchitecture> *ReadArchsFat(FILE *file, uint32_t f
   if (IsSwap(fatMagic)) {
     swap_fat_header(&header, 0);
   }
+  return header;
+}
 
-  NSMutableArray<FBBinaryArchitecture> *array = [NSMutableArray array];
+static inline id EnumerateFat(FILE *file, uint32_t fatMagic, id(^block)(struct fat_arch fatArch, uint32_t magic))
+{
+  // Get the Fat Header.
+  struct fat_header header = ReadFatHeader(file, fatMagic);
+
   long fatArchPosition = sizeof(struct fat_header);
   for (uint32_t index = 0; index < header.nfat_arch; index++) {
     // Seek-to then get the Fat Arch info
@@ -145,16 +141,134 @@ static inline NSArray<FBBinaryArchitecture> *ReadArchsFat(FILE *file, uint32_t f
       return nil;
     }
 
+    // Call the block
+    id value = block(fatArch, magic);
+    if (value) {
+      return value;
+    }
+    fatArchPosition += sizeof(struct fat_arch);
+  }
+  return nil;
+}
+
+static inline id EnumerateLoadCommands64(FILE *file, uint32_t magic, id (^block)(FILE *file, struct load_command command, uint32_t offset) )
+{
+  struct mach_header_64 header = ReadHeader64(file, magic);
+  // Offset is relative to header length and position in file. In a fat binary it's not right equal to sizeof(header).
+  uint32_t offset = (uint32_t) ftell(file);
+  for (uint32_t i = 0; i < header.ncmds; i++) {
+    struct load_command command;
+    fseek(file, offset, SEEK_SET);
+    fread(&command, sizeof(command), 1, file);
+    fseek(file, offset, SEEK_SET);
+    id value = block(file, command, offset);
+    if (value) {
+      return value;
+    }
+    offset += command.cmdsize;
+  }
+  return nil;
+}
+
+static inline id EnumerateLoadCommands32(FILE *file, uint32_t magic, id (^block)(FILE *file, struct load_command command, uint32_t offset) )
+{
+  struct mach_header header = ReadHeader32(file, magic);
+  // Offset is relative to header length and position in file. In a fat binary it's not right equal to sizeof(header).
+  uint32_t offset = (uint32_t) ftell(file);
+  for (uint32_t i = 0; i < header.ncmds; i++) {
+    struct load_command command;
+    fseek(file, offset, SEEK_SET);
+    fread(&command, sizeof(command), 1, file);
+    fseek(file, offset, SEEK_SET);
+    id value = block(file, command, offset);
+    if (value) {
+      return value;
+    }
+    offset += command.cmdsize;
+  }
+  return nil;
+}
+
+static inline NSUUID *ReadUUID(FILE *file, uint32_t magic);
+
+static id (^UUIDEnumerator)(FILE *, struct load_command, uint32_t) = ^id (FILE *file, struct load_command command, uint32_t offset){
+  if (command.cmd != LC_UUID) {
+    return nil;
+  }
+  struct uuid_command uuidCommand;
+  fread(&uuidCommand, sizeof(uuidCommand), 1, file);
+  NSUUID *uuid = [[NSUUID alloc] initWithUUIDBytes:uuidCommand.uuid];
+  return uuid;
+};
+
+static inline NSUUID *ReadUUID64(FILE *file, uint32_t magic)
+{
+  return EnumerateLoadCommands64(file, magic, UUIDEnumerator);
+}
+
+static inline NSUUID *ReadUUID32(FILE *file, uint32_t magic)
+{
+  return EnumerateLoadCommands32(file, magic, UUIDEnumerator);
+}
+
+static inline NSUUID *ReadUUIDFat(FILE *file, uint32_t fatMagic)
+{
+  return EnumerateFat(file, fatMagic, ^ id (struct fat_arch fatArch, uint32_t magic) {
+    // Get the Arch
+    return ReadUUID(file, magic);
+  });
+}
+
+static inline NSUUID *ReadUUID(FILE *file, uint32_t magic)
+{
+  if (IsFatMagic(magic)) {
+    return ReadUUIDFat(file, magic);
+  }
+  if (IsMagic64(magic)) {
+    return ReadUUID64(file, magic);
+  }
+  if (IsMagic32(magic)) {
+    return ReadUUID32(file, magic);
+  }
+  return nil;
+}
+
+static inline FBBinaryArchitecture ReadArch32(FILE *file, uint32_t magic)
+{
+  struct mach_header header = ReadHeader32(file, magic);
+  return ArchitectureForCPUType(header.cputype);
+}
+
+static inline FBBinaryArchitecture ReadArch64(FILE *file, uint32_t magic)
+{
+  struct mach_header_64 header = ReadHeader64(file, magic);
+  return ArchitectureForCPUType(header.cputype);
+}
+
+static inline FBBinaryArchitecture ReadArch(FILE *file, uint32_t magic)
+{
+  if (IsMagic32(magic)) {
+    return ReadArch32(file, magic);
+  }
+  if (IsMagic64(magic)) {
+    return ReadArch64(file, magic);
+  }
+  return nil;
+}
+
+static inline NSArray<FBBinaryArchitecture> *ReadArchsFat(FILE *file, uint32_t fatMagic)
+{
+  NSMutableArray<FBBinaryArchitecture> *array = [NSMutableArray array];
+  EnumerateFat(file, fatMagic, ^id(struct fat_arch fatArch, uint32_t magic) {
     // Get the Arch
     NSString *arch = ReadArch(file, magic);
     if (!arch) {
       return nil;
     }
     [array addObject:arch];
-    fatArchPosition += sizeof(struct fat_arch);
-  }
-
-  return [array copy];
+    return nil;
+  });
+  return array;
 }
 
 static inline NSArray<FBBinaryArchitecture> *ReadArchs(FILE *file, uint32_t magic)
@@ -175,7 +289,7 @@ static inline NSArray<FBBinaryArchitecture> *ReadArchs(FILE *file, uint32_t magi
 
 @implementation FBBinaryDescriptor
 
-- (instancetype)initWithName:(NSString *)name architectures:(NSSet<FBBinaryArchitecture> *)architectures path:(NSString *)path
+- (instancetype)initWithName:(NSString *)name architectures:(NSSet<FBBinaryArchitecture> *)architectures uuid:(NSUUID *)uuid path:(NSString *)path
 {
   NSParameterAssert(name);
   NSParameterAssert(architectures);
@@ -188,6 +302,7 @@ static inline NSArray<FBBinaryArchitecture> *ReadArchs(FILE *file, uint32_t magi
 
   _name = name;
   _architectures = architectures;
+  _uuid = uuid;
   _path = path;
 
   return self;
@@ -221,11 +336,16 @@ static inline NSArray<FBBinaryArchitecture> *ReadArchs(FILE *file, uint32_t magi
     return [[FBControlCoreError describeFormat:@"Could not read architechtures of magic %@ in file %@", MagicNameForMagic(magic), binaryPath] fail:error];
   }
 
+  // Rewind to the start of the file
+  rewind(file);
+  NSUUID *uuid = ReadUUID(file, magic);
+
   fclose(file);
 
   return [[FBBinaryDescriptor alloc]
     initWithName:[self binaryNameForBinaryPath:binaryPath]
     architectures:[NSSet setWithArray:archs]
+    uuid:uuid
     path:binaryPath];
 }
 

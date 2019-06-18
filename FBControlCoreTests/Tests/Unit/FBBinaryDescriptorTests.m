@@ -22,6 +22,7 @@
   FBBinaryDescriptor *descriptor = [FBBinaryDescriptor binaryWithPath:NSProcessInfo.processInfo.arguments.firstObject error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(descriptor);
+  XCTAssertNotNil(descriptor.uuid);
 }
 
 - (void)test64BitMacosCommand
@@ -31,6 +32,7 @@
   FBBinaryDescriptor *descriptor = [FBBinaryDescriptor binaryWithPath:@"/usr/bin/codesign" error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(descriptor);
+  XCTAssertNotNil(descriptor.uuid);
 }
 
 @end

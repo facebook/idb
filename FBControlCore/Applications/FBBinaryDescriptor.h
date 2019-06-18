@@ -30,10 +30,11 @@ extern FBBinaryArchitecture const FBBinaryArchitectureArm64;
 
  @param name The name of the executable. Must not be nil.
  @param architectures The supported architectures of the executable. Must not be nil.
+ @param uuid the LC_UUID of the binary.
  @param path The path to the executable. Must not be nil.
  @return a new FBBinaryDescriptor instance.
  */
-- (instancetype)initWithName:(NSString *)name architectures:(NSSet<FBBinaryArchitecture> *)architectures path:(NSString *)path;
+- (instancetype)initWithName:(NSString *)name architectures:(NSSet<FBBinaryArchitecture> *)architectures uuid:(nullable NSUUID *)uuid path:(NSString *)path;
 
 /**
  Returns the FBBinaryDescriptor for the given binary path, by parsing the binary.
@@ -55,6 +56,11 @@ extern FBBinaryArchitecture const FBBinaryArchitectureArm64;
  The Supported Architectures of the Executable.
  */
 @property (nonatomic, copy, readonly) NSSet<FBBinaryArchitecture> *architectures;
+
+/**
+ The LC_UUID of the binary (if present)
+ */
+@property (nonatomic, copy, nullable, readonly) NSUUID *uuid;
 
 /**
  The file path to the executable.
