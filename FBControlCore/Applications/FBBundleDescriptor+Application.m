@@ -9,7 +9,6 @@
 
 #import "FBArchiveOperations.h"
 #import "FBBinaryDescriptor.h"
-#import "FBBinaryParser.h"
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreError.h"

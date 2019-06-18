@@ -15,7 +15,6 @@
 #import <FBControlCore/FBArchiveOperations.h>
 #import <FBControlCore/FBBatchLogSearch.h>
 #import <FBControlCore/FBBinaryDescriptor.h>
-#import <FBControlCore/FBBinaryParser.h>
 #import <FBControlCore/FBBitmapStream.h>
 #import <FBControlCore/FBBitmapStreamConfiguration.h>
 #import <FBControlCore/FBBitmapStreamingCommands.h>
