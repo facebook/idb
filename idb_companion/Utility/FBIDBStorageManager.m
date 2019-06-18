@@ -142,6 +142,9 @@
       [self.logger logFormat:@"Failed to get bundle info for bundle at path %@", bundlePath];
     }
     mapping[key] = bundle;
+    if (bundle.binary.uuid) {
+      mapping[bundle.binary.uuid.UUIDString] = bundle;
+    }
   }
   return mapping;
 }

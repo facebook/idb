@@ -113,7 +113,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSSet<NSString *> *persistedBundleIDs;
 
 /**
- A mapping of Bundle IDs to bundles.
+ A mapping of keys that identify bundles, to the bundle descriptors.
+ These keys compromise:
+ - The LC_UUID of the Bundle.
+ - The Bundle ID of the Bundle.
  */
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, FBBundleDescriptor *> *persistedBundles;
 
