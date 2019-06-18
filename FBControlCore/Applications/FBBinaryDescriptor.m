@@ -115,7 +115,7 @@ static inline FBBinaryArchitecture ReadArch(FILE *file, uint32_t magic)
   if (IsMagic64(magic)) {
     return ReadArch64(file, magic);
   }
-  abort();
+  return nil;
 }
 
 static inline NSArray<FBBinaryArchitecture> *ReadArchsFat(FILE *file, uint32_t fatMagic)
@@ -162,11 +162,15 @@ static inline NSArray<FBBinaryArchitecture> *ReadArchs(FILE *file, uint32_t magi
   if (IsFatMagic(magic)) {
     return ReadArchsFat(file, magic);
   }
-  if (IsMagic32(magic) || IsMagic64(magic)) {
-    FBBinaryArchitecture arch = IsMagic32(magic) ? ReadArch32(file, magic) : ReadArch64(file, magic);
+  if (IsMagic32(magic)) {
+    FBBinaryArchitecture arch = ReadArch32(file, magic);
     return arch ? @[arch] : @[];
   }
-  abort();
+  if (IsMagic64(magic)) {
+    FBBinaryArchitecture arch = ReadArch64(file, magic);
+    return arch ? @[arch] : @[];
+  }
+  return @[];
 }
 
 @implementation FBBinaryDescriptor
