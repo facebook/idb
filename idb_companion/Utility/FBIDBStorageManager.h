@@ -21,6 +21,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) NSString *name;
 
+/**
+ The UDID of the installed artifact (if present).
+ */
+@property (nonatomic, copy, nullable, readonly) NSUUID *uuid;
+
 @end
 
 /**

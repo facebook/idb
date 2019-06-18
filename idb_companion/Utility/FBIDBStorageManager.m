@@ -15,7 +15,7 @@
 
 @implementation FBInstalledArtifact
 
-- (instancetype)initWithName:(NSString *)name
+- (instancetype)initWithName:(NSString *)name uuid:(NSUUID *)uuid
 {
   self = [super init];
   if (!self) {
@@ -23,6 +23,7 @@
   }
 
   _name = name;
+  _uuid = uuid;
 
   return self;
 }
@@ -71,7 +72,7 @@
     return nil;
   }
   [self.logger logFormat:@"Persisted %@", destination.lastPathComponent];
-  return [[FBInstalledArtifact alloc] initWithName:destination.lastPathComponent];
+  return [[FBInstalledArtifact alloc] initWithName:destination.lastPathComponent uuid:nil];
 }
 
 @end
@@ -116,7 +117,7 @@
   }
   [self.logger logFormat:@"Persisted %@", bundle.identifier];
 
-  return [[FBInstalledArtifact alloc] initWithName:bundle.identifier];
+  return [[FBInstalledArtifact alloc] initWithName:bundle.identifier uuid:bundle.binary.uuid];
 }
 
 #pragma mark Properties
@@ -459,7 +460,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
     }
   }
 
-  return [[FBInstalledArtifact alloc] initWithName:[descriptor testBundleID]];
+  return [[FBInstalledArtifact alloc] initWithName:[descriptor testBundleID] uuid:nil];
 }
 
 @end
