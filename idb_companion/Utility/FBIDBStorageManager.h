@@ -119,6 +119,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, FBBundleDescriptor *> *persistedBundles;
 
+/**
+ Whether or not to perform manual relocation of libraries.
+ */
+@property (nonatomic, assign, readonly) BOOL relocateLibraries;
+
 @end
 
 /**

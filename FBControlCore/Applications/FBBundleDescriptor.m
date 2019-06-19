@@ -8,9 +8,13 @@
 #import "FBBundleDescriptor.h"
 
 #import "FBBinaryDescriptor.h"
-#import "FBFileManager.h"
-#import "FBControlCoreError.h"
+#import "FBCodesignProvider.h"
 #import "FBCollectionInformation.h"
+#import "FBControlCoreError.h"
+#import "FBControlCoreLogger.h"
+#import "FBFileManager.h"
+#import "FBTaskBuilder.h"
+#import "FBXCodeConfiguration.h"
 
 @implementation FBBundleDescriptor
 
@@ -145,40 +149,33 @@
 
 #pragma mark Public Methods
 
-- (nullable instancetype)relocateBundleIntoDirectory:(NSString *)destinationDirectory fileManager:(id<FBFileManager>)fileManager error:(NSError **)error
+- (FBFuture<NSDictionary<NSString *, NSString *> *> *)updatePathsForRelocationWithCodesign:(id<FBCodesignProvider>)codesign logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue
 {
-  NSParameterAssert(destinationDirectory);
-  NSParameterAssert(fileManager);
-
-  NSError *innerError = nil;
-  NSString *bundleName = self.path.lastPathComponent;
-
-  if (![fileManager fileExistsAtPath:destinationDirectory] && ![fileManager createDirectoryAtPath:destinationDirectory withIntermediateDirectories:YES attributes:nil error:&innerError]) {
-    return [[FBControlCoreError
-      describeFormat:@"Could not create destination directory at  '%@'", destinationDirectory]
-      fail:error];
-  }
-
-  NSString *targetBundlePath = [destinationDirectory stringByAppendingPathComponent:bundleName];
-  if ([fileManager fileExistsAtPath:targetBundlePath] && ![fileManager removeItemAtPath:targetBundlePath error:&innerError]) {
-    return [[[FBControlCoreError
-      describeFormat:@"Could not destination item at path '%@'", targetBundlePath]
-      causedBy:innerError]
-      fail:error];
-  }
-
-  if (![fileManager copyItemAtPath:self.path toPath:targetBundlePath error:&innerError]) {
-    return [[[FBControlCoreError
-      describeFormat:@"Could not move from '%@' to '%@'", self.path, targetBundlePath]
-      causedBy:innerError]
-      fail:error];
-  }
-
-  return [[self.class alloc]
-    initWithName:self.name
-    identifier:self.identifier
-    path:targetBundlePath
-    binary:self.binary];
+  return [[[self
+    replacementsForBinary]
+    onQueue:queue fmap:^ FBFuture * (NSDictionary<NSString *, NSString *> *replacements) {
+      if (replacements.count == 0) {
+        return [FBFuture futureWithResult:replacements];
+      }
+      NSMutableArray<NSString *> *arguments = NSMutableArray.array;
+      for (NSString *key in replacements.allKeys) {
+        [arguments addObject:@"-rpath"];
+        [arguments addObject:key];
+        [arguments addObject:replacements[key]];
+      }
+      [arguments addObject:self.binary.path];
+      [logger logFormat:@"Updating rpaths for binary %@", [FBCollectionInformation oneLineDescriptionFromDictionary:replacements]];
+      return [[[[[FBTaskBuilder
+        withLaunchPath:@"/usr/bin/install_name_tool" arguments:arguments]
+        withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
+        withStdErrToLogger:logger]
+        runUntilCompletion]
+        mapReplace:replacements];
+    }]
+    onQueue:queue fmap:^(NSDictionary<NSString *, NSString *> *replacements) {
+      [logger logFormat:@"Re-Codesigning after rpath update %@", self.path];
+      return [[codesign signBundleAtPath:self.path] mapReplace:replacements];
+    }];
 }
 
 #pragma mark Private
@@ -198,6 +195,33 @@
 + (NSString *)bundleNameForBundle:(NSBundle *)bundle
 {
   return bundle.infoDictionary[@"CFBundleName"] ?: bundle.infoDictionary[@"CFBundleExecutable"] ?: bundle.bundlePath.stringByDeletingPathExtension.lastPathComponent;
+}
+
+- (FBFuture<NSDictionary<NSString *, NSString *> *> *)replacementsForBinary
+{
+  NSError *error = nil;
+  NSArray<NSString *> *rpaths = [self.binary rpathsWithError:&error];
+  if (!rpaths) {
+    return [FBFuture futureWithError:error];
+  }
+  return [FBFuture futureWithResult:[FBBundleDescriptor interpolateRpathReplacementsForRPaths:rpaths]];
+}
+
++ (NSDictionary<NSString *, NSString *> *)interpolateRpathReplacementsForRPaths:(NSArray<NSString *> *)rpaths
+{
+  NSError *error = nil;
+  NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"(/Applications/(?:xcode|Xcode).*\\.app/Contents/Developer)(.*)" options:0 error:&error];
+  NSAssert(regex, @"Regex failed to compile %@", error);
+  NSMutableDictionary<NSString *, NSString *> *replacements = NSMutableDictionary.dictionary;
+  for (NSString *rpath in rpaths) {
+    NSTextCheckingResult *result = [regex firstMatchInString:rpath options:0 range:NSMakeRange(0, rpath.length)];
+    if (!result) {
+      continue;
+    }
+    NSString *oldXcodePath = [rpath substringWithRange:[result rangeAtIndex:1]];
+    replacements[rpath] = [rpath stringByReplacingOccurrencesOfString:oldXcodePath withString:FBXcodeConfiguration.developerDirectory];
+  }
+  return replacements;
 }
 
 @end

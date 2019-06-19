@@ -79,6 +79,20 @@
 
 @implementation FBBundleStorage
 
+#pragma mark Initializers
+
+- (instancetype)initWithTarget:(id<FBiOSTarget>)target basePath:(NSURL *)basePath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger relocateLibraries:(BOOL)relocateLibraries
+{
+  self = [super initWithTarget:target basePath:basePath queue:queue logger:logger];
+  if (!self) {
+    return nil;
+  }
+
+  _relocateLibraries = relocateLibraries;
+
+  return self;
+}
+
 #pragma mark Public
 
 - (BOOL)checkArchitecture:(FBBundleDescriptor *)bundle error:(NSError **)error
@@ -119,7 +133,16 @@
   [self.logger logFormat:@"Persisted %@", bundle.identifier];
 
   FBInstalledArtifact *artifact = [[FBInstalledArtifact alloc] initWithName:bundle.identifier uuid:bundle.binary.uuid];
-  return [FBFuture futureWithResult:artifact];
+  if (!self.relocateLibraries) {
+    return [FBFuture futureWithResult:artifact];
+  }
+  bundle = [FBBundleDescriptor bundleFromPath:destinationBundlePath.path error:&error];
+  if (!bundle) {
+    return [FBFuture futureWithError:error];
+  }
+  return [[bundle
+    updatePathsForRelocationWithCodesign:FBCodesignProvider.codeSignCommandWithAdHocIdentity logger:self.logger queue:self.queue]
+    mapReplace:artifact];
 }
 
 #pragma mark Properties
@@ -491,13 +514,13 @@ static NSString *const XctestRunExtension = @"xctestrun";
   if (!basePath) {
     return nil;
   }
-  FBXCTestBundleStorage *xctest = [[FBXCTestBundleStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
+  FBXCTestBundleStorage *xctest = [[FBXCTestBundleStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger relocateLibraries:NO];
 
   basePath = [self prepareStoragePathWithName:@"idb-applications" target:target error:error];
   if (!basePath) {
     return nil;
   }
-  FBBundleStorage *application = [[FBBundleStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
+  FBBundleStorage *application = [[FBBundleStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger relocateLibraries:NO];
 
   basePath = [self prepareStoragePathWithName:@"idb-dylibs" target:target error:error];
   if (!basePath) {
@@ -515,7 +538,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   if (!basePath) {
     return nil;
   }
-  FBBundleStorage *framework = [[FBBundleStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
+  FBBundleStorage *framework = [[FBBundleStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger relocateLibraries:YES];
 
   return [[self alloc] initWithXctest:xctest application:application dylib:dylib dsym:dsym framework:framework logger:logger];
 }

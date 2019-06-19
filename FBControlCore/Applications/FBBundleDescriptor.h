@@ -7,13 +7,16 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBDebugDescribeable.h>
+#import <FBControlCore/FBFuture.h>
+#import <FBControlCore/FBJSONConversion.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBBinaryDescriptor;
-@protocol FBFileManager;
+
+@protocol FBControlCoreLogger;
+@protocol FBCodesignProvider;
 
 /**
  Concrete value wrapper around a Bundle on disk.
@@ -57,13 +60,17 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Public Methods
 
 /**
- Relocates the reciever into a destination directory.
+ Updates the binary within the Framework to point to the Xcode version present on the host.
+ If the binary that the reciever wraps references the developer directory for Xcode, then this method will make a best-attempt to adjust any rpaths to point to the currently selected Xcode.
+ This means that if a Framework was built on one machine that has a different Xcode path to another, then this method may help to ensure that the reciever's Framwork can be linked.
+ Since modifying the rpaths of a Mach-O binary will cause the code signature to become invalid, this method will also re-sign the binary using the codesigner provided.
 
- @param destinationDirectory the Destination Path to relocate to. Must not be nil.
- @param fileManager the fileManager to use. Must not be nil.
- @param error an error out for any error that occurs.
+ @param codesign the codesign implementation to codesign with.
+ @param logger the logger to use.
+ @param queue the queue to do work on.
+ @return a Future that resolves with the relocation replacements.
  */
-- (nullable instancetype)relocateBundleIntoDirectory:(NSString *)destinationDirectory fileManager:(id<FBFileManager>)fileManager error:(NSError **)error;
+- (FBFuture<NSDictionary<NSString *, NSString *> *> *)updatePathsForRelocationWithCodesign:(id<FBCodesignProvider>)codesign logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;
 
 #pragma mark Properties
 
