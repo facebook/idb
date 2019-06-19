@@ -47,9 +47,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the Bundle Identifier of the Container.
  @param containerPath the sub-path within the to copy out.
  @param destinationPath the path to copy in to.
- @return A future that resolves when successful.
+ @return A future that resolves with the destination path when successful.
  */
-- (FBFuture<NSNull *> *)copyDataFromContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath toDestinationPath:(NSString *)destinationPath;
+- (FBFuture<NSString *> *)copyDataFromContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath toDestinationPath:(NSString *)destinationPath;
 
 /**
  Create Directory inside the Application Data Container.
