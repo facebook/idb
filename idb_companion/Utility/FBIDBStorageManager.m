@@ -95,29 +95,31 @@
   return YES;
 }
 
-- (nullable FBInstalledArtifact *)saveBundle:(FBBundleDescriptor *)bundle error:(NSError **)error
+- (FBFuture<FBInstalledArtifact *> *)saveBundle:(FBBundleDescriptor *)bundle
 {
   // Check that the bundle matches the architecture of the target.
-  if (![self checkArchitecture:bundle error:error]) {
-    return nil;
+  NSError *error = nil;
+  if (![self checkArchitecture:bundle error:&error]) {
+    return [FBFuture futureWithError:error];
   }
 
   // Where the bundle will be copied to.
   NSURL *storageDirectory = [self.basePath URLByAppendingPathComponent:bundle.identifier];
-  if (![self prepareDirectoryWithURL:storageDirectory error:error]) {
-    return nil;
+  if (![self prepareDirectoryWithURL:storageDirectory error:&error]) {
+    return [FBFuture futureWithError:error];
   }
 
   // Copy over bundle
   NSURL *sourceBundlePath = [NSURL fileURLWithPath:bundle.path];
   NSURL *destinationBundlePath = [storageDirectory URLByAppendingPathComponent:sourceBundlePath.lastPathComponent];
   [self.logger logFormat:@"Persisting %@ to %@", bundle.identifier, destinationBundlePath];
-  if (![NSFileManager.defaultManager copyItemAtURL:sourceBundlePath toURL:destinationBundlePath error:error]) {
-    return nil;
+  if (![NSFileManager.defaultManager copyItemAtURL:sourceBundlePath toURL:destinationBundlePath error:&error]) {
+    return [FBFuture futureWithError:error];
   }
   [self.logger logFormat:@"Persisted %@", bundle.identifier];
 
-  return [[FBInstalledArtifact alloc] initWithName:bundle.identifier uuid:bundle.binary.uuid];
+  FBInstalledArtifact *artifact = [[FBInstalledArtifact alloc] initWithName:bundle.identifier uuid:bundle.binary.uuid];
+  return [FBFuture futureWithResult:artifact];
 }
 
 #pragma mark Properties
@@ -186,66 +188,57 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
 #pragma mark Public
 
-- (FBInstalledArtifact *)saveBundleOrTestRunFromBaseDirectory:(NSURL *)baseDirectory error:(NSError **)error
+- (FBFuture<FBInstalledArtifact *> *)saveBundleOrTestRunFromBaseDirectory:(NSURL *)baseDirectory
 {
   // Find .xctest or .xctestrun in directory.
-  NSDictionary<NSString *, NSSet<NSURL *> *> *buckets = [FBStorageUtils bucketFilesWithExtensions:[NSSet setWithArray:@[XctestExtension, XctestRunExtension]] inDirectory:baseDirectory error:error];
+  NSError *error = nil;
+  NSDictionary<NSString *, NSSet<NSURL *> *> *buckets = [FBStorageUtils bucketFilesWithExtensions:[NSSet setWithArray:@[XctestExtension, XctestRunExtension]] inDirectory:baseDirectory error:&error];
   if (!buckets) {
-    return nil;
+    return [FBFuture futureWithError:error];
   }
   NSArray<NSURL *> *bucket = buckets[XctestExtension].allObjects;
   NSURL *xctestBundleURL = bucket.firstObject;
   if (bucket.count > 1) {
     return [[FBControlCoreError
       describeFormat:@"Multiple files with .xctest extension: %@", [FBCollectionInformation oneLineDescriptionFromArray:bucket]]
-      fail:error];
+      failFuture];
   }
   bucket = buckets[XctestRunExtension].allObjects;
   NSURL *xctestrunURL = bucket.firstObject;
   if (bucket.count > 1) {
     return [[FBControlCoreError
       describeFormat:@"Multiple files with .xctestrun extension: %@", [FBCollectionInformation oneLineDescriptionFromArray:bucket]]
-      fail:error];
+      failFuture];
   }
   if (!xctestBundleURL && !xctestrunURL) {
     return [[FBIDBError
       describeFormat:@"Neither a .xctest bundle or .xctestrun file provided: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:buckets]]
-      fail:error];
+      failFuture];
   }
 
-  FBInstalledArtifact *artifact = nil;
   if (xctestBundleURL) {
-    artifact = [self saveTestBundle:xctestBundleURL error:error];
-    if (!artifact) {
-      return nil;
-    }
+    return [self saveTestBundle:xctestBundleURL];
   }
   if (xctestrunURL) {
-    artifact = [self saveTestRun:xctestrunURL error:error];
-    if (!artifact) {
-      return nil;
-    }
+    return [self saveTestRun:xctestrunURL];
   }
-  if (!artifact) {
-    return [[FBIDBError
-      describeFormat:@".xctest bundle (%@) or .xctestrun (%@) file was not saved", xctestBundleURL, xctestrunURL]
-      fail:error];
-  }
-  return artifact;
+  return [[FBIDBError
+    describeFormat:@".xctest bundle (%@) or .xctestrun (%@) file was not saved", xctestBundleURL, xctestrunURL]
+    failFuture];
 }
 
-- (FBInstalledArtifact *)saveBundleOrTestRun:(NSURL *)filePath error:(NSError **)error
+- (FBFuture<FBInstalledArtifact *> *)saveBundleOrTestRun:(NSURL *)filePath
 {
   // save .xctest or .xctestrun
   if ([filePath.pathExtension isEqualToString:XctestExtension]) {
-    return [self saveTestBundle:filePath error:error];
+    return [self saveTestBundle:filePath];
   }
   if ([filePath.pathExtension isEqualToString:XctestRunExtension]) {
-    return [self saveTestRun:filePath error:error];
+    return [self saveTestRun:filePath];
   }
   return [[FBControlCoreError
     describeFormat:@"The path extension (%@) of the provided bundle (%@) is not .xctest or .xctestrun", filePath.pathExtension, filePath]
-    fail:error];
+    failFuture];
 }
 
 - (NSSet<id<FBXCTestDescriptor>> *)listTestDescriptorsWithError:(NSError **)error
@@ -412,37 +405,41 @@ static NSString *const XctestRunExtension = @"xctestrun";
   return descriptors;
 }
 
-- (FBInstalledArtifact *)saveTestBundle:(NSURL *)testBundleURL error:(NSError **)error
+- (FBFuture<FBInstalledArtifact *> *)saveTestBundle:(NSURL *)testBundleURL
 {
   // Test Bundles don't always have a bundle id, so fallback to another name if it's not there.
-  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleWithFallbackIdentifierFromPath:testBundleURL.path error:error];
+  NSError *error = nil;
+  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleWithFallbackIdentifierFromPath:testBundleURL.path error:&error];
   if (!bundle) {
-    return nil;
+    return [FBFuture futureWithError:error];
   }
-  return [self saveBundle:bundle error:error];
+  return [self saveBundle:bundle];
 }
 
-- (FBInstalledArtifact *)saveTestRun:(NSURL *)XCTestRunURL error:(NSError **)error
+- (FBFuture<FBInstalledArtifact *> *)saveTestRun:(NSURL *)XCTestRunURL
 {
   // Delete old xctestrun with the same id if it exists
   NSArray<id<FBXCTestDescriptor>> *descriptors = [self getXCTestRunDescriptorsFromURL:XCTestRunURL];
   if (descriptors.count != 1) {
-    return [[FBIDBError describeFormat:@"Expected exactly one test in the xctestrun file, got: %lu", descriptors.count] fail:error];
+    return [[FBIDBError
+      describeFormat:@"Expected exactly one test in the xctestrun file, got: %lu", descriptors.count]
+      failFuture];
   }
 
   id<FBXCTestDescriptor> descriptor = descriptors[0];
-  id<FBXCTestDescriptor> toDelete = [self testDescriptorWithID:descriptor.testBundleID error:error];
+  NSError *error = nil;
+  id<FBXCTestDescriptor> toDelete = [self testDescriptorWithID:descriptor.testBundleID error:&error];
   if (toDelete) {
-    if (![NSFileManager.defaultManager removeItemAtURL:[toDelete.url URLByDeletingLastPathComponent] error:error]) {
-      return nil;
+    if (![NSFileManager.defaultManager removeItemAtURL:[toDelete.url URLByDeletingLastPathComponent] error:&error]) {
+      return [FBFuture futureWithError:error];
     }
   }
 
   NSString *uuidString = [[NSUUID UUID] UUIDString];
   NSURL *newPath = [self.basePath URLByAppendingPathComponent:uuidString];
 
-  if (![self prepareDirectoryWithURL:newPath error:error]) {
-    return nil;
+  if (![self prepareDirectoryWithURL:newPath error:&error]) {
+    return [FBFuture futureWithError:error];
   }
 
   // Get the directory containing the xctestrun file and its contents
@@ -451,19 +448,20 @@ static NSString *const XctestRunExtension = @"xctestrun";
     contentsOfDirectoryAtURL:dir
     includingPropertiesForKeys:nil
     options:0
-    error:error];
+    error:&error];
   if (!contents) {
-    return nil;
+    return [FBFuture futureWithError:error];
   }
 
   // Copy all files
   for (NSURL *url in contents) {
-    if (![NSFileManager.defaultManager moveItemAtURL:url toURL:[newPath URLByAppendingPathComponent:url.lastPathComponent] error:error]) {
-      return nil;
+    if (![NSFileManager.defaultManager moveItemAtURL:url toURL:[newPath URLByAppendingPathComponent:url.lastPathComponent] error:&error]) {
+      return [FBFuture futureWithError:error];
     }
   }
 
-  return [[FBInstalledArtifact alloc] initWithName:[descriptor testBundleID] uuid:nil];
+  FBInstalledArtifact *artifact = [[FBInstalledArtifact alloc] initWithName:[descriptor testBundleID] uuid:nil];
+  return [FBFuture futureWithResult:artifact];
 }
 
 @end

@@ -627,12 +627,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }]
     onQueue:self.target.workQueue pop:^(FBBundleDescriptor *appBundle){
       [self.logger logFormat:@"Persisting application bundle %@", appBundle];
-      NSError *error = nil;
-      FBInstalledArtifact *artifact = [self.storageManager.application saveBundle:appBundle error:&error];
-      if (!artifact) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:artifact];
+      return [self.storageManager.application saveBundle:appBundle];
     }];
 }
 
@@ -640,12 +635,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 {
   return [extractedXctest
     onQueue:self.target.workQueue pop:^(NSURL *extractionDirectory) {
-      NSError *error = nil;
-      FBInstalledArtifact *artifact = [self.storageManager.xctest saveBundleOrTestRunFromBaseDirectory:extractionDirectory error:&error];
-      if (!artifact) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:artifact];
+      return [self.storageManager.xctest saveBundleOrTestRunFromBaseDirectory:extractionDirectory];
   }];
 }
 
@@ -653,12 +643,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 {
   return [bundle
     onQueue:self.target.workQueue pop:^(NSURL *xctestURL) {
-      NSError *error = nil;
-      FBInstalledArtifact *artifact = [self.storageManager.xctest saveBundleOrTestRun:xctestURL error:&error];
-      if (!artifact) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:artifact];
+      return [self.storageManager.xctest saveBundleOrTestRun:xctestURL];
     }];
 }
 
@@ -678,17 +663,13 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 - (FBFuture<FBInstalledArtifact *> *)installBundle:(FBFutureContext<NSURL *> *)extractedDirectoryContext intoStorage:(FBBundleStorage *)storage
 {
   return [extractedDirectoryContext
-    onQueue:self.target.workQueue pop:^(NSURL *extractedDirectory) {
+    onQueue:self.target.workQueue pop:^ FBFuture<FBInstalledArtifact *> * (NSURL *extractedDirectory) {
       NSError *error = nil;
       FBBundleDescriptor *bundle = [FBStorageUtils bundleInDirectory:extractedDirectory error:&error];
       if (!bundle) {
         return [FBFuture futureWithError:error];
       }
-      FBInstalledArtifact *artifact = [storage saveBundle:bundle error:&error];
-      if (!artifact) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:artifact];
+      return [storage saveBundle:bundle];
     }];
 }
 

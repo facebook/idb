@@ -100,10 +100,9 @@ NS_ASSUME_NONNULL_BEGIN
  Persist the bundle to storage.
 
  @param bundle the bundle to persist.
- @param error an error out for any error that occurs.
- @return the installed artifact info.
+ @return a future of the persisted bundle info.
  */
-- (nullable FBInstalledArtifact *)saveBundle:(FBBundleDescriptor *)bundle error:(NSError **)error;
+- (FBFuture<FBInstalledArtifact *> *)saveBundle:(FBBundleDescriptor *)bundle;
 
 #pragma mark Properties
 
@@ -134,20 +133,18 @@ NS_ASSUME_NONNULL_BEGIN
  This is useful when the test bundle is extracted to a temporary directory, because it came from an archive.
 
  @param baseDirectory the directory containing the test bundle.
- @param error an error out for any error that occurs.
  @return the bundle id of the installed test, or nil if failed
  */
-- (nullable FBInstalledArtifact *)saveBundleOrTestRunFromBaseDirectory:(NSURL *)baseDirectory error:(NSError **)error;
+- (FBFuture<FBInstalledArtifact *> *)saveBundleOrTestRunFromBaseDirectory:(NSURL *)baseDirectory;
 
 /**
  Stores a test bundle, based on the file path of the actual test bundle.
  This is useful when the test bundle is from an existing and local file path, instead of passed in an archive.
 
  @param filePath the file path of the bundle.
- @param error an error out for any error that occurs.
  @return the bundle id of the installed test, or nil if failed
  */
-- (nullable FBInstalledArtifact *)saveBundleOrTestRun:(NSURL *)filePath error:(NSError **)error;
+- (FBFuture<FBInstalledArtifact *> *)saveBundleOrTestRun:(NSURL *)filePath;
 
 /**
  Get descriptors for all installed test bundles and xctestrun files.
