@@ -167,9 +167,6 @@
       [self.logger logFormat:@"Failed to get bundle info for bundle at path %@", bundlePath];
     }
     mapping[key] = bundle;
-    if (bundle.binary.uuid) {
-      mapping[bundle.binary.uuid.UUIDString] = bundle;
-    }
   }
   return mapping;
 }
@@ -177,12 +174,17 @@
 - (NSDictionary<NSString *, NSString *> *)replacementMapping
 {
   NSDictionary<NSString *, FBBundleDescriptor *> *persistedBundles = self.persistedBundles;
-  NSMutableDictionary<NSString *, NSString *> *replacementMapping = NSMutableDictionary.dictionary;
+  NSMutableDictionary<NSString *, NSString *> *mapping = NSMutableDictionary.dictionary;
   for (NSString *name in persistedBundles) {
     FBBundleDescriptor *bundle = persistedBundles[name];
-    replacementMapping[bundle.name] = bundle.path;
+    if (bundle.identifier) {
+      mapping[bundle.identifier] = bundle.path;
+    }
+    if (bundle.binary.uuid) {
+      mapping[bundle.binary.uuid.UUIDString] = bundle.path;
+    }
   }
-  return replacementMapping;
+  return mapping;
 }
 
 #pragma mark Private
