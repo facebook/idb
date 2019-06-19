@@ -65,12 +65,12 @@
     }];
 }
 
-- (FBFuture<NSString *> *)copyDataFromContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath toDestinationPath:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyDataFromContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath toDestinationPath:(NSString *)destinationPath
 {
   __block NSString *dstPath = destinationPath;
   return [[self
     dataContainerPathForBundleID:bundleID]
-    onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSString *> * (NSString *dataContainer) {
+    onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSNull *> * (NSString *dataContainer) {
       NSString *source = [dataContainer stringByAppendingPathComponent:containerPath];
       BOOL srcIsDirecory = NO;
       if ([NSFileManager.defaultManager fileExistsAtPath:source isDirectory:&srcIsDirecory] && !srcIsDirecory) {
@@ -101,7 +101,7 @@
           causedBy:copyError]
           failFuture];
       }
-      return [FBFuture futureWithResult:destinationPath];
+      return FBFuture.empty;
     }];
 }
 

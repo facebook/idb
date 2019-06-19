@@ -70,19 +70,19 @@
   }];
 }
 
-- (FBFuture<NSString *> *)copyDataFromContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath toDestinationPath:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyDataFromContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath toDestinationPath:(NSString *)destinationPath
 {
   return [[self
     readFileWithBundleID:bundleID path:containerPath]
-    onQueue:self.device.asyncQueue fmap:^FBFuture<NSString *> *(NSData *fileData) {
+    onQueue:self.device.asyncQueue fmap:^FBFuture<NSNull *> *(NSData *fileData) {
      NSError *error;
-     if (![fileData writeToFile:destinationPath options:0 error:&ecopyDataFromContainerOfApplicationrror]) {
+     if (![fileData writeToFile:destinationPath options:0 error:&error]) {
        return [[[FBDeviceControlError
         describeFormat:@"Failed to write data to file at path %@", destinationPath]
         causedBy:error]
         failFuture];
      }
-     return [FBFuture futureWithResult:destinationPath];
+     return FBFuture.empty;
    }];
 }
 
