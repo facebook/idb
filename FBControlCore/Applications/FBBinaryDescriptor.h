@@ -67,6 +67,13 @@ extern FBBinaryArchitecture const FBBinaryArchitectureArm64;
  */
 @property (nonatomic, copy, readonly) NSString *path;
 
+#pragma mark Public Methods
+
+/**
+ Obtain the rpaths in the binary.
+ */
+- (nullable NSArray<NSString *> *)rpathsWithError:(NSError **)error;
+
 @end
 
 NS_ASSUME_NONNULL_END

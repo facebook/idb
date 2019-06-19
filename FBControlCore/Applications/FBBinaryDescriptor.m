@@ -189,6 +189,45 @@ static inline id EnumerateLoadCommands32(FILE *file, uint32_t magic, id (^block)
   return nil;
 }
 
+static inline NSArray<NSString *> *ReadRPathsSpecific(FILE *file, uint32_t magic, id(*Enumerator)(FILE *, uint32_t magic, id (^)(FILE *, struct load_command, uint32_t)))
+{
+  NSMutableArray<NSString *> *rpaths = NSMutableArray.array;
+  Enumerator(file, magic, ^ id (FILE *_, struct load_command command, uint32_t offset) {
+    if (command.cmd != LC_RPATH) {
+      return nil;
+    }
+    // Offset is calculated from the start of the command
+    struct rpath_command rpathCommand;
+    fseek(file, offset, SEEK_SET);
+    fread(&rpathCommand, sizeof(rpathCommand), 1, file);
+
+    // Calculate the offset and move back
+    const uint32_t pathOffset = offset + rpathCommand.path.offset;
+    const uint32_t pathLength = command.cmdsize;
+
+    // Extract the path
+    char *path = alloca(command.cmdsize);
+    fseek(file, pathOffset, SEEK_SET);
+    fread(path, pathLength, 1, file);
+
+    // Create an NSString for the rpaths
+    NSString *string = [[NSString alloc] initWithBytes:path length:strlen(path) encoding:NSASCIIStringEncoding];
+    [rpaths addObject:string];
+
+    return nil;
+  });
+  return rpaths;
+}
+
+static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic);
+
+static inline NSArray<NSString *> *ReadRPathsFat(FILE *file, uint32_t fatMagic)
+{
+  return EnumerateFat(file, fatMagic, ^id(struct fat_arch fatArch, uint32_t magic) {
+    return ReadRPaths(file, magic);
+  });
+}
+
 static inline NSUUID *ReadUUID(FILE *file, uint32_t magic);
 
 static id (^UUIDEnumerator)(FILE *, struct load_command, uint32_t) = ^id (FILE *file, struct load_command command, uint32_t offset){
@@ -285,6 +324,20 @@ static inline NSArray<FBBinaryArchitecture> *ReadArchs(FILE *file, uint32_t magi
     return arch ? @[arch] : @[];
   }
   return @[];
+}
+
+static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic)
+{
+  if (IsFatMagic(magic)) {
+    return ReadRPathsFat(file, magic);
+  }
+  if (IsMagic64(magic)) {
+    return ReadRPathsSpecific(file, magic, EnumerateLoadCommands64);
+  }
+  if (IsMagic32(magic)) {
+    return ReadRPathsSpecific(file, magic, EnumerateLoadCommands32);
+  }
+  return nil;
 }
 
 @implementation FBBinaryDescriptor
@@ -410,6 +463,30 @@ static inline NSArray<FBBinaryArchitecture> *ReadArchs(FILE *file, uint32_t magi
     @"path" : self.path,
     @"architectures" : self.architectures.allObjects,
   };
+}
+
+#pragma mark Public Methods
+
+- (NSArray<NSString *> *)rpathsWithError:(NSError **)error
+{
+  FILE *file = fopen(self.path.UTF8String, "rb");
+  if (file == NULL) {
+    return [[FBControlCoreError describeFormat:@"Could not fopen file at path %@", self.path] fail:error];
+  }
+
+  // Seek to and read the magic.
+  rewind(file);
+  uint32_t magic = GetMagic(file);
+
+  if (!IsMagic(magic)) {
+    fclose(file);
+    return [[FBControlCoreError describeFormat:@"Could not interpret magic '%d' in file %@", magic, self.path] fail:error];
+  }
+
+  NSArray<NSString *> *rpaths = ReadRPaths(file, magic);
+  fclose(file);
+
+  return rpaths;
 }
 
 #pragma mark Private

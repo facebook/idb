@@ -23,6 +23,10 @@
   XCTAssertNil(error);
   XCTAssertNotNil(descriptor);
   XCTAssertNotNil(descriptor.uuid);
+
+  NSArray<NSString *> *rpaths = [descriptor rpathsWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(rpaths);
 }
 
 - (void)test64BitMacosCommand
@@ -33,6 +37,20 @@
   XCTAssertNil(error);
   XCTAssertNotNil(descriptor);
   XCTAssertNotNil(descriptor.uuid);
+}
+
+- (void)testBinaryWithRpaths
+{
+  // codesign is not a fat binary.
+  NSError *error = nil;
+  FBBinaryDescriptor *descriptor = [FBBinaryDescriptor binaryWithPath:@"/Applications/xcode_10.2.app/Contents/MacOS/Xcode" error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(descriptor);
+  XCTAssertNotNil(descriptor.uuid);
+
+  NSArray<NSString *> *rpaths = [descriptor rpathsWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(rpaths);
 }
 
 @end
