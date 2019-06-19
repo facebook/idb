@@ -39,7 +39,7 @@ static Status drain_writer(FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *ta
   NSError *error = nil;
   FBTask<NSNull *, NSInputStream *, id> *task = [taskFuture block:&error];
   if (!task) {
-    return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   NSInputStream *inputStream = task.stdOut;
   [inputStream open];
@@ -72,7 +72,7 @@ static Status respond_file_path(NSURL *source, NSString *destination, grpc::inte
   if (source) {
     NSError *error = nil;
     if (![NSFileManager.defaultManager moveItemAtPath:source.path toPath:destination error:&error]) {
-      return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
+      return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
     }
   }
   T response;
@@ -946,12 +946,12 @@ Status FBIDBServiceHandler::record(grpc::ServerContext *context, grpc::ServerRea
   NSString *filePath = requestedFilePath.length() > 0 ? nsstring_from_c_string(requestedFilePath.c_str()) : [[_target.auxillaryDirectory stringByAppendingPathComponent:@"idb_encode"] stringByAppendingPathExtension:@"mp4"];
   id<FBiOSTargetContinuation> operation = [[_target startRecordingToFile:filePath] block:&error];
   if (!operation) {
-    return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   idb::RecordRequest stop;
   stream->Read(&stop);
   if (![[_target stopRecording] succeeds:&error]) {
-    return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   if (requestedFilePath.length() > 0) {
     return respond_file_path(nil, filePath, stream);
@@ -974,7 +974,7 @@ Status FBIDBServiceHandler::push(grpc::ServerContext *context, grpc::ServerReade
     return [_commandExecutor push_files:files to_path:nsstring_from_c_string(inner.dst_path()) in_container_of_application:nsstring_from_c_string(inner.bundle_id())];
   }] block:&error];
   if (error) {
-    return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   return Status::OK;
 }}
@@ -986,7 +986,7 @@ Status FBIDBServiceHandler::pull(ServerContext *context, const ::idb::PullReques
   if (request->dst_path().length() > 0) {
     NSString *filePath = [[_commandExecutor pull_file_path:path in_container_of_application:nsstring_from_c_string(request->bundle_id()) destination_path:nsstring_from_c_string(request->dst_path())] block:&error];
     if (error) {
-      return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
+      return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
     }
     return respond_file_path(nil, filePath, stream);
   } else {
@@ -994,7 +994,7 @@ Status FBIDBServiceHandler::pull(ServerContext *context, const ::idb::PullReques
     NSString *tempPath = [url.path stringByAppendingPathComponent:path.lastPathComponent];
     NSString *filePath = [[_commandExecutor pull_file_path:path in_container_of_application:nsstring_from_c_string(request->bundle_id()) destination_path:tempPath] block:&error];
     if (error) {
-      return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
+      return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
     }
     return drain_writer([FBArchiveOperations
                          createGzippedTarForPath:filePath
@@ -1031,7 +1031,7 @@ Status FBIDBServiceHandler::add_media(grpc::ServerContext *context, grpc::Server
     return [_commandExecutor add_media:files];
   }] block:&error];
   if (error) {
-    return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   return Status::OK;
 }}
@@ -1056,7 +1056,7 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
   ]];
   FBInstrumentsOperation *operation = [[_target startInstrument:configuration logger:logger] block:&error];
   if (!operation) {
-    return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   dispatch_sync(writeQueue, ^{
     idb::InstrumentsRunResponse response;
@@ -1065,7 +1065,7 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
   });
   stream->Read(&request);
   if (![operation.stop succeeds:&error]) {
-    return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   NSArray<NSString *> *postProcessArguments = [_commandExecutor.storageManager interpolateArgumentReplacements:extract_string_array(request.stop().post_process_arguments())];
   dispatch_sync(writeQueue, ^{
@@ -1075,7 +1075,7 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
   });
   NSURL *processed = [[FBInstrumentsManager postProcess:postProcessArguments traceFile:operation.traceFile queue:writeQueue logger:logger] block:&error];
   if (!processed) {
-    return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   if (requestedFilePath.length() > 0) {
     return respond_file_path(processed, nsstring_from_c_string(requestedFilePath.c_str()), stream);
@@ -1095,7 +1095,7 @@ Status FBIDBServiceHandler::debugserver(grpc::ServerContext *context, grpc::Serv
       idb::DebugServerRequest::Start start = request.start();
       id<FBDebugServer> debugServer = [[_commandExecutor debugserver_start:nsstring_from_c_string(start.bundle_id())] block:&error];
       if (!debugServer) {
-        return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
+        return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
       }
       stream->Write(translate_debugserver_status(debugServer));
       return Status::OK;
@@ -1108,7 +1108,7 @@ Status FBIDBServiceHandler::debugserver(grpc::ServerContext *context, grpc::Serv
     case idb::DebugServerRequest::ControlCase::kStop: {
       id<FBDebugServer> debugServer = [[_commandExecutor debugserver_status] block:&error];
       if (!debugServer) {
-        return Status(grpc::StatusCode::INTERNAL, error.description.UTF8String);
+        return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
       }
       stream->Write(translate_debugserver_status(debugServer));
       return Status::OK;
