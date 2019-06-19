@@ -26,9 +26,13 @@ class AppInstallCommand(TargetCommand):
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         artifact = await client.install(args.bundle_path)
         if args.json:
-            print(json.dumps({"installedAppBundleId": artifact.name}))
+            print(
+                json.dumps(
+                    {"installedAppBundleId": artifact.name, "uuid": artifact.uuid}
+                )
+            )
         else:
-            print(f"Installed: {artifact.name}")
+            print(f"Installed: {artifact.name} {artifact.uuid}")
 
 
 class AppUninstallCommand(TargetCommand):

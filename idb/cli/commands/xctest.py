@@ -34,9 +34,13 @@ class XctestInstallCommand(TargetCommand):
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         artifact = await client.install_xctest(args.test_bundle_path)
         if args.json:
-            print(json.dumps({"installedTestBundleId": artifact.name}))
+            print(
+                json.dumps(
+                    {"installedTestBundleId": artifact.name, "uuid": artifact.uuid}
+                )
+            )
         else:
-            print(f"Installed: {artifact.name}")
+            print(f"Installed: {artifact.name} {artifact.uuid}")
 
 
 class XctestsListBundlesCommand(TargetCommand):
