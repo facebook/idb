@@ -60,7 +60,7 @@ static const NSTimeInterval MaximumInstrumentTime = 60 * 60 * 4; // 4 Hours.
     return [FBFuture futureWithResult:traceFile];
   }
   NSURL *outputTraceFile = [[traceFile URLByDeletingLastPathComponent] URLByAppendingPathComponent:arguments[2]];
-  NSMutableArray<NSString *> *launchArguments = [@[arguments[1], traceFile, @"-o", outputTraceFile] mutableCopy];
+  NSMutableArray<NSString *> *launchArguments = [@[arguments[1], traceFile.absoluteString, @"-o", outputTraceFile.absoluteString] mutableCopy];
   if (arguments.count > 3) {
     [launchArguments addObjectsFromArray:[arguments subarrayWithRange:(NSRange){3, [arguments count] - 3}]];
   }
