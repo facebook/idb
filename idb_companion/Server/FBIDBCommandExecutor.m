@@ -247,7 +247,7 @@
     onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> commands) {
       return [commands copyDataFromContainerOfApplication:bundleID atContainerPath:path toDestinationPath:destinationPath];
     }]
-    fmapReplace:[FBFuture futureWithResult:destinationPath]];
+    chainReplace:[FBFuture futureWithResult:destinationPath]];
 }
 
 - (FBFuture<NSData *> *)pull_file:(NSString *)path in_container_of_application:(NSString *)bundleID

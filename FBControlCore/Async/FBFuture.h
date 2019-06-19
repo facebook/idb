@@ -247,12 +247,13 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 - (FBFuture *)mapReplace:(id)replacement;
 
 /**
- Once the reciever has resolved, resolves with a second future.
+ Once the reciever has resolved in any state, chains to another Future.
+ This is un-conditional, if the reciever resolves in error the replacement will still be used.
 
  @param replacement the replacement
  @return a future with the replacement.
  */
-- (FBFuture *)fmapReplace:(FBFuture *)replacement;
+- (FBFuture *)chainReplace:(FBFuture *)replacement;
 
 /**
  Shields the future from failure, replacing it with the provided value.

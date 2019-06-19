@@ -50,7 +50,7 @@
   _processIdentifier = processIdentifier;
   _completed = [terminationFuture
     onQueue:simulator.workQueue chain:^(FBFuture *future) {
-      return [[self performTeardown] fmapReplace:future];
+      return [[self performTeardown] chainReplace:future];
     }];
   return self;
 }

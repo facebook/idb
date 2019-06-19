@@ -676,7 +676,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   }];
 }
 
-- (FBFuture *)fmapReplace:(FBFuture *)replacement
+- (FBFuture *)chainReplace:(FBFuture *)replacement
 {
   return [self onQueue:FBFuture.internalQueue chain:^FBFuture *(FBFuture *_) {
     return replacement;

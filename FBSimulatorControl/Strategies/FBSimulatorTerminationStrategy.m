@@ -151,7 +151,7 @@
   // 2) Wait for a Simulator launched via Simulator.app to be in a consistent 'Shutdown' state.
   // 3) Shutdown a SimDevice that has been launched directly via. `-[SimDevice bootWithOptions:error]`.
   return [[[disconnectFuture
-    fmapReplace:simulatorAppProcessKillFuture]
+    chainReplace:simulatorAppProcessKillFuture]
     onQueue:simulator.workQueue fmap:^(id _) {
       return [[FBSimulatorShutdownStrategy
         strategyWithSimulator:simulator]

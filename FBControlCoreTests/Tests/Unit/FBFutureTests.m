@@ -622,10 +622,25 @@
   ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
-- (void)testReplaceFuture
+- (void)testChainReplaceSuccessful
 {
   FBMutableFuture<NSNumber *> *replacement = FBMutableFuture.future;
-  FBFuture<NSNumber *> *future = [[[FBFuture futureWithResult:@NO] fmapReplace:replacement] delay:0.1];
+  FBFuture<NSNumber *> *future = [[[FBFuture futureWithResult:@NO] chainReplace:replacement] delay:0.1];
+  dispatch_async(self.queue, ^{
+    [replacement resolveWithResult:@YES];
+  });
+
+  [self waitForExpectations:@[
+    [self keyValueObservingExpectationForObject:future keyPath:@"result" expectedValue:@YES],
+    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateDone)]
+  ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
+- (void)testChainReplaceFailing
+{
+  NSError *error = [NSError errorWithDomain:@"foo" code:0 userInfo:nil];
+  FBMutableFuture<NSNumber *> *replacement = FBMutableFuture.future;
+  FBFuture<NSNumber *> *future = [[[FBFuture futureWithError:error] chainReplace:replacement] delay:0.1];
   dispatch_async(self.queue, ^{
     [replacement resolveWithResult:@YES];
   });

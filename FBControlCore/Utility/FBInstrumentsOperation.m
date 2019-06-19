@@ -135,7 +135,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
         return [[[FBFuture
           race:@[instrumentsConsumer.hasStoppedRecording, timerFuture]]
           onQueue:target.asyncQueue handleError:^ FBFuture * (NSError *error) {
-            return [[task sendSignal:SIGTERM] fmapReplace:[FBFuture futureWithError:error]];
+            return [[task sendSignal:SIGTERM] chainReplace:[FBFuture futureWithError:error]];
           }]
           mapReplace:task];
         }];

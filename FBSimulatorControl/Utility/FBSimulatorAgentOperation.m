@@ -53,7 +53,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
       FBFuture<NSNull *> *teardown = future.result
         ? [self processDidTerminate:future.result.intValue]
         : [self processWasCancelled];
-      return [teardown fmapReplace:future];
+      return [teardown chainReplace:future];
     }]
     nameFormat:@"Completion of agent process %d", processIdentifier];
   _exitCode = [[processStatusFuture

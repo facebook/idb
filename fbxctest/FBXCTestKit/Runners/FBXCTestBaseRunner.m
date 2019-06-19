@@ -77,7 +77,7 @@
 
   if ([self.configuration isKindOfClass:FBTestManagerTestConfiguration.class]) {
     return [[[FBTestRunStrategy strategyWithTarget:device configuration:(FBTestManagerTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger testPreparationStrategyClass:FBMacTestPreparationStrategy.class] execute] onQueue:device.workQueue chain:^(FBFuture *future) {
-      return [[device restorePrimaryDeviceState] fmapReplace:future];
+      return [[device restorePrimaryDeviceState] chainReplace:future];
     }];
   }
 
@@ -99,7 +99,7 @@
         runTestWithSimulator:simulator]
         onQueue:dispatch_get_main_queue() chain:^(FBFuture *future) {
           // Propogate the original result, but wait on the Simulator teardown as-well
-          return [[self.context finishedExecutionOnSimulator:simulator] fmapReplace:future];
+          return [[self.context finishedExecutionOnSimulator:simulator] chainReplace:future];
         }];
     }];
 }

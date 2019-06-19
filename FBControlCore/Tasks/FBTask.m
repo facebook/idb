@@ -335,7 +335,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     teardownProcess] // Wait for the process to exit, terminating it if necessary.
     onQueue:self.queue chain:^(FBFuture<NSNumber *> *exitCodeFuture) {
       // Then tear-down the resources, this should happen regardless of the exit status.
-      return [[self.io detach] fmapReplace:exitCodeFuture];
+      return [[self.io detach] chainReplace:exitCodeFuture];
     }]
     onQueue:self.queue fmap:^(NSNumber *exitCode) {
       // Then check whether the exit code honours the acceptable codes.
