@@ -12,6 +12,7 @@ import idb.common.gzip as gzip
 import idb.common.tar as tar
 from grpclib.const import Status
 from grpclib.exceptions import GRPCError
+from idb.common.types import InstalledArtifact
 from idb.common.xctest import xctest_paths_to_tar
 from idb.grpc.idb_pb2 import InstallRequest, InstallResponse, Payload
 from idb.grpc.stream import Stream, drain_to_stream
@@ -120,7 +121,7 @@ def _generate_binary_chunks(
 
 async def _install_to_destination(
     client: CompanionClient, bundle: Bundle, destination: Destination
-) -> str:
+) -> InstalledArtifact:
     if isinstance(bundle, str):
         # Treat as a file path / url
         url = urllib.parse.urlparse(bundle)
@@ -133,7 +134,7 @@ async def _install_to_destination(
             await stream.send_message(InstallRequest(payload=payload))
             await stream.end()
             response = await stream.recv_message()
-            return response.bundle_id
+            return InstalledArtifact(name=response.name, uuid=response.uuid)
     else:
         # Treat as a binary object (tar of .app or .ipa)
         async with client.stub.install.open() as stream:
@@ -143,34 +144,36 @@ async def _install_to_destination(
                 generator=_generate_io_chunks(io=bundle, logger=client.logger),
                 logger=client.logger,
             )
-            return response.bundle_id
+            return InstalledArtifact(name=response.name, uuid=response.uuid)
 
 
-async def install(client: CompanionClient, bundle: Bundle) -> str:
+async def install(client: CompanionClient, bundle: Bundle) -> InstalledArtifact:
     return await _install_to_destination(
         client=client, bundle=bundle, destination=InstallRequest.APP
     )
 
 
-async def install_xctest(client: CompanionClient, bundle: Bundle) -> str:
+async def install_xctest(client: CompanionClient, bundle: Bundle) -> InstalledArtifact:
     return await _install_to_destination(
         client=client, bundle=bundle, destination=InstallRequest.XCTEST
     )
 
 
-async def install_dylib(client: CompanionClient, dylib: Bundle) -> str:
+async def install_dylib(client: CompanionClient, dylib: Bundle) -> InstalledArtifact:
     return await _install_to_destination(
         client=client, bundle=dylib, destination=InstallRequest.DYLIB
     )
 
 
-async def install_dsym(client: CompanionClient, dsym: Bundle) -> str:
+async def install_dsym(client: CompanionClient, dsym: Bundle) -> InstalledArtifact:
     return await _install_to_destination(
         client=client, bundle=dsym, destination=InstallRequest.DSYM
     )
 
 
-async def install_framework(client: CompanionClient, framework_path: Bundle) -> str:
+async def install_framework(
+    client: CompanionClient, framework_path: Bundle
+) -> InstalledArtifact:
     return await _install_to_destination(
         client=client, bundle=framework_path, destination=InstallRequest.FRAMEWORK
     )

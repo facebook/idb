@@ -87,7 +87,8 @@ message InstallRequest {
 }
 
 message InstallResponse {
-  string bundle_id = 1;
+  string name = 1;
+  string uuid = 2;
 }
 
 message ScreenshotRequest {

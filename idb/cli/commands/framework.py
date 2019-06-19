@@ -24,8 +24,8 @@ class FrameworkInstallCommand(TargetCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
-        framework = await client.install_framework(args.framework_path)
+        artifact = await client.install_framework(args.framework_path)
         if args.json:
-            print(json.dumps({"framework": framework}))
+            print(json.dumps({"framework": artifact.name}))
         else:
-            print(f"Installed: {framework}")
+            print(f"Installed: {artifact.name}")

@@ -32,11 +32,11 @@ class XctestInstallCommand(TargetCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
-        test_bundle_id = await client.install_xctest(args.test_bundle_path)
+        artifact = await client.install_xctest(args.test_bundle_path)
         if args.json:
-            print(json.dumps({"installedTestBundleId": test_bundle_id}))
+            print(json.dumps({"installedTestBundleId": artifact.name}))
         else:
-            print(f"Installed: {test_bundle_id}")
+            print(f"Installed: {artifact.name}")
 
 
 class XctestsListBundlesCommand(TargetCommand):

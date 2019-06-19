@@ -22,8 +22,8 @@ class DsymInstallCommand(TargetCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
-        dsym = await client.install_dsym(args.dsym_path)
+        artifact = await client.install_dsym(args.dsym_path)
         if args.json:
-            print(json.dumps({"dsym": dsym}))
+            print(json.dumps({"dsym": artifact.name}))
         else:
-            print(f"Installed: {dsym}")
+            print(f"Installed: {artifact.name}")

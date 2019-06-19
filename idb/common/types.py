@@ -196,6 +196,11 @@ class HIDDelay(NamedTuple):
 HIDEvent = Union[HIDPress, HIDSwipe, HIDDelay]
 
 
+class InstalledArtifact(NamedTuple):
+    name: str
+    uuid: Optional[str]
+
+
 class IdbClientBase:
     async def list_apps(self) -> List[InstalledAppInfo]:
         pass
@@ -228,22 +233,22 @@ class IdbClientBase:
     ) -> AsyncIterator[TestRunInfo]:
         yield
 
-    async def install(self, bundle_path: str) -> str:
+    async def install(self, bundle_path: str) -> InstalledArtifact:
+        pass
+
+    async def install_dylib(self, dylib_path: str) -> InstalledArtifact:
+        pass
+
+    async def install_dsym(self, dsym_path: str) -> InstalledArtifact:
+        pass
+
+    async def install_xctest(self, bundle_path: str) -> InstalledArtifact:
+        pass
+
+    async def install_framework(self, framework_path: str) -> InstalledArtifact:
         pass
 
     async def uninstall(self, bundle_id: str) -> None:
-        pass
-
-    async def install_dylib(self, dylib_path: str) -> str:
-        pass
-
-    async def install_dsym(self, dsym_path: str) -> str:
-        pass
-
-    async def install_xctest(self, bundle_path: str) -> str:
-        pass
-
-    async def install_framework(self, framework_path: str) -> str:
         pass
 
     async def connect(

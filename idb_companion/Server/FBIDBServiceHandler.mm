@@ -576,7 +576,8 @@ Status FBIDBServiceHandler::install(ServerContext *context, grpc::ServerReader<i
   if (!artifact) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String ?: "An internal error occured when installing");
   }
-  response->set_bundle_id(artifact.name.UTF8String);
+  response->set_name(artifact.name.UTF8String);
+  response->set_uuid(artifact.uuid.UUIDString.UTF8String ?: "");
   return Status::OK;
 }}
 

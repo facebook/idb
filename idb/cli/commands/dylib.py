@@ -22,8 +22,8 @@ class DylibInstallCommand(TargetCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
-        dylib = await client.install_dylib(args.dylib_path)
+        artifact = await client.install_dylib(args.dylib_path)
         if args.json:
-            print(json.dumps({"dylib": dylib}))
+            print(json.dumps({"dylib": artifact.name}))
         else:
-            print(f"Installed: {dylib}")
+            print(f"Installed: {artifact.name}")

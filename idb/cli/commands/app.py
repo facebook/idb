@@ -24,11 +24,11 @@ class AppInstallCommand(TargetCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
-        bundle_id = await client.install(args.bundle_path)
+        artifact = await client.install(args.bundle_path)
         if args.json:
-            print(json.dumps({"installedAppBundleId": bundle_id}))
+            print(json.dumps({"installedAppBundleId": artifact.name}))
         else:
-            print(f"Installed: {bundle_id}")
+            print(f"Installed: {artifact.name}")
 
 
 class AppUninstallCommand(TargetCommand):
