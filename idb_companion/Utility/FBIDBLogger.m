@@ -109,8 +109,7 @@ static void RemoveGlobalLogger(id<FBControlCoreLogger> logger)
 
     [loggers addObject:[FBControlCoreLogger loggerToFileDescriptor:fileDescriptor closeOnEndOfFile:YES]];
   }
-  FBIDBLogger *logger = [[FBIDBLogger alloc] initWithLoggers:loggers];
-  [logger withDateFormatEnabled:YES];
+  FBIDBLogger *logger = [[[FBIDBLogger alloc] initWithLoggers:loggers] withDateFormatEnabled:YES];
   FBControlCoreGlobalConfiguration.defaultLogger = logger;
 
   return logger;
