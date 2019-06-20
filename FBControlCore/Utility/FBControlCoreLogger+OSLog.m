@@ -42,13 +42,13 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
 {
   switch (self.level) {
     case FBControlCoreLogLevelError:
-      os_log_error(self.client, "%s", message.UTF8String);
+      os_log_error(self.client, "%{public}s", message.UTF8String);
       break;
     case FBControlCoreLogLevelInfo:
-      os_log_info(self.client, "%s", message.UTF8String);
+      os_log_info(self.client, "%{public}s", message.UTF8String);
       break;
     case FBControlCoreLogLevelDebug:
-      os_log_debug(self.client, "%s", message.UTF8String);
+      os_log_debug(self.client, "%{public}s", message.UTF8String);
       break;
     default:
       break;
