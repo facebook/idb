@@ -51,6 +51,7 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
       os_log_debug(self.client, "%{public}s", message.UTF8String);
       break;
     default:
+      os_log(self.client, "%{public}s", message.UTF8String);
       break;
   }
   return self;
