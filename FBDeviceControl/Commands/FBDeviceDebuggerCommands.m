@@ -103,7 +103,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
       if (status != 0) {
         NSString *internalMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
         return [[FBDeviceControlError
-          describeFormat:@"Failed to mount image '%@' with error (%@)", diskImage.diskImagePath, internalMessage]
+          describeFormat:@"Failed to mount image '%@' with error 0x%x (%@)", diskImage.diskImagePath, status, internalMessage]
           failFuture];
       }
       return [FBFuture futureWithResult:diskImage];

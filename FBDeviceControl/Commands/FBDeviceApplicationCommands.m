@@ -96,7 +96,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
       if (status != 0) {
         NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
         return [[FBDeviceControlError
-          describeFormat:@"Failed to uninstall application '%@' with error (%@)", bundleID, internalMessage]
+          describeFormat:@"Failed to uninstall application '%@' with error 0x%x (%@)", bundleID, status, internalMessage]
           failFuture];
       }
       [self.device.logger logFormat:@"Uninstalled Application %@", bundleID];
@@ -202,7 +202,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
       if (status != 0) {
         NSString *internalMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
         return [[FBDeviceControlError
-          describeFormat:@"Failed to transfer '%@' with error (%@)", appURL, internalMessage]
+          describeFormat:@"Failed to transfer '%@' with error 0x%x (%@)", appURL, status, internalMessage]
           failFuture];
       }
       return FBFuture.empty;
@@ -226,7 +226,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
       if (status != 0) {
         NSString *errorMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
         return [[FBDeviceControlError
-          describeFormat:@"Failed to install application %@ (%@)", [appURL lastPathComponent], errorMessage]
+          describeFormat:@"Failed to install application %@ 0x%x (%@)", [appURL lastPathComponent], status, errorMessage]
           failFuture];
       }
       [self.device.logger logFormat:@"Installed Application %@", appURL];
@@ -251,7 +251,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
       if (status != 0) {
         NSString *errorMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
         return [[FBDeviceControlError
-          describeFormat:@"Failed to get list of applications (%@)", errorMessage]
+          describeFormat:@"Failed to get list of applications 0x%x (%@)", status, errorMessage]
           failFuture];
       }
       return [FBFuture futureWithResult:CFBridgingRelease(applications)];

@@ -342,7 +342,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
       if (status != 0) {
         NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
         return [[[FBDeviceControlError
-          describeFormat:@"SecureStartService of %@ Failed with %d %@", service, status, errorDescription]
+          describeFormat:@"SecureStartService of %@ Failed with 0x%x %@", service, status, errorDescription]
           logger:self.logger]
           failFutureContext];
       }
