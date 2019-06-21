@@ -1,38 +1,65 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-import inspect
+import asyncio
 import logging
-from typing import Any, Callable, Optional, Set
+import warnings
+from typing import Dict, Optional
 
+import idb.grpc.ipc_loader as ipc_loader
+from grpclib.client import Channel
 from idb.client.daemon_pid_saver import kill_saved_pids
+from idb.client.daemon_spawner import DaemonSpawner
 from idb.common.types import IdbClientBase
+from idb.grpc.idb_grpc import CompanionServiceStub
+from idb.grpc.types import CompanionClient
 
-
-BASE_MEMBERS: Set[str] = {
-    name
-    for (name, value) in inspect.getmembers(IdbClientBase)
-    if not name.startswith("__")
-}
+# this is to silence the channel not closed warning
+# https://github.com/vmagamedov/grpclib/issues/58
+warnings.filterwarnings(action="ignore", category=ResourceWarning)
 
 
 class IdbClient(IdbClientBase):
     def __init__(
         self,
-        resolve: Callable[[str], IdbClientBase],
+        port: int,
+        host: str,
+        target_udid: Optional[str],
         logger: Optional[logging.Logger] = None,
+        force_kill_daemon: bool = False,
     ) -> None:
-        self.logger: logging.Logger = logger or logging.getLogger("idb_client")
-        self._resolve = resolve
+        self.port: int = port
+        self.host: str = host
+        self.logger: logging.Logger = (
+            logger if logger else logging.getLogger("idb_grpc_client")
+        )
+        self.force_kill_daemon = force_kill_daemon
+        self.target_udid = target_udid
+        self.daemon_spawner = DaemonSpawner(host=self.host, port=self.port)
+        self.channel: Optional[Channel] = None
+        self.stub: Optional[CompanionServiceStub] = None
+        for (call_name, f) in ipc_loader.client_calls(
+            daemon_provider=self.provide_client
+        ):
+            setattr(self, call_name, f)
 
-    def __getattribute__(self, key: str) -> Any:  # pyre-ignore
-        if key not in BASE_MEMBERS:
-            return super().key
-        logger = super().__getattribute__("logger")
-        logger.debug(f"Resolving client for {key}")
-        client = super().__getattribute__("_resolve")(key)
-        logger.debug(f"Resolved client for {key} to {client}")
-        return getattr(client, key)
+    async def provide_client(self) -> CompanionClient:
+        await self.daemon_spawner.start_daemon_if_needed(
+            force_kill=self.force_kill_daemon
+        )
+        if not self.channel or not self.stub:
+            self.channel = Channel(self.host, self.port, loop=asyncio.get_event_loop())
+            self.stub = CompanionServiceStub(channel=self.channel)
+        return CompanionClient(
+            stub=self.stub, is_local=True, udid=self.target_udid, logger=self.logger
+        )
+
+    @property
+    def metadata(self) -> Dict[str, str]:
+        if self.target_udid:
+            return {"udid": self.target_udid}
+        else:
+            return {}
 
     @classmethod
     async def kill(cls) -> None:
