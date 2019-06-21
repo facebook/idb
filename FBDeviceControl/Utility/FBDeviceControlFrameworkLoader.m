@@ -35,12 +35,71 @@
   }
   BOOL result = [super loadPrivateFrameworks:logger error:error];
   if (result) {
-    [FBAMDevice defaultCalls];
+    [FBDeviceControlFrameworkLoader amDeviceCalls];
   }
   if (logger.level >= FBControlCoreLogLevelDebug) {
-    [FBAMDevice setDefaultLogLevel:9 logFilePath:@"/tmp/FBDeviceControl_MobileDevice.txt"];
+    [FBDeviceControlFrameworkLoader setDefaultLogLevel:9 logFilePath:@"/tmp/FBDeviceControl_MobileDevice.txt"];
   }
   return result;
+}
+
++ (AMDCalls)amDeviceCalls
+{
+  static dispatch_once_t onceToken;
+  static AMDCalls amDeviceCalls;
+  dispatch_once(&onceToken, ^{
+    [self populateMobileDeviceSymbols:&amDeviceCalls];
+  });
+  return amDeviceCalls;
+}
+
+#pragma mark Private
+
++ (void)populateMobileDeviceSymbols:(AMDCalls *)calls
+{
+  void *handle = [[NSBundle bundleWithIdentifier:@"com.apple.mobiledevice"] dlopenExecutablePath];
+  calls->Connect = FBGetSymbolFromHandle(handle, "AMDeviceConnect");
+  calls->CopyDeviceIdentifier = FBGetSymbolFromHandle(handle, "AMDeviceCopyDeviceIdentifier");
+  calls->CopyErrorText = FBGetSymbolFromHandle(handle, "AMDCopyErrorText");
+  calls->CopyValue = FBGetSymbolFromHandle(handle, "AMDeviceCopyValue");
+  calls->CreateDeviceList = FBGetSymbolFromHandle(handle, "AMDCreateDeviceList");
+  calls->CreateHouseArrestService = FBGetSymbolFromHandle(handle, "AMDeviceCreateHouseArrestService");
+  calls->Disconnect = FBGetSymbolFromHandle(handle, "AMDeviceDisconnect");
+  calls->IsPaired = FBGetSymbolFromHandle(handle, "AMDeviceIsPaired");
+  calls->LookupApplications = FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");
+  calls->MountImage = FBGetSymbolFromHandle(handle, "AMDeviceMountImage");
+  calls->NotificationSubscribe = FBGetSymbolFromHandle(handle, "AMDeviceNotificationSubscribe");
+  calls->NotificationUnsubscribe = FBGetSymbolFromHandle(handle, "AMDeviceNotificationUnsubscribe");
+  calls->Release = FBGetSymbolFromHandle(handle, "AMDeviceRelease");
+  calls->Retain = FBGetSymbolFromHandle(handle, "AMDeviceRetain");
+  calls->SecureInstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureInstallApplication");
+  calls->SecureStartService = FBGetSymbolFromHandle(handle, "AMDeviceSecureStartService");
+  calls->SecureTransferPath = FBGetSymbolFromHandle(handle, "AMDeviceSecureTransferPath");
+  calls->SecureUninstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureUninstallApplication");
+  calls->ServiceConnectionGetSecureIOContext = FBGetSymbolFromHandle(handle, "AMDServiceConnectionGetSecureIOContext");
+  calls->ServiceConnectionGetSocket = FBGetSymbolFromHandle(handle, "AMDServiceConnectionGetSocket");
+  calls->ServiceConnectionInvalidate = FBGetSymbolFromHandle(handle, "AMDServiceConnectionInvalidate");
+  calls->ServiceConnectionReceive = FBGetSymbolFromHandle(handle, "AMDServiceConnectionReceive");
+  calls->ServiceConnectionSend = FBGetSymbolFromHandle(handle, "AMDServiceConnectionSend");
+  calls->SetLogLevel = FBGetSymbolFromHandle(handle, "AMDSetLogLevel");
+  calls->StartSession = FBGetSymbolFromHandle(handle, "AMDeviceStartSession");
+  calls->StopSession = FBGetSymbolFromHandle(handle, "AMDeviceStopSession");
+  calls->ValidatePairing = FBGetSymbolFromHandle(handle, "AMDeviceValidatePairing");
+}
+
+/**
+ Sets the Default Log Level and File Path for MobileDevice.framework.
+ Must be called before any MobileDevice APIs are called, as these values are read during Framework initialization.
+ Logging goes via asl instead of os_log, so logging to a file path may be unpredicatable.
+
+ @param level the Log Level to use.
+ @param logFilePath the file path to log to.
+ */
++ (void)setDefaultLogLevel:(int)level logFilePath:(NSString *)logFilePath
+{
+  NSNumber *levelNumber = @(level);
+  CFPreferencesSetAppValue(CFSTR("LogLevel"), (__bridge CFPropertyListRef _Nullable)(levelNumber), CFSTR("com.apple.MobileDevice"));
+  CFPreferencesSetAppValue(CFSTR("LogFile"), (__bridge CFPropertyListRef _Nullable)(logFilePath), CFSTR("com.apple.MobileDevice"));
 }
 
 @end

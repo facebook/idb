@@ -62,11 +62,6 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
  */
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
-/**
- The default AMDevice calls.
- */
-@property (nonatomic, assign, readonly, class) AMDCalls defaultCalls;
-
 #pragma mark Private Methods
 
 /**

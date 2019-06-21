@@ -12,10 +12,11 @@
 
 #include <dlfcn.h>
 
-#import "FBAMDServiceConnection.h"
-#import "FBDeviceControlError.h"
 #import "FBAFCConnection.h"
 #import "FBAMDeviceServiceManager.h"
+#import "FBAMDServiceConnection.h"
+#import "FBDeviceControlError.h"
+#import "FBDeviceControlFrameworkLoader.h"
 
 #pragma mark - Notifications
 
@@ -63,7 +64,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   static FBAMDeviceManager *manager;
   dispatch_once(&onceToken, ^{
     id<FBControlCoreLogger> logger = [FBControlCoreGlobalConfiguration.defaultLogger withName:@"device_manager"];
-    manager = [self managerWithCalls:FBAMDevice.defaultCalls Queue:dispatch_get_main_queue() logger:logger];
+    manager = [self managerWithCalls:FBDeviceControlFrameworkLoader.amDeviceCalls Queue:dispatch_get_main_queue() logger:logger];
   });
   return manager;
 }
@@ -218,55 +219,6 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
 @synthesize contextPoolTimeout = _contextPoolTimeout;
 
 #pragma mark Initializers
-
-+ (void)setDefaultLogLevel:(int)level logFilePath:(NSString *)logFilePath
-{
-  NSNumber *levelNumber = @(level);
-  CFPreferencesSetAppValue(CFSTR("LogLevel"), (__bridge CFPropertyListRef _Nullable)(levelNumber), CFSTR("com.apple.MobileDevice"));
-  CFPreferencesSetAppValue(CFSTR("LogFile"), (__bridge CFPropertyListRef _Nullable)(logFilePath), CFSTR("com.apple.MobileDevice"));
-}
-
-+ (AMDCalls)defaultCalls
-{
-  static dispatch_once_t onceToken;
-  static AMDCalls defaultCalls;
-  dispatch_once(&onceToken, ^{
-    [self populateMobileDeviceSymbols:&defaultCalls];
-  });
-  return defaultCalls;
-}
-
-+ (void)populateMobileDeviceSymbols:(AMDCalls *)calls
-{
-  void *handle = [[NSBundle bundleWithIdentifier:@"com.apple.mobiledevice"] dlopenExecutablePath];
-  calls->Connect = FBGetSymbolFromHandle(handle, "AMDeviceConnect");
-  calls->CopyDeviceIdentifier = FBGetSymbolFromHandle(handle, "AMDeviceCopyDeviceIdentifier");
-  calls->CopyErrorText = FBGetSymbolFromHandle(handle, "AMDCopyErrorText");
-  calls->CopyValue = FBGetSymbolFromHandle(handle, "AMDeviceCopyValue");
-  calls->CreateDeviceList = FBGetSymbolFromHandle(handle, "AMDCreateDeviceList");
-  calls->CreateHouseArrestService = FBGetSymbolFromHandle(handle, "AMDeviceCreateHouseArrestService");
-  calls->Disconnect = FBGetSymbolFromHandle(handle, "AMDeviceDisconnect");
-  calls->IsPaired = FBGetSymbolFromHandle(handle, "AMDeviceIsPaired");
-  calls->LookupApplications = FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");
-  calls->MountImage = FBGetSymbolFromHandle(handle, "AMDeviceMountImage");
-  calls->NotificationSubscribe = FBGetSymbolFromHandle(handle, "AMDeviceNotificationSubscribe");
-  calls->NotificationUnsubscribe = FBGetSymbolFromHandle(handle, "AMDeviceNotificationUnsubscribe");
-  calls->Release = FBGetSymbolFromHandle(handle, "AMDeviceRelease");
-  calls->Retain = FBGetSymbolFromHandle(handle, "AMDeviceRetain");
-  calls->SecureInstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureInstallApplication");
-  calls->SecureStartService = FBGetSymbolFromHandle(handle, "AMDeviceSecureStartService");
-  calls->SecureTransferPath = FBGetSymbolFromHandle(handle, "AMDeviceSecureTransferPath");
-  calls->SecureUninstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureUninstallApplication");
-  calls->ServiceConnectionGetSecureIOContext = FBGetSymbolFromHandle(handle, "AMDServiceConnectionGetSecureIOContext");
-  calls->ServiceConnectionGetSocket = FBGetSymbolFromHandle(handle, "AMDServiceConnectionGetSocket");
-  calls->ServiceConnectionInvalidate = FBGetSymbolFromHandle(handle, "AMDServiceConnectionInvalidate");
-  calls->ServiceConnectionReceive = FBGetSymbolFromHandle(handle, "AMDServiceConnectionReceive");
-  calls->ServiceConnectionSend = FBGetSymbolFromHandle(handle, "AMDServiceConnectionSend");
-  calls->SetLogLevel = FBGetSymbolFromHandle(handle, "AMDSetLogLevel");
-  calls->StartSession = FBGetSymbolFromHandle(handle, "AMDeviceStartSession");
-  calls->StopSession = FBGetSymbolFromHandle(handle, "AMDeviceStopSession");
-  calls->ValidatePairing = FBGetSymbolFromHandle(handle, "AMDeviceValidatePairing");
-}
 
 + (NSArray<FBAMDevice *> *)allDevices
 {

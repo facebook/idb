@@ -9,14 +9,21 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <FBDeviceControl/FBAMDefines.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBControlCoreLogger;
 
 /**
- Loads Frameworks that FBDeviceControl depends on.
+ Loads Frameworks that FBDeviceControl depends on and initializes values.
  */
 @interface FBDeviceControlFrameworkLoader : FBControlCoreFrameworkLoader
+
+/**
+ The AMDevice Calls to use.
+ */
+@property (nonatomic, assign, class, readonly) AMDCalls amDeviceCalls;
 
 @end
 
