@@ -57,5 +57,12 @@ async def start_daemon_server(args: Namespace, logger: Logger) -> Server:
         )
         await companion_tailer.start()
         servers.append(companion_tailer)
+    servers = await plugin.resolve_servers(
+        args=args,
+        companion_manager=companion_manager,
+        boot_manager=boot_manager,
+        logger=logger,
+        servers=servers,
+    )
     logger.debug(f"Started servers {servers}")
     return CompositeServer(servers=servers, logger=logger)
