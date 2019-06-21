@@ -15,6 +15,27 @@
 #import "FBAMDevice.h"
 #import "FBAMDevice+Private.h"
 
+static BOOL IsInitializing = NO;
+
+static asl_object_t FBDeviceControlFrameworkLoader_asl_open(const char *ident, const char *facility, uint32_t opts)
+{
+  asl_object_t object = asl_open(ident, facility, opts);
+  if (!IsInitializing) {
+    return object;
+  }
+  asl_add_log_file(object, STDERR_FILENO);
+  return object;
+}
+
+#ifndef DYLD_INTERPOSE
+
+#define DYLD_INTERPOSE(_replacment,_replacee) \
+   __attribute__((used)) static struct{ const void* replacment; const void* replacee; } _interpose_##_replacee \
+            __attribute__ ((section ("__DATA,__interpose"))) = { (const void*)(unsigned long)&_replacment, (const void*)(unsigned long)&_replacee };
+DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
+
+#endif
+
 @implementation FBDeviceControlFrameworkLoader
 
 #pragma mark Initialziers
@@ -35,7 +56,10 @@
   }
   BOOL result = [super loadPrivateFrameworks:logger error:error];
   if (result) {
-    [FBDeviceControlFrameworkLoader amDeviceCalls];
+    AMDCalls calls = FBDeviceControlFrameworkLoader.amDeviceCalls;
+    IsInitializing = YES;
+    calls.InitializeMobileDevice();
+    IsInitializing = NO;
   }
   if (logger.level >= FBControlCoreLogLevelDebug) {
     [FBDeviceControlFrameworkLoader setDefaultLogLevel:9 logFilePath:@"/tmp/FBDeviceControl_MobileDevice.txt"];
@@ -65,6 +89,7 @@
   calls->CreateDeviceList = FBGetSymbolFromHandle(handle, "AMDCreateDeviceList");
   calls->CreateHouseArrestService = FBGetSymbolFromHandle(handle, "AMDeviceCreateHouseArrestService");
   calls->Disconnect = FBGetSymbolFromHandle(handle, "AMDeviceDisconnect");
+  calls->InitializeMobileDevice = FBGetSymbolFromHandle(handle, "_InitializeMobileDevice");
   calls->IsPaired = FBGetSymbolFromHandle(handle, "AMDeviceIsPaired");
   calls->LookupApplications = FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");
   calls->MountImage = FBGetSymbolFromHandle(handle, "AMDeviceMountImage");

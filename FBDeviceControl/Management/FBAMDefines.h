@@ -105,6 +105,7 @@ typedef struct {
   int (*MountImage)(AMDeviceRef device, CFStringRef image, CFDictionaryRef options, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
 
   // Debugging
+  void (*InitializeMobileDevice)(void);
   void (*SetLogLevel)(int32_t level);
   _Nullable CFStringRef (*CopyErrorText)(int status);
 } AMDCalls;
