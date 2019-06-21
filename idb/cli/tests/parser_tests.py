@@ -312,6 +312,7 @@ class TestParser(TestCase):
             namespace.app_bundle_id = app_under_test_id
             namespace.force = False
             namespace.timeout = XCTEST_TIMEOUT
+            namespace.grpc = False
             mock.assert_called_once_with(namespace)
 
     async def test_xctest_run_ui(self) -> None:
@@ -338,6 +339,7 @@ class TestParser(TestCase):
             namespace.test_host_app_bundle_id = test_host_app_bundle_id
             namespace.force = False
             namespace.timeout = XCTEST_TIMEOUT
+            namespace.grpc = False
             mock.assert_called_once_with(namespace)
 
     async def test_xctest_run_logic(self) -> None:
@@ -351,6 +353,7 @@ class TestParser(TestCase):
             namespace = self.xctest_run_namespace("logic", test_bundle_id)
             namespace.timeout = XCTEST_TIMEOUT
             namespace.force = False
+            namespace.grpc = False
             mock.assert_called_once_with(namespace)
 
     async def test_xctest_list(self) -> None:
@@ -414,6 +417,7 @@ class TestParser(TestCase):
             namespace.daemon_grpc_port = 9889
             namespace.daemon_host = "localhost"
             namespace.force = False
+            namespace.grpc = False
             mock.assert_called_once_with(namespace)
 
     async def test_log_arguments(self) -> None:
@@ -430,6 +434,7 @@ class TestParser(TestCase):
             namespace.daemon_grpc_port = 9889
             namespace.daemon_host = "localhost"
             namespace.force = False
+            namespace.grpc = False
             mock.assert_called_once_with(namespace)
 
     async def test_clear_keychain(self) -> None:
@@ -477,6 +482,7 @@ class TestParser(TestCase):
             namespace.daemon_grpc_port = 9889
             namespace.daemon_host = "localhost"
             namespace.force = False
+            namespace.grpc = False
             mock.assert_called_once_with(namespace)
 
     async def test_key_sequence(self) -> None:

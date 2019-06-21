@@ -8,7 +8,7 @@ from logging import Logger
 from types import ModuleType
 from typing import TYPE_CHECKING, Dict, List
 
-from idb.common.types import LoggingMetadata, Server
+from idb.common.types import IdbClientBase, LoggingMetadata, Server
 
 
 if TYPE_CHECKING:
@@ -94,6 +94,17 @@ def on_connecting_parser(parser: ArgumentParser, logger: Logger) -> None:
         if parser is None:
             continue
         plugin_parser(parser=parser, logger=logger)
+
+
+def resolve_client(
+    args: Namespace, logger: Logger, client: IdbClientBase, name: str
+) -> IdbClientBase:
+    for plugin in PLUGINS:
+        plugin_resolver = getattr(plugin, "resolve_client", None)
+        if not plugin_resolver:
+            continue
+        client = plugin_resolver(args=args, logger=logger, client=client, name=name)
+    return client
 
 
 def resolve_metadata(logger: Logger) -> LoggingMetadata:
