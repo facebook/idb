@@ -151,20 +151,6 @@
   return [FBFuture futureWithResult:application];
 }
 
-- (FBFuture<NSString *> *)dataContainerOfApplicationWithBundleID:(NSString *)bundleID
-{
-  NSParameterAssert(bundleID);
-  return [[self
-    installedApplicationWithBundleID:bundleID]
-    onQueue:self.simulator.asyncQueue chain:^FBFuture<NSString *> *(FBFuture<FBInstalledApplication *> *future) {
-      NSString *container = future.result.dataContainer;
-      if (container) {
-        return [FBFuture futureWithResult:container];
-      }
-      return [self fallbackDataContainerForBundleID:bundleID];
-    }];
-}
-
 - (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningApplications
 {
   return [[self.simulator
@@ -288,9 +274,9 @@ static NSString *const KeyDataContainer = @"DataContainer";
       }
 
       return [[[FBSimulatorError
-                describeFormat:@"Failed to install Application %@ with options %@", application, options]
-               causedBy:error]
-              failFuture];
+        describeFormat:@"Failed to install Application %@ with options %@", application, options]
+        causedBy:error]
+        failFuture];
     }];
 }
 
@@ -326,21 +312,6 @@ static NSString *const KeyDataContainer = @"DataContainer";
           failFuture];
       }
       return [FBFuture futureWithResult:application];
-    }];
-}
-
-- (FBFuture<NSString *> *)fallbackDataContainerForBundleID:(NSString *)bundleID
-{
-  return [[self
-    runningApplicationWithBundleID:bundleID]
-    onQueue:self.simulator.asyncQueue fmap:^(FBProcessInfo *runningApplication) {
-      NSString *homeDirectory = runningApplication.environment[@"HOME"];
-      if (![NSFileManager.defaultManager fileExistsAtPath:homeDirectory]) {
-        return [[FBSimulatorError
-          describeFormat:@"App Home Directory does not exist at path %@", homeDirectory]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:homeDirectory];
     }];
 }
 

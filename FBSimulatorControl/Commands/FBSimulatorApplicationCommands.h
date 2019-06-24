@@ -22,15 +22,6 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Querying Application State
 
 /**
- Determines the location of the Data Container of an Application, it's chroot jail.
-
- @param bundleID the Bundle ID of the Application to search for,.
- @note returns absolute path
- @return a Future with the home directory.
- */
-- (FBFuture<NSString *> *)dataContainerOfApplicationWithBundleID:(NSString *)bundleID;
-
-/**
  Returns the Process Info for a Application by Bundle ID.
 
  @param bundleID the Bundle ID to fetch an installed application for.
