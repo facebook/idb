@@ -96,7 +96,7 @@
 - (FBFuture<NSString *> *)deleteSimulator:(FBSimulator *)simulator
 {
   // Get the Log Directory ahead of time as the Simulator will dissapear on deletion.
-  NSString *coreSimulatorLogsDirectory = simulator.simulatorDiagnostics.coreSimulatorLogsDirectory;
+  NSString *coreSimulatorLogsDirectory = simulator.coreSimulatorLogsDirectory;
   dispatch_queue_t workQueue = simulator.workQueue;
   NSString *udid = simulator.udid;
 

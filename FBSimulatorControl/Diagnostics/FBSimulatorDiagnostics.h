@@ -44,13 +44,6 @@ extern FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap;
  */
 + (instancetype)withSimulator:(FBSimulator *)simulator;
 
-#pragma mark Paths
-
-/**
- The directory path of the expected location of the CoreSimulator logs directory.
- */
-- (NSString *)coreSimulatorLogsDirectory;
-
 #pragma mark Standard Diagnostics
 
 /**

@@ -52,15 +52,6 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
   return self;
 }
 
-#pragma mark Paths
-
-- (NSString *)coreSimulatorLogsDirectory
-{
-  return [[NSHomeDirectory()
-    stringByAppendingPathComponent:@"Library/Logs/CoreSimulator"]
-    stringByAppendingPathComponent:self.simulator.udid];
-}
-
 #pragma mark Crash Log Diagnostics
 
 - (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date withProcessType:(FBCrashLogInfoProcessType)processType
@@ -268,7 +259,7 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
 
 - (NSString *)aslPath
 {
-  return [self.coreSimulatorLogsDirectory stringByAppendingPathComponent:@"asl"];
+  return [self.simulator.coreSimulatorLogsDirectory stringByAppendingPathComponent:@"asl"];
 }
 
 #pragma mark Crash Logs

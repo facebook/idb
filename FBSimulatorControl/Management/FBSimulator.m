@@ -240,6 +240,13 @@
   return [FBAppleSimctlCommandExecutor executorForSimulator:self];
 }
 
+- (NSString *)coreSimulatorLogsDirectory
+{
+  return [[NSHomeDirectory()
+    stringByAppendingPathComponent:@"Library/Logs/CoreSimulator"]
+    stringByAppendingPathComponent:self.udid];
+}
+
 #pragma mark NSObject
 
 - (NSUInteger)hash

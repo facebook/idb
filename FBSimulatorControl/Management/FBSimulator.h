@@ -40,6 +40,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulator : NSObject <FBiOSTarget, FBCrashLogCommands, FBScreenshotCommands, FBSimulatorAgentCommands, FBSimulatorApplicationCommands, FBApplicationDataCommands, FBSimulatorBridgeCommands, FBSimulatorKeychainCommands, FBSimulatorSettingsCommands, FBSimulatorXCTestCommands, FBSimulatorLifecycleCommands, FBSimulatorLaunchCtlCommands, FBSimulatorMediaCommands>
 
+#pragma mark Properties
+
 /**
  The Underlying SimDevice.
  */
@@ -102,10 +104,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, readonly, nonnull) FBSimulatorDiagnostics *simulatorDiagnostics;
 
-/*
+/**
  A command executor for simctl
  */
 @property (nonatomic, strong, readonly) FBAppleSimctlCommandExecutor *simctlExecutor;
+
+/**
+ The directory path of the expected location of the CoreSimulator logs directory.
+ */
+@property (nonatomic, copy, readonly) NSString *coreSimulatorLogsDirectory;
 
 @end
 
