@@ -984,7 +984,6 @@ struct FBDiagnosticQueryParser {
   internal static var parser: Parser<FBDiagnosticQuery> {
     return Parser
       .alternative([
-        self.appFilesParser,
         self.namedParser,
         self.crashesParser,
       ])
@@ -1015,17 +1014,6 @@ struct FBDiagnosticQueryParser {
       )
       .fmap { date, processType in
         FBDiagnosticQuery.crashes(of: processType, since: date)
-      }
-  }
-
-  static var appFilesParser: Parser<FBDiagnosticQuery> {
-    return Parser
-      .ofTwoSequenced(
-        Parser<Any>.ofBundleIDOrApplicationDescriptorBundleID,
-        Parser.manyCount(1, Parser<Any>.ofAny)
-      )
-      .fmap { bundleID, fileNames in
-        FBDiagnosticQuery.files(inApplicationOfBundleID: bundleID, withFilenames: fileNames, withFilenameGlobs: [])
       }
   }
 }

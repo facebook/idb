@@ -108,7 +108,7 @@
 
   __block id<FBiOSTargetContinuation> tailLogContinuation = nil;
 
-  return [[[[[runner
+  return [[[[[[runner
     connectAndStart]
     onQueue:self.target.workQueue fmap:^(FBTestManager *manager) {
       FBFuture<id> *startedVideoRecording = self.configuration.videoRecordingPath != nil
@@ -147,10 +147,6 @@
         [self.reporter didSaveOSLogAtPath:self.configuration.osLogPath];
       }
 
-      if (self.configuration.testArtifactsFilenameGlobs != nil) {
-        [self _saveTestArtifactsOfTestRunnerApp:testRunnerApp withFilenameMatchGlobs:self.configuration.testArtifactsFilenameGlobs];
-      }
-
       if (result.crash) {
         return [[FBXCTestError
           describeFormat:@"The Application Crashed during the Test Run\n%@", result.crash]
@@ -161,37 +157,47 @@
         return [FBFuture futureWithError:result.error];
       }
       return FBFuture.empty;
+    }]
+    onQueue:self.target.workQueue chain:^ FBFuture<NSNull *> * (FBFuture<NSNull *> *original) {
+      if (!self.configuration.testArtifactsFilenameGlobs) {
+        return original;
+      }
+      return [[self _saveTestArtifactsOfTestRunnerApp:testRunnerApp withFilenameMatchGlobs:self.configuration.testArtifactsFilenameGlobs] chainReplace:original];
     }];
 }
 
 // Save test artifacts matches certain filename globs that are populated during test run
 // to a temporary folder so it can be obtained by external tools if needed.
-- (void)_saveTestArtifactsOfTestRunnerApp:(FBBundleDescriptor *)testRunnerApp withFilenameMatchGlobs:(NSArray<NSString *> *)filenameGlobs
+- (FBFuture<NSNull *> *)_saveTestArtifactsOfTestRunnerApp:(FBBundleDescriptor *)testRunnerApp withFilenameMatchGlobs:(NSArray<NSString *> *)filenameGlobs
 {
-  NSArray<FBDiagnostic *> *diagnostics = [[[FBDiagnosticQuery
-    filesInApplicationOfBundleID:testRunnerApp.identifier withFilenames:@[] withFilenameGlobs:filenameGlobs]
-    run:self.target]
-    await:nil];
+  return [[[self.target
+    installedApplicationWithBundleID:testRunnerApp.identifier]
+    onQueue:self.target.asyncQueue fmap:^ FBFuture<NSNull *> * (FBInstalledApplication *application) {
+      NSString *directory = application.dataContainer;
+      NSArray<NSString *> *paths = [FBFileFinder recursiveFindByFilenameGlobs:filenameGlobs inDirectory:directory];
+      if (paths.count == 0) {
+        return FBFuture.empty;
+      }
 
-  if ([diagnostics count] == 0) {
-    return;
-  }
+      NSError *error = nil;
+      NSURL *tempTestArtifactsPath = [NSURL fileURLWithPath:[NSString pathWithComponents:@[NSTemporaryDirectory(), NSProcessInfo.processInfo.globallyUniqueString, @"test_artifacts"]] isDirectory:YES];
+      if (![NSFileManager.defaultManager createDirectoryAtURL:tempTestArtifactsPath withIntermediateDirectories:YES attributes:nil error:&error]) {
+        [self.logger logFormat:@"Could not create temporary directory for test artifacts %@", error];
+        return FBFuture.empty;
+      }
 
-  NSURL *tempTestArtifactsPath = [NSURL fileURLWithPath:[NSString pathWithComponents:@[NSTemporaryDirectory(), NSProcessInfo.processInfo.globallyUniqueString, @"test_artifacts"]] isDirectory:YES];
-
-  NSError *error = nil;
-  if (![NSFileManager.defaultManager createDirectoryAtURL:tempTestArtifactsPath withIntermediateDirectories:YES attributes:nil error:&error]) {
-    [self.logger logFormat:@"Could not create temporary directory for test artifacts %@", error];
-    return;
-  }
-
-  for (FBDiagnostic *diagnostic in diagnostics) {
-    NSString *testArtifactsFilename = diagnostic.asPath.lastPathComponent;
-    NSString *outputPath = [tempTestArtifactsPath.path stringByAppendingPathComponent:testArtifactsFilename];
-    if ([diagnostic writeOutToFilePath:outputPath error:nil]) {
-      [self.reporter didCopiedTestArtifact:testArtifactsFilename toPath:outputPath];
-    }
-  }
+      for (NSString *sourcePath in paths) {
+        NSString *testArtifactsFilename = sourcePath.lastPathComponent;
+        NSString *destinationPath = [tempTestArtifactsPath.path stringByAppendingPathComponent:testArtifactsFilename];
+        if ([NSFileManager.defaultManager copyItemAtPath:sourcePath toPath:destinationPath error:nil]) {
+          [self.reporter didCopiedTestArtifact:testArtifactsFilename toPath:destinationPath];
+        }
+      }
+      return FBFuture.empty;
+    }]
+    onQueue:self.target.asyncQueue handleError:^(NSError *_) {
+      return FBFuture.empty;
+    }];
 }
 
 - (FBFuture *)_startTailLogToFile:(NSString *)logFilePath

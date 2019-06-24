@@ -167,24 +167,6 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
   return [FBSimulatorDiagnostics diagnosticsForSubpathsOf:self.stdOutErrContainersPath];
 }
 
-- (NSArray<FBDiagnostic *> *)diagnosticsForApplicationWithBundleID:(nullable NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames withFilenameGlobs:(nonnull NSArray<NSString *> *)filenameGlobs fallbackToGlobalSearch:(BOOL)globalFallback
-{
-  NSString *directory = nil;
-  if (bundleID) {
-    directory = [[self.simulator dataContainerOfApplicationWithBundleID:bundleID] await:nil];
-  }
-  if (!directory && globalFallback) {
-    directory = self.simulator.dataDirectory;
-  }
-  if (!directory) {
-    return @[];
-  }
-  NSArray<NSString *> *pathsByFilenames = [FBFileFinder mostRecentFindFiles:filenames inDirectory:directory];
-  NSArray<NSString *> *pathsByFilenameGlobs = [FBFileFinder recursiveFindByFilenameGlobs:filenameGlobs inDirectory:directory];
-  NSArray<NSString *> *paths = [pathsByFilenames arrayByAddingObjectsFromArray:pathsByFilenameGlobs];
-  return [FBSimulatorDiagnostics diagnosticsForPaths:paths];
-}
-
 - (NSArray<FBDiagnostic *> *)allDiagnostics
 {
   NSMutableArray<FBDiagnostic *> *logs = [[super allDiagnostics] mutableCopy];

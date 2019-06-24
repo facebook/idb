@@ -48,16 +48,6 @@ extern FBDiagnosticQueryFormat FBDiagnosticQueryFormatContent;
 + (instancetype)all;
 
 /**
- A Query for Diagnostics in an Application's Sandbox.
-
- @param bundleID the Application Bundle ID to search in.
- @param filenames the filenames to search for.
- @param filenameGlobs the list of file name glob to search for.
- @return a FBDiagnosticQuery.
- */
-+ (instancetype)filesInApplicationOfBundleID:(NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames withFilenameGlobs:(NSArray<NSString *> *)filenameGlobs;
-
-/**
  A Query for Crashes of a Process Type, after a date.
 
  @param processType the Process Types to search for.
