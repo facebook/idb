@@ -380,7 +380,7 @@
   return nil;
 }
 
-- (nonnull FBFuture<id<FBiOSTargetContinuation>> *)startRecordingToFile:(nullable NSString *)filePath
+- (nonnull FBFuture<id<FBiOSTargetContinuation>> *)startRecordingToFile:(NSString *)filePath
 {
   NSAssert(nil, @"startRecordingToFile: is not yet supported");
   return nil;

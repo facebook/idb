@@ -26,12 +26,12 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoRecording;
 @protocol FBVideoRecordingCommands <NSObject, FBiOSTargetCommand>
 
 /**
- Starts the Recording of Video to a File.
+ Starts the Recording of Video to a File on Disk.
 
- @param filePath an optional filePath to write to. If not provided, a default file path will be used.
+ @param filePath an optional filePath to write to.
  @return A Future, wrapping the recording session.
  */
-- (FBFuture<id<FBiOSTargetContinuation>> *)startRecordingToFile:(nullable NSString *)filePath;
+- (FBFuture<id<FBiOSTargetContinuation>> *)startRecordingToFile:(NSString *)filePath;
 
 /**
  Stops the Recording of Video.

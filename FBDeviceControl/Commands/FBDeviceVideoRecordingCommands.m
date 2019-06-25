@@ -46,14 +46,12 @@
 
 - (FBFuture<id<FBiOSTargetContinuation>> *)startRecordingToFile:(NSString *)filePath
 {
+  NSParameterAssert(filePath);
   if (self.video) {
     return [[FBDeviceControlError
       describe:@"Cannot create a new video recording session, one is already active"]
       failFuture];
   }
-
-  FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithDiagnostic:self.device.diagnostics.video];
-  filePath = filePath ?: logBuilder.createPath;
 
   return [[FBDeviceVideo
     videoForDevice:self.device filePath:filePath]

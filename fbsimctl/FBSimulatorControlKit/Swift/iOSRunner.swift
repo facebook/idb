@@ -34,7 +34,7 @@ struct iOSActionProvider {
       let future = action.run(with: target, consumer: reporter.reporter.writer, reporter: reporter.reporter)
       return FutureRunner(reporter, action.eventName, action.subject, future)
     case .record(.start(let filePath)):
-      return FutureRunner(reporter, nil, RecordSubject(.start(filePath)), target.startRecording(toFile: filePath))
+      return FutureRunner(reporter, nil, RecordSubject(.start(filePath)), target.startRecording(toFile: filePath ?? target.diagnostics.video().asPath!))
     case .record(.stop):
       return FutureRunner(reporter, nil, RecordSubject(.stop), target.stopRecording())
     case .stream(let configuration, let output):
