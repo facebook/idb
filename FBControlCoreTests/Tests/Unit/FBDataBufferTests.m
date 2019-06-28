@@ -61,16 +61,47 @@
     [lines addObject:line];
   }];
 
-  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
   [consumer consumeData:[@"FOO\n" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"BAR\n" dataUsingEncoding:NSUTF8StringEncoding]];
   XCTAssertEqualObjects(lines, (@[@"FOO", @"BAR"]));
+  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
+
   [consumer consumeEndOfFile];
+  XCTAssertEqualObjects(lines, (@[@"FOO", @"BAR"]));
+  XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
+
+  [consumer consumeData:[@"NOPE" dataUsingEncoding:NSUTF8StringEncoding]];
+  [consumer consumeData:[@"NOPE" dataUsingEncoding:NSUTF8StringEncoding]];
+  XCTAssertEqualObjects(lines, (@[@"FOO", @"BAR"]));
+  XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
+}
+
+- (void)testLineBufferedConsumerAsync
+{
+  NSMutableArray<NSString *> *lines = [NSMutableArray array];
+  id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer asynchronousLineConsumerWithBlock:^(NSString *line) {
+    [lines addObject:line];
+  }];
+
+  [consumer consumeData:[@"FOO\n" dataUsingEncoding:NSUTF8StringEncoding]];
+  [consumer consumeData:[@"BAR\n" dataUsingEncoding:NSUTF8StringEncoding]];
+  usleep(1000);
+  XCTAssertEqualObjects(lines, (@[@"FOO", @"BAR"]));
+  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
+
+  [consumer consumeEndOfFile];
+  XCTAssertEqualObjects(lines, (@[@"FOO", @"BAR"]));
+  XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
+
+  [consumer consumeData:[@"NOPE" dataUsingEncoding:NSUTF8StringEncoding]];
+  [consumer consumeData:[@"NOPE" dataUsingEncoding:NSUTF8StringEncoding]];
+  XCTAssertEqualObjects(lines, (@[@"FOO", @"BAR"]));
   XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
 }
 
 - (void)testUnbufferedConsumer
 {
+  NSData *expected = [@"FOOBARBAZ" dataUsingEncoding:NSUTF8StringEncoding];
   NSMutableData *actual = NSMutableData.data;
   id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *incremental) {
     [actual appendData:incremental];
@@ -80,10 +111,43 @@
   [consumer consumeData:[@"FOO" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"BAR" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"BAZ" dataUsingEncoding:NSUTF8StringEncoding]];
+  usleep(1000);
+  XCTAssertEqualObjects(expected, actual);
+  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
+
   [consumer consumeEndOfFile];
+  XCTAssertEqualObjects(expected, actual);
   XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
 
+  [consumer consumeData:[@"NOPE" dataUsingEncoding:NSUTF8StringEncoding]];
+  [consumer consumeData:[@"NOPE" dataUsingEncoding:NSUTF8StringEncoding]];
+  XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
+  XCTAssertEqualObjects(expected, actual);
+}
+
+- (void)testUnbufferedConsumerAsync
+{
   NSData *expected = [@"FOOBARBAZ" dataUsingEncoding:NSUTF8StringEncoding];
+  NSMutableData *actual = NSMutableData.data;
+  id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer asynchronousDataConsumerWithBlock:^(NSData *incremental) {
+    [actual appendData:incremental];
+  }];
+
+  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
+  [consumer consumeData:[@"FOO" dataUsingEncoding:NSUTF8StringEncoding]];
+  [consumer consumeData:[@"BAR" dataUsingEncoding:NSUTF8StringEncoding]];
+  [consumer consumeData:[@"BAZ" dataUsingEncoding:NSUTF8StringEncoding]];
+  usleep(1000);
+  XCTAssertEqualObjects(expected, actual);
+  XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
+
+  [consumer consumeEndOfFile];
+  XCTAssertEqualObjects(expected, actual);
+  XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
+
+  [consumer consumeData:[@"NOPE" dataUsingEncoding:NSUTF8StringEncoding]];
+  [consumer consumeData:[@"NOPE" dataUsingEncoding:NSUTF8StringEncoding]];
+  XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
   XCTAssertEqualObjects(expected, actual);
 }
 

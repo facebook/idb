@@ -156,8 +156,8 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
 
 @interface FBBlockDataConsumer_Dispatcher : NSObject <FBDataConsumer>
 
-@property (nonatomic, strong, nullable, readonly) dispatch_queue_t queue;
-@property (nonatomic, copy, readonly) void (^consumer)(NSData *);
+@property (nonatomic, strong, nullable, readwrite) dispatch_queue_t queue;
+@property (nonatomic, copy, nullable, readwrite) void (^consumer)(NSData *);
 
 @end
 
@@ -178,18 +178,32 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
 
 - (void)consumeData:(NSData *)data
 {
-  if (self.queue) {
-    dispatch_async(self.queue, ^{
-      self.consumer(data);
+  void (^consumer)(NSData *) = nil;
+  dispatch_queue_t queue;
+  @synchronized (self)
+  {
+    consumer = self.consumer;
+    queue = self.queue;
+  }
+  if (!consumer) {
+    return;
+  }
+  if (queue) {
+    dispatch_async(queue, ^{
+      consumer(data);
     });
   } else {
-    self.consumer(data);
+    consumer(data);
   }
 }
 
 - (void)consumeEndOfFile
 {
-
+  @synchronized (self)
+  {
+    self.consumer = nil;
+    self.queue = nil;
+  }
 }
 
 @end

@@ -69,7 +69,9 @@
 - (void)consumeData:(NSData *)data
 {
   @synchronized (self) {
-    NSAssert(self.finishedConsuming.hasCompleted == NO, @"Cannot consume data after eof recieved");
+    if (self.finishedConsuming.hasCompleted) {
+      return;
+    }
     [self.buffer appendData:data];
     if (self.capacity > 0) {
       NSInteger overrun = (NSInteger) self.buffer.length - (NSInteger) self.capacity;
@@ -83,7 +85,9 @@
 - (void)consumeEndOfFile
 {
   @synchronized (self) {
-    NSAssert(self.finishedConsuming.hasCompleted == NO, @"Cannot consume eof after eof recieved");
+    if (self.finishedConsuming.hasCompleted) {
+      return;
+    }
     [self.finishedConsumingFuture resolveWithResult:NSNull.null];
   }
 }
