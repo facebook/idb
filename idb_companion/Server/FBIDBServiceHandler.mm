@@ -1038,14 +1038,19 @@ Status FBIDBServiceHandler::add_media(grpc::ServerContext *context, grpc::Server
 
 Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::ServerReaderWriter<idb::InstrumentsRunResponse, idb::InstrumentsRunRequest> *stream)
 {@autoreleasepool{
-  idb::InstrumentsRunRequest request;
-  stream->Read(&request);
-  FBInstrumentsConfiguration *configuration = translate_instruments_configuration(request.start());
-  const std::string requestedFilePath = request.start().file_path();
+  __block idb::InstrumentsRunRequest startRunRequest;
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.idb.instruments.server", DISPATCH_QUEUE_SERIAL);
+  dispatch_sync(queue, ^{
+    idb::InstrumentsRunRequest request;
+    stream->Read(&request);
+    startRunRequest = request;
+  });
+
+  FBInstrumentsConfiguration *configuration = translate_instruments_configuration(startRunRequest.start());
+  const std::string requestedFilePath = startRunRequest.start().file_path();
 
   NSError *error = nil;
-  dispatch_queue_t writeQueue = dispatch_queue_create("com.facebook.idb.instruments.write", DISPATCH_QUEUE_SERIAL);
-  id<FBDataConsumer> consumer = [FBBlockDataConsumer asynchronousDataConsumerOnQueue:writeQueue consumer:^(NSData *data) {
+  id<FBDataConsumer> consumer = [FBBlockDataConsumer asynchronousDataConsumerOnQueue:queue consumer:^(NSData *data) {
     idb::InstrumentsRunResponse response;
     response.set_log_output(data.bytes, data.length);
     stream->Write(response);
@@ -1058,29 +1063,34 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
   if (!operation) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
-  dispatch_sync(writeQueue, ^{
+  __block idb::InstrumentsRunRequest stopRunRequest;
+  dispatch_sync(queue, ^{
     idb::InstrumentsRunResponse response;
     response.set_state(idb::InstrumentsRunResponse::State::InstrumentsRunResponse_State_RUNNING_INSTRUMENTS);
     stream->Write(response);
+    idb::InstrumentsRunRequest request;
+    stream->Read(&request);
+    stopRunRequest = request;
   });
-  stream->Read(&request);
   if (![operation.stop succeeds:&error]) {
+    [consumer consumeEndOfFile];
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
-  NSArray<NSString *> *postProcessArguments = [_commandExecutor.storageManager interpolateArgumentReplacements:extract_string_array(request.stop().post_process_arguments())];
-  dispatch_sync(writeQueue, ^{
+  NSArray<NSString *> *postProcessArguments = [_commandExecutor.storageManager interpolateArgumentReplacements:extract_string_array(stopRunRequest.stop().post_process_arguments())];
+  dispatch_sync(queue, ^{
     idb::InstrumentsRunResponse response;
     response.set_state(idb::InstrumentsRunResponse::State::InstrumentsRunResponse_State_POST_PROCESSING);
     stream->Write(response);
   });
-  NSURL *processed = [[FBInstrumentsManager postProcess:postProcessArguments traceFile:operation.traceFile queue:writeQueue logger:logger] block:&error];
+  NSURL *processed = [[FBInstrumentsManager postProcess:postProcessArguments traceFile:operation.traceFile queue:queue logger:logger] block:&error];
+  [consumer consumeEndOfFile];
   if (!processed) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   if (requestedFilePath.length() > 0) {
     return respond_file_path(processed, nsstring_from_c_string(requestedFilePath.c_str()), stream);
   } else {
-    return drain_writer([FBArchiveOperations createGzippedTarForPath:processed.path queue:writeQueue logger:_target.logger], stream);
+    return drain_writer([FBArchiveOperations createGzippedTarForPath:processed.path queue:queue logger:_target.logger], stream);
   }
 }}
 
