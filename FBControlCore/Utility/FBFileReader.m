@@ -33,7 +33,6 @@ static NSString *StateStringFromState(FBFileReaderState state)
 @property (nonatomic, copy, readonly) NSString *targeting;
 @property (nonatomic, strong, readonly) id<FBDispatchDataConsumer> consumer;
 @property (nonatomic, strong, readonly) dispatch_queue_t readQueue;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *ioChannelFinishedReading;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *ioChannelRelinquishedControl;
 @property (nonatomic, assign, readonly) int fileDescriptor;
 @property (nonatomic, assign, readonly) BOOL closeOnEndOfFile;
@@ -89,7 +88,6 @@ static NSString *StateStringFromState(FBFileReaderState state)
   _consumer = consumer;
   _targeting = targeting;
   _readQueue = queue;
-  _ioChannelFinishedReading = [FBMutableFuture futureWithNameFormat:@"IO Channel finished reading of %@", targeting];
   _ioChannelRelinquishedControl = [FBMutableFuture futureWithNameFormat:@"IO Channel control relinquished %@", targeting];
   _logger = logger;
   _state = FBFileReaderStateNotStarted;
@@ -164,7 +162,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
   // The self-capture is intentional, if the creator of an FBFileReader no longer strongly references self, we still need to keep it alive.
   // The self-capture is then removed in the below callback, which means the FBFileReader can then be deallocated.
   self.io = dispatch_io_create(DISPATCH_IO_STREAM, fileDescriptor, self.readQueue, ^(int createErrorCode) {
-    [self ioChannelControlHasRelinquished:fileDescriptor withErrorCode:(createErrorCode ?: readErrorCode)];
+    [self ioChannelHasRelinquishedControlWithErrorCode:(createErrorCode ?: readErrorCode)];
   });
   if (!self.io) {
     return [[FBControlCoreError
@@ -180,7 +178,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
     }
     if (done) {
       readErrorCode = errorCode;
-      [self ioChannelHasFinishedReadOperation:fileDescriptor withErrorCode:errorCode];
+      [self ioChannelReadOperationDone:errorCode];
     }
   });
   self.state = FBFileReaderStateReading;
@@ -201,22 +199,81 @@ static NSString *StateStringFromState(FBFileReaderState state)
   }
 
   // dispatch_io_close will stop future reads of the io channel.
-  // However, it does not mean that the dispatch_io_read callback will recieve further calls.
-  // The true arbiter of whether we have reached the end of a read operation is 'done' being set in dispatch_io_read.
-  // Therefore, closing the channel will have the effect that dispatch_io_read will become 'done' in the near future.
+  // But it does not mean that the dispatch_io_read callback will recieve further calls:
+  // > "Even if you specify this flag, the corresponding handlers may be invoked with partial results"
+  // However, if this has been called, then it is safe to assume that control of the file descriptor *has* been relinquished.
+  // From the dispatch_io_close docs:
+  // > "After calling this function, the system takes control of the specified file descriptor until one of the following occurs"
+  // > "- You close the channel by calling the dispatch_io_close function"
   // The ioChannelFinishedReadOperation future will then be resolved, so we can return that future from here.
   dispatch_io_close(self.io, DISPATCH_IO_STOP);
+  [self ioChannelHasBeenClosedWithErrorCode:ECANCELED];
   return self.ioChannelRelinquishedControl;
 }
 
-- (void)ioChannelHasFinishedReadOperation:(int)fileDescriptor withErrorCode:(int)errorCode
+- (void)ioChannelReadOperationDone:(int)errorCode
+{
+  // First, update internal state that the read operation is over.
+  [self ioChannelReadOperationStateFinalize:errorCode];
+
+  // Closing is is necessary when a read has finished, since a "Read Operation" terminating *does not* mean that the channel control has been relinquished.
+  // When dispatch_io_close has been issued, it *does* mean that we are free to use the file descriptor elsewhere.
+  // We also have to consider that a dispatch_io_read can race with dispatch_io_create's handler.
+  // In this case we have to ensure that we don't close an NULL io channel.
+  dispatch_io_t io = self.io;
+  if (!io) {
+    return;
+  }
+  dispatch_io_close(io, 0);
+  [self ioChannelHasBeenClosedWithErrorCode:errorCode];
+}
+
+- (void)ioChannelHasBeenClosedWithErrorCode:(int)errorCode
+{
+  // At this point we are free to assume that the
+  // Take the same path as if control was relinquished in the dispatch_io_create callback.
+  // From the dispatch_io_create docs:
+  // > After calling this function, the system takes control of the specified file descriptor until one of the following occurs:
+  // > - You close the channel by calling the dispatch_io_close function"
+  // > - An unrecoverable error occurs on the file descriptor
+  // > - All references to the channel are released
+  // This means that we've satisfied the first condition at this point and are free to cleanup the file descriptor.
+  [self ioChannelHasRelinquishedControlWithErrorCode:errorCode];
+}
+
+- (void)ioChannelHasRelinquishedControlWithErrorCode:(int)errorCode
+{
+  // In the case of a bad file descriptor (EBADF) this can be called before dispatch_io_read.
+  // In that case, we won't get a callback dispatch_io_read, so have to consider the reading has finished.
+  [self ioChannelReadOperationStateFinalize:errorCode];
+
+  // We now want to signal that the file descriptor reading has now fully finished.
+  // It's important that "Finished Reading" and "Control Relinquished" are tracked separately.
+  // This is because it's possible that reading is finished but the file descriptor is still tracked by libdispatch.
+  [self.ioChannelRelinquishedControl resolveWithResult:@(errorCode)];
+
+  // Now that the IO channel is done for good, we can finally remove the reference to it.
+  // By this point all read operations have finished and the consumer has been notified of an end-of-file.
+  // We should only close the file descriptor if we're transitioning from IO Channel -> No Channel
+  if (!self.io) {
+    return;
+  }
+  self.io = nil;
+  // We can also now safely close the file descriptor if requested
+  if (self.closeOnEndOfFile) {
+    close(self.fileDescriptor);
+  }
+}
+
+- (void)ioChannelReadOperationStateFinalize:(int)errorCode
 {
   // This should only be called in response to the 'done' flagging on dispatch_io_read and not after calling dispatch_io_close.
-  // "If the DISPATCH_IO_STOP option is specified in the flags parameter, the system attempts to interrupt any outstanding read and write operations on the I/O channel.
-  //  Even if you specify this flag, the corresponding handlers may be invoked with partial results.
-  //  In addition, the final invocation of the handler is passed the ECANCELED error code to indicate that the operation was interrupted."
+  // > "If the DISPATCH_IO_STOP option is specified in the flags parameter, the system attempts to interrupt any outstanding read and write operations on the I/O channel.
+  // > Even if you specify this flag, the corresponding handlers may be invoked with partial results.
+  // > In addition, the final invocation of the handler is passed the ECANCELED error code to indicate that the operation was interrupted."
   // This means that we can't assume that the dispatch_io_close will result in no more data to be delivered to dispatch_io_read and therefore the consumer.
-  // We should also short circuit if we're not at a terminal state.
+  //
+  // We should also short circuit if we're not at a terminal state, as we don't want to send end-of-file more than once.
   if (self.state != FBFileReaderStateReading) {
     return;
   }
@@ -231,37 +288,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
       self.state = FBFileReaderStateFinishedReadingInError;
       break;
   }
-  // Closing is not essential here as dispatch_io_close only marks the IO channel to prevent futher dispatch_io operations.
-  // "After calling this function, you should not schedule any more read or write operations on the channel. Doing so causes an error to be sent to your handler".
-  // However, this does enforce the invariant that future operations on the channel should fail.
-  dispatch_io_close(self.io, 0);
-  [self.ioChannelFinishedReading resolveWithResult:@(errorCode)];
   [self.consumer consumeEndOfFile];
-}
-
-- (void)ioChannelControlHasRelinquished:(int)fileDescriptor withErrorCode:(int)errorCode
-{
-  NSAssert(self.io, @"Should only be called if an IO channel is present");
-
-  // In the case of a bad file descriptor (EBADF) this may be called before we're done.
-  // In that case, make sure we do the first-stage of tear-down.
-  if (self.state == FBFileReaderStateReading) {
-    [self ioChannelHasFinishedReadOperation:fileDescriptor withErrorCode:errorCode];
-  }
-
-  // We now want to signal that the file descriptor reading has now fully finished.
-  // It's important that "Finished Reading" and "Control Relinquished" are tracked separately.
-  // This is because it's possible that reading is finished but the file descriptor is still tracked by libdispatch.
-  [self.ioChannelRelinquishedControl resolveWithResult:@(errorCode)];
-
-  // Now that the IO channel is done for good, we can finally remove the reference to it.
-  // By this point all read operations have finished and the consumer has been notified of an end-of-file.
-  self.io = nil;
-
-  // We can also now safely close the file descriptor if requested
-  if (self.closeOnEndOfFile) {
-    close(self.fileDescriptor);
-  }
 }
 
 @end
