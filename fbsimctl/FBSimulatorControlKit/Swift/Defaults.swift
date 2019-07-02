@@ -13,7 +13,7 @@ public enum DefaultsError: Error, CustomStringConvertible {
 
   public var description: String {
     switch self {
-    case .unreadableRCFile(let underlyingError):
+    case let .unreadableRCFile(underlyingError):
       return "Unreadable RC File " + underlyingError
     }
   }
@@ -116,11 +116,11 @@ extension Action {
     // Depending on what state the simulator is expected to be in.
     // Descructive of machine-killing actions shouldn't have defaults.
     switch self {
-    case .coreFuture(let future) where type(of: future).futureType == .diagnosticQuery:
+    case let .coreFuture(future) where type(of: future).futureType == .diagnosticQuery:
       return FBiOSTargetQuery.allTargets()
     case .list:
       return FBiOSTargetQuery.allTargets()
-    case .coreFuture(let future):
+    case let .coreFuture(future):
       return type(of: future).futureType.defaultQuery
     case .delete:
       return nil

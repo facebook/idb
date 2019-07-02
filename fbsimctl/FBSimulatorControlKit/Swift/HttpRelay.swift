@@ -16,11 +16,11 @@ enum QueryError: Error, CustomStringConvertible {
 
   var description: String {
     switch self {
-    case .TooManyMatches(let matches, let expected):
+    case let .TooManyMatches(matches, expected):
       return "Matched too many Targets. \(expected) targets matched but had \(matches.count)"
     case .NoMatches:
       return "No Matching Targets"
-    case .WrongTarget(let expected, let actual):
+    case let .WrongTarget(expected, actual):
       return "Wrong Target. Expected \(expected) but got \(actual)"
     case .NoneProvided:
       return "No Query Provided"
@@ -67,14 +67,14 @@ enum ResponseKeys: String {
 
   func interactionResultResponse(_ result: CommandResult) -> HttpResponse {
     switch result.outcome {
-    case .failure(let string):
+    case let .failure(string):
       let json = JSON.dictionary([
         ResponseKeys.Status.rawValue: JSON.string(ResponseKeys.Failure.rawValue),
         ResponseKeys.Message.rawValue: JSON.string(string),
         ResponseKeys.Events.rawValue: self.jsonDescription,
       ])
       return HttpResponse.internalServerError(json.data)
-    case .success(let subject):
+    case let .success(subject):
       var dictionary = [
         ResponseKeys.Status.rawValue: JSON.string(ResponseKeys.Success.rawValue),
         ResponseKeys.Events.rawValue: self.jsonDescription,
@@ -87,8 +87,7 @@ enum ResponseKeys: String {
     }
   }
 
-  func addMetadata(_ metadata: [String : String]) {
-  }
+  func addMetadata(_: [String: String]) {}
 }
 
 extension ActionPerformer {
@@ -106,15 +105,15 @@ extension ActionPerformer {
   func futureWithSingleTarget<A>(_ query: FBiOSTargetQuery, action: (FBiOSTarget) -> FBFuture<A>) throws -> FBFuture<A> {
     let target = try runnerContext(HttpEventReporter()).querySingleTarget(query)
     let future = target.workQueue.sync {
-      return action(target)
+      action(target)
     }
     return future
   }
 }
 
 enum HttpMethod: String {
-  case GET = "GET"
-  case POST = "POST"
+  case GET
+  case POST
 }
 
 enum ActionHandler {
@@ -126,21 +125,21 @@ enum ActionHandler {
 
   func produceAction(_ request: HttpRequest) throws -> (Action, FBiOSTargetQuery?) {
     switch self {
-    case .constant(let action):
+    case let .constant(action):
       return (action, nil)
-    case .path(let pathHandler):
+    case let .path(pathHandler):
       let components = Array(request.pathComponents.dropFirst())
       let action = try pathHandler(components)
       return (action, nil)
-    case .parser(let actionParser):
+    case let .parser(actionParser):
       let json = try request.jsonBody()
       let action = try actionParser(json)
       let query = try? FBiOSTargetQuery.inflate(fromJSON: json.getValue("simulators").decode())
       return (action, query)
-    case .binary(let binaryHandler):
+    case let .binary(binaryHandler):
       let action = try binaryHandler(request.body)
       return (action, nil)
-    case .file(let pathExtension, let handler):
+    case let .file(pathExtension, handler):
       let guid = UUID().uuidString
       let destination = URL(fileURLWithPath: NSTemporaryDirectory())
         .appendingPathComponent("fbsimctl-\(guid)")
@@ -274,7 +273,7 @@ struct ScreenshotRoute: Route {
         throw QueryError.NoneProvided
       }
       let imageFuture: FBFuture<NSData> = try performer.futureWithSingleTarget(query) { target in
-        return target.takeScreenshot(format)
+        target.takeScreenshot(format)
       }
       let imageData = try imageFuture.await()
       return HttpResponse(statusCode: 200, body: imageData as Data, contentType: "image/" + self.format.rawValue)
@@ -456,9 +455,9 @@ class HttpRelay: Relay {
   fileprivate static var uploadRoute: Route {
     let jsonToDiagnostics: (JSON) throws -> [FBDiagnostic] = { json in
       switch json {
-      case .array(let array):
+      case let .array(array):
         let diagnostics = try array.map { jsonDiagnostic in
-          return try FBDiagnostic.inflate(fromJSON: jsonDiagnostic.decode())
+          try FBDiagnostic.inflate(fromJSON: jsonDiagnostic.decode())
         }
         return diagnostics
       case .dictionary:
@@ -470,7 +469,7 @@ class HttpRelay: Relay {
     }
 
     return ActionRoute.post(.upload) { json in
-      return Action.upload(try jsonToDiagnostics(json))
+      Action.upload(try jsonToDiagnostics(json))
     }
   }
 

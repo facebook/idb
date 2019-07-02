@@ -29,7 +29,7 @@ open class SimulatorReporter: NSObject, FBSimulatorEventSink, iOSReporter {
     reportValue(.launch, .discrete, applicationProcess)
   }
 
-  open func containerApplicationDidTerminate(_ applicationProcess: FBProcessInfo, expected: Bool) {
+  open func containerApplicationDidTerminate(_ applicationProcess: FBProcessInfo, expected _: Bool) {
     reportValue(.terminate, .discrete, applicationProcess)
   }
 
@@ -37,21 +37,19 @@ open class SimulatorReporter: NSObject, FBSimulatorEventSink, iOSReporter {
     reportValue(.launch, .discrete, connection)
   }
 
-  open func connectionDidDisconnect(_ connection: FBSimulatorConnection, expected: Bool) {
+  open func connectionDidDisconnect(_ connection: FBSimulatorConnection, expected _: Bool) {
     reportValue(.terminate, .discrete, connection)
   }
 
-  open func testmanagerDidConnect(_ testManager: FBTestManager) {
-  }
+  open func testmanagerDidConnect(_: FBTestManager) {}
 
-  open func testmanagerDidDisconnect(_ testManager: FBTestManager) {
-  }
+  open func testmanagerDidDisconnect(_: FBTestManager) {}
 
   open func simulatorDidLaunch(_ launchdProcess: FBProcessInfo) {
     reportValue(.launch, .discrete, launchdProcess)
   }
 
-  open func simulatorDidTerminate(_ launchdProcess: FBProcessInfo, expected: Bool) {
+  open func simulatorDidTerminate(_ launchdProcess: FBProcessInfo, expected _: Bool) {
     reportValue(.terminate, .discrete, launchdProcess)
   }
 
@@ -59,7 +57,7 @@ open class SimulatorReporter: NSObject, FBSimulatorEventSink, iOSReporter {
     reportValue(.launch, .discrete, operation)
   }
 
-  open func agentDidTerminate(_ operation: FBSimulatorAgentOperation, statLoc: Int32) {
+  open func agentDidTerminate(_ operation: FBSimulatorAgentOperation, statLoc _: Int32) {
     reportValue(.terminate, .discrete, operation)
   }
 
@@ -70,7 +68,7 @@ open class SimulatorReporter: NSObject, FBSimulatorEventSink, iOSReporter {
     }
   }
 
-  open func applicationDidTerminate(_ operation: FBSimulatorApplicationOperation, expected: Bool) {
+  open func applicationDidTerminate(_ operation: FBSimulatorApplicationOperation, expected _: Bool) {
     reportValue(.terminate, .discrete, operation)
   }
 

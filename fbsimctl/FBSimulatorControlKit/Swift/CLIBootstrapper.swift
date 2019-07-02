@@ -24,11 +24,11 @@ struct CLIRunner: Runner {
 
   func run() -> CommandResult {
     switch cli {
-    case .run(let command):
+    case let .run(command):
       return BaseCommandRunner(reporter: reporter, command: command).run()
-    case .show(let help):
+    case let .show(help):
       return HelpRunner(reporter: reporter, help: help).run()
-    case .print(let action):
+    case let .print(action):
       return PrintRunner(action: action, writer: writer).run()
     }
   }
@@ -41,10 +41,10 @@ struct CLIRunner: Runner {
       continuation.completed?.cancel()
     }
     switch result.outcome {
-    case .failure(let message):
+    case let .failure(message):
       reporter.reportError(message)
       return 1
-    case .success(.some(let subject)):
+    case let .success(.some(subject)):
       reporter.report(subject)
       fallthrough
     default:
@@ -59,7 +59,7 @@ struct PrintRunner: Runner {
 
   func run() -> CommandResult {
     switch action {
-    case .coreFuture(let action):
+    case let .coreFuture(action):
       let output = action.printable
       writer.write(output)
       return .success(nil)
@@ -92,7 +92,7 @@ extension CLI {
   public func bootstrap() -> (CLI, Writer, EventReporter, FBControlCoreLoggerProtocol) {
     let writer = createWriter()
     let reporter = createReporter(writer)
-    if case .run(let command) = self {
+    if case let .run(command) = self {
       let configuration = command.configuration
       let debugEnabled = configuration.outputOptions.contains(OutputOptions.DebugLogging)
       let bridge = ControlCoreLoggerBridge(reporter: reporter)
@@ -111,7 +111,7 @@ extension CLI {
       return FBFileWriter.stdErrWriter
     case .print:
       return FBFileWriter.stdOutWriter
-    case .run(let command):
+    case let .run(command):
       return command.createWriter()
     }
   }

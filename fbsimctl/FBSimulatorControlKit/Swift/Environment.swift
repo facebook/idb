@@ -24,7 +24,7 @@ private func extractChildProcessEnvironment(_ environment: [String: String]) -> 
 public extension CLI {
   func appendEnvironment(_ environment: [String: String]) -> CLI {
     switch self {
-    case .run(let command):
+    case let .run(command):
       return .run(command.appendEnvironment(environment))
     default:
       return self
@@ -47,8 +47,7 @@ protocol EnvironmentAdditive {
   func withEnvironmentAdditions(_ environmentAdditions: [String: String]) -> Self
 }
 
-extension EnvironmentAdditive {
-}
+extension EnvironmentAdditive {}
 
 extension FBSimulatorBootConfiguration: EnvironmentAdditive {
   func withEnvironmentAdditions(_ environmentAdditions: [String: String]) -> Self {
@@ -59,7 +58,7 @@ extension FBSimulatorBootConfiguration: EnvironmentAdditive {
 public extension Action {
   func appendEnvironment(_ environment: [String: String]) -> Action {
     switch self {
-    case .coreFuture(var action):
+    case var .coreFuture(action):
       if let additive = action as? EnvironmentAdditive & FBiOSTargetFuture {
         action = additive.withEnvironmentAdditions(
           extractChildProcessEnvironment(environment)

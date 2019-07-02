@@ -59,10 +59,8 @@ func AssertCast<U, T>(_ obj: U, _ tests: (T) -> Void) {
   switch obj {
   case let casted as T:
     tests(casted)
-    break
   default:
     XCTFail("AssertCast: Could not dynamically cast value")
-    break
   }
 }
 
@@ -73,7 +71,6 @@ func AssertCast<U, T>(_ obj: U, _ tests: (T) -> Void) {
  * equivalent.
  */
 func AssertEqualDesc(_ lhs: ParserDescription, _ rhs: ParserDescription) {
-
   XCTAssertEqual(lhs.summary, rhs.summary)
   XCTAssertEqual(lhs.delimitedSummary, rhs.delimitedSummary)
   XCTAssertEqual(lhs.isDelimited, rhs.isDelimited)
@@ -89,7 +86,6 @@ func AssertEqualDesc(_ lhs: ParserDescription, _ rhs: ParserDescription) {
 }
 
 class NormalisationTests: XCTestCase {
-
   func testPrimitive() {
     let prim = PrimitiveDesc(name: "name", desc: "desc")
     AssertEqualDesc(prim, prim.normalised)

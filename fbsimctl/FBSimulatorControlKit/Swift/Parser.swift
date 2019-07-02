@@ -18,11 +18,11 @@ public enum ParseError: Error, CustomStringConvertible {
     switch self {
     case .endOfInput:
       return "End of Input"
-    case .doesNotMatch(let expected, let actual):
+    case let .doesNotMatch(expected, actual):
       return "'\(actual)' does not match '\(expected)'"
-    case .couldNotInterpret(let typeName, let actual):
+    case let .couldNotInterpret(typeName, actual):
       return "\(actual) could not be interpreted as \(typeName)"
-    case .custom(let message):
+    case let .custom(message):
       return message
     }
   }
@@ -92,7 +92,7 @@ extension Parser {
   }
 
   func sequence<B>(_ p: Parser<B>) -> Parser<B> {
-    return bind({ _ in p })
+    return bind { _ in p }
       .describe(SequenceDesc(children: [
         self.matchDescription,
         p.matchDescription,
@@ -163,7 +163,7 @@ extension Parser {
 
   static var passthrough: Parser<NSNull> {
     return Parser<NSNull>(SequenceDesc(children: [])) { tokens in
-      return (tokens, NSNull())
+      (tokens, NSNull())
     }
   }
 
@@ -230,7 +230,7 @@ extension Parser {
     }
 
     let sequentialParser = Parser<()>
-      .ofFlag(flag, (), explanation)
+      .ofFlag(flag,, explanation)
       .sequence(arg)
     return Parser<A>.alternative([equalParser, sequentialParser])
   }
@@ -243,11 +243,11 @@ extension Parser {
 
   static func ofTwoSequenced<B>(_ a: Parser<A>, _ b: Parser<B>) -> Parser<(A, B)> {
     return
-      a.bind({ valueA in
-        return b.fmap { valueB in
-          return (valueA, valueB)
+      a.bind { valueA in
+        b.fmap { valueB in
+          (valueA, valueB)
         }
-      }).describe(SequenceDesc(children: [
+      }.describe(SequenceDesc(children: [
         a.matchDescription,
         b.matchDescription,
       ]))
@@ -255,13 +255,13 @@ extension Parser {
 
   static func ofThreeSequenced<B, C>(_ a: Parser<A>, _ b: Parser<B>, _ c: Parser<C>) -> Parser<(A, B, C)> {
     return
-      a.bind({ valueA in
-        return b.bind { valueB in
-          return c.fmap { valueC in
-            return (valueA, valueB, valueC)
+      a.bind { valueA in
+        b.bind { valueB in
+          c.fmap { valueC in
+            (valueA, valueB, valueC)
           }
         }
-      }).describe(SequenceDesc(children: [
+      }.describe(SequenceDesc(children: [
         a.matchDescription,
         b.matchDescription,
         c.matchDescription,
@@ -270,15 +270,15 @@ extension Parser {
 
   static func ofFourSequenced<B, C, D>(_ a: Parser<A>, _ b: Parser<B>, _ c: Parser<C>, _ d: Parser<D>) -> Parser<(A, B, C, D)> {
     return
-      a.bind({ valueA in
-        return b.bind { valueB in
-          return c.bind { valueC in
-            return d.fmap { valueD in
-              return (valueA, valueB, valueC, valueD)
+      a.bind { valueA in
+        b.bind { valueB in
+          c.bind { valueC in
+            d.fmap { valueD in
+              (valueA, valueB, valueC, valueD)
             }
           }
         }
-      }).describe(SequenceDesc(children: [
+      }.describe(SequenceDesc(children: [
         a.matchDescription,
         b.matchDescription,
         c.matchDescription,
@@ -402,7 +402,7 @@ extension Parser {
     return Parser
       .ofTwoSequenced(parser, Parser.noRemaining)
       .fmap { original, _ in
-        return original
+        original
       }
   }
 }

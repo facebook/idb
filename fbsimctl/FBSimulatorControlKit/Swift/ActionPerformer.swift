@@ -59,19 +59,19 @@ public enum CommandOutcome: CustomStringConvertible, CustomDebugStringConvertibl
 
   func append(_ second: CommandOutcome) -> CommandOutcome {
     switch (self, second) {
-    case (.success(.some(let leftSubject)), .success(.some(let rightSubject))):
+    case let (.success(.some(leftSubject)), .success(.some(rightSubject))):
       return .success(leftSubject.append(rightSubject))
-    case (.success(.some(let leftSubject)), .success(.none)):
+    case (let .success(.some(leftSubject)), .success(.none)):
       return .success(leftSubject)
-    case (.success(.none), .success(.some(let rightSubject))):
+    case let (.success(.none), .success(.some(rightSubject))):
       return .success(rightSubject)
     case (.success, .success):
       return .success(nil)
-    case (.success, .failure(let secondString)):
+    case let (.success, .failure(secondString)):
       return .failure(secondString)
-    case (.failure(let firstString), .success):
+    case (let .failure(firstString), .success):
       return .failure(firstString)
-    case (.failure(let firstString), .failure(let secondString)):
+    case let (.failure(firstString), .failure(secondString)):
       return .failure("\(firstString)\n\(secondString)")
     }
   }
@@ -79,7 +79,7 @@ public enum CommandOutcome: CustomStringConvertible, CustomDebugStringConvertibl
   public var description: String {
     switch self {
     case .success: return "Success"
-    case .failure(let string): return "Failure '\(string)'"
+    case let .failure(string): return "Failure '\(string)'"
     }
   }
 

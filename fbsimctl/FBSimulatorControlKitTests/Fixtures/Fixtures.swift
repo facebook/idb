@@ -9,8 +9,7 @@ import FBSimulatorControl
 @testable import FBSimulatorControlKit
 import XCTest
 
-@objc class FBSimulatorControlKitTestsNSObject: NSObject {
-}
+@objc class FBSimulatorControlKitTestsNSObject: NSObject {}
 
 struct Fixtures {
   static var application: FBBundleDescriptor {

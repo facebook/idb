@@ -293,7 +293,7 @@ class ActionParserTests: XCTestCase {
 
   func testParsesInsidePrint() {
     let pairs = validActions.map { tokens, action in
-      return (["print"] + tokens, CLI.print(action))
+      (["print"] + tokens, CLI.print(action))
     }
     assertParsesAll(CLI.parser, pairs)
   }
@@ -387,7 +387,7 @@ class CommandParserTests: XCTestCase {
 
   func unzipAndAssert(_ actions: [Action], suffix: [String], extras: [([String], FBiOSTargetQuery?, FBiOSTargetFormat?)]) {
     let pairs = extras.map { tokens, query, format in
-      return (tokens + suffix, Command(configuration: Configuration.defaultValue, actions: actions, query: query, format: format))
+      (tokens + suffix, Command(configuration: Configuration.defaultValue, actions: actions, query: query, format: format))
     }
     assertParsesAll(Command.parser, pairs)
   }

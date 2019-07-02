@@ -284,7 +284,7 @@ public func == (left: CreationSpecification, right: CreationSpecification) -> Bo
   switch (left, right) {
   case (.allMissingDefaults, .allMissingDefaults):
     return true
-  case (.individual(let leftConfiguration), .individual(let rightConfiguration)):
+  case let (.individual(leftConfiguration), .individual(rightConfiguration)):
     return leftConfiguration == rightConfiguration
   default:
     return false
@@ -294,7 +294,7 @@ public func == (left: CreationSpecification, right: CreationSpecification) -> Bo
 extension Record: Equatable {}
 public func == (left: Record, right: Record) -> Bool {
   switch (left, right) {
-  case (.start(let leftPath), .start(let rightPath)):
+  case let (.start(leftPath), .start(rightPath)):
     return leftPath == rightPath
   case (.stop, .stop):
     return true
@@ -306,7 +306,7 @@ public func == (left: Record, right: Record) -> Bool {
 extension FileOutput: Equatable {}
 public func == (left: FileOutput, right: FileOutput) -> Bool {
   switch (left, right) {
-  case (.path(let leftPath), .path(let rightPath)):
+  case let (.path(leftPath), .path(rightPath)):
     return leftPath == rightPath
   case (.standardOut, .standardOut):
     return true
@@ -318,7 +318,7 @@ public func == (left: FileOutput, right: FileOutput) -> Bool {
 extension Action: Equatable {}
 public func == (left: Action, right: Action) -> Bool {
   switch (left, right) {
-  case (.clearKeychain(let leftBundleID), .clearKeychain(let rightBundleID)):
+  case let (.clearKeychain(leftBundleID), .clearKeychain(rightBundleID)):
     return leftBundleID == rightBundleID
   case (.clone, .clone):
     return true
@@ -326,7 +326,7 @@ public func == (left: Action, right: Action) -> Bool {
     return true
   case let (.coreFuture(leftAction), .coreFuture(rightAction)):
     return leftAction.isEqual(rightAction)
-  case (.create(let leftSpecification), .create(let rightSpecification)):
+  case let (.create(leftSpecification), .create(rightSpecification)):
     return leftSpecification == rightSpecification
   case (.delete, .delete):
     return true
@@ -338,25 +338,25 @@ public func == (left: Action, right: Action) -> Bool {
     return true
   case (.listDeviceSets, .listDeviceSets):
     return true
-  case (.listen(let leftServer), .listen(let rightServer)):
+  case let (.listen(leftServer), .listen(rightServer)):
     return leftServer == rightServer
-  case (.open(let leftURL), .open(let rightURL)):
+  case let (.open(leftURL), .open(rightURL)):
     return leftURL == rightURL
-  case (.record(let leftStart), .record(let rightStart)):
+  case let (.record(leftStart), .record(rightStart)):
     return leftStart == rightStart
-  case (.relaunch(let leftLaunch), .relaunch(let rightLaunch)):
+  case let (.relaunch(leftLaunch), .relaunch(rightLaunch)):
     return leftLaunch == rightLaunch
-  case (.setLocation(let leftLat, let leftLon), .setLocation(let rightLat, let rightLon)):
+  case let (.setLocation(leftLat, leftLon), .setLocation(rightLat, rightLon)):
     return leftLat == rightLat && leftLon == rightLon
-  case (.stream(let leftConfiguration, let leftOutput), .stream(let rightConfiguration, let rightOutput)):
+  case let (.stream(leftConfiguration, leftOutput), .stream(rightConfiguration, rightOutput)):
     return leftConfiguration == rightConfiguration && leftOutput == rightOutput
-  case (.terminate(let leftBundleID), .terminate(let rightBundleID)):
+  case let (.terminate(leftBundleID), .terminate(rightBundleID)):
     return leftBundleID == rightBundleID
-  case (.uninstall(let leftBundleID), .uninstall(let rightBundleID)):
+  case let (.uninstall(leftBundleID), .uninstall(rightBundleID)):
     return leftBundleID == rightBundleID
-  case (.upload(let leftPaths), .upload(let rightPaths)):
+  case let (.upload(leftPaths), .upload(rightPaths)):
     return leftPaths == rightPaths
-  case (.watchdogOverride(let leftBundleIDs, let leftTimeout), .watchdogOverride(let rightBundleIDs, let rightTimeout)):
+  case let (.watchdogOverride(leftBundleIDs, leftTimeout), .watchdogOverride(rightBundleIDs, rightTimeout)):
     return leftBundleIDs == rightBundleIDs && leftTimeout == rightTimeout
   default:
     return false
@@ -368,11 +368,11 @@ extension Action {
     switch self {
     case .clone:
       return (.clone, nil)
-    case .clearKeychain(let bundleID):
+    case let .clearKeychain(bundleID):
       return (.clearKeychain, FBEventReporterSubject(string: bundleID ?? "none"))
     case .config:
       return (.config, nil)
-    case .coreFuture(let action):
+    case let .coreFuture(action):
       return (action.eventName, action.subject)
     case .create:
       return (.create, nil)
@@ -390,19 +390,19 @@ extension Action {
       return (.listDeviceSets, nil)
     case .listen:
       return (.listen, nil)
-    case .open(let url):
+    case let .open(url):
       return (.open, FBEventReporterSubject(string: url.absoluteString))
-    case .record(let record):
+    case let .record(record):
       return (.record, RecordSubject(record))
-    case .relaunch(let appLaunch):
+    case let .relaunch(appLaunch):
       return (.relaunch, appLaunch.subject)
     case .setLocation:
       return (.setLocation, nil)
     case .stream:
       return (.stream, nil)
-    case .terminate(let bundleID):
+    case let .terminate(bundleID):
       return (.terminate, FBEventReporterSubject(string: bundleID))
-    case .uninstall(let bundleID):
+    case let .uninstall(bundleID):
       return (.uninstall, FBEventReporterSubject(string: bundleID))
     case .upload:
       return (.diagnose, nil)

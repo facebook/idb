@@ -20,15 +20,15 @@ public enum JSONError: Error {
 
   public var description: String {
     switch self {
-    case .notContainer(let object):
+    case let .notContainer(object):
       return "\(object) is not a container"
-    case .nonEncodable(let object):
+    case let .nonEncodable(object):
       return "\(object) is not JSON Encodable"
-    case .serialization(let error):
+    case let .serialization(error):
       return "Serialization \(error.description)"
-    case .stringifying(let data):
+    case let .stringifying(data):
       return "Stringifying \(data.description)"
-    case .parse(let string):
+    case let .parse(string):
       return "Parsing \(string)"
     }
   }
@@ -84,23 +84,23 @@ public indirect enum JSON {
 
   func decode() -> AnyObject {
     switch self {
-    case .dictionary(let dictionary):
+    case let .dictionary(dictionary):
       let decoded = NSMutableDictionary()
       for (key, value) in dictionary {
         decoded[key] = value.decode()
       }
       return decoded.copy() as AnyObject
-    case .array(let array):
+    case let .array(array):
       let decoded = NSMutableArray()
       for value in array {
         decoded.add(value.decode())
       }
       return decoded.copy() as AnyObject
-    case .string(let string):
+    case let .string(string):
       return string as AnyObject
-    case .number(let number):
+    case let .number(number):
       return number
-    case .bool(let bool):
+    case let .bool(bool):
       return NSNumber(booleanLiteral: bool)
     case .null:
       return NSNull()
@@ -148,7 +148,7 @@ extension JSON {
 
   func getOptionalValue(_ key: String) throws -> JSON? {
     switch self {
-    case .dictionary(let dictionary):
+    case let .dictionary(dictionary):
       guard let value = dictionary[key] else {
         return nil
       }
@@ -160,7 +160,7 @@ extension JSON {
 
   func getOptionalArray() -> [JSON]? {
     switch self {
-    case .array(let array):
+    case let .array(array):
       return array
     default:
       return nil
@@ -176,7 +176,7 @@ extension JSON {
 
   func getOptionalDictionary() -> [String: JSON]? {
     switch self {
-    case .dictionary(let dictionary):
+    case let .dictionary(dictionary):
       return dictionary
     default:
       return nil
@@ -192,7 +192,7 @@ extension JSON {
 
   func getString() throws -> String {
     switch self {
-    case .string(let string):
+    case let .string(string):
       return string
     default:
       throw JSONError.parse("\(self) not a string")
@@ -201,7 +201,7 @@ extension JSON {
 
   func getNumber() throws -> NSNumber {
     switch self {
-    case .number(let number):
+    case let .number(number):
       return number
     default:
       throw JSONError.parse("\(self) is not a number")
@@ -210,9 +210,9 @@ extension JSON {
 
   func getBool() throws -> Bool {
     switch self {
-    case .number(let number):
+    case let .number(number):
       return number.boolValue
-    case .bool(let bool):
+    case let .bool(bool):
       return bool
     default:
       throw JSONError.parse("\(self) is not a number/boolean")

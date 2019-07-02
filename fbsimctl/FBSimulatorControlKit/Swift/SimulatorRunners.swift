@@ -11,7 +11,7 @@ import Foundation
 extension FileOutput {
   func makeWriter() throws -> FBDataConsumer {
     switch self {
-    case .path(let path):
+    case let .path(path):
       return try FBFileWriter.syncWriter(forFilePath: path)
     case .standardOut:
       return FBFileWriter.syncWriter(withFileDescriptor: FileHandle.standardOutput.fileDescriptor, closeOnEndOfFile: false)
@@ -24,7 +24,7 @@ extension iOSRunnerContext {
     switch creationSpecification {
     case .allMissingDefaults:
       return simulatorControl.set.configurationsForAbsentDefaultSimulators()
-    case .individual(let configuration):
+    case let .individual(configuration):
       return [configuration.simulatorConfiguration]
     }
   }
@@ -44,7 +44,7 @@ extension FBBitmapStreamingCommands {
       let writer = try output.makeWriter()
       let stream = try createStream(with: configuration).await()
       return stream.startStreaming(writer).mapReplace(stream) as! FBFuture<FBiOSTargetContinuation>
-    } catch let error {
+    } catch {
       return FBFuture(error: error)
     }
   }
@@ -91,7 +91,7 @@ struct SimulatorActionRunner: Runner {
     }
 
     switch action {
-    case .clearKeychain(let maybeBundleID):
+    case let .clearKeychain(maybeBundleID):
       var futures: [FBFuture<NSNull>] = []
       if let bundleID = maybeBundleID {
         futures.append(simulator.killApplication(withBundleID: bundleID))
@@ -127,26 +127,26 @@ struct SimulatorActionRunner: Runner {
         simulator.subject,
         simulator.setupKeyboard()
       )
-    case .open(let url):
+    case let .open(url):
       return SimpleRunner(reporter, .open, FBEventReporterSubject(string: url.bridgedAbsoluteString)) {
         try simulator.open(url)
       }
-    case .relaunch(let processLaunch):
+    case let .relaunch(processLaunch):
       var appLaunch = FBApplicationLaunchConfiguration(bundleID: processLaunch.bundleID, bundleName: processLaunch.bundleName, arguments: processLaunch.arguments, environment: processLaunch.environment, output: processLaunch.output, launchMode: .relaunchIfRunning)
       if processLaunch.waitForDebugger {
         appLaunch = appLaunch.withWaitForDebugger(nil)
       }
       return FutureRunner(reporter, .relaunch, appLaunch.subject, simulator.launchApplication(appLaunch))
-    case .setLocation(let latitude, let longitude):
+    case let .setLocation(latitude, longitude):
       return FutureRunner(
         reporter,
         .setLocation,
         simulator.subject,
         simulator.setLocationWithLatitude(latitude, longitude: longitude)
       )
-    case .upload(let diagnostics):
+    case let .upload(diagnostics):
       return UploadRunner(reporter, diagnostics)
-    case .watchdogOverride(let bundleIDs, let timeout):
+    case let .watchdogOverride(bundleIDs, timeout):
       return FutureRunner(
         reporter,
         .watchdogOverride,

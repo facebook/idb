@@ -65,7 +65,7 @@ struct iOSRunnerContext<A> {
     let simulators: [FBiOSTarget] = simulatorControl.set.query(query)
     let targets = devices + simulators
     return targets.sorted { left, right in
-      return FBiOSTargetComparison(left, right) == ComparisonResult.orderedDescending
+      FBiOSTargetComparison(left, right) == ComparisonResult.orderedDescending
     }
   }
 
@@ -102,7 +102,7 @@ struct BaseCommandRunner: Runner {
         deviceControl: deviceControl
       )
       return CommandRunner(context: context).run()
-    } catch DefaultsError.unreadableRCFile(let string) {
+    } catch let DefaultsError.unreadableRCFile(string) {
       return .failure("Unreadable .rc file " + string)
     } catch let error as NSError {
       return .failure(error.description)
@@ -182,10 +182,10 @@ struct ActionRunner: Runner {
     case .listDeviceSets:
       let context = self.context.replace(self.context.simulatorControl.serviceContext)
       return ListDeviceSetsRunner(context: context).run()
-    case .listen(let server):
+    case let .listen(server):
       let context = self.context.replace((server, query))
       return ListenRunner(context: context).run()
-    case .create(let configuration):
+    case let .create(configuration):
       let context = self.context.replace(configuration)
       return SimulatorCreationRunner(context: context, eventName: .create, futures: context.createSimulators(configuration)).run()
     default:
@@ -283,9 +283,9 @@ struct ListenRunner: Runner, ActionPerformer {
     let context = runnerContext(reporter).replace((action, query))
 
     return FBFuture.onQueue(workQueue, resolve: {
-      if case .coreFuture(let coreFuture) = action {
+      if case let .coreFuture(coreFuture) = action {
         let futures = context.query(query).map { target in
-          return coreFuture.run(with: target, consumer: reporter.writer, reporter: reporter)
+          coreFuture.run(with: target, consumer: reporter.writer, reporter: reporter)
         }
         return FBFuture(futures: futures).mapReplace(CommandResultBox(value: CommandResult.success(nil)))
       }

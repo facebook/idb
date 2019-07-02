@@ -28,18 +28,18 @@ struct iOSActionProvider {
     let (action, target, reporter) = context.value
 
     switch action {
-    case .uninstall(let appBundleID):
+    case let .uninstall(appBundleID):
       return FutureRunner(reporter, .uninstall, FBEventReporterSubject(string: appBundleID), target.uninstallApplication(withBundleID: appBundleID))
-    case .coreFuture(let action):
+    case let .coreFuture(action):
       let future = action.run(with: target, consumer: reporter.reporter.writer, reporter: reporter.reporter)
       return FutureRunner(reporter, action.eventName, action.subject, future)
     case .record(.start(let filePath)):
       return FutureRunner(reporter, nil, RecordSubject(.start(filePath)), target.startRecording(toFile: filePath ?? target.diagnostics.video().asPath!))
     case .record(.stop):
       return FutureRunner(reporter, nil, RecordSubject(.stop), target.stopRecording())
-    case .stream(let configuration, let output):
+    case let .stream(configuration, output):
       return FutureRunner(reporter, .stream, configuration.subject, target.startStreaming(configuration: configuration, output: output))
-    case .terminate(let bundleID):
+    case let .terminate(bundleID):
       return FutureRunner(reporter, .terminate, FBEventReporterSubject(string: bundleID), target.killApplication(withBundleID: bundleID))
     default:
       return nil

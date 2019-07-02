@@ -41,7 +41,7 @@ extension Parser {
   public static var ofUDID: Parser<String> {
     let desc = PrimitiveDesc(name: "udid", desc: "Device or simulator Unique Device Identifier.")
     return Parser<String>.single(desc) { token in
-      return try FBiOSTargetQuery.parseUDIDToken(token)
+      try FBiOSTargetQuery.parseUDIDToken(token)
     }
   }
 
@@ -123,7 +123,7 @@ extension Parser {
   public static var ofLocale: Parser<Locale> {
     let desc = PrimitiveDesc(name: "locale", desc: "Locale identifier.")
     return Parser<Locale>.single(desc) { token in
-      return Locale(identifier: token)
+      Locale(identifier: token)
     }
   }
 
@@ -264,7 +264,7 @@ extension IndividualCreationConfiguration: Parsable {
 
   static var deviceConfigurationParser: Parser<IndividualCreationConfiguration> {
     return deviceParser.fmap { device in
-      return IndividualCreationConfiguration(
+      IndividualCreationConfiguration(
         os: nil,
         model: device,
         auxDirectory: nil
@@ -286,7 +286,7 @@ extension IndividualCreationConfiguration: Parsable {
 
   static var osVersionConfigurationParser: Parser<IndividualCreationConfiguration> {
     return osVersionParser.fmap { osVersion in
-      return IndividualCreationConfiguration(
+      IndividualCreationConfiguration(
         os: osVersion,
         model: nil,
         auxDirectory: nil
@@ -301,7 +301,7 @@ extension IndividualCreationConfiguration: Parsable {
 
   static var auxDirectoryConfigurationParser: Parser<IndividualCreationConfiguration> {
     return auxDirectoryParser.fmap { auxDirectory in
-      return IndividualCreationConfiguration(
+      IndividualCreationConfiguration(
         os: nil,
         model: nil,
         auxDirectory: auxDirectory
@@ -332,7 +332,7 @@ extension FBiOSTargetState: Parsable {
       ("shutting-down", FBiOSTargetState.shuttingDown),
     ]
     let stateParsers = names.map { name, state in
-      return Parser.ofString(name, state)
+      Parser.ofString(name, state)
     }
     return Parser<FBiOSTargetState>.ofFlagWithArg(
       "state",
@@ -400,7 +400,7 @@ extension Help: Parsable {
         Parser.ofString("help", NSNull())
       )
       .fmap { output, _ in
-        return Help(outputOptions: output, error: nil, command: nil)
+        Help(outputOptions: output, error: nil, command: nil)
       }
   }
 }
@@ -415,7 +415,7 @@ extension Command: Parsable {
         compoundActionParser
       )
       .fmap { configuration, query, format, actions in
-        return Command(
+        Command(
           configuration: configuration,
           actions: actions,
           query: query,
@@ -838,7 +838,7 @@ extension Action: Parsable {
       )
       .fmap { paths in
         let diagnostics: [FBDiagnostic] = paths.map { path in
-          return FBDiagnosticBuilder().updatePath(path).build()
+          FBDiagnosticBuilder().updatePath(path).build()
         }
         return Action.upload(diagnostics)
       }
@@ -1121,7 +1121,7 @@ struct FBProcessLaunchConfigurationParsers {
         argumentParser
       )
       .fmap { output, binary, arguments in
-        return FBAgentLaunchConfiguration(binary: binary, arguments: arguments, environment: [:], output: output)
+        FBAgentLaunchConfiguration(binary: binary, arguments: arguments, environment: [:], output: output)
       }
   }
 

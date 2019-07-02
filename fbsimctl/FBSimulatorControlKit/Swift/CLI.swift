@@ -44,11 +44,11 @@ public enum CLI {
 extension CLI: Equatable {}
 public func == (left: CLI, right: CLI) -> Bool {
   switch (left, right) {
-  case (.show(let leftHelp), .show(let rightHelp)):
+  case let (.show(leftHelp), .show(rightHelp)):
     return leftHelp == rightHelp
-  case (.run(let leftCommand), .run(let rightCommand)):
+  case let (.run(leftCommand), .run(rightCommand)):
     return leftCommand == rightCommand
-  case (.print(let leftAction), .print(let rightAction)):
+  case let (.print(leftAction), .print(rightAction)):
     return leftAction == rightAction
   default:
     return false

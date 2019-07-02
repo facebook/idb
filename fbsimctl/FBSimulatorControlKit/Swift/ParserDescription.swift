@@ -15,7 +15,6 @@ import Foundation
  * that can be used, for example, in a usage dialog.
  */
 public protocol ParserDescription: CustomStringConvertible {
-
   /**
    * normalised: ParserDescription
    *
@@ -102,7 +101,6 @@ extension ParserDescription {
       switch child {
       case let d as D:
         descs.append(d)
-        break
       default:
         break
       }
@@ -350,14 +348,11 @@ private func normalisedTransitiveChildren<D: ParserDescription>(
 
   for child in desc.children {
     switch child.normalised {
-
     case let dChild as D:
       ntChildren += normalisedTransitiveChildren(Of: dChild)
-      break
 
     case let normChild:
       ntChildren.append(normChild)
-      break
     }
   }
 

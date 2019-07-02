@@ -10,7 +10,7 @@ import Foundation
 @objc class SignalInfo: NSObject, EventReporterSubject {
   var eventName: FBEventName?
   var eventType: FBEventType?
-  var argument: [String : String]?
+  var argument: [String: String]?
   var arguments: [String]?
   var duration: NSNumber?
   var message: String?

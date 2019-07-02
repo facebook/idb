@@ -13,7 +13,7 @@ public typealias EventInterpreter = FBEventInterpreterProtocol
 public typealias EventReporter = FBEventReporterProtocol
 
 public extension EventReporter {
-  public var writer: Writer {
+  var writer: Writer {
     return consumer
   }
 
@@ -39,7 +39,7 @@ public extension EventReporter {
 }
 
 public extension OutputOptions {
-  public func createReporter(_ writer: Writer) -> EventReporter {
+  func createReporter(_ writer: Writer) -> EventReporter {
     return FBEventReporter.withInterpreter(createInterpreter(), consumer: writer)
   }
 
@@ -51,29 +51,29 @@ public extension OutputOptions {
     return FBEventInterpreter.humanReadable()
   }
 
-  public func createLogWriter() -> Writer {
+  func createLogWriter() -> Writer {
     return contains(OutputOptions.JSON) ? FBFileWriter.stdOutWriter : FBFileWriter.stdErrWriter
   }
 }
 
 public extension Help {
-  public func createReporter(_ writer: Writer) -> EventReporter {
+  func createReporter(_ writer: Writer) -> EventReporter {
     return outputOptions.createReporter(writer)
   }
 }
 
 public extension Command {
-  public func createReporter(_ writer: Writer) -> EventReporter {
+  func createReporter(_ writer: Writer) -> EventReporter {
     return configuration.outputOptions.createReporter(writer)
   }
 }
 
 public extension CLI {
-  public func createReporter(_ writer: Writer) -> EventReporter {
+  func createReporter(_ writer: Writer) -> EventReporter {
     switch self {
-    case .run(let command):
+    case let .run(command):
       return command.createReporter(writer)
-    case .show(let help):
+    case let .show(help):
       return help.createReporter(writer)
     case .print:
       return FBEventReporter.withInterpreter(FBEventInterpreter.humanReadable(), consumer: writer)

@@ -65,8 +65,7 @@ public extension XCTestCase {
     }
   }
 
-  func consumeEndOfFile() {
-  }
+  func consumeEndOfFile() {}
 
   override var description: String {
     return output.joined(separator: "\n")

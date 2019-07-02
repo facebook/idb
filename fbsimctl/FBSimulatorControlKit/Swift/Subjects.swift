@@ -35,7 +35,7 @@ extension FBJSONSerializable {
 @objc class RecordSubject: NSObject, EventReporterSubject {
   var eventName: FBEventName?
   var eventType: FBEventType?
-  var argument: [String : String]?
+  var argument: [String: String]?
   var arguments: [String]?
   var duration: NSNumber?
   var message: String?
@@ -50,7 +50,7 @@ extension FBJSONSerializable {
   var jsonSerializableRepresentation: Any {
     var contents: [String: NSObject] = [:]
     switch self.record {
-    case .start(let maybePath):
+    case let .start(maybePath):
       contents["start"] = NSNumber(value: true)
       if let path = maybePath {
         contents["path"] = path as NSString
@@ -65,7 +65,7 @@ extension FBJSONSerializable {
 
   override var description: String {
     switch record {
-    case .start(let maybePath):
+    case let .start(maybePath):
       let destination = maybePath ?? "Default Destination"
       return "Start Recording \(destination)"
     case .stop:
@@ -81,7 +81,7 @@ extension FBJSONSerializable {
 @objc class ListenSubject: NSObject, EventReporterSubject {
   var eventName: FBEventName?
   var eventType: FBEventType?
-  var argument: [String : String]?
+  var argument: [String: String]?
   var arguments: [String]?
   var duration: NSNumber?
   var message: String?

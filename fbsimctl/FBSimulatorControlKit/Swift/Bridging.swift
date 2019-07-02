@@ -168,7 +168,7 @@ extension IndividualCreationConfiguration {
 }
 
 extension Bool {
-  static func fallback(from: String?, to: Bool) -> Bool {
+  static func fallback(from: String?, to _: Bool) -> Bool {
     guard let from = from else {
       return false
     }

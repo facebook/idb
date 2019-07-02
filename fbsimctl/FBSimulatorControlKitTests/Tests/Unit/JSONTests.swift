@@ -9,7 +9,6 @@
 import XCTest
 
 class JSONTests: XCTestCase {
-
   func testEncodesContainerJSON() {
     let input: [String: AnyObject] = [
       "foo": "bar" as AnyObject,
@@ -20,7 +19,7 @@ class JSONTests: XCTestCase {
       XCTAssertEqual(try json.getValue("foo").getString(), "bar")
       _ = json.decode()
       _ = try json.decodeContainer()
-    } catch let error {
+    } catch {
       XCTFail("JSON Failure \(error)")
     }
   }
@@ -34,7 +33,7 @@ class JSONTests: XCTestCase {
       if case .some = try? json.decodeContainer() {
         XCTFail("\(input) should fail decodeContainer")
       }
-    } catch let error {
+    } catch {
       XCTFail("JSON Failure \(error)")
     }
   }
@@ -50,7 +49,7 @@ class JSONTests: XCTestCase {
       XCTAssertEqual(try json.getValue("value").getBool(), false)
       json = JSON.dictionary(["value": JSON.number(NSNumber(booleanLiteral: true))])
       XCTAssertEqual(try json.getValue("value").getBool(), true)
-    } catch let error {
+    } catch {
       XCTFail("JSON Failure \(error)")
     }
   }
