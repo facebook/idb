@@ -131,8 +131,11 @@ async def run_xctest(
         )
         await stream.send_message(request, end=True)
         async for response in stream:
-            for output in response.log_output:
-                client.logger.info(output)
+            for line in response.log_output.splitlines():
+                if len(line):
+                    client.logger.info(line)
+                    if idb_log_buffer:
+                        idb_log_buffer.write(line)
             if result_bundle_path:
                 await _write_result_bundle(
                     response=response,
