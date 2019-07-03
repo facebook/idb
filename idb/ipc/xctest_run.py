@@ -131,7 +131,7 @@ async def run_xctest(
         )
         await stream.send_message(request, end=True)
         async for response in stream:
-            for line in response.log_output.splitlines():
+            for line in response.log_output:
                 if len(line):
                     client.logger.info(line)
                     if idb_log_buffer:
