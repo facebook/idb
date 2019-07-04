@@ -28,6 +28,7 @@ class CompanionSpawner:
         port = 0
         while True:
             line = await stream.readline()
+            logging.debug(f"read line from companion : {line}")
             if line:
                 update = json.loads(line.decode())
                 if update:
@@ -70,7 +71,10 @@ class CompanionSpawner:
             self.companion_processes.append(process)
             logging.debug(f"started companion at process id {process.pid}")
             if process.stdout:
-                return await self._read_stream(process.stdout)
+                port = await self._read_stream(process.stdout)
+                if not port:
+                    raise CompanionSpawnerException("failed to spawn companion")
+                return port
             raise CompanionSpawnerException("process has no stdout")
 
     def close(self) -> None:
