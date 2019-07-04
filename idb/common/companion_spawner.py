@@ -2,9 +2,11 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 import asyncio
+import atexit
 import json
 import logging
 import os
+import signal
 from asyncio import StreamReader
 from asyncio.subprocess import Process
 from typing import List
@@ -20,6 +22,7 @@ class CompanionSpawner:
     def __init__(self, companion_path: str) -> None:
         self.companion_path = companion_path
         self.companion_processes: List[Process] = []
+        atexit.register(self.kill_spawned_companion)
 
     async def _read_stream(self, stream: StreamReader) -> int:
         port = 0
@@ -38,6 +41,10 @@ class CompanionSpawner:
     def _log_file_path(self, target_udid: str) -> str:
         os.makedirs(name=IDB_LOGS_PATH, exist_ok=True)
         return IDB_LOGS_PATH + "/" + target_udid
+
+    def kill_spawned_companion(self) -> None:
+        for p in self.companion_processes:
+            os.kill(p.pid, signal.SIGTERM)
 
     async def spawn_companion(self, target_udid: str) -> int:
         if not self.companion_path:
