@@ -18,7 +18,7 @@ class Stream(Generic[_TSend, _TRecv], AsyncIterator[_TRecv]):
     async def recv_message(self) -> Optional[_TRecv]:
         ...
 
-    async def send_message(self, message: _TSend, end: bool = False) -> None:
+    async def send_message(self, message: _TSend) -> None:
         ...
 
     async def end(self) -> None:

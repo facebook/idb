@@ -210,7 +210,6 @@ async def daemon(
         else:
             raise Exception(f"Unrecognised payload message")
         await stream.send_message(response)
-        await stream.end()
 
 
 # pyre-ignore
