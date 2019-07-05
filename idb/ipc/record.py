@@ -44,7 +44,8 @@ async def daemon(
         client.logger.info("Request sent")
         await stream.recv_message()
         client.logger.info("Stopping video recording")
-        await forward_stream.send_message(RecordRequest(stop=Stop()), end=True)
+        await forward_stream.send_message(RecordRequest(stop=Stop()))
+        await forward_stream.stream.end()
         if client.is_local:
             client.logger.info("Responding with file path")
             response = await forward_stream.recv_message()
@@ -70,7 +71,8 @@ async def record_video(
         client.logger.info("Request sent")
         await stop.wait()
         client.logger.info("Stopping video recording")
-        await stream.send_message(RecordRequest(stop=Stop()), end=True)
+        await stream.send_message(RecordRequest(stop=Stop()))
+        await stream.end()
         await stream.recv_message()
 
 

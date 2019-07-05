@@ -30,7 +30,8 @@ async def _end_stream(
     stream: Stream[LaunchRequest, LaunchResponse], stop: asyncio.Event
 ) -> None:
     await stop.wait()
-    await stream.send_message(LaunchRequest(stop=Stop()), end=True)
+    await stream.send_message(LaunchRequest(stop=Stop()))
+    await stream.end()
 
 
 async def daemon(
@@ -62,5 +63,6 @@ async def client(
             await stream.send_message(request)
             await asyncio.gather(_drain_stream(stream), _end_stream(stream, stop))
         else:
-            await stream.send_message(request, end=True)
+            await stream.send_message(request)
+            await stream.end()
             await _drain_stream(stream)

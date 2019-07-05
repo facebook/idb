@@ -24,7 +24,8 @@ async def daemon(client: CompanionClient, request: PullRequest) -> PullResponse:
             request = PullRequest(
                 bundle_id=request.bundle_id, src_path=request.src_path, dst_path=None
             )
-        await stream.send_message(request, end=True)
+        await stream.send_message(request)
+        await stream.end()
         if client.is_local:
             await stream.recv_message()
         else:

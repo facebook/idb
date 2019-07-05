@@ -12,7 +12,8 @@ async def _unary(
     client: CompanionClient, request: DebugServerRequest
 ) -> DebugServerResponse:
     async with client.stub.debugserver.open() as stream:
-        await stream.send_message(request, end=True)
+        await stream.send_message(request)
+        await stream.end()
         return await stream.recv_message()
 
 

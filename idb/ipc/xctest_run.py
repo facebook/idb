@@ -129,7 +129,8 @@ async def run_xctest(
             result_bundle_path=result_bundle_path,
             timeout=timeout,
         )
-        await stream.send_message(request, end=True)
+        await stream.send_message(request)
+        await stream.end()
         async for response in stream:
             for line in response.log_output:
                 if len(line):
