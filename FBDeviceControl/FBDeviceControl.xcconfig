@@ -3,7 +3,7 @@
 #include "../Configuration/Framework.xcconfig"
 
 // Weak-Link Xcode Private Frameworks
-OTHER_LDFLAGS = $(inherited) -weak_framework DTXConnectionServices -weak_framework DVTFoundation -weak_framework IBAutolayoutFoundation -weak_framework IDEFoundation -weak_framework IDEKit -weak_library $(DEVELOPER_DIR)/../PlugIns/IDEiOSSupportCore.ideplugin/Contents/MacOS/IDEiOSSupportCore -weak_library $(DEVELOPER_DIR)/../PlugIns/IDESourceEditor.ideplugin/Contents/MacOS/IDESourceEditor
+OTHER_LDFLAGS = $(inherited) -weak_framework DTXConnectionServices -weak_framework DVTFoundation -weak_framework IBAutolayoutFoundation -weak_framework IDEFoundation -weak_framework IDEKit -weak_library $(DEVELOPER_DIR)/../PlugIns/IDEiOSSupportCore.ideplugin/Contents/MacOS/IDEiOSSupportCore
 
 // Target-Specific Settings
 INFOPLIST_FILE = $(SRCROOT)/FBDeviceControl/FBDeviceControl-Info.plist
