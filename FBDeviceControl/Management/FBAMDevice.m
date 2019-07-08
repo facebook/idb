@@ -280,9 +280,9 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
     @"CloseOnInvalidate" : @1,
     @"InvalidateOnDetach" : @1,
   };
-  return [[[self
+  return [[self
     connectToDeviceWithPurpose:@"start_service_%@", service]
-    onQueue:self.workQueue pend:^ FBFuture<FBAMDServiceConnection *> * (FBAMDevice *device) {
+    onQueue:self.workQueue push:^(FBAMDevice *device) {
       AMDServiceConnectionRef serviceConnection;
       [self.logger logFormat:@"Starting service %@", service];
       int status = self.calls.SecureStartService(
@@ -296,21 +296,22 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
         return [[[FBDeviceControlError
           describeFormat:@"SecureStartService of %@ Failed with 0x%x %@", service, status, errorDescription]
           logger:self.logger]
-          failFuture];
+          failFutureContext];
       }
       FBAMDServiceConnection *connection = [[FBAMDServiceConnection alloc] initWithServiceConnection:serviceConnection device:device.amDevice calls:self.calls logger:self.logger];
       [self.logger logFormat:@"Service %@ started", service];
-      return [FBFuture futureWithResult:connection];
-    }]
-    onQueue:self.workQueue contextualTeardown:^(FBAMDServiceConnection *connection, FBFutureState __) {
-      [self.logger logFormat:@"Invalidating service %@", service];
-      NSError *error = nil;
-      if (![connection invalidateWithError:&error]) {
-        [self.logger logFormat:@"Failed to invalidate service %@ with error %@", service, error];
-      } else {
-        [self.logger logFormat:@"Invalidated service %@", service];
-      }
-      return FBFuture.empty;
+      return [[FBFuture
+        futureWithResult:connection]
+        onQueue:self.workQueue contextualTeardown:^(id _, FBFutureState __) {
+          [self.logger logFormat:@"Invalidating service %@", service];
+          NSError *error = nil;
+          if (![connection invalidateWithError:&error]) {
+            [self.logger logFormat:@"Failed to invalidate service %@ with error %@", service, error];
+          } else {
+            [self.logger logFormat:@"Invalidated service %@", service];
+          }
+          return FBFuture.empty;
+        }];
     }];
 }
 
