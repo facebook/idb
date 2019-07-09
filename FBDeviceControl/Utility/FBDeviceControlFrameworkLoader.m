@@ -164,8 +164,7 @@
     FBWeakFramework.IDEFoundation,
     FBWeakFramework.IDEiOSSupportCore,
     FBWeakFramework.IBAutolayoutFoundation,
-    FBWeakFramework.IDEKit,
-    FBWeakFramework.IDESourceEditor
+    FBWeakFramework.IDEKit
   ];
 
   if ([FBDeviceControlFrameworkLoader macOSVersionIsAtLeastSierra:macOSVersion] &&
