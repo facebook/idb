@@ -29,7 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)IDEiOSSupportCore;
 + (instancetype)IBAutolayoutFoundation;
 + (instancetype)IDEKit;
-+ (instancetype)IDESourceEditor;
 + (instancetype)DFRSupportKit;
 + (instancetype)DVTKit;
 + (instancetype)DebugHierarchyFoundation;

@@ -86,11 +86,6 @@
   return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../Frameworks/IDEKit.framework"];
 }
 
-+ (nonnull instancetype)IDESourceEditor
-{
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../PlugIns/IDESourceEditor.ideplugin"];
-}
-
 + (nonnull instancetype)DFRSupportKit
 {
   return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../Frameworks/DFRSupportKit.framework"];
