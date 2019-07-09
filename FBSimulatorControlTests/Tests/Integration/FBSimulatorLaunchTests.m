@@ -74,7 +74,7 @@
 
 - (void)testLaunchesTV
 {
-  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration withDeviceModel:FBDeviceModelAppleTV1080p]];
+  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration withDeviceModel:FBDeviceModelAppleTV4KAt1080p]];
 }
 
 - (void)testLaunchesPreviousiOSVersionAndAwaitsServices

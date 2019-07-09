@@ -100,4 +100,18 @@
   }
 }
 
+- (void)testCanFetchAllAvailableSimulators
+{
+    // invoke FBSImulatorControl the same way as iOSDeviceManager does
+    FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
+                                                      configurationWithDeviceSetPath:nil
+                                                      options:FBSimulatorManagementOptionsIgnoreSpuriousKillFail];
+    
+    NSError *err;
+    FBSimulatorControl *simControl = [FBSimulatorControl withConfiguration:configuration error:&err];
+    XCTAssertNil(err);
+    NSArray<FBSimulator *> *availableSimulators = [[simControl set] allSimulators];
+    XCTAssertNotNil(availableSimulators);
+}
+
 @end

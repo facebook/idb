@@ -226,7 +226,7 @@ IndigoMessage *(*IndigoHIDMessageForMouseNSEvent)(CGPoint *point0, CGPoint *poin
 {
   IndigoMessage *message = IndigoHIDMessageForButton((int) [self eventSourceForButton:button], (int)direction, ButtonEventTargetHardware);
   if (messageSizeOut) {
-      *messageSizeOut = malloc_size(message);
+    *messageSizeOut = malloc_size(message);
   }
   return message;
 }
