@@ -7,12 +7,15 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-@class NSObject;
-@protocol OS_dispatch_queue;
+#import <Foundation/Foundation.h>
 
 @protocol SimDeviceNotifier
 - (BOOL)unregisterNotificationHandler:(unsigned long long)arg1 error:(id *)arg2;
-- (unsigned long long)registerNotificationHandler:(void (^)(NSDictionary *))arg2;
 - (unsigned long long)registerNotificationHandlerOnQueue:(NSObject<OS_dispatch_queue> *)arg1 handler:(void (^)(NSDictionary *))arg2;
+
+// Removed in Xcode 11.0
+@optional;
+- (unsigned long long)registerNotificationHandler:(void (^)(NSDictionary *))arg1;
+
 @end
 
