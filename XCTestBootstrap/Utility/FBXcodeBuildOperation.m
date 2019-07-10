@@ -43,9 +43,10 @@ static NSString *XcodebuildDestinationTimeoutSecs = @"180"; // How long xcodebui
   environment[XcodebuildEnvironmentTargetUDID] = udid;
 
   [logger logFormat:@"Starting test with xcodebuild %@", [arguments componentsJoinedByString:@" "]];
-  FBTaskBuilder *builder = [[FBTaskBuilder
+  FBTaskBuilder *builder = [[[FBTaskBuilder
     withLaunchPath:xcodeBuildPath arguments:arguments]
-    withEnvironment:environment];
+    withEnvironment:environment]
+    withAcceptableTerminationStatusCodes:[NSSet setWithObjects:@0, @65, nil]];
   if (logger) {
     [builder withStdOutToLoggerAndErrorMessage:logger];
     [builder withStdErrToLoggerAndErrorMessage:logger];
