@@ -19,5 +19,7 @@ class GRPCServer(GRPC_Server, Server):
 
     @property
     def ports(self) -> Dict[str, Optional[int]]:
+        # pyre-fixme[6]: Expected `List[socket]` for 1st param but got
+        #  `Optional[List[socket]]`.
         (ipv4, ipv6) = ports_from_sockets(none_throws(self._server).sockets)
         return {"ipv4_grpc_port": ipv4, "ipv6_grpc_port": ipv6}

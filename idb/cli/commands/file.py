@@ -41,6 +41,7 @@ def _extract_bundle_id(args: Namespace) -> str:
         bundle_id = value.bundle_id
         if bundle_id is None:
             continue
+        # pyre-fixme[16]: `Namespace` has no attribute `bundle_id`.
         args.bundle_id = bundle_id
         return args.bundle_id
     raise NoBundleIdentifierProvidedException(f"No Bundle ID Provided in args {args}")
@@ -49,6 +50,7 @@ def _extract_bundle_id(args: Namespace) -> str:
 def _convert_args(args: Namespace) -> Tuple[Namespace, str]:
     def convert_value(value: Any) -> Any:  # pyre-ignore
         if isinstance(value, List):
+            # pyre-fixme[18]: Global name `convert_value` is undefined.
             return [convert_value(x) for x in value]
         return value.path if isinstance(value, BundleWithPath) else value
 
@@ -63,6 +65,7 @@ def _convert_args(args: Namespace) -> Tuple[Namespace, str]:
     return (args, bundle_id)
 
 
+# pyre-fixme[44]: `FSCommand` non-abstract class with abstract methods
 class FSCommand(TargetCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(

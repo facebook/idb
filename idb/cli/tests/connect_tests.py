@@ -14,8 +14,11 @@ class TestParser(TestCase):
         namespace = Namespace()
         host = "localhost"
         port = 1234
+        # pyre-fixme[16]: `Namespace` has no attribute `companion`.
         namespace.companion = host
+        # pyre-fixme[16]: `Namespace` has no attribute `port`.
         namespace.port = port
+        # pyre-fixme[16]: `Namespace` has no attribute `grpc_port`.
         namespace.grpc_port = None
         address = get_destination(args=namespace)
         assert isinstance(address, Address)
@@ -27,8 +30,11 @@ class TestParser(TestCase):
         host = "localhost"
         port = 1234
         grpc_port = 1235
+        # pyre-fixme[16]: `Namespace` has no attribute `companion`.
         namespace.companion = host
+        # pyre-fixme[16]: `Namespace` has no attribute `port`.
         namespace.port = port
+        # pyre-fixme[16]: `Namespace` has no attribute `grpc_port`.
         namespace.grpc_port = grpc_port
         address = get_destination(args=namespace)
         assert isinstance(address, Address)
@@ -39,6 +45,7 @@ class TestParser(TestCase):
     async def test_get_destination_from_target_udid(self) -> None:
         namespace = Namespace()
         target_udid = "0B3311FA-234C-4665-950F-37544F690B61"
+        # pyre-fixme[16]: `Namespace` has no attribute `companion`.
         namespace.companion = target_udid
         udid = get_destination(args=namespace)
         self.assertEqual(target_udid, udid)

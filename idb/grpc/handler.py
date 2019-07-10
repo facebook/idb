@@ -14,12 +14,14 @@ from idb.manager.companion import CompanionManager
 
 
 # Don't let the abstractmetod machineary mess raise at runtime
+# pyre-fixme[16]: `Type` has no attribute `__abstractmethods__`.
 CompanionServiceBase.__abstractmethods__ = frozenset([])
 # this is to silence the channel not closed warning
 # https://github.com/vmagamedov/grpclib/issues/58
 warnings.filterwarnings(action="ignore", category=ResourceWarning)
 
 
+# pyre-fixme[38]: `GRPCHandler` does not implement all inherited abstract methods.
 class GRPCHandler(CompanionServiceBase):
     def __init__(
         self,

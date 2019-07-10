@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-from unittest import mock
-from typing import TypeVar, AsyncContextManager, Optional, Type
 from types import TracebackType
+from typing import AsyncContextManager, Optional, Type, TypeVar
+from unittest import mock
 
 from idb.common.types import Address, CompanionInfo, TargetDescription
 from idb.manager.companion import CompanionManager
@@ -82,6 +82,7 @@ class CompanionManagerTest(TestCase):
         )
         spawner = mock.Mock()
         companion_manager.companion_spawner = spawner
+        # pyre-fixme[16]: `CompanionManager` has no attribute `channel`.
         companion_manager.channel = mock.Mock()
         companion_manager.close()
         spawner.close.assert_called_once()

@@ -16,8 +16,8 @@ from idb.client.daemon_pid_saver import (
 )
 from idb.client.daemon_spawner import DaemonSpawner, DaemonSpawnerException
 from idb.common.constants import (
-    DEFAULT_DAEMON_HOST,
     DEFAULT_DAEMON_GRPC_PORT,
+    DEFAULT_DAEMON_HOST,
     IDB_DAEMON_PID_PATH,
 )
 from idb.utils.testing import AsyncMock, TestCase, ignoreTaskLeaks
@@ -29,6 +29,7 @@ class DaemonSpawnerTests(TestCase):
         self.spawner = DaemonSpawner(
             port=DEFAULT_DAEMON_GRPC_PORT, host=DEFAULT_DAEMON_HOST
         )
+        # pyre-fixme[16]: `DaemonSpawner` has no attribute `daemon_pids`.
         self.spawner.daemon_pids = []
 
     async def test_start_daemon_if_needed_override(self) -> None:

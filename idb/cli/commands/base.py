@@ -62,12 +62,12 @@ class CompositeCommand(Command, metaclass=ABCMeta):
         )
         if aDict is None:
             aDict = {}
+            # pyre-fixme[16]: `CompositeCommand` has no attribute
+            #  `_subcommands_by_name`.
             self._subcommands_by_name = aDict
             for cmd in self.subcommands:
-                # pyre-fixme[16]: `Dict` has no attribute `add_unique_cmd`.
                 add_unique_cmd(aDict, cmd.name, cmd)
                 for alias in cmd.aliases:
-                    # pyre-fixme[16]: `Dict` has no attribute `add_unique_cmd`.
                     add_unique_cmd(aDict, alias, cmd)
 
         return aDict
@@ -131,6 +131,7 @@ class BaseCommand(Command, metaclass=ABCMeta):
         raise Exception("subclass")
 
 
+# pyre-fixme[44]: `ConnectingCommand` non-abstract class with abstract methods
 class ConnectingCommand(BaseCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         plugin.on_connecting_parser(parser=parser, logger=self.logger)
