@@ -1039,6 +1039,9 @@ Status FBIDBServiceHandler::add_media(grpc::ServerContext *context, grpc::Server
 Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::ServerReaderWriter<idb::InstrumentsRunResponse, idb::InstrumentsRunRequest> *stream)
 {@autoreleasepool{
   __block idb::InstrumentsRunRequest startRunRequest;
+  __block pthread_mutex_t mutex;
+  pthread_mutex_init(&mutex, NULL);
+  __block bool finished_writing = NO;
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.idb.instruments.server", DISPATCH_QUEUE_SERIAL);
   dispatch_sync(queue, ^{
     idb::InstrumentsRunRequest request;
@@ -1053,7 +1056,12 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
   id<FBDataConsumer> consumer = [FBBlockDataConsumer asynchronousDataConsumerOnQueue:queue consumer:^(NSData *data) {
     idb::InstrumentsRunResponse response;
     response.set_log_output(data.bytes, data.length);
-    stream->Write(response);
+    pthread_mutex_lock(&mutex);
+    if (!finished_writing) {
+      stream->Write(response);
+    }
+    pthread_mutex_unlock(&mutex);
+
   }];
   id<FBControlCoreLogger> logger = [FBControlCoreLogger compositeLoggerWithLoggers:@[
     [FBControlCoreLogger loggerToConsumer:consumer],
@@ -1061,6 +1069,9 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
   ]];
   FBInstrumentsOperation *operation = [[_target startInstrument:configuration logger:logger] block:&error];
   if (!operation) {
+    pthread_mutex_lock(&mutex);
+    finished_writing = YES;
+    pthread_mutex_unlock(&mutex);
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   __block idb::InstrumentsRunRequest stopRunRequest;
@@ -1073,7 +1084,9 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
     stopRunRequest = request;
   });
   if (![operation.stop succeeds:&error]) {
-    [consumer consumeEndOfFile];
+    pthread_mutex_lock(&mutex);
+    finished_writing = YES;
+    pthread_mutex_unlock(&mutex);
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   NSArray<NSString *> *postProcessArguments = [_commandExecutor.storageManager interpolateArgumentReplacements:extract_string_array(stopRunRequest.stop().post_process_arguments())];
@@ -1083,7 +1096,9 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
     stream->Write(response);
   });
   NSURL *processed = [[FBInstrumentsManager postProcess:postProcessArguments traceFile:operation.traceFile queue:queue logger:logger] block:&error];
-  [consumer consumeEndOfFile];
+  pthread_mutex_lock(&mutex);
+  finished_writing = YES;
+  pthread_mutex_unlock(&mutex);
   if (!processed) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
