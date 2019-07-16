@@ -3,15 +3,15 @@
 
 import json
 import os
-from argparse import ArgumentParser, Namespace
-from typing import Optional, Dict
+from argparse import SUPPRESS, ArgumentParser, Namespace
+from typing import Dict, Optional
 
-from idb.common.signal import signal_handler_event
 from idb.cli.commands.base import BaseCommand
 from idb.client.daemon_pid_saver import remove_daemon_pid, save_daemon_pid
 from idb.common.constants import DEFAULT_DAEMON_GRPC_PORT, DEFAULT_DAEMON_PORT
+from idb.common.signal import signal_handler_event
+from idb.common.types import IdbException, Server
 from idb.daemon.server import start_daemon_server
-from idb.common.types import Server, IdbException
 
 
 class DaemonCommand(BaseCommand):
@@ -25,10 +25,7 @@ class DaemonCommand(BaseCommand):
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
-            "--daemon-port",
-            help="Port for the daemon to listen on",
-            type=int,
-            default=DEFAULT_DAEMON_PORT,
+            "--daemon-port", help=SUPPRESS, type=int, default=DEFAULT_DAEMON_PORT
         )
         parser.add_argument(
             "--reply-fd",

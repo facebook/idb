@@ -57,4 +57,4 @@ async def _read_from_fd(
 
 def _get_ports(data: str) -> Tuple[int, Optional[int]]:
     all_ports = json.loads(data)
-    return all_ports.get("port") or all_ports["thrift_port"], all_ports["grpc_port"]
+    return all_ports["grpc_port"]

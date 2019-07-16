@@ -395,17 +395,9 @@ class TestParser(TestCase):
         with patch(
             "idb.cli.commands.daemon.DaemonCommand._run_impl", new=mock, create=True
         ):
-            port = 1234
+            port = 9888
             grpc_port = 1235
-            await cli_main(
-                cmd_input=[
-                    "daemon",
-                    "--daemon-port",
-                    str(port),
-                    "--daemon-grpc-port",
-                    str(grpc_port),
-                ]
-            )
+            await cli_main(cmd_input=["daemon", "--daemon-grpc-port", str(grpc_port)])
             namespace = Namespace()
             # pyre-fixme[16]: `Namespace` has no attribute `daemon_port`.
             namespace.daemon_port = port
