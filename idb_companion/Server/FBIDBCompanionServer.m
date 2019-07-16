@@ -17,7 +17,7 @@
 
 @interface FBIDBCompanionServer ()
 
-@property (nonatomic, strong, readonly) NSArray<id<FBIDBCompanionServer>> *servers;
+@property (nonatomic, strong, readonly) FBGRPCServer *server;
 
 @end
 
@@ -45,22 +45,17 @@
 
 + (instancetype)serverWithPorts:(FBIDBPortsConfiguration *)ports target:(id<FBiOSTarget>)target commandExecutor:(FBIDBCommandExecutor *)commandExecutor eventReporter:(id<FBEventReporter>)eventReporter logger:(id<FBControlCoreLogger>)logger
 {
-  NSMutableArray<id<FBIDBCompanionServer>> *servers = NSMutableArray.array;
-  for (Class serverClass in self.serverClasses) {
-    [servers addObject:[serverClass serverWithPorts:ports target:target commandExecutor:commandExecutor eventReporter:eventReporter logger:logger]];
-  }
-
-  return [[self alloc] initWithServers:servers];
+  return [[self alloc] initWithServer:[FBGRPCServer serverWithPorts:ports target:target commandExecutor:commandExecutor eventReporter:eventReporter logger:logger]];
 }
 
-- (instancetype)initWithServers:(NSArray<id<FBIDBCompanionServer>> *)servers
+- (instancetype)initWithServer:(FBGRPCServer *)server
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _servers = servers;
+  _server = server;
 
   return self;
 }
@@ -83,15 +78,13 @@ static NSMutableArray<Class> *staticServerClasses;
 - (FBFuture<id<FBIDBCompanionServer>> *)start
 {
   return [[FBFuture
-    futureWithFutures:[self.servers valueForKey:@"start"]]
-    mapReplace:self];
+    futureWithResult:[_server start]]
+    mapReplace:_server];
 }
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [[FBFuture
-    futureWithFutures:[self.servers valueForKey:@"completed"]]
-    mapReplace:NSNull.null];
+  return [[FBFuture futureWithResult:[self.server completed]] mapReplace:_server];
 }
 
 - (NSString *)futureType
@@ -103,11 +96,7 @@ static NSMutableArray<Class> *staticServerClasses;
 
 - (id)jsonSerializableRepresentation
 {
-  NSMutableDictionary<NSString *, id> *json = NSMutableDictionary.dictionary;
-  for (id<FBIDBCompanionServer> server in self.servers) {
-    [json addEntriesFromDictionary:server.jsonSerializableRepresentation];
-  }
-  return json;
+  return _server.jsonSerializableRepresentation;
 }
 
 @end

@@ -58,13 +58,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable instancetype)companionForTarget:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports eventReporter:(id<FBEventReporter>)eventReporter logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
-#pragma mark Properties
-
-/**
- The server classes to use.
- */
-@property (nonatomic, strong, class, readonly) NSMutableArray<Class> *serverClasses;
-
 @end
 
 NS_ASSUME_NONNULL_END
