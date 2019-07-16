@@ -66,9 +66,10 @@ static const NSTimeInterval MaximumInstrumentTime = 60 * 60 * 4; // 4 Hours.
   }
 
   [logger logFormat:@"Starting post processing | Launch path: %@ | Arguments: %@", arguments[0], [FBCollectionInformation oneLineDescriptionFromArray:launchArguments]];
-  return [[[[[[[FBTaskBuilder
+  return [[[[[[[[FBTaskBuilder
     withLaunchPath:arguments[0]]
     withArguments:launchArguments]
+    withStdInConnected]
     withStdOutToLogger:logger]
     withStdErrToLogger:logger]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
