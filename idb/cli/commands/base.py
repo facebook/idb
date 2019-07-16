@@ -12,7 +12,6 @@ import idb.common.plugin as plugin
 from idb.client.client import IdbClient
 from idb.common.constants import DEFAULT_DAEMON_GRPC_PORT, DEFAULT_DAEMON_HOST
 from idb.common.logging import log_call
-from idb.grpc.client import IdbGRPCClient
 
 
 class Command(metaclass=ABCMeta):
@@ -154,16 +153,10 @@ class ConnectingCommand(BaseCommand):
 
     async def _run_impl(self, args: Namespace) -> None:
         udid = vars(args).get("udid")
-        grpc_client = IdbGRPCClient(
+        client = IdbClient(
             port=args.daemon_grpc_port,
             host=args.daemon_host,
             target_udid=udid,
-            logger=self.logger,
-        )
-        client = IdbClient(
-            resolve=functools.partial(
-                plugin.resolve_client, args, self.logger, grpc_client
-            ),
             logger=self.logger,
         )
         await self.run_with_client(args=args, client=client)

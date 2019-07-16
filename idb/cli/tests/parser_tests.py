@@ -330,8 +330,6 @@ class TestParser(TestCase):
             namespace.force = False
             # pyre-fixme[16]: `Namespace` has no attribute `timeout`.
             namespace.timeout = XCTEST_TIMEOUT
-            # pyre-fixme[16]: `Namespace` has no attribute `grpc`.
-            namespace.grpc = False
             mock.assert_called_once_with(namespace)
 
     async def test_xctest_run_ui(self) -> None:
@@ -362,8 +360,6 @@ class TestParser(TestCase):
             namespace.force = False
             # pyre-fixme[16]: `Namespace` has no attribute `timeout`.
             namespace.timeout = XCTEST_TIMEOUT
-            # pyre-fixme[16]: `Namespace` has no attribute `grpc`.
-            namespace.grpc = False
             mock.assert_called_once_with(namespace)
 
     async def test_xctest_run_logic(self) -> None:
@@ -379,8 +375,6 @@ class TestParser(TestCase):
             namespace.timeout = XCTEST_TIMEOUT
             # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
-            # pyre-fixme[16]: `Namespace` has no attribute `grpc`.
-            namespace.grpc = False
             mock.assert_called_once_with(namespace)
 
     async def test_xctest_list(self) -> None:
@@ -461,8 +455,6 @@ class TestParser(TestCase):
             namespace.daemon_host = "localhost"
             # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
-            # pyre-fixme[16]: `Namespace` has no attribute `grpc`.
-            namespace.grpc = False
             mock.assert_called_once_with(namespace)
 
     async def test_log_arguments(self) -> None:
@@ -488,8 +480,6 @@ class TestParser(TestCase):
             namespace.daemon_host = "localhost"
             # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
-            # pyre-fixme[16]: `Namespace` has no attribute `grpc`.
-            namespace.grpc = False
             mock.assert_called_once_with(namespace)
 
     async def test_clear_keychain(self) -> None:
@@ -546,8 +536,6 @@ class TestParser(TestCase):
             namespace.daemon_host = "localhost"
             # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
-            # pyre-fixme[16]: `Namespace` has no attribute `grpc`.
-            namespace.grpc = False
             mock.assert_called_once_with(namespace)
 
     async def test_key_sequence(self) -> None:
