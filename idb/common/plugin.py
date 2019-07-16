@@ -3,17 +3,12 @@
 
 import asyncio
 import importlib
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser
 from logging import Logger
 from types import ModuleType
-from typing import TYPE_CHECKING, Dict, List
+from typing import Dict, List
 
-from idb.common.types import LoggingMetadata, Server
-
-
-if TYPE_CHECKING:
-    from idb.manager.companion import CompanionManager
-    from idb.common.boot_manager import BootManager
+from idb.common.types import LoggingMetadata
 
 
 def package_exists(package_name: str) -> bool:
@@ -116,25 +111,3 @@ def append_companion_metadata(
             continue
         metadata = method(logger=logger, metadata=metadata)
     return metadata
-
-
-async def resolve_servers(
-    args: Namespace,
-    companion_manager: "CompanionManager",
-    boot_manager: "BootManager",
-    logger: Logger,
-    servers: List[Server],
-) -> List[Server]:
-    for plugin in PLUGINS:
-        plugin_resolver = getattr(plugin, "resolve_servers", None)
-        if not plugin_resolver:
-            continue
-        resolved_servers = await plugin_resolver(
-            args=args,
-            companion_manager=companion_manager,
-            boot_manager=boot_manager,
-            logger=logger,
-            servers=servers,
-        )
-        servers = servers + resolved_servers
-    return servers
