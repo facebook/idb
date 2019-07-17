@@ -30,7 +30,7 @@ class AsyncContextManagerDouble(AsyncContextManager[_T]):
 
 
 TEST_COMPANION = CompanionInfo(
-    udid="someUdid", host="myHost", port=1234, is_local=False, grpc_port=1235
+    udid="someUdid", host="myHost", port=1234, is_local=False
 )
 
 
@@ -47,9 +47,7 @@ class CompanionManagerTest(TestCase):
             companion_path=None, logger=mock.MagicMock()
         )
         companion_manager.add_companion(
-            CompanionInfo(
-                udid="asdasda", host="foohost", port=123, is_local=False, grpc_port=124
-            )
+            CompanionInfo(udid="asdasda", host="foohost", port=123, is_local=False)
         )
         assert companion_manager._udid_companion_map["asdasda"]
 
@@ -70,9 +68,7 @@ class CompanionManagerTest(TestCase):
             )
         )
         companion_manager.add_companion(
-            CompanionInfo(
-                udid="asdasda", host="foohost", port=123, is_local=False, grpc_port=124
-            )
+            CompanionInfo(udid="asdasda", host="foohost", port=123, is_local=False)
         )
         assert companion_manager._udid_target_map["asdasda"].companion_info
 
@@ -95,11 +91,7 @@ class CompanionManagerTest(TestCase):
         self.assertEqual(len(companion_manager._udid_companion_map), 1)
         self.assertEqual(len(companion_manager._udid_target_map), 1)
         result = companion_manager.remove_companion(
-            Address(
-                host=TEST_COMPANION.host,
-                port=TEST_COMPANION.port,
-                grpc_port=TEST_COMPANION.grpc_port,
-            )
+            Address(host=TEST_COMPANION.host, port=TEST_COMPANION.port)
         )
         self.assertEqual(result, TEST_COMPANION)
         self.assertEqual(len(companion_manager._udid_companion_map), 0)
@@ -131,7 +123,6 @@ class CompanionManagerTest(TestCase):
                 host=TEST_COMPANION.host,
                 port=TEST_COMPANION.port,
                 is_local=TEST_COMPANION.is_local,
-                grpc_port=TEST_COMPANION.grpc_port,
             )
         )
         self.assertFalse(companion_manager.has_default_companion())

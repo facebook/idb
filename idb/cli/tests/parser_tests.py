@@ -63,17 +63,7 @@ class TestParser(TestCase):
         port = 1234
         await cli_main(cmd_input=["connect", host, str(port)])
         self.client_mock().connect.assert_called_once_with(
-            destination=(host, port, None), metadata=ANY
-        )
-
-    async def test_connect_with_host_and_port_and_grpc_port(self) -> None:
-        self.client_mock().connect = AsyncMock()
-        host = "someHost"
-        port = 1234
-        grpc_port = 1235
-        await cli_main(cmd_input=["connect", host, str(port), str(grpc_port)])
-        self.client_mock().connect.assert_called_once_with(
-            destination=(host, grpc_port, port), metadata=ANY
+            destination=(host, port), metadata=ANY
         )
 
     async def test_connect_with_udid(self) -> None:
@@ -89,9 +79,7 @@ class TestParser(TestCase):
         host = "someHost"
         port = 1234
         await cli_main(cmd_input=["disconnect", host, str(port)])
-        self.client_mock().disconnect.assert_called_once_with(
-            destination=(host, port, None)
-        )
+        self.client_mock().disconnect.assert_called_once_with(destination=(host, port))
 
     async def test_disconnect_with_udid(self) -> None:
         self.client_mock().disconnect = AsyncMock()

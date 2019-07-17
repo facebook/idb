@@ -11,7 +11,6 @@ def companion_to_grpc(companion: CompanionInfo) -> GrpcCompanionInfo:
         host=companion.host,
         port=companion.port,
         is_local=companion.is_local,
-        grpc_port=companion.grpc_port,
     )
 
 
@@ -21,5 +20,4 @@ def companion_to_py(companion: GrpcCompanionInfo) -> CompanionInfo:
         host=companion.host,
         port=companion.port,
         is_local=companion.is_local,
-        grpc_port=companion.grpc_port,
     )

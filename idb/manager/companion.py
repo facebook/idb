@@ -172,7 +172,7 @@ class CompanionManager:
         metadata: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = None,
     ) -> CompanionInfo:
-        stub = self.get_stub_for_address(address.host, none_throws(address.grpc_port))
+        stub = self.get_stub_for_address(address.host, none_throws(address.port))
         with tempfile.NamedTemporaryFile(mode="w+b") as file:
             response = await stub.connect(
                 ConnectRequest(metadata=metadata, local_file_path=file.name)
@@ -182,7 +182,6 @@ class CompanionManager:
             host=address.host,
             port=address.port,
             is_local=response.companion.is_local,
-            grpc_port=address.grpc_port,
         )
         self.add_companion(info)
         return info
@@ -208,7 +207,7 @@ class CompanionManager:
             host = "localhost"
             self._logger.info(f"companion started at {host}:{port}")
             async with self.create_companion_for_target_with_address(
-                address=Address(host=host, port=port, grpc_port=port),
+                address=Address(host=host, port=port),
                 metadata=metadata,
                 timeout=timeout,
             ) as companion:
@@ -233,7 +232,7 @@ class CompanionManager:
                 target_udid=udid
             ) as companion:
                 stub = self.get_stub_for_address(
-                    companion.host, none_throws(companion.grpc_port)
+                    companion.host, none_throws(companion.port)
                 )
                 self._stub_map[companion.udid] = stub
                 return CompanionClient(

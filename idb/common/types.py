@@ -23,8 +23,7 @@ LoggingMetadata = Dict[str, Optional[Union[str, List[str], int, float]]]
 
 class Address(NamedTuple):
     host: str
-    grpc_port: int
-    port: Optional[int] = None
+    port: int
 
 
 class AppProcessState(Enum):
@@ -58,7 +57,6 @@ class CompanionInfo(NamedTuple):
     host: str
     port: int
     is_local: bool
-    grpc_port: int
 
 
 class ScreenDimensions(NamedTuple):

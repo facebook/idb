@@ -183,7 +183,6 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
         data["host"] = target.companion_info.host
         data["port"] = target.companion_info.port
         data["is_local"] = target.companion_info.is_local
-        data["grpc_port"] = target.companion_info.grpc_port
         data["udid"] = target.companion_info.udid
     return data
 
@@ -191,14 +190,13 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
 def target_description_from_json(data: str) -> TargetDescription:
     parsed = json.loads(data)
 
-    companion_info_fields = ["host", "port", "is_local", "grpc_port", "udid"]
+    companion_info_fields = ["host", "port", "is_local", "udid"]
     companion_info = None
     if all((field in parsed for field in companion_info_fields)):
         companion_info = CompanionInfo(
             host=parsed["host"],
             port=parsed["port"],
             is_local=parsed["is_local"],
-            grpc_port=parsed["grpc_port"],
             udid=parsed["udid"],
         )
     return TargetDescription(

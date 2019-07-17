@@ -15,20 +15,12 @@ def destination_to_grpc(
         return GrpcConnectionDestination(target_udid=destination)
     elif isinstance(destination, Address):
         return GrpcConnectionDestination(
-            address=GrpcConnectionAddress(
-                host=destination.host,
-                port=destination.port,
-                grpc_port=destination.grpc_port,
-            )
+            address=GrpcConnectionAddress(host=destination.host, port=destination.port)
         )
 
 
 def destination_to_py(destination: GrpcConnectionDestination) -> ConnectionDestination:
     if destination.HasField("address"):
-        return Address(
-            host=destination.address.host,
-            port=destination.address.port,
-            grpc_port=destination.address.grpc_port,
-        )
+        return Address(host=destination.address.host, port=destination.address.port)
     else:
         return destination.target_udid

@@ -48,7 +48,7 @@ INSTALLED_APP_INFO_FIXTURE = InstalledAppInfo(
     debuggable=True,
 )
 COMPANION_INFO_FIXTURE = CompanionInfo(
-    udid="MyUdid", host="ThisMac", port=1234, is_local=False, grpc_port=9
+    udid="MyUdid", host="ThisMac", port=1234, is_local=False
 )
 TARGET_DESCRIPTION_FIXTURE = TargetDescription(
     udid="MyUdid",
