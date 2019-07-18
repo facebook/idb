@@ -89,6 +89,8 @@ extern FBOSVersionName const FBOSVersionNameiOS_11_2;
 extern FBOSVersionName const FBOSVersionNameiOS_11_3;
 extern FBOSVersionName const FBOSVersionNameiOS_11_4;
 extern FBOSVersionName const FBOSVersionNameiOS_12_0;
+extern FBOSVersionName const FBOSVersionNameiOS_12_1;
+extern FBOSVersionName const FBOSVersionNameiOS_13_0;
 extern FBOSVersionName const FBOSVersionNametvOS_9_0;
 extern FBOSVersionName const FBOSVersionNametvOS_9_1;
 extern FBOSVersionName const FBOSVersionNametvOS_9_2;
@@ -101,6 +103,8 @@ extern FBOSVersionName const FBOSVersionNametvOS_11_2;
 extern FBOSVersionName const FBOSVersionNametvOS_11_3;
 extern FBOSVersionName const FBOSVersionNametvOS_11_4;
 extern FBOSVersionName const FBOSVersionNametvOS_12_0;
+extern FBOSVersionName const FBOSVersionNametvOS_12_1;
+extern FBOSVersionName const FBOSVersionNametvOS_13_0;
 extern FBOSVersionName const FBOSVersionNamewatchOS_2_0;
 extern FBOSVersionName const FBOSVersionNamewatchOS_2_1;
 extern FBOSVersionName const FBOSVersionNamewatchOS_2_2;
@@ -111,6 +115,7 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_4_0;
 extern FBOSVersionName const FBOSVersionNamewatchOS_4_1;
 extern FBOSVersionName const FBOSVersionNamewatchOS_4_2;
 extern FBOSVersionName const FBOSVersionNamewatchOS_5_0;
+extern FBOSVersionName const FBOSVersionNamewatchOS_6_0;
 
 #pragma mark Screen
 

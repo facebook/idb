@@ -77,6 +77,7 @@ FBOSVersionName const FBOSVersionNameiOS_11_3 = @"iOS 11.3";
 FBOSVersionName const FBOSVersionNameiOS_11_4 = @"iOS 11.4";
 FBOSVersionName const FBOSVersionNameiOS_12_0 = @"iOS 12.0";
 FBOSVersionName const FBOSVersionNameiOS_12_1 = @"iOS 12.1";
+FBOSVersionName const FBOSVersionNameiOS_13_0 = @"iOS 13.0";
 FBOSVersionName const FBOSVersionNametvOS_9_0 = @"tvOS 9.0";
 FBOSVersionName const FBOSVersionNametvOS_9_1 = @"tvOS 9.1";
 FBOSVersionName const FBOSVersionNametvOS_9_2 = @"tvOS 9.2";
@@ -90,6 +91,7 @@ FBOSVersionName const FBOSVersionNametvOS_11_3 = @"tvOS 11.3";
 FBOSVersionName const FBOSVersionNametvOS_11_4 = @"tvOS 11.4";
 FBOSVersionName const FBOSVersionNametvOS_12_0 = @"tvOS 12.0";
 FBOSVersionName const FBOSVersionNametvOS_12_1 = @"tvOS 12.1";
+FBOSVersionName const FBOSVersionNametvOS_13_0 = @"tvOS 13.0";
 FBOSVersionName const FBOSVersionNamewatchOS_2_0 = @"watchOS 2.0";
 FBOSVersionName const FBOSVersionNamewatchOS_2_1 = @"watchOS 2.1";
 FBOSVersionName const FBOSVersionNamewatchOS_2_2 = @"watchOS 2.2";
@@ -101,6 +103,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_4_1 = @"watchOS 4.1";
 FBOSVersionName const FBOSVersionNamewatchOS_4_2 = @"watchOS 4.2";
 FBOSVersionName const FBOSVersionNamewatchOS_5_0 = @"watchOS 5.0";
 FBOSVersionName const FBOSVersionNamewatchOS_5_1 = @"watchOS 5.1";
+FBOSVersionName const FBOSVersionNamewatchOS_6_0 = @"watchOS 6.0";
 
 @implementation FBiOSTargetScreenInfo
 
@@ -399,6 +402,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_5_1 = @"watchOS 5.1";
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_11_4],
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_12_0],
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_12_1],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_13_0],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_0],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_1],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_2],
@@ -412,6 +416,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_5_1 = @"watchOS 5.1";
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_11_4],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_12_0],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_12_1],
+      [FBOSVersion tvOSWithName:FBOSVersionNametvOS_13_0],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_2_0],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_2_1],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_2_2],
@@ -423,6 +428,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_5_1 = @"watchOS 5.1";
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_4_2],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_5_0],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_5_1],
+      [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_6_0],
     ];
   });
   return OSConfigurations;
