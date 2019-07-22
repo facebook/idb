@@ -235,8 +235,8 @@ class XctestRunCommand(CompositeCommand):
     @property
     def description(self) -> str:
         return (
-            "Run an installed xctest. Will pass through any environment\n"
-            "variables prefixed with IDB_"
+            "Run an installed xctest. Any environment variables of the form IDB_X\n"
+            " will be passed through with the IDB_ prefix removed."
         )
 
     @property

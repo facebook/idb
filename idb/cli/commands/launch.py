@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-from argparse import ArgumentParser, REMAINDER, Namespace
+from argparse import REMAINDER, ArgumentParser, Namespace
 
 from idb.cli.commands.base import TargetCommand
 from idb.client.client import IdbClient
@@ -13,8 +13,8 @@ class LaunchCommand(TargetCommand):
     @property
     def description(self) -> str:
         return (
-            "Launch an application. Will pass through any environment\n"
-            "variables prefixed with IDB_"
+            "Launch an application. Any environment variables of the form IDB_X\n"
+            " will be passed through with the IDB_ prefix removed."
         )
 
     @property
