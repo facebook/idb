@@ -68,14 +68,14 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
     // Start up the companion
     FBIDBPortsConfiguration *ports = [FBIDBPortsConfiguration portsWithArguments:userDefaults];
     FBTemporaryDirectory *temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:logger];
-    FBIDBCompanionServer *companion = [FBIDBCompanionServer companionForTarget:target temporaryDirectory:temporaryDirectory ports:ports eventReporter:reporter logger:logger error:&error];
-    if (!companion) {
+    FBIDBCompanionServer *server = [FBIDBCompanionServer companionForTarget:target temporaryDirectory:temporaryDirectory ports:ports eventReporter:reporter logger:logger error:&error];
+    if (!server) {
       return [FBFuture futureWithError:error];
     }
 
-    return [[companion
+    return [[server
       start]
-      onQueue:target.workQueue map:^(id<FBIDBCompanionServer> server) {
+      onQueue:target.workQueue map:^id(id result) {
         NSData *jsonOutput = [NSJSONSerialization dataWithJSONObject:server.jsonSerializableRepresentation options:0 error:nil];
         NSMutableData *readyOutput = [NSMutableData dataWithData:jsonOutput];
         [readyOutput appendData:[@"\n" dataUsingEncoding:NSUTF8StringEncoding]];

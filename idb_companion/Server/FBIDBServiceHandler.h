@@ -20,13 +20,14 @@ private:
   FBIDBCommandExecutor *_commandExecutor;
   id<FBiOSTarget> _target;
   id<FBEventReporter> _eventReporter;
-  FBIDBPortsConfiguration *_portsConfig;
   FBFuture<FBInstalledArtifact *> *install_future(const idb::InstallRequest_Destination destination, grpc::ServerReader<idb::InstallRequest> *reader);
 
 public:
+  FBIDBPortsConfiguration *portsConfig;
   // Constructors
-  FBIDBServiceHandler(FBIDBCommandExecutor *commandExecutor, id<FBiOSTarget> target, id<FBEventReporter> eventReporter, FBIDBPortsConfiguration *portsConfig);
+  FBIDBServiceHandler(FBIDBCommandExecutor *commandExecutor, id<FBiOSTarget> target, id<FBEventReporter> eventReporter);
   FBIDBServiceHandler(const FBIDBServiceHandler &c);
+  void setPorts(FBIDBPortsConfiguration *configuration);
 
   // Handled Methods
   Status accessibility_info(ServerContext *context, const idb::AccessibilityInfoRequest *request, idb::AccessibilityInfoResponse *response);

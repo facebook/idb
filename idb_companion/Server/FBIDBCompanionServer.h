@@ -17,31 +17,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBEventReporter;
 
-/**
- The abstract interface for a server.
- */
-@protocol FBIDBCompanionServer <NSObject, FBJSONSerializable, FBiOSTargetContinuation>
-
-/**
- The designated initializers
-
- @param ports the ports to use.
- @param logger the logger to use.
- @return an instance of the server.
- */
-+ (instancetype)serverWithPorts:(FBIDBPortsConfiguration *)ports target:(id<FBiOSTarget>)target commandExecutor:(FBIDBCommandExecutor *)commandExecutor eventReporter:(id<FBEventReporter>)eventReporter logger:(FBIDBLogger *)logger;
-
-/**
- Starts the server.
- */
-- (FBFuture<id<FBIDBCompanionServer>> *)start;
-
-@end
 
 /**
  The IDB Companion.
  */
-@interface FBIDBCompanionServer : NSObject <FBIDBCompanionServer>
+@interface FBIDBCompanionServer : NSObject
+
+/**
+ Starts the server.
+ */
+- (FBFuture<NSNull *> *)start;
+
+- (FBFuture<NSNull *> *)completed;
+
+- (id)jsonSerializableRepresentation;
 
 #pragma mark Initializers
 

@@ -31,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The GRPC Port.
  */
-@property (nonatomic, assign, readonly) in_port_t grpcPort;
+@property (nonatomic, assign, readwrite) in_port_t grpcPort;
 
 /**
  The debugserver port

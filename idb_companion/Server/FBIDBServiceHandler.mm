@@ -440,12 +440,11 @@ static idb::TargetDescription description_of_target(id<FBiOSTarget> target, FBID
 
 #pragma mark Constructors
 
-FBIDBServiceHandler::FBIDBServiceHandler(FBIDBCommandExecutor *commandExecutor, id<FBiOSTarget> target, id<FBEventReporter> eventReporter, FBIDBPortsConfiguration *portsConfig)
+FBIDBServiceHandler::FBIDBServiceHandler(FBIDBCommandExecutor *commandExecutor, id<FBiOSTarget> target, id<FBEventReporter> eventReporter)
 {
   _commandExecutor = commandExecutor;
   _target = target;
   _eventReporter = eventReporter;
-  _portsConfig = portsConfig;
 }
 
 FBIDBServiceHandler::FBIDBServiceHandler(const FBIDBServiceHandler &c)
@@ -453,9 +452,12 @@ FBIDBServiceHandler::FBIDBServiceHandler(const FBIDBServiceHandler &c)
   _commandExecutor = c._commandExecutor;
   _target = c._target;
   _eventReporter = c._eventReporter;
-  _portsConfig = c._portsConfig;
 }
 
+void FBIDBServiceHandler::setPorts(FBIDBPortsConfiguration *configuration)
+{
+  portsConfig = configuration;
+}
 #pragma mark Handled Methods
 
 FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::InstallRequest_Destination destination, grpc::ServerReader<idb::InstallRequest> *reader)
@@ -1157,12 +1159,12 @@ Status FBIDBServiceHandler::connect(grpc::ServerContext *context, const idb::Con
   response->mutable_companion()->set_is_local(isLocal);
   response->mutable_companion()->set_udid(_target.udid.UTF8String);
   response->mutable_companion()->set_host(NSProcessInfo.processInfo.hostName.UTF8String);
-  response->mutable_companion()->set_grpc_port(_portsConfig.grpcPort);
+  response->mutable_companion()->set_grpc_port(portsConfig.grpcPort);
   return Status::OK;
 }}
 
 Status FBIDBServiceHandler::list_targets(grpc::ServerContext *context, const idb::ListTargetsRequest *request, idb::ListTargetsResponse *response)
 {@autoreleasepool{
-  response->add_targets()->MergeFrom(description_of_target(_target, _portsConfig));
+  response->add_targets()->MergeFrom(description_of_target(_target, portsConfig));
   return Status::OK;
 }}

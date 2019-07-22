@@ -5,19 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBGRPCServer.h"
+#import "FBIDBCompanionServer.h"
 
 #import <grpcpp/grpcpp.h>
 #import <grpcpp/resource_quota.h>
 #import <idbGRPC/idb.grpc.pb.h>
 
+#import "FBIDBStorageManager.h"
 #import "FBIDBCommandExecutor.h"
-#import "FBIDBServiceHandler.h"
+#import "FBIDBError.h"
 #import "FBIDBPortsConfiguration.h"
+#import "FBIDBLogger.h"
+#import "FBIDBServiceHandler.h"
 
-@interface FBGRPCServer ()
+@interface FBIDBCompanionServer ()
 
-@property (nonatomic, strong, readonly) FBIDBPortsConfiguration *ports;
+@property (nonatomic, strong, readwrite) FBIDBPortsConfiguration *ports;
 @property (nonatomic, strong, readonly) FBIDBCommandExecutor *commandExecutor;
 @property (nonatomic, strong, readonly)  id<FBiOSTarget> target;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
@@ -35,14 +38,29 @@ using grpc::Status;
 using grpc::ResourceQuota;
 using namespace std;
 
-@implementation FBGRPCServer
+@implementation FBIDBCompanionServer
 
 #pragma mark Initializers
 
-+ (instancetype)serverWithPorts:(FBIDBPortsConfiguration *)ports target:(id<FBiOSTarget>)target commandExecutor:(FBIDBCommandExecutor *)commandExecutor eventReporter:(id<FBEventReporter>)eventReporter logger:(id<FBControlCoreLogger>)logger
++ (instancetype)companionForTarget:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports eventReporter:(id<FBEventReporter>)eventReporter logger:(FBIDBLogger *)logger error:(NSError **)error
 {
+  FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:error];
+  if (!storageManager) {
+    return nil;
+  }
+  // Command Executor
+  FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
+    commandExecutorForTarget:target
+    storageManager:storageManager
+    temporaryDirectory:temporaryDirectory
+    ports:ports
+    logger:logger];
+  commandExecutor = [FBLoggingWrapper wrap:commandExecutor eventReporter:eventReporter logger:nil];
+
   return [[self alloc] initWithPorts:ports target:target commandExecutor:commandExecutor eventReporter:eventReporter logger:logger];
 }
+
+
 
 - (instancetype)initWithPorts:(FBIDBPortsConfiguration *)ports target:(id<FBiOSTarget>)target commandExecutor:(FBIDBCommandExecutor *)commandExecutor eventReporter:(id<FBEventReporter>)eventReporter logger:(id<FBControlCoreLogger>)logger
 {
@@ -61,6 +79,7 @@ using namespace std;
   return self;
 }
 
+
 #pragma mark FBIDBCompanionServer
 
 - (FBFuture<NSNull *> *)start
@@ -72,17 +91,18 @@ using namespace std;
   dispatch_async(queue, ^(void){
     [self.logger logFormat:@"Starting GRPC server on port %u", self.ports.grpcPort];
     string server_address("0.0.0.0:" + std::to_string(self.ports.grpcPort));
-    FBIDBServiceHandler service = FBIDBServiceHandler(self.commandExecutor, self.target, self.eventReporter, self.ports);
+    FBIDBServiceHandler service = FBIDBServiceHandler(self.commandExecutor, self.target, self.eventReporter);
     int selectedPort = self.ports.grpcPort;
     unique_ptr<Server> server(ServerBuilder()
-      .AddListeningPort(server_address, grpc::InsecureServerCredentials(), &selectedPort)
-      .RegisterService(&service)
-      .SetResourceQuota(ResourceQuota("idb_resource.quota").SetMaxThreads(10))
-      .SetMaxReceiveMessageSize(16777216) // 16MB (16 * 1024 * 1024). Default is 4MB (4 * 1024 * 1024)
-      .BuildAndStart()
-    );
+                              .AddListeningPort(server_address, grpc::InsecureServerCredentials(), &selectedPort)
+                              .RegisterService(&service)
+                              .SetResourceQuota(ResourceQuota("idb_resource.quota").SetMaxThreads(10))
+                              .SetMaxReceiveMessageSize(16777216) // 16MB (16 * 1024 * 1024). Default is 4MB (4 * 1024 * 1024)
+                              .BuildAndStart()
+                              );
     self.selectedPort = selectedPort;
-
+    self.ports.grpcPort = selectedPort;
+    service.setPorts(self.ports);
     [serverStarted resolveWithResult:NSNull.null];
     [self.logger.info logFormat:@"Started GRPC server on port %u", selectedPort];
     server->Wait();
@@ -101,6 +121,8 @@ using namespace std;
 {
   return @"grpc_server";
 }
+
+#pragma mark FBJSONSerialization
 
 - (id)jsonSerializableRepresentation
 {
