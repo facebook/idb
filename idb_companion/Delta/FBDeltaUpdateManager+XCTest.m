@@ -259,7 +259,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
       NSTimeInterval timeout = request.testTimeout.boolValue ? request.testTimeout.doubleValue : FBLogicTestTimeout;
       FBLogicTestConfiguration *configuration = [FBLogicTestConfiguration
         configurationWithShims:shims
-        environment:@{}
+        environment:request.environment
         workingDirectory:workingDirectory.path
         testBundlePath:testDescriptor.testBundle.path
         waitForDebugger:NO
