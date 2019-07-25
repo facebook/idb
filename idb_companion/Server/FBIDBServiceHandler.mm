@@ -396,13 +396,18 @@ static FBSimulatorHIDEvent *translate_event(idb::HIDEvent &event, NSError **erro
 
 static FBInstrumentsConfiguration *translate_instruments_configuration(idb::InstrumentsRunRequest_Start request)
 {
-  static const NSTimeInterval MaximumInstrumentTime = 60 * 60 * 4; // 4 Hours.
   return [FBInstrumentsConfiguration
     configurationWithInstrumentName:nsstring_from_c_string(request.template_name())
     targetApplication:nsstring_from_c_string(request.app_bundle_id())
     environment:extract_str_dict(request.environment())
     arguments:extract_string_array(request.arguments())
-    duration:MaximumInstrumentTime];
+    timings:[FBInstrumentsTimings
+      timingsWithTerminateTimeout:request.timings().terminate_timeout() ?: DefaultInstrumentsTerminateTimeout
+      launchRetryTimeout:request.timings().launch_retry_timeout() ?: DefaultInstrumentsLaunchRetryTimeout
+      launchErrorTimeout:request.timings().launch_error_timeout() ?: DefaultInstrumentsLaunchErrorTimeout
+      operationDuration:request.timings().operation_duration() ?: DefaultInstrumentsOperationDuration
+      ]
+    ];
 }
 
 static idb::DebugServerResponse translate_debugserver_status(id<FBDebugServer> debugServer)

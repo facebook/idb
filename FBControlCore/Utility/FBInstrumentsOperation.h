@@ -9,6 +9,11 @@
 
 #import <FBControlCore/FBiOSTargetFuture.h>
 
+extern const NSTimeInterval DefaultInstrumentsOperationDuration; // Operation duration
+extern const NSTimeInterval DefaultInstrumentsTerminateTimeout; // When stopping instruments with SIGINT, wait this long before SIGKILLing it
+extern const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout;  // Wait this long to ensure instruments started properly
+extern const NSTimeInterval DefaultInstrumentsLaunchErrorTimeout; // Fail instruments if the launch error message appears within this timeout
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBInstrumentsConfiguration;

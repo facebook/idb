@@ -17,9 +17,10 @@
 #import "FBTask+Helpers.h"
 #import "FBTaskBuilder.h"
 
-static const NSTimeInterval InterruptBackoffTimeout = 600.0; // When stopping instruments with SIGINT, wait this long before SIGKILLing it
-static const NSTimeInterval InstrumentsStartupDelay = 15.0;  // Wait this long to ensure instruments started properly
-static const NSTimeInterval InstrumentsStartupTimeout = 360.0; // Fail instruments startup after this amount of time
+const NSTimeInterval DefaultInstrumentsOperationDuration = 60 * 60 * 4;
+const NSTimeInterval DefaultInstrumentsTerminateTimeout = 600.0;
+const NSTimeInterval DefaultInstrumentsLaunchErrorTimeout = 15.0;
+const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
 
@@ -98,7 +99,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
     onQueue:target.asyncQueue resolveUntil:^ FBFuture * {
       return [self operationWithTargetInternal:target configuration:configuration logger:logger];
     }]
-    timeout:InstrumentsStartupTimeout waitingFor:@"Successful instruments startup"];
+    timeout:configuration.timings.launchRetryTimeout waitingFor:@"successful instruments startup"];
 }
 
 + (FBFuture<FBInstrumentsOperation *> *)operationWithTargetInternal:(id<FBiOSTarget>)target configuration:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
@@ -106,7 +107,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.instruments", DISPATCH_QUEUE_SERIAL);
   NSString *fileName = [[[[configuration.instrumentName componentsSeparatedByString:@" "] arrayByAddingObject:NSUUID.UUID.UUIDString] componentsJoinedByString:@"_"] stringByAppendingPathExtension:@"trace"];
   NSString *filePath = [target.auxillaryDirectory stringByAppendingPathComponent:fileName];
-  NSString *durationMilliseconds = [@(configuration.duration * 1000) stringValue];
+  NSString *durationMilliseconds = [@(configuration.timings.operationDuration * 1000) stringValue];
   NSMutableArray<NSString *> *arguments = [@[@"-w", target.udid, @"-D", filePath, @"-t", configuration.instrumentName, @"-l",  durationMilliseconds, @"-v"] mutableCopy];
   if (configuration.targetApplication && [configuration.targetApplication length] > 0) {
     [arguments addObject:configuration.targetApplication];
@@ -129,9 +130,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
     onQueue:target.asyncQueue fmap:^ FBFuture * (FBTask *task) {
       return [instrumentsConsumer.hasStartedLoadingTemplate
         onQueue:target.asyncQueue fmap:^ FBFuture * (id _) {
-        [logger logFormat:@"Waiting for %f seconds for Instruments to start properly", InstrumentsStartupDelay];
+        [logger logFormat:@"Waiting for %f seconds for Instruments to start properly", configuration.timings.launchErrorTimeout];
         // Wait a few seconds for instruments to startup. If it fails, kill it
-        FBFuture *timerFuture = [FBFuture.empty delay:InstrumentsStartupDelay];
+        FBFuture *timerFuture = [FBFuture.empty delay:configuration.timings.launchErrorTimeout];
         return [[[FBFuture
           race:@[instrumentsConsumer.hasStoppedRecording, timerFuture]]
           onQueue:target.asyncQueue handleError:^ FBFuture * (NSError *error) {
@@ -168,11 +169,10 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
 
 - (FBFuture<NSURL *> *)stop
 {
-  NSTimeInterval termTimeout = InterruptBackoffTimeout;
   return [[FBFuture
     onQueue:self.queue resolve:^{
-      [self.logger logFormat:@"Terminating Instruments %@. Backoff Timeout %f", self.task, termTimeout];
-      return [self.task sendSignal:SIGINT backingOfToKillWithTimeout:termTimeout];
+      [self.logger logFormat:@"Terminating Instruments %@. Backoff Timeout %f", self.task, self.configuration.timings.terminateTimeout];
+      return [self.task sendSignal:SIGINT backingOfToKillWithTimeout:self.configuration.timings.terminateTimeout];
     }]
     onQueue:self.queue map:^ NSURL * (NSNumber *exitCode) {
       [self.logger logFormat:@"Instruments exited with exitCode: %@", exitCode];

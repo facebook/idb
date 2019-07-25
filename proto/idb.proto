@@ -568,12 +568,19 @@ message AddMediaResponse {
 }
 
 message InstrumentsRunRequest {
+  message InstrumentsTimings {
+    double terminate_timeout = 1;
+    double launch_retry_timeout = 2;
+    double launch_error_timeout = 3;
+    double operation_duration = 4;
+  }
   message Start {
     string file_path = 1;
     string template_name = 2;
     string app_bundle_id = 3;
     map<string, string> environment = 4;
     repeated string arguments = 5;
+    InstrumentsTimings timings = 6;
   }
   message Stop {
     repeated string post_process_arguments = 1;

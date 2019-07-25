@@ -10,6 +10,46 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ Contains all the timings for an instruments operation.
+ */
+@interface FBInstrumentsTimings : NSObject
+
+#pragma mark Initializers
+
+/**
+ Creates and returns a new FBInstrumentsTimings object with the provided parameters
+
+ @param terminateTimeout timeout for stopping Instruments
+ @param launchRetryTimeout timeout for launching Instruments
+ @param launchErrorTimeout timeout for the Instruments launch error message to pop up
+ @param operationDuration the total duration for the Instruments operation
+ @return a new FBInstrumentsTimings object with the specified timing values.
+ */
++ (instancetype)timingsWithTerminateTimeout:(NSTimeInterval)terminateTimeout launchRetryTimeout:(NSTimeInterval)launchRetryTimeout launchErrorTimeout:(NSTimeInterval)launchErrorTimeout operationDuration:(NSTimeInterval)operationDuration;
+
+/**
+ The maximum backoff time when stopping Instruments.
+ */
+@property (nonatomic, assign, readonly) NSTimeInterval terminateTimeout;
+
+/**
+ The timeout waiting for Instruments to start properly.
+ */
+@property (nonatomic, assign, readonly) NSTimeInterval launchRetryTimeout;
+
+/**
+ The time waiting for the Instruments launch error message to appear.
+ */
+@property (nonatomic, assign, readonly) NSTimeInterval launchErrorTimeout;
+
+/**
+ The total operation duration for the Instruments operation.
+ */
+@property (nonatomic, assign, readonly) NSTimeInterval operationDuration;
+
+@end
+
+/**
  A Value object with the information required to launch an instruments operation.
  */
 @interface FBInstrumentsConfiguration : NSObject <NSCopying>
@@ -22,7 +62,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param instrumentName the name of the instrument
  @return a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithInstrumentName:(NSString *)instrumentName targetApplication:(NSString *)targetApplication environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments duration:(NSTimeInterval)duration;
++ (instancetype)configurationWithInstrumentName:(NSString *)instrumentName targetApplication:(NSString *)targetApplication environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments timings:(FBInstrumentsTimings *)timings;
 
 #pragma mark Properties
 
@@ -47,9 +87,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSArray<NSString *> *arguments;
 
 /**
- The duration to run the instument for.
+ All the timings for the Instruments operation.
  */
-@property (nonatomic, assign, readonly) NSTimeInterval duration;
+@property (nonatomic, copy, readonly) FBInstrumentsTimings *timings;
 
 @end
 
