@@ -41,6 +41,13 @@ class InstalledAppInfo(NamedTuple):
     debuggable: bool
 
 
+class InstrumentsTimings(NamedTuple):
+    launch_error_timeout: Optional[float]
+    launch_retry_timeout: Optional[float]
+    terminate_timeout: Optional[float]
+    operation_duration: Optional[float]
+
+
 class HIDButtonType(Enum):
     APPLE_PAY = 1
     HOME = 2
@@ -355,6 +362,7 @@ class IdbClientBase:
         env: Optional[Dict[str, str]] = None,
         app_args: Optional[List[str]] = None,
         started: Optional[asyncio.Event] = None,
+        timings: Optional[InstrumentsTimings] = None,
     ) -> None:
         return
 

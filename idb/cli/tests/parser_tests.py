@@ -8,7 +8,7 @@ from unittest.mock import ANY, MagicMock, patch
 
 from idb.cli.main import gen_main as cli_main
 from idb.common.constants import XCTEST_TIMEOUT
-from idb.common.types import CrashLogQuery, HIDButtonType
+from idb.common.types import CrashLogQuery, HIDButtonType, InstrumentsTimings
 from idb.utils.testing import AsyncMock, TestCase
 
 
@@ -626,6 +626,7 @@ class TestParser(TestCase):
             trace_path=trace_path,
             env={},
             app_args=None,
+            timings=None,
         )
 
     async def test_instruments_with_post_args(self) -> None:
@@ -649,6 +650,7 @@ class TestParser(TestCase):
             trace_path=trace_path,
             env={},
             app_args=None,
+            timings=None,
         )
 
     async def test_instruments_with_app_args(self) -> None:
@@ -666,6 +668,82 @@ class TestParser(TestCase):
             trace_path=trace_path,
             env={},
             app_args=["perfLab"],
+            timings=None,
+        )
+
+    async def test_instruments_with_all_timings(self) -> None:
+        self.client_mock().run_instruments = AsyncMock()
+        template_name = "System Trace"
+        trace_path = template_name + ".trace"
+        (
+            launch_error_timeout,
+            launch_retry_timeout,
+            terminate_timeout,
+            operation_duration,
+        ) = ("10.0", "200.0", "200.0", "30")
+        await cli_main(
+            cmd_input=[
+                "instruments",
+                template_name,
+                "--app-args",
+                "perfLab",
+                "--operation-duration",
+                operation_duration,
+                "--launch-retry-timeout",
+                launch_retry_timeout,
+                "--terminate-timeout",
+                terminate_timeout,
+                "--launch-error-timeout",
+                launch_error_timeout,
+            ]
+        )
+        self.client_mock().run_instruments.assert_called_once_with(
+            stop=ANY,
+            template=template_name,
+            app_bundle_id=None,
+            post_process_arguments=None,
+            trace_path=trace_path,
+            env={},
+            app_args=["perfLab"],
+            timings=InstrumentsTimings(
+                launch_error_timeout=float(launch_error_timeout),
+                launch_retry_timeout=float(launch_retry_timeout),
+                terminate_timeout=float(terminate_timeout),
+                operation_duration=float(operation_duration),
+            ),
+        )
+
+    async def test_instruments_with_partial_timings(self) -> None:
+        self.client_mock().run_instruments = AsyncMock()
+        template_name = "System Trace"
+        trace_path = template_name + ".trace"
+        launch_retry_timeout, terminate_timeout = ("200.0", "200.0")
+        await cli_main(
+            cmd_input=[
+                "instruments",
+                template_name,
+                "--app-args",
+                "perfLab",
+                "--launch-retry-timeout",
+                launch_retry_timeout,
+                "--terminate-timeout",
+                terminate_timeout,
+            ]
+        )
+        self.client_mock().run_instruments.assert_called_once_with(
+            stop=ANY,
+            template=template_name,
+            app_bundle_id=None,
+            post_process_arguments=None,
+            trace_path=trace_path,
+            env={},
+            app_args=["perfLab"],
+            timings=InstrumentsTimings(
+                launch_error_timeout=None,
+                launch_retry_timeout=float(launch_retry_timeout),
+                terminate_timeout=float(terminate_timeout),
+                operation_duration=None,
+            ),
         )
 
     async def test_add_media(self) -> None:

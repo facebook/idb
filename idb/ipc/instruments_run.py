@@ -8,6 +8,7 @@ from logging import Logger
 from typing import AsyncIterator, Dict, List, Optional
 
 from idb.common.tar import drain_untar
+from idb.common.types import InstrumentsTimings
 from idb.grpc.idb_pb2 import InstrumentsRunRequest, InstrumentsRunResponse
 from idb.grpc.stream import Stream, join_streams, stop_wrapper
 from idb.grpc.types import CompanionClient
@@ -67,6 +68,21 @@ async def _drain_until_stop(
             logger.info(output.decode())
 
 
+def _translate_instruments_timings(
+    timings: Optional[InstrumentsTimings]
+) -> Optional[InstrumentsRunRequest.InstrumentsTimings]:
+    return (
+        InstrumentsRunRequest.InstrumentsTimings(
+            terminate_timeout=timings.terminate_timeout,
+            launch_retry_timeout=timings.launch_retry_timeout,
+            launch_error_timeout=timings.launch_error_timeout,
+            operation_duration=timings.operation_duration,
+        )
+        if timings
+        else None
+    )
+
+
 async def run_instruments(
     client: CompanionClient,
     stop: asyncio.Event,
@@ -77,6 +93,7 @@ async def run_instruments(
     env: Optional[Dict[str, str]] = None,
     app_args: Optional[List[str]] = None,
     started: Optional[asyncio.Event] = None,
+    timings: Optional[InstrumentsTimings] = None,
 ) -> str:
     trace_path = os.path.realpath(trace_path)
     client.logger.info(f"Starting instruments connection, writing to {trace_path}")
@@ -90,6 +107,7 @@ async def run_instruments(
                     app_bundle_id=app_bundle_id,
                     environment=env,
                     arguments=app_args,
+                    timings=_translate_instruments_timings(timings),
                 )
             )
         )
