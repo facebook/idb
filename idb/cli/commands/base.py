@@ -8,6 +8,7 @@ from argparse import ArgumentParser, Namespace
 from typing import Dict, List, Optional
 
 import idb.common.plugin as plugin
+from idb.client.direct_client import GrpcDirectClient
 from idb.client.grpc import GrpcClient
 from idb.common.constants import DEFAULT_DAEMON_GRPC_PORT, DEFAULT_DAEMON_HOST
 from idb.common.logging import log_call
@@ -114,6 +115,12 @@ class BaseCommand(Command, metaclass=ABCMeta):
             default=False,
             help="Create json structured output",
         )
+        parser.add_argument(
+            "--direct",
+            action="store_true",
+            default=False,
+            help="WIP do not use the idb daemon and send the request to the companion directly",
+        )
 
     async def run(self, args: Namespace) -> None:
         # Set the log level on the base logger
@@ -153,12 +160,16 @@ class ConnectingCommand(BaseCommand):
 
     async def _run_impl(self, args: Namespace) -> None:
         udid = vars(args).get("udid")
-        client = GrpcClient(
-            port=args.daemon_grpc_port,
-            host=args.daemon_host,
-            target_udid=udid,
-            logger=self.logger,
-        )
+        # this is to force using the direct client for development
+        if args.direct:
+            client = GrpcDirectClient(logger=self.logger, target_udid=udid)
+        else:
+            client = GrpcClient(
+                port=args.daemon_grpc_port,
+                host=args.daemon_host,
+                target_udid=udid,
+                logger=self.logger,
+            )
         await self.run_with_client(args=args, client=client)
 
     @abstractmethod
