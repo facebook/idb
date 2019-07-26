@@ -102,6 +102,25 @@ static FBProcessInput<NSOutputStream *> *pipe_to_input(const idb::Payload initia
   return input;
 }
 
+static FBProcessInput<NSOutputStream *> *pipe_to_input_output(const idb::Payload initial, grpc::ServerReaderWriter<idb::InstallResponse, idb::InstallRequest> *stream)
+{
+  const std::string initialData = initial.data();
+  FBProcessInput<NSOutputStream *> *input = [FBProcessInput inputFromStream];
+  NSOutputStream *appStream = input.contents;
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.idb.processinput", DISPATCH_QUEUE_SERIAL);
+  dispatch_async(queue, ^{
+    idb::InstallRequest request;
+    [appStream open];
+    [appStream write:(const uint8_t *)initialData.c_str() maxLength:initialData.length()];
+    while (stream->Read(&request)) {
+      const auto tarData = request.payload().data();
+      [appStream write:(const uint8_t *)tarData.c_str() maxLength:tarData.length()];
+    }
+    [appStream close];
+  });
+return input;
+}
+
 static id<FBDataConsumerLifecycle> pipe_output(const idb::LaunchResponse::Interface interface, dispatch_queue_t queue, grpc::ServerReaderWriter<idb::LaunchResponse, idb::LaunchRequest> *stream)
 {
   id<FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer asynchronousDataConsumerOnQueue:queue consumer:^(NSData *data) {
@@ -465,32 +484,32 @@ void FBIDBServiceHandler::setPorts(FBIDBPortsConfiguration *configuration)
 }
 #pragma mark Handled Methods
 
-FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::InstallRequest_Destination destination, grpc::ServerReader<idb::InstallRequest> *reader)
+FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::InstallRequest_Destination destination, grpc::ServerReaderWriter<idb::InstallResponse, idb::InstallRequest> *stream)
 {@autoreleasepool{
   idb::InstallRequest request;
-  reader->Read(&request);
+  stream->Read(&request);
   idb::Payload payload;
   NSString *name = NSUUID.UUID.UUIDString;
   if (request.name_hint().length()) {
     name = nsstring_from_c_string(request.name_hint());
-    reader->Read(&request);
+    stream->Read(&request);
   }
   payload = request.payload();
 
   switch (payload.source_case()) {
     case idb::Payload::kData: {
-      FBProcessInput<NSOutputStream *> *stream = pipe_to_input(payload, reader);
+      FBProcessInput<NSOutputStream *> *dataStream = pipe_to_input_output(payload, stream);
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_app_stream:stream];
+          return [_commandExecutor install_app_stream:dataStream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
-          return [_commandExecutor install_xctest_app_stream:stream];
+          return [_commandExecutor install_xctest_app_stream:dataStream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
-          return [_commandExecutor install_dsym_stream:stream];
+          return [_commandExecutor install_dsym_stream:dataStream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
-          return [_commandExecutor install_dylib_stream:stream name:name];
+          return [_commandExecutor install_dylib_stream:dataStream name:name];
         case idb::InstallRequest_Destination::InstallRequest_Destination_FRAMEWORK:
-          return [_commandExecutor install_framework_stream:stream];
+          return [_commandExecutor install_framework_stream:dataStream];
         default:
           return nil;
       }
@@ -572,19 +591,21 @@ Status FBIDBServiceHandler::open_url(ServerContext *context, const idb::OpenUrlR
   return Status::OK;
 }}
 
-Status FBIDBServiceHandler::install(ServerContext *context, grpc::ServerReader<idb::InstallRequest> *reader, idb::InstallResponse *response)
+Status FBIDBServiceHandler::install(ServerContext *context, grpc::ServerReaderWriter<idb::InstallResponse, idb::InstallRequest> *stream)
 {@autoreleasepool{
   idb::InstallRequest request;
-  reader->Read(&request);
+  stream->Read(&request);
   idb::InstallRequest_Destination destination = request.destination();
 
   NSError *error = nil;
-  FBInstalledArtifact *artifact = [install_future(destination, reader) block:&error];
+  FBInstalledArtifact *artifact = [install_future(destination, stream) block:&error];
   if (!artifact) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String ?: "An internal error occured when installing");
   }
-  response->set_name(artifact.name.UTF8String);
-  response->set_uuid(artifact.uuid.UUIDString.UTF8String ?: "");
+  idb::InstallResponse response;
+  response.set_name(artifact.name.UTF8String);
+  response.set_uuid(artifact.uuid.UUIDString.UTF8String ?: "");
+  stream->Write(response);
   return Status::OK;
 }}
 

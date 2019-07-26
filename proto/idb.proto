@@ -19,7 +19,7 @@ service CompanionService {
   rpc disconnect (DisconnectRequest) returns (DisconnectResponse) {}
   rpc focus (FocusRequest) returns (FocusResponse) {}
   rpc hid (stream HIDEvent) returns (HIDResponse) {}
-  rpc install (stream InstallRequest) returns (InstallResponse) {}
+  rpc install (stream InstallRequest) returns (stream InstallResponse) {}
   rpc instruments_run (stream InstrumentsRunRequest) returns (stream InstrumentsRunResponse) {}
   rpc launch (stream LaunchRequest) returns (stream LaunchResponse) {}
   rpc list_apps (ListAppsRequest) returns (ListAppsResponse) {}

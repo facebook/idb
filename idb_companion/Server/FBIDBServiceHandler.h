@@ -20,7 +20,7 @@ private:
   FBIDBCommandExecutor *_commandExecutor;
   id<FBiOSTarget> _target;
   id<FBEventReporter> _eventReporter;
-  FBFuture<FBInstalledArtifact *> *install_future(const idb::InstallRequest_Destination destination, grpc::ServerReader<idb::InstallRequest> *reader);
+  FBFuture<FBInstalledArtifact *> *install_future(const idb::InstallRequest_Destination destination, grpc::ServerReaderWriter<idb::InstallResponse, idb::InstallRequest> *stream);
 
 public:
   FBIDBPortsConfiguration *portsConfig;
@@ -45,7 +45,7 @@ public:
   Status disconnect(ServerContext *context, const idb::DisconnectRequest *request, idb::DisconnectResponse *response);
   Status focus(ServerContext *context, const idb::FocusRequest *request, idb::FocusResponse *response);
   Status hid(ServerContext *context,grpc::ServerReader<idb::HIDEvent> *reader, idb::HIDResponse *response);
-  Status install(ServerContext *context, grpc::ServerReader<idb::InstallRequest> *reader, idb::InstallResponse *response);
+  Status install(ServerContext *context,grpc::ServerReaderWriter<idb::InstallResponse, idb::InstallRequest> *stream);
   Status instruments_run(ServerContext *context,grpc::ServerReaderWriter<idb::InstrumentsRunResponse, idb::InstrumentsRunRequest> *stream);
   Status launch(ServerContext *context,grpc::ServerReaderWriter<idb::LaunchResponse, idb::LaunchRequest> *stream);
   Status list_apps(ServerContext *context, const idb::ListAppsRequest *request, idb::ListAppsResponse *response);
