@@ -29,6 +29,7 @@ async def _create_tar_command(
     paths: List[str],
     additional_tar_args: Optional[List[str]],
     place_in_subfolders: bool,
+    verbose: bool = False,
 ) -> AsyncContextManager[asyncio.subprocess.Process]:
     with tempfile.TemporaryDirectory(prefix="tar_link_") as temp_dir:
         tar_args = additional_tar_args or []
@@ -47,7 +48,10 @@ async def _create_tar_command(
                 ]
             )
         process = await asyncio.create_subprocess_shell(
-            f'tar cfv - {" ".join(tar_args)} | {COMPRESSION_COMMAND}',
+            (
+                f'tar cf{"v" if verbose else ""} - '
+                + f'{" ".join(tar_args)} | {COMPRESSION_COMMAND}'
+            ),
             stderr=sys.stderr,
             stdout=asyncio.subprocess.PIPE,
         )
@@ -56,10 +60,10 @@ async def _create_tar_command(
 
 @asynccontextmanager  # noqa T484
 async def _create_untar_command(
-    output_path: str,
+    output_path: str, verbose: bool = False
 ) -> AsyncContextManager[asyncio.subprocess.Process]:
     process = await asyncio.create_subprocess_shell(
-        f"tar -C '{output_path}' -vxzpf -",
+        f"tar -C '{output_path}' -xzpf{'v' if verbose else ''} -",
         stdin=asyncio.subprocess.PIPE,
         stderr=sys.stderr,
         stdout=sys.stderr,
@@ -75,11 +79,13 @@ async def create_tar(
     paths: List[str],
     additional_tar_args: Optional[List[str]] = None,
     place_in_subfolders: bool = False,
+    verbose: bool = False,
 ) -> bytes:
     async with _create_tar_command(
         paths=paths,
         additional_tar_args=additional_tar_args,
         place_in_subfolders=place_in_subfolders,
+        verbose=verbose,
     ) as process:
         tar_contents = (await process.communicate())[0]
         if process.returncode != 0:
@@ -94,11 +100,13 @@ async def generate_tar(
     paths: List[str],
     additional_tar_args: Optional[List[str]] = None,
     place_in_subfolders: bool = False,
+    verbose: bool = False,
 ) -> AsyncIterator[bytes]:
     async with _create_tar_command(
         paths=paths,
         additional_tar_args=additional_tar_args,
         place_in_subfolders=place_in_subfolders,
+        verbose=verbose,
     ) as process:
         reader = none_throws(process.stdout)
         while not reader.at_eof():
@@ -114,12 +122,16 @@ async def generate_tar(
             )
 
 
-async def drain_untar(generator: AsyncIterator[bytes], output_path: str) -> None:
+async def drain_untar(
+    generator: AsyncIterator[bytes], output_path: str, verbose: bool = False
+) -> None:
     try:
         os.mkdir(output_path)
     except FileExistsError:
         pass
-    async with _create_untar_command(output_path=output_path) as process:
+    async with _create_untar_command(
+        output_path=output_path, verbose=verbose
+    ) as process:
         writer = none_throws(process.stdin)
         async for data in generator:
             writer.write(data)
@@ -129,7 +141,9 @@ async def drain_untar(generator: AsyncIterator[bytes], output_path: str) -> None
         await process.wait()
 
 
-async def untar(data: bytes, output_path: str) -> None:
+async def untar(data: bytes, output_path: str, verbose: bool = False) -> None:
     await drain_untar(
-        generator=_generator_from_data(data=data), output_path=output_path
+        generator=_generator_from_data(data=data),
+        output_path=output_path,
+        verbose=verbose,
     )
