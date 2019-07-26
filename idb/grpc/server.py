@@ -14,6 +14,8 @@ from idb.utils.typing import none_throws
 
 class GRPCServer(GRPC_Server, Server):
     def __init__(self, handler: GRPCHandler, logger: Logger) -> None:
+        # pyre-fixme[6]: Expected `Collection[IServable]` for 2nd param but got
+        #  `List[GRPCHandler]`.
         GRPC_Server.__init__(self, [handler], loop=asyncio.get_event_loop())
         self.logger = logger
 

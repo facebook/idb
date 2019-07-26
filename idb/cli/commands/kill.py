@@ -17,4 +17,5 @@ class KillCommand(BaseCommand):
         return "kill"
 
     async def _run_impl(self, args: Namespace) -> None:
+        # pyre-fixme[16]: `IdbClient` has no attribute `kill`.
         await IdbClient.kill()

@@ -187,6 +187,7 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
     return data
 
 
+# pyre-fixme[3]: Return annotation cannot contain `Any`.
 def json_data_companions(companions: List[CompanionInfo]) -> List[Dict[str, Any]]:
     data: List[Dict[str, Any]] = []  # pyre-ignore
     for companion in companions:
