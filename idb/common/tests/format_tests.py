@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
+import json
+
 from idb.common.format import (
     installed_app_info_from_json,
     installed_test_info_from_json,
+    json_data_companions,
     json_format_installed_app_info,
     json_format_installed_test_info,
     json_format_target_info,
     json_format_test_info,
+    json_to_companion_info,
     target_description_from_json,
     test_info_from_json,
 )
@@ -66,6 +70,12 @@ INSTALLED_TEST_INFO = InstalledTestInfo(
 
 
 class FormattingTests(TestCase):
+    def test_json_to_companion_info(self) -> None:
+        self.assertEqual(
+            [COMPANION_INFO_FIXTURE],
+            json_to_companion_info(json_data_companions([COMPANION_INFO_FIXTURE])),
+        )
+
     def test_test_info_no_optional_fields(self) -> None:
         self.assertEqual(
             TEST_RUN_INFO_FIXTURE,

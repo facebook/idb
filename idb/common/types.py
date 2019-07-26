@@ -65,6 +65,14 @@ class CompanionInfo(NamedTuple):
     port: int
     is_local: bool
 
+    def __eq__(self, other) -> bool:  # pyre-ignore
+        return (
+            self.udid == other.udid
+            and self.host == other.host
+            and self.port == other.port
+            and self.is_local == other.is_local
+        )
+
 
 class ScreenDimensions(NamedTuple):
     width: int

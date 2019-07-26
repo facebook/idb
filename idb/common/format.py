@@ -3,7 +3,7 @@
 
 import json
 from textwrap import indent
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from idb.common.types import (
     AppProcessState,
@@ -185,6 +185,36 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
         data["is_local"] = target.companion_info.is_local
         data["udid"] = target.companion_info.udid
     return data
+
+
+def json_data_companions(companions: List[CompanionInfo]) -> List[Dict[str, Any]]:
+    data: List[Dict[str, Any]] = []  # pyre-ignore
+    for companion in companions:
+        data.append(
+            {
+                "host": companion.host,
+                "udid": companion.udid,
+                "port": companion.port,
+                "is_local": companion.is_local,
+            }
+        )
+    return data
+
+
+def json_to_companion_info(
+    data: List[Dict[str, Any]]  # pyre-ignore
+) -> List[CompanionInfo]:
+    companion_list = []
+    for item in data:
+        companion_list.append(
+            CompanionInfo(
+                udid=item["udid"],
+                host=item["host"],
+                port=item["port"],
+                is_local=item["is_local"],
+            )
+        )
+    return companion_list
 
 
 def target_description_from_json(data: str) -> TargetDescription:
