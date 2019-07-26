@@ -10,16 +10,17 @@ import idb.grpc.ipc_loader as ipc_loader
 from grpclib.client import Channel
 from idb.client.daemon_pid_saver import kill_saved_pids
 from idb.client.daemon_spawner import DaemonSpawner
-from idb.common.types import IdbClientBase
+from idb.common.types import IdbClient
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.types import CompanionClient
+
 
 # this is to silence the channel not closed warning
 # https://github.com/vmagamedov/grpclib/issues/58
 warnings.filterwarnings(action="ignore", category=ResourceWarning)
 
 
-class IdbClient(IdbClientBase):
+class GrpcClient(IdbClient):
     def __init__(
         self,
         port: int,

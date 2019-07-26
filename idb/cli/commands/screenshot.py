@@ -6,9 +6,8 @@ from argparse import ArgumentParser, Namespace
 from contextlib import contextmanager
 from typing import IO, Iterator
 
-
 from idb.cli.commands.base import TargetCommand
-from idb.client.client import IdbClient
+from idb.common.types import IdbClient
 
 
 class ScreenshotCommand(TargetCommand):

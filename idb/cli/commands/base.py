@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-import functools
 import logging
 import os
 from abc import ABCMeta, abstractmethod
@@ -9,9 +8,10 @@ from argparse import ArgumentParser, Namespace
 from typing import Dict, List, Optional
 
 import idb.common.plugin as plugin
-from idb.client.client import IdbClient
+from idb.client.grpc import GrpcClient
 from idb.common.constants import DEFAULT_DAEMON_GRPC_PORT, DEFAULT_DAEMON_HOST
 from idb.common.logging import log_call
+from idb.common.types import IdbClient
 
 
 class Command(metaclass=ABCMeta):
@@ -153,7 +153,7 @@ class ConnectingCommand(BaseCommand):
 
     async def _run_impl(self, args: Namespace) -> None:
         udid = vars(args).get("udid")
-        client = IdbClient(
+        client = GrpcClient(
             port=args.daemon_grpc_port,
             host=args.daemon_host,
             target_udid=udid,

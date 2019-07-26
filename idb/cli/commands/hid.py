@@ -3,10 +3,8 @@
 
 from argparse import ArgumentParser, Namespace
 
-
 from idb.cli.commands.base import TargetCommand
-from idb.client.client import IdbClient
-from idb.common.types import HIDButtonType
+from idb.common.types import HIDButtonType, IdbClient
 
 
 class TapCommand(TargetCommand):

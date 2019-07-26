@@ -18,7 +18,7 @@ class TestParser(TestCase):
 
     def setUp(self) -> None:
         self.client_mock = MagicMock(name="client_mock")
-        self.client_patch = patch("idb.cli.commands.base.IdbClient", self.client_mock)
+        self.client_patch = patch("idb.cli.commands.base.GrpcClient", self.client_mock)
         self.client_patch.start()
         self
 

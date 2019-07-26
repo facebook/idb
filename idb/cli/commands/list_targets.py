@@ -3,10 +3,9 @@
 
 from argparse import ArgumentParser, Namespace
 
-
 from idb.cli.commands.base import ConnectingCommand
-from idb.client.client import IdbClient
 from idb.common.format import human_format_target_info, json_format_target_info
+from idb.common.types import IdbClient
 
 
 class ListTargetsCommand(ConnectingCommand):

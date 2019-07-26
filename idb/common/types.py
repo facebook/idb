@@ -206,7 +206,7 @@ class InstalledArtifact(NamedTuple):
     uuid: Optional[str]
 
 
-class IdbClientBase:
+class IdbClient:
     async def list_apps(self) -> List[InstalledAppInfo]:
         pass
 
@@ -260,8 +260,8 @@ class IdbClientBase:
         self,
         destination: Union[Address, str],
         metadata: Optional[Dict[str, str]] = None,
-    ) -> None:
-        return
+    ) -> CompanionInfo:
+        pass
 
     async def disconnect(self, destination: Union[Address, str]) -> None:
         pass

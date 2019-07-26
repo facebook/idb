@@ -7,8 +7,7 @@ from typing import Union
 
 import idb.common.plugin as plugin
 from idb.cli.commands.base import ConnectingCommand
-from idb.client.client import IdbClient
-from idb.common.types import Address, IdbException
+from idb.common.types import Address, IdbClient, IdbException
 from idb.common.udid import is_udid
 
 

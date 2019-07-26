@@ -4,9 +4,9 @@
 from argparse import REMAINDER, ArgumentParser, Namespace
 
 from idb.cli.commands.base import TargetCommand
-from idb.client.client import IdbClient
 from idb.common.misc import get_env_with_idb_prefix
 from idb.common.signal import signal_handler_event
+from idb.common.types import IdbClient
 
 
 class LaunchCommand(TargetCommand):

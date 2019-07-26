@@ -6,7 +6,6 @@ from argparse import REMAINDER, ArgumentParser, Namespace
 from typing import List, Optional, Set
 
 from idb.cli.commands.base import Command, CompositeCommand, TargetCommand
-from idb.client.client import IdbClient
 from idb.common.format import (
     human_format_installed_test_info,
     human_format_test_info,
@@ -14,6 +13,7 @@ from idb.common.format import (
     json_format_test_info,
 )
 from idb.common.misc import get_env_with_idb_prefix
+from idb.common.types import IdbClient
 
 
 class XctestInstallCommand(TargetCommand):
