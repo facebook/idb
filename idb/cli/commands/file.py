@@ -2,6 +2,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 import json
+import os
 from abc import abstractmethod
 from argparse import ArgumentParser, Namespace
 from typing import Any, List, NamedTuple, Optional, Tuple
@@ -227,7 +228,9 @@ class FSPushCommand(FSCommand):
         self, bundle_id: str, args: Namespace, client: IdbClient
     ) -> None:
         return await client.push(
-            bundle_id=bundle_id, src_paths=args.src_paths, dest_path=args.dest_path
+            bundle_id=bundle_id,
+            src_paths=[os.path.abspath(path) for path in args.src_paths],
+            dest_path=args.dest_path,
         )
 
 
@@ -250,7 +253,9 @@ class FSPullCommand(FSCommand):
     async def run_with_bundle(
         self, bundle_id: str, args: Namespace, client: IdbClient
     ) -> None:
-        await client.pull(bundle_id=bundle_id, src_path=args.src, dest_path=args.dst)
+        await client.pull(
+            bundle_id=bundle_id, src_path=args.src, dest_path=os.path.abspath(args.dst)
+        )
 
 
 class DeprecatedPushCommand(TargetCommand):

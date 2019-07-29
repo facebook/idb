@@ -2,6 +2,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 import asyncio
+import os
 from argparse import Namespace
 from typing import Any
 from unittest.mock import ANY, MagicMock, patch
@@ -182,7 +183,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "push", src, dst, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.client_mock().push.assert_called_once_with(
-            bundle_id=bundle_id, src_paths=[src], dest_path=dst
+            bundle_id=bundle_id, src_paths=[os.path.abspath(src)], dest_path=dst
         )
 
     async def test_file_push_multi_flag(self) -> None:
@@ -194,7 +195,9 @@ class TestParser(TestCase):
         cmd_input = ["file", "push", src1, src2, dst, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.client_mock().push.assert_called_once_with(
-            bundle_id=bundle_id, src_paths=[src1, src2], dest_path=dst
+            bundle_id=bundle_id,
+            src_paths=[os.path.abspath(path) for path in [src1, src2]],
+            dest_path=dst,
         )
 
     async def test_file_push_single_colon(self) -> None:
@@ -203,7 +206,9 @@ class TestParser(TestCase):
         cmd_input = ["file", "push", src, "com.bundle.id:someOutputDir"]
         await cli_main(cmd_input=cmd_input)
         self.client_mock().push.assert_called_once_with(
-            bundle_id="com.bundle.id", src_paths=[src], dest_path="someOutputDir"
+            bundle_id="com.bundle.id",
+            src_paths=[os.path.abspath(src)],
+            dest_path="someOutputDir",
         )
 
     async def test_file_push_multi_colon(self) -> None:
@@ -213,7 +218,9 @@ class TestParser(TestCase):
         cmd_input = ["file", "push", src1, src2, "com.bundle.id:someOutputDir"]
         await cli_main(cmd_input=cmd_input)
         self.client_mock().push.assert_called_once_with(
-            bundle_id="com.bundle.id", src_paths=[src1, src2], dest_path="someOutputDir"
+            bundle_id="com.bundle.id",
+            src_paths=[os.path.abspath(path) for path in [src1, src2]],
+            dest_path="someOutputDir",
         )
 
     async def test_file_pull(self) -> None:
@@ -224,7 +231,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "pull", src, dst, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.client_mock().pull.assert_called_once_with(
-            bundle_id=bundle_id, src_path=src, dest_path=dst
+            bundle_id=bundle_id, src_path=src, dest_path=os.path.abspath(dst)
         )
 
     async def test_push_deprecated(self) -> None:
@@ -234,7 +241,9 @@ class TestParser(TestCase):
         dest_path = "Library"
         await cli_main(cmd_input=["push", src_path, app_bundle_id, dest_path])
         self.client_mock().push.assert_called_once_with(
-            bundle_id=app_bundle_id, src_paths=[src_path], dest_path=dest_path
+            bundle_id=app_bundle_id,
+            src_paths=[os.path.abspath(src_path)],
+            dest_path=dest_path,
         )
 
     async def test_pull_deprecated(self) -> None:
@@ -244,7 +253,7 @@ class TestParser(TestCase):
         dest = "someOutputDir"
         await cli_main(cmd_input=["pull", bundle_id, src, dest])
         self.client_mock().pull.assert_called_once_with(
-            bundle_id=bundle_id, src_path=src, dest_path=dest
+            bundle_id=bundle_id, src_path=src, dest_path=os.path.abspath(dest)
         )
 
     async def test_list_targets(self) -> None:
