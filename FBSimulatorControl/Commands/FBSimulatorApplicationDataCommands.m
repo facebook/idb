@@ -56,7 +56,7 @@
         NSURL *destURL = [basePathURL URLByAppendingPathComponent:url.lastPathComponent];
         if (![fileManager copyItemAtURL:url toURL:destURL error:&error]) {
           return [[[FBSimulatorError
-            describeFormat:@"Could not copy from %@ to %@", url, destURL]
+            describeFormat:@"Could not copy from %@ to %@: %@", url, destURL, error]
             causedBy:error]
             failFuture];
         }
@@ -77,7 +77,7 @@
         NSError *createDirectoryError;
         if (![NSFileManager.defaultManager createDirectoryAtPath:dstPath withIntermediateDirectories:YES attributes:nil error:&createDirectoryError]) {
           return [[[FBSimulatorError
-            describeFormat:@"Could not create temporary directory"]
+            describeFormat:@"Could not create temporary directory: %@", createDirectoryError]
             causedBy:createDirectoryError]
             failFuture];
         }
@@ -97,7 +97,7 @@
       NSError *copyError;
       if (![NSFileManager.defaultManager copyItemAtPath:source toPath:dstPath error:&copyError]) {
         return [[[FBSimulatorError
-          describeFormat:@"Could not copy from %@ to %@", source, dstPath]
+          describeFormat:@"Could not copy from %@ to %@: %@", source, dstPath, copyError]
           causedBy:copyError]
           failFuture];
       }
@@ -114,7 +114,7 @@
       NSString *fullPath = [dataContainer stringByAppendingPathComponent:directoryPath];
       if (![NSFileManager.defaultManager createDirectoryAtPath:fullPath withIntermediateDirectories:YES attributes:nil error:&error]) {
         return [[[FBSimulatorError
-          describeFormat:@"Could not create directory %@ in container %@", directoryPath, dataContainer]
+          describeFormat:@"Could not create directory %@ in container %@: %@", directoryPath, dataContainer, error]
           causedBy:error]
           failFuture];
       }
@@ -133,7 +133,7 @@
         NSString *fullOriginPath = [dataContainer stringByAppendingPathComponent:originPath];
         if (![NSFileManager.defaultManager moveItemAtPath:fullOriginPath toPath:fullDestinationPath error:&error]) {
           return [[[FBSimulatorError
-            describeFormat:@"Could not move item at %@ to %@", fullOriginPath, fullDestinationPath]
+            describeFormat:@"Could not move item at %@ to %@: %@", fullOriginPath, fullDestinationPath, error]
             causedBy:error]
             failFuture];
         }
@@ -152,7 +152,7 @@
         NSString *fullPath = [dataContainer stringByAppendingPathComponent:path];
         if (![NSFileManager.defaultManager removeItemAtPath:fullPath error:&error]) {
           return [[[FBSimulatorError
-            describeFormat:@"Could not remove item at path %@", fullPath]
+            describeFormat:@"Could not remove item at path %@: %@", fullPath, error]
             causedBy:error]
             failFuture];
         }
