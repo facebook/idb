@@ -132,11 +132,16 @@ async def run_xctest(
         await stream.send_message(request)
         await stream.end()
         async for response in stream:
-            for line in response.log_output:
-                if len(line):
-                    client.logger.info(line)
-                    if idb_log_buffer:
-                        idb_log_buffer.write(line)
+            # response.log_output is a container of strings.
+            # google.protobuf.pyext._message.RepeatedScalarContainer.
+            for line in [
+                line
+                for lines in response.log_output
+                for line in lines.splitlines(keepends=True)
+            ]:
+                client.logger.info(line)
+                if idb_log_buffer:
+                    idb_log_buffer.write(line)
             if result_bundle_path:
                 await _write_result_bundle(
                     response=response,
