@@ -6,7 +6,6 @@ from argparse import Namespace
 from logging import Logger
 from typing import Dict, List
 
-import idb.common.plugin as plugin
 from idb.common.boot_manager import BootManager
 from idb.common.logging import log_call
 from idb.common.types import Server

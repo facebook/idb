@@ -325,8 +325,6 @@ class TestParser(TestCase):
             namespace.app_bundle_id = app_under_test_id
             # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
-            # pyre-fixme[16]: `Namespace` has no attribute `direct`.
-            namespace.direct = False
             # pyre-fixme[16]: `Namespace` has no attribute `timeout`.
             namespace.timeout = XCTEST_TIMEOUT
             mock.assert_called_once_with(namespace)
@@ -357,8 +355,6 @@ class TestParser(TestCase):
             namespace.test_host_app_bundle_id = test_host_app_bundle_id
             # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
-            # pyre-fixme[16]: `Namespace` has no attribute `direct`.
-            namespace.direct = False
             # pyre-fixme[16]: `Namespace` has no attribute `timeout`.
             namespace.timeout = XCTEST_TIMEOUT
             mock.assert_called_once_with(namespace)
@@ -376,8 +372,6 @@ class TestParser(TestCase):
             namespace.timeout = XCTEST_TIMEOUT
             # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
-            # pyre-fixme[16]: `Namespace` has no attribute `direct`.
-            namespace.direct = False
             mock.assert_called_once_with(namespace)
 
     async def test_xctest_list(self) -> None:
@@ -418,8 +412,6 @@ class TestParser(TestCase):
             namespace.prefer_ipv6 = False
             # pyre-fixme[16]: `Namespace` has no attribute `notifier_path`.
             namespace.notifier_path = None
-            # pyre-fixme[16]: `Namespace` has no attribute `direct`.
-            namespace.direct = False
             mock.assert_called_once_with(namespace)
 
     async def test_terminate(self) -> None:
@@ -452,8 +444,6 @@ class TestParser(TestCase):
             namespace.daemon_host = "localhost"
             # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
-            # pyre-fixme[16]: `Namespace` has no attribute `direct`.
-            namespace.direct = False
             mock.assert_called_once_with(namespace)
 
     async def test_log_arguments(self) -> None:
@@ -479,8 +469,6 @@ class TestParser(TestCase):
             namespace.daemon_host = "localhost"
             # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
-            # pyre-fixme[16]: `Namespace` has no attribute `direct`.
-            namespace.direct = False
             mock.assert_called_once_with(namespace)
 
     async def test_clear_keychain(self) -> None:
@@ -537,8 +525,6 @@ class TestParser(TestCase):
             namespace.daemon_host = "localhost"
             # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
-            # pyre-fixme[16]: `Namespace` has no attribute `direct`.
-            namespace.direct = False
             mock.assert_called_once_with(namespace)
 
     async def test_key_sequence(self) -> None:

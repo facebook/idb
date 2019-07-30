@@ -4,7 +4,7 @@ import json
 import tempfile
 from unittest import mock
 
-from idb.client.direct_companion_manager import DirectCompanionManager
+from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.common.format import json_data_companions, json_to_companion_info
 from idb.common.types import CompanionInfo
 from idb.utils.testing import TestCase, ignoreTaskLeaks

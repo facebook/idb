@@ -22,6 +22,7 @@ from typing import (
 
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.common.boot_manager import BootManager
+from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.common.logging import log_call
 from idb.common.types import IdbException, LoggingMetadata
 from idb.grpc.idb_grpc import CompanionServiceStub
@@ -58,6 +59,7 @@ BASE_PACKAGE = "idb.ipc"
 class DaemonContext(NamedTuple):
     companion_manager: CompanionManager
     boot_manager: BootManager
+    direct_companion_manager: DirectCompanionManager
 
 
 CompanionProvider = Callable[[Optional[str]], Awaitable[CompanionClient]]

@@ -48,4 +48,6 @@ async def connect_companion(
     async with context.companion_manager.create_companion_for_target_with_destination(
         destination=destination, metadata=metadata
     ) as companion:
+        # temporarily write to direct_companion_manager while we transition to daemonless
+        context.direct_companion_manager.add_companion(companion)
         return GrpcConnectResponse(companion=companion_to_grpc(companion))

@@ -25,6 +25,7 @@ class DirectCompanionManager:
         self.logger.info(f"idb state file stored at {self.state_file_path}")
 
     def add_companion(self, companion: CompanionInfo) -> None:
+        self.logger.info(f"added direct companion {companion}")
         self.companions.append(companion)
         self._save()
 
@@ -56,7 +57,7 @@ class DirectCompanionManager:
                 return companions[0]
             else:
                 raise IdbException(
-                    "Couldn't find companion for target with udid {target_udid}"
+                    f"Couldn't find companion for target with udid {target_udid}"
                 )
         elif len(self.companions) >= 1:
             companion = self.companions[0]

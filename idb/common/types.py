@@ -266,7 +266,7 @@ class IdbClient:
 
     async def connect(
         self,
-        destination: Union[Address, str],
+        destination: ConnectionDestination,
         metadata: Optional[Dict[str, str]] = None,
     ) -> CompanionInfo:
         pass

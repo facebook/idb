@@ -10,7 +10,8 @@ import idb.grpc.ipc_loader as ipc_loader
 from grpclib.client import Channel
 from idb.client.daemon_pid_saver import kill_saved_pids
 from idb.client.daemon_spawner import DaemonSpawner
-from idb.common.types import IdbClient
+from idb.common.direct_companion_manager import DirectCompanionManager
+from idb.common.types import CompanionInfo, IdbClient, IdbException
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.types import CompanionClient
 
@@ -43,6 +44,24 @@ class GrpcClient(IdbClient):
             daemon_provider=self.provide_client
         ):
             setattr(self, call_name, f)
+        # this is temporary while we are killing the daemon
+        # the cli needs access to the new direct_companion_manager to route direct
+        # commands.
+        # this overrides the stub to talk directly to the companion
+        self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
+        try:
+            self.companion_info: CompanionInfo = self.direct_companion_manager.get_companion_info(
+                target_udid=self.target_udid
+            )
+            self.logger.info(f"using companion {self.companion_info}")
+            self.channel = Channel(
+                self.companion_info.host,
+                self.companion_info.port,
+                loop=asyncio.get_event_loop(),
+            )
+            self.stub: CompanionServiceStub = CompanionServiceStub(channel=self.channel)
+        except IdbException as e:
+            self.logger.info(e)
 
     async def provide_client(self) -> CompanionClient:
         await self.daemon_spawner.start_daemon_if_needed(
