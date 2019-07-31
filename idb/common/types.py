@@ -42,10 +42,10 @@ class InstalledAppInfo(NamedTuple):
 
 
 class InstrumentsTimings(NamedTuple):
-    launch_error_timeout: Optional[float]
-    launch_retry_timeout: Optional[float]
-    terminate_timeout: Optional[float]
-    operation_duration: Optional[float]
+    launch_error_timeout: Optional[float] = None
+    launch_retry_timeout: Optional[float] = None
+    terminate_timeout: Optional[float] = None
+    operation_duration: Optional[float] = None
 
 
 class HIDButtonType(Enum):
