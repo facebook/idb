@@ -4,21 +4,45 @@
 import asyncio
 import logging
 import warnings
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import idb.grpc.ipc_loader as ipc_loader
 from grpclib.client import Channel
+from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.client.daemon_pid_saver import kill_saved_pids
 from idb.client.daemon_spawner import DaemonSpawner
 from idb.common.direct_companion_manager import DirectCompanionManager
-from idb.common.types import CompanionInfo, IdbClient, IdbException
+from idb.common.logging import log_call
+from idb.common.types import (
+    AppProcessState,
+    CompanionInfo,
+    IdbClient,
+    IdbException,
+    InstalledAppInfo,
+)
 from idb.grpc.idb_grpc import CompanionServiceStub
+from idb.grpc.idb_pb2 import ListAppsRequest
 from idb.grpc.types import CompanionClient
 
 
 # this is to silence the channel not closed warning
 # https://github.com/vmagamedov/grpclib/issues/58
 warnings.filterwarnings(action="ignore", category=ResourceWarning)
+
+
+def log_and_handle_exceptions(func):  # pyre-ignore
+    @log_call(name=func.__name__)
+    def func_wrapper(*args, **kwargs):  # pyre-ignore
+
+        try:
+            return func(*args, **kwargs)
+
+        except GRPCError as e:
+            raise IdbException(e.message) from e  # noqa B306
+        except (ProtocolError, StreamTerminatedError) as e:
+            raise IdbException(e.args) from e
+
+    return func_wrapper
 
 
 class GrpcClient(IdbClient):
@@ -84,3 +108,18 @@ class GrpcClient(IdbClient):
     @classmethod
     async def kill(cls) -> None:
         await kill_saved_pids()
+
+    @log_and_handle_exceptions
+    async def list_apps(self) -> List[InstalledAppInfo]:
+        response = await self.stub.list_apps(ListAppsRequest())
+        return [
+            InstalledAppInfo(
+                bundle_id=app.bundle_id,
+                name=app.name,
+                architectures=app.architectures,
+                install_type=app.install_type,
+                process_state=AppProcessState(app.process_state),
+                debuggable=app.debuggable,
+            )
+            for app in response.apps
+        ]
