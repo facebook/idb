@@ -62,8 +62,8 @@ class GrpcClient(IdbClient):
         self.force_kill_daemon = force_kill_daemon
         self.target_udid = target_udid
         self.daemon_spawner = DaemonSpawner(host=self.host, port=self.port)
-        self.channel: Optional[Channel] = None
-        self.stub: Optional[CompanionServiceStub] = None
+        self.daemon_channel: Optional[Channel] = None
+        self.daemon_stub: Optional[CompanionServiceStub] = None
         for (call_name, f) in ipc_loader.client_calls(
             daemon_provider=self.provide_client
         ):
@@ -91,11 +91,16 @@ class GrpcClient(IdbClient):
         await self.daemon_spawner.start_daemon_if_needed(
             force_kill=self.force_kill_daemon
         )
-        if not self.channel or not self.stub:
-            self.channel = Channel(self.host, self.port, loop=asyncio.get_event_loop())
-            self.stub = CompanionServiceStub(channel=self.channel)
+        if not self.daemon_channel or not self.daemon_stub:
+            self.daemon_channel = Channel(
+                self.host, self.port, loop=asyncio.get_event_loop()
+            )
+            self.daemon_stub = CompanionServiceStub(channel=self.daemon_channel)
         return CompanionClient(
-            stub=self.stub, is_local=True, udid=self.target_udid, logger=self.logger
+            stub=self.daemon_stub,
+            is_local=True,
+            udid=self.target_udid,
+            logger=self.logger,
         )
 
     @property
