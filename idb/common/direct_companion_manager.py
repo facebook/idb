@@ -51,7 +51,7 @@ class DirectCompanionManager:
             companions = [
                 companion
                 for companion in self.companions
-                if companion.udid is target_udid
+                if companion.udid == target_udid
             ]
             if len(companions) > 0:
                 return companions[0]

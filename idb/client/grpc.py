@@ -4,7 +4,7 @@
 import asyncio
 import logging
 import warnings
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import idb.grpc.ipc_loader as ipc_loader
 from grpclib.client import Channel
@@ -14,6 +14,7 @@ from idb.client.daemon_spawner import DaemonSpawner
 from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.common.logging import log_call
 from idb.common.types import (
+    AccessibilityInfo,
     AppProcessState,
     CompanionInfo,
     IdbClient,
@@ -21,7 +22,7 @@ from idb.common.types import (
     InstalledAppInfo,
 )
 from idb.grpc.idb_grpc import CompanionServiceStub
-from idb.grpc.idb_pb2 import ListAppsRequest
+from idb.grpc.idb_pb2 import AccessibilityInfoRequest, ListAppsRequest, Point
 from idb.grpc.types import CompanionClient
 
 
@@ -73,6 +74,8 @@ class GrpcClient(IdbClient):
         # commands.
         # this overrides the stub to talk directly to the companion
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
+        self.channel = None
+        self.stub = None
         try:
             self.companion_info: CompanionInfo = self.direct_companion_manager.get_companion_info(
                 target_udid=self.target_udid
@@ -83,7 +86,7 @@ class GrpcClient(IdbClient):
                 self.companion_info.port,
                 loop=asyncio.get_event_loop(),
             )
-            self.stub: CompanionServiceStub = CompanionServiceStub(channel=self.channel)
+            self.stub = CompanionServiceStub(channel=self.channel)
         except IdbException as e:
             self.logger.info(e)
 
@@ -128,3 +131,13 @@ class GrpcClient(IdbClient):
             )
             for app in response.apps
         ]
+
+    @log_and_handle_exceptions
+    async def accessibility_info(
+        self, point: Optional[Tuple[int, int]]
+    ) -> AccessibilityInfo:
+        grpc_point = Point(x=point[0], y=point[1]) if point is not None else None
+        response = await self.stub.accessibility_info(
+            AccessibilityInfoRequest(point=grpc_point)
+        )
+        return AccessibilityInfo(json=response.json)
