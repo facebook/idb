@@ -4,7 +4,7 @@
 import asyncio
 import logging
 import warnings
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import idb.grpc.ipc_loader as ipc_loader
 from grpclib.client import Channel
@@ -27,6 +27,7 @@ from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
     AccessibilityInfoRequest,
     AddMediaRequest,
+    ApproveRequest,
     ListAppsRequest,
     Payload,
     Point,
@@ -34,6 +35,12 @@ from idb.grpc.idb_pb2 import (
 from idb.grpc.stream import drain_to_stream
 from idb.grpc.types import CompanionClient
 
+
+APPROVE_MAP: Dict[str, Any] = {
+    "photos": ApproveRequest.PHOTOS,
+    "camera": ApproveRequest.CAMERA,
+    "contacts": ApproveRequest.CONTACTS,
+}
 
 # this is to silence the channel not closed warning
 # https://github.com/vmagamedov/grpclib/issues/58
@@ -171,3 +178,12 @@ class GrpcClient(IdbClient):
                 await drain_to_stream(
                     stream=stream, generator=generator, logger=self.logger
                 )
+
+    @log_and_handle_exceptions
+    async def approve(self, bundle_id: str, permissions: Set[str]) -> None:
+        await self.stub.approve(
+            ApproveRequest(
+                bundle_id=bundle_id,
+                permissions=[APPROVE_MAP[permission] for permission in permissions],
+            )
+        )
