@@ -14,7 +14,7 @@ from idb.client.daemon_spawner import DaemonSpawner
 from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.common.logging import log_call
 from idb.common.stream import stream_map
-from idb.common.tar import generate_tar
+from idb.common.tar import create_tar, generate_tar
 from idb.common.types import (
     AccessibilityInfo,
     AppProcessState,
@@ -22,18 +22,30 @@ from idb.common.types import (
     IdbClient,
     IdbException,
     InstalledAppInfo,
+    TargetDescription,
 )
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
     AccessibilityInfoRequest,
     AddMediaRequest,
     ApproveRequest,
+    ClearKeychainRequest,
+    ContactsUpdateRequest,
+    FocusRequest,
     ListAppsRequest,
+    Location,
+    OpenUrlRequest,
     Payload,
     Point,
+    ScreenshotRequest,
+    SetLocationRequest,
+    TargetDescriptionRequest,
+    TerminateRequest,
+    UninstallRequest,
 )
 from idb.grpc.stream import drain_to_stream
 from idb.grpc.types import CompanionClient
+from idb.ipc.mapping.target import target_to_py
 
 
 APPROVE_MAP: Dict[str, Any] = {
@@ -187,3 +199,48 @@ class GrpcClient(IdbClient):
                 permissions=[APPROVE_MAP[permission] for permission in permissions],
             )
         )
+
+    @log_and_handle_exceptions
+    async def clear_keychain(self) -> None:
+        await self.stub.clear_keychain(ClearKeychainRequest())
+
+    @log_and_handle_exceptions
+    async def contacts_update(self, contacts_path: str) -> None:
+        data = await create_tar([contacts_path])
+        await self.stub.contacts_update(
+            ContactsUpdateRequest(payload=Payload(data=data))
+        )
+
+    @log_and_handle_exceptions
+    async def screenshot(self) -> bytes:
+        response = await self.stub.screenshot(ScreenshotRequest())
+        return response.image_data
+
+    @log_and_handle_exceptions
+    async def set_location(self, latitude: float, longitude: float) -> None:
+        await self.stub.set_location(
+            SetLocationRequest(
+                location=Location(latitude=latitude, longitude=longitude)
+            )
+        )
+
+    @log_and_handle_exceptions
+    async def terminate(self, bundle_id: str) -> None:
+        await self.stub.terminate(TerminateRequest(bundle_id=bundle_id))
+
+    @log_and_handle_exceptions
+    async def describe(self) -> TargetDescription:
+        response = await self.stub.describe(TargetDescriptionRequest())
+        return target_to_py(response.target_description)
+
+    @log_and_handle_exceptions
+    async def focus(self) -> None:
+        await self.stub.focus(FocusRequest())
+
+    @log_and_handle_exceptions
+    async def open_url(self, url: str) -> None:
+        await self.stub.open_url(OpenUrlRequest(url=url))
+
+    @log_and_handle_exceptions
+    async def uninstall(self, bundle_id: str) -> None:
+        await self.stub.uninstall(UninstallRequest(bundle_id=bundle_id))
