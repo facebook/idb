@@ -19,6 +19,7 @@ from idb.common.types import (
     AccessibilityInfo,
     AppProcessState,
     CompanionInfo,
+    FileEntryInfo,
     IdbClient,
     IdbException,
     InstalledAppInfo,
@@ -34,9 +35,13 @@ from idb.grpc.idb_pb2 import (
     FocusRequest,
     ListAppsRequest,
     Location,
+    LsRequest,
+    MkdirRequest,
+    MvRequest,
     OpenUrlRequest,
     Payload,
     Point,
+    RmRequest,
     ScreenshotRequest,
     SetLocationRequest,
     TargetDescriptionRequest,
@@ -244,3 +249,22 @@ class GrpcClient(IdbClient):
     @log_and_handle_exceptions
     async def uninstall(self, bundle_id: str) -> None:
         await self.stub.uninstall(UninstallRequest(bundle_id=bundle_id))
+
+    @log_and_handle_exceptions
+    async def rm(self, bundle_id: str, paths: List[str]) -> None:
+        await self.stub.rm(RmRequest(bundle_id=bundle_id, paths=paths))
+
+    @log_and_handle_exceptions
+    async def mv(self, bundle_id: str, src_paths: List[str], dest_path: str) -> None:
+        await self.stub.mv(
+            MvRequest(bundle_id=bundle_id, src_paths=src_paths, dst_path=dest_path)
+        )
+
+    @log_and_handle_exceptions
+    async def ls(self, bundle_id: str, path: str) -> List[FileEntryInfo]:
+        response = await self.stub.ls(LsRequest(bundle_id=bundle_id, path=path))
+        return [FileEntryInfo(path=file.path) for file in response.files]
+
+    @log_and_handle_exceptions
+    async def mkdir(self, bundle_id: str, path: str) -> None:
+        await self.stub.mkdir(MkdirRequest(bundle_id=bundle_id, path=path))
