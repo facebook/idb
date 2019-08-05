@@ -13,6 +13,8 @@ from idb.client.daemon_pid_saver import kill_saved_pids
 from idb.client.daemon_spawner import DaemonSpawner
 from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.common.logging import log_call
+from idb.common.stream import stream_map
+from idb.common.tar import generate_tar
 from idb.common.types import (
     AccessibilityInfo,
     AppProcessState,
@@ -22,7 +24,14 @@ from idb.common.types import (
     InstalledAppInfo,
 )
 from idb.grpc.idb_grpc import CompanionServiceStub
-from idb.grpc.idb_pb2 import AccessibilityInfoRequest, ListAppsRequest, Point
+from idb.grpc.idb_pb2 import (
+    AccessibilityInfoRequest,
+    AddMediaRequest,
+    ListAppsRequest,
+    Payload,
+    Point,
+)
+from idb.grpc.stream import drain_to_stream
 from idb.grpc.types import CompanionClient
 
 
@@ -74,8 +83,8 @@ class GrpcClient(IdbClient):
         # commands.
         # this overrides the stub to talk directly to the companion
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
-        self.channel = None
-        self.stub = None
+        self.channel: Optional[Channel] = None
+        self.stub: Optional[CompanionServiceStub] = None
         try:
             self.companion_info: CompanionInfo = self.direct_companion_manager.get_companion_info(
                 target_udid=self.target_udid
@@ -86,7 +95,9 @@ class GrpcClient(IdbClient):
                 self.companion_info.port,
                 loop=asyncio.get_event_loop(),
             )
-            self.stub = CompanionServiceStub(channel=self.channel)
+            self.stub: Optional[CompanionServiceStub] = CompanionServiceStub(
+                channel=self.channel
+            )
         except IdbException as e:
             self.logger.info(e)
 
@@ -141,3 +152,22 @@ class GrpcClient(IdbClient):
             AccessibilityInfoRequest(point=grpc_point)
         )
         return AccessibilityInfo(json=response.json)
+
+    @log_and_handle_exceptions
+    async def add_media(self, file_paths: List[str]) -> None:
+        async with self.stub.add_media.open() as stream:
+            if self.companion_info.is_local:
+                for file_path in file_paths:
+                    await stream.send_message(
+                        AddMediaRequest(payload=Payload(file_path=file_path))
+                    )
+                await stream.end()
+                await stream.recv_message()
+            else:
+                generator = stream_map(
+                    generate_tar(paths=file_paths, place_in_subfolders=True),
+                    lambda chunk: AddMediaRequest(payload=Payload(data=chunk)),
+                )
+                await drain_to_stream(
+                    stream=stream, generator=generator, logger=self.logger
+                )
