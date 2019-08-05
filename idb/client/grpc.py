@@ -19,6 +19,9 @@ from idb.common.types import (
     AccessibilityInfo,
     AppProcessState,
     CompanionInfo,
+    CrashLog,
+    CrashLogInfo,
+    CrashLogQuery,
     FileEntryInfo,
     IdbClient,
     IdbException,
@@ -32,6 +35,7 @@ from idb.grpc.idb_pb2 import (
     ApproveRequest,
     ClearKeychainRequest,
     ContactsUpdateRequest,
+    CrashShowRequest,
     FocusRequest,
     ListAppsRequest,
     Location,
@@ -50,6 +54,11 @@ from idb.grpc.idb_pb2 import (
 )
 from idb.grpc.stream import drain_to_stream
 from idb.grpc.types import CompanionClient
+from idb.ipc.mapping.crash import (
+    _to_crash_log,
+    _to_crash_log_info_list,
+    _to_crash_log_query_proto,
+)
 from idb.ipc.mapping.target import target_to_py
 
 
@@ -268,3 +277,18 @@ class GrpcClient(IdbClient):
     @log_and_handle_exceptions
     async def mkdir(self, bundle_id: str, path: str) -> None:
         await self.stub.mkdir(MkdirRequest(bundle_id=bundle_id, path=path))
+
+    @log_and_handle_exceptions
+    async def crash_delete(self, query: CrashLogQuery) -> List[CrashLogInfo]:
+        response = await self.stub.crash_delete(_to_crash_log_query_proto(query))
+        return _to_crash_log_info_list(response)
+
+    @log_and_handle_exceptions
+    async def crash_list(self, query: CrashLogQuery) -> List[CrashLogInfo]:
+        response = await self.stub.crash_list(_to_crash_log_query_proto(query))
+        return _to_crash_log_info_list(response)
+
+    @log_and_handle_exceptions
+    async def crash_show(self, name: str) -> CrashLog:
+        response = await self.stub.crash_show(CrashShowRequest(name=name))
+        return _to_crash_log(response)
