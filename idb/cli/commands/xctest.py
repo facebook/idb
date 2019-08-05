@@ -108,12 +108,6 @@ class CommonRunXcTestCommand(TargetCommand):
         parser.add_argument(
             "--timeout", help="Seconds before timeout occurs", default=3600, type=int
         )
-        parser.add_argument(
-            "test_arguments",
-            help="Arguments to start the test with",
-            default=[],
-            nargs=REMAINDER,
-        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
@@ -126,6 +120,7 @@ class CommonRunXcTestCommand(TargetCommand):
             if hasattr(args, "test_host_app_bundle_id")
             else None
         )
+        arguments = getattr(args, "test_arguments", [])
         is_ui = args.run == "ui"
         is_logic = args.run == "logic"
 
@@ -140,7 +135,7 @@ class CommonRunXcTestCommand(TargetCommand):
             tests_to_skip=tests_to_skip,
             timeout=args.timeout,
             env=get_env_with_idb_prefix(),
-            args=args.test_arguments,
+            args=arguments,
             result_bundle_path=args.result_bundle_path,
         ):
             print(formatter(test_result))
@@ -178,6 +173,12 @@ class XcestRunAppCommand(CommonRunXcTestCommand):
             help="Skip these tests, \
             has precedence over --tests-to-run. \
             Format: className/methodName",
+        )
+        parser.add_argument(
+            "test_arguments",
+            help="Arguments to start the test with",
+            default=[],
+            nargs=REMAINDER,
         )
 
     def get_tests_to_run(self, args: Namespace) -> Optional[Set[str]]:

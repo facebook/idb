@@ -290,6 +290,8 @@ class TestParser(TestCase):
             namespace.tests_to_run = None
             # pyre-fixme[16]: `Namespace` has no attribute `tests_to_skip`.
             namespace.tests_to_skip = None
+            # pyre-fixme[16]: `Namespace` has no attribute `test_arguments`.
+            namespace.test_arguments = []
         elif command == "logic":
             # pyre-fixme[16]: `Namespace` has no attribute `test_to_run`.
             namespace.test_to_run = None
@@ -297,8 +299,6 @@ class TestParser(TestCase):
         namespace.run = command
         # pyre-fixme[16]: `Namespace` has no attribute `test_bundle_id`.
         namespace.test_bundle_id = test_bundle_id
-        # pyre-fixme[16]: `Namespace` has no attribute `test_arguments`.
-        namespace.test_arguments = []
         # pyre-fixme[16]: `Namespace` has no attribute `daemon_port`.
         namespace.daemon_port = 9888
         # pyre-fixme[16]: `Namespace` has no attribute `daemon_grpc_port`.
