@@ -56,6 +56,8 @@ from idb.grpc.idb_pb2 import (
     OpenUrlRequest,
     Payload,
     Point,
+    PushRequest,
+    PushResponse,
     RmRequest,
     ScreenshotRequest,
     SetLocationRequest,
@@ -370,3 +372,28 @@ class GrpcClient(IdbClient):
                 stream=stream, generator=generator, logger=self.logger
             )
             return InstalledArtifact(name=response.name, uuid=response.uuid)
+
+    @log_and_handle_exceptions
+    async def push(self, src_paths: List[str], bundle_id: str, dest_path: str) -> None:
+        async with self.stub.push.open() as stream:
+            await stream.send_message(
+                PushRequest(
+                    inner=PushRequest.Inner(bundle_id=bundle_id, dst_path=dest_path)
+                )
+            )
+            if self.companion_info.is_local:
+                for src_path in src_paths:
+                    await stream.send_message(
+                        PushRequest(payload=Payload(file_path=src_path))
+                    )
+                await stream.end()
+                await stream.recv_message()
+            else:
+                await drain_to_stream(
+                    stream=stream,
+                    generator=stream_map(
+                        generate_tar(paths=src_paths),
+                        lambda chunk: PushRequest(payload=Payload(data=chunk)),
+                    ),
+                    logger=self.logger,
+                )
