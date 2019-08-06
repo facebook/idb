@@ -170,9 +170,10 @@ class GrpcClient(IdbClient):
         else:
             return {}
 
-    @classmethod
-    async def kill(cls) -> None:
+    @log_and_handle_exceptions
+    async def kill(self) -> None:
         await kill_saved_pids()
+        self.direct_companion_manager.clear()
 
     @log_and_handle_exceptions
     async def list_apps(self) -> List[InstalledAppInfo]:

@@ -45,6 +45,10 @@ class DirectCompanionManager:
                 return json_to_companion_info(json.load(f))
         return []
 
+    def clear(self) -> None:
+        self.companions = []
+        self._save()
+
     def get_companion_info(self, target_udid: Optional[str]) -> CompanionInfo:
         self.load_companions()
         if target_udid:

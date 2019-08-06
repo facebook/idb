@@ -434,6 +434,9 @@ class IdbClient:
     async def hid(self, event_iterator: AsyncIterable[HIDEvent]) -> None:
         pass
 
+    async def kill(self) -> None:
+        pass
+
 
 class Server(metaclass=ABCMeta):
     def close(self) -> None:

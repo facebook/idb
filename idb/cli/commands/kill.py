@@ -3,11 +3,11 @@
 
 from argparse import Namespace
 
-from idb.cli.commands.base import BaseCommand
+from idb.cli.commands.base import ConnectingCommand
 from idb.common.types import IdbClient
 
 
-class KillCommand(BaseCommand):
+class KillCommand(ConnectingCommand):
     @property
     def description(self) -> str:
         return "Kill the idb daemon"
@@ -16,6 +16,5 @@ class KillCommand(BaseCommand):
     def name(self) -> str:
         return "kill"
 
-    async def _run_impl(self, args: Namespace) -> None:
-        # pyre-fixme[16]: `IdbClient` has no attribute `kill`.
-        await IdbClient.kill()
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+        await client.kill()

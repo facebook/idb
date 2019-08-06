@@ -39,3 +39,16 @@ class CompanionManagerTests(TestCase):
             companions = companion_manager._load()
             read_companion: CompanionInfo = companions[0]
             self.assertEqual(companion, read_companion)
+
+    async def test_clear(self) -> None:
+        with tempfile.NamedTemporaryFile() as f:
+            companion_manager = DirectCompanionManager(
+                logger=mock.MagicMock(), state_file_path=f.name
+            )
+            companion = CompanionInfo(
+                udid="asdasda", host="foohost", port=123, is_local=False
+            )
+            companion_manager.add_companion(companion)
+            companion_manager.clear()
+            companions = companion_manager.load_companions()
+            self.assertEqual(companions, [])

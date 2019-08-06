@@ -262,10 +262,9 @@ class TestParser(TestCase):
         self.client_mock().list_targets.assert_called_once()
 
     async def test_kill(self) -> None:
-        mock = AsyncMock()
-        with patch("idb.cli.commands.kill.IdbClient.kill", new=mock, create=True):
-            await cli_main(cmd_input=["kill"])
-            mock.assert_called_once()
+        self.client_mock().kill = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["kill"])
+        self.client_mock().kill.assert_called_once_with()
 
     async def test_xctest_install(self) -> None:
         self.client_mock().install_xctest = AsyncMock(return_value=[])
