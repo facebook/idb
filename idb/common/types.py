@@ -6,6 +6,8 @@ from abc import ABCMeta
 from enum import Enum
 from io import StringIO
 from typing import (
+    IO,
+    Any,
     AsyncIterable,
     AsyncIterator,
     Dict,
@@ -246,19 +248,21 @@ class IdbClient:
     ) -> AsyncIterator[TestRunInfo]:
         yield
 
-    async def install(self, bundle_path: str) -> InstalledArtifact:
+    async def install(self, bundle: Union[str, IO[bytes]]) -> InstalledArtifact:
         pass
 
-    async def install_dylib(self, dylib_path: str) -> InstalledArtifact:
+    async def install_dylib(self, dylib: Union[str, IO[bytes]]) -> InstalledArtifact:
         pass
 
-    async def install_dsym(self, dsym_path: str) -> InstalledArtifact:
+    async def install_dsym(self, dsym: Union[str, IO[bytes]]) -> InstalledArtifact:
         pass
 
-    async def install_xctest(self, bundle_path: str) -> InstalledArtifact:
+    async def install_xctest(self, xctest: Union[str, IO[bytes]]) -> InstalledArtifact:
         pass
 
-    async def install_framework(self, framework_path: str) -> InstalledArtifact:
+    async def install_framework(
+        self, framework_path: Union[str, IO[bytes]]
+    ) -> InstalledArtifact:
         pass
 
     async def uninstall(self, bundle_id: str) -> None:

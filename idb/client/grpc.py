@@ -3,7 +3,9 @@
 
 import asyncio
 import logging
+import urllib.parse
 import warnings
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import idb.grpc.ipc_loader as ipc_loader
@@ -12,6 +14,13 @@ from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.client.daemon_pid_saver import kill_saved_pids
 from idb.client.daemon_spawner import DaemonSpawner
 from idb.common.direct_companion_manager import DirectCompanionManager
+from idb.common.install import (
+    Bundle,
+    Destination,
+    generate_binary_chunks,
+    generate_io_chunks,
+    generate_requests,
+)
 from idb.common.logging import log_call
 from idb.common.stream import stream_map
 from idb.common.tar import create_tar, generate_tar
@@ -26,6 +35,7 @@ from idb.common.types import (
     IdbClient,
     IdbException,
     InstalledAppInfo,
+    InstalledArtifact,
     TargetDescription,
 )
 from idb.grpc.idb_grpc import CompanionServiceStub
@@ -37,6 +47,7 @@ from idb.grpc.idb_pb2 import (
     ContactsUpdateRequest,
     CrashShowRequest,
     FocusRequest,
+    InstallRequest,
     ListAppsRequest,
     Location,
     LsRequest,
@@ -292,3 +303,70 @@ class GrpcClient(IdbClient):
     async def crash_show(self, name: str) -> CrashLog:
         response = await self.stub.crash_show(CrashShowRequest(name=name))
         return _to_crash_log(response)
+
+    @log_and_handle_exceptions
+    async def install(self, bundle: Bundle) -> InstalledArtifact:
+        return await self._install_to_destination(
+            bundle=bundle, destination=InstallRequest.APP
+        )
+
+    @log_and_handle_exceptions
+    async def install_xctest(self, xctest: Bundle) -> InstalledArtifact:
+        return await self._install_to_destination(
+            bundle=xctest, destination=InstallRequest.XCTEST
+        )
+
+    @log_and_handle_exceptions
+    async def install_dylib(self, dylib: Bundle) -> InstalledArtifact:
+        return await self._install_to_destination(
+            bundle=dylib, destination=InstallRequest.DYLIB
+        )
+
+    @log_and_handle_exceptions
+    async def install_dsym(self, dsym: Bundle) -> InstalledArtifact:
+        return await self._install_to_destination(
+            bundle=dsym, destination=InstallRequest.DSYM
+        )
+
+    @log_and_handle_exceptions
+    async def install_framework(self, framework_path: Bundle) -> InstalledArtifact:
+        return await self._install_to_destination(
+            bundle=framework_path, destination=InstallRequest.FRAMEWORK
+        )
+
+    async def _install_to_destination(
+        self, bundle: Bundle, destination: Destination
+    ) -> InstalledArtifact:
+        generator = None
+        if isinstance(bundle, str):
+            url = urllib.parse.urlparse(bundle)
+            if url.scheme:
+                # send url
+                payload = Payload(url=bundle)
+                async with self.stub.install.open() as stream:
+                    generator = generate_requests([InstallRequest(payload=payload)])
+
+            else:
+                file_path = str(Path(bundle).resolve(strict=True))
+                if self.companion_info.is_local:
+                    # send file_path
+                    async with self.stub.install.open() as stream:
+                        generator = generate_requests(
+                            [InstallRequest(payload=Payload(file_path=file_path))]
+                        )
+                else:
+                    # chunk file from file_path
+                    generator = generate_binary_chunks(
+                        path=file_path, destination=destination, logger=self.logger
+                    )
+
+        else:
+            # chunk file from memory
+            generator = generate_io_chunks(io=bundle, logger=self.logger)
+        # stream to companion
+        async with self.stub.install.open() as stream:
+            await stream.send_message(InstallRequest(destination=destination))
+            response = await drain_to_stream(
+                stream=stream, generator=generator, logger=self.logger
+            )
+            return InstalledArtifact(name=response.name, uuid=response.uuid)
