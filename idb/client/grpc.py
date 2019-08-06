@@ -2,6 +2,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 import asyncio
+import functools
 import logging
 import urllib.parse
 import warnings
@@ -87,6 +88,7 @@ warnings.filterwarnings(action="ignore", category=ResourceWarning)
 
 
 def log_and_handle_exceptions(func):  # pyre-ignore
+    @functools.wraps(func)
     @log_call(name=func.__name__)
     def func_wrapper(*args, **kwargs):  # pyre-ignore
 
