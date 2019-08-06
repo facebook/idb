@@ -183,7 +183,6 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
         data["host"] = target.companion_info.host
         data["port"] = target.companion_info.port
         data["is_local"] = target.companion_info.is_local
-        data["udid"] = target.companion_info.udid
     return data
 
 
