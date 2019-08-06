@@ -435,7 +435,7 @@ message ConnectRequest {
 message CompanionInfo {
   string udid = 1;
   string host = 2;
-  uint64 port = 3;
+// uint64 port = 3; deprecated
   bool is_local = 4;
   uint64 grpc_port = 5;
 }

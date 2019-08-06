@@ -9,7 +9,7 @@ def companion_to_grpc(companion: CompanionInfo) -> GrpcCompanionInfo:
     return GrpcCompanionInfo(
         udid=companion.udid,
         host=companion.host,
-        port=companion.port,
+        grpc_port=companion.port,
         is_local=companion.is_local,
     )
 
