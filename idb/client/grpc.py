@@ -90,10 +90,22 @@ warnings.filterwarnings(action="ignore", category=ResourceWarning)
 def log_and_handle_exceptions(func):  # pyre-ignore
     @functools.wraps(func)
     @log_call(name=func.__name__)
-    def func_wrapper(*args, **kwargs):  # pyre-ignore
+    def func_wrapper(client, *args, **kwargs):  # pyre-ignore
 
         try:
-            return func(*args, **kwargs)
+            client.companion_info: CompanionInfo = client.direct_companion_manager.get_companion_info(
+                target_udid=client.target_udid
+            )
+            client.logger.info(f"using companion {client.companion_info}")
+            client.channel = Channel(
+                client.companion_info.host,
+                client.companion_info.port,
+                loop=asyncio.get_event_loop(),
+            )
+            client.stub: Optional[CompanionServiceStub] = CompanionServiceStub(
+                channel=client.channel
+            )
+            return func(client, *args, **kwargs)
 
         except GRPCError as e:
             raise IdbException(e.message) from e  # noqa B306
@@ -133,21 +145,6 @@ class GrpcClient(IdbClient):
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
         self.channel: Optional[Channel] = None
         self.stub: Optional[CompanionServiceStub] = None
-        try:
-            self.companion_info: CompanionInfo = self.direct_companion_manager.get_companion_info(
-                target_udid=self.target_udid
-            )
-            self.logger.info(f"using companion {self.companion_info}")
-            self.channel = Channel(
-                self.companion_info.host,
-                self.companion_info.port,
-                loop=asyncio.get_event_loop(),
-            )
-            self.stub: Optional[CompanionServiceStub] = CompanionServiceStub(
-                channel=self.channel
-            )
-        except IdbException as e:
-            self.logger.info(e)
 
     async def provide_client(self) -> CompanionClient:
         await self.daemon_spawner.start_daemon_if_needed(
