@@ -7,7 +7,7 @@ import logging
 import urllib.parse
 import warnings
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, AsyncIterable, Dict, Iterable, List, Optional, Set, Tuple
 
 import idb.grpc.ipc_loader as ipc_loader
 from grpclib.client import Channel
@@ -15,6 +15,14 @@ from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.client.daemon_pid_saver import kill_saved_pids
 from idb.client.daemon_spawner import DaemonSpawner
 from idb.common.direct_companion_manager import DirectCompanionManager
+from idb.common.hid import (
+    button_press_to_events,
+    iterator_to_async_iterator,
+    key_press_to_events,
+    swipe_to_events,
+    tap_to_events,
+    text_to_events,
+)
 from idb.common.install import (
     Bundle,
     Destination,
@@ -33,6 +41,8 @@ from idb.common.types import (
     CrashLogInfo,
     CrashLogQuery,
     FileEntryInfo,
+    HIDButtonType,
+    HIDEvent,
     IdbClient,
     IdbException,
     InstalledAppInfo,
@@ -59,7 +69,6 @@ from idb.grpc.idb_pb2 import (
     Payload,
     Point,
     PushRequest,
-    PushResponse,
     RmRequest,
     ScreenshotRequest,
     SetLocationRequest,
@@ -76,6 +85,7 @@ from idb.ipc.mapping.crash import (
     _to_crash_log_info_list,
     _to_crash_log_query_proto,
 )
+from idb.ipc.mapping.hid import event_to_grpc
 from idb.ipc.mapping.target import target_to_py
 
 
@@ -419,3 +429,52 @@ class GrpcClient(IdbClient):
             )
             for bundle in response.bundles
         ]
+
+    @log_and_handle_exceptions
+    async def send_events(self, events: Iterable[HIDEvent]) -> None:
+        await self.hid(iterator_to_async_iterator(events))
+
+    @log_and_handle_exceptions
+    async def tap(self, x: int, y: int, duration: Optional[float] = None) -> None:
+        await self.send_events(tap_to_events(x, y, duration))
+
+    @log_and_handle_exceptions
+    async def button(
+        self, button_type: HIDButtonType, duration: Optional[float] = None
+    ) -> None:
+        await self.send_events(button_press_to_events(button_type, duration))
+
+    @log_and_handle_exceptions
+    async def key(self, keycode: int, duration: Optional[float] = None) -> None:
+        await self.send_events(key_press_to_events(keycode, duration))
+
+    @log_and_handle_exceptions
+    async def text(self, text: str) -> None:
+        await self.send_events(text_to_events(text))
+
+    @log_and_handle_exceptions
+    async def swipe(
+        self,
+        p_start: Tuple[int, int],
+        p_end: Tuple[int, int],
+        delta: Optional[int] = None,
+    ) -> None:
+        await self.send_events(swipe_to_events(p_start, p_end, delta))
+
+    @log_and_handle_exceptions
+    async def key_sequence(self, key_sequence: List[int]) -> None:
+        events: List[HIDEvent] = []
+        for key in key_sequence:
+            events.extend(key_press_to_events(key))
+        await self.send_events(events)
+
+    @log_and_handle_exceptions
+    async def hid(self, event_iterator: AsyncIterable[HIDEvent]) -> None:
+        async with self.stub.hid.open() as stream:
+            grpc_event_iterator = (
+                event_to_grpc(event) async for event in event_iterator
+            )
+            await drain_to_stream(
+                stream=stream, generator=grpc_event_iterator, logger=self.logger
+            )
+            await stream.recv_message()
