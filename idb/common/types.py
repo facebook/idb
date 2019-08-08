@@ -375,21 +375,7 @@ class IdbClient:
         app_args: Optional[List[str]] = None,
         started: Optional[asyncio.Event] = None,
         timings: Optional[InstrumentsTimings] = None,
-    ) -> None:
-        return
-
-    async def start_instruments(
-        self,
-        template: str,
-        app_bundle_id: str,
-        env: Optional[Dict[str, str]] = None,
-        app_args: Optional[List[str]] = None,
-    ) -> Optional[str]:
-        return
-
-    async def stop_instruments(
-        self, session_id: str, post_process_arguments: Optional[List[str]] = None
-    ) -> Tuple[Optional[bytes], Optional[str]]:
+    ) -> str:
         pass
 
     async def crash_list(self, query: CrashLogQuery) -> List[CrashLogInfo]:

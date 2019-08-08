@@ -4,6 +4,7 @@
 import asyncio
 import functools
 import logging
+import os
 import urllib.parse
 import warnings
 from pathlib import Path
@@ -30,6 +31,11 @@ from idb.common.install import (
     generate_io_chunks,
     generate_requests,
 )
+from idb.common.instruments import (
+    drain_until_running,
+    instruments_generate_bytes,
+    translate_instruments_timings,
+)
 from idb.common.logging import log_call
 from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
@@ -48,6 +54,7 @@ from idb.common.types import (
     InstalledAppInfo,
     InstalledArtifact,
     InstalledTestInfo,
+    InstrumentsTimings,
     TargetDescription,
 )
 from idb.grpc.idb_grpc import CompanionServiceStub
@@ -62,6 +69,7 @@ from idb.grpc.idb_pb2 import (
     DebugServerResponse,
     FocusRequest,
     InstallRequest,
+    InstrumentsRunRequest,
     ListAppsRequest,
     Location,
     LsRequest,
@@ -82,7 +90,7 @@ from idb.grpc.idb_pb2 import (
     XctestListBundlesRequest,
     XctestListTestsRequest,
 )
-from idb.grpc.stream import drain_to_stream, generate_bytes
+from idb.grpc.stream import drain_to_stream, generate_bytes, stop_wrapper
 from idb.grpc.types import CompanionClient
 from idb.ipc.mapping.crash import (
     _to_crash_log,
@@ -530,3 +538,58 @@ class GrpcClient(IdbClient):
         )
         commands = response.status.lldb_bootstrap_commands
         return commands if commands else None
+
+    @log_and_handle_exceptions
+    async def run_instruments(
+        self,
+        stop: asyncio.Event,
+        template: str,
+        app_bundle_id: str,
+        trace_path: str,
+        post_process_arguments: Optional[List[str]] = None,
+        env: Optional[Dict[str, str]] = None,
+        app_args: Optional[List[str]] = None,
+        started: Optional[asyncio.Event] = None,
+        timings: Optional[InstrumentsTimings] = None,
+    ) -> str:
+        trace_path = os.path.realpath(trace_path)
+        self.logger.info(f"Starting instruments connection, writing to {trace_path}")
+        async with self.stub.instruments_run.open() as stream:
+            self.logger.info("Sending instruments request")
+            await stream.send_message(
+                InstrumentsRunRequest(
+                    start=InstrumentsRunRequest.Start(
+                        file_path=None,
+                        template_name=template,
+                        app_bundle_id=app_bundle_id,
+                        environment=env,
+                        arguments=app_args,
+                        timings=translate_instruments_timings(timings),
+                    )
+                )
+            )
+            self.logger.info("Starting instruments")
+            await drain_until_running(stream=stream, logger=self.logger)
+            if started:
+                started.set()
+            self.logger.info("Instruments has started, waiting for stop")
+            async for response in stop_wrapper(stream=stream, stop=stop):
+                output = response.log_output
+                if len(output):
+                    self.logger.info(output.decode())
+            self.logger.info("Stopping instruments")
+            await stream.send_message(
+                InstrumentsRunRequest(
+                    stop=InstrumentsRunRequest.Stop(
+                        post_process_arguments=post_process_arguments
+                    )
+                )
+            )
+            await stream.end()
+            self.logger.info(f"Writing instruments from tar to {trace_path}")
+            await drain_untar(
+                instruments_generate_bytes(stream=stream, logger=self.logger),
+                output_path=trace_path,
+            )
+            self.logger.info(f"Instruments trace written to {trace_path}")
+            return trace_path
