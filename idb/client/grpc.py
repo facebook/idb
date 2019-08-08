@@ -58,6 +58,8 @@ from idb.grpc.idb_pb2 import (
     ClearKeychainRequest,
     ContactsUpdateRequest,
     CrashShowRequest,
+    DebugServerRequest,
+    DebugServerResponse,
     FocusRequest,
     InstallRequest,
     ListAppsRequest,
@@ -499,3 +501,32 @@ class GrpcClient(IdbClient):
                 stream=stream, generator=grpc_event_iterator, logger=self.logger
             )
             await stream.recv_message()
+
+    async def debug_server(self, request: DebugServerRequest) -> DebugServerResponse:
+        async with self.stub.debugserver.open() as stream:
+            await stream.send_message(request)
+            await stream.end()
+            return await stream.recv_message()
+
+    @log_and_handle_exceptions
+    async def debugserver_start(self, bundle_id: str) -> List[str]:
+        response = await self.debug_server(
+            request=DebugServerRequest(
+                start=DebugServerRequest.Start(bundle_id=bundle_id)
+            )
+        )
+        return response.status.lldb_bootstrap_commands
+
+    @log_and_handle_exceptions
+    async def debugserver_stop(self) -> None:
+        await self.debug_server(
+            request=DebugServerRequest(stop=DebugServerRequest.Stop())
+        )
+
+    @log_and_handle_exceptions
+    async def debugserver_status(self) -> Optional[List[str]]:
+        response = await self.debug_server(
+            request=DebugServerRequest(status=DebugServerRequest.Status())
+        )
+        commands = response.status.lldb_bootstrap_commands
+        return commands if commands else None
