@@ -37,6 +37,7 @@ from idb.common.types import (
     IdbException,
     InstalledAppInfo,
     InstalledArtifact,
+    InstalledTestInfo,
     TargetDescription,
 )
 from idb.grpc.idb_grpc import CompanionServiceStub
@@ -65,6 +66,7 @@ from idb.grpc.idb_pb2 import (
     TargetDescriptionRequest,
     TerminateRequest,
     UninstallRequest,
+    XctestListBundlesRequest,
     XctestListTestsRequest,
 )
 from idb.grpc.stream import drain_to_stream
@@ -405,3 +407,15 @@ class GrpcClient(IdbClient):
             XctestListTestsRequest(bundle_name=test_bundle_id)
         )
         return [name for name in response.names]
+
+    @log_and_handle_exceptions
+    async def list_xctests(self) -> List[InstalledTestInfo]:
+        response = await self.stub.xctest_list_bundles(XctestListBundlesRequest())
+        return [
+            InstalledTestInfo(
+                bundle_id=bundle.bundle_id,
+                name=bundle.name,
+                architectures=bundle.architectures,
+            )
+            for bundle in response.bundles
+        ]
