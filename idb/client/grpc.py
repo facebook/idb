@@ -65,6 +65,7 @@ from idb.grpc.idb_pb2 import (
     TargetDescriptionRequest,
     TerminateRequest,
     UninstallRequest,
+    XctestListTestsRequest,
 )
 from idb.grpc.stream import drain_to_stream
 from idb.grpc.types import CompanionClient
@@ -397,3 +398,10 @@ class GrpcClient(IdbClient):
                     ),
                     logger=self.logger,
                 )
+
+    @log_and_handle_exceptions
+    async def list_test_bundle(self, test_bundle_id: str) -> List[str]:
+        response = await self.stub.xctest_list_tests(
+            XctestListTestsRequest(bundle_name=test_bundle_id)
+        )
+        return [name for name in response.names]
