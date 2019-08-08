@@ -36,6 +36,7 @@ from idb.common.instruments import (
     instruments_generate_bytes,
     translate_instruments_timings,
 )
+from idb.common.launch import drain_launch_stream, end_launch_stream
 from idb.common.logging import log_call
 from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
@@ -70,6 +71,7 @@ from idb.grpc.idb_pb2 import (
     FocusRequest,
     InstallRequest,
     InstrumentsRunRequest,
+    LaunchRequest,
     ListAppsRequest,
     Location,
     LsRequest,
@@ -593,3 +595,31 @@ class GrpcClient(IdbClient):
             )
             self.logger.info(f"Instruments trace written to {trace_path}")
             return trace_path
+
+    @log_and_handle_exceptions
+    async def launch(
+        self,
+        bundle_id: str,
+        args: Optional[List[str]] = None,
+        env: Optional[Dict[str, str]] = None,
+        foreground_if_running: bool = False,
+        stop: Optional[asyncio.Event] = None,
+    ) -> None:
+        async with self.stub.launch.open() as stream:
+            request = LaunchRequest(
+                start=LaunchRequest.Start(
+                    bundle_id=bundle_id,
+                    env=env,
+                    app_args=args,
+                    foreground_if_running=foreground_if_running,
+                    wait_for=True if stop else False,
+                )
+            )
+            await stream.send_message(request)
+            if stop:
+                await asyncio.gather(
+                    drain_launch_stream(stream), end_launch_stream(stream, stop)
+                )
+            else:
+                await stream.end()
+                await drain_launch_stream(stream)
