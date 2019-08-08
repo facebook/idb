@@ -7,14 +7,6 @@ from idb.grpc.stream import generate_bytes
 from idb.grpc.types import CompanionClient
 
 
-async def client(
-    client: CompanionClient, bundle_id: str, src_path: str, dest_path: str
-) -> None:
-    await client.stub.pull(
-        PullRequest(bundle_id=bundle_id, src_path=src_path, dst_path=dest_path)
-    )
-
-
 async def daemon(client: CompanionClient, request: PullRequest) -> PullResponse:
     destination = request.dst_path
     async with client.stub.pull.open() as stream:

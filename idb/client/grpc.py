@@ -32,7 +32,7 @@ from idb.common.install import (
 )
 from idb.common.logging import log_call
 from idb.common.stream import stream_map
-from idb.common.tar import create_tar, generate_tar
+from idb.common.tar import create_tar, drain_untar, generate_tar
 from idb.common.types import (
     AccessibilityInfo,
     AppProcessState,
@@ -68,6 +68,8 @@ from idb.grpc.idb_pb2 import (
     OpenUrlRequest,
     Payload,
     Point,
+    PullRequest,
+    PullResponse,
     PushRequest,
     RmRequest,
     ScreenshotRequest,
@@ -78,7 +80,7 @@ from idb.grpc.idb_pb2 import (
     XctestListBundlesRequest,
     XctestListTestsRequest,
 )
-from idb.grpc.stream import drain_to_stream
+from idb.grpc.stream import drain_to_stream, generate_bytes
 from idb.grpc.types import CompanionClient
 from idb.ipc.mapping.crash import (
     _to_crash_log,
@@ -410,6 +412,25 @@ class GrpcClient(IdbClient):
                     ),
                     logger=self.logger,
                 )
+
+    @log_and_handle_exceptions
+    async def pull(self, bundle_id: str, src_path: str, dest_path: str) -> None:
+        async with self.stub.pull.open() as stream:
+            request = request = PullRequest(
+                bundle_id=bundle_id,
+                src_path=src_path,
+                # not sending the destination to remote companion
+                # so it streams the file back
+                dst_path=dest_path if self.companion_info.is_local else None,
+            )
+            await stream.send_message(request)
+            await stream.end()
+            if self.companion_info.is_local:
+                await stream.recv_message()
+            else:
+                await drain_untar(generate_bytes(stream), output_path=dest_path)
+            self.logger.info(f"pulled file to {dest_path}")
+        return PullResponse(payload=Payload(file_path=dest_path))
 
     @log_and_handle_exceptions
     async def list_test_bundle(self, test_bundle_id: str) -> List[str]:
