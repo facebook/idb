@@ -840,8 +840,9 @@ static BOOL NSBundle_loadAndReturnError(id self, SEL sel, NSError **error)
 static void assignOutputFiles(void)
 {
   const char *stdoutFileKey = "OTEST_SHIM_STDOUT_FILE";
-  if (getenv(stdoutFileKey)) {
-    __stdout = fopen(getenv(stdoutFileKey), "w");
+  FILE *shimStdoutFile = fopen(getenv(stdoutFileKey), "w");
+  if (shimStdoutFile) {
+    __stdout = shimStdoutFile;
   } else {
     int stdoutHandle = dup(STDOUT_FILENO);
     __stdout = fdopen(stdoutHandle, "w");
@@ -849,8 +850,9 @@ static void assignOutputFiles(void)
   setvbuf(__stdout, NULL, _IONBF, 0);
 
   const char *stderrFileKey = "OTEST_SHIM_STDERR_FILE";
-  if (getenv(stderrFileKey)) {
-    __stderr = fopen(getenv(stderrFileKey), "w");
+  FILE *shimStderrFile = fopen(getenv(stderrFileKey), "w");
+  if (shimStderrFile) {
+    __stderr = shimStderrFile;
   } else {
     int stderrHandle = dup(STDERR_FILENO);
     __stderr = fdopen(stderrHandle, "w");
