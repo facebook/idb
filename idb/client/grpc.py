@@ -14,8 +14,8 @@ from typing import Any, AsyncIterable, Dict, Iterable, List, Optional, Set, Tupl
 import idb.grpc.ipc_loader as ipc_loader
 from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
-from idb.client.daemon_pid_saver import kill_saved_pids
 from idb.client.daemon_spawner import DaemonSpawner
+from idb.client.pid_saver import kill_saved_pids
 from idb.common.companion_spawner import CompanionSpawner
 from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.common.hid import (

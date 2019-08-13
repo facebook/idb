@@ -8,17 +8,17 @@ import signal
 import tempfile
 from unittest import mock
 
-from idb.client.daemon_pid_saver import (
-    _clear_saved_daemon_pids,
-    _get_daemon_pids,
-    _write_daemon_pids,
+from idb.client.daemon_spawner import DaemonSpawner, DaemonSpawnerException
+from idb.client.pid_saver import (
+    _clear_saved_pids,
+    _get_pids,
+    _write_pids,
     kill_saved_pids,
 )
-from idb.client.daemon_spawner import DaemonSpawner, DaemonSpawnerException
 from idb.common.constants import (
     DEFAULT_DAEMON_GRPC_PORT,
     DEFAULT_DAEMON_HOST,
-    IDB_DAEMON_PID_PATH,
+    IDB_PID_PATH,
 )
 from idb.utils.testing import AsyncMock, TestCase, ignoreTaskLeaks
 
@@ -58,16 +58,14 @@ class DaemonSpawnerTests(TestCase):
                 self.spawner._spawn_daemon.assert_called_once_with()
 
     async def test_kill_no_pids(self) -> None:
-        _clear_saved_daemon_pids()
+        _clear_saved_pids()
         with mock.patch("idb.client.daemon_spawner.os.kill") as kill:
             await kill_saved_pids()
             kill.assert_not_called()
 
     async def test_kill_with_pids(self) -> None:
-        _clear_saved_daemon_pids()
-        with mock.patch(
-            "idb.client.daemon_pid_saver._get_daemon_pids", return_value=[1, 2]
-        ):
+        _clear_saved_pids()
+        with mock.patch("idb.client.pid_saver._get_pids", return_value=[1, 2]):
             with mock.patch("idb.client.daemon_spawner.os.kill") as kill:
                 await kill_saved_pids()
                 kill.assert_has_calls(
@@ -75,20 +73,20 @@ class DaemonSpawnerTests(TestCase):
                 )
 
     async def test_save_daemon_pids(self) -> None:
-        _clear_saved_daemon_pids()
+        _clear_saved_pids()
         with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = os.path.join(temp_dir, IDB_DAEMON_PID_PATH)
-            _write_daemon_pids(pids=[1, 2])
+            file_path = os.path.join(temp_dir, IDB_PID_PATH)
+            _write_pids(pids=[1, 2])
             with open(file_path, "r") as file:
                 self.assertEqual(json.load(file), [1, 2])
 
     async def test_get_daemon_pids(self) -> None:
-        _clear_saved_daemon_pids()
+        _clear_saved_pids()
         with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = os.path.join(temp_dir, IDB_DAEMON_PID_PATH)
+            file_path = os.path.join(temp_dir, IDB_PID_PATH)
             with open(file_path, "w") as file:
                 json.dump([1, 2], file)
-            self.assertEqual([1, 2], _get_daemon_pids())
+            self.assertEqual([1, 2], _get_pids())
 
     async def test_spawn_daemon(self) -> None:
         await self.spawn_daemon(on_darwin=False)
@@ -97,7 +95,7 @@ class DaemonSpawnerTests(TestCase):
         await self.spawn_daemon(on_darwin=True)
 
     async def spawn_daemon(self, on_darwin: bool) -> None:
-        _clear_saved_daemon_pids()
+        _clear_saved_pids()
         with tempfile.TemporaryDirectory() as temp_dir:
             self.spawner._log_file_path = mock.Mock(return_value=temp_dir + "/daemon")
             self.spawner._read_daemon_output = AsyncMock()
@@ -119,7 +117,7 @@ class DaemonSpawnerTests(TestCase):
                     stdout=asyncio.subprocess.PIPE,
                     stderr=mock.ANY,
                 )
-                self.assertEqual(_get_daemon_pids(), [123])
+                self.assertEqual(_get_pids(), [123])
 
     async def test_read_daemon_output_json(self) -> None:
         stream = mock.Mock()

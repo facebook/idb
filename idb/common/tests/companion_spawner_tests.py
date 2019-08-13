@@ -17,7 +17,9 @@ class CompanionSpawnerTest(TestCase):
         with mock.patch(
             "idb.common.companion_spawner.asyncio.create_subprocess_exec",
             new=AsyncMock(),
-        ) as exec_mock, mock.patch("idb.common.companion_spawner.open"):
+        ) as exec_mock, mock.patch("idb.common.companion_spawner.open"), mock.patch(
+            "idb.common.companion_spawner.save_pid"
+        ):
             process_mock = mock.Mock()
             process_mock.stdout.readline = AsyncMock(
                 return_value=json.dumps(

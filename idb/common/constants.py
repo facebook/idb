@@ -20,6 +20,6 @@ CRASH_LIST_TIMEOUT: float = timedelta(minutes=5).total_seconds()
 
 JSONDict = Dict[str, Any]
 
-IDB_DAEMON_PID_PATH: str = "/tmp/idb_daemon_pid"
+IDB_PID_PATH: str = "/tmp/idb_pid"
 IDB_LOGS_PATH: str = "/tmp/idb_logs"
 IDB_STATE_FILE_PATH: str = "/tmp/idb_state"

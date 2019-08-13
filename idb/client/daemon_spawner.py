@@ -11,7 +11,7 @@ from asyncio import StreamReader
 from typing import List
 
 import idb.common.networking as networking
-from idb.client.daemon_pid_saver import kill_saved_pids, save_daemon_pid
+from idb.client.pid_saver import kill_saved_pids, save_pid
 from idb.common.constants import (
     DEFAULT_DAEMON_GRPC_PORT,
     DEFAULT_DAEMON_HOST,
@@ -60,5 +60,5 @@ class DaemonSpawner:
                 *cmd, stdout=asyncio.subprocess.PIPE, stderr=log_file
             )
             logging.debug(f"daemon process id {process.pid}")
-            save_daemon_pid(pid=process.pid)
+            save_pid(pid=process.pid)
             await self._read_daemon_output(none_throws(process.stdout))

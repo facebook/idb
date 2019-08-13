@@ -2,15 +2,13 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 import asyncio
-import atexit
 import json
 import logging
 import os
-import signal
 from asyncio import StreamReader
-from asyncio.subprocess import Process
 from typing import List
 
+from idb.client.pid_saver import save_pid
 from idb.common.constants import IDB_LOGS_PATH
 
 
@@ -21,7 +19,6 @@ class CompanionSpawnerException(Exception):
 class CompanionSpawner:
     def __init__(self, companion_path: str) -> None:
         self.companion_path = companion_path
-        self.companion_processes: List[Process] = []
 
     async def _read_stream(self, stream: StreamReader) -> int:
         port = 0
@@ -63,7 +60,7 @@ class CompanionSpawner:
                 stdin=asyncio.subprocess.PIPE,
                 stderr=log_file,
             )
-            self.companion_processes.append(process)
+            save_pid(process.pid)
             logging.debug(f"started companion at process id {process.pid}")
             if process.stdout:
                 port = await self._read_stream(process.stdout)
@@ -71,9 +68,3 @@ class CompanionSpawner:
                     raise CompanionSpawnerException("failed to spawn companion")
                 return port
             raise CompanionSpawnerException("process has no stdout")
-
-    def close(self) -> None:
-        logging.info("Stopping companion spawner")
-        for process in self.companion_processes:
-            logging.info("Stopping companion")
-            process.terminate()
