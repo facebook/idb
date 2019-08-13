@@ -3,10 +3,11 @@
 
 import asyncio
 import functools
+import inspect
 import logging
 import os
+import platform
 import urllib.parse
-import warnings
 from pathlib import Path
 from typing import Any, AsyncIterable, Dict, Iterable, List, Optional, Set, Tuple
 
@@ -15,6 +16,7 @@ from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.client.daemon_pid_saver import kill_saved_pids
 from idb.client.daemon_spawner import DaemonSpawner
+from idb.common.companion_spawner import CompanionSpawner
 from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.common.hid import (
     button_press_to_events,
@@ -56,6 +58,7 @@ from idb.common.types import (
     InstalledArtifact,
     InstalledTestInfo,
     InstrumentsTimings,
+    LoggingMetadata,
     TargetDescription,
 )
 from idb.grpc.idb_grpc import CompanionServiceStub
@@ -101,6 +104,8 @@ from idb.ipc.mapping.crash import (
 )
 from idb.ipc.mapping.hid import event_to_grpc
 from idb.ipc.mapping.target import target_to_py
+from idb.utils.contextlib import asynccontextmanager
+from idb.utils.typing import none_throws
 
 
 APPROVE_MAP: Dict[str, Any] = {
@@ -109,37 +114,36 @@ APPROVE_MAP: Dict[str, Any] = {
     "contacts": ApproveRequest.CONTACTS,
 }
 
-# this is to silence the channel not closed warning
-# https://github.com/vmagamedov/grpclib/issues/58
-warnings.filterwarnings(action="ignore", category=ResourceWarning)
+
+CLIENT_METADATA: LoggingMetadata = {"component": "client", "rpc_protocol": "grpc"}
 
 
 def log_and_handle_exceptions(func):  # pyre-ignore
     @functools.wraps(func)
-    @log_call(name=func.__name__)
-    def func_wrapper(client, *args, **kwargs):  # pyre-ignore
-
+    @log_call(name=func.__name__, metadata=CLIENT_METADATA)
+    async def func_wrapper(*args: Any, **kwargs: Any) -> Any:  # pyre-ignore
         try:
-            client.companion_info: CompanionInfo = client.direct_companion_manager.get_companion_info(
-                target_udid=client.target_udid
-            )
-            client.logger.info(f"using companion {client.companion_info}")
-            client.channel = Channel(
-                client.companion_info.host,
-                client.companion_info.port,
-                loop=asyncio.get_event_loop(),
-            )
-            client.stub: Optional[CompanionServiceStub] = CompanionServiceStub(
-                channel=client.channel
-            )
-            return func(client, *args, **kwargs)
-
+            return await func(*args, **kwargs)
         except GRPCError as e:
             raise IdbException(e.message) from e  # noqa B306
         except (ProtocolError, StreamTerminatedError) as e:
             raise IdbException(e.args) from e
 
-    return func_wrapper
+    @functools.wraps(func)
+    @log_call(name=func.__name__, metadata=CLIENT_METADATA)
+    async def func_wrapper_gen(*args: Any, **kwargs: Any) -> Any:  # pyre-ignore
+        try:
+            async for item in func(*args, **kwargs):
+                yield item
+        except GRPCError as e:
+            raise IdbException(e.message) from e  # noqa B306
+        except (ProtocolError, StreamTerminatedError) as e:
+            raise IdbException(e.args) from e
+
+    if inspect.isasyncgenfunction(func):
+        return func_wrapper_gen
+    else:
+        return func_wrapper
 
 
 class GrpcClient(IdbClient):
@@ -165,13 +169,9 @@ class GrpcClient(IdbClient):
             daemon_provider=self.provide_client
         ):
             setattr(self, call_name, f)
-        # this is temporary while we are killing the daemon
-        # the cli needs access to the new direct_companion_manager to route direct
-        # commands.
-        # this overrides the stub to talk directly to the companion
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
-        self.channel: Optional[Channel] = None
-        self.stub: Optional[CompanionServiceStub] = None
+        self.companion_spawner = CompanionSpawner(companion_path="idb_companion")
+        self.companion_info: Optional[CompanionInfo] = None
 
     async def provide_client(self) -> CompanionClient:
         await self.daemon_spawner.start_daemon_if_needed(
@@ -188,6 +188,42 @@ class GrpcClient(IdbClient):
             udid=self.target_udid,
             logger=self.logger,
         )
+        self.companion_info: Optional[CompanionInfo] = None
+
+    @asynccontextmanager
+    async def get_stub(self) -> CompanionServiceStub:
+        channel: Optional[Channel] = None
+        try:
+            try:
+                self.companion_info = self.direct_companion_manager.get_companion_info(
+                    target_udid=self.target_udid
+                )
+            except IdbException as e:
+                # will try to spawn a companion if on mac.
+                if platform.system() == "Darwin" and self.target_udid:
+                    self.logger.info(
+                        f"will attempt to spawn a companion for {self.target_udid}"
+                    )
+                    port = await self.companion_spawner.spawn_companion(
+                        target_udid=self.target_udid
+                    )
+                    host = "localhost"
+                    self.companion_info = CompanionInfo(
+                        host=host, port=port, udid=self.target_udid, is_local=True
+                    )
+                    self.direct_companion_manager.add_companion(self.companion_info)
+                else:
+                    raise e
+            self.logger.info(f"using companion {self.companion_info}")
+            channel = Channel(
+                self.companion_info.host,
+                self.companion_info.port,
+                loop=asyncio.get_event_loop(),
+            )
+            yield CompanionServiceStub(channel=channel)
+        finally:
+            if channel:
+                channel.close()
 
     @property
     def metadata(self) -> Dict[str, str]:
@@ -196,40 +232,41 @@ class GrpcClient(IdbClient):
         else:
             return {}
 
-    @log_and_handle_exceptions
     async def kill(self) -> None:
         await kill_saved_pids()
         self.direct_companion_manager.clear()
 
     @log_and_handle_exceptions
     async def list_apps(self) -> List[InstalledAppInfo]:
-        response = await self.stub.list_apps(ListAppsRequest())
-        return [
-            InstalledAppInfo(
-                bundle_id=app.bundle_id,
-                name=app.name,
-                architectures=app.architectures,
-                install_type=app.install_type,
-                process_state=AppProcessState(app.process_state),
-                debuggable=app.debuggable,
-            )
-            for app in response.apps
-        ]
+        async with self.get_stub() as stub:
+            response = await stub.list_apps(ListAppsRequest())
+            return [
+                InstalledAppInfo(
+                    bundle_id=app.bundle_id,
+                    name=app.name,
+                    architectures=app.architectures,
+                    install_type=app.install_type,
+                    process_state=AppProcessState(app.process_state),
+                    debuggable=app.debuggable,
+                )
+                for app in response.apps
+            ]
 
     @log_and_handle_exceptions
     async def accessibility_info(
         self, point: Optional[Tuple[int, int]]
     ) -> AccessibilityInfo:
-        grpc_point = Point(x=point[0], y=point[1]) if point is not None else None
-        response = await self.stub.accessibility_info(
-            AccessibilityInfoRequest(point=grpc_point)
-        )
-        return AccessibilityInfo(json=response.json)
+        async with self.get_stub() as stub:
+            grpc_point = Point(x=point[0], y=point[1]) if point is not None else None
+            response = await stub.accessibility_info(
+                AccessibilityInfoRequest(point=grpc_point)
+            )
+            return AccessibilityInfo(json=response.json)
 
     @log_and_handle_exceptions
     async def add_media(self, file_paths: List[str]) -> None:
-        async with self.stub.add_media.open() as stream:
-            if self.companion_info.is_local:
+        async with self.get_stub() as stub, stub.add_media.open() as stream:
+            if none_throws(self.companion_info).is_local:
                 for file_path in file_paths:
                     await stream.send_message(
                         AddMediaRequest(payload=Payload(file_path=file_path))
@@ -247,91 +284,108 @@ class GrpcClient(IdbClient):
 
     @log_and_handle_exceptions
     async def approve(self, bundle_id: str, permissions: Set[str]) -> None:
-        await self.stub.approve(
-            ApproveRequest(
-                bundle_id=bundle_id,
-                permissions=[APPROVE_MAP[permission] for permission in permissions],
+        async with self.get_stub() as stub:
+            await stub.approve(
+                ApproveRequest(
+                    bundle_id=bundle_id,
+                    permissions=[APPROVE_MAP[permission] for permission in permissions],
+                )
             )
-        )
 
     @log_and_handle_exceptions
     async def clear_keychain(self) -> None:
-        await self.stub.clear_keychain(ClearKeychainRequest())
+        async with self.get_stub() as stub:
+            await stub.clear_keychain(ClearKeychainRequest())
 
     @log_and_handle_exceptions
     async def contacts_update(self, contacts_path: str) -> None:
-        data = await create_tar([contacts_path])
-        await self.stub.contacts_update(
-            ContactsUpdateRequest(payload=Payload(data=data))
-        )
+        async with self.get_stub() as stub:
+            data = await create_tar([contacts_path])
+            await stub.contacts_update(
+                ContactsUpdateRequest(payload=Payload(data=data))
+            )
 
     @log_and_handle_exceptions
     async def screenshot(self) -> bytes:
-        response = await self.stub.screenshot(ScreenshotRequest())
-        return response.image_data
+        async with self.get_stub() as stub:
+            response = await stub.screenshot(ScreenshotRequest())
+            return response.image_data
 
     @log_and_handle_exceptions
     async def set_location(self, latitude: float, longitude: float) -> None:
-        await self.stub.set_location(
-            SetLocationRequest(
-                location=Location(latitude=latitude, longitude=longitude)
+        async with self.get_stub() as stub:
+            await stub.set_location(
+                SetLocationRequest(
+                    location=Location(latitude=latitude, longitude=longitude)
+                )
             )
-        )
 
     @log_and_handle_exceptions
     async def terminate(self, bundle_id: str) -> None:
-        await self.stub.terminate(TerminateRequest(bundle_id=bundle_id))
+        async with self.get_stub() as stub:
+            await stub.terminate(TerminateRequest(bundle_id=bundle_id))
 
     @log_and_handle_exceptions
     async def describe(self) -> TargetDescription:
-        response = await self.stub.describe(TargetDescriptionRequest())
-        return target_to_py(response.target_description)
+        async with self.get_stub() as stub:
+            response = await stub.describe(TargetDescriptionRequest())
+            return target_to_py(response.target_description)
 
     @log_and_handle_exceptions
     async def focus(self) -> None:
-        await self.stub.focus(FocusRequest())
+        async with self.get_stub() as stub:
+            await stub.focus(FocusRequest())
 
     @log_and_handle_exceptions
     async def open_url(self, url: str) -> None:
-        await self.stub.open_url(OpenUrlRequest(url=url))
+        async with self.get_stub() as stub:
+            await stub.open_url(OpenUrlRequest(url=url))
 
     @log_and_handle_exceptions
     async def uninstall(self, bundle_id: str) -> None:
-        await self.stub.uninstall(UninstallRequest(bundle_id=bundle_id))
+        async with self.get_stub() as stub:
+            await stub.uninstall(UninstallRequest(bundle_id=bundle_id))
 
     @log_and_handle_exceptions
     async def rm(self, bundle_id: str, paths: List[str]) -> None:
-        await self.stub.rm(RmRequest(bundle_id=bundle_id, paths=paths))
+        async with self.get_stub() as stub:
+            await stub.rm(RmRequest(bundle_id=bundle_id, paths=paths))
 
     @log_and_handle_exceptions
     async def mv(self, bundle_id: str, src_paths: List[str], dest_path: str) -> None:
-        await self.stub.mv(
-            MvRequest(bundle_id=bundle_id, src_paths=src_paths, dst_path=dest_path)
-        )
+        async with self.get_stub() as stub:
+            await stub.mv(
+                MvRequest(bundle_id=bundle_id, src_paths=src_paths, dst_path=dest_path)
+            )
 
     @log_and_handle_exceptions
     async def ls(self, bundle_id: str, path: str) -> List[FileEntryInfo]:
-        response = await self.stub.ls(LsRequest(bundle_id=bundle_id, path=path))
-        return [FileEntryInfo(path=file.path) for file in response.files]
+        async with self.get_stub() as stub:
+            response = await stub.ls(LsRequest(bundle_id=bundle_id, path=path))
+            return [FileEntryInfo(path=file.path) for file in response.files]
 
     @log_and_handle_exceptions
     async def mkdir(self, bundle_id: str, path: str) -> None:
-        await self.stub.mkdir(MkdirRequest(bundle_id=bundle_id, path=path))
+        async with self.get_stub() as stub:
+            await stub.mkdir(MkdirRequest(bundle_id=bundle_id, path=path))
 
     @log_and_handle_exceptions
     async def crash_delete(self, query: CrashLogQuery) -> List[CrashLogInfo]:
-        response = await self.stub.crash_delete(_to_crash_log_query_proto(query))
-        return _to_crash_log_info_list(response)
+        async with self.get_stub() as stub:
+            response = await stub.crash_delete(_to_crash_log_query_proto(query))
+            return _to_crash_log_info_list(response)
 
     @log_and_handle_exceptions
     async def crash_list(self, query: CrashLogQuery) -> List[CrashLogInfo]:
-        response = await self.stub.crash_list(_to_crash_log_query_proto(query))
-        return _to_crash_log_info_list(response)
+        async with self.get_stub() as stub:
+            response = await stub.crash_list(_to_crash_log_query_proto(query))
+            return _to_crash_log_info_list(response)
 
     @log_and_handle_exceptions
     async def crash_show(self, name: str) -> CrashLog:
-        response = await self.stub.crash_show(CrashShowRequest(name=name))
-        return _to_crash_log(response)
+        async with self.get_stub() as stub:
+            response = await stub.crash_show(CrashShowRequest(name=name))
+            return _to_crash_log(response)
 
     @log_and_handle_exceptions
     async def install(self, bundle: Bundle) -> InstalledArtifact:
@@ -366,49 +420,50 @@ class GrpcClient(IdbClient):
     async def _install_to_destination(
         self, bundle: Bundle, destination: Destination
     ) -> InstalledArtifact:
-        generator = None
-        if isinstance(bundle, str):
-            url = urllib.parse.urlparse(bundle)
-            if url.scheme:
-                # send url
-                payload = Payload(url=bundle)
-                async with self.stub.install.open() as stream:
-                    generator = generate_requests([InstallRequest(payload=payload)])
+        async with self.get_stub() as stub:
+            generator = None
+            if isinstance(bundle, str):
+                url = urllib.parse.urlparse(bundle)
+                if url.scheme:
+                    # send url
+                    payload = Payload(url=bundle)
+                    async with stub.install.open() as stream:
+                        generator = generate_requests([InstallRequest(payload=payload)])
+
+                else:
+                    file_path = str(Path(bundle).resolve(strict=True))
+                    if none_throws(self.companion_info).is_local:
+                        # send file_path
+                        async with stub.install.open() as stream:
+                            generator = generate_requests(
+                                [InstallRequest(payload=Payload(file_path=file_path))]
+                            )
+                    else:
+                        # chunk file from file_path
+                        generator = generate_binary_chunks(
+                            path=file_path, destination=destination, logger=self.logger
+                        )
 
             else:
-                file_path = str(Path(bundle).resolve(strict=True))
-                if self.companion_info.is_local:
-                    # send file_path
-                    async with self.stub.install.open() as stream:
-                        generator = generate_requests(
-                            [InstallRequest(payload=Payload(file_path=file_path))]
-                        )
-                else:
-                    # chunk file from file_path
-                    generator = generate_binary_chunks(
-                        path=file_path, destination=destination, logger=self.logger
-                    )
-
-        else:
-            # chunk file from memory
-            generator = generate_io_chunks(io=bundle, logger=self.logger)
-        # stream to companion
-        async with self.stub.install.open() as stream:
-            await stream.send_message(InstallRequest(destination=destination))
-            response = await drain_to_stream(
-                stream=stream, generator=generator, logger=self.logger
-            )
-            return InstalledArtifact(name=response.name, uuid=response.uuid)
+                # chunk file from memory
+                generator = generate_io_chunks(io=bundle, logger=self.logger)
+            # stream to companion
+            async with stub.install.open() as stream:
+                await stream.send_message(InstallRequest(destination=destination))
+                response = await drain_to_stream(
+                    stream=stream, generator=generator, logger=self.logger
+                )
+                return InstalledArtifact(name=response.name, uuid=response.uuid)
 
     @log_and_handle_exceptions
     async def push(self, src_paths: List[str], bundle_id: str, dest_path: str) -> None:
-        async with self.stub.push.open() as stream:
+        async with self.get_stub() as stub, stub.push.open() as stream:
             await stream.send_message(
                 PushRequest(
                     inner=PushRequest.Inner(bundle_id=bundle_id, dst_path=dest_path)
                 )
             )
-            if self.companion_info.is_local:
+            if none_throws(self.companion_info).is_local:
                 for src_path in src_paths:
                     await stream.send_message(
                         PushRequest(payload=Payload(file_path=src_path))
@@ -427,17 +482,19 @@ class GrpcClient(IdbClient):
 
     @log_and_handle_exceptions
     async def pull(self, bundle_id: str, src_path: str, dest_path: str) -> None:
-        async with self.stub.pull.open() as stream:
+        async with self.get_stub() as stub, stub.pull.open() as stream:
             request = request = PullRequest(
                 bundle_id=bundle_id,
                 src_path=src_path,
                 # not sending the destination to remote companion
                 # so it streams the file back
-                dst_path=dest_path if self.companion_info.is_local else None,
+                dst_path=dest_path
+                if none_throws(self.companion_info).is_local
+                else None,
             )
             await stream.send_message(request)
             await stream.end()
-            if self.companion_info.is_local:
+            if none_throws(self.companion_info).is_local:
                 await stream.recv_message()
             else:
                 await drain_untar(generate_bytes(stream), output_path=dest_path)
@@ -446,22 +503,24 @@ class GrpcClient(IdbClient):
 
     @log_and_handle_exceptions
     async def list_test_bundle(self, test_bundle_id: str) -> List[str]:
-        response = await self.stub.xctest_list_tests(
-            XctestListTestsRequest(bundle_name=test_bundle_id)
-        )
-        return [name for name in response.names]
+        async with self.get_stub() as stub:
+            response = await stub.xctest_list_tests(
+                XctestListTestsRequest(bundle_name=test_bundle_id)
+            )
+            return [name for name in response.names]
 
     @log_and_handle_exceptions
     async def list_xctests(self) -> List[InstalledTestInfo]:
-        response = await self.stub.xctest_list_bundles(XctestListBundlesRequest())
-        return [
-            InstalledTestInfo(
-                bundle_id=bundle.bundle_id,
-                name=bundle.name,
-                architectures=bundle.architectures,
-            )
-            for bundle in response.bundles
-        ]
+        async with self.get_stub() as stub:
+            response = await stub.xctest_list_bundles(XctestListBundlesRequest())
+            return [
+                InstalledTestInfo(
+                    bundle_id=bundle.bundle_id,
+                    name=bundle.name,
+                    architectures=bundle.architectures,
+                )
+                for bundle in response.bundles
+            ]
 
     @log_and_handle_exceptions
     async def send_events(self, events: Iterable[HIDEvent]) -> None:
@@ -503,7 +562,7 @@ class GrpcClient(IdbClient):
 
     @log_and_handle_exceptions
     async def hid(self, event_iterator: AsyncIterable[HIDEvent]) -> None:
-        async with self.stub.hid.open() as stream:
+        async with self.get_stub() as stub, stub.hid.open() as stream:
             grpc_event_iterator = (
                 event_to_grpc(event) async for event in event_iterator
             )
@@ -513,7 +572,7 @@ class GrpcClient(IdbClient):
             await stream.recv_message()
 
     async def debug_server(self, request: DebugServerRequest) -> DebugServerResponse:
-        async with self.stub.debugserver.open() as stream:
+        async with self.get_stub() as stub, stub.debugserver.open() as stream:
             await stream.send_message(request)
             await stream.end()
             return await stream.recv_message()
@@ -556,7 +615,7 @@ class GrpcClient(IdbClient):
     ) -> str:
         trace_path = os.path.realpath(trace_path)
         self.logger.info(f"Starting instruments connection, writing to {trace_path}")
-        async with self.stub.instruments_run.open() as stream:
+        async with self.get_stub() as stub, stub.instruments_run.open() as stream:
             self.logger.info("Sending instruments request")
             await stream.send_message(
                 InstrumentsRunRequest(
@@ -605,7 +664,7 @@ class GrpcClient(IdbClient):
         foreground_if_running: bool = False,
         stop: Optional[asyncio.Event] = None,
     ) -> None:
-        async with self.stub.launch.open() as stream:
+        async with self.get_stub() as stub, stub.launch.open() as stream:
             request = LaunchRequest(
                 start=LaunchRequest.Start(
                     bundle_id=bundle_id,
