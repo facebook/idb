@@ -43,18 +43,14 @@ def add_companion(
 @ignoreTaskLeaks
 class CompanionManagerTest(TestCase):
     async def test_add_companion_with_host_and_port_adds_companion(self) -> None:
-        companion_manager = CompanionManager(
-            companion_path=None, logger=mock.MagicMock()
-        )
+        companion_manager = CompanionManager(logger=mock.MagicMock())
         companion_manager.add_companion(
             CompanionInfo(udid="asdasda", host="foohost", port=123, is_local=False)
         )
         assert companion_manager._udid_companion_map["asdasda"]
 
     async def test_add_companion_assigns_to_target(self) -> None:
-        companion_manager = CompanionManager(
-            companion_path=None, logger=mock.MagicMock()
-        )
+        companion_manager = CompanionManager(logger=mock.MagicMock())
         companion_manager.update_target(
             TargetDescription(
                 udid="asdasda",
@@ -72,21 +68,8 @@ class CompanionManagerTest(TestCase):
         )
         assert companion_manager._udid_target_map["asdasda"].companion_info
 
-    async def test_closes_spawner_on_close(self) -> None:
-        companion_manager = CompanionManager(
-            companion_path=None, logger=mock.MagicMock()
-        )
-        spawner = mock.Mock()
-        companion_manager.companion_spawner = spawner
-        # pyre-fixme[16]: `CompanionManager` has no attribute `channel`.
-        companion_manager.channel = mock.Mock()
-        companion_manager.close()
-        spawner.close.assert_called_once()
-
     async def test_remove_companion_by_address(self) -> None:
-        companion_manager = CompanionManager(
-            companion_path=None, logger=mock.MagicMock()
-        )
+        companion_manager = CompanionManager(logger=mock.MagicMock())
         add_companion(companion_manager, TEST_COMPANION)
         self.assertEqual(len(companion_manager._udid_companion_map), 1)
         self.assertEqual(len(companion_manager._udid_target_map), 1)
@@ -98,9 +81,7 @@ class CompanionManagerTest(TestCase):
         self.assertEqual(len(companion_manager._udid_target_map), 0)
 
     async def test_remove_companion_by_udid(self) -> None:
-        companion_manager = CompanionManager(
-            companion_path=None, logger=mock.MagicMock()
-        )
+        companion_manager = CompanionManager(logger=mock.MagicMock())
         add_companion(companion_manager, TEST_COMPANION)
         self.assertEqual(len(companion_manager._udid_companion_map), 1)
         self.assertEqual(len(companion_manager._udid_target_map), 1)
@@ -110,9 +91,7 @@ class CompanionManagerTest(TestCase):
         self.assertEqual(len(companion_manager._udid_target_map), 0)
 
     async def test_get_default_companion(self) -> None:
-        companion_manager = CompanionManager(
-            companion_path=None, logger=mock.MagicMock()
-        )
+        companion_manager = CompanionManager(logger=mock.MagicMock())
         self.assertFalse(companion_manager.has_default_companion())
         add_companion(companion_manager, TEST_COMPANION)
         self.assertTrue(companion_manager.has_default_companion())
@@ -128,9 +107,7 @@ class CompanionManagerTest(TestCase):
         self.assertFalse(companion_manager.has_default_companion())
 
     async def test_get_existing_companion(self) -> None:
-        companion_manager = CompanionManager(
-            companion_path=None, logger=mock.MagicMock()
-        )
+        companion_manager = CompanionManager(logger=mock.MagicMock())
         add_companion(companion_manager, TEST_COMPANION)
         async with companion_manager.create_companion_for_target_with_udid(
             TEST_COMPANION.udid, None
@@ -138,9 +115,7 @@ class CompanionManagerTest(TestCase):
             self.assertEqual(yielded_compainion, TEST_COMPANION)
 
     async def test_creates_default_companion(self) -> None:
-        companion_manager = CompanionManager(
-            companion_path=None, logger=mock.MagicMock()
-        )
+        companion_manager = CompanionManager(logger=mock.MagicMock())
         add_companion(companion_manager, TEST_COMPANION)
         async with companion_manager.create_companion_for_target_with_udid(
             None, None

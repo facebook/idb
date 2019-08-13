@@ -42,7 +42,7 @@ class CompositeServer(Server):
 async def start_daemon_server(args: Namespace, logger: Logger) -> Server:
     grpc_port = args.daemon_grpc_port
     notifier_path = args.notifier_path
-    companion_manager = CompanionManager(companion_path=notifier_path, logger=logger)
+    companion_manager = CompanionManager(logger=logger)
     boot_manager = BootManager(companion_path=notifier_path)
     grpc_handler = GRPCHandler(
         companion_manager=companion_manager, boot_manager=boot_manager, logger=logger

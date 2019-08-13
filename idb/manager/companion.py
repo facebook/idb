@@ -7,7 +7,6 @@ from logging import Logger
 from typing import AsyncContextManager, Dict, List, Optional
 
 from grpclib.client import Channel
-from idb.common.companion_spawner import CompanionSpawner
 from idb.common.types import (
     Address,
     CompanionInfo,
@@ -22,19 +21,11 @@ from idb.utils.typing import none_throws
 
 
 class CompanionManager:
-    def __init__(self, companion_path: Optional[str], logger: Logger) -> None:
+    def __init__(self, logger: Logger) -> None:
         self._udid_companion_map: Dict[str, CompanionInfo] = {}
         self._udid_target_map: Dict[str, TargetDescription] = {}
-        self.companion_spawner = (
-            CompanionSpawner(companion_path=companion_path) if companion_path else None
-        )
         self._stub_map: Dict[str, CompanionServiceStub] = {}
         self._logger = logger
-
-    def close(self) -> None:
-        self._logger.info("Stopping companion manager")
-        if self.companion_spawner:
-            self.companion_spawner.close()
 
     def is_companion_available_for_target_udid(self, target_udid: str) -> bool:
         return target_udid in self._udid_target_map
@@ -199,19 +190,6 @@ class CompanionManager:
             yield companion
         elif target_udid is None:
             raise Exception("Please provide a UDID for your target")
-        elif self.companion_spawner and target_udid in self._udid_target_map:
-            self._logger.debug(f"spawning a companion for {target_udid}")
-            port = await self.companion_spawner.spawn_companion(target_udid=target_udid)
-            # overriding host here with localhost as spawning
-            # the companion only works locally
-            host = "localhost"
-            self._logger.info(f"companion started at {host}:{port}")
-            async with self.create_companion_for_target_with_address(
-                address=Address(host=host, port=port),
-                metadata=metadata,
-                timeout=timeout,
-            ) as companion:
-                yield companion
         else:
             raise Exception(f"no companion available for {target_udid}")
 

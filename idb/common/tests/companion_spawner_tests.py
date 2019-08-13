@@ -37,11 +37,3 @@ class CompanionSpawnerTest(TestCase):
                 stderr=mock.ANY,
             )
             self.assertEqual(port, 1234)
-            self.assertEqual(spawner.companion_processes, [process_mock])
-
-    async def test_close(self) -> None:
-        spawner = CompanionSpawner("idb_path")
-        spawner.companion_processes = [mock.Mock() for _ in range(3)]
-        spawner.close()
-        for process in spawner.companion_processes:
-            process.terminate.assert_called_once()

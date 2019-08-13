@@ -2,8 +2,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 import json
-from unittest import mock
 from typing import List
+from unittest import mock
 
 from idb.common.types import TargetDescription
 from idb.daemon.companion_tailer import CompanionTailer
@@ -60,7 +60,7 @@ class CompanionTailerTest(TestCase):
                 self.i += 1
                 return result
 
-        manager = CompanionManager(None, mock.MagicMock())
+        manager = CompanionManager(mock.MagicMock())
         tailer = CompanionTailer("idb_path", manager)
         await tailer._read_stream(StreamMock())  # pyre-ignore
         self.assertEqual(
