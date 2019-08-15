@@ -3,34 +3,15 @@
 
 from typing import Dict, Optional
 
-import idb.common.plugin as plugin
-from idb.common.types import ConnectionDestination, ConnectResponse
+from idb.common.types import ConnectionDestination
 from idb.grpc.idb_pb2 import (
     ConnectRequest as GrpcConnectRequest,
     ConnectResponse as GrpcConnectResponse,
 )
 from idb.grpc.ipc_loader import DaemonContext
-from idb.grpc.types import CompanionClient
-from idb.ipc.mapping.companion import companion_to_grpc, companion_to_py
-from idb.ipc.mapping.destination import destination_to_grpc, destination_to_py
+from idb.ipc.mapping.companion import companion_to_grpc
+from idb.ipc.mapping.destination import destination_to_py
 from idb.utils.typing import none_throws
-
-
-async def client(
-    client: CompanionClient,
-    destination: ConnectionDestination,
-    metadata: Optional[Dict[str, str]] = None,
-) -> ConnectResponse:
-    client.logger.debug(f"Connecting to {destination} with meta {metadata}")
-    metadata = plugin.append_companion_metadata(
-        logger=client.logger, metadata=metadata or {}
-    )
-    response = await client.stub.connect(
-        GrpcConnectRequest(
-            destination=destination_to_grpc(destination), metadata=metadata
-        )
-    )
-    return companion_to_py(response.companion)
 
 
 async def daemon(
