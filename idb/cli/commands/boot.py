@@ -10,7 +10,7 @@ from idb.common.types import IdbClient
 class BootCommand(TargetCommand):
     @property
     def description(self) -> str:
-        return "Boots a simulator"
+        return "Boots a simulator (only works on mac)"
 
     @property
     def name(self) -> str:

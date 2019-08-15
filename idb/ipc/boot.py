@@ -9,10 +9,6 @@ from idb.grpc.types import CompanionClient
 from idb.utils.typing import none_throws
 
 
-async def client(client: CompanionClient) -> None:
-    await client.stub.boot(BootRequest())
-
-
 async def daemon(
     context: DaemonContext, client: CompanionClient, request: BootRequest
 ) -> BootResponse:

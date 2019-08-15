@@ -57,8 +57,10 @@ from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
 from idb.common.types import (
     AccessibilityInfo,
+    Address,
     AppProcessState,
     CompanionInfo,
+    ConnectionDestination,
     CrashLog,
     CrashLogInfo,
     CrashLogQuery,
@@ -83,6 +85,7 @@ from idb.grpc.idb_pb2 import (
     AddMediaRequest,
     ApproveRequest,
     ClearKeychainRequest,
+    ConnectRequest,
     ContactsUpdateRequest,
     CrashShowRequest,
     DebugServerRequest,
@@ -125,6 +128,7 @@ from idb.ipc.mapping.crash import (
     _to_crash_log_info_list,
     _to_crash_log_query_proto,
 )
+from idb.ipc.mapping.destination import destination_to_grpc
 from idb.ipc.mapping.hid import event_to_grpc
 from idb.ipc.mapping.target import target_to_py
 from idb.utils.contextlib import asynccontextmanager
@@ -817,3 +821,14 @@ class GrpcClient(IdbClient):
             source=LogRequest.COMPANION, stop=stop, arguments=None
         ):
             yield message
+
+    @log_and_handle_exceptions
+    async def boot(self) -> None:
+        if self.target_udid:
+            cmd: List[str] = ["idb_companion", "--boot", none_throws(self.target_udid)]
+            process = await asyncio.create_subprocess_exec(
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            await process.communicate()
+        else:
+            raise IdbException("boot needs --udid to work")
