@@ -8,8 +8,19 @@ import logging
 import os
 import platform
 import urllib.parse
+from io import StringIO
 from pathlib import Path
-from typing import Any, AsyncIterable, Dict, Iterable, List, Optional, Set, Tuple
+from typing import (
+    Any,
+    AsyncIterable,
+    AsyncIterator,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+)
 
 import idb.grpc.ipc_loader as ipc_loader
 from grpclib.client import Channel
@@ -17,6 +28,7 @@ from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.client.daemon_spawner import DaemonSpawner
 from idb.client.pid_saver import kill_saved_pids
 from idb.common.companion_spawner import CompanionSpawner
+from idb.common.constants import TESTS_POLL_INTERVAL
 from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.common.gzip import drain_gzip_decompress
 from idb.common.hid import (
@@ -61,8 +73,10 @@ from idb.common.types import (
     InstrumentsTimings,
     LoggingMetadata,
     TargetDescription,
+    TestRunInfo,
 )
 from idb.common.video import generate_video_bytes
+from idb.common.xctest import make_request, make_results, write_result_bundle
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
     AccessibilityInfoRequest,
@@ -715,3 +729,56 @@ class GrpcClient(IdbClient):
                     generate_video_bytes(stream), output_path=output_file
                 )
                 self.logger.info(f"Finished decompression to {output_file}")
+
+    @log_and_handle_exceptions
+    async def run_xctest(
+        self,
+        test_bundle_id: str,
+        app_bundle_id: str,
+        test_host_app_bundle_id: Optional[str] = None,
+        is_ui_test: bool = False,
+        is_logic_test: bool = False,
+        tests_to_run: Optional[Set[str]] = None,
+        tests_to_skip: Optional[Set[str]] = None,
+        env: Optional[Dict[str, str]] = None,
+        args: Optional[List[str]] = None,
+        result_bundle_path: Optional[str] = None,
+        idb_log_buffer: Optional[StringIO] = None,
+        timeout: Optional[int] = None,
+        poll_interval_sec: float = TESTS_POLL_INTERVAL,
+    ) -> AsyncIterator[TestRunInfo]:
+        async with self.get_stub() as stub, stub.xctest_run.open() as stream:
+            request = make_request(
+                test_bundle_id=test_bundle_id,
+                app_bundle_id=app_bundle_id,
+                test_host_app_bundle_id=test_host_app_bundle_id,
+                is_ui_test=is_ui_test,
+                is_logic_test=is_logic_test,
+                tests_to_run=tests_to_run,
+                tests_to_skip=tests_to_skip,
+                env=env,
+                args=args,
+                result_bundle_path=result_bundle_path,
+                timeout=timeout,
+            )
+            await stream.send_message(request)
+            await stream.end()
+            async for response in stream:
+                # response.log_output is a container of strings.
+                # google.protobuf.pyext._message.RepeatedScalarContainer.
+                for line in [
+                    line
+                    for lines in response.log_output
+                    for line in lines.splitlines(keepends=True)
+                ]:
+                    self.logger.info(line)
+                    if idb_log_buffer:
+                        idb_log_buffer.write(line)
+                if result_bundle_path:
+                    await write_result_bundle(
+                        response=response,
+                        output_path=result_bundle_path,
+                        logger=self.logger,
+                    )
+                for result in make_results(response):
+                    yield result

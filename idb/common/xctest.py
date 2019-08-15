@@ -4,7 +4,18 @@
 import os
 import plistlib
 from enum import Enum
-from typing import Any, Dict, List
+from logging import Logger
+from typing import Any, Dict, List, Optional, Set
+
+from idb.common.tar import untar
+from idb.common.types import TestActivity, TestRunFailureInfo, TestRunInfo
+from idb.grpc.idb_pb2 import XctestRunRequest, XctestRunResponse
+
+
+Mode = XctestRunRequest.Mode
+Logic = XctestRunRequest.Logic
+Application = XctestRunRequest.Application
+UI = XctestRunRequest.UI
 
 
 class XCTestException(Exception):
@@ -55,3 +66,82 @@ def xctest_paths_to_tar(bundle_path: str) -> List[str]:
         return extract_paths_from_xctestrun(bundle_path)
     else:
         return [bundle_path]
+
+
+def make_request(
+    test_bundle_id: str,
+    app_bundle_id: str,
+    test_host_app_bundle_id: Optional[str],
+    is_ui_test: bool,
+    is_logic_test: bool,
+    tests_to_run: Optional[Set[str]],
+    tests_to_skip: Optional[Set[str]],
+    env: Optional[Dict[str, str]],
+    args: Optional[List[str]],
+    result_bundle_path: Optional[str],
+    timeout: Optional[int],
+) -> XctestRunRequest:
+    if is_logic_test:
+        mode = Mode(logic=Logic())
+    elif is_ui_test:
+        mode = Mode(
+            ui=UI(
+                app_bundle_id=app_bundle_id,
+                test_host_app_bundle_id=test_host_app_bundle_id,
+            )
+        )
+    else:
+        mode = Mode(application=Application(app_bundle_id=app_bundle_id))
+
+    return XctestRunRequest(
+        mode=mode,
+        test_bundle_id=test_bundle_id,
+        tests_to_run=list(tests_to_run or []),
+        tests_to_skip=list(tests_to_skip or []),
+        environment=env,
+        arguments=args,
+    )
+
+
+async def write_result_bundle(
+    response: XctestRunResponse, output_path: str, logger: Logger
+) -> None:
+    payload = response.result_bundle
+    if not payload:
+        return
+    data = payload.data
+    if not len(data):
+        return
+    logger.info(f"Writing result bundle to {output_path}")
+    await untar(data=data, output_path=output_path)
+    logger.info(f"Finished writing result bundle to {output_path}")
+
+
+def make_results(response: XctestRunResponse) -> List[TestRunInfo]:
+    return [
+        TestRunInfo(
+            bundle_name=result.bundle_name,
+            class_name=result.class_name,
+            method_name=result.method_name,
+            logs=list(result.logs),
+            duration=result.duration,
+            passed=result.status == XctestRunResponse.TestRunInfo.PASSED,
+            failure_info=(
+                TestRunFailureInfo(
+                    message=result.failure_info.failure_message,
+                    file=result.failure_info.file,
+                    line=result.failure_info.line,
+                )
+                if result.failure_info
+                else None
+            ),
+            activityLogs=[
+                TestActivity(
+                    title=activity.title, duration=activity.duration, uuid=activity.uuid
+                )
+                for activity in result.activityLogs or []
+            ],
+            crashed=result.status == XctestRunResponse.TestRunInfo.CRASHED,
+        )
+        for result in response.results or []
+    ]
