@@ -29,7 +29,7 @@ class DirectCompanionManager:
         self.companions.append(companion)
         self._save()
 
-    def load_companions(self) -> List[CompanionInfo]:
+    def get_companions(self) -> List[CompanionInfo]:
         self.companions = self._load()
         return self.companions
 
@@ -50,7 +50,7 @@ class DirectCompanionManager:
         self._save()
 
     def get_companion_info(self, target_udid: Optional[str]) -> CompanionInfo:
-        self.load_companions()
+        self.get_companions()
         if target_udid:
             companions = [
                 companion

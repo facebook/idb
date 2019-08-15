@@ -832,3 +832,20 @@ class GrpcClient(IdbClient):
             await process.communicate()
         else:
             raise IdbException("boot needs --udid to work")
+
+    async def _companion_to_target(self, companion: CompanionInfo) -> TargetDescription:
+        channel = Channel(companion.host, companion.port, loop=asyncio.get_event_loop())
+        stub = CompanionServiceStub(channel=channel)
+        response = await stub.describe(TargetDescriptionRequest())
+        channel.close()
+        return target_to_py(response.target_description)
+
+    @log_and_handle_exceptions
+    async def list_targets(self) -> List[TargetDescription]:
+        companions = self.direct_companion_manager.get_companions()
+        return await asyncio.gather(  # pyre-ignore
+            *(
+                self._companion_to_target(companion=companion)
+                for companion in companions
+            )
+        )

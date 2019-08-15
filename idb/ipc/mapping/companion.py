@@ -17,7 +17,7 @@ def companion_to_grpc(companion: CompanionInfo) -> GrpcCompanionInfo:
 def companion_to_py(companion: GrpcCompanionInfo) -> CompanionInfo:
     return CompanionInfo(
         udid=companion.udid,
-        host=companion.host if ".local" not in companion.host else "localhost",
+        host=companion.host,
         port=companion.grpc_port,
         is_local=companion.is_local,
     )

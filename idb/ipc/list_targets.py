@@ -1,18 +1,9 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-from typing import List
-
-from idb.common.types import TargetDescription
 from idb.grpc.idb_pb2 import ListTargetsRequest, ListTargetsResponse
 from idb.grpc.ipc_loader import DaemonContext
-from idb.ipc.mapping.target import target_to_grpc, target_to_py
-from idb.manager.companion import CompanionClient
-
-
-async def client(client: CompanionClient) -> List[TargetDescription]:
-    response = await client.stub.list_targets(ListTargetsRequest())
-    return [target_to_py(target) for target in response.targets]
+from idb.ipc.mapping.target import target_to_grpc
 
 
 async def daemon(
