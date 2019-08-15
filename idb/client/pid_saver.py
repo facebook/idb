@@ -60,6 +60,6 @@ async def kill_saved_pids() -> None:
         try:
             os.kill(pid, signal.SIGTERM)
             logging.info(f"stopped daemon with pid {pid}")
-        except OSError:
-            logging.exception(f"failed to stop daemon with pid {pid} because of error")
+        except OSError or ProcessLookupError:
+            pass
     _clear_saved_pids()
