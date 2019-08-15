@@ -18,6 +18,7 @@ from idb.client.daemon_spawner import DaemonSpawner
 from idb.client.pid_saver import kill_saved_pids
 from idb.common.companion_spawner import CompanionSpawner
 from idb.common.direct_companion_manager import DirectCompanionManager
+from idb.common.gzip import drain_gzip_decompress
 from idb.common.hid import (
     button_press_to_events,
     iterator_to_async_iterator,
@@ -61,6 +62,7 @@ from idb.common.types import (
     LoggingMetadata,
     TargetDescription,
 )
+from idb.common.video import generate_video_bytes
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
     AccessibilityInfoRequest,
@@ -86,6 +88,7 @@ from idb.grpc.idb_pb2 import (
     PullRequest,
     PullResponse,
     PushRequest,
+    RecordRequest,
     RmRequest,
     ScreenshotRequest,
     SetLocationRequest,
@@ -682,3 +685,33 @@ class GrpcClient(IdbClient):
             else:
                 await stream.end()
                 await drain_launch_stream(stream)
+
+    @log_and_handle_exceptions
+    async def record_video(self, stop: asyncio.Event, output_file: str) -> None:
+        self.logger.info(f"Starting connection to backend")
+        async with self.get_stub() as stub, stub.record.open() as stream:
+            if none_throws(self.companion_info).is_local:
+                self.logger.info(
+                    f"Starting video recording to local file {output_file}"
+                )
+                await stream.send_message(
+                    RecordRequest(start=RecordRequest.Start(file_path=output_file))
+                )
+            else:
+                self.logger.info(f"Starting video recording with response data")
+                await stream.send_message(
+                    RecordRequest(start=RecordRequest.Start(file_path=None))
+                )
+            await stop.wait()
+            self.logger.info("Stopping video recording")
+            await stream.send_message(RecordRequest(stop=RecordRequest.Stop()))
+            await stream.end()
+            if none_throws(self.companion_info).is_local:
+                self.logger.info("Video saved at output path")
+                await stream.recv_message()
+            else:
+                self.logger.info(f"Decompressing gzip to {output_file}")
+                await drain_gzip_decompress(
+                    generate_video_bytes(stream), output_path=output_file
+                )
+                self.logger.info(f"Finished decompression to {output_file}")

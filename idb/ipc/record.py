@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
-
-import asyncio
-from typing import AsyncIterator
-
 from idb.common.gzip import drain_gzip_decompress
+from idb.common.video import generate_video_bytes
 from idb.grpc.idb_pb2 import Payload, RecordRequest, RecordResponse
 from idb.grpc.stream import Stream
 from idb.grpc.types import CompanionClient
@@ -14,14 +11,6 @@ from idb.utils.typing import none_throws
 
 Start = RecordRequest.Start
 Stop = RecordRequest.Stop
-
-
-async def _generate_bytes(
-    stream: AsyncIterator[RecordResponse],
-) -> AsyncIterator[bytes]:
-    async for response in stream:
-        data = response.payload.data
-        yield data
 
 
 async def daemon(
@@ -45,7 +34,7 @@ async def daemon(
         await stream.recv_message()
         client.logger.info("Stopping video recording")
         await forward_stream.send_message(RecordRequest(stop=Stop()))
-        await forward_stream.stream.end()
+        await forward_stream.end()
         if client.is_local:
             client.logger.info("Responding with file path")
             response = await forward_stream.recv_message()
@@ -53,27 +42,9 @@ async def daemon(
         else:
             client.logger.info(f"Decompressing gzip to {output_file}")
             await drain_gzip_decompress(
-                _generate_bytes(forward_stream), output_path=output_file
+                generate_video_bytes(forward_stream), output_path=output_file
             )
             client.logger.info(f"Finished decompression to {output_file}")
             await stream.send_message(
                 RecordResponse(payload=Payload(file_path=output_file))
             )
-
-
-async def record_video(
-    client: CompanionClient, stop: asyncio.Event, output_file: str
-) -> None:
-    client.logger.info(f"Starting connection to backend")
-    async with client.stub.record.open() as stream:
-        client.logger.info("Starting video recording")
-        await stream.send_message(RecordRequest(start=Start(file_path=output_file)))
-        client.logger.info("Request sent")
-        await stop.wait()
-        client.logger.info("Stopping video recording")
-        await stream.send_message(RecordRequest(stop=Stop()))
-        await stream.end()
-        await stream.recv_message()
-
-
-CLIENT_PROPERTIES = [record_video]  # pyre-ignore
