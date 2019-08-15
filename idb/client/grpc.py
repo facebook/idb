@@ -93,6 +93,7 @@ from idb.grpc.idb_pb2 import (
     LaunchRequest,
     ListAppsRequest,
     Location,
+    LogRequest,
     LsRequest,
     MkdirRequest,
     MvRequest,
@@ -112,7 +113,12 @@ from idb.grpc.idb_pb2 import (
     XctestListBundlesRequest,
     XctestListTestsRequest,
 )
-from idb.grpc.stream import drain_to_stream, generate_bytes, stop_wrapper
+from idb.grpc.stream import (
+    cancel_wrapper,
+    drain_to_stream,
+    generate_bytes,
+    stop_wrapper,
+)
 from idb.grpc.types import CompanionClient
 from idb.ipc.mapping.crash import (
     _to_crash_log,
@@ -782,3 +788,32 @@ class GrpcClient(IdbClient):
                     )
                 for result in make_results(response):
                     yield result
+
+    async def _tail_specific_logs(
+        self,
+        source: LogRequest.Source,
+        stop: asyncio.Event,
+        arguments: Optional[List[str]],
+    ) -> AsyncIterator[str]:
+        async with self.get_stub() as stub, stub.log.open() as stream:
+            await stream.send_message(
+                LogRequest(arguments=arguments, source=source), end=True
+            )
+            async for message in cancel_wrapper(stream=stream, stop=stop):
+                yield message.output.decode()
+
+    @log_and_handle_exceptions
+    async def tail_logs(
+        self, stop: asyncio.Event, arguments: Optional[List[str]] = None
+    ) -> AsyncIterator[str]:
+        async for message in self._tail_specific_logs(
+            source=LogRequest.TARGET, stop=stop, arguments=arguments
+        ):
+            yield message
+
+    @log_and_handle_exceptions
+    async def tail_companion_logs(self, stop: asyncio.Event) -> AsyncIterator[str]:
+        async for message in self._tail_specific_logs(
+            source=LogRequest.COMPANION, stop=stop, arguments=None
+        ):
+            yield message
