@@ -91,27 +91,31 @@ static NSString *const PingSuccess = @"ping";
 
   id<FBControlCoreLogger> logger = self.device.logger;
   return [[self
-    copyCrashReportsAndGetFileConnection]
-    onQueue:self.device.workQueue pop:^(FBAFCConnection *afc) {
-      if (!self.hasPerformedInitialIngestion) {
-        [self.store ingestAllExistingInDirectory];
-        self.hasPerformedInitialIngestion = YES;
-      }
-      NSError *error = nil;
-      NSArray<NSString *> *paths = [afc contentsOfDirectory:@"." error:&error];
-      if (!paths) {
-        return [FBFuture futureWithError:error];
-      }
-      NSMutableArray<FBCrashLogInfo *> *crashes = [NSMutableArray array];
-      for (NSString *path in paths) {
-        FBCrashLogInfo *crash = [self crashLogInfo:afc path:path error:&error];
-        if (!crash) {
-          [logger logFormat:@"Failed to ingest crash log %@: %@", path, error];
-          continue;
-        }
-        [crashes addObject:crash];
-      }
-      return [FBFuture futureWithResult:crashes];
+    moveCrashReports]
+    onQueue:self.device.workQueue fmap:^(NSString *_) {
+      return [[self
+        crashReportFileConnection]
+        onQueue:self.device.workQueue pop:^(FBAFCConnection *afc) {
+          if (!self.hasPerformedInitialIngestion) {
+            [self.store ingestAllExistingInDirectory];
+            self.hasPerformedInitialIngestion = YES;
+          }
+          NSError *error = nil;
+          NSArray<NSString *> *paths = [afc contentsOfDirectory:@"." error:&error];
+          if (!paths) {
+            return [FBFuture futureWithError:error];
+          }
+          NSMutableArray<FBCrashLogInfo *> *crashes = [NSMutableArray array];
+          for (NSString *path in paths) {
+            FBCrashLogInfo *crash = [self crashLogInfo:afc path:path error:&error];
+            if (!crash) {
+              [logger logFormat:@"Failed to ingest crash log %@: %@", path, error];
+              continue;
+            }
+            [crashes addObject:crash];
+          }
+          return [FBFuture futureWithResult:crashes];
+        }];
     }];
 }
 
@@ -149,15 +153,6 @@ static NSString *const PingSuccess = @"ping";
   return [self.store ingestCrashLogData:data name:name];
 }
 
-- (FBFutureContext<FBAFCConnection *> *)copyCrashReportsAndGetFileConnection
-{
-  return [[self
-    moveCrashReports]
-    onQueue:self.device.workQueue pushTeardown:^(NSString *_) {
-      return [self crashReportFileConnection];
-    }];
-}
-
 - (FBFuture<NSString *> *)moveCrashReports
 {
   return [[self.device.amDevice
@@ -188,13 +183,8 @@ static NSString *const PingSuccess = @"ping";
   return [[self.device.amDevice
     startService:CrashReportCopyService]
     // Re-map this into a AFC Connection.
-    onQueue:self.device.workQueue pend:^(FBAMDServiceConnection *connection) {
-      NSError *error = nil;
-      FBAFCConnection *afc = [FBAFCConnection afcFromServiceConnection:connection calls:FBAFCConnection.defaultCalls logger:self.device.logger error:&error];
-      if (!afc) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:afc];
+    onQueue:self.device.workQueue push:^(FBAMDServiceConnection *connection) {
+      return [FBAFCConnection afcFromServiceConnection:connection calls:FBAFCConnection.defaultCalls logger:self.device.logger queue:self.device.workQueue];
     }];
 }
 

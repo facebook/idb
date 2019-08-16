@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBFuture.h>
 #import <FBDeviceControl/FBAMDefines.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -32,15 +33,15 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithConnection:(AFCConnectionRef)connection calls:(AFCCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
- Constructs an FBAFCConnection from a Service Connection.
+ Constructs an FBAFCConnection from a Service Connection and tears it down after.
 
  @param serviceConnection the connection to use.
  @param calls the calls to use.
  @param logger the logger to use.
- @param error an error out for any error that occurs.
+ @param queue the logger to use.
  @return an FBAFCConnection instance.
  */
-+ (nullable instancetype)afcFromServiceConnection:(FBAMDServiceConnection *)serviceConnection calls:(AFCCalls)calls logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (FBFutureContext<FBAFCConnection *> *)afcFromServiceConnection:(FBAMDServiceConnection *)serviceConnection calls:(AFCCalls)calls logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;
 
 #pragma mark Public Methods
 

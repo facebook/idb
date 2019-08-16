@@ -37,11 +37,16 @@ static AFCCalls defaultCalls;
   return self;
 }
 
-+ (nullable instancetype)afcFromServiceConnection:(FBAMDServiceConnection *)serviceConnection calls:(AFCCalls)calls logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (FBFutureContext<FBAFCConnection *> *)afcFromServiceConnection:(FBAMDServiceConnection *)serviceConnection calls:(AFCCalls)calls logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue
 {
   int socket = serviceConnection.socket;
   AFCConnectionRef afcConnection = calls.Create(0x0, socket, 0x0, 0x0, 0x0);
-  return [[self alloc] initWithConnection:afcConnection calls:calls logger:logger];
+  FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:afcConnection calls:calls logger:logger];
+  return [[FBFuture futureWithResult:connection]
+    onQueue:queue contextualTeardown:^(id _, FBFutureState __) {
+      [connection closeWithError:nil];
+      return FBFuture.empty;
+    }];
 }
 
 #pragma mark Public Methods
