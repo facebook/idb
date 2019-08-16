@@ -22,8 +22,10 @@ from typing import (
     Tuple,
 )
 
+import idb.grpc.ipc_loader as ipc_loader
 from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
+from idb.client.daemon_spawner import DaemonSpawner
 from idb.client.pid_saver import kill_saved_pids
 from idb.common.companion_spawner import CompanionSpawner
 from idb.common.constants import TESTS_POLL_INTERVAL
@@ -120,6 +122,7 @@ from idb.grpc.stream import (
     generate_bytes,
     stop_wrapper,
 )
+from idb.grpc.types import CompanionClient
 from idb.ipc.mapping.crash import (
     _to_crash_log,
     _to_crash_log_info_list,
@@ -184,9 +187,34 @@ class GrpcClient(IdbClient):
         self.logger: logging.Logger = (
             logger if logger else logging.getLogger("idb_grpc_client")
         )
+        self.force_kill_daemon = force_kill_daemon
         self.target_udid = target_udid
+        self.daemon_spawner = DaemonSpawner(host=self.host, port=self.port)
+        self.daemon_channel: Optional[Channel] = None
+        self.daemon_stub: Optional[CompanionServiceStub] = None
+        for (call_name, f) in ipc_loader.client_calls(
+            daemon_provider=self.provide_client
+        ):
+            setattr(self, call_name, f)
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
         self.companion_spawner = CompanionSpawner(companion_path="idb_companion")
+        self.companion_info: Optional[CompanionInfo] = None
+
+    async def provide_client(self) -> CompanionClient:
+        await self.daemon_spawner.start_daemon_if_needed(
+            force_kill=self.force_kill_daemon
+        )
+        if not self.daemon_channel or not self.daemon_stub:
+            self.daemon_channel = Channel(
+                self.host, self.port, loop=asyncio.get_event_loop()
+            )
+            self.daemon_stub = CompanionServiceStub(channel=self.daemon_channel)
+        return CompanionClient(
+            stub=self.daemon_stub,
+            is_local=True,
+            udid=self.target_udid,
+            logger=self.logger,
+        )
         self.companion_info: Optional[CompanionInfo] = None
 
     @asynccontextmanager
@@ -821,40 +849,3 @@ class GrpcClient(IdbClient):
                 for companion in companions
             )
         )
-
-    @log_and_handle_exceptions
-    async def connect(
-        self,
-        destination: ConnectionDestination,
-        metadata: Optional[Dict[str, str]] = None,
-    ) -> CompanionInfo:
-        self.logger.debug(f"Connecting directly to {destination} with meta {metadata}")
-        if isinstance(destination, Address):
-            channel = Channel(
-                destination.host, destination.port, loop=asyncio.get_event_loop()
-            )
-            stub = CompanionServiceStub(channel=channel)
-            response = await stub.connect(
-                ConnectRequest(
-                    destination=destination_to_grpc(destination), metadata=metadata
-                )
-            )
-            companion = CompanionInfo(
-                udid=response.companion.udid,
-                host=destination.host,
-                port=destination.port,
-                is_local=response.companion.is_local,
-            )
-            self.logger.debug(f"Connected directly to {companion}")
-            self.direct_companion_manager.add_companion(companion)
-            channel.close()
-            return companion
-        else:
-            raise Exception("Connecting to companion using UDID is not implemented yet")
-            # implement connect using UDID for local use
-            # when the notifier works in direct client mode
-            return CompanionInfo()
-
-    @log_and_handle_exceptions
-    async def disconnect(self, destination: ConnectionDestination) -> None:
-        self.direct_companion_manager.remove_companion(destination)
