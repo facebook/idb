@@ -50,5 +50,5 @@ class CompanionManagerTests(TestCase):
             )
             companion_manager.add_companion(companion)
             companion_manager.clear()
-            companions = companion_manager.load_companions()
+            companions = companion_manager.get_companions()
             self.assertEqual(companions, [])
