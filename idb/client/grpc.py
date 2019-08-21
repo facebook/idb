@@ -834,12 +834,14 @@ class GrpcClient(IdbClient):
     @log_and_handle_exceptions
     async def list_targets(self) -> List[TargetDescription]:
         companions = self.direct_companion_manager.get_companions()
-        return await asyncio.gather(  # pyre-ignore
+        local_targets = self.local_targets_manager.get_local_targets()
+        connected_targets = await asyncio.gather(
             *(
                 self._companion_to_target(companion=companion)
                 for companion in companions
             )
         )
+        return local_targets + list(connected_targets)
 
     @log_and_handle_exceptions
     async def connect(
