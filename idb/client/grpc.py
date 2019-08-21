@@ -438,24 +438,22 @@ class GrpcClient(IdbClient):
     async def _install_to_destination(
         self, bundle: Bundle, destination: Destination
     ) -> InstalledArtifact:
-        async with self.get_stub() as stub:
+        async with self.get_stub() as stub, stub.install.open() as stream:
             generator = None
             if isinstance(bundle, str):
                 url = urllib.parse.urlparse(bundle)
                 if url.scheme:
                     # send url
                     payload = Payload(url=bundle)
-                    async with stub.install.open() as stream:
-                        generator = generate_requests([InstallRequest(payload=payload)])
+                    generator = generate_requests([InstallRequest(payload=payload)])
 
                 else:
                     file_path = str(Path(bundle).resolve(strict=True))
                     if none_throws(self.companion_info).is_local:
                         # send file_path
-                        async with stub.install.open() as stream:
-                            generator = generate_requests(
-                                [InstallRequest(payload=Payload(file_path=file_path))]
-                            )
+                        generator = generate_requests(
+                            [InstallRequest(payload=Payload(file_path=file_path))]
+                        )
                     else:
                         # chunk file from file_path
                         generator = generate_binary_chunks(
@@ -465,13 +463,12 @@ class GrpcClient(IdbClient):
             else:
                 # chunk file from memory
                 generator = generate_io_chunks(io=bundle, logger=self.logger)
-            # stream to companion
-            async with stub.install.open() as stream:
-                await stream.send_message(InstallRequest(destination=destination))
-                response = await drain_to_stream(
-                    stream=stream, generator=generator, logger=self.logger
-                )
-                return InstalledArtifact(name=response.name, uuid=response.uuid)
+                # stream to companion
+            await stream.send_message(InstallRequest(destination=destination))
+            response = await drain_to_stream(
+                stream=stream, generator=generator, logger=self.logger
+            )
+            return InstalledArtifact(name=response.name, uuid=response.uuid)
 
     @log_and_handle_exceptions
     async def push(self, src_paths: List[str], bundle_id: str, dest_path: str) -> None:
