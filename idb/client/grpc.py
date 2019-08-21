@@ -6,10 +6,10 @@ import functools
 import inspect
 import logging
 import os
-import platform
 import urllib.parse
 from io import StringIO
 from pathlib import Path
+from sys import platform
 from typing import (
     Any,
     AsyncIterable,
@@ -24,7 +24,7 @@ from typing import (
 
 from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
-from idb.client.pid_saver import kill_saved_pids
+from idb.client.pid_saver import PidSaver
 from idb.common.companion_spawner import CompanionSpawner
 from idb.common.constants import TESTS_POLL_INTERVAL
 from idb.common.direct_companion_manager import DirectCompanionManager
@@ -50,6 +50,7 @@ from idb.common.instruments import (
     translate_instruments_timings,
 )
 from idb.common.launch import drain_launch_stream, end_launch_stream
+from idb.common.local_targets_manager import LocalTargetsManager
 from idb.common.logging import log_call
 from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
@@ -186,11 +187,17 @@ class GrpcClient(IdbClient):
         )
         self.target_udid = target_udid
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
-        self.companion_spawner = CompanionSpawner(companion_path="idb_companion")
+        self.local_targets_manager = LocalTargetsManager(logger=self.logger)
         self.companion_info: Optional[CompanionInfo] = None
+        self.companion_spawner: Optional[CompanionSpawner]
 
     @asynccontextmanager
     async def get_stub(self) -> CompanionServiceStub:
+        if platform == "darwin" and not self.companion_spawner:
+            self.companion_spawner = CompanionSpawner(
+                companion_path="idb_companion", logger=self.logger
+            )
+            await self.companion_spawner.spawn_notifier()
         channel: Optional[Channel] = None
         try:
             try:
@@ -199,18 +206,11 @@ class GrpcClient(IdbClient):
                 )
             except IdbException as e:
                 # will try to spawn a companion if on mac.
-                if platform.system() == "Darwin" and self.target_udid:
-                    self.logger.info(
-                        f"will attempt to spawn a companion for {self.target_udid}"
-                    )
-                    port = await self.companion_spawner.spawn_companion(
-                        target_udid=self.target_udid
-                    )
-                    host = "localhost"
-                    self.companion_info = CompanionInfo(
-                        host=host, port=port, udid=self.target_udid, is_local=True
-                    )
-                    self.direct_companion_manager.add_companion(self.companion_info)
+                companion_info = await self.spawn_companion(
+                    target_udid=none_throws(self.target_udid)
+                )
+                if companion_info:
+                    self.companion_info = companion_info
                 else:
                     raise e
             self.logger.info(f"using companion {self.companion_info}")
@@ -224,6 +224,25 @@ class GrpcClient(IdbClient):
             if channel:
                 channel.close()
 
+    async def spawn_companion(self, target_udid: str) -> Optional[CompanionInfo]:
+        if (
+            self.companion_spawner
+            and self.local_targets_manager.is_local_target_available(
+                target_udid=target_udid
+            )
+        ):
+            self.logger.info(f"will attempt to spawn a companion for {target_udid}")
+            port = await self.companion_spawner.spawn_companion(target_udid=target_udid)
+            if port:
+                self.logger.info(f"spawned a companion for {target_udid}")
+                host = "localhost"
+                companion_info = CompanionInfo(
+                    host=host, port=port, udid=target_udid, is_local=True
+                )
+                self.direct_companion_manager.add_companion(companion_info)
+                return companion_info
+        return None
+
     @property
     def metadata(self) -> Dict[str, str]:
         if self.target_udid:
@@ -232,7 +251,7 @@ class GrpcClient(IdbClient):
             return {}
 
     async def kill(self) -> None:
-        await kill_saved_pids()
+        PidSaver(logger=self.logger).kill_saved_pids()
         self.direct_companion_manager.clear()
 
     @log_and_handle_exceptions
@@ -850,10 +869,11 @@ class GrpcClient(IdbClient):
             channel.close()
             return companion
         else:
-            raise Exception("Connecting to companion using UDID is not implemented yet")
-            # implement connect using UDID for local use
-            # when the notifier works in direct client mode
-            return CompanionInfo()
+            companion = await self.spawn_companion(target_udid=destination)
+            if companion:
+                return companion
+            else:
+                raise IdbException(f"can't find target for udid {destination}")
 
     @log_and_handle_exceptions
     async def disconnect(self, destination: ConnectionDestination) -> None:

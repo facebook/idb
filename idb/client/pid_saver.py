@@ -10,56 +10,62 @@ from typing import List
 from idb.common.constants import IDB_PID_PATH
 
 
-def save_pid(pid: int) -> None:
-    pids = _get_pids()
-    pids.append(pid)
-    _write_pids(pids=pids)
-    logging.debug(f"saved daemon pid {pid}")
+class PidSaver:
+    def __init__(
+        self, logger: logging.Logger, pids_file_path: str = IDB_PID_PATH
+    ) -> None:
+        self.companion_pids: List[int] = []
+        self.notifier_pid = 0
+        self.logger = logger
+        self.pids_file_path = pids_file_path
 
+    def save_companion_pid(self, pid: int) -> None:
+        self._load()
+        self.companion_pids.append(pid)
+        self._save()
+        self.logger.info(f"saved companion pid {pid}")
 
-def remove_pid(pid: int) -> None:
-    pids = _get_pids()
-    if pids.count(pid) > 0:
-        pids.remove(pid)
-        _write_pids(pids=pids)
-        logging.debug(f"removed daemon pid {pid}")
+    def save_notifier_pid(self, pid: int) -> None:
+        self.notifier_pid = pid
+        self._save()
+        self.logger.info(f"saved notifier pids {pid}")
 
+    def get_notifier_pid(self) -> int:
+        self._load()
+        return self.notifier_pid
 
-def _write_pids(pids: List[int]) -> None:
-    with open(IDB_PID_PATH, "w") as pid_file:
-        json.dump(pids, pid_file)
-        pid_file.flush()
-
-
-def _has_saved_pids() -> bool:
-    pids = _get_pids()
-    logging.debug(f"has saved pids {pids}")
-    return len(pids) > 0
-
-
-def _get_pids() -> List[int]:
-    try:
-        with open(IDB_PID_PATH) as pid_file:
-            return json.load(pid_file)
-    except Exception:
-        return []
-
-
-def _clear_saved_pids() -> None:
-    if os.path.exists(IDB_PID_PATH):
-        # Empty the file
-        with open(IDB_PID_PATH, "wb", buffering=0) as pid_file:
+    def _save(self) -> None:
+        with open(self.pids_file_path, "w") as pid_file:
+            json.dump(
+                {"companions": self.companion_pids, "notifier": self.notifier_pid},
+                pid_file,
+            )
             pid_file.flush()
 
-
-async def kill_saved_pids() -> None:
-    if not _has_saved_pids():
-        logging.debug(f"no daemon pid found")
-        return
-    for pid in _get_pids():
+    def _load(self) -> None:
         try:
-            os.kill(pid, signal.SIGTERM)
-            logging.info(f"stopped daemon with pid {pid}")
-        except OSError or ProcessLookupError:
-            pass
-    _clear_saved_pids()
+            with open(self.pids_file_path) as pid_file:
+                dictionary = json.load(pid_file)
+                self.companion_pids = dictionary["companions"]
+                self.notifier_pid = dictionary["notifier"]
+        except Exception as e:
+            self.logger.info(
+                f"failed to open pid file {self.pids_file_path} because of {e}"
+            )
+
+    def _clear_saved_pids(self) -> None:
+        self.companion_pids = []
+        self.notifier_pid = 0
+        self._save()
+
+    def kill_saved_pids(self) -> None:
+        self._load()
+        all_pids = list(self.companion_pids)
+        all_pids.append(self.notifier_pid)
+        for pid in all_pids:
+            try:
+                os.kill(pid, signal.SIGTERM)
+                self.logger.info(f"stopped with pid {pid}")
+            except OSError or ProcessLookupError:
+                pass
+        self._clear_saved_pids()

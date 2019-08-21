@@ -8,8 +8,8 @@ import os
 from asyncio import StreamReader
 from typing import List
 
-from idb.client.pid_saver import save_pid
-from idb.common.constants import IDB_LOGS_PATH
+from idb.client.pid_saver import PidSaver
+from idb.common.constants import IDB_LOCAL_TARGETS_FILE, IDB_LOGS_PATH
 
 
 class CompanionSpawnerException(Exception):
@@ -17,8 +17,10 @@ class CompanionSpawnerException(Exception):
 
 
 class CompanionSpawner:
-    def __init__(self, companion_path: str) -> None:
+    def __init__(self, companion_path: str, logger: logging.Logger) -> None:
         self.companion_path = companion_path
+        self.logger = logger
+        self.pid_saver = PidSaver(logger=self.logger)
 
     async def _read_stream(self, stream: StreamReader) -> int:
         port = 0
@@ -60,7 +62,7 @@ class CompanionSpawner:
                 stdin=asyncio.subprocess.PIPE,
                 stderr=log_file,
             )
-            save_pid(process.pid)
+            self.pid_saver.save_companion_pid(pid=process.pid)
             logging.debug(f"started companion at process id {process.pid}")
             if process.stdout:
                 port = await self._read_stream(process.stdout)
@@ -68,3 +70,22 @@ class CompanionSpawner:
                     raise CompanionSpawnerException("failed to spawn companion")
                 return port
             raise CompanionSpawnerException("process has no stdout")
+
+    def _is_notifier_running(self) -> bool:
+        return self.pid_saver.get_notifier_pid() > 0
+
+    async def spawn_notifier(self) -> None:
+        if not self._is_notifier_running():
+            if not self.companion_path:
+                raise CompanionSpawnerException(
+                    f"couldn't instantiate a notifier because\
+                     the companion_path is not available"
+                )
+            cmd: List[str] = [self.companion_path, "--notify", IDB_LOCAL_TARGETS_FILE]
+
+            with open(self._log_file_path("notifier"), "a") as log_file:
+                process = await asyncio.create_subprocess_exec(
+                    *cmd, stdout=log_file, stderr=log_file
+                )
+                self.pid_saver.save_notifier_pid(pid=process.pid)
+                logging.debug(f"started notifier at process id {process.pid}")

@@ -9,7 +9,6 @@ from typing import Dict, List
 from idb.common.boot_manager import BootManager
 from idb.common.logging import log_call
 from idb.common.types import Server
-from idb.daemon.companion_tailer import CompanionTailer
 from idb.grpc.handler import GRPCHandler
 from idb.grpc.server import GRPCServer
 from idb.manager.companion import CompanionManager
@@ -50,11 +49,5 @@ async def start_daemon_server(args: Namespace, logger: Logger) -> Server:
     grpc_server = GRPCServer(handler=grpc_handler, logger=logger)
     await grpc_server.start("localhost", grpc_port)
     servers: List[Server] = [grpc_server]
-    if notifier_path:
-        companion_tailer = CompanionTailer(
-            notifier_path=notifier_path, companion_manager=companion_manager
-        )
-        await companion_tailer.start()
-        servers.append(companion_tailer)
     logger.debug(f"Started servers {servers}")
     return CompositeServer(servers=servers, logger=logger)

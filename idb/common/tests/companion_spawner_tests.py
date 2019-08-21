@@ -11,15 +11,14 @@ from idb.utils.testing import AsyncMock, TestCase, ignoreTaskLeaks
 @ignoreTaskLeaks
 class CompanionSpawnerTest(TestCase):
     async def test_spawn_companion(self) -> None:
-        spawner = CompanionSpawner("idb_path")
+        spawner = CompanionSpawner("idb_path", logger=mock.Mock())
         spawner._log_file_path = mock.Mock()
+        spawner.pid_saver = mock.Mock()
         udid = "someUdid"
         with mock.patch(
             "idb.common.companion_spawner.asyncio.create_subprocess_exec",
             new=AsyncMock(),
-        ) as exec_mock, mock.patch("idb.common.companion_spawner.open"), mock.patch(
-            "idb.common.companion_spawner.save_pid"
-        ):
+        ) as exec_mock, mock.patch("idb.common.companion_spawner.open"):
             process_mock = mock.Mock()
             process_mock.stdout.readline = AsyncMock(
                 return_value=json.dumps(
@@ -39,3 +38,19 @@ class CompanionSpawnerTest(TestCase):
                 stderr=mock.ANY,
             )
             self.assertEqual(port, 1234)
+
+    async def test_spawn_notifier(self) -> None:
+        spawner = CompanionSpawner("idb_path", logger=mock.Mock())
+        spawner._log_file_path = mock.Mock()
+        spawner._is_notifier_running = mock.Mock(return_value=False)
+        spawner.pid_saver = mock.Mock()
+        with mock.patch(
+            "idb.common.companion_spawner.asyncio.create_subprocess_exec",
+            new=AsyncMock(),
+        ) as exec_mock, mock.patch("idb.common.companion_spawner.open"):
+            process_mock = mock.Mock()
+            exec_mock.return_value = process_mock
+            await spawner.spawn_notifier()
+            exec_mock.assert_called_once_with(
+                "idb_path", "--notify", "1", stderr=mock.ANY, stdout=mock.ANY
+            )
