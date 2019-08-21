@@ -5,6 +5,7 @@ import json
 from unittest import mock
 
 from idb.common.companion_spawner import CompanionSpawner
+from idb.common.constants import IDB_LOCAL_TARGETS_FILE
 from idb.utils.testing import AsyncMock, TestCase, ignoreTaskLeaks
 
 
@@ -52,5 +53,9 @@ class CompanionSpawnerTest(TestCase):
             exec_mock.return_value = process_mock
             await spawner.spawn_notifier()
             exec_mock.assert_called_once_with(
-                "idb_path", "--notify", "1", stderr=mock.ANY, stdout=mock.ANY
+                "idb_path",
+                "--notify",
+                IDB_LOCAL_TARGETS_FILE,
+                stderr=mock.ANY,
+                stdout=mock.ANY,
             )
