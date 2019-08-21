@@ -23,3 +23,4 @@ JSONDict = Dict[str, Any]
 IDB_PID_PATH: str = "/tmp/idb_pid"
 IDB_LOGS_PATH: str = "/tmp/idb_logs"
 IDB_STATE_FILE_PATH: str = "/tmp/idb_state"
+IDB_LOCAL_TARGETS_FILE: str = "/tmp/idb_local_targets"

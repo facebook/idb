@@ -218,8 +218,10 @@ def json_to_companion_info(
 
 
 def target_description_from_json(data: str) -> TargetDescription:
-    parsed = json.loads(data)
+    return target_description_from_dictionary(parsed=json.loads(data))
 
+
+def target_description_from_dictionary(parsed: Dict[str, Any]) -> TargetDescription:
     companion_info_fields = ["host", "port", "is_local", "udid"]
     companion_info = None
     if all((field in parsed for field in companion_info_fields)):
