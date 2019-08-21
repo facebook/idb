@@ -9,8 +9,7 @@ from typing import Dict, Optional
 from idb.cli.commands.base import BaseCommand
 from idb.common.constants import DEFAULT_DAEMON_GRPC_PORT, DEFAULT_DAEMON_PORT
 from idb.common.signal import signal_handler_event
-from idb.common.types import IdbException, Server
-from idb.daemon.server import start_daemon_server
+from idb.common.types import IdbException
 
 
 class DaemonCommand(BaseCommand):
@@ -53,19 +52,17 @@ class DaemonCommand(BaseCommand):
         super().add_parser_arguments(parser)
 
     async def _run_impl(self, args: Namespace) -> None:
-        server: Optional[Server] = None
         try:
-            server = await start_daemon_server(args=args, logger=self.logger)
-            print(json.dumps(server.ports), sep="\n", flush=True)
-            self._reply_with_port(args.reply_fd, args.prefer_ipv6, server.ports)
+            # leaving the daemon command with a dummy output
+            # will remove after all uses are removed
+            ports = {"ipv4_grpc_port": 0, "ipv6_grpc_port": 0}
+            print(json.dumps(ports), sep="\n", flush=True)
+            self._reply_with_port(args.reply_fd, args.prefer_ipv6, ports)
             await signal_handler_event("server").wait()
         except IdbException as ex:
             self.logger.exception("Exception in main")
             raise ex
         finally:
-            if server:
-                server.close()
-                await server.wait_closed()
             self.logger.info("Exiting")
 
     def _reply_with_port(
