@@ -11,7 +11,6 @@ from idb.common.logging import log_call
 from idb.common.types import Server
 from idb.grpc.handler import GRPCHandler
 from idb.grpc.server import GRPCServer
-from idb.manager.companion import CompanionManager
 
 
 class CompositeServer(Server):
@@ -41,11 +40,8 @@ class CompositeServer(Server):
 async def start_daemon_server(args: Namespace, logger: Logger) -> Server:
     grpc_port = args.daemon_grpc_port
     notifier_path = args.notifier_path
-    companion_manager = CompanionManager(logger=logger)
     boot_manager = BootManager(companion_path=notifier_path)
-    grpc_handler = GRPCHandler(
-        companion_manager=companion_manager, boot_manager=boot_manager, logger=logger
-    )
+    grpc_handler = GRPCHandler(boot_manager=boot_manager, logger=logger)
     grpc_server = GRPCServer(handler=grpc_handler, logger=logger)
     await grpc_server.start("localhost", grpc_port)
     servers: List[Server] = [grpc_server]
