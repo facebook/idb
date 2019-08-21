@@ -173,15 +173,8 @@ def log_and_handle_exceptions(func):  # pyre-ignore
 
 class GrpcClient(IdbClient):
     def __init__(
-        self,
-        port: int,
-        host: str,
-        target_udid: Optional[str],
-        logger: Optional[logging.Logger] = None,
-        force_kill_daemon: bool = False,
+        self, target_udid: Optional[str], logger: Optional[logging.Logger] = None
     ) -> None:
-        self.port: int = port
-        self.host: str = host
         self.logger: logging.Logger = (
             logger if logger else logging.getLogger("idb_grpc_client")
         )
@@ -251,8 +244,8 @@ class GrpcClient(IdbClient):
             return {}
 
     async def kill(self) -> None:
-        PidSaver(logger=self.logger).kill_saved_pids()
         self.direct_companion_manager.clear()
+        PidSaver(logger=self.logger).kill_saved_pids()
 
     @log_and_handle_exceptions
     async def list_apps(self) -> List[InstalledAppInfo]:

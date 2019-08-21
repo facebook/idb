@@ -153,12 +153,7 @@ class ConnectingCommand(BaseCommand):
 
     async def _run_impl(self, args: Namespace) -> None:
         udid = vars(args).get("udid")
-        client = GrpcClient(
-            port=args.daemon_grpc_port,
-            host=args.daemon_host,
-            target_udid=udid,
-            logger=self.logger,
-        )
+        client = GrpcClient(target_udid=udid, logger=self.logger)
         await self.run_with_client(args=args, client=client)
 
     @abstractmethod
