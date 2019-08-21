@@ -5,7 +5,6 @@ import logging
 import warnings
 from typing import Dict, Optional
 
-from idb.common.boot_manager import BootManager
 from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.grpc.idb_grpc import CompanionServiceBase
 
@@ -18,13 +17,10 @@ warnings.filterwarnings(action="ignore", category=ResourceWarning)
 
 
 class GRPCHandler(CompanionServiceBase):
-    def __init__(
-        self, boot_manager: BootManager, logger: Optional[logging.Logger] = None
-    ) -> None:
+    def __init__(self, logger: Optional[logging.Logger] = None) -> None:
         self.logger: logging.Logger = (
             logger if logger else logging.getLogger("idb_daemon")
         )
-        self.boot_manager = boot_manager
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
 
     def get_udid(self, metadata: Dict[str, str]) -> Optional[str]:
