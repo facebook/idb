@@ -214,7 +214,7 @@ class XctestRunLogicCommand(CommonRunXcTestCommand):
             nargs=1,
             help="Run only this test, \
             if not specified all tests are run. \
-            Format: className",
+            Format: className/methodName",
         )
 
     def get_tests_to_run(self, args: Namespace) -> Optional[Set[str]]:
