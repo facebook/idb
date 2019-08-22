@@ -15,7 +15,7 @@ from idb.common.types import IdbException
 class DaemonCommand(BaseCommand):
     @property
     def description(self) -> str:
-        return "Start the daemon"
+        return "This command is deprecated. the idb daemon is not used anymore."
 
     @property
     def name(self) -> str:
