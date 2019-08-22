@@ -21,19 +21,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The designated initializer.
 
- @param consumer the consumer to write updates to.
+ @param filepath the filepath to write the updates to
  @param logger the logger to log to.
  @return a new notifier instance.
  */
-+ (instancetype)notifierWithConsumer:(id<FBDataConsumer>)consumer notifierForLogger:(id<FBControlCoreLogger>)logger;
++ (instancetype)notifierToFilePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger;
 
-/**
- A notifier that writes to stdout.
-
- @param logger the logger to log to.
- @return a new notifier instance.
- */
-+ (instancetype)stdoutNotifierWithLogger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 

@@ -10,40 +10,42 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBDeviceControl/FBDeviceControl.h>
 
+
 @interface FBiOSTargetStateChangeNotifier () <FBiOSTargetSetDelegate>
 
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) NSString *filePath;
 @property (nonatomic, strong, readwrite) FBDeviceSet *deviceSet;
 @property (nonatomic, strong, readwrite) FBSimulatorSet *simulatorSet;
 @property (nonatomic, strong, readwrite) id<FBDataConsumer> consumer;
+@property (nonatomic, strong, readwrite) NSMutableSet<FBiOSTargetStateUpdate *> *targets;
 
 @end
 
 @implementation FBiOSTargetStateChangeNotifier
 
+
 #pragma mark Initializers
 
-+ (instancetype)notifierWithConsumer:(id<FBDataConsumer>)consumer notifierForLogger:(id<FBControlCoreLogger>)logger
++ (instancetype)notifierToFilePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithConsumer:consumer logger:logger];
+  return [[self alloc] initWithFilePath:filePath logger:logger];
 }
 
-+ (instancetype)stdoutNotifierWithLogger:(id<FBControlCoreLogger>)logger
-{
-  id<FBDataConsumer> consumer = [FBFileWriter syncWriterWithFileDescriptor:STDOUT_FILENO closeOnEndOfFile:NO];
-  return [self notifierWithConsumer:consumer notifierForLogger:logger];
-}
-
-- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFilePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
-
-  _consumer = consumer;
   _logger = logger;
-
+  _filePath = filePath;
+  BOOL didCreateFile = [[NSFileManager defaultManager] createFileAtPath:_filePath contents:nil attributes:nil];
+  if (!didCreateFile) {
+    [logger.error log:@"failed to create local targets file"];
+    exit(1);
+  }
+  _targets = [[NSMutableSet alloc] init];
   return self;
 }
 
@@ -81,36 +83,44 @@
 - (void)reportInitialState
 {
   for (FBDevice *device in self.deviceSet.allDevices) {
-    [self targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:device.state type:FBiOSTargetTypeDevice name:device.name osVersion:device.osVersion architecture:device.architecture]];
+    [_targets addObject:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:device.state type:FBiOSTargetTypeDevice name:device.name osVersion:device.osVersion architecture:device.architecture]];
   }
   for (FBSimulator *simulator in self.simulatorSet.allSimulators) {
-    [self targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithUDID:simulator.udid state:simulator.state type:FBiOSTargetTypeSimulator name:simulator.name osVersion:simulator.osVersion architecture:simulator.architecture]];
+    [_targets addObject:[[FBiOSTargetStateUpdate alloc] initWithUDID:simulator.udid state:simulator.state type:FBiOSTargetTypeSimulator name:simulator.name osVersion:simulator.osVersion architecture:simulator.architecture]];
   }
-  [self endOfInitialState];
+  [self writeTargets];
 }
 
-- (void)writeJSONObject:(NSDictionary<NSString *, id> *)dictionary
+- (void)writeTargets
 {
   NSError *error = nil;
-  NSData *data = [NSJSONSerialization dataWithJSONObject:dictionary options:0 error:&error];
+  NSMutableArray<id<FBJSONSerializable>> *jsonArray = [[NSMutableArray alloc] init];
+  for (FBiOSTargetStateUpdate *target in _targets.allObjects) {
+       [jsonArray addObject:target.jsonSerializableRepresentation];
+  }
+  NSData *data = [NSJSONSerialization dataWithJSONObject:jsonArray options:0 error:&error];
   if (!data) {
     [self.logger logFormat:@"error writing update to consumer %@",error];
-    return;
+    exit(1);
   }
-  [self.consumer consumeData:data];
-  [self.consumer consumeData:FBDataBuffer.newlineTerminal];
+  [data writeToFile:_filePath atomically:YES];
 }
 
 #pragma mark FBiOSTargetSet Delegate Methods
 
+
 - (void)targetDidUpdate:(FBiOSTargetStateUpdate *)update
 {
-  [self writeJSONObject:update.jsonSerializableRepresentation];
+  NSMutableArray<FBiOSTargetStateUpdate *> *targetsToUpdate = [[NSMutableArray alloc] init];
+  for (FBiOSTargetStateUpdate *target in self.targets) {
+    if ([target.udid isEqualToString:update.udid]) {
+      [targetsToUpdate addObject:target];
+    }
+  }
+  for (FBiOSTargetStateUpdate *target in targetsToUpdate) {
+    [_targets removeObject:target];
+  }
+  [_targets addObject:update];
+  [self writeTargets];
 }
-
-- (void)endOfInitialState
-{
-  [self writeJSONObject:@{@"initial_state_ended": @YES}];
-}
-
 @end

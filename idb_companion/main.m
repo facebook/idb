@@ -51,7 +51,7 @@ static FBFuture<NSNull *> *TargetOfflineFuture(id<FBiOSTarget> target, id<FBCont
 
 static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, const char *argv[], NSUserDefaults *userDefaults, FBIDBLogger *logger) {
   NSString *udid = [userDefaults stringForKey:@"-udid"];
-  BOOL notify = [userDefaults boolForKey:@"-notify"];
+  NSString *notifyFilePath = [userDefaults stringForKey:@"-notify"];
   NSString *boot = [userDefaults stringForKey:@"-boot"];
   BOOL terminateOffline = [userDefaults boolForKey:@"-terminate-offline"];
 
@@ -94,9 +94,9 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
             return future;
           }];
       }];
-  } else if (notify) {
-    [logger.info log:@"Notify mode is set"];
-    return [[FBiOSTargetStateChangeNotifier stdoutNotifierWithLogger:logger] startNotifier];
+  } else if (notifyFilePath) {
+    [logger.info logFormat:@"Notify mode is set. writing updates to %@", notifyFilePath];
+    return [[FBiOSTargetStateChangeNotifier notifierToFilePath:notifyFilePath logger:logger] startNotifier];
   } else if (boot) {
     [logger.info log:@"Booting target"];
     return [FBFuture futureWithResult:[[FBBootManager bootManagerForLogger:logger] boot:boot]];
