@@ -182,7 +182,7 @@ class GrpcClient(IdbClient):
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
         self.local_targets_manager = LocalTargetsManager(logger=self.logger)
         self.companion_info: Optional[CompanionInfo] = None
-        self.companion_spawner: Optional[CompanionSpawner]
+        self.companion_spawner: Optional[CompanionSpawner] = None
 
     @asynccontextmanager
     async def get_stub(self) -> CompanionServiceStub:
