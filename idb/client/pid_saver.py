@@ -35,7 +35,7 @@ class PidSaver:
         return self.notifier_pid
 
     def _save(self) -> None:
-        with open(self.pids_file_path, "w") as pid_file:
+        with open(self.pids_file_path, "w+") as pid_file:
             json.dump(
                 {"companions": self.companion_pids, "notifier": self.notifier_pid},
                 pid_file,

@@ -182,15 +182,17 @@ class GrpcClient(IdbClient):
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
         self.local_targets_manager = LocalTargetsManager(logger=self.logger)
         self.companion_info: Optional[CompanionInfo] = None
-        self.companion_spawner: Optional[CompanionSpawner] = None
+
+    async def spawn_notifier(self) -> None:
+        if platform == "darwin":
+            companion_spawner = CompanionSpawner(
+                companion_path="idb_companion", logger=self.logger
+            )
+            await companion_spawner.spawn_notifier()
 
     @asynccontextmanager
     async def get_stub(self) -> CompanionServiceStub:
-        if platform == "darwin" and not self.companion_spawner:
-            self.companion_spawner = CompanionSpawner(
-                companion_path="idb_companion", logger=self.logger
-            )
-            await self.companion_spawner.spawn_notifier()
+        await self.spawn_notifier()
         channel: Optional[Channel] = None
         try:
             try:
@@ -218,14 +220,14 @@ class GrpcClient(IdbClient):
                 channel.close()
 
     async def spawn_companion(self, target_udid: str) -> Optional[CompanionInfo]:
-        if (
-            self.companion_spawner
-            and self.local_targets_manager.is_local_target_available(
-                target_udid=target_udid
-            )
+        if self.local_targets_manager.is_local_target_available(
+            target_udid=target_udid
         ):
+            companion_spawner = CompanionSpawner(
+                companion_path="idb_companion", logger=self.logger
+            )
             self.logger.info(f"will attempt to spawn a companion for {target_udid}")
-            port = await self.companion_spawner.spawn_companion(target_udid=target_udid)
+            port = await companion_spawner.spawn_companion(target_udid=target_udid)
             if port:
                 self.logger.info(f"spawned a companion for {target_udid}")
                 host = "localhost"
@@ -245,6 +247,7 @@ class GrpcClient(IdbClient):
 
     async def kill(self) -> None:
         self.direct_companion_manager.clear()
+        self.local_targets_manager.clear()
         PidSaver(logger=self.logger).kill_saved_pids()
 
     @log_and_handle_exceptions
@@ -823,6 +826,7 @@ class GrpcClient(IdbClient):
 
     @log_and_handle_exceptions
     async def list_targets(self) -> List[TargetDescription]:
+        await self.spawn_notifier()
         companions = self.direct_companion_manager.get_companions()
         local_targets = self.local_targets_manager.get_local_targets()
         connected_targets = await asyncio.gather(

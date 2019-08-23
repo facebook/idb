@@ -43,3 +43,8 @@ class LocalTargetsManager:
             target for target in self.local_targets if target.udid == target_udid
         ]
         return len(targets) > 0
+
+    def clear(self) -> None:
+        with open(self.local_targets_file, "w") as f:
+            json.dump([], f)
+            f.flush()
