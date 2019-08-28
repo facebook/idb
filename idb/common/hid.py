@@ -135,6 +135,7 @@ KEY_MAP: Dict[str, List[HIDEvent]] = {
     "8": key_press_to_events(37),
     "9": key_press_to_events(38),
     "0": key_press_to_events(39),
+    "\n": key_press_to_events(40),
     ";": key_press_to_events(51),
     "=": key_press_to_events(46),
     ",": key_press_to_events(54),
