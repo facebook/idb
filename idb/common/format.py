@@ -163,6 +163,8 @@ def human_format_target_info(target: TargetDescription) -> str:
         f" | {target.target_type} | {target.os_version} | {target.architecture}"
     )
     target_info += (
+        # pyre-fixme[16]: `Optional` has no attribute `host`.
+        # pyre-fixme[16]: `Optional` has no attribute `port`.
         f" | {target.companion_info.host}:{target.companion_info.port}"
         if target.companion_info
         else f" | No Companion Connected"
@@ -180,15 +182,17 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
         "architecture": target.architecture,
     }
     if target.companion_info:
+        # pyre-fixme[16]: `Optional` has no attribute `host`.
         data["host"] = target.companion_info.host
+        # pyre-fixme[16]: `Optional` has no attribute `port`.
         data["port"] = target.companion_info.port
+        # pyre-fixme[16]: `Optional` has no attribute `is_local`.
         data["is_local"] = target.companion_info.is_local
     return data
 
 
-# pyre-fixme[3]: Return annotation cannot contain `Any`.
 def json_data_companions(companions: List[CompanionInfo]) -> List[Dict[str, Any]]:
-    data: List[Dict[str, Any]] = []  # pyre-ignore
+    data: List[Dict[str, Any]] = []
     for companion in companions:
         data.append(
             {
@@ -201,9 +205,7 @@ def json_data_companions(companions: List[CompanionInfo]) -> List[Dict[str, Any]
     return data
 
 
-def json_to_companion_info(
-    data: List[Dict[str, Any]]  # pyre-ignore
-) -> List[CompanionInfo]:
+def json_to_companion_info(data: List[Dict[str, Any]]) -> List[CompanionInfo]:
     companion_list = []
     for item in data:
         companion_list.append(

@@ -156,7 +156,7 @@ def log_and_handle_exceptions(func):  # pyre-ignore
 
     @functools.wraps(func)
     @log_call(name=func.__name__, metadata=CLIENT_METADATA)
-    async def func_wrapper_gen(*args: Any, **kwargs: Any) -> Any:  # pyre-ignore
+    async def func_wrapper_gen(*args: Any, **kwargs: Any) -> Any:
         try:
             async for item in func(*args, **kwargs):
                 yield item
@@ -241,6 +241,8 @@ class GrpcClient(IdbClient):
     @property
     def metadata(self) -> Dict[str, str]:
         if self.target_udid:
+            # pyre-fixme[7]: Expected `Dict[str, str]` but got `Dict[str,
+            #  Optional[str]]`.
             return {"udid": self.target_udid}
         else:
             return {}
@@ -811,7 +813,10 @@ class GrpcClient(IdbClient):
         if self.target_udid:
             cmd: List[str] = ["idb_companion", "--boot", none_throws(self.target_udid)]
             process = await asyncio.create_subprocess_exec(
-                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                *cmd,
+                # pyre-fixme[18]: Global name `subprocess` is undefined.
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
             await process.communicate()
         else:

@@ -53,6 +53,7 @@ async def _create_tar_command(
                 + f'{" ".join(tar_args)} | {COMPRESSION_COMMAND}'
             ),
             stderr=sys.stderr,
+            # pyre-fixme[18]: Global name `subprocess` is undefined.
             stdout=asyncio.subprocess.PIPE,
         )
         yield process
@@ -64,6 +65,7 @@ async def _create_untar_command(
 ) -> AsyncContextManager[asyncio.subprocess.Process]:
     process = await asyncio.create_subprocess_shell(
         f"tar -C '{output_path}' -xzpf{'v' if verbose else ''} -",
+        # pyre-fixme[18]: Global name `subprocess` is undefined.
         stdin=asyncio.subprocess.PIPE,
         stderr=sys.stderr,
         stdout=sys.stderr,

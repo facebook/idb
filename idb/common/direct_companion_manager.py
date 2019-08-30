@@ -35,6 +35,8 @@ def exclusive_open(
             sleep(retry_time)
     try:
         with open(filename, *args, **kwargs) as f:
+            # pyre-fixme[7]: Expected `AsyncGenerator[None, None]` but got
+            #  `Generator[IO[Any], None, None]`.
             yield f
     finally:
         try:
@@ -66,11 +68,13 @@ class DirectCompanionManager:
         return self.companions
 
     def _save(self) -> None:
+        # pyre-fixme[16]: `AsyncGenerator` has no attribute `__enter__`.
         with exclusive_open(self.state_file_path, "w") as f:
             json.dump(json_data_companions(self.companions), f)
 
     def _load(self) -> List[CompanionInfo]:
         if os.path.exists(self.state_file_path):
+            # pyre-fixme[16]: `AsyncGenerator` has no attribute `__enter__`.
             with exclusive_open(self.state_file_path, "r") as f:
                 return json_to_companion_info(json.load(f))
         return []

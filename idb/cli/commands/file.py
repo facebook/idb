@@ -51,8 +51,8 @@ def _extract_bundle_id(args: Namespace) -> str:
 def _convert_args(args: Namespace) -> Tuple[Namespace, str]:
     def convert_value(value: Any) -> Any:  # pyre-ignore
         if isinstance(value, List):
-            # pyre-fixme[18]: Global name `convert_value` is undefined.
             return [convert_value(x) for x in value]
+        # pyre-fixme[18]: Global name `file` is undefined.
         return value.path if isinstance(value, BundleWithPath) else value
 
     bundle_id = _extract_bundle_id(args)

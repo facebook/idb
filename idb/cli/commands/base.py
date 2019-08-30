@@ -83,8 +83,10 @@ class CompositeCommand(Command, metaclass=ABCMeta):
     def _get_subcommand_for_args(self, args: Namespace) -> Command:
         subcmd_name = getattr(args, self.name)
         if self.parser and subcmd_name is None:
+            # pyre-fixme[16]: `Optional` has no attribute `print_help`.
             self.parser.print_help()
             # This terminates the program with exit code 2
+            # pyre-fixme[16]: `Optional` has no attribute `error`.
             self.parser.error(f"No subcommand found for {self.name}")
         subcmd = self.subcommands_by_name[subcmd_name]
         assert subcmd is not None, "subcommand %r doesn't exist" % subcmd_name

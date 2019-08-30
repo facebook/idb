@@ -19,6 +19,7 @@ async def _create_gzip_decompress_command(
 ) -> AsyncContextManager[asyncio.subprocess.Process]:
     process = await asyncio.create_subprocess_shell(
         f"gunzip -v > '{extract_path}'",
+        # pyre-fixme[18]: Global name `subprocess` is undefined.
         stdin=asyncio.subprocess.PIPE,
         stderr=sys.stderr,
         stdout=sys.stdout,
@@ -32,6 +33,7 @@ async def _create_gzip_compress_command(
 ) -> AsyncContextManager[asyncio.subprocess.Process]:
     process = await asyncio.create_subprocess_shell(
         f"gzip -v '{path}' --to-stdout",
+        # pyre-fixme[18]: Global name `subprocess` is undefined.
         stdin=asyncio.subprocess.PIPE,
         stderr=sys.stderr,
         stdout=asyncio.subprocess.PIPE,

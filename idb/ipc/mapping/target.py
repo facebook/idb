@@ -13,6 +13,8 @@ def target_to_grpc(target: TargetDescription) -> GrpcTargetDescription:
     return GrpcTargetDescription(
         udid=target.udid,
         name=target.name,
+        # pyre-fixme[6]: Expected `ScreenDimensions` for 1st param but got
+        #  `Optional[ScreenDimensions]`.
         screen_dimensions=screen_dimensions_to_grpc(target.screen_dimensions)
         if target.screen_dimensions
         else None,
@@ -20,6 +22,8 @@ def target_to_grpc(target: TargetDescription) -> GrpcTargetDescription:
         target_type=target.target_type,
         os_version=target.os_version,
         architecture=target.architecture,
+        # pyre-fixme[6]: Expected `CompanionInfo` for 1st param but got
+        #  `Optional[CompanionInfo]`.
         companion_info=companion_to_grpc(target.companion_info)
         if target.companion_info
         else None,

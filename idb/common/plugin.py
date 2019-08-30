@@ -13,6 +13,7 @@ from idb.common.types import LoggingMetadata
 
 def package_exists(package_name: str) -> bool:
     try:
+        # pyre-fixme[18]: Global name `util` is undefined.
         return importlib.util.find_spec(package_name) is not None
     except Exception:
         return False
@@ -22,6 +23,7 @@ PLUGIN_PACKAGE_NAMES = ["idb.fb.plugin"]
 PLUGINS: List[ModuleType] = [
     importlib.import_module(package.name)
     for package in [
+        # pyre-fixme[18]: Global name `util` is undefined.
         importlib.util.find_spec(package_name)
         for package_name in PLUGIN_PACKAGE_NAMES
         if package_exists(package_name)
