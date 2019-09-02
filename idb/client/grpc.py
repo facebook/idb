@@ -6,6 +6,7 @@ import functools
 import inspect
 import logging
 import os
+import tempfile
 import urllib.parse
 from io import StringIO
 from pathlib import Path
@@ -854,11 +855,14 @@ class GrpcClient(IdbClient):
                 destination.host, destination.port, loop=asyncio.get_event_loop()
             )
             stub = CompanionServiceStub(channel=channel)
-            response = await stub.connect(
-                ConnectRequest(
-                    destination=destination_to_grpc(destination), metadata=metadata
+            with tempfile.NamedTemporaryFile(mode="w+b") as f:
+                response = await stub.connect(
+                    ConnectRequest(
+                        destination=destination_to_grpc(destination),
+                        metadata=metadata,
+                        local_file_path=f.name,
+                    )
                 )
-            )
             companion = CompanionInfo(
                 udid=response.companion.udid,
                 host=destination.host,
