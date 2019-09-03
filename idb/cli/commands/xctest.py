@@ -216,9 +216,26 @@ class XctestRunLogicCommand(CommonRunXcTestCommand):
             if not specified all tests are run. \
             Format: className/methodName",
         )
+        parser.add_argument(
+            "--tests-to-run",
+            nargs="*",
+            help="Run these tests only. \
+            if not specified all tests are run. \
+            Format: className/methodName",
+        )
 
     def get_tests_to_run(self, args: Namespace) -> Optional[Set[str]]:
-        return set(args.test_to_run) if args.test_to_run else None
+        if args.test_to_run:
+            return set(args.test_to_run)
+        if args.tests_to_run:
+            tests = ""
+            for test in args.tests_to_run:
+                tests += test + ","
+            tests = tests[:-1]
+            # the companion is expecting a set of size one for the logic tests,
+            # that is why we parse it here
+            return set([tests])
+        return None
 
 
 class XctestRunCommand(CompositeCommand):
