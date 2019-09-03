@@ -823,12 +823,23 @@ class GrpcClient(IdbClient):
         else:
             raise IdbException("boot needs --udid to work")
 
-    async def _companion_to_target(self, companion: CompanionInfo) -> TargetDescription:
-        channel = Channel(companion.host, companion.port, loop=asyncio.get_event_loop())
-        stub = CompanionServiceStub(channel=channel)
-        response = await stub.describe(TargetDescriptionRequest())
-        channel.close()
-        return target_to_py(response.target_description)
+    async def _companion_to_target(
+        self, companion: CompanionInfo
+    ) -> Optional[TargetDescription]:
+        try:
+            channel = Channel(
+                companion.host, companion.port, loop=asyncio.get_event_loop()
+            )
+            stub = CompanionServiceStub(channel=channel)
+            response = await stub.describe(TargetDescriptionRequest())
+            channel.close()
+            return target_to_py(response.target_description)
+        except Exception:
+            self.logger.warning(f"Failed to describe {companion}, removing it")
+            self.direct_companion_manager.remove_companion(
+                Address(companion.host, companion.port)
+            )
+            return None
 
     @log_and_handle_exceptions
     async def list_targets(self) -> List[TargetDescription]:
@@ -841,7 +852,9 @@ class GrpcClient(IdbClient):
                 for companion in companions
             )
         )
-        return local_targets + list(connected_targets)
+        return local_targets + [
+            target for target in connected_targets if target is not None
+        ]
 
     @log_and_handle_exceptions
     async def connect(
