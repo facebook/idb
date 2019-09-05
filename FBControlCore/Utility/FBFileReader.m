@@ -66,7 +66,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
 + (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = self.createQueue;
-  return [FBFuture onQueue:queue resolveValue:^(NSError **error) {
+  return [FBFuture onQueue:queue resolveValue:^id (NSError **error) {
     int fileDescriptor = open(filePath.UTF8String, O_RDONLY);
     if (fileDescriptor == -1) {
       return [[FBControlCoreError

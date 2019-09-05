@@ -16,7 +16,7 @@
 
 #pragma mark Initializers
 
-+ (NSString *)xcodeSelectFromCommandLine
++ (FBXcodeDirectory *)xcodeSelectFromCommandLine
 {
   return [self new];
 }
