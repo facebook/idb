@@ -2,29 +2,13 @@
 id: commands
 title: Commands
 ---
-## Managing idb
-
-### Starting a daemon
-```
-idb daemon
-```
-Starts a daemon running on the default port 9889
-
-
-| Argument | Description | Default
-|----------|-------------|--------
-|--daemon-port PORT | Port for the daemon to listen on | 9889
-|--log {DEBUG,INFO,WARNING,ERROR,CRITICAL} | Set the log level | CRITICAL
-|--reply-fd REPLY_FD | File descriptor to write port the daemon was started on |
-
-
-### Terminate daemons
+### Reset Idb
 
 ```
 idb kill
 ```
 
-Kills all automatically spawned daemons
+idb stores information about available companions in a local file. this command clears these files and kills the idb notifier if one is running.
 
 
 ### Starting a companion
@@ -38,13 +22,22 @@ On macs idb can spawn a companion automatically on connect
 | Argument | Description | Default
 |----------|-------------|--------
 |--udid UDID | Specify the target device / simulator |
-|--port PORT | Port to start on | 10880
-|--grpc-port PORT | Port to start on | 10882
+|--port PORT | Port to start on | 10882
 |--log-file-path PATH | Path to write a log file to e.g ./output.log | Logs to stdErr
 |--device-set-path PATH | Path to the custom device set if used |
 |--daemon-host HOST | Auto connect to a daemon |
 |--daemon-host PORT | Auto connect to a daemon |
 |--serving-host HOST | Hostname to report to the daemon |
+
+
+### Starting a notifier
+```
+idb_companion --notify FILE_PATH
+```
+Starts up a companion process in the notifier mode.
+in this mode the companion will find out what simulators/devices are available and write that output to the file path specified.
+A notifier is always spawned automatically if the idb cli is called on a mac.
+
 
 ### Boot a simulator
 

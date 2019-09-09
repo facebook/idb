@@ -3,7 +3,7 @@
   "localized-strings": {
     "next": "Next",
     "previous": "Previous",
-    "tagline": "iOS debug bridge",
+    "tagline": "iOS Development Bridge",
     "docs": {
       "architecture": {
         "title": "Architecture"
@@ -19,6 +19,9 @@
       },
       "overview": {
         "title": "idb"
+      },
+      "test_execution": {
+        "title": "Test Execution"
       }
     },
     "links": {
