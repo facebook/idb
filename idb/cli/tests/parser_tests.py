@@ -294,7 +294,6 @@ class TestParser(TestCase):
         elif command == "logic":
             # pyre-fixme[16]: `Namespace` has no attribute `test_to_run`.
             namespace.test_to_run = None
-            # pyre-fixme[16]: `Namespace` has no attribute `tests_to_run`.
             namespace.tests_to_run = None
         # pyre-fixme[16]: `Namespace` has no attribute `run`.
         namespace.run = command

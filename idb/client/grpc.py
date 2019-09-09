@@ -814,10 +814,7 @@ class GrpcClient(IdbClient):
         if self.target_udid:
             cmd: List[str] = ["idb_companion", "--boot", none_throws(self.target_udid)]
             process = await asyncio.create_subprocess_exec(
-                *cmd,
-                # pyre-fixme[18]: Global name `subprocess` is undefined.
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
             await process.communicate()
         else:

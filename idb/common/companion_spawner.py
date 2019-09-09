@@ -58,7 +58,6 @@ class CompanionSpawner:
         with open(self._log_file_path(target_udid), "a") as log_file:
             process = await asyncio.create_subprocess_exec(
                 *cmd,
-                # pyre-fixme[18]: Global name `subprocess` is undefined.
                 stdout=asyncio.subprocess.PIPE,
                 stdin=asyncio.subprocess.PIPE,
                 stderr=log_file,

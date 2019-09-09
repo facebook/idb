@@ -79,7 +79,6 @@ class log_call(AsyncContextManager[None]):
         @functools.wraps(function)
         async def _async_wrapper(*args: Any, **kwargs: Any) -> Any:  # pyre-ignore
             logger.debug(f"{_name} called")
-            # pyre-fixme[18]: Global name `logging` is undefined.
             (_metadata, start) = _initial_info(args, self.metadata)
             await plugin.before_invocation(name=_name, metadata=_metadata)
             try:
@@ -113,7 +112,6 @@ class log_call(AsyncContextManager[None]):
         @functools.wraps(function)
         async def _async_gen_wrapper(*args, **kwargs) -> Any:  # pyre-ignore
             logger.debug(f"{_name} started")
-            # pyre-fixme[18]: Global name `logging` is undefined.
             (_metadata, start) = _initial_info(args, self.metadata)
             await plugin.before_invocation(name=_name, metadata=_metadata)
             try:
