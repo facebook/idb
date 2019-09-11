@@ -89,6 +89,11 @@
     [_targets addObject:[[FBiOSTargetStateUpdate alloc] initWithUDID:simulator.udid state:simulator.state type:FBiOSTargetTypeSimulator name:simulator.name osVersion:simulator.osVersion architecture:simulator.architecture]];
   }
   [self writeTargets];
+  NSData *jsonOutput = [NSJSONSerialization dataWithJSONObject:@{@"report_initial_state": @YES} options:0 error:nil];
+  NSMutableData *readyOutput = [NSMutableData dataWithData:jsonOutput];
+  [readyOutput appendData:[@"\n" dataUsingEncoding:NSUTF8StringEncoding]];
+  write(STDOUT_FILENO, readyOutput.bytes, readyOutput.length);
+  fflush(stdout);
 }
 
 - (void)writeTargets
