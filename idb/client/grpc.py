@@ -13,6 +13,7 @@ from pathlib import Path
 from sys import platform
 from typing import (
     Any,
+    AsyncContextManager,
     AsyncIterable,
     AsyncIterator,
     Dict,
@@ -192,7 +193,7 @@ class GrpcClient(IdbClient):
             await companion_spawner.spawn_notifier()
 
     @asynccontextmanager
-    async def get_stub(self) -> CompanionServiceStub:
+    async def get_stub(self) -> AsyncContextManager[CompanionServiceStub]:
         await self.spawn_notifier()
         channel: Optional[Channel] = None
         try:
@@ -513,7 +514,6 @@ class GrpcClient(IdbClient):
             else:
                 await drain_untar(generate_bytes(stream), output_path=dest_path)
             self.logger.info(f"pulled file to {dest_path}")
-        return PullResponse(payload=Payload(file_path=dest_path))
 
     @log_and_handle_exceptions
     async def list_test_bundle(self, test_bundle_id: str) -> List[str]:

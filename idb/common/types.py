@@ -7,7 +7,6 @@ from enum import Enum
 from io import StringIO
 from typing import (
     IO,
-    Any,
     AsyncIterable,
     AsyncIterator,
     Dict,

@@ -27,8 +27,6 @@ def target_to_grpc(target: TargetDescription) -> GrpcTargetDescription:
         companion_info=companion_to_grpc(target.companion_info)
         if target.companion_info
         else None,
-        daemon_host=None,
-        daemon_port=None,
     )
 
 
