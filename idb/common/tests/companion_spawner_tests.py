@@ -50,6 +50,9 @@ class CompanionSpawnerTest(TestCase):
             new=AsyncMock(),
         ) as exec_mock, mock.patch("idb.common.companion_spawner.open"):
             process_mock = mock.Mock()
+            process_mock.stdout.readline = AsyncMock(
+                return_value=json.dumps({"report_initial_state": True}).encode("utf-8")
+            )
             exec_mock.return_value = process_mock
             await spawner.spawn_notifier()
             exec_mock.assert_called_once_with(

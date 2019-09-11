@@ -10,6 +10,7 @@ from typing import List
 
 from idb.client.pid_saver import PidSaver
 from idb.common.constants import IDB_LOCAL_TARGETS_FILE, IDB_LOGS_PATH
+from idb.utils.typing import none_throws
 
 
 class CompanionSpawnerException(Exception):
@@ -87,7 +88,20 @@ class CompanionSpawner:
 
             with open(self._log_file_path("notifier"), "a") as log_file:
                 process = await asyncio.create_subprocess_exec(
-                    *cmd, stdout=log_file, stderr=log_file
+                    *cmd, stdout=asyncio.subprocess.PIPE, stderr=log_file
                 )
                 self.pid_saver.save_notifier_pid(pid=process.pid)
+                await asyncio.ensure_future(
+                    self._read_notifier_output(stream=none_throws(process.stdout))
+                )
                 logging.debug(f"started notifier at process id {process.pid}")
+
+    async def _read_notifier_output(self, stream: StreamReader) -> None:
+        while True:
+            line = await stream.readline()
+            if line:
+                update = json.loads(line.decode())
+                if update["report_initial_state"]:
+                    return
+            else:
+                return
