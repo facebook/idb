@@ -8,6 +8,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import "FBBootManager.h"
 #import "FBIDBCompanionServer.h"
@@ -19,6 +20,7 @@
 #import "FBiOSTargetStateChangeNotifier.h"
 #import "FBStorageUtils.h"
 #import "FBTemporaryDirectory.h"
+#import "FBSimulatorsManager.h"
 
 const char *kUsageHelpMessage = "\
 Usage: \n \
@@ -28,8 +30,9 @@ Usage: \n \
   --grpc-port PORT           Port to start GRPC on (default: 10882) \n \
   --log-file-path PATH       Path to write a log file to e.g ./output.log (default: logs to stdErr) \n \
   --device-set-path PATH     Path to the custom device set if used \n \
-  --notify VALUE             When set to 1 - enables notify mode \n \
+  --notify PATH              Path to file to write updates about available targets \n \
   --terminate-offline VALUE  Terminate if the target goes offline, otherwise the companion will stay alive\n \
+  --create VALUE             Create a simulator value should look like \"iPhone X, iOS 12.4\"\n \
   --help                     Show this help message and exit \n";
 
 static BOOL shouldPrintUsage(void) {
@@ -53,6 +56,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   NSString *udid = [userDefaults stringForKey:@"-udid"];
   NSString *notifyFilePath = [userDefaults stringForKey:@"-notify"];
   NSString *boot = [userDefaults stringForKey:@"-boot"];
+  NSString *create = [userDefaults stringForKey:@"-create"];
   BOOL terminateOffline = [userDefaults boolForKey:@"-terminate-offline"];
 
   NSError *error = nil;
@@ -100,6 +104,21 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   } else if (boot) {
     [logger.info log:@"Booting target"];
     return [FBFuture futureWithResult:[[FBBootManager bootManagerForLogger:logger] boot:boot]];
+  } else if (create) {
+    NSString *deviceSetPath = [userDefaults stringForKey:@"-device-set-path"];
+    FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:deviceSetPath options:0 logger:logger reporter:reporter];
+    FBSimulatorsManager *manager = [[FBSimulatorsManager alloc] initWithSimulatorControlConfiguration:configuration];
+    NSArray<NSString *> *parameters = [create componentsSeparatedByString:@","];
+    NSString *name = nil;
+    NSString *osName = nil;
+    if (parameters.count > 0) {
+      name = [parameters objectAtIndex:0];
+    }
+    if (parameters.count > 1) {
+       osName = [parameters objectAtIndex:1];
+    }
+    return [FBFuture futureWithResult:[manager createSimulatorWithName:name withOSName:osName]];
+
   }
 
   return [[FBIDBError
