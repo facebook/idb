@@ -19,6 +19,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithSimulatorControlConfiguration:(FBSimulatorControlConfiguration *)configuration;
 
 - (FBFuture<FBSimulator *> *)createSimulatorWithName:(nullable NSString *)name withOSName:(nullable NSString *)osName;
+- (FBFuture<NSArray<NSString *> *> *)deleteAll;
+- (FBFuture<NSString *> *)deleteSimulator:(NSString *)udid;
 
 @end
 

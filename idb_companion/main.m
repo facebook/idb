@@ -33,6 +33,7 @@ Usage: \n \
   --notify PATH              Path to file to write updates about available targets \n \
   --terminate-offline VALUE  Terminate if the target goes offline, otherwise the companion will stay alive\n \
   --create VALUE             Create a simulator value should look like \"iPhone X, iOS 12.4\"\n \
+  --delete-all               Deletes all simulators \n \
   --help                     Show this help message and exit \n";
 
 static BOOL shouldPrintUsage(void) {
@@ -57,6 +58,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   NSString *notifyFilePath = [userDefaults stringForKey:@"-notify"];
   NSString *boot = [userDefaults stringForKey:@"-boot"];
   NSString *create = [userDefaults stringForKey:@"-create"];
+  NSString *delete = [userDefaults stringForKey:@"-delete"];
   BOOL terminateOffline = [userDefaults boolForKey:@"-terminate-offline"];
 
   NSError *error = nil;
@@ -104,21 +106,28 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   } else if (boot) {
     [logger.info log:@"Booting target"];
     return [FBFuture futureWithResult:[[FBBootManager bootManagerForLogger:logger] boot:boot]];
-  } else if (create) {
+  } else if (create || delete) {
     NSString *deviceSetPath = [userDefaults stringForKey:@"-device-set-path"];
     FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:deviceSetPath options:0 logger:logger reporter:reporter];
     FBSimulatorsManager *manager = [[FBSimulatorsManager alloc] initWithSimulatorControlConfiguration:configuration];
-    NSArray<NSString *> *parameters = [create componentsSeparatedByString:@","];
-    NSString *name = nil;
-    NSString *osName = nil;
-    if (parameters.count > 0) {
-      name = [parameters objectAtIndex:0];
+    if (create) {
+      NSArray<NSString *> *parameters = [create componentsSeparatedByString:@","];
+      NSString *name = nil;
+      NSString *osName = nil;
+      if (parameters.count > 0) {
+        name = [parameters objectAtIndex:0];
+      }
+      if (parameters.count > 1) {
+        osName = [parameters objectAtIndex:1];
+      }
+      return [FBFuture futureWithResult:[manager createSimulatorWithName:name withOSName:osName]];
+    } else if (delete) {
+      if ([delete isEqualToString:@"all"]) {
+        return [FBFuture futureWithResult:[manager deleteAll]];
+      } else {
+        return [FBFuture futureWithResult:[manager deleteSimulator:delete]];
+      }
     }
-    if (parameters.count > 1) {
-       osName = [parameters objectAtIndex:1];
-    }
-    return [FBFuture futureWithResult:[manager createSimulatorWithName:name withOSName:osName]];
-
   }
 
   return [[FBIDBError

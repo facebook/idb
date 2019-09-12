@@ -37,5 +37,20 @@
   return [_simulatorControl.set createSimulatorWithConfiguration:simulatorConfiguration];
 }
 
+- (FBFuture<NSArray<NSString *> *> *)deleteAll
+{
+  return [_simulatorControl.set deleteAll];
+}
+
+- (FBFuture<NSString *> *)deleteSimulator:(NSString *)udid
+{
+  FBSimulator *simulatorToDelete;
+  for (FBSimulator *simulator in [_simulatorControl.set allSimulators]) {
+    if ([simulator.udid isEqualToString:udid]) {
+      simulatorToDelete = simulator;
+    }
+  }
+  return [_simulatorControl.set deleteSimulator:simulatorToDelete];
+}
 
 @end
