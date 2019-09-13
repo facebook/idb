@@ -44,7 +44,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestOperation;
  @param timeout a timeout for the listing.
  @return an array of strings for the test names if successful, NO otherwise.
  */
-- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath;
+- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout;
 
 /**
  Starts 'testmanagerd' connection and creates socket to it.

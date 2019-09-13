@@ -246,7 +246,7 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
   return operation ? @[operation] : @[];
 }
 
-- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(nonnull NSString *)appPath
+- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout
 {
   return [[FBDeviceControlError
     describeFormat:@"Cannot list the tests in bundle %@ as this is not supported on devices", bundlePath]

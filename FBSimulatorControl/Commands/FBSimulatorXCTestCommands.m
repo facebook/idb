@@ -76,7 +76,7 @@
     execute];
 }
 
-- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
+- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout
 {
   return [[FBXCTestShimConfiguration
     defaultShimConfiguration]
@@ -86,7 +86,7 @@
         environment:@{}
         workingDirectory:self.simulator.auxillaryDirectory
         testBundlePath:bundlePath
-        runnerAppPath:appPath
+        runnerAppPath:nil
         waitForDebugger:NO
         timeout:timeout];
 

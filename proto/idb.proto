@@ -287,7 +287,6 @@ message XctestListBundlesResponse {
 
 message XctestListTestsRequest {
   string bundle_name = 1;
-  string app_path = 2;
 }
 
 message XctestListTestsResponse {

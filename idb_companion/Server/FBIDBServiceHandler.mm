@@ -904,7 +904,7 @@ Status FBIDBServiceHandler::xctest_list_bundles(ServerContext *context, const id
 Status FBIDBServiceHandler::xctest_list_tests(ServerContext *context, const idb::XctestListTestsRequest *request, idb::XctestListTestsResponse *response)
 {@autoreleasepool{
   NSError *error = nil;
-  NSArray<NSString *> *tests = [[_commandExecutor list_tests_in_bundle:nsstring_from_c_string(request->bundle_name()) with_app:nsstring_from_c_string(request->app_path())] block:&error];
+  NSArray<NSString *> *tests = [[_commandExecutor list_tests_in_bundle:nsstring_from_c_string(request->bundle_name())] block:&error];
   if (!tests) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
