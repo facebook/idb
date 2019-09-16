@@ -384,7 +384,7 @@ class TestParser(TestCase):
         bundle_id = "myBundleID"
         await cli_main(cmd_input=["xctest", "list-bundle", bundle_id])
         self.client_mock().list_test_bundle.assert_called_once_with(
-            test_bundle_id=bundle_id
+            test_bundle_id=bundle_id, app_path=None
         )
 
     async def test_daemon(self) -> None:

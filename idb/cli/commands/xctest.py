@@ -70,14 +70,25 @@ class XctestListTestsCommand(TargetCommand):
     def name(self) -> str:
         return "list-bundle"
 
-    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+    def add_parser_positional_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "test_bundle_id", help="Bundle id of the test bundle to list", type=str
+        )
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        self.add_parser_positional_arguments(parser)
+        parser.add_argument(
+            "--app-path",
+            default=None,
+            type=str,
+            help="Path of the app of the test (needed for app tests)",
         )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
-        tests = await client.list_test_bundle(test_bundle_id=args.test_bundle_id)
+        tests = await client.list_test_bundle(
+            test_bundle_id=args.test_bundle_id, app_path=args.app_path
+        )
         if args.json:
             print(json.dumps(tests))
         else:

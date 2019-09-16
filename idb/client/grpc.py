@@ -516,10 +516,10 @@ class GrpcClient(IdbClient):
             self.logger.info(f"pulled file to {dest_path}")
 
     @log_and_handle_exceptions
-    async def list_test_bundle(self, test_bundle_id: str) -> List[str]:
+    async def list_test_bundle(self, test_bundle_id: str, app_path: str) -> List[str]:
         async with self.get_stub() as stub:
             response = await stub.xctest_list_tests(
-                XctestListTestsRequest(bundle_name=test_bundle_id)
+                XctestListTestsRequest(bundle_name=test_bundle_id, app_path=app_path)
             )
             return [name for name in response.names]
 

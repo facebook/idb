@@ -292,7 +292,7 @@ class IdbClient:
     async def mkdir(self, bundle_id: str, path: str) -> None:
         pass
 
-    async def list_test_bundle(self, test_bundle_id: str) -> List[str]:
+    async def list_test_bundle(self, test_bundle_id: str, app_path: str) -> List[str]:
         pass
 
     async def tail_logs(
