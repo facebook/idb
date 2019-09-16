@@ -378,7 +378,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that resolves with names of tests in the bundle.
  */
-- (FBFuture<NSArray<NSString *> *> *)list_tests_in_bundle:(NSString *)bundleID;
+- (FBFuture<NSArray<NSString *> *> *)list_tests_in_bundle:(NSString *)bundleID with_app:(NSString *)appPath;
 
 /**
  Uninstall an application
