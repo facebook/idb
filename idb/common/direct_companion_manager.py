@@ -35,6 +35,7 @@ def exclusive_open(
             sleep(retry_time)
     try:
         with open(filename, *args, **kwargs) as f:
+            os.chmod(filename, 0o666)
             # pyre-fixme[7]: Expected `AsyncGenerator[None, None]` but got
             #  `Generator[IO[Any], None, None]`.
             yield f
