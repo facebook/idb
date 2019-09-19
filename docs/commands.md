@@ -202,7 +202,7 @@ idb xctest run app TEST_BUNDLE_ID APP_BUNDLE_ID
 idb debugserver start BUNDLE_ID
 ```
 
-Starts a debug session
+Starts a debug session. The output will be similar to ```process connect connect://localhost:10881``` and it will be used to start the lldb. In another terminal, type in the command ```lldb```, which will start the lldb. There, type the output of the start command to connect the debug server.
 
 
 ### Stop a debug session
