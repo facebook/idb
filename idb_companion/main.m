@@ -64,13 +64,15 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   NSError *error = nil;
   id<FBEventReporter> reporter = FBIDBConfiguration.eventReporter;
   if (udid) {
+    if ([udid isEqualToString:@"mac"]) {
+      udid = [FBMacDevice resolveDeviceUDID];
+    }
     id<FBiOSTarget> target = [FBiOSTargetProvider targetWithUDID:udid logger:logger reporter:reporter error:&error];
     if (!target) {
       return [FBFuture futureWithError:error];
     }
     [reporter addMetadata:@{@"udid": udid}];
     [reporter report:[FBEventReporterSubject subjectForEvent:FBEventNameLaunched]];
-
     // Start up the companion
     FBIDBPortsConfiguration *ports = [FBIDBPortsConfiguration portsWithArguments:userDefaults];
     FBTemporaryDirectory *temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:logger];
