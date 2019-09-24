@@ -222,8 +222,11 @@ class GrpcClient(IdbClient):
                 channel.close()
 
     async def spawn_companion(self, target_udid: str) -> Optional[CompanionInfo]:
-        if self.local_targets_manager.is_local_target_available(
-            target_udid=target_udid
+        if (
+            self.local_targets_manager.is_local_target_available(
+                target_udid=target_udid
+            )
+            or target_udid == "mac"
         ):
             companion_spawner = CompanionSpawner(
                 companion_path="idb_companion", logger=self.logger
