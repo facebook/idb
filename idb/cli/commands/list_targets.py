@@ -27,6 +27,7 @@ class ListTargetsCommand(ConnectingCommand):
                 print("No available targets")
             return
 
+        targets = sorted(targets, key=lambda target: target.name)
         formatter = human_format_target_info
         if args.json:
             formatter = json_format_target_info
