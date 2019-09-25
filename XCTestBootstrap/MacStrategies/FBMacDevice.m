@@ -81,6 +81,7 @@
     _workQueue = dispatch_get_main_queue();
     _workingDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
     _screenInfo = nil;
+    _osVersion = [FBOSVersion genericWithName:FBOSVersionNamemac];
   }
   return self;
 }

@@ -21,6 +21,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreProductFamily) {
   FBControlCoreProductFamilyiPad = 2,
   FBControlCoreProductFamilyAppleTV = 3,
   FBControlCoreProductFamilyAppleWatch = 4,
+  FBControlCoreProductFamilyMac = 5,
 };
 
 /**
@@ -123,6 +124,7 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_5_1;
 extern FBOSVersionName const FBOSVersionNamewatchOS_5_2;
 extern FBOSVersionName const FBOSVersionNamewatchOS_5_3;
 extern FBOSVersionName const FBOSVersionNamewatchOS_6_0;
+extern FBOSVersionName const FBOSVersionNamemac;
 
 #pragma mark Screen
 

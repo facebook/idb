@@ -110,6 +110,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_5_1 = @"watchOS 5.1";
 FBOSVersionName const FBOSVersionNamewatchOS_5_2 = @"watchOS 5.2";
 FBOSVersionName const FBOSVersionNamewatchOS_5_3 = @"watchOS 5.3";
 FBOSVersionName const FBOSVersionNamewatchOS_6_0 = @"watchOS 6.0";
+FBOSVersionName const FBOSVersionNamemac = @"macOS";
 
 @implementation FBiOSTargetScreenInfo
 
@@ -319,6 +320,11 @@ FBOSVersionName const FBOSVersionNamewatchOS_6_0 = @"watchOS 6.0";
   return [[self alloc] initWithName:name families:[NSSet setWithObject:@(FBControlCoreProductFamilyAppleWatch)]];
 }
 
++ (instancetype)macOSWithName:(FBOSVersionName)name
+{
+  return [[self alloc] initWithName:name families:[NSSet setWithObject:@(FBControlCoreProductFamilyMac)]];
+}
+
 @end
 
 @implementation FBiOSTargetConfiguration
@@ -441,6 +447,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_6_0 = @"watchOS 6.0";
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_5_2],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_5_3],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_6_0],
+      [FBOSVersion macOSWithName:FBOSVersionNamemac],
     ];
   });
   return OSConfigurations;
