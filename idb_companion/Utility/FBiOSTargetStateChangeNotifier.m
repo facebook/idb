@@ -40,7 +40,9 @@
   }
   _logger = logger;
   _filePath = filePath;
-  BOOL didCreateFile = [[NSFileManager defaultManager] createFileAtPath:_filePath contents:nil attributes:nil];
+  BOOL didCreateFile = [[NSFileManager defaultManager] createFileAtPath:_filePath
+                                                               contents:[@"[]" dataUsingEncoding:NSUTF8StringEncoding]
+                                                             attributes:@{NSFilePosixPermissions: [NSNumber numberWithShort:0666]}];
   if (!didCreateFile) {
     [logger.error log:@"failed to create local targets file"];
     exit(1);
