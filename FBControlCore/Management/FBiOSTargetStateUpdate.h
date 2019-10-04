@@ -33,7 +33,7 @@
 /**
  The Target's Name.
  */
-@property (nonatomic, assign, readonly) NSString *name;
+@property (nonatomic, copy, readonly) NSString *name;
 
 /**
  The Target's OS Version.
