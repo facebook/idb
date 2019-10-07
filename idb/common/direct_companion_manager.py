@@ -7,7 +7,7 @@ import os
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from time import sleep
-from typing import AsyncGenerator, List, Optional
+from typing import IO, Any, Generator, List, Optional
 
 from idb.common.constants import IDB_STATE_FILE_PATH
 from idb.common.format import json_data_companions, json_to_companion_info
@@ -18,9 +18,9 @@ from idb.common.types import CompanionInfo, ConnectionDestination, IdbException
 
 
 @contextmanager
-def exclusive_open(
-    filename: str, *args, **kwargs  # pyre-ignore  # pyre-ignore
-) -> AsyncGenerator[None, None]:
+def exclusive_open(  # pyre-ignore
+    filename: str, *args, **kwargs  # pyre-ignore
+) -> Generator[IO[Any], None, None]:
     timeout = 3
     retry_time = 0.05
     lockfile = filename + ".lock"
@@ -36,8 +36,6 @@ def exclusive_open(
     try:
         with open(filename, *args, **kwargs) as f:
             os.chmod(filename, 0o666)
-            # pyre-fixme[7]: Expected `AsyncGenerator[None, None]` but got
-            #  `Generator[IO[Any], None, None]`.
             yield f
     finally:
         try:
@@ -69,13 +67,11 @@ class DirectCompanionManager:
         return self.companions
 
     def _save(self) -> None:
-        # pyre-fixme[16]: `AsyncGenerator` has no attribute `__enter__`.
         with exclusive_open(self.state_file_path, "w") as f:
             json.dump(json_data_companions(self.companions), f)
 
     def _load(self) -> List[CompanionInfo]:
         if os.path.exists(self.state_file_path):
-            # pyre-fixme[16]: `AsyncGenerator` has no attribute `__enter__`.
             with exclusive_open(self.state_file_path, "r") as f:
                 return json_to_companion_info(json.load(f))
         return []
