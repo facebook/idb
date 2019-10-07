@@ -29,7 +29,10 @@ class LocalTargetsManager:
 
     def _load(self) -> List[TargetDescription]:
         targets = []
-        if os.path.exists(self.local_targets_file):
+        if (
+            os.path.exists(self.local_targets_file)
+            and os.path.getsize(self.local_targets_file) > 0
+        ):
             with open(self.local_targets_file, "r") as f:
                 targets_list = json.load(f)
                 for target in targets_list:
