@@ -190,9 +190,18 @@
       failFuture];
   }
 
+  NSArray<NSString *> *recordVideoParameters = @[@"--type=mp4"];
+
+  if ([FBXcodeConfiguration.xcodeVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"11.1"]]) {
+    recordVideoParameters = @[@"--codec=h264", @"--force"];
+  }
+
+  NSArray<NSString *> *ioCommandArguments =
+  [[@[@"recordVideo"] arrayByAddingObjectsFromArray:recordVideoParameters] arrayByAddingObject:filePath];
+
   // Create the task
   self.recordingStarted = [[[[self.simctlExecutor
-    taskBuilderWithCommand:@"io" arguments:@[@"recordVideo", @"--type=mp4", filePath]]
+    taskBuilderWithCommand:@"io" arguments:ioCommandArguments]
     withStdOutToLogger:self.logger]
     withStdErrToLogger:self.logger]
     start];
