@@ -74,6 +74,11 @@
   return [self.mediator _XCT_testSuite:tests didStartAt:time];
 }
 
+- (id)_XCT_logDebugMessage:(NSString *)arg1
+{
+  return [self.mediator _XCT_logDebugMessage:arg1];
+}
+
 - (id)_XCT_didBeginExecutingTestPlan
 {
   [self.reporter testManagerMediatorDidBeginExecutingTestPlan:self.mediator];

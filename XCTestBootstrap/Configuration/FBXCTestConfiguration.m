@@ -285,6 +285,17 @@ NSString *const KeyWorkingDirectory = @"working_directory";
     // xctest framework to app's rpath so it can be found by dyld when we load test bundle later.
     [FBListTestConfiguration copyFrameworkToApplicationAtPath:_runnerAppPath frameworkPath:xcTestFrameworkPath error:nil];
 
+    // Since Xcode 11, XCTest.framework load XCTAutomationSupport.framework use LC_LOAD_DYLIB, so
+    // we need to make sure XCTAutomationSupport.framework is available at @rpath when we load test bundle.
+    if ([FBXcodeConfiguration.xcodeVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"11.0"]]) {
+      NSString *XCTAutomationSupportFrameworkPath =
+      [[FBXcodeConfiguration.developerDirectory
+        stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform"]
+        stringByAppendingPathComponent:@"Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework"];
+
+      [FBListTestConfiguration copyFrameworkToApplicationAtPath:_runnerAppPath frameworkPath:XCTAutomationSupportFrameworkPath error:nil];
+    }
+
     FBBundleDescriptor *appBundle = [FBBundleDescriptor bundleFromPath:_runnerAppPath error:nil];
     return [FBXCTestProcess
       startWithLaunchPath:appBundle.binary.path
