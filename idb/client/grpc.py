@@ -188,7 +188,7 @@ class GrpcClient(IdbClient):
     async def spawn_notifier(self) -> None:
         if platform == "darwin":
             companion_spawner = CompanionSpawner(
-                companion_path="idb_companion", logger=self.logger
+                companion_path="/usr/local/bin/idb_companion", logger=self.logger
             )
             await companion_spawner.spawn_notifier()
 
@@ -229,7 +229,7 @@ class GrpcClient(IdbClient):
             or target_udid == "mac"
         ):
             companion_spawner = CompanionSpawner(
-                companion_path="idb_companion", logger=self.logger
+                companion_path="/usr/local/bin/idb_companion", logger=self.logger
             )
             self.logger.info(f"will attempt to spawn a companion for {target_udid}")
             port = await companion_spawner.spawn_companion(target_udid=target_udid)
@@ -815,7 +815,11 @@ class GrpcClient(IdbClient):
     @log_and_handle_exceptions
     async def boot(self) -> None:
         if self.target_udid:
-            cmd: List[str] = ["idb_companion", "--boot", none_throws(self.target_udid)]
+            cmd: List[str] = [
+                "/usr/local/bin/idb_companion",
+                "--boot",
+                none_throws(self.target_udid),
+            ]
             process = await asyncio.create_subprocess_exec(
                 *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
