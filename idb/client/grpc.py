@@ -409,38 +409,45 @@ class GrpcClient(IdbClient):
             return _to_crash_log(response)
 
     @log_and_handle_exceptions
-    async def install(self, bundle: Bundle) -> InstalledArtifact:
-        return await self._install_to_destination(
+    async def install(self, bundle: Bundle) -> AsyncIterator[InstalledArtifact]:
+        async for response in self._install_to_destination(
             bundle=bundle, destination=InstallRequest.APP
-        )
+        ):
+            yield response
 
     @log_and_handle_exceptions
-    async def install_xctest(self, xctest: Bundle) -> InstalledArtifact:
-        return await self._install_to_destination(
+    async def install_xctest(self, xctest: Bundle) -> AsyncIterator[InstalledArtifact]:
+        async for response in self._install_to_destination(
             bundle=xctest, destination=InstallRequest.XCTEST
-        )
+        ):
+            yield response
 
     @log_and_handle_exceptions
-    async def install_dylib(self, dylib: Bundle) -> InstalledArtifact:
-        return await self._install_to_destination(
+    async def install_dylib(self, dylib: Bundle) -> AsyncIterator[InstalledArtifact]:
+        async for response in self._install_to_destination(
             bundle=dylib, destination=InstallRequest.DYLIB
-        )
+        ):
+            yield response
 
     @log_and_handle_exceptions
-    async def install_dsym(self, dsym: Bundle) -> InstalledArtifact:
-        return await self._install_to_destination(
+    async def install_dsym(self, dsym: Bundle) -> AsyncIterator[InstalledArtifact]:
+        async for response in self._install_to_destination(
             bundle=dsym, destination=InstallRequest.DSYM
-        )
+        ):
+            yield response
 
     @log_and_handle_exceptions
-    async def install_framework(self, framework_path: Bundle) -> InstalledArtifact:
-        return await self._install_to_destination(
+    async def install_framework(
+        self, framework_path: Bundle
+    ) -> AsyncIterator[InstalledArtifact]:
+        async for response in self._install_to_destination(
             bundle=framework_path, destination=InstallRequest.FRAMEWORK
-        )
+        ):
+            yield response
 
     async def _install_to_destination(
         self, bundle: Bundle, destination: Destination
-    ) -> InstalledArtifact:
+    ) -> AsyncIterator[InstalledArtifact]:
         async with self.get_stub() as stub, stub.install.open() as stream:
             generator = None
             if isinstance(bundle, str):
@@ -468,12 +475,13 @@ class GrpcClient(IdbClient):
                 generator = generate_io_chunks(io=bundle, logger=self.logger)
                 # stream to companion
             await stream.send_message(InstallRequest(destination=destination))
-            response = await drain_to_stream(
-                stream=stream, generator=generator, logger=self.logger
-            )
-            return InstalledArtifact(
-                name=response.name, uuid=response.uuid, progress=response.progress
-            )
+            async for message in generator:
+                await stream.send_message(message)
+            await stream.end()
+            async for response in stream:
+                yield InstalledArtifact(
+                    name=response.name, uuid=response.uuid, progress=response.progress
+                )
 
     @log_and_handle_exceptions
     async def push(self, src_paths: List[str], bundle_id: str, dest_path: str) -> None:

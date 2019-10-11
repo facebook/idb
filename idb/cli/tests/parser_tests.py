@@ -4,13 +4,37 @@
 import asyncio
 import os
 from argparse import Namespace
-from typing import Any
+from typing import Any, Tuple, TypeVar
 from unittest.mock import ANY, MagicMock, patch
 
 from idb.cli.main import gen_main as cli_main
 from idb.common.constants import XCTEST_TIMEOUT
 from idb.common.types import CrashLogQuery, HIDButtonType, InstrumentsTimings
 from idb.utils.testing import AsyncMock, TestCase
+
+
+T = TypeVar("T")
+
+
+class AsyncGeneratorMock(AsyncMock):
+    def __call__(self) -> None:
+        super()
+
+    def __init__(self, iter_list: Tuple[T, ...] = ()) -> None:
+        super().__init__()
+        self.iter_list = iter_list
+        self.iter_pos: int = -1
+
+    def __aiter__(self) -> AsyncMock:
+        self.iter_pos = -1
+        return self
+
+    async def __anext__(self) -> MagicMock:
+        try:
+            self.iter_pos += 1
+            return self.iter_list[self.iter_pos]
+        except IndexError:
+            raise StopAsyncIteration()
 
 
 class TestParser(TestCase):
@@ -42,7 +66,7 @@ class TestParser(TestCase):
         self.client_mock().boot.assert_called_once()
 
     async def test_install(self) -> None:
-        self.client_mock().install = AsyncMock(return_value="com.foo.bar")
+        self.client_mock().install = MagicMock(return_value=AsyncGeneratorMock())
         app_path = "testApp.app"
         await cli_main(cmd_input=["install", app_path])
         self.client_mock().install.assert_called_once_with(app_path)
@@ -267,7 +291,7 @@ class TestParser(TestCase):
         self.client_mock().kill.assert_called_once_with()
 
     async def test_xctest_install(self) -> None:
-        self.client_mock().install_xctest = AsyncMock(return_value=[])
+        self.client_mock().install_xctest = MagicMock(return_value=AsyncGeneratorMock())
         test_bundle_path = "testBundle.xctest"
         await cli_main(cmd_input=["xctest", "install", test_bundle_path])
         self.client_mock().install_xctest.assert_called_once_with(test_bundle_path)

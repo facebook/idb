@@ -22,8 +22,10 @@ class DsymInstallCommand(TargetCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
-        artifact = await client.install_dsym(args.dsym_path)
-        if args.json:
-            print(json.dumps({"dsym": artifact.name}))
-        else:
-            print(f"Installed: {artifact.name}")
+        async for install_response in client.install_dsym(args.dsym_path):
+            if install_response.progress != 0.0 and not args.json:
+                print("Installed {install_response.progress}%")
+            elif args.json:
+                print(json.dumps({"dsym": install_response.name}))
+            else:
+                print(f"Installed: {install_response.name}")

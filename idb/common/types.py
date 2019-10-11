@@ -248,22 +248,30 @@ class IdbClient:
     ) -> AsyncIterator[TestRunInfo]:
         yield
 
-    async def install(self, bundle: Union[str, IO[bytes]]) -> InstalledArtifact:
-        pass
+    async def install(
+        self, bundle: Union[str, IO[bytes]]
+    ) -> AsyncIterator[InstalledArtifact]:
+        yield
 
-    async def install_dylib(self, dylib: Union[str, IO[bytes]]) -> InstalledArtifact:
-        pass
+    async def install_dylib(
+        self, dylib: Union[str, IO[bytes]]
+    ) -> AsyncIterator[InstalledArtifact]:
+        yield
 
-    async def install_dsym(self, dsym: Union[str, IO[bytes]]) -> InstalledArtifact:
-        pass
+    async def install_dsym(
+        self, dsym: Union[str, IO[bytes]]
+    ) -> AsyncIterator[InstalledArtifact]:
+        yield
 
-    async def install_xctest(self, xctest: Union[str, IO[bytes]]) -> InstalledArtifact:
-        pass
+    async def install_xctest(
+        self, xctest: Union[str, IO[bytes]]
+    ) -> AsyncIterator[InstalledArtifact]:
+        yield
 
     async def install_framework(
         self, framework_path: Union[str, IO[bytes]]
-    ) -> InstalledArtifact:
-        pass
+    ) -> AsyncIterator[InstalledArtifact]:
+        yield
 
     async def uninstall(self, bundle_id: str) -> None:
         pass

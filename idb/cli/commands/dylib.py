@@ -22,8 +22,14 @@ class DylibInstallCommand(TargetCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
-        artifact = await client.install_dylib(args.dylib_path)
-        if args.json:
-            print(json.dumps({"dylib": artifact.name, "uuid": artifact.uuid}))
-        else:
-            print(f"Installed: {artifact.name} {artifact.uuid}")
+        async for install_response in client.install_dylib(args.dylib_path):
+            if install_response.progress != 0.0 and not args.json:
+                print("Installed {install_response.progress}%")
+            elif args.json:
+                print(
+                    json.dumps(
+                        {"dylib": install_response.name, "uuid": install_response.uuid}
+                    )
+                )
+            else:
+                print(f"Installed: {install_response.name} {install_response.uuid}")
