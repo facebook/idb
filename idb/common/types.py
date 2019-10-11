@@ -213,6 +213,7 @@ HIDEvent = Union[HIDPress, HIDSwipe, HIDDelay]
 class InstalledArtifact(NamedTuple):
     name: str
     uuid: Optional[str]
+    progress: Optional[float]
 
 
 class IdbClient:

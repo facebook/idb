@@ -471,7 +471,9 @@ class GrpcClient(IdbClient):
             response = await drain_to_stream(
                 stream=stream, generator=generator, logger=self.logger
             )
-            return InstalledArtifact(name=response.name, uuid=response.uuid)
+            return InstalledArtifact(
+                name=response.name, uuid=response.uuid, progress=response.progress
+            )
 
     @log_and_handle_exceptions
     async def push(self, src_paths: List[str], bundle_id: str, dest_path: str) -> None:
