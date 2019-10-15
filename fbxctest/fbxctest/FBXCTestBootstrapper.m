@@ -64,8 +64,11 @@
     return [self printErrorMessage:error];
   }
 
-  if (![NSFileManager.defaultManager removeItemAtPath:workingDirectory error:&error]) {
-    return [self printErrorMessage:error];
+  BOOL isDir = NO;
+  if ([NSFileManager.defaultManager fileExistsAtPath:workingDirectory isDirectory:&isDir] && isDir) {
+    if (![NSFileManager.defaultManager removeItemAtPath:workingDirectory error:&error]) {
+      return [self printErrorMessage:error];
+    }
   }
 
   return YES;
