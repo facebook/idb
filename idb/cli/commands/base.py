@@ -88,6 +88,7 @@ class CompositeCommand(Command, metaclass=ABCMeta):
             # This terminates the program with exit code 2
             # pyre-fixme[16]: `Optional` has no attribute `error`.
             self.parser.error(f"No subcommand found for {self.name}")
+        # pyre-fixme[6]: Expected `str` for 1st param but got `None`.
         subcmd = self.subcommands_by_name[subcmd_name]
         assert subcmd is not None, "subcommand %r doesn't exist" % subcmd_name
         return subcmd
@@ -132,7 +133,6 @@ class BaseCommand(Command, metaclass=ABCMeta):
         raise Exception("subclass")
 
 
-# pyre-fixme[44]: `ConnectingCommand` non-abstract class with abstract methods
 class ConnectingCommand(BaseCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         plugin.on_connecting_parser(parser=parser, logger=self.logger)

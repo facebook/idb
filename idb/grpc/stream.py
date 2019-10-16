@@ -12,8 +12,9 @@ _TSend = TypeVar("_TSend")
 _TRecv = TypeVar("_TRecv")
 
 
+# pyre-fixme[13]: Attribute `metadata` is never initialized.
 class Stream(Generic[_TSend, _TRecv], AsyncIterator[_TRecv]):
-    metadata: Dict[str, str]  # pyre-ignore
+    metadata: Dict[str, str]
 
     async def recv_message(self) -> Optional[_TRecv]:
         ...

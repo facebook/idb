@@ -65,7 +65,6 @@ def _convert_args(args: Namespace) -> Tuple[Namespace, str]:
     return (args, bundle_id)
 
 
-# pyre-fixme[44]: `FSCommand` non-abstract class with abstract methods
 class FSCommand(TargetCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
