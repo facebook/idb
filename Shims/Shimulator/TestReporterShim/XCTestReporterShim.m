@@ -575,6 +575,11 @@ static void XCTestCaseSuite_performTest(id self, SEL sel, id arg1)
   XCPerformTestWithSuppressedExpectedAssertionFailures(self, originalSelector, arg1);
 }
 
+static id XCTRunnerDaemonSession_sharedSession(Class cls, SEL cmd)
+{
+  return nil;
+}
+
 #pragma mark - _enableSymbolication
 
 static BOOL XCTestCase__enableSymbolication(id self, SEL sel)
@@ -630,6 +635,22 @@ static void PrintNewlineAndCloseFDs()
 
 static void SwizzleXCTestMethodsIfAvailable()
 {
+  if ([[[NSBundle mainBundle] bundleIdentifier] hasPrefix:@"com.apple.dt.xctest"]) {
+    // Start from Xcode 11.1, XCTest will try to connect to testmanagerd service
+    // when reporting test failures (for capture screenshots automatically), and crash
+    // if it cannot make a connection.
+    // We don't really boot the simulator for running logic tests, so just force
+    // it to return nil.
+    static dispatch_once_t token;
+    dispatch_once(&token, ^{
+      XTSwizzleClassSelectorForFunction(
+        NSClassFromString(@"XCTRunnerDaemonSession"),
+        @selector(sharedSession),
+        (IMP)XCTRunnerDaemonSession_sharedSession
+      );
+    });
+  }
+
   Class testLogClass = objc_getClass("XCTestLog");
 
   if (testLogClass == nil) {
