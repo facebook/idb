@@ -26,10 +26,11 @@ NS_ASSUME_NONNULL_BEGIN
  The provided client is an FBFutureContext. This is because the reading and writing of the service connection needs to be torn down before the service.
 
  @param connection the service connection connection to use.
+ @param queue the queue to execute on
  @param logger the logger to log to.
  @return a Future wrapping the FBServiceConnectionClient Client.
  */
-+ (FBFutureContext<FBServiceConnectionClient *> *)clientForServiceConnection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger;
++ (FBFutureContext<FBServiceConnectionClient *> *)clientForServiceConnection:(FBAMDServiceConnection *)connection queue:(dispatch_queue_t)queue  logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 

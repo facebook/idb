@@ -52,7 +52,7 @@ static NSString *const ScreenShotDataKey = @"ScreenShotData";
   return [[[[[self.device.amDevice
     startService:@"com.apple.mobile.screenshotr"]
     onQueue:self.device.workQueue push:^(FBAMDServiceConnection *connection) {
-      return [connection makeClientWithLogger:self.device.logger];
+      return [connection makeClientWithLogger:self.device.logger queue:self.device.workQueue];
     }]
     onQueue:self.device.workQueue pend:^(FBServiceConnectionClient *rawClient) {
       return [FBDeviceLinkClient deviceLinkClientWithServiceConnectionClient:rawClient];
@@ -60,7 +60,7 @@ static NSString *const ScreenShotDataKey = @"ScreenShotData";
     onQueue:self.device.workQueue pop:^(FBDeviceLinkClient *client) {
       return [client processMessage:@{@"MessageType": @"ScreenShotRequest"}];
     }]
-    onQueue:self.device.asyncQueue fmap:^(NSDictionary<id, id> *response) {
+    onQueue:self.device.workQueue fmap:^(NSDictionary<id, id> *response) {
       NSData *screenshotData = response[ScreenShotDataKey];
       if (![screenshotData isKindOfClass:NSData.class]) {
         return [[FBDeviceControlError

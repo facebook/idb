@@ -64,9 +64,10 @@ typedef CFTypeRef AMDServiceConnectionRef;
  Build a service connection client, returning it in an FBFutureContext.
 
  @param logger the logger to use.
+ @param queue the queue to execute on
  @return an FBFutureContext wrapping the client.
  */
-- (FBFutureContext<FBServiceConnectionClient *> *)makeClientWithLogger:(id<FBControlCoreLogger>)logger;
+- (FBFutureContext<FBServiceConnectionClient *> *)makeClientWithLogger:(id<FBControlCoreLogger>)logger  queue:(dispatch_queue_t)queue;
 
 #pragma mark Properties
 

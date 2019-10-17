@@ -22,7 +22,7 @@
 
 #pragma mark Initializers
 
-+ (FBFutureContext<FBServiceConnectionClient *> *)clientForServiceConnection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger
++ (FBFutureContext<FBServiceConnectionClient *> *)clientForServiceConnection:(FBAMDServiceConnection *)connection queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   NSError *error = nil;
   id<FBDataConsumer, FBDataConsumerLifecycle> writer = [FBFileWriter asyncWriterWithFileDescriptor:connection.socket closeOnEndOfFile:NO error:&error];
@@ -34,7 +34,7 @@
     outputBuffer,
     [FBLoggingDataConsumer consumerWithLogger:[logger withName:@"RECV"]],
   ]];
-  dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBDeviceControl.ServiceConnection.client", DISPATCH_QUEUE_SERIAL);
+
   FBFileReader *reader = [FBFileReader readerWithFileDescriptor:connection.socket closeOnEndOfFile:NO consumer:output logger:nil];
   return [[[reader
     startReading]

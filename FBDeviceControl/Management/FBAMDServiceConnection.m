@@ -73,9 +73,9 @@
   return YES;
 }
 
-- (FBFutureContext<FBServiceConnectionClient *> *)makeClientWithLogger:(id<FBControlCoreLogger>)logger
+- (FBFutureContext<FBServiceConnectionClient *> *)makeClientWithLogger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue
 {
-  return [FBServiceConnectionClient clientForServiceConnection:self logger:logger];
+  return [FBServiceConnectionClient clientForServiceConnection:self queue:queue logger:logger];
 }
 
 #pragma mark Properties
