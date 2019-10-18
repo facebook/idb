@@ -93,7 +93,11 @@ FBOSVersionName const FBOSVersionNameiOS_12_0 = @"iOS 12.0";
 FBOSVersionName const FBOSVersionNameiOS_12_1 = @"iOS 12.1";
 FBOSVersionName const FBOSVersionNameiOS_12_2 = @"iOS 12.2";
 FBOSVersionName const FBOSVersionNameiOS_13_0 = @"iOS 13.0";
+FBOSVersionName const FBOSVersionNameiOS_13_1 = @"iOS 13.1";
+FBOSVersionName const FBOSVersionNameiOS_13_1_1 = @"iOS 13.1.1";
 FBOSVersionName const FBOSVersionNameiOS_13_1_2 = @"iOS 13.1.2";
+FBOSVersionName const FBOSVersionNameiOS_13_1_3 = @"iOS 13.1.3";
+FBOSVersionName const FBOSVersionNameiOS_13_2 = @"iOS 13.2";
 FBOSVersionName const FBOSVersionNametvOS_9_0 = @"tvOS 9.0";
 FBOSVersionName const FBOSVersionNametvOS_9_1 = @"tvOS 9.1";
 FBOSVersionName const FBOSVersionNametvOS_9_2 = @"tvOS 9.2";
@@ -359,9 +363,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_6_0 = @"watchOS 6.0";
   });
   return deviceConfigurations;
 }
-// https://www.theiphonewiki.com/wiki/List_of_Apple_TVs
-// https://gist.github.com/adamawolf/3048717
-// https://www.theiphonewiki.com/wiki/Models
+
 + (NSArray<FBOSVersion *> *)OSConfigurations
 {
   static dispatch_once_t onceToken;
@@ -394,7 +396,11 @@ FBOSVersionName const FBOSVersionNamewatchOS_6_0 = @"watchOS 6.0";
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_12_1],
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_12_2],
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_13_0],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_13_1],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_13_1_1],
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_13_1_2],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_13_1_3],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_13_2],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_0],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_1],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_2],
