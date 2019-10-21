@@ -244,7 +244,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
         queue:queue
         acceptableStatusCodes:configuration.acceptableStatusCodes
         configurationDescription:configuration.description
-        programName:configuration.launchPath.lastPathComponent];
+        programName:configuration.programName];
     }];
 }
 

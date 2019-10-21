@@ -26,6 +26,7 @@
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdErr;
 @property (nonatomic, strong, nullable, readwrite) FBProcessInput *stdIn;
 @property (nonatomic, strong, nullable, readwrite) id<FBControlCoreLogger> logger;
+@property (nonatomic, copy, readwrite) NSString *programName;
 
 @end
 
@@ -48,6 +49,7 @@
   _stdErr = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   _stdIn = nil;
   _logger = [FBControlCoreGlobalConfiguration.defaultLogger withName:[NSString stringWithFormat:@"FBTask_%@", launchPath.lastPathComponent]];
+  _programName = [launchPath lastPathComponent];
 
   return self;
 }
@@ -243,6 +245,12 @@
   return self;
 }
 
+- (instancetype)withProgramName:(NSString *)programName
+{
+  self.programName = programName;
+  return self;
+}
+
 #pragma mark Building
 
 - (FBFuture<FBTask *> *)start
@@ -269,7 +277,8 @@
     environment:self.environment
     acceptableStatusCodes:self.acceptableStatusCodes
     io:[[FBProcessIO alloc] initWithStdIn:self.stdIn stdOut:self.stdOut stdErr:self.stdErr]
-    logger:self.logger];
+    logger:self.logger
+    programName:self.programName];
 }
 
 + (NSDictionary<NSString *, NSString *> *)defaultEnvironmentForSubprocess

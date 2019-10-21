@@ -265,6 +265,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (instancetype)withNoLogging;
 
+/**
+ Custom program name
+
+ @return the receiver for chaining.
+ */
+- (instancetype)withProgramName:(NSString *)programName;
+
 #pragma mark Building
 
 /**

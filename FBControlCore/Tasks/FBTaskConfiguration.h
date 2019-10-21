@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a Task Configuration with the provided parameters.
  */
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCode io:(FBProcessIO *)io logger:(nullable id<FBControlCoreLogger>)logger;
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCode io:(FBProcessIO *)io logger:(nullable id<FBControlCoreLogger>)logger programName:(NSString *)programName;
 
 /**
  The Launch Path of the Process to launch.
@@ -52,6 +52,11 @@ The FBProcessIO object.
  The logger to log to.
  */
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
+
+/**
+ The program display name for logging.
+ */
+@property (nonatomic, copy, readonly) NSString *programName;
 
 @end
 
