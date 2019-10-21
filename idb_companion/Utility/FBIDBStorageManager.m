@@ -102,9 +102,7 @@
 
   const BOOL containsExactArch = [bundleArchs containsObject:targetArch];
   // arm64 binaries are acceptable on arm64e devices, but arm64e is not yet available
-  const BOOL arm64eEquivalent = [bundleArchs objectsPassingTest:^BOOL(NSString *arch, BOOL *_Nonnull stop) {
-    return [arch hasPrefix:@"arm64"];
-  }] != nil;
+  const BOOL arm64eEquivalent = [targetArch isEqualToString:@"arm64e"] && [bundleArchs containsObject:@"arm64"];
 
   if (!(containsExactArch || arm64eEquivalent)) {
     return [[FBIDBError
