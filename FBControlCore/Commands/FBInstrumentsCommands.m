@@ -40,7 +40,7 @@
 
 #pragma mark FBInstrumentsCommands
 
-- (FBFuture<FBInstrumentsOperation *> *)startInstrument:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<FBInstrumentsOperation *> *)startInstruments:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   return [FBInstrumentsOperation operationWithTarget:self.target configuration:configuration logger:logger];
 }

@@ -21,13 +21,13 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBInstrumentsCommands <NSObject, FBiOSTargetCommand>
 
 /**
- Runs the provided instrument with the given configuration
+ Runs instruments with the given configuration
 
  @param configuration the configuration to use.
  @param logger the logger to use.
- @return A future that resolves with the instrument operation.
+ @return A future that resolves with the instruments operation.
  */
-- (FBFuture<FBInstrumentsOperation *> *)startInstrument:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
+- (FBFuture<FBInstrumentsOperation *> *)startInstruments:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

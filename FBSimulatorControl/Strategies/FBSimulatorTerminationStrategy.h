@@ -13,7 +13,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
 @class FBSimulatorSet;
-@protocol FBControlCoreLogger;
 
 /**
  A class for terminating Simulators.
@@ -45,7 +44,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Kills all of the Simulators that are not launched by `FBSimulatorControl`.
- This can mean Simulators that werelaunched via Xcode or Instruments.
+ This can mean Simulators that were launched via Xcode or Instruments.
  Getting a Simulator host into a clean state improves the general reliability of Simulator management and launching.
  In addition, performance should increase as these Simulators won't take up any system resources.
 
