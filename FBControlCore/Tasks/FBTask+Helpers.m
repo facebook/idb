@@ -11,7 +11,7 @@
 
 @implementation FBTask (Helpers)
 
-- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout
+- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOfToKillWithTimeout:(NSTimeInterval)timeout
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task_terminate", DISPATCH_QUEUE_SERIAL);
   FBFuture<NSNumber *> *signal = [self sendSignal:signo];

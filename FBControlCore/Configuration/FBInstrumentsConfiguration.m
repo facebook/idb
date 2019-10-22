@@ -39,19 +39,19 @@
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithTemplateName:(NSString *)templateName targetApplication:(NSString *)targetApplication environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments timings:(FBInstrumentsTimings *)timings
++ (instancetype)configurationWithInstrumentName:(NSString *)instrumentName targetApplication:(NSString *)targetApplication environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments timings:(FBInstrumentsTimings *)timings
 {
-  return [[self alloc] initWithTemplateName:templateName targetApplication:targetApplication environment:environment arguments:arguments timings:timings];
+  return [[self alloc] initWithInstrumentName:instrumentName targetApplication:targetApplication environment:environment arguments:arguments timings:timings];
 }
 
-- (instancetype)initWithTemplateName:(NSString *)templateName targetApplication:(NSString *)targetApplication environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments timings:(FBInstrumentsTimings *)timings
+- (instancetype)initWithInstrumentName:(NSString *)instrumentName targetApplication:(NSString *)targetApplication environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments timings:(FBInstrumentsTimings *)timings
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _templateName = templateName;
+  _instrumentName = instrumentName;
   _targetApplication = targetApplication;
   _environment = environment;
   _arguments = arguments;
@@ -64,8 +64,8 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Instruments %@ | %@ | %@ | %@ | duration %f | terminate timeout %f | launch retry timeout %f | launch error timeout %f",
-    self.templateName,
+    @"Instrument %@ | %@ | %@ | %@ | duration %f | terminate timeout %f | launch retry timeout %f | launch error timeout %f",
+    self.instrumentName,
     self.targetApplication,
     [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
     [FBCollectionInformation oneLineDescriptionFromArray:self.arguments],

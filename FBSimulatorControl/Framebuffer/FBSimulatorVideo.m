@@ -236,7 +236,7 @@
 
   // Stop for real be interrupting the task itself.
   FBFuture<NSNull *> *completed = [[[[recordingTask
-    sendSignal:SIGINT backingOffToKillWithTimeout:10]
+    sendSignal:SIGINT backingOfToKillWithTimeout:10]
     logCompletion:self.logger withPurpose:@"The video recording task terminated"]
     onQueue:self.queue fmap:^(NSNumber *result) {
       self.recordingStarted = nil;

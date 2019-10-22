@@ -33,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
 typedef FBDeltaUpdateManager<FBInstrumentsDelta *, FBInstrumentsOperation *, FBInstrumentsConfiguration *> FBInstrumentsManager;
 
 /**
- Manages multiple instruments sessions for one target.
+ Manages multiple instrument sessions for one target.
  */
 @interface FBDeltaUpdateManager (Instruments)
 

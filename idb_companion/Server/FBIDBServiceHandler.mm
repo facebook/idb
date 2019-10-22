@@ -416,7 +416,7 @@ static FBSimulatorHIDEvent *translate_event(idb::HIDEvent &event, NSError **erro
 static FBInstrumentsConfiguration *translate_instruments_configuration(idb::InstrumentsRunRequest_Start request)
 {
   return [FBInstrumentsConfiguration
-    configurationWithTemplateName:nsstring_from_c_string(request.template_name())
+    configurationWithInstrumentName:nsstring_from_c_string(request.template_name())
     targetApplication:nsstring_from_c_string(request.app_bundle_id())
     environment:extract_str_dict(request.environment())
     arguments:extract_string_array(request.arguments())
@@ -1095,7 +1095,7 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
     [FBControlCoreLogger loggerToConsumer:consumer],
     _target.logger,
   ]];
-  FBInstrumentsOperation *operation = [[_target startInstruments:configuration logger:logger] block:&error];
+  FBInstrumentsOperation *operation = [[_target startInstrument:configuration logger:logger] block:&error];
   if (!operation) {
     pthread_mutex_lock(&mutex);
     finished_writing = YES;

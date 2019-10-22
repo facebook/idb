@@ -59,17 +59,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates and returns a new Configuration with the provided parameters
 
- @param templateName the name of the template
+ @param instrumentName the name of the instrument
  @return a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithTemplateName:(NSString *)templateName targetApplication:(NSString *)targetApplication environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments timings:(FBInstrumentsTimings *)timings;
++ (instancetype)configurationWithInstrumentName:(NSString *)instrumentName targetApplication:(NSString *)targetApplication environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments timings:(FBInstrumentsTimings *)timings;
 
 #pragma mark Properties
 
 /**
- The template name or path.
+ The Instrument Name
  */
-@property (nonatomic, copy, readonly) NSString *templateName;
+@property (nonatomic, copy, readonly) NSString *instrumentName;
 
 /**
  The target application bundle id.
@@ -77,7 +77,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSString *targetApplication;
 
 /**
- The target application environment.
+ The target application environment
  */
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *environment;
 
