@@ -100,7 +100,11 @@
   NSSet<NSString *> *bundleArchs = bundle.binary.architectures;
   NSString *targetArch = self.target.architecture;
 
-  if (![bundleArchs containsObject:targetArch]) {
+  const BOOL containsExactArch = [bundleArchs containsObject:targetArch];
+  // arm64 binaries are acceptable on arm64e devices, but arm64e is not yet available
+  const BOOL arm64eEquivalent = [targetArch isEqualToString:@"arm64e"] && [bundleArchs containsObject:@"arm64"];
+
+  if (!(containsExactArch || arm64eEquivalent)) {
     return [[FBIDBError
       describeFormat:@"Targets architecture %@ not in the bundles supported architectures: %@", targetArch, bundleArchs.allObjects]
       failBool:error];
