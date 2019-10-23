@@ -468,7 +468,7 @@
   XCTAssertEqual(task.exitCode.state, FBFutureStateRunning);
 
   NSError *error = nil;
-  BOOL success = [[task sendSignal:SIGHUP backingOfToKillWithTimeout:0.5] await:&error] != nil;
+  BOOL success = [[task sendSignal:SIGHUP backingOffToKillWithTimeout:0.5] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
   XCTAssertEqual(task.exitCode.state, FBFutureStateDone);

@@ -43,7 +43,7 @@ static const NSTimeInterval MaximumInstrumentTime = 60 * 60 * 4; // 4 Hours.
     create:^ FBFuture<FBInstrumentsOperation *> * (FBInstrumentsConfiguration *configuration) {
       id<FBConsumableBuffer> logBuffer = FBDataBuffer.consumableBuffer;
       id<FBControlCoreLogger> logger = [[FBControlCoreLogger loggerToConsumer:logBuffer] withDateFormatEnabled:YES];
-      return [target startInstrument:configuration logger:logger];
+      return [target startInstruments:configuration logger:logger];
     }
     delta:^ FBFuture<FBInstrumentsDelta *> * (FBInstrumentsOperation *operation, NSString *identifier, BOOL *done) {
       id logger = operation.logger;

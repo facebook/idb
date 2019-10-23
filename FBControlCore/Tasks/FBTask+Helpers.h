@@ -22,9 +22,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param signo the signal number to send.
  @param timeout the timeout to wait before sending a SIGKILL.
- @return a future that resolves when the process has been terminate.
+ @return a future that resolves to the signal sent when the process has been terminated.
  */
-- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOfToKillWithTimeout:(NSTimeInterval)timeout;
+- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout;
 
 @end
 
