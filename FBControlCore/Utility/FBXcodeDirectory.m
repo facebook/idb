@@ -32,6 +32,10 @@
     runUntilCompletion]
     onQueue:queue fmap:^(FBTask *task) {
       NSString *directory = [task stdOut];
+      if ([[NSProcessInfo.processInfo.environment allKeys] containsObject:@"FBXCTEST_XCODE_PATH_OVERRIDE"]) {
+        directory = NSProcessInfo.processInfo.environment[@"FBXCTEST_XCODE_PATH_OVERRIDE"];
+      }
+
       if (!directory) {
         return [[FBControlCoreError
           describeFormat:@"Xcode Path could not be determined from `xcode-select`: %@", directory]

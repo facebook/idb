@@ -190,21 +190,58 @@
       failFuture];
   }
 
-  NSArray<NSString *> *recordVideoParameters = @[@"--type=mp4"];
+  self.recordingStarted =
+    [[[[[FBTaskBuilder
+         withLaunchPath:@"/usr/bin/what"
+         arguments:@[@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/Resources/bin/simctl"]]
+        runUntilCompletion]
+    onQueue:self.queue handleError:^(NSError *error) {
+      [self.logger logFormat:@"Abnormal exit of what process %@", error];
+      return [FBFuture futureWithResult:NSNull.null];
+    }]
+    onQueue:self.queue fmap:^(FBTask *task) {
+      if ([task isKindOfClass:[NSNull class]]) {
+        [self.logger logFormat:@"what command failed, return 0.0"];
+        return [FBFuture futureWithResult:@"0.0"];
+      }
 
-  if ([FBXcodeConfiguration.xcodeVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"11.1"]]) {
-    recordVideoParameters = @[@"--codec=h264", @"--force"];
-  }
+      NSString *output = [task stdOut];
+      NSString *pattern = @"CoreSimulator-([0-9\\.]+)";
+      NSRegularExpression* regex = [NSRegularExpression regularExpressionWithPattern:pattern
+                                                                             options:0
+                                                                               error:nil];
+      NSArray* matches = [regex matchesInString:output
+                                        options:0
+                                          range:NSMakeRange(0, [output length])];
+      if (matches.count != 1) {
+        [self.logger logFormat:@"Couldn't find simctl version from: %@, return 0.0", output];
+        return [FBFuture futureWithResult:@"0.0"];
+      }
 
-  NSArray<NSString *> *ioCommandArguments =
-  [[@[@"recordVideo"] arrayByAddingObjectsFromArray:recordVideoParameters] arrayByAddingObject:filePath];
+      NSTextCheckingResult *match = matches[0];
+      NSString *result = [output substringWithRange:[match rangeAtIndex:1]];
 
-  // Create the task
-  self.recordingStarted = [[[[self.simctlExecutor
-    taskBuilderWithCommand:@"io" arguments:ioCommandArguments]
-    withStdOutToLogger:self.logger]
-    withStdErrToLogger:self.logger]
-    start];
+      return [FBFuture futureWithResult:result];
+    }] onQueue:self.queue fmap:^(NSString *simctlVersion) {
+      NSArray<NSString *> *recordVideoParameters = @[@"--type=mp4"];
+
+      NSDecimalNumber *simctlVersionNumber = [NSDecimalNumber decimalNumberWithString:simctlVersion];
+
+      // This is the version of CoreSimulator comes with Xcode 11.2 beta 2
+      if ([simctlVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"681.14"]]) {
+        recordVideoParameters = @[@"--codec=h264", @"--force"];
+      }
+
+      NSArray<NSString *> *ioCommandArguments =
+      [[@[@"recordVideo"] arrayByAddingObjectsFromArray:recordVideoParameters] arrayByAddingObject:filePath];
+
+      return [[[[self.simctlExecutor
+                 taskBuilderWithCommand:@"io" arguments:ioCommandArguments]
+                withStdOutToLogger:self.logger]
+               withStdErrToLogger:self.logger]
+              start];
+    }];
+
   self.filePath = filePath;
 
   return [self.recordingStarted mapReplace:NSNull.null];
