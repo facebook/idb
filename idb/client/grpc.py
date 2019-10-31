@@ -212,7 +212,9 @@ class GrpcClient(IdbClient):
                     raise e
             self.logger.info(f"using companion {self.companion_info}")
             channel = Channel(
+                # pyre-fixme[16]: `Optional` has no attribute `host`.
                 self.companion_info.host,
+                # pyre-fixme[16]: `Optional` has no attribute `port`.
                 self.companion_info.port,
                 loop=asyncio.get_event_loop(),
             )
