@@ -86,6 +86,7 @@ FBOSVersionName const FBOSVersionNameiOS_12_2 = @"iOS 12.2";
 FBOSVersionName const FBOSVersionNameiOS_12_4 = @"iOS 12.4";
 FBOSVersionName const FBOSVersionNameiOS_13_0 = @"iOS 13.0";
 FBOSVersionName const FBOSVersionNameiOS_13_1 = @"iOS 13.1";
+FBOSVersionName const FBOSVersionNameiOS_13_2 = @"iOS 13.2";
 FBOSVersionName const FBOSVersionNametvOS_9_0 = @"tvOS 9.0";
 FBOSVersionName const FBOSVersionNametvOS_9_1 = @"tvOS 9.1";
 FBOSVersionName const FBOSVersionNametvOS_9_2 = @"tvOS 9.2";
@@ -102,6 +103,7 @@ FBOSVersionName const FBOSVersionNametvOS_12_1 = @"tvOS 12.1";
 FBOSVersionName const FBOSVersionNametvOS_12_2 = @"tvOS 12.2";
 FBOSVersionName const FBOSVersionNametvOS_12_4 = @"tvOS 12.4";
 FBOSVersionName const FBOSVersionNametvOS_13_0 = @"tvOS 13.0";
+FBOSVersionName const FBOSVersionNametvOS_13_2 = @"tvOS 13.2";
 FBOSVersionName const FBOSVersionNamewatchOS_2_0 = @"watchOS 2.0";
 FBOSVersionName const FBOSVersionNamewatchOS_2_1 = @"watchOS 2.1";
 FBOSVersionName const FBOSVersionNamewatchOS_2_2 = @"watchOS 2.2";
@@ -116,6 +118,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_5_1 = @"watchOS 5.1";
 FBOSVersionName const FBOSVersionNamewatchOS_5_2 = @"watchOS 5.2";
 FBOSVersionName const FBOSVersionNamewatchOS_5_3 = @"watchOS 5.3";
 FBOSVersionName const FBOSVersionNamewatchOS_6_0 = @"watchOS 6.0";
+FBOSVersionName const FBOSVersionNamewatchOS_6_1 = @"watchOS 6.1";
 FBOSVersionName const FBOSVersionNamemac = @"macOS";
 
 @implementation FBiOSTargetScreenInfo
@@ -429,6 +432,7 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_12_4],
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_13_0],
       [FBOSVersion iOSWithName:FBOSVersionNameiOS_13_1],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_13_2],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_0],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_1],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_2],
@@ -445,6 +449,7 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_12_2],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_12_4],
       [FBOSVersion tvOSWithName:FBOSVersionNametvOS_13_0],
+      [FBOSVersion tvOSWithName:FBOSVersionNametvOS_13_2],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_2_0],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_2_1],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_2_2],
@@ -459,6 +464,7 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_5_2],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_5_3],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_6_0],
+      [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_6_1],
       [FBOSVersion macOSWithName:FBOSVersionNamemac],
     ];
   });
