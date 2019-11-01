@@ -578,12 +578,13 @@ message InstrumentsRunRequest {
     double operation_duration = 4;
   }
   message Start {
-    string file_path = 1;
+//  string file_path = 1; deprecated
     string template_name = 2;
     string app_bundle_id = 3;
     map<string, string> environment = 4;
     repeated string arguments = 5;
     InstrumentsTimings timings = 6;
+    repeated string tool_arguments = 7;
   }
   message Stop {
     repeated string post_process_arguments = 1;

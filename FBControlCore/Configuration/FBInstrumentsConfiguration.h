@@ -62,7 +62,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param templateName the name of the template
  @return a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithTemplateName:(NSString *)templateName targetApplication:(NSString *)targetApplication environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments timings:(FBInstrumentsTimings *)timings;
++ (instancetype)configurationWithTemplateName:(NSString *)templateName targetApplication:(NSString *)targetApplication appEnvironment:(NSDictionary<NSString *, NSString *> *)appEnvironment appArguments:(NSArray<NSString *> *)appArguments toolArguments:(NSArray<NSString *> *)toolArguments timings:(FBInstrumentsTimings *)timings;
+
+- (instancetype)initWithTemplateName:(NSString *)templateName targetApplication:(NSString *)targetApplication appEnvironment:(NSDictionary<NSString *, NSString *> *)appEnvironment appArguments:(NSArray<NSString *> *)appArguments toolArguments:(NSArray<NSString *> *)toolArguments timings:(FBInstrumentsTimings *)timings;
 
 #pragma mark Properties
 
@@ -79,12 +81,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The target application environment.
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *environment;
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *appEnvironment;
 
 /**
  The arguments to the target application.
  */
-@property (nonatomic, copy, readonly) NSArray<NSString *> *arguments;
+@property (nonatomic, copy, readonly) NSArray<NSString *> *appArguments;
+
+/**
+ Additional arguments.
+ */
+@property (nonatomic, copy, readonly) NSArray<NSString *> *toolArguments;
 
 /**
  All the timings for the Instruments operation.

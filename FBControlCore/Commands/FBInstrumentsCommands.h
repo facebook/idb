@@ -36,6 +36,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBInstrumentsCommands : NSObject <FBInstrumentsCommands>
 
+@property (nonatomic, weak, readonly) id<FBiOSTarget> target;
+
 @end
 
 NS_ASSUME_NONNULL_END

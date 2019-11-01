@@ -13,7 +13,7 @@ static const NSTimeInterval MaximumInstrumentTime = 60 * 60 * 4; // 4 Hours.
 
 @implementation FBInstrumentsDelta
 
-- (instancetype)initWithLogOutput:(NSString *)logOutput traceFile:(NSURL *)traceFile
+- (instancetype)initWithLogOutput:(NSString *)logOutput traceDir:(NSURL *)traceDir
 {
   self = [self init];
   if (!self) {
@@ -21,7 +21,7 @@ static const NSTimeInterval MaximumInstrumentTime = 60 * 60 * 4; // 4 Hours.
   }
 
   _logOutput = logOutput;
-  _traceFile = traceFile;
+  _traceDir = traceDir;
 
   return self;
 }
@@ -49,18 +49,18 @@ static const NSTimeInterval MaximumInstrumentTime = 60 * 60 * 4; // 4 Hours.
       id logger = operation.logger;
       id<FBConsumableBuffer> logBuffer = (id<FBConsumableBuffer>) [logger consumer];
       NSString *logOutput = [logBuffer consumeCurrentString];
-      FBInstrumentsDelta *delta = [[FBInstrumentsDelta alloc] initWithLogOutput:logOutput traceFile:operation.traceFile];
+      FBInstrumentsDelta *delta = [[FBInstrumentsDelta alloc] initWithLogOutput:logOutput traceDir:operation.traceDir];
       return [FBFuture futureWithResult:delta];
     }];
 }
 
-+ (FBFuture<NSURL *> *)postProcess:(NSArray<NSString *> *)arguments traceFile:(NSURL *)traceFile queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSURL *> *)postProcess:(NSArray<NSString *> *)arguments traceDir:(NSURL *)traceDir queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   if (!arguments || arguments.count == 0) {
-    return [FBFuture futureWithResult:traceFile];
+    return [FBFuture futureWithResult:traceDir];
   }
-  NSURL *outputTraceFile = [[traceFile URLByDeletingLastPathComponent] URLByAppendingPathComponent:arguments[2]];
-  NSMutableArray<NSString *> *launchArguments = [@[arguments[1], traceFile.path, @"-o", outputTraceFile.path] mutableCopy];
+  NSURL *outputTraceFile = [[traceDir URLByDeletingLastPathComponent] URLByAppendingPathComponent:arguments[2]];
+  NSMutableArray<NSString *> *launchArguments = [@[arguments[1], traceDir.path, @"-o", outputTraceFile.path] mutableCopy];
   if (arguments.count > 3) {
     [launchArguments addObjectsFromArray:[arguments subarrayWithRange:(NSRange){3, [arguments count] - 3}]];
   }
@@ -84,9 +84,9 @@ static const NSTimeInterval MaximumInstrumentTime = 60 * 60 * 4; // 4 Hours.
   id<FBConsumableBuffer> logBuffer = FBDataBuffer.consumableBuffer;
   id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToConsumer:logBuffer];
   return [[self
-    postProcess:arguments traceFile:delta.traceFile queue:queue logger:logger]
+    postProcess:arguments traceDir:delta.traceDir queue:queue logger:logger]
     onQueue:queue map:^(NSURL *result) {
-      return [[FBInstrumentsDelta alloc] initWithLogOutput:logBuffer.consumeCurrentString traceFile:result];
+      return [[FBInstrumentsDelta alloc] initWithLogOutput:logBuffer.consumeCurrentString traceDir:result];
     }];
 }
 

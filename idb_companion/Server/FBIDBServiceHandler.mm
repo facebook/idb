@@ -413,13 +413,14 @@ static FBSimulatorHIDEvent *translate_event(idb::HIDEvent &event, NSError **erro
   return nil;
 }
 
-static FBInstrumentsConfiguration *translate_instruments_configuration(idb::InstrumentsRunRequest_Start request)
+static FBInstrumentsConfiguration *translate_instruments_configuration(idb::InstrumentsRunRequest_Start request, FBIDBStorageManager *storageManager)
 {
   return [FBInstrumentsConfiguration
     configurationWithTemplateName:nsstring_from_c_string(request.template_name())
     targetApplication:nsstring_from_c_string(request.app_bundle_id())
-    environment:extract_str_dict(request.environment())
-    arguments:extract_string_array(request.arguments())
+    appEnvironment:extract_str_dict(request.environment())
+    appArguments:extract_string_array(request.arguments())
+    toolArguments:[storageManager interpolateArgumentReplacements:extract_string_array(request.tool_arguments())]
     timings:[FBInstrumentsTimings
       timingsWithTerminateTimeout:request.timings().terminate_timeout() ?: DefaultInstrumentsTerminateTimeout
       launchRetryTimeout:request.timings().launch_retry_timeout() ?: DefaultInstrumentsLaunchRetryTimeout
@@ -1077,8 +1078,7 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
     startRunRequest = request;
   });
 
-  FBInstrumentsConfiguration *configuration = translate_instruments_configuration(startRunRequest.start());
-  const std::string requestedFilePath = startRunRequest.start().file_path();
+  FBInstrumentsConfiguration *configuration = translate_instruments_configuration(startRunRequest.start(), _commandExecutor.storageManager);
 
   NSError *error = nil;
   id<FBDataConsumer> consumer = [FBBlockDataConsumer asynchronousDataConsumerOnQueue:queue consumer:^(NSData *data) {
@@ -1123,18 +1123,14 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
     response.set_state(idb::InstrumentsRunResponse::State::InstrumentsRunResponse_State_POST_PROCESSING);
     stream->Write(response);
   });
-  NSURL *processed = [[FBInstrumentsManager postProcess:postProcessArguments traceFile:operation.traceFile queue:queue logger:logger] block:&error];
+  NSURL *processed = [[FBInstrumentsManager postProcess:postProcessArguments traceDir:operation.traceDir queue:queue logger:logger] block:&error];
   pthread_mutex_lock(&mutex);
   finished_writing = YES;
   pthread_mutex_unlock(&mutex);
   if (!processed) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
-  if (requestedFilePath.length() > 0) {
-    return respond_file_path(processed, nsstring_from_c_string(requestedFilePath.c_str()), stream);
-  } else {
-    return drain_writer([FBArchiveOperations createGzippedTarForPath:processed.path queue:queue logger:_target.logger], stream);
-  }
+  return drain_writer([FBArchiveOperations createGzippedTarForPath:processed.path queue:queue logger:_target.logger], stream);
 }}
 
 Status FBIDBServiceHandler::debugserver(grpc::ServerContext *context, grpc::ServerReaderWriter<idb::DebugServerResponse, idb::DebugServerRequest> *stream)

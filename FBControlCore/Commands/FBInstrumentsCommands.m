@@ -11,12 +11,6 @@
 #import "FBInstrumentsOperation.h"
 #import "FBiOSTarget.h"
 
-@interface FBInstrumentsCommands ()
-
-@property (nonatomic, weak, readonly) id<FBiOSTarget> target;
-
-@end
-
 @implementation FBInstrumentsCommands
 
 #pragma mark Properties

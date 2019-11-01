@@ -80,13 +80,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
 }
 @end
 
-@interface FBInstrumentsOperation  ()
-
-@property (nonatomic, strong, readonly) FBTask *task;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-
-@end
-
 @implementation FBInstrumentsOperation
 
 #pragma mark Initializers
@@ -105,16 +98,26 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
 + (FBFuture<FBInstrumentsOperation *> *)operationWithTargetInternal:(id<FBiOSTarget>)target configuration:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.instruments", DISPATCH_QUEUE_SERIAL);
-  NSString *fileName = [[[[configuration.templateName componentsSeparatedByString:@" "] arrayByAddingObject:NSUUID.UUID.UUIDString] componentsJoinedByString:@"_"] stringByAppendingPathExtension:@"trace"];
-  NSString *filePath = [target.auxillaryDirectory stringByAppendingPathComponent:fileName];
+  NSString *traceDir = [target.auxillaryDirectory stringByAppendingPathComponent:[@"instruments-" stringByAppendingString:[[NSUUID UUID] UUIDString]]];
+  NSError *innerError = nil;
+  if (![[NSFileManager defaultManager] createDirectoryAtPath:traceDir withIntermediateDirectories:NO attributes:nil error:&innerError]) {
+    return [[FBControlCoreError describeFormat:@"Failed to create instruments trace output directory: %@", innerError] failFuture];
+  }
+  NSString *traceFile = [traceDir stringByAppendingPathComponent:@"trace.trace"];
+
   NSString *durationMilliseconds = [@(configuration.timings.operationDuration * 1000) stringValue];
-  NSMutableArray<NSString *> *arguments = [@[@"-w", target.udid, @"-D", filePath, @"-t", configuration.templateName, @"-l",  durationMilliseconds, @"-v"] mutableCopy];
+  NSMutableArray<NSString *> *arguments = [NSMutableArray new];
+  if ([[configuration toolArguments] count] > 0) {
+    [arguments addObjectsFromArray:[configuration toolArguments]];
+  }
+  [arguments addObjectsFromArray:@[@"-w", target.udid, @"-D", traceFile, @"-t", configuration.templateName, @"-l",  durationMilliseconds, @"-v"]];
+
   if (configuration.targetApplication && [configuration.targetApplication length] > 0) {
     [arguments addObject:configuration.targetApplication];
-    for (NSString *key in configuration.environment) {
-      [arguments addObjectsFromArray:@[@"-e", key, configuration.environment[key]]];
+    for (NSString *key in configuration.appEnvironment) {
+      [arguments addObjectsFromArray:@[@"-e", key, configuration.appEnvironment[key]]];
     }
-    [arguments addObjectsFromArray:configuration.arguments];
+    [arguments addObjectsFromArray:configuration.appArguments];
   }
   [logger logFormat:@"Starting instruments with arguments: %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
   FBInstrumentsConsumer *instrumentsConsumer = [[FBInstrumentsConsumer alloc] init];
@@ -146,12 +149,12 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
     // Yay instruments started properly
     onQueue:target.asyncQueue map:^ FBInstrumentsOperation * (FBTask *task) {
       [logger logFormat:@"Started instruments %@", task];
-      NSURL *traceFile = [NSURL fileURLWithPath:filePath];
-      return [[FBInstrumentsOperation alloc] initWithTask:task traceFile:traceFile configuration:configuration queue:queue logger:logger];
+
+      return [[FBInstrumentsOperation alloc] initWithTask:task traceDir:[NSURL fileURLWithPath:traceFile] configuration:configuration queue:queue logger:logger];
     }];
 }
 
-- (instancetype)initWithTask:(FBTask *)task traceFile:(NSURL *)traceFile configuration:(FBInstrumentsConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithTask:(FBTask *)task traceDir:(NSURL *)traceDir configuration:(FBInstrumentsConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -159,7 +162,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
   }
 
   _task = task;
-  _traceFile = traceFile;
+  _traceDir = traceDir;
   _configuration = configuration;
   _queue = queue;
   _logger = logger;
@@ -178,7 +181,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
     }] chainReplace:[[self.task exitCode]
     onQueue:self.queue fmap:^FBFuture<NSURL *> *(NSNumber *exitCode) {
       if ([exitCode isEqualToNumber:@(0)]) {
-        return [FBFuture futureWithResult:self.traceFile];
+        return [FBFuture futureWithResult:self.traceDir];
       } else {
         return [[FBControlCoreError describeFormat:@"Instruments exited with failure - status: %@", exitCode] failFuture];
       }

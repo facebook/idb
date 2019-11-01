@@ -39,12 +39,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithTemplateName:(NSString *)templateName targetApplication:(NSString *)targetApplication environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments timings:(FBInstrumentsTimings *)timings
++ (instancetype)configurationWithTemplateName:(NSString *)templateName targetApplication:(NSString *)targetApplication appEnvironment:(NSDictionary<NSString *, NSString *> *)appEnvironment appArguments:(NSArray<NSString *> *)appArguments toolArguments:(NSArray<NSString *> *)toolArguments timings:(FBInstrumentsTimings *)timings
 {
-  return [[self alloc] initWithTemplateName:templateName targetApplication:targetApplication environment:environment arguments:arguments timings:timings];
+  return [[self alloc] initWithTemplateName:templateName targetApplication:targetApplication appEnvironment:appEnvironment appArguments:appArguments toolArguments:toolArguments timings:timings];
 }
 
-- (instancetype)initWithTemplateName:(NSString *)templateName targetApplication:(NSString *)targetApplication environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments timings:(FBInstrumentsTimings *)timings
+- (instancetype)initWithTemplateName:(NSString *)templateName targetApplication:(NSString *)targetApplication appEnvironment:(NSDictionary<NSString *, NSString *> *)appEnvironment appArguments:(NSArray<NSString *> *)appArguments toolArguments:(NSArray<NSString *> *)toolArguments timings:(FBInstrumentsTimings *)timings
 {
   self = [super init];
   if (!self) {
@@ -53,8 +53,9 @@
 
   _templateName = templateName;
   _targetApplication = targetApplication;
-  _environment = environment;
-  _arguments = arguments;
+  _appEnvironment = appEnvironment;
+  _appArguments = appArguments;
+  _toolArguments = toolArguments;
   _timings = timings;
   return self;
 }
@@ -64,11 +65,12 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Instruments %@ | %@ | %@ | %@ | duration %f | terminate timeout %f | launch retry timeout %f | launch error timeout %f",
+    @"Instruments %@ | %@ | %@ | %@ | %@ | duration %f | terminate timeout %f | launch retry timeout %f | launch error timeout %f",
     self.templateName,
     self.targetApplication,
-    [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
-    [FBCollectionInformation oneLineDescriptionFromArray:self.arguments],
+    [FBCollectionInformation oneLineDescriptionFromDictionary:self.appEnvironment],
+    [FBCollectionInformation oneLineDescriptionFromArray:self.appArguments],
+    [FBCollectionInformation oneLineDescriptionFromArray:self.toolArguments],
     self.timings.operationDuration,
     self.timings.terminateTimeout,
     self.timings.launchRetryTimeout,

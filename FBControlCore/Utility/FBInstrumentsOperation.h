@@ -44,12 +44,17 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments;
  */
 + (FBFuture<FBInstrumentsOperation *> *)operationWithTarget:(id<FBiOSTarget>)target configuration:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
 
+- (instancetype)initWithTask:(FBTask *)task traceDir:(NSURL *)traceDir configuration:(FBInstrumentsConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+
 #pragma mark Properties
 
+@property (nonatomic, strong, readonly) FBTask *task;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+
 /**
- The file of the generated trace file.
+ Trace output directory.
  */
-@property (nonatomic, copy, readonly) NSURL *traceFile;
+@property (nonatomic, copy, readonly) NSURL *traceDir;
 
 /**
  The configuration of the operation.

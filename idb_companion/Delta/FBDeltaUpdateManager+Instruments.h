@@ -18,10 +18,10 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBInstrumentsDelta : NSObject
 
 /**
- The location of the trace file is located.
- Is nil when the file is not yet written to.
+ The location of the trace data.
+ Is nil when the data is not yet written.
  */
-@property (nonatomic, copy, nullable, readonly) NSURL *traceFile;
+@property (nonatomic, copy, nullable, readonly) NSURL *traceDir;
 
 /**
  The log output data.
@@ -66,7 +66,7 @@ typedef FBDeltaUpdateManager<FBInstrumentsDelta *, FBInstrumentsOperation *, FBI
  @param logger the logger to log to.
  @return a delta that post-processes.
  */
-+ (FBFuture<NSURL *> *)postProcess:(nullable NSArray<NSString *> *)arguments traceFile:(NSURL *)traceFile queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBFuture<NSURL *> *)postProcess:(nullable NSArray<NSString *> *)arguments traceDir:(NSURL *)traceDir queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
 
