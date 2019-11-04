@@ -260,6 +260,7 @@ class XctestRunLogicCommand(CommonRunXcTestCommand):
 
 class XctestRunCommand(CompositeCommand):
     def __init__(self) -> None:
+        super().__init__()
         self._subcommands: List[Command] = [
             XcestRunAppCommand(),
             XctestRunUICommand(),

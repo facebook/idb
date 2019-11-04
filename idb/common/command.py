@@ -35,7 +35,9 @@ class Command(metaclass=ABCMeta):
 
 
 class CompositeCommand(Command, metaclass=ABCMeta):
-    parser: Optional[ArgumentParser] = None
+    def __init__(self) -> None:
+        self.parser: Optional[ArgumentParser] = None
+        self._subcommands_by_name: Dict[str, Command] = {}
 
     @property
     @abstractmethod
@@ -44,24 +46,19 @@ class CompositeCommand(Command, metaclass=ABCMeta):
 
     @property
     def subcommands_by_name(self) -> Dict[str, Command]:
-        def add_unique_cmd(aDict: Dict[str, Command], key: str, value: Command) -> None:
-            assert key not in aDict, f'Subcommand by name "{key}" already exists'
-            aDict[key] = value
+        def add_unique_cmd(key: str, value: Command) -> None:
+            assert (
+                key not in self._subcommands_by_name
+            ), f'Subcommand by name "{key}" already exists'
+            self._subcommands_by_name[key] = value
 
-        aDict: Optional[Dict[str, Command]] = getattr(
-            self, "_subcommands_by_name", None
-        )
-        if aDict is None:
-            aDict = {}
-            # pyre-fixme[16]: `CompositeCommand` has no attribute
-            #  `_subcommands_by_name`.
-            self._subcommands_by_name = aDict
+        if len(self._subcommands_by_name) == 0:
             for cmd in self.subcommands:
-                add_unique_cmd(aDict, cmd.name, cmd)
+                add_unique_cmd(cmd.name, cmd)
                 for alias in cmd.aliases:
-                    add_unique_cmd(aDict, alias, cmd)
+                    add_unique_cmd(alias, cmd)
 
-        return aDict
+        return self._subcommands_by_name
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         self.parser = parser
@@ -74,13 +71,11 @@ class CompositeCommand(Command, metaclass=ABCMeta):
 
     def _get_subcommand_for_args(self, args: Namespace) -> Command:
         subcmd_name = getattr(args, self.name)
-        if self.parser and subcmd_name is None:
-            # pyre-fixme[16]: `Optional` has no attribute `print_help`.
-            self.parser.print_help()
-            # This terminates the program with exit code 2
-            # pyre-fixme[16]: `Optional` has no attribute `error`.
-            self.parser.error(f"No subcommand found for {self.name}")
-        # pyre-fixme[6]: Expected `str` for 1st param but got `None`.
+        parser = self.parser
+        if parser is not None and subcmd_name is None:
+            parser.print_help()
+            parser.error(f"No subcommand found for {self.name}")
+            raise Exception("Should not reach here")
         subcmd = self.subcommands_by_name[subcmd_name]
         assert subcmd is not None, "subcommand %r doesn't exist" % subcmd_name
         return subcmd
@@ -91,6 +86,7 @@ class CompositeCommand(Command, metaclass=ABCMeta):
 
 class CommandGroup(CompositeCommand):
     def __init__(self, name: str, description: str, commands: List[Command]) -> None:
+        super().__init__()
         self.commands = commands
         self._name = name
         self._description = description
