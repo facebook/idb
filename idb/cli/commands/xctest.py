@@ -8,7 +8,8 @@ import json
 from argparse import REMAINDER, ArgumentParser, Namespace
 from typing import List, Optional, Set
 
-from idb.cli.commands.base import Command, CompositeCommand, TargetCommand
+from idb.cli.commands.base import Command, TargetCommand
+from idb.common.command import CompositeCommand
 from idb.common.format import (
     human_format_installed_test_info,
     human_format_test_info,

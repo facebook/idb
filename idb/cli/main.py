@@ -23,7 +23,6 @@ from idb.cli.commands.app import (
     AppUninstallCommand,
 )
 from idb.cli.commands.approve import ApproveCommand
-from idb.cli.commands.base import Command, CommandGroup
 from idb.cli.commands.boot import BootCommand
 from idb.cli.commands.clear_keychain import ClearKeychainCommand
 from idb.cli.commands.connect import ConnectCommand, ConnectCommandException
@@ -79,6 +78,7 @@ from idb.cli.commands.xctest import (
     XctestRunCommand,
     XctestsListBundlesCommand,
 )
+from idb.common.command import Command, CommandGroup
 from idb.common.types import IdbException
 
 
