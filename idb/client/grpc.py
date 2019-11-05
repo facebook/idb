@@ -652,7 +652,6 @@ class GrpcClient(IdbClient):
             await stream.send_message(
                 InstrumentsRunRequest(
                     start=InstrumentsRunRequest.Start(
-                        file_path=None,
                         template_name=template,
                         app_bundle_id=app_bundle_id,
                         environment=env,
