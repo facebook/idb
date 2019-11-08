@@ -378,15 +378,16 @@ class IdbClient:
     async def run_instruments(
         self,
         stop: asyncio.Event,
-        template: str,
+        trace_basename: str,
+        template_name: str,
         app_bundle_id: str,
-        trace_path: str,
-        post_process_arguments: Optional[List[str]] = None,
-        env: Optional[Dict[str, str]] = None,
-        app_args: Optional[List[str]] = None,
+        app_environment: Optional[Dict[str, str]] = None,
+        app_arguments: Optional[List[str]] = None,
+        tool_arguments: Optional[List[str]] = None,
         started: Optional[asyncio.Event] = None,
         timings: Optional[InstrumentsTimings] = None,
-    ) -> str:
+        post_process_arguments: Optional[List[str]] = None,
+    ) -> List[str]:
         pass
 
     async def crash_list(self, query: CrashLogQuery) -> List[CrashLogInfo]:

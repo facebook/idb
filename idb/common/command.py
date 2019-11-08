@@ -3,7 +3,10 @@
 
 from abc import ABCMeta, abstractmethod
 from argparse import ArgumentParser, Namespace
+from logging import Logger, getLogger
 from typing import Dict, List, Optional
+
+from idb.common import logging, plugin
 
 
 class Command(metaclass=ABCMeta):

@@ -66,7 +66,7 @@ async def _create_untar_command(
     output_path: str, verbose: bool = False
 ) -> AsyncContextManager[asyncio.subprocess.Process]:
     process = await asyncio.create_subprocess_shell(
-        f"tar -C '{output_path}' -xzpf{'v' if verbose else ''} -",
+        f"tar -C '{output_path}' {'--warning=no-unknown-keyword' if not verbose else ''} -xzpf{'v' if verbose else ''} -",
         stdin=asyncio.subprocess.PIPE,
         stderr=sys.stderr,
         stdout=sys.stderr,

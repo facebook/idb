@@ -201,6 +201,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
             commands=[CompanionLogCommand()],
         ),
     ]
+    commands.extend(plugin.get_commands())
     sorted_commands = sorted(commands, key=lambda command: command.name)
     root_command = CommandGroup("root_command", "", sorted_commands)
     root_command.add_parser_arguments(parser)

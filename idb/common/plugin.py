@@ -11,6 +11,7 @@ from logging import Logger
 from types import ModuleType
 from typing import Dict, List
 
+from idb.common.command import Command
 from idb.common.types import LoggingMetadata
 
 
@@ -114,3 +115,15 @@ def append_companion_metadata(
             continue
         metadata = method(logger=logger, metadata=metadata)
     return metadata
+
+
+def get_commands() -> List[Command]:
+    commands = []
+
+    for plugin in PLUGINS:
+        method = getattr(plugin, "get_commands", None)
+        if not method:
+            continue
+        commands.extend(method())
+
+    return commands

@@ -31,7 +31,7 @@ async def instruments_generate_bytes(
             yield data
 
 
-async def drain_until_running(
+async def instruments_drain_until_running(
     stream: Stream[InstrumentsRunRequest, InstrumentsRunResponse], logger: Logger
 ) -> None:
     while True:
@@ -46,7 +46,7 @@ async def drain_until_running(
             return
 
 
-async def drain_until_stop(
+async def instruments_drain_until_stop(
     stream: Stream[InstrumentsRunRequest, InstrumentsRunResponse],
     stop: asyncio.Future,
     logger: Logger,

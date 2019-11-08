@@ -9,6 +9,7 @@ import functools
 import inspect
 import logging
 import os
+import shutil
 import tempfile
 import urllib.parse
 from io import StringIO
@@ -50,7 +51,7 @@ from idb.common.install import (
     generate_requests,
 )
 from idb.common.instruments import (
-    drain_until_running,
+    instruments_drain_until_running,
     instruments_generate_bytes,
     translate_instruments_timings,
 )
@@ -636,32 +637,33 @@ class GrpcClient(IdbClient):
     async def run_instruments(
         self,
         stop: asyncio.Event,
-        template: str,
+        trace_basename: str,
+        template_name: str,
         app_bundle_id: str,
-        trace_path: str,
-        post_process_arguments: Optional[List[str]] = None,
-        env: Optional[Dict[str, str]] = None,
-        app_args: Optional[List[str]] = None,
+        app_environment: Optional[Dict[str, str]] = None,
+        app_arguments: Optional[List[str]] = None,
+        tool_arguments: Optional[List[str]] = None,
         started: Optional[asyncio.Event] = None,
         timings: Optional[InstrumentsTimings] = None,
-    ) -> str:
-        trace_path = os.path.realpath(trace_path)
-        self.logger.info(f"Starting instruments connection, writing to {trace_path}")
+        post_process_arguments: Optional[List[str]] = None,
+    ) -> List[str]:
+        self.logger.info(f"Starting instruments connection")
         async with self.get_stub() as stub, stub.instruments_run.open() as stream:
             self.logger.info("Sending instruments request")
             await stream.send_message(
                 InstrumentsRunRequest(
                     start=InstrumentsRunRequest.Start(
-                        template_name=template,
+                        template_name=template_name,
                         app_bundle_id=app_bundle_id,
-                        environment=env,
-                        arguments=app_args,
+                        environment=app_environment,
+                        arguments=app_arguments,
+                        tool_arguments=tool_arguments,
                         timings=translate_instruments_timings(timings),
                     )
                 )
             )
             self.logger.info("Starting instruments")
-            await drain_until_running(stream=stream, logger=self.logger)
+            await instruments_drain_until_running(stream=stream, logger=self.logger)
             if started:
                 started.set()
             self.logger.info("Instruments has started, waiting for stop")
@@ -678,13 +680,39 @@ class GrpcClient(IdbClient):
                 )
             )
             await stream.end()
-            self.logger.info(f"Writing instruments from tar to {trace_path}")
-            await drain_untar(
-                instruments_generate_bytes(stream=stream, logger=self.logger),
-                output_path=trace_path,
-            )
-            self.logger.info(f"Instruments trace written to {trace_path}")
-            return trace_path
+
+            result = []
+
+            with tempfile.TemporaryDirectory() as tmp_trace_dir:
+                self.logger.info(
+                    f"Writing instruments data from tar to {tmp_trace_dir}"
+                )
+                await drain_untar(
+                    instruments_generate_bytes(stream=stream, logger=self.logger),
+                    output_path=tmp_trace_dir,
+                )
+
+                if os.path.exists(
+                    os.path.join(os.path.abspath(tmp_trace_dir), "instrument_data")
+                ):
+                    # tar is an instruments trace (old behavior)
+                    trace_file = f"{trace_basename}.trace"
+                    shutil.copytree(tmp_trace_dir, trace_file)
+                    result.append(trace_file)
+                    self.logger.info(f"Trace written to {trace_file}")
+                else:
+                    # tar is a folder containing one or more trace files
+                    for file in os.listdir(tmp_trace_dir):
+                        _, file_extension = os.path.splitext(file)
+                        tmp_trace_file = os.path.join(
+                            os.path.abspath(tmp_trace_dir), file
+                        )
+                        trace_file = f"{trace_basename}{file_extension}"
+                        shutil.move(tmp_trace_file, trace_file)
+                        result.append(trace_file)
+                        self.logger.info(f"Trace written to {trace_file}")
+
+            return result
 
     @log_and_handle_exceptions
     async def launch(

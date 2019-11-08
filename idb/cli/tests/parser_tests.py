@@ -48,7 +48,6 @@ class TestParser(TestCase):
         self.client_mock = MagicMock(name="client_mock")
         self.client_patch = patch("idb.cli.commands.base.GrpcClient", self.client_mock)
         self.client_patch.start()
-        self
 
     def tearDown(self) -> None:
         self.client_patch.stop()
@@ -652,27 +651,39 @@ class TestParser(TestCase):
     async def test_instruments(self) -> None:
         self.client_mock().run_instruments = AsyncMock()
         template_name = "System Trace"
-        trace_path = template_name + ".trace"
-        await cli_main(cmd_input=["instruments", template_name])
+        trace_path = "trace.trace"
+        await cli_main(
+            cmd_input=[
+                "instruments",
+                "--output",
+                trace_path,
+                "--template",
+                template_name,
+            ]
+        )
         self.client_mock().run_instruments.assert_called_once_with(
             stop=ANY,
-            template=template_name,
+            trace_basename="trace",
+            template_name=template_name,
             app_bundle_id=None,
-            post_process_arguments=None,
-            trace_path=trace_path,
-            env={},
-            app_args=None,
+            app_environment={},
+            app_arguments=[],
+            tool_arguments=None,
             timings=None,
+            post_process_arguments=[],
         )
 
     async def test_instruments_with_post_args(self) -> None:
         self.client_mock().run_instruments = AsyncMock()
         template_name = "Time Profiler"
-        trace_path = template_name + ".trace"
+        trace_path = "trace.trace"
         post_process_arguments = ["instrumental", "convert"]
         await cli_main(
             cmd_input=[
                 "instruments",
+                "--output",
+                trace_path,
+                "--template",
                 template_name,
                 "--post-args",
                 *post_process_arguments,
@@ -680,37 +691,47 @@ class TestParser(TestCase):
         )
         self.client_mock().run_instruments.assert_called_once_with(
             stop=ANY,
-            template=template_name,
+            trace_basename="trace",
+            template_name=template_name,
             app_bundle_id=None,
-            post_process_arguments=post_process_arguments,
-            trace_path=trace_path,
-            env={},
-            app_args=None,
+            app_environment={},
+            app_arguments=[],
+            tool_arguments=None,
             timings=None,
+            post_process_arguments=post_process_arguments,
         )
 
     async def test_instruments_with_app_args(self) -> None:
         self.client_mock().run_instruments = AsyncMock()
         template_name = "System Trace"
-        trace_path = template_name + ".trace"
+        trace_path = "trace.trace"
         await cli_main(
-            cmd_input=["instruments", template_name, "--app-args", "perfLab"]
+            cmd_input=[
+                "instruments",
+                "--output",
+                trace_path,
+                "--template",
+                template_name,
+                "--app-args",
+                "perfLab",
+            ]
         )
         self.client_mock().run_instruments.assert_called_once_with(
             stop=ANY,
-            template=template_name,
+            trace_basename="trace",
+            template_name=template_name,
             app_bundle_id=None,
-            post_process_arguments=None,
-            trace_path=trace_path,
-            env={},
-            app_args=["perfLab"],
+            app_environment={},
+            app_arguments=["perfLab"],
+            tool_arguments=None,
             timings=None,
+            post_process_arguments=[],
         )
 
     async def test_instruments_with_all_timings(self) -> None:
         self.client_mock().run_instruments = AsyncMock()
         template_name = "System Trace"
-        trace_path = template_name + ".trace"
+        trace_path = "trace.trace"
         (
             launch_error_timeout,
             launch_retry_timeout,
@@ -720,6 +741,9 @@ class TestParser(TestCase):
         await cli_main(
             cmd_input=[
                 "instruments",
+                "--output",
+                trace_path,
+                "--template",
                 template_name,
                 "--app-args",
                 "perfLab",
@@ -735,28 +759,32 @@ class TestParser(TestCase):
         )
         self.client_mock().run_instruments.assert_called_once_with(
             stop=ANY,
-            template=template_name,
+            trace_basename="trace",
+            template_name=template_name,
             app_bundle_id=None,
-            post_process_arguments=None,
-            trace_path=trace_path,
-            env={},
-            app_args=["perfLab"],
+            app_environment={},
+            app_arguments=["perfLab"],
+            tool_arguments=None,
             timings=InstrumentsTimings(
                 launch_error_timeout=float(launch_error_timeout),
                 launch_retry_timeout=float(launch_retry_timeout),
                 terminate_timeout=float(terminate_timeout),
                 operation_duration=float(operation_duration),
             ),
+            post_process_arguments=[],
         )
 
     async def test_instruments_with_partial_timings(self) -> None:
         self.client_mock().run_instruments = AsyncMock()
         template_name = "System Trace"
-        trace_path = template_name + ".trace"
+        trace_path = "trace.trace"
         launch_retry_timeout, terminate_timeout = ("200.0", "200.0")
         await cli_main(
             cmd_input=[
                 "instruments",
+                "--output",
+                trace_path,
+                "--template",
                 template_name,
                 "--app-args",
                 "perfLab",
@@ -768,18 +796,19 @@ class TestParser(TestCase):
         )
         self.client_mock().run_instruments.assert_called_once_with(
             stop=ANY,
-            template=template_name,
+            trace_basename="trace",
+            template_name=template_name,
             app_bundle_id=None,
-            post_process_arguments=None,
-            trace_path=trace_path,
-            env={},
-            app_args=["perfLab"],
+            app_environment={},
+            app_arguments=["perfLab"],
+            tool_arguments=None,
             timings=InstrumentsTimings(
                 launch_error_timeout=None,
                 launch_retry_timeout=float(launch_retry_timeout),
                 terminate_timeout=float(terminate_timeout),
                 operation_duration=None,
             ),
+            post_process_arguments=[],
         )
 
     async def test_add_media(self) -> None:
