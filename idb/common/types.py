@@ -405,9 +405,6 @@ class IdbClient:
     async def focus(self) -> None:
         pass
 
-    async def tail_logs_contextmanager(self) -> AsyncIterator[str]:
-        yield
-
     async def debugserver_start(self, bundle_id: str) -> List[str]:
         pass
 
