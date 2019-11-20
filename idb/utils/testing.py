@@ -93,7 +93,7 @@ class TestCase(unittest.TestCase):
         real_logger = logging.getLogger("asyncio").error
         c_log.error.side_effect = b_log.error.side_effect = real_logger
         # Don't make testmethods cleanup tasks that existed before them
-        before_tasks = asyncio.Task.all_tasks(self.loop)
+        before_tasks = asyncio.all_tasks(self.loop)
         _tasks_warning(before_tasks)
         debug_async = self.debug_async(testMethod)
         self.loop.run_until_complete(debug_async)
@@ -103,7 +103,7 @@ class TestCase(unittest.TestCase):
         # Sometimes we end up with a reference to our task for debug_async
         tasks = {
             t
-            for t in asyncio.Task.all_tasks(self.loop) - before_tasks
+            for t in asyncio.all_tasks(self.loop) - before_tasks
             if not (t._coro == debug_async and t.done())
         }
         del before_tasks
@@ -118,7 +118,7 @@ class TestCase(unittest.TestCase):
         real_logger = logging.getLogger("asyncio").error
         c_log.error.side_effect = b_log.error.side_effect = real_logger
         # Don't make testmethods cleanup tasks that existed before them
-        before_tasks = asyncio.Task.all_tasks(self.loop)
+        before_tasks = asyncio.all_tasks(self.loop)
         _tasks_warning(before_tasks)
         run_async = self.run_async(testMethod, outcome, expecting_failure)
         ignore_tasks = getattr(
@@ -134,7 +134,7 @@ class TestCase(unittest.TestCase):
             # Sometimes we end up with a reference to our task for run_async
             tasks = {
                 t
-                for t in asyncio.Task.all_tasks(self.loop) - before_tasks
+                for t in asyncio.all_tasks(self.loop) - before_tasks
                 if not (t._coro == run_async and t.done())
             }
             del before_tasks
