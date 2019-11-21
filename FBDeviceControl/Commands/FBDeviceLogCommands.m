@@ -95,10 +95,17 @@
   dispatch_queue_t queue = self.device.asyncQueue;
   return [[[self.device.amDevice
     startService:@"com.apple.syslog_relay"]
-    onQueue:queue pend:^(FBAMDServiceConnection *connection) {
+    onQueue:queue push:^(FBAMDServiceConnection *connection) {
       [logger logFormat:@"Reading log data from %@", connection];
       FBFileReader *reader = [FBFileReader readerWithFileDescriptor:connection.socket closeOnEndOfFile:NO consumer:consumer logger:nil];
-      return [[reader startReading] mapReplace:reader];
+      return [[[reader
+        startReading]
+        onQueue:queue contextualTeardown:^(id _, FBFutureState __) {
+           return [reader stopReading];
+        }]
+        onQueue:queue pend:^(id _) {
+          return [FBFuture futureWithResult:reader];
+        }];
     }]
     onQueue:queue enter:^(FBFileReader *reader, FBMutableFuture<NSNull *> *teardown) {
       return [[FBDeviceLogOperation alloc] initWithReader:reader consumer:consumer completed:teardown];
