@@ -190,11 +190,10 @@
       failFuture];
   }
 
-  self.recordingStarted =
-    [[[[[FBTaskBuilder
-         withLaunchPath:@"/usr/bin/what"
-         arguments:@[@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/Resources/bin/simctl"]]
-        runUntilCompletion]
+  self.recordingStarted = [[[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/what"
+    arguments:@[@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/Resources/bin/simctl"]]
+    runUntilCompletion]
     onQueue:self.queue handleError:^(NSError *error) {
       [self.logger logFormat:@"Abnormal exit of what process %@", error];
       return [FBFuture futureWithResult:NSNull.null];
@@ -207,12 +206,16 @@
 
       NSString *output = [task stdOut];
       NSString *pattern = @"CoreSimulator-([0-9\\.]+)";
-      NSRegularExpression* regex = [NSRegularExpression regularExpressionWithPattern:pattern
-                                                                             options:0
-                                                                               error:nil];
-      NSArray* matches = [regex matchesInString:output
-                                        options:0
-                                          range:NSMakeRange(0, [output length])];
+      NSRegularExpression* regex = [NSRegularExpression
+        regularExpressionWithPattern:pattern
+        options:0
+        error:nil];
+
+      NSArray* matches = [regex
+        matchesInString:output
+        options:0
+        range:NSMakeRange(0, [output length])];
+
       if (matches.count != 1) {
         [self.logger logFormat:@"Couldn't find simctl version from: %@, return 0.0", output];
         return [FBFuture futureWithResult:@"0.0"];
@@ -222,7 +225,8 @@
       NSString *result = [output substringWithRange:[match rangeAtIndex:1]];
 
       return [FBFuture futureWithResult:result];
-    }] onQueue:self.queue fmap:^(NSString *simctlVersion) {
+    }]
+    onQueue:self.queue fmap:^(NSString *simctlVersion) {
       NSArray<NSString *> *recordVideoParameters = @[@"--type=mp4"];
 
       NSDecimalNumber *simctlVersionNumber = [NSDecimalNumber decimalNumberWithString:simctlVersion];
@@ -232,14 +236,15 @@
         recordVideoParameters = @[@"--codec=h264", @"--force"];
       }
 
-      NSArray<NSString *> *ioCommandArguments =
-      [[@[@"recordVideo"] arrayByAddingObjectsFromArray:recordVideoParameters] arrayByAddingObject:filePath];
+      NSArray<NSString *> *ioCommandArguments = [[@[@"recordVideo"]
+        arrayByAddingObjectsFromArray:recordVideoParameters]
+        arrayByAddingObject:filePath];
 
       return [[[[self.simctlExecutor
-                 taskBuilderWithCommand:@"io" arguments:ioCommandArguments]
-                withStdOutToLogger:self.logger]
-               withStdErrToLogger:self.logger]
-              start];
+        taskBuilderWithCommand:@"io" arguments:ioCommandArguments]
+        withStdOutToLogger:self.logger]
+        withStdErrToLogger:self.logger]
+        start];
     }];
 
   self.filePath = filePath;
