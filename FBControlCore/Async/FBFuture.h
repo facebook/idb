@@ -507,6 +507,15 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 - (FBFutureContext *)onQueue:(dispatch_queue_t)queue push:(FBFutureContext * (^)(T result))fmap;
 
 /**
+ Replaces the current context.
+ This is equivalent to replacing the top of the context stack with a different context.
+ @param queue the queue to chain on.
+ @param replace the block to produce more context.
+ @return a Context derived from the replace with the current context stacked below.
+ */
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue replace:(FBFutureContext * (^)(T result))replace;
+
+/**
  Adds a teardown to the context
 
  @param queue the queue to call the teardown on

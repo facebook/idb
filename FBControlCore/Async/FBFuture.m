@@ -224,6 +224,25 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return nextContext;
 }
 
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue replace:(FBFutureContext * (^)(id))replace
+{
+  FBFutureContext_Teardown *top = self.teardowns.lastObject;
+  [self.teardowns removeLastObject];
+  __block FBFutureContext *nextContext = nil;
+  FBFuture *future = [[self.future
+    onQueue:queue fmap:^(id result) {
+      FBFutureContext *resolved = replace(result);
+      [nextContext.teardowns addObjectsFromArray:resolved.teardowns];
+      return resolved.future;
+    }]
+    onQueue:queue chain:^(FBFuture *resolved) {
+      return [[top performTeardown:resolved.state] chainReplace:resolved];
+    }];
+
+  nextContext = [[FBFutureContext alloc] initWithFuture:future teardowns:self.teardowns];
+  return nextContext;
+}
+
 - (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:( FBFuture<NSNull *> * (^)(id, FBFutureState) )action
 {
   FBFutureContext_Teardown *teardown = [[FBFutureContext_Teardown alloc] initWithFuture:self.future queue:queue action:action];

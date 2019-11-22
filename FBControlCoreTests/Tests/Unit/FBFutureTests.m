@@ -937,6 +937,56 @@
   [self waitForExpectations:@[outerTeardownExpectation, innerTeardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
+- (void)testReplacedTeardownStack
+{
+  __block BOOL popCalled = NO;
+  __block BOOL firstTeardownCalled = NO;
+  __block BOOL replacedTeardownCalled = NO;
+  XCTestExpectation *completionExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+  XCTestExpectation *firstTeardownExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Outer Teardown"];
+  XCTestExpectation *replacedTeardownExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Inner Teardown"];
+  [[[[[FBFuture
+    futureWithResult:@1]
+    onQueue:self.queue contextualTeardown:^(NSNumber *value, FBFutureState state){
+      XCTAssertFalse(popCalled);
+      XCTAssertFalse(replacedTeardownCalled);
+      XCTAssertEqualObjects(value, @1);
+      XCTAssertEqual(state, FBFutureStateDone);
+      firstTeardownCalled = YES;
+      [firstTeardownExpectation fulfill];
+      return [FBFuture.empty delay:1];
+    }]
+    onQueue:self.queue replace:^(NSNumber *value) {
+     XCTAssertEqualObjects(value, @1);
+     return [[FBFuture
+       futureWithResult:@2]
+       onQueue:self.queue contextualTeardown:^(NSNumber *innerValue, FBFutureState state) {
+         XCTAssertTrue(popCalled);
+         XCTAssertEqualObjects(innerValue, @2);
+         XCTAssertTrue(firstTeardownCalled);
+         XCTAssertFalse(replacedTeardownCalled);
+         replacedTeardownCalled = YES;
+         [replacedTeardownExpectation fulfill];
+         return FBFuture.empty;
+       }];
+    }]
+    onQueue:self.queue pop:^(NSNumber *value) {
+      XCTAssertTrue(firstTeardownCalled);
+      XCTAssertFalse(replacedTeardownCalled);
+      XCTAssertEqualObjects(value, @2);
+      popCalled = YES;
+      return [FBFuture futureWithResult:@3];
+    }]
+   onQueue:self.queue notifyOfCompletion:^(FBFuture<NSNumber *> *future) {
+     XCTAssertTrue(popCalled);
+     XCTAssertEqualObjects(future.result, @3);
+     [completionExpectation fulfill];
+   }];
+  [self waitForExpectations:@[completionExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  [self waitForExpectations:@[firstTeardownExpectation, replacedTeardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
+
 - (void)testAdditionalTeardownOrdering
 {
   __block BOOL popCalled = NO;

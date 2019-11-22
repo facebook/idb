@@ -165,7 +165,6 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   return YES;
 }
 
-static const NSTimeInterval ConnectionReuseTimeout = 10.0;
 static const NSTimeInterval ServiceReuseTimeout = 6.0;
 
 - (void)deviceConnected:(AMDeviceRef)amDevice
@@ -174,7 +173,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   NSString *udid = CFBridgingRelease(self.calls.CopyDeviceIdentifier(amDevice));
   FBAMDevice *device = self.devices[udid];
   if (!device) {
-    device = [[FBAMDevice alloc] initWithUDID:udid calls:self.calls connectionReuseTimeout:@(ConnectionReuseTimeout) serviceReuseTimeout:@(ServiceReuseTimeout) workQueue:self.queue logger:self.logger];
+    device = [[FBAMDevice alloc] initWithUDID:udid calls:self.calls connectionReuseTimeout:nil serviceReuseTimeout:@(ServiceReuseTimeout) workQueue:self.queue logger:self.logger];
     self.devices[udid] = device;
   }
   AMDeviceRef oldDevice = device.amDevice;
@@ -277,12 +276,14 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
 - (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service
 {
   NSDictionary<NSString *, id> *userInfo = @{
-    @"CloseOnInvalidate" : @1,
-    @"InvalidateOnDetach" : @1,
-  };
-  return [[self
+                                             @"CloseOnInvalidate" : @1,
+                                             @"InvalidateOnDetach" : @1,
+                                             };
+  // NOTE - The pop: after connectToDeviceWithPurpose: is critical to ensure we stop the AMDevice session
+  //        immediately after the service is started. See longer description in FBAMDevice.h to understand why.
+  return [[[self
     connectToDeviceWithPurpose:@"start_service_%@", service]
-    onQueue:self.workQueue push:^(FBAMDevice *device) {
+    onQueue:self.workQueue pop:^ FBFuture *(FBAMDevice *device) {
       AMDServiceConnectionRef serviceConnection;
       [self.logger logFormat:@"Starting service %@", service];
       int status = self.calls.SecureStartService(
@@ -294,24 +295,23 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
       if (status != 0) {
         NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
         return [[[FBDeviceControlError
-          describeFormat:@"SecureStartService of %@ Failed with 0x%x %@", service, status, errorDescription]
-          logger:self.logger]
-          failFutureContext];
+                  describeFormat:@"SecureStartService of %@ Failed with 0x%x %@", service, status, errorDescription]
+                  logger:self.logger]
+                  failFuture];
       }
       FBAMDServiceConnection *connection = [[FBAMDServiceConnection alloc] initWithServiceConnection:serviceConnection device:device.amDevice calls:self.calls logger:self.logger];
       [self.logger logFormat:@"Service %@ started", service];
-      return [[FBFuture
-        futureWithResult:connection]
-        onQueue:self.workQueue contextualTeardown:^(id _, FBFutureState __) {
-          [self.logger logFormat:@"Invalidating service %@", service];
-          NSError *error = nil;
-          if (![connection invalidateWithError:&error]) {
-            [self.logger logFormat:@"Failed to invalidate service %@ with error %@", service, error];
-          } else {
-            [self.logger logFormat:@"Invalidated service %@", service];
-          }
-          return FBFuture.empty;
-        }];
+      return [FBFuture futureWithResult:connection];
+    }]
+    onQueue:self.workQueue contextualTeardown:^(id connection, FBFutureState __) {
+      [self.logger logFormat:@"Invalidating service %@", service];
+      NSError *error = nil;
+      if (![connection invalidateWithError:&error]) {
+        [self.logger logFormat:@"Failed to invalidate service %@ with error %@", service, error];
+      } else {
+        [self.logger logFormat:@"Invalidated service %@", service];
+      }
+      return FBFuture.empty;
     }];
 }
 
@@ -330,7 +330,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
 {
   return [[self
     connectToDeviceWithPurpose:@"house_arrest"]
-    onQueue:self.workQueue push:^ FBFutureContext<FBAFCConnection *> * (FBAMDevice *device) {
+    onQueue:self.workQueue replace:^ FBFutureContext<FBAFCConnection *> * (FBAMDevice *device) {
       return [[self.serviceManager
         houseArrestAFCConnectionForBundleID:bundleID afcCalls:afcCalls]
         utilizeWithPurpose:self.udid];
