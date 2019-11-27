@@ -219,7 +219,8 @@ class InstalledArtifact(NamedTuple):
     progress: Optional[float]
 
 
-class IdbClient:
+# Exposes the resource-specific commands that imply a connected companion
+class IdbClientBase:
     async def list_apps(self) -> List[InstalledAppInfo]:
         pass
 
@@ -279,19 +280,6 @@ class IdbClient:
     async def uninstall(self, bundle_id: str) -> None:
         pass
 
-    async def connect(
-        self,
-        destination: ConnectionDestination,
-        metadata: Optional[Dict[str, str]] = None,
-    ) -> CompanionInfo:
-        pass
-
-    async def disconnect(self, destination: Union[Address, str]) -> None:
-        pass
-
-    async def list_targets(self) -> List[TargetDescription]:
-        pass
-
     async def list_xctests(self) -> List[InstalledTestInfo]:
         pass
 
@@ -319,9 +307,6 @@ class IdbClient:
         pass
 
     async def clear_keychain(self) -> None:
-        pass
-
-    async def boot(self) -> None:
         pass
 
     async def open_url(self, url: str) -> None:
@@ -427,6 +412,25 @@ class IdbClient:
         pass
 
     async def hid(self, event_iterator: AsyncIterable[HIDEvent]) -> None:
+        pass
+
+
+# Extends the base by adding management related commands
+class IdbClient(IdbClientBase):
+    async def connect(
+        self,
+        destination: ConnectionDestination,
+        metadata: Optional[Dict[str, str]] = None,
+    ) -> CompanionInfo:
+        pass
+
+    async def disconnect(self, destination: Union[Address, str]) -> None:
+        pass
+
+    async def list_targets(self) -> List[TargetDescription]:
+        pass
+
+    async def boot(self) -> None:
         pass
 
     async def kill(self) -> None:
