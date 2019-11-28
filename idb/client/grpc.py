@@ -188,8 +188,8 @@ class GrpcStubClient(IdbClientBase):
         self.companion_info = companion_info
         self.logger = logger
 
-    @asynccontextmanager
     @classmethod
+    @asynccontextmanager
     async def build(
         cls, companion_info: CompanionInfo, logger: logging.Logger
     ) -> AsyncContextManager["GrpcStubClient"]:
