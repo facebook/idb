@@ -47,6 +47,24 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
   return readFromDict(dict, key, NSArray.class);
 }
 
+static inline NSArray *unwrapValues(NSDictionary<NSString *, NSObject *> *wrappedObject)
+{
+  return readFromDict(wrappedObject, @"_values", NSArray.class);
+}
+
+static inline id unwrapValue(NSDictionary<NSString *, NSObject *> *wrappedObject)
+{
+  return readFromDict(wrappedObject, @"_value", NSObject.class);
+}
+
+static inline NSDate *dateFromString(NSString *date)
+{
+  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
+  NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+  [dateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ss.SSSZ"];
+  return [dateFormatter dateFromString:date];
+}
+
 @interface FBDeviceXCTestCommands ()
 
 @property (nonatomic, weak, readonly) FBDevice *device;
@@ -79,7 +97,7 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
   return self;
 }
 
-#pragma mark Public
+#pragma mark Public: Legacy XCTest Result
 
 + (void)reportTestMethod:(NSDictionary<NSString *, NSObject *> *)testMethod testBundleName:(NSString *)testBundleName testClassName:(NSString *)testClassName reporter:(id<FBTestManagerTestReporter>)reporter
 {
@@ -99,17 +117,17 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
   }
 
   NSArray *activitySummaries = readArrayFromDict(testMethod, @"ActivitySummaries");
-  NSMutableArray *logs = [self buildTestLog:activitySummaries
-                             testBundleName:testBundleName
-                              testClassName:testClassName
-                             testMethodName:testMethodName
-                                 testPassed:status == FBTestReportStatusPassed
-                                   duration:[duration doubleValue]];
+  NSMutableArray *logs = [self buildTestLogLegacy:activitySummaries
+                                   testBundleName:testBundleName
+                                    testClassName:testClassName
+                                   testMethodName:testMethodName
+                                       testPassed:status == FBTestReportStatusPassed
+                                         duration:[duration doubleValue]];
 
   [reporter testManagerMediator:nil testCaseDidStartForTestClass:testClassName method:testMethodName];
   if (status == FBTestReportStatusFailed) {
     NSArray *failureSummaries = readArrayFromDict(testMethod, @"FailureSummaries");
-    [reporter testManagerMediator:nil testCaseDidFailForTestClass:testClassName method:testMethodName withMessage:[self buildErrorMessage:failureSummaries] file:nil line:0];
+    [reporter testManagerMediator:nil testCaseDidFailForTestClass:testClassName method:testMethodName withMessage:[self buildErrorMessageLegacy:failureSummaries] file:nil line:0];
   }
 
   if ([reporter respondsToSelector:@selector(testManagerMediator:testCaseDidFinishForTestClass:method:withStatus:duration:logs:)]) {
@@ -216,6 +234,260 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
   [self reportTargetTests:testTargets reporter:reporter];
 }
 
+#pragma mark Public: Xcode 11 XCTest Result
+
++ (void)reportTestMethod:(NSDictionary<NSString *, NSDictionary *> *)testMethod
+          testBundleName:(NSString *)testBundleName
+           testClassName:(NSString *)testClassName
+                reporter:(id<FBTestManagerTestReporter>)reporter
+                   queue:(dispatch_queue_t)queue
+        resultBundlePath:(NSString *)resultBundlePath
+                  logger:(id<FBControlCoreLogger>)logger
+{
+  NSAssert(testMethod, @"testMethod is nil");
+  NSAssert([testMethod isKindOfClass:NSDictionary.class], @"testMethod not a NSDictionary");
+
+  NSString *testStatus = (NSString *)unwrapValue(testMethod[@"testStatus"]);
+  NSString *testMethodName = (NSString *)unwrapValue(testMethod[@"identifier"]);
+  NSNumber *duration = (NSNumber *)unwrapValue(testMethod[@"duration"]);
+
+  FBTestReportStatus status = FBTestReportStatusUnknown;
+  if ([testStatus isEqualToString:@"Success"]) {
+    status = FBTestReportStatusPassed;
+  }
+  if ([testStatus isEqualToString:@"Failure"]) {
+    status = FBTestReportStatusFailed;
+  }
+
+  [reporter testManagerMediator:nil testCaseDidStartForTestClass:testClassName method:testMethodName];
+
+  NSDictionary<NSString *, NSDictionary *> *summaryRef = testMethod[@"summaryRef"];
+  NSAssert(summaryRef, @"Summary reference is nil");
+  NSAssert([summaryRef isKindOfClass:NSDictionary.class], @"Summary reference not a NSDictionary");
+  NSString *summaryRefId = (NSString *)unwrapValue(summaryRef[@"id"]);
+  [[FBXCTestResultToolOperation
+    getJSONFrom:resultBundlePath forId:summaryRefId queue:queue logger:logger]
+    onQueue:queue doOnResolved:^(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *actionTestSummary){
+      if (status == FBTestReportStatusFailed) {
+        NSArray *failureSummaries = unwrapValues(actionTestSummary[@"failureSummaries"]);
+        [reporter testManagerMediator:nil testCaseDidFailForTestClass:testClassName method:testMethodName withMessage:[self buildErrorMessage:failureSummaries] file:nil line:0];
+      }
+
+      if ([reporter respondsToSelector:@selector(testManagerMediator:testCaseDidFinishForTestClass:method:withStatus:duration:logs:)]) {
+        NSArray<NSDictionary *> *activitySummaries = unwrapValues(actionTestSummary[@"activitySummaries"]);
+        NSMutableArray *logs = [self buildTestLog:activitySummaries
+                                   testBundleName:testBundleName
+                                    testClassName:testClassName
+                                   testMethodName:testMethodName
+                                       testPassed:status == FBTestReportStatusPassed
+                                         duration:[duration doubleValue]];
+        [reporter testManagerMediator:nil testCaseDidFinishForTestClass:testClassName method:testMethodName withStatus:status duration:[duration doubleValue] logs:[logs copy]];
+      }
+      else {
+        [reporter testManagerMediator:nil testCaseDidFinishForTestClass:testClassName method:testMethodName withStatus:status duration:[duration doubleValue]];
+      }
+    }];
+}
+
++ (void)reportTestMethods:(NSArray<NSDictionary *> *)testMethods
+           testBundleName:(NSString *)testBundleName
+            testClassName:(NSString *)testClassName
+                 reporter:(id<FBTestManagerTestReporter>)reporter
+                    queue:(dispatch_queue_t)queue
+         resultBundlePath:(NSString *)resultBundlePath
+                   logger:(id<FBControlCoreLogger>)logger
+{
+  NSAssert(testMethods, @"testMethods is nil");
+  NSAssert([testMethods isKindOfClass:NSArray.class], @"testMethods not a NSArray");
+
+  for (NSDictionary *testMethod in testMethods) {
+    [self reportTestMethod:testMethod testBundleName:testBundleName testClassName:testClassName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+  }
+}
+
++ (void)reportTestClass:(NSDictionary<NSString *, NSDictionary *> *)testClass
+         testBundleName:(NSString *)testBundleName
+               reporter:(id<FBTestManagerTestReporter>)reporter
+                  queue:(dispatch_queue_t)queue
+       resultBundlePath:(NSString *)resultBundlePath
+                 logger:(id<FBControlCoreLogger>)logger
+{
+  NSAssert(testClass, @"selectedTest is nil");
+  NSAssert([testClass isKindOfClass:NSDictionary.class], @"testClass not a NSDictionary");
+
+  NSString *testClassName = (NSString *)unwrapValue(testClass[@"identifier"]);
+  NSArray<NSDictionary *> *testMethods = unwrapValues(testClass[@"subtests"]);
+  [self reportTestMethods:testMethods testBundleName:testBundleName testClassName:testClassName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+}
+
++ (void)reportTestClasses:(NSArray<NSDictionary *> *)testClasses
+           testBundleName:(NSString *)testBundleName
+                 reporter:(id<FBTestManagerTestReporter>)reporter
+                    queue:(dispatch_queue_t)queue
+         resultBundlePath:(NSString *)resultBundlePath
+                   logger:(id<FBControlCoreLogger>)logger
+{
+  NSAssert(testClasses, @"selectedTest is nil");
+  NSAssert([testClasses isKindOfClass:NSArray.class], @"testClasses not a NSArray");
+
+  for (NSDictionary *testClass in testClasses) {
+    [self reportTestClass:testClass testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+  }
+}
+
++ (void)reportTestTargetXctest:(NSDictionary<NSString *, NSDictionary *> *)testTargetXctest
+                testBundleName:(NSString *)testBundleName
+                      reporter:(id<FBTestManagerTestReporter>)reporter
+                         queue:(dispatch_queue_t)queue
+              resultBundlePath:(NSString *)resultBundlePath
+                        logger:(id<FBControlCoreLogger>)logger
+{
+  NSAssert(testTargetXctest, @"selectedTest is nil");
+  NSAssert([testTargetXctest isKindOfClass:NSDictionary.class], @"testTargetXctest not a NSDictionary");
+
+  NSArray *testClasses = unwrapValues(testTargetXctest[@"subtests"]);
+  [self reportTestClasses:testClasses testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+}
+
++ (void)reportTestTargetXctests:(NSArray<NSDictionary *> *)testTargetXctests
+                 testBundleName:(NSString *)testBundleName
+                       reporter:(id<FBTestManagerTestReporter>)reporter
+                          queue:(dispatch_queue_t)queue
+               resultBundlePath:(NSString *)resultBundlePath
+                         logger:(id<FBControlCoreLogger>)logger
+{
+  NSAssert(testTargetXctests, @"testTargetXctests is nil");
+  NSAssert([testTargetXctests isKindOfClass:NSArray.class], @"testTargetXctests not a NSArray");
+
+  for (NSDictionary *testTargetXctest in testTargetXctests) {
+    [self reportTestTargetXctest:testTargetXctest testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+  }
+}
+
++ (void)reportSelectedTest:(NSDictionary<NSString *, NSDictionary *> *)selectedTest
+            testBundleName:(NSString *)testBundleName
+                  reporter:(id<FBTestManagerTestReporter>)reporter
+                     queue:(dispatch_queue_t)queue
+          resultBundlePath:(NSString *)resultBundlePath
+                    logger:(id<FBControlCoreLogger>)logger
+{
+  NSAssert(selectedTest, @"selectedTest is nil");
+  NSAssert([selectedTest isKindOfClass:NSDictionary.class], @"selectedTest not a NSDictionary");
+
+  NSArray<NSDictionary *> *testTargetXctests = unwrapValues(selectedTest[@"subtests"]);
+  [self reportTestTargetXctests:testTargetXctests testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+}
+
++ (void)reportSelectedTests:(NSArray<NSDictionary *> *)selectedTests
+             testBundleName:(NSString *)testBundleName
+                   reporter:(id<FBTestManagerTestReporter>)reporter
+                      queue:(dispatch_queue_t)queue
+           resultBundlePath:(NSString *)resultBundlePath
+                     logger:(id<FBControlCoreLogger>)logger
+{
+  NSAssert(selectedTests, @"selectedTests is nil");
+  NSAssert([selectedTests isKindOfClass:NSArray.class], @"selectedTests not a NSArray");
+
+  for (NSDictionary *selectedTest in selectedTests) {
+    [self reportSelectedTest:selectedTest testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+  }
+}
+
++ (void)reportTargetTest:(NSDictionary<NSString *, NSDictionary *> *)targetTest
+                reporter:(id<FBTestManagerTestReporter>)reporter
+                   queue:(dispatch_queue_t)queue
+        resultBundlePath:(NSString *)resultBundlePath
+                  logger:(id<FBControlCoreLogger>)logger
+{
+  NSAssert(targetTest, @"targetTest is nil");
+  NSAssert([targetTest isKindOfClass:NSDictionary.class], @"targetTest not a NSDictionary");
+  NSString *testBundleName = (NSString *)unwrapValue(targetTest[@"targetName"]);
+
+  NSArray<NSDictionary *> *selectedTests = unwrapValues(targetTest[@"tests"]);
+  [self reportSelectedTests:selectedTests testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+}
+
++ (void)reportTargetTests:(NSArray<NSDictionary *> *)targetTests
+                 reporter:(id<FBTestManagerTestReporter>)reporter
+                    queue:(dispatch_queue_t)queue
+         resultBundlePath:(NSString *)resultBundlePath
+                   logger:(id<FBControlCoreLogger>)logger
+{
+  NSAssert(targetTests, @"targetTests is nil");
+  NSAssert([targetTests isKindOfClass:NSArray.class], @"targetTests not a NSArray");
+
+  for (NSDictionary<NSString *, NSDictionary *> *targetTest in targetTests) {
+    [self reportTargetTest:targetTest reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+  }
+}
+
++ (void)reportResults:(NSDictionary<NSString *, NSDictionary *> *)results
+             reporter:(id<FBTestManagerTestReporter>)reporter
+                queue:(dispatch_queue_t)queue
+     resultBundlePath:(NSString *)resultBundlePath
+               logger:(id<FBControlCoreLogger>)logger
+{
+  NSAssert([results isKindOfClass:NSDictionary.class], @"Test results not a NSDictionary");
+  NSArray<NSDictionary *> *testTargets = unwrapValues(results[@"testableSummaries"]);
+
+  [self reportTargetTests:testTargets reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+}
+
++ (void)reportSummaries:(NSArray<NSDictionary *> *)summaries
+               reporter:(id<FBTestManagerTestReporter>)reporter
+                  queue:(dispatch_queue_t)queue
+       resultBundlePath:(NSString *)resultBundlePath
+                 logger:(id<FBControlCoreLogger>)logger
+{
+  NSAssert(summaries, @"Test summaries have no value");
+  NSAssert([summaries isKindOfClass:NSArray.class], @"Test summary values not a NSArray");
+
+  for (NSDictionary<NSString *, NSDictionary *> *summary in summaries) {
+    [self reportResults:summary reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+  }
+}
+
++ (NSString *)parseTestsRef:(NSDictionary<NSString *, NSDictionary *> *)testsRef
+{
+  NSAssert(testsRef, @"tests ref is nil");
+  NSAssert([testsRef isKindOfClass:NSDictionary.class], @"tests ref not a NSDictionary");
+
+  return (NSString *)unwrapValue(testsRef[@"id"]);
+}
+
++ (NSString *)parseActionResult:(NSDictionary<NSString *, NSDictionary *> *)actionResult
+{
+  NSAssert(actionResult, @"action result is nil");
+  NSAssert([actionResult isKindOfClass:NSDictionary.class], @"action result not a NSDictionary");
+
+  NSDictionary<NSString *, NSDictionary *> *testsRef = actionResult[@"testsRef"];
+  return [self parseTestsRef:testsRef];
+}
+
++ (NSString *)parseAction:(NSDictionary<NSString *, NSDictionary *> *)action
+{
+  NSAssert(action, @"action is nil");
+  NSAssert([action isKindOfClass:NSDictionary.class], @"action not a NSDictionary");
+
+  NSDictionary<NSString *, NSDictionary *> *actionResult = action[@"actionResult"];
+  return [self parseActionResult:actionResult];
+}
+
++ (NSArray<NSString *> *)parseActions:(NSDictionary<NSString *, NSObject *> *)actions
+{
+  NSAssert(actions, @"Test actions is nil");
+  NSAssert([actions isKindOfClass:NSDictionary.class], @"Test actions not a NSDictionary");
+
+  NSArray<NSDictionary *> *actionValues = unwrapValues(actions);
+  NSAssert(actionValues, @"action values is nil");
+
+  NSMutableArray<NSString *> *ids = [[NSMutableArray alloc] init];
+  for (NSDictionary<NSString *, NSDictionary *> *action in actionValues) {
+    [ids addObject:[self parseAction:action]];
+  }
+  return ids;
+}
+
 #pragma mark FBXCTestCommands Implementation
 
 - (FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
@@ -301,9 +573,32 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
 
         NSString *testSummariesPath = [configuration.resultBundlePath stringByAppendingPathComponent:@"TestSummaries.plist"];
         NSDictionary<NSString *, NSArray *> *results = [NSDictionary dictionaryWithContentsOfFile:testSummariesPath];
+        NSString *resultBundleInfoPath = [configuration.resultBundlePath stringByAppendingPathComponent:@"Info.plist"];
+        NSDictionary<NSString *, NSObject *> *bundleInfo = [NSDictionary dictionaryWithContentsOfFile:resultBundleInfoPath];
+        id bundleFormatVersion =[bundleInfo valueForKey:@"version"];
+
         if (results) {
           [self.class reportResults:results reporter:reporter];
           [logger logFormat:@"ResultBundlePath: %@", configuration.resultBundlePath];
+        }
+        else if (bundleFormatVersion && [bundleFormatVersion isKindOfClass:NSDictionary.class]) {
+          NSNumber *majorVersion = readNumberFromDict(bundleFormatVersion, @"major");
+          NSNumber *minorVersion = readNumberFromDict(bundleFormatVersion, @"minor");
+          [logger logFormat:@"Test result bundle format version: %@.%@", majorVersion, minorVersion];
+          [[FBXCTestResultToolOperation
+            getJSONFrom:configuration.resultBundlePath forId:nil queue:self.device.workQueue logger:logger]
+            onQueue:self.device.workQueue doOnResolved:^(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *actionsInvocationRecord) {
+              NSDictionary<NSString *, NSArray *> *actions = actionsInvocationRecord[@"actions"];
+              NSArray<NSString *> *ids = [self.class parseActions:actions];
+              for (NSString *bundleObjectId in ids) {
+                [[FBXCTestResultToolOperation
+                  getJSONFrom:configuration.resultBundlePath forId:bundleObjectId queue:self.device.workQueue logger:logger]
+                  onQueue:self.device.workQueue doOnResolved:^void (NSDictionary<NSString *, NSDictionary<NSString *, id> *> *xcresults) {
+                    NSArray<NSDictionary *> *summaries = unwrapValues(xcresults[@"summaries"]);
+                    [self.class reportSummaries:summaries reporter:reporter queue:self.device.workQueue resultBundlePath:configuration.resultBundlePath logger:logger];
+                  }];
+              }
+            }];
         }
         else {
           NSString *errorMessage = [NSString stringWithFormat:@"No test results were produced for Configuration:\n\n%@", configuration];
@@ -377,7 +672,8 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
 }
 
 // This replicates the stdout from xcodebuild, but without all the garbage that xcodebuild outputs
-+ (void)addTestLogsFromActivitySummary:(NSDictionary *)activitySummary logs:(NSMutableArray<NSString *> *)logs testStartTimeInterval:(double)testStartTimeInterval indent:(NSUInteger)indent
+// This works before Xcode 11
++ (void)addTestLogsFromLegacyActivitySummary:(NSDictionary *)activitySummary logs:(NSMutableArray<NSString *> *)logs testStartTimeInterval:(double)testStartTimeInterval indent:(NSUInteger)indent
 {
 
   NSAssert([activitySummary isKindOfClass:NSDictionary.class], @"activitySummary not a NSDictionary");
@@ -392,6 +688,59 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
   if (!subActivities) {
     return;
   }
+  NSAssert([subActivities isKindOfClass:NSArray.class], @"subActivities is not a NSArray");
+
+  for (NSDictionary *subActivity in subActivities) {
+    [self addTestLogsFromLegacyActivitySummary:subActivity logs:logs testStartTimeInterval:testStartTimeInterval indent:indent + 1];
+  }
+}
+
+// This works before Xcode 11
++ (NSMutableArray<NSString *> *)buildTestLogLegacy:(NSArray<NSDictionary *> *)activitySummaries
+                                    testBundleName:(NSString *)testBundleName
+                                     testClassName:(NSString *)testClassName
+                                    testMethodName:(NSString *)testMethodName
+                                        testPassed:(BOOL)testPassed
+                                          duration:(double)duration
+{
+  NSMutableArray *logs = [NSMutableArray array];
+  NSString *testCaseFullName = [NSString stringWithFormat:@"-[%@.%@ %@]", testBundleName, testClassName, testMethodName];
+  [logs addObject:[NSString stringWithFormat:@"Test Case '%@' started.", testCaseFullName]];
+
+  double testStartTimeInterval = 0;
+  BOOL startTimeSet = NO;
+  for (NSDictionary *activitySummary in activitySummaries) {
+    if (!startTimeSet) {
+      testStartTimeInterval = readDoubleFromDict(activitySummary, @"StartTimeInterval");
+      startTimeSet = YES;
+    }
+
+    NSString *activityType = readStringFromDict(activitySummary, @"ActivityType");
+    if ([activityType isEqualToString:@"com.apple.dt.xctest.activity-type.internal"]) {
+      [self addTestLogsFromLegacyActivitySummary:activitySummary logs:logs testStartTimeInterval:testStartTimeInterval indent:0];
+    }
+  }
+
+  [logs addObject:[NSString stringWithFormat:@"Test Case '%@' %@ in %.3f seconds", testCaseFullName, testPassed ? @"passed" : @"failed", duration]];
+  return logs;
+}
+
++ (void)addTestLogsFromActivitySummary:(NSDictionary *)activitySummary logs:(NSMutableArray<NSString *> *)logs testStartTimeInterval:(double)testStartTimeInterval indent:(NSUInteger)indent
+{
+  NSAssert([activitySummary isKindOfClass:NSDictionary.class], @"activitySummary not a NSDictionary");
+  NSString *message = (NSString *)unwrapValue(activitySummary[@"title"]);
+  NSDate *date = dateFromString((NSString *)unwrapValue(activitySummary[@"start"]));
+  double startTimeInterval = [date timeIntervalSince1970];
+  double elapsed = startTimeInterval - testStartTimeInterval;
+  NSString *indentString = [@"" stringByPaddingToLength:1 + indent * 4 withString:@" " startingAtIndex:0];
+  NSString *log = [NSString stringWithFormat:@"    t = %8.2fs%@%@", elapsed, indentString, message];
+  [logs addObject:log];
+
+  NSDictionary<NSString *, NSObject *> *wrappedSubActivities = activitySummary[@"subactivities"];
+  if (!wrappedSubActivities) {
+    return;
+  }
+  NSArray<NSDictionary *> *subActivities = unwrapValues(wrappedSubActivities);
   NSAssert([subActivities isKindOfClass:NSArray.class], @"subActivities is not a NSArray");
 
   for (NSDictionary *subActivity in subActivities) {
@@ -414,11 +763,12 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
   BOOL startTimeSet = NO;
   for (NSDictionary *activitySummary in activitySummaries) {
     if (!startTimeSet) {
-      testStartTimeInterval = readDoubleFromDict(activitySummary, @"StartTimeInterval");
+      NSDate *date = dateFromString((NSString *)unwrapValue(activitySummary[@"start"]));
+      testStartTimeInterval = [date timeIntervalSince1970];
       startTimeSet = YES;
     }
 
-    NSString *activityType = readStringFromDict(activitySummary, @"ActivityType");
+    NSString *activityType = (NSString *)unwrapValue(activitySummary[@"activityType"]);
     if ([activityType isEqualToString:@"com.apple.dt.xctest.activity-type.internal"]) {
       [self addTestLogsFromActivitySummary:activitySummary logs:logs testStartTimeInterval:testStartTimeInterval indent:0];
     }
@@ -428,11 +778,22 @@ static inline NSArray *readArrayFromDict(NSDictionary *dict, NSString *key)
   return logs;
 }
 
-+ (NSString *)buildErrorMessage:(NSArray<NSDictionary *> *)failureSummmaries {
+// This works before Xcode 11
++ (NSString *)buildErrorMessageLegacy:(NSArray<NSDictionary *> *)failureSummmaries {
   NSMutableArray *messages = [NSMutableArray array];
   for (NSDictionary *failureSummary in failureSummmaries) {
     NSAssert([failureSummary isKindOfClass:NSDictionary.class], @"failureSummary is not a NSDictionary");
     [messages addObject:readStringFromDict(failureSummary, @"Message")];
+  }
+
+  return [messages componentsJoinedByString:@"\n"];
+}
+
++ (NSString *)buildErrorMessage:(NSArray<NSDictionary *> *)failureSummmaries {
+  NSMutableArray *messages = [NSMutableArray array];
+  for (NSDictionary *failureSummary in failureSummmaries) {
+    NSAssert([failureSummary isKindOfClass:NSDictionary.class], @"failureSummary is not a NSDictionary");
+    [messages addObject:(NSString *)unwrapValue(failureSummary[@"message"])];
   }
 
   return [messages componentsJoinedByString:@"\n"];
