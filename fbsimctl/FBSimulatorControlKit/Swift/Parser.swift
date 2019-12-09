@@ -230,7 +230,7 @@ extension Parser {
     }
 
     let sequentialParser = Parser<()>
-      .ofFlag(flag, explanation)
+      .ofFlag(flag, (), explanation)
       .sequence(arg)
     return Parser<A>.alternative([equalParser, sequentialParser])
   }
