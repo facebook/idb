@@ -3522,6 +3522,8 @@
 				TargetAttributes = {
 					AA819DB11B9FB40D002F58CA = {
 						CreatedOnToolsVersion = 7.0;
+						DevelopmentTeam = FYD86LA7RE;
+						ProvisioningStyle = Manual;
 					};
 					AAC8B22A1CEC51120034A865 = {
 						CreatedOnToolsVersion = 7.3.1;
@@ -3530,6 +3532,8 @@
 					};
 					AAC8B2331CEC51120034A865 = {
 						CreatedOnToolsVersion = 7.3.1;
+						DevelopmentTeam = FYD86LA7RE;
+						ProvisioningStyle = Manual;
 					};
 					E66DC04E390C419500000000 = {
 						DevelopmentTeam = FYD86LA7RE;
@@ -3542,6 +3546,8 @@
 					};
 					EE4F0D381C91B7DB00608E89 = {
 						CreatedOnToolsVersion = 7.2.1;
+						DevelopmentTeam = FYD86LA7RE;
+						ProvisioningStyle = Manual;
 					};
 					EEBD600D1C90628F00298A07 = {
 						CreatedOnToolsVersion = 7.2.1;
@@ -3550,6 +3556,8 @@
 					};
 					EEBD60161C90628F00298A07 = {
 						CreatedOnToolsVersion = 7.2.1;
+						DevelopmentTeam = FYD86LA7RE;
+						ProvisioningStyle = Manual;
 					};
 				};
 			};
@@ -3558,6 +3566,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = B401C979EFB6AC4600000000 /* mainGroup */;
@@ -4066,7 +4075,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Mac Developer: Karl Krukow (YTTN6Y2QS9)";
 				DEVELOPMENT_TEAM = FYD86LA7RE;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4080,8 +4089,11 @@
 		4952437303EDA63300000002 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Mac Developer: Karl Krukow (YTTN6Y2QS9)";
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = FYD86LA7RE;
 				ENABLE_TESTABILITY = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1";
@@ -4093,7 +4105,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Mac Developer: Karl Krukow (YTTN6Y2QS9)";
 				DEVELOPMENT_TEAM = FYD86LA7RE;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4107,8 +4119,11 @@
 		4952437350C7218900000002 /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Mac Developer: Karl Krukow (YTTN6Y2QS9)";
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = FYD86LA7RE;
 				GCC_OPTIMIZATION_LEVEL = s;
 			};
 			name = Profile;
@@ -4117,7 +4132,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Mac Developer: Karl Krukow (YTTN6Y2QS9)";
 				DEVELOPMENT_TEAM = FYD86LA7RE;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4131,8 +4146,11 @@
 		49524373A439BFE700000002 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Mac Developer: Karl Krukow (YTTN6Y2QS9)";
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = FYD86LA7RE;
 				GCC_OPTIMIZATION_LEVEL = s;
 			};
 			name = Release;
@@ -4162,7 +4180,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Mac Developer: Karl Krukow (YTTN6Y2QS9)";
 				DEVELOPMENT_TEAM = FYD86LA7RE;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4176,7 +4194,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Mac Developer: Karl Krukow (YTTN6Y2QS9)";
 				DEVELOPMENT_TEAM = FYD86LA7RE;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4190,7 +4208,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Mac Developer: Karl Krukow (YTTN6Y2QS9)";
 				DEVELOPMENT_TEAM = FYD86LA7RE;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4228,7 +4246,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Mac Developer: Karl Krukow (YTTN6Y2QS9)";
 				DEVELOPMENT_TEAM = FYD86LA7RE;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4246,7 +4264,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Mac Developer: Karl Krukow (YTTN6Y2QS9)";
 				DEVELOPMENT_TEAM = FYD86LA7RE;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4264,7 +4282,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Mac Developer: Karl Krukow (YTTN6Y2QS9)";
 				DEVELOPMENT_TEAM = FYD86LA7RE;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4327,7 +4345,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Mac Developer: Karl Krukow (YTTN6Y2QS9)";
 				DEVELOPMENT_TEAM = FYD86LA7RE;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4341,7 +4359,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Mac Developer: Karl Krukow (YTTN6Y2QS9)";
 				DEVELOPMENT_TEAM = FYD86LA7RE;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4355,7 +4373,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Mac Developer: Karl Krukow (YTTN6Y2QS9)";
 				DEVELOPMENT_TEAM = FYD86LA7RE;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
