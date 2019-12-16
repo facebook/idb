@@ -265,16 +265,18 @@ static inline NSDate *dateFromString(NSString *date)
   NSAssert(summaryRef, @"Summary reference is nil");
   NSAssert([summaryRef isKindOfClass:NSDictionary.class], @"Summary reference not a NSDictionary");
   NSString *summaryRefId = (NSString *)unwrapValue(summaryRef[@"id"]);
-  [[FBXCTestResultToolOperation
+  [[[FBXCTestResultToolOperation
     getJSONFrom:resultBundlePath forId:summaryRefId queue:queue logger:logger]
-    onQueue:queue doOnResolved:^(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *actionTestSummary){
+    onQueue:queue doOnResolved:^(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *actionTestSummary) {
       if (status == FBTestReportStatusFailed) {
         NSArray *failureSummaries = unwrapValues(actionTestSummary[@"failureSummaries"]);
         [reporter testManagerMediator:nil testCaseDidFailForTestClass:testClassName method:testMethodName withMessage:[self buildErrorMessage:failureSummaries] file:nil line:0];
       }
 
+      NSArray<NSDictionary *> *activitySummaries = unwrapValues(actionTestSummary[@"activitySummaries"]);
+      [self extractScreenshotsFromActivities:activitySummaries queue:queue resultBundlePath:resultBundlePath logger:logger];
+
       if ([reporter respondsToSelector:@selector(testManagerMediator:testCaseDidFinishForTestClass:method:withStatus:duration:logs:)]) {
-        NSArray<NSDictionary *> *activitySummaries = unwrapValues(actionTestSummary[@"activitySummaries"]);
         NSMutableArray *logs = [self buildTestLog:activitySummaries
                                    testBundleName:testBundleName
                                     testClassName:testClassName
@@ -286,7 +288,7 @@ static inline NSDate *dateFromString(NSString *date)
       else {
         [reporter testManagerMediator:nil testCaseDidFinishForTestClass:testClassName method:testMethodName withStatus:status duration:[duration doubleValue]];
       }
-    }];
+    }] await:nil];
 }
 
 + (void)reportTestMethods:(NSArray<NSDictionary *> *)testMethods
@@ -563,9 +565,9 @@ static inline NSDate *dateFromString(NSString *date)
 
 - (id<FBiOSTargetContinuation>)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  FBFuture<NSNull *> *completed = [[[task
+  FBFuture<NSNull *> *completed = [[[[task
     completed]
-    onQueue:self.device.workQueue map:^(id _) {
+    onQueue:self.device.workQueue fmap:^FBFuture<NSNull *> *(id _) {
       // This will execute only if the operation completes successfully.
       [logger logFormat:@"xcodebuild operation completed successfully %@", task];
       if (configuration.resultBundlePath) {
@@ -580,36 +582,42 @@ static inline NSDate *dateFromString(NSString *date)
         if (results) {
           [self.class reportResults:results reporter:reporter];
           [logger logFormat:@"ResultBundlePath: %@", configuration.resultBundlePath];
+          return FBFuture.empty;
         }
         else if (bundleFormatVersion && [bundleFormatVersion isKindOfClass:NSDictionary.class]) {
           NSNumber *majorVersion = readNumberFromDict(bundleFormatVersion, @"major");
           NSNumber *minorVersion = readNumberFromDict(bundleFormatVersion, @"minor");
           [logger logFormat:@"Test result bundle format version: %@.%@", majorVersion, minorVersion];
-          [[FBXCTestResultToolOperation
+          return [[FBXCTestResultToolOperation
             getJSONFrom:configuration.resultBundlePath forId:nil queue:self.device.workQueue logger:logger]
-            onQueue:self.device.workQueue doOnResolved:^(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *actionsInvocationRecord) {
+            onQueue:self.device.workQueue fmap:^(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *actionsInvocationRecord) {
               NSDictionary<NSString *, NSArray *> *actions = actionsInvocationRecord[@"actions"];
               NSArray<NSString *> *ids = [self.class parseActions:actions];
+              NSMutableArray<FBFuture *> *operations = NSMutableArray.array;
               for (NSString *bundleObjectId in ids) {
-                [[FBXCTestResultToolOperation
+                FBFuture *operation = [[FBXCTestResultToolOperation
                   getJSONFrom:configuration.resultBundlePath forId:bundleObjectId queue:self.device.workQueue logger:logger]
                   onQueue:self.device.workQueue doOnResolved:^void (NSDictionary<NSString *, NSDictionary<NSString *, id> *> *xcresults) {
                     NSArray<NSDictionary *> *summaries = unwrapValues(xcresults[@"summaries"]);
-                    [self.class reportSummaries:summaries reporter:reporter queue:self.device.workQueue resultBundlePath:configuration.resultBundlePath logger:logger];
+                    [self.class reportSummaries:summaries reporter:reporter queue:self.device.asyncQueue resultBundlePath:configuration.resultBundlePath logger:logger];
                   }];
+                [operations addObject:operation];
               }
+              return [FBFuture futureWithFutures:operations];
             }];
         }
         else {
           NSString *errorMessage = [NSString stringWithFormat:@"No test results were produced for Configuration:\n\n%@", configuration];
           [reporter testManagerMediator:nil testPlanDidFailWithMessage:errorMessage];
+          return FBFuture.empty;
         }
-      } else {
-        [logger log:@"No result bundle to parse"];
       }
+      [logger log:@"No result bundle to parse"];
+      return FBFuture.empty;
+    }]
+    onQueue:self.device.workQueue fmap:^(id _) {
       [reporter testManagerMediatorDidFinishExecutingTestPlan:nil];
-
-      return NSNull.null;
+      return FBFuture.empty;
     }]
     onQueue:self.device.workQueue chain:^(FBFuture *future) {
       // Always perform this, whether the operation was successful or not.
@@ -617,7 +625,6 @@ static inline NSDate *dateFromString(NSString *date)
       self.operation = nil;
       return future;
     }];
-
 
   self.operation = FBiOSTargetContinuationNamed(completed, FBiOSTargetFutureTypeTestOperation);
   [logger logFormat:@"Test Operation %@ has started for %@, storing it as the sole operation for this target", task, configuration.shortDescription];
@@ -776,6 +783,66 @@ static inline NSDate *dateFromString(NSString *date)
 
   [logs addObject:[NSString stringWithFormat:@"Test Case '%@' %@ in %.3f seconds", testCaseFullName, testPassed ? @"passed" : @"failed", duration]];
   return logs;
+}
+
++ (void)extractScreenshotsFromAttachments:(NSArray<NSDictionary *> *)attachments
+                                       to:(NSString *)destination
+                                    queue:(dispatch_queue_t)queue
+                         resultBundlePath:(NSString *)resultBundlePath
+                                   logger:(id<FBControlCoreLogger>)logger
+{
+  NSError *error = nil;
+  NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"^Screenshot_.*\\.jpg$" options:0 error:&error];
+  NSAssert(regex, @"Screenshot filename regex failed to compile %@", error);
+  for (NSDictionary<NSString *, NSDictionary *> *attachment in attachments) {
+    if (attachment[@"filename"]) {
+      NSString *filename = (NSString *)unwrapValue(attachment[@"filename"]);
+      NSTextCheckingResult *matchResult = [regex firstMatchInString:filename options:0 range:NSMakeRange(0, [filename length])];
+      if (attachment[@"payloadRef"] && matchResult) {
+        NSString *timestamp = (NSString *)unwrapValue(attachment[@"timestamp"]);
+        NSString *exportPath = [destination stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_%@", timestamp, filename]];
+        NSDictionary<NSString *, NSDictionary *> *payloadRef = attachment[@"payloadRef"];
+        NSAssert(payloadRef, @"Screenshot payload reference is empty");
+        NSString *screenshotId = (NSString *)unwrapValue(payloadRef[@"id"]);
+        [[FBXCTestResultToolOperation exportFileFrom:resultBundlePath to:exportPath forId:screenshotId queue:queue logger:logger] await:nil];
+      }
+    }
+  }
+}
+
++ (NSString *)extractScreenshotsFromActivities:(NSArray<NSDictionary *> *)activities
+                                         queue:(dispatch_queue_t)queue
+                              resultBundlePath:(NSString *)resultBundlePath
+                                        logger:(id<FBControlCoreLogger>)logger
+{
+  NSError *error = nil;
+
+  NSFileManager *fileManager = NSFileManager.defaultManager;
+  // Extract all screenshots to the "Attachments" folder just as in the legacy test result bundle
+  NSString *screenshotsPath = [resultBundlePath stringByAppendingPathComponent:@"Attachments"];
+  BOOL isDirectory = NO;
+  if ([fileManager fileExistsAtPath:screenshotsPath isDirectory:&isDirectory]) {
+    if (!isDirectory) {
+      return [[FBControlCoreError describeFormat:@"%@ is not a directory", screenshotsPath] fail:&error];
+    }
+  } else {
+    if (![fileManager createDirectoryAtPath:screenshotsPath withIntermediateDirectories:NO attributes:nil error:&error]) {
+      return [[FBControlCoreError describeFormat:@"Failed to create directory at %@", screenshotsPath] fail:&error];
+    }
+  }
+
+  for (NSDictionary *activity in activities) {
+    if (activity[@"attachments"]) {
+      NSArray<NSDictionary *> *attachments = unwrapValues(activity[@"attachments"]);
+      [self extractScreenshotsFromAttachments:attachments to:screenshotsPath queue:queue resultBundlePath:resultBundlePath logger:logger];
+    }
+    if (activity[@"subactivities"]) {
+      NSArray<NSDictionary *> *subactivities = unwrapValues(activity[@"subactivities"]);
+      [self extractScreenshotsFromActivities:subactivities queue:queue resultBundlePath:resultBundlePath logger:logger];
+    }
+  }
+
+  return screenshotsPath;
 }
 
 // This works before Xcode 11

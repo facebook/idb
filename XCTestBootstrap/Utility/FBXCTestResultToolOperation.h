@@ -28,17 +28,28 @@ NS_ASSUME_NONNULL_BEGIN
 + (FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)getJSONFrom:(NSString *)path forId:(nullable NSString *)bundleObjectId queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
-Export file or directory from the XCTest result bundle
+Export file from the XCTest result bundle
 
 @param path the path of the result bundle
 @param destination the location for the exported file/directory
 @param bundleObjectId ID of an object in the result bundle
-@param exportType file or directory
 @param queue the queue to use for serialization.
 @param logger the logger to log to.
 @return a future that resolves when the task has finished.
 */
-+ (FBFuture<FBTask *> *)exportFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId withType:(NSString *)exportType queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBFuture<FBTask *> *)exportFileFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
+
+/**
+Export directory from the XCTest result bundle
+
+@param path the path of the result bundle
+@param destination the location for the exported file/directory
+@param bundleObjectId ID of an object in the result bundle
+@param queue the queue to use for serialization.
+@param logger the logger to log to.
+@return a future that resolves when the task has finished.
+*/
++ (FBFuture<FBTask *> *)exportDirectoryFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
 Describe the format of the result bundle
