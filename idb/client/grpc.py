@@ -744,7 +744,7 @@ class GrpcClient(IdbClient):
         self.companion_info: Optional[CompanionInfo] = None
 
     async def spawn_notifier(self) -> None:
-        if platform == "darwin":
+        if platform == "darwin" and os.path.exists("/usr/local/bin/idb_companion"):
             companion_spawner = CompanionSpawner(
                 companion_path="/usr/local/bin/idb_companion", logger=self.logger
             )
