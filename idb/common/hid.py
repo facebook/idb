@@ -51,11 +51,45 @@ def _press_with_duration(
 def swipe_to_events(
     p_start: Tuple[float, float],
     p_end: Tuple[float, float],
+    duration: Optional[float] = None,
     delta: Optional[float] = None,
 ) -> List[HIDEvent]:
-    start = Point(x=p_start[0], y=p_start[1])
-    end = Point(x=p_end[0], y=p_end[1])
-    return [HIDSwipe(start=start, end=end, delta=delta)]
+    if duration is None:
+        start = Point(x=p_start[0], y=p_start[1])
+        end = Point(x=p_end[0], y=p_end[1])
+        return [HIDSwipe(start=start, end=end, delta=delta)]
+    else:
+        delta = 10.0 if delta is None else delta
+
+        xStart, yStart = p_start
+        xEnd, yEnd = p_end
+
+        distance = ((xEnd - xStart) ** 2 + (yEnd - yStart) ** 2) ** 0.5
+        steps = int(distance // delta)
+
+        dx = (xEnd - xStart) / steps
+        dy = (yEnd - yStart) / steps
+
+        events = []
+        for i in range(steps + 1):
+            events.append(
+                HIDPress(
+                    action=HIDTouch(
+                        point=Point(x=(xStart + i * dx), y=(yStart + i * dy))
+                    ),
+                    direction=HIDDirection.DOWN,
+                )
+            )
+            if duration:
+                events.append(HIDDelay(duration=(duration / (steps + 1))))
+
+        events.append(
+            HIDPress(
+                action=HIDTouch(point=Point(x=xEnd, y=yEnd)), direction=HIDDirection.UP
+            )
+        )
+
+        return events
 
 
 def _key_down_event(keycode: int) -> HIDEvent:

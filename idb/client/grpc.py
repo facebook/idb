@@ -469,9 +469,10 @@ class GrpcStubClient(IdbClientBase):
         self,
         p_start: Tuple[int, int],
         p_end: Tuple[int, int],
+        duration: Optional[float] = None,
         delta: Optional[int] = None,
     ) -> None:
-        await self.send_events(swipe_to_events(p_start, p_end, delta))
+        await self.send_events(swipe_to_events(p_start, p_end, duration, delta))
 
     async def key_sequence(self, key_sequence: List[int]) -> None:
         events: List[HIDEvent] = []
@@ -1001,10 +1002,13 @@ class GrpcClient(IdbClient):
         self,
         p_start: Tuple[int, int],
         p_end: Tuple[int, int],
+        duration: Optional[float] = None,
         delta: Optional[int] = None,
     ) -> None:
         async with self.get_stub() as stub:
-            return await stub.swipe(p_start=p_start, p_end=p_end, delta=delta)
+            return await stub.swipe(
+                p_start=p_start, p_end=p_end, duration=duration, delta=delta
+            )
 
     @log_and_handle_exceptions
     async def key_sequence(self, key_sequence: List[int]) -> None:

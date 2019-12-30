@@ -342,6 +342,7 @@ class IdbClientBase:
         self,
         p_start: Tuple[int, int],
         p_end: Tuple[int, int],
+        duration: Optional[float] = None,
         delta: Optional[int] = None,
     ) -> None:
         pass

@@ -133,6 +133,8 @@ class SwipeCommand(TargetCommand):
             "y_end", help="The y-coordinate of the swipe end point", type=int
         )
 
+        parser.add_argument("--duration", help="Swipe duration", type=float)
+
         parser.add_argument(
             "--delta",
             dest="delta",
@@ -147,5 +149,6 @@ class SwipeCommand(TargetCommand):
         await client.swipe(
             p_start=(args.x_start, args.y_start),
             p_end=(args.x_end, args.y_end),
+            duration=args.duration,
             delta=args.delta,
         )
