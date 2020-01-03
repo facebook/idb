@@ -13,6 +13,7 @@ def signal_handler_event(name: str) -> asyncio.Event:
     loop = asyncio.get_event_loop()
     stop = asyncio.Event()
 
+    # pyre-fixme[53]: Captured variable `stop` is not annotated.
     def signal_handler(sig: signal.Signals) -> None:
         print(f"\nStopping {name}", file=stderr)
         stop.set()
