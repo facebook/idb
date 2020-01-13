@@ -265,6 +265,7 @@ message HIDEvent {
     Point start = 1;
     Point end = 2;
     double delta = 5;
+    double duration = 6;
   }
 
   message HIDDelay {

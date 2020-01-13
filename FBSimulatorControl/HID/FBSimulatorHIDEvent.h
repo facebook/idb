@@ -119,7 +119,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param delta distance between tap down events
  @return a new HID Event.
  */
-+ (instancetype)swipe:(double)xStart yStart:(double)yStart xEnd:(double)xEnd yEnd:(double)yEnd delta:(double)delta;
++ (instancetype)swipe:(double)xStart yStart:(double)yStart xEnd:(double)xEnd yEnd:(double)yEnd delta:(double)delta duration:(double)duration;
 
 /**
  A HID Event consisting of multiple events

@@ -550,7 +550,7 @@ static NSString *const KeyDuration = @"duration";
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Delay for %lu", (unsigned long)self.duration];
+  return [NSString stringWithFormat:@"Delay for %f", self.duration];
 }
 
 - (BOOL)isEqual:(FBSimulatorHIDEvent_Delay *)event
@@ -643,7 +643,7 @@ static NSString *const KeyDuration = @"duration";
   return [self eventWithEvents:events];
 }
 
-+ (instancetype)swipe:(double)xStart yStart:(double)yStart xEnd:(double)xEnd yEnd:(double)yEnd delta:(double)delta
++ (instancetype)swipe:(double)xStart yStart:(double)yStart xEnd:(double)xEnd yEnd:(double)yEnd delta:(double)delta duration:(double)duration
 {
   NSMutableArray<FBSimulatorHIDEvent *> *events = [NSMutableArray array];
   double distance = sqrt(pow(yEnd - yStart, 2) + pow(xEnd - xStart, 2));
@@ -655,8 +655,11 @@ static NSString *const KeyDuration = @"duration";
   double dx = (xEnd - xStart) / steps;
   double dy = (yEnd - yStart) / steps;
 
+  double stepDelay = duration/(steps + 1);
+
   for (int i = 0 ; i <= steps ; ++i) {
-      [events addObject:[self touchDownAtX:(xStart + dx * i) y:(yStart + dy * i)]];
+    [events addObject:[self touchDownAtX:(xStart + dx * i) y:(yStart + dy * i)]];
+    [events addObject:[self delay:stepDelay]];
   }
 
   [events addObject:[self touchUpAtX:xEnd y:yEnd]];

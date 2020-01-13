@@ -404,7 +404,7 @@ static FBSimulatorHIDEvent *translate_event(idb::HIDEvent &event, NSError **erro
       }
     }
   } else if (event.has_swipe()) {
-    return [FBSimulatorHIDEvent swipe:event.swipe().start().x() yStart:event.swipe().start().y() xEnd:event.swipe().end().x() yEnd:event.swipe().end().y() delta:event.swipe().delta()];
+    return [FBSimulatorHIDEvent swipe:event.swipe().start().x() yStart:event.swipe().start().y() xEnd:event.swipe().end().x() yEnd:event.swipe().end().y() delta:event.swipe().delta() duration:event.swipe().duration()];
   } else if (event.has_delay()) {
     return [FBSimulatorHIDEvent delay:event.delay().duration()];
   }
