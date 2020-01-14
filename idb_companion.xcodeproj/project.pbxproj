@@ -14,6 +14,8 @@
 		AAAD2B9B22819C0F0043D2DE /* FBBootManager.m in Sources */ = {isa = PBXBuildFile; fileRef = AAAD2B9922819C0F0043D2DE /* FBBootManager.m */; };
 		AAAD2B9C22819C0F0043D2DE /* FBBootManager.h in Headers */ = {isa = PBXBuildFile; fileRef = AAAD2B9A22819C0F0043D2DE /* FBBootManager.h */; };
 		D7107CF822E708C00007FF32 /* FBIDBCompanionServer.mm in Sources */ = {isa = PBXBuildFile; fileRef = D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */; };
+		D720AE7923CE1E140040F01B /* libz.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D720AE7823CE1E140040F01B /* libz.1.dylib */; };
+		D720AE7A23CE1E140040F01B /* libz.1.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = D720AE7823CE1E140040F01B /* libz.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		D72CB1C52277837000265160 /* FBDataDownloadInput.h in Headers */ = {isa = PBXBuildFile; fileRef = D72CB1C32277837000265160 /* FBDataDownloadInput.h */; };
 		D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */ = {isa = PBXBuildFile; fileRef = D72CB1C42277837000265160 /* FBDataDownloadInput.m */; };
 		D7589977234755AB00A1F256 /* FBSimulatorsManager.h in Headers */ = {isa = PBXBuildFile; fileRef = D7589975234755AB00A1F256 /* FBSimulatorsManager.h */; };
@@ -24,9 +26,6 @@
 		D7D6DF8F2265DE4E00B01F14 /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */; };
 		D7D6DF9A2265DF2B00B01F14 /* idb.proto in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DF992265DF2B00B01F14 /* idb.proto */; };
 		D7D6DF9D2265E04800B01F14 /* libidbGRPC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF942265DF2200B01F14 /* libidbGRPC.a */; };
-		D7D6DFA52265E76200B01F14 /* libgrpc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DFA22265E76200B01F14 /* libgrpc.a */; };
-		D7D6DFA62265E76200B01F14 /* libprotobuf.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DFA32265E76200B01F14 /* libprotobuf.a */; };
-		D7D6DFA72265E76200B01F14 /* libgrpc++.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DFA42265E76200B01F14 /* libgrpc++.a */; };
 		D7D6DFF62265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFAA2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m */; };
 		D7D6DFF72265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFAB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h */; };
 		D7D6DFF82265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFAC2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h */; };
@@ -67,6 +66,8 @@
 			compilerSpec = com.apple.compilers.proxy.script;
 			filePatterns = "*.proto";
 			fileType = pattern.proxy;
+			inputFiles = (
+			);
 			isEditable = 1;
 			outputFiles = (
 				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).pb.h",
@@ -79,6 +80,17 @@
 /* End PBXBuildRule section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		D720AE7623CE1D6E0040F01B /* Embed Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				D720AE7A23CE1E140040F01B /* libz.1.dylib in Embed Libraries */,
+			);
+			name = "Embed Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D7D6DF102265DDEC00B01F14 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -98,6 +110,11 @@
 		AAAD2B9922819C0F0043D2DE /* FBBootManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBBootManager.m; sourceTree = "<group>"; };
 		AAAD2B9A22819C0F0043D2DE /* FBBootManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBBootManager.h; sourceTree = "<group>"; };
 		D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FBIDBCompanionServer.mm; sourceTree = "<group>"; };
+		D720AE6F23CE1B5F0040F01B /* libgrpc++.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libgrpc++.dylib"; path = "/usr/local/lib/libgrpc++.dylib"; sourceTree = "<group>"; };
+		D720AE7123CE1B690040F01B /* libgrpc.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgrpc.dylib; path = /usr/local/lib/libgrpc.dylib; sourceTree = "<group>"; };
+		D720AE7323CE1D6E0040F01B /* libcares.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcares.2.dylib; path = "/usr/local/lib/libcares.2.dylib"; sourceTree = "<group>"; };
+		D720AE7723CE1DF50040F01B /* libz.1.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.1.tbd; path = /usr/lib/libz.1.tbd; sourceTree = SDKROOT; };
+		D720AE7823CE1E140040F01B /* libz.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.1.dylib; path = /usr/lib/libz.1.dylib; sourceTree = "<group>"; };
 		D72CB1C32277837000265160 /* FBDataDownloadInput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDataDownloadInput.h; sourceTree = "<group>"; };
 		D72CB1C42277837000265160 /* FBDataDownloadInput.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDataDownloadInput.m; sourceTree = "<group>"; };
 		D7589975234755AB00A1F256 /* FBSimulatorsManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorsManager.h; sourceTree = "<group>"; };
@@ -153,12 +170,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				D7D6DF892265DE4E00B01F14 /* FBControlCore.framework in Frameworks */,
+				D720AE7923CE1E140040F01B /* libz.1.dylib in Frameworks */,
 				D7D6DF8B2265DE4E00B01F14 /* FBDeviceControl.framework in Frameworks */,
 				D7D6DF8D2265DE4E00B01F14 /* FBSimulatorControl.framework in Frameworks */,
-				D7D6DFA72265E76200B01F14 /* libgrpc++.a in Frameworks */,
-				D7D6DFA52265E76200B01F14 /* libgrpc.a in Frameworks */,
 				D7D6DF9D2265E04800B01F14 /* libidbGRPC.a in Frameworks */,
-				D7D6DFA62265E76200B01F14 /* libprotobuf.a in Frameworks */,
 				D7D6DF8F2265DE4E00B01F14 /* XCTestBootstrap.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -195,6 +210,11 @@
 		D7D6DF872265DE4E00B01F14 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				D720AE7823CE1E140040F01B /* libz.1.dylib */,
+				D720AE7723CE1DF50040F01B /* libz.1.tbd */,
+				D720AE7323CE1D6E0040F01B /* libcares.2.dylib */,
+				D720AE7123CE1B690040F01B /* libgrpc.dylib */,
+				D720AE6F23CE1B5F0040F01B /* libgrpc++.dylib */,
 				D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */,
 				D7D6DF8A2265DE4E00B01F14 /* FBDeviceControl.framework */,
 				D7D6DF8C2265DE4E00B01F14 /* FBSimulatorControl.framework */,
@@ -354,6 +374,7 @@
 				D7D6DF9E2265E35300B01F14 /* Headers */,
 				D7D6DF0F2265DDEC00B01F14 /* Frameworks */,
 				D7D6DF102265DDEC00B01F14 /* CopyFiles */,
+				D720AE7623CE1D6E0040F01B /* Embed Libraries */,
 			);
 			buildRules = (
 			);
@@ -602,6 +623,14 @@
 				INFOPLIST_FILE = "$(SRCROOT)/idb_companion/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				OTHER_LDFLAGS = (
+					"/usr/local/opt/openssl@1.1/lib/libssl.a",
+					"/usr/local/lib/libgrpc++.a",
+					"/usr/local/opt/openssl@1.1/lib/libcrypto.a",
+					/usr/local/lib/libgrpc.a,
+					/usr/local/lib/libprotobuf.a,
+					/usr/local/lib/libcares.a,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
@@ -619,6 +648,14 @@
 				INFOPLIST_FILE = "$(SRCROOT)/idb_companion/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				OTHER_LDFLAGS = (
+					"/usr/local/opt/openssl@1.1/lib/libssl.a",
+					"/usr/local/lib/libgrpc++.a",
+					"/usr/local/opt/openssl@1.1/lib/libcrypto.a",
+					/usr/local/lib/libgrpc.a,
+					/usr/local/lib/libprotobuf.a,
+					/usr/local/lib/libcares.a,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
