@@ -157,7 +157,7 @@ static inline id EnumerateLoadCommands64(FILE *file, uint32_t magic, id (^block)
   // Offset is relative to header length and position in file. In a fat binary it's not right equal to sizeof(header).
   uint32_t offset = (uint32_t) ftell(file);
   for (uint32_t i = 0; i < header.ncmds; i++) {
-    struct load_command command;
+    struct load_command command = {0x0, 0x0};
     fseek(file, offset, SEEK_SET);
     fread(&command, sizeof(command), 1, file);
     fseek(file, offset, SEEK_SET);
@@ -176,7 +176,7 @@ static inline id EnumerateLoadCommands32(FILE *file, uint32_t magic, id (^block)
   // Offset is relative to header length and position in file. In a fat binary it's not right equal to sizeof(header).
   uint32_t offset = (uint32_t) ftell(file);
   for (uint32_t i = 0; i < header.ncmds; i++) {
-    struct load_command command;
+    struct load_command command = {0x0, 0x0};
     fseek(file, offset, SEEK_SET);
     fread(&command, sizeof(command), 1, file);
     fseek(file, offset, SEEK_SET);
