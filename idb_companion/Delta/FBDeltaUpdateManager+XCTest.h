@@ -48,7 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Execution State.
  */
-@property (nonatomic, assign, readonly) FBIDBTestManagerState state;
+@property (nonatomic, assign, readonly) FBIDBTestOperationState state;
 
 /**
  The error to report if any.

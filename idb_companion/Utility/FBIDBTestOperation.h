@@ -12,15 +12,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBConsumableXCTestReporter;
 
-typedef NS_ENUM(NSUInteger, FBIDBTestManagerState) {
+typedef NS_ENUM(NSUInteger, FBIDBTestOperationState) {
   //Test has not started running
-  FBIDBTestManagerStateNotRunning,
+  FBIDBTestOperationStateNotRunning,
   //Test has completed
-  FBIDBTestManagerStateTerminatedNormally,
+  FBIDBTestOperationStateTerminatedNormally,
   //Test has terminated before completing. probably crashed
-  FBIDBTestManagerStateTerminatedAbnormally,
+  FBIDBTestOperationStateTerminatedAbnormally,
   //Test is running
-  FBIDBTestManagerStateRunning
+  FBIDBTestOperationStateRunning
 };
 
 /**
@@ -33,7 +33,7 @@ typedef NS_ENUM(NSUInteger, FBIDBTestManagerState) {
 /**
  The Execution State.
  */
-@property (nonatomic, assign, readonly) FBIDBTestManagerState state;
+@property (nonatomic, assign, readonly) FBIDBTestOperationState state;
 
 /**
  The Log Buffer of the test operation.

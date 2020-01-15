@@ -27,7 +27,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
 @implementation FBXCTestDelta
 
-- (instancetype)initWithIdentifier:(NSString *)identifier results:(NSArray<FBTestRunUpdate *> *)results logOutput:(NSString *)logOutput resultBundlePath:(NSString *)resultBundlePath state:(FBIDBTestManagerState)state error:(NSError *)error
+- (instancetype)initWithIdentifier:(NSString *)identifier results:(NSArray<FBTestRunUpdate *> *)results logOutput:(NSString *)logOutput resultBundlePath:(NSString *)resultBundlePath state:(FBIDBTestOperationState)state error:(NSError *)error
 {
   self = [super init];
   if (!self) {
@@ -92,12 +92,12 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
         }];
     }
     delta:^(FBIDBTestOperation *operation, NSString *identifier, BOOL *done) {
-      FBIDBTestManagerState state = operation.state;
+      FBIDBTestOperationState state = operation.state;
       NSString *logOutput = [operation.logBuffer consumeCurrentString];
       NSString *resultBundlePath = operation.resultBundlePath;
       NSError *error = operation.completed.error;
       NSArray<FBTestRunUpdate *> *results = [operation.reporter consumeCurrentResults];
-      if (state == FBIDBTestManagerStateTerminatedNormally) {
+      if (state == FBIDBTestOperationStateTerminatedNormally) {
         *done = YES;
       }
 

@@ -215,13 +215,13 @@ static idb::XctestRunResponse convert_xctest_delta(const FBXCTestDelta *delta, d
 {
   idb::XctestRunResponse response;
   switch (delta.state) {
-    case FBIDBTestManagerStateRunning:
+    case FBIDBTestOperationStateRunning:
       response.set_status(idb::XctestRunResponse_Status_RUNNING);
       break;
-    case FBIDBTestManagerStateTerminatedNormally:
+    case FBIDBTestOperationStateTerminatedNormally:
       response.set_status(idb::XctestRunResponse_Status_TERMINATED_NORMALLY);
       break;
-    case FBIDBTestManagerStateTerminatedAbnormally:
+    case FBIDBTestOperationStateTerminatedAbnormally:
       response.set_status(idb::XctestRunResponse_Status_TERMINATED_ABNORMALLY);
     default:
       break;
@@ -262,7 +262,7 @@ static idb::XctestRunResponse convert_xctest_delta(const FBXCTestDelta *delta, d
   }
   NSString *resultBundlePath = delta.resultBundlePath;
   // Only send result bundle when finished to avoid unnecessary packing for every delta update
-  if ((delta.state == FBIDBTestManagerStateTerminatedNormally || delta.state == FBIDBTestManagerStateTerminatedAbnormally)
+  if ((delta.state == FBIDBTestOperationStateTerminatedNormally || delta.state == FBIDBTestOperationStateTerminatedAbnormally)
    && resultBundlePath) {
     NSError *error = nil;
     NSData *data = [[FBArchiveOperations createGzippedTarDataForPath:resultBundlePath queue:queue logger:logger] block:&error];
@@ -918,7 +918,7 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
     if (!delta) {
       return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
     }
-    hasFinished = delta.state != FBIDBTestManagerStateRunning;
+    hasFinished = delta.state != FBIDBTestOperationStateRunning;
     idb::XctestRunResponse next = convert_xctest_delta(delta, _target.asyncQueue, _target.logger);
     response->Write(next, grpc::WriteOptions().set_write_through());
     usleep(1000 * 200);

@@ -36,16 +36,16 @@
   return self;
 }
 
-- (FBIDBTestManagerState)state
+- (FBIDBTestOperationState)state
 {
   if (self.completed) {
     if (self.completed.error) {
-      return FBIDBTestManagerStateTerminatedAbnormally;
+      return FBIDBTestOperationStateTerminatedAbnormally;
     } else {
-      return self.completed.hasCompleted ? FBIDBTestManagerStateTerminatedNormally : FBIDBTestManagerStateRunning;
+      return self.completed.hasCompleted ? FBIDBTestOperationStateTerminatedNormally : FBIDBTestOperationStateRunning;
     }
   } else {
-    return FBIDBTestManagerStateNotRunning;
+    return FBIDBTestOperationStateNotRunning;
   }
 }
 
