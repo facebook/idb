@@ -11,7 +11,10 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBIDBTestOperation;
+@class FBTemporaryDirectory;
 @class FBTestApplicationsPair;
+@class FBXCTestBundleStorage;
 
 /**
  Describes the necessary information to start a test run.
@@ -113,6 +116,16 @@ The Initializer for Logic Tests.
  The timeout of the entire execution, if relevant.
  */
 @property (nonatomic, copy, nullable, readonly) NSNumber *testTimeout;
+
+/**
+ Starts the test operation.
+
+ @param bundleStorage the bundle storage class to use.
+ @param target the target to run against.
+ @param temporaryDirectory the temporary directory to use.
+ @return a future that resolves when the test operation starts.
+ */
+- (FBFuture<FBIDBTestOperation *> *)startWithBundleStorageManager:(FBXCTestBundleStorage *)bundleStorage target:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory;
 
 @end
 

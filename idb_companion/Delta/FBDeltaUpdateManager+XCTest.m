@@ -17,7 +17,6 @@
 #import "FBXCTestDescriptor.h"
 
 static const NSTimeInterval DEFAULT_CLIENT_TIMEOUT = 60;
-static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
 @interface FBXCTestDelta ()
 
@@ -46,28 +45,6 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
 @end
 
-@interface FBFuture (FBIDBTestManager)
-
-- (instancetype)idb_appendErrorLogging:(FBIDBTestOperation *)operation;
-
-@end
-
-@implementation FBFuture (FBIDBTestManager)
-
-- (instancetype)idb_appendErrorLogging:(FBIDBTestOperation *)operation
-{
-  return [self onQueue:operation.queue chain:^(FBFuture *future) {
-    if (!future.error) {
-      return future;
-    }
-    return [[FBIDBError
-      describeFormat:@"%@:%@", future.error.localizedDescription, operation.logBuffer.lines]
-      failFuture];
-  }];
-}
-
-@end
-
 @implementation FBDeltaUpdateManager (XCTest)
 
 #pragma mark Initializers
@@ -81,15 +58,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     capacity:nil
     logger:target.logger
     create:^ FBFuture<FBIDBTestOperation *> * (FBXCTestRunRequest *request) {
-      return [[self
-        fetchAndSetupDescriptorForRequest:request bundleStorage:bundleStorage target:target]
-        onQueue:target.workQueue fmap:^(id<FBXCTestDescriptor> descriptor) {
-          if (request.isLogicTest) {
-            return [self startLogicTest:request testDescriptor:descriptor target:target temporaryDirectory:temporaryDirectory];
-          } else {
-            return [self startApplicationBasedTest:request testDescriptor:descriptor target:target];
-          }
-        }];
+      return [request startWithBundleStorageManager:bundleStorage target:target temporaryDirectory:temporaryDirectory];
     }
     delta:^(FBIDBTestOperation *operation, NSString *identifier, BOOL *done) {
       FBIDBTestOperationState state = operation.state;
@@ -110,120 +79,6 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
         error:error];
 
       return [FBFuture futureWithResult:delta];
-    }];
-}
-
-#pragma mark Private Methods
-
-+ (FBFuture<id<FBXCTestDescriptor>> *)fetchAndSetupDescriptorForRequest:(FBXCTestRunRequest *)request bundleStorage:(FBXCTestBundleStorage *)bundleStorage target:(id<FBiOSTarget>)target
-{
-  NSError *error = nil;
-  id<FBXCTestDescriptor> testDescriptor = [bundleStorage testDescriptorWithID:request.testBundleID error:&error];
-  if (!testDescriptor) {
-    return [FBFuture futureWithError:error];
-  }
-  return [[testDescriptor setupWithRequest:request target:target] mapReplace:testDescriptor];
-}
-
-+ (FBFuture<id<FBXCTestProcessExecutor>> *)executorWithConfiguration:(FBLogicTestConfiguration *)configuration target:(id<FBiOSTarget>)target
-{
-  id<FBXCTestProcessExecutor> executor = nil;
-  if ([target isKindOfClass:FBSimulator.class]) {
-    executor = [FBSimulatorXCTestProcessExecutor executorWithSimulator:(FBSimulator *)target shims:configuration.shims];
-  } else if ([target isKindOfClass:FBMacDevice.class]) {
-    executor = [FBMacXCTestProcessExecutor executorWithMacDevice:(FBMacDevice *)target shims:configuration.shims];
-  }
-
-  if (!executor) {
-    return [[FBIDBError
-      describeFormat:@"%@ does not support logic tests", target]
-      failFuture];
-  }
-  return [FBFuture futureWithResult:executor];
-}
-
-+ (FBFuture<FBIDBTestOperation *> *)runLogic:(FBLogicTestConfiguration *)configuration target:(id<FBiOSTarget>)target
-{
-  return [[self
-    executorWithConfiguration:configuration target:target]
-    onQueue:target.workQueue fmap:^(id<FBXCTestProcessExecutor> executor) {
-      id<FBConsumableBuffer> logBuffer = FBDataBuffer.consumableBuffer;
-      id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToConsumer:logBuffer];
-      FBConsumableXCTestReporter *reporter = [FBConsumableXCTestReporter new];
-      FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:reporter logger:logger];
-      FBLogicTestRunStrategy *runner = [FBLogicTestRunStrategy strategyWithExecutor:executor configuration:configuration reporter:adapter logger:logger];
-      FBFuture<NSNull *> *completed = [runner execute];
-      if (completed.error) {
-        return [FBFuture futureWithError:completed.error];
-      }
-      FBIDBTestOperation *operation = [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:nil reporter:reporter logBuffer:logBuffer completed:completed queue:target.workQueue];
-      return [[FBFuture futureWithResult:operation] idb_appendErrorLogging:operation];
-    }];
-}
-
-+ (FBFuture<FBIDBTestOperation *> *)run:(FBTestLaunchConfiguration *)configuration target:(id<FBiOSTarget>)target
-{
-  id<FBConsumableBuffer> logBuffer = FBDataBuffer.consumableBuffer;
-  id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToConsumer:logBuffer];
-  FBConsumableXCTestReporter *reporter = [FBConsumableXCTestReporter new];
-  FBXCTestReporterAdapter *adapter = [FBXCTestReporterAdapter adapterWithReporter:reporter];
-  return [[target
-    startTestWithLaunchConfiguration:configuration reporter:adapter logger:logger]
-    onQueue:target.workQueue fmap:^(id<FBiOSTargetContinuation> continuation) {
-      FBIDBTestOperation *operation = [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:configuration.resultBundlePath reporter:reporter logBuffer:logBuffer completed:continuation.completed queue:target.workQueue];
-      return [[FBFuture futureWithResult:operation] idb_appendErrorLogging:operation];
-    }];
-}
-
-+ (FBFuture<FBIDBTestOperation *> *)startLogicTest:(FBXCTestRunRequest *)request testDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
-{
-  return [[FBXCTestShimConfiguration
-    defaultShimConfiguration]
-    onQueue:target.workQueue fmap:^ FBFuture<FBIDBTestOperation *> * (FBXCTestShimConfiguration *shims) {
-      NSError *error = nil;
-      NSURL *workingDirectory = [temporaryDirectory ephemeralTemporaryDirectory];
-      if (![NSFileManager.defaultManager createDirectoryAtURL:workingDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
-        return [FBFuture futureWithError:error];
-      }
-      NSString *testFilter = nil;
-      NSArray<NSString *> *testsToSkip = request.testsToSkip.allObjects ?: @[];
-      if (testsToSkip.count > 0) {
-        return [[FBXCTestError
-          describeFormat:@"'Tests to Skip' %@ provided, but Logic Tests to not support this.", [FBCollectionInformation oneLineDescriptionFromArray:testsToSkip]]
-          failFuture];
-      }
-      NSArray<NSString *> *testsToRun = request.testsToRun.allObjects ?: @[];
-      if (testsToRun.count > 1){
-        return [[FBXCTestError
-          describeFormat:@"More than one 'Tests to Run' %@ provided, but only one 'Tests to Run' is supported.", [FBCollectionInformation oneLineDescriptionFromArray:testsToRun]]
-          failFuture];
-      }
-      testFilter = testsToRun.firstObject;
-
-      NSTimeInterval timeout = request.testTimeout.boolValue ? request.testTimeout.doubleValue : FBLogicTestTimeout;
-      FBLogicTestConfiguration *configuration = [FBLogicTestConfiguration
-        configurationWithShims:shims
-        environment:request.environment
-        workingDirectory:workingDirectory.path
-        testBundlePath:testDescriptor.testBundle.path
-        waitForDebugger:NO
-        timeout:timeout
-        testFilter:testFilter
-        mirroring:FBLogicTestMirrorFileLogs];
-
-      return [self runLogic:configuration target:target];
-    }];
-}
-
-+ (FBFuture<FBIDBTestOperation *> *)startApplicationBasedTest:(FBXCTestRunRequest *)request testDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target
-{
-  return [[testDescriptor
-    testAppPairForRequest:request target:target]
-    onQueue:target.workQueue fmap:^ FBFuture<FBIDBTestOperation *> * (FBTestApplicationsPair *pair) {
-      [target.logger logFormat:@"Obtaining launch configuration for App Pair %@ on descriptor %@", pair, testDescriptor];
-      FBTestLaunchConfiguration *testConfig = [testDescriptor testConfigWithRunRequest:request testApps:pair];
-      [target.logger logFormat:@"Obtained launch configuration %@", testConfig];
-      return [self run:testConfig target:target];
     }];
 }
 
