@@ -18,28 +18,6 @@
 
 static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
-@interface FBFuture (FBXCTestDescriptor)
-
-- (instancetype)idb_appendErrorLogging:(FBIDBTestOperation *)operation;
-
-@end
-
-@implementation FBFuture (FBXCTestDescriptor)
-
-- (instancetype)idb_appendErrorLogging:(FBIDBTestOperation *)operation
-{
-  return [self onQueue:operation.queue chain:^(FBFuture *future) {
-    if (!future.error) {
-      return future;
-    }
-    return [[FBIDBError
-      describeFormat:@"%@:%@", future.error.localizedDescription, operation.logBuffer.lines]
-      failFuture];
-  }];
-}
-
-@end
-
 @interface FBXCTestRunRequest_LogicTest : FBXCTestRunRequest
 
 @end
@@ -56,7 +34,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   return NO;
 }
 
-- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
+- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
 {
   return [[FBXCTestShimConfiguration
     defaultShimConfiguration]
@@ -92,26 +70,23 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
         testFilter:testFilter
         mirroring:FBLogicTestMirrorFileLogs];
 
-      return [self startTestExecution:configuration target:target];
+      return [self startTestExecution:configuration target:target reporter:reporter logger:logger];
     }];
 }
 
-- (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBLogicTestConfiguration *)configuration target:(id<FBiOSTarget>)target
+- (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBLogicTestConfiguration *)configuration target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   return [[self
     executorWithConfiguration:configuration target:target]
     onQueue:target.workQueue fmap:^(id<FBXCTestProcessExecutor> executor) {
-      id<FBConsumableBuffer> logBuffer = FBDataBuffer.consumableBuffer;
-      id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToConsumer:logBuffer];
-      FBConsumableXCTestReporter *reporter = [FBConsumableXCTestReporter new];
       FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:reporter logger:logger];
       FBLogicTestRunStrategy *runner = [FBLogicTestRunStrategy strategyWithExecutor:executor configuration:configuration reporter:adapter logger:logger];
       FBFuture<NSNull *> *completed = [runner execute];
       if (completed.error) {
         return [FBFuture futureWithError:completed.error];
       }
-      FBIDBTestOperation *operation = [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:nil reporter:reporter logBuffer:logBuffer completed:completed queue:target.workQueue];
-      return [[FBFuture futureWithResult:operation] idb_appendErrorLogging:operation];
+      FBIDBTestOperation *operation = [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:nil reporter:reporter logger:logger completed:completed queue:target.workQueue];
+      return [FBFuture futureWithResult:operation];
     }];
 }
 
@@ -150,29 +125,25 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   return NO;
 }
 
-- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
+- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
 {
   return [[testDescriptor
     testAppPairForRequest:self target:target]
     onQueue:target.workQueue fmap:^ FBFuture<FBIDBTestOperation *> * (FBTestApplicationsPair *pair) {
-      [target.logger logFormat:@"Obtaining launch configuration for App Pair %@ on descriptor %@", pair, testDescriptor];
+      [logger logFormat:@"Obtaining launch configuration for App Pair %@ on descriptor %@", pair, testDescriptor];
       FBTestLaunchConfiguration *testConfig = [testDescriptor testConfigWithRunRequest:self testApps:pair];
-      [target.logger logFormat:@"Obtained launch configuration %@", testConfig];
-      return [FBXCTestRunRequest_AppTest startTestExecution:testConfig target:target];
+      [logger logFormat:@"Obtained launch configuration %@", testConfig];
+      return [FBXCTestRunRequest_AppTest startTestExecution:testConfig target:target reporter:reporter logger:logger];
     }];
 }
 
-+ (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBTestLaunchConfiguration *)configuration target:(id<FBiOSTarget>)target
++ (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBTestLaunchConfiguration *)configuration target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  id<FBConsumableBuffer> logBuffer = FBDataBuffer.consumableBuffer;
-  id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToConsumer:logBuffer];
-  FBConsumableXCTestReporter *reporter = [FBConsumableXCTestReporter new];
   FBXCTestReporterAdapter *adapter = [FBXCTestReporterAdapter adapterWithReporter:reporter];
   return [[target
     startTestWithLaunchConfiguration:configuration reporter:adapter logger:logger]
-    onQueue:target.workQueue fmap:^(id<FBiOSTargetContinuation> continuation) {
-      FBIDBTestOperation *operation = [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:configuration.resultBundlePath reporter:reporter logBuffer:logBuffer completed:continuation.completed queue:target.workQueue];
-      return [[FBFuture futureWithResult:operation] idb_appendErrorLogging:operation];
+    onQueue:target.workQueue map:^(id<FBiOSTargetContinuation> continuation) {
+      return [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:configuration.resultBundlePath reporter:reporter logger:logger completed:continuation.completed queue:target.workQueue];
     }];
 }
 
@@ -254,16 +225,16 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   return NO;
 }
 
-- (FBFuture<FBIDBTestOperation *> *)startWithBundleStorageManager:(FBXCTestBundleStorage *)bundleStorage target:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
+- (FBFuture<FBIDBTestOperation *> *)startWithBundleStorageManager:(FBXCTestBundleStorage *)bundleStorage target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
 {
   return [[self
     fetchAndSetupDescriptorWithBundleStorage:bundleStorage target:target]
     onQueue:target.workQueue fmap:^(id<FBXCTestDescriptor> descriptor) {
-      return [self startWithTestDescriptor:descriptor target:target temporaryDirectory:temporaryDirectory];
+      return [self startWithTestDescriptor:descriptor target:target reporter:reporter logger:logger temporaryDirectory:temporaryDirectory];
     }];
 }
 
-- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
+- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
 {
   return [[FBIDBError
     describeFormat:@"%@ not implemented in abstract base class", NSStringFromSelector(_cmd)]

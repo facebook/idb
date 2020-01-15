@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <XCTestBootstrap/FBConsumableXCTestReporter.h>
 #import <XCTestBootstrap/FBJSONTestReporter.h>
 #import <XCTestBootstrap/FBListTestStrategy.h>
 #import <XCTestBootstrap/FBLogicReporterAdapter.h>

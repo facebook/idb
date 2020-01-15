@@ -10,7 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
-#import "FBDeltaUpdateManager+XCTest.h"
 #import "FBXCTestDescriptor.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -21,6 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBIDBStorageManager;
 @class FBInstalledArtifact;
 @class FBTemporaryDirectory;
+
+@protocol FBXCTestReporter;
 
 @interface FBIDBCommandExecutor : NSObject
 
@@ -44,11 +45,6 @@ NS_ASSUME_NONNULL_BEGIN
  For storage of all bundles
  */
 @property (nonatomic, strong, readonly) FBIDBStorageManager *storageManager;
-
-/**
- The xctest manager
- */
-@property (nonatomic, strong, readonly) FBXCTestDeltaUpdateManager *testManager;
 
 /**
  The running debugserver
@@ -420,9 +416,11 @@ NS_ASSUME_NONNULL_BEGIN
  Runs an xctest request
 
  @param request the request to run
- @return a Future that resolves with the xctest session.
+ @param reporter the reporter to report to.
+ @param logger the logger to log to.
+ @return a Future that resolves with the xctest operation.
  */
-- (FBFuture<FBDeltaUpdateSession<FBXCTestDelta *> *> *)xctest_run:(FBXCTestRunRequest *)request;
+- (FBFuture<FBIDBTestOperation *> *)xctest_run:(FBXCTestRunRequest *)request reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Starts the debugserver

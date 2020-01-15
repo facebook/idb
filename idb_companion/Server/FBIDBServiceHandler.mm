@@ -12,11 +12,13 @@
 #import <grpcpp/grpcpp.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
-#import "FBIDBStorageManager.h"
 #import "FBDataDownloadInput.h"
 #import "FBIDBCommandExecutor.h"
 #import "FBIDBPortsConfiguration.h"
 #import "FBIDBServiceHandler.h"
+#import "FBIDBStorageManager.h"
+#import "FBIDBTestOperation.h"
+#import "FBIDBXCTestReporter.h"
 #import "FBStorageUtils.h"
 #import "FBTemporaryDirectory.h"
 
@@ -211,69 +213,6 @@ static NSArray<NSString *> *extract_string_array(T &input)
   return arguments;
 }
 
-static idb::XctestRunResponse convert_xctest_delta(const FBXCTestDelta *delta, dispatch_queue_t queue, id<FBControlCoreLogger> logger)
-{
-  idb::XctestRunResponse response;
-  switch (delta.state) {
-    case FBIDBTestOperationStateRunning:
-      response.set_status(idb::XctestRunResponse_Status_RUNNING);
-      break;
-    case FBIDBTestOperationStateTerminatedNormally:
-      response.set_status(idb::XctestRunResponse_Status_TERMINATED_NORMALLY);
-      break;
-    case FBIDBTestOperationStateTerminatedAbnormally:
-      response.set_status(idb::XctestRunResponse_Status_TERMINATED_ABNORMALLY);
-    default:
-      break;
-  }
-  for (FBTestRunUpdate *result in delta.results) {
-    idb::XctestRunResponse_TestRunInfo *info = response.add_results();
-    if (result.passed) {
-      info->set_status(idb::XctestRunResponse_TestRunInfo_Status_PASSED);
-    } else if (result.crashed) {
-      info->set_status(idb::XctestRunResponse_TestRunInfo_Status_CRASHED);
-    } else {
-      info->set_status(idb::XctestRunResponse_TestRunInfo_Status_FAILED);
-    }
-    info->set_bundle_name(result.bundleName.UTF8String ?: "");
-    info->set_class_name(result.className.UTF8String ?: "");
-    info->set_method_name(result.methodName.UTF8String ?: "");
-    info->set_duration(result.duration);
-    FBTestRunFailureInfo *failureInfo = result.failureInfo;
-    if (failureInfo) {
-      idb::XctestRunResponse_TestRunInfo_TestRunFailureInfo *failureInfoOut = info->mutable_failure_info();
-      failureInfoOut->set_failure_message(failureInfo.message.UTF8String ?: "");
-      failureInfoOut->set_file(failureInfo.file.UTF8String ?: "");
-      failureInfoOut->set_line(failureInfo.line);
-    }
-    for (NSString *log in result.logs) {
-      info->add_logs(log.UTF8String ?: "");
-    }
-    for (FBTestRunTestActivity *activity in result.activityLogs) {
-      idb::XctestRunResponse_TestRunInfo_TestActivity *activityOut = info->add_activitylogs();
-      activityOut->set_title(activity.title.UTF8String ?: "");
-      activityOut->set_duration(activity.duration);
-      activityOut->set_uuid(activity.uuid.UTF8String ?: "");
-    }
-  }
-  NSString *logOutput = delta.logOutput;
-  if (logOutput) {
-    response.add_log_output(logOutput.UTF8String);
-  }
-  NSString *resultBundlePath = delta.resultBundlePath;
-  // Only send result bundle when finished to avoid unnecessary packing for every delta update
-  if ((delta.state == FBIDBTestOperationStateTerminatedNormally || delta.state == FBIDBTestOperationStateTerminatedAbnormally)
-   && resultBundlePath) {
-    NSError *error = nil;
-    NSData *data = [[FBArchiveOperations createGzippedTarDataForPath:resultBundlePath queue:queue logger:logger] block:&error];
-    if (!data) {
-      [logger.error logFormat:@"Failed to create gzipped tar for result bundle %@", error];
-    }
-    idb::Payload *payload = response.mutable_result_bundle();
-    payload->set_data(data.bytes, data.length);
-  }
-  return response;
-}
 
 static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *request)
 {
@@ -906,23 +845,16 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
   if (xctestRunRequest == nil) {
     return Status(grpc::StatusCode::INTERNAL, "Failed to convert xctest request");
   }
+  // Once the reporter is created, only it will perform writing to the writer.
   NSError *error = nil;
-  FBDeltaUpdateSession<FBXCTestDelta *> *session = [[_commandExecutor xctest_run:xctestRunRequest] block:&error];
-  if (!session){
+  FBIDBXCTestReporter *reporter = [[FBIDBXCTestReporter alloc] initWithResponseWriter:response queue:_target.workQueue logger:_target.logger];
+  FBIDBTestOperation *operation = [[_commandExecutor xctest_run:xctestRunRequest reporter:reporter logger:[FBControlCoreLogger loggerToConsumer:reporter]] block:&error];
+  reporter.resultBundlePath = operation.resultBundlePath;
+  if (!operation){
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
-  BOOL hasFinished = NO;
-  const grpc::WriteOptions writeOptions = grpc::WriteOptions().set_write_through();
-  while (!hasFinished) {
-    const FBXCTestDelta *delta = [[session obtainUpdates] block:&error];
-    if (!delta) {
-      return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
-    }
-    hasFinished = delta.state != FBIDBTestOperationStateRunning;
-    idb::XctestRunResponse next = convert_xctest_delta(delta, _target.asyncQueue, _target.logger);
-    response->Write(next, grpc::WriteOptions().set_write_through());
-    usleep(1000 * 200);
-  }
+  // Ensure that we wait for both the reporting to finish, as well as the test operation itself.
+  [[FBFuture futureWithFutures:@[operation.completed, reporter.reportingTerminated]] block:&error];
   return Status::OK;
 }}
 

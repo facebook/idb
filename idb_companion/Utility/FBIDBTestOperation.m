@@ -19,7 +19,7 @@
 
 @synthesize completed = _completed;
 
-- (instancetype)initWithConfiguration:(id<FBJSONSerializable>)configuration resultBundlePath:(NSString *)resultBundlePath reporter:(FBConsumableXCTestReporter *)reporter logBuffer:(id<FBConsumableBuffer>)logBuffer completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue
+- (instancetype)initWithConfiguration:(id<FBJSONSerializable>)configuration resultBundlePath:(NSString *)resultBundlePath reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -29,7 +29,7 @@
   _configuration = configuration;
   _resultBundlePath = resultBundlePath;
   _reporter = reporter;
-  _logBuffer = logBuffer;
+  _logger = logger;
   _completed = completed;
   _queue = queue;
 

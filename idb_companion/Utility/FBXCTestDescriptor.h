@@ -16,6 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBTestApplicationsPair;
 @class FBXCTestBundleStorage;
 
+@protocol FBXCTestReporter;
+
 /**
  Describes the necessary information to start a test run.
  */
@@ -122,10 +124,12 @@ The Initializer for Logic Tests.
 
  @param bundleStorage the bundle storage class to use.
  @param target the target to run against.
+ @param reporter the reporter to report test results to.
+ @param logger the logger to log to.
  @param temporaryDirectory the temporary directory to use.
  @return a future that resolves when the test operation starts.
  */
-- (FBFuture<FBIDBTestOperation *> *)startWithBundleStorageManager:(FBXCTestBundleStorage *)bundleStorage target:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory;
+- (FBFuture<FBIDBTestOperation *> *)startWithBundleStorageManager:(FBXCTestBundleStorage *)bundleStorage target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory;
 
 @end
 

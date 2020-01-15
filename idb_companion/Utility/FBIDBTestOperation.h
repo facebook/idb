@@ -10,7 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBConsumableXCTestReporter;
+@protocol FBXCTestReporter;
 
 typedef NS_ENUM(NSUInteger, FBIDBTestOperationState) {
   //Test has not started running
@@ -28,7 +28,7 @@ typedef NS_ENUM(NSUInteger, FBIDBTestOperationState) {
  */
 @interface FBIDBTestOperation : NSObject <FBiOSTargetContinuation>
 
-- (instancetype)initWithConfiguration:(id<FBJSONSerializable>)configuration resultBundlePath:(nullable NSString *)resultBundlePath reporter:(FBConsumableXCTestReporter *)reporter logBuffer:(id<FBConsumableBuffer>)logBuffer completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue;
+- (instancetype)initWithConfiguration:(id<FBJSONSerializable>)configuration resultBundlePath:(nullable NSString *)resultBundlePath reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue;
 
 /**
  The Execution State.
@@ -36,9 +36,9 @@ typedef NS_ENUM(NSUInteger, FBIDBTestOperationState) {
 @property (nonatomic, assign, readonly) FBIDBTestOperationState state;
 
 /**
- The Log Buffer of the test operation.
+ The logger to log to during the test operation.
  */
-@property (nonatomic, strong, readonly) id<FBConsumableBuffer> logBuffer;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 /**
  The queue to serialize on
@@ -53,7 +53,7 @@ typedef NS_ENUM(NSUInteger, FBIDBTestOperationState) {
 /**
  The reporter to report to.
 */
-@property (nonatomic, strong, readonly) FBConsumableXCTestReporter *reporter;
+@property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
 
 @end
 

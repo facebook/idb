@@ -45,7 +45,6 @@
   _temporaryDirectory = temporaryDirectory;
   _ports = ports;
   _logger = logger;
-  _testManager = [FBDeltaUpdateManager xctestManagerWithTarget:self.target bundleStorage:storageManager.xctest temporaryDirectory:temporaryDirectory];
 
   return self;
 }
@@ -382,9 +381,9 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [self.target launchApplication:[configuration withEnvironment:[self.storageManager interpolateEnvironmentReplacements:configuration.environment]]];
 }
 
-- (FBFuture<FBDeltaUpdateSession<FBXCTestDelta *> *> *)xctest_run:(FBXCTestRunRequest *)request
+- (FBFuture<FBIDBTestOperation *> *)xctest_run:(FBXCTestRunRequest *)request reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  return [self.testManager startSession:request];
+  return [request startWithBundleStorageManager:self.storageManager.xctest target:self.target reporter:reporter logger:logger temporaryDirectory:self.temporaryDirectory];
 }
 
 - (FBFuture<id<FBDebugServer>> *)debugserver_start:(NSString *)bundleID
