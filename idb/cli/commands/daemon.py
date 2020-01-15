@@ -55,6 +55,9 @@ class DaemonCommand(BaseCommand):
         super().add_parser_arguments(parser)
 
     async def _run_impl(self, args: Namespace) -> None:
+        self.logger.error(
+            "idb daemon is deprecated and does nothing, please remove usages of it."
+        )
         try:
             # leaving the daemon command with a dummy output
             # will remove after all uses are removed
