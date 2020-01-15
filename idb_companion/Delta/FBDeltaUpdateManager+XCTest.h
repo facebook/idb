@@ -10,6 +10,7 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 #import "FBDeltaUpdateManager.h"
+#import "FBIDBTestOperation.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -18,17 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class TestRunInfo;
 
 @class FBXCTestRunRequest;
-
-typedef NS_ENUM(NSUInteger, FBIDBTestManagerState) {
-  //Test has not started running
-  FBIDBTestManagerStateNotRunning,
-  //Test has completed
-  FBIDBTestManagerStateTerminatedNormally,
-  //Test has terminated before completing. probably crashed
-  FBIDBTestManagerStateTerminatedAbnormally,
-  //Test is running
-  FBIDBTestManagerStateRunning
-};
 
 /**
  An incremental update for a given session
@@ -64,18 +54,6 @@ typedef NS_ENUM(NSUInteger, FBIDBTestManagerState) {
  The error to report if any.
  */
 @property (nonatomic, assign, readonly) NSError *error;
-
-@end
-
-/**
- The long-running test operation class
- */
-@interface FBIDBTestOperation : NSObject <FBiOSTargetContinuation>
-
-/**
- The Execution State.
- */
-@property (nonatomic, assign, readonly) FBIDBTestManagerState state;
 
 @end
 
