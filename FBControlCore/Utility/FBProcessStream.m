@@ -299,8 +299,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput = @"process_outpu
 
 @interface FBProcessOutput_Consumer : FBProcessOutput_Pipe
 
+@property (nonatomic, strong, readwrite) id<FBDataConsumer> consumer;
 @property (nonatomic, strong, nullable, readwrite) FBFileReader *reader;
-@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> consumer;
 @property (nonatomic, strong, nullable, readwrite) id<FBControlCoreLogger> logger;
 
 - (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
