@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBXCTestBundleStorage;
 @class TestRunInfo;
 
-@protocol FBXCTestRunRequest;
+@class FBXCTestRunRequest;
 
 typedef NS_ENUM(NSUInteger, FBIDBTestManagerState) {
   //Test has not started running
@@ -79,7 +79,7 @@ typedef NS_ENUM(NSUInteger, FBIDBTestManagerState) {
 
 @end
 
-typedef FBDeltaUpdateManager<FBXCTestDelta *, FBIDBTestOperation *, id<FBXCTestRunRequest>> FBXCTestDeltaUpdateManager;
+typedef FBDeltaUpdateManager<FBXCTestDelta *, FBIDBTestOperation *, FBXCTestRunRequest *> FBXCTestDeltaUpdateManager;
 
 /**
  Manages running tests and returning partial results

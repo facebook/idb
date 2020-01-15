@@ -382,7 +382,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [self.target launchApplication:[configuration withEnvironment:[self.storageManager interpolateEnvironmentReplacements:configuration.environment]]];
 }
 
-- (FBFuture<FBDeltaUpdateSession<FBXCTestDelta *> *> *)xctest_run:(id<FBXCTestRunRequest>)request
+- (FBFuture<FBDeltaUpdateSession<FBXCTestDelta *> *> *)xctest_run:(FBXCTestRunRequest *)request
 {
   return [self.testManager startSession:request];
 }

@@ -14,9 +14,55 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBTestApplicationsPair;
 
 /**
- Serialization-independent protocol for describing how to start a test run, sent over the wire.
+ Describes the necessary information to start a test run.
  */
-@protocol FBXCTestRunRequest <NSObject>
+@interface FBXCTestRunRequest : NSObject
+
+#pragma mark Initializers
+
+/**
+ The Initializer for Logic Tests.
+
+ @param testBundleID the bundle id of the test to run.
+ @param environment environment for the logic test process.
+ @param arguments arguments for the logic test process.
+ @param testsToRun the tests to run.
+ @param testsToSkip the tests to skip
+ @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
+ @return an FBXCTestRunRequest instance.
+ */
++ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout;
+
+/**
+The Initializer for Logic Tests.
+
+ @param testBundleID the bundle id of the test to run.
+ @param appBundleID the bundle id of the application to inject the test bundle into.
+ @param environment environment for the application test process.
+ @param arguments arguments for the application test process.
+ @param testsToRun the tests to run.
+ @param testsToSkip the tests to skip
+ @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
+ @return an FBXCTestRunRequest instance.
+*/
++ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout;
+
+/**
+The Initializer for Logic Tests.
+
+ @param testBundleID the bundle id of the test to run.
+ @param appBundleID the bundle id of the application to automatie.
+ @param testHostAppBundleID the bundle id of the application hosting the test bundle.
+ @param environment environment for the logic test process.
+ @param arguments arguments for the logic test process.
+ @param testsToRun the tests to run.
+ @param testsToSkip the tests to skip
+ @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
+ @return an FBXCTestRunRequest instance.
+*/
++ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout;
+
+#pragma mark Properties
 
 /**
  YES if a logic test, NO otherwise
@@ -71,18 +117,6 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- Value implementation of FBXCTestRunRequest
- */
-@interface FBXCTestRunRequest : NSObject <FBXCTestRunRequest>
-
-/**
- The Designated Initializer.
- */
-- (instancetype)initWithLogicTest:(BOOL)logicTest uiTest:(BOOL)uiTest testBundleID:(NSString *)testBundleID appBundleID:(nullable NSString *)appBundleID testHostAppBundleID:(nullable NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout;
-
-@end
-
-/**
  A Protocol that describes a Test Bundle that is present on the host.
  This holds the notion of an 'installed' test for any given target.
  This knowledge is used to translate an incoming rpc requests into an internal FBTestLaunchConfiguration.
@@ -125,7 +159,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param target the target to run against.
  @return a future that resolves when the test is setup.
  */
-- (FBFuture<NSNull *> *)setupWithRequest:(id<FBXCTestRunRequest>)request target:(id<FBiOSTarget>)target;
+- (FBFuture<NSNull *> *)setupWithRequest:(FBXCTestRunRequest *)request target:(id<FBiOSTarget>)target;
 
 /**
  Creates test config from the thrift request and host applications.
@@ -133,7 +167,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param request the xctest run request
  @param testApps the materialized Applications that are used as a part of testing.
  */
-- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(id<FBXCTestRunRequest>)request testApps:(FBTestApplicationsPair *)testApps;
+- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps;
 
 /**
  Obtains the Test Application Components for the provided target and request
@@ -142,7 +176,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param target the target to obtain applications for.
  @return a Future wrapping the Application Pair.
  */
-- (FBFuture<FBTestApplicationsPair *> *)testAppPairForRequest:(id<FBXCTestRunRequest>)request target:(id<FBiOSTarget>)target;
+- (FBFuture<FBTestApplicationsPair *> *)testAppPairForRequest:(FBXCTestRunRequest *)request target:(id<FBiOSTarget>)target;
 
 @end
 

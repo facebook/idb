@@ -275,17 +275,14 @@ static idb::XctestRunResponse convert_xctest_delta(const FBXCTestDelta *delta, d
   return response;
 }
 
-static id<FBXCTestRunRequest> convert_xctest_request(const idb::XctestRunRequest *request)
+static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *request)
 {
-  BOOL isLogicTest = NO;
-  BOOL isUITest = NO;
-  NSString *appBundleID = nil;
-  NSString *testHostAppBundleID = nil;
   NSNumber *testTimeout = @(request->timeout());
   NSArray<NSString *> *arguments = extract_string_array(request->arguments());
   NSDictionary<NSString *, NSString *> *environment = extract_str_dict(request->environment());
   NSMutableSet<NSString *> *testsToRun = nil;
   NSMutableSet<NSString *> *testsToSkip = NSMutableSet.set;
+  NSString *testBundleID = nsstring_from_c_string(request->test_bundle_id());
 
   if (request->tests_to_run_size() > 0) {
     testsToRun = NSMutableSet.set;
@@ -299,38 +296,25 @@ static id<FBXCTestRunRequest> convert_xctest_request(const idb::XctestRunRequest
     [testsToSkip addObject:nsstring_from_c_string(value)];
   }
 
+
   switch (request->mode().mode_case()) {
     case idb::XctestRunRequest_Mode::kLogic: {
-      isLogicTest = YES;
-      break;
+      return [FBXCTestRunRequest logicTestWithTestBundleID:testBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout];
     }
     case idb::XctestRunRequest_Mode::kApplication: {
       const idb::XctestRunRequest::Application application = request->mode().application();
-      appBundleID = nsstring_from_c_string(application.app_bundle_id());
-      break;
+      NSString *appBundleID = nsstring_from_c_string(application.app_bundle_id());
+      return [FBXCTestRunRequest applicationTestWithTestBundleID:testBundleID appBundleID:appBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout];
     }
     case idb::XctestRunRequest_Mode::kUi: {
       const idb::XctestRunRequest::UI ui = request->mode().ui();
-      appBundleID = nsstring_from_c_string(ui.app_bundle_id());
-      testHostAppBundleID = nsstring_from_c_string(ui.test_host_app_bundle_id());
-      isUITest = YES;
-      break;
+      NSString *appBundleID = nsstring_from_c_string(ui.app_bundle_id());
+      NSString *testHostAppBundleID = nsstring_from_c_string(ui.test_host_app_bundle_id());
+      return [FBXCTestRunRequest uiTestWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout];
     }
     default:
-      break;
+      return nil;
   }
-
-  return [[FBXCTestRunRequest alloc]
-    initWithLogicTest:isLogicTest
-    uiTest:isUITest
-    testBundleID:nsstring_from_c_string(request->test_bundle_id())
-    appBundleID:appBundleID
-    testHostAppBundleID:testHostAppBundleID
-    environment:environment
-    arguments:arguments
-    testsToRun:testsToRun
-    testsToSkip:testsToSkip
-    testTimeout:testTimeout];
 }
 
 static NSPredicate *nspredicate_from_crash_log_query(const idb::CrashLogQuery *request)
@@ -918,7 +902,7 @@ Status FBIDBServiceHandler::xctest_list_tests(ServerContext *context, const idb:
 
 Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::XctestRunRequest *request, grpc::ServerWriter<idb::XctestRunResponse> *response)
 {@autoreleasepool{
-  id<FBXCTestRunRequest> xctestRunRequest = convert_xctest_request(request);
+  FBXCTestRunRequest *xctestRunRequest = convert_xctest_request(request);
   if (xctestRunRequest == nil) {
     return Status(grpc::StatusCode::INTERNAL, "Failed to convert xctest request");
   }

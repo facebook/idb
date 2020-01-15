@@ -422,7 +422,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param request the request to run
  @return a Future that resolves with the xctest session.
  */
-- (FBFuture<FBDeltaUpdateSession<FBXCTestDelta *> *> *)xctest_run:(id<FBXCTestRunRequest>)request;
+- (FBFuture<FBDeltaUpdateSession<FBXCTestDelta *> *> *)xctest_run:(FBXCTestRunRequest *)request;
 
 /**
  Starts the debugserver

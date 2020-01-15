@@ -136,7 +136,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     expiration:@(DEFAULT_CLIENT_TIMEOUT)
     capacity:nil
     logger:target.logger
-    create:^ FBFuture<FBIDBTestOperation *> * (id<FBXCTestRunRequest> request) {
+    create:^ FBFuture<FBIDBTestOperation *> * (FBXCTestRunRequest *request) {
       return [[self
         fetchAndSetupDescriptorForRequest:request bundleStorage:bundleStorage target:target]
         onQueue:target.workQueue fmap:^(id<FBXCTestDescriptor> descriptor) {
@@ -171,7 +171,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
 #pragma mark Private Methods
 
-+ (FBFuture<id<FBXCTestDescriptor>> *)fetchAndSetupDescriptorForRequest:(id<FBXCTestRunRequest>)request bundleStorage:(FBXCTestBundleStorage *)bundleStorage target:(id<FBiOSTarget>)target
++ (FBFuture<id<FBXCTestDescriptor>> *)fetchAndSetupDescriptorForRequest:(FBXCTestRunRequest *)request bundleStorage:(FBXCTestBundleStorage *)bundleStorage target:(id<FBiOSTarget>)target
 {
   NSError *error = nil;
   id<FBXCTestDescriptor> testDescriptor = [bundleStorage testDescriptorWithID:request.testBundleID error:&error];
@@ -231,7 +231,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     }];
 }
 
-+ (FBFuture<FBIDBTestOperation *> *)startLogicTest:(id<FBXCTestRunRequest>)request testDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
++ (FBFuture<FBIDBTestOperation *> *)startLogicTest:(FBXCTestRunRequest *)request testDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
 {
   return [[FBXCTestShimConfiguration
     defaultShimConfiguration]
@@ -271,7 +271,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     }];
 }
 
-+ (FBFuture<FBIDBTestOperation *> *)startApplicationBasedTest:(id<FBXCTestRunRequest>)request testDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target
++ (FBFuture<FBIDBTestOperation *> *)startApplicationBasedTest:(FBXCTestRunRequest *)request testDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target
 {
   return [[testDescriptor
     testAppPairForRequest:request target:target]

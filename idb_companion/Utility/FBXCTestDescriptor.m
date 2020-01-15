@@ -10,10 +10,62 @@
 #import "FBIDBError.h"
 #import "FBTestApplicationsPair.h"
 
+@interface FBXCTestRunRequest_LogicTest : FBXCTestRunRequest
+
+@end
+
+@implementation FBXCTestRunRequest_LogicTest
+
+- (BOOL)isLogicTest
+{
+  return YES;
+}
+
+- (BOOL)isUITest
+{
+  return NO;
+}
+
+@end
+
+@interface FBXCTestRunRequest_AppTest : FBXCTestRunRequest
+
+@end
+
+@implementation FBXCTestRunRequest_AppTest
+
+- (BOOL)isLogicTest
+{
+  return NO;
+}
+
+- (BOOL)isUITest
+{
+  return NO;
+}
+
+@end
+
+@interface FBXCTestRunRequest_UITest : FBXCTestRunRequest
+
+@end
+
+@implementation FBXCTestRunRequest_UITest
+
+- (BOOL)isLogicTest
+{
+  return NO;
+}
+
+- (BOOL)isUITest
+{
+  return YES;
+}
+
+@end
+
 @implementation FBXCTestRunRequest
 
-@synthesize isLogicTest = _isLogicTest;
-@synthesize isUITest = _isUITest;
 @synthesize testBundleID = _testBundleID;
 @synthesize appBundleID = _appBundleID;
 @synthesize testHostAppBundleID = _testHostAppBundleID;
@@ -24,15 +76,30 @@
 @synthesize testTimeout = _testTimeout;
 
 
-- (instancetype)initWithLogicTest:(BOOL)logicTest uiTest:(BOOL)uiTest testBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout
+#pragma mark Initializers
+
++ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout
+{
+  return [[FBXCTestRunRequest_LogicTest alloc] initWithTestBundleID:testBundleID appBundleID:nil testHostAppBundleID:nil environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout];
+}
+
++ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout
+{
+  return [[FBXCTestRunRequest_AppTest alloc] initWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:nil environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout];
+}
+
++ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout
+{
+  return [[FBXCTestRunRequest_UITest alloc] initWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout];
+}
+
+- (instancetype)initWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _isLogicTest = logicTest;
-  _isUITest = uiTest;
   _testBundleID = testBundleID;
   _appBundleID = appBundleID;
   _testHostAppBundleID = testHostAppBundleID;
@@ -43,6 +110,16 @@
   _testTimeout = testTimeout;
 
   return self;
+}
+
+- (BOOL)isLogicTest
+{
+  return NO;
+}
+
+- (BOOL)isUITest
+{
+  return NO;
 }
 
 @end
@@ -123,7 +200,7 @@
 
 #pragma mark Public
 
-- (FBFuture<NSNull *> *)setupWithRequest:(id<FBXCTestRunRequest>)request target:(id<FBiOSTarget>)target
+- (FBFuture<NSNull *> *)setupWithRequest:(FBXCTestRunRequest *)request target:(id<FBiOSTarget>)target
 {
   if (request.isLogicTest) {
     //Logic tests don't use an app to run
@@ -135,7 +212,7 @@
   return [[FBXCTestBootstrapDescriptor killAllRunningApplications:target] mapReplace:NSNull.null];
 }
 
-- (FBFuture<FBTestApplicationsPair *> *)testAppPairForRequest:(id<FBXCTestRunRequest>)request target:(id<FBiOSTarget>)target
+- (FBFuture<FBTestApplicationsPair *> *)testAppPairForRequest:(FBXCTestRunRequest *)request target:(id<FBiOSTarget>)target
 {
   if (request.isLogicTest) {
     return [FBFuture futureWithResult:[[FBTestApplicationsPair alloc] initWithApplicationUnderTest:nil testHostApp:nil]];
@@ -169,7 +246,7 @@
     }];
 }
 
-- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(id<FBXCTestRunRequest>)request testApps:(FBTestApplicationsPair *)testApps
+- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps
 {
   if (request.isUITest) {
     FBApplicationLaunchConfiguration *runnerLaunchConfig = [self appLaunchConfigForBundleID:testApps.testHostApp.bundle.identifier env:request.environment args:request.arguments];
@@ -245,13 +322,13 @@
 
 #pragma mark Public Methods
 
-- (FBFuture<NSNull *> *)setupWithRequest:(id<FBXCTestRunRequest>)request target:(id<FBiOSTarget>)target
+- (FBFuture<NSNull *> *)setupWithRequest:(FBXCTestRunRequest *)request target:(id<FBiOSTarget>)target
 {
   _targetAuxillaryDirectory = target.auxillaryDirectory;
   return FBFuture.empty;
 }
 
-- (FBFuture<FBTestApplicationsPair *> *)testAppPairForRequest:(id<FBXCTestRunRequest>)request target:(id<FBiOSTarget>)target
+- (FBFuture<FBTestApplicationsPair *> *)testAppPairForRequest:(FBXCTestRunRequest *)request target:(id<FBiOSTarget>)target
 {
   return [FBFuture futureWithResult:[[FBTestApplicationsPair alloc] initWithApplicationUnderTest:nil testHostApp:nil]];
 }
@@ -267,7 +344,7 @@
     launchMode:FBApplicationLaunchModeFailIfRunning];
 }
 
-- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(id<FBXCTestRunRequest>)request testApps:(FBTestApplicationsPair *)testApps
+- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps
 {
   FBApplicationLaunchConfiguration *launchConfig = [self appLaunchConfigForBundleID:request.appBundleID env:request.environment args:request.arguments];
   NSString *resultBundleName = [NSString stringWithFormat:@"resultbundle_%@", NSUUID.UUID.UUIDString];
