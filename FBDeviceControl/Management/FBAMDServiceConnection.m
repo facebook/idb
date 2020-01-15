@@ -43,6 +43,7 @@
   void *buffer = malloc(size);
   size_t readBytes = (size_t) self.calls.ServiceConnectionReceive(self.connection, buffer, size);
   if (readBytes < size) {
+    free(buffer);
     return [[FBDeviceControlError
       describeFormat:@"Failed to receive %zu bytes from AMDServiceConnectionReceive", readBytes]
       fail:error];
