@@ -26,12 +26,10 @@
 		D7D6DF8F2265DE4E00B01F14 /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */; };
 		D7D6DF9A2265DF2B00B01F14 /* idb.proto in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DF992265DF2B00B01F14 /* idb.proto */; };
 		D7D6DF9D2265E04800B01F14 /* libidbGRPC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF942265DF2200B01F14 /* libidbGRPC.a */; };
-		D7D6DFF62265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFAA2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m */; };
 		D7D6DFF72265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFAB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h */; };
 		D7D6DFF82265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFAC2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h */; };
 		D7D6DFFA2265F0DF00B01F14 /* FBDeltaUpdateManager.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFAE2265F0DF00B01F14 /* FBDeltaUpdateManager.m */; };
 		D7D6DFFB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFAF2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.m */; };
-		D7D6DFFC2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFB02265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h */; };
 		D7D6DFFD2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFB12265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m */; };
 		D7D6DFFE2265F0DF00B01F14 /* FBDeltaUpdateManager.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFB22265F0DF00B01F14 /* FBDeltaUpdateManager.h */; };
 		D7D6E0052265F0DF00B01F14 /* FBIDBError.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */; };
@@ -112,7 +110,7 @@
 		D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FBIDBCompanionServer.mm; sourceTree = "<group>"; };
 		D720AE6F23CE1B5F0040F01B /* libgrpc++.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libgrpc++.dylib"; path = "/usr/local/lib/libgrpc++.dylib"; sourceTree = "<group>"; };
 		D720AE7123CE1B690040F01B /* libgrpc.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgrpc.dylib; path = /usr/local/lib/libgrpc.dylib; sourceTree = "<group>"; };
-		D720AE7323CE1D6E0040F01B /* libcares.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcares.2.dylib; path = "/usr/local/lib/libcares.2.dylib"; sourceTree = "<group>"; };
+		D720AE7323CE1D6E0040F01B /* libcares.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcares.2.dylib; path = /usr/local/lib/libcares.2.dylib; sourceTree = "<group>"; };
 		D720AE7723CE1DF50040F01B /* libz.1.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.1.tbd; path = /usr/lib/libz.1.tbd; sourceTree = SDKROOT; };
 		D720AE7823CE1E140040F01B /* libz.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.1.dylib; path = /usr/lib/libz.1.dylib; sourceTree = "<group>"; };
 		D72CB1C32277837000265160 /* FBDataDownloadInput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDataDownloadInput.h; sourceTree = "<group>"; };
@@ -129,12 +127,10 @@
 		D7D6DFA22265E76200B01F14 /* libgrpc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgrpc.a; path = /usr/local/lib/libgrpc.a; sourceTree = "<group>"; };
 		D7D6DFA32265E76200B01F14 /* libprotobuf.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libprotobuf.a; path = /usr/local/lib/libprotobuf.a; sourceTree = "<group>"; };
 		D7D6DFA42265E76200B01F14 /* libgrpc++.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libgrpc++.a"; path = "/usr/local/lib/libgrpc++.a"; sourceTree = "<group>"; };
-		D7D6DFAA2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBDeltaUpdateManager+Video.m"; sourceTree = "<group>"; };
 		D7D6DFAB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBDeltaUpdateManager+XCTest.h"; sourceTree = "<group>"; };
 		D7D6DFAC2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBDeltaUpdateManager+Instruments.h"; sourceTree = "<group>"; };
 		D7D6DFAE2265F0DF00B01F14 /* FBDeltaUpdateManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeltaUpdateManager.m; sourceTree = "<group>"; };
 		D7D6DFAF2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBDeltaUpdateManager+XCTest.m"; sourceTree = "<group>"; };
-		D7D6DFB02265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBDeltaUpdateManager+Video.h"; sourceTree = "<group>"; };
 		D7D6DFB12265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBDeltaUpdateManager+Instruments.m"; sourceTree = "<group>"; };
 		D7D6DFB22265F0DF00B01F14 /* FBDeltaUpdateManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeltaUpdateManager.h; sourceTree = "<group>"; };
 		D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBError.h; sourceTree = "<group>"; };
@@ -253,8 +249,6 @@
 			children = (
 				D7D6DFAC2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h */,
 				D7D6DFB12265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m */,
-				D7D6DFB02265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h */,
-				D7D6DFAA2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m */,
 				D7D6DFAB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h */,
 				D7D6DFAF2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.m */,
 				D7D6DFB22265F0DF00B01F14 /* FBDeltaUpdateManager.h */,
@@ -340,7 +334,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				D7D6DFF82265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.h in Headers */,
-				D7D6DFFC2265F0DF00B01F14 /* FBDeltaUpdateManager+Video.h in Headers */,
 				D7D6DFF72265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.h in Headers */,
 				AAAD2B9C22819C0F0043D2DE /* FBBootManager.h in Headers */,
 				D7D6DFFE2265F0DF00B01F14 /* FBDeltaUpdateManager.h in Headers */,
@@ -466,7 +459,6 @@
 			files = (
 				D7107CF822E708C00007FF32 /* FBIDBCompanionServer.mm in Sources */,
 				D7D6DFFD2265F0DF00B01F14 /* FBDeltaUpdateManager+Instruments.m in Sources */,
-				D7D6DFF62265F0DF00B01F14 /* FBDeltaUpdateManager+Video.m in Sources */,
 				D7D6DFFB2265F0DF00B01F14 /* FBDeltaUpdateManager+XCTest.m in Sources */,
 				D7D6DFFA2265F0DF00B01F14 /* FBDeltaUpdateManager.m in Sources */,
 				D7D6E00F2265F0DF00B01F14 /* FBIDBCommandExecutor.m in Sources */,
