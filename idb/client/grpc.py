@@ -146,7 +146,7 @@ APPROVE_MAP: Dict[str, Any] = {
 }
 
 
-CLIENT_METADATA: LoggingMetadata = {"component": "client", "rpc_protocol": "grpc"}
+CLIENT_METADATA: LoggingMetadata = {"component": "client"}
 
 
 def log_and_handle_exceptions(func):  # pyre-ignore
