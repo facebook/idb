@@ -1124,7 +1124,7 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
     response.set_state(idb::InstrumentsRunResponse::State::InstrumentsRunResponse_State_POST_PROCESSING);
     stream->Write(response);
   });
-  NSURL *processed = [[FBInstrumentsManager postProcess:postProcessArguments traceDir:operation.traceDir queue:queue logger:logger] block:&error];
+  NSURL *processed = [[FBInstrumentsOperation postProcess:postProcessArguments traceDir:operation.traceDir queue:queue logger:logger] block:&error];
   pthread_mutex_lock(&mutex);
   finished_writing = YES;
   pthread_mutex_unlock(&mutex);

@@ -189,6 +189,31 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
   ];
 }
 
++ (FBFuture<NSURL *> *)postProcess:(NSArray<NSString *> *)arguments traceDir:(NSURL *)traceDir queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  if (!arguments || arguments.count == 0) {
+    return [FBFuture futureWithResult:traceDir];
+  }
+  NSURL *outputTraceFile = [[traceDir URLByDeletingLastPathComponent] URLByAppendingPathComponent:arguments[2]];
+  NSMutableArray<NSString *> *launchArguments = [@[arguments[1], traceDir.path, @"-o", outputTraceFile.path] mutableCopy];
+  if (arguments.count > 3) {
+    [launchArguments addObjectsFromArray:[arguments subarrayWithRange:(NSRange){3, [arguments count] - 3}]];
+  }
+
+  [logger logFormat:@"Starting post processing | Launch path: %@ | Arguments: %@", arguments[0], [FBCollectionInformation oneLineDescriptionFromArray:launchArguments]];
+  return [[[[[[[[FBTaskBuilder
+    withLaunchPath:arguments[0]]
+    withArguments:launchArguments]
+    withStdInConnected]
+    withStdOutToLogger:logger]
+    withStdErrToLogger:logger]
+    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
+    runUntilCompletion]
+    onQueue:queue map:^(id _) {
+      return outputTraceFile;
+    }];
+}
+
 #pragma mark FBiOSTargetContinuation
 
 - (FBiOSTargetFutureType)futureType

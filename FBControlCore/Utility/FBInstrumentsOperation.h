@@ -76,6 +76,17 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments;
  */
 - (FBFuture<NSURL *> *)stop;
 
+/**
+ Post-process an instruments trace.
+
+ @param arguments the arguments to post-process with, if relevant.
+ @param traceFile the file to apply.
+ @param queue the queue to serialize on.
+ @param logger the logger to log to.
+ @return a delta that post-processes.
+ */
++ (FBFuture<NSURL *> *)postProcess:(nullable NSArray<NSString *> *)arguments traceDir:(NSURL *)traceDir queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
+
 @end
 
 NS_ASSUME_NONNULL_END

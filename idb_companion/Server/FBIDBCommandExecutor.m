@@ -45,7 +45,6 @@
   _temporaryDirectory = temporaryDirectory;
   _ports = ports;
   _logger = logger;
-  _instrumentsManager = [FBDeltaUpdateManager instrumentsManagerWithTarget:target];
   _testManager = [FBDeltaUpdateManager xctestManagerWithTarget:self.target bundleStorage:storageManager.xctest temporaryDirectory:temporaryDirectory];
 
   return self;

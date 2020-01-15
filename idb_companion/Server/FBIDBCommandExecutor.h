@@ -10,7 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
-#import "FBDeltaUpdateManager+Instruments.h"
 #import "FBDeltaUpdateManager+XCTest.h"
 #import "FBXCTestDescriptor.h"
 
@@ -50,11 +49,6 @@ NS_ASSUME_NONNULL_BEGIN
  The xctest manager
  */
 @property (nonatomic, strong, readonly) FBXCTestDeltaUpdateManager *testManager;
-
-/**
- The instruments manager
- */
-@property (nonatomic, strong, readonly) FBInstrumentsManager *instrumentsManager;
 
 /**
  The running debugserver
