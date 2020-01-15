@@ -165,7 +165,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Installs a dSYM from a file path.
 
- @param input the input to pipe.
+ @param filePath the input to pipe.
  @return A future that resolves with the dSYM Name
  */
 - (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath;

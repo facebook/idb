@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer.
 
- @param userDefalts the user defaults to use.
+ @param userDefaults the user defaults to use.
  @return a new logger instance.
  */
 + (instancetype)loggerWithUserDefaults:(NSUserDefaults *)userDefaults;

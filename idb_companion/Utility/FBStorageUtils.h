@@ -23,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
  Finds files with given extensions and buckets them.
  Note this doesn't recurse into subdirectories.
 
- @param extension File extensions to find e.g. doc / zip / ...
+ @param extensions File extensions to find e.g. doc / zip / ...
  @param directory The directory to search in.
  @param error Error set if there was not exactly one matching file
  @return A mapping of extensions to found files.
@@ -57,7 +57,6 @@ NS_ASSUME_NONNULL_BEGIN
  Finds a unique file within a directory.
 
  @param directory the directory to search in.
- @param queue the queue to use.
  @return a the URL if a unique file could be foudn.
  */
 + (nullable NSURL *)findUniqueFileInDirectory:(NSURL *)directory error:(NSError **)error;

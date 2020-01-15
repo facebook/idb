@@ -80,7 +80,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments;
  Post-process an instruments trace.
 
  @param arguments the arguments to post-process with, if relevant.
- @param traceFile the file to apply.
+ @param traceDir Locaiton to place trace files.
  @param queue the queue to serialize on.
  @param logger the logger to log to.
  @return a delta that post-processes.

@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The designated initializer.
 
- @param filepath the filepath to write the updates to
+ @param filePath the filepath to write the updates to
  @param logger the logger to log to.
  @return a new notifier instance.
  */
