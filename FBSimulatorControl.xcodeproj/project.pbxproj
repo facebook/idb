@@ -318,8 +318,6 @@
 		AA861B6E1E5F8F270080C86B /* FBSimulatorXCTestCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AA861B6C1E5F8F270080C86B /* FBSimulatorXCTestCommands.m */; };
 		AA861B711E5F920B0080C86B /* FBSimulatorLifecycleCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AA861B6F1E5F920B0080C86B /* FBSimulatorLifecycleCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA861B721E5F920B0080C86B /* FBSimulatorLifecycleCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AA861B701E5F920B0080C86B /* FBSimulatorLifecycleCommands.m */; };
-		AA8680A12241176B00D35D18 /* FBConsumableXCTestReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA86809F2241176B00D35D18 /* FBConsumableXCTestReporter.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA8680A22241176B00D35D18 /* FBConsumableXCTestReporter.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8680A02241176B00D35D18 /* FBConsumableXCTestReporter.m */; };
 		AA89546B1D5C7400006BD815 /* FBControlCoreFrameworkLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8954691D5C7400006BD815 /* FBControlCoreFrameworkLoader.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA89546C1D5C7400006BD815 /* FBControlCoreFrameworkLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = AA89546A1D5C7400006BD815 /* FBControlCoreFrameworkLoader.m */; };
 		AA8B2D921F4AF7C600E0393B /* FBTestApplicationLaunchStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8B2D901F4AF7C600E0393B /* FBTestApplicationLaunchStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -3238,7 +3236,6 @@
 				EE4F0D8D1C91B82700608E89 /* XCTestBootstrapError.h in Headers */,
 				AA6062F21EE4B59900E2EFEE /* FBLogicTestRunStrategy.h in Headers */,
 				EE2586F11FB06D9C00E7526E /* FBMacDevice.h in Headers */,
-				AA8680A12241176B00D35D18 /* FBConsumableXCTestReporter.h in Headers */,
 				AAE5A08E1EDF926100A1A811 /* FBXCTestReporterAdapter.h in Headers */,
 				EE1277601C9338D700DE52A1 /* FBTestManager.h in Headers */,
 				AAEA64751CDB31C600194B6B /* FBTestManagerTestReporter.h in Headers */,
@@ -3891,7 +3888,6 @@
 				EE2586FE1FB072F700E7526E /* FBMacTestPreparationStrategy.m in Sources */,
 				AAE5A0821EDF8C9C00A1A811 /* FBXCTestLogger.m in Sources */,
 				AA6062F31EE4B59900E2EFEE /* FBLogicTestRunStrategy.m in Sources */,
-				AA8680A22241176B00D35D18 /* FBConsumableXCTestReporter.m in Sources */,
 				EE4F0D881C91B82700608E89 /* FBXCTestRunStrategy.m in Sources */,
 				EE2586F01FB06D9C00E7526E /* FBMacDevice.m in Sources */,
 				EE4F0D7A1C91B82700608E89 /* FBTestBundle.m in Sources */,
