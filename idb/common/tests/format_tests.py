@@ -4,8 +4,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import json
-
 from idb.common.format import (
     installed_app_info_from_json,
     installed_test_info_from_json,

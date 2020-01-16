@@ -254,7 +254,7 @@ class XctestRunLogicCommand(CommonRunXcTestCommand):
             tests = tests[:-1]
             # the companion is expecting a set of size one for the logic tests,
             # that is why we parse it here
-            return set([tests])
+            return {tests}
         return None
 
 

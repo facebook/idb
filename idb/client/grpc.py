@@ -436,7 +436,7 @@ class GrpcStubClient(IdbClientBase):
         response = await self.stub.xctest_list_tests(
             XctestListTestsRequest(bundle_name=test_bundle_id, app_path=app_path)
         )
-        return [name for name in response.names]
+        return list(response.names)
 
     async def list_xctests(self) -> List[InstalledTestInfo]:
         response = await self.stub.xctest_list_bundles(XctestListBundlesRequest())
