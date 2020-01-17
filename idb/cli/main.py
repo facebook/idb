@@ -99,6 +99,13 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         epilog="See Also: https://www.fbidb.io/docs/guided-tour",
         formatter_class=argparse.RawTextHelpFormatter,
     )
+    parser.add_argument(
+        "--log",
+        dest="log_level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default="WARNING",
+        help="Set the logging level",
+    )
     commands: List[Command] = [
         DescribeCommand(),
         AppInstallCommand(),
@@ -202,8 +209,11 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         ),
     ]
     commands.extend(plugin.get_commands())
-    sorted_commands = sorted(commands, key=lambda command: command.name)
-    root_command = CommandGroup("root_command", "", sorted_commands)
+    root_command = CommandGroup(
+        name="root_command",
+        description="",
+        commands=sorted(commands, key=lambda command: command.name),
+    )
     root_command.add_parser_arguments(parser)
 
     # Parse input and run

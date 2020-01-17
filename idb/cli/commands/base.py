@@ -26,10 +26,10 @@ class BaseCommand(Command, metaclass=ABCMeta):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--log",
-            dest="log_level",
+            dest="log_level_deprecated",
             choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-            default="WARNING",
-            help="Set the logging level",
+            default=None,
+            help="Set the logging level. Deprecated: Please place --log before the command name",
         )
         parser.add_argument(
             "--json",
@@ -39,10 +39,15 @@ class BaseCommand(Command, metaclass=ABCMeta):
         )
 
     async def run(self, args: Namespace) -> None:
-        # Set the log level on the base logger
-        logging.getLogger().setLevel(args.log_level)
+        # In order to keep the argparse compatible with old invocations
+        # We should use the --log after command if set, otherwise use the pre-command --log
+        logging.getLogger().setLevel(args.log_level_deprecated or args.log_level)
         name = self.__class__.__name__
         self.logger.debug(f"{name} command run with: {args}")
+        if args.log_level_deprecated is not None:
+            self.logger.warning(
+                f"Setting --log after the command is deprecated, please place it at the start of the invocation"
+            )
         async with log_call(
             name=name, metadata=plugin.resolve_metadata(logger=self.logger)
         ):

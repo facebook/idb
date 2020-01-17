@@ -302,6 +302,8 @@ class TestParser(TestCase):
         namespace = Namespace()
         # pyre-fixme[16]: `Namespace` has no attribute `log_level`.
         namespace.log_level = "WARNING"
+        # pyre-fixme[16]: `Namespace` has no attribute `log_level_deprecated`.
+        namespace.log_level_deprecated = None
         # pyre-fixme[16]: `Namespace` has no attribute `root_command`.
         namespace.root_command = "xctest"
         # pyre-fixme[16]: `Namespace` has no attribute `xctest`.
@@ -428,6 +430,8 @@ class TestParser(TestCase):
             namespace.daemon_grpc_port = grpc_port
             # pyre-fixme[16]: `Namespace` has no attribute `log_level`.
             namespace.log_level = "WARNING"
+            # pyre-fixme[16]: `Namespace` has no attribute `log_level_deprecated`.
+            namespace.log_level_deprecated = None
             # pyre-fixme[16]: `Namespace` has no attribute `root_command`.
             namespace.root_command = "daemon"
             # pyre-fixme[16]: `Namespace` has no attribute `json`.
@@ -454,6 +458,8 @@ class TestParser(TestCase):
             namespace = Namespace()
             # pyre-fixme[16]: `Namespace` has no attribute `log_level`.
             namespace.log_level = "WARNING"
+            # pyre-fixme[16]: `Namespace` has no attribute `log_level_deprecated`.
+            namespace.log_level_deprecated = None
             # pyre-fixme[16]: `Namespace` has no attribute `root_command`.
             namespace.root_command = "log"
             # pyre-fixme[16]: `Namespace` has no attribute `udid`.
@@ -479,6 +485,8 @@ class TestParser(TestCase):
             namespace = Namespace()
             # pyre-fixme[16]: `Namespace` has no attribute `log_level`.
             namespace.log_level = "WARNING"
+            # pyre-fixme[16]: `Namespace` has no attribute `log_level_deprecated`.
+            namespace.log_level_deprecated = None
             # pyre-fixme[16]: `Namespace` has no attribute `root_command`.
             namespace.root_command = "log"
             # pyre-fixme[16]: `Namespace` has no attribute `udid`.
@@ -535,6 +543,8 @@ class TestParser(TestCase):
             namespace = Namespace()
             # pyre-fixme[16]: `Namespace` has no attribute `log_level`.
             namespace.log_level = "WARNING"
+            # pyre-fixme[16]: `Namespace` has no attribute `log_level_deprecated`.
+            namespace.log_level_deprecated = None
             # pyre-fixme[16]: `Namespace` has no attribute `root_command`.
             namespace.root_command = "record-video"
             # pyre-fixme[16]: `Namespace` has no attribute `udid`.
