@@ -736,7 +736,6 @@ class GrpcClient(IdbClient):
         self.target_udid = target_udid
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
         self.local_targets_manager = LocalTargetsManager(logger=self.logger)
-        self.companion_info: Optional[CompanionInfo] = None
 
     async def spawn_notifier(self) -> None:
         if platform == "darwin" and os.path.exists("/usr/local/bin/idb_companion"):
@@ -757,11 +756,8 @@ class GrpcClient(IdbClient):
             companion_info = await self.spawn_companion(
                 target_udid=none_throws(self.target_udid)
             )
-            if companion_info:
-                self.companion_info = companion_info
-            else:
+            if companion_info is None:
                 raise e
-        self.companion_info = companion_info
         async with GrpcStubClient.build(
             host=companion_info.host,
             port=companion_info.port,
