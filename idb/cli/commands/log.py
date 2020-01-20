@@ -7,12 +7,12 @@
 from argparse import REMAINDER, ArgumentParser, Namespace
 from typing import List, Optional
 
-from idb.cli.commands.base import TargetCommand
+from idb.cli.commands.base import CompanionCommand
 from idb.common.signal import signal_handler_event
-from idb.common.types import IdbManagementClient
+from idb.common.types import IdbClient
 
 
-class LogCommand(TargetCommand):
+class LogCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Obtain logs from the target"
@@ -46,9 +46,7 @@ log stream --predicate examples:
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         async for chunk in client.tail_logs(
             stop=signal_handler_event("log"),
             arguments=self.normalise_log_arguments(args.log_arguments),
@@ -68,7 +66,7 @@ log stream --predicate examples:
         return log_arguments
 
 
-class CompanionLogCommand(TargetCommand):
+class CompanionLogCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Obtain logs from the companion"
@@ -77,9 +75,7 @@ class CompanionLogCommand(TargetCommand):
     def name(self) -> str:
         return "log"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         async for chunk in client.tail_companion_logs(stop=signal_handler_event("log")):
             print(chunk, end="")
         print("")

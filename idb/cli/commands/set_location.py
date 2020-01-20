@@ -6,11 +6,11 @@
 
 from argparse import ArgumentParser, Namespace
 
-from idb.cli.commands.base import TargetCommand
-from idb.common.types import IdbManagementClient
+from idb.cli.commands.base import CompanionCommand
+from idb.common.types import IdbClient
 
 
-class SetLocationCommand(TargetCommand):
+class SetLocationCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Set a simulator's location"
@@ -24,7 +24,5 @@ class SetLocationCommand(TargetCommand):
         parser.add_argument("longitude", help="Longitude to set", type=float)
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         await client.set_location(args.latitude, args.longitude)

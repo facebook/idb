@@ -10,8 +10,8 @@ from abc import abstractmethod
 from argparse import ArgumentParser, Namespace
 from typing import Any, List, NamedTuple, Optional, Tuple
 
-from idb.cli.commands.base import TargetCommand
-from idb.common.types import IdbManagementClient
+from idb.cli.commands.base import CompanionCommand
+from idb.common.types import IdbClient
 
 
 class NoBundleIdentifierProvidedException(BaseException):
@@ -68,7 +68,7 @@ def _convert_args(args: Namespace) -> Tuple[Namespace, str]:
     return (args, bundle_id)
 
 
-class FSCommand(TargetCommand):
+class FSCommand(CompanionCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--bundle-id",
@@ -81,13 +81,11 @@ class FSCommand(TargetCommand):
 
     @abstractmethod
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbManagementClient
+        self, bundle_id: str, args: Namespace, client: IdbClient
     ) -> None:
         pass
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         (args, bundle_id) = _convert_args(args)
         return await self.run_with_bundle(bundle_id=bundle_id, args=args, client=client)
 
@@ -112,7 +110,7 @@ class FSListCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbManagementClient
+        self, bundle_id: str, args: Namespace, client: IdbClient
     ) -> None:
         paths = await client.ls(bundle_id=bundle_id, path=args.path)
         if args.json:
@@ -138,7 +136,7 @@ class FSMkdirCommand(FSCommand):
         )
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbManagementClient
+        self, bundle_id: str, args: Namespace, client: IdbClient
     ) -> None:
         await client.mkdir(bundle_id=bundle_id, path=args.path)
 
@@ -171,7 +169,7 @@ class FSMoveCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbManagementClient
+        self, bundle_id: str, args: Namespace, client: IdbClient
     ) -> None:
         await client.mv(bundle_id=bundle_id, src_paths=args.src, dest_path=args.dst)
 
@@ -199,7 +197,7 @@ class FSRemoveCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbManagementClient
+        self, bundle_id: str, args: Namespace, client: IdbClient
     ) -> None:
         await client.rm(bundle_id=bundle_id, paths=args.path)
 
@@ -228,7 +226,7 @@ class FSPushCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbManagementClient
+        self, bundle_id: str, args: Namespace, client: IdbClient
     ) -> None:
         return await client.push(
             bundle_id=bundle_id,
@@ -254,14 +252,14 @@ class FSPullCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbManagementClient
+        self, bundle_id: str, args: Namespace, client: IdbClient
     ) -> None:
         await client.pull(
             bundle_id=bundle_id, src_path=args.src, dest_path=os.path.abspath(args.dst)
         )
 
 
-class DeprecatedPushCommand(TargetCommand):
+class DeprecatedPushCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Copy file(s) from local machine to target"
@@ -287,16 +285,14 @@ class DeprecatedPushCommand(TargetCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         self.logger.warning(f"'push' is deprecated, please use 'file push' instead")
         return await FSPushCommand().run_with_bundle(
             bundle_id=args.bundle_id, args=args, client=client
         )
 
 
-class DeprecatedPullCommand(TargetCommand):
+class DeprecatedPullCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Copy a file inside an application's container"
@@ -313,9 +309,7 @@ class DeprecatedPullCommand(TargetCommand):
         parser.add_argument("dst", help="Local destination path", type=str)
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         self.logger.warning(f"'pull' is deprecated, please use 'file pull' instead")
         return await FSPullCommand().run_with_bundle(
             bundle_id=args.bundle_id, args=args, client=client

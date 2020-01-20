@@ -8,13 +8,44 @@ import logging
 import os
 from abc import ABCMeta, abstractmethod
 from argparse import ArgumentParser, Namespace
+from typing import AsyncContextManager
 
 from idb.client.grpc import IdbManagementClient as IdbManagementClientGrpc
 from idb.common import plugin
 from idb.common.command import Command
 from idb.common.constants import DEFAULT_DAEMON_GRPC_PORT, DEFAULT_DAEMON_HOST
 from idb.common.logging import log_call
-from idb.common.types import IdbManagementClient
+from idb.common.types import IdbClient, IdbManagementClient
+from idb.utils.contextlib import asynccontextmanager
+
+
+@asynccontextmanager
+async def _get_client(
+    args: Namespace, logger: logging.Logger
+) -> AsyncContextManager[IdbManagementClient]:
+    udid = vars(args).get("udid")
+    yield IdbManagementClientGrpc(target_udid=udid, logger=logger)
+
+
+def _add_common_client_arguments(
+    parser: ArgumentParser, logger: logging.Logger
+) -> None:
+    plugin.on_connecting_parser(parser=parser, logger=logger)
+    parser.add_argument(
+        "--daemon-host",
+        help="Host the daemon is running on",
+        type=str,
+        default=DEFAULT_DAEMON_HOST,
+    )
+    parser.add_argument(
+        "--force", help="Kill any implicitly running daemons", action="store_true"
+    )
+    parser.add_argument(
+        "--daemon-grpc-port",
+        help="Port the daemon is running it's grpc interface on",
+        type=int,
+        default=DEFAULT_DAEMON_GRPC_PORT,
+    )
 
 
 class BaseCommand(Command, metaclass=ABCMeta):
@@ -58,43 +89,38 @@ class BaseCommand(Command, metaclass=ABCMeta):
         raise Exception("subclass")
 
 
-class ConnectingCommand(BaseCommand):
+# A command that vends the IdbClientBase interface.
+class CompanionCommand(BaseCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
-        plugin.on_connecting_parser(parser=parser, logger=self.logger)
-        parser.add_argument(
-            "--daemon-host",
-            help="Host the daemon is running on",
-            type=str,
-            default=DEFAULT_DAEMON_HOST,
-        )
-        parser.add_argument(
-            "--force", help="Kill any implicitly running daemons", action="store_true"
-        )
-        parser.add_argument(
-            "--daemon-grpc-port",
-            help="Port the daemon is running it's grpc interface on",
-            type=int,
-            default=DEFAULT_DAEMON_GRPC_PORT,
-        )
-        super().add_parser_arguments(parser)
-
-    async def _run_impl(self, args: Namespace) -> None:
-        udid = vars(args).get("udid")
-        client = IdbManagementClientGrpc(target_udid=udid, logger=self.logger)
-        await self.run_with_client(args=args, client=client)
-
-    @abstractmethod
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
-        pass
-
-
-class TargetCommand(ConnectingCommand):
-    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        _add_common_client_arguments(parser=parser, logger=self.logger)
         parser.add_argument(
             "--udid",
             help="Udid of target, can also be set with the IDB_UDID env var",
             default=os.environ.get("IDB_UDID"),
         )
         super().add_parser_arguments(parser)
+
+    async def _run_impl(self, args: Namespace) -> None:
+        async with _get_client(args=args, logger=self.logger) as client:
+            await self.run_with_client(args=args, client=client)
+
+    @abstractmethod
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+        pass
+
+
+# A command that vends the IdbClient interface
+class ManagementCommand(BaseCommand):
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        _add_common_client_arguments(parser=parser, logger=self.logger)
+        super().add_parser_arguments(parser)
+
+    async def _run_impl(self, args: Namespace) -> None:
+        async with _get_client(args=args, logger=self.logger) as client:
+            await self.run_with_client(args=args, client=client)
+
+    @abstractmethod
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
+        pass

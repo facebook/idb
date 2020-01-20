@@ -6,11 +6,11 @@
 
 from argparse import ArgumentParser, Namespace
 
-from idb.cli.commands.base import TargetCommand
-from idb.common.types import IdbManagementClient
+from idb.cli.commands.base import CompanionCommand
+from idb.common.types import IdbClient
 
 
-class DebugServerStartCommand(TargetCommand):
+class DebugServerStartCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Start the Debug Server"
@@ -23,14 +23,12 @@ class DebugServerStartCommand(TargetCommand):
         super().add_parser_arguments(parser)
         parser.add_argument("bundle_id", help="The bundle id to debug")
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         commands = await client.debugserver_start(bundle_id=args.bundle_id)
         print(*commands, sep="\n")
 
 
-class DebugServerStopCommand(TargetCommand):
+class DebugServerStopCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Stop the debug server"
@@ -39,13 +37,11 @@ class DebugServerStopCommand(TargetCommand):
     def name(self) -> str:
         return "stop"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         await client.debugserver_stop()
 
 
-class DebugServerStatusCommand(TargetCommand):
+class DebugServerStatusCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Get the status of the debug server"
@@ -54,9 +50,7 @@ class DebugServerStatusCommand(TargetCommand):
     def name(self) -> str:
         return "status"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         commands = await client.debugserver_status()
         if commands is None:
             print("Not Running")

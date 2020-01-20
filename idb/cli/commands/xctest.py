@@ -8,7 +8,7 @@ import json
 from argparse import REMAINDER, ArgumentParser, Namespace
 from typing import List, Optional, Set
 
-from idb.cli.commands.base import Command, TargetCommand
+from idb.cli.commands.base import Command, CompanionCommand
 from idb.common.command import CompositeCommand
 from idb.common.format import (
     human_format_installed_test_info,
@@ -17,10 +17,10 @@ from idb.common.format import (
     json_format_test_info,
 )
 from idb.common.misc import get_env_with_idb_prefix
-from idb.common.types import IdbManagementClient
+from idb.common.types import IdbClient
 
 
-class XctestInstallCommand(TargetCommand):
+class XctestInstallCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Install an xctest"
@@ -35,9 +35,7 @@ class XctestInstallCommand(TargetCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         async for install_response in client.install_xctest(args.test_bundle_path):
             if install_response.progress != 0.0 and not args.json:
                 print("Installed {install_response.progress}%")
@@ -54,7 +52,7 @@ class XctestInstallCommand(TargetCommand):
                 print(f"Installed: {install_response.name} {install_response.uuid}")
 
 
-class XctestsListBundlesCommand(TargetCommand):
+class XctestsListBundlesCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "List the installed test bundles"
@@ -63,9 +61,7 @@ class XctestsListBundlesCommand(TargetCommand):
     def name(self) -> str:
         return "list"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         tests = await client.list_xctests()
         formatter = human_format_installed_test_info
         if args.json:
@@ -74,7 +70,7 @@ class XctestsListBundlesCommand(TargetCommand):
             print(formatter(test))
 
 
-class XctestListTestsCommand(TargetCommand):
+class XctestListTestsCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "List the tests inside an installed test bundle"
@@ -98,9 +94,7 @@ class XctestListTestsCommand(TargetCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         tests = await client.list_test_bundle(
             test_bundle_id=args.test_bundle_id, app_path=args.app_path
         )
@@ -110,7 +104,7 @@ class XctestListTestsCommand(TargetCommand):
             print("\n".join(tests))
 
 
-class CommonRunXcTestCommand(TargetCommand):
+class CommonRunXcTestCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return (
@@ -136,9 +130,7 @@ class CommonRunXcTestCommand(TargetCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         await super().run_with_client(args, client)
         tests_to_run = self.get_tests_to_run(args)
         tests_to_skip = self.get_tests_to_skip(args)
@@ -290,7 +282,5 @@ class XctestRunCommand(CompositeCommand):
     def name(self) -> str:
         return "run"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         await self.run(args)

@@ -6,11 +6,11 @@
 
 from argparse import ArgumentParser, Namespace
 
-from idb.cli.commands.base import TargetCommand
-from idb.common.types import IdbManagementClient
+from idb.cli.commands.base import CompanionCommand
+from idb.common.types import IdbClient
 
 
-class AccessibilityInfoAllCommand(TargetCommand):
+class AccessibilityInfoAllCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Describes Accessibility Information for the entire screen"
@@ -19,14 +19,12 @@ class AccessibilityInfoAllCommand(TargetCommand):
     def name(self) -> str:
         return "describe-all"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         info = await client.accessibility_info(point=None)
         print(info.json)
 
 
-class AccessibilityInfoAtPointCommand(TargetCommand):
+class AccessibilityInfoAtPointCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Describes Accessibility Information at a point on the screen"
@@ -40,8 +38,6 @@ class AccessibilityInfoAtPointCommand(TargetCommand):
         parser.add_argument("y", help="The y-coordinate", type=int)
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         info = await client.accessibility_info(point=(args.x, args.y))
         print(info.json)

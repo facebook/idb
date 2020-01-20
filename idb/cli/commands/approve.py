@@ -6,11 +6,11 @@
 
 from argparse import ArgumentParser, Namespace
 
-from idb.cli.commands.base import TargetCommand
-from idb.common.types import IdbManagementClient
+from idb.cli.commands.base import CompanionCommand
+from idb.common.types import IdbClient
 
 
-class ApproveCommand(TargetCommand):
+class ApproveCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Approve permissions for an app"
@@ -29,9 +29,7 @@ class ApproveCommand(TargetCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         await client.approve(
             bundle_id=args.bundle_id, permissions=set(args.permissions)
         )

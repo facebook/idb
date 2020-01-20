@@ -6,15 +6,15 @@
 
 from argparse import Namespace
 
-from idb.cli.commands.base import TargetCommand
+from idb.cli.commands.base import CompanionCommand
 from idb.common.format import (
     human_format_installed_app_info,
     json_format_installed_app_info,
 )
-from idb.common.types import IdbManagementClient
+from idb.common.types import IdbClient
 
 
-class ListAppsCommand(TargetCommand):
+class ListAppsCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "List the installed apps"
@@ -23,9 +23,7 @@ class ListAppsCommand(TargetCommand):
     def name(self) -> str:
         return "list-apps"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         apps = await client.list_apps()
         formatter = human_format_installed_app_info
         if args.json:

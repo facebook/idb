@@ -7,11 +7,11 @@
 import json
 from argparse import ArgumentParser, Namespace
 
-from idb.cli.commands.base import TargetCommand
-from idb.common.types import IdbManagementClient
+from idb.cli.commands.base import CompanionCommand
+from idb.common.types import IdbClient
 
 
-class AppInstallCommand(TargetCommand):
+class AppInstallCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Install an application"
@@ -26,9 +26,7 @@ class AppInstallCommand(TargetCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         async for install_response in client.install(args.bundle_path):
             if install_response.progress != 0.0 and not args.json:
                 print("Installed {install_response.progress}%")
@@ -45,7 +43,7 @@ class AppInstallCommand(TargetCommand):
                 print(f"Installed: {install_response.name} {install_response.uuid}")
 
 
-class AppUninstallCommand(TargetCommand):
+class AppUninstallCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Uninstall an application"
@@ -60,13 +58,11 @@ class AppUninstallCommand(TargetCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         await client.uninstall(bundle_id=args.bundle_id)
 
 
-class AppTerminateCommand(TargetCommand):
+class AppTerminateCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Terminate a running application"
@@ -79,7 +75,5 @@ class AppTerminateCommand(TargetCommand):
         parser.add_argument("bundle_id", help="Bundle id of the app to kill", type=str)
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         await client.terminate(args.bundle_id)

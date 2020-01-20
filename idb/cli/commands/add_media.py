@@ -6,11 +6,11 @@
 
 from argparse import ArgumentParser, Namespace
 
-from idb.cli.commands.base import TargetCommand
-from idb.common.types import IdbManagementClient
+from idb.cli.commands.base import CompanionCommand
+from idb.common.types import IdbClient
 
 
-class AddMediaCommand(TargetCommand):
+class AddMediaCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Add photos/videos to the target"
@@ -25,7 +25,5 @@ class AddMediaCommand(TargetCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         await client.add_media(file_paths=args.file_paths)

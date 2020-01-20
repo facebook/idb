@@ -6,11 +6,11 @@
 
 from argparse import Namespace
 
-from idb.cli.commands.base import TargetCommand
-from idb.common.types import IdbManagementClient
+from idb.cli.commands.base import CompanionCommand
+from idb.common.types import IdbClient
 
 
-class FocusCommand(TargetCommand):
+class FocusCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Brings the simulator window to front"
@@ -19,7 +19,5 @@ class FocusCommand(TargetCommand):
     def name(self) -> str:
         return "focus"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         await client.focus()

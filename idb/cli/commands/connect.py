@@ -9,7 +9,7 @@ from argparse import SUPPRESS, ArgumentParser, Namespace
 from typing import Union
 
 import idb.common.plugin as plugin
-from idb.cli.commands.base import ConnectingCommand
+from idb.cli.commands.base import ManagementCommand
 from idb.common.types import Address, IdbException, IdbManagementClient
 from idb.common.udid import is_udid
 
@@ -29,7 +29,7 @@ class ConnectCommandException(Exception):
     pass
 
 
-class ConnectCommand(ConnectingCommand):
+class ConnectCommand(ManagementCommand):
     @property
     def description(self) -> str:
         return "Connect to a companion"

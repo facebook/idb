@@ -6,12 +6,12 @@
 
 from argparse import ArgumentParser, Namespace
 
-from idb.cli.commands.base import ConnectingCommand
+from idb.cli.commands.base import ManagementCommand
 from idb.common.format import human_format_target_info, json_format_target_info
 from idb.common.types import IdbManagementClient
 
 
-class ListTargetsCommand(ConnectingCommand):
+class ListTargetsCommand(ManagementCommand):
     @property
     def description(self) -> str:
         return "List the connected targets"
@@ -19,9 +19,6 @@ class ListTargetsCommand(ConnectingCommand):
     @property
     def name(self) -> str:
         return "list-targets"
-
-    def add_parser_arguments(self, parser: ArgumentParser) -> None:
-        super().add_parser_arguments(parser)
 
     async def run_with_client(
         self, args: Namespace, client: IdbManagementClient

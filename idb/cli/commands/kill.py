@@ -6,11 +6,11 @@
 
 from argparse import Namespace
 
-from idb.cli.commands.base import ConnectingCommand
+from idb.cli.commands.base import ManagementCommand
 from idb.common.types import IdbManagementClient
 
 
-class KillCommand(ConnectingCommand):
+class KillCommand(ManagementCommand):
     @property
     def description(self) -> str:
         return "Kill the idb daemon"

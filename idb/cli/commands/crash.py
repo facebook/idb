@@ -7,8 +7,8 @@
 import json
 from argparse import ArgumentParser, Namespace
 
-from idb.cli.commands.base import TargetCommand
-from idb.common.types import CrashLogQuery, IdbManagementClient
+from idb.cli.commands.base import CompanionCommand
+from idb.common.types import CrashLogQuery, IdbClient
 
 
 class CrashDeleteException(Exception):
@@ -51,7 +51,7 @@ def _build_query(arguments: Namespace) -> CrashLogQuery:
     )
 
 
-class CrashListCommand(TargetCommand):
+class CrashListCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "List the available crashes"
@@ -64,15 +64,13 @@ class CrashListCommand(TargetCommand):
         _add_query_arguments(parser=parser)
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         crashes = await client.crash_list(query=_build_query(args))
         for crash in crashes:
             print(json.dumps(crash._asdict()))
 
 
-class CrashShowCommand(TargetCommand):
+class CrashShowCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Fetch a crash log"
@@ -85,14 +83,12 @@ class CrashShowCommand(TargetCommand):
         parser.add_argument("name", help="The unique name of the crash")
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         crash = await client.crash_show(name=args.name)
         print(crash.contents)
 
 
-class CrashDeleteCommand(TargetCommand):
+class CrashDeleteCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Delete a crash log"
@@ -109,9 +105,7 @@ class CrashDeleteCommand(TargetCommand):
         parser.add_argument("--all", help="Delete all crash logs", action="store_true")
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         crashes = await client.crash_delete(query=_build_query(args))
         for crash in crashes:
             print(json.dumps(crash._asdict()))

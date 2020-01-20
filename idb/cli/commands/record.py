@@ -7,12 +7,12 @@
 from argparse import ArgumentParser, Namespace
 from typing import List
 
-from idb.cli.commands.base import TargetCommand
+from idb.cli.commands.base import CompanionCommand
 from idb.common.signal import signal_handler_event
-from idb.common.types import IdbManagementClient
+from idb.common.types import IdbClient
 
 
-class RecordVideoCommand(TargetCommand):
+class RecordVideoCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Record the target's screen to a mp4 video file"
@@ -29,9 +29,7 @@ class RecordVideoCommand(TargetCommand):
         parser.add_argument("output_file", help="mp4 file to output the video to")
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         await client.record_video(
             stop=signal_handler_event("video"), output_file=args.output_file
         )

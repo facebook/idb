@@ -7,11 +7,11 @@
 import json
 from argparse import ArgumentParser, Namespace
 
-from idb.cli.commands.base import TargetCommand
-from idb.common.types import IdbManagementClient
+from idb.cli.commands.base import CompanionCommand
+from idb.common.types import IdbClient
 
 
-class DsymInstallCommand(TargetCommand):
+class DsymInstallCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Install dSYM(s)"
@@ -24,9 +24,7 @@ class DsymInstallCommand(TargetCommand):
         parser.add_argument("dsym_path", help="Path to dSYM(s) to install", type=str)
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         async for install_response in client.install_dsym(args.dsym_path):
             if install_response.progress != 0.0 and not args.json:
                 print("Installed {install_response.progress}%")

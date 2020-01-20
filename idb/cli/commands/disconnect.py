@@ -7,7 +7,7 @@
 from argparse import ArgumentParser, Namespace
 from typing import Union
 
-from idb.cli.commands.base import ConnectingCommand
+from idb.cli.commands.base import ManagementCommand
 from idb.common.types import Address, IdbException, IdbManagementClient
 from idb.common.udid import is_udid
 
@@ -27,7 +27,7 @@ class DisconnectCommandException(Exception):
     pass
 
 
-class DisconnectCommand(ConnectingCommand):
+class DisconnectCommand(ManagementCommand):
     @property
     def description(self) -> str:
         return "Disconnect a companion"

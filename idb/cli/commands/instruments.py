@@ -7,14 +7,14 @@
 import os
 from argparse import ArgumentParser, Namespace
 
-from idb.cli.commands.base import TargetCommand
+from idb.cli.commands.base import CompanionCommand
 from idb.common.args import KeyValueDictAppendAction, find_next_file_prefix
 from idb.common.misc import get_env_with_idb_prefix
 from idb.common.signal import signal_handler_event
-from idb.common.types import IdbManagementClient, InstrumentsTimings
+from idb.common.types import IdbClient, InstrumentsTimings
 
 
-class InstrumentsCommand(TargetCommand):
+class InstrumentsCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Run instruments on the device"
@@ -90,9 +90,7 @@ class InstrumentsCommand(TargetCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         app_arguments = args.app_args
 
         app_environment = args.app_env

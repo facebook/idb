@@ -6,11 +6,11 @@
 
 from argparse import Namespace
 
-from idb.cli.commands.base import TargetCommand
-from idb.common.types import IdbManagementClient
+from idb.cli.commands.base import CompanionCommand
+from idb.common.types import IdbClient
 
 
-class DescribeCommand(TargetCommand):
+class DescribeCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Describes the Target"
@@ -19,8 +19,6 @@ class DescribeCommand(TargetCommand):
     def name(self) -> str:
         return "describe"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         description = await client.describe()
         print(description)
