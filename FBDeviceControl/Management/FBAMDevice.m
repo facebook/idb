@@ -276,9 +276,9 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
 - (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service
 {
   NSDictionary<NSString *, id> *userInfo = @{
-                                             @"CloseOnInvalidate" : @1,
-                                             @"InvalidateOnDetach" : @1,
-                                             };
+    @"CloseOnInvalidate" : @1,
+    @"InvalidateOnDetach" : @1,
+  };
   // NOTE - The pop: after connectToDeviceWithPurpose: is critical to ensure we stop the AMDevice session
   //        immediately after the service is started. See longer description in FBAMDevice.h to understand why.
   return [[[self
@@ -295,9 +295,9 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
       if (status != 0) {
         NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
         return [[[FBDeviceControlError
-                  describeFormat:@"SecureStartService of %@ Failed with 0x%x %@", service, status, errorDescription]
-                  logger:self.logger]
-                  failFuture];
+          describeFormat:@"SecureStartService of %@ Failed with 0x%x %@", service, status, errorDescription]
+          logger:self.logger]
+          failFuture];
       }
       FBAMDServiceConnection *connection = [[FBAMDServiceConnection alloc] initWithServiceConnection:serviceConnection device:device.amDevice calls:self.calls logger:self.logger];
       [self.logger logFormat:@"Service %@ started", service];
