@@ -72,9 +72,9 @@ from idb.common.types import (
     FileEntryInfo,
     HIDButtonType,
     HIDEvent,
-    IdbClient,
+    IdbClient as IdbClientBase,
     IdbException,
-    IdbManagementClient,
+    IdbManagementClient as IdbManagementClientBase,
     InstalledAppInfo,
     InstalledArtifact,
     InstalledTestInfo,
@@ -178,7 +178,7 @@ def log_and_handle_exceptions(func):  # pyre-ignore
         return func_wrapper
 
 
-class GrpcStubClient(IdbClient):
+class IdbClient(IdbClientBase):
     def __init__(
         self, stub: CompanionServiceStub, is_local: bool, logger: logging.Logger
     ) -> None:
@@ -190,10 +190,10 @@ class GrpcStubClient(IdbClient):
     @asynccontextmanager
     async def build(
         cls, host: str, port: int, is_local: bool, logger: logging.Logger
-    ) -> AsyncContextManager["GrpcStubClient"]:
+    ) -> AsyncContextManager[IdbClientBase]:
         channel = Channel(host=host, port=port, loop=asyncio.get_event_loop())
         try:
-            yield GrpcStubClient(
+            yield IdbClient(
                 stub=CompanionServiceStub(channel=channel),
                 is_local=is_local,
                 logger=logger,
@@ -726,7 +726,7 @@ class GrpcStubClient(IdbClient):
             yield message
 
 
-class GrpcClient(IdbManagementClient):
+class IdbManagementClient(IdbManagementClientBase):
     def __init__(
         self, target_udid: Optional[str], logger: Optional[logging.Logger] = None
     ) -> None:
@@ -745,7 +745,7 @@ class GrpcClient(IdbManagementClient):
             await companion_spawner.spawn_notifier()
 
     @asynccontextmanager
-    async def get_stub(self) -> AsyncContextManager[GrpcStubClient]:
+    async def get_stub(self) -> AsyncContextManager[IdbClient]:
         await self.spawn_notifier()
         try:
             companion_info = self.direct_companion_manager.get_companion_info(
@@ -758,7 +758,7 @@ class GrpcClient(IdbManagementClient):
             )
             if companion_info is None:
                 raise e
-        async with GrpcStubClient.build(
+        async with IdbClient.build(
             host=companion_info.host,
             port=companion_info.port,
             is_local=companion_info.is_local,
