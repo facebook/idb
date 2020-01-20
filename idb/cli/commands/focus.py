@@ -7,7 +7,7 @@
 from argparse import Namespace
 
 from idb.cli.commands.base import TargetCommand
-from idb.common.types import IdbClient
+from idb.common.types import IdbManagementClient
 
 
 class FocusCommand(TargetCommand):
@@ -19,5 +19,7 @@ class FocusCommand(TargetCommand):
     def name(self) -> str:
         return "focus"
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         await client.focus()

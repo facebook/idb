@@ -17,7 +17,7 @@ from idb.common.format import (
     json_format_test_info,
 )
 from idb.common.misc import get_env_with_idb_prefix
-from idb.common.types import IdbClient
+from idb.common.types import IdbManagementClient
 
 
 class XctestInstallCommand(TargetCommand):
@@ -35,7 +35,9 @@ class XctestInstallCommand(TargetCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         async for install_response in client.install_xctest(args.test_bundle_path):
             if install_response.progress != 0.0 and not args.json:
                 print("Installed {install_response.progress}%")
@@ -61,7 +63,9 @@ class XctestsListBundlesCommand(TargetCommand):
     def name(self) -> str:
         return "list"
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         tests = await client.list_xctests()
         formatter = human_format_installed_test_info
         if args.json:
@@ -94,7 +98,9 @@ class XctestListTestsCommand(TargetCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         tests = await client.list_test_bundle(
             test_bundle_id=args.test_bundle_id, app_path=args.app_path
         )
@@ -130,7 +136,9 @@ class CommonRunXcTestCommand(TargetCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         await super().run_with_client(args, client)
         tests_to_run = self.get_tests_to_run(args)
         tests_to_skip = self.get_tests_to_skip(args)
@@ -282,5 +290,7 @@ class XctestRunCommand(CompositeCommand):
     def name(self) -> str:
         return "run"
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         await self.run(args)

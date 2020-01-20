@@ -8,7 +8,7 @@ from argparse import ArgumentParser, Namespace
 from typing import Union
 
 from idb.cli.commands.base import ConnectingCommand
-from idb.common.types import Address, IdbClient, IdbException
+from idb.common.types import Address, IdbException, IdbManagementClient
 from idb.common.udid import is_udid
 
 
@@ -51,7 +51,9 @@ class DisconnectCommand(ConnectingCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         try:
             destination = get_destination(args=args)
             await client.disconnect(destination=destination)

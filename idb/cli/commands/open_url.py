@@ -7,7 +7,7 @@
 from argparse import ArgumentParser, Namespace
 
 from idb.cli.commands.base import TargetCommand
-from idb.common.types import IdbClient
+from idb.common.types import IdbManagementClient
 
 
 class OpenUrlCommand(TargetCommand):
@@ -23,5 +23,7 @@ class OpenUrlCommand(TargetCommand):
         parser.add_argument("url", help="URL to launch", type=str)
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         await client.open_url(args.url)

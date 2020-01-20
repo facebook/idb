@@ -8,7 +8,7 @@ import json
 from argparse import ArgumentParser, Namespace
 
 from idb.cli.commands.base import TargetCommand
-from idb.common.types import CrashLogQuery, IdbClient
+from idb.common.types import CrashLogQuery, IdbManagementClient
 
 
 class CrashDeleteException(Exception):
@@ -64,7 +64,9 @@ class CrashListCommand(TargetCommand):
         _add_query_arguments(parser=parser)
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         crashes = await client.crash_list(query=_build_query(args))
         for crash in crashes:
             print(json.dumps(crash._asdict()))
@@ -83,7 +85,9 @@ class CrashShowCommand(TargetCommand):
         parser.add_argument("name", help="The unique name of the crash")
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         crash = await client.crash_show(name=args.name)
         print(crash.contents)
 
@@ -105,7 +109,9 @@ class CrashDeleteCommand(TargetCommand):
         parser.add_argument("--all", help="Delete all crash logs", action="store_true")
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         crashes = await client.crash_delete(query=_build_query(args))
         for crash in crashes:
             print(json.dumps(crash._asdict()))

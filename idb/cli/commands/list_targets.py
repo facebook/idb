@@ -8,7 +8,7 @@ from argparse import ArgumentParser, Namespace
 
 from idb.cli.commands.base import ConnectingCommand
 from idb.common.format import human_format_target_info, json_format_target_info
-from idb.common.types import IdbClient
+from idb.common.types import IdbManagementClient
 
 
 class ListTargetsCommand(ConnectingCommand):
@@ -23,7 +23,9 @@ class ListTargetsCommand(ConnectingCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         targets = await client.list_targets()
         if len(targets) == 0:
             if not args.json:

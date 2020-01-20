@@ -7,7 +7,7 @@
 from argparse import Namespace
 
 from idb.cli.commands.base import ConnectingCommand
-from idb.common.types import IdbClient
+from idb.common.types import IdbManagementClient
 
 
 class KillCommand(ConnectingCommand):
@@ -19,5 +19,7 @@ class KillCommand(ConnectingCommand):
     def name(self) -> str:
         return "kill"
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         await client.kill()

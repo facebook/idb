@@ -8,7 +8,7 @@ import json
 from argparse import ArgumentParser, Namespace
 
 from idb.cli.commands.base import TargetCommand
-from idb.common.types import IdbClient
+from idb.common.types import IdbManagementClient
 
 
 class AppInstallCommand(TargetCommand):
@@ -26,7 +26,9 @@ class AppInstallCommand(TargetCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         async for install_response in client.install(args.bundle_path):
             if install_response.progress != 0.0 and not args.json:
                 print("Installed {install_response.progress}%")
@@ -58,7 +60,9 @@ class AppUninstallCommand(TargetCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         await client.uninstall(bundle_id=args.bundle_id)
 
 
@@ -75,5 +79,7 @@ class AppTerminateCommand(TargetCommand):
         parser.add_argument("bundle_id", help="Bundle id of the app to kill", type=str)
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         await client.terminate(args.bundle_id)

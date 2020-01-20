@@ -220,7 +220,7 @@ class InstalledArtifact(NamedTuple):
 
 
 # Exposes the resource-specific commands that imply a connected companion
-class IdbClientBase:
+class IdbClient:
     async def list_apps(self) -> List[InstalledAppInfo]:
         pass
 
@@ -417,7 +417,7 @@ class IdbClientBase:
 
 
 # Extends the base by adding management related commands
-class IdbClient(IdbClientBase):
+class IdbManagementClient(IdbClient):
     async def connect(
         self,
         destination: ConnectionDestination,

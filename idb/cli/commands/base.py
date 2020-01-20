@@ -14,7 +14,7 @@ from idb.common import plugin
 from idb.common.command import Command
 from idb.common.constants import DEFAULT_DAEMON_GRPC_PORT, DEFAULT_DAEMON_HOST
 from idb.common.logging import log_call
-from idb.common.types import IdbClient
+from idb.common.types import IdbManagementClient
 
 
 class BaseCommand(Command, metaclass=ABCMeta):
@@ -84,7 +84,9 @@ class ConnectingCommand(BaseCommand):
         await self.run_with_client(args=args, client=client)
 
     @abstractmethod
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         pass
 
 

@@ -11,7 +11,7 @@ from argparse import ArgumentParser, Namespace
 from typing import Any, List, NamedTuple, Optional, Tuple
 
 from idb.cli.commands.base import TargetCommand
-from idb.common.types import IdbClient
+from idb.common.types import IdbManagementClient
 
 
 class NoBundleIdentifierProvidedException(BaseException):
@@ -81,11 +81,13 @@ class FSCommand(TargetCommand):
 
     @abstractmethod
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbClient
+        self, bundle_id: str, args: Namespace, client: IdbManagementClient
     ) -> None:
         pass
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         (args, bundle_id) = _convert_args(args)
         return await self.run_with_bundle(bundle_id=bundle_id, args=args, client=client)
 
@@ -110,7 +112,7 @@ class FSListCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbClient
+        self, bundle_id: str, args: Namespace, client: IdbManagementClient
     ) -> None:
         paths = await client.ls(bundle_id=bundle_id, path=args.path)
         if args.json:
@@ -136,7 +138,7 @@ class FSMkdirCommand(FSCommand):
         )
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbClient
+        self, bundle_id: str, args: Namespace, client: IdbManagementClient
     ) -> None:
         await client.mkdir(bundle_id=bundle_id, path=args.path)
 
@@ -169,7 +171,7 @@ class FSMoveCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbClient
+        self, bundle_id: str, args: Namespace, client: IdbManagementClient
     ) -> None:
         await client.mv(bundle_id=bundle_id, src_paths=args.src, dest_path=args.dst)
 
@@ -197,7 +199,7 @@ class FSRemoveCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbClient
+        self, bundle_id: str, args: Namespace, client: IdbManagementClient
     ) -> None:
         await client.rm(bundle_id=bundle_id, paths=args.path)
 
@@ -226,7 +228,7 @@ class FSPushCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbClient
+        self, bundle_id: str, args: Namespace, client: IdbManagementClient
     ) -> None:
         return await client.push(
             bundle_id=bundle_id,
@@ -252,7 +254,7 @@ class FSPullCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbClient
+        self, bundle_id: str, args: Namespace, client: IdbManagementClient
     ) -> None:
         await client.pull(
             bundle_id=bundle_id, src_path=args.src, dest_path=os.path.abspath(args.dst)
@@ -285,7 +287,9 @@ class DeprecatedPushCommand(TargetCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         self.logger.warning(f"'push' is deprecated, please use 'file push' instead")
         return await FSPushCommand().run_with_bundle(
             bundle_id=args.bundle_id, args=args, client=client
@@ -309,7 +313,9 @@ class DeprecatedPullCommand(TargetCommand):
         parser.add_argument("dst", help="Local destination path", type=str)
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         self.logger.warning(f"'pull' is deprecated, please use 'file pull' instead")
         return await FSPullCommand().run_with_bundle(
             bundle_id=args.bundle_id, args=args, client=client

@@ -73,8 +73,8 @@ from idb.common.types import (
     HIDButtonType,
     HIDEvent,
     IdbClient,
-    IdbClientBase,
     IdbException,
+    IdbManagementClient,
     InstalledAppInfo,
     InstalledArtifact,
     InstalledTestInfo,
@@ -178,7 +178,7 @@ def log_and_handle_exceptions(func):  # pyre-ignore
         return func_wrapper
 
 
-class GrpcStubClient(IdbClientBase):
+class GrpcStubClient(IdbClient):
     def __init__(
         self, stub: CompanionServiceStub, is_local: bool, logger: logging.Logger
     ) -> None:
@@ -726,7 +726,7 @@ class GrpcStubClient(IdbClientBase):
             yield message
 
 
-class GrpcClient(IdbClient):
+class GrpcClient(IdbManagementClient):
     def __init__(
         self, target_udid: Optional[str], logger: Optional[logging.Logger] = None
     ) -> None:

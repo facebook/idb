@@ -9,7 +9,7 @@ from typing import List
 
 from idb.cli.commands.base import TargetCommand
 from idb.common.signal import signal_handler_event
-from idb.common.types import IdbClient
+from idb.common.types import IdbManagementClient
 
 
 class RecordVideoCommand(TargetCommand):
@@ -29,7 +29,9 @@ class RecordVideoCommand(TargetCommand):
         parser.add_argument("output_file", help="mp4 file to output the video to")
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         await client.record_video(
             stop=signal_handler_event("video"), output_file=args.output_file
         )

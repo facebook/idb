@@ -9,7 +9,7 @@ from typing import List, Optional
 
 from idb.cli.commands.base import TargetCommand
 from idb.common.signal import signal_handler_event
-from idb.common.types import IdbClient
+from idb.common.types import IdbManagementClient
 
 
 class LogCommand(TargetCommand):
@@ -46,7 +46,9 @@ log stream --predicate examples:
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         async for chunk in client.tail_logs(
             stop=signal_handler_event("log"),
             arguments=self.normalise_log_arguments(args.log_arguments),
@@ -75,7 +77,9 @@ class CompanionLogCommand(TargetCommand):
     def name(self) -> str:
         return "log"
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
         async for chunk in client.tail_companion_logs(stop=signal_handler_event("log")):
             print(chunk, end="")
         print("")
