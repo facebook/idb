@@ -8,9 +8,12 @@ import logging
 import os
 from abc import ABCMeta, abstractmethod
 from argparse import ArgumentParser, Namespace
-from typing import AsyncContextManager
+from typing import AsyncContextManager, Tuple
 
-from idb.client.grpc import IdbManagementClient as IdbManagementClientGrpc
+from idb.client.grpc import (
+    IdbClient as IdbClientGrpc,
+    IdbManagementClient as IdbManagementClientGrpc,
+)
 from idb.common import plugin
 from idb.common.command import Command
 from idb.common.constants import DEFAULT_DAEMON_GRPC_PORT, DEFAULT_DAEMON_HOST
@@ -19,12 +22,33 @@ from idb.common.types import IdbClient, IdbManagementClient
 from idb.utils.contextlib import asynccontextmanager
 
 
+def _parse_companion_info(value: str) -> Tuple[str, int]:
+    (host, port) = value.rsplit(":", 1)
+    return (host, int(port))
+
+
 @asynccontextmanager
-async def _get_client(
+async def _get_management_client(
     args: Namespace, logger: logging.Logger
 ) -> AsyncContextManager[IdbManagementClient]:
     udid = vars(args).get("udid")
     yield IdbManagementClientGrpc(target_udid=udid, logger=logger)
+
+
+@asynccontextmanager
+async def _get_client(
+    args: Namespace, logger: logging.Logger
+) -> AsyncContextManager[IdbClient]:
+    companion = vars(args).get("companion")
+    if companion is not None:
+        (host, port) = _parse_companion_info(companion)
+        async with IdbClientGrpc.build(
+            host=host, port=port, is_local=False, logger=logger
+        ) as client:
+            yield client
+    else:
+        async with _get_management_client(args=args, logger=logger) as client:
+            yield client
 
 
 def _add_common_client_arguments(
@@ -116,7 +140,7 @@ class ManagementCommand(BaseCommand):
         super().add_parser_arguments(parser)
 
     async def _run_impl(self, args: Namespace) -> None:
-        async with _get_client(args=args, logger=self.logger) as client:
+        async with _get_management_client(args=args, logger=self.logger) as client:
             await self.run_with_client(args=args, client=client)
 
     @abstractmethod

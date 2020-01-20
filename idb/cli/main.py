@@ -106,6 +106,12 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         default="WARNING",
         help="Set the logging level",
     )
+    parser.add_argument(
+        "--companion",
+        type=str,
+        default=None,
+        help="A string of the form HOSTNAME:PORT that will describe the companion connect to",
+    )
     commands: List[Command] = [
         DescribeCommand(),
         AppInstallCommand(),
