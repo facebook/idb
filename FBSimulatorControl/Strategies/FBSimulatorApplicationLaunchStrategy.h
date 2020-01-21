@@ -18,9 +18,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulatorApplicationOperation;
 
 /**
- A Strategy for Launching Applications.
+ A Strategy for Launching Applications inside a Simulator.
  */
-@interface FBApplicationLaunchStrategy : NSObject
+@interface FBSimulatorApplicationLaunchStrategy : NSObject
 
 #pragma mark Initializers
 

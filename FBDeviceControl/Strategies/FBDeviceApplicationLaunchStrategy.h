@@ -12,7 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBAMDServiceConnection;
-@class FBApplicationLaunchStrategy;
+@class FBSimulatorApplicationLaunchStrategy;
 @class FBDevice;
 @class FBDeviceApplicationProcess;
 

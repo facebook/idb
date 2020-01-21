@@ -11,7 +11,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBApplicationLaunchStrategy.h"
+#import "FBSimulatorApplicationLaunchStrategy.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplicationOperation.h"
@@ -68,7 +68,7 @@
 
 - (FBFuture<FBSimulatorApplicationOperation *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
-  return [[FBApplicationLaunchStrategy
+  return [[FBSimulatorApplicationLaunchStrategy
     strategyWithSimulator:self.simulator]
     launchApplication:configuration];
 }
