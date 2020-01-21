@@ -95,7 +95,11 @@
   return [[[self.simulator
     installedApplicationWithBundleID:bundleID]
     mapReplace:NSNull.null]
-    rephraseFailure:@"App %@ can't be launched as it isn't installed", bundleID];
+    onQueue:self.simulator.asyncQueue handleError:^(NSError *error) {
+      return [[FBSimulatorError
+        describeFormat:@"App %@ can't be launched as it isn't installed: %@", bundleID, error]
+        failFuture];
+    }];
 }
 
 - (FBFuture<NSNumber *> *)confirmApplicationLaunchState:(NSString *)bundleID launchMode:(FBApplicationLaunchMode)launchMode

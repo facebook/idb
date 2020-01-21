@@ -138,14 +138,16 @@
   NSParameterAssert(bundleID);
 
   NSError *error = nil;
+  // appInfo is usually always returned, even if there is no app installed.
   NSDictionary *appInfo = [self.simulator.device propertiesOfApplication:bundleID error:&error];
   if (!appInfo) {
     return [FBFuture futureWithError:error];
   }
+  // Therefore we have to parse the app info to see that it is actually a real app.
   FBInstalledApplication *application = [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:&error];
   if (!application) {
     return [[FBSimulatorError
-      describeFormat:@"Application Info %@ could not be parsed: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:appInfo], error]
+      describeFormat:@"Application Info %@ could not be parsed (it's probably not installed): %@", [FBCollectionInformation oneLineDescriptionFromDictionary:appInfo], error]
       failFuture];
   }
   return [FBFuture futureWithResult:application];
