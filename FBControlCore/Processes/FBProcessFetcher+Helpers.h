@@ -66,7 +66,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)processExists:(FBProcessInfo *)process error:(NSError **)error;
 
 /**
- Uses the reciever to wait for the termination of a process identifier.
+ Uses the receiver to wait for the termination of a process identifier.
 
  @param queue the queue to poll on.
  @param processIdentifier the pid of the process to wait for.

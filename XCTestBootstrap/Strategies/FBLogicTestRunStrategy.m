@@ -163,7 +163,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
           [output stopReading],
           [consumer finishedConsuming],
         ]]
-        timeout:EndOfFileFromStopReadingTimeout waitingFor:@"recieve and end-of-file after fifo has been stopped, as the process has already exited with code %@", exitCode];
+        timeout:EndOfFileFromStopReadingTimeout waitingFor:@"receive and end-of-file after fifo has been stopped, as the process has already exited with code %@", exitCode];
     }];
 }
 

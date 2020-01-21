@@ -75,7 +75,7 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 @property (nonatomic, strong, readonly, nullable) id<FBControlCoreLogger> logger;
 
 /**
- The Action Classes supported by the reciever.
+ The Action Classes supported by the receiver.
  */
 @property (nonatomic, strong, readonly) NSArray<Class> *actionClasses;
 

@@ -48,7 +48,7 @@ extern NSString *const FBProcessOutputToFileDefaultLocation;
 + (instancetype)outputToDevNull;
 
 /**
- Construct a copy of the reciever, with the stdOut applied
+ Construct a copy of the receiver, with the stdOut applied
 
  @param stdOut the stdout, see the documentation for the stdOut property for details.
  @param error an error if the parameters are incorrect.
@@ -57,7 +57,7 @@ extern NSString *const FBProcessOutputToFileDefaultLocation;
 - (nullable instancetype)withStdOut:(id)stdOut error:(NSError **)error;
 
 /**
- Construct a copy of the reciever, with the stdErr applied
+ Construct a copy of the receiver, with the stdErr applied
 
  @param stdErr the stdout, see the documentation for the stdOut property for details.
  @param error an error if the parameters are incorrect.

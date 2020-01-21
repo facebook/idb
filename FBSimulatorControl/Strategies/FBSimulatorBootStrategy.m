@@ -111,7 +111,7 @@
 @protocol FBSimulatorApplicationLaunchOptions <NSObject>
 
 /**
- Creates and returns the arguments to pass to Xcode's Simulator.app for the reciever's configuration.
+ Creates and returns the arguments to pass to Xcode's Simulator.app for the receiver's configuration.
 
  @param configuration the configuration to base off.
  @param simulator the Simulator construct boot args for.

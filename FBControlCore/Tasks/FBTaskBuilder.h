@@ -54,7 +54,7 @@ NS_ASSUME_NONNULL_BEGIN
  The Launch Path of the Task. Will override any shell command set with `shellCommand`.
 
  @param launchPath the Launch Path. Will remove shellCommand.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)withLaunchPath:(NSString *)launchPath;
 
@@ -62,7 +62,7 @@ NS_ASSUME_NONNULL_BEGIN
  The Arguments of the Task. Will override any shell command set with `shellCommand`.
 
  @param arguments the arguments for the launch path.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)withArguments:(NSArray<NSString *> *)arguments;
 
@@ -70,7 +70,7 @@ NS_ASSUME_NONNULL_BEGIN
  Replaces the Subprocess Environment with the provided Environment.
 
  @param environment an Environment Dictionary. Must not be nil.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)withEnvironment:(NSDictionary<NSString *, NSString *> *)environment;
 
@@ -78,7 +78,7 @@ NS_ASSUME_NONNULL_BEGIN
  Adds the provided dictionary to the environment of the built task.
 
  @param environment an Environment Dictionary. Must not be nil.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)withEnvironmentAdditions:(NSDictionary<NSString *, NSString *> *)environment;
 
@@ -86,7 +86,7 @@ NS_ASSUME_NONNULL_BEGIN
  The Set of Return Codes that are considered non-erroneous.
 
  @param statusCodes the non-erroneous stats codes.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)withAcceptableTerminationStatusCodes:(NSSet<NSNumber *> *)statusCodes;
 
@@ -120,14 +120,14 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Reads stdout into memory, as a Data.
 
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBTaskBuilder<StdInType, NSData *, StdErrType> *)withStdOutInMemoryAsData;
 
 /**
  Reads stdout into memory, as a String.
 
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBTaskBuilder<StdInType, NSString *, StdErrType> *)withStdOutInMemoryAsString;
 
@@ -135,21 +135,21 @@ NS_ASSUME_NONNULL_BEGIN
  Assigns a path to write stdout to.
 
  @param stdOutPath the path to write stdout to. Must not be nil.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBTaskBuilder<StdInType, NSString *, StdErrType> *)withStdOutPath:(NSString *)stdOutPath;
 
 /**
  Redirects stdout to /dev/null
 
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBTaskBuilder<StdInType, NSNull *, StdErrType> *)withStdOutToDevNull;
 
 /**
  Redirects stdout to an input stream.
 
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBTaskBuilder<StdInType, NSInputStream *, StdErrType> *)withStdOutToInputStream;
 
@@ -157,7 +157,7 @@ NS_ASSUME_NONNULL_BEGIN
  Redirects stdout data to the consumer.
 
  @param consumer the consumer to consume the data.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBTaskBuilder<StdInType, id<FBDataConsumer>, StdErrType> *)withStdOutConsumer:(id<FBDataConsumer>)consumer;
 
@@ -165,7 +165,7 @@ NS_ASSUME_NONNULL_BEGIN
  Redirects stdout to the reader block, on a per line basis.
 
  @param reader the block to use for reading lines
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBTaskBuilder<StdInType, id<FBDataConsumer>, StdErrType> *)withStdOutLineReader:(void (^)(NSString *))reader;
 
@@ -190,14 +190,14 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Reads stderr into memory, as a Data.
 
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBTaskBuilder<StdInType, StdInType, NSData *> *)withStdErrInMemoryAsData;
 
 /**
  Reads stderr into memory, as a String.
 
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBTaskBuilder<StdInType, StdOutType, NSString *> *)withStdErrInMemoryAsString;
 
@@ -205,14 +205,14 @@ NS_ASSUME_NONNULL_BEGIN
  Assigns a path to write stderr to.
 
  @param stdErrPath the path to write stderr to. Must not be nil.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBTaskBuilder<StdInType, StdOutType, NSString *> *)withStdErrPath:(NSString *)stdErrPath;
 
 /**
  Redirects stderr to /dev/null
 
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBTaskBuilder<StdInType, StdOutType, NSNull *> *)withStdErrToDevNull;
 
@@ -220,7 +220,7 @@ NS_ASSUME_NONNULL_BEGIN
  Redirects stderr data to the consumer.
 
  @param consumer the consumer to consume the data.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBTaskBuilder<StdInType, StdOutType, id<FBDataConsumer>> *)withStdErrConsumer:(id<FBDataConsumer>)consumer;
 
@@ -228,7 +228,7 @@ NS_ASSUME_NONNULL_BEGIN
  Redirects stderr to the reader block, on a per line basis.
 
  @param reader the block to use for reading lines
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBTaskBuilder<StdInType, StdOutType, id<FBDataConsumer>> *)withStdErrLineReader:(void (^)(NSString *))reader;
 
@@ -254,14 +254,14 @@ NS_ASSUME_NONNULL_BEGIN
  Enables logging of the task lifecycle
 
  @param logger the logger to log to.
- @return the reciever for chaining.
+ @return the receiver for chaining.
  */
 - (instancetype)withLoggingTo:(id<FBControlCoreLogger>)logger;
 
 /**
  Disables logging of the task lifecycle
 
- @return the reciever for chaining.
+ @return the receiver for chaining.
  */
 - (instancetype)withNoLogging;
 

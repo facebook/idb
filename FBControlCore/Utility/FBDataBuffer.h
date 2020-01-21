@@ -62,7 +62,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable NSData *)consumeLength:(NSUInteger)length;
 
 /**
- Consumes until data recieved.
+ Consumes until data received.
 
  @param terminal the terminal.
  @return all the data before the separator if there is data to consume, nil otherwise.

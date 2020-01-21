@@ -96,7 +96,7 @@ NS_ASSUME_NONNULL_BEGIN
  2) Disables Auto Capitalize
  3) Disables Auto Correction / QuickType
 
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBFuture<NSNull *> *)setupKeyboard;
 

@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)withEnvironmentAdditions:(NSDictionary<NSString *, NSString *> *)environmentAdditions;
 
 /**
- Adds Diagnostic Environment information to the reciever's environment configuration.
+ Adds Diagnostic Environment information to the receiver's environment configuration.
 
  @return a new Launch Configuration with the Diagnostic Environment Applied.
  */

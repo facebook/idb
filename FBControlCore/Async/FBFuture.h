@@ -80,7 +80,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  Resolve a future synchronously, by value.
 
  @param resolve the the block to resolve the future.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 + (instancetype)resolveValue:( T(^)(NSError **) )resolve;
 
@@ -89,7 +89,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
  @param queue to resolve on.
  @param resolve the the block to resolve the future.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 + (instancetype)onQueue:(dispatch_queue_t)queue resolveValue:( T(^)(NSError **) )resolve;
 
@@ -98,7 +98,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
  @param queue to resolve on.
  @param resolve the the block to resolve the future.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 + (instancetype)onQueue:(dispatch_queue_t)queue resolve:( FBFuture *(^)(void) )resolve;
 
@@ -151,21 +151,21 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  However, this may be undesirable if you wish to prevent a default cancellation from propogating.
  This is useful when you wish to override the default cancellation behaviour of chained futures.
 
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)shieldCancellation;
 
 /**
- Respond to the cancellation of the reciever.
+ Respond to the cancellation of the receiver.
  Since the cancellation handler can itself return a future, asynchronous cancellation is permitted.
  This can be called multiple times for the same Future if multiple cleanup operations need to occur.
 
- Make sure that the future that is returned from this block is itself not the same reference as the reciever.
+ Make sure that the future that is returned from this block is itself not the same reference as the receiver.
  Otherwise the `cancel` call will itself resolve as 'cancelled'.
 
  @param queue the queue to notify on.
  @param handler the block to invoke if cancelled.
- @return the Reciever, for chaining.
+ @return the Receiver, for chaining.
  */
 - (instancetype)onQueue:(dispatch_queue_t)queue respondToCancellation:(FBFuture<NSNull *> *(^)(void))handler;
 
@@ -176,7 +176,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
  @param queue the queue to notify on.
  @param handler the block to invoke.
- @return the Reciever, for chaining.
+ @return the Receiver, for chaining.
  */
 - (instancetype)onQueue:(dispatch_queue_t)queue notifyOfCompletion:(void (^)(FBFuture *))handler;
 
@@ -186,14 +186,14 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
  @param queue the queue to notify on.
  @param handler the block to invoke.
- @return the Reciever, for chaining.
+ @return the Receiver, for chaining.
  */
 - (instancetype)onQueue:(dispatch_queue_t)queue doOnResolved:(void (^)(T))handler;
 
 #pragma mark Deriving new Futures
 
 /**
- Chain Futures based on any non-cancellation resolution of the reciever.
+ Chain Futures based on any non-cancellation resolution of the receiver.
  All completion events are called in the chained future block (Done, Error, Cancelled).
 
  @param queue the queue to chain on.
@@ -203,7 +203,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 - (FBFuture *)onQueue:(dispatch_queue_t)queue chain:(FBFuture * (^)(FBFuture *future))chain;
 
 /**
- FlatMap a successful resolution of the reciever to a new Future.
+ FlatMap a successful resolution of the receiver to a new Future.
 
  @param queue the queue to chain on.
  @param fmap the function to re-map the result to a new future, only called on success.
@@ -212,7 +212,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 - (FBFuture *)onQueue:(dispatch_queue_t)queue fmap:(FBFuture * (^)(T result))fmap;
 
 /**
- Map a future's result to a new value, based on a successful resolution of the reciever.
+ Map a future's result to a new value, based on a successful resolution of the receiver.
 
  @param queue the queue to map on.
  @param map the mapping block, only called on success.
@@ -247,8 +247,8 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 - (FBFuture *)mapReplace:(id)replacement;
 
 /**
- Once the reciever has resolved in any state, chains to another Future.
- This is un-conditional, if the reciever resolves in error the replacement will still be used.
+ Once the receiver has resolved in any state, chains to another Future.
+ This is un-conditional, if the receiver resolves in error the replacement will still be used.
 
  @param replacement the replacement
  @return a future with the replacement.
@@ -264,7 +264,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 - (FBFuture<T> *)fallback:(T)replacement;
 
 /**
- Delays delivery of the completion of the reciever.
+ Delays delivery of the completion of the receiver.
  A chaining convenience over -[FBFuture futureWithDelay:future:]
 
  @param delay the delay to resolve the future in.
@@ -287,11 +287,11 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  This is useful for resource cleanup, where closing a resource needs to be managed.
  The teardown will always be called, regardless of the terminating condition of any chained future.
  The state passed in the teardown callback is the state of the resolved future from any chaining that may happen.
- The teardown will only be called if the reciever has resolved, as this is how the context value is resolved.
+ The teardown will only be called if the receiver has resolved, as this is how the context value is resolved.
 
  @param queue the queue to perform the teardown on.
  @param action the teardown action to invoke. This block will be executed after the context object is done. This also includes the state that the resultant future ended in.
- @return a 'context object' that manages the tear-down of the reciever's value. This teardown can be asynchronous, and is indicated via the return-value of the contextualTeardown block,
+ @return a 'context object' that manages the tear-down of the receiver's value. This teardown can be asynchronous, and is indicated via the return-value of the contextualTeardown block,
  */
 - (FBFutureContext<T> *)onQueue:(dispatch_queue_t)queue contextualTeardown:( FBFuture<NSNull *> * (^)(T, FBFutureState))action;
 
@@ -300,7 +300,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
  @param queue the queue to perform the teardown on.
  @param fmap the 'context object' to add.
- @return a 'contex object' that manages the tear-down of the reciever's value.
+ @return a 'contex object' that manages the tear-down of the receiver's value.
  */
 - (FBFutureContext *)onQueue:(dispatch_queue_t)queue pushTeardown:(FBFutureContext *(^)(T))fmap;
 
@@ -310,7 +310,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  Rename the future.
 
  @param name the name of the Future.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBFuture<T> *)named:(NSString *)name;
 
@@ -318,7 +318,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  Rename the future with a format string.
 
  @param format the format string for the Future's name.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (FBFuture<T> *)nameFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
 
@@ -327,14 +327,14 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
  @param logger the logger to log to.
  @param format a description of the future.
- @return the reciever, for chaining
+ @return the receiver, for chaining
  */
 - (FBFuture<T> *)logCompletion:(id<FBControlCoreLogger>)logger withPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(2,3);
 
 #pragma mark Properties
 
 /**
- YES if reciever has terminated, NO otherwise.
+ YES if receiver has terminated, NO otherwise.
  */
 @property (atomic, assign, readonly) BOOL hasCompleted;
 
@@ -399,7 +399,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  Make the wrapped future succeeded.
 
  @param result The result.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)resolveWithResult:(T)result;
 
@@ -407,15 +407,15 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  Make the wrapped future fail with an error.
 
  @param error The error.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)resolveWithError:(NSError *)error;
 
 /**
- Resolve the reciever upon the completion of another future.
+ Resolve the receiver upon the completion of another future.
 
  @param future the future to resolve from.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)resolveFromFuture:(FBFuture *)future;
 
@@ -477,7 +477,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
 /**
  Return a Future from the context.
- The reciever's teardown will occur *after* the Future returned by `pop` resolves.
+ The receiver's teardown will occur *after* the Future returned by `pop` resolves.
  If you wish to keep the context alive after the `pop` then use `pend` instead.
 
  @param queue the queue to chain on.
@@ -488,7 +488,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
 /**
  Continue to keep the context alive, but fmap a new future.
- The reciever's teardown will not occur after the `pend`'s Future has resolved.
+ The receiver's teardown will not occur after the `pend`'s Future has resolved.
 
  @param queue the queue to chain on.
  @param fmap the function to re-map the result to a new future, only called on success.
@@ -529,7 +529,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  This is designed to allow a context manager to be combined with the teardown of other long-running operations.
 
  @param queue the queue to chain on.
- @param enter the block that recieves two parameters. The first is the context value, the second is a future that will tear-down the context when it is resolved.
+ @param enter the block that receives two parameters. The first is the context value, the second is a future that will tear-down the context when it is resolved.
  @return a Future that wraps the value returned from fmap.
  */
 - (FBFuture *)onQueue:(dispatch_queue_t)queue enter:(id (^)(T result, FBMutableFuture<NSNull *> *teardown))enter;

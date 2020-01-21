@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
  Options for FBSimulatorVideo.
  */
 typedef NS_OPTIONS(NSUInteger, FBVideoEncoderOptions) {
-  FBVideoEncoderOptionsAutorecord = 1 << 0, /** If Set, will automatically start recording when the first video frame is recieved. **/
+  FBVideoEncoderOptionsAutorecord = 1 << 0, /** If Set, will automatically start recording when the first video frame is received. **/
   FBVideoEncoderOptionsImmediateFrameStart = 1 << 1, /** If Set, will start recording a video immediately, using the previously delivered frame **/
   FBVideoEncoderOptionsFinalFrame = 1 << 2, /** If Set, will repeat the last frame just before a video is stopped **/
 };

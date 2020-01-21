@@ -75,7 +75,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)inferSimulatorConfigurationFromDeviceSynthesizingMissing:(SimDevice *)simDevice;
 
 /**
- Confirms that the Runtime requirements for the reciever's configurations are met.
+ Confirms that the Runtime requirements for the receiver's configurations are met.
  Since it is possible to construct configurations for a wide range of Device Types & Runtimes,
  it may be the case the configuration represents an OS Version or Device that is unavaiable.
 

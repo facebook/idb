@@ -199,7 +199,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
   }
 
   // dispatch_io_close will stop future reads of the io channel.
-  // But it does not mean that the dispatch_io_read callback will recieve further calls:
+  // But it does not mean that the dispatch_io_read callback will receive further calls:
   // > "Even if you specify this flag, the corresponding handlers may be invoked with partial results"
   // However, if this has been called, then it is safe to assume that control of the file descriptor *has* been relinquished.
   // From the dispatch_io_close docs:

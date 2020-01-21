@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Public Methods
 
 /**
- Sends a packet, resolving when a response packet has been recieved.
+ Sends a packet, resolving when a response packet has been received.
 
  @param payload the payload to send
  @param terminator the terminator to wait for

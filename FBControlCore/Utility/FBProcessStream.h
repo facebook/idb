@@ -106,7 +106,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 @protocol FBProcessOutput <NSObject>
 
 /**
- Allows the reciever to be written to via a file instead of via a file handle.
+ Allows the receiver to be written to via a file instead of via a file handle.
  This is desirable to use when interacting with an API that doesn't support writing to a file handle.
 
  @return A Future wrapping a FBProcessFileOutput instance.
@@ -114,7 +114,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 - (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile;
 
 /**
- Allows the reciever to be written to via a Data Consumer.
+ Allows the receiver to be written to via a Data Consumer.
 
  @return A Future wrapping a FBDataConsumer instance.
  */

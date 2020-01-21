@@ -12,7 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- An Event Sink that stores recieved events as state.
+ An Event Sink that stores received events as state.
  Then forwards these events to the provided sink, so that events are de-duplicated.
  */
 @interface FBSimulatorMutableState : NSObject <FBSimulatorEventSink>

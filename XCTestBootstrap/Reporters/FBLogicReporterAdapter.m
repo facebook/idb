@@ -58,7 +58,7 @@
 - (void)handleEventJSONData:(NSData *)data
 {
   if (data.length == 0) {
-    [self.logger log:@"Recieved zero-length JSON data"];
+    [self.logger log:@"Received zero-length JSON data"];
     return;
   }
   NSError *error;

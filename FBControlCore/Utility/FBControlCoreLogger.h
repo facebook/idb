@@ -23,7 +23,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 @protocol FBDataConsumer;
 
 /**
- A Protocol for Classes that recieve Logger Messages.
+ A Protocol for Classes that receive Logger Messages.
  */
 @protocol FBControlCoreLogger <NSObject>
 
@@ -33,7 +33,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  Logs a Message with the provided String.
 
  @param message the message to log.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (id<FBControlCoreLogger>)log:(NSString *)message;
 
@@ -41,7 +41,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  Logs a Message with the provided Format String.
 
  @param format the Format String for the Logger.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (id<FBControlCoreLogger>)logFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
 

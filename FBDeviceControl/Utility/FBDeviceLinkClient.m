@@ -82,7 +82,7 @@ static FBFuture<NSArray<id> *> * (^ParsePlistResponse)(NSData *) = ^(NSData *dat
 - (FBFuture<NSDictionary<id, id> *> *)processMessage:(NSArray<id> *)message
 {
   return [[self
-    sendAndRecieve:@[
+    sendAndReceive:@[
       @"DLMessageProcessMessage",
       message,
     ]]
@@ -119,7 +119,7 @@ static NSString *const DeviceReady = @"DLMessageDeviceReady";
         @"DLVersionsOk",
         version,
       ];
-      return [self sendAndRecieve:response];
+      return [self sendAndReceive:response];
     }]
     onQueue:self.client.queue fmap:^ FBFuture<NSNumber *> * (NSArray<id> *handshake) {
       NSString *message = handshake.firstObject;
@@ -144,7 +144,7 @@ static NSString *const DeviceReady = @"DLMessageDeviceReady";
   return FBFuture.empty;
 }
 
-- (FBFuture<NSArray<id> *> *)sendAndRecieve:(NSArray<id> *)payload
+- (FBFuture<NSArray<id> *> *)sendAndReceive:(NSArray<id> *)payload
 {
   return [[[self
     sendPlist:payload]

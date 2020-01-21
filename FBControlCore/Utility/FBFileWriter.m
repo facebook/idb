@@ -130,7 +130,7 @@
 
   _fileDescriptor = fileDescriptor;
   _closeOnEndOfFile = closeOnEndOfFile;
-  _finishedConsumingMutable = [FBMutableFuture futureWithName:@"EOF Recieved"];
+  _finishedConsumingMutable = [FBMutableFuture futureWithName:@"EOF Received"];
 
   return self;
 }

@@ -53,7 +53,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch;
 @property (nonatomic, strong, nullable, readonly) FBFuture<NSNull *> *completed;
 
 /**
- The Type of the Future, used for identifying kinds of the reciever.
+ The Type of the Future, used for identifying kinds of the receiver.
  */
 @property (nonatomic, copy, readonly) FBiOSTargetFutureType futureType;
 
@@ -92,12 +92,12 @@ extern id<FBiOSTargetContinuation> FBiOSTargetContinuationDone(FBiOSTargetFuture
 @protocol FBiOSTargetFuture <NSObject, FBJSONSerializable, FBJSONDeserializable>
 
 /**
- The Action Type of the Reciever.
+ The Action Type of the Receiver.
  */
 @property (nonatomic, copy, class, readonly) FBiOSTargetFutureType futureType;
 
 /**
- Starts the action represented by the reciever.
+ Starts the action represented by the receiver.
 
  @param target the target to run against.
  @param consumer the consumer to report binary data to.

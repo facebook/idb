@@ -61,8 +61,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Updates the binary within the Framework to point to the Xcode version present on the host.
- If the binary that the reciever wraps references the developer directory for Xcode, then this method will make a best-attempt to adjust any rpaths to point to the currently selected Xcode.
- This means that if a Framework was built on one machine that has a different Xcode path to another, then this method may help to ensure that the reciever's Framwork can be linked.
+ If the binary that the receiver wraps references the developer directory for Xcode, then this method will make a best-attempt to adjust any rpaths to point to the currently selected Xcode.
+ This means that if a Framework was built on one machine that has a different Xcode path to another, then this method may help to ensure that the receiver's Framwork can be linked.
  Since modifying the rpaths of a Mach-O binary will cause the code signature to become invalid, this method will also re-sign the binary using the codesigner provided.
 
  @param codesign the codesign implementation to codesign with.

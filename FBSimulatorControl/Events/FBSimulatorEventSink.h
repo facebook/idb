@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBJSONSerializable;
 
 /**
- A reciever of Simulator Events
+ A receiver of Simulator Events
  */
 @protocol FBSimulatorEventSink <NSObject>
 

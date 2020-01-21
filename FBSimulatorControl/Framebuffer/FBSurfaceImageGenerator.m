@@ -98,7 +98,7 @@
   if (surface != NULL) {
     IOSurfaceIncrementUseCount(surface);
     CFRetain(surface);
-    [self.logger.info logFormat:@"Recieved IOSurface from Framebuffer Service %@", surface];
+    [self.logger.info logFormat:@"Received IOSurface from Framebuffer Service %@", surface];
     self.surface = surface;
   }
 }

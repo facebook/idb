@@ -75,7 +75,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<FBSimulator *> *)cloneSimulator:(FBSimulator *)simulator;
 
 /**
- Finds and creates the Configurations for the missing 'Default Simulators' in the reciever.
+ Finds and creates the Configurations for the missing 'Default Simulators' in the receiver.
  */
 - (NSArray<FBSimulatorConfiguration *> *)configurationsForAbsentDefaultSimulators;
 
@@ -83,7 +83,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Kills a Simulator in the Set.
- The Set to which the Simulator belongs must be the reciever.
+ The Set to which the Simulator belongs must be the receiver.
 
  @param simulator the Simulator to delete. Must not be nil.
  @return an Future that resolves when successful.
@@ -92,7 +92,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Erases a Simulator in the Set.
- The Set to which the Simulator belongs must be the reciever.
+ The Set to which the Simulator belongs must be the receiver.
 
  @param simulator the Simulator to erase. Must not be nil.
  @return A future wrapping the erased simulators udids.
@@ -101,7 +101,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Deletes a Simulator in the Set.
- The Set to which the Simulator belongs must be the reciever.
+ The Set to which the Simulator belongs must be the receiver.
 
  @param simulator the Simulator to delete. Must not be nil.
  @return A future wrapping the delegate simulators.
@@ -110,7 +110,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Kills all provided Simulators.
- The Set to which the Simulators belong must be the reciever.
+ The Set to which the Simulators belong must be the receiver.
 
  @param simulators the Simulators to kill. Must not be nil.
  @return an Future that resolves when successful.
@@ -119,7 +119,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Erases all provided Simulators.
- The Set to which the Simulators belong must be the reciever.
+ The Set to which the Simulators belong must be the receiver.
 
  @param simulators the Simulators to erase. Must not be nil.
  @return A future wrapping the erased simulators.
@@ -128,7 +128,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Erases all provided Simulators.
- The Set to which the Simulators belong must be the reciever.
+ The Set to which the Simulators belong must be the receiver.
 
  @param simulators the Simulators to delete. Must not be nil.
  @return A future wrapping the erased simulators udids.
@@ -136,21 +136,21 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSArray<NSString *> *> *)deleteAll:(NSArray<FBSimulator *> *)simulators;
 
 /**
- Kills all of the Simulators that belong to the reciever.
+ Kills all of the Simulators that belong to the receiver.
 
  @return an Future that resolves when successful.
  */
 - (FBFuture<NSArray<FBSimulator *> *> *)killAll;
 
 /**
- Kills all of the Simulators that belong to the reciever.
+ Kills all of the Simulators that belong to the receiver.
 
  @return A future wrapping the erased simulators.
  */
 - (FBFuture<NSArray<FBSimulator *> *> *)eraseAll;
 
 /**
- Delete all of the Simulators that belong to the reciever.
+ Delete all of the Simulators that belong to the receiver.
 
  @return A future wrapping the erased simulators udids.
  */
@@ -167,12 +167,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, nullable, readonly) id<FBEventReporter> reporter;
 
 /**
- Returns the configuration for the reciever.
+ Returns the configuration for the receiver.
  */
 @property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
 
 /**
- The SimDeviceSet to that is owned by the reciever.
+ The SimDeviceSet to that is owned by the receiver.
  */
 @property (nonatomic, strong, readonly) SimDeviceSet *deviceSet;
 

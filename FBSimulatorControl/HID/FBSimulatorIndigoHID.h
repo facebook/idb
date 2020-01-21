@@ -54,7 +54,7 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
 
  @param direction the direction of the event.
  @param keycode the Key Code to send. The keycodes are 'Hardware Independent' as described in <HIToolbox/Events.h>.
- @return an NSData-Wrapped IndigoMessage. The data is owned by the reciever and will be freed when the data is deallocated.
+ @return an NSData-Wrapped IndigoMessage. The data is owned by the receiver and will be freed when the data is deallocated.
  */
 - (NSData *)keyboardWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode;
 
@@ -63,7 +63,7 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
 
  @param direction the direction of the event.
  @param button the button.
- @return an NSData-Wrapped IndigoMessage. The data is owned by the reciever and will be freed when the data is deallocated.
+ @return an NSData-Wrapped IndigoMessage. The data is owned by the receiver and will be freed when the data is deallocated.
  */
 - (NSData *)buttonWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button;
 
@@ -74,7 +74,7 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
  @param direction the direction of the event.
  @param x the X-Coordinate in pixels
  @param y the Y-Coordinate pixels
- @return an NSData-Wrapped IndigoMessage. The data is owned by the reciever and will be freed when the data is deallocated.
+ @return an NSData-Wrapped IndigoMessage. The data is owned by the receiver and will be freed when the data is deallocated.
  */
 - (NSData *)touchScreenSize:(CGSize)screenSize direction:(FBSimulatorHIDDirection)direction x:(double)x y:(double)y;
 
@@ -86,7 +86,7 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
  @param direction the direction of the event.
  @param x the X-Coordinate in pixels
  @param y the Y-Coordinate pixels
- @return an NSData-Wrapped IndigoMessage. The data is owned by the reciever and will be freed when the data is deallocated.
+ @return an NSData-Wrapped IndigoMessage. The data is owned by the receiver and will be freed when the data is deallocated.
  */
 - (NSData *)touchScreenSize:(CGSize)screenSize screenScale:(float)screenScale direction:(FBSimulatorHIDDirection)direction x:(double)x y:(double)y;
 

@@ -82,7 +82,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
 
 /**
  Writes the FBDiagnostic out to a file path.
- This call is optimised for backing store of the reciever.
+ This call is optimised for backing store of the receiver.
 
  @param filePath the File Path write to.
  @param error an error out for any error that occurs.
@@ -92,7 +92,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
 
 /**
  Writes the FBDiagnostic out to a directory.
- This call is optimised for backing store of the reciever.
+ This call is optimised for backing store of the receiver.
 
  @param directory the directory to write into.
  @param error an error out for any error that occurs.
@@ -116,7 +116,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  Creates a new `FBDiagnosticBuilder` copying all of the values from `diagnostic`.
 
  @param diagnostic the original Diagnostic to copy values from.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 + (instancetype)builderWithDiagnostic:(FBDiagnostic *)diagnostic;
 
@@ -124,7 +124,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  Updates the Diagnostic in the builder.
 
  @param diagnostic the original Diagnostic to copy values from.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)updateDiagnostic:(FBDiagnostic *)diagnostic;
 
@@ -132,7 +132,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  Updates the `shortName` of the underlying `FBDiagnostic`.
 
  @param shortName the Short Name to update with.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)updateShortName:(FBDiagnosticName)shortName;
 
@@ -140,7 +140,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  Updates the `fileType` of the underlying `FBDiagnostic`.
 
  @param fileType the File Type to update with.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)updateFileType:(NSString *)fileType;
 
@@ -148,7 +148,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  Updates the `humanReadableName` of the underlying `FBDiagnostic`.
 
  @param humanReadableName the Human Readable Name to update with.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)updateHumanReadableName:(NSString *)humanReadableName;
 
@@ -156,7 +156,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  Updates the `storageDirectory` of the underlying `FBDiagnostic`.
 
  @param storageDirectory the Human Readable Name to update with.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)updateStorageDirectory:(NSString *)storageDirectory;
 
@@ -164,7 +164,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  Updates the `destination` of the underlying `FBDiagnostic`.
 
  @param destination the Destination to update with.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)updateDestination:(NSString *)destination;
 
@@ -173,7 +173,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  Will replace any previous path or string that represent the log.
 
  @param data the Date to update with.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)updateData:(NSData *)data;
 
@@ -182,7 +182,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  Will replace any previous data or path that represent the log.
 
  @param string the String to update with.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)updateString:(NSString *)string;
 
@@ -193,7 +193,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  Since the Diagnostic associated with a Path can change, any coercions will happen lazily.
 
  @param path the File Path to update with.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)updatePath:(NSString *)path;
 
@@ -202,7 +202,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  Will replace any data, string or path associated with the log.
 
  @param json Can be either an FBJSONSerializable or an object that meets the requirements of NSJSONSerialization.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)updateJSON:(id)json;
 
@@ -224,7 +224,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  If writing to the file was succesful, YES
 
  @param block a block to populate a file path with.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)updatePathFromBlock:( BOOL (^)(NSString *path) )block;
 
@@ -235,7 +235,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  2) shortName
  3) fileType
 
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)updatePathFromDefaultLocation;
 
@@ -250,7 +250,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  If you wish to transfer a diagnostic to a remote machine, reading it into memory will also mean that it can be encoded
  into a JSON representation and reconstructed as a file on the remote machine.
 
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)readIntoMemory;
 
@@ -259,12 +259,12 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  This allows other processes to read the contents of the log.
  If the diagnostic is backed by a file, this call will do nothing.
 
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)writeOutToFile;
 
 /**
- Returns a new `FBDiagnostic` with the reciever's updates applied.
+ Returns a new `FBDiagnostic` with the receiver's updates applied.
  */
 - (FBDiagnostic *)build;
 

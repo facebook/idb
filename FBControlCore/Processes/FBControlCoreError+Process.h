@@ -16,7 +16,7 @@
 
  @param processIdentifier the Process Identifier to find information for.
  @param processFetcher the Process Fetcher object to obtain process information from.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)attachProcessInfoForIdentifier:(pid_t)processIdentifier processFetcher:(FBProcessFetcher *)processFetcher;
 

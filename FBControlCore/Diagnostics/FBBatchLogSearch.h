@@ -80,7 +80,7 @@ typedef NS_OPTIONS(NSUInteger, FBBatchLogSearchOptions) {
 #pragma mark Public Methods
 
 /**
- Runs the Reciever over an array of Diagnostics.
+ Runs the Receiver over an array of Diagnostics.
 
  @param diagnostics an NSArray of FBDiagnostics to search.
  @return a search result
@@ -88,7 +88,7 @@ typedef NS_OPTIONS(NSUInteger, FBBatchLogSearchOptions) {
 - (FBBatchLogSearchResult *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics;
 
 /**
- Runs the Reciever over an iOS Target.
+ Runs the Receiver over an iOS Target.
 
  @param target the target to search.
  @return a search result, wrapped in a future.

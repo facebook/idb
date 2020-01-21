@@ -28,7 +28,7 @@ extern NSString *const FBSimulatorControlErrorDomain;
  Automatically attach Simulator diagnostic info.
 
  @param simulator the Simulator to obtain diagnostic information from.
- @return the reciever, for chaining.
+ @return the receiver, for chaining.
  */
 - (instancetype)inSimulator:(FBSimulator *)simulator;
 

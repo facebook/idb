@@ -10,18 +10,18 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- Defines a Full and Partial Description of the reciever
+ Defines a Full and Partial Description of the receiver
  Bridges to Swift's CustomDebugStringConvertible.
  */
 @protocol FBDebugDescribeable
 
 /**
- A Full Description of the reciever.
+ A Full Description of the receiver.
  */
 @property (nonatomic, readonly, copy) NSString *debugDescription;
 
 /**
- A Partial Description of the reciever.
+ A Partial Description of the receiver.
  */
 @property (nonatomic, readonly, copy) NSString *shortDescription;
 
