@@ -10,7 +10,7 @@ from idb.cli.commands.base import CompanionCommand
 from idb.common.types import IdbClient
 
 
-class AddMediaCommand(CompanionCommand):
+class MediaAddCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Add photos/videos to the target"

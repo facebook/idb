@@ -16,7 +16,6 @@ from idb.cli.commands.accessibility import (
     AccessibilityInfoAllCommand,
     AccessibilityInfoAtPointCommand,
 )
-from idb.cli.commands.add_media import AddMediaCommand
 from idb.cli.commands.app import (
     AppInstallCommand,
     AppListCommand,
@@ -68,6 +67,7 @@ from idb.cli.commands.kill import KillCommand
 from idb.cli.commands.launch import LaunchCommand
 from idb.cli.commands.list_targets import ListTargetsCommand
 from idb.cli.commands.log import CompanionLogCommand, LogCommand
+from idb.cli.commands.media import MediaAddCommand
 from idb.cli.commands.open_url import OpenUrlCommand
 from idb.cli.commands.record import RecordVideoCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
@@ -185,7 +185,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         ),
         InstrumentsCommand(),
         KillCommand(),
-        AddMediaCommand(),
+        MediaAddCommand(),
         FocusCommand(),
         BootCommand(),
         CommandGroup(
