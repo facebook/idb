@@ -66,12 +66,12 @@ from idb.cli.commands.instruments import InstrumentsCommand
 from idb.cli.commands.kill import KillCommand
 from idb.cli.commands.launch import LaunchCommand
 from idb.cli.commands.list_targets import ListTargetsCommand
+from idb.cli.commands.location import LocationSetCommand
 from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.media import MediaAddCommand
 from idb.cli.commands.open_url import OpenUrlCommand
 from idb.cli.commands.record import RecordVideoCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
-from idb.cli.commands.set_location import SetLocationCommand
 from idb.cli.commands.xctest import (
     XctestInstallCommand,
     XctestListTestsCommand,
@@ -157,7 +157,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         DeprecatedPullCommand(),
         OpenUrlCommand(),
         ClearKeychainCommand(),
-        SetLocationCommand(),
+        LocationSetCommand(),
         ApproveCommand(),
         ConnectCommand(),
         DisconnectCommand(),

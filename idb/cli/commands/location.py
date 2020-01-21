@@ -10,7 +10,7 @@ from idb.cli.commands.base import CompanionCommand
 from idb.common.types import IdbClient
 
 
-class SetLocationCommand(CompanionCommand):
+class LocationSetCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Set a simulator's location"
