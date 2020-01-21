@@ -10,15 +10,11 @@
 #import "FBDeviceControlError.h"
 #import "FBAMDServiceConnection.h"
 
-// This client is based off DeviceLink.framework, which is a bidirectional messaging system on a protocol that's used in multiple places.
-// The protocol that this client uses is a standard "Plist Interchange" format that's used by a number of lockdown services.
-// It's implemented in the AMDServiceConnectionSendMessage/AMDServiceConnectionReceiveMessage calls, but can also be implemented manually.
-// The protocol is as follows:
-// 1) Any packet has a device-endian 32-bit unsigned integer that encodes the length of a packet. This is used for both the sending and recieving side.
-// 2) The data after this is a binary-plist of the payload itself.
-// 3) There is no trailer for a packet, the header defines when the end of the packet is.
-// 4) Before anything starts, there's a version exchange. This uses plists as well, but the arguments are an NSArray of plist data instead of an NSDictionary.
-// 5) For the message-passing usage, all messages are embedded in an NSArray with DLMessageProcessMessage, this is also the case with the response.
+// This client is based off DeviceLink.framework, which is a bidirectional messaging system on top of the "plist messaging" protocol documented in FBAMDServiceConnection.h.
+// The "DeviceLink" protocol is as follows
+// 1) Before anything starts, there's a version exchange. The device sends an initial packet contains a version number for the DeviceLink protocol. This is an NSArray of plist data (not an NSDictionary)
+// 2) The host then acknowledges that it can proceed by sending an "ok" message, including the version number from #1
+// 3) The host can then send requests in the "plist messaging" format and the device responds back.
 
 @interface FBDeviceLinkClient ()
 

@@ -36,7 +36,7 @@
   return [NSString stringWithFormat:@"%@", self.connection];
 }
 
-#pragma mark Public
+#pragma mark Raw Data
 
 // There's an upper limit on the number of bytes we can receive at once
 static size_t SendBufferSize = 1024 * 4;
@@ -65,17 +65,6 @@ static size_t SendBufferSize = 1024 * 4;
     return [[FBDeviceControlError
       describeFormat:@"Failed to send %zu bytes from AMDServiceConnectionReceive, %zu remaining", data.length, bytesRemaning]
       failBool:error];
-  }
-  return YES;
-}
-
-- (BOOL)sendMessage:(id)message error:(NSError **)error
-{
-  int result = self.calls.ServiceConnectionSendMessage(self.connection, (__bridge CFPropertyListRef)(message), kCFPropertyListBinaryFormat_v1_0, NULL, NULL, NULL);
-  if (result != 0) {
-    return [[FBDeviceControlError
-      describeFormat:@"Failed to send message %@, code %d", message, result]
-      fail:error];
   }
   return YES;
 }
@@ -113,6 +102,19 @@ static size_t ReadBufferSize = 1024 * 4;
   return data;
 }
 
+#pragma mark plist Messaging
+
+- (BOOL)sendMessage:(id)message error:(NSError **)error
+{
+  int result = self.calls.ServiceConnectionSendMessage(self.connection, (__bridge CFPropertyListRef)(message), kCFPropertyListBinaryFormat_v1_0, NULL, NULL, NULL);
+  if (result != 0) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to send message %@, code %d", message, result]
+      fail:error];
+  }
+  return YES;
+}
+
 - (id)receiveMessageWithError:(NSError **)error
 {
   CFTypeRef message = NULL;
@@ -124,6 +126,8 @@ static size_t ReadBufferSize = 1024 * 4;
   }
   return CFBridgingRelease(message);
 }
+
+#pragma mark Lifecycle
 
 - (BOOL)invalidateWithError:(NSError **)error
 {

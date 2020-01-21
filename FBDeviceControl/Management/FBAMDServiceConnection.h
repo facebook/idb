@@ -38,7 +38,7 @@ typedef CFTypeRef AMDServiceConnectionRef;
  */
 - (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
 
-#pragma mark Public
+#pragma mark Raw Data
 
 /**
  Synchronously send bytes on the connection.
@@ -50,6 +50,34 @@ typedef CFTypeRef AMDServiceConnectionRef;
 - (BOOL)send:(NSData *)data error:(NSError **)error;
 
 /**
+ Synchronously receive bytes from the connection.
+
+ @param error an error out for any error that occurs.
+ @return the data.
+ */
+- (NSData *)receive:(size_t)size error:(NSError **)error;
+
+#pragma mark plist Messaging
+
+// There's a common protocol that is commonly used with AMDServiceConnections (otherwise known as lockdown services).
+// As this is used by a number of different services, there's library code for this protocol in MobileDevice.framework
+// This format is built on top of sending and receiving from the AMDServiceConnection socket.
+// It's implemented in the AMDServiceConnectionSendMessage/AMDServiceConnectionReceiveMessage calls, but can also be implemented manually.
+// One reason for using these calls instead of sending raw bytes is that these library functions send encrypted traffic if there's an SSL context on the AMDServiceConnection.
+// Over the course of iOS releases, the requirement to send data using SSL has become more strictly enforced.
+//
+// The send-side of the protocol is as follows:
+// 1) Any packet has a device-endian 32-bit unsigned integer that encodes the length of a packet. This is used for both the sending and recieving side.
+// 2) The data after this is a binary-plist of the payload itself. This means that any plist-serializable data can be transmitted.
+// 3) There is no trailer for a packet, the header defines when the end of the packet is.
+// 4) The header (#1) and the binary plist (#2) are then sent over the socket. If there's an SSL context then any data that is transmitted is encrypted. When encryption is enabled, all data on the channel is encrypted, including the header
+//
+// The receive side is just the same, but in reverse:
+// 1) The header is read, it's of a fixed size so the socket receive call can be provided with a fixed value
+// 2) The header gives the size of the plist-packet read length. Once the read side has read up to the size of the payload, it is ready to be deserialized.
+// 3) As with the write side, if there's an SSL context the data will be decrypted through this context.
+
+/**
  Synchronously recieve a plist-based packet used by lockdown.
 
  @param message the message to send.
@@ -59,20 +87,14 @@ typedef CFTypeRef AMDServiceConnectionRef;
 - (BOOL)sendMessage:(id)message error:(NSError **)error;
 
 /**
- Synchronously receive bytes from the connection.
-
- @param error an error out for any error that occurs.
- @return the data.
- */
-- (NSData *)receive:(size_t)size error:(NSError **)error;
-
-/**
  Synchronously recieve a plist-based packet used by lockdown.
 
  @param error an error out for any error that occurs.
  @return the read plist.
  */
 - (id)receiveMessageWithError:(NSError **)error;
+
+#pragma mark Lifecycle
 
 /**
  Invalidates the Service connection.
