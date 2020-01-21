@@ -69,9 +69,9 @@ from idb.cli.commands.list_targets import ListTargetsCommand
 from idb.cli.commands.location import LocationSetCommand
 from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.media import MediaAddCommand
-from idb.cli.commands.open_url import OpenUrlCommand
 from idb.cli.commands.record import RecordVideoCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
+from idb.cli.commands.url import UrlOpenCommand
 from idb.cli.commands.xctest import (
     XctestInstallCommand,
     XctestListTestsCommand,
@@ -155,7 +155,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         RecordVideoCommand(),
         DeprecatedPushCommand(),
         DeprecatedPullCommand(),
-        OpenUrlCommand(),
+        UrlOpenCommand(),
         KeychainClearCommand(),
         LocationSetCommand(),
         ApproveCommand(),

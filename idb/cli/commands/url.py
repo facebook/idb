@@ -10,7 +10,7 @@ from idb.cli.commands.base import CompanionCommand
 from idb.common.types import IdbClient
 
 
-class OpenUrlCommand(CompanionCommand):
+class UrlOpenCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Open a URL"
