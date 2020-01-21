@@ -4,25 +4,24 @@
 
 The “iOS Development Bridge” or `idb`, is a command line interface for automating iOS Simulators and Devices for development. It has three main goals:
 
-* *Remote Automation.* `idb` has a “companion” that runs on macOS and a python client and cli that runs anywhere. This enables scenarios such as a “Device Lab” within a Data Center or fanning out commands to large numbers of iOS Simulators.
-* *Simple Primitives.* `idb` exposes granular APIs that enable building more sophisticated workflows on top. This means you can use `idb` from an IDE or build an automated testing scenario that is more than just running a set of tests. All of these primitives are consistent across OS Versions and between Simulators and Devices. The cli is intended to also be easy to use for humans as well as automation, as such it provides terse and self-documenting commands.
-* *Exposing missing functionality.* Xcode has a number of features that aren't available outside it's own UI. `idb` exposes many of these features so that they can be used within other GUI-less automation.
+* *Remote Automation*: `idb` is composed of a "companion" that runs on macOS and a python client that can run anywhere. This enables scenarios such as a "Device Lab" within a Data Center or fanning out shards of test executions to a large pool of iOS Simulators.
+* *Simple Primitives*: `idb` exposes granular commands so that sophisticated workflows can be sequenced on top of them. This means you can use `idb` from an IDE or build an automated testing scenario that isn't feasible with default tooling. All of these primitives aim to be consistent across iOS versions and between iOS Simulators and iOS Devices. All the primitives are exposed over a cli, so that it easy to use for both humans and automation.
+* *Exposing missing functionality*: Xcode has a number of features that aren't available outside it's user interface. `idb` leverages many of Private Frameworks that are used by Xcode, so that these features can be in GUI-less automated scenarios.
 
-`idb` is largely built from the `FBSimulatorControl` and `FBDeviceControl` Frameworks, contained within this repository. These Frameworks can be used independently of `idb`, but `idb` is likely to provide the simplest install and the most sensible defaults for most users.
+`idb` is built on top the `FBSimulatorControl` and `FBDeviceControl` macOS Frameworks, contained within this repository. These Frameworks can be used independently of `idb`, however `idb` is likely to provide the simplest install and the most sensible defaults for most users.
 
-We've given a talk about `idb` at F8, so that you can learn a bit more about what `idb` is and why we built it. A [recording of the talk is available here](https://developers.facebook.com/videos/2019/reliable-code-at-scale/).
+We've given a talk about `idb` at F8, so that you can learn more about what `idb` is and why we built it. A [recording of the talk is available here](https://developers.facebook.com/videos/2019/reliable-code-at-scale/).
 
 ## Quick Start
-**Under Construction**
-please bear with us. the quick start steps might not be working for you yet.
 
-`idb` is made up of 2 parts, each of which needs to be installed separately.
+`idb` is made up of 2 major components, each of which needs to be installed separately.
 
 ### `idb` companion
 
 Each target (simulator/device) will have a companion process attached allowing `idb` to communicate remotely.
 
 The `idb` companion can be installed via brew or built from [source](https://github.com/facebook/idb)
+
 ```
 brew tap facebook/fb
 brew install idb-companion
@@ -34,6 +33,7 @@ Note: Instructions on how to install brew can be found [here](https://brew.sh)
 A cli tool and python client is provided to interact with `idb`.
 
 It can be installed via pip:
+
 ```
 pip3.6 install fb-idb
 ```
@@ -69,7 +69,7 @@ com.apple.mobilesafari | MobileSafari | system | x86_64 | Not running | Not Debu
 $ idb launch com.apple.mobilesafari
 ```
 
-Head over [here](https://www.fbidb.io) for more details on what you can do with idb and the full list of commands.
+Head over [to the main documentation](https://www.fbidb.io) for more details on what you can do with idb and the full list of commands.
 
 ## Building from Source
 
