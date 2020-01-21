@@ -24,7 +24,6 @@ from idb.cli.commands.app import (
 )
 from idb.cli.commands.approve import ApproveCommand
 from idb.cli.commands.boot import BootCommand
-from idb.cli.commands.clear_keychain import ClearKeychainCommand
 from idb.cli.commands.connect import ConnectCommand, ConnectCommandException
 from idb.cli.commands.contacts import ContactsUpdateCommand
 from idb.cli.commands.crash import (
@@ -63,6 +62,7 @@ from idb.cli.commands.hid import (
     TextCommand,
 )
 from idb.cli.commands.instruments import InstrumentsCommand
+from idb.cli.commands.keychain import KeychainClearCommand
 from idb.cli.commands.kill import KillCommand
 from idb.cli.commands.launch import LaunchCommand
 from idb.cli.commands.list_targets import ListTargetsCommand
@@ -156,7 +156,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         DeprecatedPushCommand(),
         DeprecatedPullCommand(),
         OpenUrlCommand(),
-        ClearKeychainCommand(),
+        KeychainClearCommand(),
         LocationSetCommand(),
         ApproveCommand(),
         ConnectCommand(),

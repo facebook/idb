@@ -10,7 +10,7 @@ from idb.cli.commands.base import CompanionCommand
 from idb.common.types import IdbClient
 
 
-class ClearKeychainCommand(CompanionCommand):
+class KeychainClearCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Clear the targets keychain"
