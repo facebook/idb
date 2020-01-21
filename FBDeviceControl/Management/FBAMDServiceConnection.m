@@ -69,6 +69,17 @@ static size_t SendBufferSize = 1024 * 4;
   return YES;
 }
 
+- (BOOL)sendMessage:(id)message error:(NSError **)error
+{
+  int result = self.calls.ServiceConnectionSendMessage(self.connection, (__bridge CFPropertyListRef)(message), kCFPropertyListBinaryFormat_v1_0, NULL, NULL, NULL);
+  if (result != 0) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to send message %@, code %d", message, result]
+      fail:error];
+  }
+  return YES;
+}
+
 // There's an upper limit on the number of bytes we can read at once
 static size_t ReadBufferSize = 1024 * 4;
 
@@ -100,6 +111,18 @@ static size_t ReadBufferSize = 1024 * 4;
       fail:error];
   }
   return data;
+}
+
+- (id)receiveMessageWithError:(NSError **)error
+{
+  CFTypeRef message = NULL;
+  int result = self.calls.ServiceConnectionReceiveMessage(self.connection, &message, NULL, NULL, NULL, NULL);
+  if (result != 0) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to recieve message with code %d", result]
+      fail:error];
+  }
+  return CFBridgingRelease(message);
 }
 
 - (BOOL)invalidateWithError:(NSError **)error
