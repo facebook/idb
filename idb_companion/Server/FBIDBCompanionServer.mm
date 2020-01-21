@@ -92,13 +92,12 @@ using namespace std;
     FBIDBServiceHandler service = FBIDBServiceHandler(self.commandExecutor, self.target, self.eventReporter);
     int selectedPort = self.ports.grpcPort;
     unique_ptr<Server> server(ServerBuilder()
-                              .AddListeningPort(server_address, grpc::InsecureServerCredentials(), &selectedPort)
-                              .RegisterService(&service)
-                              .SetResourceQuota(ResourceQuota("idb_resource.quota").SetMaxThreads(10))
-                              .SetMaxReceiveMessageSize(16777216) // 16MB (16 * 1024 * 1024). Default is 4MB (4 * 1024 * 1024)
-                              .BuildAndStart()
-                              );
-    self.selectedPort = selectedPort;
+      .AddListeningPort(server_address, grpc::InsecureServerCredentials(), &selectedPort)
+      .RegisterService(&service)
+      .SetResourceQuota(ResourceQuota("idb_resource.quota").SetMaxThreads(10))
+      .SetMaxReceiveMessageSize(16777216) // 16MB (16 * 1024 * 1024). Default is 4MB (4 * 1024 * 1024)
+      .BuildAndStart()
+    );
     self.ports.grpcPort = selectedPort;
     service.setPorts(self.ports);
     [serverStarted resolveWithResult:NSNull.null];
@@ -124,7 +123,7 @@ using namespace std;
 
 - (id)jsonSerializableRepresentation
 {
-  return @{@"grpc_port": @(self.selectedPort)};
+  return @{@"grpc_port": @(self.ports.grpcPort)};
 }
 
 @end
