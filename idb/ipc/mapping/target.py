@@ -13,40 +13,41 @@ from idb.ipc.mapping.companion import companion_to_grpc, companion_to_py
 
 
 def target_to_grpc(target: TargetDescription) -> GrpcTargetDescription:
+    screen_dimensions = target.screen_dimensions
+    companion_info = target.companion_info
     return GrpcTargetDescription(
         udid=target.udid,
         name=target.name,
-        # pyre-fixme[6]: Expected `ScreenDimensions` for 1st param but got
-        #  `Optional[ScreenDimensions]`.
-        screen_dimensions=screen_dimensions_to_grpc(target.screen_dimensions)
-        if target.screen_dimensions
-        else None,
+        screen_dimensions=(
+            screen_dimensions_to_grpc(screen_dimensions)
+            if screen_dimensions is not None
+            else None
+        ),
         state=target.state,
         target_type=target.target_type,
         os_version=target.os_version,
         architecture=target.architecture,
-        # pyre-fixme[6]: Expected `CompanionInfo` for 1st param but got
-        #  `Optional[CompanionInfo]`.
-        companion_info=companion_to_grpc(target.companion_info)
-        if target.companion_info
-        else None,
+        companion_info=(
+            companion_to_grpc(companion_info) if companion_info is not None else None
+        ),
     )
 
 
 def target_to_py(target: GrpcTargetDescription) -> TargetDescription:
+    companion_info = target.companion_info
     return TargetDescription(
         udid=target.udid,
         name=target.name,
-        screen_dimensions=screen_dimensions_to_py(target.screen_dimensions)
-        if target.screen_dimensions
-        else None,
+        screen_dimensions=(
+            screen_dimensions_to_py(target.screen_dimensions)
+            if target.screen_dimensions
+            else None
+        ),
         state=target.state,
         target_type=target.target_type,
         os_version=target.os_version,
         architecture=target.architecture,
-        companion_info=companion_to_py(target.companion_info)
-        if target.companion_info
-        else None,
+        companion_info=(companion_to_py(companion_info) if companion_info else None),
     )
 
 
