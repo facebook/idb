@@ -14,7 +14,6 @@
 #import "FBDevice.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceLinkClient.h"
-#import "FBServiceConnectionClient.h"
 
 @interface FBDeviceScreenshotCommands ()
 
@@ -49,13 +48,10 @@ static NSString *const ScreenShotDataKey = @"ScreenShotData";
 
 - (FBFuture<NSData *> *)takeScreenshot:(FBScreenshotFormat)format
 {
-  return [[[[[self.device.amDevice
+  return [[[[self.device.amDevice
     startService:@"com.apple.mobile.screenshotr"]
-    onQueue:self.device.workQueue push:^(FBAMDServiceConnection *connection) {
-      return [connection makeClientWithLogger:self.device.logger queue:self.device.workQueue];
-    }]
-    onQueue:self.device.workQueue pend:^(FBServiceConnectionClient *rawClient) {
-      return [FBDeviceLinkClient deviceLinkClientWithServiceConnectionClient:rawClient];
+    onQueue:self.device.workQueue pend:^(FBAMDServiceConnection *connection) {
+      return [FBDeviceLinkClient deviceLinkClientWithConnection:connection];
     }]
     onQueue:self.device.workQueue pop:^(FBDeviceLinkClient *client) {
       return [client processMessage:@{@"MessageType": @"ScreenShotRequest"}];

@@ -9,14 +9,15 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import <FBDeviceControl/FBServiceConnectionClient.h>
-
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBServiceConnectionClient;
+@class FBAMDServiceConnection;
 
 /**
  An implementation of a client for DeviceLink-based lockdown services.
+ All IO happens synchronously on a private background queue.
+ Whilst there are ongoing operations upon this client, the Service Connection should not be used elsewhere.
+ Once the constructor is called, this class should be the unique client of the Service Connection.
  */
 @interface FBDeviceLinkClient : NSObject
 
@@ -24,11 +25,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Creates a plist client.
+ When the returned future has resolved successfully, the client is ready to use.
 
- @param client the client to use.
- @return a Future wrapping the FBPlistClient instance.
+ @param connection the Service Connection to use.
+ @return a Future wrapping the FBDeviceLinkClient instance.
  */
-+ (FBFuture<FBDeviceLinkClient *> *)deviceLinkClientWithServiceConnectionClient:(FBServiceConnectionClient *)client;
++ (FBFuture<FBDeviceLinkClient *> *)deviceLinkClientWithConnection:(FBAMDServiceConnection *)connection;
 
 #pragma mark Public Methods
 

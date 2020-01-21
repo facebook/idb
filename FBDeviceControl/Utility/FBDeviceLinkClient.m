@@ -9,7 +9,6 @@
 
 #import "FBDeviceControlError.h"
 #import "FBAMDServiceConnection.h"
-#import "FBServiceConnectionClient.h"
 
 // This client is based off DeviceLink.framework
 // The protocol here is quite simple:
@@ -19,37 +18,13 @@
 // 4) Before anything starts, there's a version exchange. This uses plists as well, but the arguments are an NSArray of plist data instead of an NSDictionary.
 // 5) For the message-passing usage, all messages are embedded in an NSArray with DLMessageProcessMessage, this is also the case with the response.
 
-typedef uint HeaderIntType;
-
+typedef uint32_t HeaderIntType;
 static NSUInteger HeaderLength = sizeof(HeaderIntType);
-
-static NSData *lengthPayload(NSData *payload)
-{
-  HeaderIntType length = (HeaderIntType) payload.length;
-  HeaderIntType lengthWire = EndianU32_NtoB(length); // The native length should be converted to big-endian (ARM).
-  return [[NSData alloc] initWithBytes:&lengthWire length:HeaderLength];
-}
-
-static NSUInteger (^HeaderSizeRead)(NSData *data) = ^(NSData *responseLengthData) {
-  HeaderIntType length = 0;
-  [responseLengthData getBytes:&length length:HeaderLength];
-  length = EndianU32_BtoN(length); // Devices are ARM (big-endian) so we need to convert it to the native endianness.
-  return (NSUInteger) length;
-};
-
-static FBFuture<NSArray<id> *> * (^ParsePlistResponse)(NSData *) = ^(NSData *data) {
-  NSError *error = nil;
-  id response = [NSPropertyListSerialization propertyListWithData:data options:0 format:0 error:&error];
-  if (!response) {
-    return [FBFuture futureWithError:error];
-  }
-  return [FBFuture futureWithResult:response];
-};
-
 
 @interface FBDeviceLinkClient ()
 
-@property (nonatomic, strong, readonly) FBServiceConnectionClient *client;
+@property (nonatomic, strong, readonly) FBAMDServiceConnection *connection;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
 
@@ -57,22 +32,24 @@ static FBFuture<NSArray<id> *> * (^ParsePlistResponse)(NSData *) = ^(NSData *dat
 
 #pragma mark Initializers
 
-+ (FBFuture<FBDeviceLinkClient *> *)deviceLinkClientWithServiceConnectionClient:(FBServiceConnectionClient *)client
++ (FBFuture<FBDeviceLinkClient *> *)deviceLinkClientWithConnection:(FBAMDServiceConnection *)connection
 {
-  FBDeviceLinkClient *plistClient = [[self alloc] initWithServiceConnectionClient:client];
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbdevicecontrol.fbdevicelinkclient", DISPATCH_QUEUE_SERIAL);
+  FBDeviceLinkClient *plistClient = [[self alloc] initWithServiceConnection:connection queue:queue];
   return [[plistClient
     performVersionExchange]
     mapReplace:plistClient];
 }
 
-- (instancetype)initWithServiceConnectionClient:(FBServiceConnectionClient *)client
+- (instancetype)initWithServiceConnection:(FBAMDServiceConnection *)connection queue:(dispatch_queue_t)queue
 {
   self = [self init];
   if (!self) {
     return nil;
   }
 
-  _client = client;
+  _connection = connection;
+  _queue = queue;
 
   return self;
 }
@@ -82,11 +59,11 @@ static FBFuture<NSArray<id> *> * (^ParsePlistResponse)(NSData *) = ^(NSData *dat
 - (FBFuture<NSDictionary<id, id> *> *)processMessage:(NSArray<id> *)message
 {
   return [[self
-    sendAndReceive:@[
+    sendAndReceivePlist:@[
       @"DLMessageProcessMessage",
       message,
     ]]
-    onQueue:self.client.queue fmap:^(NSArray<id> *result) {
+    onQueue:self.queue fmap:^(NSArray<id> *result) {
       NSDictionary<NSString *, id> *response = result[1];
       if (![response isKindOfClass:NSDictionary.class]) {
         return [[FBDeviceControlError
@@ -101,57 +78,109 @@ static FBFuture<NSArray<id> *> * (^ParsePlistResponse)(NSData *) = ^(NSData *dat
 
 static NSString *const DeviceReady = @"DLMessageDeviceReady";
 
-- (FBFuture<NSNumber *> *)performVersionExchange
+- (FBFuture<NSNull *> *)performVersionExchange
 {
-  __block NSNumber *version = nil;
-  return [[[[self.client.buffer
-    consumeHeaderLength:HeaderLength derivedLength:HeaderSizeRead]
-    onQueue:self.client.queue fmap:ParsePlistResponse]
-    onQueue:self.client.queue fmap:^ FBFuture<NSArray<id> *> * (NSArray<id> *handshake) {
-      version = handshake[1]; // Handshake packet is (DLMessageVersionExchange, MAX_VERSION_INT, MIN_VERSION_INT)
-      if (![version isKindOfClass:NSNumber.class]) {
+  return [[[self
+    receivePlist]
+    onQueue:self.queue fmap:^ FBFuture<id> * (id plist) {
+      if (![plist isKindOfClass:NSArray.class]) {
         return [[FBDeviceControlError
-          describeFormat:@"%@ is not a NSNumber for the handshake version", version]
+          describeFormat:@"%@ is not an array in version exchange", plist]
+          failFuture];
+      }
+      NSNumber *versionNumber = plist[1];
+      if (![versionNumber isKindOfClass:NSNumber.class]) {
+        return [[FBDeviceControlError
+          describeFormat:@"%@ is not a NSNumber for the handshake version", versionNumber]
           failFuture];
       }
       NSArray<id> *response = @[
         @"DLMessageVersionExchange",
         @"DLVersionsOk",
-        version,
+        versionNumber,
       ];
-      return [self sendAndReceive:response];
+      return [self sendAndReceivePlist:response];
     }]
-    onQueue:self.client.queue fmap:^ FBFuture<NSNumber *> * (NSArray<id> *handshake) {
-      NSString *message = handshake.firstObject;
-      if (![message isEqual:DeviceReady]) {
+    onQueue:self.queue fmap:^(id plist) {
+      if (![plist isKindOfClass:NSArray.class]) {
+        return [[FBDeviceControlError
+          describeFormat:@"%@ is not an array in version exchange", plist]
+          failFuture];
+      }
+      NSString *message = plist[0];
+      if (![message isKindOfClass:NSString.class]) {
+        return [[FBDeviceControlError
+          describeFormat:@"%@ is not a NSString for the device ready call", message]
+          failFuture];
+      }
+      if (![message isEqualToString:DeviceReady]) {
         return [[FBDeviceControlError
           describeFormat:@"%@ is not equal to %@", message, DeviceReady]
           failFuture];
       }
-      return [FBFuture futureWithResult:version];
+      return [FBFuture futureWithResult:NSNull.null];
     }];
 }
 
-- (FBFuture<NSNull *> *)sendPlist:(NSArray<id> *)payload
+- (FBFuture<NSData *> *)sendPlist:(id)payload
 {
-  NSError *error = nil;
-  NSData *plistData = [NSPropertyListSerialization dataWithPropertyList:payload format:NSPropertyListBinaryFormat_v1_0 options:0 error:&error];
-  if (!plistData) {
-    return [FBFuture futureWithError:error];
-  }
-  [self.client sendRaw:lengthPayload(plistData)];
-  [self.client sendRaw:plistData];
-  return FBFuture.empty;
+  return [FBFuture
+    onQueue:self.queue resolveValue:^ NSData * (NSError **error) {
+      // Convert the data to a binary plist
+      NSData *data = [NSPropertyListSerialization dataWithPropertyList:payload format:NSPropertyListBinaryFormat_v1_0 options:0 error:error];
+      if (!data) {
+        return nil;
+      }
+      // Create the header of how long the sent plist is going to be.
+      HeaderIntType length = (HeaderIntType) data.length;
+      HeaderIntType lengthWire = EndianU32_NtoB(length); // The native length should be converted to big-endian (ARM).
+      NSData *lengthData = [[NSData alloc] initWithBytes:&lengthWire length:HeaderLength];
+      // Write the length data.
+      if (![self.connection send:lengthData error:error]) {
+        return nil;
+      }
+      // Then send the actual payload.
+      if (![self.connection send:data error:error]) {
+        return nil;
+      }
+      return data;
+    }];
 }
 
-- (FBFuture<NSArray<id> *> *)sendAndReceive:(NSArray<id> *)payload
+- (FBFuture<id> *)receivePlist
 {
-  return [[[self
+  return [FBFuture
+    onQueue:self.queue resolveValue:^ id (NSError **error) {
+      // Read how many bytes the payload response is
+      NSData *data = [self.connection receive:sizeof(HeaderIntType) error:error];
+      if (!data) {
+        return nil;
+      }
+      // Convert this to the amount of bytes to read.
+      HeaderIntType length = 0;
+      [data getBytes:&length length:HeaderLength];
+      length = EndianU32_BtoN(length); // Devices are ARM (big-endian) so we need to convert it to the native endianness.
+      // Then receive the actual plist
+      data = [self.connection receive:length error:error];
+      if (!data) {
+        return nil;
+      }
+      // Convert the response data to a plist.
+      id plist = [NSPropertyListSerialization propertyListWithData:data options:0 format:0 error:error];
+      if (!plist) {
+        return nil;
+      }
+      return plist;
+    }];
+}
+
+- (FBFuture<id> *)sendAndReceivePlist:(id)payload
+{
+  return [[self
     sendPlist:payload]
-    onQueue:self.client.queue fmap:^(id _) {
-      return [self.client.buffer consumeHeaderLength:HeaderLength derivedLength:HeaderSizeRead];
-    }]
-    onQueue:self.client.queue fmap:ParsePlistResponse];
+    onQueue:self.queue fmap:^(id _) {
+      return [self receivePlist];
+    }];
 }
 
 @end

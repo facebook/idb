@@ -41,9 +41,18 @@ typedef CFTypeRef AMDServiceConnectionRef;
 #pragma mark Public
 
 /**
- receive from the connection.
+ Synchronously send bytes on the connection.
 
- @param size the length in bytes to receive.
+ @param size the length in bytes of data to receive.
+ @param error an error out for any error that occurs.
+ @return YES if the bytes were sent, NO otherwise.
+ */
+- (BOOL)send:(NSData *)data error:(NSError **)error;
+
+/**
+ Synchronously receive bytes from the connection.
+
+ @param size the length in bytes of data to receive.
  @param error an error out for any error that occurs.
  @return the data.
  */
