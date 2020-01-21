@@ -108,7 +108,7 @@
 /**
  Provides Launch Options to a Simulator.
  */
-@protocol FBSimulatorApplicationLaunchOptions <NSObject>
+@protocol FBSimulatorGUIAppLauncherOptions <NSObject>
 
 /**
  Creates and returns the arguments to pass to Xcode's Simulator.app for the receiver's configuration.
@@ -131,12 +131,12 @@
 
 @end
 
-@interface FBSimulatorApplicationLaunchStrategy : NSObject
+@interface FBSimulatorGUIAppLauncher : NSObject
 
 @property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
 @property (nonatomic, strong, readonly) id<FBSimulatorApplicationProcessLauncher> launcher;
-@property (nonatomic, strong, readonly) id<FBSimulatorApplicationLaunchOptions> options;
+@property (nonatomic, strong, readonly) id<FBSimulatorGUIAppLauncherOptions> options;
 
 @end
 
@@ -152,10 +152,10 @@
 
 @property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBSimulatorApplicationLaunchStrategy *applicationStrategy;
+@property (nonatomic, strong, readonly) FBSimulatorGUIAppLauncher *appLauncher;
 @property (nonatomic, strong, readonly) FBCoreSimulatorBootStrategy *coreSimulatorStrategy;
 
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator applicationStrategy:(FBSimulatorApplicationLaunchStrategy *)applicationStrategy coreSimulatorStrategy:(FBCoreSimulatorBootStrategy *)coreSimulatorStrategy;
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator appLauncher:(FBSimulatorGUIAppLauncher *)appLauncher coreSimulatorStrategy:(FBCoreSimulatorBootStrategy *)coreSimulatorStrategy;
 
 @end
 
@@ -344,10 +344,10 @@
 
 @end
 
-@interface FBSimulatorApplicationLaunchOptions_Xcode7 : NSObject <FBSimulatorApplicationLaunchOptions>
+@interface FBSimulatorGUIAppLauncherOptions_Xcode7 : NSObject <FBSimulatorGUIAppLauncherOptions>
 @end
 
-@implementation FBSimulatorApplicationLaunchOptions_Xcode7
+@implementation FBSimulatorGUIAppLauncherOptions_Xcode7
 
 - (NSArray<NSString *> *)xcodeSimulatorApplicationArguments:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator error:(NSError **)error
 {
@@ -387,11 +387,11 @@
 
 @end
 
-@interface FBSimulatorApplicationLaunchOptions_Xcode9 : NSObject <FBSimulatorApplicationLaunchOptions>
+@interface FBSimulatorGUIAppLauncherOptions_Xcode9 : NSObject <FBSimulatorGUIAppLauncherOptions>
 
 @end
 
-@implementation FBSimulatorApplicationLaunchOptions_Xcode9
+@implementation FBSimulatorGUIAppLauncherOptions_Xcode9
 
 - (NSArray<NSString *> *)xcodeSimulatorApplicationArguments:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator error:(NSError **)error
 {
@@ -427,9 +427,9 @@
 @end
 
 
-@implementation FBSimulatorApplicationLaunchStrategy
+@implementation FBSimulatorGUIAppLauncher
 
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator launcher:(id<FBSimulatorApplicationProcessLauncher>)launcher options:(id<FBSimulatorApplicationLaunchOptions>)options
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator launcher:(id<FBSimulatorApplicationProcessLauncher>)launcher options:(id<FBSimulatorGUIAppLauncherOptions>)options
 {
   self = [super init];
   if (!self) {
@@ -493,9 +493,9 @@
   id<FBCoreSimulatorBootOptions> coreSimulatorOptions = [self coreSimulatorBootOptions];
   FBCoreSimulatorBootStrategy *coreSimulatorStrategy = [[FBCoreSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator options:coreSimulatorOptions];
   id<FBSimulatorApplicationProcessLauncher> launcher = [self applicationProcessLauncherWithConfiguration:configuration];
-  id<FBSimulatorApplicationLaunchOptions> applicationOptions = [self applicationLaunchOptions];
-  FBSimulatorApplicationLaunchStrategy *applicationStrategy = [[FBSimulatorApplicationLaunchStrategy alloc] initWithConfiguration:configuration simulator:simulator launcher:launcher options:applicationOptions];
-  return [[FBSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator applicationStrategy:applicationStrategy coreSimulatorStrategy:coreSimulatorStrategy];
+  id<FBSimulatorGUIAppLauncherOptions> applicationOptions = [self applicationLaunchOptions];
+  FBSimulatorGUIAppLauncher *appLauncher = [[FBSimulatorGUIAppLauncher alloc] initWithConfiguration:configuration simulator:simulator launcher:launcher options:applicationOptions];
+  return [[FBSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator appLauncher:appLauncher coreSimulatorStrategy:coreSimulatorStrategy];
 }
 
 + (id<FBCoreSimulatorBootOptions>)coreSimulatorBootOptions
@@ -514,14 +514,14 @@
     : [FBSimulatorApplicationProcessLauncher_Task new];
 }
 
-+ (id<FBSimulatorApplicationLaunchOptions>)applicationLaunchOptions
++ (id<FBSimulatorGUIAppLauncherOptions>)applicationLaunchOptions
 {
   return FBXcodeConfiguration.isXcode9OrGreater
-    ? [FBSimulatorApplicationLaunchOptions_Xcode9 new]
-    : [FBSimulatorApplicationLaunchOptions_Xcode7 new];
+    ? [FBSimulatorGUIAppLauncherOptions_Xcode9 new]
+    : [FBSimulatorGUIAppLauncherOptions_Xcode7 new];
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator applicationStrategy:(FBSimulatorApplicationLaunchStrategy *)applicationStrategy coreSimulatorStrategy:(FBCoreSimulatorBootStrategy *)coreSimulatorStrategy
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator appLauncher:(FBSimulatorGUIAppLauncher *)appLauncher coreSimulatorStrategy:(FBCoreSimulatorBootStrategy *)coreSimulatorStrategy
 {
   self = [super init];
   if (!self) {
@@ -530,7 +530,7 @@
 
   _configuration = configuration;
   _simulator = simulator;
-  _applicationStrategy = applicationStrategy;
+  _appLauncher = appLauncher;
   _coreSimulatorStrategy = coreSimulatorStrategy;
 
   return self;
@@ -553,7 +553,7 @@
   return [[[[[self.coreSimulatorStrategy
     performBoot]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
-      return [[self.applicationStrategy launchSimulatorApplication] mapReplace:connection];
+      return [[self.appLauncher launchSimulatorApplication] mapReplace:connection];
     }]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
       if (!self.configuration.shouldConnectBridge) {
