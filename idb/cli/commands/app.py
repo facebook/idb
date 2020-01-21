@@ -8,6 +8,10 @@ import json
 from argparse import ArgumentParser, Namespace
 
 from idb.cli.commands.base import CompanionCommand
+from idb.common.format import (
+    human_format_installed_app_info,
+    json_format_installed_app_info,
+)
 from idb.common.types import IdbClient
 
 
@@ -77,3 +81,21 @@ class AppTerminateCommand(CompanionCommand):
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         await client.terminate(args.bundle_id)
+
+
+class AppListCommand(CompanionCommand):
+    @property
+    def description(self) -> str:
+        return "List the installed apps"
+
+    @property
+    def name(self) -> str:
+        return "list-apps"
+
+    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+        apps = await client.list_apps()
+        formatter = human_format_installed_app_info
+        if args.json:
+            formatter = json_format_installed_app_info
+        for app in apps:
+            print(formatter(app))
