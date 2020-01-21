@@ -276,7 +276,7 @@ class IdbClient(IdbClientBase):
 
     async def describe(self) -> TargetDescription:
         response = await self.stub.describe(TargetDescriptionRequest())
-        return target_to_py(response.target_description)
+        return target_to_py(target=response.target_description, companion_info=None)
 
     async def focus(self) -> None:
         await self.stub.focus(FocusRequest())
@@ -1148,12 +1148,14 @@ class IdbManagementClient(IdbManagementClientBase):
     ) -> Optional[TargetDescription]:
         try:
             channel = Channel(
-                companion.host, companion.port, loop=asyncio.get_event_loop()
+                host=companion.host, port=companion.port, loop=asyncio.get_event_loop()
             )
             stub = CompanionServiceStub(channel=channel)
             response = await stub.describe(TargetDescriptionRequest())
             channel.close()
-            return target_to_py(response.target_description)
+            return target_to_py(
+                target=response.target_description, companion_info=companion
+            )
         except Exception:
             self.logger.warning(f"Failed to describe {companion}, removing it")
             self.direct_companion_manager.remove_companion(
