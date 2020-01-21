@@ -23,8 +23,6 @@ from idb.cli.commands.app import (
     AppUninstallCommand,
 )
 from idb.cli.commands.approve import ApproveCommand
-from idb.cli.commands.boot import BootCommand
-from idb.cli.commands.connect import ConnectCommand, ConnectCommandException
 from idb.cli.commands.contacts import ContactsUpdateCommand
 from idb.cli.commands.crash import (
     CrashDeleteCommand,
@@ -37,8 +35,6 @@ from idb.cli.commands.debugserver import (
     DebugServerStatusCommand,
     DebugServerStopCommand,
 )
-from idb.cli.commands.describe import DescribeCommand
-from idb.cli.commands.disconnect import DisconnectCommand
 from idb.cli.commands.dsym import DsymInstallCommand
 from idb.cli.commands.dylib import DylibInstallCommand
 from idb.cli.commands.file import (
@@ -65,12 +61,19 @@ from idb.cli.commands.instruments import InstrumentsCommand
 from idb.cli.commands.keychain import KeychainClearCommand
 from idb.cli.commands.kill import KillCommand
 from idb.cli.commands.launch import LaunchCommand
-from idb.cli.commands.list_targets import ListTargetsCommand
 from idb.cli.commands.location import LocationSetCommand
 from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.media import MediaAddCommand
 from idb.cli.commands.record import RecordVideoCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
+from idb.cli.commands.target import (
+    ConnectCommandException,
+    TargetBootCommand,
+    TargetConnectCommand,
+    TargetDescribeCommand,
+    TargetDisconnectCommand,
+    TargetListCommand,
+)
 from idb.cli.commands.url import UrlOpenCommand
 from idb.cli.commands.xctest import (
     XctestInstallCommand,
@@ -113,7 +116,6 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         help="A string of the form HOSTNAME:PORT that will describe the companion connect to",
     )
     commands: List[Command] = [
-        DescribeCommand(),
         AppInstallCommand(),
         AppUninstallCommand(),
         AppListCommand(),
@@ -159,9 +161,11 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         KeychainClearCommand(),
         LocationSetCommand(),
         ApproveCommand(),
-        ConnectCommand(),
-        DisconnectCommand(),
-        ListTargetsCommand(),
+        TargetConnectCommand(),
+        TargetDisconnectCommand(),
+        TargetListCommand(),
+        TargetDescribeCommand(),
+        TargetBootCommand(),
         DaemonCommand(),
         ScreenshotCommand(),
         CommandGroup(
@@ -187,7 +191,6 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         KillCommand(),
         MediaAddCommand(),
         FocusCommand(),
-        BootCommand(),
         CommandGroup(
             name="debugserver",
             description="debugserver interactions",

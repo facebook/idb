@@ -6,7 +6,7 @@
 
 from argparse import Namespace
 
-from idb.cli.commands.connect import get_destination
+from idb.cli.commands.target import get_destination
 from idb.common.types import Address
 from idb.utils.testing import TestCase, ignoreTaskLeaks
 
