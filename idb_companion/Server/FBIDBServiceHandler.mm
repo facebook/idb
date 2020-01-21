@@ -407,6 +407,7 @@ void FBIDBServiceHandler::setPorts(FBIDBPortsConfiguration *configuration)
 {
   portsConfig = configuration;
 }
+
 #pragma mark Handled Methods
 
 FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::InstallRequest_Destination destination, grpc::ServerReaderWriter<idb::InstallResponse, idb::InstallRequest> *stream)
@@ -967,6 +968,9 @@ Status FBIDBServiceHandler::describe(ServerContext *context, const idb::TargetDe
   description->set_target_type(FBiOSTargetTypeStringsFromTargetType(_target.targetType).firstObject.lowercaseString.UTF8String);
   description->set_os_version(_target.osVersion.name.UTF8String);
   description->set_architecture(_target.architecture.UTF8String);
+  idb::CompanionInfo *companionInfo = description->mutable_companion_info();
+  companionInfo->set_grpc_port(portsConfig.grpcPort);
+  companionInfo->set_host(NSProcessInfo.processInfo.hostName.UTF8String);
   return Status::OK;
 }}
 
