@@ -28,7 +28,6 @@ def exclusive_open(  # pyre-ignore
     retry_time = 0.05
     lockfile = filename + ".lock"
     deadline = datetime.now() + timedelta(seconds=timeout)
-    os.umask(0o011)
     while True:
         try:
             fd = os.open(lockfile, os.O_CREAT | os.O_EXCL)

@@ -8,6 +8,7 @@ import argparse
 import asyncio
 import concurrent.futures
 import logging
+import os
 import sys
 from typing import List, Optional, Set
 
@@ -96,6 +97,8 @@ logger: logging.Logger = logging.getLogger()
 
 
 async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
+    # Make sure all files are created with global rw permissions
+    os.umask(0o011)
     # Setup parser
     parser = argparse.ArgumentParser(
         description="idb: a versatile tool to communicate with iOS Simulators and Devices",
