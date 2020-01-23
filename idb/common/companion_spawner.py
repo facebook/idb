@@ -45,12 +45,18 @@ class CompanionSpawner:
         os.makedirs(name=IDB_LOGS_PATH, exist_ok=True)
         return IDB_LOGS_PATH + "/" + target_udid
 
-    async def spawn_companion(self, target_udid: str) -> int:
+    def check_okay_to_spawn(self) -> None:
         if not self.companion_path:
-            raise CompanionSpawnerException(
-                f"couldn't instantiate a companion for {target_udid} because\
-                 the companion_path is not available"
+            raise CompanionSpawnerException("companion_path not set")
+        if os.getuid() == 0:
+            logging.warning(
+                "idb should not be run as root. "
+                "Listing available targets on this host and spawning "
+                "companions will not work"
             )
+
+    async def spawn_companion(self, target_udid: str) -> int:
+        self.check_okay_to_spawn()
         cmd: List[str] = [
             self.companion_path,
             "--udid",
@@ -82,11 +88,7 @@ class CompanionSpawner:
 
     async def spawn_notifier(self) -> None:
         if not self._is_notifier_running():
-            if not self.companion_path:
-                raise CompanionSpawnerException(
-                    f"couldn't instantiate a notifier because\
-                     the companion_path is not available"
-                )
+            self.check_okay_to_spawn()
             cmd: List[str] = [self.companion_path, "--notify", IDB_LOCAL_TARGETS_FILE]
 
             with open(self._log_file_path("notifier"), "a") as log_file:
