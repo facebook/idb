@@ -104,7 +104,7 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["--companion", "thehost:123", "list-apps"])
         self.direct_client_mock.list_apps.assert_called_once()
         self.direct_client_mock.build.assert_called_once_with(
-            host="thehost", port=123, is_local=False, logger=ANY,
+            host="thehost", port=123, is_local=False, logger=ANY
         )
 
     async def test_connect_with_host_and_port(self) -> None:
@@ -339,42 +339,25 @@ class TestParser(TestCase):
 
     def xctest_run_namespace(self, command: str, test_bundle_id: str) -> Namespace:
         namespace = Namespace()
-        # pyre-fixme[16]: `Namespace` has no attribute `log_level`.
         namespace.companion = None
-        # pyre-fixme[16]: `Namespace` has no attribute `log_level`.
         namespace.log_level = "WARNING"
-        # pyre-fixme[16]: `Namespace` has no attribute `log_level_deprecated`.
         namespace.log_level_deprecated = None
-        # pyre-fixme[16]: `Namespace` has no attribute `root_command`.
         namespace.root_command = "xctest"
-        # pyre-fixme[16]: `Namespace` has no attribute `xctest`.
         namespace.xctest = "run"
-        # pyre-fixme[16]: `Namespace` has no attribute `udid`.
         namespace.udid = None
-        # pyre-fixme[16]: `Namespace` has no attribute `json`.
         namespace.json = False
         if command in ["app", "ui"]:
-            # pyre-fixme[16]: `Namespace` has no attribute `tests_to_run`.
             namespace.tests_to_run = None
-            # pyre-fixme[16]: `Namespace` has no attribute `tests_to_skip`.
             namespace.tests_to_skip = None
-            # pyre-fixme[16]: `Namespace` has no attribute `test_arguments`.
             namespace.test_arguments = []
         elif command == "logic":
-            # pyre-fixme[16]: `Namespace` has no attribute `test_to_run`.
             namespace.test_to_run = None
             namespace.tests_to_run = None
-        # pyre-fixme[16]: `Namespace` has no attribute `run`.
         namespace.run = command
-        # pyre-fixme[16]: `Namespace` has no attribute `test_bundle_id`.
         namespace.test_bundle_id = test_bundle_id
-        # pyre-fixme[16]: `Namespace` has no attribute `daemon_port`.
         namespace.daemon_port = 9888
-        # pyre-fixme[16]: `Namespace` has no attribute `daemon_grpc_port`.
         namespace.daemon_grpc_port = 9889
-        # pyre-fixme[16]: `Namespace` has no attribute `daemon_host`.
         namespace.daemon_host = "localhost"
-        # pyre-fixme[16]: `Namespace` has no attribute `result_bundle_path`.
         namespace.result_bundle_path = None
         return namespace
 
@@ -390,11 +373,8 @@ class TestParser(TestCase):
                 cmd_input=["xctest", "run", "app", test_bundle_id, app_under_test_id]
             )
             namespace = self.xctest_run_namespace("app", test_bundle_id)
-            # pyre-fixme[16]: `Namespace` has no attribute `app_bundle_id`.
             namespace.app_bundle_id = app_under_test_id
-            # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
-            # pyre-fixme[16]: `Namespace` has no attribute `timeout`.
             namespace.timeout = XCTEST_TIMEOUT
             mock.assert_called_once_with(namespace)
 
@@ -418,13 +398,9 @@ class TestParser(TestCase):
                 ]
             )
             namespace = self.xctest_run_namespace("ui", test_bundle_id)
-            # pyre-fixme[16]: `Namespace` has no attribute `app_bundle_id`.
             namespace.app_bundle_id = app_under_test_id
-            # pyre-fixme[16]: `Namespace` has no attribute `test_host_app_bundle_id`.
             namespace.test_host_app_bundle_id = test_host_app_bundle_id
-            # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
-            # pyre-fixme[16]: `Namespace` has no attribute `timeout`.
             namespace.timeout = XCTEST_TIMEOUT
             mock.assert_called_once_with(namespace)
 
@@ -437,9 +413,7 @@ class TestParser(TestCase):
             test_bundle_id = "com.me.tests"
             await cli_main(cmd_input=["xctest", "run", "logic", test_bundle_id])
             namespace = self.xctest_run_namespace("logic", test_bundle_id)
-            # pyre-fixme[16]: `Namespace` has no attribute `timeout`.
             namespace.timeout = XCTEST_TIMEOUT
-            # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
             mock.assert_called_once_with(namespace)
 
@@ -465,25 +439,15 @@ class TestParser(TestCase):
             grpc_port = 1235
             await cli_main(cmd_input=["daemon", "--daemon-grpc-port", str(grpc_port)])
             namespace = Namespace()
-            # pyre-fixme[16]: `Namespace` has no attribute `log_level`.
             namespace.companion = None
-            # pyre-fixme[16]: `Namespace` has no attribute `daemon_port`.
             namespace.daemon_port = port
-            # pyre-fixme[16]: `Namespace` has no attribute `daemon_grpc_port`.
             namespace.daemon_grpc_port = grpc_port
-            # pyre-fixme[16]: `Namespace` has no attribute `log_level`.
             namespace.log_level = "WARNING"
-            # pyre-fixme[16]: `Namespace` has no attribute `log_level_deprecated`.
             namespace.log_level_deprecated = None
-            # pyre-fixme[16]: `Namespace` has no attribute `root_command`.
             namespace.root_command = "daemon"
-            # pyre-fixme[16]: `Namespace` has no attribute `json`.
             namespace.json = False
-            # pyre-fixme[16]: `Namespace` has no attribute `reply_fd`.
             namespace.reply_fd = None
-            # pyre-fixme[16]: `Namespace` has no attribute `prefer_ipv6`.
             namespace.prefer_ipv6 = False
-            # pyre-fixme[16]: `Namespace` has no attribute `notifier_path`.
             namespace.notifier_path = None
             mock.assert_called_once_with(namespace)
 
@@ -499,27 +463,16 @@ class TestParser(TestCase):
         with patch("idb.cli.commands.log.LogCommand._run_impl", new=mock, create=True):
             await cli_main(cmd_input=["log", "--udid", "1234"])
             namespace = Namespace()
-            # pyre-fixme[16]: `Namespace` has no attribute `log_level`.
             namespace.companion = None
-            # pyre-fixme[16]: `Namespace` has no attribute `log_level`.
             namespace.log_level = "WARNING"
-            # pyre-fixme[16]: `Namespace` has no attribute `log_level_deprecated`.
             namespace.log_level_deprecated = None
-            # pyre-fixme[16]: `Namespace` has no attribute `root_command`.
             namespace.root_command = "log"
-            # pyre-fixme[16]: `Namespace` has no attribute `udid`.
             namespace.udid = "1234"
-            # pyre-fixme[16]: `Namespace` has no attribute `json`.
             namespace.json = False
-            # pyre-fixme[16]: `Namespace` has no attribute `log_arguments`.
             namespace.log_arguments = []
-            # pyre-fixme[16]: `Namespace` has no attribute `daemon_port`.
             namespace.daemon_port = 9888
-            # pyre-fixme[16]: `Namespace` has no attribute `daemon_grpc_port`.
             namespace.daemon_grpc_port = 9889
-            # pyre-fixme[16]: `Namespace` has no attribute `daemon_host`.
             namespace.daemon_host = "localhost"
-            # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
             mock.assert_called_once_with(namespace)
 
@@ -528,27 +481,16 @@ class TestParser(TestCase):
         with patch("idb.cli.commands.log.LogCommand._run_impl", new=mock, create=True):
             await cli_main(cmd_input=["log", "--", "--style", "json"])
             namespace = Namespace()
-            # pyre-fixme[16]: `Namespace` has no attribute `log_level`.
             namespace.companion = None
-            # pyre-fixme[16]: `Namespace` has no attribute `log_level`.
             namespace.log_level = "WARNING"
-            # pyre-fixme[16]: `Namespace` has no attribute `log_level_deprecated`.
             namespace.log_level_deprecated = None
-            # pyre-fixme[16]: `Namespace` has no attribute `root_command`.
             namespace.root_command = "log"
-            # pyre-fixme[16]: `Namespace` has no attribute `udid`.
             namespace.udid = None
-            # pyre-fixme[16]: `Namespace` has no attribute `json`.
             namespace.json = False
-            # pyre-fixme[16]: `Namespace` has no attribute `log_arguments`.
             namespace.log_arguments = ["--", "--style", "json"]
-            # pyre-fixme[16]: `Namespace` has no attribute `daemon_port`.
             namespace.daemon_port = 9888
-            # pyre-fixme[16]: `Namespace` has no attribute `daemon_grpc_port`.
             namespace.daemon_grpc_port = 9889
-            # pyre-fixme[16]: `Namespace` has no attribute `daemon_host`.
             namespace.daemon_host = "localhost"
-            # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
             mock.assert_called_once_with(namespace)
 
@@ -590,27 +532,16 @@ class TestParser(TestCase):
             output_file = "video.mp4"
             await cli_main(cmd_input=["record-video", output_file])
             namespace = Namespace()
-            # pyre-fixme[16]: `Namespace` has no attribute `log_level`.
             namespace.companion = None
-            # pyre-fixme[16]: `Namespace` has no attribute `log_level`.
             namespace.log_level = "WARNING"
-            # pyre-fixme[16]: `Namespace` has no attribute `log_level_deprecated`.
             namespace.log_level_deprecated = None
-            # pyre-fixme[16]: `Namespace` has no attribute `root_command`.
             namespace.root_command = "record-video"
-            # pyre-fixme[16]: `Namespace` has no attribute `udid`.
             namespace.udid = None
-            # pyre-fixme[16]: `Namespace` has no attribute `json`.
             namespace.json = False
-            # pyre-fixme[16]: `Namespace` has no attribute `output_file`.
             namespace.output_file = output_file
-            # pyre-fixme[16]: `Namespace` has no attribute `daemon_port`.
             namespace.daemon_port = 9888
-            # pyre-fixme[16]: `Namespace` has no attribute `daemon_grpc_port`.
             namespace.daemon_grpc_port = 9889
-            # pyre-fixme[16]: `Namespace` has no attribute `daemon_host`.
             namespace.daemon_host = "localhost"
-            # pyre-fixme[16]: `Namespace` has no attribute `force`.
             namespace.force = False
             mock.assert_called_once_with(namespace)
 

@@ -266,6 +266,8 @@ def json_format_installed_test_info(test: InstalledTestInfo) -> str:
     data = {
         "bundle_id": test.bundle_id,
         "name": test.name,
+        # pyre-fixme[6]: Expected `Iterable[Variable[_T]]` for 1st param but got
+        #  `Optional[typing.Set[str]]`.
         "architectures": list(test.architectures) if test.architectures else None,
     }
     return json.dumps(data)

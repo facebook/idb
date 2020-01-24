@@ -45,7 +45,6 @@ def _extract_bundle_id(args: Namespace) -> str:
         bundle_id = value.bundle_id
         if bundle_id is None:
             continue
-        # pyre-fixme[16]: `Namespace` has no attribute `bundle_id`.
         args.bundle_id = bundle_id
         return args.bundle_id
     raise NoBundleIdentifierProvidedException(f"No Bundle ID Provided in args {args}")
