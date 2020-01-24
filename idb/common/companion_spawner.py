@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import asyncio
+import errno
 import json
 import logging
 import os
@@ -84,7 +85,20 @@ class CompanionSpawner:
             raise CompanionSpawnerException("process has no stdout")
 
     def _is_notifier_running(self) -> bool:
-        return self.pid_saver.get_notifier_pid() > 0
+        pid = self.pid_saver.get_notifier_pid()
+        # Taken from https://fburl.com/ibk820b6
+        if pid <= 0:
+            return False
+        try:
+            # no-op if process exists
+            os.kill(pid, 0)
+            return True
+        except OSError as err:
+            # EPERM clearly means there's a process to deny access to
+            # otherwise proc doesn't exist
+            return err.errno == errno.EPERM
+        except Exception:
+            return False
 
     async def spawn_notifier(self) -> None:
         if not self._is_notifier_running():
