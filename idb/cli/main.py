@@ -237,10 +237,10 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         await root_command.run(args)
         return 0
     except ConnectCommandException as e:
-        print(str(e))
+        print(str(e), file=sys.stderr)
         return 1
     except IdbException as e:
-        print(e.args[0])
+        print(e.args[0], file=sys.stderr)
         return 1
     except Exception:
         logger.exception("Exception thrown in main")
