@@ -247,8 +247,10 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         return 1
     finally:
         await plugin.on_close(logger)
-        pending = set(asyncio.Task.all_tasks())
-        pending.discard(asyncio.Task.current_task())
+        pending = set(asyncio.all_tasks())
+        current_task = asyncio.current_task()
+        if current_task is not None:
+            pending.discard(current_task)
         await drain_coroutines(pending)
 
 
