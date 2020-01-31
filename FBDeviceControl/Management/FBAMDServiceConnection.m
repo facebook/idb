@@ -110,7 +110,7 @@ static size_t ReadBufferSize = 1024 * 4;
   if (result != 0) {
     return [[FBDeviceControlError
       describeFormat:@"Failed to send message %@, code %d", message, result]
-      fail:error];
+      failBool:error];
   }
   return YES;
 }

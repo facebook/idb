@@ -43,7 +43,7 @@ typedef CFTypeRef AMDServiceConnectionRef;
 /**
  Synchronously send bytes on the connection.
 
- @param size the length in bytes of data to receive.
+ @param data data to send
  @param error an error out for any error that occurs.
  @return YES if the bytes were sent, NO otherwise.
  */

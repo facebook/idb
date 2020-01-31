@@ -63,6 +63,6 @@ setuptools.setup(
     install_requires=["aiofiles", "grpclib", "protobuf"],
     setup_requires=["grpcio-tools", "grpclib"],
     entry_points={"console_scripts": ["idb = idb.cli.main:main"]},
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     cmdclass={"build_py": BuildPyCommand},
 )
