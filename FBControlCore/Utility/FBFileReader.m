@@ -91,7 +91,6 @@ static NSString *StateStringFromState(FBFileReaderState state)
   _ioChannelRelinquishedControl = [FBMutableFuture futureWithNameFormat:@"IO Channel control relinquished %@", targeting];
   _logger = logger;
   _state = FBFileReaderStateNotStarted;
-  _closeOnEndOfFile = closeOnEndOfFile;
 
   return self;
 }
