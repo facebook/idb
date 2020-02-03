@@ -127,6 +127,25 @@ static size_t ReadBufferSize = 1024 * 4;
   return CFBridgingRelease(message);
 }
 
+#pragma mark Streams
+
+- (FBFuture<NSNull *> *)consume:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue
+{
+  return [FBFuture
+    onQueue:queue resolve:^{
+      void *buffer = alloca(ReadBufferSize);
+      while (true) {
+        size_t readBytes = self.calls.ServiceConnectionReceive(self.connection, buffer, ReadBufferSize);
+        if (readBytes < 1) {
+          [consumer consumeEndOfFile];
+          return FBFuture.empty;
+        }
+        NSData *data = [[NSData alloc] initWithBytes:buffer length:readBytes];
+        [consumer consumeData:data];
+      }
+    }];
+}
+
 #pragma mark Lifecycle
 
 - (BOOL)invalidateWithError:(NSError **)error

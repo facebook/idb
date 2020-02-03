@@ -43,7 +43,7 @@ typedef CFTypeRef AMDServiceConnectionRef;
 /**
  Synchronously send bytes on the connection.
 
- @param data data to send
+ @param data the data to send
  @param error an error out for any error that occurs.
  @return YES if the bytes were sent, NO otherwise.
  */
@@ -93,6 +93,17 @@ typedef CFTypeRef AMDServiceConnectionRef;
  @return the read plist.
  */
 - (id)receiveMessageWithError:(NSError **)error;
+
+#pragma mark Streams
+
+/**
+ Reads the stream on the given queue, until exhausted.
+
+ @param consumer the consumer to use.
+ @param queue the queue to consume on.
+ @return a Future that resolves once consumption has finished.
+*/
+- (FBFuture<NSNull *> *)consume:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue;
 
 #pragma mark Lifecycle
 
