@@ -851,11 +851,13 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
   FBIDBXCTestReporter *reporter = [[FBIDBXCTestReporter alloc] initWithResponseWriter:response queue:_target.workQueue logger:_target.logger];
   FBIDBTestOperation *operation = [[_commandExecutor xctest_run:xctestRunRequest reporter:reporter logger:[FBControlCoreLogger loggerToConsumer:reporter]] block:&error];
   reporter.resultBundlePath = operation.resultBundlePath;
-  if (!operation){
+  if (!operation) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
-  // Ensure that we wait for both the reporting to finish, as well as the test operation itself.
-  [[FBFuture futureWithFutures:@[operation.completed, reporter.reportingTerminated]] block:&error];
+  // First wait for the test operation to finish
+  [operation.completed block:&error];
+  // Then make sure we've reported everything, otherwise we could write in the background (use-after-free)
+  [reporter.reportingTerminated block:&error];
   return Status::OK;
 }}
 
