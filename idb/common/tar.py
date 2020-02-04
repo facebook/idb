@@ -61,17 +61,8 @@ async def _create_tar_command(
         yield process
 
 
-@asynccontextmanager  # noqa T484
-async def _create_untar_command(
-    output_path: str, verbose: bool = False
-) -> AsyncContextManager[asyncio.subprocess.Process]:
-    process = await asyncio.create_subprocess_shell(
-        f"tar -C '{output_path}' {'--warning=no-unknown-keyword' if not verbose else ''} -xzpf{'v' if verbose else ''} -",
-        stdin=asyncio.subprocess.PIPE,
-        stderr=sys.stderr,
-        stdout=sys.stderr,
-    )
-    yield process
+def _create_untar_command(output_path: str, verbose: bool = False) -> str:
+    return f"tar -C '{output_path}' {'--warning=no-unknown-keyword' if not verbose else ''} -xzpf{'v' if verbose else ''} -"
 
 
 async def _generator_from_data(data: bytes) -> AsyncIterator[bytes]:
@@ -132,16 +123,19 @@ async def drain_untar(
         os.mkdir(output_path)
     except FileExistsError:
         pass
-    async with _create_untar_command(
-        output_path=output_path, verbose=verbose
-    ) as process:
-        writer = none_throws(process.stdin)
-        async for data in generator:
-            writer.write(data)
-            await writer.drain()
-        writer.write_eof()
+    process = await asyncio.create_subprocess_shell(
+        _create_untar_command(output_path=output_path, verbose=verbose),
+        stdin=asyncio.subprocess.PIPE,
+        stderr=sys.stderr,
+        stdout=sys.stderr,
+    )
+    writer = none_throws(process.stdin)
+    async for data in generator:
+        writer.write(data)
         await writer.drain()
-        await process.wait()
+    writer.write_eof()
+    await writer.drain()
+    await process.wait()
 
 
 async def untar(data: bytes, output_path: str, verbose: bool = False) -> None:
