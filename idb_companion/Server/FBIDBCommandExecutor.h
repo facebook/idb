@@ -66,16 +66,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSDictionary<FBInstalledApplication *, id> *> *)list_apps;
 
 /**
- Deprecated.
- Install an App via a File Path or NSData
-
- @param appData tar or zip app data.
- @param filePath the path to a file on disk with the file.
- @return A future that resolves with the App Bundle Id
- */
-- (FBFuture<NSString *> *)install:(nullable NSData *)appData filePath:(nullable NSString *)filePath;
-
-/**
  Install an App via a File Path.
 
  @param filePath the path to a file on disk with the file.
@@ -92,15 +82,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input;
 
 /**
- Deprecated.
- Install an App via a Data.
-
- @param appData tar or zip app data.
- @return A future that resolves with the App Bundle Id
- */
-- (FBFuture<FBInstalledArtifact *> *)install_app_binary:(NSData *)appData;
-
-/**
  Installs an xctest bundle by file path.
 
  @param filePath the local file path of the xctest bundle
@@ -115,15 +96,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Future that resolves with the xctest identifier.
  */
 - (FBFuture<FBInstalledArtifact *> *)install_xctest_app_stream:(FBProcessInput *)input;
-
-/**
- Deprecated.
- Installs an xctest bundle by a tar blob
-
- @param tarData a tar blob of the xctest data.
- @return a Future that resolves with the xctest identifier.
- */
-- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_binary:(NSData *)tarData;
 
 /**
  Installs a dylib from a file path.

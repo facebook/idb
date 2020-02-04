@@ -69,32 +69,9 @@
     }];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install:(nullable NSData *)appData filePath:(nullable NSString *)filePath
-{
-  if (filePath) {
-    return [self install_app_file_path:filePath];
-  }
-  if (appData) {
-    return [self install_app_binary:appData];
-  }
-  return [[FBIDBError
-    describeFormat:@"no filepath or data found for install"]
-    failFuture];
-}
-
 - (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath
 {
   return [self installExtractedApplication:[FBBundleDescriptor onQueue:self.target.asyncQueue findOrExtractApplicationAtPath:filePath logger:self.logger]];
-}
-
-- (FBFuture<FBInstalledArtifact *> *)install_app_binary:(NSData *)data
-{
-  FBFutureContext<FBBundleDescriptor *> *bundle = [[self.temporaryDirectory
-    withArchiveExtracted:data]
-    onQueue:self.target.asyncQueue pend:^(NSURL *tempDirectory) {
-      return [FBBundleDescriptor findAppPathFromDirectory:tempDirectory];
-    }];
-  return [self installExtractedApplication:bundle];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input
@@ -110,11 +87,6 @@
 - (FBFuture<FBInstalledArtifact *> *)install_xctest_app_stream:(FBProcessInput *)stream
 {
   return [self installXctest:[self.temporaryDirectory withArchiveExtractedFromStream:stream]];
-}
-
-- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_binary:(NSData *)tarData
-{
-  return [self installXctest:[self.temporaryDirectory withArchiveExtracted:tarData]];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)install_dylib_file_path:(NSString *)filePath
