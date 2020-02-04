@@ -55,7 +55,7 @@
 
 + (int)fileDescriptorForPath:(NSString *)filePath error:(NSError **)error
 {
-  int fileDescriptor = open(filePath.UTF8String, O_WRONLY | O_CREAT);
+  int fileDescriptor = open(filePath.UTF8String, O_WRONLY | O_CREAT, 0644);
   if (!fileDescriptor) {
     return [[FBControlCoreError
       describeFormat:@"A file handle for path %@ could not be opened: %s", filePath, strerror(errno)]
