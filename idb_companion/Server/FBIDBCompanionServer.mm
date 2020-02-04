@@ -55,7 +55,7 @@ using namespace std;
     temporaryDirectory:temporaryDirectory
     ports:ports
     logger:logger];
-  commandExecutor = [FBLoggingWrapper wrap:commandExecutor eventReporter:eventReporter logger:nil];
+  commandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:eventReporter logger:nil];
 
   return [[self alloc] initWithPorts:ports target:target commandExecutor:commandExecutor eventReporter:eventReporter logger:logger];
 }

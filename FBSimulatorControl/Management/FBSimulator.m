@@ -84,6 +84,7 @@
   _logger = [logger withName:device.UDID.UUIDString];
   _forwarder = [FBLoggingWrapper
     wrap:[FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBSimulator.commandResponders statefulCommands:FBSimulator.statefulCommands]
+    simplifiedNaming:NO
     eventReporter:reporter
     logger:nil];
 

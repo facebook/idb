@@ -26,11 +26,12 @@ NS_ASSUME_NONNULL_BEGIN
  Each log contains the methodName and a truncated description of it's arguments
 
  @param wrappedObject the object to wrap, all methods must return an FBFuture.
+ @param simplifiedNaming YES if the name of the first element in the selector should be used, NO if you want the full selector.
  @param eventReporter the event reporter to log to.
  @param logger FBControlCoreLogger to use.
  @return wrapper instance, that proxies the underlying wrapped object.
  */
-+ (id)wrap:(id)wrappedObject eventReporter:(nullable id<FBEventReporter>)eventReporter logger:(nullable id<FBControlCoreLogger>)logger;
++ (id)wrap:(id)wrappedObject simplifiedNaming:(BOOL)simplifiedNaming eventReporter:(nullable id<FBEventReporter>)eventReporter logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
 

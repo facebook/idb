@@ -13,6 +13,7 @@
 @property (nonatomic, strong, readonly) id<FBEventReporter> eventReporter;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, assign, readonly) BOOL simplifiedNaming;
 
 @end
 
@@ -20,12 +21,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)wrap:(id)wrappedObject eventReporter:(nullable id<FBEventReporter>)eventReporter logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)wrap:(id)wrappedObject simplifiedNaming:(BOOL)simplifiedNaming eventReporter:(nullable id<FBEventReporter>)eventReporter logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithWrappedObject:wrappedObject eventReporter:eventReporter logger:logger];
+  return [[self alloc] initWithWrappedObject:wrappedObject simplifiedNaming:simplifiedNaming eventReporter:eventReporter logger:logger];
 }
 
-- (instancetype)initWithWrappedObject:(id)wrappedObject eventReporter:(nullable id<FBEventReporter>)eventReporter logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithWrappedObject:(id)wrappedObject simplifiedNaming:(BOOL)simplifiedNaming eventReporter:(nullable id<FBEventReporter>)eventReporter logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -33,6 +34,7 @@
   }
 
   _wrappedObject = wrappedObject;
+  _simplifiedNaming = simplifiedNaming;
   _queue = dispatch_queue_create("com.facebook.fbcontrolcore.logging_wrapper", DISPATCH_QUEUE_SERIAL);
   _eventReporter = eventReporter;
   _logger = logger;
@@ -65,7 +67,7 @@
 {
   // Extract information about the start of the call.
   NSDate *startDate = NSDate.date;
-  NSString *methodName = [self.class methodName:invocation];
+  NSString *methodName = [self.class methodName:invocation simplifiedNaming:self.simplifiedNaming];
   NSArray<NSString *> *descriptionOfArguments = [self.class descriptionOfArguments:invocation];
   id<FBEventReporterSubject> beforeSubject = [self.class subjectForBeforeInvocation:methodName descriptionOfArguments:descriptionOfArguments logger:self.logger];
   [self.eventReporter report:beforeSubject];
@@ -121,9 +123,14 @@
 
 #pragma mark - NSInvocation inspection
 
-+ (NSString *)methodName:(NSInvocation *)invocation
++ (NSString *)methodName:(NSInvocation *)invocation simplifiedNaming:(BOOL)simplifiedNaming
 {
-  return [NSStringFromSelector(invocation.selector) stringByReplacingOccurrencesOfString:@":" withString:@""];
+  // This will log the first argument in the method name, so method names should be unique relative to the first component within the selector
+  if (simplifiedNaming) {
+    return [NSStringFromSelector(invocation.selector) componentsSeparatedByString:@":"][0];
+  }
+  // Otherwise log the entire selector
+  return NSStringFromSelector(invocation.selector);
 }
 
 + (NSArray<NSString *> *)descriptionOfArguments:(NSInvocation *)invocation
