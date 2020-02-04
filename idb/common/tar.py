@@ -27,6 +27,16 @@ COMPRESSION_COMMAND = "pigz -c" if _has_executable("pigz") else "gzip -4"
 READ_CHUNK_SIZE: int = 1024 * 1024 * 4  # 4Mb, the default max read for gRPC
 
 
+async def is_gnu_tar() -> bool:
+    proc = await asyncio.create_subprocess_shell(
+        "tar --version | grep GNU",
+        stdout=asyncio.subprocess.DEVNULL,
+        stderr=asyncio.subprocess.DEVNULL,
+    )
+    await proc.communicate()
+    return proc.returncode == 0
+
+
 @asynccontextmanager  # noqa T484
 async def _create_tar_command(
     paths: List[str],
@@ -61,8 +71,15 @@ async def _create_tar_command(
         yield process
 
 
-def _create_untar_command(output_path: str, verbose: bool = False) -> str:
-    return f"tar -C '{output_path}' {'--warning=no-unknown-keyword' if not verbose else ''} -xzpf{'v' if verbose else ''} -"
+def _create_untar_command(
+    output_path: str, gnu_tar: bool, verbose: bool = False
+) -> str:
+    command = ["tar", "-C", f"'{output_path}'"]
+    if not verbose and gnu_tar:
+        command.append("--warning=no-unknown-keyword")
+    command.append(f"-xzpf{'v' if verbose else ''}")
+    command.append("-")
+    return " ".join(command)
 
 
 async def _generator_from_data(data: bytes) -> AsyncIterator[bytes]:
@@ -123,8 +140,11 @@ async def drain_untar(
         os.mkdir(output_path)
     except FileExistsError:
         pass
+
     process = await asyncio.create_subprocess_shell(
-        _create_untar_command(output_path=output_path, verbose=verbose),
+        _create_untar_command(
+            output_path=output_path, gnu_tar=await is_gnu_tar(), verbose=verbose
+        ),
         stdin=asyncio.subprocess.PIPE,
         stderr=sys.stderr,
         stdout=sys.stderr,
