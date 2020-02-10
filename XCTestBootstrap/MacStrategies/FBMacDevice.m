@@ -178,9 +178,11 @@
   if (!transport) {
     return [FBFutureContext futureContextWithError:error];
   }
-  return [[FBFuture futureWithResult:transport] onQueue:self.workQueue contextualTeardown:^(id _, FBFutureState __) {
-    [transport closeFile];
-    return FBFuture.empty;
+  return [[FBFuture
+    futureWithResult:@(transport.fileDescriptor)]
+    onQueue:self.workQueue contextualTeardown:^(id _, FBFutureState __) {
+      [transport closeFile];
+      return FBFuture.empty;
   }];
 }
 
