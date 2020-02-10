@@ -205,22 +205,28 @@
 
 - (void)consumeData:(dispatch_data_t)data
 {
-  NSParameterAssert(self.io);
+  dispatch_io_t io = self.io;
+  if (!io) {
+    return;
+  }
 
-  dispatch_io_write(self.io, 0, data, self.writeQueue, ^(bool done, dispatch_data_t remainder, int error) {});
+  dispatch_io_write(io, 0, data, self.writeQueue, ^(bool done, dispatch_data_t remainder, int error) {});
 }
 
 - (void)consumeEndOfFile
 {
-  NSParameterAssert(self.io);
+  dispatch_io_t io = self.io;
+  if (!io) {
+    return;
+  }
 
   // We can't close the file handle right now since there may still be pending IO operations on the channel.
   // The safe place to do this is within the dispatch_io_create cleanup_handler callback.
   // Until the cleanup_handler is called, libdispatch takes over control of the file descriptor.
   // We also want to ensure that there are no pending write operations on the channel, otherwise it's easy to miss data.
   // The barrier ensures that there are no pending writes before we attempt to interrupt the channel.
-  dispatch_io_barrier(self.io, ^{
-    dispatch_io_close(self.io, DISPATCH_IO_STOP);
+  dispatch_io_barrier(io, ^{
+    dispatch_io_close(io, DISPATCH_IO_STOP);
   });
 }
 
