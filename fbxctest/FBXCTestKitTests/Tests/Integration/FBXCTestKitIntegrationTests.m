@@ -63,7 +63,7 @@
   NSString *testTargetPath = [FBXCTestKitFixtures iOSUITestAppTargetPath];
   NSString *testBundlePath = self.iOSUITestBundlePath;
   NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@:%@", testBundlePath, applicationPath, testTargetPath];
-  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-uiTest", appTestArgument ];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 8", @"-uiTest", appTestArgument ];
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
@@ -91,7 +91,7 @@
   NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];
   NSString *testBundlePath = [self iOSUnitTestBundlePath];
   NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
-  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument ];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 8", @"-appTest", appTestArgument ];
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
@@ -145,7 +145,7 @@
   NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];
   NSString *testBundlePath = [self iOSUnitTestBundlePath];
   NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
-  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument ];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 8", @"-appTest", appTestArgument ];
   NSDictionary<NSString *, NSString *> *processUnderTestEnvironment = FBXCTestKitIntegrationTests.crashingProcessUnderTestEnvironment;
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processUnderTestEnvironment workingDirectory:workingDirectory error:&error];
@@ -170,7 +170,7 @@
   NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
   NSString *shortTestFilter = @"iOSAppFixtureAppTests/testWillAlwaysPass";
   NSString *testFilter = [NSString stringWithFormat:@"%@:%@", testBundlePath, shortTestFilter];
-  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument, @"-only", testFilter];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 8", @"-appTest", appTestArgument, @"-only", testFilter];
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine  commandLineFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
@@ -193,7 +193,7 @@
   NSString *applicationPath = [FBXCTestKitFixtures iOSUITestAppTargetPath];
   NSString *testBundlePath = [self iOSAppTestBundlePath];
   NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
-  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 8", @"-appTest", appTestArgument];
   NSString *osLogPath = [workingDirectory stringByAppendingPathComponent:@"os_log.txt"];
 
   XCTAssertFalse([[NSFileManager defaultManager] fileExistsAtPath:osLogPath isDirectory:nil], @"should have no os log file");
@@ -225,7 +225,7 @@
 
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSString *testBundlePath = [self iOSUnitTestBundlePath];
-  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 8", @"-logicTest", testBundlePath ];
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine  commandLineFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
@@ -252,7 +252,7 @@
 
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSString *testBundlePath = [self iOSUnitTestBundlePath];
-  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 8", @"-logicTest", testBundlePath ];
   NSDictionary<NSString *, NSString *> *processUnderTestEnvironment = FBXCTestKitIntegrationTests.crashingProcessUnderTestEnvironment;
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processUnderTestEnvironment workingDirectory:workingDirectory error:&error];
@@ -281,7 +281,7 @@
 
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSString *testBundlePath = [self iOSUnitTestBundlePath];
-  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 8", @"-logicTest", testBundlePath ];
   NSDictionary<NSString *, NSString *> *processUnderTestEnvironment = FBXCTestKitIntegrationTests.stallingProcessUnderTestEnvironment;
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processUnderTestEnvironment workingDirectory:workingDirectory timeout:5 error:&error];
@@ -310,7 +310,7 @@
 
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSString *testBundlePath = [self iOSUnitTestBundlePath];
-  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath, @"-listTestsOnly" ];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 8", @"-logicTest", testBundlePath, @"-listTestsOnly" ];
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
@@ -348,7 +348,7 @@
   NSString *applicationPath = [FBXCTestKitFixtures iOSUITestAppTargetPath];
   NSString *testBundlePath = [self iOSAppTestBundlePath];
   NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
-  NSArray<NSString *> *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument, @"-listTestsOnly" ];
+  NSArray<NSString *> *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 8", @"-appTest", appTestArgument, @"-listTestsOnly" ];
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
