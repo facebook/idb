@@ -199,15 +199,16 @@ static NSString *StateStringFromState(FBFileReaderState state)
   }
 
   // dispatch_io_close will stop future reads of the io channel.
-  // But it does not mean that the dispatch_io_read callback will receive further calls:
+  // But it does not mean that the dispatch_io_read callback will never receive further callbacks:
   // > "Even if you specify this flag, the corresponding handlers may be invoked with partial results"
-  // However, if this has been called, then it is safe to assume that control of the file descriptor *has* been relinquished.
-  // From the dispatch_io_close docs:
+  // This also means that the errorCode in the dispatch_io_read callback will correspond to ECANCELED.
+  //
+  // There is also the issue of "relinquishment", which is whether the file descriptor can be used elsewhere.
+  // The libdispatch documentation does explicitly say that it is fine to assume that control has been relinquished:
   // > "After calling this function, the system takes control of the specified file descriptor until one of the following occurs"
   // > "- You close the channel by calling the dispatch_io_close function"
-  // The ioChannelFinishedReadOperation future will then be resolved, so we can return that future from here.
+  // However, this does not appear to be the case and the only safe way of considering a file descriptor relinquished is in the dispatch_io_create handler.
   dispatch_io_close(self.io, DISPATCH_IO_STOP);
-  [self ioChannelHasBeenClosedWithErrorCode:ECANCELED];
   return self.ioChannelRelinquishedControl;
 }
 
@@ -225,20 +226,6 @@ static NSString *StateStringFromState(FBFileReaderState state)
     return;
   }
   dispatch_io_close(io, 0);
-  [self ioChannelHasBeenClosedWithErrorCode:errorCode];
-}
-
-- (void)ioChannelHasBeenClosedWithErrorCode:(int)errorCode
-{
-  // At this point we are free to assume that the
-  // Take the same path as if control was relinquished in the dispatch_io_create callback.
-  // From the dispatch_io_create docs:
-  // > After calling this function, the system takes control of the specified file descriptor until one of the following occurs:
-  // > - You close the channel by calling the dispatch_io_close function"
-  // > - An unrecoverable error occurs on the file descriptor
-  // > - All references to the channel are released
-  // This means that we've satisfied the first condition at this point and are free to cleanup the file descriptor.
-  [self ioChannelHasRelinquishedControlWithErrorCode:errorCode];
 }
 
 - (void)ioChannelHasRelinquishedControlWithErrorCode:(int)errorCode
