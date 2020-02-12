@@ -315,7 +315,7 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
     }
     [[self
       findCrashedProcessLog]
-      onQueue:self.target.workQueue notifyOfCompletion:^(FBFuture<FBCrashLogInfo *> *future) {
+      onQueue:self.target.workQueue notifyOfCompletion:^(FBFuture<FBCrashLog *> *future) {
         if (future.result) {
           [self concludeWithResult:[FBTestBundleResult bundleCrashedDuringTestRun:future.result]];
         } else {
@@ -328,9 +328,9 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
   });
 }
 
-- (FBFuture<FBCrashLogInfo *> *)findCrashedProcessLog
+- (FBFuture<FBCrashLog *> *)findCrashedProcessLog
 {
-  return [[self.target
+  return [[[self.target
     processIDWithBundleID:self.context.testRunnerBundleID]
     onQueue:self.target.workQueue chain:^FBFuture<FBTestBundleResult *> *(FBFuture<NSNumber *> *processIdentifierFuture) {
       if (processIdentifierFuture.result) {
@@ -350,6 +350,14 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
         notifyOfCrash:[FBCrashLogInfo predicateForCrashLogsWithProcessID:self.context.testRunnerPID]]
         timeout:CrashCheckWaitLimit
         waitingFor:@"Getting crash log for process with pid %d, bunndle ID: %@", self.context.testRunnerPID, self.context.testRunnerBundleID];
+    }]
+    onQueue:self.target.workQueue fmap:^(FBCrashLogInfo *info) {
+      NSError *error = nil;
+      FBCrashLog *log = [info obtainCrashLogWithError:&error];
+      if (!log) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:log];
     }];
 }
 

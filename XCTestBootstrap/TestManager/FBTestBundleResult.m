@@ -65,13 +65,13 @@
 
 @interface FBTestBundleResult_CrashedDuringTestRun : FBTestBundleResult
 
-@property (nonatomic, strong, readonly) FBCrashLogInfo *underlyingCrash;
+@property (nonatomic, strong, readonly) FBCrashLog *underlyingCrash;
 
 @end
 
 @implementation FBTestBundleResult_CrashedDuringTestRun
 
-- (instancetype)initWithCrash:(FBCrashLogInfo *)crash
+- (instancetype)initWithCrash:(FBCrashLog *)crash
 {
   self = [super init];
   if (!self) {
@@ -91,18 +91,18 @@
 - (NSError *)error
 {
   return [[XCTestBootstrapError
-    describeFormat:@"The Test Bundle Crashed during the Test Run %@", self.crash]
+    describeFormat:@"The Test Bundle Crashed during the Test Run %@", self.crash.contents]
     build];
 }
 
-- (FBCrashLogInfo *)crash
+- (FBCrashLog *)crash
 {
   return self.underlyingCrash;
 }
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Bundle Connection crashed during test run: %@", self.crash];
+  return [NSString stringWithFormat:@"Bundle Connection crashed during test run: %@", self.crash.contents];
 }
 
 @end
@@ -163,7 +163,7 @@
   return [FBTestBundleResult_ClientRequestedDisconnect new];
 }
 
-+ (instancetype)bundleCrashedDuringTestRun:(FBCrashLogInfo *)crash
++ (instancetype)bundleCrashedDuringTestRun:(FBCrashLog *)crash
 {
   return [[FBTestBundleResult_CrashedDuringTestRun alloc] initWithCrash:crash];
 }

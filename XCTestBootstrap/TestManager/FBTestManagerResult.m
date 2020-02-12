@@ -109,13 +109,13 @@
 
 @interface FBTestManagerResult_TestHostCrashed : FBTestManagerResult
 
-@property (nonatomic, strong, readonly) FBCrashLogInfo *underlyingCrash;
+@property (nonatomic, strong, readonly) FBCrashLog *underlyingCrash;
 
 @end
 
 @implementation FBTestManagerResult_TestHostCrashed
 
-- (instancetype)initWithCrashDiagnostic:(FBCrashLogInfo *)crash
+- (instancetype)initWithCrashDiagnostic:(FBCrashLog *)crash
 {
   self = [super init];
   if (!self) {
@@ -139,7 +139,7 @@
     build];
 }
 
-- (FBCrashLogInfo *)crash
+- (FBCrashLog *)crash
 {
   return self.underlyingCrash;
 }

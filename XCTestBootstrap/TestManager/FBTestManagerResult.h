@@ -9,7 +9,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBCrashLogInfo;
+@class FBCrashLog;
 @class FBTestBundleResult;
 @class FBTestDaemonResult;
 @class XCTestBootstrapError;
@@ -79,7 +79,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Diagnostic for the Crash of a Test Host, if relevant.
  */
-@property (nonatomic, strong, nullable, readonly) FBCrashLogInfo *crash;
+@property (nonatomic, strong, nullable, readonly) FBCrashLog *crash;
 
 @end
 
