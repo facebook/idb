@@ -752,7 +752,7 @@ class IdbManagementClient(IdbManagementClientBase):
     async def get_stub(self) -> AsyncContextManager[IdbClient]:
         await self.spawn_notifier()
         try:
-            companion_info = self.direct_companion_manager.get_companion_info(
+            companion_info = await self.direct_companion_manager.get_companion_info(
                 target_udid=self.target_udid
             )
         except IdbException as e:
@@ -788,7 +788,7 @@ class IdbManagementClient(IdbManagementClientBase):
                 companion_info = CompanionInfo(
                     host=host, port=port, udid=target_udid, is_local=True
                 )
-                self.direct_companion_manager.add_companion(companion_info)
+                await self.direct_companion_manager.add_companion(companion_info)
                 return companion_info
         return None
 
@@ -802,7 +802,7 @@ class IdbManagementClient(IdbManagementClientBase):
             return {}
 
     async def kill(self) -> None:
-        self.direct_companion_manager.clear()
+        await self.direct_companion_manager.clear()
         self.local_targets_manager.clear()
         PidSaver(logger=self.logger).kill_saved_pids()
 
@@ -1162,15 +1162,16 @@ class IdbManagementClient(IdbManagementClientBase):
             )
         except Exception:
             self.logger.warning(f"Failed to describe {companion}, removing it")
-            self.direct_companion_manager.remove_companion(
+            await self.direct_companion_manager.remove_companion(
                 Address(companion.host, companion.port)
             )
             return None
 
     @log_and_handle_exceptions
     async def list_targets(self) -> List[TargetDescription]:
-        await self.spawn_notifier()
-        companions = self.direct_companion_manager.get_companions()
+        (_, companions) = await asyncio.gather(
+            self.spawn_notifier(), self.direct_companion_manager.get_companions()
+        )
         local_targets = self.local_targets_manager.get_local_targets()
         connected_targets = await asyncio.gather(
             *(
@@ -1209,7 +1210,7 @@ class IdbManagementClient(IdbManagementClientBase):
                 is_local=response.companion.is_local,
             )
             self.logger.debug(f"Connected directly to {companion}")
-            self.direct_companion_manager.add_companion(companion)
+            await self.direct_companion_manager.add_companion(companion)
             channel.close()
             return companion
         else:
@@ -1221,4 +1222,4 @@ class IdbManagementClient(IdbManagementClientBase):
 
     @log_and_handle_exceptions
     async def disconnect(self, destination: ConnectionDestination) -> None:
-        self.direct_companion_manager.remove_companion(destination)
+        await self.direct_companion_manager.remove_companion(destination)

@@ -26,7 +26,7 @@ class CompanionManagerTests(TestCase):
             companion = CompanionInfo(
                 udid="asdasda", host="foohost", port=123, is_local=False
             )
-            companion_manager.add_companion(companion)
+            await companion_manager.add_companion(companion)
             data = json.load(f)
             companions = json_to_companion_info(data)
             read_companion: CompanionInfo = companions[0]
@@ -42,7 +42,7 @@ class CompanionManagerTests(TestCase):
             )
             with open(f.name, "w") as f:
                 json.dump(json_data_companions([companion]), f)
-            companions = companion_manager._load()
+            companions = await companion_manager._load()
             read_companion: CompanionInfo = companions[0]
             self.assertEqual(companion, read_companion)
 
@@ -56,9 +56,9 @@ class CompanionManagerTests(TestCase):
             companion = CompanionInfo(
                 udid="asdasda", host="foohost", port=123, is_local=False
             )
-            companion_manager.add_companion(companion)
-            companion_manager.clear()
-            companions = companion_manager.get_companions()
+            await companion_manager.add_companion(companion)
+            await companion_manager.clear()
+            companions = await companion_manager.get_companions()
             self.assertEqual(companions, [])
 
     async def test_remove_companion_with_udid(self) -> None:
@@ -71,10 +71,10 @@ class CompanionManagerTests(TestCase):
             )
             with open(f.name, "w") as f:
                 json.dump(json_data_companions([companion]), f)
-            companion_manager.remove_companion(
+            await companion_manager.remove_companion(
                 Address(host=companion.host, port=companion.port)
             )
-            companions = companion_manager._load()
+            companions = await companion_manager._load()
             self.assertEqual(companions, [])
 
     async def test_remove_companion_with_host_and_port(self) -> None:
@@ -87,6 +87,6 @@ class CompanionManagerTests(TestCase):
             )
             with open(f.name, "w") as f:
                 json.dump(json_data_companions([companion]), f)
-            companion_manager.remove_companion(companion.udid)
-            companions = companion_manager._load()
+            await companion_manager.remove_companion(companion.udid)
+            companions = await companion_manager._load()
             self.assertEqual(companions, [])

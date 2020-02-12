@@ -4,13 +4,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import asyncio
 import json
 import logging
 import os
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from time import sleep
-from typing import IO, Any, Generator, List, Optional
+from typing import IO, AsyncGenerator, List, Optional
 
 from idb.common.constants import IDB_STATE_FILE_PATH
 from idb.common.format import json_data_companions, json_to_companion_info
@@ -20,10 +20,10 @@ from idb.common.types import CompanionInfo, ConnectionDestination, IdbException
 # this is the new companion manager for direct_client mode
 
 
-@contextmanager
-def exclusive_open(  # pyre-ignore
+@asynccontextmanager
+async def exclusive_open(
     filename: str, *args, **kwargs  # pyre-ignore
-) -> Generator[IO[Any], None, None]:
+) -> AsyncGenerator[IO[str], None]:
     timeout = 3
     retry_time = 0.05
     lockfile = filename + ".lock"
@@ -35,7 +35,7 @@ def exclusive_open(  # pyre-ignore
         except FileExistsError:
             if datetime.now() >= deadline:
                 raise
-            sleep(retry_time)
+            await asyncio.sleep(retry_time)
     try:
         with open(filename, *args, **kwargs) as f:
             yield f
@@ -55,35 +55,35 @@ class DirectCompanionManager:
         self.logger = logger
         self.logger.info(f"idb state file stored at {self.state_file_path}")
 
-    def add_companion(self, companion: CompanionInfo) -> None:
-        self.get_companions()
+    async def add_companion(self, companion: CompanionInfo) -> None:
+        await self.get_companions()
         if companion in self.companions:
             self.logger.info(f"companion {companion} already added")
         else:
             self.companions.append(companion)
             self.logger.info(f"added direct companion {companion}")
-        self._save()
+        await self._save()
 
-    def get_companions(self) -> List[CompanionInfo]:
-        self.companions = self._load()
+    async def get_companions(self) -> List[CompanionInfo]:
+        self.companions = await self._load()
         return self.companions
 
-    def _save(self) -> None:
-        with exclusive_open(self.state_file_path, "w") as f:
+    async def _save(self) -> None:
+        async with exclusive_open(self.state_file_path, "w") as f:
             json.dump(json_data_companions(self.companions), f)
 
-    def _load(self) -> List[CompanionInfo]:
-        if os.path.exists(self.state_file_path):
-            with exclusive_open(self.state_file_path, "r") as f:
-                return json_to_companion_info(json.load(f))
-        return []
+    async def _load(self) -> List[CompanionInfo]:
+        if not os.path.exists(self.state_file_path):
+            return []
+        async with exclusive_open(self.state_file_path, "r") as f:
+            return json_to_companion_info(json.load(f))
 
-    def clear(self) -> None:
+    async def clear(self) -> None:
         self.companions = []
-        self._save()
+        await self._save()
 
-    def get_companion_info(self, target_udid: Optional[str]) -> CompanionInfo:
-        self.get_companions()
+    async def get_companion_info(self, target_udid: Optional[str]) -> CompanionInfo:
+        await self.get_companions()
         if target_udid:
             companions = [
                 companion
@@ -103,8 +103,8 @@ class DirectCompanionManager:
         else:
             raise IdbException("No UDID provided and couldn't find a default companion")
 
-    def remove_companion(self, destination: ConnectionDestination) -> None:
-        self.get_companions()
+    async def remove_companion(self, destination: ConnectionDestination) -> None:
+        await self.get_companions()
         companions = []
         if isinstance(destination, str):
             companions = [
@@ -121,4 +121,4 @@ class DirectCompanionManager:
             ]
         for companion in companions:
             self.companions.remove(companion)
-        self._save()
+        await self._save()
