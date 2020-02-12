@@ -22,6 +22,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 @property (nonatomic, copy, readonly) NSMutableArray<NSString *> *pendingTestOutput;
 
 @property (nonatomic, copy, readwrite) NSString *currentTestName;
+@property (nonatomic, assign, readwrite) BOOL started;
 @property (nonatomic, assign, readwrite) BOOL finished;
 
 @end
@@ -41,9 +42,9 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   _testType = testType;
   _xctestNameExceptionsMapping = [NSMutableDictionary dictionary];
   _pendingTestOutput = [NSMutableArray array];
-  _events = [NSMutableArray array];
 
   _currentTestName = nil;
+  _started = NO;
   _finished = NO;
 
   return self;
@@ -51,33 +52,30 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 
 - (BOOL)printReportWithError:(NSError **)error
 {
+  if (!_started) {
+    return [[FBXCTestError describe:[self noStartOfTestPlanErrorMessage]] failBool:error];
+  }
   if (!_finished) {
-    NSString *errorMessage = @"No end-ocunit event was received, the test bundle has likely crashed";
+    NSString *errorMessage = @"No didFinishExecutingTestPlan event was received, the test bundle has likely crashed.";
     if (_currentTestName) {
       errorMessage = [errorMessage stringByAppendingString:@". Crash occurred while this test was running: "];
       errorMessage = [errorMessage stringByAppendingString:_currentTestName];
     }
-    [self printEvent:[FBJSONTestReporter createOCUnitBeginEvent:self.testType testBundlePath:self.testBundlePath]];
     [self printEvent:[FBJSONTestReporter createOCUnitEndEvent:self.testType testBundlePath:self.testBundlePath message:errorMessage success:NO]];
     return [[FBXCTestError describe:errorMessage] failBool:error];
-  }
-  for (NSDictionary *event in _events) {
-    [self printEvent:event];
   }
   [self.dataConsumer consumeEndOfFile];
   return YES;
 }
 
-- (void)storeEvent:(NSDictionary *)dictionary
-{
-  NSMutableDictionary *mDictionary = dictionary.mutableCopy;
-  mDictionary[@"timestamp"] = @([NSDate date].timeIntervalSince1970);
-  [_events addObject:mDictionary.copy];
-}
-
 - (void)printEvent:(NSDictionary *)event
 {
-  NSData *data = [NSJSONSerialization dataWithJSONObject:event options:0 error:nil];
+  NSMutableDictionary *timestamped = event.mutableCopy;
+  if (!timestamped[@"timestamp"]) {
+    timestamped[@"timestamp"] = @(NSDate.date.timeIntervalSince1970);
+  }
+
+  NSData *data = [NSJSONSerialization dataWithJSONObject:timestamped options:0 error:nil];
   [self.dataConsumer consumeData:data];
   [self.dataConsumer consumeData:[NSData dataWithBytes:"\n" length:1]];
 }
@@ -96,12 +94,25 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 
 - (void)didBeginExecutingTestPlan
 {
-  [self storeEvent:[FBJSONTestReporter createOCUnitBeginEvent:self.testType testBundlePath:self.testBundlePath]];
+  _started = YES;
+  [self printEvent:[FBJSONTestReporter createOCUnitBeginEvent:self.testType testBundlePath:self.testBundlePath]];
+}
+
+- (void)didFinishExecutingTestPlan
+{
+  if (_started) {
+    [self printEvent:[FBJSONTestReporter createOCUnitEndEvent:self.testType testBundlePath:self.testBundlePath message:nil success:YES]];
+  } else {
+    [self printEvent:[FBJSONTestReporter createOCUnitBeginEvent:self.testType testBundlePath:self.testBundlePath]];
+    NSString *errorMessage = [self noStartOfTestPlanErrorMessage];
+    [self printEvent:[FBJSONTestReporter createOCUnitEndEvent:self.testType testBundlePath:self.testBundlePath message:errorMessage success:NO]];
+  }
+  _finished = YES;
 }
 
 - (void)testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime
 {
-  [self storeEvent:[FBJSONTestReporter beginTestSuiteEvent:startTime]];
+  [self printEvent:[FBJSONTestReporter beginTestSuiteEvent:testSuite]];
 }
 
 - (void)testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
@@ -109,7 +120,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   NSString *xctestName = FBFullyFormattedXCTestName(testClass, method);
   _currentTestName = xctestName;
   self.xctestNameExceptionsMapping[xctestName] = [NSMutableArray array];
-  [self storeEvent:[FBJSONTestReporter beginTestCaseEvent:testClass testMethod:method]];
+  [self printEvent:[FBJSONTestReporter beginTestCaseEvent:testClass testMethod:method]];
 }
 
 - (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line
@@ -128,56 +139,44 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
     duration:duration
     pendingTestOutput:self.pendingTestOutput
     xctestNameExceptionsMapping:self.xctestNameExceptionsMapping];
-  [self storeEvent:event];
+  [self printEvent:event];
   [self.pendingTestOutput removeAllObjects];
 }
 
 - (void)finishedWithSummary:(FBTestManagerResultSummary *)summary
 {
-  [self storeEvent:[FBJSONTestReporter finishedEventFromSummary:summary]];
+  [self printEvent:[FBJSONTestReporter finishedEventFromSummary:summary]];
 }
 
 - (void)didRecordVideoAtPath:(nonnull NSString *)videoRecordingPath
 {
-  NSDictionary<NSString *, id> *event =
-    @{
-      @"event" : @"video-recording-finished",
-      @"videoRecordingPath" : videoRecordingPath,
-    };
-  [self storeEvent:event];
+  [self printEvent:@{
+    @"event" : @"video-recording-finished",
+    @"videoRecordingPath" : videoRecordingPath,
+  }];
 }
 
 - (void)didSaveOSLogAtPath:(nonnull NSString *)osLogPath
 {
-  NSDictionary<NSString *, id> *event =
-  @{
+  [self printEvent:@{
     @"event" : @"os-log-saved",
     @"osLogPath" : osLogPath,
-    };
-  [self storeEvent:event];
+  }];
 }
 
 - (void)didCopiedTestArtifact:(nonnull NSString *)testArtifactFilename toPath:(nonnull NSString *)path
 {
-  NSDictionary<NSString *, id> *event =
-  @{
+  [self printEvent:@{
     @"event" : @"copy-test-artifact",
     @"test_artifact_file_name" : testArtifactFilename,
     @"path" : path,
-    };
-  [self storeEvent:event];
-}
-
-- (void)didFinishExecutingTestPlan
-{
-  _finished = YES;
-  [self storeEvent:[FBJSONTestReporter createOCUnitEndEvent:self.testType testBundlePath:self.testBundlePath message:nil success:YES]];
+  }];
 }
 
 - (void)testHadOutput:(NSString *)output
 {
   [self.pendingTestOutput addObject:output];
-  [self storeEvent:[FBJSONTestReporter testOutputEvent:output]];
+  [self printEvent:[FBJSONTestReporter testOutputEvent:output]];
 }
 
 - (void)handleExternalEvent:(NSString *)line
@@ -200,6 +199,16 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 }
 
 #pragma mark Event Synthesis
+
+- (NSString *)noStartOfTestPlanErrorMessage
+{
+  NSString *errorMessage = @"No didBeginExecutingTestPlan event was received.";
+  if (_currentTestName) {
+    errorMessage = [errorMessage stringByAppendingString:@". However a test was running: "];
+    errorMessage = [errorMessage stringByAppendingString:_currentTestName];
+  }
+  return errorMessage;
+}
 
 + (NSDictionary<NSString *, id> *)exceptionEvent:(NSString *)reason file:(NSString *)file line:(NSUInteger)line
 {
