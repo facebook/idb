@@ -47,8 +47,6 @@ class CompanionSpawner:
         return IDB_LOGS_PATH + "/" + target_udid
 
     def check_okay_to_spawn(self) -> None:
-        if not self.companion_path:
-            raise CompanionSpawnerException("companion_path not set")
         if os.getuid() == 0:
             logging.warning(
                 "idb should not be run as root. "
