@@ -75,14 +75,11 @@ class CompanionSpawner:
             )
             self.pid_saver.save_companion_pid(pid=process.pid)
             logging.debug(f"started companion at process id {process.pid}")
-            if process.stdout:
-                # pyre-fixme[6]: Expected `StreamReader` for 1st param but got
-                #  `Optional[StreamReader]`.
-                port = await self._read_stream(process.stdout)
-                if not port:
-                    raise CompanionSpawnerException("failed to spawn companion")
-                return port
-            raise CompanionSpawnerException("process has no stdout")
+            stdout = none_throws(process.stdout)
+            port = await self._read_stream(stdout)
+            if not port:
+                raise CompanionSpawnerException("failed to spawn companion")
+            return port
 
     def _is_notifier_running(self) -> bool:
         pid = self.pid_saver.get_notifier_pid()
