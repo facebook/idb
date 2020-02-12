@@ -114,9 +114,8 @@ class CompanionSpawner:
     async def _read_notifier_output(self, stream: StreamReader) -> None:
         while True:
             line = await stream.readline()
-            if line:
-                update = json.loads(line.decode())
-                if update["report_initial_state"]:
-                    return
-            else:
+            if line is None:
+                return
+            update = json.loads(line.decode())
+            if update["report_initial_state"]:
                 return
