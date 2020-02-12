@@ -728,7 +728,10 @@ class IdbClient(IdbClientBase):
 
 class IdbManagementClient(IdbManagementClientBase):
     def __init__(
-        self, target_udid: Optional[str], logger: Optional[logging.Logger] = None
+        self,
+        target_udid: Optional[str],
+        companion_path: str = "/usr/local/bin/idb_companion",
+        logger: Optional[logging.Logger] = None,
     ) -> None:
         self.logger: logging.Logger = (
             logger if logger else logging.getLogger("idb_grpc_client")
@@ -736,11 +739,12 @@ class IdbManagementClient(IdbManagementClientBase):
         self.target_udid = target_udid
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
         self.local_targets_manager = LocalTargetsManager(logger=self.logger)
+        self.companion_path = companion_path
 
     async def spawn_notifier(self) -> None:
-        if platform == "darwin" and os.path.exists("/usr/local/bin/idb_companion"):
+        if platform == "darwin" and os.path.exists(self.companion_path):
             companion_spawner = CompanionSpawner(
-                companion_path="/usr/local/bin/idb_companion", logger=self.logger
+                companion_path=self.companion_path, logger=self.logger
             )
             await companion_spawner.spawn_notifier()
 
