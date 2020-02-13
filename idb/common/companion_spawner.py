@@ -14,6 +14,7 @@ from typing import List
 
 from idb.client.pid_saver import PidSaver
 from idb.common.constants import IDB_LOCAL_TARGETS_FILE, IDB_LOGS_PATH
+from idb.common.file import get_last_n_lines
 from idb.utils.typing import none_throws
 
 
@@ -64,7 +65,8 @@ class CompanionSpawner:
             "0",
         ]
 
-        with open(self._log_file_path(target_udid), "a") as log_file:
+        log_file_path = self._log_file_path(target_udid)
+        with open(log_file_path, "a") as log_file:
             process = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
@@ -76,7 +78,10 @@ class CompanionSpawner:
             stdout = none_throws(process.stdout)
             port = await self._read_stream(stdout)
             if not port:
-                raise CompanionSpawnerException("failed to spawn companion")
+                raise CompanionSpawnerException(
+                    f"Failed to spawn companion, "
+                    f"stderr: {get_last_n_lines(log_file_path, 30)}"
+                )
             return port
 
     def _is_notifier_running(self) -> bool:
