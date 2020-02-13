@@ -98,7 +98,7 @@ logger: logging.Logger = logging.getLogger()
 
 async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
     # Make sure all files are created with global rw permissions
-    os.umask(0o011)
+    os.umask(0o000)
     # Setup parser
     parser = argparse.ArgumentParser(
         description="idb: a versatile tool to communicate with iOS Simulators and Devices",
