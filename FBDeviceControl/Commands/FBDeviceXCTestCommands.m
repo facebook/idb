@@ -258,7 +258,7 @@ static inline NSDate *dateFromString(NSString *date)
   NSAssert([testMethod isKindOfClass:NSDictionary.class], @"testMethod not a NSDictionary");
 
   NSString *testStatus = (NSString *)unwrapValue(testMethod[@"testStatus"]);
-  NSString *testMethodName = (NSString *)unwrapValue(testMethod[@"identifier"]);
+  NSString *testMethodIdentifier = (NSString *)unwrapValue(testMethod[@"identifier"]);
   NSNumber *duration = (NSNumber *)unwrapValue(testMethod[@"duration"]);
 
   FBTestReportStatus status = FBTestReportStatusUnknown;
@@ -269,7 +269,7 @@ static inline NSDate *dateFromString(NSString *date)
     status = FBTestReportStatusFailed;
   }
 
-  [reporter testManagerMediator:nil testCaseDidStartForTestClass:testClassName method:testMethodName];
+  [reporter testManagerMediator:nil testCaseDidStartForTestClass:testClassName method:testMethodIdentifier];
 
   NSDictionary<NSString *, NSDictionary *> *summaryRef = testMethod[@"summaryRef"];
   NSAssert(summaryRef, @"Summary reference is nil");
@@ -281,7 +281,17 @@ static inline NSDate *dateFromString(NSString *date)
       onQueue:queue doOnResolved:^(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *actionTestSummary) {
         if (status == FBTestReportStatusFailed) {
           NSArray *failureSummaries = unwrapValues(actionTestSummary[@"failureSummaries"]);
-          [reporter testManagerMediator:nil testCaseDidFailForTestClass:testClassName method:testMethodName withMessage:[self buildErrorMessage:failureSummaries] file:nil line:0];
+          [reporter testManagerMediator:nil testCaseDidFailForTestClass:testClassName method:testMethodIdentifier withMessage:[self buildErrorMessage:failureSummaries] file:nil line:0];
+        }
+
+        NSArray<NSDictionary *> *performanceMetrics = unwrapValues(actionTestSummary[@"performanceMetrics"]);
+        if (performanceMetrics != nil) {
+          NSString *testMethodName = (NSString *)unwrapValue(testMethod[@"name"]);
+          NSString *suffix = @"()";
+          if ([testMethodName hasSuffix:suffix]) {
+            testMethodName = [testMethodName substringToIndex:[testMethodName length] - [suffix length]];
+          }
+          [self savePerformanceMetrics:performanceMetrics toTestResultBundle:resultBundlePath forTestTarget:testBundleName testClass:testClassName testMethod:testMethodName logger:logger];
         }
 
         NSArray<NSDictionary *> *activitySummaries = unwrapValues(actionTestSummary[@"activitySummaries"]);
@@ -291,13 +301,13 @@ static inline NSDate *dateFromString(NSString *date)
           NSMutableArray *logs = [self buildTestLog:activitySummaries
                                      testBundleName:testBundleName
                                       testClassName:testClassName
-                                     testMethodName:testMethodName
+                                     testMethodName:testMethodIdentifier
                                          testPassed:status == FBTestReportStatusPassed
                                            duration:[duration doubleValue]];
-          [reporter testManagerMediator:nil testCaseDidFinishForTestClass:testClassName method:testMethodName withStatus:status duration:[duration doubleValue] logs:[logs copy]];
+          [reporter testManagerMediator:nil testCaseDidFinishForTestClass:testClassName method:testMethodIdentifier withStatus:status duration:[duration doubleValue] logs:[logs copy]];
         }
         else {
-          [reporter testManagerMediator:nil testCaseDidFinishForTestClass:testClassName method:testMethodName withStatus:status duration:[duration doubleValue]];
+          [reporter testManagerMediator:nil testCaseDidFinishForTestClass:testClassName method:testMethodIdentifier withStatus:status duration:[duration doubleValue]];
         }
       }] await:nil];
   }
@@ -719,7 +729,6 @@ static inline NSDate *dateFromString(NSString *date)
 // This works before Xcode 11
 + (void)addTestLogsFromLegacyActivitySummary:(NSDictionary *)activitySummary logs:(NSMutableArray<NSString *> *)logs testStartTimeInterval:(double)testStartTimeInterval indent:(NSUInteger)indent
 {
-
   NSAssert([activitySummary isKindOfClass:NSDictionary.class], @"activitySummary not a NSDictionary");
   NSString *message = readStringFromDict(activitySummary, @"Title");
   double startTimeInterval = readDoubleFromDict(activitySummary, @"StartTimeInterval");
@@ -847,27 +856,13 @@ static inline NSDate *dateFromString(NSString *date)
   }
 }
 
-+ (NSString *)extractScreenshotsFromActivities:(NSArray<NSDictionary *> *)activities
++ (void)extractScreenshotsFromActivities:(NSArray<NSDictionary *> *)activities
                                          queue:(dispatch_queue_t)queue
                               resultBundlePath:(NSString *)resultBundlePath
                                         logger:(id<FBControlCoreLogger>)logger
 {
-  NSError *error = nil;
-
-  NSFileManager *fileManager = NSFileManager.defaultManager;
   // Extract all screenshots to the "Attachments" folder just as in the legacy test result bundle
-  NSString *screenshotsPath = [resultBundlePath stringByAppendingPathComponent:@"Attachments"];
-  BOOL isDirectory = NO;
-  if ([fileManager fileExistsAtPath:screenshotsPath isDirectory:&isDirectory]) {
-    if (!isDirectory) {
-      return [[FBControlCoreError describeFormat:@"%@ is not a directory", screenshotsPath] fail:&error];
-    }
-  } else {
-    if (![fileManager createDirectoryAtPath:screenshotsPath withIntermediateDirectories:NO attributes:nil error:&error]) {
-      return [[FBControlCoreError describeFormat:@"Failed to create directory at %@", screenshotsPath] fail:&error];
-    }
-  }
-
+  NSString *screenshotsPath = [self ensureSubdirectory:@"Attachments" insideResultBundle:resultBundlePath];
   for (NSDictionary *activity in activities) {
     if (activity[@"attachments"]) {
       NSArray<NSDictionary *> *attachments = unwrapValues(activity[@"attachments"]);
@@ -878,8 +873,46 @@ static inline NSDate *dateFromString(NSString *date)
       [self extractScreenshotsFromActivities:subactivities queue:queue resultBundlePath:resultBundlePath logger:logger];
     }
   }
+}
 
-  return screenshotsPath;
++ (void)savePerformanceMetrics:(NSArray<NSDictionary *> *)performanceMetrics
+            toTestResultBundle:(NSString *)resultBundlePath
+                 forTestTarget:(NSString *)testTarget
+                     testClass:(NSString *)testClass
+                    testMethod:(NSString *)testMethod
+                        logger:(id<FBControlCoreLogger>)logger
+{
+  NSMutableArray *metrics = [NSMutableArray new];
+  for (NSDictionary<NSString *, NSDictionary *> *performanceMetric in performanceMetrics) {
+    NSString *metricName = unwrapValue(performanceMetric[@"displayName"]);
+    NSString *metricUnit = unwrapValue(performanceMetric[@"unitOfMeasurement"]);
+    NSString *metricIdentifier = unwrapValue(performanceMetric[@"identifier"]);
+    NSArray *metricMeasurements = unwrapValues(performanceMetric[@"measurements"]);
+    NSMutableArray<NSNumber *> *measurements = [NSMutableArray new];
+    for (NSDictionary *metricMeasurement in metricMeasurements) {
+      [measurements addObject:(NSNumber *)unwrapValue(metricMeasurement)];
+    }
+    NSDictionary *metric = [[NSDictionary alloc] initWithObjectsAndKeys:
+                            metricName, @"name",
+                            metricUnit, @"unit",
+                            metricIdentifier, @"identifier",
+                            measurements, @"measurements",
+                            nil];
+    [metrics addObject:metric];
+  }
+
+  if ([NSJSONSerialization isValidJSONObject:metrics]) {
+    NSError *error = nil;
+    NSData *json = [NSJSONSerialization dataWithJSONObject:metrics options:NSJSONWritingPrettyPrinted error:&error];
+    if (error != nil) {
+      [logger logFormat:@"Failed to serilize performance metrics %@ with error %@", metrics, error];
+    }
+    else if (json != nil) {
+      NSString *performanceMetricsDirectory = [self ensureSubdirectory:@"Metrics" insideResultBundle:resultBundlePath];
+      NSString *metricFilePath = [performanceMetricsDirectory stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_%@_%@.json", testTarget, testClass, testMethod]];
+      [json writeToFile:metricFilePath atomically:YES];
+    }
+  }
 }
 
 // This works before Xcode 11
@@ -901,6 +934,23 @@ static inline NSDate *dateFromString(NSString *date)
   }
 
   return [messages componentsJoinedByString:@"\n"];
+}
+
++ (NSString *)ensureSubdirectory:(NSString *)subdirectory insideResultBundle:(NSString *)resultBundlePath {
+  NSError *error = nil;
+  NSFileManager *fileManager = NSFileManager.defaultManager;
+  NSString *subdirectoryFullPath = [resultBundlePath stringByAppendingPathComponent:subdirectory];
+  BOOL isDirectory = NO;
+  if ([fileManager fileExistsAtPath:subdirectoryFullPath isDirectory:&isDirectory]) {
+    if (!isDirectory) {
+      return [[FBControlCoreError describeFormat:@"%@ is not a directory", subdirectoryFullPath] fail:&error];
+    }
+  } else {
+    if (![fileManager createDirectoryAtPath:subdirectoryFullPath withIntermediateDirectories:NO attributes:nil error:&error]) {
+      return [[FBControlCoreError describeFormat:@"Failed to create directory at %@", subdirectoryFullPath] fail:&error];
+    }
+  }
+  return subdirectoryFullPath;
 }
 
 @end
