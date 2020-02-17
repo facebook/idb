@@ -32,7 +32,9 @@ NSNotificationName const FBAMDeviceNotificationNameDeviceDetached = @"FBAMDevice
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
-@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, FBAMDevice *> *devices;
+@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, FBAMDevice *> *attachedDevices;
+@property (nonatomic, strong, readonly) NSMapTable<NSString *, FBAMDevice *> *referencedDevices;
+
 @property (nonatomic, assign, readwrite) AMDNotificationSubscription subscription;
 
 - (void)deviceConnected:(AMDeviceRef)amDevice;
@@ -90,7 +92,8 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   _calls = calls;
   _queue = queue;
   _logger = logger;
-  _devices = [NSMutableDictionary dictionary];
+  _attachedDevices = [NSMutableDictionary dictionary];
+  _referencedDevices = [NSMapTable mapTableWithKeyOptions:NSPointerFunctionsCopyIn valueOptions:NSPointerFunctionsWeakMemory];
 
   return self;
 }
@@ -167,25 +170,43 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 static const NSTimeInterval ServiceReuseTimeout = 6.0;
 
-- (void)deviceConnected:(AMDeviceRef)amDevice
+- (void)deviceConnected:(AMDeviceRef)amDeviceRef
 {
-  [self.logger logFormat:@"Device Connected %@", amDevice];
-  NSString *udid = CFBridgingRelease(self.calls.CopyDeviceIdentifier(amDevice));
-  FBAMDevice *device = self.devices[udid];
-  if (!device) {
-    device = [[FBAMDevice alloc] initWithUDID:udid calls:self.calls connectionReuseTimeout:nil serviceReuseTimeout:@(ServiceReuseTimeout) workQueue:self.queue logger:self.logger];
-    self.devices[udid] = device;
-  }
-  AMDeviceRef oldDevice = device.amDevice;
-  if (oldDevice == NULL) {
-    [self.logger logFormat:@"New Device '%@' appeared for the first time", amDevice];
-    device.amDevice = amDevice;
-  } else if (amDevice != oldDevice) {
-    [self.logger logFormat:@"New Device '%@' replaces Old Device '%@'", amDevice, oldDevice];
-    device.amDevice = amDevice;
+  [self.logger logFormat:@"Device Connected %@", amDeviceRef];
+  NSString *udid = CFBridgingRelease(self.calls.CopyDeviceIdentifier(amDeviceRef));
+
+  // Make sure that we pull from all known FBAMDevice instances.
+  // We do this instead of the attached ones.
+  // The reason for doing so is that consumers of FBAMDevice/FBDevice instances may be holding onto a reference to a device that's been re-connected.
+  // Pulling from the map of referenced devices means that we re-use these referenced devices if they are present.
+  // If the device is no-longer referenced it will have been removed from the referencedDevices mapping as it's values are weakly-held.
+  FBAMDevice *device = [self.referencedDevices objectForKey:udid];
+  FBAMDevice *attachedDevice = self.attachedDevices[udid];
+  if (device) {
+    [self.logger.info logFormat:@"Device has been re-attached %@", device];
+    NSAssert(attachedDevice == nil || device == attachedDevice, @"Known referenced device %@ does not match the attached one %@!", device, attachedDevice);
   } else {
-    [self.logger logFormat:@"Existing Device %@ is the same as the old", amDevice];
+    device = [[FBAMDevice alloc] initWithUDID:udid calls:self.calls connectionReuseTimeout:nil serviceReuseTimeout:@(ServiceReuseTimeout) workQueue:self.queue logger:self.logger];
+    [self.logger.info logFormat:@"Created a new FBAMDevice instance %@", device];
+    NSAssert(attachedDevice == nil, @"An device is in the attached but it is not in the weak set! Attached device %@", attachedDevice);
   }
+  AMDeviceRef oldDeviceRef = device.amDevice;
+  if (oldDeviceRef == NULL) {
+    [self.logger logFormat:@"New AMDeviceRef '%@' appeared for the first time", amDeviceRef];
+    device.amDevice = amDeviceRef;
+  } else if (amDeviceRef != oldDeviceRef) {
+    [self.logger logFormat:@"New AMDeviceRef '%@' replaces Old Device '%@'", amDeviceRef, oldDeviceRef];
+    device.amDevice = amDeviceRef;
+  } else {
+    [self.logger logFormat:@"Existing Device %@ is the same as the old", amDeviceRef];
+  }
+
+  // Set both the strong-memory and the weak-memory device.
+  // If it already exists this is fine, otherwise it will ensure that this mapping is preserved.
+  // Any removed devies will be removed from attachedDevices on disconnect so that abandoned device references are cleaned up.
+  self.attachedDevices[udid] = device;
+  [self.referencedDevices setObject:device forKey:udid];
+
   [NSNotificationCenter.defaultCenter postNotificationName:FBAMDeviceNotificationNameDeviceAttached object:device.udid];
 }
 
@@ -193,19 +214,23 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
 {
   [self.logger logFormat:@"Device Disconnected %@", amDevice];
   NSString *udid = CFBridgingRelease(self.calls.CopyDeviceIdentifier(amDevice));
-  FBAMDevice *device = self.devices[udid];
+  FBAMDevice *device = self.attachedDevices[udid];
   if (!device) {
-    [self.logger logFormat:@"No Device named %@ from inflated devices, nothing to remove", udid];
+    [self.logger logFormat:@"No Device named %@ from attached devices, nothing to remove", udid];
     return;
-  } 
-  [self.logger logFormat:@"Removing Device %@ from inflated devices", udid];
-  [self.devices removeObjectForKey:udid];
+  }
+  [self.logger logFormat:@"Removing Device %@ from attached devices", udid];
+
+  // Remove only from the list of attached devices.
+  // If the device instance is not referenced elsewhere it will be removed from the referencedDevices dictionary.
+  // This is because the values in that dictionary are weakly referenced.
+  [self.attachedDevices removeObjectForKey:udid];
   [NSNotificationCenter.defaultCenter postNotificationName:FBAMDeviceNotificationNameDeviceDetached object:device.udid];
 }
 
 - (NSArray<FBAMDevice *> *)currentDeviceList
 {
-  return [self.devices.allValues sortedArrayUsingSelector:@selector(udid)];
+  return [self.attachedDevices.allValues sortedArrayUsingSelector:@selector(udid)];
 }
 
 @end
