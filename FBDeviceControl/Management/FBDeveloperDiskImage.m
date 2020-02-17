@@ -33,7 +33,7 @@
     }
   }
   NSOperatingSystemVersion targetVersion = device.operatingSystemVersion;
-  [logger logFormat:@"Attempting to find Disk Image directory by Version %ld.%ld", (long)targetVersion.majorVersion, targetVersion.minorVersion];
+  [logger logFormat:@"Attempting to find Disk Image directory by Version %ld.%ld", targetVersion.majorVersion, targetVersion.minorVersion];
   for (NSString *searchPath in searchPaths) {
     for (NSString *fileName in [NSFileManager.defaultManager enumeratorAtPath:searchPath]) {
       NSOperatingSystemVersion currentVersion = [FBDevice operatingSystemVersionFromString:fileName];
@@ -44,7 +44,7 @@
   }
 
   return [[FBDeviceControlError
-    describeFormat:@"Could not find the DeveloperDiskImage for %@", self]
+    describeFormat:@"Could not find the DeveloperDiskImage in %@ (Build %@, Version %ld.%ld)", [FBCollectionInformation oneLineDescriptionFromArray:searchPaths], buildVersion, targetVersion.majorVersion, targetVersion.minorVersion]
     fail:error];
 }
 
