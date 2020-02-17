@@ -90,7 +90,7 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 @property (nonatomic, copy, readonly) NSString *name;
 
 /**
- The Directory that FBSimulatorControl uses to store auxillary files.
+ The Directory that the target uses to store per-target files on the host.
  */
 @property (nonatomic, copy, readonly) NSString *auxillaryDirectory;
 
