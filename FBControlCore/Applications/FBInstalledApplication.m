@@ -131,7 +131,7 @@ static NSString *const KeyDataContainer = @"data_container";
   if ([installTypeString isEqualToString:FBApplicationInstallTypeStringUser]) {
     if ([signerIdentity containsString:@"iPhone Distribution"]) {
       return FBApplicationInstallTypeUserEnterprise;
-    } else if ([signerIdentity containsString:@"iPhone Developer"]) {
+    } else if ([signerIdentity containsString:@"iPhone Developer"] || [signerIdentity containsString:@"Apple Development"]) {
       return FBApplicationInstallTypeUserDevelopment;
     }
     return FBApplicationInstallTypeUser;
