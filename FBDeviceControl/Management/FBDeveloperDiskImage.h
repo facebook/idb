@@ -17,7 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Initializers
 
 /**
- Finds the path of the Device Support disk image, if one can be found.
+ Finds the Disk Image for the given device, if one can be found.
+ If an exact match is not found, the closest match will be used.
 
  @param device the device to find for.
  @param logger the logger to log to.

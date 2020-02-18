@@ -12,6 +12,13 @@
 #import "FBDevice.h"
 #import "FBDeviceControlError.h"
 
+static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSystemVersion target)
+{
+  NSInteger major = ABS((current.majorVersion - target.majorVersion) * 10);
+  NSInteger minor = ABS(current.minorVersion - target.minorVersion);
+  return major + minor;
+}
+
 @implementation FBDeveloperDiskImage
 
 #pragma mark Private
@@ -32,17 +39,46 @@
       }
     }
   }
+  // Construct all of the versions in an array
   NSOperatingSystemVersion targetVersion = device.operatingSystemVersion;
+  NSMutableArray<NSString *> *resolvedPaths = NSMutableArray.array;
   [logger logFormat:@"Attempting to find Disk Image directory by Version %ld.%ld", targetVersion.majorVersion, targetVersion.minorVersion];
   for (NSString *searchPath in searchPaths) {
-    for (NSString *fileName in [NSFileManager.defaultManager enumeratorAtPath:searchPath]) {
-      NSOperatingSystemVersion currentVersion = [FBDevice operatingSystemVersionFromString:fileName];
-      if (currentVersion.majorVersion == targetVersion.majorVersion && currentVersion.minorVersion == targetVersion.minorVersion) {
-        return [searchPath stringByAppendingPathComponent:fileName];
-      }
+    for (NSString *fileName in [NSFileManager.defaultManager contentsOfDirectoryAtPath:searchPath error:nil] ?: @[]) {
+      NSString *resolvedPath = [searchPath stringByAppendingPathComponent:fileName];
+      [resolvedPaths addObject:resolvedPath];
     }
   }
+  // Sort the array such that the best matching version appears at the top.
+  [resolvedPaths sortUsingComparator:^NSComparisonResult(NSString *left, NSString *right) {
+    NSOperatingSystemVersion leftVersion = [FBDevice operatingSystemVersionFromString:left.lastPathComponent];
+    NSOperatingSystemVersion rightVersion = [FBDevice operatingSystemVersionFromString:right.lastPathComponent];
+    NSInteger leftDelta = ScoreVersions(leftVersion, targetVersion);
+    NSInteger rightDelta = ScoreVersions(rightVersion, targetVersion);
+    if (leftDelta < rightDelta) {
+      return NSOrderedAscending;
+    }
+    if (leftDelta > rightDelta) {
+      return NSOrderedDescending;
+    }
+    return NSOrderedSame;
+  }];
 
+  NSString *best = resolvedPaths.firstObject;
+  if (!best) {
+    return [[FBDeviceControlError
+      describeFormat:@"Could not find any DeveloperDiskImage in %@ (Build %@, Version %ld.%ld)", [FBCollectionInformation oneLineDescriptionFromArray:searchPaths], buildVersion, targetVersion.majorVersion, targetVersion.minorVersion]
+      fail:error];
+  }
+  NSOperatingSystemVersion bestVersion = [FBDevice operatingSystemVersionFromString:best.lastPathComponent];
+  if (bestVersion.majorVersion == targetVersion.majorVersion && bestVersion.minorVersion == targetVersion.minorVersion) {
+    [logger logFormat:@"Found the best match for %ld.%ld at %@", targetVersion.majorVersion, targetVersion.minorVersion, best];
+    return best;
+  }
+  if (bestVersion.majorVersion == targetVersion.majorVersion) {
+    [logger logFormat:@"Found the closest match for %ld.%ld at %@", targetVersion.majorVersion, targetVersion.minorVersion, best];
+    return best;
+  }
   return [[FBDeviceControlError
     describeFormat:@"Could not find the DeveloperDiskImage in %@ (Build %@, Version %ld.%ld)", [FBCollectionInformation oneLineDescriptionFromArray:searchPaths], buildVersion, targetVersion.majorVersion, targetVersion.minorVersion]
     fail:error];
