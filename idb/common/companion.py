@@ -6,8 +6,9 @@
 
 
 from logging import Logger
-from typing import NamedTuple, Optional
+from typing import List, NamedTuple, Optional, Sequence
 
+from idb.common.types import TargetDescription
 from idb.grpc.idb_grpc import CompanionServiceStub
 
 
@@ -17,3 +18,25 @@ class CompanionClient(NamedTuple):
     udid: Optional[str]
     logger: Logger
     is_companion_available: bool = False
+
+
+def merge_connected_targets(
+    local_targets: Sequence[TargetDescription],
+    connected_targets: Sequence[TargetDescription],
+) -> List[TargetDescription]:
+    connected_mapping = {target.udid: target for target in connected_targets}
+    targets = {}
+    # First, add all local targets, updating companion info where available
+    for target in local_targets:
+        udid = target.udid
+        if udid in connected_mapping:
+            targets[udid] = connected_mapping[udid]
+        else:
+            targets[udid] = target
+    # Then add the connected targets that aren't local
+    for target in connected_targets:
+        udid = target.udid
+        if udid in targets:
+            continue
+        targets[udid] = target
+    return list(targets.values())

@@ -31,6 +31,7 @@ from typing import (
 from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.client.pid_saver import PidSaver
+from idb.common.companion import merge_connected_targets
 from idb.common.companion_spawner import CompanionSpawner
 from idb.common.constants import TESTS_POLL_INTERVAL
 from idb.common.direct_companion_manager import DirectCompanionManager
@@ -1172,16 +1173,22 @@ class IdbManagementClient(IdbManagementClientBase):
         (_, companions) = await asyncio.gather(
             self.spawn_notifier(), self.direct_companion_manager.get_companions()
         )
-        local_targets = self.local_targets_manager.get_local_targets()
-        connected_targets = await asyncio.gather(
-            *(
-                self._companion_to_target(companion=companion)
-                for companion in companions
+        connected_targets = [
+            target
+            for target in (
+                await asyncio.gather(
+                    *(
+                        self._companion_to_target(companion=companion)
+                        for companion in companions
+                    )
+                )
             )
-        )
-        return local_targets + [
-            target for target in connected_targets if target is not None
+            if target is not None
         ]
+        return merge_connected_targets(
+            local_targets=self.local_targets_manager.get_local_targets(),
+            connected_targets=connected_targets,
+        )
 
     @log_and_handle_exceptions
     async def connect(
