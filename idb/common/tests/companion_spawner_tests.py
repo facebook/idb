@@ -40,6 +40,7 @@ class CompanionSpawnerTest(TestCase):
                 stdout=mock.ANY,
                 stdin=mock.ANY,
                 stderr=mock.ANY,
+                cwd=None,
             )
             self.assertEqual(port, 1234)
 
