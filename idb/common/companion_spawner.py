@@ -12,9 +12,9 @@ import os
 from asyncio import StreamReader
 from typing import List
 
-from idb.client.pid_saver import PidSaver
 from idb.common.constants import IDB_LOCAL_TARGETS_FILE, IDB_LOGS_PATH
 from idb.common.file import get_last_n_lines
+from idb.common.pid_saver import PidSaver
 from idb.utils.typing import none_throws
 
 

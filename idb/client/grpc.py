@@ -30,7 +30,6 @@ from typing import (
 
 from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
-from idb.client.pid_saver import PidSaver
 from idb.common.companion import merge_connected_targets
 from idb.common.companion_spawner import CompanionSpawner
 from idb.common.constants import TESTS_POLL_INTERVAL
@@ -59,6 +58,7 @@ from idb.common.instruments import (
 from idb.common.launch import drain_launch_stream, end_launch_stream
 from idb.common.local_targets_manager import LocalTargetsManager
 from idb.common.logging import log_call
+from idb.common.pid_saver import PidSaver
 from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
 from idb.common.types import (

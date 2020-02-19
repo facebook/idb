@@ -9,7 +9,7 @@ import signal
 import tempfile
 from unittest import mock
 
-from idb.client.pid_saver import PidSaver
+from idb.common.pid_saver import PidSaver
 from idb.utils.testing import TestCase, ignoreTaskLeaks
 
 
@@ -61,7 +61,7 @@ class PidSaverTests(TestCase):
             pid_saver.save_companion_pid(companion_pid)
             notifier_pid = 2
             pid_saver.save_notifier_pid(notifier_pid)
-            with mock.patch("idb.client.pid_saver.os.kill") as kill:
+            with mock.patch("idb.common.pid_saver.os.kill") as kill:
                 pid_saver.kill_saved_pids()
                 kill.assert_has_calls(
                     [mock.call(1, signal.SIGTERM), mock.call(2, signal.SIGTERM)]
