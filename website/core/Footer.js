@@ -8,16 +8,6 @@
 const React = require('react');
 
 class Footer extends React.Component {
-  docUrl(doc, language) {
-    const baseUrl = this.props.config.baseUrl;
-    return baseUrl + 'docs/' + (language ? language + '/' : '') + doc;
-  }
-
-  pageUrl(doc, language) {
-    const baseUrl = this.props.config.baseUrl;
-    return baseUrl + (language ? language + '/' : '') + doc;
-  }
-
   render() {
     return (
       <footer className="nav-footer" id="footer">
@@ -42,7 +32,7 @@ class Footer extends React.Component {
           <a href="https://twitter.com/fbOpenSource" target="_blank">
             Twitter
           </a>
-          <a href={this.props.config.repoUrl} target="_blank">
+          <a href="https://github.com/facebook/idb" target="_blank">
             Contribute to idb
           </a>
         </section>

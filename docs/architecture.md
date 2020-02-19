@@ -2,7 +2,9 @@
 id: architecture
 title: Architecture
 ---
+
 idb is formed of two components that have different responsibilities.
+
 ## The idb cli
 
 This is a python3 cli that exposes all of the functionality that idb has to offer. As it is written in python, we can run this basically anywhere.

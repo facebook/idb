@@ -2,6 +2,7 @@
 id: commands
 title: Commands
 ---
+
 ### Reset Idb
 
 ```
@@ -12,9 +13,11 @@ idb stores information about available companions in a local file. this command 
 
 
 ### Starting a companion
+
 ```
 idb_companion --udid UDID
 ```
+
 Starts up a companion process for a target specified by its UDID.
 On macs idb can spawn a companion automatically on connect
 
@@ -31,9 +34,11 @@ On macs idb can spawn a companion automatically on connect
 
 
 ### Starting a notifier
+
 ```
 idb_companion --notify FILE_PATH
 ```
+
 Starts up a companion process in the notifier mode.
 in this mode the companion will find out what simulators/devices are available and write that output to the file path specified.
 A notifier is always spawned automatically if the idb cli is called on a mac.
@@ -49,14 +54,17 @@ When running locally idb can boot an installed simulator.
 To see a list of the available targets try `idb list-targets`
 
 ### Connect a target
+
 To use the idb client with a target, first its companion must be connected.
 
 To connect to an existing companion run:
+
 ```
 idb connect COMPANION_HOST COMPANION_PORT
 ```
 
 In the local case you can connect via UDID, idb will also spawn a companion for you.
+
 ```
 idb connect TARGET_UDID
 ```
@@ -80,9 +88,10 @@ List all of the targets idb can currently communicate with.
 
 This will be all targets that have been connected through `idb connect` as well as any that could be booted if idb is running locally.
 
-
 ## Commands
+
 ### General arguments
+
 | Argument | Description | Default
 |----------|-------------|--------
 |--udid UDID | UDID of the target | If only one target is connected it'll use that one
@@ -97,6 +106,7 @@ This will be all targets that have been connected through `idb connect` as well 
 ```
 idb list-apps
 ```
+
 Lists the targets installed applications and their metadata, including:
 - Bundle ID
 - Name
@@ -135,6 +145,7 @@ idb terminate com.apple.Maps
 Kills an app with the given bundle ID.
 
 ### Uninstalling an app
+
 ```
 idb uninstall com.facebook.Facebook
 ```
@@ -196,6 +207,7 @@ idb xctest run app TEST_BUNDLE_ID APP_BUNDLE_ID
 ```
 
 ## Debug an app
+
 ### Starting a debug session
 
 ```
@@ -203,7 +215,6 @@ idb debugserver start BUNDLE_ID
 ```
 
 Starts a debug session. The output will be similar to ```process connect connect://localhost:10881``` and it will be used to start the lldb. In another terminal, type in the command ```lldb```, which will start the lldb. There, type the output of the start command to connect the debug server.
-
 
 ### Stop a debug session
 
@@ -221,7 +232,6 @@ idb debugserver status
 
 Display metadata about any running debug sessions.
 
-
 ## File commands
 
 The `idb file` commands allow for managing files on a target, or moving them to/from a remote host.
@@ -229,19 +239,24 @@ The `idb file` commands allow for managing files on a target, or moving them to/
 All paths on a target are relative to a specific applications data container.
 
 ### Copy a file to a target
+
 ```
 idb file push src1.jpg src2.jpg dest_1 --bundle-id BUNDLE_ID
 ```
+
 Copies files from this host to an apps data container at the specified path.
 
 
 ### Fetch a file form a target
+
 ```
 idb file pull src.txt dest.txt --bundle-id BUNDLE_ID
 ```
+
 Copies a file from an apps data container to the host machine.
 
 ### Move a file between apps
+
 ```
 idb file mv src1.jpg src2.jpg dest_1 --bundle-id BUNDLE_ID
 ```
@@ -250,6 +265,7 @@ Move source file(s) from one location in an apps data container to a different p
 
 
 ### Make a new directory
+
 ```
 idb file mkdir FOLDER_NAME --bundle-id BUNDLE_ID
 ```
@@ -257,17 +273,21 @@ idb file mkdir FOLDER_NAME --bundle-id BUNDLE_ID
 Creates a new folder within the apps data container.
 
 ### Remove a path on a target
+
 ```
 idb file rm PATH_A PATH_B --bundle-id BUNDLE_ID
 ```
+
 Removes the specified paths within an apps data container.
 
 If a folder is specified to be deleted, all of its contents will be removed recursively.
 
 ### List a path on a target
+
 ```
 idb file ls PATH --bundle-id BUNDLE_ID
 ```
+
 Returns a list of all the files present at the given path within an apps data container.
 
 
@@ -276,35 +296,44 @@ Returns a list of all the files present at the given path within an apps data co
 For simulators we provide a handful of commands for emulating HID events.
 
 ### Tap
+
 ```
 idb ui tap X Y
 ```
+
 Taps a location on the screen specified in the points coordinate system.
 The tap duration can be set with `--duration`
 
 ### Swipe
+
 ```
 idb ui swipe X_START Y_START X_END Y_END
 ```
+
 Swipes from the specified start point to the end.
 By default this will be done by a touch down at the start point, followed by moving 10 points at a time until the end point is reached. The size of each step can be specified with `--delta`.
 
 ### Press a button
+
 ```
 idb ui button {APPLE_PAY,HOME,LOCK,SIDE_BUTTON,SIRI}
 ```
+
 Simulates a press of the specified button.
 The press duration can be set with `--duration`.
 
 ### Inputting text
+
 ```
 idb ui text "some text"
 ```
+
 Types the specified text into the target.
 
 ```
 idb ui key 4
 ```
+
 Simulates the press of a key specified by its keycode.
 The key presses duration can be set with `--duration`.
 
@@ -312,22 +341,27 @@ The key presses duration can be set with `--duration`.
 ```
 idb ui key-sequence 4 5 6
 ```
+
 Inputs multiple key events sequentially.
 
 
 ## Accessibility info
 
 ### Describe the whole screen
+
 ```
 idb ui describe-all
 ```
+
 Returns a JSON formatted list of all the elements currently on screen, including their bounds and accessibility information.
 
 
 ### Describe a point
+
 ```
 idb ui describe-point X Y
 ```
+
 Returns JSON formatted information about a specific point on the screen, if an element exists there.
 
 
@@ -335,6 +369,7 @@ Returns JSON formatted information about a specific point on the screen, if an e
 ## Misc
 
 ### Describe a target
+
 ```
 idb describe
 ```
@@ -350,37 +385,43 @@ Returns metadata about the specified target, including:
 - Information about its companion
 
 ### Focus a simulators window
+
 ```
 idb focus
 ```
 Brings a simulators window to the foreground.
 
 ### Install a .dylib
+
 ```
 idb dylib install test.dylib
 ```
+
 Installs a `.dylib` on the target. This can then be injected into apps on launch.
 
-
 ### Instruments
+
 ```
 idb instruments TEMPLATE
 ```
+
 Starts instruments running connected to the target
 
 ### Record a video
+
 ```
 idb record video OUTPUT_MP4
 ```
+
 Starts recording the targets screen, outputting the content to the specified path. The recording can be stopped by pressing `^C`.
 
 ### Log
+
 ```
 idb log
 ```
 
 Tail logs from a target, uses the standard log(1) stream arguments
-
 
 ### Open a url
 
@@ -417,6 +458,7 @@ Files supplied to this command will be placed in the targets camera roll.
 Most common image and video file formats are supported.
 
 ### Approve
+
 ```
 idb approve com.apple.Maps photos camera
 ```
@@ -428,6 +470,7 @@ Currently idb can approve:
 - `contacts` - Permission to access the targets contacts
 
 ### Add contacts
+
 ```
 idb contacts update db.sqlite
 ```
@@ -457,6 +500,7 @@ idb crash show CRASH_NAME
 Fetches the crash log with the specified name
 
 ### Delete crash logs
+
 ```
 idb crash delete CRASH_NAME
 idb crash delete --before/--since/--all X
