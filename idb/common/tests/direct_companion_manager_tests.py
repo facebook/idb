@@ -6,6 +6,7 @@
 
 import json
 import tempfile
+from pathlib import Path
 from unittest import mock
 
 from idb.common.direct_companion_manager import DirectCompanionManager
@@ -42,7 +43,7 @@ class CompanionManagerTests(TestCase):
             )
             with open(f.name, "w") as f:
                 json.dump(json_data_companions([companion]), f)
-            companions = await companion_manager._load()
+            companions = await companion_manager.get_companions()
             read_companion: CompanionInfo = companions[0]
             self.assertEqual(companion, read_companion)
 
@@ -74,7 +75,7 @@ class CompanionManagerTests(TestCase):
             await companion_manager.remove_companion(
                 Address(host=companion.host, port=companion.port)
             )
-            companions = await companion_manager._load()
+            companions = await companion_manager.get_companions()
             self.assertEqual(companions, [])
 
     async def test_remove_companion_with_host_and_port(self) -> None:
@@ -88,5 +89,19 @@ class CompanionManagerTests(TestCase):
             with open(f.name, "w") as f:
                 json.dump(json_data_companions([companion]), f)
             await companion_manager.remove_companion(companion.udid)
-            companions = await companion_manager._load()
+            companions = await companion_manager.get_companions()
             self.assertEqual(companions, [])
+
+    async def test_compound_behaviour_on_absent_state_file(self) -> None:
+        with tempfile.TemporaryDirectory() as dir:
+            companion_manager = DirectCompanionManager(
+                logger=mock.MagicMock(), state_file_path=str(Path(dir) / "state_file")
+            )
+            companions = await companion_manager.get_companions()
+            self.assertEqual(companions, [])
+            companion = CompanionInfo(
+                udid="asdasda", host="foohost", port=123, is_local=False
+            )
+            await companion_manager.add_companion(companion)
+            companions = await companion_manager.get_companions()
+            self.assertEqual(companions, [companion])
