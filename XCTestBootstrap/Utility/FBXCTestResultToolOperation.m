@@ -24,7 +24,6 @@ NSString *const XcrunPath = @"/usr/bin/xcrun";
     withStdErrToLogger:logger]
     runUntilCompletion]
     onQueue:queue map:^(FBTask *task) {
-      [logger logFormat:@"xcresulttool operation arguments: %@", arguments];
       return task;
     }];
 }
