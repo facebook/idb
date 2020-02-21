@@ -67,6 +67,9 @@ class DirectCompanionManager:
             if companion_info_in == companion_info_out:
                 return
             f.seek(0)
+            companion_info_out = sorted(
+                companion_info_out, key=lambda companion: companion.udid
+            )
             json.dump(json_data_companions(companion_info_out), f)
             f.truncate()
 
