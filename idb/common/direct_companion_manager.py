@@ -107,7 +107,9 @@ class DirectCompanionManager:
                     "No UDID provided and couldn't find a default companion"
                 )
 
-    async def remove_companion(self, destination: ConnectionDestination) -> None:
+    async def remove_companion(
+        self, destination: ConnectionDestination
+    ) -> List[CompanionInfo]:
         async with self._use_stored_companions() as companions:
             if isinstance(destination, str):
                 to_remove = [
@@ -124,3 +126,4 @@ class DirectCompanionManager:
                 ]
             for companion in to_remove:
                 companions.remove(companion)
+            return to_remove
