@@ -10,7 +10,7 @@ from typing import AsyncGenerator
 from unittest import mock
 
 from idb.common.direct_companion_manager import DirectCompanionManager
-from idb.common.types import Address, CompanionInfo
+from idb.common.types import Address, CompanionInfo, IdbException
 from idb.utils.testing import TestCase, ignoreTaskLeaks
 
 
@@ -95,3 +95,20 @@ class CompanionManagerTests(TestCase):
             await manager.clear()
             companions = await manager.get_companions()
             self.assertEqual(companions, [])
+
+    async def test_ambiguous_companions(self) -> None:
+        async for manager in self._managers():
+            companion_a = CompanionInfo(
+                udid="a", host="ahost", port=123, is_local=False
+            )
+            await manager.add_companion(companion_a)
+            companions = await manager.get_companions()
+            self.assertEqual(companions, [companion_a])
+            companion_b = CompanionInfo(
+                udid="b", host="ahost", port=123, is_local=False
+            )
+            await manager.add_companion(companion_b)
+            companions = await manager.get_companions()
+            self.assertEqual(companions, [companion_a, companion_b])
+            with self.assertRaises(IdbException):
+                await manager.get_companion_info(target_udid=None)

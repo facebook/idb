@@ -91,21 +91,31 @@ class DirectCompanionManager:
             matching = [
                 companion for companion in companions if companion.udid == target_udid
             ]
+            # If we get a target by udid we expect only one value.
             if target_udid is not None:
-                if len(matching) > 0:
+                if len(matching) == 1:
                     return companions[0]
+                elif len(matching) > 1:
+                    raise IdbException(
+                        f"More than one companion matching udid {target_udid}: {matching}"
+                    )
                 else:
                     raise IdbException(
-                        f"Couldn't find companion for target with udid {target_udid}"
+                        f"No companion for {target_udid}, existing {companions}"
                     )
-            elif len(matching) >= 1:
+            # With no udid provided make sure there is only a single match
+            elif len(matching) == 1:
                 companion = companions[0]
-                self.logger.info(f"using default companion with udid {companion.udid}")
-                return companion
-            else:
-                raise IdbException(
-                    "No UDID provided and couldn't find a default companion"
+                self.logger.info(
+                    f"Using sole default companion with udid {companion.udid}"
                 )
+                return companion
+            elif len(matching) > 1:
+                raise IdbException(
+                    f"No UDID provided there's multiple companion ambiguity: {matching}"
+                )
+            else:
+                raise IdbException("No UDID provided and no companions exist")
 
     async def remove_companion(
         self, destination: ConnectionDestination
