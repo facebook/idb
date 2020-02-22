@@ -26,29 +26,29 @@ module.exports = {
       ],
     },
     footer: {
-      style: "dark",
+      style: 'dark',
       logo: {
-        alt: "idb",
-        src: "img/oss_logo.png",
+        alt: 'idb',
+        src: 'img/oss_logo.png',
         href: 'https://opensource.facebook.com/',
       },
       copyright: `Copyright © ${new Date().getFullYear()} Facebook, Inc.`,
       links: [
         {
-          title: "Social",
+          title: 'Social',
           items: [
             {
-              label: "Twitter",
-              to: "https://twitter.com/fbOpenSource"
+              label: 'Twitter',
+              to: 'https://twitter.com/fbOpenSource'
             },
           ]
         },
         {
-          title: "Contribute",
+          title: 'Contribute',
           items: [
             {
-              label: "Github",
-              to: "https://github.com/facebook/idb"
+              label: 'Github',
+              to: 'https://github.com/facebook/idb'
             },
           ]
         }

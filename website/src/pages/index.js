@@ -15,7 +15,7 @@ import styles from "./styles.module.css";
 
 function HomeSplash(props) {
   return (
-    <header className={classnames("hero", styles.heroBanner)}>
+    <header className={classnames('hero', styles.heroBanner)}>
       <div className="container">
         <div className="row">
           <div className="col col--4"></div>
@@ -24,12 +24,12 @@ function HomeSplash(props) {
             <p className="hero__subtitle">{props.tagline}</p>
             <Link
               className="button button--lg button--outline button--primary"
-              to={useBaseUrl("docs/overview")}
+              to={useBaseUrl('docs/overview')}
             >
               GETTING STARTED
             </Link>
           </div>
-          <div className="col col--4"><img className={styles.itemImage} src='img/idb_Icon_Color.svg' alt='API' /></div>
+          <div className="col col--4"><img className={styles.itemImage} src="img/idb_Icon_Color.svg" alt="API" /></div>
         </div>
       </div>
     </header>
@@ -38,7 +38,7 @@ function HomeSplash(props) {
 
 const DemoVideo = props => (
   <main>
-    <section className={classnames("hero", styles.items)}>
+    <section className={classnames('hero', styles.items)}>
       <div className="container">
         <video playsInline loop muted controls>
           <source src="idb_demo.mov" type="video/mp4" />
