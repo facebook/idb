@@ -3,14 +3,7 @@ id: commands
 title: Commands
 ---
 
-### Reset Idb
-
-```
-idb kill
-```
-
-idb stores information about available companions in a local file. this command clears these files and kills the idb notifier if one is running.
-
+## Starting
 
 ### Starting a companion
 
@@ -32,7 +25,6 @@ On macs idb can spawn a companion automatically on connect
 |--daemon-host PORT | Auto connect to a daemon |
 |--serving-host HOST | Hostname to report to the daemon |
 
-
 ### Starting a notifier
 
 ```
@@ -43,7 +35,6 @@ Starts up a companion process in the notifier mode.
 in this mode the companion will find out what simulators/devices are available and write that output to the file path specified.
 A notifier is always spawned automatically if the idb cli is called on a mac.
 
-
 ### Boot a simulator
 
 ```
@@ -52,6 +43,9 @@ idb boot UDID
 
 When running locally idb can boot an installed simulator.
 To see a list of the available targets try `idb list-targets`
+
+
+## Target
 
 ### Connect a target
 
@@ -88,7 +82,21 @@ List all of the targets idb can currently communicate with.
 
 This will be all targets that have been connected through `idb connect` as well as any that could be booted if idb is running locally.
 
-## Commands
+### Describe a target
+
+```
+idb describe
+```
+
+Returns metadata about the specified target, including:
+- UDID
+- Name
+- Screen dimensions and density
+- State (booted/...)
+- Type (simulator/device)
+- iOS version
+- Architecture
+- Information about its companion
 
 ### General arguments
 
@@ -151,6 +159,7 @@ idb uninstall com.facebook.Facebook
 ```
 Removes an app from the target.
 
+
 ## Tests
 
 ### Install a test bundle
@@ -206,6 +215,7 @@ idb xctest run logic TEST_BUNDLE_ID
 idb xctest run app TEST_BUNDLE_ID APP_BUNDLE_ID
 ```
 
+
 ## Debug an app
 
 ### Starting a debug session
@@ -231,6 +241,7 @@ idb debugserver status
 ```
 
 Display metadata about any running debug sessions.
+
 
 ## File commands
 
@@ -355,7 +366,6 @@ idb ui describe-all
 
 Returns a JSON formatted list of all the elements currently on screen, including their bounds and accessibility information.
 
-
 ### Describe a point
 
 ```
@@ -365,24 +375,15 @@ idb ui describe-point X Y
 Returns JSON formatted information about a specific point on the screen, if an element exists there.
 
 
-
 ## Misc
 
-### Describe a target
+### Reset Idb
 
 ```
-idb describe
+idb kill
 ```
 
-Returns metadata about the specified target, including:
-- UDID
-- Name
-- Screen dimensions and density
-- State (booted/...)
-- Type (simulator/device)
-- iOS version
-- Architecture
-- Information about its companion
+idb stores information about available companions in a local file. this command clears these files and kills the idb notifier if one is running.
 
 ### Focus a simulators window
 
