@@ -77,13 +77,21 @@ class DirectCompanionManager:
         async with self._use_stored_companions() as companions:
             return companions
 
-    async def add_companion(self, companion: CompanionInfo) -> None:
+    async def add_companion(self, companion: CompanionInfo) -> Optional[CompanionInfo]:
         async with self._use_stored_companions() as companions:
-            if companion in companions:
-                self.logger.info(f"companion {companion} already added")
-                return
+            udid = companion.udid
+            current = {existing.udid: existing for existing in companions}
+            existing = current.get(udid)
+            if existing is not None:
+                existing = current[udid]
+                current[udid] = companion
+                self.logger.info(f"Replacing {existing} with {companion}")
+                companions.clear()
+                companions.extend(current.values())
+                return existing
+            self.logger.info(f"Adding companion {companion}")
             companions.append(companion)
-            self.logger.info(f"added direct companion {companion}")
+            return None
 
     async def clear(self) -> None:
         async with self._use_stored_companions() as companions:

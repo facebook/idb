@@ -31,19 +31,22 @@ class CompanionManagerTests(TestCase):
             companion_a = CompanionInfo(
                 udid="a", host="ahost", port=123, is_local=False
             )
-            await manager.add_companion(companion_a)
+            replaced = await manager.add_companion(companion_a)
+            self.assertIsNone(replaced)
             companions = await manager.get_companions()
             self.assertEqual(companions, [companion_a])
             companion_b = CompanionInfo(
                 udid="b", host="bhost", port=123, is_local=False
             )
-            await manager.add_companion(companion_b)
+            replaced = await manager.add_companion(companion_b)
+            self.assertIsNone(replaced)
             companions = await manager.get_companions()
             self.assertEqual(companions, [companion_a, companion_b])
             companion_c = CompanionInfo(
                 udid="c", host="chost", port=123, is_local=False
             )
-            await manager.add_companion(companion_c)
+            replaced = await manager.add_companion(companion_c)
+            self.assertIsNone(replaced)
             companions = await manager.get_companions()
             self.assertEqual(companions, [companion_a, companion_b, companion_c])
             removed = await manager.remove_companion(
@@ -61,7 +64,8 @@ class CompanionManagerTests(TestCase):
             companion = CompanionInfo(
                 udid="asdasda", host="foohost", port=123, is_local=False
             )
-            await manager.add_companion(companion)
+            replaced = await manager.add_companion(companion)
+            self.assertIsNone(replaced)
             companions = await manager.get_companions()
             self.assertEqual(companions, [companion])
             removed = await manager.remove_companion(
@@ -76,7 +80,8 @@ class CompanionManagerTests(TestCase):
             companion = CompanionInfo(
                 udid="asdasda", host="foohost", port=123, is_local=False
             )
-            await manager.add_companion(companion)
+            replaced = await manager.add_companion(companion)
+            self.assertIsNone(replaced)
             companions = await manager.get_companions()
             self.assertEqual(companions, [companion])
             removed = await manager.remove_companion("asdasda")
@@ -101,14 +106,33 @@ class CompanionManagerTests(TestCase):
             companion_a = CompanionInfo(
                 udid="a", host="ahost", port=123, is_local=False
             )
-            await manager.add_companion(companion_a)
+            replaced = await manager.add_companion(companion_a)
+            self.assertIsNone(replaced)
             companions = await manager.get_companions()
             self.assertEqual(companions, [companion_a])
             companion_b = CompanionInfo(
                 udid="b", host="ahost", port=123, is_local=False
             )
-            await manager.add_companion(companion_b)
+            replaced = await manager.add_companion(companion_b)
+            self.assertIsNone(replaced)
             companions = await manager.get_companions()
             self.assertEqual(companions, [companion_a, companion_b])
             with self.assertRaises(IdbException):
                 await manager.get_companion_info(target_udid=None)
+
+    async def test_replace_companion(self) -> None:
+        async for manager in self._managers():
+            companion_first = CompanionInfo(
+                udid="a", host="ahost", port=123, is_local=False
+            )
+            replaced = await manager.add_companion(companion_first)
+            self.assertIsNone(replaced)
+            companions = await manager.get_companions()
+            self.assertEqual(companions, [companion_first])
+            companion_second = CompanionInfo(
+                udid="a", host="anotherhost", port=321, is_local=False
+            )
+            replaced = await manager.add_companion(companion_second)
+            self.assertEqual(replaced, companion_first)
+            companions = await manager.get_companions()
+            self.assertEqual(companions, [companion_second])
