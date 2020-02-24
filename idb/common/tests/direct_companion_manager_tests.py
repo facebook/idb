@@ -17,14 +17,22 @@ from idb.utils.testing import TestCase, ignoreTaskLeaks
 @ignoreTaskLeaks
 class CompanionManagerTests(TestCase):
     async def _managers(self) -> AsyncGenerator[DirectCompanionManager, None]:
+        # Covers a fresh tempfile
         with tempfile.NamedTemporaryFile() as f:
             yield DirectCompanionManager(
                 logger=mock.MagicMock(), state_file_path=f.name
             )
+        # Covers a missing state file
         with tempfile.TemporaryDirectory() as dir:
             yield DirectCompanionManager(
                 logger=mock.MagicMock(), state_file_path=str(Path(dir) / "state_file")
             )
+        # Covers a garbage tempfile
+        with tempfile.TemporaryDirectory() as dir:
+            path = str(Path(dir) / "state_file")
+            with open(path, "w") as f:
+                f.write("GARBAGEASDASDASD")
+            yield DirectCompanionManager(logger=mock.MagicMock(), state_file_path=path)
 
     async def test_add_multiple(self) -> None:
         async for manager in self._managers():
