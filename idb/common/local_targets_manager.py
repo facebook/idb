@@ -24,7 +24,6 @@ class LocalTargetsManager:
         self.local_targets: List[TargetDescription] = []
         self.local_targets_file = local_targets_file
         self.logger = logger
-        self.logger.info(f"idb local targets file stored at {self.local_targets_file}")
 
     def get_local_targets(self) -> List[TargetDescription]:
         self.local_targets = self._load()

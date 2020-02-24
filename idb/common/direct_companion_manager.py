@@ -46,7 +46,6 @@ class DirectCompanionManager:
     ) -> None:
         self.state_file_path = state_file_path
         self.logger = logger
-        self.logger.info(f"idb state file stored at {self.state_file_path}")
 
     @asynccontextmanager
     async def _use_stored_companions(self) -> AsyncGenerator[List[CompanionInfo], None]:

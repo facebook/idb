@@ -63,7 +63,7 @@ class DaemonCommand(BaseCommand):
         try:
             companions = await companion_manager.get_companions()
             if len(companions):
-                self.logger.info("Clearing existing companions {companions}")
+                self.logger.info(f"Clearing existing companions {companions}")
             await companion_manager.clear()
             # leaving the daemon command with a dummy output
             # will remove after all uses are removed
@@ -77,7 +77,7 @@ class DaemonCommand(BaseCommand):
         finally:
             companions = await companion_manager.get_companions()
             if len(companions):
-                self.logger.info("Clearing existing companions {companions}")
+                self.logger.info(f"Clearing existing companions {companions}")
             await companion_manager.clear()
             self.logger.info("Exiting")
 
