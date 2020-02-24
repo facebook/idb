@@ -11,40 +11,33 @@ import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import IO, AsyncGenerator, List, Optional
+from typing import AsyncGenerator, List, Optional
 
 from idb.common.constants import IDB_STATE_FILE_PATH
 from idb.common.format import json_data_companions, json_to_companion_info
 from idb.common.types import CompanionInfo, ConnectionDestination, IdbException
 
 
-# this is the new companion manager for direct_client mode
-
-
 @asynccontextmanager
-async def exclusive_rw_open(filename: str) -> AsyncGenerator[IO[str], None]:
+async def _open_lockfile(filename: str) -> AsyncGenerator[None, None]:
     timeout = 3
     retry_time = 0.05
-    lockfile = filename + ".lock"
     deadline = datetime.now() + timedelta(seconds=timeout)
-    while True:
-        try:
-            fd = os.open(lockfile, os.O_CREAT | os.O_EXCL)
-            break
-        except FileExistsError:
-            if datetime.now() >= deadline:
-                raise
-            await asyncio.sleep(retry_time)
+    lock_path = filename + ".lock"
+    lock = None
     try:
-        # r+ will not create the file like w will, we have to create it first
-        Path(filename).touch(exist_ok=True)
-        with open(filename, "r+") as f:
-            yield f
+        while lock is None:
+            try:
+                lock = os.open(lock_path, os.O_CREAT | os.O_EXCL)
+                yield None
+            except FileExistsError:
+                if datetime.now() >= deadline:
+                    raise IdbException("Failed to open the lockfile {lock_path}")
+                await asyncio.sleep(retry_time)
     finally:
-        try:
-            os.close(fd)  # pyre-ignore
-        finally:
-            os.unlink(lockfile)
+        if lock is not None:
+            os.close(lock)
+        os.unlink(lock_path)
 
 
 class DirectCompanionManager:
@@ -57,21 +50,39 @@ class DirectCompanionManager:
 
     @asynccontextmanager
     async def _use_stored_companions(self) -> AsyncGenerator[List[CompanionInfo], None]:
-        async with exclusive_rw_open(self.state_file_path) as f:
-            try:
-                companion_info_in = json_to_companion_info(json.load(f))
-            except json.JSONDecodeError:
-                companion_info_in = []
+        async with _open_lockfile(filename=self.state_file_path):
+            # Create the state file
+            Path(self.state_file_path).touch(exist_ok=True)
+            fresh_state = False
+            with open(self.state_file_path, "r") as f:
+                try:
+                    companion_info_in = json_to_companion_info(json.load(f))
+                except json.JSONDecodeError:
+                    fresh_state = True
+                    self.logger.info(
+                        "State file is invalid or empty, creating empty companion info"
+                    )
+                    companion_info_in = []
+            companion_info_in = sorted(
+                companion_info_in, key=lambda companion: companion.udid
+            )
             companion_info_out = list(companion_info_in)
             yield companion_info_out
-            if companion_info_in == companion_info_out:
-                return
-            f.seek(0)
             companion_info_out = sorted(
                 companion_info_out, key=lambda companion: companion.udid
             )
-            json.dump(json_data_companions(companion_info_out), f)
-            f.truncate()
+            if fresh_state:
+                self.logger.info(
+                    f"Created a fresh companion info of {companion_info_out}, writing to file"
+                )
+            elif companion_info_in != companion_info_out:
+                self.logger.info(
+                    f"Companion info changed from {companion_info_in} to {companion_info_out}, writing to file"
+                )
+            else:
+                return
+            with open(self.state_file_path, "w") as f:
+                json.dump(json_data_companions(companion_info_out), f)
 
     async def get_companions(self) -> List[CompanionInfo]:
         async with self._use_stored_companions() as companions:
