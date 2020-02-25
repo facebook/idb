@@ -3,6 +3,8 @@ id: architecture
 title: Architecture
 ---
 
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
 idb is formed of two components that have different responsibilities.
 
 ## The idb cli
@@ -15,4 +17,4 @@ The cli itself just wraps a client class which can also be imported elsewhere. I
 The companion is a gRPC server in Objective-C and C++. It talks to the native APIs that are used for automating Simulators and Devices. It links FBSimulatorControl and FBDeviceControl to perform these tasks.
 The companion is paired with a single iOS target (a device/simulator), handles executing the requested commands.
 
-![](https://www.fbidb.io/docs/assets/idb_architecture.png)
+<img alt="idb architecture" src={useBaseUrl('static/img/idb_architecture.png')} />;

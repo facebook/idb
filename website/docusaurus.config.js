@@ -5,9 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// See https://docusaurus.io/docs/site-config for all the possible
-// site configuration options.
-
 module.exports = {
   title: 'idb',
   tagline: 'iOS Development Bridge',
