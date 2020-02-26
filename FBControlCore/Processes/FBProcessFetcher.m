@@ -111,7 +111,7 @@ static inline FBProcessInfo *ProcessInfoForProcessIdentifier(pid_t processIdenti
 
   // Now the environment is here
   NSMutableDictionary *environment = [NSMutableDictionary dictionary];
-  while (currentPosition != '\0') {
+  while (*currentPosition != '\0') {
     NSString *string = [[NSString alloc] initWithCString:currentPosition encoding:NSASCIIStringEncoding];
     NSArray *tokens = [string componentsSeparatedByString:@"="];
     // If we don't get 2 tokens, something is malformed.
