@@ -9,7 +9,7 @@ import errno
 import json
 import logging
 import os
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from idb.common.constants import IDB_LOCAL_TARGETS_FILE, IDB_LOGS_PATH
 from idb.common.file import get_last_n_lines
@@ -21,17 +21,26 @@ class CompanionSpawnerException(Exception):
     pass
 
 
-async def _extract_port_from_spawned_companion(
-    stream: asyncio.StreamReader
-) -> Optional[int]:
-    # The first line of stdout should contain launch info, otherwise something bad has happened
+class IdbJsonException(Exception):
+    pass
+
+
+def _parse_json_line(line: bytes) -> Dict[str, Any]:
+    decoded_line = line.decode()
+    try:
+        return json.loads(decoded_line)
+    except json.JSONDecodeError:
+        raise IdbJsonException(f"Failed to parse json from: {decoded_line}")
+
+
+async def _extract_port_from_spawned_companion(stream: asyncio.StreamReader) -> int:
+    # The first line of stdout should contain launch info,
+    # otherwise something bad has happened
     line = await stream.readline()
-    logging.debug(f"read line from companion : {line}")
-    if line is None:
-        return None
-    update = json.loads(line.decode())
-    logging.debug(f"got update from companion {update}")
-    return update["grpc_port"]
+    logging.debug(f"Read line from companion: {line}")
+    update = _parse_json_line(line)
+    logging.debug(f"Got update from companion: {update}")
+    return int(update["grpc_port"])
 
 
 async def do_spawn_companion(
@@ -62,15 +71,22 @@ async def do_spawn_companion(
         )
         logging.debug(f"started companion at process id {process.pid}")
         stdout = none_throws(process.stdout)
-        extracted_port = await _extract_port_from_spawned_companion(stdout)
-        if not extracted_port:
+        try:
+            extracted_port = await _extract_port_from_spawned_companion(stdout)
+        except Exception as e:
             raise CompanionSpawnerException(
-                f"Failed to spawn companion, "
+                f"Failed to spawn companion, couldn't read port"
+                f"stderr: {get_last_n_lines(log_file_path, 30)}"
+            ) from e
+        if extracted_port == 0:
+            raise CompanionSpawnerException(
+                f"Failed to spawn companion, port is zero"
                 f"stderr: {get_last_n_lines(log_file_path, 30)}"
             )
         if port is not None and extracted_port != port:
             raise CompanionSpawnerException(
-                f"Failed to spawn companion, port is not correct (expected {port} got {extracted_port})"
+                "Failed to spawn companion, port is not correct "
+                f"(expected {port} got {extracted_port})"
                 f"stderr: {get_last_n_lines(log_file_path, 30)}"
             )
         return (process, extracted_port)
@@ -129,21 +145,26 @@ class CompanionSpawner:
 
         self.check_okay_to_spawn()
         cmd = [self.companion_path, "--notify", IDB_LOCAL_TARGETS_FILE]
-        with open(self._log_file_path("notifier"), "a") as log_file:
+        log_path = self._log_file_path("notifier")
+        with open(log_path, "a") as log_file:
             process = await asyncio.create_subprocess_exec(
                 *cmd, stdout=asyncio.subprocess.PIPE, stderr=log_file
             )
+        try:
             self.pid_saver.save_notifier_pid(pid=process.pid)
-            await asyncio.ensure_future(
-                self._read_notifier_output(stream=none_throws(process.stdout))
-            )
+            await self._read_notifier_output(stream=none_throws(process.stdout))
             logging.debug(f"started notifier at process id {process.pid}")
+        except Exception as e:
+            raise CompanionSpawnerException(
+                "Failed to spawn the idb notifier. "
+                f"Stderr: {get_last_n_lines(log_path, 30)}"
+            ) from e
 
     async def _read_notifier_output(self, stream: asyncio.StreamReader) -> None:
         while True:
             line = await stream.readline()
             if line is None:
                 return
-            update = json.loads(line.decode())
+            update = _parse_json_line(line)
             if update["report_initial_state"]:
                 return
