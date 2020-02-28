@@ -7,7 +7,7 @@
 
 @class NSArray, NSData, NSDictionary, NSString;
 
-@protocol SimulatorBridge
+@protocol SimulatorBridge <NSObject>
 - (void)setLocationWithLatitude:(double)arg1 andLongitude:(double)arg2;
 - (void)setLocationScenarioWithPath:(in bycopy NSString *)arg1;
 - (void)setLocationScenario:(in bycopy NSString *)arg1;

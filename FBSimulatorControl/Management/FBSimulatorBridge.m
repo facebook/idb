@@ -208,7 +208,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
 {
   return [[self
     interactWithBridge]
-    onQueue:self.workQueue fmap:^ FBFuture<NSNull *> * (NSProxy<SimulatorBridge> *bridge) {
+    onQueue:self.workQueue fmap:^ FBFuture * _Nonnull (id<SimulatorBridge> bridge) {
       if ([bridge respondsToSelector:@selector(enableAccessibility)]) {
         [bridge performSelector:@selector(enableAccessibility)];
       }
@@ -229,7 +229,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
 {
   return [[[self
     interactWithBridge]
-    onQueue:self.workQueue fmap:^(NSProxy<SimulatorBridge> *bridge) {
+    onQueue:self.workQueue fmap:^(id<SimulatorBridge> bridge) {
       id elements = [bridge accessibilityElementsWithDisplayId:0];
       if (!elements) {
         return [[FBSimulatorError
