@@ -75,7 +75,8 @@
 
 - (NSString *)auxillaryDirectory
 {
-  return NSFileManager.defaultManager.currentDirectoryPath;
+  NSString *cwd = NSFileManager.defaultManager.currentDirectoryPath;
+  return [NSFileManager.defaultManager isWritableFileAtPath:cwd] ? cwd : @"/tmp";
 }
 
 - (FBiOSTargetState)state
