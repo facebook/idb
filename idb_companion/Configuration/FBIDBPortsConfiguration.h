@@ -24,14 +24,10 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)portsWithArguments:(NSUserDefaults *)userDefaults;
 
-#pragma mark Properties
-
-@property (nonatomic, strong, readonly) NSUserDefaults *userDefaults;
-
 /**
  The GRPC Port.
  */
-@property (nonatomic, assign, readwrite) in_port_t grpcPort;
+@property (atomic, assign, readwrite) in_port_t grpcPort;
 
 /**
  The debugserver port

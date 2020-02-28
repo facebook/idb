@@ -25,21 +25,10 @@ static NSString *const GrpcPortKey = @"-grpc-port";
     return nil;
   }
 
-  _userDefaults = userDefaults;
+  _debugserverPort = [userDefaults integerForKey:@"-debug-port"] ?: 10881;
+  _grpcPort = [userDefaults stringForKey:GrpcPortKey] ? [userDefaults integerForKey:GrpcPortKey] : 10882;
 
   return self;
-}
-
-#pragma mark Properties
-
-- (in_port_t)debugserverPort
-{
-  return [self.userDefaults integerForKey:@"-debug-port"] ?: 10881;
-}
-
-- (in_port_t)grpcPort
-{
-  return [self.userDefaults stringForKey:GrpcPortKey] ? [self.userDefaults integerForKey:GrpcPortKey] : 10882;
 }
 
 @end

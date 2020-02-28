@@ -83,8 +83,8 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
 
     return [[server
       start]
-      onQueue:target.workQueue map:^id(id result) {
-        NSData *jsonOutput = [NSJSONSerialization dataWithJSONObject:server.jsonSerializableRepresentation options:0 error:nil];
+      onQueue:target.workQueue map:^id(NSNumber *port) {
+        NSData *jsonOutput = [NSJSONSerialization dataWithJSONObject:@{@"grpc_port": port} options:0 error:nil];
         NSMutableData *readyOutput = [NSMutableData dataWithData:jsonOutput];
         [readyOutput appendData:[@"\n" dataUsingEncoding:NSUTF8StringEncoding]];
         write(STDOUT_FILENO, readyOutput.bytes, readyOutput.length);

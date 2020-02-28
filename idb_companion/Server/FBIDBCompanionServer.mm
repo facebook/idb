@@ -20,7 +20,7 @@
 
 @interface FBIDBCompanionServer ()
 
-@property (nonatomic, strong, readwrite) FBIDBPortsConfiguration *ports;
+@property (nonatomic, strong, readonly) FBIDBPortsConfiguration *ports;
 @property (nonatomic, strong, readonly) FBIDBCommandExecutor *commandExecutor;
 @property (nonatomic, strong, readonly)  id<FBiOSTarget> target;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
@@ -82,10 +82,10 @@ using namespace std;
 
 #pragma mark FBIDBCompanionServer
 
-- (FBFuture<NSNull *> *)start
+- (FBFuture<NSNumber *> *)start
 {
   dispatch_queue_t queue = dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
-  FBMutableFuture<NSNull *> *serverStarted = FBMutableFuture.future;
+  FBMutableFuture<NSNumber *> *serverStarted = FBMutableFuture.future;
   dispatch_async(queue, ^(void){
     [self.logger logFormat:@"Starting GRPC server on port %u", self.ports.grpcPort];
     string server_address("0.0.0.0:" + std::to_string(self.ports.grpcPort));
@@ -100,7 +100,7 @@ using namespace std;
     );
     self.ports.grpcPort = selectedPort;
     service.setPorts(self.ports);
-    [serverStarted resolveWithResult:NSNull.null];
+    [serverStarted resolveWithResult:@(selectedPort)];
     [self.logger.info logFormat:@"Started GRPC server on port %u", selectedPort];
     server->Wait();
     [self.logger.info logFormat:@"GRPC server is no longer running on port %u", selectedPort];
@@ -117,13 +117,6 @@ using namespace std;
 - (NSString *)futureType
 {
   return @"grpc_server";
-}
-
-#pragma mark FBJSONSerialization
-
-- (id)jsonSerializableRepresentation
-{
-  return @{@"grpc_port": @(self.ports.grpcPort)};
 }
 
 @end

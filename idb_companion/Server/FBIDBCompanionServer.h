@@ -26,11 +26,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Starts the server.
  */
-- (FBFuture<NSNull *> *)start;
+- (FBFuture<NSNumber *> *)start;
 
 - (FBFuture<NSNull *> *)completed;
-
-- (id)jsonSerializableRepresentation;
 
 #pragma mark Initializers
 
