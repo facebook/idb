@@ -336,16 +336,16 @@
   return [configuration.auxillaryDirectory stringByAppendingPathComponent:device.UDID.UUIDString];
 }
 
-+ (NSSet<NSString *> *)statefulCommands
++ (NSSet<Class> *)statefulCommands
 {
   static dispatch_once_t onceToken;
-  static NSSet<NSString *> *statefulCommands;
+  static NSSet<Class> *statefulCommands;
   dispatch_once(&onceToken, ^{
     statefulCommands = [NSSet setWithArray:@[
-      NSStringFromClass(FBSimulatorCrashLogCommands.class),
-      NSStringFromClass(FBSimulatorLifecycleCommands.class),
-      NSStringFromClass(FBSimulatorScreenshotCommands.class),
-      NSStringFromClass(FBSimulatorVideoRecordingCommands.class),
+      FBSimulatorCrashLogCommands.class,
+      FBSimulatorLifecycleCommands.class,
+      FBSimulatorScreenshotCommands.class,
+      FBSimulatorVideoRecordingCommands.class,
     ]];
   });
   return statefulCommands;
