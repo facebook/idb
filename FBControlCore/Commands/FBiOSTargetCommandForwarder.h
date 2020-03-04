@@ -39,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param commandClasses the classes to forward to.
  @param statefulCommands A set of stateful command class names that should be memoized.
  */
-+ (instancetype)forwarderWithTarget:(id<FBiOSTarget>)target commandClasses:(NSArray<Class> *)commandClasses statefulCommands:(NSSet<NSString *> *)statefulCommands;
++ (instancetype)forwarderWithTarget:(id<FBiOSTarget>)target commandClasses:(NSArray<Class> *)commandClasses statefulCommands:(NSSet<Class> *)statefulCommands;
 
 @end
 
