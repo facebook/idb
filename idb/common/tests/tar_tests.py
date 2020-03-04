@@ -13,11 +13,11 @@ class UdidTests(TestCase):
         output_path = "test_output_path"
         self.assertEqual(
             _create_untar_command(output_path=output_path, gnu_tar=True, verbose=False),
-            f"tar -C '{output_path}' --warning=no-unknown-keyword -xzpf -",
+            ["tar", "-C", output_path, "--warning=no-unknown-keyword", "-xzpf", "-"],
         )
         self.assertEqual(
             _create_untar_command(output_path=output_path, gnu_tar=True, verbose=True),
-            f"tar -C '{output_path}' -xzpfv -",
+            ["tar", "-C", output_path, "-xzpfv", "-"],
         )
 
     def test_untar_command_bsd(self) -> None:
@@ -26,9 +26,9 @@ class UdidTests(TestCase):
             _create_untar_command(
                 output_path=output_path, gnu_tar=False, verbose=False
             ),
-            f"tar -C '{output_path}' -xzpf -",
+            ["tar", "-C", output_path, "-xzpf", "-"],
         )
         self.assertEqual(
             _create_untar_command(output_path=output_path, gnu_tar=False, verbose=True),
-            f"tar -C '{output_path}' -xzpfv -",
+            ["tar", "-C", output_path, "-xzpfv", "-"],
         )

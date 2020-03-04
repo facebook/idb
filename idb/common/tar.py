@@ -73,13 +73,13 @@ async def _create_tar_command(
 
 def _create_untar_command(
     output_path: str, gnu_tar: bool, verbose: bool = False
-) -> str:
-    command = ["tar", "-C", f"'{output_path}'"]
+) -> List[str]:
+    command = ["tar", "-C", output_path]
     if not verbose and gnu_tar:
         command.append("--warning=no-unknown-keyword")
     command.append(f"-xzpf{'v' if verbose else ''}")
     command.append("-")
-    return " ".join(command)
+    return command
 
 
 async def _generator_from_data(data: bytes) -> AsyncIterator[bytes]:
@@ -141,8 +141,8 @@ async def drain_untar(
     except FileExistsError:
         pass
 
-    process = await asyncio.create_subprocess_shell(
-        _create_untar_command(
+    process = await asyncio.create_subprocess_exec(
+        *_create_untar_command(
             output_path=output_path, gnu_tar=await is_gnu_tar(), verbose=verbose
         ),
         stdin=asyncio.subprocess.PIPE,
