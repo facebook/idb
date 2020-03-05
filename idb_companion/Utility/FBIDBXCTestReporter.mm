@@ -205,6 +205,11 @@
   idb::XctestRunResponse response;
   response.set_status(idb::XctestRunResponse_Status_RUNNING);
   for (NSString *log in logOutput) {
+      NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"Assertion failed: (.*), function (.*), file (.*), line (\\d+)." options:NSRegularExpressionCaseInsensitive error:nil];
+      NSTextCheckingResult *result = [regex firstMatchInString:log options:0 range:NSMakeRange(0, [log length])];
+      if (result) {
+          self.failureInfo = [self failureInfoWithMessage:[log substringWithRange:[result rangeAtIndex:1]] file:[log substringWithRange:[result rangeAtIndex:3]] line:[[log substringWithRange:[result rangeAtIndex:4]] integerValue]];
+      }
     response.add_log_output(log.UTF8String ?: "");
   }
   return response;
@@ -226,6 +231,7 @@
   info->set_bundle_name(self.currentBundleName.UTF8String ?: "");
   info->set_class_name(self.currentTestClass.UTF8String ?: "");
   info->set_method_name(self.currentTestMethod.UTF8String ?: "");
+  info->mutable_failure_info()->CopyFrom(self.failureInfo);
   info->set_status(idb::XctestRunResponse_TestRunInfo_Status_CRASHED);
   [self resetCurrentTestState];
   return response;
