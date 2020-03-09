@@ -54,6 +54,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/facebook/idb",
     packages=setuptools.find_packages(),
+    data_files=[("proto", ["proto/idb.proto"])],
     license="MIT",
     classifiers=[
         "Programming Language :: Python :: 3.6",
