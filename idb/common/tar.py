@@ -23,7 +23,7 @@ def _has_executable(exe: str) -> bool:
     return any((os.path.exists(os.path.join(path, exe)) for path in os.get_exec_path()))
 
 
-COMPRESSION_COMMAND = "pigz -c" if _has_executable("pigz") else "gzip -4"
+COMPRESSION_COMMAND = ["pigz", "-c"] if _has_executable("pigz") else ["gzip", "-4"]
 READ_CHUNK_SIZE: int = 1024 * 1024 * 4  # 4Mb, the default max read for gRPC
 
 
@@ -45,30 +45,34 @@ async def _create_tar_command(
     verbose: bool = False,
 ) -> AsyncContextManager[asyncio.subprocess.Process]:
     with tempfile.TemporaryDirectory(prefix="tar_link_") as temp_dir:
-        tar_args = additional_tar_args or []
+        command = ["tar", "vcf" if verbose else "cf", "-"]
+        if additional_tar_args:
+            command.extend(additional_tar_args)
+
         if place_in_subfolders:
             for path in paths:
                 sub_dir_name = str(uuid.uuid4())
                 temp_subdir = os.path.join(temp_dir, sub_dir_name)
                 os.symlink(os.path.dirname(path), temp_subdir)
                 path_to_file = os.path.join(sub_dir_name, os.path.basename(path))
-                tar_args.append(f"-C '{temp_dir}' '{path_to_file}'")
+                command.extend(["-C", temp_dir, path_to_file])
         else:
-            tar_args.extend(
-                [
-                    f"-C '{os.path.dirname(path)}' '{os.path.basename(path)}'"
-                    for path in paths
-                ]
-            )
-        process = await asyncio.create_subprocess_shell(
-            (
-                f'tar cf{"v" if verbose else ""} - '
-                + f'{" ".join(tar_args)} | {COMPRESSION_COMMAND}'
-            ),
+            for path in paths:
+                command.extend(["-C", os.path.dirname(path), os.path.basename(path)])
+        pipe_read, pipe_write = os.pipe()
+        process_tar = await asyncio.create_subprocess_exec(
+            *command, stderr=sys.stderr, stdout=pipe_write
+        )
+        os.close(pipe_write)
+        process_compressor = await asyncio.create_subprocess_exec(
+            *COMPRESSION_COMMAND,
+            stdin=pipe_read,
             stderr=sys.stderr,
             stdout=asyncio.subprocess.PIPE,
         )
-        yield process
+        os.close(pipe_read)
+        yield process_compressor
+        await asyncio.gather(process_tar.wait(), process_compressor.wait())
 
 
 def _create_untar_command(
