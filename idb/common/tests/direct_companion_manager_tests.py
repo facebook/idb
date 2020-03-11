@@ -144,3 +144,38 @@ class CompanionManagerTests(TestCase):
             self.assertEqual(replaced, companion_first)
             companions = await manager.get_companions()
             self.assertEqual(companions, [companion_second])
+
+    async def test_default_companion(self) -> None:
+        async for manager in self._managers():
+            # Add two companions
+            companion_a = CompanionInfo(
+                udid="a", host="ahost", port=123, is_local=False
+            )
+            await manager.add_companion(companion_a)
+            self.assertEqual(
+                companion_a, await manager.get_companion_info(target_udid=None)
+            )
+            companion_b = CompanionInfo(
+                udid="b", host="bhost", port=123, is_local=False
+            )
+            await manager.add_companion(companion_b)
+            with self.assertRaises(IdbException):
+                await manager.get_companion_info(target_udid=None)
+
+    async def test_selecting_companion(self) -> None:
+        async for manager in self._managers():
+            # Add two companions
+            companion_a = CompanionInfo(
+                udid="a", host="ahost", port=123, is_local=False
+            )
+            await manager.add_companion(companion_a)
+            companion_b = CompanionInfo(
+                udid="b", host="bhost", port=123, is_local=False
+            )
+            await manager.add_companion(companion_b)
+            self.assertEqual(
+                companion_a, await manager.get_companion_info(target_udid="a")
+            )
+            self.assertEqual(
+                companion_b, await manager.get_companion_info(target_udid="b")
+            )
