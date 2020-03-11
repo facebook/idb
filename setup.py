@@ -4,11 +4,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
-import setuptools
-import setuptools.command.build_py
-
 from pathlib import Path
+import os
+
+import setuptools.command.build_py
 
 
 class BuildPyCommand(setuptools.command.build_py.build_py):
@@ -18,7 +17,7 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
         root = Path(os.path.realpath(__file__)).parent
         proto_file = root / "proto" / "idb.proto"
         output_dir = root / "build" / "lib" / "idb" / "grpc"
-        grpclib_output = output_dir / "idb_grpc.py"
+        grpclib_output = output_dir / "idb_pb2_grpc.py"
 
         # Generate the grpc files
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -26,9 +25,10 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
             "grpc_tools.protoc",
             "--proto_path={}".format(proto_file.parent),
             "--python_out={}".format(output_dir),
-            "--python_grpc_out={}".format(output_dir),
+            "--grpc_python_out={}".format(output_dir),
         ] + [str(proto_file)]
-        # Needs to be imported after setuptools has ensured grpcio-tools is installed
+        # Needs to be imported after setuptools has ensured
+        # grpcio-tools is installed
         from grpc_tools import protoc  # pyre-ignore
 
         if protoc.main(command) != 0:
