@@ -4,16 +4,35 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from pathlib import Path
+from posix import chmod
 import os
+import sys
 import setuptools
 import setuptools.command.build_py
 
-from pathlib import Path
+
+def gen_protoc_complier():
+    cur_dir = os.path.dirname(__file__)
+    template_name = "protoc_compiler_template.py"
+    with open(os.path.join(cur_dir, template_name)) as fd:
+        template_py = fd.read()
+
+    target_name = os.path.join(cur_dir, "protoc-gen-python_grpc")
+    with open(target_name, "w") as fd:
+        content = "#!%s\n" % sys.executable + template_py
+        fd.write(content)
+    chmod(target_name, 0o755)
+    os.environ["PATH"] = cur_dir + os.pathsep + os.environ["PATH"]
 
 
 class BuildPyCommand(setuptools.command.build_py.build_py):
     def run(self) -> None:
         super().run()
+
+        # Generate pure python protoc compiler
+        gen_protoc_complier()
+
         # Paths
         root = Path(os.path.realpath(__file__)).parent
         proto_file = root / "proto" / "idb.proto"
@@ -28,7 +47,8 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
             "--python_out={}".format(output_dir),
             "--python_grpc_out={}".format(output_dir),
         ] + [str(proto_file)]
-        # Needs to be imported after setuptools has ensured grpcio-tools is installed
+        # Needs to be imported after setuptools has ensured grpcio-tools is
+        # installed
         from grpc_tools import protoc  # pyre-ignore
 
         if protoc.main(command) != 0:
@@ -54,7 +74,8 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/facebook/idb",
     packages=setuptools.find_packages(),
-    data_files=[("proto", ["proto/idb.proto"])],
+    data_files=[("proto", ["proto/idb.proto"]),
+                ("", ["protoc_compiler_template.py"])],
     license="MIT",
     classifiers=[
         "Programming Language :: Python :: 3.6",
