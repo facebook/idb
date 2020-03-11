@@ -109,7 +109,7 @@ class CompanionManagerTests(TestCase):
             companions = await manager.get_companions()
             self.assertEqual(companions, [])
 
-    async def test_ambiguous_companions(self) -> None:
+    async def test_ambiguity_when_no_udid_multiple_companions(self) -> None:
         async for manager in self._managers():
             companion_a = CompanionInfo(
                 udid="a", host="ahost", port=123, is_local=False
@@ -125,8 +125,45 @@ class CompanionManagerTests(TestCase):
             self.assertIsNone(replaced)
             companions = await manager.get_companions()
             self.assertEqual(companions, [companion_a, companion_b])
-            with self.assertRaises(IdbException):
+            with self.assertRaises(IdbException) as cm:
                 await manager.get_companion_info(target_udid=None)
+            self.assertIn(
+                "No UDID provided and there's multiple companions", str(cm.exception)
+            )
+
+    async def test_ambiguity_when_no_udid_no_companions(self) -> None:
+        async for manager in self._managers():
+            companions = await manager.get_companions()
+            self.assertEqual(companions, [])
+            with self.assertRaises(IdbException) as cm:
+                await manager.get_companion_info(target_udid=None)
+            self.assertIn("No UDID provided and no companions exist", str(cm.exception))
+
+    async def test_selects_when_no_udid_single_companion(self) -> None:
+        async for manager in self._managers():
+            companion = CompanionInfo(udid="a", host="ahost", port=123, is_local=False)
+            await manager.add_companion(companion)
+            self.assertEqual(
+                companion, await manager.get_companion_info(target_udid=None)
+            )
+
+    async def test_selects_by_udid(self) -> None:
+        async for manager in self._managers():
+            # Add two companions
+            companion_a = CompanionInfo(
+                udid="a", host="ahost", port=123, is_local=False
+            )
+            await manager.add_companion(companion_a)
+            companion_b = CompanionInfo(
+                udid="b", host="bhost", port=123, is_local=False
+            )
+            await manager.add_companion(companion_b)
+            self.assertEqual(
+                companion_a, await manager.get_companion_info(target_udid="a")
+            )
+            self.assertEqual(
+                companion_b, await manager.get_companion_info(target_udid="b")
+            )
 
     async def test_replace_companion(self) -> None:
         async for manager in self._managers():
@@ -144,38 +181,3 @@ class CompanionManagerTests(TestCase):
             self.assertEqual(replaced, companion_first)
             companions = await manager.get_companions()
             self.assertEqual(companions, [companion_second])
-
-    async def test_default_companion(self) -> None:
-        async for manager in self._managers():
-            # Add two companions
-            companion_a = CompanionInfo(
-                udid="a", host="ahost", port=123, is_local=False
-            )
-            await manager.add_companion(companion_a)
-            self.assertEqual(
-                companion_a, await manager.get_companion_info(target_udid=None)
-            )
-            companion_b = CompanionInfo(
-                udid="b", host="bhost", port=123, is_local=False
-            )
-            await manager.add_companion(companion_b)
-            with self.assertRaises(IdbException):
-                await manager.get_companion_info(target_udid=None)
-
-    async def test_selecting_companion(self) -> None:
-        async for manager in self._managers():
-            # Add two companions
-            companion_a = CompanionInfo(
-                udid="a", host="ahost", port=123, is_local=False
-            )
-            await manager.add_companion(companion_a)
-            companion_b = CompanionInfo(
-                udid="b", host="bhost", port=123, is_local=False
-            )
-            await manager.add_companion(companion_b)
-            self.assertEqual(
-                companion_a, await manager.get_companion_info(target_udid="a")
-            )
-            self.assertEqual(
-                companion_b, await manager.get_companion_info(target_udid="b")
-            )
