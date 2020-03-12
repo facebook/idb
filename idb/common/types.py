@@ -416,8 +416,7 @@ class IdbClient:
         pass
 
 
-# Extends the base by adding management related commands
-class IdbManagementClient(IdbClient):
+class IdbManagementClient:
     async def connect(
         self,
         destination: ConnectionDestination,

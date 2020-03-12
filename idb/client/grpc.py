@@ -742,36 +742,14 @@ class IdbManagementClient(IdbManagementClientBase):
         self.local_targets_manager = LocalTargetsManager(logger=self.logger)
         self.companion_path = companion_path
 
-    async def spawn_notifier(self) -> None:
+    async def _spawn_notifier(self) -> None:
         if platform == "darwin" and os.path.exists(self.companion_path):
             companion_spawner = CompanionSpawner(
                 companion_path=self.companion_path, logger=self.logger
             )
             await companion_spawner.spawn_notifier()
 
-    @asynccontextmanager
-    async def get_stub(self) -> AsyncContextManager[IdbClient]:
-        await self.spawn_notifier()
-        try:
-            companion_info = await self.direct_companion_manager.get_companion_info(
-                target_udid=self.target_udid
-            )
-        except IdbException as e:
-            # will try to spawn a companion if on mac.
-            companion_info = await self.spawn_companion(
-                target_udid=none_throws(self.target_udid)
-            )
-            if companion_info is None:
-                raise e
-        async with IdbClient.build(
-            host=companion_info.host,
-            port=companion_info.port,
-            is_local=companion_info.is_local,
-            logger=self.logger,
-        ) as stub:
-            yield stub
-
-    async def spawn_companion(self, target_udid: str) -> Optional[CompanionInfo]:
+    async def _spawn_companion(self, target_udid: str) -> Optional[CompanionInfo]:
         if (
             self.local_targets_manager.is_local_target_available(
                 target_udid=target_udid
@@ -793,361 +771,6 @@ class IdbManagementClient(IdbManagementClientBase):
                 return companion_info
         return None
 
-    @property
-    def metadata(self) -> Dict[str, str]:
-        if self.target_udid:
-            # pyre-fixme[7]: Expected `Dict[str, str]` but got `Dict[str,
-            #  Optional[str]]`.
-            return {"udid": self.target_udid}
-        else:
-            return {}
-
-    async def kill(self) -> None:
-        await self.direct_companion_manager.clear()
-        self.local_targets_manager.clear()
-        PidSaver(logger=self.logger).kill_saved_pids()
-
-    @log_and_handle_exceptions
-    async def list_apps(self) -> List[InstalledAppInfo]:
-        async with self.get_stub() as stub:
-            return await stub.list_apps()
-
-    @log_and_handle_exceptions
-    async def accessibility_info(
-        self, point: Optional[Tuple[int, int]]
-    ) -> AccessibilityInfo:
-        async with self.get_stub() as stub:
-            return await stub.accessibility_info(point=point)
-
-    @log_and_handle_exceptions
-    async def add_media(self, file_paths: List[str]) -> None:
-        async with self.get_stub() as stub:
-            return await stub.add_media(file_paths=file_paths)
-
-    @log_and_handle_exceptions
-    async def approve(self, bundle_id: str, permissions: Set[str]) -> None:
-        async with self.get_stub() as stub:
-            return await stub.approve(bundle_id, permissions)
-
-    @log_and_handle_exceptions
-    async def clear_keychain(self) -> None:
-        async with self.get_stub() as stub:
-            await stub.clear_keychain()
-
-    @log_and_handle_exceptions
-    async def contacts_update(self, contacts_path: str) -> None:
-        async with self.get_stub() as stub:
-            return await stub.contacts_update(contacts_path=contacts_path)
-
-    @log_and_handle_exceptions
-    async def screenshot(self) -> bytes:
-        async with self.get_stub() as stub:
-            return await stub.screenshot()
-
-    @log_and_handle_exceptions
-    async def set_location(self, latitude: float, longitude: float) -> None:
-        async with self.get_stub() as stub:
-            await stub.set_location(latitude=latitude, longitude=longitude)
-
-    @log_and_handle_exceptions
-    async def terminate(self, bundle_id: str) -> None:
-        async with self.get_stub() as stub:
-            await stub.terminate(bundle_id=bundle_id)
-
-    @log_and_handle_exceptions
-    async def describe(self) -> TargetDescription:
-        async with self.get_stub() as stub:
-            return await stub.describe()
-
-    @log_and_handle_exceptions
-    async def focus(self) -> None:
-        async with self.get_stub() as stub:
-            return await stub.focus()
-
-    @log_and_handle_exceptions
-    async def open_url(self, url: str) -> None:
-        async with self.get_stub() as stub:
-            return await stub.open_url(url=url)
-
-    @log_and_handle_exceptions
-    async def uninstall(self, bundle_id: str) -> None:
-        async with self.get_stub() as stub:
-            return await stub.uninstall(bundle_id=bundle_id)
-
-    @log_and_handle_exceptions
-    async def rm(self, bundle_id: str, paths: List[str]) -> None:
-        async with self.get_stub() as stub:
-            return await stub.rm(bundle_id=bundle_id, paths=paths)
-
-    @log_and_handle_exceptions
-    async def mv(self, bundle_id: str, src_paths: List[str], dest_path: str) -> None:
-        async with self.get_stub() as stub:
-            return await stub.mv(
-                bundle_id=bundle_id, src_paths=src_paths, dest_path=dest_path
-            )
-
-    @log_and_handle_exceptions
-    async def ls(self, bundle_id: str, path: str) -> List[FileEntryInfo]:
-        async with self.get_stub() as stub:
-            return await stub.ls(bundle_id=bundle_id, path=path)
-
-    @log_and_handle_exceptions
-    async def mkdir(self, bundle_id: str, path: str) -> None:
-        async with self.get_stub() as stub:
-            return await stub.mkdir(bundle_id=bundle_id, path=path)
-
-    @log_and_handle_exceptions
-    async def crash_delete(self, query: CrashLogQuery) -> List[CrashLogInfo]:
-        async with self.get_stub() as stub:
-            return await stub.crash_delete(query=query)
-
-    @log_and_handle_exceptions
-    async def crash_list(self, query: CrashLogQuery) -> List[CrashLogInfo]:
-        async with self.get_stub() as stub:
-            return await stub.crash_list(query=query)
-
-    @log_and_handle_exceptions
-    async def crash_show(self, name: str) -> CrashLog:
-        async with self.get_stub() as stub:
-            return await stub.crash_show(name)
-
-    @log_and_handle_exceptions
-    async def install(self, bundle: Bundle) -> AsyncIterator[InstalledArtifact]:
-        async with self.get_stub() as stub:
-            async for response in stub.install(bundle=bundle):
-                yield response
-
-    @log_and_handle_exceptions
-    async def install_xctest(self, xctest: Bundle) -> AsyncIterator[InstalledArtifact]:
-        async with self.get_stub() as stub:
-            async for response in stub.install_xctest(xctest=xctest):
-                yield response
-
-    @log_and_handle_exceptions
-    async def install_dylib(self, dylib: Bundle) -> AsyncIterator[InstalledArtifact]:
-        async with self.get_stub() as stub:
-            async for response in stub.install_dylib(dylib=dylib):
-                yield response
-
-    @log_and_handle_exceptions
-    async def install_dsym(self, dsym: Bundle) -> AsyncIterator[InstalledArtifact]:
-        async with self.get_stub() as stub:
-            async for response in stub.install_dsym(dsym=dsym):
-                yield response
-
-    @log_and_handle_exceptions
-    async def install_framework(
-        self, framework_path: Bundle
-    ) -> AsyncIterator[InstalledArtifact]:
-        async with self.get_stub() as stub:
-            async for response in stub.install_framework(framework_path=framework_path):
-                yield response
-
-    @log_and_handle_exceptions
-    async def push(self, src_paths: List[str], bundle_id: str, dest_path: str) -> None:
-        async with self.get_stub() as stub:
-            return await stub.push(
-                src_paths=src_paths, bundle_id=bundle_id, dest_path=dest_path
-            )
-
-    @log_and_handle_exceptions
-    async def pull(self, bundle_id: str, src_path: str, dest_path: str) -> None:
-        async with self.get_stub() as stub:
-            return await stub.pull(
-                bundle_id=bundle_id, src_path=src_path, dest_path=dest_path
-            )
-
-    @log_and_handle_exceptions
-    async def list_test_bundle(self, test_bundle_id: str, app_path: str) -> List[str]:
-        async with self.get_stub() as stub:
-            return await stub.list_test_bundle(
-                test_bundle_id=test_bundle_id, app_path=app_path
-            )
-
-    @log_and_handle_exceptions
-    async def list_xctests(self) -> List[InstalledTestInfo]:
-        async with self.get_stub() as stub:
-            return await stub.list_xctests()
-
-    @log_and_handle_exceptions
-    async def send_events(self, events: Iterable[HIDEvent]) -> None:
-        async with self.get_stub() as stub:
-            return await stub.send_events(events=events)
-
-    @log_and_handle_exceptions
-    async def tap(self, x: int, y: int, duration: Optional[float] = None) -> None:
-        async with self.get_stub() as stub:
-            return await stub.tap(x=x, y=y, duration=duration)
-
-    @log_and_handle_exceptions
-    async def button(
-        self, button_type: HIDButtonType, duration: Optional[float] = None
-    ) -> None:
-        async with self.get_stub() as stub:
-            return await stub.button(button_type=button_type, duration=duration)
-
-    @log_and_handle_exceptions
-    async def key(self, keycode: int, duration: Optional[float] = None) -> None:
-        async with self.get_stub() as stub:
-            return await stub.key(keycode=keycode, duration=duration)
-
-    @log_and_handle_exceptions
-    async def text(self, text: str) -> None:
-        async with self.get_stub() as stub:
-            return await stub.text(text=text)
-
-    @log_and_handle_exceptions
-    async def swipe(
-        self,
-        p_start: Tuple[int, int],
-        p_end: Tuple[int, int],
-        duration: Optional[float] = None,
-        delta: Optional[int] = None,
-    ) -> None:
-        async with self.get_stub() as stub:
-            return await stub.swipe(
-                p_start=p_start, p_end=p_end, duration=duration, delta=delta
-            )
-
-    @log_and_handle_exceptions
-    async def key_sequence(self, key_sequence: List[int]) -> None:
-        async with self.get_stub() as stub:
-            return await stub.key_sequence(key_sequence=key_sequence)
-
-    @log_and_handle_exceptions
-    async def hid(self, event_iterator: AsyncIterable[HIDEvent]) -> None:
-        async with self.get_stub() as stub:
-            return await stub.hid(event_iterator=event_iterator)
-
-    @log_and_handle_exceptions
-    async def debugserver_start(self, bundle_id: str) -> List[str]:
-        async with self.get_stub() as stub:
-            return await stub.debugserver_start(bundle_id=bundle_id)
-
-    @log_and_handle_exceptions
-    async def debugserver_stop(self) -> None:
-        async with self.get_stub() as stub:
-            return await stub.debugserver_stop()
-
-    @log_and_handle_exceptions
-    async def debugserver_status(self) -> Optional[List[str]]:
-        async with self.get_stub() as stub:
-            return await stub.debugserver_status()
-
-    @log_and_handle_exceptions
-    async def run_instruments(
-        self,
-        stop: asyncio.Event,
-        trace_basename: str,
-        template_name: str,
-        app_bundle_id: str,
-        app_environment: Optional[Dict[str, str]] = None,
-        app_arguments: Optional[List[str]] = None,
-        tool_arguments: Optional[List[str]] = None,
-        started: Optional[asyncio.Event] = None,
-        timings: Optional[InstrumentsTimings] = None,
-        post_process_arguments: Optional[List[str]] = None,
-    ) -> List[str]:
-        async with self.get_stub() as stub:
-            return await stub.run_instruments(
-                stop=stop,
-                trace_basename=trace_basename,
-                template_name=template_name,
-                app_bundle_id=app_bundle_id,
-                app_environment=app_environment,
-                app_arguments=app_arguments,
-                tool_arguments=tool_arguments,
-                started=started,
-                timings=timings,
-                post_process_arguments=post_process_arguments,
-            )
-
-    @log_and_handle_exceptions
-    async def launch(
-        self,
-        bundle_id: str,
-        args: Optional[List[str]] = None,
-        env: Optional[Dict[str, str]] = None,
-        foreground_if_running: bool = False,
-        stop: Optional[asyncio.Event] = None,
-    ) -> None:
-        async with self.get_stub() as stub:
-            return await stub.launch(
-                bundle_id=bundle_id,
-                args=args,
-                env=env,
-                foreground_if_running=foreground_if_running,
-            )
-
-    @log_and_handle_exceptions
-    async def record_video(self, stop: asyncio.Event, output_file: str) -> None:
-        async with self.get_stub() as stub:
-            return await stub.record_video(stop=stop, output_file=output_file)
-
-    @log_and_handle_exceptions
-    async def run_xctest(
-        self,
-        test_bundle_id: str,
-        app_bundle_id: str,
-        test_host_app_bundle_id: Optional[str] = None,
-        is_ui_test: bool = False,
-        is_logic_test: bool = False,
-        tests_to_run: Optional[Set[str]] = None,
-        tests_to_skip: Optional[Set[str]] = None,
-        env: Optional[Dict[str, str]] = None,
-        args: Optional[List[str]] = None,
-        result_bundle_path: Optional[str] = None,
-        idb_log_buffer: Optional[StringIO] = None,
-        timeout: Optional[int] = None,
-        poll_interval_sec: float = TESTS_POLL_INTERVAL,
-    ) -> AsyncIterator[TestRunInfo]:
-        async with self.get_stub() as stub:
-            async for result in stub.run_xctest(
-                test_bundle_id=test_bundle_id,
-                app_bundle_id=app_bundle_id,
-                test_host_app_bundle_id=test_host_app_bundle_id,
-                is_ui_test=is_ui_test,
-                is_logic_test=is_logic_test,
-                tests_to_run=tests_to_run,
-                tests_to_skip=tests_to_skip,
-                env=env,
-                args=args,
-                result_bundle_path=result_bundle_path,
-                idb_log_buffer=idb_log_buffer,
-                timeout=timeout,
-                poll_interval_sec=poll_interval_sec,
-            ):
-                yield result
-
-    @log_and_handle_exceptions
-    async def tail_logs(
-        self, stop: asyncio.Event, arguments: Optional[List[str]] = None
-    ) -> AsyncIterator[str]:
-        async with self.get_stub() as stub:
-            async for message in stub.tail_logs(stop=stop, arguments=arguments):
-                yield message
-
-    @log_and_handle_exceptions
-    async def tail_companion_logs(self, stop: asyncio.Event) -> AsyncIterator[str]:
-        async with self.get_stub() as stub:
-            async for message in stub.tail_companion_logs(stop=stop):
-                yield message
-
-    @log_and_handle_exceptions
-    async def boot(self) -> None:
-        if self.target_udid:
-            cmd: List[str] = [
-                "/usr/local/bin/idb_companion",
-                "--boot",
-                none_throws(self.target_udid),
-            ]
-            process = await asyncio.create_subprocess_exec(
-                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-            )
-            await process.communicate()
-        else:
-            raise IdbException("boot needs --udid to work")
-
     async def _companion_to_target(
         self, companion: CompanionInfo
     ) -> Optional[TargetDescription]:
@@ -1168,10 +791,19 @@ class IdbManagementClient(IdbManagementClientBase):
             )
             return None
 
+    @property
+    def metadata(self) -> Dict[str, str]:
+        if self.target_udid:
+            # pyre-fixme[7]: Expected `Dict[str, str]` but got `Dict[str,
+            #  Optional[str]]`.
+            return {"udid": self.target_udid}
+        else:
+            return {}
+
     @log_and_handle_exceptions
     async def list_targets(self) -> List[TargetDescription]:
         (_, companions) = await asyncio.gather(
-            self.spawn_notifier(), self.direct_companion_manager.get_companions()
+            self._spawn_notifier(), self.direct_companion_manager.get_companions()
         )
         connected_targets = [
             target
@@ -1221,7 +853,7 @@ class IdbManagementClient(IdbManagementClientBase):
             channel.close()
             return companion
         else:
-            companion = await self.spawn_companion(target_udid=destination)
+            companion = await self._spawn_companion(target_udid=destination)
             if companion:
                 return companion
             else:
@@ -1230,3 +862,24 @@ class IdbManagementClient(IdbManagementClientBase):
     @log_and_handle_exceptions
     async def disconnect(self, destination: ConnectionDestination) -> None:
         await self.direct_companion_manager.remove_companion(destination)
+
+    @log_and_handle_exceptions
+    async def boot(self) -> None:
+        if self.target_udid:
+            cmd: List[str] = [
+                "/usr/local/bin/idb_companion",
+                "--boot",
+                none_throws(self.target_udid),
+            ]
+            process = await asyncio.create_subprocess_exec(
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            await process.communicate()
+        else:
+            raise IdbException("boot needs --udid to work")
+
+    @log_and_handle_exceptions
+    async def kill(self) -> None:
+        await self.direct_companion_manager.clear()
+        self.local_targets_manager.clear()
+        PidSaver(logger=self.logger).kill_saved_pids()
