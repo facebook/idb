@@ -123,6 +123,7 @@
         if (!file) {
           return [FBFuture futureWithError:error];
         }
+        [filesInTar addObject:file];
       }
       return [FBFuture futureWithResult:filesInTar];
     }];

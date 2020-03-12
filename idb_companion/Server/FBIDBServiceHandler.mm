@@ -979,9 +979,11 @@ Status FBIDBServiceHandler::describe(ServerContext *context, const idb::TargetDe
 Status FBIDBServiceHandler::add_media(grpc::ServerContext *context, grpc::ServerReader<idb::AddMediaRequest> *reader, idb::AddMediaResponse *response)
 {@autoreleasepool{
   NSError *error = nil;
-  [[filepaths_from_reader(_commandExecutor.temporaryDirectory, reader, true, _target.logger) onQueue:_target.asyncQueue pop:^FBFuture<NSNull *> *(NSArray<NSURL *> *files) {
-    return [_commandExecutor add_media:files];
-  }] block:&error];
+  [[filepaths_from_reader(_commandExecutor.temporaryDirectory, reader, true, _target.logger)
+    onQueue:_target.asyncQueue pop:^(NSArray<NSURL *> *files) {
+      return [_commandExecutor add_media:files];
+    }]
+    block:&error];
   if (error) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
