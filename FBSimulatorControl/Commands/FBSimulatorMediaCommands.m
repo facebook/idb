@@ -80,7 +80,9 @@
 - (BOOL)uploadMedia:(NSArray<NSString *> *)mediaPaths error:(NSError **)error
 {
   if (!mediaPaths.count) {
-    return YES;
+    return [[FBSimulatorError
+      describe:@"Cannot upload media, none was provided"]
+      failBool:error];
   }
 
   NSArray<NSString *> *unknown = [mediaPaths filteredArrayUsingPredicate:[NSCompoundPredicate notPredicateWithSubpredicate:NSPredicate.predicateForMediaPaths]];
