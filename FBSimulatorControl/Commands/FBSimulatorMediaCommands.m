@@ -69,9 +69,9 @@
     NSError *innerError = nil;
     if (![self.simulator.device addVideo:url error:&innerError]) {
       return [[[FBSimulatorError
-                describeFormat:@"Failed to upload video at path %@", path]
-               causedBy:innerError]
-              failBool:error];
+        describeFormat:@"Failed to upload video at path %@", path]
+        causedBy:innerError]
+        failBool:error];
     }
   }
   return YES;
@@ -86,8 +86,8 @@
   NSArray<NSString *> *unknown = [mediaPaths filteredArrayUsingPredicate:[NSCompoundPredicate notPredicateWithSubpredicate:NSPredicate.predicateForMediaPaths]];
   if (unknown.count > 0) {
     return [[FBSimulatorError
-             describeFormat:@"%@ not a media path", unknown]
-            failBool:error];
+      describeFormat:@"%@ not a media path", unknown]
+      failBool:error];
   }
 
   NSArray<NSString *> *photos = [mediaPaths filteredArrayUsingPredicate:NSPredicate.predicateForPhotoPaths];
@@ -103,8 +103,8 @@
   }
   if (self.simulator.state != FBiOSTargetStateBooted) {
     return [[FBSimulatorError
-             describeFormat:@"Simulator must be booted to upload photos, is %@", self.simulator.device.stateString]
-            failBool:error];
+      describeFormat:@"Simulator must be booted to upload photos, is %@", self.simulator.device.stateString]
+      failBool:error];
   }
 
   for (NSString *path in photoPaths) {
@@ -112,7 +112,10 @@
 
     NSError *innerError = nil;
     if (![self.simulator.device addPhoto:url error:&innerError]) {
-      return [[[FBSimulatorError describeFormat:@"Failed to upload photo at path %@", path] causedBy:innerError] failBool:error];
+      return [[[FBSimulatorError
+        describeFormat:@"Failed to upload photo at path %@", path]
+        causedBy:innerError]
+        failBool:error];
     }
   }
   return YES;
@@ -125,16 +128,16 @@
   }
   if (self.simulator.state != FBiOSTargetStateBooted) {
     return [[FBSimulatorError
-             describeFormat:@"Simulator must be booted to upload videos, is %@", self.simulator.device.stateString]
-            failBool:error];
+      describeFormat:@"Simulator must be booted to upload videos, is %@", self.simulator.device.stateString]
+      failBool:error];
   }
 
   NSError *innerError = nil;
   BOOL success = [self addVideos:videoPaths error:&innerError];
   if (!success) {
     return [[[FBSimulatorError describeFormat:@"Failed to upload videos at paths %@", videoPaths]
-             causedBy:innerError]
-            failBool:error];
+      causedBy:innerError]
+      failBool:error];
   }
   return YES;
 }
