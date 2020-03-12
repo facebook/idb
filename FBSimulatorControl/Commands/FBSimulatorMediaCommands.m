@@ -24,11 +24,6 @@
 
 #pragma mark Initializers
 
-+ (instancetype)commandsWithTarget:(FBSimulator *)target
-{
-  return [[self alloc] initWithSimulator:target];
-}
-
 - (instancetype)initWithSimulator:(FBSimulator *)simulator
 {
   self = [super init];
@@ -37,10 +32,18 @@
   }
 
   _simulator = simulator;
+
   return self;
 }
 
-#pragma mark Public
+#pragma mark FBiOSTargetCommand Protocol Implementation
+
++ (instancetype)commandsWithTarget:(FBSimulator *)target
+{
+  return [[self alloc] initWithSimulator:target];
+}
+
+#pragma mark FBSimulatorMediaCommands Protocol
 
 - (FBFuture<NSNull *> *)addMedia:(NSArray<NSURL *> *)mediaFileURLs
 {
@@ -57,6 +60,7 @@
   }
 }
 
+#pragma mark Private
 
 - (BOOL)addVideos:(NSArray<NSString *> *)paths error:(NSError **)error
 {

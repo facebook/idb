@@ -31,34 +31,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorMediaCommands : NSObject <FBSimulatorMediaCommands>
 
-/**
- Uploads photos or videos to the Camera Roll of the Simulator.
-
- @param mediaPaths an NSArray<NSString *> of File Paths for the Videos to Upload.
- @param error an error out for any error that occurs.
- @return YES if the upload was successful, NO otherwise.
- */
-- (BOOL)uploadMedia:(NSArray<NSString *> *)mediaPaths error:(NSError **)error;
-
-/**
- Adds a Video to the Camera Roll.
- Will polyfill to the 'Camera App Upload' hack, if required
-
- @param paths an Array of paths of videos to upload.
- @param error an error out for any error that occurs.
- @return YES if the upload was successful, NO otherwise.
- */
-- (BOOL)uploadVideos:(NSArray<NSString *> *)paths error:(NSError **)error;
-
-/**
- Uploads photos to the Camera Roll of the Simulator
-
- @param photoPaths photoPaths an NSArray<NSString *> of File Paths for the Photos to Upload.
- @param error an error out for any error that occurs.
- @return YES if the upload was successful, NO otherwise.
- */
-- (BOOL)uploadPhotos:(NSArray<NSString *> *)photoPaths error:(NSError **)error;
-
 @end
 
 NS_ASSUME_NONNULL_END
