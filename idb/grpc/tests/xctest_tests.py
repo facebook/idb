@@ -9,7 +9,7 @@ import plistlib
 import tempfile
 from unittest import TestCase
 
-from idb.common.xctest import extract_paths_from_xctestrun
+from idb.grpc.xctest import extract_paths_from_xctestrun
 
 
 class XCTestsTestCase(TestCase):

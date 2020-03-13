@@ -30,7 +30,6 @@ from typing import (
 
 from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
-from idb.common.companion import merge_connected_targets
 from idb.common.companion_spawner import CompanionSpawner
 from idb.common.constants import TESTS_POLL_INTERVAL
 from idb.common.direct_companion_manager import DirectCompanionManager
@@ -43,21 +42,7 @@ from idb.common.hid import (
     tap_to_events,
     text_to_events,
 )
-from idb.common.install import (
-    Bundle,
-    Destination,
-    generate_binary_chunks,
-    generate_io_chunks,
-    generate_requests,
-)
-from idb.common.instruments import (
-    instruments_drain_until_running,
-    instruments_generate_bytes,
-    translate_instruments_timings,
-)
-from idb.common.launch import drain_launch_stream, end_launch_stream
 from idb.common.local_targets_manager import LocalTargetsManager
-from idb.common.logging import log_call
 from idb.common.pid_saver import PidSaver
 from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
@@ -84,8 +69,7 @@ from idb.common.types import (
     TargetDescription,
     TestRunInfo,
 )
-from idb.common.video import generate_video_bytes
-from idb.common.xctest import make_request, make_results, write_result_bundle
+from idb.grpc.companion import merge_connected_targets
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
     AccessibilityInfoRequest,
@@ -122,12 +106,28 @@ from idb.grpc.idb_pb2 import (
     XctestListBundlesRequest,
     XctestListTestsRequest,
 )
+from idb.grpc.install import (
+    Bundle,
+    Destination,
+    generate_binary_chunks,
+    generate_io_chunks,
+    generate_requests,
+)
+from idb.grpc.instruments import (
+    instruments_drain_until_running,
+    instruments_generate_bytes,
+    translate_instruments_timings,
+)
+from idb.grpc.launch import drain_launch_stream, end_launch_stream
+from idb.grpc.logging import log_call
 from idb.grpc.stream import (
     cancel_wrapper,
     drain_to_stream,
     generate_bytes,
     stop_wrapper,
 )
+from idb.grpc.video import generate_video_bytes
+from idb.grpc.xctest import make_request, make_results, write_result_bundle
 from idb.ipc.mapping.crash import (
     _to_crash_log,
     _to_crash_log_info_list,

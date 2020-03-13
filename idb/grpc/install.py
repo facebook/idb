@@ -13,8 +13,8 @@ import idb.common.gzip as gzip
 import idb.common.tar as tar
 from grpclib.const import Status
 from grpclib.exceptions import GRPCError
-from idb.common.xctest import xctest_paths_to_tar
 from idb.grpc.idb_pb2 import InstallRequest, Payload
+from idb.grpc.xctest import xctest_paths_to_tar
 
 
 CHUNK_SIZE = 16384

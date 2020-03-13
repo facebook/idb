@@ -6,8 +6,8 @@
 
 from unittest import TestCase
 
-from idb.common.companion import merge_connected_targets
 from idb.common.types import CompanionInfo, TargetDescription
+from idb.grpc.companion import merge_connected_targets
 
 
 class CompanionTests(TestCase):
