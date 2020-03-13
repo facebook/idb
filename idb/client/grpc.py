@@ -202,150 +202,18 @@ class IdbClient(IdbClientBase):
         finally:
             channel.close()
 
-    @log_and_handle_exceptions
-    async def list_apps(self) -> List[InstalledAppInfo]:
-        response = await self.stub.list_apps(ListAppsRequest())
-        return [
-            InstalledAppInfo(
-                bundle_id=app.bundle_id,
-                name=app.name,
-                architectures=app.architectures,
-                install_type=app.install_type,
-                process_state=AppProcessState(app.process_state),
-                debuggable=app.debuggable,
+    async def _tail_specific_logs(
+        self,
+        source: LogRequest.Source,
+        stop: asyncio.Event,
+        arguments: Optional[List[str]],
+    ) -> AsyncIterator[str]:
+        async with self.stub.log.open() as stream:
+            await stream.send_message(
+                LogRequest(arguments=arguments, source=source), end=True
             )
-            for app in response.apps
-        ]
-
-    async def accessibility_info(
-        self, point: Optional[Tuple[int, int]]
-    ) -> AccessibilityInfo:
-        grpc_point = Point(x=point[0], y=point[1]) if point is not None else None
-        response = await self.stub.accessibility_info(
-            AccessibilityInfoRequest(point=grpc_point)
-        )
-        return AccessibilityInfo(json=response.json)
-
-    async def add_media(self, file_paths: List[str]) -> None:
-        async with self.stub.add_media.open() as stream:
-            if self.is_local:
-                for file_path in file_paths:
-                    await stream.send_message(
-                        AddMediaRequest(payload=Payload(file_path=file_path))
-                    )
-                await stream.end()
-                await stream.recv_message()
-            else:
-                generator = stream_map(
-                    generate_tar(paths=file_paths, place_in_subfolders=True),
-                    lambda chunk: AddMediaRequest(payload=Payload(data=chunk)),
-                )
-                await drain_to_stream(
-                    stream=stream, generator=generator, logger=self.logger
-                )
-
-    async def approve(self, bundle_id: str, permissions: Set[str]) -> None:
-        await self.stub.approve(
-            ApproveRequest(
-                bundle_id=bundle_id,
-                permissions=[APPROVE_MAP[permission] for permission in permissions],
-            )
-        )
-
-    async def clear_keychain(self) -> None:
-        await self.stub.clear_keychain(ClearKeychainRequest())
-
-    async def contacts_update(self, contacts_path: str) -> None:
-        data = await create_tar([contacts_path])
-        await self.stub.contacts_update(
-            ContactsUpdateRequest(payload=Payload(data=data))
-        )
-
-    async def screenshot(self) -> bytes:
-        response = await self.stub.screenshot(ScreenshotRequest())
-        return response.image_data
-
-    async def set_location(self, latitude: float, longitude: float) -> None:
-        await self.stub.set_location(
-            SetLocationRequest(
-                location=Location(latitude=latitude, longitude=longitude)
-            )
-        )
-
-    async def terminate(self, bundle_id: str) -> None:
-        await self.stub.terminate(TerminateRequest(bundle_id=bundle_id))
-
-    async def describe(self) -> TargetDescription:
-        response = await self.stub.describe(TargetDescriptionRequest())
-        return target_to_py(target=response.target_description, companion_info=None)
-
-    async def focus(self) -> None:
-        await self.stub.focus(FocusRequest())
-
-    async def open_url(self, url: str) -> None:
-        await self.stub.open_url(OpenUrlRequest(url=url))
-
-    async def uninstall(self, bundle_id: str) -> None:
-        await self.stub.uninstall(UninstallRequest(bundle_id=bundle_id))
-
-    async def rm(self, bundle_id: str, paths: List[str]) -> None:
-        await self.stub.rm(RmRequest(bundle_id=bundle_id, paths=paths))
-
-    async def mv(self, bundle_id: str, src_paths: List[str], dest_path: str) -> None:
-        await self.stub.mv(
-            MvRequest(bundle_id=bundle_id, src_paths=src_paths, dst_path=dest_path)
-        )
-
-    async def ls(self, bundle_id: str, path: str) -> List[FileEntryInfo]:
-        response = await self.stub.ls(LsRequest(bundle_id=bundle_id, path=path))
-        return [FileEntryInfo(path=file.path) for file in response.files]
-
-    async def mkdir(self, bundle_id: str, path: str) -> None:
-        await self.stub.mkdir(MkdirRequest(bundle_id=bundle_id, path=path))
-
-    async def crash_delete(self, query: CrashLogQuery) -> List[CrashLogInfo]:
-        response = await self.stub.crash_delete(_to_crash_log_query_proto(query))
-        return _to_crash_log_info_list(response)
-
-    async def crash_list(self, query: CrashLogQuery) -> List[CrashLogInfo]:
-        response = await self.stub.crash_list(_to_crash_log_query_proto(query))
-        return _to_crash_log_info_list(response)
-
-    async def crash_show(self, name: str) -> CrashLog:
-        response = await self.stub.crash_show(CrashShowRequest(name=name))
-        return _to_crash_log(response)
-
-    async def install(self, bundle: Bundle) -> AsyncIterator[InstalledArtifact]:
-        async for response in self._install_to_destination(
-            bundle=bundle, destination=InstallRequest.APP
-        ):
-            yield response
-
-    async def install_xctest(self, xctest: Bundle) -> AsyncIterator[InstalledArtifact]:
-        async for response in self._install_to_destination(
-            bundle=xctest, destination=InstallRequest.XCTEST
-        ):
-            yield response
-
-    async def install_dylib(self, dylib: Bundle) -> AsyncIterator[InstalledArtifact]:
-        async for response in self._install_to_destination(
-            bundle=dylib, destination=InstallRequest.DYLIB
-        ):
-            yield response
-
-    async def install_dsym(self, dsym: Bundle) -> AsyncIterator[InstalledArtifact]:
-        async for response in self._install_to_destination(
-            bundle=dsym, destination=InstallRequest.DSYM
-        ):
-            yield response
-
-    async def install_framework(
-        self, framework_path: Bundle
-    ) -> AsyncIterator[InstalledArtifact]:
-        async for response in self._install_to_destination(
-            bundle=framework_path, destination=InstallRequest.FRAMEWORK
-        ):
-            yield response
+            async for message in cancel_wrapper(stream=stream, stop=stop):
+                yield message.output.decode()
 
     async def _install_to_destination(
         self, bundle: Bundle, destination: Destination
@@ -385,6 +253,176 @@ class IdbClient(IdbClientBase):
                     name=response.name, uuid=response.uuid, progress=response.progress
                 )
 
+    @log_and_handle_exceptions
+    async def list_apps(self) -> List[InstalledAppInfo]:
+        response = await self.stub.list_apps(ListAppsRequest())
+        return [
+            InstalledAppInfo(
+                bundle_id=app.bundle_id,
+                name=app.name,
+                architectures=app.architectures,
+                install_type=app.install_type,
+                process_state=AppProcessState(app.process_state),
+                debuggable=app.debuggable,
+            )
+            for app in response.apps
+        ]
+
+    @log_and_handle_exceptions
+    async def accessibility_info(
+        self, point: Optional[Tuple[int, int]]
+    ) -> AccessibilityInfo:
+        grpc_point = Point(x=point[0], y=point[1]) if point is not None else None
+        response = await self.stub.accessibility_info(
+            AccessibilityInfoRequest(point=grpc_point)
+        )
+        return AccessibilityInfo(json=response.json)
+
+    @log_and_handle_exceptions
+    async def add_media(self, file_paths: List[str]) -> None:
+        async with self.stub.add_media.open() as stream:
+            if self.is_local:
+                for file_path in file_paths:
+                    await stream.send_message(
+                        AddMediaRequest(payload=Payload(file_path=file_path))
+                    )
+                await stream.end()
+                await stream.recv_message()
+            else:
+                generator = stream_map(
+                    generate_tar(paths=file_paths, place_in_subfolders=True),
+                    lambda chunk: AddMediaRequest(payload=Payload(data=chunk)),
+                )
+                await drain_to_stream(
+                    stream=stream, generator=generator, logger=self.logger
+                )
+
+    @log_and_handle_exceptions
+    async def approve(self, bundle_id: str, permissions: Set[str]) -> None:
+        await self.stub.approve(
+            ApproveRequest(
+                bundle_id=bundle_id,
+                permissions=[APPROVE_MAP[permission] for permission in permissions],
+            )
+        )
+
+    @log_and_handle_exceptions
+    async def clear_keychain(self) -> None:
+        await self.stub.clear_keychain(ClearKeychainRequest())
+
+    @log_and_handle_exceptions
+    async def contacts_update(self, contacts_path: str) -> None:
+        data = await create_tar([contacts_path])
+        await self.stub.contacts_update(
+            ContactsUpdateRequest(payload=Payload(data=data))
+        )
+
+    @log_and_handle_exceptions
+    async def screenshot(self) -> bytes:
+        response = await self.stub.screenshot(ScreenshotRequest())
+        return response.image_data
+
+    @log_and_handle_exceptions
+    async def set_location(self, latitude: float, longitude: float) -> None:
+        await self.stub.set_location(
+            SetLocationRequest(
+                location=Location(latitude=latitude, longitude=longitude)
+            )
+        )
+
+    @log_and_handle_exceptions
+    async def terminate(self, bundle_id: str) -> None:
+        await self.stub.terminate(TerminateRequest(bundle_id=bundle_id))
+
+    @log_and_handle_exceptions
+    async def describe(self) -> TargetDescription:
+        response = await self.stub.describe(TargetDescriptionRequest())
+        return target_to_py(target=response.target_description, companion_info=None)
+
+    @log_and_handle_exceptions
+    async def focus(self) -> None:
+        await self.stub.focus(FocusRequest())
+
+    @log_and_handle_exceptions
+    async def open_url(self, url: str) -> None:
+        await self.stub.open_url(OpenUrlRequest(url=url))
+
+    @log_and_handle_exceptions
+    async def uninstall(self, bundle_id: str) -> None:
+        await self.stub.uninstall(UninstallRequest(bundle_id=bundle_id))
+
+    @log_and_handle_exceptions
+    async def rm(self, bundle_id: str, paths: List[str]) -> None:
+        await self.stub.rm(RmRequest(bundle_id=bundle_id, paths=paths))
+
+    @log_and_handle_exceptions
+    async def mv(self, bundle_id: str, src_paths: List[str], dest_path: str) -> None:
+        await self.stub.mv(
+            MvRequest(bundle_id=bundle_id, src_paths=src_paths, dst_path=dest_path)
+        )
+
+    @log_and_handle_exceptions
+    async def ls(self, bundle_id: str, path: str) -> List[FileEntryInfo]:
+        response = await self.stub.ls(LsRequest(bundle_id=bundle_id, path=path))
+        return [FileEntryInfo(path=file.path) for file in response.files]
+
+    @log_and_handle_exceptions
+    async def mkdir(self, bundle_id: str, path: str) -> None:
+        await self.stub.mkdir(MkdirRequest(bundle_id=bundle_id, path=path))
+
+    @log_and_handle_exceptions
+    async def crash_delete(self, query: CrashLogQuery) -> List[CrashLogInfo]:
+        response = await self.stub.crash_delete(_to_crash_log_query_proto(query))
+        return _to_crash_log_info_list(response)
+
+    @log_and_handle_exceptions
+    async def crash_list(self, query: CrashLogQuery) -> List[CrashLogInfo]:
+        response = await self.stub.crash_list(_to_crash_log_query_proto(query))
+        return _to_crash_log_info_list(response)
+
+    @log_and_handle_exceptions
+    async def crash_show(self, name: str) -> CrashLog:
+        response = await self.stub.crash_show(CrashShowRequest(name=name))
+        return _to_crash_log(response)
+
+    @log_and_handle_exceptions
+    async def install(self, bundle: Bundle) -> AsyncIterator[InstalledArtifact]:
+        async for response in self._install_to_destination(
+            bundle=bundle, destination=InstallRequest.APP
+        ):
+            yield response
+
+    @log_and_handle_exceptions
+    async def install_xctest(self, xctest: Bundle) -> AsyncIterator[InstalledArtifact]:
+        async for response in self._install_to_destination(
+            bundle=xctest, destination=InstallRequest.XCTEST
+        ):
+            yield response
+
+    @log_and_handle_exceptions
+    async def install_dylib(self, dylib: Bundle) -> AsyncIterator[InstalledArtifact]:
+        async for response in self._install_to_destination(
+            bundle=dylib, destination=InstallRequest.DYLIB
+        ):
+            yield response
+
+    @log_and_handle_exceptions
+    async def install_dsym(self, dsym: Bundle) -> AsyncIterator[InstalledArtifact]:
+        async for response in self._install_to_destination(
+            bundle=dsym, destination=InstallRequest.DSYM
+        ):
+            yield response
+
+    @log_and_handle_exceptions
+    async def install_framework(
+        self, framework_path: Bundle
+    ) -> AsyncIterator[InstalledArtifact]:
+        async for response in self._install_to_destination(
+            bundle=framework_path, destination=InstallRequest.FRAMEWORK
+        ):
+            yield response
+
+    @log_and_handle_exceptions
     async def push(self, src_paths: List[str], bundle_id: str, dest_path: str) -> None:
         async with self.stub.push.open() as stream:
             await stream.send_message(
@@ -409,6 +447,7 @@ class IdbClient(IdbClientBase):
                     logger=self.logger,
                 )
 
+    @log_and_handle_exceptions
     async def pull(self, bundle_id: str, src_path: str, dest_path: str) -> None:
         async with self.stub.pull.open() as stream:
             request = request = PullRequest(
@@ -426,12 +465,14 @@ class IdbClient(IdbClientBase):
                 await drain_untar(generate_bytes(stream), output_path=dest_path)
             self.logger.info(f"pulled file to {dest_path}")
 
+    @log_and_handle_exceptions
     async def list_test_bundle(self, test_bundle_id: str, app_path: str) -> List[str]:
         response = await self.stub.xctest_list_tests(
             XctestListTestsRequest(bundle_name=test_bundle_id, app_path=app_path)
         )
         return list(response.names)
 
+    @log_and_handle_exceptions
     async def list_xctests(self) -> List[InstalledTestInfo]:
         response = await self.stub.xctest_list_bundles(XctestListBundlesRequest())
         return [
@@ -443,23 +484,29 @@ class IdbClient(IdbClientBase):
             for bundle in response.bundles
         ]
 
+    @log_and_handle_exceptions
     async def send_events(self, events: Iterable[HIDEvent]) -> None:
         await self.hid(iterator_to_async_iterator(events))
 
+    @log_and_handle_exceptions
     async def tap(self, x: int, y: int, duration: Optional[float] = None) -> None:
         await self.send_events(tap_to_events(x, y, duration))
 
+    @log_and_handle_exceptions
     async def button(
         self, button_type: HIDButtonType, duration: Optional[float] = None
     ) -> None:
         await self.send_events(button_press_to_events(button_type, duration))
 
+    @log_and_handle_exceptions
     async def key(self, keycode: int, duration: Optional[float] = None) -> None:
         await self.send_events(key_press_to_events(keycode, duration))
 
+    @log_and_handle_exceptions
     async def text(self, text: str) -> None:
         await self.send_events(text_to_events(text))
 
+    @log_and_handle_exceptions
     async def swipe(
         self,
         p_start: Tuple[int, int],
@@ -469,12 +516,14 @@ class IdbClient(IdbClientBase):
     ) -> None:
         await self.send_events(swipe_to_events(p_start, p_end, duration, delta))
 
+    @log_and_handle_exceptions
     async def key_sequence(self, key_sequence: List[int]) -> None:
         events: List[HIDEvent] = []
         for key in key_sequence:
             events.extend(key_press_to_events(key))
         await self.send_events(events)
 
+    @log_and_handle_exceptions
     async def hid(self, event_iterator: AsyncIterable[HIDEvent]) -> None:
         async with self.stub.hid.open() as stream:
             grpc_event_iterator = (
@@ -485,12 +534,14 @@ class IdbClient(IdbClientBase):
             )
             await stream.recv_message()
 
+    @log_and_handle_exceptions
     async def debug_server(self, request: DebugServerRequest) -> DebugServerResponse:
         async with self.stub.debugserver.open() as stream:
             await stream.send_message(request)
             await stream.end()
             return await stream.recv_message()
 
+    @log_and_handle_exceptions
     async def debugserver_start(self, bundle_id: str) -> List[str]:
         response = await self.debug_server(
             request=DebugServerRequest(
@@ -499,11 +550,13 @@ class IdbClient(IdbClientBase):
         )
         return response.status.lldb_bootstrap_commands
 
+    @log_and_handle_exceptions
     async def debugserver_stop(self) -> None:
         await self.debug_server(
             request=DebugServerRequest(stop=DebugServerRequest.Stop())
         )
 
+    @log_and_handle_exceptions
     async def debugserver_status(self) -> Optional[List[str]]:
         response = await self.debug_server(
             request=DebugServerRequest(status=DebugServerRequest.Status())
@@ -511,6 +564,7 @@ class IdbClient(IdbClientBase):
         commands = response.status.lldb_bootstrap_commands
         return commands if commands else None
 
+    @log_and_handle_exceptions
     async def run_instruments(
         self,
         stop: asyncio.Event,
@@ -591,6 +645,7 @@ class IdbClient(IdbClientBase):
 
             return result
 
+    @log_and_handle_exceptions
     async def launch(
         self,
         bundle_id: str,
@@ -618,6 +673,7 @@ class IdbClient(IdbClientBase):
                 await stream.end()
                 await drain_launch_stream(stream)
 
+    @log_and_handle_exceptions
     async def record_video(self, stop: asyncio.Event, output_file: str) -> None:
         self.logger.info(f"Starting connection to backend")
         async with self.stub.record.open() as stream:
@@ -647,6 +703,7 @@ class IdbClient(IdbClientBase):
                 )
                 self.logger.info(f"Finished decompression to {output_file}")
 
+    @log_and_handle_exceptions
     async def run_xctest(
         self,
         test_bundle_id: str,
@@ -699,19 +756,7 @@ class IdbClient(IdbClientBase):
                 for result in make_results(response):
                     yield result
 
-    async def _tail_specific_logs(
-        self,
-        source: LogRequest.Source,
-        stop: asyncio.Event,
-        arguments: Optional[List[str]],
-    ) -> AsyncIterator[str]:
-        async with self.stub.log.open() as stream:
-            await stream.send_message(
-                LogRequest(arguments=arguments, source=source), end=True
-            )
-            async for message in cancel_wrapper(stream=stream, stop=stop):
-                yield message.output.decode()
-
+    @log_and_handle_exceptions
     async def tail_logs(
         self, stop: asyncio.Event, arguments: Optional[List[str]] = None
     ) -> AsyncIterator[str]:
@@ -720,6 +765,7 @@ class IdbClient(IdbClientBase):
         ):
             yield message
 
+    @log_and_handle_exceptions
     async def tail_companion_logs(self, stop: asyncio.Event) -> AsyncIterator[str]:
         async for message in self._tail_specific_logs(
             source=LogRequest.COMPANION, stop=stop, arguments=None
