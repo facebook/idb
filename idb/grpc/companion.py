@@ -8,8 +8,9 @@
 from logging import Logger
 from typing import List, NamedTuple, Optional, Sequence
 
-from idb.common.types import TargetDescription
+from idb.common.types import CompanionInfo, TargetDescription
 from idb.grpc.idb_grpc import CompanionServiceStub
+from idb.grpc.idb_pb2 import CompanionInfo as GrpcCompanionInfo
 
 
 class CompanionClient(NamedTuple):
@@ -18,6 +19,24 @@ class CompanionClient(NamedTuple):
     udid: Optional[str]
     logger: Logger
     is_companion_available: bool = False
+
+
+def companion_to_grpc(companion: CompanionInfo) -> GrpcCompanionInfo:
+    return GrpcCompanionInfo(
+        udid=companion.udid,
+        host=companion.host,
+        grpc_port=companion.port,
+        is_local=companion.is_local,
+    )
+
+
+def companion_to_py(companion: GrpcCompanionInfo) -> CompanionInfo:
+    return CompanionInfo(
+        udid=companion.udid,
+        host=companion.host,
+        port=companion.grpc_port,
+        is_local=companion.is_local,
+    )
 
 
 def merge_connected_targets(

@@ -70,6 +70,13 @@ from idb.common.types import (
     TestRunInfo,
 )
 from idb.grpc.companion import merge_connected_targets
+from idb.grpc.crash import (
+    _to_crash_log,
+    _to_crash_log_info_list,
+    _to_crash_log_query_proto,
+)
+from idb.grpc.destination import destination_to_grpc
+from idb.grpc.hid import event_to_grpc
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
     AccessibilityInfoRequest,
@@ -126,18 +133,10 @@ from idb.grpc.stream import (
     generate_bytes,
     stop_wrapper,
 )
+from idb.grpc.target import target_to_py
 from idb.grpc.video import generate_video_bytes
 from idb.grpc.xctest import make_request, make_results, write_result_bundle
-from idb.ipc.mapping.crash import (
-    _to_crash_log,
-    _to_crash_log_info_list,
-    _to_crash_log_query_proto,
-)
-from idb.ipc.mapping.destination import destination_to_grpc
-from idb.ipc.mapping.hid import event_to_grpc
-from idb.ipc.mapping.target import target_to_py
 from idb.utils.contextlib import asynccontextmanager
-from idb.utils.typing import none_throws
 
 
 APPROVE_MAP: Dict[str, Any] = {

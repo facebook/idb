@@ -7,11 +7,11 @@
 from typing import Optional
 
 from idb.common.types import CompanionInfo, ScreenDimensions, TargetDescription
+from idb.grpc.companion import companion_to_grpc, companion_to_py
 from idb.grpc.idb_pb2 import (
     ScreenDimensions as GrpcScreenDimensions,
     TargetDescription as GrpcTargetDescription,
 )
-from idb.ipc.mapping.companion import companion_to_grpc, companion_to_py
 
 
 def target_to_grpc(target: TargetDescription) -> GrpcTargetDescription:
