@@ -253,6 +253,10 @@ class IdbClient(IdbClientBase):
                     name=response.name, uuid=response.uuid, progress=response.progress
                 )
 
+    @property
+    def _is_verbose(self) -> bool:
+        return self.logger.isEnabledFor(logging.DEBUG)
+
     @log_and_handle_exceptions
     async def list_apps(self) -> List[InstalledAppInfo]:
         response = await self.stub.list_apps(ListAppsRequest())
@@ -289,8 +293,13 @@ class IdbClient(IdbClientBase):
                 await stream.end()
                 await stream.recv_message()
             else:
+                print(file_paths)
                 generator = stream_map(
-                    generate_tar(paths=file_paths, place_in_subfolders=True),
+                    generate_tar(
+                        paths=file_paths,
+                        place_in_subfolders=True,
+                        verbose=self._is_verbose,
+                    ),
                     lambda chunk: AddMediaRequest(payload=Payload(data=chunk)),
                 )
                 await drain_to_stream(
@@ -441,7 +450,7 @@ class IdbClient(IdbClientBase):
                 await drain_to_stream(
                     stream=stream,
                     generator=stream_map(
-                        generate_tar(paths=src_paths),
+                        generate_tar(paths=src_paths, verbose=self._is_verbose),
                         lambda chunk: PushRequest(payload=Payload(data=chunk)),
                     ),
                     logger=self.logger,
