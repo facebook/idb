@@ -339,6 +339,7 @@ class TestParser(TestCase):
 
     def xctest_run_namespace(self, command: str, test_bundle_id: str) -> Namespace:
         namespace = Namespace()
+        namespace.companion_path = "/usr/local/bin/idb_companion"
         namespace.companion = None
         namespace.log_level = "WARNING"
         namespace.log_level_deprecated = None
@@ -439,6 +440,7 @@ class TestParser(TestCase):
             grpc_port = 1235
             await cli_main(cmd_input=["daemon", "--daemon-grpc-port", str(grpc_port)])
             namespace = Namespace()
+            namespace.companion_path = "/usr/local/bin/idb_companion"
             namespace.companion = None
             namespace.daemon_port = port
             namespace.daemon_grpc_port = grpc_port
@@ -463,6 +465,7 @@ class TestParser(TestCase):
         with patch("idb.cli.commands.log.LogCommand._run_impl", new=mock, create=True):
             await cli_main(cmd_input=["log", "--udid", "1234"])
             namespace = Namespace()
+            namespace.companion_path = "/usr/local/bin/idb_companion"
             namespace.companion = None
             namespace.log_level = "WARNING"
             namespace.log_level_deprecated = None
@@ -481,6 +484,7 @@ class TestParser(TestCase):
         with patch("idb.cli.commands.log.LogCommand._run_impl", new=mock, create=True):
             await cli_main(cmd_input=["log", "--", "--style", "json"])
             namespace = Namespace()
+            namespace.companion_path = "/usr/local/bin/idb_companion"
             namespace.companion = None
             namespace.log_level = "WARNING"
             namespace.log_level_deprecated = None
@@ -532,6 +536,7 @@ class TestParser(TestCase):
             output_file = "video.mp4"
             await cli_main(cmd_input=["record-video", output_file])
             namespace = Namespace()
+            namespace.companion_path = "/usr/local/bin/idb_companion"
             namespace.companion = None
             namespace.log_level = "WARNING"
             namespace.log_level_deprecated = None

@@ -775,9 +775,7 @@ class IdbClient(IdbClientBase):
 
 class IdbManagementClient(IdbManagementClientBase):
     def __init__(
-        self,
-        companion_path: str = "/usr/local/bin/idb_companion",
-        logger: Optional[logging.Logger] = None,
+        self, companion_path: str, logger: Optional[logging.Logger] = None
     ) -> None:
         self.logger: logging.Logger = (
             logger if logger else logging.getLogger("idb_grpc_client")

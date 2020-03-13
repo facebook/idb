@@ -119,6 +119,12 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         help="A string of the form HOSTNAME:PORT that will describe the companion connect to."
         "Can also be set with the IDB_COMPANION environment variable",
     )
+    parser.add_argument(
+        "--companion-path",
+        type=str,
+        default="/usr/local/bin/idb_companion",
+        help="The path to the idb companion binary",
+    )
     commands: List[Command] = [
         AppInstallCommand(),
         AppUninstallCommand(),

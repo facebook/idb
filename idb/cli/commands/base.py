@@ -31,7 +31,7 @@ def _parse_companion_info(value: str) -> Tuple[str, int]:
 async def _get_management_client(
     args: Namespace, logger: logging.Logger
 ) -> AsyncContextManager[IdbManagementClient]:
-    yield IdbManagementClientGrpc(logger=logger)
+    yield IdbManagementClientGrpc(logger=logger, companion_path=args.companion_path)
 
 
 @asynccontextmanager
