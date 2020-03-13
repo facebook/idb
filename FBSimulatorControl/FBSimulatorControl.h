@@ -72,4 +72,3 @@
 #import <FBSimulatorControl/FBSurfaceImageGenerator.h>
 #import <FBSimulatorControl/FBVideoEncoderConfiguration.h>
 #import <FBSimulatorControl/FBVideoEncoderSimulatorKit.h>
-#import <FBSimulatorControl/NSPredicate+FBSimulatorControl.h>

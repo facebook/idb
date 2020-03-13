@@ -79,9 +79,9 @@
 - (BOOL)uninstallApplication:(id)arg1 withOptions:(id)arg2 error:(id *)arg3;
 - (BOOL)installApplication:(id)arg1 withOptions:(id)arg2 error:(id *)arg3;
 - (BOOL)setKeyboardLanguage:(id)arg1 error:(id *)arg2;
-- (BOOL)addVideo:(id)arg1 error:(id *)arg2;
-- (BOOL)addPhoto:(id)arg1 error:(id *)arg2;
-- (BOOL)addMedia:(id)arg1 error:(id *)arg2;
+- (BOOL)addVideo:(NSURL *)path error:(NSError **)arg2;
+- (BOOL)addPhoto:(NSURL *)path error:(NSError **)arg2;
+- (BOOL)addMedia:(NSArray<NSURL *> *)paths error:(NSError **)arg2;
 - (BOOL)openURL:(id)arg1 error:(id *)arg2;
 - (id)hostSupportPortWithError:(id *)arg1;
 - (long long)compare:(id)arg1;

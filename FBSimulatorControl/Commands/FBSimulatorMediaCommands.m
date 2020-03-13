@@ -7,12 +7,10 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "NSPredicate+FBSimulatorControl.h"
 #import "FBSimulatorMediaCommands.h"
 
 #import <CoreSimulator/SimDevice.h>
-
-
+#import <AppKit/AppKit.h>
 
 @interface FBSimulatorMediaCommands ()
 
@@ -47,13 +45,8 @@
 
 - (FBFuture<NSNull *> *)addMedia:(NSArray<NSURL *> *)mediaFileURLs
 {
-  NSMutableArray<NSString *> *mediaFilePaths = [NSMutableArray arrayWithCapacity:mediaFileURLs.count];
-  for (NSURL *url in mediaFileURLs) {
-    [mediaFilePaths addObject:url.path];
-  }
-
   NSError *error;
-  if ([self uploadMedia:mediaFilePaths error:&error]) {
+  if ([self uploadMedia:mediaFileURLs error:&error]) {
     return FBFuture.empty;
   } else {
     return [FBFuture futureWithError:error];
@@ -62,86 +55,93 @@
 
 #pragma mark Private
 
-- (BOOL)addVideos:(NSArray<NSString *> *)paths error:(NSError **)error
+- (BOOL)uploadMedia:(NSArray<NSURL *> *)mediaFileURLs error:(NSError **)error
 {
-  for (NSString *path in paths) {
-    NSURL *url = [NSURL fileURLWithPath:path];
-    NSError *innerError = nil;
-    if (![self.simulator.device addVideo:url error:&innerError]) {
-      return [[[FBSimulatorError
-        describeFormat:@"Failed to upload video at path %@", path]
-        causedBy:innerError]
-        failBool:error];
-    }
-  }
-  return YES;
-}
-
-- (BOOL)uploadMedia:(NSArray<NSString *> *)mediaPaths error:(NSError **)error
-{
-  if (!mediaPaths.count) {
+  if (!mediaFileURLs.count) {
     return [[FBSimulatorError
       describe:@"Cannot upload media, none was provided"]
       failBool:error];
   }
 
-  NSArray<NSString *> *unknown = [mediaPaths filteredArrayUsingPredicate:[NSCompoundPredicate notPredicateWithSubpredicate:NSPredicate.predicateForMediaPaths]];
+  NSArray<NSURL *> *unknown = [mediaFileURLs filteredArrayUsingPredicate:[NSCompoundPredicate notPredicateWithSubpredicate:FBSimulatorMediaCommands.predicateForMediaPaths]];
   if (unknown.count > 0) {
     return [[FBSimulatorError
-      describeFormat:@"%@ not a media path", unknown]
+      describeFormat:@"%@ not a known media path", unknown]
       failBool:error];
   }
 
-  NSArray<NSString *> *photos = [mediaPaths filteredArrayUsingPredicate:NSPredicate.predicateForPhotoPaths];
-  NSArray<NSString *> *videos = [mediaPaths filteredArrayUsingPredicate:NSPredicate.predicateForVideoPaths];
-
-  return [self uploadPhotos:photos error:error] && [self uploadVideos:videos error:error];
-}
-
-- (BOOL)uploadPhotos:(NSArray<NSString *> *)photoPaths error:(NSError **)error
-{
-  if (!photoPaths.count) {
-    return YES;
-  }
   if (self.simulator.state != FBiOSTargetStateBooted) {
     return [[FBSimulatorError
       describeFormat:@"Simulator must be booted to upload photos, is %@", self.simulator.device.stateString]
       failBool:error];
   }
 
-  for (NSString *path in photoPaths) {
-    NSURL *url = [NSURL fileURLWithPath:path];
-
+  for (NSURL *url in [mediaFileURLs filteredArrayUsingPredicate:FBSimulatorMediaCommands.predicateForPhotoPaths]) {
     NSError *innerError = nil;
     if (![self.simulator.device addPhoto:url error:&innerError]) {
       return [[[FBSimulatorError
-        describeFormat:@"Failed to upload photo at path %@", path]
+        describeFormat:@"Failed to add photo %@", url]
         causedBy:innerError]
         failBool:error];
     }
   }
+
+  for (NSURL *url in [mediaFileURLs filteredArrayUsingPredicate:FBSimulatorMediaCommands.predicateForVideoPaths]) {
+    NSError *innerError = nil;
+    if (![self.simulator.device addVideo:url error:&innerError]) {
+      return [[[FBSimulatorError
+        describeFormat:@"Failed to add video %@", url]
+        causedBy:innerError]
+        failBool:error];
+    }
+  }
+
+  NSArray<NSURL *> *contacts = [mediaFileURLs filteredArrayUsingPredicate:FBSimulatorMediaCommands.predicateForContactPaths];
+  if (contacts.count > 0) {
+    NSError *innerError = nil;
+    if (![self.simulator.device addMedia:contacts error:&innerError]) {
+      return [[[FBSimulatorError
+        describeFormat:@"Failed to add contacts %@", contacts]
+        causedBy:innerError]
+        failBool:error];
+    }
+  }
+
   return YES;
 }
 
-- (BOOL)uploadVideos:(NSArray<NSString *> *)videoPaths error:(NSError **)error
++ (NSPredicate *)predicateForVideoPaths
 {
-  if (!videoPaths.count) {
-    return YES;
-  }
-  if (self.simulator.state != FBiOSTargetStateBooted) {
-    return [[FBSimulatorError
-      describeFormat:@"Simulator must be booted to upload videos, is %@", self.simulator.device.stateString]
-      failBool:error];
-  }
+  return [self predicateForPathsMatchingUTIs:@[(NSString *)kUTTypeMovie, (NSString *)kUTTypeMPEG4, (NSString *)kUTTypeQuickTimeMovie]];
+}
 
-  NSError *innerError = nil;
-  BOOL success = [self addVideos:videoPaths error:&innerError];
-  if (!success) {
-    return [[[FBSimulatorError describeFormat:@"Failed to upload videos at paths %@", videoPaths]
-      causedBy:innerError]
-      failBool:error];
-  }
-  return YES;
++ (NSPredicate *)predicateForPhotoPaths
+{
+  return [self predicateForPathsMatchingUTIs:@[(NSString *)kUTTypeImage, (NSString *)kUTTypePNG, (NSString *)kUTTypeJPEG, (NSString *)kUTTypeJPEG2000]];
+}
+
++ (NSPredicate *)predicateForContactPaths
+{
+  return [self predicateForPathsMatchingUTIs:@[(NSString *)kUTTypeVCard]];
+}
+
++ (NSPredicate *)predicateForMediaPaths
+{
+  return [NSCompoundPredicate orPredicateWithSubpredicates:@[
+    self.predicateForVideoPaths,
+    self.predicateForPhotoPaths,
+    self.predicateForContactPaths,
+  ]];
+}
+
++ (NSPredicate *)predicateForPathsMatchingUTIs:(NSArray<NSString *> *)utis
+{
+  NSSet<NSString *> *utiSet = [NSSet setWithArray:utis];
+  NSWorkspace *workspace = NSWorkspace.sharedWorkspace;
+  return [NSPredicate predicateWithBlock:^ BOOL (NSURL *url, NSDictionary *_) {
+    NSString *uti = [workspace typeOfFile:url.path error:nil];
+    return [utiSet containsObject:uti];
+  }];
 }
 
 @end
