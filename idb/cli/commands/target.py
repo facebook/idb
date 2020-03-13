@@ -183,6 +183,7 @@ class TargetBootCommand(ManagementCommand):
         parser.add_argument(
             "--udid",
             help="Udid of target, can also be set with the IDB_UDID env var",
+            required=True,
             default=os.environ.get("IDB_UDID"),
         )
         super().add_parser_arguments(parser)
@@ -198,4 +199,4 @@ class TargetBootCommand(ManagementCommand):
     async def run_with_client(
         self, args: Namespace, client: IdbManagementClient
     ) -> None:
-        await client.boot()
+        await client.boot(udid=args.udid)

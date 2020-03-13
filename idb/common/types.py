@@ -430,7 +430,7 @@ class IdbManagementClient:
     async def list_targets(self) -> List[TargetDescription]:
         pass
 
-    async def boot(self) -> None:
+    async def boot(self, udid: str) -> None:
         pass
 
     async def kill(self) -> None:

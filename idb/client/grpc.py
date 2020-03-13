@@ -776,14 +776,12 @@ class IdbClient(IdbClientBase):
 class IdbManagementClient(IdbManagementClientBase):
     def __init__(
         self,
-        target_udid: Optional[str],
         companion_path: str = "/usr/local/bin/idb_companion",
         logger: Optional[logging.Logger] = None,
     ) -> None:
         self.logger: logging.Logger = (
             logger if logger else logging.getLogger("idb_grpc_client")
         )
-        self.target_udid = target_udid
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
         self.local_targets_manager = LocalTargetsManager(logger=self.logger)
         self.companion_path = companion_path
@@ -836,15 +834,6 @@ class IdbManagementClient(IdbManagementClientBase):
                 Address(companion.host, companion.port)
             )
             return None
-
-    @property
-    def metadata(self) -> Dict[str, str]:
-        if self.target_udid:
-            # pyre-fixme[7]: Expected `Dict[str, str]` but got `Dict[str,
-            #  Optional[str]]`.
-            return {"udid": self.target_udid}
-        else:
-            return {}
 
     @log_and_handle_exceptions
     async def list_targets(self) -> List[TargetDescription]:
@@ -910,19 +899,12 @@ class IdbManagementClient(IdbManagementClientBase):
         await self.direct_companion_manager.remove_companion(destination)
 
     @log_and_handle_exceptions
-    async def boot(self) -> None:
-        if self.target_udid:
-            cmd: List[str] = [
-                "/usr/local/bin/idb_companion",
-                "--boot",
-                none_throws(self.target_udid),
-            ]
-            process = await asyncio.create_subprocess_exec(
-                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-            )
-            await process.communicate()
-        else:
-            raise IdbException("boot needs --udid to work")
+    async def boot(self, udid: str) -> None:
+        cmd: List[str] = ["/usr/local/bin/idb_companion", "--boot", udid]
+        process = await asyncio.create_subprocess_exec(
+            *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+        await process.communicate()
 
     @log_and_handle_exceptions
     async def kill(self) -> None:
