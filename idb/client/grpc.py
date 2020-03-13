@@ -801,7 +801,7 @@ class IdbManagementClient(IdbManagementClientBase):
             or target_udid == "mac"
         ):
             companion_spawner = CompanionSpawner(
-                companion_path="/usr/local/bin/idb_companion", logger=self.logger
+                companion_path=self.companion_path, logger=self.logger
             )
             self.logger.info(f"will attempt to spawn a companion for {target_udid}")
             port = await companion_spawner.spawn_companion(target_udid=target_udid)
@@ -900,7 +900,7 @@ class IdbManagementClient(IdbManagementClientBase):
 
     @log_and_handle_exceptions
     async def boot(self, udid: str) -> None:
-        cmd: List[str] = ["/usr/local/bin/idb_companion", "--boot", udid]
+        cmd: List[str] = [self.companion_path, "--boot", udid]
         process = await asyncio.create_subprocess_exec(
             *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
         )
