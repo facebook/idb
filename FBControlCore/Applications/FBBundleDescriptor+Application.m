@@ -56,7 +56,7 @@
     includingPropertiesForKeys:@[NSURLIsDirectoryKey]
     options:0
     errorHandler:nil];
-  NSSet *applicationURLs = [NSSet set];
+  NSSet<NSURL*> *applicationURLs = [NSSet set];
   for (NSURL *fileURL in directoryEnumerator) {
     if ([FBBundleDescriptor isApplicationAtPath:fileURL.path]) {
       applicationURLs = [applicationURLs setByAddingObject:fileURL];
@@ -65,7 +65,7 @@
   }
   if (applicationURLs.count != 1) {
     return [[FBControlCoreError
-      describeFormat:@"Expected only one Application in IPA, found %lu", applicationURLs.count]
+      describeFormat:@"Expected only one Application in IPA, found %lu: %@", applicationURLs.count, [FBCollectionInformation oneLineDescriptionFromArray:[applicationURLs.allObjects valueForKey:@"lastPathComponent"]]]
       failFuture];
   }
   return [self extractedApplicationAtPath:[applicationURLs.allObjects.firstObject path] directory:directory];
