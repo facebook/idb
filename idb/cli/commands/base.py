@@ -28,13 +28,6 @@ def _parse_companion_info(value: str) -> Tuple[str, int]:
 
 
 @asynccontextmanager
-async def _get_management_client(
-    args: Namespace, logger: logging.Logger
-) -> AsyncContextManager[IdbManagementClient]:
-    yield IdbManagementClientGrpc(logger=logger, companion_path=args.companion_path)
-
-
-@asynccontextmanager
 async def _get_client(
     args: Namespace, logger: logging.Logger
 ) -> AsyncContextManager[IdbClient]:
@@ -46,7 +39,9 @@ async def _get_client(
         ) as client:
             yield client
     else:
-        async with _get_management_client(args=args, logger=logger) as client:
+        async with IdbManagementClientGrpc(
+            logger=logger, companion_path=args.companion_path
+        ).from_udid(udid=vars(args).get("udid")) as client:
             yield client
 
 
@@ -139,8 +134,12 @@ class ManagementCommand(BaseCommand):
         super().add_parser_arguments(parser)
 
     async def _run_impl(self, args: Namespace) -> None:
-        async with _get_management_client(args=args, logger=self.logger) as client:
-            await self.run_with_client(args=args, client=client)
+        await self.run_with_client(
+            args=args,
+            client=IdbManagementClientGrpc(
+                logger=self.logger, companion_path=args.companion_path
+            ),
+        )
 
     @abstractmethod
     async def run_with_client(

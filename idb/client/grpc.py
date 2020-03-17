@@ -137,6 +137,7 @@ from idb.grpc.target import target_to_py
 from idb.grpc.video import generate_video_bytes
 from idb.grpc.xctest import make_request, make_results, write_result_bundle
 from idb.utils.contextlib import asynccontextmanager
+from idb.utils.typing import none_throws
 
 
 APPROVE_MAP: Dict[str, Any] = {
@@ -840,6 +841,26 @@ class IdbManagementClient(IdbManagementClientBase):
                 Address(companion.host, companion.port)
             )
             return None
+
+    @asynccontextmanager
+    async def from_udid(self, udid: Optional[str]) -> AsyncContextManager[IdbClient]:
+        await self._spawn_notifier()
+        try:
+            companion_info = await self.direct_companion_manager.get_companion_info(
+                target_udid=udid
+            )
+        except IdbException as e:
+            # will try to spawn a companion if on mac.
+            companion_info = await self._spawn_companion(target_udid=none_throws(udid))
+            if companion_info is None:
+                raise e
+        async with IdbClient.build(
+            host=companion_info.host,
+            port=companion_info.port,
+            is_local=companion_info.is_local,
+            logger=self.logger,
+        ) as client:
+            yield client
 
     @log_and_handle_exceptions
     async def list_targets(self) -> List[TargetDescription]:
