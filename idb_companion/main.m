@@ -28,6 +28,7 @@ Usage: \n \
     --udid UDID                Launches a companion server for the specified UDID.\n\
     --boot UDID                Boots the simulator with the specified UDID.\n\
     --shutdown UDID            Shuts down the simulator with the specified UDID.\n\
+    --erase UDID               Erases the simulator with the specified UDID.\n\
     --delete-all               Deletes all simulators in the device set.\n\
     --create VALUE             Creates a simulator using the VALUE argument like \"iPhone X, iOS 12.4\"\n\
     --notify PATH              Launches a companionn notifier which will stream availability updates to the specified path.\n\
@@ -73,6 +74,22 @@ static FBFuture<NSNull *> *ShutdownFuture(NSString *udid, id<FBControlCoreLogger
   return [commands shutdown];
 }
 
+static FBFuture<NSNull *> *EraseFuture(NSString *udid, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
+{
+  NSError *error = nil;
+  id<FBiOSTarget> target = [FBiOSTargetProvider targetWithUDID:udid logger:logger reporter:reporter error:&error];
+  if (!target) {
+    return [FBFuture futureWithError:error];
+  }
+  id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
+  if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
+    return [[FBIDBError
+      describeFormat:@"%@ does not support erase", commands]
+      failFuture];
+  }
+  return [commands erase];
+}
+
 static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, const char *argv[], NSUserDefaults *userDefaults, FBIDBLogger *logger) {
   NSString *udid = [userDefaults stringForKey:@"-udid"];
   NSString *notifyFilePath = [userDefaults stringForKey:@"-notify"];
@@ -80,6 +97,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   NSString *create = [userDefaults stringForKey:@"-create"];
   NSString *delete = [userDefaults stringForKey:@"-delete"];
   NSString *shutdown = [userDefaults stringForKey:@"-shutdown"];
+  NSString *erase = [userDefaults stringForKey:@"-erase"];
   BOOL terminateOffline = [userDefaults boolForKey:@"-terminate-offline"];
 
   NSError *error = nil;
@@ -132,6 +150,9 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   } else if(shutdown) {
     [logger.info logFormat:@"Shutting down %@", shutdown];
     return [FBFuture futureWithResult:ShutdownFuture(shutdown, logger, reporter)];
+  } else if (erase) {
+    [logger.info logFormat:@"Erasing %@", erase];
+    return [FBFuture futureWithResult:EraseFuture(erase, logger, reporter)];
   } else if (create || delete) {
     NSString *deviceSetPath = [userDefaults stringForKey:@"-device-set-path"];
     FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:deviceSetPath options:0 logger:logger reporter:reporter];
