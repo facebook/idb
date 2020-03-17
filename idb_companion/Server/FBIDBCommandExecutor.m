@@ -160,15 +160,6 @@
   return [self accessibility_info_at_point:nil];
 }
 
-- (FBFuture<NSNull *> *)add_media_from_tar:(nullable NSData *)tarData or_file_path:(nullable NSArray<NSString *> *)filePaths
-{
-  return [[self.temporaryDirectory
-    withFilesInTar:tarData orFilePaths:filePaths]
-    onQueue:self.target.workQueue pop:^(NSArray<NSURL *> *mediaFileURLs) {
-      return [self add_media:mediaFileURLs];
-    }];
-}
-
 - (FBFuture<NSNull *> *)add_media:(NSArray<NSURL *> *)filePaths
 {
   return [self.mediaCommands

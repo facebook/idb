@@ -180,16 +180,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibility_info;
 
 /**
- Adds all the media files (photos, videos, ...) contained in the tar or specified by the files paths to the target
- Exactly one of tarData or filePaths must be provided
-
- @param tarData a tar containing media files
- @param filePaths local file paths to the media files
- @return A Future that resolves when complete
- */
-- (FBFuture<NSNull *> *)add_media_from_tar:(nullable NSData *)tarData or_file_path:(nullable NSArray<NSString *> *)filePaths;
-
-/**
  Adds media files (photos, videos, ...) to the target
 
  @param filePaths local file paths to the media files
