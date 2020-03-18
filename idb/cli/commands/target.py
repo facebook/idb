@@ -246,3 +246,41 @@ class TargetEraseCommand(ManagementCommand):
         self, args: Namespace, client: IdbManagementClient
     ) -> None:
         await client.erase(udid=args.udid)
+
+
+class TargetDeleteCommand(ManagementCommand):
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "udid",
+            help="udid of target to erase, can also be set with the IDB_UDID env var",
+            default=os.environ.get("IDB_UDID"),
+        )
+        super().add_parser_arguments(parser)
+
+    @property
+    def description(self) -> str:
+        return "Deletes (only works on mac)"
+
+    @property
+    def name(self) -> str:
+        return "delete"
+
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
+        await client.delete(udid=args.udid)
+
+
+class TargetDeleteAllCommand(ManagementCommand):
+    @property
+    def description(self) -> str:
+        return "Deletes all simulators (only works on mac)"
+
+    @property
+    def name(self) -> str:
+        return "delete-all"
+
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
+        await client.delete(udid=None)

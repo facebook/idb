@@ -442,6 +442,9 @@ class IdbManagementClient:
     async def kill(self) -> None:
         pass
 
+    async def delete(self, udid: Optional[str]) -> None:
+        pass
+
 
 class Server(metaclass=ABCMeta):
     def close(self) -> None:

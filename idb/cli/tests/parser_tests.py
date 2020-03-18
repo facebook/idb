@@ -93,6 +93,17 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["erase", udid])
         self.management_client_mock().erase.assert_called_once_with(udid=udid)
 
+    async def test_delete(self) -> None:
+        self.management_client_mock().delete = AsyncMock()
+        udid = "my udid"
+        await cli_main(cmd_input=["delete", udid])
+        self.management_client_mock().delete.assert_called_once_with(udid=udid)
+
+    async def test_delete(self) -> None:
+        self.management_client_mock().delete = AsyncMock()
+        await cli_main(cmd_input=["delete-all"])
+        self.management_client_mock().delete.assert_called_once_with(udid=None)
+
     async def test_install(self) -> None:
         self.direct_client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
         app_path = "testApp.app"
