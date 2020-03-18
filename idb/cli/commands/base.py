@@ -14,11 +14,9 @@ from idb.common import plugin
 from idb.common.command import Command
 from idb.common.constants import DEFAULT_DAEMON_GRPC_PORT, DEFAULT_DAEMON_HOST
 from idb.common.types import IdbClient, IdbManagementClient
-from idb.grpc.client import (
-    IdbClient as IdbClientGrpc,
-    IdbManagementClient as IdbManagementClientGrpc,
-)
+from idb.grpc.client import IdbClient as IdbClientGrpc
 from idb.grpc.logging import log_call
+from idb.grpc.management import IdbManagementClient as IdbManagementClientGrpc
 from idb.utils.contextlib import asynccontextmanager
 
 
