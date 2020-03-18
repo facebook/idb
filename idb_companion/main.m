@@ -178,7 +178,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   }
 
   return [[FBIDBError
-    describeFormat:@"Please select the companion mode you want. \n--udid for attaching to a specific target. \n--boot to boot a specific target. or \n--notify to notify idb daemon of targets available \n\n%s", kUsageHelpMessage]
+    describeFormat:@"You must specify at least one 'Mode of operation'\n\n%s", kUsageHelpMessage]
     failFuture];
 }
 
