@@ -177,14 +177,21 @@ class IdbManagementClient(IdbManagementClientBase):
 
     @log_call
     async def boot(self, udid: str) -> None:
-        cmd: List[str] = [self.companion_path, "--boot", udid]
-        process = await asyncio.create_subprocess_exec(*cmd, stdout=None, stderr=None)
-        if process.returncode != 0:
-            raise IdbException(f"Failed to boot simulator with udid {udid}")
-        self.logger.info(f"The simulator {udid} is now booted")
+        await self._run_udid_command(udid=udid, command="boot")
+
+    @log_call
+    async def shutdown(self, udid: str) -> None:
+        await self._run_udid_command(udid=udid, command="shutdown")
 
     @log_call
     async def kill(self) -> None:
         await self.direct_companion_manager.clear()
         self.local_targets_manager.clear()
         PidSaver(logger=self.logger).kill_saved_pids()
+
+    async def _run_udid_command(self, udid: str, command: str) -> None:
+        cmd: List[str] = [self.companion_path, f"--{command}", udid]
+        process = await asyncio.create_subprocess_exec(*cmd, stdout=None, stderr=None)
+        if process.returncode != 0:
+            raise IdbException(f"Failed to {command} {udid}")
+        self.logger.info(f"{udid} did {command} successfully.")

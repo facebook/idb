@@ -79,7 +79,13 @@ class TestParser(TestCase):
         self.management_client_mock().boot = AsyncMock()
         udid = "my udid"
         await cli_main(cmd_input=["boot", "--udid", udid])
-        self.management_client_mock().boot.assert_called_once()
+        self.management_client_mock().boot.assert_called_once_with(udid=udid)
+
+    async def test_shutdown(self) -> None:
+        self.management_client_mock().boot = AsyncMock()
+        udid = "my udid"
+        await cli_main(cmd_input=["shutdown", udid])
+        self.management_client_mock().shutdown.assert_called_once_with(udid=udid)
 
     async def test_install(self) -> None:
         self.direct_client_mock.install = MagicMock(return_value=AsyncGeneratorMock())

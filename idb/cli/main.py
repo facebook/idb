@@ -74,6 +74,7 @@ from idb.cli.commands.target import (
     TargetDescribeCommand,
     TargetDisconnectCommand,
     TargetListCommand,
+    TargetShutdownCommand,
 )
 from idb.cli.commands.url import UrlOpenCommand
 from idb.cli.commands.xctest import (
@@ -176,6 +177,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         TargetListCommand(),
         TargetDescribeCommand(),
         TargetBootCommand(),
+        TargetShutdownCommand(),
         DaemonCommand(),
         ScreenshotCommand(),
         CommandGroup(
