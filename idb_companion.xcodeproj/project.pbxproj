@@ -22,8 +22,6 @@
 		D720AE7A23CE1E140040F01B /* libz.1.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = D720AE7823CE1E140040F01B /* libz.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		D72CB1C52277837000265160 /* FBDataDownloadInput.h in Headers */ = {isa = PBXBuildFile; fileRef = D72CB1C32277837000265160 /* FBDataDownloadInput.h */; };
 		D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */ = {isa = PBXBuildFile; fileRef = D72CB1C42277837000265160 /* FBDataDownloadInput.m */; };
-		D7589977234755AB00A1F256 /* FBSimulatorsManager.h in Headers */ = {isa = PBXBuildFile; fileRef = D7589975234755AB00A1F256 /* FBSimulatorsManager.h */; };
-		D7589978234755AB00A1F256 /* FBSimulatorsManager.m in Sources */ = {isa = PBXBuildFile; fileRef = D7589976234755AB00A1F256 /* FBSimulatorsManager.m */; };
 		D7D6DF892265DE4E00B01F14 /* FBControlCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */; };
 		D7D6DF8B2265DE4E00B01F14 /* FBDeviceControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF8A2265DE4E00B01F14 /* FBDeviceControl.framework */; };
 		D7D6DF8D2265DE4E00B01F14 /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF8C2265DE4E00B01F14 /* FBSimulatorControl.framework */; };
@@ -117,8 +115,6 @@
 		D720AE7823CE1E140040F01B /* libz.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.1.dylib; path = /usr/lib/libz.1.dylib; sourceTree = "<group>"; };
 		D72CB1C32277837000265160 /* FBDataDownloadInput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDataDownloadInput.h; sourceTree = "<group>"; };
 		D72CB1C42277837000265160 /* FBDataDownloadInput.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDataDownloadInput.m; sourceTree = "<group>"; };
-		D7589975234755AB00A1F256 /* FBSimulatorsManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorsManager.h; sourceTree = "<group>"; };
-		D7589976234755AB00A1F256 /* FBSimulatorsManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorsManager.m; sourceTree = "<group>"; };
 		D7D6DF122265DDEC00B01F14 /* idb_companion */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = idb_companion; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBControlCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7D6DF8A2265DE4E00B01F14 /* FBDeviceControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBDeviceControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -291,8 +287,6 @@
 				D7D6DFEB2265F0DF00B01F14 /* FBiOSTargetProvider.m */,
 				D7D6DFEE2265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.h */,
 				D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */,
-				D7589975234755AB00A1F256 /* FBSimulatorsManager.h */,
-				D7589976234755AB00A1F256 /* FBSimulatorsManager.m */,
 				D7D6DFF32265F0DF00B01F14 /* FBStorageUtils.h */,
 				D7D6DFEC2265F0DF00B01F14 /* FBStorageUtils.m */,
 				D7D6DFF12265F0DF00B01F14 /* FBTemporaryDirectory.h */,
@@ -334,7 +328,6 @@
 				D7D6E0342265F0DF00B01F14 /* FBStorageUtils.h in Headers */,
 				AA0DB07E23CF0D9800E8CDEE /* FBIDBTestOperation.h in Headers */,
 				D7D6E0322265F0DF00B01F14 /* FBTemporaryDirectory.h in Headers */,
-				D7589977234755AB00A1F256 /* FBSimulatorsManager.h in Headers */,
 				D7D6E02E2265F0DF00B01F14 /* FBTestApplicationsPair.h in Headers */,
 				AA34E73D228EBF1B0085F93F /* FBIDBStorageManager.h in Headers */,
 				D7D6E0312265F0DF00B01F14 /* FBXCTestDescriptor.h in Headers */,
@@ -449,7 +442,6 @@
 				D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */,
 				D7D6E0082265F0DF00B01F14 /* FBIDBConfiguration.m in Sources */,
 				AAAD2B9B22819C0F0043D2DE /* FBBootManager.m in Sources */,
-				D7589978234755AB00A1F256 /* FBSimulatorsManager.m in Sources */,
 				D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */,
 				D7D6E00C2265F0DF00B01F14 /* FBIDBPortsConfiguration.m in Sources */,
 				D7D6E00D2265F0DF00B01F14 /* FBIDBServiceHandler.mm in Sources */,
