@@ -11,7 +11,6 @@ import tempfile
 from sys import platform
 from typing import AsyncContextManager, Dict, List, Optional
 
-from grpclib.client import Channel
 from idb.common.companion_spawner import CompanionSpawner
 from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.common.local_targets_manager import LocalTargetsManager
@@ -27,8 +26,7 @@ from idb.common.types import (
 from idb.grpc.client import IdbClient
 from idb.grpc.companion import merge_connected_targets
 from idb.grpc.destination import destination_to_grpc
-from idb.grpc.idb_grpc import CompanionServiceStub
-from idb.grpc.idb_pb2 import ConnectRequest, TargetDescriptionRequest
+from idb.grpc.idb_pb2 import ConnectRequest
 from idb.grpc.logging import log_call
 from idb.grpc.target import target_to_py
 from idb.utils.contextlib import asynccontextmanager
@@ -79,19 +77,17 @@ class IdbManagementClient(IdbManagementClientBase):
         self, companion: CompanionInfo
     ) -> Optional[TargetDescription]:
         try:
-            channel = Channel(
-                host=companion.host, port=companion.port, loop=asyncio.get_event_loop()
-            )
-            stub = CompanionServiceStub(channel=channel)
-            response = await stub.describe(TargetDescriptionRequest())
-            channel.close()
-            return target_to_py(
-                target=response.target_description, companion_info=companion
-            )
+            async with IdbClient.build(
+                host=companion.host,
+                port=companion.port,
+                is_local=False,
+                logger=self.logger,
+            ) as client:
+                return await client.describe()
         except Exception:
             self.logger.warning(f"Failed to describe {companion}, removing it")
             await self.direct_companion_manager.remove_companion(
-                Address(companion.host, companion.port)
+                Address(host=companion.host, port=companion.port)
             )
             return None
 
@@ -145,18 +141,20 @@ class IdbManagementClient(IdbManagementClientBase):
     ) -> CompanionInfo:
         self.logger.debug(f"Connecting directly to {destination} with meta {metadata}")
         if isinstance(destination, Address):
-            channel = Channel(
-                destination.host, destination.port, loop=asyncio.get_event_loop()
-            )
-            stub = CompanionServiceStub(channel=channel)
-            with tempfile.NamedTemporaryFile(mode="w+b") as f:
-                response = await stub.connect(
-                    ConnectRequest(
-                        destination=destination_to_grpc(destination),
-                        metadata=metadata,
-                        local_file_path=f.name,
+            async with IdbClient.build(
+                host=destination.host,
+                port=destination.port,
+                is_local=False,
+                logger=self.logger,
+            ) as client:
+                with tempfile.NamedTemporaryFile(mode="w+b") as f:
+                    response = await client.stub.connect(
+                        ConnectRequest(
+                            destination=destination_to_grpc(destination),
+                            metadata=metadata,
+                            local_file_path=f.name,
+                        )
                     )
-                )
             companion = CompanionInfo(
                 udid=response.companion.udid,
                 host=destination.host,
@@ -165,7 +163,6 @@ class IdbManagementClient(IdbManagementClientBase):
             )
             self.logger.debug(f"Connected directly to {companion}")
             await self.direct_companion_manager.add_companion(companion)
-            channel.close()
             return companion
         else:
             companion = await self._spawn_companion(target_udid=destination)

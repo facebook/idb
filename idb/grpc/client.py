@@ -184,7 +184,7 @@ class IdbClient(IdbClientBase):
     @asynccontextmanager
     async def build(
         cls, host: str, port: int, is_local: bool, logger: logging.Logger
-    ) -> AsyncContextManager[IdbClientBase]:
+    ) -> AsyncContextManager["IdbClient"]:
         channel = Channel(host=host, port=port, loop=asyncio.get_event_loop())
         try:
             yield IdbClient(
