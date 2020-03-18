@@ -111,7 +111,7 @@ class IdbManagementClient(IdbManagementClientBase):
         ) as client:
             yield client
 
-    @log_call
+    @log_call()
     async def list_targets(self) -> List[TargetDescription]:
         (_, companions) = await asyncio.gather(
             self._spawn_notifier(), self.direct_companion_manager.get_companions()
@@ -133,7 +133,7 @@ class IdbManagementClient(IdbManagementClientBase):
             connected_targets=connected_targets,
         )
 
-    @log_call
+    @log_call()
     async def connect(
         self,
         destination: ConnectionDestination,
@@ -171,23 +171,23 @@ class IdbManagementClient(IdbManagementClientBase):
             else:
                 raise IdbException(f"can't find target for udid {destination}")
 
-    @log_call
+    @log_call()
     async def disconnect(self, destination: ConnectionDestination) -> None:
         await self.direct_companion_manager.remove_companion(destination)
 
-    @log_call
+    @log_call()
     async def boot(self, udid: str) -> None:
         await self._run_udid_command(udid=udid, command="boot")
 
-    @log_call
+    @log_call()
     async def shutdown(self, udid: str) -> None:
         await self._run_udid_command(udid=udid, command="shutdown")
 
-    @log_call
+    @log_call()
     async def erase(self, udid: str) -> None:
         await self._run_udid_command(udid=udid, command="erase")
 
-    @log_call
+    @log_call()
     async def kill(self) -> None:
         await self.direct_companion_manager.clear()
         self.local_targets_manager.clear()
