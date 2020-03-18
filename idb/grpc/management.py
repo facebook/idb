@@ -184,6 +184,10 @@ class IdbManagementClient(IdbManagementClientBase):
         await self._run_udid_command(udid=udid, command="shutdown")
 
     @log_call
+    async def erase(self, udid: str) -> None:
+        await self._run_udid_command(udid=udid, command="erase")
+
+    @log_call
     async def kill(self) -> None:
         await self.direct_companion_manager.clear()
         self.local_targets_manager.clear()

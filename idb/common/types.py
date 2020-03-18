@@ -436,6 +436,9 @@ class IdbManagementClient:
     async def shutdown(self, udid: str) -> None:
         pass
 
+    async def erase(self, udid: str) -> None:
+        pass
+
     async def kill(self) -> None:
         pass
 
