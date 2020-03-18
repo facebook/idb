@@ -45,6 +45,22 @@ static BOOL shouldPrintUsage(void) {
   return [NSProcessInfo.processInfo.arguments containsObject:@"--help"];
 }
 
+static FBFuture<id<FBSimulatorLifecycleCommands>> *LifecycleCommandsFuture(NSString *udid, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
+{
+  NSError *error = nil;
+  id<FBiOSTarget> target = [FBiOSTargetProvider targetWithUDID:udid logger:logger reporter:reporter error:&error];
+  if (!target) {
+    return [FBFuture futureWithError:error];
+  }
+  id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
+  if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
+    return [[FBIDBError
+      describeFormat:@"%@ does not support shutdown", commands]
+      failFuture];
+  }
+  return [FBFuture futureWithResult:commands];
+}
+
 static FBFuture<NSNull *> *TargetOfflineFuture(id<FBiOSTarget> target, id<FBControlCoreLogger> logger)
 {
   return [[FBFuture
@@ -60,34 +76,18 @@ static FBFuture<NSNull *> *TargetOfflineFuture(id<FBiOSTarget> target, id<FBCont
 
 static FBFuture<NSNull *> *ShutdownFuture(NSString *udid, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
-  NSError *error = nil;
-  id<FBiOSTarget> target = [FBiOSTargetProvider targetWithUDID:udid logger:logger reporter:reporter error:&error];
-  if (!target) {
-    return [FBFuture futureWithError:error];
-  }
-  id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
-  if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
-    return [[FBIDBError
-      describeFormat:@"%@ does not support shutdown", commands]
-      failFuture];
-  }
-  return [commands shutdown];
+  return [LifecycleCommandsFuture(udid, logger, reporter)
+    onQueue:dispatch_get_main_queue() fmap:^(id<FBSimulatorLifecycleCommands> commands) {
+      return [commands shutdown];
+    }];
 }
 
 static FBFuture<NSNull *> *EraseFuture(NSString *udid, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
-  NSError *error = nil;
-  id<FBiOSTarget> target = [FBiOSTargetProvider targetWithUDID:udid logger:logger reporter:reporter error:&error];
-  if (!target) {
-    return [FBFuture futureWithError:error];
-  }
-  id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
-  if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
-    return [[FBIDBError
-      describeFormat:@"%@ does not support erase", commands]
-      failFuture];
-  }
-  return [commands erase];
+  return [LifecycleCommandsFuture(udid, logger, reporter)
+    onQueue:dispatch_get_main_queue() fmap:^(id<FBSimulatorLifecycleCommands> commands) {
+      return [commands erase];
+    }];
 }
 
 static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, const char *argv[], NSUserDefaults *userDefaults, FBIDBLogger *logger) {
