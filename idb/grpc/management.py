@@ -220,6 +220,7 @@ class IdbManagementClient(IdbManagementClientBase):
             cmd.extend(["--device-set-path", device_set_path])
         cmd.extend([f"--{command}", udid])
         process = await asyncio.create_subprocess_exec(*cmd, stdout=None, stderr=None)
+        await process.wait()
         if process.returncode != 0:
             raise IdbException(f"Failed to {command} {udid}")
         self.logger.info(f"{udid} did {command} successfully.")
