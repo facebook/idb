@@ -6,7 +6,6 @@
 
 import asyncio
 import logging
-import os
 import tempfile
 from sys import platform
 from typing import AsyncContextManager, Dict, List, Optional
@@ -35,7 +34,7 @@ from idb.utils.typing import none_throws
 class IdbManagementClient(IdbManagementClientBase):
     def __init__(
         self,
-        companion_path: str,
+        companion_path: Optional[str] = None,
         device_set_path: Optional[str] = None,
         logger: Optional[logging.Logger] = None,
     ) -> None:
@@ -48,13 +47,17 @@ class IdbManagementClient(IdbManagementClientBase):
         self.local_targets_manager = LocalTargetsManager(logger=self.logger)
 
     async def _spawn_notifier(self) -> None:
-        if platform == "darwin" and os.path.exists(self.companion_path):
+        companion_path = self.companion_path
+        if companion_path:
             companion_spawner = CompanionSpawner(
-                companion_path=self.companion_path, logger=self.logger
+                companion_path=companion_path, logger=self.logger
             )
             await companion_spawner.spawn_notifier()
 
     async def _spawn_companion(self, target_udid: str) -> Optional[CompanionInfo]:
+        companion_path = self.companion_path
+        if companion_path is None:
+            return None
         if (
             self.local_targets_manager.is_local_target_available(
                 target_udid=target_udid
@@ -62,7 +65,7 @@ class IdbManagementClient(IdbManagementClientBase):
             or target_udid == "mac"
         ):
             companion_spawner = CompanionSpawner(
-                companion_path=self.companion_path, logger=self.logger
+                companion_path=companion_path, logger=self.logger
             )
             self.logger.info(f"will attempt to spawn a companion for {target_udid}")
             port = await companion_spawner.spawn_companion(target_udid=target_udid)
@@ -203,7 +206,15 @@ class IdbManagementClient(IdbManagementClientBase):
         PidSaver(logger=self.logger).kill_saved_pids()
 
     async def _run_udid_command(self, udid: str, command: str) -> None:
-        cmd: List[str] = [self.companion_path]
+        companion_path = self.companion_path
+        if companion_path is None:
+            if platform == "darwin":
+                raise IdbException("Companion path not provided")
+            else:
+                raise IdbException(
+                    "Companion interactions do not work on non-macOS platforms"
+                )
+        cmd: List[str] = [companion_path]
         device_set_path = self.device_set_path
         if device_set_path is not None:
             cmd.extend(["--device-set-path", device_set_path])

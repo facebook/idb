@@ -126,8 +126,8 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
     parser.add_argument(
         "--companion-path",
         type=str,
-        default="/usr/local/bin/idb_companion",
-        help="The path to the idb companion binary",
+        default="/usr/local/bin/idb_companion" if sys.platform == "darwin" else None,
+        help="The path to the idb companion binary. This is only valid when running on macOS platforms",
     )
     commands: List[Command] = [
         AppInstallCommand(),
