@@ -28,21 +28,24 @@ from idb.grpc.companion import merge_connected_targets
 from idb.grpc.destination import destination_to_grpc
 from idb.grpc.idb_pb2 import ConnectRequest
 from idb.grpc.logging import log_call
-from idb.grpc.target import target_to_py
 from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws
 
 
 class IdbManagementClient(IdbManagementClientBase):
     def __init__(
-        self, companion_path: str, logger: Optional[logging.Logger] = None
+        self,
+        companion_path: str,
+        device_set_path: Optional[str] = None,
+        logger: Optional[logging.Logger] = None,
     ) -> None:
+        self.companion_path = companion_path
+        self.device_set_path = device_set_path
         self.logger: logging.Logger = (
             logger if logger else logging.getLogger("idb_grpc_client")
         )
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
         self.local_targets_manager = LocalTargetsManager(logger=self.logger)
-        self.companion_path = companion_path
 
     async def _spawn_notifier(self) -> None:
         if platform == "darwin" and os.path.exists(self.companion_path):
@@ -200,7 +203,11 @@ class IdbManagementClient(IdbManagementClientBase):
         PidSaver(logger=self.logger).kill_saved_pids()
 
     async def _run_udid_command(self, udid: str, command: str) -> None:
-        cmd: List[str] = [self.companion_path, f"--{command}", udid]
+        cmd: List[str] = [self.companion_path]
+        device_set_path = self.device_set_path
+        if device_set_path is not None:
+            cmd.extend(["--device-set-path", device_set_path])
+        cmd.extend([f"--{command}", udid])
         process = await asyncio.create_subprocess_exec(*cmd, stdout=None, stderr=None)
         if process.returncode != 0:
             raise IdbException(f"Failed to {command} {udid}")
