@@ -10,7 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
-#import "FBBootManager.h"
 #import "FBIDBCompanionServer.h"
 #import "FBIDBConfiguration.h"
 #import "FBIDBError.h"
@@ -66,7 +65,7 @@ static FBFuture<id<FBSimulatorLifecycleCommands>> *LifecycleCommandsFuture(NSStr
   id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
   if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
     return [[FBIDBError
-      describeFormat:@"%@ does not support shutdown", commands]
+      describeFormat:@"%@ does not support Simulator Lifecycle commands", commands]
       failFuture];
   }
   return [FBFuture futureWithResult:commands];
@@ -83,6 +82,14 @@ static FBFuture<NSNull *> *TargetOfflineFuture(id<FBiOSTarget> target, id<FBCont
       return NO;
     }]
     mapReplace:NSNull.null];
+}
+
+static FBFuture<NSNull *> *BootFuture(NSString *udid, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
+{
+  return [LifecycleCommandsFuture(udid, logger, reporter)
+    onQueue:dispatch_get_main_queue() fmap:^(id<FBSimulatorLifecycleCommands> commands) {
+      return [commands boot];
+    }];
 }
 
 static FBFuture<NSNull *> *ShutdownFuture(NSString *udid, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
@@ -192,7 +199,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
     return [[FBiOSTargetStateChangeNotifier notifierToFilePath:notifyFilePath logger:logger] startNotifier];
   } else if (boot) {
     [logger.info log:@"Booting target"];
-    return [FBFuture futureWithResult:[[FBBootManager bootManagerForLogger:logger] boot:boot]];
+    return [FBFuture futureWithResult:BootFuture(boot, logger, reporter)];
   } else if(shutdown) {
     [logger.info logFormat:@"Shutting down %@", shutdown];
     return [FBFuture futureWithResult:ShutdownFuture(shutdown, logger, reporter)];

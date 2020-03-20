@@ -15,8 +15,6 @@
 		AA0DB08223CF0DCB00E8CDEE /* FBIDBXCTestReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0DB08023CF0DCB00E8CDEE /* FBIDBXCTestReporter.h */; };
 		AA34E73C228EBF1B0085F93F /* FBIDBStorageManager.m in Sources */ = {isa = PBXBuildFile; fileRef = AA34E73A228EBF1B0085F93F /* FBIDBStorageManager.m */; };
 		AA34E73D228EBF1B0085F93F /* FBIDBStorageManager.h in Headers */ = {isa = PBXBuildFile; fileRef = AA34E73B228EBF1B0085F93F /* FBIDBStorageManager.h */; };
-		AAAD2B9B22819C0F0043D2DE /* FBBootManager.m in Sources */ = {isa = PBXBuildFile; fileRef = AAAD2B9922819C0F0043D2DE /* FBBootManager.m */; };
-		AAAD2B9C22819C0F0043D2DE /* FBBootManager.h in Headers */ = {isa = PBXBuildFile; fileRef = AAAD2B9A22819C0F0043D2DE /* FBBootManager.h */; };
 		D7107CF822E708C00007FF32 /* FBIDBCompanionServer.mm in Sources */ = {isa = PBXBuildFile; fileRef = D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */; };
 		D720AE7923CE1E140040F01B /* libz.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D720AE7823CE1E140040F01B /* libz.1.dylib */; };
 		D720AE7A23CE1E140040F01B /* libz.1.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = D720AE7823CE1E140040F01B /* libz.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -105,8 +103,6 @@
 		AA0DB08023CF0DCB00E8CDEE /* FBIDBXCTestReporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBXCTestReporter.h; sourceTree = "<group>"; };
 		AA34E73A228EBF1B0085F93F /* FBIDBStorageManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBStorageManager.m; sourceTree = "<group>"; };
 		AA34E73B228EBF1B0085F93F /* FBIDBStorageManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBStorageManager.h; sourceTree = "<group>"; };
-		AAAD2B9922819C0F0043D2DE /* FBBootManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBBootManager.m; sourceTree = "<group>"; };
-		AAAD2B9A22819C0F0043D2DE /* FBBootManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBBootManager.h; sourceTree = "<group>"; };
 		D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FBIDBCompanionServer.mm; sourceTree = "<group>"; };
 		D720AE6F23CE1B5F0040F01B /* libgrpc++.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libgrpc++.dylib"; path = "/usr/local/lib/libgrpc++.dylib"; sourceTree = "<group>"; };
 		D720AE7123CE1B690040F01B /* libgrpc.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgrpc.dylib; path = /usr/local/lib/libgrpc.dylib; sourceTree = "<group>"; };
@@ -271,8 +267,6 @@
 		D7D6DFE72265F0DF00B01F14 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
-				AAAD2B9A22819C0F0043D2DE /* FBBootManager.h */,
-				AAAD2B9922819C0F0043D2DE /* FBBootManager.m */,
 				D72CB1C32277837000265160 /* FBDataDownloadInput.h */,
 				D72CB1C42277837000265160 /* FBDataDownloadInput.m */,
 				623D9F0B22E40DCB00D9129C /* FBIDBLogger.h */,
@@ -313,7 +307,6 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AAAD2B9C22819C0F0043D2DE /* FBBootManager.h in Headers */,
 				D72CB1C52277837000265160 /* FBDataDownloadInput.h in Headers */,
 				D7D6E0122265F0DF00B01F14 /* FBIDBCommandExecutor.h in Headers */,
 				D7D6E00E2265F0DF00B01F14 /* FBIDBCompanionServer.h in Headers */,
@@ -441,7 +434,6 @@
 				AA34E73C228EBF1B0085F93F /* FBIDBStorageManager.m in Sources */,
 				D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */,
 				D7D6E0082265F0DF00B01F14 /* FBIDBConfiguration.m in Sources */,
-				AAAD2B9B22819C0F0043D2DE /* FBBootManager.m in Sources */,
 				D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */,
 				D7D6E00C2265F0DF00B01F14 /* FBIDBPortsConfiguration.m in Sources */,
 				D7D6E00D2265F0DF00B01F14 /* FBIDBServiceHandler.mm in Sources */,
