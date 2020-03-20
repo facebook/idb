@@ -143,6 +143,51 @@ static FBFuture<NSNull *> *CreateFuture(NSString *create, NSUserDefaults *userDe
     mapReplace:NSNull.null];
 }
 
+static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
+{
+  BOOL terminateOffline = [userDefaults boolForKey:@"-terminate-offline"];
+  NSError *error = nil;
+  if ([udid isEqualToString:@"mac"]) {
+    udid = [FBMacDevice resolveDeviceUDID];
+  }
+  id<FBiOSTarget> target = [FBiOSTargetProvider targetWithUDID:udid logger:logger reporter:reporter error:&error];
+  if (!target) {
+    return [FBFuture futureWithError:error];
+  }
+  [reporter addMetadata:@{@"udid": udid}];
+  [reporter report:[FBEventReporterSubject subjectForEvent:FBEventNameLaunched]];
+  // Start up the companion
+  FBIDBPortsConfiguration *ports = [FBIDBPortsConfiguration portsWithArguments:userDefaults];
+  FBTemporaryDirectory *temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:logger];
+  FBIDBCompanionServer *server = [FBIDBCompanionServer companionForTarget:target temporaryDirectory:temporaryDirectory ports:ports eventReporter:reporter logger:logger error:&error];
+  if (!server) {
+    return [FBFuture futureWithError:error];
+  }
+
+  return [[server
+    start]
+    onQueue:target.workQueue map:^id(NSNumber *port) {
+      NSData *jsonOutput = [NSJSONSerialization dataWithJSONObject:@{@"grpc_port": port} options:0 error:nil];
+      NSMutableData *readyOutput = [NSMutableData dataWithData:jsonOutput];
+      [readyOutput appendData:[@"\n" dataUsingEncoding:NSUTF8StringEncoding]];
+      write(STDOUT_FILENO, readyOutput.bytes, readyOutput.length);
+      fflush(stdout);
+      FBFuture<NSNull *> *completed = server.completed;
+      if (terminateOffline) {
+        [logger.info logFormat:@"Companion will terminate when target goes offline"];
+        completed = [FBFuture race:@[completed, TargetOfflineFuture(target, logger)]];
+      } else {
+        [logger.info logFormat:@"Companion will stay alive if target goes offline"];
+      }
+      return [completed
+        onQueue:target.workQueue chain:^(FBFuture *future) {
+          [temporaryDirectory cleanOnExit];
+          return future;
+        }];
+    }];
+
+}
+
 static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, const char *argv[], NSUserDefaults *userDefaults, FBIDBLogger *logger) {
   NSString *udid = [userDefaults stringForKey:@"-udid"];
   NSString *notifyFilePath = [userDefaults stringForKey:@"-notify"];
@@ -151,49 +196,10 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   NSString *shutdown = [userDefaults stringForKey:@"-shutdown"];
   NSString *erase = [userDefaults stringForKey:@"-erase"];
   NSString *delete = [userDefaults stringForKey:@"-delete"];
-  BOOL terminateOffline = [userDefaults boolForKey:@"-terminate-offline"];
 
-  NSError *error = nil;
   id<FBEventReporter> reporter = FBIDBConfiguration.eventReporter;
   if (udid) {
-    if ([udid isEqualToString:@"mac"]) {
-      udid = [FBMacDevice resolveDeviceUDID];
-    }
-    id<FBiOSTarget> target = [FBiOSTargetProvider targetWithUDID:udid logger:logger reporter:reporter error:&error];
-    if (!target) {
-      return [FBFuture futureWithError:error];
-    }
-    [reporter addMetadata:@{@"udid": udid}];
-    [reporter report:[FBEventReporterSubject subjectForEvent:FBEventNameLaunched]];
-    // Start up the companion
-    FBIDBPortsConfiguration *ports = [FBIDBPortsConfiguration portsWithArguments:userDefaults];
-    FBTemporaryDirectory *temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:logger];
-    FBIDBCompanionServer *server = [FBIDBCompanionServer companionForTarget:target temporaryDirectory:temporaryDirectory ports:ports eventReporter:reporter logger:logger error:&error];
-    if (!server) {
-      return [FBFuture futureWithError:error];
-    }
-
-    return [[server
-      start]
-      onQueue:target.workQueue map:^id(NSNumber *port) {
-        NSData *jsonOutput = [NSJSONSerialization dataWithJSONObject:@{@"grpc_port": port} options:0 error:nil];
-        NSMutableData *readyOutput = [NSMutableData dataWithData:jsonOutput];
-        [readyOutput appendData:[@"\n" dataUsingEncoding:NSUTF8StringEncoding]];
-        write(STDOUT_FILENO, readyOutput.bytes, readyOutput.length);
-        fflush(stdout);
-        FBFuture<NSNull *> *completed = server.completed;
-        if (terminateOffline) {
-          [logger.info logFormat:@"Companion will terminate when target goes offline"];
-          completed = [FBFuture race:@[completed, TargetOfflineFuture(target, logger)]];
-        } else {
-          [logger.info logFormat:@"Companion will stay alive if target goes offline"];
-        }
-        return [completed
-          onQueue:target.workQueue chain:^(FBFuture *future) {
-            [temporaryDirectory cleanOnExit];
-            return future;
-          }];
-      }];
+    return CompanionServerFuture(udid, userDefaults, logger, reporter);
   } else if (notifyFilePath) {
     [logger.info logFormat:@"Notify mode is set. writing updates to %@", notifyFilePath];
     return [[FBiOSTargetStateChangeNotifier notifierToFilePath:notifyFilePath logger:logger] startNotifier];
