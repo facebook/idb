@@ -39,8 +39,18 @@ Usage: \n \
     --device-set-path PATH     Path to a custom Simulator device set.\n\
     --terminate-offline VALUE  Terminate if the target goes offline, otherwise the companion will stay alive.\n";
 
-static BOOL shouldPrintUsage(void) {
+static BOOL shouldPrintUsage(void)
+{
   return [NSProcessInfo.processInfo.arguments containsObject:@"--help"];
+}
+
+static void WriteJSONToStdOut(id json)
+{
+  NSData *jsonOutput = [NSJSONSerialization dataWithJSONObject:json options:0 error:nil];
+  NSMutableData *readyOutput = [NSMutableData dataWithData:jsonOutput];
+  [readyOutput appendData:[@"\n" dataUsingEncoding:NSUTF8StringEncoding]];
+  write(STDOUT_FILENO, readyOutput.bytes, readyOutput.length);
+  fflush(stdout);
 }
 
 static FBFuture<FBSimulatorSet *> *SimulatorSet(NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
@@ -140,7 +150,11 @@ static FBFuture<NSNull *> *CreateFuture(NSString *create, NSUserDefaults *userDe
       }
       return [set createSimulatorWithConfiguration:config];
     }]
-    mapReplace:NSNull.null];
+    onQueue:dispatch_get_main_queue() map:^(FBSimulator *simulator) {
+      FBiOSTargetStateUpdate *update = [[FBiOSTargetStateUpdate alloc] initWithUDID:simulator.udid state:simulator.state type:FBiOSTargetTypeSimulator name:simulator.name osVersion:simulator.osVersion architecture:simulator.architecture];
+      WriteJSONToStdOut(update.jsonSerializableRepresentation);
+      return NSNull.null;
+    }];
 }
 
 static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
@@ -166,12 +180,8 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
 
   return [[server
     start]
-    onQueue:target.workQueue map:^id(NSNumber *port) {
-      NSData *jsonOutput = [NSJSONSerialization dataWithJSONObject:@{@"grpc_port": port} options:0 error:nil];
-      NSMutableData *readyOutput = [NSMutableData dataWithData:jsonOutput];
-      [readyOutput appendData:[@"\n" dataUsingEncoding:NSUTF8StringEncoding]];
-      write(STDOUT_FILENO, readyOutput.bytes, readyOutput.length);
-      fflush(stdout);
+    onQueue:target.workQueue map:^ FBFuture * (NSNumber *port) {
+      WriteJSONToStdOut(@{@"grpc_port": port});
       FBFuture<NSNull *> *completed = server.completed;
       if (terminateOffline) {
         [logger.info logFormat:@"Companion will terminate when target goes offline"];
