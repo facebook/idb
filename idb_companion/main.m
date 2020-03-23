@@ -28,8 +28,8 @@ Usage: \n \
     --shutdown UDID            Shuts down the simulator with the specified UDID.\n\
     --erase UDID               Erases the simulator with the specified UDID.\n\
     --delete UDID|all          Deletes the simulator with the specified UDID, or 'all' to delete all simulators in the set. \n\
-    --create VALUE             Creates a simulator using the VALUE argument like \"iPhone X, iOS 12.4\"\n\
-    --notify PATH              Launches a companionn notifier which will stream availability updates to the specified path.\n\
+    --create VALUE             Creates a simulator using the VALUE argument like \"iPhone X,iOS 12.4\"\n\
+    --notify PATH              Launches a companion notifier which will stream availability updates to the specified path.\n\
     --help                     Show this help message and exit.\n\
 \n\
   Options:\n\
