@@ -178,6 +178,29 @@ class TargetListCommand(ManagementCommand):
             print(formatter(target))
 
 
+class TargetCreateCommand(ManagementCommand):
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument("device_type", help="The Device Type to create", type=str)
+        parser.add_argument("os_version", help="The OS Version to create", type=str)
+        super().add_parser_arguments(parser)
+
+    @property
+    def description(self) -> str:
+        return "Creates an iOS Simulator"
+
+    @property
+    def name(self) -> str:
+        return "create"
+
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
+        udid = await client.create(
+            device_type=args.device_type, os_version=args.os_version
+        )
+        print(udid)
+
+
 class TargetBootCommand(ManagementCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(

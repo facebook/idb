@@ -77,6 +77,13 @@ class TestParser(TestCase):
             bundle_id=bundle_id, env={}, args=[], foreground_if_running=False, stop=None
         )
 
+    async def test_create(self) -> None:
+        self.management_client_mock().create = AsyncMock()
+        await cli_main(cmd_input=["create", "ipone", "os2"])
+        self.management_client_mock().create.assert_called_once_with(
+            device_type="ipone", os_version="os2"
+        )
+
     async def test_boot(self) -> None:
         self.management_client_mock().boot = AsyncMock()
         udid = "my udid"

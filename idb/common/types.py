@@ -430,6 +430,9 @@ class IdbManagementClient:
     async def list_targets(self) -> List[TargetDescription]:
         pass
 
+    async def create(self, device_type: str, os_version: str) -> str:
+        pass
+
     async def boot(self, udid: str) -> None:
         pass
 
