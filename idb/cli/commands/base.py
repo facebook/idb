@@ -43,27 +43,6 @@ async def _get_client(
             yield client
 
 
-def _add_common_client_arguments(
-    parser: ArgumentParser, logger: logging.Logger
-) -> None:
-    plugin.on_connecting_parser(parser=parser, logger=logger)
-    parser.add_argument(
-        "--daemon-host",
-        help="Host the daemon is running on",
-        type=str,
-        default=DEFAULT_DAEMON_HOST,
-    )
-    parser.add_argument(
-        "--force", help="Kill any implicitly running daemons", action="store_true"
-    )
-    parser.add_argument(
-        "--daemon-grpc-port",
-        help="Port the daemon is running it's grpc interface on",
-        type=int,
-        default=DEFAULT_DAEMON_GRPC_PORT,
-    )
-
-
 class BaseCommand(Command, metaclass=ABCMeta):
     def __init__(self) -> None:
         super().__init__()
@@ -108,7 +87,6 @@ class BaseCommand(Command, metaclass=ABCMeta):
 # A command that vends the IdbClientBase interface.
 class CompanionCommand(BaseCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
-        _add_common_client_arguments(parser=parser, logger=self.logger)
         parser.add_argument(
             "--udid",
             help="Udid of target, can also be set with the IDB_UDID env var",
@@ -127,10 +105,6 @@ class CompanionCommand(BaseCommand):
 
 # A command that vends the IdbClient interface
 class ManagementCommand(BaseCommand):
-    def add_parser_arguments(self, parser: ArgumentParser) -> None:
-        _add_common_client_arguments(parser=parser, logger=self.logger)
-        super().add_parser_arguments(parser)
-
     async def _run_impl(self, args: Namespace) -> None:
         await self.run_with_client(
             args=args,

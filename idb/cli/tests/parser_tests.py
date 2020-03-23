@@ -378,9 +378,6 @@ class TestParser(TestCase):
             namespace.tests_to_run = None
         namespace.run = command
         namespace.test_bundle_id = test_bundle_id
-        namespace.daemon_port = 9888
-        namespace.daemon_grpc_port = 9889
-        namespace.daemon_host = "localhost"
         namespace.result_bundle_path = None
         return namespace
 
@@ -397,7 +394,6 @@ class TestParser(TestCase):
             )
             namespace = self.xctest_run_namespace("app", test_bundle_id)
             namespace.app_bundle_id = app_under_test_id
-            namespace.force = False
             namespace.timeout = XCTEST_TIMEOUT
             mock.assert_called_once_with(namespace)
 
@@ -423,7 +419,6 @@ class TestParser(TestCase):
             namespace = self.xctest_run_namespace("ui", test_bundle_id)
             namespace.app_bundle_id = app_under_test_id
             namespace.test_host_app_bundle_id = test_host_app_bundle_id
-            namespace.force = False
             namespace.timeout = XCTEST_TIMEOUT
             mock.assert_called_once_with(namespace)
 
@@ -437,7 +432,6 @@ class TestParser(TestCase):
             await cli_main(cmd_input=["xctest", "run", "logic", test_bundle_id])
             namespace = self.xctest_run_namespace("logic", test_bundle_id)
             namespace.timeout = XCTEST_TIMEOUT
-            namespace.force = False
             mock.assert_called_once_with(namespace)
 
     async def test_xctest_list(self) -> None:
@@ -495,10 +489,6 @@ class TestParser(TestCase):
             namespace.udid = "1234"
             namespace.json = False
             namespace.log_arguments = []
-            namespace.daemon_port = 9888
-            namespace.daemon_grpc_port = 9889
-            namespace.daemon_host = "localhost"
-            namespace.force = False
             mock.assert_called_once_with(namespace)
 
     async def test_log_arguments(self) -> None:
@@ -514,10 +504,6 @@ class TestParser(TestCase):
             namespace.udid = None
             namespace.json = False
             namespace.log_arguments = ["--", "--style", "json"]
-            namespace.daemon_port = 9888
-            namespace.daemon_grpc_port = 9889
-            namespace.daemon_host = "localhost"
-            namespace.force = False
             mock.assert_called_once_with(namespace)
 
     async def test_clear_keychain(self) -> None:
@@ -566,10 +552,6 @@ class TestParser(TestCase):
             namespace.udid = None
             namespace.json = False
             namespace.output_file = output_file
-            namespace.daemon_port = 9888
-            namespace.daemon_grpc_port = 9889
-            namespace.daemon_host = "localhost"
-            namespace.force = False
             mock.assert_called_once_with(namespace)
 
     async def test_key_sequence(self) -> None:
