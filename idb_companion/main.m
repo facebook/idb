@@ -273,6 +273,19 @@ static FBFuture<NSNumber *> *signalHandlerFuture(int signalCode, NSString *exitM
     }];
 }
 
+static NSString *EnvDescription()
+{
+  NSDictionary<NSString *, NSString *> *env = NSProcessInfo.processInfo.environment;
+  NSMutableDictionary<NSString *, NSString *> *modified = NSMutableDictionary.dictionary;
+  for (NSString *key in env) {
+    if ([key containsString:@"TERMCAP"]) {
+      continue;
+    }
+    modified[key] = env[key];
+  }
+  return [FBCollectionInformation oneLineDescriptionFromDictionary:modified];
+}
+
 int main(int argc, const char *argv[]) {
   if (shouldPrintUsage()) {
     fprintf(stderr, "%s", kUsageHelpMessage);
@@ -283,7 +296,7 @@ int main(int argc, const char *argv[]) {
     NSUserDefaults *userDefaults = NSUserDefaults.standardUserDefaults;
     FBIDBLogger *logger = [FBIDBLogger loggerWithUserDefaults:userDefaults];
     [logger.info logFormat:@"IDB Companion Built at %s %s", __DATE__, __TIME__];
-    [logger.info logFormat:@"Invoked with args=%@ env=%@", [FBCollectionInformation oneLineDescriptionFromArray:NSProcessInfo.processInfo.arguments], [FBCollectionInformation oneLineDescriptionFromDictionary:NSProcessInfo.processInfo.environment]];
+    [logger.info logFormat:@"Invoked with args=%@ env=%@", [FBCollectionInformation oneLineDescriptionFromArray:NSProcessInfo.processInfo.arguments], EnvDescription()];
 
     NSError *error = nil;
     FBFuture<NSNull *> *completed = [GetCompanionCompletedFuture(argc, argv, userDefaults, logger) await:&error];
