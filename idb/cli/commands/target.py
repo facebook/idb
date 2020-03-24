@@ -12,6 +12,7 @@ from typing import Union
 import idb.common.plugin as plugin
 from idb.cli.commands.base import CompanionCommand, ManagementCommand
 from idb.common.format import human_format_target_info, json_format_target_info
+from idb.common.signal import signal_handler_event
 from idb.common.types import Address, IdbClient, IdbException, IdbManagementClient
 from idb.common.udid import is_udid
 
@@ -209,6 +210,14 @@ class TargetBootCommand(ManagementCommand):
             required=True,
             default=os.environ.get("IDB_UDID"),
         )
+        parser.add_argument(
+            "--headless",
+            help="Boot the simulator headlessly. "
+            "This means that the lifecycles of the Simulator is tied to the lifecycle of this idb process. "
+            "Helpful when you wish to have subprocess-termination act teardown the Simulator.",
+            default=False,
+            action="store_true",
+        )
         super().add_parser_arguments(parser)
 
     @property
@@ -222,7 +231,11 @@ class TargetBootCommand(ManagementCommand):
     async def run_with_client(
         self, args: Namespace, client: IdbManagementClient
     ) -> None:
-        await client.boot(udid=args.udid)
+        if args.headless:
+            async with client.boot_headless(udid=args.udid):
+                await signal_handler_event("headless_boot").wait()
+        else:
+            await client.boot(udid=args.udid)
 
 
 class TargetShutdownCommand(ManagementCommand):

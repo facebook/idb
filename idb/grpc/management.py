@@ -99,7 +99,10 @@ class IdbManagementClient(IdbManagementClientBase):
             )
             return None
 
-    async def _run_companion_command(self, arguments: List[str]) -> str:
+    @asynccontextmanager
+    async def _start_companion_command(
+        self, arguments: List[str]
+    ) -> AsyncContextManager[asyncio.subprocess.Process]:
         companion_path = self.companion_path
         if companion_path is None:
             if platform == "darwin":
@@ -116,11 +119,19 @@ class IdbManagementClient(IdbManagementClientBase):
         process = await asyncio.create_subprocess_exec(
             *cmd, stdout=subprocess.PIPE, stderr=None
         )
-        (output, _) = await process.communicate()
-        if process.returncode != 0:
-            raise IdbException(f"Failed to run {cmd}")
-        self.logger.info(f"Ran {cmd} successfully.")
-        return output.decode()
+        try:
+            yield process
+        finally:
+            if process.returncode is None:
+                process.terminate()
+
+    async def _run_companion_command(self, arguments: List[str]) -> str:
+        async with self._start_companion_command(arguments=arguments) as process:
+            (output, _) = await process.communicate()
+            if process.returncode != 0:
+                raise IdbException(f"Failed to run {arguments}")
+            self.logger.info(f"Ran {arguments} successfully.")
+            return output.decode()
 
     async def _run_udid_command(self, udid: str, command: str) -> None:
         await self._run_companion_command(arguments=[f"--{command}", udid])
@@ -220,6 +231,19 @@ class IdbManagementClient(IdbManagementClientBase):
     @log_call()
     async def boot(self, udid: str) -> None:
         await self._run_udid_command(udid=udid, command="boot")
+
+    @asynccontextmanager
+    async def boot_headless(self, udid: str) -> AsyncContextManager[None]:
+        async with self._start_companion_command(
+            ["--headless", "--boot", udid]
+        ) as process:
+            # The first line written to stdout is information about the booted sim.
+            line = await none_throws(process.stdout).readline()
+            target = json.loads(line.decode())
+            assert target["udid"] == udid
+            self.logger.info(f"{udid} is now booted")
+            yield None
+            self.logger.info(f"Done with {udid}. Shutting down.")
 
     @log_call()
     async def shutdown(self, udid: str) -> None:

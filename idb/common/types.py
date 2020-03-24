@@ -10,6 +10,7 @@ from enum import Enum
 from io import StringIO
 from typing import (
     IO,
+    AsyncContextManager,
     AsyncIterable,
     AsyncIterator,
     Dict,
@@ -434,6 +435,9 @@ class IdbManagementClient:
         pass
 
     async def boot(self, udid: str) -> None:
+        pass
+
+    def boot_headless(self, udid: str) -> AsyncContextManager[None]:
         pass
 
     async def shutdown(self, udid: str) -> None:
