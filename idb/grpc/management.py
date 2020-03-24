@@ -7,6 +7,7 @@
 import asyncio
 import json
 import logging
+import signal
 import subprocess
 import tempfile
 from sys import platform
@@ -31,6 +32,29 @@ from idb.grpc.idb_pb2 import ConnectRequest
 from idb.grpc.logging import log_call
 from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws
+
+
+async def _terminate_process(
+    process: asyncio.subprocess.Process, logger: logging.Logger, timeout: int = 30
+) -> None:
+    logger.info(f"Stopping process {process} with SIGINT, waiting {timeout} seconds")
+    if process.returncode is not None:
+        logger.info(
+            f"Process is already terminated with {process.returncode} "
+            "perhaps it died prematurely"
+        )
+        return
+    process.send_signal(signal.SIGINT)
+    try:
+        await asyncio.wait_for(process.wait(), timeout=timeout)
+        logger.info(f"Stopped process {process} with SIGINT")
+    except TimeoutError:
+        logger.info(
+            f"Process {process} didn't close after {timeout} seconds, killing..."
+        )
+    finally:
+        if process.returncode is None:
+            process.kill()
 
 
 class IdbManagementClient(IdbManagementClientBase):
@@ -122,8 +146,7 @@ class IdbManagementClient(IdbManagementClientBase):
         try:
             yield process
         finally:
-            if process.returncode is None:
-                process.terminate()
+            await _terminate_process(process=process, logger=self.logger)
 
     async def _run_companion_command(self, arguments: List[str]) -> str:
         async with self._start_companion_command(arguments=arguments) as process:
