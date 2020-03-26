@@ -29,7 +29,6 @@ from typing import (
 
 from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
-from idb.common.companion_spawner import CompanionSpawner
 from idb.common.constants import TESTS_POLL_INTERVAL
 from idb.common.gzip import drain_gzip_decompress
 from idb.common.hid import (
@@ -40,8 +39,6 @@ from idb.common.hid import (
     tap_to_events,
     text_to_events,
 )
-from idb.common.local_targets_manager import LocalTargetsManager
-from idb.common.pid_saver import PidSaver
 from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
 from idb.common.types import (
@@ -63,13 +60,11 @@ from idb.common.types import (
     TargetDescription,
     TestRunInfo,
 )
-from idb.grpc.companion import merge_connected_targets
 from idb.grpc.crash import (
     _to_crash_log,
     _to_crash_log_info_list,
     _to_crash_log_query_proto,
 )
-from idb.grpc.destination import destination_to_grpc
 from idb.grpc.hid import event_to_grpc
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
@@ -130,7 +125,6 @@ from idb.grpc.target import target_to_py
 from idb.grpc.video import generate_video_bytes
 from idb.grpc.xctest import make_request, make_results, write_result_bundle
 from idb.utils.contextlib import asynccontextmanager
-from idb.utils.typing import none_throws
 
 
 APPROVE_MAP: Dict[str, Any] = {
