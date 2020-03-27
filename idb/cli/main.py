@@ -130,6 +130,13 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         default="/usr/local/bin/idb_companion" if sys.platform == "darwin" else None,
         help="The path to the idb companion binary. This is only valid when running on macOS platforms",
     )
+    parser.add_argument(
+        "--no-prune-dead-companion",
+        dest="prune_dead_companion",
+        action="store_false",
+        default=True,
+        help="If flagged will not modify local state when a companion is known to be unresponsive",
+    )
     commands: List[Command] = [
         AppInstallCommand(),
         AppUninstallCommand(),

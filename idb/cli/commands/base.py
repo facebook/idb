@@ -109,7 +109,9 @@ class ManagementCommand(BaseCommand):
         await self.run_with_client(
             args=args,
             client=IdbManagementClientGrpc(
-                logger=self.logger, companion_path=args.companion_path
+                companion_path=args.companion_path,
+                logger=self.logger,
+                prune_dead_companion=args.prune_dead_companion,
             ),
         )
 

@@ -63,12 +63,14 @@ class IdbManagementClient(IdbManagementClientBase):
         companion_path: Optional[str] = None,
         device_set_path: Optional[str] = None,
         logger: Optional[logging.Logger] = None,
+        prune_dead_companion: bool = True,
     ) -> None:
         self.companion_path = companion_path
         self.device_set_path = device_set_path
         self.logger: logging.Logger = (
             logger if logger else logging.getLogger("idb_grpc_client")
         )
+        self._prune_dead_companion = prune_dead_companion
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
         self.local_targets_manager = LocalTargetsManager(logger=self.logger)
 
@@ -117,6 +119,11 @@ class IdbManagementClient(IdbManagementClientBase):
             ) as client:
                 return await client.describe()
         except Exception:
+            if not self._prune_dead_companion:
+                self.logger.warning(
+                    f"Failed to describe {companion}, but not removing it"
+                )
+                return None
             self.logger.warning(f"Failed to describe {companion}, removing it")
             await self.direct_companion_manager.remove_companion(
                 Address(host=companion.host, port=companion.port)
