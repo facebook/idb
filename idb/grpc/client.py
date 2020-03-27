@@ -43,6 +43,7 @@ from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
 from idb.common.types import (
     AccessibilityInfo,
+    Address,
     AppProcessState,
     CrashLog,
     CrashLogInfo,
@@ -173,9 +174,14 @@ def log_and_handle_exceptions(func):  # pyre-ignore
 
 class IdbClient(IdbClientBase):
     def __init__(
-        self, stub: CompanionServiceStub, is_local: bool, logger: logging.Logger
+        self,
+        stub: CompanionServiceStub,
+        address: Address,
+        is_local: bool,
+        logger: logging.Logger,
     ) -> None:
         self.stub = stub
+        self.address = address
         self.is_local = is_local
         self.logger = logger
 
@@ -188,6 +194,7 @@ class IdbClient(IdbClientBase):
         try:
             yield IdbClient(
                 stub=CompanionServiceStub(channel=channel),
+                address=Address(host=host, port=port),
                 is_local=is_local,
                 logger=logger,
             )
