@@ -51,6 +51,7 @@ from idb.common.types import (
     HIDButtonType,
     HIDEvent,
     IdbClient as IdbClientBase,
+    IdbConnectionException,
     IdbException,
     InstalledAppInfo,
     InstalledArtifact,
@@ -147,6 +148,8 @@ def log_and_handle_exceptions(func):  # pyre-ignore
             raise IdbException(e.message) from e  # noqa B306
         except (ProtocolError, StreamTerminatedError) as e:
             raise IdbException(e.args) from e
+        except OSError as e:
+            raise IdbConnectionException(e.strerror)
 
     @functools.wraps(func)
     @log_call(name=func.__name__, metadata=CLIENT_METADATA)
@@ -159,6 +162,8 @@ def log_and_handle_exceptions(func):  # pyre-ignore
             raise IdbException(e.message) from e  # noqa B306
         except (ProtocolError, StreamTerminatedError) as e:
             raise IdbException(e.args) from e
+        except OSError as e:
+            raise IdbConnectionException(e.strerror)
 
     if inspect.isasyncgenfunction(func):
         return func_wrapper_gen

@@ -115,6 +115,10 @@ class IdbException(Exception):
     pass
 
 
+class IdbConnectionException(Exception):
+    pass
+
+
 class AccessibilityInfo(NamedTuple):
     json: Optional[str]
 
