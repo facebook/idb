@@ -9,6 +9,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
+#import <FBDeviceControl/FBDeviceControl.h>
 
 #import "FBIDBCompanionServer.h"
 #import "FBIDBConfiguration.h"
@@ -30,6 +31,7 @@ Usage: \n \
     --delete UDID|all          Deletes the simulator with the specified UDID, or 'all' to delete all simulators in the set. \n\
     --create VALUE             Creates a simulator using the VALUE argument like \"iPhone X,iOS 12.4\"\n\
     --notify PATH              Launches a companion notifier which will stream availability updates to the specified path.\n\
+    --list 1                   Lists all available devices/simulators in the current context.\n\
     --help                     Show this help message and exit.\n\
 \n\
   Options:\n\
@@ -64,6 +66,16 @@ static FBFuture<FBSimulatorSet *> *SimulatorSet(NSUserDefaults *userDefaults, id
     return [FBFuture futureWithError:error];
   }
   return [FBFuture futureWithResult:control.set];
+}
+
+static FBFuture<FBDeviceSet *> *DeviceSet(id<FBControlCoreLogger> logger)
+{
+  NSError *error = nil;
+  FBDeviceSet *deviceSet = [FBDeviceSet defaultSetWithLogger:logger error:&error delegate:nil];
+  if (!deviceSet) {
+    return [FBFuture futureWithError:error];
+  }
+  return [FBFuture futureWithResult:deviceSet];
 }
 
 static FBFuture<FBSimulator *> *SimulatorFuture(NSString *udid, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
@@ -155,6 +167,26 @@ static FBFuture<NSNull *> *DeleteFuture(NSString *udidOrAll, NSUserDefaults *use
     mapReplace:NSNull.null];
 }
 
+static FBFuture<NSNull *> *ListFuture(NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
+{
+  return [[FBFuture
+    futureWithFutures:@[
+      SimulatorSet(userDefaults, logger, reporter),
+      DeviceSet(logger),
+    ]]
+    onQueue:dispatch_get_main_queue() map:^ NSNull * (NSArray<id> *tup) {
+      FBSimulatorSet *simulatorSet = tup[0];
+      FBDeviceSet *deviceSet = tup[1];
+      for (FBSimulator *simulator in simulatorSet.allSimulators) {
+        WriteJSONToStdOut(simulator.jsonSerializableRepresentation);
+      }
+      for (FBDevice *device in deviceSet.allDevices) {
+        WriteJSONToStdOut(device.jsonSerializableRepresentation);
+      }
+      return NSNull.null;
+    }];
+}
+
 static FBFuture<NSNull *> *CreateFuture(NSString *create, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   return [[SimulatorSet(userDefaults, logger, reporter)
@@ -219,19 +251,23 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
 
 static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, const char *argv[], NSUserDefaults *userDefaults, FBIDBLogger *logger) {
   NSString *udid = [userDefaults stringForKey:@"-udid"];
-  NSString *notifyFilePath = [userDefaults stringForKey:@"-notify"];
+  NSString *notify = [userDefaults stringForKey:@"-notify"];
   NSString *boot = [userDefaults stringForKey:@"-boot"];
   NSString *create = [userDefaults stringForKey:@"-create"];
   NSString *shutdown = [userDefaults stringForKey:@"-shutdown"];
   NSString *erase = [userDefaults stringForKey:@"-erase"];
   NSString *delete = [userDefaults stringForKey:@"-delete"];
+  NSString *list = [userDefaults stringForKey:@"-list"];
 
   id<FBEventReporter> reporter = FBIDBConfiguration.eventReporter;
   if (udid) {
     return CompanionServerFuture(udid, userDefaults, logger, reporter);
-  } else if (notifyFilePath) {
-    [logger.info logFormat:@"Notify mode is set. writing updates to %@", notifyFilePath];
-    return [[FBiOSTargetStateChangeNotifier notifierToFilePath:notifyFilePath logger:logger] startNotifier];
+  } else if (list) {
+    [logger.info log:@"Listing"];
+    return [FBFuture futureWithResult:ListFuture(userDefaults, logger, reporter)];
+  } else if (notify) {
+    [logger.info logFormat:@"Notify mode is set. writing updates to %@", notify];
+    return [[FBiOSTargetStateChangeNotifier notifierToFilePath:notify logger:logger] startNotifier];
   } else if (boot) {
     [logger logFormat:@"Booting %@", udid];
     return BootFuture(boot, [userDefaults boolForKey:@"-headless"], logger, reporter);
