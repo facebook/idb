@@ -48,7 +48,7 @@ async def _get_client(
     if companion is not None:
         (host, port) = _parse_companion_info(companion)
         async with IdbClientGrpc.build(
-            host=host, port=port, is_local=False, logger=logger
+            host=host, port=port, is_local=args.companion_local, logger=logger
         ) as client:
             yield client
     else:
