@@ -8,12 +8,17 @@ import logging
 import os
 from abc import ABCMeta, abstractmethod
 from argparse import ArgumentParser, Namespace
-from typing import AsyncContextManager, Tuple
+from typing import AsyncContextManager, Optional, Tuple
 
 from idb.common import plugin
 from idb.common.command import Command
 from idb.common.constants import DEFAULT_DAEMON_GRPC_PORT, DEFAULT_DAEMON_HOST
-from idb.common.types import IdbClient, IdbManagementClient
+from idb.common.types import (
+    Address,
+    IdbClient,
+    IdbConnectionException,
+    IdbManagementClient,
+)
 from idb.grpc.client import IdbClient as IdbClientGrpc
 from idb.grpc.logging import log_call
 from idb.grpc.management import IdbManagementClient as IdbManagementClientGrpc
@@ -25,10 +30,20 @@ def _parse_companion_info(value: str) -> Tuple[str, int]:
     return (host, int(port))
 
 
+def _get_management_client(
+    logger: logging.Logger, args: Namespace
+) -> IdbManagementClient:
+    return IdbManagementClientGrpc(
+        companion_path=args.companion_path,
+        logger=logger,
+        prune_dead_companion=args.prune_dead_companion,
+    )
+
+
 @asynccontextmanager
 async def _get_client(
     args: Namespace, logger: logging.Logger
-) -> AsyncContextManager[IdbClient]:
+) -> AsyncContextManager[IdbClientGrpc]:
     companion = vars(args).get("companion")
     if companion is not None:
         (host, port) = _parse_companion_info(companion)
@@ -95,8 +110,22 @@ class CompanionCommand(BaseCommand):
         super().add_parser_arguments(parser)
 
     async def _run_impl(self, args: Namespace) -> None:
-        async with _get_client(args=args, logger=self.logger) as client:
-            await self.run_with_client(args=args, client=client)
+        address: Optional[Address] = None
+        try:
+            async with _get_client(args=args, logger=self.logger) as client:
+                address = client.address
+                await self.run_with_client(args=args, client=client)
+        except IdbConnectionException as ex:
+            if not args.prune_dead_companion:
+                raise ex
+            if address is None:
+                raise ex
+            try:
+                await _get_management_client(logger=self.logger, args=args).disconnect(
+                    destination=address
+                )
+            finally:
+                raise ex
 
     @abstractmethod
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
@@ -107,12 +136,7 @@ class CompanionCommand(BaseCommand):
 class ManagementCommand(BaseCommand):
     async def _run_impl(self, args: Namespace) -> None:
         await self.run_with_client(
-            args=args,
-            client=IdbManagementClientGrpc(
-                companion_path=args.companion_path,
-                logger=self.logger,
-                prune_dead_companion=args.prune_dead_companion,
-            ),
+            args=args, client=_get_management_client(logger=self.logger, args=args)
         )
 
     @abstractmethod
