@@ -6,13 +6,15 @@
 
 import json
 from argparse import ArgumentParser, Namespace
+from typing import Optional
 
 from idb.cli.commands.base import CompanionCommand
 from idb.common.format import (
     human_format_installed_app_info,
     json_format_installed_app_info,
 )
-from idb.common.types import IdbClient
+from idb.common.types import IdbClient, InstalledArtifact
+from idb.utils.typing import none_throws
 
 
 class AppInstallCommand(CompanionCommand):
@@ -31,20 +33,26 @@ class AppInstallCommand(CompanionCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
-        async for install_response in client.install(args.bundle_path):
-            if install_response.progress != 0.0 and not args.json:
-                print("Installed {install_response.progress}%")
-            elif args.json:
-                print(
-                    json.dumps(
-                        {
-                            "installedAppBundleId": install_response.name,
-                            "uuid": install_response.uuid,
-                        }
-                    )
+        artifact: Optional[InstalledArtifact] = None
+        async for info in client.install(args.bundle_path):
+            artifact = info
+            progress = info.progress
+            if progress is None:
+                continue
+            self.logger.info(f"Progress: {progress}")
+        if args.json:
+            print(
+                json.dumps(
+                    {
+                        "installedAppBundleId": none_throws(artifact).name,
+                        "uuid": none_throws(artifact).uuid,
+                    }
                 )
-            else:
-                print(f"Installed: {install_response.name} {install_response.uuid}")
+            )
+        else:
+            print(
+                f"Installed: {none_throws(artifact).name} {none_throws(artifact).uuid}"
+            )
 
 
 class AppUninstallCommand(CompanionCommand):
