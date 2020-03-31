@@ -50,6 +50,7 @@ async def do_spawn_companion(
     device_set_path: Optional[str],
     port: Optional[int],
     cwd: Optional[str],
+    reparent: bool,
 ) -> Tuple[asyncio.subprocess.Process, int]:
     arguments: List[str] = [
         path,
@@ -65,9 +66,10 @@ async def do_spawn_companion(
         process = await asyncio.create_subprocess_exec(
             *arguments,
             stdout=asyncio.subprocess.PIPE,
-            stdin=asyncio.subprocess.PIPE,
+            stdin=asyncio.subprocess.PIPE if reparent else None,
             stderr=log_file,
             cwd=cwd,
+            preexec_fn=os.setpgrp if reparent else None,
         )
         logging.debug(f"started companion at process id {process.pid}")
         stdout = none_throws(process.stdout)
@@ -119,6 +121,7 @@ class CompanionSpawner:
             device_set_path=None,
             port=None,
             cwd=None,
+            reparent=True,
         )
         self.pid_saver.save_companion_pid(pid=process.pid)
         return port

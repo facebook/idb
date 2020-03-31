@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import json
+import os
 from unittest import mock
 
 from idb.common.companion_spawner import CompanionSpawner
@@ -38,9 +39,10 @@ class CompanionSpawnerTest(TestCase):
                 "--grpc-port",
                 "0",
                 stdout=mock.ANY,
-                stdin=mock.ANY,
                 stderr=mock.ANY,
+                stdin=mock.ANY,
                 cwd=None,
+                preexec_fn=os.setpgrp,
             )
             self.assertEqual(port, 1234)
 
