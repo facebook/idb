@@ -394,7 +394,7 @@ class TestParser(TestCase):
         mock = AsyncMock()
         mock.return_value = []
         with patch(
-            "idb.cli.commands.xctest.XcestRunAppCommand.run", new=mock, create=True
+            "idb.cli.commands.xctest.XctestRunAppCommand.run", new=mock, create=True
         ):
             test_bundle_id = "com.me.tests"
             app_under_test_id = "com.me.app"

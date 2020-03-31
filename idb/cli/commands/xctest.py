@@ -167,7 +167,7 @@ class CommonRunXcTestCommand(CompanionCommand):
         return None
 
 
-class XcestRunAppCommand(CommonRunXcTestCommand):
+class XctestRunAppCommand(CommonRunXcTestCommand):
     @property
     def name(self) -> str:
         return "app"
@@ -208,7 +208,7 @@ class XcestRunAppCommand(CommonRunXcTestCommand):
         return set(args.tests_to_skip) if args.tests_to_skip else None
 
 
-class XctestRunUICommand(XcestRunAppCommand):
+class XctestRunUICommand(XctestRunAppCommand):
     @property
     def name(self) -> str:
         return "ui"
@@ -262,7 +262,7 @@ class XctestRunCommand(CompositeCommand):
     def __init__(self) -> None:
         super().__init__()
         self._subcommands: List[Command] = [
-            XcestRunAppCommand(),
+            XctestRunAppCommand(),
             XctestRunUICommand(),
             XctestRunLogicCommand(),
         ]
