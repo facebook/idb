@@ -256,6 +256,9 @@ class IdbClient(IdbClientBase):
     def _is_verbose(self) -> bool:
         return self.logger.isEnabledFor(logging.DEBUG)
 
+    def _log_from_companion(self, data: str) -> None:
+        self.logger.info(data.strip())
+
     @log_and_handle_exceptions
     async def list_apps(self) -> List[InstalledAppInfo]:
         response = await self.stub.list_apps(ListAppsRequest())
@@ -752,7 +755,7 @@ class IdbClient(IdbClientBase):
                     for lines in response.log_output
                     for line in lines.splitlines(keepends=True)
                 ]:
-                    self.logger.info(line)
+                    self._log_from_companion(line)
                     if idb_log_buffer:
                         idb_log_buffer.write(line)
                 if result_bundle_path:
