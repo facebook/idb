@@ -34,6 +34,9 @@ from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws
 
 
+DEFAULT_COMPANION_COMMAND_TIMEOUT = 120
+
+
 async def _terminate_process(
     process: asyncio.subprocess.Process, logger: logging.Logger, timeout: int = 30
 ) -> None:
@@ -155,13 +158,22 @@ class IdbManagementClient(IdbManagementClientBase):
         finally:
             await _terminate_process(process=process, logger=self.logger)
 
-    async def _run_companion_command(self, arguments: List[str]) -> str:
+    async def _run_companion_command(
+        self, arguments: List[str], timeout: float = DEFAULT_COMPANION_COMMAND_TIMEOUT
+    ) -> str:
         async with self._start_companion_command(arguments=arguments) as process:
-            (output, _) = await process.communicate()
-            if process.returncode != 0:
-                raise IdbException(f"Failed to run {arguments}")
-            self.logger.info(f"Ran {arguments} successfully.")
-            return output.decode()
+            try:
+                (output, _) = await asyncio.wait_for(
+                    process.communicate(), timeout=timeout
+                )
+                if process.returncode != 0:
+                    raise IdbException(f"Failed to run {arguments}")
+                self.logger.info(f"Ran {arguments} successfully.")
+                return output.decode()
+            except asyncio.TimeoutError:
+                raise IdbException(
+                    f"Timed out after {timeout} secs on command {' '.join(arguments)}"
+                )
 
     async def _run_udid_command(self, udid: str, command: str) -> None:
         await self._run_companion_command(arguments=[f"--{command}", udid])
