@@ -85,30 +85,4 @@
   XCTAssertEqualObjects(expectedProperties, realProperties);
 }
 
-- (void)testReportResults
-{
-  NSDictionary *results =
-  @{
-    @"TestableSummaries":@[@{
-      @"Tests":@[@{
-        @"Subtests": @[@{
-          @"Subtests":@[@{
-            @"TestIdentifier": @"ClassName",
-            @"Subtests":@[@{
-                @"TestStatus": @"Success",
-                @"TestIdentifier": @"testAAA()",
-                @"Duration": @1.2,
-            }]
-          }]
-        }]
-      }]
-    }]
-  };
-
-  FBTestManagerTestReporterDouble *reporter = [[FBTestManagerTestReporterDouble alloc] init];
-  [FBDeviceXCTestCommands reportResults:results reporter:reporter];
-  XCTAssertTrue(reporter.testCaseDidStartForTestClassCalled);
-  XCTAssertTrue(reporter.testCaseDidFinishForTestClassCalled);
-}
-
 @end
