@@ -346,9 +346,15 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
           failFuture];
       }
 
+      NSTimeInterval crashWaitTimeout = CrashCheckWaitLimit;
+      NSString *crashWaitTimeoutFromEnv = NSProcessInfo.processInfo.environment[@"FBXCTEST_CRASH_WAIT_TIMEOUT"];
+      if (crashWaitTimeoutFromEnv) {
+        crashWaitTimeout = crashWaitTimeoutFromEnv.floatValue;
+      }
+
       return [[crashLog
         notifyOfCrash:[FBCrashLogInfo predicateForCrashLogsWithProcessID:self.context.testRunnerPID]]
-        timeout:CrashCheckWaitLimit
+        timeout:crashWaitTimeout
         waitingFor:@"Getting crash log for process with pid %d, bunndle ID: %@", self.context.testRunnerPID, self.context.testRunnerBundleID];
     }]
     onQueue:self.target.workQueue fmap:^(FBCrashLogInfo *info) {
