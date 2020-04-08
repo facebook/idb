@@ -276,9 +276,15 @@
     return FBFuture.empty;
   }
 
+  NSTimeInterval recordingTaskWaitTimeout = 10.0;
+  NSString *recordingTaskWaitTimeoutFromEnv = NSProcessInfo.processInfo.environment[@"FBXCTEST_VIDEO_RECORDING_SIGINT_WAIT_TIMEOUT"];
+  if (recordingTaskWaitTimeoutFromEnv) {
+    recordingTaskWaitTimeout = recordingTaskWaitTimeoutFromEnv.floatValue;
+  }
+
   // Stop for real be interrupting the task itself.
   FBFuture<NSNull *> *completed = [[[[recordingTask
-    sendSignal:SIGINT backingOffToKillWithTimeout:10]
+    sendSignal:SIGINT backingOffToKillWithTimeout:recordingTaskWaitTimeout logger:self.logger]
     logCompletion:self.logger withPurpose:@"The video recording task terminated"]
     onQueue:self.queue fmap:^(NSNumber *result) {
       self.recordingStarted = nil;

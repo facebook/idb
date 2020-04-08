@@ -11,6 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBControlCoreLogger;
+
 /**
  Builds on top of the FBTask API
  */
@@ -22,9 +24,10 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param signo the signal number to send.
  @param timeout the timeout to wait before sending a SIGKILL.
+ @param logger used for log information when timeout happened.
  @return a future that resolves to the signal sent when the process has been terminated.
  */
-- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout;
+- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

@@ -8,10 +8,11 @@
 #import "FBTask+Helpers.h"
 
 #import "FBControlCoreError.h"
+#import "FBControlCoreLogger.h"
 
 @implementation FBTask (Helpers)
 
-- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout
+- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task_terminate", DISPATCH_QUEUE_SERIAL);
   FBFuture<NSNumber *> *signal = [self sendSignal:signo];
@@ -19,6 +20,7 @@
     futureWithResult:NSNull.null]
     delay:timeout]
     onQueue:queue fmap:^(id _) {
+      [logger logFormat:@"Process %d didn't exit after wait for %f seconds for sending signal %d, sending SIGKILL now.", [self processIdentifier], timeout, signo];
       return [self sendSignal:SIGKILL];
     }];
   return [FBFuture race:@[signal, kill]];

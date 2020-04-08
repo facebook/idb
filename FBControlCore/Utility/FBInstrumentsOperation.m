@@ -177,7 +177,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
   return [[FBFuture
     onQueue:self.queue resolve:^{
       [self.logger logFormat:@"Terminating instruments %@. Backoff Timeout %f", self.task, self.configuration.timings.terminateTimeout];
-      return [self.task sendSignal:SIGINT backingOffToKillWithTimeout:self.configuration.timings.terminateTimeout];
+      return [self.task sendSignal:SIGINT backingOffToKillWithTimeout:self.configuration.timings.terminateTimeout logger:self.logger];
     }] chainReplace:[[self.task exitCode]
     onQueue:self.queue fmap:^FBFuture<NSURL *> *(NSNumber *exitCode) {
       if ([exitCode isEqualToNumber:@(0)]) {
