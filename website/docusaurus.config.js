@@ -6,6 +6,10 @@
  */
 
 module.exports = {
+  algolia: {
+    apiKey: '0908032af0955efe731222e1de3bad86',
+    indexName: 'idb'
+  },
   title: 'idb',
   tagline: 'iOS Development Bridge',
   favicon: 'img/favicon.png',
