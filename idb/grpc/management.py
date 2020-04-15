@@ -67,6 +67,7 @@ class IdbManagementClient(IdbManagementClientBase):
         device_set_path: Optional[str] = None,
         logger: Optional[logging.Logger] = None,
         prune_dead_companion: bool = True,
+        companion_command_timeout: int = DEFAULT_COMPANION_COMMAND_TIMEOUT,
     ) -> None:
         self.companion_path = companion_path
         self.device_set_path = device_set_path
@@ -74,6 +75,7 @@ class IdbManagementClient(IdbManagementClientBase):
             logger if logger else logging.getLogger("idb_grpc_client")
         )
         self._prune_dead_companion = prune_dead_companion
+        self._companion_command_timeout = companion_command_timeout
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
         self.local_targets_manager = LocalTargetsManager(logger=self.logger)
 
@@ -158,9 +160,8 @@ class IdbManagementClient(IdbManagementClientBase):
         finally:
             await _terminate_process(process=process, logger=self.logger)
 
-    async def _run_companion_command(
-        self, arguments: List[str], timeout: float = DEFAULT_COMPANION_COMMAND_TIMEOUT
-    ) -> str:
+    async def _run_companion_command(self, arguments: List[str]) -> str:
+        timeout = self._companion_command_timeout
         async with self._start_companion_command(arguments=arguments) as process:
             try:
                 (output, _) = await asyncio.wait_for(
