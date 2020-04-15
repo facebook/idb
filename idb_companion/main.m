@@ -328,7 +328,8 @@ int main(int argc, const char *argv[]) {
     return 1;
   }
 
-  @autoreleasepool {
+  @autoreleasepool
+  {
     NSUserDefaults *userDefaults = NSUserDefaults.standardUserDefaults;
     FBIDBLogger *logger = [FBIDBLogger loggerWithUserDefaults:userDefaults];
     [logger.info logFormat:@"IDB Companion Built at %s %s", __DATE__, __TIME__];
@@ -350,7 +351,11 @@ int main(int argc, const char *argv[]) {
       [logger.error log:completed.error.localizedDescription];
       return 1;
     }
-    [completed await:nil];
+    id result = [completed await:&error];
+    if (!result) {
+      [logger.error log:error.localizedDescription];
+      return 1;
+    }
   }
   return 0;
 }
