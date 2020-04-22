@@ -200,58 +200,6 @@ static NSMutableArray<NSString *> *sEvents;
   XCTAssertEqualObjects(expected, actual);
 }
 
-- (void)testStartAFCService
-{
-  FBFuture<FBAMDServiceConnection *> *future = [[self.device startAFCService] onQueue:dispatch_get_main_queue() pop:^(FBAMDServiceConnection *result) {
-    return [FBFuture futureWithResult:result];
-  }];
-
-  NSError *error = nil;
-  id value = [future await:&error];
-  XCTAssertNil(error);
-  XCTAssertNotNil(value);
-
-  NSArray<NSString *> *actual = [FBAMDeviceTests.events copy];
-  NSArray<NSString *> *expected = @[
-    @"connect",
-    @"start_session",
-    @"secure_start_service",
-    @"service_connection_invalidate",
-    @"stop_session",
-    @"disconnect",
-  ];
-
-  XCTAssertEqualObjects(expected, actual);
-}
-
-- (void)testHouseArrest
-{
-  AFCCalls afcCalls = {
-    .ConnectionClose = ConnectionClose,
-  };
-
-  FBFuture<FBAFCConnection *> *future = [[self.device houseArrestAFCConnectionForBundleID:@"com.foo.bar" afcCalls:afcCalls] onQueue:dispatch_get_main_queue() pop:^(FBAFCConnection *result) {
-    return [FBFuture futureWithResult:result];
-  }];
-
-  NSError *error = nil;
-  id value = [future await:&error];
-  XCTAssertNil(error);
-  XCTAssertNotNil(value);
-
-  NSArray<NSString *> *actual = [FBAMDeviceTests.events copy];
-  NSArray<NSString *> *expected = @[
-    @"connect",
-    @"start_session",
-    @"create_house_arrest_service",
-    @"connection_close",
-    @"stop_session",
-    @"disconnect",
-  ];
-
-  XCTAssertEqualObjects(expected, actual);
-}
-
 - (void)testConcurrentHouseArrest
 {
   AFCCalls afcCalls = {
