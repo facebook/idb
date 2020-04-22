@@ -269,7 +269,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
     [logger.info logFormat:@"Notify mode is set. writing updates to %@", notify];
     return [[FBiOSTargetStateChangeNotifier notifierToFilePath:notify logger:logger] startNotifier];
   } else if (boot) {
-    [logger logFormat:@"Booting %@", udid];
+    [logger logFormat:@"Booting %@", boot];
     return BootFuture(boot, [userDefaults boolForKey:@"-headless"], logger, reporter);
   } else if(shutdown) {
     [logger.info logFormat:@"Shutting down %@", shutdown];
