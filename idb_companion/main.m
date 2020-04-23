@@ -30,6 +30,7 @@ Usage: \n \
     --erase UDID               Erases the simulator with the specified UDID.\n\
     --delete UDID|all          Deletes the simulator with the specified UDID, or 'all' to delete all simulators in the set. \n\
     --create VALUE             Creates a simulator using the VALUE argument like \"iPhone X,iOS 12.4\"\n\
+    --clone UDID               Clones a simulator by a given UDID\n\
     --notify PATH              Launches a companion notifier which will stream availability updates to the specified path.\n\
     --list 1                   Lists all available devices/simulators in the current context.\n\
     --help                     Show this help message and exit.\n\
@@ -208,6 +209,19 @@ static FBFuture<NSNull *> *CreateFuture(NSString *create, NSUserDefaults *userDe
     }];
 }
 
+static FBFuture<NSNull *> *CloneFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
+{
+  return [[SimulatorFuture(udid, logger, reporter)
+    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<FBSimulator *> * (FBSimulator *base) {
+      return [base.set cloneSimulator:base];
+    }]
+    onQueue:dispatch_get_main_queue() map:^(FBSimulator *cloned) {
+      FBiOSTargetStateUpdate *update = [[FBiOSTargetStateUpdate alloc] initWithUDID:cloned.udid state:cloned.state type:FBiOSTargetTypeSimulator name:cloned.name osVersion:cloned.osVersion architecture:cloned.architecture];
+      WriteJSONToStdOut(update.jsonSerializableRepresentation);
+      return NSNull.null;
+    }];
+}
+
 static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   BOOL terminateOffline = [userDefaults boolForKey:@"-terminate-offline"];
@@ -258,6 +272,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   NSString *erase = [userDefaults stringForKey:@"-erase"];
   NSString *delete = [userDefaults stringForKey:@"-delete"];
   NSString *list = [userDefaults stringForKey:@"-list"];
+  NSString *clone = [userDefaults stringForKey:@"-clone"];
 
   id<FBEventReporter> reporter = FBIDBConfiguration.eventReporter;
   if (udid) {
@@ -283,6 +298,9 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   } else if (create) {
     [logger.info logFormat:@"Creating %@", create];
     return [FBFuture futureWithResult:CreateFuture(create, userDefaults, logger, reporter)];
+  } else if (clone) {
+    [logger.info logFormat:@"Cloning %@", clone];
+    return [FBFuture futureWithResult:CloneFuture(clone, userDefaults, logger, reporter)];
   }
   return [[[FBIDBError
     describeFormat:@"You must specify at least one 'Mode of operation'\n\n%s", kUsageHelpMessage]
