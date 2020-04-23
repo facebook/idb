@@ -278,7 +278,7 @@ class IdbManagementClient(IdbManagementClientBase):
     @asynccontextmanager
     async def boot_headless(self, udid: str) -> AsyncContextManager[None]:
         async with self._start_companion_command(
-            ["--headless", "--boot", udid]
+            ["--headless", "1", "--boot", udid]
         ) as process:
             # The first line written to stdout is information about the booted sim.
             line = await none_throws(process.stdout).readline()
