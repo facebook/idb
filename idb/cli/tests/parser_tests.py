@@ -18,6 +18,7 @@ from idb.utils.testing import AsyncContextManagerMock, AsyncMock, TestCase
 
 
 T = TypeVar("T")
+# pyre-fixme[5]: Global expression must be annotated.
 COMPANION_PATH = "/usr/local/bin/idb_companion" if sys.platform == "darwin" else None
 
 

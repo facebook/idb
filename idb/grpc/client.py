@@ -541,7 +541,12 @@ class IdbClient(IdbClientBase):
                 event_to_grpc(event) async for event in event_iterator
             )
             await drain_to_stream(
-                stream=stream, generator=grpc_event_iterator, logger=self.logger
+                stream=stream,
+                # pyre-fixme[6]: Expected
+                #  `AsyncIterator[Variable[idb.grpc.stream._TSend]]` for 2nd param but
+                #  got `Generator[typing.Any, None, None]`.
+                generator=grpc_event_iterator,
+                logger=self.logger,
             )
             await stream.recv_message()
 

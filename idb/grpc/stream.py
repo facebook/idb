@@ -42,6 +42,7 @@ async def drain_to_stream(
         logger.debug(f"Streamed all chunks to companion, waiting for completion")
         response = none_throws(await stream.recv_message())
         logger.debug(f"Companion completed")
+        # pyre-fixme[7]: Expected `_TRecv` but got `object`.
         return response
 
 
