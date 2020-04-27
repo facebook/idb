@@ -176,8 +176,8 @@ class IdbManagementClient(IdbManagementClientBase):
                     f"Timed out after {timeout} secs on command {' '.join(arguments)}"
                 )
 
-    async def _run_udid_command(self, udid: str, command: str) -> None:
-        await self._run_companion_command(arguments=[f"--{command}", udid])
+    async def _run_udid_command(self, udid: str, command: str) -> str:
+        return await self._run_companion_command(arguments=[f"--{command}", udid])
 
     @asynccontextmanager
     async def from_udid(self, udid: Optional[str]) -> AsyncContextManager[IdbClient]:
@@ -295,6 +295,12 @@ class IdbManagementClient(IdbManagementClientBase):
     @log_call()
     async def erase(self, udid: str) -> None:
         await self._run_udid_command(udid=udid, command="erase")
+
+    @log_call()
+    async def clone(self, udid: str) -> str:
+        output = await self._run_udid_command(udid=udid, command="clone")
+        cloned = json.loads(output.splitlines()[-1])
+        return cloned["udid"]
 
     @log_call()
     async def delete(self, udid: Optional[str]) -> None:

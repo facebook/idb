@@ -103,6 +103,12 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["erase", udid])
         self.management_client_mock().erase.assert_called_once_with(udid=udid)
 
+    async def test_clone(self) -> None:
+        self.management_client_mock().clone = AsyncMock()
+        udid = "my udid"
+        await cli_main(cmd_input=["clone", udid])
+        self.management_client_mock().clone.assert_called_once_with(udid=udid)
+
     async def test_delete(self) -> None:
         self.management_client_mock().delete = AsyncMock()
         udid = "my udid"

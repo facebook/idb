@@ -268,6 +268,22 @@ class TargetEraseCommand(UDIDTargetedManagementCommand):
         await client.erase(udid=args.udid)
 
 
+class TargetCloneCommand(UDIDTargetedManagementCommand):
+    @property
+    def description(self) -> str:
+        return "Erases the simulator (only works on mac)"
+
+    @property
+    def name(self) -> str:
+        return "clone"
+
+    async def run_with_client(
+        self, args: Namespace, client: IdbManagementClient
+    ) -> None:
+        udid = await client.clone(udid=args.udid)
+        print(udid)
+
+
 class TargetDeleteCommand(UDIDTargetedManagementCommand):
     @property
     def description(self) -> str:

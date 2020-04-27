@@ -70,6 +70,7 @@ from idb.cli.commands.screenshot import ScreenshotCommand
 from idb.cli.commands.target import (
     ConnectCommandException,
     TargetBootCommand,
+    TargetCloneCommand,
     TargetConnectCommand,
     TargetCreateCommand,
     TargetDeleteAllCommand,
@@ -201,6 +202,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
         TargetBootCommand(),
         TargetShutdownCommand(),
         TargetEraseCommand(),
+        TargetCloneCommand(),
         TargetDeleteCommand(),
         TargetDeleteAllCommand(),
         DaemonCommand(),

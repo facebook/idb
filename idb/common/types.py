@@ -450,6 +450,9 @@ class IdbManagementClient:
     async def erase(self, udid: str) -> None:
         pass
 
+    async def clone(self, udid: str) -> str:
+        pass
+
     async def kill(self) -> None:
         pass
 
