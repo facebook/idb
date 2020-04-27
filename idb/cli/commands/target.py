@@ -202,14 +202,15 @@ class TargetCreateCommand(ManagementCommand):
         print(udid)
 
 
-class TargetBootCommand(ManagementCommand):
+class UDIDTargetedManagementCommand(ManagementCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
-        parser.add_argument(
-            "--udid",
-            help="Udid of target, can also be set with the IDB_UDID env var",
-            required=True,
-            default=os.environ.get("IDB_UDID"),
-        )
+        super().add_parser_arguments(parser=parser)
+        parser.add_argument("udid", help="The UDID of the target")
+
+
+class TargetBootCommand(UDIDTargetedManagementCommand):
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        super().add_parser_arguments(parser)
         parser.add_argument(
             "--headless",
             help="Boot the simulator headlessly. "
@@ -218,7 +219,6 @@ class TargetBootCommand(ManagementCommand):
             default=False,
             action="store_true",
         )
-        super().add_parser_arguments(parser)
 
     @property
     def description(self) -> str:
