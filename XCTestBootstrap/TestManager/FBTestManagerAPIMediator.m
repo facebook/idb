@@ -42,7 +42,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 @property (nonatomic, strong, readonly) FBTestManagerContext *context;
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
-
+@property (nonatomic, copy, nullable, readonly) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
 
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
 @property (nonatomic, strong, readonly) FBTestReporterForwarder *reporterForwarder;
@@ -53,7 +53,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 @property (nonatomic, strong, readonly) FBTestDaemonConnection *daemonConnection;
 @property (nonatomic, strong, nullable, readwrite) FBTestManagerResult *result;
 
-@property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
 @end
 
 @implementation FBTestManagerAPIMediator
