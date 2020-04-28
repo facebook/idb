@@ -43,6 +43,7 @@
   }
 
   _simulator = simulator;
+
   return self;
 }
 
@@ -51,29 +52,6 @@
 - (FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   return [self startTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter logger:logger workingDirectory:self.simulator.auxillaryDirectory];
-}
-
-- (FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger workingDirectory:(nullable NSString *)workingDirectory
-{
-  if (self.simulator.state != FBiOSTargetStateBooted) {
-    return [[[FBSimulatorError
-      describe:@"Simulator must be booted to run tests"]
-      inSimulator:self.simulator]
-      failFuture];
-  }
-  FBSimulatorTestPreparationStrategy *testPreparationStrategy = [FBSimulatorTestPreparationStrategy
-    strategyWithTestLaunchConfiguration:testLaunchConfiguration
-    workingDirectory:workingDirectory];
-  return (FBFuture<id<FBiOSTargetContinuation>> *) [[FBManagedTestRunStrategy
-    strategyWithTarget:self.simulator configuration:testLaunchConfiguration reporter:reporter logger:logger testPreparationStrategy:testPreparationStrategy]
-    connectAndStart];
-}
-
-- (FBFuture<NSNull *> *)runApplicationTest:(FBTestManagerTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter
-{
-  return [[FBTestRunStrategy
-    strategyWithTarget:self.simulator configuration:configuration reporter:reporter logger:self.simulator.logger testPreparationStrategyClass:FBSimulatorTestPreparationStrategy.class]
-    execute];
 }
 
 - (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
@@ -127,6 +105,22 @@
 }
 
 #pragma mark Private
+
+- (FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger workingDirectory:(nullable NSString *)workingDirectory
+{
+  if (self.simulator.state != FBiOSTargetStateBooted) {
+    return [[[FBSimulatorError
+      describe:@"Simulator must be booted to run tests"]
+      inSimulator:self.simulator]
+      failFuture];
+  }
+  FBSimulatorTestPreparationStrategy *testPreparationStrategy = [FBSimulatorTestPreparationStrategy
+    strategyWithTestLaunchConfiguration:testLaunchConfiguration
+    workingDirectory:workingDirectory];
+  return (FBFuture<id<FBiOSTargetContinuation>> *) [[FBManagedTestRunStrategy
+    strategyWithTarget:self.simulator configuration:testLaunchConfiguration reporter:reporter logger:logger testPreparationStrategy:testPreparationStrategy]
+    connectAndStart];
+}
 
 - (int)makeTestManagerDaemonSocketWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {

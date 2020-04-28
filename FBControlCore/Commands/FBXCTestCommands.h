@@ -8,6 +8,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFuture.h>
+#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBTestLaunchConfiguration.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -22,9 +23,9 @@ NS_ASSUME_NONNULL_BEGIN
 extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestOperation;
 
 /**
- Commands to perform on an iOS Target, related to XCTest.
+ Commands related to XCTest Execution.
  */
-@protocol FBXCTestCommands <NSObject>
+@protocol FBXCTestCommands <NSObject, FBiOSTargetCommand>
 
 /**
  Bootstraps a test run using a Test Launch Configuration.
