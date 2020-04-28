@@ -41,6 +41,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 @property (nonatomic, strong, readonly) FBTestManagerContext *context;
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
+@property (nonatomic, strong, readonly) id<FBTestManagerTestReporter> reporter;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, copy, nullable, readonly) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
 
@@ -73,6 +74,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
   _context = context;
   _target = target;
+  _reporter = reporter;
   _logger = logger;
   _testedApplicationAdditionalEnvironment = testedApplicationAdditionalEnvironment;
 
@@ -125,13 +127,19 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (FBFuture<FBTestManagerResult *> *)execute
 {
+  id<FBTestManagerTestReporter> reporter = self.reporter;
   return [[[FBFuture
     futureWithFutures:@[self.bundleConnection.startTestPlan, self.daemonConnection.notifyTestPlanStarted]]
     onQueue:self.target.workQueue fmap:^FBFuture *(FBTestManagerResult *result) {
       return [FBFuture futureWithFutures:@[self.bundleConnection.completeTestRun, self.daemonConnection.completed]];
     }]
-    onQueue:self.target.asyncQueue map:^FBTestManagerResult *(NSArray *results){
-      return FBTestManagerResult.success;
+    onQueue:self.target.workQueue chain:^ FBFuture <FBTestManagerResult *> * (FBFuture<NSArray<id> *> *future){
+      NSError *error = future.error;
+      if (error) {
+        [reporter testManagerMediator:self testPlanDidFailWithMessage:error.description];
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:FBTestManagerResult.success];
     }];
 }
 
