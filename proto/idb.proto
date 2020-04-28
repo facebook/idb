@@ -327,6 +327,7 @@ message XctestRunRequest {
   repeated string arguments = 5;
   map<string, string> environment = 6;
   uint64 timeout = 7;
+  bool report_activities = 8;
 }
 
 message XctestRunResponse {

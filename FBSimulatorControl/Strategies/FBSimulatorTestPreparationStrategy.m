@@ -98,7 +98,7 @@
   // Prepare XCTest bundle
   NSError *error;
   NSUUID *sessionIdentifier = [NSUUID UUID];
-  FBTestBundle *testBundle = [[[[[[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
+  FBTestBundle *testBundle = [[[[[[[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
     withBundlePath:self.testLaunchConfiguration.testBundlePath]
     withUITesting:self.testLaunchConfiguration.shouldInitializeUITesting]
     withTestsToSkip:self.testLaunchConfiguration.testsToSkip]
@@ -108,6 +108,7 @@
     withTargetApplicationPath:self.testLaunchConfiguration.targetApplicationPath]
     withTargetApplicationBundleID:self.testLaunchConfiguration.targetApplicationBundleID]
     withAutomationFrameworkPath:automationFrameworkPath]
+    withReportActivities:self.testLaunchConfiguration.reportActivities]
     buildWithError:&error];
   if (!testBundle) {
     return [[[XCTestBootstrapError

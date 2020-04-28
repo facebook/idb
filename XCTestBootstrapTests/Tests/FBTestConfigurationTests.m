@@ -53,6 +53,7 @@
     targetApplicationBundleID:@"targetBundleID"
     automationFrameworkPath:nil
     savePath:savePath
+    reportActivities:NO
     error:&error];
 
   XCTAssertNil(error);

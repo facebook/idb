@@ -27,6 +27,7 @@
 @property (nonatomic, copy) NSString *targetApplicationBundleID;
 @property (nonatomic, copy) NSString *targetApplicationPath;
 @property (nonatomic, copy) NSString *automationFrameworkPath;
+@property (nonatomic, assign) BOOL reportActivities;
 @end
 
 @implementation FBTestBundleBuilder
@@ -73,6 +74,12 @@
   return self;
 }
 
+- (instancetype)withReportActivities:(BOOL)reportActivities
+{
+  self.reportActivities = reportActivities;
+  return self;
+}
+
 - (Class)productClass
 {
   return FBTestBundle.class;
@@ -99,6 +106,7 @@
       targetApplicationBundleID:self.targetApplicationBundleID
       automationFrameworkPath:self.automationFrameworkPath
       savePath:[testBundle.path stringByAppendingPathComponent:testConfigurationFileName]
+      reportActivities:self.reportActivities
       error:&innerError];
 
     if (!testBundle.configuration) {

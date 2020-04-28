@@ -82,6 +82,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, nullable) NSString *resultBundlePath;
 
 /**
+ Determines whether xctest should report activity data
+ */
+@property (nonatomic, assign, readonly) BOOL reportActivities;
+
+/**
  Adds application launch configuration
 
  @param applicationLaunchConfiguration added application launch configuration
@@ -161,6 +166,15 @@ NS_ASSUME_NONNULL_BEGIN
  @return new test launch configuration with changes applied.
  */
 - (instancetype)withResultBundlePath:(NSString *)resultBundlePath;
+
+
+/**
+ If set xctest will report activity data
+
+ @param reportActivities set to report activity data
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withReportActivities:(BOOL)reportActivities;
 
 @end
 

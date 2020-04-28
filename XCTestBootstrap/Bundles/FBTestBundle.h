@@ -83,6 +83,14 @@
 - (instancetype)withAutomationFrameworkPath:(NSString *)automationFrameworkPath;
 
 /**
+ Controls whether activities are reported
+
+ @param reportActivities if set activity data will be reported
+ @return builder
+*/
+- (instancetype)withReportActivities:(BOOL)reportActivities;
+
+/**
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return prepared test bundle if the operation succeeds, otherwise nil.
  */

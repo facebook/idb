@@ -34,9 +34,10 @@ NS_ASSUME_NONNULL_BEGIN
  @param testsToRun the tests to run.
  @param testsToSkip the tests to skip
  @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
+ @param reportActivities if set activities and their data will be reported
  @return an FBXCTestRunRequest instance.
  */
-+ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout;
++ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities;
 
 /**
 The Initializer for Logic Tests.
@@ -48,9 +49,10 @@ The Initializer for Logic Tests.
  @param testsToRun the tests to run.
  @param testsToSkip the tests to skip
  @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
+ @param reportActivities if set activities and their data will be reported
  @return an FBXCTestRunRequest instance.
 */
-+ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout;
++ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities;
 
 /**
 The Initializer for Logic Tests.
@@ -63,9 +65,10 @@ The Initializer for Logic Tests.
  @param testsToRun the tests to run.
  @param testsToSkip the tests to skip
  @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
+@param reportActivities if set activities and their data will be reported
  @return an FBXCTestRunRequest instance.
 */
-+ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout;
++ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities;
 
 #pragma mark Properties
 
@@ -118,6 +121,12 @@ The Initializer for Logic Tests.
  The timeout of the entire execution, if relevant.
  */
 @property (nonatomic, copy, nullable, readonly) NSNumber *testTimeout;
+
+
+/**
+ If set activities and their data will be reported
+ */
+@property (nonatomic, assign, readonly) BOOL reportActivities;
 
 /**
  Starts the test operation.
