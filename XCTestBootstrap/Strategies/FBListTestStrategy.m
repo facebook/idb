@@ -56,7 +56,7 @@
         NSString *className = [testName substringToIndex:slashRange.location];
         NSString *methodName = [testName substringFromIndex:slashRange.location + 1];
         [self.reporter testCaseDidStartForTestClass:className method:methodName];
-        [self.reporter testCaseDidFinishForTestClass:className method:methodName withStatus:FBTestReportStatusPassed duration:0];
+        [self.reporter testCaseDidFinishForTestClass:className method:methodName withStatus:FBTestReportStatusPassed duration:0 logs:nil];
       }
       [self.reporter didFinishExecutingTestPlan];
 

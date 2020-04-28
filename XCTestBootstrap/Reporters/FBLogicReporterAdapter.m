@@ -111,10 +111,10 @@
   NSTimeInterval duration = [JSONEvent[@"totalDuration"] doubleValue];
 
   if ([result isEqualToString:@"success"]) {
-    [reporter testCaseDidFinishForTestClass:testClass method:testName withStatus:FBTestReportStatusPassed duration:duration];
+    [reporter testCaseDidFinishForTestClass:testClass method:testName withStatus:FBTestReportStatusPassed duration:duration logs:nil];
   } else if ([[NSSet setWithArray:@[@"failure", @"error"]] containsObject:result]) {
     [self reportTestFailureForTestClass:testClass testName:testName endTestEvent:JSONEvent];
-    [reporter testCaseDidFinishForTestClass:testClass method:testName withStatus:FBTestReportStatusFailed duration:duration];
+    [reporter testCaseDidFinishForTestClass:testClass method:testName withStatus:FBTestReportStatusFailed duration:duration logs:nil];
   } else {
     // We don't know how to handle it, but an upstream reporter might.
     NSString *stringEvent = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
