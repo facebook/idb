@@ -16,11 +16,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBActivityRecord : NSObject
 
-@property (nonatomic, copy, readonly) NSData *memoryGraphData;
-@property (nonatomic, copy, readonly) NSData *diagnosticReportData;
-@property (nonatomic, copy, readonly) NSArray *elementsOfInterest;
-@property (nonatomic, copy, readonly) NSData *screenImageData;
-@property (nonatomic, assign, readonly) BOOL hasSubactivities;
 @property (nonatomic, copy, readonly) NSDate *start;
 @property (nonatomic, copy, readonly) NSDate *finish;
 @property (nonatomic, copy, readonly) NSUUID *uuid;

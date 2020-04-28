@@ -23,11 +23,6 @@
     return nil;
   }
 
-  _memoryGraphData = record.memoryGraphData;
-  _diagnosticReportData = record.diagnosticReportData;
-  _elementsOfInterest = record.elementsOfInterest;
-  _screenImageData = record.screenImageData;
-  _hasSubactivities = record.hasSubactivities;
   _start = record.start;
   _finish = record.finish;
   _uuid = record.uuid;
@@ -39,7 +34,7 @@
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Title %@ | Duration %f | HasSubactivities %hhd | ScreenImageData %@ | ElementsOfInterest %@ | DiagnosticReportData %@ | MemoryGraphData %@ | Start %@ | Finish %@ | Uuid %@", self.title, self.duration, self.hasSubactivities, self.screenImageData, self.elementsOfInterest, self.diagnosticReportData, self.memoryGraphData, self.start, self.finish, self.uuid];
+  return [NSString stringWithFormat:@"Title %@ | Duration %f | Start %@ | Finish %@ | Uuid %@", self.title, self.duration, self.start, self.finish, self.uuid];
 }
 
 @end
