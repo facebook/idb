@@ -96,7 +96,7 @@ static FBTestManagerResultSummary *summaryFromDictionary(NSDictionary *JSONEvent
     @"filePathInProject": file,
   }];
   [[mock expect] testCaseDidFailForTestClass:event[@"className"] method:event[@"methodName"] withMessage:message file:file line:line];
-  [[mock expect] testCaseDidFinishForTestClass:event[@"className"] method:event[@"methodName"] withStatus:FBTestReportStatusFailed duration:duration];
+  [[mock expect] testCaseDidFinishForTestClass:event[@"className"] method:event[@"methodName"] withStatus:FBTestReportStatusFailed duration:duration logs:nil];
 
   NSData *data = [NSJSONSerialization dataWithJSONObject:event options:0 error:NULL];
   [self.adapter handleEventJSONData:data];
@@ -121,7 +121,7 @@ static FBTestManagerResultSummary *summaryFromDictionary(NSDictionary *JSONEvent
     @"filePathInProject": file,
   }];
   [[mock expect] testCaseDidFailForTestClass:event[@"className"] method:event[@"methodName"] withMessage:message file:file line:line];
-  [[mock expect] testCaseDidFinishForTestClass:event[@"className"] method:event[@"methodName"] withStatus:FBTestReportStatusFailed duration:duration];
+  [[mock expect] testCaseDidFinishForTestClass:event[@"className"] method:event[@"methodName"] withStatus:FBTestReportStatusFailed duration:duration logs:nil];
 
   NSData *data = [NSJSONSerialization dataWithJSONObject:event options:0 error:NULL];
   [self.adapter handleEventJSONData:data];
@@ -138,7 +138,7 @@ static FBTestManagerResultSummary *summaryFromDictionary(NSDictionary *JSONEvent
   event[@"event"] = @"end-test";
   event[@"result"] = @"success";
 
-  [[mock expect] testCaseDidFinishForTestClass:event[@"className"] method:event[@"methodName"] withStatus:FBTestReportStatusPassed duration:duration];
+  [[mock expect] testCaseDidFinishForTestClass:event[@"className"] method:event[@"methodName"] withStatus:FBTestReportStatusPassed duration:duration logs:nil];
 
   NSData *data = [NSJSONSerialization dataWithJSONObject:event options:0 error:NULL];
   [self.adapter handleEventJSONData:data];

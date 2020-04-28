@@ -84,7 +84,7 @@
 {
   [self.reporter didBeginExecutingTestPlan];
   [self.reporter testCaseDidStartForTestClass:@"FooTest" method:@"BarCase"];
-  [self.reporter testCaseDidFinishForTestClass:@"FooTest" method:@"BarCase" withStatus:FBTestReportStatusPassed duration:1];
+  [self.reporter testCaseDidFinishForTestClass:@"FooTest" method:@"BarCase" withStatus:FBTestReportStatusPassed duration:1 logs:nil];
   [self.reporter didFinishExecutingTestPlan];
   NSError *error = nil;
   BOOL success = [self.reporter printReportWithError:&error];
@@ -124,7 +124,7 @@
   [self.reporter didBeginExecutingTestPlan];
   for (NSArray<NSString *> *pairs in cases.allKeys) {
     [self.reporter testCaseDidStartForTestClass:pairs[0] method:pairs[1]];
-    [self.reporter testCaseDidFinishForTestClass:pairs[0] method:pairs[1] withStatus:cases[pairs].unsignedIntegerValue duration:1];
+    [self.reporter testCaseDidFinishForTestClass:pairs[0] method:pairs[1] withStatus:cases[pairs].unsignedIntegerValue duration:1 logs:nil];
   }
   [self.reporter didFinishExecutingTestPlan];
   NSError *error = nil;
@@ -148,7 +148,7 @@
   [self.reporter didBeginExecutingTestPlan];
   [self.reporter testCaseDidStartForTestClass:@"FooTest" method:@"BarCase"];
   [self.reporter testCaseDidFailForTestClass:@"FooTest" method:@"BarCase" withMessage:@"BadBar" file:@"BadFile" line:42];
-  [self.reporter testCaseDidFinishForTestClass:@"FooTest" method:@"BarCase" withStatus:FBTestReportStatusFailed duration:1];
+  [self.reporter testCaseDidFinishForTestClass:@"FooTest" method:@"BarCase" withStatus:FBTestReportStatusFailed duration:1 logs:nil];
   [self.reporter didFinishExecutingTestPlan];
   NSError *error = nil;
   BOOL success = [self.reporter printReportWithError:&error];
@@ -182,7 +182,7 @@
   [self.reporter didBeginExecutingTestPlan];
   [self.reporter testCaseDidStartForTestClass:@"FooTest" method:@"BarCase"];
   [self.reporter testHadOutput:@"Some Output For Foo"];
-  [self.reporter testCaseDidFinishForTestClass:@"FooTest" method:@"BarCase" withStatus:FBTestReportStatusPassed duration:1];
+  [self.reporter testCaseDidFinishForTestClass:@"FooTest" method:@"BarCase" withStatus:FBTestReportStatusPassed duration:1 logs:nil];
   [self.reporter didFinishExecutingTestPlan];
   NSError *error = nil;
   BOOL success = [self.reporter printReportWithError:&error];
@@ -217,7 +217,7 @@
 {
   [self.reporter didBeginExecutingTestPlan];
   [self.reporter testCaseDidStartForTestClass:@"FooTest" method:@"BarCase"];
-  [self.reporter testCaseDidFinishForTestClass:@"FooTest" method:@"BarCase" withStatus:FBTestReportStatusFailed duration:1];
+  [self.reporter testCaseDidFinishForTestClass:@"FooTest" method:@"BarCase" withStatus:FBTestReportStatusFailed duration:1 logs:nil];
   NSError *error = nil;
   BOOL success = [self.reporter printReportWithError:&error];
   XCTAssertFalse(success);
