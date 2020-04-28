@@ -59,9 +59,14 @@
   [self testManagerMediator:mediator testCaseDidFinishForTestClass:testClass method:method withStatus:status duration:duration logs: nil];
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(NSArray<NSString *> *)logs
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration  logs:(NSArray *)logs
 {
-  [_reporter testCaseDidFinishForTestClass:testClass method:method withStatus:status duration:duration logs:logs];
+  if ([_reporter respondsToSelector:@selector(testCaseDidFinishForTestClass:method:withStatus:duration:logs:)]) {
+    [_reporter testCaseDidFinishForTestClass:testClass method:method withStatus:status duration:duration logs:logs];
+  }
+  else {
+    [_reporter testCaseDidFinishForTestClass:testClass method:method withStatus:status duration:duration];
+  }
 }
 
 - (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator finishedWithSummary:(FBTestManagerResultSummary *)summary
