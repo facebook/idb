@@ -48,14 +48,16 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime;
 
 /**
- Called when a test case has finished.
+ Called when a test case has finished
 
+ @note This will be called instead of testCaseDidFinishForTestClass:method:withStatus:duration:logs: if implemented
  @param testClass the test class that has finished.
  @param method the test method that has finished.
  @param status the status of the finish of the test case.
  @param duration the duration of the test case.
+ @param logs the logs from the test case.
  */
-- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration;
+- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(nullable NSArray<NSString *> *)logs;
 
 /**
  Called when a test case has failed.
@@ -122,18 +124,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param activity information about the activity
  */
 - (void)testCase:(NSString *)testClass method:(NSString *)method didFinishActivity:(FBActivityRecord *)activity;
-
-/**
- Called when a test case has finished
-
- @note This will be called instead of testCaseDidFinishForTestClass:method:withStatus:duration:logs: if implemented
- @param testClass the test class that has finished.
- @param method the test method that has finished.
- @param status the status of the finish of the test case.
- @param duration the duration of the test case.
- @param logs the logs from the test case.
- */
-- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(nullable NSArray<NSString *> *)logs;
 
 /**
  Called when the test plan fails for some global issue not specific to any one test
