@@ -109,35 +109,32 @@
       [self.logger logFormat:@"Deleting Simulator %@", simulator];
       return [FBSimulatorDeletionStrategy onDeviceSet:self.set.deviceSet performDeletionOfDevice:simulator.device onQueue:simulator.asyncQueue];
     }]
-    onQueue:workQueue fmap:^(id _) {
-      [self.logger logFormat:@"Simulator Deleted Successfully %@", simulator];
+    onQueue:workQueue doOnResolved:^(id _) {
+      [self.logger logFormat:@"Simulator %@ Deleted", udid];
 
       // The Logfiles now need disposing of. 'erasing' a Simulator will cull the logfiles,
       // but deleting a Simulator will not. There's no sense in letting this directory accumilate files.
       if ([NSFileManager.defaultManager fileExistsAtPath:coreSimulatorLogsDirectory]) {
-        [self.logger logFormat:@"Deleting Log Directory at %@", coreSimulatorLogsDirectory];
+        [self.logger logFormat:@"Deleting Simulator Log Directory at %@", coreSimulatorLogsDirectory];
         NSError *error = nil;
-        if (![NSFileManager.defaultManager removeItemAtPath:coreSimulatorLogsDirectory error:&error]) {
-          return [[[[FBSimulatorError
-            describeFormat:@"Failed to delete Simulator Log Directory %@.", coreSimulatorLogsDirectory]
-            causedBy:error]
-            logger:self.logger]
-            failFuture];
+        if ([NSFileManager.defaultManager removeItemAtPath:coreSimulatorLogsDirectory error:&error]) {
+          [self.logger logFormat:@"Deleted Simulator Log Directory at %@", coreSimulatorLogsDirectory];
+        } else {
+          [self.logger.error logFormat:@"Failed to delete Simulator Log Directory %@: %@", coreSimulatorLogsDirectory, error];
         }
-        [self.logger logFormat:@"Deleted Log Directory at %@", coreSimulatorLogsDirectory];
       }
-      return [FBFuture futureWithResult:udid];
     }];
 }
 
-+ (FBFuture<NSNull *> *)onDeviceSet:(SimDeviceSet *)deviceSet performDeletionOfDevice:(SimDevice *)device onQueue:(dispatch_queue_t)queue
++ (FBFuture<NSString *> *)onDeviceSet:(SimDeviceSet *)deviceSet performDeletionOfDevice:(SimDevice *)device onQueue:(dispatch_queue_t)queue
 {
-  FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
+  NSString *udid = device.UDID.UUIDString;
+  FBMutableFuture<NSString *> *future = FBMutableFuture.future;
   [deviceSet deleteDeviceAsync:device completionQueue:queue completionHandler:^(NSError *error) {
     if (error) {
       [future resolveWithError:error];
     } else {
-      [future resolveWithResult:NSNull.null];
+      [future resolveWithResult:udid];
     }
   }];
   return future;
