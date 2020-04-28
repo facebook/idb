@@ -9,6 +9,7 @@
 
 #import <XCTestBootstrap/FBTestManagerResultSummary.h>
 #import <XCTestBootstrap/FBActivityRecord.h>
+#import <XCTestBootstrap/FBAttachment.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

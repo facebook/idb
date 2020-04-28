@@ -337,10 +337,22 @@ message XctestRunResponse {
       string file = 2;
       uint64 line = 3;
     }
+    message TestAttachment {
+      bytes payload = 1;
+      double timestamp = 2;
+      string name = 3;
+      string uniform_type_identifier = 4;
+    }
     message TestActivity {
       string title = 1;
       double duration = 2;
       string uuid = 3;
+      string activity_type = 4;
+      double start = 5;
+      double finish = 6;
+      string name = 7;
+      repeated TestAttachment attachments = 8;
+      repeated TestActivity sub_activities = 9;
     }
     enum Status {
       PASSED = 0;

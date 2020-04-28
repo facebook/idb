@@ -6,6 +6,7 @@
  */
 
 #import "FBActivityRecord.h"
+#import "FBAttachment.h"
 #import <XCTest/XCActivityRecord.h>
 
 @implementation FBActivityRecord
@@ -23,11 +24,19 @@
     return nil;
   }
 
+  _title = record.title;
+  _activityType = record.activityType;
+  _uuid = record.uuid;
   _start = record.start;
   _finish = record.finish;
-  _uuid = record.uuid;
-  _title = record.title;
+  NSMutableArray <FBAttachment *> *attachments = [NSMutableArray array];
+  for (XCTAttachment *attachment in record.attachments) {
+    [attachments addObject:[FBAttachment from:attachment]];
+  }
+  _attachments = attachments;
   _duration = record.duration;
+  _name = record.name;
+  _subactivities = [NSMutableArray array];
 
   return self;
 }

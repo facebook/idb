@@ -85,7 +85,8 @@
   [self writeTestRunInfo:info];
 }
 
-- (void)testCase:(NSString *)testClass method:(NSString *)method willStartActivity:(FBActivityRecord *)activity
+
+- (void)testCase:(NSString *)testClass method:(NSString *)method didFinishActivity:(FBActivityRecord *)activity
 {
   [self.currentActivityRecords addObject:activity];
 }
@@ -181,14 +182,51 @@
   for (NSString *log in logs) {
     info.add_logs(log.UTF8String ?: "");
   }
-  for (FBActivityRecord *activity in self.currentActivityRecords) {
-    idb::XctestRunResponse_TestRunInfo_TestActivity *activityOut = info.add_activitylogs();
-    activityOut->set_title(activity.title.UTF8String ?: "");
-    activityOut->set_duration(activity.duration);
-    activityOut->set_uuid(activity.uuid.UUIDString.UTF8String ?: "");
+  NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"start" ascending:YES];
+  [self.currentActivityRecords sortUsingDescriptors:@[sortDescriptor]];
+  NSMutableArray<FBActivityRecord *> *stackedActivities = [NSMutableArray array];
+  while (self.currentActivityRecords.count) {
+    FBActivityRecord *activity = self.currentActivityRecords[0];
+    [self.currentActivityRecords removeObjectAtIndex:0];
+    [self populateSubactivities:activity remaining:self.currentActivityRecords];
+    [stackedActivities addObject:activity];
+  }
+  for (FBActivityRecord *activity in stackedActivities) {
+    [self translateActivity:activity activityOut:info.add_activitylogs()];
   }
   [self resetCurrentTestState];
   return info;
+}
+
+- (void)populateSubactivities:(FBActivityRecord *)root remaining:(NSMutableArray<FBActivityRecord *> *)remaining {
+  while (remaining.count && root.start.timeIntervalSince1970 <= remaining[0].start.timeIntervalSince1970 && root.finish.timeIntervalSince1970 >= remaining[0].finish.timeIntervalSince1970) {
+    FBActivityRecord *sub = remaining[0];
+    [remaining removeObjectAtIndex:0];
+    [self populateSubactivities:sub remaining:remaining];
+    [root.subactivities addObject:sub];
+  }
+}
+
+- (void)translateActivity:(FBActivityRecord *)activity activityOut:(idb::XctestRunResponse_TestRunInfo_TestActivity *)activityOut
+{
+  activityOut->set_title(activity.title.UTF8String ?: "");
+  activityOut->set_duration(activity.duration);
+  activityOut->set_uuid(activity.uuid.UUIDString.UTF8String ?: "");
+  activityOut->set_activity_type(activity.activityType.UTF8String ?: "");
+  activityOut->set_start(activity.start.timeIntervalSince1970);
+  activityOut->set_finish(activity.finish.timeIntervalSince1970);
+  activityOut->set_name(activity.name.UTF8String ?: "");
+  for (FBAttachment *attachment in activity.attachments) {
+    idb::XctestRunResponse_TestRunInfo_TestAttachment *attachmentOut = activityOut->add_attachments();
+    attachmentOut->set_payload(attachment.payload.bytes, attachment.payload.length);
+    attachmentOut->set_name(attachment.name.UTF8String ?: "");
+    attachmentOut->set_timestamp(attachment.timestamp.timeIntervalSince1970);
+    attachmentOut->set_uniform_type_identifier(attachment.uniformTypeIdentifier.UTF8String ?: "");
+  }
+  for (FBActivityRecord *subActitvity in activity.subactivities) {
+    idb::XctestRunResponse_TestRunInfo_TestActivity *subactivityOut = activityOut->add_sub_activities();
+    [self translateActivity:subActitvity activityOut:subactivityOut];
+  }
 }
 
 - (const idb::XctestRunResponse_TestRunInfo_TestRunFailureInfo)failureInfoWithMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line

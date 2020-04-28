@@ -76,15 +76,15 @@
 
 - (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCase:(NSString *)testClass method:(NSString *)method willStartActivity:(FBActivityRecord *)activity
 {
-  if ([_reporter respondsToSelector:@selector(testManagerMediator:testCase:method:willStartActivity:)]) {
+  if ([_reporter respondsToSelector:@selector(testCase:method:willStartActivity:)]) {
     [_reporter testCase:testClass method:method willStartActivity:activity];
   }
 }
 
 - (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCase:(NSString *)testClass method:(NSString *)method didFinishActivity:(FBActivityRecord *)activity
 {
-  if ([_reporter respondsToSelector:@selector(testManagerMediator:testCase:method:didFinishActivity:)]) {
-    [_reporter testCase:testClass method:method willStartActivity:activity];
+  if ([_reporter respondsToSelector:@selector(testCase:method:didFinishActivity:)]) {
+    [_reporter testCase:testClass method:method didFinishActivity:activity];
   }
 }
 
