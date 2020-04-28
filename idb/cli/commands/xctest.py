@@ -128,6 +128,18 @@ class CommonRunXcTestCommand(CompanionCommand):
         parser.add_argument(
             "--timeout", help="Seconds before timeout occurs", default=3600, type=int
         )
+        parser.add_argument(
+            "--report-activities",
+            action="store_true",
+            help="idb will report activity data emitted by your test bundle",
+        )
+        parser.add_argument(
+            "--activities-output-path",
+            help=(
+                "When activity data is reported, "
+                "data blobs will be saved to this location"
+            ),
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
@@ -157,6 +169,8 @@ class CommonRunXcTestCommand(CompanionCommand):
             env=get_env_with_idb_prefix(),
             args=arguments,
             result_bundle_path=args.result_bundle_path,
+            report_activities=args.report_activities,
+            activities_output_path=args.activities_output_path,
         ):
             print(formatter(test_result))
 

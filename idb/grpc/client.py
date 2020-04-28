@@ -125,7 +125,12 @@ from idb.grpc.stream import (
 )
 from idb.grpc.target import target_to_py
 from idb.grpc.video import generate_video_bytes
-from idb.grpc.xctest import make_request, make_results, write_result_bundle
+from idb.grpc.xctest import (
+    make_request,
+    make_results,
+    save_attachments,
+    write_result_bundle,
+)
 from idb.utils.contextlib import asynccontextmanager
 
 
@@ -735,6 +740,8 @@ class IdbClient(IdbClientBase):
         idb_log_buffer: Optional[StringIO] = None,
         timeout: Optional[int] = None,
         poll_interval_sec: float = TESTS_POLL_INTERVAL,
+        report_activities: bool = False,
+        activities_output_path: Optional[str] = None,
     ) -> AsyncIterator[TestRunInfo]:
         async with self.stub.xctest_run.open() as stream:
             request = make_request(
@@ -749,6 +756,9 @@ class IdbClient(IdbClientBase):
                 args=args,
                 result_bundle_path=result_bundle_path,
                 timeout=timeout,
+                report_activities=(
+                    report_activities or activities_output_path is not None
+                ),
             )
             await stream.send_message(request)
             await stream.end()
@@ -770,6 +780,11 @@ class IdbClient(IdbClientBase):
                         logger=self.logger,
                     )
                 for result in make_results(response):
+                    if activities_output_path:
+                        save_attachments(
+                            run_info=result,
+                            activities_output_path=activities_output_path,
+                        )
                     yield result
 
     @log_and_handle_exceptions

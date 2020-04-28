@@ -11,7 +11,12 @@ from logging import Logger
 from typing import Any, Dict, List, Optional, Set
 
 from idb.common.tar import untar
-from idb.common.types import TestActivity, TestRunFailureInfo, TestRunInfo
+from idb.common.types import (
+    TestActivity,
+    TestAttachment,
+    TestRunFailureInfo,
+    TestRunInfo,
+)
 from idb.grpc.idb_pb2 import XctestRunRequest, XctestRunResponse
 
 
@@ -83,6 +88,7 @@ def make_request(
     args: Optional[List[str]],
     result_bundle_path: Optional[str],
     timeout: Optional[int],
+    report_activities: bool,
 ) -> XctestRunRequest:
     if is_logic_test:
         mode = Mode(logic=Logic())
@@ -103,6 +109,7 @@ def make_request(
         tests_to_skip=list(tests_to_skip or []),
         environment=env,
         arguments=args,
+        report_activities=report_activities,
     )
 
 
@@ -139,12 +146,69 @@ def make_results(response: XctestRunResponse) -> List[TestRunInfo]:
                 else None
             ),
             activityLogs=[
-                TestActivity(
-                    title=activity.title, duration=activity.duration, uuid=activity.uuid
-                )
-                for activity in result.activityLogs or []
+                translate_activity(activity) for activity in result.activityLogs or []
             ],
             crashed=result.status == XctestRunResponse.TestRunInfo.CRASHED,
         )
         for result in response.results or []
     ]
+
+
+def translate_activity(
+    activity: XctestRunResponse.TestRunInfo.TestActivity
+) -> TestActivity:
+    return TestActivity(
+        title=activity.title,
+        duration=activity.duration,
+        uuid=activity.uuid,
+        activity_type=activity.activity_type,
+        start=activity.start,
+        finish=activity.finish,
+        name=activity.name,
+        attachments=[
+            TestAttachment(
+                payload=attachment.payload,
+                timestamp=attachment.timestamp,
+                name=attachment.name,
+                uniform_type_identifier=attachment.uniform_type_identifier,
+            )
+            for attachment in activity.attachments or []
+        ],
+        sub_activities=[
+            translate_activity(sub_activity)
+            for sub_activity in activity.sub_activities or []
+        ],
+    )
+
+
+def save_attachments(run_info: TestRunInfo, activities_output_path: str) -> None:
+    test_name = (
+        f"{run_info.bundle_name} - {run_info.class_name} - {run_info.method_name}"
+    )
+    base_path = os.path.join(activities_output_path, test_name)
+    os.makedirs(base_path)
+    for activity in run_info.activityLogs or []:
+        save_activities_attachments(activity, base_path)
+
+
+def save_activities_attachments(activity: TestActivity, path: str) -> None:
+    for attachment in activity.attachments:
+        extension = attachment_to_file_extension(attachment)
+        attachment_path = os.path.join(
+            path,
+            f"{attachment.timestamp} - {activity.name} - {attachment.name}.{extension}",
+        )
+        with open(attachment_path, "wb") as f:
+            f.write(attachment.payload)
+    for sub_activity in activity.sub_activities:
+        save_activities_attachments(sub_activity, path)
+
+
+def attachment_to_file_extension(attachment: TestAttachment) -> str:
+    uti = attachment.uniform_type_identifier
+    if uti == "public.jpeg":
+        return "jpeg"
+    elif uti == "public.png":
+        return "png"
+    else:
+        return "data"

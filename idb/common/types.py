@@ -6,6 +6,7 @@
 
 import asyncio
 from abc import ABCMeta
+from dataclasses import dataclass
 from enum import Enum
 from io import StringIO
 from typing import (
@@ -151,13 +152,29 @@ class TestRunFailureInfo(NamedTuple):
     line: int
 
 
-class TestActivity(NamedTuple):
+@dataclass(frozen=True)
+class TestAttachment:
+    payload: bytes
+    timestamp: float
+    name: str
+    uniform_type_identifier: str
+
+
+@dataclass(frozen=True)
+class TestActivity:
     title: str
     duration: float
     uuid: str
+    activity_type: str
+    start: float
+    finish: float
+    name: str
+    attachments: List[TestAttachment]
+    sub_activities: List["TestActivity"]
 
 
-class TestRunInfo(NamedTuple):
+@dataclass(frozen=True)
+class TestRunInfo:
     bundle_name: str
     class_name: str
     method_name: str
@@ -254,6 +271,8 @@ class IdbClient:
         idb_log_buffer: Optional[StringIO] = None,
         timeout: Optional[int] = None,
         poll_interval_sec: float = 0.5,
+        report_activities: bool = False,
+        activities_output_path: Optional[str] = None,
     ) -> AsyncIterator[TestRunInfo]:
         yield
 

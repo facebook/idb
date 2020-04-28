@@ -4,9 +4,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import base64
 import json
 from textwrap import indent
 from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
 from idb.common.types import (
     AppProcessState,
@@ -18,6 +20,7 @@ from idb.common.types import (
     TestRunFailureInfo,
     TestRunInfo,
 )
+from treelib import Tree
 
 
 def human_format_test_info(test: TestRunInfo) -> str:
@@ -41,7 +44,33 @@ def human_format_test_info(test: TestRunInfo) -> str:
         log_lines = indent("\n".join(test.logs), " " * 4)
         output += "\n" + indent("Logs:\n" + log_lines, " " * 4)
 
+    if test.activityLogs:
+        output += f"\n{human_format_activities(test.activityLogs)}"
     return output
+
+
+def human_format_activities(activities: List[TestActivity]) -> str:
+    tree: Tree = Tree()
+    start = activities[0].start
+
+    def process_activity(activity: TestActivity, parent: Optional[str] = None) -> None:
+        tree.create_node(
+            f"{activity.name} ({activity.finish - start:.2f}s)",
+            activity.uuid,
+            parent=parent,
+        )
+        for attachment in activity.attachments:
+            tree.create_node(
+                f"Attachment: {attachment.name}", uuid4(), parent=activity.uuid
+            )
+        for sub_activity in activity.sub_activities:
+            process_activity(sub_activity, parent=activity.uuid)
+
+    tree.create_node("Activities", "activities")
+    for activity in activities:
+        process_activity(activity, "activities")
+
+    return str(tree)
 
 
 def json_format_test_info(test: TestRunInfo) -> str:
@@ -68,41 +97,29 @@ def json_format_test_info(test: TestRunInfo) -> str:
     return json.dumps(data)
 
 
-def test_info_from_json(data: str) -> TestRunInfo:
-    parsed = json.loads(data)
-    return TestRunInfo(
-        bundle_name=parsed["bundleName"],
-        class_name=parsed["className"],
-        method_name=parsed["methodName"],
-        logs=parsed["logs"],
-        duration=parsed["duration"],
-        passed=parsed["passed"],
-        crashed=parsed["crashed"],
-        failure_info=TestRunFailureInfo(
-            message=parsed["failureInfo"]["message"],
-            file=parsed["failureInfo"]["file"],
-            line=parsed["failureInfo"]["line"],
-        )
-        if parsed["failureInfo"]
-        else None,
-        activityLogs=[
-            activity_from_json(activity) for activity in parsed["activityLogs"]
-        ],
-    )
-
-
 def json_format_activity(activity: TestActivity) -> Dict[str, Any]:
     return {
         "title": activity.title,
         "duration": activity.duration,
         "uuid": activity.uuid,
+        "activity_type": activity.activity_type,
+        "start": activity.start,
+        "finish": activity.finish,
+        "name": activity.name,
+        "attachments": [
+            {
+                "payload": base64.b64encode(attachment.payload).decode("utf-8"),
+                "timestap": attachment.timestamp,
+                "name": attachment.name,
+                "uniform_type_identifier": attachment.uniform_type_identifier,
+            }
+            for attachment in activity.attachments
+        ],
+        "sub_activities": [
+            json_format_activity(sub_activity)
+            for sub_activity in activity.sub_activities
+        ],
     }
-
-
-def activity_from_json(data: Dict[str, Any]) -> TestActivity:
-    return TestActivity(
-        title=data["title"], duration=data["duration"], uuid=data["uuid"]
-    )
 
 
 def human_format_installed_app_info(app: InstalledAppInfo) -> str:
@@ -146,18 +163,6 @@ def json_format_installed_app_info(app: InstalledAppInfo) -> str:
         "debuggable": app.debuggable,
     }
     return json.dumps(data)
-
-
-def installed_app_info_from_json(data: str) -> "InstalledAppInfo":
-    parsed = json.loads(data)
-    return InstalledAppInfo(
-        bundle_id=parsed["bundle_id"],
-        name=parsed["name"],
-        install_type=parsed["install_type"],
-        architectures=set(parsed["architectures"]),
-        process_state=app_process_string_to_state(parsed["process_state"]),
-        debuggable=parsed["debuggable"],
-    )
 
 
 def human_format_target_info(target: TargetDescription) -> str:
@@ -271,14 +276,3 @@ def json_format_installed_test_info(test: InstalledTestInfo) -> str:
         "architectures": list(test.architectures) if test.architectures else None,
     }
     return json.dumps(data)
-
-
-def installed_test_info_from_json(data: str) -> InstalledTestInfo:
-    parsed = json.loads(data)
-    return InstalledTestInfo(
-        bundle_id=parsed["bundle_id"],
-        name=parsed["name"],
-        architectures=set(parsed["architectures"])
-        if parsed["architectures"] is not None
-        else None,
-    )
