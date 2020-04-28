@@ -11,8 +11,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBXCTestReporter;
 
+/**
+ An implementation of FBTestManagerTestReporter that delegates to a FBXCTestReporter.
+ FBTestManagerTestReporter is only used inside mediated test runs via testmanagerd.
+ FBXCTestReporter is the top-level reporter for every kind of Test Execution.
+ This allows adapting to this base protocol for reporting
+ */
 @interface FBXCTestReporterAdapter : NSObject <FBTestManagerTestReporter>
 
+/**
+ The Designated Initializer.
+
+ @param reporter the FBXCTestReporter to delegate to.
+ @return an implementation of FBTestManagerTestReporter.
+ */
 + (instancetype)adapterWithReporter:(id<FBXCTestReporter>)reporter;
 
 @end
