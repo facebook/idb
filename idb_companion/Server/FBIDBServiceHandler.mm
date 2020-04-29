@@ -853,6 +853,8 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
   FBIDBXCTestReporter *reporter = [[FBIDBXCTestReporter alloc] initWithResponseWriter:response queue:_target.workQueue logger:_target.logger];
   FBIDBTestOperation *operation = [[_commandExecutor xctest_run:xctestRunRequest reporter:reporter logger:[FBControlCoreLogger loggerToConsumer:reporter]] block:&error];
   reporter.resultBundlePath = operation.resultBundlePath;
+  reporter.coveragePath = operation.coveragePath;
+  reporter.binaryPath = operation.binaryPath;
   if (!operation) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }

@@ -121,7 +121,7 @@
   const idb::XctestRunResponse response = [self responseForNormalTestTermination];
   [self writeResponse:response];
 }
-  
+
 #pragma mark FBXCTestReporter (Unused)
 
 - (BOOL)printReportWithError:(NSError **)error
@@ -304,7 +304,7 @@
   switch (response.status()) {
     case idb::XctestRunResponse_Status_TERMINATED_NORMALLY:
     case idb::XctestRunResponse_Status_TERMINATED_ABNORMALLY:
-      [self insertResultBundleThenWriteResponse:response];
+      [self insertFinalDataThenWriteResponse:response];
       return;
     default:
       break;
@@ -313,34 +313,43 @@
   [self writeResponseFinal:response];
 }
 
-- (void)insertResultBundleThenWriteResponse:(const idb::XctestRunResponse &)response
+- (void)insertFinalDataThenWriteResponse:(const idb::XctestRunResponse &)response
 {
-  NSString *resultBundlePath = self.resultBundlePath;
-  // No result bundle, just write it straight away.
-  if (!resultBundlePath) {
-    [self writeResponseFinal:response];
-  }
-
   // Passing a reference to the response on the stack will lead to garbage memory unless we make a copy for the block.
   // https://github.com/facebook/infer/blob/master/infer/lib/linter_rules/linters.al#L212
-  const idb::XctestRunResponse responseCaptured = response;
-  [[FBArchiveOperations
-    createGzippedTarDataForPath:resultBundlePath queue:self.queue logger:self.logger]
-    onQueue:self.queue chain:^(FBFuture<NSData *> *future) {
+  __block idb::XctestRunResponse responseCaptured = response;
+  NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
+  if (self.resultBundlePath) {
+    [futures addObject:[[self getResultsBundle] onQueue:self.queue chain:^FBFuture<NSNull *> *(FBFuture<NSData *> *future) {
       NSData *data = future.result;
       if (data) {
-        // Make a local non-const copy so that we can mutate it.
-        idb::XctestRunResponse responseWithPayload = responseCaptured;
-        idb::Payload *payload = responseWithPayload.mutable_result_bundle();
+        idb::Payload *payload = responseCaptured.mutable_result_bundle();
         payload->set_data(data.bytes, data.length);
-        [self writeResponseFinal:responseWithPayload];
       } else {
         [self.logger.info logFormat:@"Failed to create result bundle %@", future];
-        [self writeResponseFinal:responseCaptured];
       }
-      return future;
-    }];
-
+      return [FBFuture futureWithResult:NSNull.null];
+    }]];
+  }
+  if (self.coveragePath) {
+    [futures addObject:[[self getCoverageData] onQueue:self.queue chain:^FBFuture<NSNull *>*(FBFuture<NSString *> *future) {
+      NSString *coverageData = future.result;
+      if (coverageData) {
+        responseCaptured.set_coverage_json(coverageData.UTF8String ?: "");
+      } else {
+        [self.logger.info logFormat:@"Failed to get coverage data %@", future];
+      }
+      return [FBFuture futureWithResult:NSNull.null];
+    }]];
+  }
+  if (futures.count == 0) {
+    [self writeResponseFinal:responseCaptured];
+    return;
+  }
+  [[FBFuture futureWithFutures:futures] onQueue:self.queue map:^NSNull *(id _) {
+    [self writeResponseFinal:responseCaptured];
+    return NSNull.null;
+  }];
 }
 
 - (void)writeResponseFinal:(const idb::XctestRunResponse &)response
@@ -368,5 +377,27 @@
     }
   }
 }
+
+- (FBFuture<NSString *> *)getCoverageData
+{
+  NSString *profdataPath = [[self.coveragePath stringByDeletingPathExtension] stringByAppendingPathExtension:@"profdata"];
+  return [[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-profdata", @"merge", @"-o", profdataPath, self.coveragePath]]
+    runUntilCompletion]
+    onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSData *> *> *(id result) {
+    return [[[FBTaskBuilder
+      withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-cov", @"export", @"-instr-profile", profdataPath, self.binaryPath]]
+      withStdOutInMemoryAsString]
+      runUntilCompletion];
+  }] onQueue:self.queue map:^NSString *(FBTask<NSNull *, NSString *, NSData *> *task) {
+    return task.stdOut;
+  }];
+}
+
+- (FBFuture<NSData *> *)getResultsBundle
+{
+  return [FBArchiveOperations createGzippedTarDataForPath:self.resultBundlePath queue:self.queue logger:self.logger];
+}
+
 
 @end
