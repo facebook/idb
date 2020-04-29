@@ -28,7 +28,7 @@ typedef NS_ENUM(NSUInteger, FBIDBTestOperationState) {
  */
 @interface FBIDBTestOperation : NSObject <FBiOSTargetContinuation>
 
-- (instancetype)initWithConfiguration:(id<FBJSONSerializable>)configuration resultBundlePath:(nullable NSString *)resultBundlePath reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue;
+- (instancetype)initWithConfiguration:(id<FBJSONSerializable>)configuration resultBundlePath:(nullable NSString *)resultBundlePath coveragePath:(nullable NSString *)coveragePath binaryPath:(nullable NSString *)binaryPath reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue;
 
 /**
  The Execution State.
@@ -54,6 +54,16 @@ typedef NS_ENUM(NSUInteger, FBIDBTestOperationState) {
  The reporter to report to.
 */
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
+
+/**
+ The path to the coverage file
+*/
+@property (nonatomic, nullable, copy, readonly) NSString *coveragePath;
+
+/**
+ The path to the app binary
+*/
+@property (nonatomic, nullable, copy, readonly) NSString *binaryPath;
 
 @end
 

@@ -328,6 +328,7 @@ message XctestRunRequest {
   map<string, string> environment = 6;
   uint64 timeout = 7;
   bool report_activities = 8;
+  bool collect_coverage = 9;
 }
 
 message XctestRunResponse {
@@ -377,6 +378,7 @@ message XctestRunResponse {
   repeated TestRunInfo results = 2;
   repeated string log_output = 3;
   Payload result_bundle = 4;
+  string coverage_json = 5;
 }
 
 message MkdirRequest {

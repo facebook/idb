@@ -130,10 +130,12 @@
     onQueue:simulator.workQueue map:^(NSArray<id> *tuple) {
       FBProductBundle *hostApplication = tuple[0];
       FBXCTestShimConfiguration *shims = tuple[1];
-      NSDictionary<NSString *, NSString *> *hostApplicationAdditionalEnvironment = @{
-        @"SHIMULATOR_START_XCTEST": @"1",
-        @"DYLD_INSERT_LIBRARIES": shims.iOSSimulatorTestShimPath,
-      };
+      NSMutableDictionary<NSString *, NSString *> *hostApplicationAdditionalEnvironment = [NSMutableDictionary dictionary];
+      hostApplicationAdditionalEnvironment[@"SHIMULATOR_START_XCTEST"] = @"1";
+      hostApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = shims.iOSSimulatorTestShimPath;
+      if (self.testLaunchConfiguration.coveragePath) {
+        hostApplicationAdditionalEnvironment[@"LLVM_PROFILE_FILE"] = self.testLaunchConfiguration.coveragePath;
+      }
       return [FBTestRunnerConfiguration
         configurationWithSessionIdentifier:sessionIdentifier
         hostApplication:hostApplication

@@ -16,7 +16,7 @@
 
 @implementation FBTestLaunchConfiguration
 
-- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostPath:(NSString *)testHostPath timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip targetApplicationPath:(NSString *)targetApplicationPath targetApplicationBundleID:(NSString *)targetApplicaitonBundleID xcTestRunProperties:(NSDictionary *)xcTestRunProperties resultBundlePath:(NSString *)resultBundlePath reportActivities:(BOOL)reportActivities
+- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostPath:(NSString *)testHostPath timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip targetApplicationPath:(NSString *)targetApplicationPath targetApplicationBundleID:(NSString *)targetApplicaitonBundleID xcTestRunProperties:(NSDictionary *)xcTestRunProperties resultBundlePath:(NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coveragePath:(NSString *)coveragePath
 {
   self = [super init];
   if (!self) {
@@ -35,6 +35,7 @@
   _xcTestRunProperties = xcTestRunProperties;
   _resultBundlePath = resultBundlePath;
   _reportActivities = reportActivities;
+  _coveragePath = coveragePath;
 
   return self;
 }
@@ -54,7 +55,8 @@
     targetApplicationBundleID:nil
     xcTestRunProperties:nil
     resultBundlePath:nil
-    reportActivities:NO];
+    reportActivities:NO
+    coveragePath:nil];
 }
 
 - (instancetype)withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
@@ -71,7 +73,8 @@
     targetApplicationBundleID:self.targetApplicationBundleID
     xcTestRunProperties: self.xcTestRunProperties
     resultBundlePath:self.resultBundlePath
-    reportActivities:self.reportActivities];
+    reportActivities:self.reportActivities
+    coveragePath:self.coveragePath];
 }
 
 - (instancetype)withTestHostPath:(NSString *)testHostPath
@@ -88,7 +91,8 @@
     targetApplicationBundleID:self.targetApplicationBundleID
     xcTestRunProperties: self.xcTestRunProperties
     resultBundlePath:self.resultBundlePath
-    reportActivities:self.reportActivities];
+    reportActivities:self.reportActivities
+    coveragePath:self.coveragePath];
 
 }
 
@@ -106,7 +110,8 @@
     targetApplicationBundleID:self.targetApplicationBundleID
     xcTestRunProperties: self.xcTestRunProperties
     resultBundlePath:self.resultBundlePath
-    reportActivities:self.reportActivities];
+    reportActivities:self.reportActivities
+    coveragePath:self.coveragePath];
 }
 
 - (instancetype)withUITesting:(BOOL)shouldInitializeUITesting
@@ -123,7 +128,8 @@
     targetApplicationBundleID:self.targetApplicationBundleID
     xcTestRunProperties: self.xcTestRunProperties
     resultBundlePath:self.resultBundlePath
-    reportActivities:self.reportActivities];
+    reportActivities:self.reportActivities
+    coveragePath:self.coveragePath];
 }
 
 - (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun
@@ -140,7 +146,8 @@
     targetApplicationBundleID:self.targetApplicationBundleID
     xcTestRunProperties: self.xcTestRunProperties
     resultBundlePath:self.resultBundlePath
-    reportActivities:self.reportActivities];
+    reportActivities:self.reportActivities
+    coveragePath:self.coveragePath];
 }
 
 - (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip
@@ -157,7 +164,8 @@
     targetApplicationBundleID:self.targetApplicationBundleID
     xcTestRunProperties: self.xcTestRunProperties
     resultBundlePath:self.resultBundlePath
-    reportActivities:self.reportActivities];
+    reportActivities:self.reportActivities
+    coveragePath:self.coveragePath];
 }
 
 - (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath
@@ -174,7 +182,8 @@
           targetApplicationBundleID:self.targetApplicationBundleID
           xcTestRunProperties: self.xcTestRunProperties
           resultBundlePath:self.resultBundlePath
-          reportActivities:self.reportActivities];
+          reportActivities:self.reportActivities
+          coveragePath:self.coveragePath];
 
 }
 
@@ -192,7 +201,8 @@
           targetApplicationBundleID:targetApplicationBundleID
           xcTestRunProperties: self.xcTestRunProperties
           resultBundlePath:self.resultBundlePath
-          reportActivities:self.reportActivities];
+          reportActivities:self.reportActivities
+          coveragePath:self.coveragePath];
 }
 
 - (instancetype)withXCTestRunProperties:(NSDictionary<NSString *, id> *)xcTestRunProperties;
@@ -209,7 +219,8 @@
           targetApplicationBundleID:self.targetApplicationBundleID
           xcTestRunProperties: xcTestRunProperties
           resultBundlePath:self.resultBundlePath
-          reportActivities:self.reportActivities];
+          reportActivities:self.reportActivities
+          coveragePath:self.coveragePath];
 }
 
 - (instancetype)withResultBundlePath:(NSString *)resultBundlePath
@@ -226,7 +237,26 @@
           targetApplicationBundleID:self.targetApplicationBundleID
           xcTestRunProperties: self.xcTestRunProperties
           resultBundlePath:resultBundlePath
-          reportActivities:self.reportActivities];
+          reportActivities:self.reportActivities
+          coveragePath:self.coveragePath];
+}
+
+- (instancetype)withCoveragePath:(NSString *)coveragePath
+{
+  return [[FBTestLaunchConfiguration alloc]
+          initWithTestBundlePath:self.testBundlePath
+          applicationLaunchConfiguration:self.applicationLaunchConfiguration
+          testHostPath:self.testHostPath
+          timeout:self.timeout
+          initializeUITesting:self.shouldInitializeUITesting
+          testsToRun:self.testsToRun
+          testsToSkip:self.testsToSkip
+          targetApplicationPath:self.targetApplicationPath
+          targetApplicationBundleID:self.targetApplicationBundleID
+          xcTestRunProperties: self.xcTestRunProperties
+          resultBundlePath:self.resultBundlePath
+          reportActivities:self.reportActivities
+          coveragePath:coveragePath];
 }
 
 - (instancetype)withReportActivities:(BOOL)reportActivities
@@ -243,7 +273,8 @@
           targetApplicationBundleID:self.targetApplicationBundleID
           xcTestRunProperties: self.xcTestRunProperties
           resultBundlePath:self.resultBundlePath
-          reportActivities:reportActivities];
+          reportActivities:reportActivities
+          coveragePath:self.coveragePath];
 }
 
 #pragma mark NSCopying
@@ -322,6 +353,7 @@ static NSString *const KeyTargetApplicationBundleID = @"targetApplicationBundleI
 static NSString *const KeyXcTestRunProperties = @"xcTestRunProperties";
 static NSString *const KeyResultBundlePath = @"resultBundlePath";
 static NSString *const KeyReportActivities = @"reportActivities";
+static NSString *const KeyCoveragePath = @"coveragePath";
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
@@ -338,6 +370,7 @@ static NSString *const KeyReportActivities = @"reportActivities";
     KeyXcTestRunProperties : self.xcTestRunProperties ?: NSNull.null,
     KeyResultBundlePath : self.resultBundlePath ?: NSNull.null,
     KeyReportActivities : @(self.reportActivities),
+    KeyCoveragePath : self.coveragePath ?: NSNull.null,
   };
 }
 
@@ -422,6 +455,12 @@ static NSString *const KeyReportActivities = @"reportActivities";
       fail:error];
   }
   BOOL reportActivities = reportActivitiesNumber ? reportActivitiesNumber.boolValue : NO;
+  NSString *coveragePath = [FBCollectionOperations nullableValueForDictionary:json key:KeyCoveragePath];
+  if (coveragePath && ![coveragePath isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError
+             describeFormat:@"%@ is not a String | Null for %@", coveragePath, KeyCoveragePath]
+            fail:error];
+  }
 
   return [[self alloc]
     initWithTestBundlePath:bundlePath
@@ -435,7 +474,8 @@ static NSString *const KeyReportActivities = @"reportActivities";
     targetApplicationBundleID:targetApplicationBundleID
     xcTestRunProperties:xcTestRunProperties
     resultBundlePath:resultBundlePath
-    reportActivities:reportActivities];
+    reportActivities:reportActivities
+    coveragePath:coveragePath];
 }
 
 #pragma mark FBiOSTargetFuture

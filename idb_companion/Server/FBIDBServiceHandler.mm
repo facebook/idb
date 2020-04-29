@@ -223,6 +223,7 @@ static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *r
   NSMutableSet<NSString *> *testsToSkip = NSMutableSet.set;
   NSString *testBundleID = nsstring_from_c_string(request->test_bundle_id());
   BOOL reportActivities = request->report_activities();
+  BOOL collectCoverage = request->collect_coverage();
 
   if (request->tests_to_run_size() > 0) {
     testsToRun = NSMutableSet.set;
@@ -239,18 +240,18 @@ static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *r
 
   switch (request->mode().mode_case()) {
     case idb::XctestRunRequest_Mode::kLogic: {
-      return [FBXCTestRunRequest logicTestWithTestBundleID:testBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities];
+      return [FBXCTestRunRequest logicTestWithTestBundleID:testBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage];
     }
     case idb::XctestRunRequest_Mode::kApplication: {
       const idb::XctestRunRequest::Application application = request->mode().application();
       NSString *appBundleID = nsstring_from_c_string(application.app_bundle_id());
-      return [FBXCTestRunRequest applicationTestWithTestBundleID:testBundleID appBundleID:appBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities];
+      return [FBXCTestRunRequest applicationTestWithTestBundleID:testBundleID appBundleID:appBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage];
     }
     case idb::XctestRunRequest_Mode::kUi: {
       const idb::XctestRunRequest::UI ui = request->mode().ui();
       NSString *appBundleID = nsstring_from_c_string(ui.app_bundle_id());
       NSString *testHostAppBundleID = nsstring_from_c_string(ui.test_host_app_bundle_id());
-      return [FBXCTestRunRequest uiTestWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities];
+      return [FBXCTestRunRequest uiTestWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage];
     }
     default:
       return nil;

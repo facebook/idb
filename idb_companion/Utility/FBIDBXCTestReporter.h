@@ -45,6 +45,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, nullable, readwrite) NSString *resultBundlePath;
 
+/**
+ Coverage file path
+ */
+@property (nonatomic, copy, nullable, readwrite) NSString *coveragePath;
+
+/**
+ App binary path
+ */
+@property (nonatomic, copy, nullable, readwrite) NSString *binaryPath;
+
 @end
 
 NS_ASSUME_NONNULL_END

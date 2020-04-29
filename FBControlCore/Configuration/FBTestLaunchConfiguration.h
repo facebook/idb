@@ -87,6 +87,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) BOOL reportActivities;
 
 /**
+ Path to coverage file
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *coveragePath;
+
+/**
  Adds application launch configuration
 
  @param applicationLaunchConfiguration added application launch configuration
@@ -175,6 +180,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return new test launch configuration with changes applied.
  */
 - (instancetype)withReportActivities:(BOOL)reportActivities;
+
+/**
+ Coverage data will be collected and saved to this path
+
+ @param coveragePath  path to save coverage data to
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withCoveragePath:(NSString *)coveragePath;
 
 @end
 
