@@ -27,7 +27,7 @@
 #import "FBTestBundleResult.h"
 
 static NSTimeInterval BundleReadyTimeout = 20; // Time for `_XCT_testBundleReadyWithProtocolVersion` to be called after the 'connect'.
-static NSTimeInterval CrashCheckWaitLimit = 200;  // Time to wait for crash report to be generated.
+static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash report to be generated.
 
 typedef NSString *FBTestBundleConnectionState NS_STRING_ENUM;
 static FBTestBundleConnectionState const FBTestBundleConnectionStateNotConnected = @"not connected";
