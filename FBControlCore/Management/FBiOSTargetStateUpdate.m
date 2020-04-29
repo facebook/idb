@@ -55,9 +55,9 @@ static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
            KeyUDID : self.udid,
            KeyState : FBiOSTargetStateStringFromState(self.state),
            KeyType : FBiOSTargetTypeStringFromTargetType(self.type),
-           KeyName : self.name,
-           KeyOsVersion : self.osVersion.name,
-           KeyArchitecture : self.architecture,
+           KeyName : self.name ?: @"unknown",
+           KeyOsVersion : self.osVersion.name ?: @"unknown",
+           KeyArchitecture : self.architecture ?: @"unknown",
            };
 }
 
