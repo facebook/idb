@@ -89,6 +89,7 @@ def make_request(
     result_bundle_path: Optional[str],
     timeout: Optional[int],
     report_activities: bool,
+    collect_coverage: bool,
 ) -> XctestRunRequest:
     if is_logic_test:
         mode = Mode(logic=Logic())
@@ -110,6 +111,7 @@ def make_request(
         environment=env,
         arguments=args,
         report_activities=report_activities,
+        collect_coverage=collect_coverage,
     )
 
 

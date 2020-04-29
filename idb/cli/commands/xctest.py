@@ -140,6 +140,10 @@ class CommonRunXcTestCommand(CompanionCommand):
                 "data blobs will be saved to this location"
             ),
         )
+        parser.add_argument(
+            "--coverage-output-path",
+            help="Outputs coverage information in the llvm json format",
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
@@ -171,6 +175,7 @@ class CommonRunXcTestCommand(CompanionCommand):
             result_bundle_path=args.result_bundle_path,
             report_activities=args.report_activities,
             activities_output_path=args.activities_output_path,
+            coverage_output_path=args.coverage_output_path,
         ):
             print(formatter(test_result))
 

@@ -273,6 +273,7 @@ class IdbClient:
         poll_interval_sec: float = 0.5,
         report_activities: bool = False,
         activities_output_path: Optional[str] = None,
+        coverage_output_path: Optional[str] = None,
     ) -> AsyncIterator[TestRunInfo]:
         yield
 

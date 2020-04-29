@@ -742,6 +742,7 @@ class IdbClient(IdbClientBase):
         poll_interval_sec: float = TESTS_POLL_INTERVAL,
         report_activities: bool = False,
         activities_output_path: Optional[str] = None,
+        coverage_output_path: Optional[str] = None,
     ) -> AsyncIterator[TestRunInfo]:
         async with self.stub.xctest_run.open() as stream:
             request = make_request(
@@ -759,6 +760,7 @@ class IdbClient(IdbClientBase):
                 report_activities=(
                     report_activities or activities_output_path is not None
                 ),
+                collect_coverage=coverage_output_path is not None,
             )
             await stream.send_message(request)
             await stream.end()
@@ -779,6 +781,9 @@ class IdbClient(IdbClientBase):
                         output_path=result_bundle_path,
                         logger=self.logger,
                     )
+                if response.coverage_json and coverage_output_path:
+                    with open(coverage_output_path, "w") as f:
+                        f.write(response.coverage_json)
                 for result in make_results(response):
                     if activities_output_path:
                         save_attachments(
