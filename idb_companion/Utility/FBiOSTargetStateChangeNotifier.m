@@ -44,7 +44,7 @@
                                                                contents:[@"[]" dataUsingEncoding:NSUTF8StringEncoding]
                                                              attributes:@{NSFilePosixPermissions: [NSNumber numberWithShort:0666]}];
   if (!didCreateFile) {
-    [logger.error log:@"failed to create local targets file"];
+    [logger.error logFormat:@"Failed to create local targets file: %s", strerror(errno)];
     exit(1);
   }
   _targets = [[NSMutableSet alloc] init];
@@ -110,7 +110,10 @@
     [self.logger logFormat:@"error writing update to consumer %@",error];
     exit(1);
   }
-  [data writeToFile:_filePath atomically:YES];
+  if (![data writeToFile:_filePath options:NSDataWritingAtomic error:&error]) {
+    [self.logger logFormat:@"Failed writing updates %@",error];
+    exit(1);
+  }
 }
 
 #pragma mark FBiOSTargetSet Delegate Methods
