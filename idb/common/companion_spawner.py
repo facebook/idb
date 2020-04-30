@@ -142,12 +142,12 @@ class CompanionSpawner:
         except Exception:
             return False
 
-    async def spawn_notifier(self) -> None:
+    async def spawn_notifier(self, targets_file: str = IDB_LOCAL_TARGETS_FILE) -> None:
         if self._is_notifier_running():
             return
 
         self.check_okay_to_spawn()
-        cmd = [self.companion_path, "--notify", IDB_LOCAL_TARGETS_FILE]
+        cmd = [self.companion_path, "--notify", targets_file]
         log_path = self._log_file_path("notifier")
         with open(log_path, "a") as log_file:
             process = await asyncio.create_subprocess_exec(

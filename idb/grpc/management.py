@@ -7,6 +7,7 @@
 import asyncio
 import json
 import logging
+import os
 import signal
 import subprocess
 import tempfile
@@ -14,6 +15,7 @@ from sys import platform
 from typing import AsyncContextManager, Dict, List, Optional
 
 from idb.common.companion_spawner import CompanionSpawner
+from idb.common.constants import BASE_IDB_FILE_PATH
 from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.common.local_targets_manager import LocalTargetsManager
 from idb.common.pid_saver import PidSaver
@@ -69,6 +71,7 @@ class IdbManagementClient(IdbManagementClientBase):
         prune_dead_companion: bool = True,
         companion_command_timeout: int = DEFAULT_COMPANION_COMMAND_TIMEOUT,
     ) -> None:
+        os.makedirs(BASE_IDB_FILE_PATH, exist_ok=True)
         self.companion_path = companion_path
         self.device_set_path = device_set_path
         self.logger: logging.Logger = (

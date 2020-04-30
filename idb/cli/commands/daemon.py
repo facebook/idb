@@ -10,7 +10,11 @@ from argparse import SUPPRESS, ArgumentParser, Namespace
 from typing import Dict, Optional
 
 from idb.cli.commands.base import BaseCommand
-from idb.common.constants import DEFAULT_DAEMON_GRPC_PORT, DEFAULT_DAEMON_PORT
+from idb.common.constants import (
+    BASE_IDB_FILE_PATH,
+    DEFAULT_DAEMON_GRPC_PORT,
+    DEFAULT_DAEMON_PORT,
+)
 from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.common.signal import signal_handler_event
 from idb.common.types import IdbException
@@ -59,6 +63,7 @@ class DaemonCommand(BaseCommand):
         self.logger.error(
             "idb daemon is deprecated and does nothing, please remove usages of it."
         )
+        os.makedirs(BASE_IDB_FILE_PATH, exist_ok=True)
         companion_manager = DirectCompanionManager(logger=self.logger)
         try:
             companions = await companion_manager.get_companions()
