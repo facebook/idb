@@ -352,8 +352,15 @@ int main(int argc, const char *argv[]) {
     FBIDBLogger *logger = [FBIDBLogger loggerWithUserDefaults:userDefaults];
     [logger.info logFormat:@"IDB Companion Built at %s %s", __DATE__, __TIME__];
     [logger.info logFormat:@"Invoked with args=%@ env=%@", [FBCollectionInformation oneLineDescriptionFromArray:NSProcessInfo.processInfo.arguments], EnvDescription()];
-
     NSError *error = nil;
+
+    // Check that xcode-select returns a valid path
+    [FBXcodeDirectory.xcodeSelectFromCommandLine.xcodePath await:&error];
+    if (error) {
+      [logger.error log:error.localizedDescription];
+      return 1;
+    }
+
     FBFuture<NSNull *> *completed = [GetCompanionCompletedFuture(argc, argv, userDefaults, logger) await:&error];
     if (!completed) {
       [logger.error log:error.localizedDescription];

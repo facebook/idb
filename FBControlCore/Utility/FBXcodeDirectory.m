@@ -43,19 +43,31 @@
       }
       directory = [directory stringByResolvingSymlinksInPath];
 
+
+      NSString *helpText = @".\n\n============================\n"
+        "%@\n"
+        "Please make sure xcode is installed and then run:\n"
+        "sudo xcode-select -s $(ls -td /Applications/Xcode* | head -1)/Contents/Developer\n"
+        "============================\n\n.";
+
       if ([directory stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length == 0) {
         return [[FBControlCoreError
-          describe:@"No Xcode Directory returned from xcode-select. Run xcode-select(1) to set this to a valid Xcode install."]
+          describeFormat:helpText, @"No Xcode Directory returned from `xcode-select -p`."]
+          failFuture];
+      }
+      if ([directory isEqual:@"/Library/Developer/CommandLineTools"]) {
+        return [[FBControlCoreError
+          describeFormat:helpText, @"`xcode-select -p` returned /Library/Developer/CommandLineTools but idb requires a full xcode install."]
           failFuture];
       }
       if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
         return [[FBControlCoreError
-          describeFormat:@"No Xcode Directory at: %@", directory]
+          describeFormat:helpText, [NSString stringWithFormat:@"`xcode-select -p` returned %@ which doesn't exist", directory]]
           failFuture];
       }
       if ([directory isEqualToString:@"/"] ) {
         return [[FBControlCoreError
-          describe:@"Xcode Directory is defined as the Root Filesystem. Run xcode-select(1) to set this to a valid Xcode install."]
+          describeFormat:helpText, @"`xcode-select -p` returned / which isn't valid."]
           failFuture];
       }
       return [FBFuture futureWithResult:directory];
