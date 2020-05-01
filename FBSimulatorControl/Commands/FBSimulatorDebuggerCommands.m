@@ -37,7 +37,6 @@
 
 - (FBFuture<NSNull *> *)completed
 {
-  (void)_completed;
   return [self.task.completed mapReplace:NSNull.null];
 }
 
