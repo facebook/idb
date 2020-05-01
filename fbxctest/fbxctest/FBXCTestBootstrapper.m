@@ -67,7 +67,14 @@
   BOOL isDir = NO;
   if ([NSFileManager.defaultManager fileExistsAtPath:workingDirectory isDirectory:&isDir] && isDir) {
     if (![NSFileManager.defaultManager removeItemAtPath:workingDirectory error:&error]) {
-      return [self printErrorMessage:error];
+      fputs("Failed removed working directory.", stderr);
+
+      // Don't return NO here to avoid fail the whole test run.
+      // Sometimes other Apple services (maybe CoreSimulatorService) will add additional simulators
+      // to the simulator set created by fbxctest. Those simulators are added to the working
+      // directory but fbxctest doesn't have permission to delete those tiles, and cause remove
+      // folder operation failure here.
+      [self printErrorMessage:error];
     }
   }
 
