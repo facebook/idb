@@ -205,7 +205,15 @@ class TargetCreateCommand(ManagementCommand):
 class UDIDTargetedManagementCommand(ManagementCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         super().add_parser_arguments(parser=parser)
-        parser.add_argument("udid", help="The UDID of the target")
+        parser.add_argument("udid", help="The UDID of the target", nargs="?")
+        parser.add_argument("--udid", help=SUPPRESS, dest="udid_flag")
+
+    def get_udid(self, args: Namespace) -> str:
+        if args.udid:
+            return args.udid
+        elif args.udid_flag:
+            return args.udid_flag
+        raise Exception("Need to provide udid as a position argument")
 
 
 class TargetBootCommand(UDIDTargetedManagementCommand):
@@ -232,10 +240,10 @@ class TargetBootCommand(UDIDTargetedManagementCommand):
         self, args: Namespace, client: IdbManagementClient
     ) -> None:
         if args.headless:
-            async with client.boot_headless(udid=args.udid):
+            async with client.boot_headless(udid=self.get_udid(args)):
                 await signal_handler_event("headless_boot").wait()
         else:
-            await client.boot(udid=args.udid)
+            await client.boot(udid=self.get_udid(args))
 
 
 class TargetShutdownCommand(UDIDTargetedManagementCommand):
@@ -250,7 +258,7 @@ class TargetShutdownCommand(UDIDTargetedManagementCommand):
     async def run_with_client(
         self, args: Namespace, client: IdbManagementClient
     ) -> None:
-        await client.shutdown(udid=args.udid)
+        await client.shutdown(udid=self.get_udid(args))
 
 
 class TargetEraseCommand(UDIDTargetedManagementCommand):
@@ -265,7 +273,7 @@ class TargetEraseCommand(UDIDTargetedManagementCommand):
     async def run_with_client(
         self, args: Namespace, client: IdbManagementClient
     ) -> None:
-        await client.erase(udid=args.udid)
+        await client.erase(udid=self.get_udid(args))
 
 
 class TargetCloneCommand(UDIDTargetedManagementCommand):
@@ -280,7 +288,7 @@ class TargetCloneCommand(UDIDTargetedManagementCommand):
     async def run_with_client(
         self, args: Namespace, client: IdbManagementClient
     ) -> None:
-        udid = await client.clone(udid=args.udid)
+        udid = await client.clone(udid=self.get_udid(args))
         print(udid)
 
 
@@ -296,7 +304,7 @@ class TargetDeleteCommand(UDIDTargetedManagementCommand):
     async def run_with_client(
         self, args: Namespace, client: IdbManagementClient
     ) -> None:
-        await client.delete(udid=args.udid)
+        await client.delete(udid=self.get_udid(args))
 
 
 class TargetDeleteAllCommand(ManagementCommand):

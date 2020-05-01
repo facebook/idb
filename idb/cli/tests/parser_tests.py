@@ -86,10 +86,14 @@ class TestParser(TestCase):
         )
 
     async def test_boot(self) -> None:
-        self.management_client_mock().boot = AsyncMock()
-        udid = "my udid"
-        await cli_main(cmd_input=["boot", udid])
-        self.management_client_mock().boot.assert_called_once_with(udid=udid)
+        for command in [
+            ["boot", "my_udid"],
+            ["boot", "--udid", "my_udid"],
+            ["boot", "--udid", "my_udid_old", "my_udid"],
+        ]:
+            self.management_client_mock().boot = AsyncMock()
+            await cli_main(cmd_input=command)
+            self.management_client_mock().boot.assert_called_once_with(udid="my_udid")
 
     async def test_shutdown(self) -> None:
         self.management_client_mock().boot = AsyncMock()
