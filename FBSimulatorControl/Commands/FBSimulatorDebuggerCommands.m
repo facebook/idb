@@ -35,10 +35,13 @@
 
 #pragma mark FBiOSTargetContinuation
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-property-ivar"
 - (FBFuture<NSNull *> *)completed
 {
   return [self.task.completed mapReplace:NSNull.null];
 }
+#pragma clang diagnostic pop
 
 - (FBiOSTargetFutureType)futureType
 {

@@ -49,6 +49,8 @@ static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
   return self;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-property-ivar"
 - (NSDictionary<NSString *, id> *)jsonSerializableRepresentation
 {
   return @{
@@ -60,6 +62,7 @@ static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
            KeyArchitecture : self.architecture ?: @"unknown",
            };
 }
+#pragma clang diagnostic pop
 
 + (instancetype)inflateFromJSON:(id)json error:(NSError **)error {
   NSString *udid = json[KeyUDID];
