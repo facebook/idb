@@ -51,6 +51,7 @@ static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
 
 - (NSDictionary<NSString *, id> *)jsonSerializableRepresentation
 {
+  (void)jsonSerializableRepresentation;
   return @{
            KeyUDID : self.udid,
            KeyState : FBiOSTargetStateStringFromState(self.state),
