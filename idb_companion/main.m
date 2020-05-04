@@ -130,7 +130,17 @@ static FBFuture<FBFuture<NSNull *> *> *BootFuture(NSString *udid, BOOL headless,
       // - We need to keep this process running until it's otherwise shutdown. When the sim is shutdown this process will die.
       // - If this process is manually killed then the simulator will die
       // For a regular boot the sim will outlive this process.
-      return headless ? TargetOfflineFuture(simulator, logger) : [FBFuture futureWithResult:NSNull.null];
+      if (!headless) {
+        return FBFuture.empty;
+      }
+      // Whilst we can rely on this process being killed shutting the simulator, this is asynchronous.
+      // This means that we should attempt to handle cancellation gracefully.
+      // In this case we should attempt to shutdown in response to cancellation.
+      // This means if this future is cancelled and waited-for before the process exits we will return it in a "Shutdown" state.
+      return [TargetOfflineFuture(simulator, logger)
+        onQueue:dispatch_get_main_queue() respondToCancellation:^{
+          return [simulator shutdown];
+        }];
     }];
 }
 
@@ -361,16 +371,16 @@ int main(int argc, const char *argv[]) {
       return 1;
     }
 
-    FBFuture<NSNull *> *completed = [GetCompanionCompletedFuture(argc, argv, userDefaults, logger) await:&error];
-    if (!completed) {
+    FBFuture<NSNull *> *companionCompleted = [GetCompanionCompletedFuture(argc, argv, userDefaults, logger) await:&error];
+    if (!companionCompleted) {
       [logger.error log:error.localizedDescription];
       return 1;
     }
 
-    completed = [FBFuture race:@[
-      completed,
-      signalHandlerFuture(SIGINT, @"Exiting: SIGINT", logger),
-      signalHandlerFuture(SIGTERM, @"Exiting: SIGTERM", logger),
+    FBFuture<NSNull *> *completed = [FBFuture race:@[
+      companionCompleted,
+      signalHandlerFuture(SIGINT, @"Signalled: SIGINT", logger),
+      signalHandlerFuture(SIGTERM, @"Signalled: SIGTERM", logger),
     ]];
     if (completed.error) {
       [logger.error log:completed.error.localizedDescription];
@@ -380,6 +390,15 @@ int main(int argc, const char *argv[]) {
     if (!result) {
       [logger.error log:error.localizedDescription];
       return 1;
+    }
+    if (companionCompleted.state == FBFutureStateCancelled) {
+      [logger logFormat:@"Responding to termination of idb with signo %@", result];
+      FBFuture<NSNull *> *cancellation = [companionCompleted cancel];
+      result = [cancellation await:&error];
+      if (!result) {
+        [logger.error log:error.localizedDescription];
+        return 1;
+      }
     }
   }
   return 0;
