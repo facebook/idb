@@ -371,6 +371,10 @@ int main(int argc, const char *argv[]) {
       return 1;
     }
 
+    FBFuture<NSNumber *> *signalled = [FBFuture race:@[
+      signalHandlerFuture(SIGINT, @"Signalled: SIGINT", logger),
+      signalHandlerFuture(SIGTERM, @"Signalled: SIGTERM", logger),
+    ]];
     FBFuture<NSNull *> *companionCompleted = [GetCompanionCompletedFuture(argc, argv, userDefaults, logger) await:&error];
     if (!companionCompleted) {
       [logger.error log:error.localizedDescription];
@@ -379,8 +383,7 @@ int main(int argc, const char *argv[]) {
 
     FBFuture<NSNull *> *completed = [FBFuture race:@[
       companionCompleted,
-      signalHandlerFuture(SIGINT, @"Signalled: SIGINT", logger),
-      signalHandlerFuture(SIGTERM, @"Signalled: SIGTERM", logger),
+      signalled,
     ]];
     if (completed.error) {
       [logger.error log:completed.error.localizedDescription];
