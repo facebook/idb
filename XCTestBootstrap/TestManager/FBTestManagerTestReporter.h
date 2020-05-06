@@ -100,6 +100,11 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
 
 @optional
 /**
+ Called when the app under test has exited
+ */
+- (void)appUnderTestExited;
+
+/**
  Called when a activity has started
 
  @param mediator the test mediator

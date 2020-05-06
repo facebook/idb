@@ -40,6 +40,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)didFinishExecutingTestPlan;
 
+
+/**
+ Called when the app under test exists
+ */
+- (void)appUnderTestExited;
+
 /**
  Called when the Test Suite has started.
 

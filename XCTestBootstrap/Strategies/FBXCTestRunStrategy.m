@@ -88,6 +88,11 @@
         logger:self.logger
         testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
 
+      // Add callback for when the app under test exists
+      [[applicationProcess exitCode] onQueue:self.iosTarget.workQueue doOnResolved:^(NSNumber * _) {
+        [self.reporter appUnderTestExited];
+      }];
+
       return [[testManager
         connect]
         onQueue:self.iosTarget.workQueue fmap:^(FBTestManagerResult *result) {

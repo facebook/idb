@@ -13,6 +13,7 @@
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *reportingTerminatedMutable;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *appUnderTestExitedMutable;
 
 @property (nonatomic, nullable, copy, readwrite) NSString *currentBundleName;
 @property (nonatomic, nullable, copy, readwrite) NSString *currentTestClass;
@@ -39,6 +40,7 @@
   _logger = logger;
   _currentActivityRecords = NSMutableArray.array;
   _reportingTerminatedMutable = FBMutableFuture.future;
+  _appUnderTestExitedMutable = FBMutableFuture.future;
 
   return self;
 }
@@ -120,6 +122,10 @@
 {
   const idb::XctestRunResponse response = [self responseForNormalTestTermination];
   [self writeResponse:response];
+}
+
+- (void)appUnderTestExited {
+  [self.appUnderTestExitedMutable resolveWithResult:NSNull.null];
 }
 
 #pragma mark FBXCTestReporter (Unused)
@@ -381,16 +387,18 @@
 - (FBFuture<NSString *> *)getCoverageData
 {
   NSString *profdataPath = [[self.coveragePath stringByDeletingPathExtension] stringByAppendingPathExtension:@"profdata"];
-  return [[[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-profdata", @"merge", @"-o", profdataPath, self.coveragePath]]
-    runUntilCompletion]
-    onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSData *> *> *(id result) {
-    return [[[FBTaskBuilder
-      withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-cov", @"export", @"-instr-profile", profdataPath, self.binaryPath]]
-      withStdOutInMemoryAsString]
-      runUntilCompletion];
-  }] onQueue:self.queue map:^NSString *(FBTask<NSNull *, NSString *, NSData *> *task) {
-    return task.stdOut;
+  return [self.appUnderTestExitedMutable onQueue:self.queue fmap:^FBFuture<NSString *> *(NSNull* _) {
+    return [[[[FBTaskBuilder
+      withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-profdata", @"merge", @"-o", profdataPath, self.coveragePath]]
+      runUntilCompletion]
+      onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSData *> *> *(id result) {
+        return [[[FBTaskBuilder
+          withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-cov", @"export", @"-instr-profile", profdataPath, self.binaryPath]]
+          withStdOutInMemoryAsString]
+          runUntilCompletion];
+      }] onQueue:self.queue map:^NSString *(FBTask<NSNull *, NSString *, NSData *> *task) {
+          return task.stdOut;
+      }];
   }];
 }
 

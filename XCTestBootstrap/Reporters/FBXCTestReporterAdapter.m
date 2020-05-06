@@ -74,6 +74,12 @@
   [_reporter didFinishExecutingTestPlan];
 }
 
+- (void)appUnderTestExited {
+  if ([_reporter respondsToSelector:@selector(appUnderTestExited)]) {
+    [_reporter appUnderTestExited];
+  }
+}
+
 - (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCase:(NSString *)testClass method:(NSString *)method willStartActivity:(FBActivityRecord *)activity
 {
   if ([_reporter respondsToSelector:@selector(testCase:method:willStartActivity:)]) {

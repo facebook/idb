@@ -198,6 +198,11 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   [self.events addObject:event];
 }
 
+- (void)appUnderTestExited
+{
+}
+
+
 #pragma mark Event Synthesis
 
 - (NSString *)noStartOfTestPlanErrorMessage
