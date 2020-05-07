@@ -102,7 +102,7 @@ logging.basicConfig(
 logger: logging.Logger = logging.getLogger()
 
 
-async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
+async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
     # Make sure all files are created with global rw permissions
     os.umask(0o000)
     # Setup parser
@@ -136,10 +136,11 @@ async def gen_main(cmd_input: Optional[List[str]] = None,) -> int:
     parser.add_argument(
         "--companion-local",
         action="store_true",
-        default=False,
+        default=bool(os.environ.get("IDB_COMPANION_LOCAL")),
         help="If set, any companion provided via IDB_COMPANION or --companion will be assumed to be running on this host."
         "Even if the companion provided is 'localhost' idb will still assume it is remote."
-        "The reason for this is that idb shouldn't assume there are no tunnels from localhost to a remote host.",
+        "The reason for this is that idb shouldn't assume there are no tunnels from localhost to a remote host."
+        "Can also be set with the IDB_COMPANION_LOCAL environment variable",
     )
     parser.add_argument(
         "--no-prune-dead-companion",
@@ -305,7 +306,7 @@ async def drain_coroutines(pending: Set[asyncio.Task]) -> None:
         pass
 
 
-def main(cmd_input: Optional[List[str]] = None,) -> int:
+def main(cmd_input: Optional[List[str]] = None) -> int:
     loop = asyncio.get_event_loop()
     try:
         return loop.run_until_complete(gen_main(cmd_input))
