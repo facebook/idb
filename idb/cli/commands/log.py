@@ -7,7 +7,7 @@
 from argparse import REMAINDER, ArgumentParser, Namespace
 from typing import List, Optional
 
-from idb.cli.commands.base import CompanionCommand
+from idb.cli import CompanionCommand
 from idb.common.signal import signal_handler_event
 from idb.common.types import IdbClient
 

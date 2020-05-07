@@ -10,7 +10,7 @@ from abc import abstractmethod
 from argparse import ArgumentParser, Namespace
 from typing import Any, List, NamedTuple, Optional, Tuple
 
-from idb.cli.commands.base import CompanionCommand
+from idb.cli import CompanionCommand
 from idb.common.types import IdbClient
 
 

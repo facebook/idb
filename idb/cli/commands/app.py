@@ -8,7 +8,7 @@ import json
 from argparse import ArgumentParser, Namespace
 from typing import Optional
 
-from idb.cli.commands.base import CompanionCommand
+from idb.cli import CompanionCommand
 from idb.common.format import (
     human_format_installed_app_info,
     json_format_installed_app_info,

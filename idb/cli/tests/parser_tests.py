@@ -57,11 +57,11 @@ class TestParser(TestCase):
             return_value=self.direct_client_mock
         )
         self.management_client_patch = patch(
-            "idb.cli.commands.base.IdbManagementClientGrpc", self.management_client_mock
+            "idb.cli.IdbManagementClientGrpc", self.management_client_mock
         )
         self.management_client_patch.start()
         self.direct_client_patch = patch(
-            "idb.cli.commands.base.IdbClientGrpc", self.direct_client_mock
+            "idb.cli.IdbClientGrpc", self.direct_client_mock
         )
         self.direct_client_patch.start()
 

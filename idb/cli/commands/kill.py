@@ -6,7 +6,7 @@
 
 from argparse import Namespace
 
-from idb.cli.commands.base import ManagementCommand
+from idb.cli import ManagementCommand
 from idb.common.types import IdbManagementClient
 
 

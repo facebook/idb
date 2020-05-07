@@ -9,7 +9,7 @@ from argparse import ArgumentParser, Namespace
 from contextlib import contextmanager
 from typing import IO, Iterator
 
-from idb.cli.commands.base import CompanionCommand
+from idb.cli import CompanionCommand
 from idb.common.types import IdbClient
 
 

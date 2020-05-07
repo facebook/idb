@@ -6,7 +6,7 @@
 
 from argparse import ArgumentParser, Namespace
 
-from idb.cli.commands.base import CompanionCommand
+from idb.cli import CompanionCommand
 from idb.common.types import HIDButtonType, IdbClient
 
 

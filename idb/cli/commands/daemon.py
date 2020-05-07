@@ -9,7 +9,7 @@ import os
 from argparse import SUPPRESS, ArgumentParser, Namespace
 from typing import Dict, Optional
 
-from idb.cli.commands.base import BaseCommand
+from idb.cli import BaseCommand
 from idb.common.constants import (
     BASE_IDB_FILE_PATH,
     DEFAULT_DAEMON_GRPC_PORT,

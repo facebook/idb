@@ -10,7 +10,7 @@ from argparse import SUPPRESS, ArgumentParser, Namespace
 from typing import Union
 
 import idb.common.plugin as plugin
-from idb.cli.commands.base import CompanionCommand, ManagementCommand
+from idb.cli import CompanionCommand, ManagementCommand
 from idb.common.format import human_format_target_info, json_format_target_info
 from idb.common.signal import signal_handler_event
 from idb.common.types import Address, IdbClient, IdbException, IdbManagementClient
