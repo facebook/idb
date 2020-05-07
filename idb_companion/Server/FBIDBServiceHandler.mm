@@ -679,7 +679,9 @@ Status FBIDBServiceHandler::terminate(ServerContext *context, const idb::Termina
 {@autoreleasepool{
   NSError *error = nil;
   [[_commandExecutor kill_application:nsstring_from_c_string(request->bundle_id())] block:&error];
-
+  if (error) {
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
   return Status::OK;
 }}
 
