@@ -87,9 +87,9 @@ static NSTimeInterval LaunchTimeout = 60;
     onQueue:queue fmap:^(id _) {
       return [client processInfo];
     }]
-    onQueue:queue doOnResolved:^(id _) {
+    onQueue:queue fmap:^(id _) {
       // App has launched, tell the debugger to continue so the app actually runs.
-      [client sendContinue];
+      return [client sendContinue];
     }]
     timeout:LaunchTimeout waitingFor:@"Timed out waiting for launch to complete"];
 }

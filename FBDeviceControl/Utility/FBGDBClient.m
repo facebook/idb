@@ -196,9 +196,10 @@ static NSNumber *processIdentifierFromResponse(NSString *response, NSError **err
   return [self sendUntilOK:@"qLaunchSuccess"];
 }
 
-- (void)sendContinue
+- (FBFuture<NSNull *> *)sendContinue
 {
-  return [self sendNow:@"c"];
+  [self sendNow:@"c"];
+  return FBFuture.empty;
 }
 
 - (FBFuture<NSNull *> *)consumeStdOut:(id<FBDataConsumer>)stdOut stdErr:(id<FBDataConsumer>)stdErr

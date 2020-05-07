@@ -58,8 +58,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Continues execution
+
+ @return a Future that resolves when successful.
  */
-- (void)sendContinue;
+- (FBFuture<NSNull *> *)sendContinue;
 
 /**
  Gets the process identifer from the process info packet.
