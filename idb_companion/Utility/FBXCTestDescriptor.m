@@ -16,6 +16,22 @@
 #import "FBTemporaryDirectory.h"
 #import "FBIDBStorageManager.h"
 
+static FBApplicationLaunchConfiguration *BuildAppLaunchConfig(NSString *bundleID, NSDictionary<NSString *, NSString *> *environment, NSArray<NSString *> * arguments, id<FBControlCoreLogger> logger)
+{
+  NSError *error = nil;
+  FBProcessOutputConfiguration *processOutput = [FBProcessOutputConfiguration
+    configurationWithStdOut:[FBLoggingDataConsumer consumerWithLogger:logger]
+    stdErr:[FBLoggingDataConsumer consumerWithLogger:logger]
+    error:&error];
+  NSCAssert(processOutput, @"Could not build process output %@", error);
+  return [FBApplicationLaunchConfiguration configurationWithBundleID:bundleID
+    bundleName:nil
+    arguments:arguments ?: @[]
+    environment:environment ?: @{}
+    output:processOutput
+    launchMode:FBApplicationLaunchModeFailIfRunning];
+}
+
 static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
 @interface FBXCTestRunRequest_LogicTest : FBXCTestRunRequest
@@ -131,7 +147,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     testAppPairForRequest:self target:target]
     onQueue:target.workQueue fmap:^ FBFuture<FBIDBTestOperation *> * (FBTestApplicationsPair *pair) {
       [logger logFormat:@"Obtaining launch configuration for App Pair %@ on descriptor %@", pair, testDescriptor];
-      FBTestLaunchConfiguration *testConfig = [testDescriptor testConfigWithRunRequest:self testApps:pair];
+      FBTestLaunchConfiguration *testConfig = [testDescriptor testConfigWithRunRequest:self testApps:pair logger:logger];
       [logger logFormat:@"Obtained launch configuration %@", testConfig];
       return [FBXCTestRunRequest_AppTest startTestExecution:testConfig target:target reporter:reporter logger:logger];
     }];
@@ -309,16 +325,6 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
 #pragma mark Private
 
-- (FBApplicationLaunchConfiguration *)appLaunchConfigForBundleID:(NSString *)bundleID env:(NSDictionary<NSString *, NSString *> *)env args:(NSArray<NSString *> *)args
-{
-  return [FBApplicationLaunchConfiguration configurationWithBundleID:bundleID
-    bundleName:nil
-    arguments:args ?: @[]
-    environment:env ?: @{}
-    output:FBProcessOutputConfiguration.outputToDevNull
-    launchMode:FBApplicationLaunchModeFailIfRunning];
-}
-
 + (FBFuture<NSNull *> *)killAllRunningApplications:(id<FBiOSTarget>)target
 {
   id<FBApplicationCommands> commands = (id<FBApplicationCommands>) target;
@@ -388,7 +394,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     }];
 }
 
-- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps
+- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps logger:(id<FBControlCoreLogger>)logger
 {
   FBTestLaunchConfiguration *config = [[[[FBTestLaunchConfiguration
   configurationWithTestBundlePath:self.testBundle.path]
@@ -397,14 +403,16 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   withReportActivities:request.reportActivities];
 
   if (request.isUITest) {
-    FBApplicationLaunchConfiguration *runnerLaunchConfig = [self appLaunchConfigForBundleID:testApps.testHostApp.bundle.identifier env:request.environment args:request.arguments];
+    FBApplicationLaunchConfiguration *runnerLaunchConfig = BuildAppLaunchConfig(testApps.testHostApp.bundle.identifier, request.environment, request.arguments, logger);
+
+    // Test config
     config = [[[[config
       withUITesting:YES]
       withApplicationLaunchConfiguration:runnerLaunchConfig]
       withTargetApplicationPath:testApps.applicationUnderTest.bundle.path]
       withTargetApplicationBundleID:testApps.applicationUnderTest.bundle.identifier];
   } else {
-    FBApplicationLaunchConfiguration *launchConfig = [self appLaunchConfigForBundleID:request.appBundleID env:request.environment args:request.arguments];
+    FBApplicationLaunchConfiguration *launchConfig = BuildAppLaunchConfig(request.appBundleID, request.environment, request.arguments, logger);
     config = [config withApplicationLaunchConfiguration:launchConfig];
   }
 
@@ -479,20 +487,9 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   return [FBFuture futureWithResult:[[FBTestApplicationsPair alloc] initWithApplicationUnderTest:nil testHostApp:nil]];
 }
 
-- (FBApplicationLaunchConfiguration *)appLaunchConfigForBundleID:(NSString *)bundleID env:(NSDictionary<NSString *, NSString *> *)env args:(NSArray<NSString *> *)args
+- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps logger:(id<FBControlCoreLogger>)logger
 {
-  return [FBApplicationLaunchConfiguration
-    configurationWithBundleID:bundleID
-    bundleName:nil
-    arguments:args ?: @[]
-    environment:env ?: @{}
-    output:FBProcessOutputConfiguration.outputToDevNull
-    launchMode:FBApplicationLaunchModeFailIfRunning];
-}
-
-- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps
-{
-  FBApplicationLaunchConfiguration *launchConfig = [self appLaunchConfigForBundleID:request.appBundleID env:request.environment args:request.arguments];
+  FBApplicationLaunchConfiguration *launchConfig = BuildAppLaunchConfig(request.appBundleID, request.environment, request.arguments, logger);
   NSString *resultBundleName = [NSString stringWithFormat:@"resultbundle_%@", NSUUID.UUID.UUIDString];
   NSString *resultBundlePath = [self.targetAuxillaryDirectory stringByAppendingPathComponent:resultBundleName];
 

@@ -17,6 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBXCTestBundleStorage;
 
 @protocol FBXCTestReporter;
+@protocol FBControlCoreLogger;
 
 /**
  Describes the necessary information to start a test run.
@@ -200,8 +201,10 @@ The Initializer for Logic Tests.
 
  @param request the xctest run request
  @param testApps the materialized Applications that are used as a part of testing.
+ @param logger the logger to log to
+ @return a test launch configuration.
  */
-- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps;
+- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Obtains the Test Application Components for the provided target and request

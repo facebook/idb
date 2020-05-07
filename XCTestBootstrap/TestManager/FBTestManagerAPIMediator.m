@@ -178,13 +178,21 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   [targetEnvironment addEntriesFromDictionary:self.testedApplicationAdditionalEnvironment];
   [targetEnvironment addEntriesFromDictionary:environment];
 
+
+  NSError *error = nil;
+  FBProcessOutputConfiguration *processOutput = [FBProcessOutputConfiguration
+    configurationWithStdOut:[FBLoggingDataConsumer consumerWithLogger:self.logger]
+    stdErr:[FBLoggingDataConsumer consumerWithLogger:self.logger]
+    error:&error];
+  NSAssert(processOutput, @"Could not construct application output configuration %@", error);
+
   DTXRemoteInvocationReceipt *receipt = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
   FBApplicationLaunchConfiguration *launch = [FBApplicationLaunchConfiguration
     configurationWithBundleID:bundleID
     bundleName:bundleID
     arguments:arguments
     environment:targetEnvironment
-    output:FBProcessOutputConfiguration.outputToDevNull
+    output:processOutput
     launchMode:FBApplicationLaunchModeFailIfRunning];
   id token = @(receipt.hash);
 
@@ -192,9 +200,9 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
     strategyWithTarget:self.target]
     launchApplication:launch atPath:path]
     onQueue:self.target.workQueue notifyOfCompletion:^(FBFuture<NSNull *> *future) {
-      NSError *error = future.error;
-      if (error) {
-        [receipt invokeCompletionWithReturnValue:nil error:error];
+      NSError *innerError = future.error;
+      if (innerError) {
+        [receipt invokeCompletionWithReturnValue:nil error:innerError];
       } else {
         self.tokenToBundleIDMap[token] = bundleID;
         [receipt invokeCompletionWithReturnValue:token error:nil];
