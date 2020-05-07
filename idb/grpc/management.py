@@ -37,29 +37,24 @@ from idb.utils.typing import none_throws
 
 
 DEFAULT_COMPANION_COMMAND_TIMEOUT = 120
+DEFAULT_COMPANION_TEARDOWN_TIMEOUT = 30
 
 
 async def _terminate_process(
-    process: asyncio.subprocess.Process, logger: logging.Logger, timeout: int = 30
+    process: asyncio.subprocess.Process, timeout: int, logger: logging.Logger
 ) -> None:
-    logger.info(f"Stopping process {process} with SIGINT, waiting {timeout} seconds")
-    if process.returncode is not None:
-        logger.info(
-            f"Process is already terminated with {process.returncode} "
-            "perhaps it died prematurely"
-        )
+    returncode = process.returncode
+    if returncode is not None:
+        logger.info(f"Process has exited with {returncode}")
         return
-    process.send_signal(signal.SIGINT)
+    logger.info(f"Stopping process with SIGTERM, waiting {timeout} seconds")
+    process.terminate()
     try:
-        await asyncio.wait_for(process.wait(), timeout=timeout)
-        logger.info(f"Stopped process {process} with SIGINT")
+        returncode = await asyncio.wait_for(process.wait(), timeout=timeout)
+        logger.info(f"Process has exited after SIGTERM with {returncode}")
     except TimeoutError:
-        logger.info(
-            f"Process {process} didn't close after {timeout} seconds, killing..."
-        )
-    finally:
-        if process.returncode is None:
-            process.kill()
+        logger.info(f"Process hasn't exited after {timeout} seconds, SIGKILL'ing...")
+        process.kill()
 
 
 class IdbManagementClient(IdbManagementClientBase):
@@ -70,6 +65,7 @@ class IdbManagementClient(IdbManagementClientBase):
         logger: Optional[logging.Logger] = None,
         prune_dead_companion: bool = True,
         companion_command_timeout: int = DEFAULT_COMPANION_COMMAND_TIMEOUT,
+        companion_teardown_timeout: int = DEFAULT_COMPANION_TEARDOWN_TIMEOUT,
     ) -> None:
         os.makedirs(BASE_IDB_FILE_PATH, exist_ok=True)
         self.companion_path = companion_path
@@ -79,6 +75,7 @@ class IdbManagementClient(IdbManagementClientBase):
         )
         self._prune_dead_companion = prune_dead_companion
         self._companion_command_timeout = companion_command_timeout
+        self._companion_teardown_timeout = companion_teardown_timeout
         self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
         self.local_targets_manager = LocalTargetsManager(logger=self.logger)
 
@@ -158,10 +155,14 @@ class IdbManagementClient(IdbManagementClientBase):
         process = await asyncio.create_subprocess_exec(
             *cmd, stdout=subprocess.PIPE, stderr=None
         )
+        logger = self.logger.getChild(f"{process.pid}:{' '.join(arguments)}")
+        logger.info("Launched process")
         try:
             yield process
         finally:
-            await _terminate_process(process=process, logger=self.logger)
+            await _terminate_process(
+                process=process, timeout=self._companion_teardown_timeout, logger=logger
+            )
 
     async def _run_companion_command(self, arguments: List[str]) -> str:
         timeout = self._companion_command_timeout
