@@ -79,6 +79,8 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
 
 #pragma mark Private
 
+static const int DiskImageAlreadyMountedCode = -402653066;  // 0xe8000076 in hex
+
 - (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage
 {
   NSError *error = nil;
@@ -100,7 +102,10 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
         (AMDeviceProgressCallback) MountCallback,
         (__bridge void *) (device)
       );
-      if (status != 0) {
+      if (status == DiskImageAlreadyMountedCode) {
+        [device.logger logFormat:@"There is a disk image already mounted. Assuming that it is correct...."];
+      }
+      else if (status != 0) {
         NSString *internalMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
         return [[FBDeviceControlError
           describeFormat:@"Failed to mount image '%@' with error 0x%x (%@)", diskImage.diskImagePath, status, internalMessage]
