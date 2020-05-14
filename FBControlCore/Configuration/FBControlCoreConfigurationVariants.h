@@ -152,10 +152,14 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
 extern FBOSVersionName const FBOSVersionNamewatchOS_4_0;
 extern FBOSVersionName const FBOSVersionNamewatchOS_4_1;
 extern FBOSVersionName const FBOSVersionNamewatchOS_4_2;
+extern FBOSVersionName const FBOSVersionNamewatchOS_4_3;
 extern FBOSVersionName const FBOSVersionNamewatchOS_5_0;
 extern FBOSVersionName const FBOSVersionNamewatchOS_5_1;
 extern FBOSVersionName const FBOSVersionNamewatchOS_5_2;
+extern FBOSVersionName const FBOSVersionNamewatchOS_5_3;
 extern FBOSVersionName const FBOSVersionNamewatchOS_6_0;
+extern FBOSVersionName const FBOSVersionNamewatchOS_6_1;
+extern FBOSVersionName const FBOSVersionNamewatchOS_6_2;
 
 #pragma mark Devices
 

@@ -128,10 +128,15 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 FBOSVersionName const FBOSVersionNamewatchOS_4_0 = @"watchOS 4.0";
 FBOSVersionName const FBOSVersionNamewatchOS_4_1 = @"watchOS 4.1";
 FBOSVersionName const FBOSVersionNamewatchOS_4_2 = @"watchOS 4.2";
+FBOSVersionName const FBOSVersionNamewatchOS_4_3 = @"watchOS 4.3";
 FBOSVersionName const FBOSVersionNamewatchOS_5_0 = @"watchOS 5.0";
 FBOSVersionName const FBOSVersionNamewatchOS_5_1 = @"watchOS 5.1";
 FBOSVersionName const FBOSVersionNamewatchOS_5_2 = @"watchOS 5.2";
+FBOSVersionName const FBOSVersionNamewatchOS_5_3 = @"watchOS 5.3";
 FBOSVersionName const FBOSVersionNamewatchOS_6_0 = @"watchOS 6.0";
+FBOSVersionName const FBOSVersionNamewatchOS_6_1 = @"watchOS 6.1";
+FBOSVersionName const FBOSVersionNamewatchOS_6_2 = @"watchOS 6.2";
+
 
 @implementation FBDeviceType
 
@@ -437,10 +442,14 @@ FBOSVersionName const FBOSVersionNamewatchOS_6_0 = @"watchOS 6.0";
       [FBOSVersion watchOSWithName:FBOSVersionNamewatchOS_4_0],
       [FBOSVersion watchOSWithName:FBOSVersionNamewatchOS_4_1],
       [FBOSVersion watchOSWithName:FBOSVersionNamewatchOS_4_2],
+      [FBOSVersion watchOSWithName:FBOSVersionNamewatchOS_4_3],
       [FBOSVersion watchOSWithName:FBOSVersionNamewatchOS_5_0],
       [FBOSVersion watchOSWithName:FBOSVersionNamewatchOS_5_1],
       [FBOSVersion watchOSWithName:FBOSVersionNamewatchOS_5_2],
+      [FBOSVersion watchOSWithName:FBOSVersionNamewatchOS_5_3],
       [FBOSVersion watchOSWithName:FBOSVersionNamewatchOS_6_0],
+      [FBOSVersion watchOSWithName:FBOSVersionNamewatchOS_6_1],
+      [FBOSVersion watchOSWithName:FBOSVersionNamewatchOS_6_2],
     ];
   });
   return OSConfigurations;
