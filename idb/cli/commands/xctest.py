@@ -144,10 +144,18 @@ class CommonRunXcTestCommand(CompanionCommand):
             "--coverage-output-path",
             help="Outputs coverage information in the llvm json format",
         )
+        parser.add_argument(
+            "--install",
+            help="When this option is provided bundle_ids are assumed "
+            "to be paths instead. They are installed before running.",
+            action="store_true",
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         await super().run_with_client(args, client)
+        if args.install:
+            await self.install_bundles(args, client)
         tests_to_run = self.get_tests_to_run(args)
         tests_to_skip = self.get_tests_to_skip(args)
         app_bundle_id = args.app_bundle_id if hasattr(args, "app_bundle_id") else None
@@ -178,6 +186,10 @@ class CommonRunXcTestCommand(CompanionCommand):
             coverage_output_path=args.coverage_output_path,
         ):
             print(formatter(test_result))
+
+    async def install_bundles(self, args: Namespace, client: IdbClient) -> None:
+        async for test in client.install_xctest(args.test_bundle_id):
+            args.test_bundle_id = test.name
 
     def get_tests_to_run(self, args: Namespace) -> Optional[Set[str]]:
         return None
@@ -220,6 +232,11 @@ class XctestRunAppCommand(CommonRunXcTestCommand):
             nargs=REMAINDER,
         )
 
+    async def install_bundles(self, args: Namespace, client: IdbClient) -> None:
+        await super().install_bundles(args, client)
+        async for app in client.install(args.app_bundle_id):
+            args.app_bundle_id = app.name
+
     def get_tests_to_run(self, args: Namespace) -> Optional[Set[str]]:
         return set(args.tests_to_run) if args.tests_to_run else None
 
@@ -239,6 +256,11 @@ class XctestRunUICommand(XctestRunAppCommand):
             help="Bundle id of the app that hosts ui test",
             type=str,
         )
+
+    async def install_bundles(self, args: Namespace, client: IdbClient) -> None:
+        await super().install_bundles(args, client)
+        async for app in client.install(args.test_host_app_bundle_id):
+            args.test_host_app_bundle_id = app.name
 
 
 class XctestRunLogicCommand(CommonRunXcTestCommand):

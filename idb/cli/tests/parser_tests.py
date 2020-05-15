@@ -402,6 +402,7 @@ class TestParser(TestCase):
         namespace.report_activities = False
         namespace.activities_output_path = None
         namespace.coverage_output_path = None
+        namespace.install = False
         return namespace
 
     async def test_xctest_run_app(self) -> None:
