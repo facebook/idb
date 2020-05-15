@@ -15,7 +15,7 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
   if (application.applicationState == UIApplicationStateBackground) {
-    UIBackgroundTaskIdentifier taskID = [application beginBackgroundTaskWithExpirationHandler:^ {
+    UIBackgroundTaskIdentifier taskID = [application beginBackgroundTaskWithName:@__FILE__ expirationHandler:^ {
       NSLog(@"Background task expired!!!");
     }];
     if (taskID == UIBackgroundTaskInvalid) {
@@ -30,7 +30,7 @@
 
 - (void)applicationWillResignActive:(UIApplication *)application
 {
-  NSLog(@"Continuing to run tests in the background with task ID %lu", [application beginBackgroundTaskWithExpirationHandler:^ {
+  NSLog(@"Continuing to run tests in the background with task ID %lu", [application beginBackgroundTaskWithName:@__FILE__ expirationHandler:^ {
     NSLog(@"Background task expired!!!");
   }]);
 }
