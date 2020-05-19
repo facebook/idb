@@ -96,6 +96,13 @@
   }];
 }
 
+#pragma mark FBiOSTargetSet Implementation
+
+- (NSArray<id<FBiOSTarget>> *)allTargets
+{
+  return self.allDevices;
+}
+
 #pragma mark Private
 
 - (FBDeviceInflationStrategy *)inflationStrategy

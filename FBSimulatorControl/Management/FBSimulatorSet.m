@@ -134,8 +134,6 @@
   return YES;
 }
 
-#pragma mark - Public Methods
-
 #pragma mark Querying
 
 - (NSArray<FBSimulator *> *)query:(FBiOSTargetQuery *)query
@@ -328,9 +326,7 @@
   return [FBFuture futureWithResult:simulator];
 }
 
-#pragma mark - Properties
-
-#pragma mark Public
+#pragma mark Public Properties
 
 - (NSArray<FBSimulator *> *)allSimulators
 {
@@ -345,7 +341,14 @@
   return [self.allSimulators filteredArrayUsingPredicate:FBSimulatorPredicates.launched];
 }
 
-#pragma mark Private
+#pragma mark FBiOSTargetSet Implementation
+
+- (NSArray<id<FBiOSTarget>> *)allTargets
+{
+  return self.allSimulators;
+}
+
+#pragma mark Private Properties
 
 - (FBSimulatorTerminationStrategy *)simulatorTerminationStrategy
 {
