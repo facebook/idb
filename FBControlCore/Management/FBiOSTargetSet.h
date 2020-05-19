@@ -8,25 +8,30 @@
 #import <Foundation/Foundation.h>
 #import <FBControlCore/FBiOSTargetStateUpdate.h>
 
-
 /**
- Delegate to inform of updates regarding the set of targets
+ Delegate that informs of updates regarding the set of iOS Targets.
  */
 @protocol FBiOSTargetSetDelegate
 
 /**
- called everytime an iOS Target has an update.
- i.e. simulator boots or device connects/disconnects
+ Called every time an iOS Target's state is updated.
+ This includes state changes such a Simulator booting or a device connecting.
+
+ @param update the state update to report.
  */
 - (void)targetDidUpdate:(FBiOSTargetStateUpdate *)update;
 
 @end
 
 /**
- Common Properties of Devices sets & Simulators sets.
+ Common properties of of iOS Target Sets, shared by Simulator & Device Sets.
  */
 @protocol FBiOSTargetSet <NSObject>
 
+/**
+ The Delegate of the Target Set.
+ Used to report updates out.
+ */
 @property (nonatomic, weak, readwrite) id<FBiOSTargetSetDelegate> delegate;
 
 @end
