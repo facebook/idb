@@ -19,6 +19,7 @@
 @property (nonatomic, strong, readonly) FBSimulatorSet *simulatorSet;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) NSMutableSet<FBiOSTargetStateUpdate *> *targets;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finished;
 
 @end
 
@@ -56,6 +57,7 @@
   _deviceSet = deviceSet;
   _logger = logger;
   _targets = [[NSMutableSet alloc] init];
+  _finished = FBMutableFuture.future;
 
   return self;
 }
@@ -70,7 +72,10 @@
   for (FBSimulator *simulator in self.simulatorSet.allSimulators) {
     [_targets addObject:[[FBiOSTargetStateUpdate alloc] initWithUDID:simulator.udid state:simulator.state type:FBiOSTargetTypeSimulator name:simulator.name osVersion:simulator.osVersion architecture:simulator.architecture]];
   }
-  [self writeTargets];
+  if (![self writeTargets]) {
+    return self.finished;
+  }
+
   NSData *jsonOutput = [NSJSONSerialization dataWithJSONObject:@{@"report_initial_state": @YES} options:0 error:nil];
   NSMutableData *readyOutput = [NSMutableData dataWithData:jsonOutput];
   [readyOutput appendData:[@"\n" dataUsingEncoding:NSUTF8StringEncoding]];
@@ -82,28 +87,29 @@
 
 - (FBFuture<NSNull *> *)notifierDone
 {
-  // Never done, for now.
-  return FBMutableFuture.future;
+  return self.finished;
 }
 
 #pragma mark Private
 
-- (void)writeTargets
+- (BOOL)writeTargets
 {
   NSError *error = nil;
   NSMutableArray<id<FBJSONSerializable>> *jsonArray = [[NSMutableArray alloc] init];
   for (FBiOSTargetStateUpdate *target in _targets.allObjects) {
-       [jsonArray addObject:target.jsonSerializableRepresentation];
+    [jsonArray addObject:target.jsonSerializableRepresentation];
   }
   NSData *data = [NSJSONSerialization dataWithJSONObject:jsonArray options:0 error:&error];
   if (!data) {
-    [self.logger logFormat:@"error writing update to consumer %@",error];
-    exit(1);
+    [self.finished resolveWithError:[[FBIDBError describeFormat:@"error writing update to consumer %@", error] build]];
+    return NO;
   }
   if (![data writeToFile:_filePath options:NSDataWritingAtomic error:&error]) {
+    [self.finished resolveWithError:[[FBIDBError describeFormat:@"Failed writing updates %@", error] build]];
     [self.logger logFormat:@"Failed writing updates %@",error];
-    exit(1);
+    return NO;
   }
+  return YES;
 }
 
 #pragma mark FBiOSTargetSetDelegate Methods
