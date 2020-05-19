@@ -270,7 +270,32 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
           return future;
         }];
     }];
+}
 
+static FBFuture<FBFuture<NSNull *> *> *NotiferFuture(NSString *notify, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
+{
+  return [[[[FBFuture
+    futureWithFutures:@[
+      SimulatorSet(userDefaults, logger, reporter),
+      DeviceSet(logger),
+    ]]
+    onQueue:dispatch_get_main_queue() fmap:^(NSArray<id> *sets) {
+      FBSimulatorSet *simulatorSet = sets[0];
+      FBDeviceSet *deviceSet = sets[1];
+      return [FBiOSTargetStateChangeNotifier notifierToFilePath:notify simulatorSet:simulatorSet deviceSet:deviceSet logger:logger];
+    }]
+    onQueue:dispatch_get_main_queue() fmap:^(FBiOSTargetStateChangeNotifier *notifier) {
+      [logger logFormat:@"Starting Notifier %@", notifier];
+      return [[notifier startNotifier] mapReplace:notifier];
+    }]
+    onQueue:dispatch_get_main_queue() map:^(FBiOSTargetStateChangeNotifier *notifier) {
+      [logger logFormat:@"Started Notifier %@", notifier];
+      return [notifier.notifierDone
+        onQueue:dispatch_get_main_queue() respondToCancellation:^{
+          [logger logFormat:@"Stopping Notifier %@", notifier];
+          return FBFuture.empty;
+        }];
+    }];
 }
 
 static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, const char *argv[], NSUserDefaults *userDefaults, FBIDBLogger *logger) {
@@ -292,7 +317,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
     return [FBFuture futureWithResult:ListFuture(userDefaults, logger, reporter)];
   } else if (notify) {
     [logger.info logFormat:@"Notify mode is set. writing updates to %@", notify];
-    return [[FBiOSTargetStateChangeNotifier notifierToFilePath:notify logger:logger] startNotifier];
+    return NotiferFuture(notify, userDefaults, logger, reporter);
   } else if (boot) {
     [logger logFormat:@"Booting %@", boot];
     return BootFuture(boot, [userDefaults boolForKey:@"-headless"], logger, reporter);

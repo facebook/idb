@@ -10,79 +10,59 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBDeviceControl/FBDeviceControl.h>
 
+#import "FBIDBError.h"
 
 @interface FBiOSTargetStateChangeNotifier () <FBiOSTargetSetDelegate>
 
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) NSString *filePath;
-@property (nonatomic, strong, readwrite) FBDeviceSet *deviceSet;
-@property (nonatomic, strong, readwrite) FBSimulatorSet *simulatorSet;
-@property (nonatomic, strong, readwrite) id<FBDataConsumer> consumer;
-@property (nonatomic, strong, readwrite) NSMutableSet<FBiOSTargetStateUpdate *> *targets;
+@property (nonatomic, strong, readonly) FBDeviceSet *deviceSet;
+@property (nonatomic, strong, readonly) FBSimulatorSet *simulatorSet;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) NSMutableSet<FBiOSTargetStateUpdate *> *targets;
 
 @end
 
 @implementation FBiOSTargetStateChangeNotifier
 
-
 #pragma mark Initializers
 
-+ (instancetype)notifierToFilePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToFilePath:(NSString *)filePath simulatorSet:(FBSimulatorSet *)simulatorSet deviceSet:(FBDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithFilePath:filePath logger:logger];
+  BOOL didCreateFile = [NSFileManager.defaultManager
+    createFileAtPath:filePath
+    contents:[@"[]" dataUsingEncoding:NSUTF8StringEncoding]
+    attributes:@{NSFilePosixPermissions: [NSNumber numberWithShort:0666]}];
+
+  if (!didCreateFile) {
+    return [[FBIDBError
+      describeFormat:@"Failed to create local targets file: %@ %s", filePath, strerror(errno)]
+      failFuture];
+  }
+  FBiOSTargetStateChangeNotifier *notifier = [[self alloc] initWithFilePath:filePath simulatorSet:simulatorSet deviceSet:deviceSet logger:logger];
+  simulatorSet.delegate = notifier;
+  deviceSet.delegate = notifier;
+  return [FBFuture futureWithResult:notifier];
 }
 
-- (instancetype)initWithFilePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFilePath:(NSString *)filePath simulatorSet:(FBSimulatorSet *)simulatorSet deviceSet:(FBDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
-  _logger = logger;
+
   _filePath = filePath;
-  BOOL didCreateFile = [[NSFileManager defaultManager] createFileAtPath:_filePath
-                                                               contents:[@"[]" dataUsingEncoding:NSUTF8StringEncoding]
-                                                             attributes:@{NSFilePosixPermissions: [NSNumber numberWithShort:0666]}];
-  if (!didCreateFile) {
-    [logger.error logFormat:@"Failed to create local targets file: %s", strerror(errno)];
-    exit(1);
-  }
+  _simulatorSet = simulatorSet;
+  _deviceSet = deviceSet;
+  _logger = logger;
   _targets = [[NSMutableSet alloc] init];
+
   return self;
 }
 
 #pragma mark Public
 
-- (FBFuture<FBFuture<NSNull *> *> *)startNotifier
-{
-  NSError *error = nil;
-  self.deviceSet = [FBDeviceSet defaultSetWithLogger:_logger error:&error delegate:self];
-  if (!self.deviceSet) {
-    [FBFuture futureWithError:error];
-  }
-  FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
-    configurationWithDeviceSetPath:nil
-    options:0
-    logger:self.logger
-    reporter:nil];
-  FBSimulatorServiceContext *serviceContext = [FBSimulatorServiceContext sharedServiceContext];
-  SimDeviceSet *simDeviceSet = [serviceContext createDeviceSetWithConfiguration:configuration error:&error];
-  if (!simDeviceSet) {
-    return [FBFuture futureWithError:error];
-  }
-  self.simulatorSet = [FBSimulatorSet setWithConfiguration:configuration deviceSet:simDeviceSet delegate:self logger:self.logger reporter:nil error:&error];
-  if (!self.simulatorSet) {
-    return [FBFuture futureWithError:error];
-  }
-  [self reportInitialState];
-
-  // The notifier never terminates, fallback here is a terrible hack to retain self
-  return [[FBFuture futureWithResult:FBMutableFuture.future] fallback:self];
-}
-
-#pragma mark Private
-
-- (void)reportInitialState
+- (FBFuture<NSNull *> *)startNotifier
 {
   for (FBDevice *device in self.deviceSet.allDevices) {
     [_targets addObject:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:device.state type:FBiOSTargetTypeDevice name:device.name osVersion:device.osVersion architecture:device.architecture]];
@@ -96,7 +76,17 @@
   [readyOutput appendData:[@"\n" dataUsingEncoding:NSUTF8StringEncoding]];
   write(STDOUT_FILENO, readyOutput.bytes, readyOutput.length);
   fflush(stdout);
+
+  return FBFuture.empty;
 }
+
+- (FBFuture<NSNull *> *)notifierDone
+{
+  // Never done, for now.
+  return FBMutableFuture.future;
+}
+
+#pragma mark Private
 
 - (void)writeTargets
 {
@@ -116,8 +106,7 @@
   }
 }
 
-#pragma mark FBiOSTargetSet Delegate Methods
-
+#pragma mark FBiOSTargetSetDelegate Methods
 
 - (void)targetDidUpdate:(FBiOSTargetStateUpdate *)update
 {
@@ -133,4 +122,5 @@
   [_targets addObject:update];
   [self writeTargets];
 }
+
 @end
