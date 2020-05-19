@@ -30,18 +30,6 @@
   return [[self developerDirectory] stringByDeletingLastPathComponent];
 }
 
-+ (nullable NSString *)appleConfiguratorApplicationPath
-{
-  static NSString *path = nil;
-#if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    path = [NSWorkspace.sharedWorkspace absolutePathForAppBundleWithIdentifier:@"com.apple.configurator.ui"];
-  });
-#endif
-  return path;
-}
-
 + (NSDecimalNumber *)xcodeVersionNumber
 {
   static dispatch_once_t onceToken;

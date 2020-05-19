@@ -18,11 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBXcodeConfiguration : NSObject <FBJSONSerializable>
 
 /**
- The File Path of Apple's 'Apple Configurator' Application, if installed.
- */
-@property (nonatomic, copy, readonly, nullable, class) NSString *appleConfiguratorApplicationPath;
-
-/**
  The File Path to of Xcode's /Xcode.app/Contents/Developer directory.
  */
 @property (nonatomic, copy, readonly, class) NSString *developerDirectory;

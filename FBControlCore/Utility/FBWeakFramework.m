@@ -64,21 +64,6 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
     requiredFrameworks:requiredFrameworks];
 }
 
-+ (instancetype)appleConfigurationFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames
-{
-  return [self appleConfigurationFrameworkWithRelativePath:relativePath requiredClassNames:requiredClassNames requiredFrameworks:@[]];
-}
-
-+ (instancetype)appleConfigurationFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks
-{
-  return [[FBWeakFramework alloc]
-    initWithBasePath:FBXcodeConfiguration.appleConfiguratorApplicationPath
-    relativePath:relativePath
-    fallbackDirectories:@[]
-    requiredClassNames:requiredClassNames
-    requiredFrameworks:requiredFrameworks];
-}
-
 + (instancetype)frameworkWithPath:(NSString *)absolutePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames
 {
   return [[FBWeakFramework alloc]
