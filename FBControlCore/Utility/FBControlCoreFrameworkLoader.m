@@ -56,12 +56,6 @@ void *FBGetSymbolFromHandleOptional(void *handle, const char *name)
   if (self.hasLoadedFrameworks) {
     return YES;
   }
-
-  if ([NSUserName() isEqualToString:@"root"]) {
-    return [[FBControlCoreError
-      describeFormat:@"The Frameworks for %@ cannot be loaded from the root user. Don't run this as root.", self.frameworkName]
-      failBool:error];
-  }
   BOOL result = [FBWeakFrameworkLoader loadPrivateFrameworks:self.frameworks logger:logger error:error];
   if (result) {
     _hasLoadedFrameworks = YES;

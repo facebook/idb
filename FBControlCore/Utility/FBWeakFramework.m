@@ -24,10 +24,12 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 @property (nonatomic, copy, readonly) NSString *name;
 @property (nonatomic, copy, readonly) NSString *basePath;
 @property (nonatomic, copy, readonly) NSString *relativePath;
-@property (nonatomic, assign, readonly) FBWeakFrameworkType type;
 @property (nonatomic, copy, readonly) NSArray<NSString *> *fallbackDirectories;
 @property (nonatomic, copy, readonly) NSArray<NSString *> *requiredClassNames;
 @property (nonatomic, copy, readonly) NSArray<FBWeakFramework *> *requiredFrameworks;
+@property (nonatomic, assign, readonly) FBWeakFrameworkType type;
+@property (nonatomic, assign, readonly) BOOL rootPermitted;
+
 
 @end
 
@@ -61,7 +63,8 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
     relativePath:relativePath
     fallbackDirectories:self.xcodeFallbackDirectories
     requiredClassNames:requiredClassNames
-    requiredFrameworks:requiredFrameworks];
+    requiredFrameworks:requiredFrameworks
+    rootPermitted:NO];
 }
 
 + (instancetype)frameworkWithPath:(NSString *)absolutePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames
@@ -71,10 +74,11 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
     relativePath:@""
     fallbackDirectories:@[]
     requiredClassNames:@[]
-    requiredFrameworks:@[]];
+    requiredFrameworks:@[]
+    rootPermitted:NO];
 }
 
-- (instancetype)initWithBasePath:(NSString *)basePath relativePath:(NSString *)relativePath fallbackDirectories:(NSArray<NSString *> *)fallbackDirectories requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks
+- (instancetype)initWithBasePath:(NSString *)basePath relativePath:(NSString *)relativePath fallbackDirectories:(NSArray<NSString *> *)fallbackDirectories requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks rootPermitted:(BOOL)rootPermitted
 {
   self = [super init];
   if (!self) {
@@ -89,8 +93,8 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   _requiredClassNames = requiredClassNames;
   _requiredFrameworks = requiredFrameworks;
   _name = filename.stringByDeletingPathExtension;
-  _type = ([filename.pathExtension isEqualToString:@"dylib"] ?
-           FBWeakFrameworkDylib : FBWeakFrameworkTypeFramework);
+  _type = [filename.pathExtension isEqualToString:@"dylib"] ? FBWeakFrameworkDylib : FBWeakFrameworkTypeFramework;
+  _rootPermitted = rootPermitted;
 
   return self;
 }
@@ -167,6 +171,13 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
     if (![requredFramework loadWithLogger:logger error:&innerError]) {
       return [FBControlCoreError failBoolWithError:innerError errorOut:error];
     }
+  }
+
+  // Check that the framework can be loaded as root if root.
+  if ([NSUserName() isEqualToString:@"root"] && self.rootPermitted == NO) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ cannot be loaded from the root user. Don't run this as root.", self.relativePath]
+      failBool:error];
   }
 
   // Load frameworks
