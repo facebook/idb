@@ -12,6 +12,7 @@ from typing import AsyncContextManager, Optional, Tuple
 
 from idb.common import plugin
 from idb.common.command import Command
+from idb.common.logging import log_call
 from idb.common.types import (
     Address,
     IdbClient,
@@ -19,7 +20,6 @@ from idb.common.types import (
     IdbManagementClient,
 )
 from idb.grpc.client import IdbClient as IdbClientGrpc
-from idb.grpc.logging import log_call
 from idb.grpc.management import IdbManagementClient as IdbManagementClientGrpc
 from idb.utils.contextlib import asynccontextmanager
 

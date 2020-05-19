@@ -18,6 +18,7 @@ from idb.common.companion_spawner import CompanionSpawner
 from idb.common.constants import BASE_IDB_FILE_PATH
 from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.common.local_targets_manager import LocalTargetsManager
+from idb.common.logging import log_call
 from idb.common.pid_saver import PidSaver
 from idb.common.types import (
     Address,
@@ -31,7 +32,6 @@ from idb.grpc.client import IdbClient
 from idb.grpc.companion import merge_connected_targets
 from idb.grpc.destination import destination_to_grpc
 from idb.grpc.idb_pb2 import ConnectRequest
-from idb.grpc.logging import log_call
 from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws
 

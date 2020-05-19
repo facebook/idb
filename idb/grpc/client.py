@@ -39,6 +39,7 @@ from idb.common.hid import (
     tap_to_events,
     text_to_events,
 )
+from idb.common.logging import log_call
 from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
 from idb.common.types import (
@@ -116,7 +117,6 @@ from idb.grpc.instruments import (
     translate_instruments_timings,
 )
 from idb.grpc.launch import drain_launch_stream, end_launch_stream
-from idb.grpc.logging import log_call
 from idb.grpc.stream import (
     cancel_wrapper,
     drain_to_stream,
