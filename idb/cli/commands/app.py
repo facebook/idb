@@ -8,7 +8,7 @@ import json
 from argparse import ArgumentParser, Namespace
 from typing import Optional
 
-from idb.cli import CompanionCommand
+from idb.cli import ClientCommand
 from idb.common.format import (
     human_format_installed_app_info,
     json_format_installed_app_info,
@@ -17,7 +17,7 @@ from idb.common.types import IdbClient, InstalledArtifact
 from idb.utils.typing import none_throws
 
 
-class AppInstallCommand(CompanionCommand):
+class AppInstallCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Install an application"
@@ -55,7 +55,7 @@ class AppInstallCommand(CompanionCommand):
             )
 
 
-class AppUninstallCommand(CompanionCommand):
+class AppUninstallCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Uninstall an application"
@@ -74,7 +74,7 @@ class AppUninstallCommand(CompanionCommand):
         await client.uninstall(bundle_id=args.bundle_id)
 
 
-class AppTerminateCommand(CompanionCommand):
+class AppTerminateCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Terminate a running application"
@@ -91,7 +91,7 @@ class AppTerminateCommand(CompanionCommand):
         await client.terminate(args.bundle_id)
 
 
-class AppListCommand(CompanionCommand):
+class AppListCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "List the installed apps"

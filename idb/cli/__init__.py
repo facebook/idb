@@ -98,8 +98,8 @@ class BaseCommand(Command, metaclass=ABCMeta):
         raise Exception("subclass")
 
 
-# A command that vends the IdbClientBase interface.
-class CompanionCommand(BaseCommand):
+# A command that vends the IdbClient interface.
+class ClientCommand(BaseCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--udid",
@@ -131,7 +131,7 @@ class CompanionCommand(BaseCommand):
         pass
 
 
-# A command that vends the IdbClient interface
+# A command that vends the IdbManagementClient interface
 class ManagementCommand(BaseCommand):
     async def _run_impl(self, args: Namespace) -> None:
         await self.run_with_client(

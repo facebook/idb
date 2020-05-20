@@ -6,11 +6,11 @@
 
 from argparse import Namespace
 
-from idb.cli import CompanionCommand
+from idb.cli import ClientCommand
 from idb.common.types import IdbClient
 
 
-class KeychainClearCommand(CompanionCommand):
+class KeychainClearCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Clear the targets keychain"

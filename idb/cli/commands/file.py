@@ -10,7 +10,7 @@ from abc import abstractmethod
 from argparse import ArgumentParser, Namespace
 from typing import Any, List, NamedTuple, Optional, Tuple
 
-from idb.cli import CompanionCommand
+from idb.cli import ClientCommand
 from idb.common.types import IdbClient
 
 
@@ -67,7 +67,7 @@ def _convert_args(args: Namespace) -> Tuple[Namespace, str]:
     return (args, bundle_id)
 
 
-class FSCommand(CompanionCommand):
+class FSCommand(ClientCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--bundle-id",
@@ -258,7 +258,7 @@ class FSPullCommand(FSCommand):
         )
 
 
-class DeprecatedPushCommand(CompanionCommand):
+class DeprecatedPushCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Copy file(s) from local machine to target"
@@ -291,7 +291,7 @@ class DeprecatedPushCommand(CompanionCommand):
         )
 
 
-class DeprecatedPullCommand(CompanionCommand):
+class DeprecatedPullCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Copy a file inside an application's container"

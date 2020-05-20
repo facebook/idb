@@ -6,11 +6,11 @@
 
 from argparse import ArgumentParser, Namespace
 
-from idb.cli import CompanionCommand
+from idb.cli import ClientCommand
 from idb.common.types import HIDButtonType, IdbClient
 
 
-class TapCommand(CompanionCommand):
+class TapCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Tap On the Screen"
@@ -29,7 +29,7 @@ class TapCommand(CompanionCommand):
         await client.tap(x=args.x, y=args.y, duration=args.duration)
 
 
-class ButtonCommand(CompanionCommand):
+class ButtonCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "A single press of a button"
@@ -54,7 +54,7 @@ class ButtonCommand(CompanionCommand):
         )
 
 
-class KeyCommand(CompanionCommand):
+class KeyCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "A short press of a keycode"
@@ -72,7 +72,7 @@ class KeyCommand(CompanionCommand):
         await client.key(keycode=args.key, duration=args.duration)
 
 
-class KeySequenceCommand(CompanionCommand):
+class KeySequenceCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "A sequence of short presses of a keycode"
@@ -93,7 +93,7 @@ class KeySequenceCommand(CompanionCommand):
         await client.key_sequence(key_sequence=list(map(int, args.key_sequence)))
 
 
-class TextCommand(CompanionCommand):
+class TextCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Input text"
@@ -110,7 +110,7 @@ class TextCommand(CompanionCommand):
         await client.text(text=args.text)
 
 
-class SwipeCommand(CompanionCommand):
+class SwipeCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Swipe from one point to another point"

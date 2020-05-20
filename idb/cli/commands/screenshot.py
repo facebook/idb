@@ -9,11 +9,11 @@ from argparse import ArgumentParser, Namespace
 from contextlib import contextmanager
 from typing import IO, Iterator
 
-from idb.cli import CompanionCommand
+from idb.cli import ClientCommand
 from idb.common.types import IdbClient
 
 
-class ScreenshotCommand(CompanionCommand):
+class ScreenshotCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Take a Screenshot of the Target"

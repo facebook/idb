@@ -7,12 +7,12 @@
 from argparse import ArgumentParser, Namespace
 from typing import List
 
-from idb.cli import CompanionCommand
+from idb.cli import ClientCommand
 from idb.common.signal import signal_handler_event
 from idb.common.types import IdbClient
 
 
-class RecordVideoCommand(CompanionCommand):
+class RecordVideoCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Record the target's screen to a mp4 video file"

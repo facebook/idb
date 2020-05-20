@@ -8,7 +8,7 @@ import dataclasses
 import json
 from argparse import ArgumentParser, Namespace
 
-from idb.cli import CompanionCommand
+from idb.cli import ClientCommand
 from idb.common.types import CrashLogQuery, IdbClient
 
 
@@ -52,7 +52,7 @@ def _build_query(arguments: Namespace) -> CrashLogQuery:
     )
 
 
-class CrashListCommand(CompanionCommand):
+class CrashListCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "List the available crashes"
@@ -71,7 +71,7 @@ class CrashListCommand(CompanionCommand):
             print(json.dumps(dataclasses.asdict(crash)))
 
 
-class CrashShowCommand(CompanionCommand):
+class CrashShowCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Fetch a crash log"
@@ -89,7 +89,7 @@ class CrashShowCommand(CompanionCommand):
         print(crash.contents)
 
 
-class CrashDeleteCommand(CompanionCommand):
+class CrashDeleteCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Delete a crash log"

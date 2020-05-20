@@ -6,11 +6,11 @@
 
 from argparse import ArgumentParser, Namespace
 
-from idb.cli import CompanionCommand
+from idb.cli import ClientCommand
 from idb.common.types import IdbClient
 
 
-class MediaAddCommand(CompanionCommand):
+class MediaAddCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Add photos/videos to the target"

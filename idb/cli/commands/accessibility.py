@@ -6,11 +6,11 @@
 
 from argparse import ArgumentParser, Namespace
 
-from idb.cli import CompanionCommand
+from idb.cli import ClientCommand
 from idb.common.types import IdbClient
 
 
-class AccessibilityInfoAllCommand(CompanionCommand):
+class AccessibilityInfoAllCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Describes Accessibility Information for the entire screen"
@@ -24,7 +24,7 @@ class AccessibilityInfoAllCommand(CompanionCommand):
         print(info.json)
 
 
-class AccessibilityInfoAtPointCommand(CompanionCommand):
+class AccessibilityInfoAtPointCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Describes Accessibility Information at a point on the screen"

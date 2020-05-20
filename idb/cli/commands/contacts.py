@@ -6,11 +6,11 @@
 
 from argparse import ArgumentParser, Namespace
 
-from idb.cli import CompanionCommand
+from idb.cli import ClientCommand
 from idb.common.types import IdbClient
 
 
-class ContactsUpdateCommand(CompanionCommand):
+class ContactsUpdateCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Updates the contacts"

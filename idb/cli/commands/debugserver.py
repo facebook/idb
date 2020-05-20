@@ -6,11 +6,11 @@
 
 from argparse import ArgumentParser, Namespace
 
-from idb.cli import CompanionCommand
+from idb.cli import ClientCommand
 from idb.common.types import IdbClient
 
 
-class DebugServerStartCommand(CompanionCommand):
+class DebugServerStartCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Start the Debug Server"
@@ -28,7 +28,7 @@ class DebugServerStartCommand(CompanionCommand):
         print(*commands, sep="\n")
 
 
-class DebugServerStopCommand(CompanionCommand):
+class DebugServerStopCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Stop the debug server"
@@ -41,7 +41,7 @@ class DebugServerStopCommand(CompanionCommand):
         await client.debugserver_stop()
 
 
-class DebugServerStatusCommand(CompanionCommand):
+class DebugServerStatusCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Get the status of the debug server"

@@ -8,7 +8,7 @@ import json
 from argparse import REMAINDER, ArgumentParser, Namespace
 from typing import List, Optional, Set
 
-from idb.cli import Command, CompanionCommand
+from idb.cli import ClientCommand, Command
 from idb.common.command import CompositeCommand
 from idb.common.format import (
     human_format_installed_test_info,
@@ -20,7 +20,7 @@ from idb.common.misc import get_env_with_idb_prefix
 from idb.common.types import IdbClient
 
 
-class XctestInstallCommand(CompanionCommand):
+class XctestInstallCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Install an xctest"
@@ -52,7 +52,7 @@ class XctestInstallCommand(CompanionCommand):
                 print(f"Installed: {install_response.name} {install_response.uuid}")
 
 
-class XctestsListBundlesCommand(CompanionCommand):
+class XctestsListBundlesCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "List the installed test bundles"
@@ -70,7 +70,7 @@ class XctestsListBundlesCommand(CompanionCommand):
             print(formatter(test))
 
 
-class XctestListTestsCommand(CompanionCommand):
+class XctestListTestsCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "List the tests inside an installed test bundle"
@@ -104,7 +104,7 @@ class XctestListTestsCommand(CompanionCommand):
             print("\n".join(tests))
 
 
-class CommonRunXcTestCommand(CompanionCommand):
+class CommonRunXcTestCommand(ClientCommand):
     @property
     def description(self) -> str:
         return (

@@ -7,12 +7,12 @@
 from argparse import REMAINDER, ArgumentParser, Namespace
 from typing import List, Optional
 
-from idb.cli import CompanionCommand
+from idb.cli import ClientCommand
 from idb.common.signal import signal_handler_event
 from idb.common.types import IdbClient
 
 
-class LogCommand(CompanionCommand):
+class LogCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Obtain logs from the target"
@@ -66,7 +66,7 @@ log stream --predicate examples:
         return log_arguments
 
 
-class CompanionLogCommand(CompanionCommand):
+class CompanionLogCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Obtain logs from the companion"

@@ -6,13 +6,13 @@
 
 from argparse import REMAINDER, ArgumentParser, Namespace
 
-from idb.cli import CompanionCommand
+from idb.cli import ClientCommand
 from idb.common.misc import get_env_with_idb_prefix
 from idb.common.signal import signal_handler_event
 from idb.common.types import IdbClient
 
 
-class LaunchCommand(CompanionCommand):
+class LaunchCommand(ClientCommand):
     @property
     def description(self) -> str:
         return (
