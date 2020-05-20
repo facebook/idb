@@ -185,14 +185,11 @@ static FBFuture<NSNull *> *ListFuture(NSUserDefaults *userDefaults, id<FBControl
       SimulatorSet(userDefaults, logger, reporter),
       DeviceSet(logger),
     ]]
-    onQueue:dispatch_get_main_queue() map:^ NSNull * (NSArray<id> *tup) {
-      FBSimulatorSet *simulatorSet = tup[0];
-      FBDeviceSet *deviceSet = tup[1];
-      for (FBSimulator *simulator in simulatorSet.allSimulators) {
-        WriteJSONToStdOut(simulator.jsonSerializableRepresentation);
-      }
-      for (FBDevice *device in deviceSet.allDevices) {
-        WriteJSONToStdOut(device.jsonSerializableRepresentation);
+    onQueue:dispatch_get_main_queue() map:^ NSNull * (NSArray<id<FBiOSTargetSet>> *targetSets) {
+      for (id<FBiOSTargetSet> targetSet in targetSets) {
+        for (id<FBiOSTarget> target in targetSet.allTargets) {
+          WriteJSONToStdOut(target.jsonSerializableRepresentation);
+        }
       }
       return NSNull.null;
     }];
