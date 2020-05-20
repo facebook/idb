@@ -31,7 +31,7 @@ Usage: \n \
     --delete UDID|all          Deletes the simulator with the specified UDID, or 'all' to delete all simulators in the set. \n\
     --create VALUE             Creates a simulator using the VALUE argument like \"iPhone X,iOS 12.4\"\n\
     --clone UDID               Clones a simulator by a given UDID\n\
-    --notify PATH              Launches a companion notifier which will stream availability updates to the specified path.\n\
+    --notify PATH|stdout       Launches a companion notifier which will stream availability updates to the specified path, or stdout.\n\
     --list 1                   Lists all available devices/simulators in the current context.\n\
     --help                     Show this help message and exit.\n\
 \n\
@@ -282,6 +282,9 @@ static FBFuture<FBFuture<NSNull *> *> *NotiferFuture(NSString *notify, NSUserDef
     onQueue:dispatch_get_main_queue() fmap:^(NSArray<id> *sets) {
       FBSimulatorSet *simulatorSet = sets[0];
       FBDeviceSet *deviceSet = sets[1];
+      if ([notify isEqualToString:@"stdout"]) {
+        return [FBiOSTargetStateChangeNotifier notifierToStdOutWithSimulatorSet:simulatorSet deviceSet:deviceSet logger:logger];
+      }
       return [FBiOSTargetStateChangeNotifier notifierToFilePath:notify simulatorSet:simulatorSet deviceSet:deviceSet logger:logger];
     }]
     onQueue:dispatch_get_main_queue() fmap:^(FBiOSTargetStateChangeNotifier *notifier) {
@@ -316,7 +319,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
     [logger.info log:@"Listing"];
     return [FBFuture futureWithResult:ListFuture(userDefaults, logger, reporter)];
   } else if (notify) {
-    [logger.info logFormat:@"Notify mode is set. writing updates to %@", notify];
+    [logger.info logFormat:@"Notifying %@", notify];
     return NotiferFuture(notify, userDefaults, logger, reporter);
   } else if (boot) {
     [logger logFormat:@"Booting %@", boot];

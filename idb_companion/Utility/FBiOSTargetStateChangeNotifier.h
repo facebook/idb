@@ -22,7 +22,8 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Initializers
 
 /**
- The designated initializer.
+ A notifier that writes state updates to a file.
+ The current set of targets is updated and the data is stored as an JSON array.
 
  @param filePath the filepath to write the updates to. This
  @param simulatorSet the simulator set to monitor.
@@ -31,6 +32,15 @@ NS_ASSUME_NONNULL_BEGIN
  @return a future that resolves when the notifier is created.
  */
 + (FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToFilePath:(NSString *)filePath simulatorSet:(FBSimulatorSet *)simulatorSet deviceSet:(FBDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logge;
+
+/**
+ A notifier that writes state updates to stdout
+
+ @param simulatorSet the simulator set to monitor.
+ @param deviceSet the device set to monitor.
+ @param logger the logger to log to.
+ */
++ (FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToStdOutWithSimulatorSet:(FBSimulatorSet *)simulatorSet deviceSet:(FBDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logge;
 
 #pragma mark Public Methods
 

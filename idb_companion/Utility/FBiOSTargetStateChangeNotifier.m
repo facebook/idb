@@ -14,7 +14,7 @@
 
 @interface FBiOSTargetStateChangeNotifier () <FBiOSTargetSetDelegate>
 
-@property (nonatomic, strong, readonly) NSString *filePath;
+@property (nonatomic, strong, readonly, nullable) NSString *filePath;
 @property (nonatomic, strong, readonly) FBDeviceSet *deviceSet;
 @property (nonatomic, strong, readonly) FBSimulatorSet *simulatorSet;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
@@ -45,7 +45,15 @@
   return [FBFuture futureWithResult:notifier];
 }
 
-- (instancetype)initWithFilePath:(NSString *)filePath simulatorSet:(FBSimulatorSet *)simulatorSet deviceSet:(FBDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToStdOutWithSimulatorSet:(FBSimulatorSet *)simulatorSet deviceSet:(FBDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logger
+{
+  FBiOSTargetStateChangeNotifier *notifier = [[self alloc] initWithFilePath:nil simulatorSet:simulatorSet deviceSet:deviceSet logger:logger];
+  simulatorSet.delegate = notifier;
+  deviceSet.delegate = notifier;
+  return [FBFuture futureWithResult:notifier];
+}
+
+- (instancetype)initWithFilePath:(nullable NSString *)filePath simulatorSet:(FBSimulatorSet *)simulatorSet deviceSet:(FBDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -75,12 +83,14 @@
   if (![self writeTargets]) {
     return self.finished;
   }
-
-  NSData *jsonOutput = [NSJSONSerialization dataWithJSONObject:@{@"report_initial_state": @YES} options:0 error:nil];
-  NSMutableData *readyOutput = [NSMutableData dataWithData:jsonOutput];
-  [readyOutput appendData:[@"\n" dataUsingEncoding:NSUTF8StringEncoding]];
-  write(STDOUT_FILENO, readyOutput.bytes, readyOutput.length);
-  fflush(stdout);
+  // If we're writing to a file, we also need to signal to stdout on the first update
+  if (self.filePath) {
+    NSData *jsonOutput = [NSJSONSerialization dataWithJSONObject:@{@"report_initial_state": @YES} options:0 error:nil];
+    NSMutableData *readyOutput = [NSMutableData dataWithData:jsonOutput];
+    [readyOutput appendData:[@"\n" dataUsingEncoding:NSUTF8StringEncoding]];
+    write(STDOUT_FILENO, readyOutput.bytes, readyOutput.length);
+    fflush(stdout);
+  }
 
   return FBFuture.empty;
 }
@@ -104,11 +114,27 @@
     [self.finished resolveWithError:[[FBIDBError describeFormat:@"error writing update to consumer %@", error] build]];
     return NO;
   }
-  if (![data writeToFile:_filePath options:NSDataWritingAtomic error:&error]) {
+  NSString *filePath = self.filePath;
+  return filePath ? [self writeTargetsData:data toFilePath:filePath] : [self writeTargetsDataToStdOut:data];
+}
+
+- (BOOL)writeTargetsData:(NSData *)data toFilePath:(NSString *)filePath
+{
+  NSError *error = nil;
+  if (![data writeToFile:filePath options:NSDataWritingAtomic error:&error]) {
+    [self.logger logFormat:@"Failed writing updates %@", error];
     [self.finished resolveWithError:[[FBIDBError describeFormat:@"Failed writing updates %@", error] build]];
-    [self.logger logFormat:@"Failed writing updates %@",error];
     return NO;
   }
+  return YES;
+}
+
+- (BOOL)writeTargetsDataToStdOut:(NSData *)data
+{
+  write(STDOUT_FILENO, data.bytes, data.length);
+  data = FBDataBuffer.newlineTerminal;
+  write(STDOUT_FILENO, data.bytes, data.length);
+  fflush(stdout);
   return YES;
 }
 
