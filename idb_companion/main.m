@@ -59,9 +59,13 @@ static void WriteJSONToStdOut(id json)
 
 static FBFuture<FBSimulatorSet *> *SimulatorSet(NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
+  // Give a more meaningful message if we can't load the frameworks.
+  NSError *error = nil;
+  if(![FBSimulatorControlFrameworkLoader.essentialFrameworks loadPrivateFrameworks:logger error:&error]) {
+    return [FBFuture futureWithError:error];
+  }
   NSString *deviceSetPath = [userDefaults stringForKey:@"-device-set-path"];
   FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:deviceSetPath options:0 logger:logger reporter:reporter];
-  NSError *error = nil;
   FBSimulatorControl *control = [FBSimulatorControl withConfiguration:configuration error:&error];
   if (!control) {
     return [FBFuture futureWithError:error];
@@ -71,7 +75,11 @@ static FBFuture<FBSimulatorSet *> *SimulatorSet(NSUserDefaults *userDefaults, id
 
 static FBFuture<FBDeviceSet *> *DeviceSet(id<FBControlCoreLogger> logger)
 {
+  // Give a more meaningful message if we can't load the frameworks.
   NSError *error = nil;
+  if(![FBDeviceControlFrameworkLoader.new loadPrivateFrameworks:logger error:&error]) {
+    return [FBFuture futureWithError:error];
+  }
   FBDeviceSet *deviceSet = [FBDeviceSet defaultSetWithLogger:logger error:&error delegate:nil];
   if (!deviceSet) {
     return [FBFuture futureWithError:error];
