@@ -4,6 +4,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import dataclasses
 import json
 from argparse import ArgumentParser, Namespace
 
@@ -67,7 +68,7 @@ class CrashListCommand(CompanionCommand):
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         crashes = await client.crash_list(query=_build_query(args))
         for crash in crashes:
-            print(json.dumps(crash._asdict()))
+            print(json.dumps(dataclasses.asdict(crash)))
 
 
 class CrashShowCommand(CompanionCommand):
@@ -108,4 +109,4 @@ class CrashDeleteCommand(CompanionCommand):
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         crashes = await client.crash_delete(query=_build_query(args))
         for crash in crashes:
-            print(json.dumps(crash._asdict()))
+            print(json.dumps(dataclasses.asdict(crash)))

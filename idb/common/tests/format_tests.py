@@ -4,6 +4,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import dataclasses
+
 from idb.common.format import (
     json_data_companions,
     json_format_installed_app_info,
@@ -93,8 +95,8 @@ class FormattingTests(TestCase):
         )
 
     def test_target_description_all_optional_fields(self) -> None:
-        target = TARGET_DESCRIPTION_FIXTURE._replace(
-            companion_info=COMPANION_INFO_FIXTURE
+        target = dataclasses.replace(
+            TARGET_DESCRIPTION_FIXTURE, companion_info=COMPANION_INFO_FIXTURE
         )
         self.assertEqual(
             target, target_description_from_json(json_format_target_info(target))

@@ -171,8 +171,6 @@ def human_format_target_info(target: TargetDescription) -> str:
         f" | {target.target_type} | {target.os_version} | {target.architecture}"
     )
     target_info += (
-        # pyre-fixme[16]: `Optional` has no attribute `host`.
-        # pyre-fixme[16]: `Optional` has no attribute `port`.
         f" | {target.companion_info.host}:{target.companion_info.port}"
         if target.companion_info
         else f" | No Companion Connected"
@@ -190,11 +188,8 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
         "architecture": target.architecture,
     }
     if target.companion_info:
-        # pyre-fixme[16]: `Optional` has no attribute `host`.
         data["host"] = target.companion_info.host
-        # pyre-fixme[16]: `Optional` has no attribute `port`.
         data["port"] = target.companion_info.port
-        # pyre-fixme[16]: `Optional` has no attribute `is_local`.
         data["is_local"] = target.companion_info.is_local
     return data
 
@@ -271,8 +266,6 @@ def json_format_installed_test_info(test: InstalledTestInfo) -> str:
     data = {
         "bundle_id": test.bundle_id,
         "name": test.name,
-        # pyre-fixme[6]: Expected `Iterable[Variable[_T]]` for 1st param but got
-        #  `Optional[typing.Set[str]]`.
         "architectures": list(test.architectures) if test.architectures else None,
     }
     return json.dumps(data)

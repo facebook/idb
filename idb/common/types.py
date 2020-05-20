@@ -16,7 +16,6 @@ from typing import (
     AsyncIterator,
     Dict,
     List,
-    NamedTuple,
     Optional,
     Set,
     Tuple,
@@ -27,7 +26,16 @@ from typing import (
 LoggingMetadata = Dict[str, Optional[Union[str, List[str], int, float]]]
 
 
-class Address(NamedTuple):
+class IdbException(Exception):
+    pass
+
+
+class IdbConnectionException(Exception):
+    pass
+
+
+@dataclass(frozen=True)
+class Address:
     host: str
     port: int
 
@@ -38,7 +46,8 @@ class AppProcessState(Enum):
     RUNNING = 2
 
 
-class InstalledAppInfo(NamedTuple):
+@dataclass(frozen=True)
+class InstalledAppInfo:
     bundle_id: str
     name: str
     architectures: Set[str]
@@ -47,7 +56,8 @@ class InstalledAppInfo(NamedTuple):
     debuggable: bool
 
 
-class InstrumentsTimings(NamedTuple):
+@dataclass(frozen=True)
+class InstrumentsTimings:
     launch_error_timeout: Optional[float] = None
     launch_retry_timeout: Optional[float] = None
     terminate_timeout: Optional[float] = None
@@ -65,7 +75,8 @@ class HIDButtonType(Enum):
 ConnectionDestination = Union[str, Address]
 
 
-class CompanionInfo(NamedTuple):
+@dataclass(frozen=True)
+class CompanionInfo:
     udid: str
     host: str
     port: int
@@ -80,7 +91,8 @@ class CompanionInfo(NamedTuple):
         )
 
 
-class ScreenDimensions(NamedTuple):
+@dataclass(frozen=True)
+class ScreenDimensions:
     width: int
     height: int
     density: Optional[float]
@@ -88,7 +100,8 @@ class ScreenDimensions(NamedTuple):
     height_points: Optional[int]
 
 
-class TargetDescription(NamedTuple):
+@dataclass(frozen=True)
+class TargetDescription:
     udid: str
     name: str
     state: Optional[str]
@@ -99,7 +112,8 @@ class TargetDescription(NamedTuple):
     screen_dimensions: Optional[ScreenDimensions]
 
 
-class DaemonInfo(NamedTuple):
+@dataclass(frozen=True)
+class DaemonInfo:
     host: str
     port: int
     targets: List[TargetDescription]
@@ -108,23 +122,18 @@ class DaemonInfo(NamedTuple):
 ConnectResponse = Union[CompanionInfo, DaemonInfo]
 
 
-class FileEntryInfo(NamedTuple):
+@dataclass(frozen=True)
+class FileEntryInfo:
     path: str
 
 
-class IdbException(Exception):
-    pass
-
-
-class IdbConnectionException(Exception):
-    pass
-
-
-class AccessibilityInfo(NamedTuple):
+@dataclass(frozen=True)
+class AccessibilityInfo:
     json: Optional[str]
 
 
-class CrashLogInfo(NamedTuple):
+@dataclass(frozen=True)
+class CrashLogInfo:
     name: Optional[str]
     bundle_id: Optional[str]
     process_name: Optional[str]
@@ -134,19 +143,22 @@ class CrashLogInfo(NamedTuple):
     timestamp: Optional[int]
 
 
-class CrashLog(NamedTuple):
+@dataclass(frozen=True)
+class CrashLog:
     info: Optional[CrashLogInfo]
     contents: Optional[str]
 
 
-class CrashLogQuery(NamedTuple):
+@dataclass(frozen=True)
+class CrashLogQuery:
     since: Optional[int] = None
     before: Optional[int] = None
     bundle_id: Optional[str] = None
     name: Optional[str] = None
 
 
-class TestRunFailureInfo(NamedTuple):
+@dataclass(frozen=True)
+class TestRunFailureInfo:
     message: str
     file: str
     line: int
@@ -186,7 +198,8 @@ class TestRunInfo:
     crashed: bool
 
 
-class InstalledTestInfo(NamedTuple):
+@dataclass(frozen=True)
+class InstalledTestInfo:
     bundle_id: str
     name: Optional[str]
     architectures: Optional[Set[str]]
@@ -197,45 +210,53 @@ class HIDDirection(Enum):
     UP = 1
 
 
-class Point(NamedTuple):
+@dataclass(frozen=True)
+class Point:
     x: float
     y: float
 
 
-class HIDTouch(NamedTuple):
+@dataclass(frozen=True)
+class HIDTouch:
     point: Point
 
 
-class HIDButton(NamedTuple):
+@dataclass(frozen=True)
+class HIDButton:
     button: HIDButtonType
 
 
-class HIDKey(NamedTuple):
+@dataclass(frozen=True)
+class HIDKey:
     keycode: int
 
 
 HIDPressAction = Union[HIDTouch, HIDButton, HIDKey]
 
 
-class HIDPress(NamedTuple):
+@dataclass(frozen=True)
+class HIDPress:
     action: HIDPressAction
     direction: HIDDirection
 
 
-class HIDSwipe(NamedTuple):
+@dataclass(frozen=True)
+class HIDSwipe:
     start: Point
     end: Point
     delta: Optional[float]
 
 
-class HIDDelay(NamedTuple):
+@dataclass(frozen=True)
+class HIDDelay:
     duration: float
 
 
 HIDEvent = Union[HIDPress, HIDSwipe, HIDDelay]
 
 
-class InstalledArtifact(NamedTuple):
+@dataclass(frozen=True)
+class InstalledArtifact:
     name: str
     uuid: Optional[str]
     progress: Optional[float]
