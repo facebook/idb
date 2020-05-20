@@ -26,21 +26,20 @@ NS_ASSUME_NONNULL_BEGIN
  The current set of targets is updated and the data is stored as an JSON array.
 
  @param filePath the filepath to write the updates to. This
- @param simulatorSet the simulator set to monitor.
+ @param targetSets the FBiOSTargetSets to monitor
  @param deviceSet the device set to monitor.
  @param logger the logger to log to.
  @return a future that resolves when the notifier is created.
  */
-+ (FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToFilePath:(NSString *)filePath simulatorSet:(FBSimulatorSet *)simulatorSet deviceSet:(FBDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logge;
++ (FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToFilePath:(NSString *)filePath withTargetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(id<FBControlCoreLogger>)logger;
 
 /**
  A notifier that writes state updates to stdout
 
- @param simulatorSet the simulator set to monitor.
- @param deviceSet the device set to monitor.
+ @param targetSets the FBiOSTargetSets to monitor
  @param logger the logger to log to.
  */
-+ (FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToStdOutWithSimulatorSet:(FBSimulatorSet *)simulatorSet deviceSet:(FBDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logge;
++ (FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToStdOutWithTargetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 

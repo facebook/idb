@@ -283,9 +283,9 @@ static FBFuture<FBFuture<NSNull *> *> *NotiferFuture(NSString *notify, NSUserDef
       FBSimulatorSet *simulatorSet = sets[0];
       FBDeviceSet *deviceSet = sets[1];
       if ([notify isEqualToString:@"stdout"]) {
-        return [FBiOSTargetStateChangeNotifier notifierToStdOutWithSimulatorSet:simulatorSet deviceSet:deviceSet logger:logger];
+        return [FBiOSTargetStateChangeNotifier notifierToStdOutWithTargetSets:@[simulatorSet, deviceSet] logger:logger];
       }
-      return [FBiOSTargetStateChangeNotifier notifierToFilePath:notify simulatorSet:simulatorSet deviceSet:deviceSet logger:logger];
+      return [FBiOSTargetStateChangeNotifier notifierToFilePath:notify withTargetSets:@[simulatorSet, deviceSet] logger:logger];
     }]
     onQueue:dispatch_get_main_queue() fmap:^(FBiOSTargetStateChangeNotifier *notifier) {
       [logger logFormat:@"Starting Notifier %@", notifier];

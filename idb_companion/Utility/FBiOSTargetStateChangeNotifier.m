@@ -15,8 +15,7 @@
 @interface FBiOSTargetStateChangeNotifier () <FBiOSTargetSetDelegate>
 
 @property (nonatomic, strong, readonly, nullable) NSString *filePath;
-@property (nonatomic, strong, readonly) FBDeviceSet *deviceSet;
-@property (nonatomic, strong, readonly) FBSimulatorSet *simulatorSet;
+@property (nonatomic, strong, readonly) NSArray<id<FBiOSTargetSet>> *targetSets;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) NSMutableSet<FBiOSTargetStateUpdate *> *targets;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finished;
@@ -27,8 +26,15 @@
 
 #pragma mark Initializers
 
-+ (FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToFilePath:(NSString *)filePath simulatorSet:(FBSimulatorSet *)simulatorSet deviceSet:(FBDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToFilePath:(NSString *)filePath withTargetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(id<FBControlCoreLogger>)logger
 {
+  if (targetSets.count == 0) {
+    return [[FBIDBError
+      describe:@"Cannot initialize FBiOSTargetStateChangeNotifier without any sets to monitor"]
+      failFuture];
+  }
+
+
   BOOL didCreateFile = [NSFileManager.defaultManager
     createFileAtPath:filePath
     contents:[@"[]" dataUsingEncoding:NSUTF8StringEncoding]
@@ -39,21 +45,29 @@
       describeFormat:@"Failed to create local targets file: %@ %s", filePath, strerror(errno)]
       failFuture];
   }
-  FBiOSTargetStateChangeNotifier *notifier = [[self alloc] initWithFilePath:filePath simulatorSet:simulatorSet deviceSet:deviceSet logger:logger];
-  simulatorSet.delegate = notifier;
-  deviceSet.delegate = notifier;
+  FBiOSTargetStateChangeNotifier *notifier = [[self alloc] initWithFilePath:filePath targetSets:targetSets logger:logger];
+  for (id<FBiOSTargetSet> targetSet in targetSets) {
+    targetSet.delegate = notifier;
+  }
   return [FBFuture futureWithResult:notifier];
 }
 
-+ (FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToStdOutWithSimulatorSet:(FBSimulatorSet *)simulatorSet deviceSet:(FBDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToStdOutWithTargetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(id<FBControlCoreLogger>)logger
 {
-  FBiOSTargetStateChangeNotifier *notifier = [[self alloc] initWithFilePath:nil simulatorSet:simulatorSet deviceSet:deviceSet logger:logger];
-  simulatorSet.delegate = notifier;
-  deviceSet.delegate = notifier;
+  if (targetSets.count == 0) {
+    return [[FBIDBError
+      describe:@"Cannot initialize FBiOSTargetStateChangeNotifier without any sets to monitor"]
+      failFuture];
+  }
+
+  FBiOSTargetStateChangeNotifier *notifier = [[self alloc] initWithFilePath:nil targetSets:targetSets logger:logger];
+  for (id<FBiOSTargetSet> targetSet in targetSets) {
+    targetSet.delegate = notifier;
+  }
   return [FBFuture futureWithResult:notifier];
 }
 
-- (instancetype)initWithFilePath:(nullable NSString *)filePath simulatorSet:(FBSimulatorSet *)simulatorSet deviceSet:(FBDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFilePath:(nullable NSString *)filePath targetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -61,8 +75,7 @@
   }
 
   _filePath = filePath;
-  _simulatorSet = simulatorSet;
-  _deviceSet = deviceSet;
+  _targetSets = targetSets;
   _logger = logger;
   _targets = [[NSMutableSet alloc] init];
   _finished = FBMutableFuture.future;
@@ -74,11 +87,10 @@
 
 - (FBFuture<NSNull *> *)startNotifier
 {
-  for (FBDevice *device in self.deviceSet.allDevices) {
-    [_targets addObject:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:device.state type:FBiOSTargetTypeDevice name:device.name osVersion:device.osVersion architecture:device.architecture]];
-  }
-  for (FBSimulator *simulator in self.simulatorSet.allSimulators) {
-    [_targets addObject:[[FBiOSTargetStateUpdate alloc] initWithUDID:simulator.udid state:simulator.state type:FBiOSTargetTypeSimulator name:simulator.name osVersion:simulator.osVersion architecture:simulator.architecture]];
+  for (id<FBiOSTargetSet> targetSet in self.targetSets) {
+    for (id<FBiOSTarget> target in targetSet.allTargets) {
+      [_targets addObject:[[FBiOSTargetStateUpdate alloc] initWithUDID:target.udid state:target.state type:target.targetType name:target.name osVersion:target.osVersion architecture:target.architecture]];
+    }
   }
   if (![self writeTargets]) {
     return self.finished;
