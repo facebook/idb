@@ -40,6 +40,7 @@ Usage: \n \
     --debug-port PORT          Port to connect debugger on (default: 10881).\n\
     --log-file-path PATH       Path to write a log file to e.g ./output.log (default: logs to stdErr).\n\
     --device-set-path PATH     Path to a custom Simulator device set.\n\
+    --device-only 1            If set, will only query against iOS Devices\n\
     --headless VALUE           If VALUE is a true value, the Simulator boot's lifecycle will be tied to the lifecycle of this invocation.\n\
     --terminate-offline VALUE  Terminate if the target goes offline, otherwise the companion will stay alive.\n";
 
@@ -85,6 +86,19 @@ static FBFuture<FBDeviceSet *> *DeviceSet(id<FBControlCoreLogger> logger)
     return [FBFuture futureWithError:error];
   }
   return [FBFuture futureWithResult:deviceSet];
+}
+
+static FBFuture<NSArray<id<FBiOSTargetSet>> *> *DefaultTargetSets(NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
+{
+  NSString *deviceOnly = [userDefaults stringForKey:@"-device-only"];
+  if (deviceOnly) {
+    [logger log:@"'--device-only' is set, ignoring simulators"];
+    return [FBFuture futureWithFutures:@[DeviceSet(logger)]];
+  }
+  return [FBFuture futureWithFutures:@[
+    SimulatorSet(userDefaults, logger, reporter),
+    DeviceSet(logger),
+  ]];
 }
 
 static FBFuture<FBSimulator *> *SimulatorFuture(NSString *udid, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
@@ -188,11 +202,7 @@ static FBFuture<NSNull *> *DeleteFuture(NSString *udidOrAll, NSUserDefaults *use
 
 static FBFuture<NSNull *> *ListFuture(NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
-  return [[FBFuture
-    futureWithFutures:@[
-      SimulatorSet(userDefaults, logger, reporter),
-      DeviceSet(logger),
-    ]]
+  return [DefaultTargetSets(userDefaults, logger, reporter)
     onQueue:dispatch_get_main_queue() map:^ NSNull * (NSArray<id<FBiOSTargetSet>> *targetSets) {
       for (id<FBiOSTargetSet> targetSet in targetSets) {
         for (id<FBiOSTarget> target in targetSet.allTargets) {
@@ -279,18 +289,12 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
 
 static FBFuture<FBFuture<NSNull *> *> *NotiferFuture(NSString *notify, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
-  return [[[[FBFuture
-    futureWithFutures:@[
-      SimulatorSet(userDefaults, logger, reporter),
-      DeviceSet(logger),
-    ]]
-    onQueue:dispatch_get_main_queue() fmap:^(NSArray<id> *sets) {
-      FBSimulatorSet *simulatorSet = sets[0];
-      FBDeviceSet *deviceSet = sets[1];
+  return [[[DefaultTargetSets(userDefaults, logger, reporter)
+    onQueue:dispatch_get_main_queue() fmap:^(NSArray<id<FBiOSTargetSet>> *targetSets) {
       if ([notify isEqualToString:@"stdout"]) {
-        return [FBiOSTargetStateChangeNotifier notifierToStdOutWithTargetSets:@[simulatorSet, deviceSet] logger:logger];
+        return [FBiOSTargetStateChangeNotifier notifierToStdOutWithTargetSets:targetSets logger:logger];
       }
-      return [FBiOSTargetStateChangeNotifier notifierToFilePath:notify withTargetSets:@[simulatorSet, deviceSet] logger:logger];
+      return [FBiOSTargetStateChangeNotifier notifierToFilePath:notify withTargetSets:targetSets logger:logger];
     }]
     onQueue:dispatch_get_main_queue() fmap:^(FBiOSTargetStateChangeNotifier *notifier) {
       [logger logFormat:@"Starting Notifier %@", notifier];
