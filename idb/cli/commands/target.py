@@ -5,12 +5,12 @@
 # LICENSE file in the root directory of this source tree.
 
 import json
-import os
 from argparse import SUPPRESS, ArgumentParser, Namespace
 from typing import Union
 
 import idb.common.plugin as plugin
-from idb.cli import ClientCommand, ManagementCommand
+from idb.cli import ClientCommand, CompanionCommand, ManagementCommand
+from idb.common.companion import Companion
 from idb.common.format import human_format_target_info, json_format_target_info
 from idb.common.signal import signal_handler_event
 from idb.common.types import Address, IdbClient, IdbException, IdbManagementClient
@@ -179,7 +179,7 @@ class TargetListCommand(ManagementCommand):
             print(formatter(target))
 
 
-class TargetCreateCommand(ManagementCommand):
+class TargetCreateCommand(CompanionCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("device_type", help="The Device Type to create", type=str)
         parser.add_argument("os_version", help="The OS Version to create", type=str)
@@ -193,16 +193,14 @@ class TargetCreateCommand(ManagementCommand):
     def name(self) -> str:
         return "create"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
-        udid = await client.create(
+    async def run_with_companion(self, args: Namespace, companion: Companion) -> None:
+        udid = await companion.create(
             device_type=args.device_type, os_version=args.os_version
         )
         print(udid)
 
 
-class UDIDTargetedManagementCommand(ManagementCommand):
+class UDIDTargetedCompanionCommand(CompanionCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         super().add_parser_arguments(parser=parser)
         parser.add_argument("udid", help="The UDID of the target", nargs="?")
@@ -216,7 +214,7 @@ class UDIDTargetedManagementCommand(ManagementCommand):
         raise Exception("Need to provide udid as a position argument")
 
 
-class TargetBootCommand(UDIDTargetedManagementCommand):
+class TargetBootCommand(UDIDTargetedCompanionCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         super().add_parser_arguments(parser)
         parser.add_argument(
@@ -236,17 +234,15 @@ class TargetBootCommand(UDIDTargetedManagementCommand):
     def name(self) -> str:
         return "boot"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_companion(self, args: Namespace, companion: Companion) -> None:
         if args.headless:
-            async with client.boot_headless(udid=self.get_udid(args)):
+            async with companion.boot_headless(udid=self.get_udid(args)):
                 await signal_handler_event("headless_boot").wait()
         else:
-            await client.boot(udid=self.get_udid(args))
+            await companion.boot(udid=self.get_udid(args))
 
 
-class TargetShutdownCommand(UDIDTargetedManagementCommand):
+class TargetShutdownCommand(UDIDTargetedCompanionCommand):
     @property
     def description(self) -> str:
         return "Shuts the simulator down (only works on mac)"
@@ -255,13 +251,11 @@ class TargetShutdownCommand(UDIDTargetedManagementCommand):
     def name(self) -> str:
         return "shutdown"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
-        await client.shutdown(udid=self.get_udid(args))
+    async def run_with_companion(self, args: Namespace, companion: Companion) -> None:
+        await companion.shutdown(udid=self.get_udid(args))
 
 
-class TargetEraseCommand(UDIDTargetedManagementCommand):
+class TargetEraseCommand(UDIDTargetedCompanionCommand):
     @property
     def description(self) -> str:
         return "Erases the simulator (only works on mac)"
@@ -270,13 +264,11 @@ class TargetEraseCommand(UDIDTargetedManagementCommand):
     def name(self) -> str:
         return "erase"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
-        await client.erase(udid=self.get_udid(args))
+    async def run_with_companion(self, args: Namespace, companion: Companion) -> None:
+        await companion.erase(udid=self.get_udid(args))
 
 
-class TargetCloneCommand(UDIDTargetedManagementCommand):
+class TargetCloneCommand(UDIDTargetedCompanionCommand):
     @property
     def description(self) -> str:
         return "Erases the simulator (only works on mac)"
@@ -285,14 +277,12 @@ class TargetCloneCommand(UDIDTargetedManagementCommand):
     def name(self) -> str:
         return "clone"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
-        udid = await client.clone(udid=self.get_udid(args))
+    async def run_with_companion(self, args: Namespace, companion: Companion) -> None:
+        udid = await companion.clone(udid=self.get_udid(args))
         print(udid)
 
 
-class TargetDeleteCommand(UDIDTargetedManagementCommand):
+class TargetDeleteCommand(UDIDTargetedCompanionCommand):
     @property
     def description(self) -> str:
         return "Deletes (only works on mac)"
@@ -301,13 +291,11 @@ class TargetDeleteCommand(UDIDTargetedManagementCommand):
     def name(self) -> str:
         return "delete"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
-        await client.delete(udid=self.get_udid(args))
+    async def run_with_companion(self, args: Namespace, companion: Companion) -> None:
+        await companion.delete(udid=self.get_udid(args))
 
 
-class TargetDeleteAllCommand(ManagementCommand):
+class TargetDeleteAllCommand(CompanionCommand):
     @property
     def description(self) -> str:
         return "Deletes all simulators (only works on mac)"
@@ -316,7 +304,5 @@ class TargetDeleteAllCommand(ManagementCommand):
     def name(self) -> str:
         return "delete-all"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
-        await client.delete(udid=None)
+    async def run_with_companion(self, args: Namespace, companion: Companion) -> None:
+        await companion.delete(udid=None)

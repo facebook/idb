@@ -13,7 +13,7 @@ from unittest.mock import ANY, MagicMock, patch
 
 from idb.cli.main import gen_main as cli_main
 from idb.common.constants import XCTEST_TIMEOUT
-from idb.common.types import CrashLogQuery, HIDButtonType, InstrumentsTimings, Address
+from idb.common.types import Address, CrashLogQuery, HIDButtonType, InstrumentsTimings
 from idb.utils.testing import AsyncContextManagerMock, AsyncMock, TestCase
 
 
@@ -64,10 +64,14 @@ class TestParser(TestCase):
             "idb.cli.IdbClientGrpc", self.direct_client_mock
         )
         self.direct_client_patch.start()
+        self.companion_mock = MagicMock(name="companion_mock")
+        self.companion_patch = patch("idb.cli.Companion", self.companion_mock)
+        self.companion_patch.start()
 
     def tearDown(self) -> None:
         self.management_client_patch.stop()
         self.direct_client_patch.stop()
+        self.companion_patch.stop()
 
     async def test_launch_with_udid(self) -> None:
         bundle_id = "com.foo.app"
@@ -79,9 +83,8 @@ class TestParser(TestCase):
         )
 
     async def test_create(self) -> None:
-        self.management_client_mock().create = AsyncMock()
         await cli_main(cmd_input=["create", "ipone", "os2"])
-        self.management_client_mock().create.assert_called_once_with(
+        self.companion_mock().create.assert_called_once_with(
             device_type="ipone", os_version="os2"
         )
 
@@ -91,38 +94,34 @@ class TestParser(TestCase):
             ["boot", "--udid", "my_udid"],
             ["boot", "--udid", "my_udid_old", "my_udid"],
         ]:
-            self.management_client_mock().boot = AsyncMock()
+            self.companion_mock().boot = AsyncMock()
             await cli_main(cmd_input=command)
-            self.management_client_mock().boot.assert_called_once_with(udid="my_udid")
+            self.companion_mock().boot.assert_called_once_with(udid="my_udid")
 
     async def test_shutdown(self) -> None:
-        self.management_client_mock().boot = AsyncMock()
         udid = "my udid"
         await cli_main(cmd_input=["shutdown", udid])
-        self.management_client_mock().shutdown.assert_called_once_with(udid=udid)
+        self.companion_mock().shutdown.assert_called_once_with(udid=udid)
 
     async def test_erase(self) -> None:
-        self.management_client_mock().erase = AsyncMock()
         udid = "my udid"
         await cli_main(cmd_input=["erase", udid])
-        self.management_client_mock().erase.assert_called_once_with(udid=udid)
+        self.companion_mock().erase.assert_called_once_with(udid=udid)
 
     async def test_clone(self) -> None:
-        self.management_client_mock().clone = AsyncMock()
         udid = "my udid"
         await cli_main(cmd_input=["clone", udid])
-        self.management_client_mock().clone.assert_called_once_with(udid=udid)
+        self.companion_mock().clone.assert_called_once_with(udid=udid)
 
     async def test_delete(self) -> None:
-        self.management_client_mock().delete = AsyncMock()
         udid = "my udid"
         await cli_main(cmd_input=["delete", udid])
-        self.management_client_mock().delete.assert_called_once_with(udid=udid)
+        self.companion_mock().delete.assert_called_once_with(udid=udid)
 
-    async def test_delete(self) -> None:
-        self.management_client_mock().delete = AsyncMock()
+    async def test_delete_all(self) -> None:
+        self.companion_mock().delete = AsyncMock()
         await cli_main(cmd_input=["delete-all"])
-        self.management_client_mock().delete.assert_called_once_with(udid=None)
+        self.companion_mock().delete.assert_called_once_with(udid=None)
 
     async def test_install(self) -> None:
         self.direct_client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
