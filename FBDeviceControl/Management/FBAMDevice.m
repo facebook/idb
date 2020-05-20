@@ -435,6 +435,7 @@ static NSString *const CacheValuesPurpose = @"cache_values";
   _architecture = [self device:device.amDevice valueForKey:@"CPUArchitecture"];
   _buildVersion = [self device:device.amDevice valueForKey:@"BuildVersion"];
   _deviceName = [self device:device.amDevice valueForKey:@"DeviceName"];
+  _ecid = [self device:device.amDevice valueForKey:@"UniqueChipID"];
   _modelName = [self device:device.amDevice valueForKey:@"DeviceClass"];
   _productType = [self device:device.amDevice valueForKey:@"ProductType"];
   _productVersion = [self device:device.amDevice valueForKey:@"ProductVersion"];

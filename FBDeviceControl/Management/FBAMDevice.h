@@ -54,6 +54,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable, copy, readonly) NSString *udid;
 
 /**
+ The "Exclusive Chip Identification" a.k.a "Unique Chip ID".
+ */
+@property (nonatomic, nullable, copy, readonly) NSNumber *ecid;
+
+/**
  The User-Defined name of the Device, e.g. "Ada's iPhone".
  */
 @property (nonatomic, nullable, copy, readonly) NSString *deviceName;
