@@ -10,7 +10,6 @@ import os
 import tempfile
 from typing import AsyncContextManager, Dict, List, Optional
 
-from idb.common.companion import Companion as IdbCompanion
 from idb.common.companion_spawner import CompanionSpawner
 from idb.common.constants import BASE_IDB_FILE_PATH
 from idb.common.direct_companion_manager import DirectCompanionManager
@@ -32,28 +31,18 @@ from idb.grpc.idb_pb2 import ConnectRequest
 from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws
 
-DEFAULT_COMPANION_COMMAND_TIMEOUT = 120
 
-
-class IdbManagementClient(IdbManagementClientBase, IdbCompanion):
+class IdbManagementClient(IdbManagementClientBase):
     def __init__(
         self,
         companion_path: Optional[str] = None,
         device_set_path: Optional[str] = None,
         prune_dead_companion: bool = True,
-        companion_command_timeout: int = DEFAULT_COMPANION_COMMAND_TIMEOUT,
         logger: Optional[logging.Logger] = None,
     ) -> None:
         os.makedirs(BASE_IDB_FILE_PATH, exist_ok=True)
         self.logger: logging.Logger = (
             logger if logger else logging.getLogger("idb_grpc_client")
-        )
-        IdbCompanion.__init__(
-            self,
-            companion_path=companion_path,
-            device_set_path=device_set_path,
-            companion_command_timeout=companion_command_timeout,
-            logger=self.logger,
         )
         self.companion_path = companion_path
         self._prune_dead_companion = prune_dead_companion

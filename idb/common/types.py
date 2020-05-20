@@ -11,7 +11,6 @@ from enum import Enum
 from io import StringIO
 from typing import (
     IO,
-    AsyncContextManager,
     AsyncIterable,
     AsyncIterator,
     Dict,
@@ -476,28 +475,7 @@ class IdbManagementClient:
     async def list_targets(self) -> List[TargetDescription]:
         pass
 
-    async def create(self, device_type: str, os_version: str) -> str:
-        pass
-
-    async def boot(self, udid: str) -> None:
-        pass
-
-    def boot_headless(self, udid: str) -> AsyncContextManager[None]:
-        pass
-
-    async def shutdown(self, udid: str) -> None:
-        pass
-
-    async def erase(self, udid: str) -> None:
-        pass
-
-    async def clone(self, udid: str) -> str:
-        pass
-
     async def kill(self) -> None:
-        pass
-
-    async def delete(self, udid: Optional[str]) -> None:
         pass
 
 
