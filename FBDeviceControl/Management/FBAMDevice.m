@@ -432,12 +432,12 @@ static NSString *const CacheValuesPurpose = @"cache_values";
   if (!device) {
     return NO;
   }
-  _architecture = CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, CFSTR("CPUArchitecture")));
-  _buildVersion = CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, CFSTR("BuildVersion")));
-  _deviceName = CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, CFSTR("DeviceName")));
-  _modelName = CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, CFSTR("DeviceClass")));
-  _productType = CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, CFSTR("ProductType")));
-  _productVersion = CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, CFSTR("ProductVersion")));
+  _architecture = [self device:device.amDevice valueForKey:@"CPUArchitecture"];
+  _buildVersion = [self device:device.amDevice valueForKey:@"BuildVersion"];
+  _deviceName = [self device:device.amDevice valueForKey:@"DeviceName"];
+  _modelName = [self device:device.amDevice valueForKey:@"DeviceClass"];
+  _productType = [self device:device.amDevice valueForKey:@"ProductType"];
+  _productVersion = [self device:device.amDevice valueForKey:@"ProductVersion"];
 
   NSString *osVersion = [FBAMDevice osVersionForDevice:device.amDevice calls:self.calls];
   _deviceConfiguration = FBiOSTargetConfiguration.productTypeToDevice[self->_productType];
@@ -452,6 +452,11 @@ static NSString *const CacheValuesPurpose = @"cache_values";
 }
 
 #pragma mark NSObject
+
+- (id)device:(AMDeviceRef)device valueForKey:(NSString *)key
+{
+  return CFBridgingRelease(self.calls.CopyValue(device, NULL, (__bridge CFStringRef)(key)));
+}
 
 - (NSString *)description
 {
