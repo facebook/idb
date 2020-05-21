@@ -54,6 +54,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable, copy, readonly) NSDictionary<NSString *, id> *allValues;
 
 /**
+ All of the Device Values available. This will filter out complex values that aren't serializable in JSON.
+ */
+@property (nonatomic, nullable, copy, readonly) NSDictionary<NSString *, id> *shallowJSONSerializableValues;
+
+/**
  The Architechture of the Device's CPU.
  */
 @property (nonatomic, nullable, copy, readonly) NSString *architecture;

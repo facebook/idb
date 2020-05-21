@@ -287,6 +287,22 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   return _amDevice;
 }
 
+- (NSDictionary<NSString *, id> *)shallowJSONSerializableValues
+{
+  NSDictionary<NSString *, id> *source = self.allValues;
+  NSMutableDictionary<NSString *, id> *destination = NSMutableDictionary.dictionary;
+  for (NSString *key in source.allKeys) {
+    id value = source[key];
+    if ([value isKindOfClass:NSString.class]) {
+      destination[key] = value;
+    }
+    if ([value isKindOfClass:NSNumber.class]) {
+      destination[key] = value;
+    }
+  }
+  return destination;
+}
+
 - (NSString *)architecture
 {
   return self.allValues[@"CPUArchitecture"];

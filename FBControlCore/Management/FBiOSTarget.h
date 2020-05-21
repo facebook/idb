@@ -153,6 +153,13 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 @property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
 
 /**
+ A dictionary containing per-target-type information that is unique to them.
+ For example iOS Devices have additional metadata that is not present on Simulators.
+ This dictionary must be JSON-Serializable.
+ */
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *extendedInformation;
+
+/**
  A Comparison Method for `sortedArrayUsingSelector:`
 
  @param target the target to compare to.

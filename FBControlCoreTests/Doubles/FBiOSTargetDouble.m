@@ -50,6 +50,11 @@
   return FBiOSTargetComparison(self, target);
 }
 
+- (NSDictionary<NSString *, id> *)extendedInformation
+{
+  return @{};
+}
+
 #pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation

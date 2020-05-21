@@ -364,6 +364,11 @@
     connectAndStart];
 }
 
+- (NSDictionary<NSString *, id> *)extendedInformation
+{
+  return @{};
+}
+
 - (NSComparisonResult)compare:(nonnull id<FBiOSTarget>)target
 {
   return NSOrderedSame; // There should be only one
@@ -373,7 +378,6 @@
 {
   return [FBiOSTargetFormat.fullFormat extractFrom:self];
 }
-
 
 #pragma mark Not supported
 

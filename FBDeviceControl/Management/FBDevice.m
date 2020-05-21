@@ -124,6 +124,11 @@
   return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
 }
 
+- (NSDictionary<NSString *, id> *)extendedInformation
+{
+  return @{@"device": self.amDevice.shallowJSONSerializableValues};
+}
+
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target
 {
   return FBiOSTargetComparison(self, target);

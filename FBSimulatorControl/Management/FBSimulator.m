@@ -177,6 +177,11 @@
   return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
 }
 
+- (NSDictionary<NSString *, id> *)extendedInformation
+{
+  return @{};
+}
+
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target
 {
   return FBiOSTargetComparison(self, target);

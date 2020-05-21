@@ -58,6 +58,11 @@ static void WriteJSONToStdOut(id json)
   fflush(stdout);
 }
 
+static void WriteTargetToStdOut(id<FBiOSTarget> target)
+{
+  WriteJSONToStdOut([[FBiOSTargetStateUpdate alloc] initWithTarget:target].jsonSerializableRepresentation);
+}
+
 static FBFuture<FBSimulatorSet *> *SimulatorSet(NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   // Give a more meaningful message if we can't load the frameworks.
@@ -176,8 +181,7 @@ static FBFuture<FBFuture<NSNull *> *> *BootFuture(NSString *udid, NSUserDefaults
     }]
     onQueue:dispatch_get_main_queue() map:^ FBFuture<NSNull *> * (FBSimulator *simulator) {
       // Write the boot success to stdout
-      FBiOSTargetStateUpdate *update = [[FBiOSTargetStateUpdate alloc] initWithTarget:simulator];
-      WriteJSONToStdOut(update.jsonSerializableRepresentation);
+      WriteTargetToStdOut(simulator);
       // In a headless boot:
       // - We need to keep this process running until it's otherwise shutdown. When the sim is shutdown this process will die.
       // - If this process is manually killed then the simulator will die
@@ -236,7 +240,7 @@ static FBFuture<NSNull *> *ListFuture(NSUserDefaults *userDefaults, id<FBControl
     onQueue:dispatch_get_main_queue() map:^ NSNull * (NSArray<id<FBiOSTargetSet>> *targetSets) {
       for (id<FBiOSTargetSet> targetSet in targetSets) {
         for (id<FBiOSTarget> target in targetSet.allTargets) {
-          WriteJSONToStdOut(target.jsonSerializableRepresentation);
+          WriteTargetToStdOut(target);
         }
       }
       return NSNull.null;
@@ -258,8 +262,7 @@ static FBFuture<NSNull *> *CreateFuture(NSString *create, NSUserDefaults *userDe
       return [set createSimulatorWithConfiguration:config];
     }]
     onQueue:dispatch_get_main_queue() map:^(FBSimulator *simulator) {
-      FBiOSTargetStateUpdate *update = [[FBiOSTargetStateUpdate alloc] initWithTarget:simulator];
-      WriteJSONToStdOut(update.jsonSerializableRepresentation);
+      WriteTargetToStdOut(simulator);
       return NSNull.null;
     }];
 }
@@ -271,8 +274,7 @@ static FBFuture<NSNull *> *CloneFuture(NSString *udid, NSUserDefaults *userDefau
       return [base.set cloneSimulator:base];
     }]
     onQueue:dispatch_get_main_queue() map:^(FBSimulator *cloned) {
-      FBiOSTargetStateUpdate *update = [[FBiOSTargetStateUpdate alloc] initWithTarget:cloned];
-      WriteJSONToStdOut(update.jsonSerializableRepresentation);
+      WriteTargetToStdOut(cloned);
       return NSNull.null;
     }];
 }
