@@ -287,6 +287,32 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   return _amDevice;
 }
 
+- (NSString *)architecture
+{
+  return self.allValues[@"CPUArchitecture"];
+}
+
+- (NSString *)buildVersion
+{
+  return self.allValues[@"BuildVersion"];
+}
+
+- (NSString *)deviceName
+{
+  return self.allValues[@"DeviceName"];
+}
+
+- (FBDeviceType *)deviceConfiguration
+{
+  return FBiOSTargetConfiguration.productTypeToDevice[self.allValues[@"ProductType"]];
+}
+
+- (FBOSVersion *)osConfiguration
+{
+  NSString *osVersion = [FBAMDevice osVersionForDeviceClass:self.allValues[@"DeviceClass"] productVersion:self.allValues[@"ProductVersion"]];
+  return FBiOSTargetConfiguration.nameToOSVersion[osVersion] ?: [FBOSVersion genericWithName:osVersion];
+}
+
 #pragma mark Public Methods
 
 - (FBFutureContext<FBAMDevice *> *)connectToDeviceWithPurpose:(NSString *)format, ...
@@ -432,17 +458,8 @@ static NSString *const CacheValuesPurpose = @"cache_values";
   if (!device) {
     return NO;
   }
-  _architecture = [self device:device.amDevice valueForKey:@"CPUArchitecture"];
-  _buildVersion = [self device:device.amDevice valueForKey:@"BuildVersion"];
-  _deviceName = [self device:device.amDevice valueForKey:@"DeviceName"];
-  _ecid = [self device:device.amDevice valueForKey:@"UniqueChipID"];
-  _modelName = [self device:device.amDevice valueForKey:@"DeviceClass"];
-  _productType = [self device:device.amDevice valueForKey:@"ProductType"];
-  _productVersion = [self device:device.amDevice valueForKey:@"ProductVersion"];
-
-  NSString *osVersion = [FBAMDevice osVersionForDevice:device.amDevice calls:self.calls];
-  _deviceConfiguration = FBiOSTargetConfiguration.productTypeToDevice[self->_productType];
-  _osConfiguration = FBiOSTargetConfiguration.nameToOSVersion[osVersion] ?: [FBOSVersion genericWithName:osVersion];
+  // Contains all values, everything is derived
+  _allValues = [CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, NULL)) copy];
 
   [self.logger logFormat:@"Finished caching values for AMDeviceRef %@", device.amDevice];
 
@@ -470,10 +487,8 @@ static NSString *const CacheValuesPurpose = @"cache_values";
 
 #pragma mark Private
 
-+ (NSString *)osVersionForDevice:(AMDeviceRef)amDevice calls:(AMDCalls)calls
++ (NSString *)osVersionForDeviceClass:(NSString *)deviceClass productVersion:(NSString *)productVersion
 {
-  NSString *deviceClass = CFBridgingRelease(calls.CopyValue(amDevice, NULL, CFSTR("DeviceClass")));
-  NSString *productVersion = CFBridgingRelease(calls.CopyValue(amDevice, NULL, CFSTR("ProductVersion")));
   NSDictionary<NSString *, NSString *> *deviceClassOSPrefixMapping = @{
     @"iPhone" : @"iOS",
     @"iPad" : @"iOS",

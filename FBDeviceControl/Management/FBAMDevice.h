@@ -49,34 +49,14 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Properties
 
 /**
- The Unique Identifier of the Device.
+ All of the Device Values available.
  */
-@property (nonatomic, nullable, copy, readonly) NSString *udid;
+@property (nonatomic, nullable, copy, readonly) NSDictionary<NSString *, id> *allValues;
 
 /**
- The "Exclusive Chip Identification" a.k.a "Unique Chip ID".
+ The Architechture of the Device's CPU.
  */
-@property (nonatomic, nullable, copy, readonly) NSNumber *ecid;
-
-/**
- The User-Defined name of the Device, e.g. "Ada's iPhone".
- */
-@property (nonatomic, nullable, copy, readonly) NSString *deviceName;
-
-/**
- The Product Type. e.g 'iPhone8,1'
- */
-@property (nonatomic, nullable, copy, readonly) NSString *productType;
-
-/**
- The Device's 'Model Name'.
- */
-@property (nonatomic, nullable, copy, readonly) NSString *modelName;
-
-/**
- The Device's 'Product Version'.
- */
-@property (nonatomic, nullable, copy, readonly) NSString *productVersion;
+@property (nonatomic, nullable, copy, readonly) NSString *architecture;
 
 /**
  The Device's 'Build Version'.
@@ -84,19 +64,29 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable, copy, readonly) NSString *buildVersion;
 
 /**
+ The User-Defined name of the Device, e.g. "Ada's iPhone".
+ */
+@property (nonatomic, nullable, copy, readonly) NSString *deviceName;
+
+/**
  The FBControlCore Configuration Variant representing the Device.
  */
 @property (nonatomic, nullable, copy, readonly) FBDeviceType *deviceConfiguration;
 
 /**
+ The Unique Identifier of the Device.
+ */
+@property (nonatomic, nullable, copy, readonly) NSString *udid;
+
+/**
+ The Device's 'Product Version'.
+ */
+@property (nonatomic, nullable, copy, readonly) NSString *productVersion;
+
+/**
  The FBControlCore Configuration Variant representing the Operating System.
  */
 @property (nonatomic, nullable, copy, readonly) FBOSVersion *osConfiguration;
-
-/**
- The Architechture of the Device's CPU.
- */
-@property (nonatomic, nullable, copy, readonly) NSString *architecture;
 
 @end
 
