@@ -40,7 +40,7 @@ Usage: \n \
     --debug-port PORT          Port to connect debugger on (default: 10881).\n\
     --log-file-path PATH       Path to write a log file to e.g ./output.log (default: logs to stdErr).\n\
     --device-set-path PATH     Path to a custom Simulator device set.\n\
-    --device-only 1            If set, will only query against iOS Devices\n\
+    --only simulator|device    If provided will query only against simulators or devices\n\
     --headless VALUE           If VALUE is a true value, the Simulator boot's lifecycle will be tied to the lifecycle of this invocation.\n\
     --terminate-offline VALUE  Terminate if the target goes offline, otherwise the companion will stay alive.\n";
 
@@ -90,11 +90,21 @@ static FBFuture<FBDeviceSet *> *DeviceSet(id<FBControlCoreLogger> logger)
 
 static FBFuture<NSArray<id<FBiOSTargetSet>> *> *DefaultTargetSets(NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
-  NSString *deviceOnly = [userDefaults stringForKey:@"-device-only"];
-  if (deviceOnly) {
-    [logger log:@"'--device-only' is set, ignoring simulators"];
-    return [FBFuture futureWithFutures:@[DeviceSet(logger)]];
+  NSString *only = [userDefaults stringForKey:@"-only"];
+  if (only) {
+    if ([only.lowercaseString containsString:@"simulator"]) {
+      [logger log:@"'--only' set for Simulators"];
+      return [FBFuture futureWithFutures:@[SimulatorSet(userDefaults, logger, reporter)]];
+    }
+    if ([only.lowercaseString containsString:@"device"]) {
+      [logger log:@"'--only' set for Devices"];
+      return [FBFuture futureWithFutures:@[DeviceSet(logger)]];
+    }
+    return [[FBIDBError
+      describeFormat:@"%@ is not a valid argument for '--only'", only]
+      failFuture];
   }
+  [logger log:@"Providing targets across Simulator and Device sets."];
   return [FBFuture futureWithFutures:@[
     SimulatorSet(userDefaults, logger, reporter),
     DeviceSet(logger),
