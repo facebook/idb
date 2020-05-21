@@ -184,16 +184,6 @@
 
 #pragma mark Properties
 
-- (NSString *)modelName
-{
-  return self.amDevice.modelName;
-}
-
-- (NSString *)productVersion
-{
-  return self.amDevice.productVersion;
-}
-
 - (NSString *)buildVersion
 {
   return self.amDevice.buildVersion;
@@ -201,7 +191,7 @@
 
 - (NSOperatingSystemVersion)operatingSystemVersion
 {
-  return [FBDevice operatingSystemVersionFromString:self.productVersion];
+  return [FBDevice operatingSystemVersionFromString:self.amDevice.productVersion];
 }
 
 - (FBiOSTargetScreenInfo *)screenInfo
