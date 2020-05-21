@@ -38,12 +38,6 @@
 
 #pragma mark FBApplicationDataCommands
 
-- (FBFuture<NSNull *> *)copyDataAtPath:(NSString *)source toContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath
-{
-  NSURL *url = [NSURL fileURLWithPath:source];
-  return [self copyItemsAtURLs:@[url] toContainerPath:containerPath inBundleID:bundleID];
-}
-
 - (FBFuture<NSNull *> *)copyItemsAtURLs:(NSArray<NSURL *> *)paths toContainerPath:(NSString *)containerPath inBundleID:(NSString *)bundleID
 {
   return [[self

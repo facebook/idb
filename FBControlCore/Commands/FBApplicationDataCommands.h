@@ -20,16 +20,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBApplicationDataCommands <NSObject, FBiOSTargetCommand>
 
 /**
- Relocate Data inside the Application Data Container.
-
- @param source the Source Path. May be a File or Directory.
- @param bundleID the Bundle Identifier of the Container.
- @param containerPath the sub-path within the container.
- @return A future that resolves when successful.
- */
-- (FBFuture<NSNull *> *)copyDataAtPath:(NSString *)source toContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath;
-
-/**
  Copy items to the Application Data Container.
 
  @param paths Array of source paths. May be Files and/or Directories.

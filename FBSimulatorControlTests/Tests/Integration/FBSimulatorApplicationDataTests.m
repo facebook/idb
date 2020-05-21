@@ -26,9 +26,9 @@
 
   NSError *error = nil;
   BOOL success = [[simulator
-    copyDataAtPath:fixturePath
-    toContainerOfApplication:self.safariAppLaunch.bundleID
-    atContainerPath:@"Documents"]
+    copyItemsAtURLs:@[[NSURL fileURLWithPath:fixturePath]]
+    toContainerPath:@"Documents"
+    inBundleID:self.safariAppLaunch.bundleID]
     await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
@@ -39,15 +39,6 @@
    atContainerPath:[@"Documents" stringByAppendingPathComponent:fixturePath.lastPathComponent]
    toDestinationPath:destinationPath]
    await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-}
-
-- (void)testDataContainerPath
-{
-  FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  NSError *error;
-  BOOL success = [[simulator dataContainerOfApplicationWithBundleID:self.safariAppLaunch.bundleID] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }

@@ -123,12 +123,6 @@
   }];
 }
 
-- (FBFuture<NSNull *> *)copyDataAtPath:(NSString *)source toContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath
-{
-  NSURL *path = [NSURL URLWithString:source];
-  return [self copyItemsAtURLs:@[path] toContainerPath:containerPath inBundleID:bundleID];
-}
-
 - (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path inContainerOfApplication:(NSString *)bundleID
 {
   return [self handleWithAFCSessionForBundleID:bundleID operationBlock:^ NSArray<NSString *> * (FBAFCConnection *afc, NSError **error) {
