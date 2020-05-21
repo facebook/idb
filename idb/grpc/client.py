@@ -770,6 +770,7 @@ class IdbClient(IdbClientBase):
                 for line in [
                     line
                     for lines in response.log_output
+                    # pyre-fixme[10]: Name `lines` is used but not defined.
                     for line in lines.splitlines(keepends=True)
                 ]:
                     self._log_from_companion(line)
