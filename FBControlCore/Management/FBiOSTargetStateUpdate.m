@@ -15,6 +15,7 @@
 @property (nonatomic, assign, readonly) FBiOSTargetState state;
 @property (nonatomic, assign, readonly) FBiOSTargetType targetType;
 @property (nonatomic, assign, readonly) FBArchitecture architecture;
+@property (nonatomic, assign, readonly) NSDictionary<NSString *, id> *extendedInformation;
 
 @end
 
@@ -46,6 +47,7 @@ static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
   _name = target.name;
   _osVersion = target.osVersion;
   _architecture = target.architecture;
+  _extendedInformation = target.extendedInformation;
 
   return self;
 }
@@ -64,14 +66,16 @@ static NSString *const KeyArchitecture = @"architecture";
 
 - (NSDictionary<NSString *, id> *)jsonSerializableRepresentation
 {
-  return @{
+  NSMutableDictionary<NSString *, id> *representation = [NSMutableDictionary dictionaryWithDictionary:@{
     KeyUDID : self.udid,
     KeyState : FBiOSTargetStateStringFromState(self.state),
     KeyType : FBiOSTargetTypeStringFromTargetType(self.targetType),
     KeyName : self.name ?: @"unknown",
     KeyOsVersion : self.osVersion.name ?: @"unknown",
     KeyArchitecture : self.architecture ?: @"unknown",
-  };
+  }];
+  [representation addEntriesFromDictionary:self.extendedInformation];
+  return representation;
 }
 
 @end
