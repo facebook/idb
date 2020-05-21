@@ -10,6 +10,8 @@
 #import <FBDeviceControl/FBDeviceControl.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
+#import "FBIDBError.h"
+
 @implementation FBiOSTargetProvider
 
 + (FBiOSTargetType)targetTypeForUDID:(NSString *)udid
@@ -25,50 +27,15 @@
   return FBiOSTargetTypeNone;
 }
 
-+ (nullable id<FBiOSTarget>)targetWithUDID:(NSString *)udid logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter error:(NSError **)error
++ (nullable id<FBiOSTarget>)targetWithUDID:(NSString *)udid targetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
+  // Obtain the Target Type for the input UDID
   FBiOSTargetType targetType = [self targetTypeForUDID:udid];
   if (targetType == FBiOSTargetTypeNone) {
     return [[FBControlCoreError
       describeFormat:@"%@ is not valid UDID", udid]
       fail:error];
   }
-
-  // Get a simulator if one was requested
-  if (targetType == FBiOSTargetTypeSimulator) {
-    [FBCrashLogNotifier.sharedInstance startListening:YES];
-    NSString *deviceSetPath = [NSUserDefaults.standardUserDefaults stringForKey:@"-device-set-path"];
-    FBSimulatorControlConfiguration *configuration =
-    [FBSimulatorControlConfiguration configurationWithDeviceSetPath:deviceSetPath options:0 logger:logger reporter:reporter];
-    FBSimulatorControl *simulatorControl = [FBSimulatorControl withConfiguration:configuration error:error];
-    if (!simulatorControl) {
-      return nil;
-    }
-
-    id<FBiOSTarget> simulator = [[simulatorControl.set query:[FBiOSTargetQuery udid:udid]] firstObject];
-    if (!simulator) {
-      return [[FBControlCoreError
-        describeFormat:@"Simulator with udid %@ could not be found in device set %@", udid, deviceSetPath]
-        fail:error];
-    }
-    return simulator;
-  }
-
-  // Get a device if one was requested
-  if (targetType == FBiOSTargetTypeDevice) {
-    FBDeviceSet *deviceSet =  [FBDeviceSet defaultSetWithLogger:logger error:error];
-    if (!deviceSet) {
-      return nil;
-    }
-    id<FBiOSTarget> device = [[deviceSet query:[FBiOSTargetQuery udid:udid]] firstObject];
-    if (!device) {
-      return [[FBControlCoreError
-        describeFormat:@"Device with udid %@ could not be found", udid]
-        fail:error];
-    }
-    return device;
-  }
-
   // Get a mac device if one was requested
   if (targetType == FBiOSTargetTypeLocalMac) {
     FBMacDevice *mac = [[FBMacDevice alloc] initWithLogger:logger];
@@ -77,7 +44,20 @@
     }
     return mac;
   }
-  return nil;
+  // Otherwise query the input target sets
+  FBiOSTargetQuery *query = [FBiOSTargetQuery udid:udid];
+  for (id<FBiOSTargetSet> targetSet in targetSets) {
+    id<FBiOSTarget> target = [[query filter:targetSet.allTargets] firstObject];
+    if (!target) {
+      continue;
+    }
+    return target;
+  }
+
+
+  return [[FBIDBError
+    describeFormat:@"%@ could not be resolved to any target in %@", udid, targetSets]
+    fail:error];
 }
 
 @end

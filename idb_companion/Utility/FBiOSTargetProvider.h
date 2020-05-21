@@ -12,7 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- Quick access to iOS targets.
+ Queries for an iOS Target Set.
  */
 @interface FBiOSTargetProvider : NSObject
 
@@ -20,12 +20,12 @@ NS_ASSUME_NONNULL_BEGIN
  Provide a target with a specified identifier.
 
  @param udid iOS Target identifier.
+ @param targetSets the target sets to fetch from.
  @param logger the logger to use.
- @param reporter the event reporter to report to.
  @param error an error out for any error that occurs.
  @return the target matching the specified identifier or nil on error.
  */
-+ (nullable id<FBiOSTarget>)targetWithUDID:(NSString *)udid logger:(nullable id<FBControlCoreLogger>)logger reporter:(nullable id<FBEventReporter>)reporter error:(NSError **)error;
++ (nullable id<FBiOSTarget>)targetWithUDID:(NSString *)udid targetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 @end
 
