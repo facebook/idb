@@ -176,7 +176,7 @@ static FBFuture<FBFuture<NSNull *> *> *BootFuture(NSString *udid, NSUserDefaults
     }]
     onQueue:dispatch_get_main_queue() map:^ FBFuture<NSNull *> * (FBSimulator *simulator) {
       // Write the boot success to stdout
-      FBiOSTargetStateUpdate *update = [[FBiOSTargetStateUpdate alloc] initWithUDID:simulator.udid state:simulator.state type:FBiOSTargetTypeSimulator name:simulator.name osVersion:simulator.osVersion architecture:simulator.architecture];
+      FBiOSTargetStateUpdate *update = [[FBiOSTargetStateUpdate alloc] initWithTarget:simulator];
       WriteJSONToStdOut(update.jsonSerializableRepresentation);
       // In a headless boot:
       // - We need to keep this process running until it's otherwise shutdown. When the sim is shutdown this process will die.
@@ -258,7 +258,7 @@ static FBFuture<NSNull *> *CreateFuture(NSString *create, NSUserDefaults *userDe
       return [set createSimulatorWithConfiguration:config];
     }]
     onQueue:dispatch_get_main_queue() map:^(FBSimulator *simulator) {
-      FBiOSTargetStateUpdate *update = [[FBiOSTargetStateUpdate alloc] initWithUDID:simulator.udid state:simulator.state type:FBiOSTargetTypeSimulator name:simulator.name osVersion:simulator.osVersion architecture:simulator.architecture];
+      FBiOSTargetStateUpdate *update = [[FBiOSTargetStateUpdate alloc] initWithTarget:simulator];
       WriteJSONToStdOut(update.jsonSerializableRepresentation);
       return NSNull.null;
     }];
@@ -271,7 +271,7 @@ static FBFuture<NSNull *> *CloneFuture(NSString *udid, NSUserDefaults *userDefau
       return [base.set cloneSimulator:base];
     }]
     onQueue:dispatch_get_main_queue() map:^(FBSimulator *cloned) {
-      FBiOSTargetStateUpdate *update = [[FBiOSTargetStateUpdate alloc] initWithUDID:cloned.udid state:cloned.state type:FBiOSTargetTypeSimulator name:cloned.name osVersion:cloned.osVersion architecture:cloned.architecture];
+      FBiOSTargetStateUpdate *update = [[FBiOSTargetStateUpdate alloc] initWithTarget:cloned];
       WriteJSONToStdOut(update.jsonSerializableRepresentation);
       return NSNull.null;
     }];

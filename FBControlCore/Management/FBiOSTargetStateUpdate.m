@@ -7,15 +7,19 @@
 
 #import "FBiOSTargetStateUpdate.h"
 #import "FBiOSTargetConfiguration.h"
-@implementation FBiOSTargetStateUpdate
-@synthesize jsonSerializableRepresentation;
 
-static NSString *const KeyUDID = @"udid";
-static NSString *const KeyState = @"state";
-static NSString *const KeyType = @"type";
-static NSString *const KeyName = @"name";
-static NSString *const KeyOsVersion = @"os_version";
-static NSString *const KeyArchitecture = @"architecture";
+@interface FBiOSTargetStateUpdate ()
+
+@property (nonatomic, copy, readonly) NSString *name;
+@property (nonatomic, copy, readonly) FBOSVersion *osVersion;
+@property (nonatomic, assign, readonly) FBiOSTargetState state;
+@property (nonatomic, assign, readonly) FBiOSTargetType targetType;
+@property (nonatomic, assign, readonly) FBArchitecture architecture;
+
+@end
+
+
+@implementation FBiOSTargetStateUpdate
 
 static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
 {
@@ -29,49 +33,45 @@ static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
   return nil;
 }
 
-- (instancetype)initWithUDID:(NSString *)udid state:(FBiOSTargetState)state type:(FBiOSTargetType)type name:(NSString *)name osVersion:(FBOSVersion *)osVersion architecture:(FBArchitecture)architecture;
+- (instancetype)initWithTarget:(id<FBiOSTarget>)target
 {
   self = [super init];
   if (!self) {
     return nil;
   }
-  _udid = udid;
-  _state = state;
-  _type = type;
-  _name = name;
-  _osVersion = osVersion;
-  _architecture = architecture;
+
+  _udid = target.udid;
+  _state = target.state;
+  _targetType = target.targetType;
+  _name = target.name;
+  _osVersion = target.osVersion;
+  _architecture = target.architecture;
 
   return self;
 }
 
-- (id)copyWithZone:(nullable NSZone *)zone {
+- (id)copyWithZone:(NSZone *)zone
+{
   return self;
 }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-property-ivar"
+static NSString *const KeyUDID = @"udid";
+static NSString *const KeyState = @"state";
+static NSString *const KeyType = @"type";
+static NSString *const KeyName = @"name";
+static NSString *const KeyOsVersion = @"os_version";
+static NSString *const KeyArchitecture = @"architecture";
+
 - (NSDictionary<NSString *, id> *)jsonSerializableRepresentation
 {
   return @{
-           KeyUDID : self.udid,
-           KeyState : FBiOSTargetStateStringFromState(self.state),
-           KeyType : FBiOSTargetTypeStringFromTargetType(self.type),
-           KeyName : self.name ?: @"unknown",
-           KeyOsVersion : self.osVersion.name ?: @"unknown",
-           KeyArchitecture : self.architecture ?: @"unknown",
-           };
-}
-#pragma clang diagnostic pop
-
-+ (instancetype)inflateFromJSON:(id)json error:(NSError **)error {
-  NSString *udid = json[KeyUDID];
-  FBiOSTargetState state = [json[KeyState] unsignedIntegerValue];
-  FBiOSTargetType type = [json[KeyType] unsignedIntegerValue];
-  NSString *name = json[KeyName];
-  FBOSVersion *osVersion = [FBOSVersion genericWithName:json[KeyOsVersion]];
-  NSString *architecture = json[KeyArchitecture];
-  return [[FBiOSTargetStateUpdate alloc] initWithUDID:udid state:state type:type name:name osVersion:osVersion architecture:architecture];
+    KeyUDID : self.udid,
+    KeyState : FBiOSTargetStateStringFromState(self.state),
+    KeyType : FBiOSTargetTypeStringFromTargetType(self.targetType),
+    KeyName : self.name ?: @"unknown",
+    KeyOsVersion : self.osVersion.name ?: @"unknown",
+    KeyArchitecture : self.architecture ?: @"unknown",
+  };
 }
 
 @end

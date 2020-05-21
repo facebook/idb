@@ -11,48 +11,21 @@
 @protocol FBJSONSerializable, FBJSONDeserializable;
 
 /**
-  Holds information about an update to FBiOSTarget
+ A value type that holds values for serializing a target information in idb
  */
-@interface FBiOSTargetStateUpdate : NSObject <FBJSONSerializable, FBJSONDeserializable, NSCopying>
+@interface FBiOSTargetStateUpdate : NSObject <FBJSONSerializable, NSCopying>
 
 /**
- The Target's UDID.
- */
-@property (nonatomic, copy, readonly) NSString *udid;
+ The Designated Initializer.
 
-/**
- The Target's State.
- */
-@property (nonatomic, assign, readonly) FBiOSTargetState state;
-
-/**
- The Target's Type.
- */
-@property (nonatomic, assign, readonly) FBiOSTargetType type;
-
-/**
- The Target's Name.
- */
-@property (nonatomic, copy, readonly) NSString *name;
-
-/**
- The Target's OS Version.
- */
-@property (nonatomic, assign, readonly) FBOSVersion *osVersion;
-
-/**
- The Target's Architecture.
- */
-@property (nonatomic, assign, readonly) FBArchitecture architecture;
-
-/**
- Returns a new Target Update
-
- @param udid the udid of the target
- @param state the state of the target
- @param type the type of the target
+ @param target the target to construct an update for.
  @return a new Target Update
  */
-- (instancetype)initWithUDID:(NSString *)udid state:(FBiOSTargetState)state type:(FBiOSTargetType)type name:(NSString *)name osVersion:(FBOSVersion *)osVersion architecture:(FBArchitecture)architecture;
+- (instancetype)initWithTarget:(id<FBiOSTarget>)target;
+
+/**
+ The UDID of the Target.
+*/
+@property (nonatomic, copy, readonly) NSString *udid;
 
 @end

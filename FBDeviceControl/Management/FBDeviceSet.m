@@ -126,14 +126,14 @@
 {
   [self recalculateAllDevices];
   FBDevice *device = [self deviceWithUDID:notification.object];
-  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:FBiOSTargetStateBooted type:FBiOSTargetTypeDevice name:device.name osVersion:device.osVersion architecture:device.architecture]];
+  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithTarget:device]];
 }
 
 - (void)deviceDetachedNotification:(NSNotification *)notification
 {
   FBDevice *device = [self deviceWithUDID:notification.object];
   [self recalculateAllDevices];
-  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithUDID:device.udid state:FBiOSTargetStateShutdown type:FBiOSTargetTypeDevice name:device.name osVersion:device.osVersion architecture:device.architecture]];
+  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithTarget:device]];
 }
 
 - (void)recalculateAllDevices

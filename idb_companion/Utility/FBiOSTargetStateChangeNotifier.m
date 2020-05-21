@@ -89,7 +89,7 @@
 {
   for (id<FBiOSTargetSet> targetSet in self.targetSets) {
     for (id<FBiOSTarget> target in targetSet.allTargets) {
-      [_targets addObject:[[FBiOSTargetStateUpdate alloc] initWithUDID:target.udid state:target.state type:target.targetType name:target.name osVersion:target.osVersion architecture:target.architecture]];
+      [_targets addObject:[[FBiOSTargetStateUpdate alloc] initWithTarget:target]];
     }
   }
   if (![self writeTargets]) {
