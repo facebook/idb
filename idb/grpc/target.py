@@ -4,10 +4,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Optional
-
 from idb.common.types import CompanionInfo, ScreenDimensions, TargetDescription
-from idb.grpc.companion import companion_to_grpc, companion_to_py
+from idb.grpc.companion import companion_to_grpc
 from idb.grpc.idb_pb2 import (
     ScreenDimensions as GrpcScreenDimensions,
     TargetDescription as GrpcTargetDescription,
@@ -36,9 +34,8 @@ def target_to_grpc(target: TargetDescription) -> GrpcTargetDescription:
 
 
 def target_to_py(
-    target: GrpcTargetDescription, companion_info: Optional[CompanionInfo]
+    target: GrpcTargetDescription, companion: CompanionInfo
 ) -> TargetDescription:
-    grpc_companion_info = target.companion_info
     return TargetDescription(
         udid=target.udid,
         name=target.name,
@@ -51,13 +48,7 @@ def target_to_py(
         target_type=target.target_type,
         os_version=target.os_version,
         architecture=target.architecture,
-        companion_info=(
-            companion_info
-            if companion_info
-            else companion_to_py(grpc_companion_info)
-            if grpc_companion_info
-            else None
-        ),
+        companion_info=companion,
     )
 
 

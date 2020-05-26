@@ -46,6 +46,7 @@ from idb.common.types import (
     AccessibilityInfo,
     Address,
     AppProcessState,
+    CompanionInfo,
     CrashLog,
     CrashLogInfo,
     CrashLogQuery,
@@ -353,7 +354,16 @@ class IdbClient(IdbClientBase):
     @log_and_handle_exceptions
     async def describe(self) -> TargetDescription:
         response = await self.stub.describe(TargetDescriptionRequest())
-        return target_to_py(target=response.target_description, companion_info=None)
+        target = response.target_description
+        return target_to_py(
+            target=target,
+            companion=CompanionInfo(
+                host=self.address.host,
+                port=self.address.port,
+                udid=target.udid,
+                is_local=self.is_local,
+            ),
+        )
 
     @log_and_handle_exceptions
     async def focus(self) -> None:
