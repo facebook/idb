@@ -19,9 +19,10 @@
 #import "FBSimulatorAgentOperation.h"
 
 static NSString *const KeyAXTraits = @"AXTraits";
-
 static NSString *const KeyTraits = @"traits";
 static NSString *const KeyType = @"type";
+
+static NSTimeInterval BridgeReadyTimeout = 5.0;
 
 @interface FBSimulatorBridge ()
 
@@ -106,8 +107,9 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
     return [FBFuture futureWithError:error];
   }
   id<FBControlCoreLogger> logger = [simulator.logger withName:@"SimulatorBridge"];
+  id<FBNotifyingBuffer> buffer = FBDataBuffer.notifyingBuffer;
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
-    configurationWithStdOut:[FBLoggingDataConsumer consumerWithLogger:logger]
+    configurationWithStdOut:buffer
     stdErr:[FBLoggingDataConsumer consumerWithLogger:logger]
     error:&error];
   if (!output) {
@@ -120,7 +122,17 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
     environment:@{}
     output:output];
 
-  return [simulator launchAgent:config];
+  return [[[simulator
+    launchAgent:config]
+    onQueue:simulator.asyncQueue fmap:^(FBSimulatorAgentOperation *operation) {
+      return [[[buffer
+        consumeAndNotifyWhen:[@"READY" dataUsingEncoding:NSUTF8StringEncoding]]
+        timeout:BridgeReadyTimeout waitingFor:@"The launched operation %@ to specify 'READY'", operation]
+        mapReplace:operation];
+    }]
+    onQueue:simulator.asyncQueue doOnResolved:^(FBSimulatorAgentOperation *operation) {
+      [logger logFormat:@"Bridge operation %@ is now ready", operation];
+    }];
 }
 
 + (FBFuture<NSProxy<SimulatorBridge> *> *)bridgeForSimulator:(FBSimulator *)simulator portName:(NSString *)portName timeout:(NSTimeInterval)timeout
