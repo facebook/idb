@@ -119,7 +119,7 @@
       } else if (launchMode == FBApplicationLaunchModeRelaunchIfRunning) {
         return [[FBSimulatorSubprocessTerminationStrategy
           strategyWithSimulator:simulator]
-          terminate:process];
+          terminateApplication:bundleID];
       }
       return FBFuture.empty;
   }];

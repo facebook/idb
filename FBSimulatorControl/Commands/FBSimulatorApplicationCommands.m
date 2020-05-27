@@ -78,11 +78,7 @@
   if (!bundleID) {
     return [[FBSimulatorError describe:@"Bundle ID was not provided"] failFuture];
   }
-  return [[self.simulator
-    runningApplicationWithBundleID:bundleID]
-    onQueue:self.simulator.workQueue map:^(FBProcessInfo *process) {
-      return [[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:self.simulator] terminate:process];
-    }];
+  return [[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:self.simulator] terminateApplication:bundleID];
 }
 
 - (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications

@@ -47,7 +47,7 @@
 
 #pragma mark Public Methods
 
-- (FBFuture<NSNull *> *)terminate:(FBProcessInfo *)process
+- (FBFuture<NSNull *> *)terminateProcess:(FBProcessInfo *)process
 {
   // Confirm that the process has the launchd_sim as a parent process.
   // The interaction should restrict itself to simulator processes so this is a guard
@@ -76,8 +76,6 @@
       }
     }];
 }
-
-#pragma mark Private
 
 - (FBFuture<NSNull *> *)terminateApplication:(NSString *)bundleID
 {

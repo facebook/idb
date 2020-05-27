@@ -36,9 +36,17 @@ NS_ASSUME_NONNULL_BEGIN
  Uses the highest-level API available for doing-so.
 
  @param process the Process to terminate.
- @return A future that resolves successfully if the process is terminated.
+ @return A future that resolves successfully when the process is terminated.
  */
-- (FBFuture<NSNull *> *)terminate:(FBProcessInfo *)process;
+- (FBFuture<NSNull *> *)terminateProcess:(FBProcessInfo *)process;
+
+/**
+ Terminates an Application Directly.
+
+ @param bundleID the Bundle ID the bundle ID of the Application to terminate.
+ @return a future that resolves successfully when the application is terminated.
+ */
+- (FBFuture<NSNull *> *)terminateApplication:(NSString *)bundleID;
 
 @end
 
