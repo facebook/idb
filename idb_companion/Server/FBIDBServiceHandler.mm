@@ -964,11 +964,12 @@ Status FBIDBServiceHandler::describe(ServerContext *context, const idb::TargetDe
   FBiOSTargetScreenInfo *screenInfo = _target.screenInfo;
   idb::TargetDescription *description = response->mutable_target_description();
   if (screenInfo) {
-    description->mutable_screen_dimensions()->set_width(screenInfo.widthPixels);
-    description->mutable_screen_dimensions()->set_height(screenInfo.heightPixels);
-    description->mutable_screen_dimensions()->set_height_points(screenInfo.heightPixels/screenInfo.scale);
-    description->mutable_screen_dimensions()->set_width_points(screenInfo.widthPixels/screenInfo.scale);
-    description->mutable_screen_dimensions()->set_density(screenInfo.scale);
+    idb::ScreenDimensions *dimensions = description->mutable_screen_dimensions();
+    dimensions->set_width(screenInfo.widthPixels);
+    dimensions->set_height(screenInfo.heightPixels);
+    dimensions->set_height_points(screenInfo.heightPixels/screenInfo.scale);
+    dimensions->set_width_points(screenInfo.widthPixels/screenInfo.scale);
+    dimensions->set_density(screenInfo.scale);
   }
   description->set_udid(_target.udid.UTF8String);
   description->set_name(_target.name.UTF8String);
@@ -976,9 +977,6 @@ Status FBIDBServiceHandler::describe(ServerContext *context, const idb::TargetDe
   description->set_target_type(FBiOSTargetTypeStringsFromTargetType(_target.targetType).firstObject.lowercaseString.UTF8String);
   description->set_os_version(_target.osVersion.name.UTF8String);
   description->set_architecture(_target.architecture.UTF8String);
-  idb::CompanionInfo *companionInfo = description->mutable_companion_info();
-  companionInfo->set_grpc_port(portsConfig.grpcPort);
-  companionInfo->set_host(NSProcessInfo.processInfo.hostName.UTF8String);
   return Status::OK;
 }}
 
