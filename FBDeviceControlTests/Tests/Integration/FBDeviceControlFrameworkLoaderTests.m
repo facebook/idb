@@ -27,11 +27,6 @@
   }
 }
 
-- (void)testLinksPrivateFrameworks
-{
-  [FBDeviceControlFrameworkLoader.new loadPrivateFrameworksOrAbort];
-}
-
 - (void)testConstructsDeviceSet
 {
   NSError *error = nil;
