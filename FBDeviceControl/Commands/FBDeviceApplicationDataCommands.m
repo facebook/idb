@@ -134,8 +134,16 @@
 
 - (FBFuture *)handleWithAFCSessionForBundleID:(NSString *)bundleID operationBlock:(id(^)(FBAFCConnection *, NSError **))operationBlock
 {
-  return [[self.device.amDevice
-    houseArrestAFCConnectionForBundleID:bundleID afcCalls:self.afcCalls]
+  return [[[self.device
+    installedApplicationWithBundleID:bundleID]
+    onQueue:self.device.asyncQueue pushTeardown:^ FBFutureContext<FBAFCConnection *> * (FBInstalledApplication *installedApplication) {
+      if (installedApplication.installType != FBApplicationInstallTypeUserDevelopment) {
+        return [[FBDeviceControlError
+          describeFormat:@"%@ is not signed for development, file operations are not possible", installedApplication]
+          failFutureContext];
+      }
+      return [self.device.amDevice houseArrestAFCConnectionForBundleID:bundleID afcCalls:self.afcCalls];
+    }]
     onQueue:self.device.workQueue pop:^(FBAFCConnection *connection) {
       NSError *error = nil;
       id result = operationBlock(connection, &error);
@@ -143,7 +151,7 @@
         return [FBFuture futureWithError:error];
       }
       return [FBFuture futureWithResult:result];
-  }];
+    }];
 }
 
 @end
