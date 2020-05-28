@@ -360,7 +360,9 @@ class IdbClient:
     async def set_location(self, latitude: float, longitude: float) -> None:
         pass
 
-    async def approve(self, bundle_id: str, permissions: Set[str]) -> None:
+    async def approve(
+        self, bundle_id: str, permissions: Set[str], scheme: Optional[str] = None
+    ) -> None:
         pass
 
     async def record_video(self, stop: asyncio.Event, output_file: str) -> None:

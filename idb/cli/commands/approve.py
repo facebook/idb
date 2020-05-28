@@ -25,11 +25,19 @@ class ApproveCommand(ClientCommand):
             "permissions",
             nargs="+",
             help="Permissions to approve",
-            choices=["photos", "camera", "contacts"],
+            choices=["photos", "camera", "contacts", "url"],
+        )
+        parser.add_argument(
+            "--scheme", help="Url scheme registered by the app to approve", type=str
         )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+        if "url" in args.permissions and not args.scheme:
+            print("You need to specify --scheme when approving url permissions")
+            exit(1)
         await client.approve(
-            bundle_id=args.bundle_id, permissions=set(args.permissions)
+            bundle_id=args.bundle_id,
+            permissions=set(args.permissions),
+            scheme=args.scheme,
         )

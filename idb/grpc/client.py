@@ -139,6 +139,7 @@ APPROVE_MAP: Dict[str, Any] = {
     "photos": ApproveRequest.PHOTOS,
     "camera": ApproveRequest.CAMERA,
     "contacts": ApproveRequest.CONTACTS,
+    "url": ApproveRequest.URL,
 }
 
 
@@ -315,11 +316,14 @@ class IdbClient(IdbClientBase):
                 )
 
     @log_and_handle_exceptions
-    async def approve(self, bundle_id: str, permissions: Set[str]) -> None:
+    async def approve(
+        self, bundle_id: str, permissions: Set[str], scheme: Optional[str] = None
+    ) -> None:
         await self.stub.approve(
             ApproveRequest(
                 bundle_id=bundle_id,
                 permissions=[APPROVE_MAP[permission] for permission in permissions],
+                scheme=scheme,
             )
         )
 

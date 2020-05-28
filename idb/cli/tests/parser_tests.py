@@ -560,7 +560,15 @@ class TestParser(TestCase):
         bundle_id = "com.fb.myApp"
         await cli_main(cmd_input=["approve", bundle_id, "photos"])
         self.direct_client_mock.approve.assert_called_once_with(
-            bundle_id=bundle_id, permissions={"photos"}
+            bundle_id=bundle_id, permissions={"photos"}, scheme=None
+        )
+
+    async def test_approve_url(self) -> None:
+        self.direct_client_mock.approve = AsyncMock(return_value=[])
+        bundle_id = "com.fb.myApp"
+        await cli_main(cmd_input=["approve", bundle_id, "url", "--scheme", "fb"])
+        self.direct_client_mock.approve.assert_called_once_with(
+            bundle_id=bundle_id, permissions={"url"}, scheme="fb"
         )
 
     async def test_video(self) -> None:
