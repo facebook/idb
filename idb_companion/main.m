@@ -122,31 +122,24 @@ static FBFuture<NSArray<id<FBiOSTargetSet>> *> *DefaultTargetSets(NSUserDefaults
   ]];
 }
 
-static FBFuture<id<FBiOSTarget>> *TargetForUDID(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
+static FBFuture<id<FBiOSTarget>> *TargetForUDID(NSString *udid, NSUserDefaults *userDefaults, BOOL warmUp, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   if ([udid isEqualToString:@"mac"]) {
     udid = [FBMacDevice resolveDeviceUDID];
   }
   return [DefaultTargetSets(userDefaults, logger, reporter)
     onQueue:dispatch_get_main_queue() fmap:^(NSArray<id<FBiOSTargetSet>> *targetSets) {
-      NSError *error = nil;
-      id<FBiOSTarget> target = [FBiOSTargetProvider targetWithUDID:udid targetSets:targetSets logger:logger error:&error];
-      if (!target) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:target];
+      return [FBiOSTargetProvider targetWithUDID:udid targetSets:targetSets warmUp:warmUp logger:logger];
     }];
 }
 
 static FBFuture<FBSimulator *> *SimulatorFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
-  return [SimulatorSet(userDefaults, logger, reporter)
+  return [[SimulatorSet(userDefaults, logger, reporter)
     onQueue:dispatch_get_main_queue() fmap:^(FBSimulatorSet *simulatorSet) {
-      NSError *error = nil;
-      id<FBiOSTarget> target = [FBiOSTargetProvider targetWithUDID:udid targetSets:@[simulatorSet] logger:logger error:&error];
-      if (!target) {
-        return [FBFuture futureWithError:error];
-      }
+      return [FBiOSTargetProvider targetWithUDID:udid targetSets:@[simulatorSet] warmUp:NO logger:logger];
+    }]
+    onQueue:dispatch_get_main_queue() fmap:^(id<FBiOSTarget> target) {
       id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
       if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
         return [[FBIDBError
@@ -154,7 +147,7 @@ static FBFuture<FBSimulator *> *SimulatorFuture(NSString *udid, NSUserDefaults *
           failFuture];
       }
       return [FBFuture futureWithResult:commands];
-  }];
+    }];
 }
 
 static FBFuture<NSNull *> *TargetOfflineFuture(id<FBiOSTarget> target, id<FBControlCoreLogger> logger)
@@ -295,7 +288,7 @@ static FBFuture<NSNull *> *CloneFuture(NSString *udid, NSUserDefaults *userDefau
 static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   BOOL terminateOffline = [userDefaults boolForKey:@"-terminate-offline"];
-  return [TargetForUDID(udid, userDefaults, logger, reporter)
+  return [TargetForUDID(udid, userDefaults, YES, logger, reporter)
     onQueue:dispatch_get_main_queue() fmap:^(id<FBiOSTarget> target) {
       [reporter addMetadata:@{@"udid": udid}];
       [reporter report:[FBEventReporterSubject subjectForEvent:FBEventNameLaunched]];

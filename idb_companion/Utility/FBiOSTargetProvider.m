@@ -27,7 +27,33 @@
   return FBiOSTargetTypeNone;
 }
 
-+ (nullable id<FBiOSTarget>)targetWithUDID:(NSString *)udid targetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+#pragma mark Public
+
++ (FBFuture<id<FBiOSTarget>> *)targetWithUDID:(NSString *)udid targetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets warmUp:(BOOL)warmUp logger:(id<FBControlCoreLogger>)logger
+{
+  NSError *error = nil;
+  id<FBiOSTarget> target = [self fetchTargetWithUDID:udid targetSets:targetSets logger:logger error:&error];
+  if (!target) {
+    return [FBFuture futureWithError:error];
+  }
+  if (!warmUp) {
+    return [FBFuture futureWithResult:target];
+  }
+  if (target.state != FBiOSTargetStateBooted) {
+    return [FBFuture futureWithResult:target];
+  }
+  id<FBSimulatorLifecycleCommands> lifecycle = (id<FBSimulatorLifecycleCommands>) target;
+  if (![lifecycle conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
+    return [FBFuture futureWithResult:target];;
+  }
+  return [[lifecycle
+    connectToBridge]
+    mapReplace:target];
+}
+
+#pragma mark Private
+
++ (id<FBiOSTarget>)fetchTargetWithUDID:(NSString *)udid targetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   // Obtain the Target Type for the input UDID
   FBiOSTargetType targetType = [self targetTypeForUDID:udid];
@@ -53,7 +79,6 @@
     }
     return target;
   }
-
 
   return [[FBIDBError
     describeFormat:@"%@ could not be resolved to any target in %@", udid, targetSets]

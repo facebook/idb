@@ -21,11 +21,11 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param udid iOS Target identifier.
  @param targetSets the target sets to fetch from.
+ @param warmUp if YES then additional steps may be taken to get the target in a "warmer" state for usage in the companion.
  @param logger the logger to use.
- @param error an error out for any error that occurs.
- @return the target matching the specified identifier or nil on error.
+ @return A future wrapping the fetched target.
  */
-+ (nullable id<FBiOSTarget>)targetWithUDID:(NSString *)udid targetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (FBFuture<id<FBiOSTarget>> *)targetWithUDID:(NSString *)udid targetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets warmUp:(BOOL)warmUp logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
 
