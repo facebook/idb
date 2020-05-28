@@ -70,9 +70,10 @@ NS_ASSUME_NONNULL_BEGIN
  Clones and returns an FBSimulator that is cloned from an existing simulator.
 
  @param simulator the Simulator to clone.
+ @param destinationSet the destination simulator set for the simulator. May be self.
  @return a Future wrapping a created FBSimulator if one could be cloned.
  */
-- (FBFuture<FBSimulator *> *)cloneSimulator:(FBSimulator *)simulator;
+- (FBFuture<FBSimulator *> *)cloneSimulator:(FBSimulator *)simulator toDeviceSet:(FBSimulatorSet *)destinationSet;
 
 /**
  Finds and creates the Configurations for the missing 'Default Simulators' in the receiver.

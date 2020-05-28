@@ -190,13 +190,13 @@
     }];
 }
 
-- (FBFuture<FBSimulator *> *)cloneSimulator:(FBSimulator *)simulator
+- (FBFuture<FBSimulator *> *)cloneSimulator:(FBSimulator *)simulator toDeviceSet:(FBSimulatorSet *)destinationSet
 {
   NSParameterAssert(simulator.set == self);
   return [[FBSimulatorSet
-    onDeviceSet:self.deviceSet cloneDevice:simulator.device queue:self.asyncQueue]
+    onDeviceSet:self.deviceSet cloneDevice:simulator.device toDeviceSet:destinationSet.deviceSet queue:self.asyncQueue]
     onQueue:self.workQueue fmap:^(SimDevice *device) {
-      return [self fetchNewlyMadeSimulator:device];
+      return [destinationSet fetchNewlyMadeSimulator:device];
     }];
 }
 
@@ -383,10 +383,10 @@
   return future;
 }
 
-+ (FBFuture<SimDevice *> *)onDeviceSet:(SimDeviceSet *)deviceSet cloneDevice:(SimDevice *)device queue:(dispatch_queue_t)queue
++ (FBFuture<SimDevice *> *)onDeviceSet:(SimDeviceSet *)deviceSet cloneDevice:(SimDevice *)device toDeviceSet:(SimDeviceSet *)destinationSet queue:(dispatch_queue_t)queue
 {
   FBMutableFuture<SimDevice *> *future = FBMutableFuture.future;
-  [deviceSet cloneDeviceAsync:device name:device.name completionQueue:queue completionHandler:^(NSError *error, SimDevice *created) {
+  [deviceSet cloneDeviceAsync:device name:device.name toSet:destinationSet completionQueue:queue completionHandler:^(NSError *error, SimDevice *created) {
     if (created) {
       [future resolveWithResult:created];
     } else {
