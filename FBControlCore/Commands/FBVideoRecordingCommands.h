@@ -31,7 +31,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoRecording;
  @param filePath an optional filePath to write to.
  @return A Future, wrapping the recording session.
  */
-- (FBFuture<id<FBiOSTargetContinuation>> *)startRecordingToFile:(NSString *)filePath;
+- (FBFuture<id<FBiOSTargetContinuation>> *)startRecordingToFile:(nullable NSString *)filePath;
 
 /**
  Stops the Recording of Video.

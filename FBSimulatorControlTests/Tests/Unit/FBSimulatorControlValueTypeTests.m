@@ -140,7 +140,6 @@
   NSArray<FBDiagnosticQuery *> *values = @[
     [FBDiagnosticQuery all],
     [FBDiagnosticQuery named:@[@"foo", @"bar", @"baz"]],
-    [FBDiagnosticQuery filesInApplicationOfBundleID:@"foo.bar.baz" withFilenames:@[@"foo.txt", @"bar.log"] withFilenameGlobs:@[@"*.foo"]],
     [FBDiagnosticQuery crashesOfType:FBCrashLogInfoProcessTypeCustomAgent | FBCrashLogInfoProcessTypeApplication since:[NSDate dateWithTimeIntervalSince1970:100]],
   ];
   [self assertEqualityOfCopy:values];
