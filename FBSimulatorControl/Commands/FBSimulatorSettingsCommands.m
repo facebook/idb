@@ -87,6 +87,61 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
   return [FBFuture futureWithFutures:futures];
 }
 
+- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toDeeplink:(NSString *)scheme
+{
+  if ([scheme length] == 0) {
+    return [[FBSimulatorError
+             describe:@"Empty scheme provided to url approve"]
+            failFuture];
+  }
+
+  if ([bundleIDs count] == 0) {
+    return [[FBSimulatorError
+             describe:@"Empty bundleID set provided to url approve"]
+            failFuture];
+  }
+
+  NSString *preferencesDirectory = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/Preferences"];
+  NSString *schemeApprovalPlistPath = [preferencesDirectory stringByAppendingPathComponent:@"com.apple.launchservices.schemeapproval.plist"];
+
+  //Read the existing file if it exists. Otherwise create a new dictionary
+  NSMutableDictionary<NSString *, NSString *> *schemeApprovalProperties = [NSMutableDictionary new];
+  if ([NSFileManager.defaultManager fileExistsAtPath:schemeApprovalPlistPath]) {
+    schemeApprovalProperties = [[NSDictionary dictionaryWithContentsOfFile:schemeApprovalPlistPath] mutableCopy];
+    if (schemeApprovalProperties == nil) {
+      return [[FBSimulatorError
+               describeFormat:@"Failed to read the file at %@", schemeApprovalPlistPath]
+              failFuture];
+    }
+  }
+
+  //Add magic strings to our plist. This is necessary to skip the dialog when using `idb open`
+  NSString *urlKey = [NSString stringWithFormat:@"com.apple.CoreSimulator.CoreSimulatorBridge-->%@", scheme];
+  for (NSString *bundleID in bundleIDs) {
+    schemeApprovalProperties[urlKey] = bundleID;
+  }
+
+  //Write our plist back
+  NSError *error = nil;
+  BOOL success = [NSFileManager.defaultManager
+                  createDirectoryAtPath:preferencesDirectory
+                  withIntermediateDirectories:YES
+                  attributes:nil
+                  error:&error];
+  if (!success) {
+        return [[FBSimulatorError
+             describe:@"Failed to create folders for scheme approval plist"]
+            failFuture];
+  }
+  success = [schemeApprovalProperties writeToFile:schemeApprovalPlistPath atomically:YES];
+  if (!success) {
+    return [[FBSimulatorError
+             describe:@"Failed to write scheme approval plist"]
+            failFuture];
+  }
+  return FBFuture.empty;
+}
+
 - (FBFuture<NSNull *> *)updateContacts:(NSString *)databaseDirectory
 {
   // Get and confirm the destination directory exists.

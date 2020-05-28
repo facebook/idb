@@ -290,6 +290,16 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSNull *> *)approve:(NSSet<FBSettingsApprovalService> *)services for_application:(NSString *)bundleID;
 
 /**
+Approves the deeplink given a schema and app.
+This allows to avoid the permission popup the first time we open a deeplink
+
+@param scheme scheme of the deeplink url (the part before ":")
+@param bundleID app to approve services for
+@return a Future that resolves when complete.
+*/
+- (FBFuture<NSNull *> *)approve_deeplink:(NSString *)scheme for_application:(NSString *)bundleID;
+
+/**
  Open a url on the target
 
  @param url url to open

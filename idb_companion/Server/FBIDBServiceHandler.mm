@@ -652,13 +652,21 @@ Status FBIDBServiceHandler::approve(ServerContext *context, const idb::ApproveRe
     @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_PHOTOS): FBSettingsApprovalServicePhotos,
     @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_CAMERA): FBSettingsApprovalServiceCamera,
     @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_CONTACTS): FBSettingsApprovalServiceContacts,
+    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_URL): FBSettingsApprovalServiceUrl,
   };
   NSMutableSet<FBSettingsApprovalService> *services = NSMutableSet.set;
   for (int j = 0; j < request->permissions_size(); j++) {
     idb::ApproveRequest_Permission permission = request->permissions(j);
     [services addObject:mapping[@(permission)]];
   }
-  [[_commandExecutor approve:services for_application:nsstring_from_c_string(request->bundle_id())] block:&error];
+  if ([services containsObject:FBSettingsApprovalServiceUrl]) {
+    [services removeObject:FBSettingsApprovalServiceUrl];
+    [[_commandExecutor approve_deeplink:nsstring_from_c_string(request->scheme())
+                        for_application:nsstring_from_c_string(request->bundle_id())] block:&error];
+  }
+  if ([services count] > 0 && !error) {
+    [[_commandExecutor approve:services for_application:nsstring_from_c_string(request->bundle_id())] block:&error];
+  }
   if (error) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }

@@ -275,6 +275,14 @@
     }];
 }
 
+- (FBFuture<NSNull *> *)approve_deeplink:(NSString *)scheme for_application:(NSString *)bundleID
+{
+  return [self.settingsCommands
+  onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorSettingsCommands> commands) {
+    return [commands grantAccess:[NSSet setWithObject:bundleID] toDeeplink:scheme];
+  }];
+}
+
 - (FBFuture<NSNull *> *)open_url:(NSString *)url
 {
   return [self.lifecycleCommands

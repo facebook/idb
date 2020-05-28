@@ -131,9 +131,11 @@ message ApproveRequest {
     PHOTOS = 0;
     CAMERA = 1;
     CONTACTS = 2;
+    URL = 3;
   }
   string bundle_id = 1;
   repeated Permission permissions = 2;
+  string scheme = 3;
 }
 
 message ApproveResponse {

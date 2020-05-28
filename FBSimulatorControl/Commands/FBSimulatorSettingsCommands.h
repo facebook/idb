@@ -51,6 +51,15 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval;
 - (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services;
 
 /**
+ Grants access to the provided deeplink scheme.
+
+ @param bundleIDs the bundle ids to provide access to.
+ @param scheme the deeplink scheme to allow
+ @return A future that resolves when the setting change is complete.
+ */
+- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toDeeplink:(NSString*)scheme;
+
+/**
  Updates the contacts on the target, using the provided local databases.
  Takes local paths to AddressBook Databases. These replace the existing databases for the Address Book.
  Only sqlitedb paths should be provided, journaling files will be ignored.
