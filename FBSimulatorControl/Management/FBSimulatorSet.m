@@ -277,12 +277,12 @@
 
 - (NSString *)shortDescription
 {
-  return [self.allSimulators valueForKey:NSStringFromSelector(@selector(shortDescription))];
+  return [FBCollectionInformation oneLineDescriptionFromArray:[self.allSimulators valueForKey:NSStringFromSelector(@selector(shortDescription))]];
 }
 
 - (NSString *)debugDescription
 {
-  return [self.allSimulators valueForKey:NSStringFromSelector(@selector(debugDescription))];
+  return [FBCollectionInformation oneLineDescriptionFromArray:[self.allSimulators valueForKey:NSStringFromSelector(@selector(debugDescription))]];
 }
 
 - (NSString *)description
