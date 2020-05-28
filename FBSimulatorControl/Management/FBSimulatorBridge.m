@@ -64,6 +64,7 @@ static NSTimeInterval BridgeReadyTimeout = 5.0;
       return [[FBSimulatorBridge alloc] initWithBridge:bridge operation:operation workQueue:bridgeQueue asyncQueue:asyncQueue];
     }]
     onQueue:bridgeQueue fmap:^(FBSimulatorBridge *bridge) {
+      [simulator.logger logFormat:@"Enabling Accessibility on the bridge %@", bridge];
       return [[bridge enableAccessibility] mapReplace:bridge];
     }];
 }
@@ -84,6 +85,7 @@ static NSTimeInterval BridgeReadyTimeout = 5.0;
         ]];
       }
       // Otherwise just return the original future wrapped in the array.
+      [simulator.logger logFormat:@"SimulatorBridge Agent %@ is already running for %@", future.result, portName];
       return [FBFuture futureWithFutures:@[future]];
     }];
 }
@@ -122,27 +124,31 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
     environment:@{}
     output:output];
 
+  [logger logFormat:@"Launching SimulatorBridge agent for %@", portName];
   return [[[simulator
     launchAgent:config]
     onQueue:simulator.asyncQueue fmap:^(FBSimulatorAgentOperation *operation) {
       return [[[buffer
         consumeAndNotifyWhen:[@"READY" dataUsingEncoding:NSUTF8StringEncoding]]
-        timeout:BridgeReadyTimeout waitingFor:@"The launched operation %@ to specify 'READY'", operation]
+        timeout:BridgeReadyTimeout waitingFor:@"The launched operation %@ to specify 'READY' for %@", operation, portName]
         mapReplace:operation];
     }]
     onQueue:simulator.asyncQueue doOnResolved:^(FBSimulatorAgentOperation *operation) {
-      [logger logFormat:@"Bridge operation %@ is now ready", operation];
+      [logger logFormat:@"Bridge operation is launched %@. %@ is now ready", operation, portName];
     }];
 }
 
 + (FBFuture<NSProxy<SimulatorBridge> *> *)bridgeForSimulator:(FBSimulator *)simulator portName:(NSString *)portName timeout:(NSTimeInterval)timeout
 {
-  return [[FBFuture
+  return [[[FBFuture
     onQueue:simulator.workQueue
     resolveUntil:^{
       return [self bridgeForSimulator:simulator portName:portName];
     }]
-    timeout:timeout waitingFor:@"Bridge Port to exist"];
+    timeout:timeout waitingFor:@"Bridge Port %@ to exist", portName]
+    onQueue:simulator.asyncQueue doOnResolved:^(NSProxy<SimulatorBridge> *bridge) {
+      [simulator.logger logFormat:@"SimulatorBridge Proxy %@ for %@ is now ready", bridge, portName];
+    }];
 }
 
 + (FBFuture<NSProxy<SimulatorBridge> *> *)bridgeForSimulator:(FBSimulator *)simulator portName:(NSString *)portName
