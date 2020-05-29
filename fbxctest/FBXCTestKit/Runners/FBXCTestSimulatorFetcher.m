@@ -26,10 +26,10 @@
 
 + (nullable instancetype)fetcherWithWorkingDirectory:(NSString *)workingDirectory logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  NSString *setPath = [workingDirectory stringByAppendingPathComponent:@"sim"];
+  NSString *setPath = [self setPathForWorkingDirectory:workingDirectory logger:logger];
   FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
     configurationWithDeviceSetPath:setPath
-    options:FBSimulatorManagementOptionsDeleteAllOnFirstStart
+    options:0
     logger:logger
     reporter:nil];
 
@@ -40,6 +40,23 @@
   }
 
   return [[self alloc] initWithSimulatorControl:simulatorControl logger:logger];
+}
+
++ (NSString *)setPathForWorkingDirectory:(NSString *)workingDirectory logger:(id<FBControlCoreLogger>)logger
+{
+  NSString *fallbackSetPath = [workingDirectory stringByAppendingPathComponent:@"sim"];
+  NSString *xctestDevicesSet = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Developer/XCTestDevices"];
+  BOOL isDirectory = NO;
+  if (![NSFileManager.defaultManager fileExistsAtPath:xctestDevicesSet isDirectory:&isDirectory]) {
+    [logger logFormat:@"%@ is not present. Falling back to using set path relative to working directory %@", xctestDevicesSet, fallbackSetPath];
+    return fallbackSetPath;
+  }
+  if (!isDirectory) {
+    [logger logFormat:@"%@ is not a directory. Falling back to using set path relative to working directory %@", xctestDevicesSet, fallbackSetPath];
+    return fallbackSetPath;
+  }
+  [logger logFormat:@"%@ exists, using it for fbxctest's simulator set", xctestDevicesSet];
+  return xctestDevicesSet;
 }
 
 - (instancetype)initWithSimulatorControl:(FBSimulatorControl *)simulatorControl logger:(id<FBControlCoreLogger>)logger
