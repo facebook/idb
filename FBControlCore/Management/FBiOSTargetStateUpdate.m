@@ -10,15 +10,16 @@
 
 @interface FBiOSTargetStateUpdate ()
 
-@property (nonatomic, copy, readonly) NSString *name;
-@property (nonatomic, copy, readonly) FBOSVersion *osVersion;
 @property (nonatomic, assign, readonly) FBiOSTargetState state;
 @property (nonatomic, assign, readonly) FBiOSTargetType targetType;
-@property (nonatomic, assign, readonly) FBArchitecture architecture;
-@property (nonatomic, assign, readonly) NSDictionary<NSString *, id> *extendedInformation;
+@property (nonatomic, copy, readonly) FBArchitecture architecture;
+@property (nonatomic, copy, readonly) FBDeviceModel model;
+@property (nonatomic, copy, readonly) FBDeviceType *deviceType;
+@property (nonatomic, copy, readonly) FBOSVersion *osVersion;
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *extendedInformation;
+@property (nonatomic, copy, readonly) NSString *name;
 
 @end
-
 
 @implementation FBiOSTargetStateUpdate
 
@@ -41,13 +42,14 @@ static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
     return nil;
   }
 
-  _udid = target.udid;
-  _state = target.state;
-  _targetType = target.targetType;
-  _name = target.name;
-  _osVersion = target.osVersion;
   _architecture = target.architecture;
   _extendedInformation = target.extendedInformation;
+  _model = target.deviceType.model;
+  _name = target.name;
+  _osVersion = target.osVersion;
+  _state = target.state;
+  _targetType = target.targetType;
+  _udid = target.udid;
 
   return self;
 }
@@ -57,22 +59,25 @@ static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
   return self;
 }
 
-static NSString *const KeyUDID = @"udid";
+// These values are parsed into TargetDescription in idb/common/types.py, so need to be stable.
+static NSString *const KeyArchitecture = @"architecture";
+static NSString *const KeyModel = @"model";
+static NSString *const KeyName = @"name";
+static NSString *const KeyOSVersion = @"os_version";
 static NSString *const KeyState = @"state";
 static NSString *const KeyType = @"type";
-static NSString *const KeyName = @"name";
-static NSString *const KeyOsVersion = @"os_version";
-static NSString *const KeyArchitecture = @"architecture";
+static NSString *const KeyUDID = @"udid";
 
 - (NSDictionary<NSString *, id> *)jsonSerializableRepresentation
 {
   NSMutableDictionary<NSString *, id> *representation = [NSMutableDictionary dictionaryWithDictionary:@{
-    KeyUDID : self.udid,
+    KeyArchitecture : self.architecture ?: @"unknown",
+    KeyModel : self.model,
+    KeyName : self.name ?: @"unknown",
+    KeyOSVersion : self.osVersion.name ?: @"unknown",
     KeyState : FBiOSTargetStateStringFromState(self.state),
     KeyType : FBiOSTargetTypeStringFromTargetType(self.targetType),
-    KeyName : self.name ?: @"unknown",
-    KeyOsVersion : self.osVersion.name ?: @"unknown",
-    KeyArchitecture : self.architecture ?: @"unknown",
+    KeyUDID : self.udid,
   }];
   [representation addEntriesFromDictionary:self.extendedInformation];
   return representation;
