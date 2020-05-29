@@ -78,11 +78,14 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
 
 + (void)setCoreSimulatorLoggingEnabled:(BOOL)enabled
 {
-  if (![NSUserDefaults instancesRespondToSelector:@selector(simulatorDefaults)]) {
+  if (![NSUserDefaults respondsToSelector:@selector(simulatorDefaults)]) {
     return;
   }
+  // These are stored at ~/Library/Preferences/com.apple.CoreSimulator.plist
+  // This will also be picked up by CoreSimulatorService, which itself links CoreSimulator and uses -[NSUserDefaults(SimDefaults) simulatorDefaults]
   NSUserDefaults *simulatorDefaults = [NSUserDefaults simulatorDefaults];
   [simulatorDefaults setBool:enabled forKey:@"DebugLogging"];
+  [simulatorDefaults synchronize];
 }
 
 + (BOOL)setInternalLogHandler
