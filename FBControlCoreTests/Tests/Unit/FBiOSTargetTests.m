@@ -31,7 +31,7 @@
     FBDeviceModeliPhone6SPlus,
     FBDeviceModeliPhone7,
     FBDeviceModeliPhone7Plus,
-    FBDeviceModeliPhoneSE,
+    FBDeviceModeliPhoneSE_1stGeneration,
   ];
 }
 
