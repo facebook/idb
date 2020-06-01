@@ -25,19 +25,19 @@
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
 
   NSError *error = nil;
-  BOOL success = [[simulator
+  BOOL success = [[[simulator
+    fileCommandsForContainerApplication:self.safariAppLaunch.bundleID]
     copyPathsOnHost:@[[NSURL fileURLWithPath:fixturePath]]
-    toDestination:@"Documents"
-    insideContainerOfApplication:self.safariAppLaunch.bundleID]
+    toDestination:@"Documents"]
     await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
   NSString *destinationPath = [NSTemporaryDirectory() stringByAppendingPathComponent:fixturePath.lastPathComponent];
-  success = [[simulator
+  success = [[[simulator
+   fileCommandsForContainerApplication:self.safariAppLaunch.bundleID]
    copyItemInContainer:[@"Documents" stringByAppendingPathComponent:fixturePath.lastPathComponent]
-   toDestinationOnHost:destinationPath
-   fromContainerOfApplication:self.safariAppLaunch.bundleID]
+   toDestinationOnHost:destinationPath]
    await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);

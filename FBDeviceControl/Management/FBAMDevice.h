@@ -83,6 +83,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, nullable, copy, readonly) NSString *udid;
 
+#pragma mark Derived Properties
+
 /**
  The Device's 'Product Version'.
  */

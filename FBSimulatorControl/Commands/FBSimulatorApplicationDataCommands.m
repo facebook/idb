@@ -10,22 +10,16 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 
-@interface FBSimulatorApplicationDataCommands ()
+@interface FBSimulatorFileCommands : NSObject <FBiOSTargetFileCommands>
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, copy, readonly) NSString *bundleID;
 
 @end
 
-@implementation FBSimulatorApplicationDataCommands
+@implementation FBSimulatorFileCommands
 
-#pragma mark Initializers
-
-+ (instancetype)commandsWithTarget:(FBSimulator *)target
-{
-  return [[self alloc] initWithSimulator:target];
-}
-
-- (instancetype)initWithSimulator:(FBSimulator *)simulator
+- (instancetype)initWithSimulator:(FBSimulator *)simulator bundleID:(NSString *)bundleID
 {
   self = [super init];
   if (!self) {
@@ -33,15 +27,17 @@
   }
 
   _simulator = simulator;
+  _bundleID = bundleID;
+
   return self;
 }
 
 #pragma mark FBApplicationDataCommands
 
-- (FBFuture<NSNull *> *)copyPathsOnHost:(NSArray<NSURL *> *)paths toDestination:(NSString *)destinationPath insideContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)copyPathsOnHost:(NSArray<NSURL *> *)paths toDestination:(NSString *)destinationPath
 {
   return [[self
-    dataContainerOfApplicationWithBundleID:bundleID]
+    dataContainer]
     onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSNull *> * (NSString *dataContainer) {
       NSError *error;
       NSURL *basePathURL =  [NSURL fileURLWithPathComponents:@[dataContainer, destinationPath]];
@@ -59,11 +55,11 @@
     }];
 }
 
-- (FBFuture<NSString *> *)copyItemInContainer:(NSString *)containerPath toDestinationOnHost:(NSString *)destinationPath fromContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSString *> *)copyItemInContainer:(NSString *)containerPath toDestinationOnHost:(NSString *)destinationPath
 {
   __block NSString *dstPath = destinationPath;
   return [[self
-    dataContainerOfApplicationWithBundleID:bundleID]
+    dataContainer]
     onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSString *> * (NSString *dataContainer) {
       NSString *source = [dataContainer stringByAppendingPathComponent:containerPath];
       BOOL srcIsDirecory = NO;
@@ -99,10 +95,10 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath insideContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
   return [[self
-    dataContainerOfApplicationWithBundleID:bundleID]
+    dataContainer]
     onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSNull *> * (NSString *dataContainer) {
       NSError *error;
       NSString *fullPath = [dataContainer stringByAppendingPathComponent:directoryPath];
@@ -116,10 +112,10 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toDestinationPath:(NSString *)destinationPath insideContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toDestinationPath:(NSString *)destinationPath
 {
   return [[self
-    dataContainerOfApplicationWithBundleID:bundleID]
+    dataContainer]
     onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSNull *> * (NSString *dataContainer) {
       NSError *error;
       NSString *fullDestinationPath = [dataContainer stringByAppendingPathComponent:destinationPath];
@@ -136,10 +132,10 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths insideContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths
 {
   return [[self
-    dataContainerOfApplicationWithBundleID:bundleID]
+    dataContainer]
     onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSNull *> * (NSString *dataContainer) {
       NSError *error;
       for (NSString *path in paths) {
@@ -155,10 +151,10 @@
     }];
 }
 
-- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path insideContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path
 {
   return [[self
-    dataContainerOfApplicationWithBundleID:bundleID]
+    dataContainer]
     onQueue:self.simulator.asyncQueue fmap:^(NSString *dataContainer) {
       NSString *fullPath = [dataContainer stringByAppendingPathComponent:path];
       NSError *error;
@@ -172,24 +168,23 @@
 
 #pragma mark Private
 
-- (FBFuture<NSString *> *)dataContainerOfApplicationWithBundleID:(NSString *)bundleID
+- (FBFuture<NSString *> *)dataContainer
 {
-  NSParameterAssert(bundleID);
   return [[self.simulator
-    installedApplicationWithBundleID:bundleID]
+    installedApplicationWithBundleID:self.bundleID]
     onQueue:self.simulator.asyncQueue chain:^FBFuture<NSString *> *(FBFuture<FBInstalledApplication *> *future) {
       NSString *container = future.result.dataContainer;
       if (container) {
         return [FBFuture futureWithResult:container];
       }
-      return [self fallbackDataContainerForBundleID:bundleID];
+      return [self fallbackDataContainer];
     }];
 }
 
-- (FBFuture<NSString *> *)fallbackDataContainerForBundleID:(NSString *)bundleID
+- (FBFuture<NSString *> *)fallbackDataContainer
 {
   return [[self.simulator
-    runningApplicationWithBundleID:bundleID]
+    runningApplicationWithBundleID:self.bundleID]
     onQueue:self.simulator.asyncQueue fmap:^(FBProcessInfo *runningApplication) {
       NSString *homeDirectory = runningApplication.environment[@"HOME"];
       if (![NSFileManager.defaultManager fileExistsAtPath:homeDirectory]) {
@@ -199,6 +194,42 @@
       }
       return [FBFuture futureWithResult:homeDirectory];
     }];
+}
+
+@end
+
+@interface FBSimulatorApplicationDataCommands ()
+
+@property (nonatomic, strong, readonly) FBSimulator *simulator;
+
+@end
+
+@implementation FBSimulatorApplicationDataCommands
+
+#pragma mark Initializers
+
++ (instancetype)commandsWithTarget:(FBSimulator *)target
+{
+  return [[self alloc] initWithSimulator:target];
+}
+
+- (instancetype)initWithSimulator:(FBSimulator *)simulator
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _simulator = simulator;
+
+  return self;
+}
+
+#pragma mark FBApplicationDataCommands Implementation
+
+- (id<FBiOSTargetFileCommands>)fileCommandsForContainerApplication:(NSString *)bundleID
+{
+  return [[FBSimulatorFileCommands alloc] initWithSimulator:self.simulator bundleID:bundleID];
 }
 
 @end
