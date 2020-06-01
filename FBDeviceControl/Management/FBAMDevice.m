@@ -382,9 +382,13 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
     }];
 }
 
-- (FBFutureContext<FBAMDServiceConnection *> *)startAFCService
+- (FBFutureContext<FBAFCConnection *> *)startAFCService
 {
-  return [self startService:@"com.apple.afc"];
+  return [[self
+    startService:@"com.apple.afc"]
+    onQueue:self.workQueue push:^(FBAMDServiceConnection *connection) {
+      return [FBAFCConnection afcFromServiceConnection:connection calls:FBAFCConnection.defaultCalls logger:self.logger queue:self.workQueue];
+    }];
 }
 
 - (FBFutureContext<FBAMDServiceConnection *> *)startTestManagerService

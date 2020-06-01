@@ -103,7 +103,7 @@ extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
 
  @return a Future wrapping the AFC connection.
  */
-- (FBFutureContext<FBAMDServiceConnection *> *)startAFCService;
+- (FBFutureContext<FBAFCConnection *> *)startAFCService;
 
 /**
  Starts house arrest for a given bundle id.

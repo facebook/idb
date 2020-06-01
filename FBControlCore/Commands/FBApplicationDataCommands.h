@@ -84,6 +84,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (id<FBiOSTargetFileCommands>)fileCommandsForContainerApplication:(NSString *)bundleID;
 
+/**
+ Returns file for the root of the filesystem
+
+ @return a Future that resolves with an instance of the file commands
+ */
+- (id<FBiOSTargetFileCommands>)fileCommandsForRootFilesystem;
+
 @end
 
 NS_ASSUME_NONNULL_END

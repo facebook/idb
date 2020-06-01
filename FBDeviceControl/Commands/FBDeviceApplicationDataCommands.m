@@ -18,13 +18,18 @@
 
 @property (nonatomic, strong, readonly) FBDevice *device;
 @property (nonatomic, assign, readonly) AFCCalls afcCalls;
+
+@end
+
+@interface FBDeviceFileCommands_HouseArrest : FBDeviceFileCommands
+
 @property (nonatomic, copy, readonly) NSString *bundleID;
 
 @end
 
 @implementation FBDeviceFileCommands
 
-- (instancetype)initWithDevice:(FBDevice *)device afcCalls:(AFCCalls)afcCalls bundleID:(NSString *)bundleID
+- (instancetype)initWithDevice:(FBDevice *)device afcCalls:(AFCCalls)afcCalls
 {
   self = [super init];
   if (!self) {
@@ -33,7 +38,6 @@
 
   _device = device;
   _afcCalls = afcCalls;
-  _bundleID = bundleID;
 
   return self;
 }
@@ -115,6 +119,43 @@
 
 #pragma mark Private
 
+- (FBFuture<NSData *> *)readFileFromPathInContainer:(NSString *)path
+{
+  return [self handleAFCOperation:^ NSData * (FBAFCConnection *afc, NSError **error) {
+    return [afc contentsOfPath:path error:error];
+  }];
+}
+
+- (FBFuture *)handleAFCOperation:(id(^)(FBAFCConnection *, NSError **))operationBlock
+{
+  return [[self.device.amDevice
+    startAFCService]
+    onQueue:self.device.workQueue pop:^(FBAFCConnection *connection) {
+      NSError *error = nil;
+      id result = operationBlock(connection, &error);
+      if (!result) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:result];
+    }];
+}
+
+@end
+
+@implementation FBDeviceFileCommands_HouseArrest
+
+- (instancetype)initWithDevice:(FBDevice *)device afcCalls:(AFCCalls)afcCalls bundleID:(NSString *)bundleID
+{
+  self = [super initWithDevice:device afcCalls:afcCalls];
+  if (!self) {
+    return nil;
+  }
+
+  _bundleID = bundleID;
+
+  return self;
+}
+
 - (FBFuture *)handleAFCOperation:(id(^)(FBAFCConnection *, NSError **))operationBlock
 {
   return [[[self.device
@@ -135,13 +176,6 @@
       }
       return [FBFuture futureWithResult:result];
     }];
-}
-
-- (FBFuture<NSData *> *)readFileFromPathInContainer:(NSString *)path
-{
-  return [self handleAFCOperation:^ NSData * (FBAFCConnection *afc, NSError **error) {
-    return [afc contentsOfPath:path error:error];
-  }];
 }
 
 @end
@@ -184,7 +218,12 @@
 
 - (id<FBiOSTargetFileCommands>)fileCommandsForContainerApplication:(NSString *)bundleID
 {
-  return [[FBDeviceFileCommands alloc] initWithDevice:self.device afcCalls:self.afcCalls bundleID:bundleID];
+  return [[FBDeviceFileCommands_HouseArrest alloc] initWithDevice:self.device afcCalls:self.afcCalls bundleID:bundleID];
+}
+
+- (id<FBiOSTargetFileCommands>)fileCommandsForRootFilesystem
+{
+  return [[FBDeviceFileCommands alloc] initWithDevice:self.device afcCalls:self.afcCalls];
 }
 
 @end

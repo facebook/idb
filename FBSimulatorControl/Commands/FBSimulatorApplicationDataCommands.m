@@ -13,13 +13,18 @@
 @interface FBSimulatorFileCommands : NSObject <FBiOSTargetFileCommands>
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
+
+@end
+
+@interface FBSimulatorFileCommands_AppContainer : FBSimulatorFileCommands
+
 @property (nonatomic, copy, readonly) NSString *bundleID;
 
 @end
 
 @implementation FBSimulatorFileCommands
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator bundleID:(NSString *)bundleID
+- (instancetype)initWithSimulator:(FBSimulator *)simulator
 {
   self = [super init];
   if (!self) {
@@ -27,7 +32,6 @@
   }
 
   _simulator = simulator;
-  _bundleID = bundleID;
 
   return self;
 }
@@ -166,6 +170,27 @@
     }];
 }
 
+- (FBFuture<NSString *> *)dataContainer
+{
+  return [FBFuture futureWithResult:self.simulator.dataDirectory];
+}
+
+@end
+
+@implementation FBSimulatorFileCommands_AppContainer
+
+- (instancetype)initWithSimulator:(FBSimulator *)simulator bundleID:(NSString *)bundleID
+{
+  self = [super initWithSimulator:simulator];
+  if (!self) {
+    return nil;
+  }
+
+  _bundleID = bundleID;
+
+  return self;
+}
+
 #pragma mark Private
 
 - (FBFuture<NSString *> *)dataContainer
@@ -229,7 +254,12 @@
 
 - (id<FBiOSTargetFileCommands>)fileCommandsForContainerApplication:(NSString *)bundleID
 {
-  return [[FBSimulatorFileCommands alloc] initWithSimulator:self.simulator bundleID:bundleID];
+  return [[FBSimulatorFileCommands_AppContainer alloc] initWithSimulator:self.simulator bundleID:bundleID];
+}
+
+- (id<FBiOSTargetFileCommands>)fileCommandsForRootFilesystem
+{
+  return [[FBSimulatorFileCommands alloc] initWithSimulator:self.simulator];
 }
 
 @end
