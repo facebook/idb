@@ -34,6 +34,11 @@ class IdbConnectionException(Exception):
     pass
 
 
+class TargetType(Enum):
+    DEVICE = 1
+    SIMULATOR = 2
+
+
 @dataclass(frozen=True)
 class Address:
     host: str
