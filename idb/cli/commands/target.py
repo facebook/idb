@@ -194,10 +194,10 @@ class TargetCreateCommand(CompanionCommand):
         return "create"
 
     async def run_with_companion(self, args: Namespace, companion: Companion) -> None:
-        udid = await companion.create(
+        target = await companion.create(
             device_type=args.device_type, os_version=args.os_version
         )
-        print(udid)
+        print(target.udid)
 
 
 class UDIDTargetedCompanionCommand(CompanionCommand):
@@ -278,8 +278,8 @@ class TargetCloneCommand(UDIDTargetedCompanionCommand):
         return "clone"
 
     async def run_with_companion(self, args: Namespace, companion: Companion) -> None:
-        udid = await companion.clone(udid=self.get_udid(args))
-        print(udid)
+        target = await companion.clone(udid=self.get_udid(args))
+        print(target.udid)
 
 
 class TargetDeleteCommand(UDIDTargetedCompanionCommand):

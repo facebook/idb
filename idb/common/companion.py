@@ -13,7 +13,7 @@ from typing import AsyncContextManager, List, Optional
 
 from idb.common.format import target_description_from_json
 from idb.common.logging import log_call
-from idb.common.types import IdbException
+from idb.common.types import IdbException, TargetDescription
 from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws
 
@@ -103,12 +103,11 @@ class Companion:
         return await self._run_companion_command(arguments=[f"--{command}", udid])
 
     @log_call()
-    async def create(self, device_type: str, os_version: str) -> str:
+    async def create(self, device_type: str, os_version: str) -> TargetDescription:
         output = await self._run_companion_command(
             arguments=["--create", f"{device_type},{os_version}"]
         )
-        created = target_description_from_json(output.splitlines()[-1])
-        return created.udid
+        return target_description_from_json(output.splitlines()[-1])
 
     @log_call()
     async def boot(self, udid: str) -> None:
@@ -135,10 +134,9 @@ class Companion:
         await self._run_udid_command(udid=udid, command="erase")
 
     @log_call()
-    async def clone(self, udid: str) -> str:
+    async def clone(self, udid: str) -> TargetDescription:
         output = await self._run_udid_command(udid=udid, command="clone")
-        cloned = target_description_from_json(output.splitlines()[-1])
-        return cloned.udid
+        return target_description_from_json(output.splitlines()[-1])
 
     @log_call()
     async def delete(self, udid: Optional[str]) -> None:
