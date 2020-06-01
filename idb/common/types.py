@@ -15,6 +15,7 @@ from typing import (
     AsyncIterator,
     Dict,
     List,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -99,6 +100,9 @@ class ScreenDimensions:
     height_points: Optional[int]
 
 
+DeviceDetails = Mapping[str, Union[int, str]]
+
+
 @dataclass(frozen=True)
 class TargetDescription:
     udid: str
@@ -109,6 +113,7 @@ class TargetDescription:
     architecture: Optional[str]
     companion_info: Optional[CompanionInfo]
     screen_dimensions: Optional[ScreenDimensions]
+    device: Optional[DeviceDetails] = None
 
 
 @dataclass(frozen=True)

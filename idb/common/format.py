@@ -191,6 +191,8 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
         data["host"] = target.companion_info.host
         data["port"] = target.companion_info.port
         data["is_local"] = target.companion_info.is_local
+    if target.device is not None:
+        data["device"] = target.device
     return data
 
 
@@ -245,6 +247,7 @@ def target_description_from_dictionary(parsed: Dict[str, Any]) -> TargetDescript
         architecture=parsed["architecture"],
         companion_info=companion_info,
         screen_dimensions=None,
+        device=parsed.get("device"),
     )
 
 
