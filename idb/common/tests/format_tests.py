@@ -93,11 +93,3 @@ class FormattingTests(TestCase):
                 json_format_target_info(TARGET_DESCRIPTION_FIXTURE)
             ),
         )
-
-    def test_target_description_all_optional_fields(self) -> None:
-        target = dataclasses.replace(
-            TARGET_DESCRIPTION_FIXTURE, companion_info=COMPANION_INFO_FIXTURE
-        )
-        self.assertEqual(
-            target, target_description_from_json(json_format_target_info(target))
-        )

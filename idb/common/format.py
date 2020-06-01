@@ -17,7 +17,6 @@ from idb.common.types import (
     InstalledTestInfo,
     TargetDescription,
     TestActivity,
-    TestRunFailureInfo,
     TestRunInfo,
 )
 from treelib import Tree
@@ -229,15 +228,6 @@ def target_description_from_json(data: str) -> TargetDescription:
 
 
 def target_description_from_dictionary(parsed: Dict[str, Any]) -> TargetDescription:
-    companion_info_fields = ["host", "port", "is_local", "udid"]
-    companion_info = None
-    if all((field in parsed for field in companion_info_fields)):
-        companion_info = CompanionInfo(
-            host=parsed["host"],
-            port=parsed["port"],
-            is_local=parsed["is_local"],
-            udid=parsed["udid"],
-        )
     return TargetDescription(
         name=parsed["name"],
         udid=parsed["udid"],
@@ -245,7 +235,7 @@ def target_description_from_dictionary(parsed: Dict[str, Any]) -> TargetDescript
         target_type=parsed["type"],
         os_version=parsed["os_version"],
         architecture=parsed["architecture"],
-        companion_info=companion_info,
+        companion_info=None,
         screen_dimensions=None,
         device=parsed.get("device"),
     )
