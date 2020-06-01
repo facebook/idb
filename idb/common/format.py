@@ -229,8 +229,9 @@ def target_description_from_json(data: str) -> TargetDescription:
 
 def target_description_from_dictionary(parsed: Dict[str, Any]) -> TargetDescription:
     return TargetDescription(
-        name=parsed["name"],
         udid=parsed["udid"],
+        name=parsed["name"],
+        model=parsed.get("model"),
         state=parsed.get("state"),
         target_type=parsed.get("type"),
         os_version=parsed.get("os_version"),

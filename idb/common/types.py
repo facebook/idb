@@ -113,6 +113,7 @@ class TargetDescription:
     architecture: Optional[str]
     companion_info: Optional[CompanionInfo]
     screen_dimensions: Optional[ScreenDimensions]
+    model: Optional[str] = None
     device: Optional[DeviceDetails] = None
 
 
