@@ -38,13 +38,13 @@
 
 #pragma mark FBApplicationDataCommands
 
-- (FBFuture<NSNull *> *)copyItemsAtURLs:(NSArray<NSURL *> *)paths toContainerPath:(NSString *)containerPath inBundleID:(NSString *)bundleID
+- (FBFuture<NSNull *> *)copyPathsOnHost:(NSArray<NSURL *> *)paths toDestination:(NSString *)destinationPath insideContainerOfApplication:(NSString *)bundleID
 {
   return [[self
     dataContainerOfApplicationWithBundleID:bundleID]
     onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSNull *> * (NSString *dataContainer) {
       NSError *error;
-      NSURL *basePathURL =  [NSURL fileURLWithPathComponents:@[dataContainer, containerPath]];
+      NSURL *basePathURL =  [NSURL fileURLWithPathComponents:@[dataContainer, destinationPath]];
       NSFileManager *fileManager = NSFileManager.defaultManager;
       for (NSURL *url in paths) {
         NSURL *destURL = [basePathURL URLByAppendingPathComponent:url.lastPathComponent];
@@ -59,7 +59,7 @@
     }];
 }
 
-- (FBFuture<NSString *> *)copyDataFromContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath toDestinationPath:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyItemInContainer:(NSString *)containerPath toDestinationOnHost:(NSString *)destinationPath fromContainerOfApplication:(NSString *)bundleID
 {
   __block NSString *dstPath = destinationPath;
   return [[self
@@ -99,7 +99,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath insideContainerOfApplication:(NSString *)bundleID
 {
   return [[self
     dataContainerOfApplicationWithBundleID:bundleID]
@@ -116,7 +116,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toDestinationPath:(NSString *)destinationPath insideContainerOfApplication:(NSString *)bundleID
 {
   return [[self
     dataContainerOfApplicationWithBundleID:bundleID]
@@ -136,7 +136,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths insideContainerOfApplication:(NSString *)bundleID
 {
   return [[self
     dataContainerOfApplicationWithBundleID:bundleID]
@@ -155,7 +155,7 @@
     }];
 }
 
-- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path insideContainerOfApplication:(NSString *)bundleID
 {
   return [[self
     dataContainerOfApplicationWithBundleID:bundleID]

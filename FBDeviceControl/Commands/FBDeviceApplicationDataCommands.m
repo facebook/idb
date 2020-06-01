@@ -57,11 +57,11 @@
   }];
 }
 
-- (FBFuture<NSNull *> *)copyItemsAtURLs:(NSArray<NSURL *> *)paths toContainerPath:(NSString *)containerPath inBundleID:(NSString *)bundleID
+- (FBFuture<NSNull *> *)copyPathsOnHost:(NSArray<NSURL *> *)paths toDestination:(NSString *)destinationPath insideContainerOfApplication:(NSString *)bundleID
 {
   return [self handleWithAFCSessionForBundleID:bundleID operationBlock:^ NSNull * (FBAFCConnection *afc, NSError **error) {
     for (NSURL *path in paths) {
-      BOOL success = [afc copyFromHost:path toContainerPath:containerPath error:error];
+      BOOL success = [afc copyFromHost:path toContainerPath:destinationPath error:error];
       if (!success) {
         return nil;
       }
@@ -70,7 +70,7 @@
   }];
 }
 
-- (FBFuture<NSString *> *)copyDataFromContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath toDestinationPath:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyItemInContainer:(NSString *)containerPath toDestinationOnHost:(NSString *)destinationPath fromContainerOfApplication:(NSString *)bundleID
 {
   return [[self
     readFileWithBundleID:bundleID path:containerPath]
@@ -86,7 +86,7 @@
    }];
 }
 
-- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath insideContainerOfApplication:(NSString *)bundleID
 {
   return [self handleWithAFCSessionForBundleID:bundleID operationBlock:^ NSNull * (FBAFCConnection *afc, NSError **error) {
     BOOL success = [afc createDirectory:directoryPath error:error];
@@ -97,7 +97,7 @@
   }];
 }
 
-- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toDestinationPath:(NSString *)destinationPath insideContainerOfApplication:(NSString *)bundleID
 {
   return [self handleWithAFCSessionForBundleID:bundleID operationBlock:^ NSNull * (FBAFCConnection *afc, NSError **error) {
     for (NSString *originPath in originPaths) {
@@ -110,7 +110,7 @@
   }];
 }
 
-- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths insideContainerOfApplication:(NSString *)bundleID
 {
   return [self handleWithAFCSessionForBundleID:bundleID operationBlock:^ NSNull * (FBAFCConnection *afc, NSError **error) {
     for (NSString *path in paths) {
@@ -123,7 +123,7 @@
   }];
 }
 
-- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path inContainerOfApplication:(NSString *)bundleID
+- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path insideContainerOfApplication:(NSString *)bundleID
 {
   return [self handleWithAFCSessionForBundleID:bundleID operationBlock:^ NSArray<NSString *> * (FBAFCConnection *afc, NSError **error) {
     return [afc contentsOfDirectory:path error:error];

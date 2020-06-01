@@ -20,61 +20,62 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBApplicationDataCommands <NSObject, FBiOSTargetCommand>
 
 /**
- Copy items to the Application Data Container.
-
- @param paths Array of source paths. May be Files and/or Directories.
- @param containerPath the destination path within the container.
- @param bundleID the Bundle Identifier of the Container.
- @return A future that resolves when successful.
+ Copy items to from the host, to Application Data Container.
 
  @note Performs a recursive copy
+ @param paths Array of source paths on the host. May be Files and/or Directories.
+ @param destinationPath the destination path within the container.
+ @param bundleID the Bundle Identifier of the Container.
+ @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)copyItemsAtURLs:(NSArray<NSURL *> *)paths toContainerPath:(NSString *)containerPath inBundleID:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)copyPathsOnHost:(NSArray<NSURL *> *)paths toDestination:(NSString *)destinationPath insideContainerOfApplication:(NSString *)bundleID;
 
 /**
- Relocate Data inside the Application Data Container.
+ Relocate a file from the Application Data Container, to the host.
 
- @param bundleID the Bundle Identifier of the Container.
  @param containerPath the sub-path within the to copy out.
  @param destinationPath the path to copy in to.
+ @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves with the destination path when successful.
  */
-- (FBFuture<NSString *> *)copyDataFromContainerOfApplication:(NSString *)bundleID atContainerPath:(NSString *)containerPath toDestinationPath:(NSString *)destinationPath;
+- (FBFuture<NSString *> *)copyItemInContainer:(NSString *)containerPath toDestinationOnHost:(NSString *)destinationPath fromContainerOfApplication:(NSString *)bundleID;
 
 /**
- Create Directory inside the Application Data Container.
+ Create a directory inside the Application Data Container.
 
  @param directoryPath the path to the directory to be created.
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath inContainerOfApplication:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath insideContainerOfApplication:(NSString *)bundleID;
 
 /**
- Move data within the container to a different path
+ Move paths inside the Application Data Container.
+
  @param originPaths relative paths to the container where data resides
  @param destinationPath relative path where the data will be moved to
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toPath:(NSString *)destinationPath inContainerOfApplication:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toDestinationPath:(NSString *)destinationPath insideContainerOfApplication:(NSString *)bundleID;
 
 /**
- Remove path within the container
+ Remove paths inside the Application Data Container.
 
  @param paths relative paths to the container where data resides
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths inContainerOfApplication:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths insideContainerOfApplication:(NSString *)bundleID;
 
 /**
  List directory within the container
+
  @param path relative path to the container
  @param bundleID the Bundle Identifier of the Container.
  @return A future containing the list of entries that resolves when successful.
  */
-- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path inContainerOfApplication:(NSString *)bundleID;
+- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path insideContainerOfApplication:(NSString *)bundleID;
 
 @end
 

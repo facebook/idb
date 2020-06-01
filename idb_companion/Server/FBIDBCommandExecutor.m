@@ -135,7 +135,7 @@
   return [[self
     targetDataCommands]
     onQueue:self.target.workQueue fmap:^(id<FBApplicationDataCommands> targetApplicationData) {
-      return [targetApplicationData createDirectory:directoryPath inContainerOfApplication:bundleID];
+      return [targetApplicationData createDirectory:directoryPath insideContainerOfApplication:bundleID];
     }];
 }
 
@@ -172,7 +172,7 @@
 {
   return [self.targetDataCommands
     onQueue:self.target.workQueue fmap:^(id<FBApplicationDataCommands> commands) {
-      return [commands movePaths:originPaths toPath:destinationPath inContainerOfApplication:bundleID];
+      return [commands movePaths:originPaths toDestinationPath:destinationPath insideContainerOfApplication:bundleID];
     }];
 }
 
@@ -196,7 +196,7 @@
     onQueue:self.target.asyncQueue resolve:^FBFuture<NSNull *> *{
       return [[self targetDataCommands]
         onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> targetApplicationsData) {
-          return [targetApplicationsData copyItemsAtURLs:paths toContainerPath:destinationPath inBundleID:bundleID];
+          return [targetApplicationsData copyPathsOnHost:paths toDestination:destinationPath insideContainerOfApplication:bundleID];
         }];
   }];
 }
@@ -205,7 +205,7 @@
 {
   return [self.targetDataCommands
     onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> commands) {
-      return [commands copyDataFromContainerOfApplication:bundleID atContainerPath:path toDestinationPath:destinationPath];
+      return [commands copyItemInContainer:path toDestinationOnHost:destinationPath fromContainerOfApplication:bundleID];
     }];
 }
 
@@ -220,7 +220,7 @@
       return self.targetDataCommands;
     }]
     onQueue:self.target.workQueue pend:^(id<FBApplicationDataCommands> commands) {
-     return [commands copyDataFromContainerOfApplication:bundleID atContainerPath:path toDestinationPath:tempPath];
+      return [commands copyItemInContainer:path toDestinationOnHost:tempPath fromContainerOfApplication:bundleID];
     }]
     onQueue:self.target.workQueue pop:^(id _) {
       return [FBArchiveOperations createGzippedTarDataForPath:tempPath queue:self.target.workQueue logger:self.target.logger];
@@ -239,7 +239,7 @@
 {
   return [self.targetDataCommands
     onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> commands) {
-      return [commands removePaths:paths inContainerOfApplication:bundleID];
+      return [commands removePaths:paths insideContainerOfApplication:bundleID];
     }];
 }
 
@@ -247,7 +247,7 @@
 {
   return [self.targetDataCommands
     onQueue:self.target.workQueue fmap:^FBFuture *(id<FBApplicationDataCommands> commands) {
-      return [commands contentsOfDirectory:path inContainerOfApplication:bundleID];
+      return [commands contentsOfDirectory:path insideContainerOfApplication:bundleID];
     }];
 }
 
