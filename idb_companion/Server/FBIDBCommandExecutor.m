@@ -203,7 +203,7 @@
   }];
 }
 
-- (FBFuture<NSString *> *)pull_file_path:(NSString *)path in_container_of_application:(NSString *)bundleID destination_path:(NSString *)destinationPath
+- (FBFuture<NSString *> *)pull_file_path:(NSString *)path destination_path:(NSString *)destinationPath in_container_of_application:(NSString *)bundleID
 {
   return [[self
     applicationDataContainerCommands:bundleID]
@@ -474,6 +474,10 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     return [[FBControlCoreError
       describeFormat:@"Target doesn't conform to FBApplicationDataCommands protocol %@", commands]
       failFuture];
+  }
+  return [FBFuture futureWithResult:[commands fileCommandsForRootFilesystem]];
+  if (bundleID == nil || bundleID.length == 0) {
+    return [FBFuture futureWithResult:[commands fileCommandsForRootFilesystem]];
   }
   return [FBFuture futureWithResult:[commands fileCommandsForContainerApplication:bundleID]];
 }

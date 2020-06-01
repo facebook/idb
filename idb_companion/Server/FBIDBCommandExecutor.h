@@ -195,7 +195,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)move_paths:(NSArray<NSString *> *)originPaths to_path:(NSString *)destinationPath in_container_of_application:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)move_paths:(NSArray<NSString *> *)originPaths to_path:(NSString *)destinationPath in_container_of_application:(nullable NSString *)bundleID;
 
 /**
  Push files to an applications container from a tar
@@ -205,7 +205,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)push_file_from_tar:(NSData *)tarData to_path:(NSString *)destinationPath in_container_of_application:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)push_file_from_tar:(NSData *)tarData to_path:(NSString *)destinationPath in_container_of_application:(nullable NSString *)bundleID;
 
 /**
  Push files to an applications container
@@ -215,17 +215,17 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)push_files:(NSArray<NSURL *> *)paths to_path:(NSString *)destinationPath in_container_of_application:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)push_files:(NSArray<NSURL *> *)paths to_path:(NSString *)destinationPath in_container_of_application:(nullable NSString *)bundleID;
 
 /**
  Pull a file from an applications container
 
  @param path relative path to the container where file resides
- @param bundleID the Bundle Identifier of the Container.
  @param destinationPath path to write the file to.
+ @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves the path the file is copied to.
  */
-- (FBFuture<NSString *> *)pull_file_path:(NSString *)path in_container_of_application:(NSString *)bundleID destination_path:(nullable NSString *)destinationPath;
+- (FBFuture<NSString *> *)pull_file_path:(NSString *)path destination_path:(nullable NSString *)destinationPath in_container_of_application:(nullable NSString *)bundleID;
 
 /**
  Pull a file from an applications container
@@ -234,7 +234,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves the content of that file.
  */
-- (FBFuture<NSData *> *)pull_file:(NSString *)path in_container_of_application:(NSString *)bundleID;
+- (FBFuture<NSData *> *)pull_file:(NSString *)path in_container_of_application:(nullable NSString *)bundleID;
 
 /**
  Remove path within the container
@@ -243,7 +243,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)remove_paths:(NSArray<NSString *> *)paths in_container_of_application:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)remove_paths:(NSArray<NSString *> *)paths in_container_of_application:(nullable NSString *)bundleID;
 
 /**
  Lists path within the container
@@ -252,7 +252,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the Bundle Identifier of the Container.
  @return A future that resolves with the list of files.
  */
-- (FBFuture<NSArray<NSString *> *> *)list_path:(NSString *)path in_container_of_application:(NSString *)bundleID;
+- (FBFuture<NSArray<NSString *> *> *)list_path:(NSString *)path in_container_of_application:(nullable NSString *)bundleID;
 
 /**
  Perform a hid event on the target

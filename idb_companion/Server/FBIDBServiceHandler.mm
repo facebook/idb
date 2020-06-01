@@ -947,7 +947,7 @@ Status FBIDBServiceHandler::pull(ServerContext *context, const ::idb::PullReques
   NSString *path = nsstring_from_c_string(request->src_path());
   NSError *error = nil;
   if (request->dst_path().length() > 0) {
-    NSString *filePath = [[_commandExecutor pull_file_path:path in_container_of_application:nsstring_from_c_string(request->bundle_id()) destination_path:nsstring_from_c_string(request->dst_path())] block:&error];
+    NSString *filePath = [[_commandExecutor pull_file_path:path destination_path:nsstring_from_c_string(request->dst_path()) in_container_of_application:nsstring_from_c_string(request->bundle_id()) ] block:&error];
     if (error) {
       return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
     }
@@ -955,7 +955,7 @@ Status FBIDBServiceHandler::pull(ServerContext *context, const ::idb::PullReques
   } else {
     NSURL *url = [_commandExecutor.temporaryDirectory temporaryDirectory];
     NSString *tempPath = [url.path stringByAppendingPathComponent:path.lastPathComponent];
-    NSString *filePath = [[_commandExecutor pull_file_path:path in_container_of_application:nsstring_from_c_string(request->bundle_id()) destination_path:tempPath] block:&error];
+    NSString *filePath = [[_commandExecutor pull_file_path:path destination_path:tempPath in_container_of_application:nsstring_from_c_string(request->bundle_id())] block:&error];
     if (error) {
       return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
     }
