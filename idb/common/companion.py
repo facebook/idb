@@ -13,7 +13,7 @@ from typing import AsyncContextManager, List, Optional
 
 from idb.common.format import target_description_from_json
 from idb.common.logging import log_call
-from idb.common.types import IdbException, TargetDescription
+from idb.common.types import IdbException, TargetDescription, TargetType
 from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws
 
@@ -148,3 +148,19 @@ class Companion:
         await self._run_udid_command(
             udid=udid if udid is not None else "all", command="delete"
         )
+
+    @log_call()
+    async def list_targets(
+        self, only: Optional[TargetType] = None
+    ) -> List[TargetDescription]:
+        arguments = ["--list", "1"]
+        if only is not None:
+            arguments.extend(
+                ["--only", "simulator" if only is TargetType.SIMULATOR else "device"]
+            )
+        output = await self._run_companion_command(arguments=arguments)
+        return [
+            target_description_from_json(data=line.strip())
+            for line in output.splitlines()
+            if len(line.strip())
+        ]
