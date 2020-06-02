@@ -134,8 +134,13 @@ class Companion:
         await self._run_udid_command(udid=udid, command="erase")
 
     @log_call()
-    async def clone(self, udid: str) -> TargetDescription:
-        output = await self._run_udid_command(udid=udid, command="clone")
+    async def clone(
+        self, udid: str, destination_device_set: Optional[str] = None
+    ) -> TargetDescription:
+        arguments = ["--clone", udid]
+        if destination_device_set is not None:
+            arguments.extend(["--clone-destination-set", destination_device_set])
+        output = await self._run_companion_command(arguments=arguments)
         return target_description_from_json(output.splitlines()[-1])
 
     @log_call()
