@@ -484,7 +484,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
   // Copy all files
   for (NSURL *url in contents) {
-    if (![NSFileManager.defaultManager moveItemAtURL:url toURL:[newPath URLByAppendingPathComponent:url.lastPathComponent] error:&error]) {
+    if (![NSFileManager.defaultManager copyItemAtURL:url toURL:[newPath URLByAppendingPathComponent:url.lastPathComponent] error:&error]) {
       return [FBFuture futureWithError:error];
     }
   }
