@@ -475,7 +475,6 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       describeFormat:@"Target doesn't conform to FBApplicationDataCommands protocol %@", commands]
       failFuture];
   }
-  return [FBFuture futureWithResult:[commands fileCommandsForRootFilesystem]];
   if (bundleID == nil || bundleID.length == 0) {
     return [FBFuture futureWithResult:[commands fileCommandsForRootFilesystem]];
   }
