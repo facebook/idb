@@ -13,6 +13,7 @@
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
 @property (nonatomic, strong, readonly) FBCrashLogNotifier *notifier;
+@property (nonatomic, assign, readwrite) BOOL hasPerformedInitialIngestion;
 
 @end
 
@@ -35,6 +36,7 @@
 
   _simulator = simulator;
   _notifier = notifier;
+  _hasPerformedInitialIngestion = NO;
 
   return self;
 }
@@ -48,6 +50,11 @@
 
 - (FBFuture<NSArray<FBCrashLogInfo *> *> *)crashes:(NSPredicate *)predicate useCache:(BOOL)useCache
 {
+  if (!self.hasPerformedInitialIngestion) {
+    [self.notifier.store ingestAllExistingInDirectory];
+    self.hasPerformedInitialIngestion = YES;
+  }
+
   return [FBFuture futureWithResult:[self.notifier.store ingestedCrashLogsMatchingPredicate:predicate]];
 }
 
