@@ -29,7 +29,6 @@ from idb.grpc.companion import merge_connected_targets
 from idb.grpc.destination import destination_to_grpc
 from idb.grpc.idb_pb2 import ConnectRequest
 from idb.utils.contextlib import asynccontextmanager
-from idb.utils.typing import none_throws
 
 
 class IdbManagementClient(IdbManagementClientBase):
@@ -114,7 +113,9 @@ class IdbManagementClient(IdbManagementClientBase):
             )
         except IdbException as e:
             # will try to spawn a companion if on mac.
-            companion_info = await self._spawn_companion(target_udid=none_throws(udid))
+            if udid is None:
+                raise e
+            companion_info = await self._spawn_companion(target_udid=udid)
             if companion_info is None:
                 raise e
         async with IdbClient.build(
