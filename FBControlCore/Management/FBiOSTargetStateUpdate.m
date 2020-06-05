@@ -35,7 +35,7 @@ static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
   return nil;
 }
 
-- (instancetype)initWithTarget:(id<FBiOSTarget>)target
+- (instancetype)initWithTarget:(id<FBiOSTargetInfo>)target
 {
   self = [super init];
   if (!self) {

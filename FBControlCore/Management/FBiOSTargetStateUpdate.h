@@ -21,7 +21,7 @@
  @param target the target to construct an update for.
  @return a new Target Update
  */
-- (instancetype)initWithTarget:(id<FBiOSTarget>)target;
+- (instancetype)initWithTarget:(id<FBiOSTargetInfo>)target;
 
 /**
  The UDID of the Target.
