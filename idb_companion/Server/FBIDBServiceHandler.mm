@@ -383,9 +383,6 @@ static idb::TargetDescription description_of_target(id<FBiOSTarget> target, FBID
   description.set_target_type(FBiOSTargetTypeStringsFromTargetType(target.targetType)[0].UTF8String);
   description.set_target_type(target.osVersion.name.UTF8String);
   description.set_target_type(target.architecture.UTF8String);
-  idb::CompanionInfo *companionInfo = description.mutable_companion_info();
-  companionInfo->set_host(NSProcessInfo.processInfo.hostName.UTF8String);
-  companionInfo->set_grpc_port(portsConfig.grpcPort);
   return description;
 }
 
