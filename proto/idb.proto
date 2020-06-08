@@ -446,7 +446,6 @@ message ConnectionDestination {
 
 message DisconnectRequest {
   ConnectionDestination destination = 1;
-// bool is_daemon = 2; depreacted
 }
 
 message DisconnectResponse {
@@ -455,14 +454,12 @@ message DisconnectResponse {
 message ConnectRequest {
   map<string, string> metadata = 1;
   ConnectionDestination destination = 2;
-// bool is_daemon = 3; deprecated
   string local_file_path = 4;
 }
 
 message CompanionInfo {
   string udid = 1;
   string host = 2;
-// uint64 port = 3; deprecated
   bool is_local = 4;
   uint64 grpc_port = 5;
 }
@@ -488,7 +485,6 @@ message TargetDescription {
 
 message ConnectResponse {
    CompanionInfo companion = 1;
-// DaemonInfo daemon = 2; depreacted
 }
 
 message ListTargetsRequest {
@@ -594,7 +590,6 @@ message InstrumentsRunRequest {
     double operation_duration = 4;
   }
   message Start {
-//  string file_path = 1; deprecated
     string template_name = 2;
     string app_bundle_id = 3;
     map<string, string> environment = 4;
