@@ -9,47 +9,42 @@ import logging
 import os
 from typing import List
 
+import aiofiles
 from idb.common.constants import IDB_LOCAL_TARGETS_FILE
 from idb.common.format import target_description_from_dictionary
 from idb.common.types import TargetDescription
-
-
-# this is the new companion manager for direct_client mode
 
 
 class LocalTargetsManager:
     def __init__(
         self, logger: logging.Logger, local_targets_file: str = IDB_LOCAL_TARGETS_FILE
     ) -> None:
-        self.local_targets: List[TargetDescription] = []
-        self.local_targets_file = local_targets_file
-        self.logger = logger
+        self._local_targets_file = local_targets_file
+        self._logger = logger
 
-    def get_local_targets(self) -> List[TargetDescription]:
-        self.local_targets = self._load()
-        return self.local_targets
+    async def get_local_targets(self) -> List[TargetDescription]:
+        if not os.path.exists(self._local_targets_file):
+            self._logger.debug(
+                f"No local targets file at {self._local_targets_file} to read"
+            )
+            return []
+        if os.path.getsize(self._local_targets_file) < 1:
+            self._logger.debug(f"Empty targets file at {self._local_targets_file}")
+        async with aiofiles.open(self._local_targets_file, "r") as f:
+            line = (await f.readline()).strip()
+            self._logger.debug(f"Read targets {line} from {self._local_targets_file}")
+            return [
+                target_description_from_dictionary(target)
+                for target in json.loads(line)
+            ]
 
-    def _load(self) -> List[TargetDescription]:
-        targets = []
-        if (
-            os.path.exists(self.local_targets_file)
-            and os.path.getsize(self.local_targets_file) > 0
-        ):
-            with open(self.local_targets_file, "r") as f:
-                targets_list = json.load(f)
-                for target in targets_list:
-                    targets.append(target_description_from_dictionary(target))
-        return targets
-
-    def is_local_target_available(self, target_udid: str) -> bool:
-        self.get_local_targets()
-        targets = []
-        targets = [
-            target for target in self.local_targets if target.udid == target_udid
+    async def is_local_target_available(self, target_udid: str) -> bool:
+        all_targets = await self.get_local_targets()
+        filtered_targets = [
+            target for target in all_targets if target.udid == target_udid
         ]
-        return len(targets) > 0
+        return len(filtered_targets) > 0
 
-    def clear(self) -> None:
-        with open(self.local_targets_file, "w") as f:
-            json.dump([], f)
-            f.flush()
+    async def clear(self) -> None:
+        async with aiofiles.open(self._local_targets_file, "w") as f:
+            await f.write(json.dumps([]))

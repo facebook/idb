@@ -24,7 +24,7 @@ class LocalTargetsManagerTests(TestCase):
             )
             with open(f.name, "w") as f:
                 f.write(notifier_output)
-            targets = local_targets_manager._load()
+            targets = await local_targets_manager.get_local_targets()
             target: TargetDescription = targets[0]
             self.assertEqual(target.udid, "AADCF696-ADFA-4D1B-834A-451B6AD7CA27")
             self.assertEqual(target.state, "Shutdown")

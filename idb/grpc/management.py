@@ -60,12 +60,10 @@ class IdbManagementClient(IdbManagementClientBase):
         companion_path = self.companion_path
         if companion_path is None:
             return None
-        if (
-            self.local_targets_manager.is_local_target_available(
-                target_udid=target_udid
-            )
-            or target_udid == "mac"
-        ):
+        local_target_available = await self.local_targets_manager.is_local_target_available(
+            target_udid=target_udid
+        )
+        if local_target_available or target_udid == "mac":
             companion_spawner = CompanionSpawner(
                 companion_path=companion_path, logger=self.logger
             )
@@ -128,8 +126,10 @@ class IdbManagementClient(IdbManagementClientBase):
 
     @log_call()
     async def list_targets(self) -> List[TargetDescription]:
-        (_, companions) = await asyncio.gather(
-            self._spawn_notifier(), self.direct_companion_manager.get_companions()
+        (_, companions, local_targets) = await asyncio.gather(
+            self._spawn_notifier(),
+            self.direct_companion_manager.get_companions(),
+            self.local_targets_manager.get_local_targets(),
         )
         connected_targets = [
             target
@@ -144,8 +144,7 @@ class IdbManagementClient(IdbManagementClientBase):
             if target is not None
         ]
         return merge_connected_targets(
-            local_targets=self.local_targets_manager.get_local_targets(),
-            connected_targets=connected_targets,
+            local_targets=local_targets, connected_targets=connected_targets
         )
 
     @log_call()
@@ -193,5 +192,5 @@ class IdbManagementClient(IdbManagementClientBase):
     @log_call()
     async def kill(self) -> None:
         await self.direct_companion_manager.clear()
-        self.local_targets_manager.clear()
+        await self.local_targets_manager.clear()
         PidSaver(logger=self.logger).kill_saved_pids()
