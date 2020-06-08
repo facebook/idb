@@ -483,9 +483,7 @@ message TargetDescription {
   string target_type = 5;
   string os_version = 6;
   string architecture = 7;
-  CompanionInfo companion_info = 8;
-// string daemon_host = 9; deprecated
-// uint64 daemon_port = 10; deprecated
+  // CompanionInfo companion_info = 8; deprecated
 }
 
 message ConnectResponse {
