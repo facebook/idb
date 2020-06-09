@@ -71,6 +71,11 @@
   [self unsubscribeFromDeviceNotifications];
 }
 
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"FBDeviceSet: %@", [FBCollectionInformation oneLineDescriptionFromArray:self.allDevices]];
+}
+
 #pragma mark Querying
 
 - (NSArray<FBDevice *> *)query:(FBiOSTargetQuery *)query
