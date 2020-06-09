@@ -43,7 +43,19 @@ static NSString *const UnknownValue = @"unknown";
 
 - (FBiOSTargetState)state
 {
-  return FBiOSTargetStateUnknown;
+  AMRestorableDeviceState deviceState = self.calls.RestorableDeviceGetState(self.restorableDevice);
+  switch (deviceState) {
+    case AMRestorableDeviceStateDFU:
+      return FBiOSTargetStateDFU;
+    case AMRestorableDeviceStateRecovery:
+      return FBiOSTargetStateRecovery;
+    case AMRestorableDeviceStateRestoreOS:
+      return FBiOSTargetStateRestoreOS;
+    case AMRestorableDeviceStateBootedOS:
+      return FBiOSTargetStateBooted;
+    default:
+      return FBiOSTargetStateUnknown;
+  }
 }
 
 - (FBDeviceType *)deviceType
@@ -84,19 +96,19 @@ static NSString *const UnknownValue = @"unknown";
 
 // AMRestorableGetStringForState, is a private function so we can't get to it.
 // Instead it's a very simple implementation so we just re-implement it.
-+ (NSString *)stringForState:(AMRestorableDeviceState)state
++ (FBiOSTargetState)targetStateForDeviceState:(AMRestorableDeviceState)state
 {
   switch (state) {
     case AMRestorableDeviceStateDFU:
-      return @"DFU";
+      return FBiOSTargetStateDFU;
     case AMRestorableDeviceStateRecovery:
-      return @"Recovery";
+      return FBiOSTargetStateRecovery;
     case AMRestorableDeviceStateRestoreOS:
-      return @"Recovery";
+      return FBiOSTargetStateRestoreOS;
     case AMRestorableDeviceStateBootedOS:
-      return @"BootedOS";
+      return FBiOSTargetStateBooted;
     default:
-      return @"Unknown";
+      return FBiOSTargetStateUnknown;
   }
 }
 

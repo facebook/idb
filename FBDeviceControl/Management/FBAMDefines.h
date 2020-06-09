@@ -10,7 +10,7 @@
 #pragma mark - AMDevice API
 
 /**
- An Alias for where AMDevices are used in the AMDevice APIs.
+ An Alias AMDeviceRef Type.
  */
 typedef CFTypeRef AMDeviceRef;
 
@@ -18,6 +18,11 @@ typedef CFTypeRef AMDeviceRef;
  The Connection Reference as is typically passed around between functions.
  */
 typedef CFTypeRef AFCConnectionRef;
+
+/**
+ An Alias for the AMRestorableDeviceRef Type.
+ */
+typedef CFTypeRef AMRestorableDeviceRef;
 
 /**
  An opaque handle to a notification subscription.
@@ -40,6 +45,22 @@ typedef NS_ENUM(int, AMDeviceNotificationType) {
   AMDeviceNotificationTypeDisconnected = 2,
 };
 
+typedef NS_ENUM(int, AMRestorableDeviceNotificationType) {
+  AMRestorableDeviceNotificationTypeConnected = 0,
+  AMRestorableDeviceNotificationTypeDisconnected = 1,
+};
+
+/**
+ Aliases for AMRestorableDeviceState
+ */
+typedef NS_ENUM(int, AMRestorableDeviceState) {
+  AMRestorableDeviceStateDFU = 0,
+  AMRestorableDeviceStateRecovery = 1,
+  AMRestorableDeviceStateRestoreOS = 2,
+  AMRestorableDeviceStateBootedOS = 4,
+  AMRestorableDeviceStateUnknown = 5,
+};
+
 /**
  A Notification structure.
  */
@@ -57,9 +78,14 @@ typedef struct {
 typedef void (*AMDeviceProgressCallback)(NSDictionary<NSString *, id> *progress, void *_Nullable context);
 
 /**
- Defines the "Notification Callback" function signature.
+ Defines the "Notification Callback" AMDeviceRef instances.
  */
 typedef void (*AMDeviceNotificationCallback)(AMDeviceNotification *notification, void *_Nullable context);
+
+/**
+ Defines the "Notification Callback" for AMRestorableDeviceRef instances.
+ */
+typedef void (*AMRestoreableDeviceNotificationCallaback)(AMRestorableDeviceRef eventData, AMRestorableDeviceNotificationType status, id arg2);
 
 /**
  A Structure that references to the AMDevice APIs we use.
@@ -82,7 +108,7 @@ typedef struct {
   _Nullable CFStringRef (*_Nonnull CopyValue)(AMDeviceRef device, _Nullable CFStringRef domain, CFStringRef name);
 
   // Obtaining Devices.
-  _Nullable CFArrayRef (*_Nonnull CreateDeviceList)(void);
+  _Nullable CFArrayRef (*CreateDeviceList)(void);
   int (*NotificationSubscribe)(AMDeviceNotificationCallback callback, int arg0, int arg1, void *context, AMDNotificationSubscription *subscriptionOut);
   int (*NotificationUnsubscribe)(AMDNotificationSubscription subscription);
 
@@ -105,6 +131,22 @@ typedef struct {
 
   // Developer Images
   int (*MountImage)(AMDeviceRef device, CFStringRef image, CFDictionaryRef options, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
+
+  // Restorable Devices: Notifications
+  int (*RestorableDeviceRegisterForNotifications)(AMRestoreableDeviceNotificationCallaback callback, void *context, int arg2, int arg3);
+  int (*RestorableDeviceUnregisterForNotifications)(int registrationID);
+
+  // Restorable Devices: Getting and Copying Values.
+  CFStringRef (*RestorableDeviceCopyBoardConfig)(AMRestorableDeviceRef device);
+  CFStringRef (*RestorableDeviceCopyProductString)(AMRestorableDeviceRef device);
+  CFStringRef (*RestorableDeviceCopyUserFriendlyName)(AMRestorableDeviceRef device);
+  int (*RestorableDeviceGetBoardID)(AMRestorableDeviceRef device);
+  int (*RestorableDeviceGetChipID)(AMRestorableDeviceRef device);
+  int (*RestorableDeviceGetDeviceClass)(AMRestorableDeviceRef device);
+  int (*RestorableDeviceGetECID)(AMRestorableDeviceRef device);
+  int (*RestorableDeviceGetLocationID)(AMRestorableDeviceRef device);
+  int (*RestorableDeviceGetProductType)(AMRestorableDeviceRef device);
+  int (*RestorableDeviceGetState)(AMRestorableDeviceRef device);
 
   // Debugging
   void (*InitializeMobileDevice)(void);
