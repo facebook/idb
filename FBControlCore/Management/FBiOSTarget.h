@@ -39,6 +39,9 @@ typedef NS_ENUM(NSUInteger, FBiOSTargetState) {
   FBiOSTargetStateBooting = 2,
   FBiOSTargetStateBooted = 3,
   FBiOSTargetStateShuttingDown = 4,
+  FBiOSTargetStateDFU = 5,
+  FBiOSTargetStateRecovery = 6,
+  FBiOSTargetStateRestoreOS = 7,
   FBiOSTargetStateUnknown = 99,
 };
 
@@ -62,6 +65,9 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringShutdown;
 extern FBiOSTargetStateString const FBiOSTargetStateStringBooting;
 extern FBiOSTargetStateString const FBiOSTargetStateStringBooted;
 extern FBiOSTargetStateString const FBiOSTargetStateStringShuttingDown;
+extern FBiOSTargetStateString const FBiOSTargetStateStringDFU;
+extern FBiOSTargetStateString const FBiOSTargetStateStringRecovery;
+extern FBiOSTargetStateString const FBiOSTargetStateStringRestoreOS;
 extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 
 /**

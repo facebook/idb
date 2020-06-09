@@ -14,7 +14,11 @@ FBiOSTargetStateString const FBiOSTargetStateStringShutdown = @"Shutdown";
 FBiOSTargetStateString const FBiOSTargetStateStringBooting = @"Booting";
 FBiOSTargetStateString const FBiOSTargetStateStringBooted = @"Booted";
 FBiOSTargetStateString const FBiOSTargetStateStringShuttingDown = @"Shutting Down";
+FBiOSTargetStateString const FBiOSTargetStateStringDFU = @"DFU";
+FBiOSTargetStateString const FBiOSTargetStateStringRecovery = @"Recovery";
+FBiOSTargetStateString const FBiOSTargetStateStringRestoreOS = @"RestoreOS";
 FBiOSTargetStateString const FBiOSTargetStateStringUnknown = @"Unknown";
+
 
 NSString *FBiOSTargetStateStringFromState(FBiOSTargetState state)
 {
@@ -29,6 +33,12 @@ NSString *FBiOSTargetStateStringFromState(FBiOSTargetState state)
       return FBiOSTargetStateStringBooted;
     case FBiOSTargetStateShuttingDown:
       return FBiOSTargetStateStringShuttingDown;
+    case FBiOSTargetStateDFU:
+      return FBiOSTargetStateStringDFU;
+    case FBiOSTargetStateRecovery:
+      return FBiOSTargetStateStringRecovery;
+    case FBiOSTargetStateRestoreOS:
+      return FBiOSTargetStateStringRestoreOS;
     default:
       return FBiOSTargetStateStringUnknown;
   }
@@ -51,6 +61,15 @@ FBiOSTargetState FBiOSTargetStateFromStateString(NSString *stateString)
   }
   if ([stateString isEqualToString:FBiOSTargetStateStringShuttingDown.lowercaseString]) {
     return FBiOSTargetStateShuttingDown;
+  }
+  if ([stateString isEqualToString:FBiOSTargetStateStringDFU.lowercaseString]) {
+    return FBiOSTargetStateDFU;
+  }
+  if ([stateString isEqualToString:FBiOSTargetStateStringRecovery.lowercaseString]) {
+    return FBiOSTargetStateRecovery;
+  }
+  if ([stateString isEqualToString:FBiOSTargetStateStringRestoreOS.lowercaseString]) {
+    return FBiOSTargetStateRestoreOS;
   }
   return FBiOSTargetStateUnknown;
 }
