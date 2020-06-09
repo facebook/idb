@@ -160,7 +160,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param targets the targets to filter.
  @return a filtered array of targets.
  */
-- (NSArray<id<FBiOSTarget>> *)filter:(NSArray<id<FBiOSTarget>> *)targets;
+- (NSArray<id<FBiOSTargetInfo>> *)filter:(NSArray<id<FBiOSTargetInfo>> *)targets;
 
 /**
  Determines whether the Query excludes all of a specific target type.

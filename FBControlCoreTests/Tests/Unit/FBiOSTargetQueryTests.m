@@ -91,7 +91,7 @@
 {
   NSArray<id<FBiOSTarget>> *targets = self.targets;
   NSArray<id<FBiOSTarget>> *expected = targets;
-  NSArray<id<FBiOSTarget>> *actual = [[FBiOSTargetQuery allTargets] filter:targets];
+  NSArray<id<FBiOSTargetInfo>> *actual = [[FBiOSTargetQuery allTargets] filter:targets];
   XCTAssertEqualObjects(expected, actual);
 }
 
@@ -99,7 +99,7 @@
 {
   NSArray<id<FBiOSTarget>> *targets = self.targets;
   NSArray<id<FBiOSTarget>> *expected = @[targets[0], targets[3], targets[4]];
-  NSArray<id<FBiOSTarget>> *actual = [[FBiOSTargetQuery udids:@[@"AA", @"DD", @"EE"]] filter:targets];
+  NSArray<id<FBiOSTargetInfo>> *actual = [[FBiOSTargetQuery udids:@[@"AA", @"DD", @"EE"]] filter:targets];
   XCTAssertEqualObjects(expected, actual);
 }
 
@@ -107,7 +107,7 @@
 {
   NSArray<id<FBiOSTarget>> *targets = self.targets;
   NSArray<id<FBiOSTarget>> *expected = @[targets[0], targets[1], targets[2]];
-  NSArray<id<FBiOSTarget>> *actual = [[FBiOSTargetQuery targetType:FBiOSTargetTypeDevice] filter:targets];
+  NSArray<id<FBiOSTargetInfo>> *actual = [[FBiOSTargetQuery targetType:FBiOSTargetTypeDevice] filter:targets];
   XCTAssertEqualObjects(expected, actual);
 }
 
@@ -115,7 +115,7 @@
 {
   NSArray<id<FBiOSTarget>> *targets = self.targets;
   NSArray<id<FBiOSTarget>> *expected = @[targets[3], targets[4], targets[5]];
-  NSArray<id<FBiOSTarget>> *actual = [[FBiOSTargetQuery targetType:FBiOSTargetTypeSimulator] filter:targets];
+  NSArray<id<FBiOSTargetInfo>> *actual = [[FBiOSTargetQuery targetType:FBiOSTargetTypeSimulator] filter:targets];
   XCTAssertEqualObjects(expected, actual);
 }
 
@@ -123,7 +123,7 @@
 {
   NSArray<id<FBiOSTarget>> *targets = self.targets;
   NSArray<id<FBiOSTarget>> *expected = @[targets[0], targets[4]];
-  NSArray<id<FBiOSTarget>> *actual = [[FBiOSTargetQuery names:@[@"Target0", @"Target4"]] filter:targets];
+  NSArray<id<FBiOSTargetInfo>> *actual = [[FBiOSTargetQuery names:@[@"Target0", @"Target4"]] filter:targets];
   XCTAssertEqualObjects(expected, actual);
 }
 

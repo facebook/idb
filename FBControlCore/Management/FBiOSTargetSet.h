@@ -35,8 +35,8 @@
 @property (nonatomic, weak, readwrite) id<FBiOSTargetSetDelegate> delegate;
 
 /**
- Obtains all current targets within the set.
+ Obtains all current targets infos within a set.
  */
-@property (nonatomic, copy, readonly) NSArray<id<FBiOSTarget>> *allTargets;
+@property (nonatomic, copy, readonly) NSArray<id<FBiOSTargetInfo>> *allTargetInfos;
 
 @end

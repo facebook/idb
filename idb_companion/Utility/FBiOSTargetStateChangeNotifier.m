@@ -88,7 +88,7 @@
 - (FBFuture<NSNull *> *)startNotifier
 {
   for (id<FBiOSTargetSet> targetSet in self.targetSets) {
-    for (id<FBiOSTarget> target in targetSet.allTargets) {
+    for (id<FBiOSTargetInfo> target in targetSet.allTargetInfos) {
       [_targets addObject:[[FBiOSTargetStateUpdate alloc] initWithTarget:target]];
     }
   }

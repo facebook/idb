@@ -73,11 +73,16 @@
   // Otherwise query the input target sets
   FBiOSTargetQuery *query = [FBiOSTargetQuery udid:udid];
   for (id<FBiOSTargetSet> targetSet in targetSets) {
-    id<FBiOSTarget> target = [[query filter:targetSet.allTargets] firstObject];
-    if (!target) {
+    id<FBiOSTargetInfo> targetInfo = [[query filter:targetSet.allTargetInfos] firstObject];
+    if (!targetInfo) {
       continue;
     }
-    return target;
+    if (![targetInfo conformsToProtocol:@protocol(FBiOSTarget)]) {
+      return [[FBDeviceControlError
+        describeFormat:@"UDID %@ exists, but the target is not usable %@", udid, targetInfo]
+        fail:error];
+    }
+    return (id<FBiOSTarget>) targetInfo;
   }
 
   return [[FBIDBError

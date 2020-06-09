@@ -59,7 +59,7 @@ static void WriteJSONToStdOut(id json)
   fflush(stdout);
 }
 
-static void WriteTargetToStdOut(id<FBiOSTarget> target)
+static void WriteTargetToStdOut(id<FBiOSTargetInfo> target)
 {
   WriteJSONToStdOut([[FBiOSTargetStateUpdate alloc] initWithTarget:target].jsonSerializableRepresentation);
 }
@@ -238,8 +238,8 @@ static FBFuture<NSNull *> *ListFuture(NSUserDefaults *userDefaults, id<FBControl
   return [DefaultTargetSets(userDefaults, logger, reporter)
     onQueue:dispatch_get_main_queue() map:^ NSNull * (NSArray<id<FBiOSTargetSet>> *targetSets) {
       for (id<FBiOSTargetSet> targetSet in targetSets) {
-        for (id<FBiOSTarget> target in targetSet.allTargets) {
-          WriteTargetToStdOut(target);
+        for (id<FBiOSTargetInfo> targetInfo in targetSet.allTargetInfos) {
+          WriteTargetToStdOut(targetInfo);
         }
       }
       return NSNull.null;

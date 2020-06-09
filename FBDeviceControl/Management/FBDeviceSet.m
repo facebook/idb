@@ -103,7 +103,7 @@
 
 #pragma mark FBiOSTargetSet Implementation
 
-- (NSArray<id<FBiOSTarget>> *)allTargets
+- (NSArray<id<FBiOSTarget>> *)allTargetInfos
 {
   return self.allDevices;
 }
