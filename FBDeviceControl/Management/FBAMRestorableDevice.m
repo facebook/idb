@@ -28,7 +28,7 @@ static NSString *const UnknownValue = @"unknown";
 
 - (NSString *)uniqueIdentifier
 {
-  return [@(self.UniqueID) stringValue];
+  return [@(self.UniqueChipID) stringValue];
 }
 
 - (NSString *)udid
@@ -83,7 +83,7 @@ static NSString *const UnknownValue = @"unknown";
 {
   return @{
     @"device": @{
-      @"UniqueID": @(self.UniqueID),
+      @"UniqueChipID": @(self.UniqueChipID),
       @"LocationID": @(self.LocationID),
       @"ChipID": @(self.ChipID),
       @"DeviceClass": @(self.DeviceClass),
@@ -114,7 +114,7 @@ static NSString *const UnknownValue = @"unknown";
 
 #pragma mark Private
 
-- (int)UniqueID
+- (int)UniqueChipID
 {
   return self.calls.RestorableDeviceGetECID(self.restorableDevice);
 }
