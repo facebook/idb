@@ -364,6 +364,11 @@
     connectAndStart];
 }
 
+- (NSString *)uniqueIdentifier
+{
+  return self.udid;
+}
+
 - (NSDictionary<NSString *, id> *)extendedInformation
 {
   return @{};

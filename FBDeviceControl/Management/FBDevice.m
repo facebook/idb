@@ -58,6 +58,11 @@
   ];
 }
 
+- (NSString *)uniqueIdentifier
+{
+  return self.amDevice.uniqueIdentifier;
+}
+
 - (NSString *)udid
 {
   return self.amDevice.udid;

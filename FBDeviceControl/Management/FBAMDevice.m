@@ -304,6 +304,11 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   return @{@"device": destination};
 }
 
+- (NSString *)uniqueIdentifier
+{
+  return [self.allValues[@"UniqueChipID"] stringValue];
+}
+
 - (NSString *)architecture
 {
   return self.allValues[@"CPUArchitecture"];

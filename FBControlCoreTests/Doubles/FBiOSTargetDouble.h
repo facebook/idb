@@ -13,6 +13,8 @@
 
 @property (nonatomic, strong, readonly) NSArray<Class> *actionClasses;
 
+@property (nonatomic, copy, readwrite) NSString *uniqueIdentifier;
+
 @property (nonatomic, copy, readwrite) NSString *udid;
 
 @property (nonatomic, copy, readwrite) NSString *name;

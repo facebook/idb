@@ -70,7 +70,13 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 @protocol FBiOSTargetInfo <NSObject>
 
 /**
- The Unique Device Identifier of the iOS Target.
+ A Unique Identifier that describes this iOS Target.
+ */
+ @property (nonatomic, copy, readonly) NSString *uniqueIdentifier;
+
+/**
+ The "Unique Device Identifier" of the iOS Target.
+ This may be distinct from the uniqueIdentifier.
  */
 @property (nonatomic, copy, readonly) NSString *udid;
 

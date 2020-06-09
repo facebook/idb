@@ -121,6 +121,11 @@
   ];
 }
 
+- (NSString *)uniqueIdentifier
+{
+  return self.udid;
+}
+
 - (NSString *)udid
 {
   return self.device.UDID.UUIDString;
