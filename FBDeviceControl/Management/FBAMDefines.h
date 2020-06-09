@@ -139,6 +139,7 @@ typedef struct {
   // Restorable Devices: Getting and Copying Values.
   CFStringRef (*RestorableDeviceCopyBoardConfig)(AMRestorableDeviceRef device);
   CFStringRef (*RestorableDeviceCopyProductString)(AMRestorableDeviceRef device);
+  CFStringRef (*RestorableDeviceCopySerialNumber)(AMRestorableDeviceRef device);
   CFStringRef (*RestorableDeviceCopyUserFriendlyName)(AMRestorableDeviceRef device);
   int (*RestorableDeviceGetBoardID)(AMRestorableDeviceRef device);
   int (*RestorableDeviceGetChipID)(AMRestorableDeviceRef device);

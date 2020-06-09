@@ -83,11 +83,12 @@ static NSString *const UnknownValue = @"unknown";
 {
   return @{
     @"device": @{
-      @"UniqueChipID": @(self.UniqueChipID),
-      @"LocationID": @(self.LocationID),
       @"ChipID": @(self.ChipID),
       @"DeviceClass": @(self.DeviceClass),
+      @"LocationID": @(self.LocationID),
       @"ProductType": self.ProductString,
+      @"SerialNumber": self.SerialNumber,
+      @"UniqueChipID": @(self.UniqueChipID),
     },
   };
 }
@@ -144,5 +145,9 @@ static NSString *const UnknownValue = @"unknown";
   return CFBridgingRelease(self.calls.RestorableDeviceCopyProductString(self.restorableDevice));
 }
 
+- (NSString *)SerialNumber
+{
+  return CFBridgingRelease(self.calls.RestorableDeviceCopySerialNumber(self.restorableDevice));
+}
 
 @end

@@ -98,6 +98,7 @@ DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
   calls->Release = FBGetSymbolFromHandle(handle, "AMDeviceRelease");
   calls->RestorableDeviceCopyBoardConfig = FBGetSymbolFromHandle(handle, "AMRestorableDeviceCopyBoardConfig");
   calls->RestorableDeviceCopyProductString = FBGetSymbolFromHandle(handle, "AMRestorableDeviceCopyProductString");
+  calls->RestorableDeviceCopySerialNumber = FBGetSymbolFromHandle(handle, "AMRestorableDeviceCopySerialNumber");
   calls->RestorableDeviceCopyUserFriendlyName = FBGetSymbolFromHandle(handle, "AMRestorableDeviceCopyUserFriendlyName");
   calls->RestorableDeviceGetBoardID = FBGetSymbolFromHandle(handle, "AMRestorableDeviceGetBoardID");
   calls->RestorableDeviceGetChipID = FBGetSymbolFromHandle(handle, "AMRestorableDeviceGetChipID");
