@@ -17,7 +17,7 @@
 @property (nonatomic, strong, readonly, nullable) NSString *filePath;
 @property (nonatomic, strong, readonly) NSArray<id<FBiOSTargetSet>> *targetSets;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) NSMutableSet<FBiOSTargetStateUpdate *> *targets;
+@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, FBiOSTargetStateUpdate *> *current;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finished;
 
 @end
@@ -77,7 +77,7 @@
   _filePath = filePath;
   _targetSets = targetSets;
   _logger = logger;
-  _targets = [[NSMutableSet alloc] init];
+  _current = NSMutableDictionary.dictionary;
   _finished = FBMutableFuture.future;
 
   return self;
@@ -89,7 +89,7 @@
 {
   for (id<FBiOSTargetSet> targetSet in self.targetSets) {
     for (id<FBiOSTargetInfo> target in targetSet.allTargetInfos) {
-      [_targets addObject:[[FBiOSTargetStateUpdate alloc] initWithTarget:target]];
+      self.current[target.uniqueIdentifier] = [[FBiOSTargetStateUpdate alloc] initWithTarget:target];
     }
   }
   if (![self writeTargets]) {
@@ -118,7 +118,7 @@
 {
   NSError *error = nil;
   NSMutableArray<id<FBJSONSerializable>> *jsonArray = [[NSMutableArray alloc] init];
-  for (FBiOSTargetStateUpdate *target in _targets.allObjects) {
+  for (FBiOSTargetStateUpdate *target in self.current.allValues) {
     [jsonArray addObject:target.jsonSerializableRepresentation];
   }
   NSData *data = [NSJSONSerialization dataWithJSONObject:jsonArray options:0 error:&error];
@@ -152,18 +152,21 @@
 
 #pragma mark FBiOSTargetSetDelegate Methods
 
-- (void)targetDidUpdate:(FBiOSTargetStateUpdate *)update
+- (void)targetAdded:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
 {
-  NSMutableArray<FBiOSTargetStateUpdate *> *targetsToUpdate = [[NSMutableArray alloc] init];
-  for (FBiOSTargetStateUpdate *target in self.targets) {
-    if ([target.udid isEqualToString:update.udid]) {
-      [targetsToUpdate addObject:target];
-    }
-  }
-  for (FBiOSTargetStateUpdate *target in targetsToUpdate) {
-    [_targets removeObject:target];
-  }
-  [_targets addObject:update];
+  self.current[targetInfo.uniqueIdentifier] = [[FBiOSTargetStateUpdate alloc] initWithTarget:targetInfo];
+  [self writeTargets];
+}
+
+- (void)targetRemoved:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
+{
+  [self.current removeObjectForKey:targetInfo.uniqueIdentifier];
+  [self writeTargets];
+}
+
+- (void)targetUpdated:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
+{
+  self.current[targetInfo.uniqueIdentifier] = [[FBiOSTargetStateUpdate alloc] initWithTarget:targetInfo];
   [self writeTargets];
 }
 

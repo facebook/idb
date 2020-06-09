@@ -87,7 +87,7 @@
   if (state == FBiOSTargetStateShutdown || state == FBiOSTargetStateShuttingDown) {
     [self discardLaunchdSimInfoFromShutdownOfSimulator:simulator];
   }
-  [_set.delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithTarget:simulator]];
+  [_set.delegate targetUpdated:simulator inTargetSet:simulator.set];
 }
 
 - (void)fetchLaunchdSimInfoFromBootOfSimulator:(FBSimulator *)simulator

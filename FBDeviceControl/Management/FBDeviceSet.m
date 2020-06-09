@@ -131,14 +131,14 @@
 {
   [self recalculateAllDevices];
   FBDevice *device = [self deviceWithUDID:notification.object];
-  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithTarget:device]];
+  [_delegate targetAdded:device inTargetSet:self];
 }
 
 - (void)deviceDetachedNotification:(NSNotification *)notification
 {
   FBDevice *device = [self deviceWithUDID:notification.object];
   [self recalculateAllDevices];
-  [_delegate targetDidUpdate:[[FBiOSTargetStateUpdate alloc] initWithTarget:device]];
+  [_delegate targetRemoved:device inTargetSet:self];
 }
 
 - (void)recalculateAllDevices

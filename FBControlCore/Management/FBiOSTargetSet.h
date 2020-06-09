@@ -8,18 +8,36 @@
 #import <Foundation/Foundation.h>
 #import <FBControlCore/FBiOSTargetStateUpdate.h>
 
+@protocol FBiOSTargetSet;
+
 /**
  Delegate that informs of updates regarding the set of iOS Targets.
  */
 @protocol FBiOSTargetSetDelegate
 
 /**
- Called every time an iOS Target's state is updated.
- This includes state changes such a Simulator booting or a device connecting.
+ Called every time an iOS Target is added to the set.
 
- @param update the state update to report.
+ @param targetInfo the target info.
+ @param targetSet the target set.
  */
-- (void)targetDidUpdate:(FBiOSTargetStateUpdate *)update;
+- (void)targetAdded:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet;
+
+/**
+ Called every time an iOS Target is removed from the set.
+
+ @param targetInfo the target info.
+ @param targetSet the target set.
+ */
+- (void)targetRemoved:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet;
+
+/**
+ Called every time the target info is change.
+
+ @param targetInfo the target info.
+ @param targetSet the target set.
+*/
+- (void)targetUpdated:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet;
 
 @end
 
