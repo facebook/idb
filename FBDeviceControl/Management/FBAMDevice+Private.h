@@ -14,18 +14,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBAMDServiceConnection;
 @class FBAMDeviceServiceManager;
 
-#pragma mark - Notifications
-
-/**
- Notification for the Attachment of a Device.
- */
-extern NSNotificationName const FBAMDeviceNotificationNameDeviceAttached;
-
-/**
- Notification for the Detachment of a Device.
- */
-extern NSNotificationName const FBAMDeviceNotificationNameDeviceDetached;
-
 #pragma mark - AMDevice Class Private
 
 @interface FBAMDevice () <FBFutureContextManagerDelegate>

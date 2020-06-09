@@ -6,12 +6,13 @@
  */
 
 #import <FBDeviceControl/FBDeviceSet.h>
+#import <FBDeviceControl/FBDeviceManager.h>
 
 @protocol FBControlCoreLogger;
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface FBDeviceSet ()
+@interface FBDeviceSet () <FBiOSTargetSetDelegate>
 
 @property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
 

@@ -19,6 +19,7 @@
 #import "FBDeviceControlFrameworkLoader.h"
 #import "FBDevice.h"
 #import "FBDevice+Private.h"
+#import "FBAMDeviceManager.h"
 #import "FBAMDevice.h"
 #import "FBAMDevice+Private.h"
 #import "FBDeviceInflationStrategy.h"
@@ -117,28 +118,12 @@
 
 - (void)subscribeToDeviceNotifications
 {
-  [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(deviceAttachedNotification:) name:FBAMDeviceNotificationNameDeviceAttached object:nil];
-  [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(deviceDetachedNotification:) name:FBAMDeviceNotificationNameDeviceDetached object:nil];
+  FBAMDeviceManager.sharedManager.delegate = self;
 }
 
 - (void)unsubscribeFromDeviceNotifications
 {
-  [NSNotificationCenter.defaultCenter removeObserver:self name:FBAMDeviceNotificationNameDeviceAttached object:nil];
-  [NSNotificationCenter.defaultCenter removeObserver:self name:FBAMDeviceNotificationNameDeviceDetached object:nil];
-}
-
-- (void)deviceAttachedNotification:(NSNotification *)notification
-{
-  [self recalculateAllDevices];
-  FBDevice *device = [self deviceWithUDID:notification.object];
-  [_delegate targetAdded:device inTargetSet:self];
-}
-
-- (void)deviceDetachedNotification:(NSNotification *)notification
-{
-  FBDevice *device = [self deviceWithUDID:notification.object];
-  [self recalculateAllDevices];
-  [_delegate targetRemoved:device inTargetSet:self];
+  FBAMDeviceManager.sharedManager.delegate = nil;
 }
 
 - (void)recalculateAllDevices
@@ -146,6 +131,23 @@
   _allDevices = [[self.inflationStrategy
     inflateFromDevices:FBAMDevice.allDevices existingDevices:_allDevices]
     sortedArrayUsingSelector:@selector(compare:)];
+}
+
+#pragma mark FBiOSTargetSetDelegate Implementation
+
+- (void)targetAdded:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
+{
+  [self.delegate targetAdded:targetInfo inTargetSet:targetSet];
+}
+
+- (void)targetRemoved:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
+{
+  [self.delegate targetRemoved:targetInfo inTargetSet:targetSet];
+}
+
+- (void)targetUpdated:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
+{
+  [self.delegate targetUpdated:targetInfo inTargetSet:targetSet];
 }
 
 @end
