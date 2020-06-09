@@ -240,6 +240,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
 @implementation FBAMDevice
 
 @synthesize amDevice = _amDevice;
+@synthesize udid = _udid;
 @synthesize contextPoolTimeout = _contextPoolTimeout;
 
 #pragma mark Initializers
@@ -287,7 +288,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   return _amDevice;
 }
 
-- (NSDictionary<NSString *, id> *)shallowJSONSerializableValues
+- (NSDictionary<NSString *, id> *)extendedInformation
 {
   NSDictionary<NSString *, id> *source = self.allValues;
   NSMutableDictionary<NSString *, id> *destination = NSMutableDictionary.dictionary;
@@ -300,7 +301,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
       destination[key] = value;
     }
   }
-  return destination;
+  return @{@"device": destination};
 }
 
 - (NSString *)architecture
@@ -313,20 +314,30 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   return self.allValues[@"BuildVersion"];
 }
 
-- (NSString *)deviceName
+- (NSString *)name
 {
   return self.allValues[@"DeviceName"];
 }
 
-- (FBDeviceType *)deviceConfiguration
+- (FBDeviceType *)deviceType
 {
   return FBiOSTargetConfiguration.productTypeToDevice[self.allValues[@"ProductType"]];
 }
 
-- (FBOSVersion *)osConfiguration
+- (FBOSVersion *)osVersion
 {
   NSString *osVersion = [FBAMDevice osVersionForDeviceClass:self.allValues[@"DeviceClass"] productVersion:self.allValues[@"ProductVersion"]];
   return FBiOSTargetConfiguration.nameToOSVersion[osVersion] ?: [FBOSVersion genericWithName:osVersion];
+}
+
+- (FBiOSTargetState)state
+{
+  return FBiOSTargetStateBooted;
+}
+
+- (FBiOSTargetType)targetType
+{
+  return FBiOSTargetTypeDevice;
 }
 
 #pragma mark Public Methods
@@ -501,7 +512,7 @@ static NSString *const CacheValuesPurpose = @"cache_values";
   return [NSString stringWithFormat:
     @"AMDevice %@ | %@",
     self.udid,
-    self.deviceName
+    self.name
   ];
 }
 

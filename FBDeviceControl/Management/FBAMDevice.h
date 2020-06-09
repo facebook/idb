@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
  - Starting / stopping the same service on the phone (e.g. house_arrest) many times in a short period will cause the error 0xe800005b (Too many instances of this service are already running.)
    Because of this, we pool service connections with a short cooldown to avoid reopening the same service repeatedly during bursts of operations using that service (e.g. recursively enumerating a directory)
  */
-@interface FBAMDevice : NSObject
+@interface FBAMDevice : NSObject <FBiOSTargetInfo>
 
 #pragma mark Initializers
 
@@ -54,46 +54,14 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable, copy, readonly) NSDictionary<NSString *, id> *allValues;
 
 /**
- All of the Device Values available. This will filter out complex values that aren't serializable in JSON.
- */
-@property (nonatomic, nullable, copy, readonly) NSDictionary<NSString *, id> *shallowJSONSerializableValues;
-
-/**
- The Architechture of the Device's CPU.
- */
-@property (nonatomic, nullable, copy, readonly) NSString *architecture;
-
-/**
- The Device's 'Build Version'.
- */
-@property (nonatomic, nullable, copy, readonly) NSString *buildVersion;
-
-/**
- The User-Defined name of the Device, e.g. "Ada's iPhone".
- */
-@property (nonatomic, nullable, copy, readonly) NSString *deviceName;
-
-/**
- The FBControlCore Configuration Variant representing the Device.
- */
-@property (nonatomic, nullable, copy, readonly) FBDeviceType *deviceConfiguration;
-
-/**
- The Unique Identifier of the Device.
- */
-@property (nonatomic, nullable, copy, readonly) NSString *udid;
-
-#pragma mark Derived Properties
-
-/**
  The Device's 'Product Version'.
  */
 @property (nonatomic, nullable, copy, readonly) NSString *productVersion;
 
 /**
- The FBControlCore Configuration Variant representing the Operating System.
+ The Device's 'Build Version'.
  */
-@property (nonatomic, nullable, copy, readonly) FBOSVersion *osConfiguration;
+@property (nonatomic, nullable, copy, readonly) NSString *buildVersion;
 
 @end
 

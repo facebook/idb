@@ -65,7 +65,7 @@
 
 - (NSString *)name
 {
-  return self.amDevice.deviceName;
+  return self.amDevice.name;
 }
 
 - (FBArchitecture)architecture
@@ -73,20 +73,20 @@
   return self.amDevice.architecture;
 }
 
-- (NSString *)auxillaryDirectory
-{
-  NSString *cwd = NSFileManager.defaultManager.currentDirectoryPath;
-  return [NSFileManager.defaultManager isWritableFileAtPath:cwd] ? cwd : @"/tmp";
-}
-
 - (FBiOSTargetState)state
 {
-  return FBiOSTargetStateBooted;
+  return self.amDevice.state;
 }
 
 - (FBiOSTargetType)targetType
 {
-  return FBiOSTargetTypeDevice;
+  return self.amDevice.targetType;
+}
+
+- (NSString *)auxillaryDirectory
+{
+  NSString *cwd = NSFileManager.defaultManager.currentDirectoryPath;
+  return [NSFileManager.defaultManager isWritableFileAtPath:cwd] ? cwd : @"/tmp";
 }
 
 - (FBProcessInfo *)containerApplication
@@ -101,12 +101,12 @@
 
 - (FBDeviceType *)deviceType
 {
-  return self.amDevice.deviceConfiguration;
+  return self.amDevice.deviceType;
 }
 
 - (FBOSVersion *)osVersion
 {
-  return self.amDevice.osConfiguration;
+  return self.amDevice.osVersion;
 }
 
 - (FBiOSTargetDiagnostics *)diagnostics
@@ -126,7 +126,7 @@
 
 - (NSDictionary<NSString *, id> *)extendedInformation
 {
-  return @{@"device": self.amDevice.shallowJSONSerializableValues};
+  return self.amDevice.extendedInformation;
 }
 
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target
