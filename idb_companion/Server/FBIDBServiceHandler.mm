@@ -650,6 +650,7 @@ Status FBIDBServiceHandler::approve(ServerContext *context, const idb::ApproveRe
     @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_CAMERA): FBSettingsApprovalServiceCamera,
     @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_CONTACTS): FBSettingsApprovalServiceContacts,
     @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_URL): FBSettingsApprovalServiceUrl,
+    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_LOCATION): FBSettingsApprovalServiceLocation,
   };
   NSMutableSet<FBSettingsApprovalService> *services = NSMutableSet.set;
   for (int j = 0; j < request->permissions_size(); j++) {
