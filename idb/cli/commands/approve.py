@@ -5,9 +5,15 @@
 # LICENSE file in the root directory of this source tree.
 
 from argparse import ArgumentParser, Namespace
+from typing import Dict
 
 from idb.cli import ClientCommand
-from idb.common.types import IdbClient
+from idb.common.types import IdbClient, Permission
+
+
+_ARG_TO_ENUM: Dict[str, Permission] = {
+    key.lower(): value for (key, value) in Permission.__members__.items()
+}
 
 
 class ApproveCommand(ClientCommand):
@@ -25,7 +31,7 @@ class ApproveCommand(ClientCommand):
             "permissions",
             nargs="+",
             help="Permissions to approve",
-            choices=["photos", "camera", "contacts", "url", "location"],
+            choices=_ARG_TO_ENUM.keys(),
         )
         parser.add_argument(
             "--scheme", help="Url scheme registered by the app to approve", type=str
@@ -38,6 +44,8 @@ class ApproveCommand(ClientCommand):
             exit(1)
         await client.approve(
             bundle_id=args.bundle_id,
-            permissions=set(args.permissions),
+            permissions={
+                _ARG_TO_ENUM[permission_name] for permission_name in args.permissions
+            },
             scheme=args.scheme,
         )

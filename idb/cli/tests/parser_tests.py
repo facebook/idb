@@ -13,7 +13,13 @@ from unittest.mock import ANY, MagicMock, patch
 
 from idb.cli.main import gen_main as cli_main
 from idb.common.constants import XCTEST_TIMEOUT
-from idb.common.types import Address, CrashLogQuery, HIDButtonType, InstrumentsTimings
+from idb.common.types import (
+    Address,
+    CrashLogQuery,
+    HIDButtonType,
+    InstrumentsTimings,
+    Permission,
+)
 from idb.utils.testing import AsyncContextManagerMock, AsyncMock, TestCase
 
 
@@ -560,7 +566,7 @@ class TestParser(TestCase):
         bundle_id = "com.fb.myApp"
         await cli_main(cmd_input=["approve", bundle_id, "photos"])
         self.direct_client_mock.approve.assert_called_once_with(
-            bundle_id=bundle_id, permissions={"photos"}, scheme=None
+            bundle_id=bundle_id, permissions={Permission.PHOTOS}, scheme=None
         )
 
     async def test_approve_url(self) -> None:
@@ -568,7 +574,7 @@ class TestParser(TestCase):
         bundle_id = "com.fb.myApp"
         await cli_main(cmd_input=["approve", bundle_id, "url", "--scheme", "fb"])
         self.direct_client_mock.approve.assert_called_once_with(
-            bundle_id=bundle_id, permissions={"url"}, scheme="fb"
+            bundle_id=bundle_id, permissions={Permission.URL}, scheme="fb"
         )
 
     async def test_video(self) -> None:

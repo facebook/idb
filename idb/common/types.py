@@ -34,6 +34,14 @@ class IdbConnectionException(Exception):
     pass
 
 
+class Permission(Enum):
+    PHOTOS = 0
+    CAMERA = 1
+    CONTACTS = 2
+    URL = 3
+    LOCATION = 4
+
+
 class TargetType(Enum):
     DEVICE = 1
     SIMULATOR = 2
@@ -372,7 +380,7 @@ class IdbClient:
         pass
 
     async def approve(
-        self, bundle_id: str, permissions: Set[str], scheme: Optional[str] = None
+        self, bundle_id: str, permissions: Set[Permission], scheme: Optional[str] = None
     ) -> None:
         pass
 
