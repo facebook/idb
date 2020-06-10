@@ -115,7 +115,7 @@ static NSString *const UnknownValue = @"unknown";
 
 #pragma mark Private
 
-- (int)UniqueChipID
+- (unsigned long)UniqueChipID
 {
   return self.calls.RestorableDeviceGetECID(self.restorableDevice);
 }

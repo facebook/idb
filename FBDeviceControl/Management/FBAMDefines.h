@@ -144,7 +144,7 @@ typedef struct {
   int (*RestorableDeviceGetBoardID)(AMRestorableDeviceRef device);
   int (*RestorableDeviceGetChipID)(AMRestorableDeviceRef device);
   int (*RestorableDeviceGetDeviceClass)(AMRestorableDeviceRef device);
-  int (*RestorableDeviceGetECID)(AMRestorableDeviceRef device);
+  unsigned long (*RestorableDeviceGetECID)(AMRestorableDeviceRef device);
   int (*RestorableDeviceGetLocationID)(AMRestorableDeviceRef device);
   int (*RestorableDeviceGetProductType)(AMRestorableDeviceRef device);
   int (*RestorableDeviceGetState)(AMRestorableDeviceRef device);
