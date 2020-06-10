@@ -25,7 +25,7 @@ class ApproveCommand(ClientCommand):
             "permissions",
             nargs="+",
             help="Permissions to approve",
-            choices=["photos", "camera", "contacts", "url"],
+            choices=["photos", "camera", "contacts", "url", "location"],
         )
         parser.add_argument(
             "--scheme", help="Url scheme registered by the app to approve", type=str

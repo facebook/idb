@@ -140,6 +140,7 @@ APPROVE_MAP: Dict[str, Any] = {
     "camera": ApproveRequest.CAMERA,
     "contacts": ApproveRequest.CONTACTS,
     "url": ApproveRequest.URL,
+    "location": ApproveRequest.LOCATION,
 }
 
 
