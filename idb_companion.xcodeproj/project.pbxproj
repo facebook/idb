@@ -584,12 +584,9 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				OTHER_LDFLAGS = (
-					"/usr/local/opt/openssl@1.1/lib/libssl.a",
 					"/usr/local/lib/libgrpc++.a",
-					"/usr/local/opt/openssl@1.1/lib/libcrypto.a",
 					/usr/local/lib/libgrpc.a,
 					/usr/local/lib/libprotobuf.a,
-					/usr/local/lib/libcares.a,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -609,12 +606,9 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				OTHER_LDFLAGS = (
-					"/usr/local/opt/openssl@1.1/lib/libssl.a",
 					"/usr/local/lib/libgrpc++.a",
-					"/usr/local/opt/openssl@1.1/lib/libcrypto.a",
 					/usr/local/lib/libgrpc.a,
 					/usr/local/lib/libprotobuf.a,
-					/usr/local/lib/libcares.a,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
