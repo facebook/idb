@@ -19,6 +19,14 @@ static NSString *AFCDomainKey = @"AFCDomain";
 
 static AFCCalls defaultCalls;
 
+static void AFCConnectionCallback(void *connectionRefPtr, void *arg1, void *afcOperationPtr)
+{
+  AFCConnectionRef connection = connectionRefPtr;
+  AFCOperationRef operation = afcOperationPtr;
+  id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
+  [logger logFormat:@"Connection %@, operation %@", connection, operation];
+}
+
 @implementation FBAFCConnection
 
 #pragma mark Initializers
@@ -39,8 +47,13 @@ static AFCCalls defaultCalls;
 
 + (FBFutureContext<FBAFCConnection *> *)afcFromServiceConnection:(FBAMDServiceConnection *)serviceConnection calls:(AFCCalls)calls logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue
 {
-  int socket = serviceConnection.socket;
-  AFCConnectionRef afcConnection = calls.Create(0x0, socket, 0x0, 0x0, 0x0);
+  AFCConnectionRef afcConnection = calls.Create(
+    0x0,
+    serviceConnection.socket,
+    0x0,
+    AFCConnectionCallback,
+    0x0
+  );
   FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:afcConnection calls:calls logger:logger];
   return [[FBFuture futureWithResult:connection]
     onQueue:queue contextualTeardown:^(id _, FBFutureState __) {
@@ -267,7 +280,7 @@ const char *DoubleDot = "..";
 - (BOOL)removePathAndContents:(NSString *)path error:(NSError **)error
 {
   [self.logger logFormat:@"Removing path %@ and contents", path];
-  CFTypeRef operation = self.calls.OperationCreateRemovePathAndContents(
+  AFCOperationRef operation = self.calls.OperationCreateRemovePathAndContents(
     CFGetAllocator(self.connection),
     (__bridge CFStringRef _Nonnull)(path),
     NULL
@@ -291,7 +304,7 @@ const char *DoubleDot = "..";
   return success;
 }
 
-- (BOOL)afcOperationSucceeded:(CFTypeRef)operation error:(NSError **)error
+- (BOOL)afcOperationSucceeded:(AFCOperationRef)operation error:(NSError **)error
 {
   int status = self.calls.OperationGetResultStatus(operation);
   if (status == 0) {

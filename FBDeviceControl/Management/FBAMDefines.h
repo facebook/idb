@@ -19,6 +19,12 @@ typedef CFTypeRef AMDeviceRef;
  */
 typedef CFTypeRef AFCConnectionRef;
 
+
+/**
+ Used inside AFC Operations.
+ */
+typedef CFTypeRef AFCOperationRef;
+
 /**
  An Alias for the AMRestorableDeviceRef Type.
  */
@@ -86,6 +92,11 @@ typedef void (*AMDeviceNotificationCallback)(AMDeviceNotification *notification,
  Defines the "Notification Callback" for AMRestorableDeviceRef instances.
  */
 typedef void (*AMRestorableDeviceNotificationCallback)(AMRestorableDeviceRef eventData, AMRestorableDeviceNotificationType status, void *context);
+
+/**
+ Defines the "Notification Callback" for AFCConnectionCreate call.
+ */
+typedef void (*AFCNotificationCallback)(void *connectionRefPtr, void *arg1, void *afcOperationPtr);
 
 /**
  A Structure that references to the AMDevice APIs we use.
@@ -160,7 +171,7 @@ typedef struct {
  */
 typedef struct {
   // Creating a Connection
-  AFCConnectionRef (*Create)(void *_Nullable unknown0, int socket, void *_Nullable unknown1, void *_Nullable unknown2, void *_Nullable unknown3);
+  AFCConnectionRef (*Create)(void *_Nullable unknown0, int socket, void *_Nullable unknown1, AFCNotificationCallback callback, void *_Nullable unknown3);
   int (*ConnectionOpen)(CFTypeRef handle, uint32_t io_timeout,CFTypeRef _Nullable *_Nullable conn);
   int (*ConnectionClose)(AFCConnectionRef connection);
   int (*SetSecureContext)(CFTypeRef connection);
