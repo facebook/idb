@@ -350,12 +350,6 @@ class IdbClient:
     async def terminate(self, bundle_id: str) -> None:
         pass
 
-    async def pull(self, bundle_id: str, src_path: str, dest_path: str) -> None:
-        pass
-
-    async def mkdir(self, bundle_id: str, path: str) -> None:
-        pass
-
     async def list_test_bundle(self, test_bundle_id: str, app_path: str) -> List[str]:
         pass
 
@@ -366,9 +360,6 @@ class IdbClient:
 
     async def tail_companion_logs(self, stop: asyncio.Event) -> AsyncIterator[str]:
         yield
-
-    async def push(self, src_paths: List[str], bundle_id: str, dest_path: str) -> None:
-        pass
 
     async def clear_keychain(self) -> None:
         pass
@@ -469,16 +460,31 @@ class IdbClient:
     async def text(self, text: str) -> None:
         return
 
-    async def ls(self, bundle_id: str, path: str) -> List[FileEntryInfo]:
-        pass
-
-    async def mv(self, bundle_id: str, src_paths: List[str], dest_path: str) -> None:
-        pass
-
-    async def rm(self, bundle_id: str, paths: List[str]) -> None:
-        pass
-
     async def hid(self, event_iterator: AsyncIterable[HIDEvent]) -> None:
+        pass
+
+    async def ls(self, bundle_id: Optional[str], path: str) -> List[FileEntryInfo]:
+        pass
+
+    async def mv(
+        self, bundle_id: Optional[str], src_paths: List[str], dest_path: str
+    ) -> None:
+        pass
+
+    async def rm(self, bundle_id: Optional[str], paths: List[str]) -> None:
+        pass
+
+    async def mkdir(self, bundle_id: Optional[str], path: str) -> None:
+        pass
+
+    async def pull(
+        self, bundle_id: Optional[str], src_path: str, dest_path: str
+    ) -> None:
+        pass
+
+    async def push(
+        self, src_paths: List[str], bundle_id: Optional[str], dest_path: str
+    ) -> None:
         pass
 
 

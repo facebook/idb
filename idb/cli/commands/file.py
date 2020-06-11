@@ -14,10 +14,6 @@ from idb.cli import ClientCommand
 from idb.common.types import IdbClient
 
 
-class NoBundleIdentifierProvidedException(BaseException):
-    pass
-
-
 class BundleWithPath(NamedTuple):
     bundle_id: Optional[str]
     path: str
@@ -30,8 +26,8 @@ class BundleWithPath(NamedTuple):
         return BundleWithPath(bundle_id=split[0], path=split[1])
 
 
-def _extract_bundle_id(args: Namespace) -> str:
-    if args.bundle_id:
+def _extract_bundle_id(args: Namespace) -> Optional[str]:
+    if args.bundle_id is not None:
         return args.bundle_id
     values = []
     for value in vars(args).values():
@@ -46,11 +42,10 @@ def _extract_bundle_id(args: Namespace) -> str:
         if bundle_id is None:
             continue
         args.bundle_id = bundle_id
-        return args.bundle_id
-    raise NoBundleIdentifierProvidedException(f"No Bundle ID Provided in args {args}")
+    return args.bundle_id
 
 
-def _convert_args(args: Namespace) -> Tuple[Namespace, str]:
+def _convert_args(args: Namespace) -> Tuple[Namespace, Optional[str]]:
     def convert_value(value: Any) -> Any:  # pyre-ignore
         if isinstance(value, List):
             return [convert_value(x) for x in value]
@@ -71,7 +66,7 @@ class FSCommand(ClientCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--bundle-id",
-            help="Bundle ID of application. Must be provi",
+            help="Bundle ID of application. If not provided, the 'root' of the target will be used",
             type=str,
             required=False,
             default=None,
@@ -80,7 +75,7 @@ class FSCommand(ClientCommand):
 
     @abstractmethod
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbClient
+        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
     ) -> None:
         pass
 
@@ -109,7 +104,7 @@ class FSListCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbClient
+        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
     ) -> None:
         paths = await client.ls(bundle_id=bundle_id, path=args.path)
         if args.json:
@@ -135,7 +130,7 @@ class FSMkdirCommand(FSCommand):
         )
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbClient
+        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
     ) -> None:
         await client.mkdir(bundle_id=bundle_id, path=args.path)
 
@@ -168,7 +163,7 @@ class FSMoveCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbClient
+        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
     ) -> None:
         await client.mv(bundle_id=bundle_id, src_paths=args.src, dest_path=args.dst)
 
@@ -196,7 +191,7 @@ class FSRemoveCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbClient
+        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
     ) -> None:
         await client.rm(bundle_id=bundle_id, paths=args.path)
 
@@ -225,7 +220,7 @@ class FSPushCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbClient
+        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
     ) -> None:
         return await client.push(
             bundle_id=bundle_id,
@@ -251,7 +246,7 @@ class FSPullCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_bundle(
-        self, bundle_id: str, args: Namespace, client: IdbClient
+        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
     ) -> None:
         await client.pull(
             bundle_id=bundle_id, src_path=args.src, dest_path=os.path.abspath(args.dst)
