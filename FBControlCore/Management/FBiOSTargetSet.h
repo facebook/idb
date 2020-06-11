@@ -6,7 +6,7 @@
  */
 
 #import <Foundation/Foundation.h>
-#import <FBControlCore/FBiOSTargetStateUpdate.h>
+#import <FBControlCore/FBiOSTarget.h>
 
 @protocol FBiOSTargetSet;
 

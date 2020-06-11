@@ -10,6 +10,7 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBDeviceControl/FBDeviceControl.h>
 
+#import "FBiOSTargetDescription.h"
 #import "FBIDBError.h"
 
 @interface FBiOSTargetStateChangeNotifier () <FBiOSTargetSetDelegate>
@@ -17,7 +18,7 @@
 @property (nonatomic, strong, readonly, nullable) NSString *filePath;
 @property (nonatomic, strong, readonly) NSArray<id<FBiOSTargetSet>> *targetSets;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, FBiOSTargetStateUpdate *> *current;
+@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, FBiOSTargetDescription *> *current;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finished;
 
 @end
@@ -89,7 +90,7 @@
 {
   for (id<FBiOSTargetSet> targetSet in self.targetSets) {
     for (id<FBiOSTargetInfo> target in targetSet.allTargetInfos) {
-      self.current[target.uniqueIdentifier] = [[FBiOSTargetStateUpdate alloc] initWithTarget:target];
+      self.current[target.uniqueIdentifier] = [[FBiOSTargetDescription alloc] initWithTarget:target];
     }
   }
   if (![self writeTargets]) {
@@ -118,7 +119,7 @@
 {
   NSError *error = nil;
   NSMutableArray<id<FBJSONSerializable>> *jsonArray = [[NSMutableArray alloc] init];
-  for (FBiOSTargetStateUpdate *target in self.current.allValues) {
+  for (FBiOSTargetDescription *target in self.current.allValues) {
     [jsonArray addObject:target.jsonSerializableRepresentation];
   }
   NSData *data = [NSJSONSerialization dataWithJSONObject:jsonArray options:0 error:&error];
@@ -154,7 +155,7 @@
 
 - (void)targetAdded:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
 {
-  self.current[targetInfo.uniqueIdentifier] = [[FBiOSTargetStateUpdate alloc] initWithTarget:targetInfo];
+  self.current[targetInfo.uniqueIdentifier] = [[FBiOSTargetDescription alloc] initWithTarget:targetInfo];
   [self writeTargets];
 }
 
@@ -166,7 +167,7 @@
 
 - (void)targetUpdated:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
 {
-  self.current[targetInfo.uniqueIdentifier] = [[FBiOSTargetStateUpdate alloc] initWithTarget:targetInfo];
+  self.current[targetInfo.uniqueIdentifier] = [[FBiOSTargetDescription alloc] initWithTarget:targetInfo];
   [self writeTargets];
 }
 

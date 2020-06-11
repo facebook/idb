@@ -5,10 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBiOSTargetStateUpdate.h"
-#import "FBiOSTargetConfiguration.h"
+#import "FBiOSTargetDescription.h"
 
-@interface FBiOSTargetStateUpdate ()
+@interface FBiOSTargetDescription ()
 
 @property (nonatomic, assign, readonly) FBiOSTargetState state;
 @property (nonatomic, assign, readonly) FBiOSTargetType targetType;
@@ -21,7 +20,7 @@
 
 @end
 
-@implementation FBiOSTargetStateUpdate
+@implementation FBiOSTargetDescription
 
 static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
 {
