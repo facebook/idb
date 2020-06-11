@@ -34,7 +34,7 @@
   return FBAMDeviceManager.sharedManager.currentDeviceList;
 }
 
-- (instancetype)initWithUDID:(NSString *)udid calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithUDID:(NSString *)udid allValues:(NSDictionary<NSString *, id> *)allValues calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -42,6 +42,7 @@
   }
 
   _udid = udid;
+  _allValues = allValues;
   _calls = calls;
   _workQueue = workQueue;
   _logger = [logger withName:udid];
@@ -64,7 +65,6 @@
   if (oldAMDevice) {
     self.calls.Release(oldAMDevice);
   }
-  [self cacheAllValues];
 }
 
 - (AMDeviceRef)amDevice
@@ -212,47 +212,19 @@
 
 - (FBFuture<FBAMDevice *> *)prepare:(id<FBControlCoreLogger>)logger
 {
-  AMDeviceRef amDevice = self.amDevice;
-  if (amDevice == NULL) {
-    return [[FBDeviceControlError
-      describe:@"Cannot utilize a non existent AMDeviceRef"]
-      failFuture];
+  NSError *error = nil;
+  if (![FBAMDeviceManager startUsing:self.amDevice calls:self.calls logger:logger error:&error]) {
+    return [FBFuture futureWithError:error];
   }
-
-  [logger log:@"Connecting to AMDevice"];
-  int status = self.calls.Connect(amDevice);
-  if (status != 0) {
-    NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
-    return [[FBDeviceControlError
-      describeFormat:@"Failed to connect to device. (%@)", errorDescription]
-      failFuture];
-  }
-
-  [logger log:@"Starting Session on AMDevice"];
-  status = self.calls.StartSession(amDevice);
-  if (status != 0) {
-    self.calls.Disconnect(amDevice);
-    NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
-    return [[FBDeviceControlError
-      describeFormat:@"Failed to start session with device. (%@)", errorDescription]
-      failFuture];
-  }
-
-  [logger log:@"Device ready for use"];
   return [FBFuture futureWithResult:self];
 }
 
 - (FBFuture<NSNull *> *)teardown:(FBAMDevice *)device logger:(id<FBControlCoreLogger>)logger;
 {
-  AMDeviceRef amDevice = device.amDevice;
-  [logger log:@"Stopping Session on AMDevice"];
-  self.calls.StopSession(amDevice);
-
-  [logger log:@"Disconnecting from AMDevice"];
-  self.calls.Disconnect(amDevice);
-
-  [logger log:@"Disconnected from AMDevice"];
-
+  NSError *error = nil;
+  if (![FBAMDeviceManager stopUsing:self.amDevice calls:self.calls logger:logger error:&error]) {
+    return [FBFuture futureWithError:error];
+  }
   return FBFuture.empty;
 }
 
@@ -263,29 +235,6 @@
 
 - (BOOL)isContextSharable
 {
-  return YES;
-}
-
-#pragma mark Private
-
-static NSString *const CacheValuesPurpose = @"cache_values";
-
-- (BOOL)cacheAllValues
-{
-  NSError *error = nil;
-  FBAMDevice *device = [self.connectionContextManager utilizeNowWithPurpose:CacheValuesPurpose error:&error];
-  [self.logger logFormat:@"Caching values for AMDeviceRef %@", device.amDevice];
-  if (!device) {
-    return NO;
-  }
-  // Contains all values, everything is derived
-  _allValues = [CFBridgingRelease(self.calls.CopyValue(device.amDevice, NULL, NULL)) copy];
-
-  [self.logger logFormat:@"Finished caching values for AMDeviceRef %@", device.amDevice];
-
-  if (![self.connectionContextManager returnNowWithPurpose:CacheValuesPurpose error:nil]) {
-    return NO;
-  }
   return YES;
 }
 

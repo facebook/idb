@@ -51,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  All of the Device Values available.
  */
-@property (nonatomic, nullable, copy, readonly) NSDictionary<NSString *, id> *allValues;
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *allValues;
 
 /**
  The Device's 'Product Version'.

@@ -42,7 +42,7 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
   }
   switch (status) {
     case AMRestorableDeviceNotificationTypeConnected:
-      [manager deviceConnected:device identifier:identifier];
+      [manager deviceConnected:device identifier:identifier info:nil];
       return;
     case AMRestorableDeviceNotificationTypeDisconnected:
       [manager deviceDisconnected:device identifier:identifier];
@@ -94,12 +94,12 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
   return YES;
 }
 
-- (FBAMRestorableDevice *)constructPublic:(AMRestorableDeviceRef)privateDevice
+- (FBAMRestorableDevice *)constructPublic:(AMRestorableDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
 {
   return [[FBAMRestorableDevice alloc] initWithCalls:self.calls restorableDevice:privateDevice];
 }
 
-+ (void)updatePublicReference:(FBAMRestorableDevice *)publicDevice privateDevice:(AMRestorableDeviceRef)privateDevice
++ (void)updatePublicReference:(FBAMRestorableDevice *)publicDevice privateDevice:(AMRestorableDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
 {
   publicDevice.restorableDevice = privateDevice;
 }

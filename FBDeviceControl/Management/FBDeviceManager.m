@@ -59,13 +59,13 @@
     failBool:error];
 }
 
-- (id)constructPublic:(PrivateDevice)privateDevice
+- (id)constructPublic:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
 }
 
-+ (void)updatePublicReference:(id)publicDevice privateDevice:(PrivateDevice)privateDevice
++ (void)updatePublicReference:(id)publicDevice privateDevice:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self), NSStringFromSelector(_cmd));
 }
@@ -78,7 +78,7 @@
 
 #pragma mark Called in Subclasses
 
-- (void)deviceConnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier
+- (void)deviceConnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
 {
   [self.logger logFormat:@"Device Connected %@", privateDevice];
 
@@ -93,17 +93,17 @@
     [self.logger.info logFormat:@"Device has been re-attached %@", device];
     NSAssert(attachedDevice == nil || device == attachedDevice, @"Known referenced device %@ does not match the attached one %@!", device, attachedDevice);
   } else {
-    device = [self constructPublic:privateDevice];
+    device = [self constructPublic:privateDevice identifier:identifier info:info];
     [self.logger.info logFormat:@"Created a new FBAMDevice instance %@", device];
     NSAssert(attachedDevice == nil, @"An device is in the attached but it is not in the weak set! Attached device %@", attachedDevice);
   }
   PrivateDevice oldPrivateDevice = [self.class extractPrivateReference:device];
   if (oldPrivateDevice == NULL) {
     [self.logger logFormat:@"New AMDeviceRef '%@' appeared for the first time", device];
-    [self.class updatePublicReference:device privateDevice:privateDevice];
+    [self.class updatePublicReference:device privateDevice:privateDevice identifier:identifier info:info];
   } else if (privateDevice != oldPrivateDevice) {
     [self.logger logFormat:@"New AMDeviceRef '%@' replaces Old Device '%@'", device, oldPrivateDevice];
-    [self.class updatePublicReference:device privateDevice:privateDevice];
+    [self.class updatePublicReference:device privateDevice:privateDevice identifier:identifier info:info];
   } else {
     [self.logger logFormat:@"Existing Device %@ is the same as the old", privateDevice];
   }

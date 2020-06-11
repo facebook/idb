@@ -24,6 +24,28 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, class, strong, readonly) FBAMDeviceManager *sharedManager;
 
+/**
+ Starts using the AMDeviceRef via Connections.
+
+ @param device the device to use.
+ @param calls the calls to use.
+ @param logger the logger to use.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
++ (BOOL)startUsing:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
+
+/**
+ Stops using the AMDeviceRef connections.
+
+ @param device the device to use.
+ @param calls the calls to use.
+ @param logger the logger to use.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
++ (BOOL)stopUsing:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
+
 @end
 
 NS_ASSUME_NONNULL_END

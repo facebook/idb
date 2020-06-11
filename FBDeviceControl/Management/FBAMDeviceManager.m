@@ -24,16 +24,31 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   AMDeviceNotificationType notificationType = notification->status;
   AMDeviceRef device = notification->amDevice;
   NSString *identifier = [manager identifierForDevice:device];
+  AMDCalls calls = manager.calls;
+  id<FBControlCoreLogger> logger = manager.logger;
   switch (notificationType) {
-    case AMDeviceNotificationTypeConnected:
-      [manager deviceConnected:device identifier:identifier];
-      break;
+    case AMDeviceNotificationTypeConnected: {
+      NSError *error = nil;
+      (void)error;
+      if (![FBAMDeviceManager startUsing:device calls:calls logger:logger error:&error]) {
+        [logger.error logFormat:@"Cannot start session with device, ignoring device %@", error];
+        return;
+      }
+      NSDictionary<NSString *, id> *info = [CFBridgingRelease(calls.CopyValue(device, NULL, NULL)) copy];
+      [FBAMDeviceManager stopUsing:device calls:calls logger:logger error:nil];
+      if (!info) {
+        [logger.error log:@"Ignoring device as no values were returned for it"];
+        return;
+      }
+      [manager deviceConnected:device identifier:identifier info:info];
+      return;
+    }
     case AMDeviceNotificationTypeDisconnected:
       [manager deviceDisconnected:device identifier:identifier];
-      break;
+      return;
     default:
       [manager.logger logFormat:@"Got Unknown status %d from self.calls.ListenerCallback", notificationType];
-      break;
+      return;
   }
 }
 
@@ -59,6 +74,52 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   BOOL success = [manager startListeningWithError:&error];
   NSAssert(success, @"Failed to Start Listening %@", error);
   return manager;
+}
+
+#pragma mark Public
+
++ (BOOL)startUsing:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  if (device == NULL) {
+    return [[FBDeviceControlError
+      describe:@"Cannot utilize a non existent AMDeviceRef"]
+      failBool:error];
+  }
+
+  [logger log:@"Connecting to AMDevice"];
+  int status = calls.Connect(device);
+  if (status != 0) {
+    NSString *errorDescription = CFBridgingRelease(calls.CopyErrorText(status));
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to connect to device. (%@)", errorDescription]
+      failBool:error];
+  }
+
+  [logger log:@"Starting Session on AMDevice"];
+  status = calls.StartSession(device);
+  if (status != 0) {
+    calls.Disconnect(device);
+    NSString *errorDescription = CFBridgingRelease(calls.CopyErrorText(status));
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to start session with device. (%@)", errorDescription]
+      failBool:error];
+  }
+
+  [logger log:@"Device ready for use"];
+  return YES;
+}
+
++ (BOOL)stopUsing:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  [logger log:@"Stopping Session on AMDevice"];
+  calls.StopSession(device);
+
+  [logger log:@"Disconnecting from AMDevice"];
+  calls.Disconnect(device);
+
+  [logger log:@"Disconnected from AMDevice"];
+
+  return YES;
 }
 
 #pragma mark FBDeviceManager Implementation
@@ -119,15 +180,15 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 static const NSTimeInterval ServiceReuseTimeout = 6.0;
 
-- (id)constructPublic:(AMDeviceRef)privateDevice
+- (id)constructPublic:(AMDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
 {
-  NSString *identifier = [self identifierForDevice:privateDevice];
-  return [[FBAMDevice alloc] initWithUDID:identifier calls:self.calls connectionReuseTimeout:nil serviceReuseTimeout:@(ServiceReuseTimeout) workQueue:self.queue logger:self.logger];
+  return [[FBAMDevice alloc] initWithUDID:identifier allValues:info calls:self.calls connectionReuseTimeout:nil serviceReuseTimeout:@(ServiceReuseTimeout) workQueue:self.queue logger:self.logger];
 }
 
-+ (void)updatePublicReference:(FBAMDevice *)publicDevice privateDevice:(AMDeviceRef)privateDevice
++ (void)updatePublicReference:(FBAMDevice *)publicDevice privateDevice:(AMDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
 {
   publicDevice.amDevice = privateDevice;
+  publicDevice.allValues = info;
 }
 
 + (AMDeviceRef)extractPrivateReference:(FBAMDevice *)publicDevice
@@ -146,7 +207,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   for (NSInteger index = 0; index < CFArrayGetCount(array); index++) {
     AMDeviceRef value = CFArrayGetValueAtIndex(array, index);
     NSString *identifier = [self identifierForDevice:value];
-    [self deviceConnected:value identifier:identifier];
+    [self deviceConnected:value identifier:identifier info:nil];
   }
   CFRelease(array);
   return YES;

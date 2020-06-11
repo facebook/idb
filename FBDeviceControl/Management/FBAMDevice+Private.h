@@ -26,6 +26,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readwrite) AMDeviceRef amDevice;
 
 /**
+ All of the Device Values available.
+ */
+@property (nonatomic, copy, readwrite) NSDictionary<NSString *, id> *allValues;
+
+/**
  The Context Manager for the Connection
  */
 @property (nonatomic, strong, readonly) FBFutureContextManager<FBAMDevice *> *connectionContextManager;
@@ -56,6 +61,7 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Initializer
 
  @param udid the UDID of the AMDevice.
+ @param allValues the values from the AMDevice.
  @param calls the calls to use.
  @param connectionReuseTimeout the time to wait before releasing a connection
  @param serviceReuseTimeout the time to wait before releasing a service
@@ -63,7 +69,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new FBAMDevice instance.
  */
-- (instancetype)initWithUDID:(NSString *)udid calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithUDID:(NSString *)udid allValues:(NSDictionary<NSString *, id> *)allValues calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Obtain the connection for a device.

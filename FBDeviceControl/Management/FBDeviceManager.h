@@ -60,17 +60,21 @@ typedef CFTypeRef PrivateDevice;
  Construct the public type from the private type
 
  @param privateDevice the private device
+ @param identifier the device identifier.
+ @param info optional information about the device.
  @return the public device.
  */
-- (PublicDevice)constructPublic:(PrivateDevice)privateDevice;
+- (PublicDevice)constructPublic:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(nullable NSDictionary<NSString *, id> *)info;
 
 /**
  Construct the public type from the private type
 
  @param publicDevice the public device
  @param privateDevice the private device
+ @param identifier the device identifier.
+ @param info optional information about the device.
  */
-+ (void)updatePublicReference:(PublicDevice)publicDevice privateDevice:(PrivateDevice)privateDevice;
++ (void)updatePublicReference:(PublicDevice)publicDevice privateDevice:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(nullable NSDictionary<NSString *, id> *)info;
 
 /**
  Extract the private type from the public type
@@ -87,8 +91,9 @@ typedef CFTypeRef PrivateDevice;
 
  @param privateDevice the device reference.
  @param identifier the device identifier
+ @param info optional information about the device.
  */
-- (void)deviceConnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier;
+- (void)deviceConnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(nullable NSDictionary<NSString *, id> *)info;
 
 /**
  Call when the device is disconnected.
