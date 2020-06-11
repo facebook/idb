@@ -85,7 +85,7 @@ typedef void (*AMDeviceNotificationCallback)(AMDeviceNotification *notification,
 /**
  Defines the "Notification Callback" for AMRestorableDeviceRef instances.
  */
-typedef void (*AMRestorableDeviceNotificationCallback)(AMRestorableDeviceRef eventData, AMRestorableDeviceNotificationType status, id arg2);
+typedef void (*AMRestorableDeviceNotificationCallback)(AMRestorableDeviceRef eventData, AMRestorableDeviceNotificationType status, void *context);
 
 /**
  A Structure that references to the AMDevice APIs we use.

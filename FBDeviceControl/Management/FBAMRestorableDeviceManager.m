@@ -24,8 +24,9 @@ static NSString *NotificationTypeToString(AMRestorableDeviceNotificationType sta
   }
 }
 
-static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, AMRestorableDeviceNotificationType status, FBAMRestorableDeviceManager *manager)
+static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, AMRestorableDeviceNotificationType status, void *context)
 {
+  FBAMRestorableDeviceManager *manager = (__bridge FBAMRestorableDeviceManager *)context;
   id<FBControlCoreLogger> logger = manager.logger;
   AMRestorableDeviceState deviceState = manager.calls.RestorableDeviceGetState(device);
   FBiOSTargetState targetState = [FBAMRestorableDevice targetStateForDeviceState:deviceState];
