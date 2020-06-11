@@ -85,7 +85,7 @@ typedef void (*AMDeviceNotificationCallback)(AMDeviceNotification *notification,
 /**
  Defines the "Notification Callback" for AMRestorableDeviceRef instances.
  */
-typedef void (*AMRestoreableDeviceNotificationCallaback)(AMRestorableDeviceRef eventData, AMRestorableDeviceNotificationType status, id arg2);
+typedef void (*AMRestorableDeviceNotificationCallback)(AMRestorableDeviceRef eventData, AMRestorableDeviceNotificationType status, id arg2);
 
 /**
  A Structure that references to the AMDevice APIs we use.
@@ -133,7 +133,7 @@ typedef struct {
   int (*MountImage)(AMDeviceRef device, CFStringRef image, CFDictionaryRef options, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
 
   // Restorable Devices: Notifications
-  int (*RestorableDeviceRegisterForNotifications)(AMRestoreableDeviceNotificationCallaback callback, void *context, int arg2, int arg3);
+  int (*RestorableDeviceRegisterForNotifications)(AMRestorableDeviceNotificationCallback callback, void *context, int arg2, int arg3);
   int (*RestorableDeviceUnregisterForNotifications)(int registrationID);
 
   // Restorable Devices: Getting and Copying Values.

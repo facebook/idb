@@ -78,7 +78,7 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 /**
  A Unique Identifier that describes this iOS Target.
  */
- @property (nonatomic, copy, readonly) NSString *uniqueIdentifier;
+@property (nonatomic, copy, readonly) NSString *uniqueIdentifier;
 
 /**
  The "Unique Device Identifier" of the iOS Target.
@@ -92,11 +92,6 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 @property (nonatomic, copy, readonly) NSString *name;
 
 /**
- The State of the iOS Target. Currently only applies to Simulators.
- */
-@property (nonatomic, assign, readonly) FBiOSTargetState state;
-
-/**
  The Device Type of the Target.
  */
 @property (nonatomic, copy, readonly) FBDeviceType *deviceType;
@@ -105,11 +100,6 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
  The Architecture of the iOS Target
  */
 @property (nonatomic, copy, readonly) FBArchitecture architecture;
-
-/**
- The Type of the iOS Target
- */
-@property (nonatomic, assign, readonly) FBiOSTargetType targetType;
 
 /**
  The OS Version of the Target.
@@ -122,6 +112,16 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
  This dictionary must be JSON-Serializable.
  */
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *extendedInformation;
+
+/**
+ The Type of the iOS Target
+ */
+@property (nonatomic, assign, readonly) FBiOSTargetType targetType;
+
+/**
+ The State of the iOS Target. Currently only applies to Simulators.
+ */
+@property (nonatomic, assign, readonly) FBiOSTargetState state;
 
 @end
 
