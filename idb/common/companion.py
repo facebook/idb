@@ -164,3 +164,15 @@ class Companion:
             for line in output.splitlines()
             if len(line.strip())
         ]
+
+    @log_call()
+    async def target_description(
+        self, udid: str, only: Optional[TargetType] = None
+    ) -> TargetDescription:
+        all_details = await self.list_targets(only=only)
+        details = [target for target in all_details if target.udid == udid]
+        if len(details) > 1:
+            raise IdbException(f"More than one device info found {details}")
+        if len(details) == 0:
+            raise IdbException(f"No device info found, got {all_details}")
+        return details[0]
