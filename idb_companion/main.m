@@ -107,6 +107,7 @@ static FBFuture<FBAMRestorableDeviceManager *> *RestorableDeviceSet(id<FBControl
   if(![FBDeviceControlFrameworkLoader.new loadPrivateFrameworks:logger error:&error]) {
     return [FBFuture futureWithError:error];
   }
+  logger = [logger withName:@"restorable_device_manager"];
   FBDeviceManager *manager = [[FBAMRestorableDeviceManager alloc] initWithCalls:FBDeviceControlFrameworkLoader.amDeviceCalls queue:dispatch_get_main_queue() logger:logger];
   if (![manager startListeningWithError:&error]) {
     return [FBFuture futureWithError:error];

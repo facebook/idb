@@ -61,7 +61,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   static dispatch_once_t onceToken;
   static FBAMDeviceManager *manager;
   dispatch_once(&onceToken, ^{
-    id<FBControlCoreLogger> logger = [FBControlCoreGlobalConfiguration.defaultLogger withName:@"device_manager"];
+    id<FBControlCoreLogger> logger = [FBControlCoreGlobalConfiguration.defaultLogger withName:@"amdevice_manager"];
     manager = [self managerWithCalls:FBDeviceControlFrameworkLoader.amDeviceCalls Queue:dispatch_get_main_queue() logger:logger];
   });
   return manager;
