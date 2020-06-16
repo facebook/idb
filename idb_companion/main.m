@@ -39,6 +39,7 @@ Usage: \n \
 \n\
   Options:\n\
     --grpc-port PORT           Port to start the grpc companion server on (default: 10882).\n\
+    --grpc-domain-sock PATH    Unix Domain Socket path to start the companion server on, will superceed TCP binding via --grpc-port.\n\
     --debug-port PORT          Port to connect debugger on (default: 10881).\n\
     --log-file-path PATH       Path to write a log file to e.g ./output.log (default: logs to stdErr).\n\
     --device-set-path PATH     Path to a custom Simulator device set.\n\

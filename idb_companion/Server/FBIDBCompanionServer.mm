@@ -86,8 +86,14 @@ using namespace std;
   dispatch_queue_t queue = dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
   FBMutableFuture<NSDictionary<NSString *, id> *> *serverStarted = FBMutableFuture.future;
   dispatch_async(queue, ^(void){
-    [self.logger logFormat:@"Starting GRPC server on port %u", self.ports.grpcPort];
-    string server_address("0.0.0.0:" + std::to_string(self.ports.grpcPort));
+    NSString *domainSocket = self.ports.grpcDomainSocket;
+    std::string server_address("0.0.0.0:" + std::to_string(self.ports.grpcPort));
+    if (domainSocket) {
+      server_address = "unix:" + std::string(self.ports.grpcDomainSocket.UTF8String);
+      [self.logger logFormat:@"Starting GRPC server at path %@", domainSocket];
+    } else {
+      [self.logger logFormat:@"Starting GRPC server on port %u", self.ports.grpcPort];
+    }
     FBIDBServiceHandler service = FBIDBServiceHandler(self.commandExecutor, self.target, self.eventReporter);
     int selectedPort = self.ports.grpcPort;
     unique_ptr<Server> server(ServerBuilder()
@@ -97,8 +103,13 @@ using namespace std;
       .SetMaxReceiveMessageSize(16777216) // 16MB (16 * 1024 * 1024). Default is 4MB (4 * 1024 * 1024)
       .BuildAndStart()
     );
-    [serverStarted resolveWithResult:@{@"grpc_port": @(selectedPort)}];
-    [self.logger.info logFormat:@"Started GRPC server on port %u", selectedPort];
+    if (domainSocket) {
+      [self.logger.info logFormat:@"Started GRPC server at path %@", domainSocket];
+      [serverStarted resolveWithResult:@{@"grpc_path": domainSocket}];
+    } else {
+      [self.logger.info logFormat:@"Started GRPC server on port %u", selectedPort];
+      [serverStarted resolveWithResult:@{@"grpc_port": @(selectedPort)}];
+    }
     server->Wait();
     [self.logger.info logFormat:@"GRPC server is no longer running on port %u", selectedPort];
     [self.serverTerminated resolveWithResult:NSNull.null];

@@ -25,9 +25,14 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)portsWithArguments:(NSUserDefaults *)userDefaults;
 
 /**
- The GRPC Port.
+ The GRPC Unix Domain Socket Path. nil if not set.
  */
-@property (atomic, assign, readwrite) in_port_t grpcPort;
+@property (nonatomic, nullable, copy, readonly) NSString *grpcDomainSocket;
+
+/**
+ The GRPC TCP Port.
+ */
+@property (nonatomic, assign, readonly) in_port_t grpcPort;
 
 /**
  The debugserver port

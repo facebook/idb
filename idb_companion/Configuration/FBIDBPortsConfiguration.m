@@ -27,6 +27,7 @@ static NSString *const GrpcPortKey = @"-grpc-port";
 
   _debugserverPort = [userDefaults integerForKey:@"-debug-port"] ?: 10881;
   _grpcPort = [userDefaults stringForKey:GrpcPortKey] ? [userDefaults integerForKey:GrpcPortKey] : 10882;
+  _grpcDomainSocket = [userDefaults stringForKey:@"-grpc-domain-sock"];
 
   return self;
 }
