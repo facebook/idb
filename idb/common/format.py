@@ -57,19 +57,23 @@ def human_format_activities(activities: List[TestActivity]) -> str:
             f"{activity.name} ({activity.finish - start:.2f}s)",
             activity.uuid,
             parent=parent,
+            data={"start": activity.start},
         )
         for attachment in activity.attachments:
             tree.create_node(
-                f"Attachment: {attachment.name}", uuid4(), parent=activity.uuid
+                f"Attachment: {attachment.name}",
+                uuid4(),
+                parent=activity.uuid,
+                data={"start": activity.start},
             )
         for sub_activity in activity.sub_activities:
             process_activity(sub_activity, parent=activity.uuid)
 
-    tree.create_node("Activities", "activities")
+    tree.create_node("Activities", "activities", data={"start": 0})
     for activity in activities:
         process_activity(activity, "activities")
 
-    return str(tree)
+    return tree.show(key=lambda n: n.data["start"], stdout=False)
 
 
 def json_format_test_info(test: TestRunInfo) -> str:
