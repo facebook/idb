@@ -311,6 +311,7 @@ class IdbClient:
         timeout: Optional[int] = None,
         poll_interval_sec: float = 0.5,
         report_activities: bool = False,
+        report_attachments: bool = False,
         activities_output_path: Optional[str] = None,
         coverage_output_path: Optional[str] = None,
     ) -> AsyncIterator[TestRunInfo]:

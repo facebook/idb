@@ -134,6 +134,11 @@ class CommonRunXcTestCommand(ClientCommand):
             help="idb will report activity data emitted by your test bundle",
         )
         parser.add_argument(
+            "--report-attachments",
+            action="store_true",
+            help="idb will report activity and attachment data emitted by your test bundle",
+        )
+        parser.add_argument(
             "--activities-output-path",
             help=(
                 "When activity data is reported, "
@@ -181,7 +186,8 @@ class CommonRunXcTestCommand(ClientCommand):
             env=get_env_with_idb_prefix(),
             args=arguments,
             result_bundle_path=args.result_bundle_path,
-            report_activities=args.report_activities,
+            report_activities=args.report_activities or args.report_attachments,
+            report_attachments=args.report_attachments,
             activities_output_path=args.activities_output_path,
             coverage_output_path=args.coverage_output_path,
         ):

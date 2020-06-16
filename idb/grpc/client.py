@@ -757,6 +757,7 @@ class IdbClient(IdbClientBase):
         timeout: Optional[int] = None,
         poll_interval_sec: float = TESTS_POLL_INTERVAL,
         report_activities: bool = False,
+        report_attachments: bool = False,
         activities_output_path: Optional[str] = None,
         coverage_output_path: Optional[str] = None,
     ) -> AsyncIterator[TestRunInfo]:
@@ -774,8 +775,11 @@ class IdbClient(IdbClientBase):
                 result_bundle_path=result_bundle_path,
                 timeout=timeout,
                 report_activities=(
-                    report_activities or activities_output_path is not None
+                    report_activities
+                    or activities_output_path is not None
+                    or report_attachments
                 ),
+                report_attachments=report_attachments,
                 collect_coverage=coverage_output_path is not None,
             )
             await stream.send_message(request)

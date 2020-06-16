@@ -456,6 +456,7 @@ class TestParser(TestCase):
         namespace.test_bundle_id = test_bundle_id
         namespace.result_bundle_path = None
         namespace.report_activities = False
+        namespace.report_attachments = False
         namespace.activities_output_path = None
         namespace.coverage_output_path = None
         namespace.install = False

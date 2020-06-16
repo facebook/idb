@@ -89,6 +89,7 @@ def make_request(
     result_bundle_path: Optional[str],
     timeout: Optional[int],
     report_activities: bool,
+    report_attachments: bool,
     collect_coverage: bool,
 ) -> XctestRunRequest:
     if is_logic_test:
@@ -112,6 +113,7 @@ def make_request(
         arguments=args,
         report_activities=report_activities,
         collect_coverage=collect_coverage,
+        report_attachments=report_attachments,
     )
 
 
@@ -157,7 +159,7 @@ def make_results(response: XctestRunResponse) -> List[TestRunInfo]:
 
 
 def translate_activity(
-    activity: XctestRunResponse.TestRunInfo.TestActivity
+    activity: XctestRunResponse.TestRunInfo.TestActivity,
 ) -> TestActivity:
     return TestActivity(
         title=activity.title,
