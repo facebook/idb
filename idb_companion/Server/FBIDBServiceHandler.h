@@ -28,7 +28,6 @@ public:
   // Constructors
   FBIDBServiceHandler(FBIDBCommandExecutor *commandExecutor, id<FBiOSTarget> target, id<FBEventReporter> eventReporter);
   FBIDBServiceHandler(const FBIDBServiceHandler &c);
-  void setPorts(FBIDBPortsConfiguration *configuration);
 
   // Handled Methods
   Status accessibility_info(ServerContext *context, const idb::AccessibilityInfoRequest *request, idb::AccessibilityInfoResponse *response);

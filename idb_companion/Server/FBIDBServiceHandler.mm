@@ -368,7 +368,7 @@ static idb::DebugServerResponse translate_debugserver_status(id<FBDebugServer> d
   return response;
 }
 
-static idb::TargetDescription description_of_target(id<FBiOSTarget> target, FBIDBPortsConfiguration *portsConfig)
+static idb::TargetDescription description_of_target(id<FBiOSTarget> target)
 {
   idb::TargetDescription description;
   description.set_udid(target.udid.UTF8String);
@@ -400,11 +400,6 @@ FBIDBServiceHandler::FBIDBServiceHandler(const FBIDBServiceHandler &c)
   _commandExecutor = c._commandExecutor;
   _target = c._target;
   _eventReporter = c._eventReporter;
-}
-
-void FBIDBServiceHandler::setPorts(FBIDBPortsConfiguration *configuration)
-{
-  portsConfig = configuration;
 }
 
 #pragma mark Handled Methods
@@ -1116,12 +1111,11 @@ Status FBIDBServiceHandler::connect(grpc::ServerContext *context, const idb::Con
   response->mutable_companion()->set_is_local(isLocal);
   response->mutable_companion()->set_udid(_target.udid.UTF8String);
   response->mutable_companion()->set_host(NSProcessInfo.processInfo.hostName.UTF8String);
-  response->mutable_companion()->set_grpc_port(portsConfig.grpcPort);
   return Status::OK;
 }}
 
 Status FBIDBServiceHandler::list_targets(grpc::ServerContext *context, const idb::ListTargetsRequest *request, idb::ListTargetsResponse *response)
 {@autoreleasepool{
-  response->add_targets()->MergeFrom(description_of_target(_target, portsConfig));
+  response->add_targets()->MergeFrom(description_of_target(_target));
   return Status::OK;
 }}

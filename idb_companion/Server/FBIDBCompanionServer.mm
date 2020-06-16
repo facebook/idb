@@ -99,7 +99,6 @@ using namespace std;
       .BuildAndStart()
     );
     self.ports.grpcPort = selectedPort;
-    service.setPorts(self.ports);
     [serverStarted resolveWithResult:@(selectedPort)];
     [self.logger.info logFormat:@"Started GRPC server on port %u", selectedPort];
     server->Wait();
