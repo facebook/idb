@@ -61,7 +61,6 @@ using namespace std;
 }
 
 
-
 - (instancetype)initWithPorts:(FBIDBPortsConfiguration *)ports target:(id<FBiOSTarget>)target commandExecutor:(FBIDBCommandExecutor *)commandExecutor eventReporter:(id<FBEventReporter>)eventReporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
@@ -82,10 +81,10 @@ using namespace std;
 
 #pragma mark FBIDBCompanionServer
 
-- (FBFuture<NSNumber *> *)start
+- (FBFuture<NSDictionary<NSString *, id> *> *)start
 {
   dispatch_queue_t queue = dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
-  FBMutableFuture<NSNumber *> *serverStarted = FBMutableFuture.future;
+  FBMutableFuture<NSDictionary<NSString *, id> *> *serverStarted = FBMutableFuture.future;
   dispatch_async(queue, ^(void){
     [self.logger logFormat:@"Starting GRPC server on port %u", self.ports.grpcPort];
     string server_address("0.0.0.0:" + std::to_string(self.ports.grpcPort));
@@ -98,8 +97,7 @@ using namespace std;
       .SetMaxReceiveMessageSize(16777216) // 16MB (16 * 1024 * 1024). Default is 4MB (4 * 1024 * 1024)
       .BuildAndStart()
     );
-    self.ports.grpcPort = selectedPort;
-    [serverStarted resolveWithResult:@(selectedPort)];
+    [serverStarted resolveWithResult:@{@"grpc_port": @(selectedPort)}];
     [self.logger.info logFormat:@"Started GRPC server on port %u", selectedPort];
     server->Wait();
     [self.logger.info logFormat:@"GRPC server is no longer running on port %u", selectedPort];

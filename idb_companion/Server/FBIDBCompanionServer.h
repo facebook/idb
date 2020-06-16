@@ -23,13 +23,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBIDBCompanionServer : NSObject
 
-/**
- Starts the server.
- */
-- (FBFuture<NSNumber *> *)start;
-
-- (FBFuture<NSNull *> *)completed;
-
 #pragma mark Initializers
 
 /**
@@ -44,6 +37,22 @@ NS_ASSUME_NONNULL_BEGIN
  @return a server on success, nil otherwise.
  */
 + (nullable instancetype)companionForTarget:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports eventReporter:(id<FBEventReporter>)eventReporter logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
+
+#pragma mark Methods
+
+/**
+ Starts the server.
+
+ @return a Future that resolves with a dictionary describing the bound server.
+ */
+- (FBFuture<NSDictionary<NSString *, id> *> *)start;
+
+#pragma mark Properties
+
+/**
+ Resolves when the server has stopped serving.
+ */
+@property (nonatomic, strong, readonly) FBFuture<NSNull *> *completed;
 
 @end
 

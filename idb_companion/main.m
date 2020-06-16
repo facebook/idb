@@ -322,8 +322,8 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
       }
       return [[server
         start]
-        onQueue:target.workQueue map:^ FBFuture * (NSNumber *port) {
-          WriteJSONToStdOut(@{@"grpc_port": port});
+        onQueue:target.workQueue map:^ FBFuture * (NSDictionary<NSString *, id> *serverDescription) {
+          WriteJSONToStdOut(serverDescription);
           FBFuture<NSNull *> *completed = server.completed;
           if (terminateOffline) {
             [logger.info logFormat:@"Companion will terminate when target goes offline"];
