@@ -10,6 +10,7 @@
 @interface FBIDBXCTestReporter ()
 
 @property (nonatomic, assign, readwrite) grpc::ServerWriter<idb::XctestRunResponse> *writer;
+@property (nonatomic, assign, readonly) BOOL reportAttachments;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *reportingTerminatedMutable;
@@ -28,7 +29,7 @@
 
 #pragma mark Initializer
 
-- (instancetype)initWithResponseWriter:(grpc::ServerWriter<idb::XctestRunResponse> *)writer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithResponseWriter:(grpc::ServerWriter<idb::XctestRunResponse> *)writer reportAttachments:(BOOL)reportAttachments queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -36,6 +37,7 @@
   }
 
   _writer = writer;
+  _reportAttachments = reportAttachments;
   _queue = queue;
   _logger = logger;
   _currentActivityRecords = NSMutableArray.array;
@@ -222,12 +224,14 @@
   activityOut->set_start(activity.start.timeIntervalSince1970);
   activityOut->set_finish(activity.finish.timeIntervalSince1970);
   activityOut->set_name(activity.name.UTF8String ?: "");
-  for (FBAttachment *attachment in activity.attachments) {
-    idb::XctestRunResponse_TestRunInfo_TestAttachment *attachmentOut = activityOut->add_attachments();
-    attachmentOut->set_payload(attachment.payload.bytes, attachment.payload.length);
-    attachmentOut->set_name(attachment.name.UTF8String ?: "");
-    attachmentOut->set_timestamp(attachment.timestamp.timeIntervalSince1970);
-    attachmentOut->set_uniform_type_identifier(attachment.uniformTypeIdentifier.UTF8String ?: "");
+  if (self.reportAttachments) {
+    for (FBAttachment *attachment in activity.attachments) {
+      idb::XctestRunResponse_TestRunInfo_TestAttachment *attachmentOut = activityOut->add_attachments();
+      attachmentOut->set_payload(attachment.payload.bytes, attachment.payload.length);
+      attachmentOut->set_name(attachment.name.UTF8String ?: "");
+      attachmentOut->set_timestamp(attachment.timestamp.timeIntervalSince1970);
+      attachmentOut->set_uniform_type_identifier(attachment.uniformTypeIdentifier.UTF8String ?: "");
+    }
   }
   for (FBActivityRecord *subActitvity in activity.subactivities) {
     idb::XctestRunResponse_TestRunInfo_TestActivity *subactivityOut = activityOut->add_sub_activities();

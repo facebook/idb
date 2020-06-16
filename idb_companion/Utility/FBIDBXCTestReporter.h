@@ -29,9 +29,10 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param writer the response writer to use.
  @param queue the queue to serialize work on.
+ @param reportAttachments whether to return activity attachments
  @param logger the logger to log to.
  */
-- (instancetype)initWithResponseWriter:(grpc::ServerWriter<idb::XctestRunResponse> *)writer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithResponseWriter:(grpc::ServerWriter<idb::XctestRunResponse> *)writer reportAttachments:(BOOL)reportAttachments queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Properties
 

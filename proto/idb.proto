@@ -332,6 +332,7 @@ message XctestRunRequest {
   uint64 timeout = 7;
   bool report_activities = 8;
   bool collect_coverage = 9;
+  bool report_attachments = 10;
 }
 
 message XctestRunResponse {
