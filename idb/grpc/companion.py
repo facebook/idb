@@ -5,20 +5,10 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from logging import Logger
-from typing import List, NamedTuple, Optional, Sequence
+from typing import List, Sequence
 
 from idb.common.types import CompanionInfo, TargetDescription
-from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import CompanionInfo as GrpcCompanionInfo
-
-
-class CompanionClient(NamedTuple):
-    stub: CompanionServiceStub
-    is_local: bool
-    udid: Optional[str]
-    logger: Logger
-    is_companion_available: bool = False
 
 
 def companion_to_grpc(companion: CompanionInfo) -> GrpcCompanionInfo:
