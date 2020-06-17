@@ -95,14 +95,23 @@ using namespace std;
       [self.logger logFormat:@"Starting GRPC server on port %u", self.ports.grpcPort];
     }
     FBIDBServiceHandler service = FBIDBServiceHandler(self.commandExecutor, self.target, self.eventReporter);
-    int selectedPort = self.ports.grpcPort;
+    int selectedPort = 0;
     unique_ptr<Server> server(ServerBuilder()
       .AddListeningPort(server_address, grpc::InsecureServerCredentials(), &selectedPort)
       .RegisterService(&service)
       .SetResourceQuota(ResourceQuota("idb_resource.quota").SetMaxThreads(10))
       .SetMaxReceiveMessageSize(16777216) // 16MB (16 * 1024 * 1024). Default is 4MB (4 * 1024 * 1024)
+      .AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0)
       .BuildAndStart()
     );
+    // AddListeningPort will either set this to 0 or not modify it.
+    // For 0 TCP input that binds: The selectedPort is whatever port that the server has bound on
+    // For PORT TCP input that binds: The selectedPort is PORT.
+    // For a Unix Domain Socket: The selectedPort is 1.
+    if (selectedPort == 0) {
+      [serverStarted resolveWithError:[[FBIDBError describeFormat:@"Failed to start GRPC Server"] build]];
+      return;
+    }
     if (domainSocket) {
       [self.logger.info logFormat:@"Started GRPC server at path %@", domainSocket];
       [serverStarted resolveWithResult:@{@"grpc_path": domainSocket}];
