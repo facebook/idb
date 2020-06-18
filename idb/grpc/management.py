@@ -26,7 +26,6 @@ from idb.common.types import (
 )
 from idb.grpc.client import IdbClient
 from idb.grpc.companion import merge_connected_targets
-from idb.grpc.destination import destination_to_grpc
 from idb.grpc.idb_pb2 import ConnectRequest
 from idb.utils.contextlib import asynccontextmanager
 
@@ -163,11 +162,7 @@ class IdbManagementClient(IdbManagementClientBase):
             ) as client:
                 with tempfile.NamedTemporaryFile(mode="w+b") as f:
                     response = await client.stub.connect(
-                        ConnectRequest(
-                            destination=destination_to_grpc(destination),
-                            metadata=metadata,
-                            local_file_path=f.name,
-                        )
+                        ConnectRequest(metadata=metadata, local_file_path=f.name)
                     )
             companion = CompanionInfo(
                 udid=response.companion.udid,

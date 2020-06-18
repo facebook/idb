@@ -433,30 +433,21 @@ message LsResponse {
   repeated FileInfo files = 1;
 }
 
-message ConnectionAddress {
-  string host = 1;
-  uint64 port = 2;
-  uint64 grpc_port = 3;
+message ConnectRequest {
+  map<string, string> metadata = 1;
+  // ConnectionDestination destination = 2; deprecated
+  string local_file_path = 4;
 }
 
-message ConnectionDestination {
-  oneof destination {
-    ConnectionAddress address = 1;
-    string target_udid = 2;
-  }
+message ConnectResponse {
+   CompanionInfo companion = 1;
 }
 
 message DisconnectRequest {
-  ConnectionDestination destination = 1;
+  // ConnectionDestination destination = 1; deprecated
 }
 
 message DisconnectResponse {
-}
-
-message ConnectRequest {
-  map<string, string> metadata = 1;
-  ConnectionDestination destination = 2;
-  string local_file_path = 4;
 }
 
 message CompanionInfo {
@@ -485,9 +476,6 @@ message TargetDescription {
   // CompanionInfo companion_info = 8; deprecated
 }
 
-message ConnectResponse {
-   CompanionInfo companion = 1;
-}
 
 message ListTargetsRequest {
 }
