@@ -6,6 +6,7 @@
 
 import asyncio
 import importlib
+import os
 from argparse import ArgumentParser
 from logging import Logger
 from types import ModuleType
@@ -32,6 +33,7 @@ PLUGINS: List[ModuleType] = [
     ]
     if package is not None
 ]
+_META_ENVIRON_PREFIX = "IDB_META_"
 
 
 def on_launch(logger: Logger) -> None:
@@ -96,7 +98,11 @@ def on_connecting_parser(parser: ArgumentParser, logger: Logger) -> None:
 
 
 def resolve_metadata(logger: Logger) -> LoggingMetadata:
-    metadata = {}
+    metadata: LoggingMetadata = {
+        key[len(_META_ENVIRON_PREFIX) :]: value
+        for (key, value) in os.environ.items()
+        if key.startswith(_META_ENVIRON_PREFIX)
+    }
     for plugin in PLUGINS:
         plugin_resolver = getattr(plugin, "resolve_metadata", None)
         if not plugin_resolver:
