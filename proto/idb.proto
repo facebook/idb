@@ -30,7 +30,6 @@ service CompanionService {
   rpc instruments_run (stream InstrumentsRunRequest) returns (stream InstrumentsRunResponse) {}
   rpc launch (stream LaunchRequest) returns (stream LaunchResponse) {}
   rpc list_apps (ListAppsRequest) returns (ListAppsResponse) {}
-  rpc list_targets (ListTargetsRequest) returns (ListTargetsResponse) {}
   rpc log (LogRequest) returns (stream LogResponse) {}
   rpc ls (LsRequest) returns (LsResponse) {}
   rpc mkdir (MkdirRequest) returns (MkdirResponse) {}
@@ -474,14 +473,6 @@ message TargetDescription {
   string os_version = 6;
   string architecture = 7;
   // CompanionInfo companion_info = 8; deprecated
-}
-
-
-message ListTargetsRequest {
-}
-
-message ListTargetsResponse {
-  repeated TargetDescription targets = 1;
 }
 
 message BootRequest{

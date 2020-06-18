@@ -49,7 +49,6 @@ public:
   Status instruments_run(ServerContext *context,grpc::ServerReaderWriter<idb::InstrumentsRunResponse, idb::InstrumentsRunRequest> *stream);
   Status launch(ServerContext *context,grpc::ServerReaderWriter<idb::LaunchResponse, idb::LaunchRequest> *stream);
   Status list_apps(ServerContext *context, const idb::ListAppsRequest *request, idb::ListAppsResponse *response);
-  Status list_targets(ServerContext *context, const idb::ListTargetsRequest *request, idb::ListTargetsResponse *response);
   Status log(ServerContext *context, const idb::LogRequest *request, grpc::ServerWriter<idb::LogResponse> *response);
   Status ls(ServerContext *context, const idb::LsRequest *request, idb::LsResponse *response);
   Status mkdir(ServerContext *context, const idb::MkdirRequest *request, idb::MkdirResponse *response);

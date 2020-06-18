@@ -1113,9 +1113,3 @@ Status FBIDBServiceHandler::connect(grpc::ServerContext *context, const idb::Con
   response->mutable_companion()->set_host(NSProcessInfo.processInfo.hostName.UTF8String);
   return Status::OK;
 }}
-
-Status FBIDBServiceHandler::list_targets(grpc::ServerContext *context, const idb::ListTargetsRequest *request, idb::ListTargetsResponse *response)
-{@autoreleasepool{
-  response->add_targets()->MergeFrom(description_of_target(_target));
-  return Status::OK;
-}}
