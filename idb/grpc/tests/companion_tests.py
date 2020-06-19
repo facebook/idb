@@ -6,7 +6,7 @@
 
 from unittest import TestCase
 
-from idb.common.types import CompanionInfo, TargetDescription
+from idb.common.types import Address, CompanionInfo, TargetDescription
 from idb.grpc.companion import merge_connected_targets
 
 
@@ -54,7 +54,9 @@ class CompanionTests(TestCase):
                     os_version=None,
                     architecture=None,
                     companion_info=CompanionInfo(
-                        udid="a", host="remotehost", port=1, is_local=False
+                        udid="a",
+                        address=Address(host="remotehost", port=1),
+                        is_local=False,
                     ),
                     screen_dimensions=None,
                 ),
@@ -66,7 +68,9 @@ class CompanionTests(TestCase):
                     os_version=None,
                     architecture=None,
                     companion_info=CompanionInfo(
-                        udid="d", host="remotehost", port=2, is_local=False
+                        udid="d",
+                        address=Address(host="remotehost", port=2),
+                        is_local=False,
                     ),
                     screen_dimensions=None,
                 ),
@@ -83,7 +87,9 @@ class CompanionTests(TestCase):
                     os_version=None,
                     architecture=None,
                     companion_info=CompanionInfo(
-                        udid="a", host="remotehost", port=1, is_local=False
+                        udid="a",
+                        address=Address(host="remotehost", port=1),
+                        is_local=False,
                     ),
                     screen_dimensions=None,
                 ),
@@ -115,7 +121,9 @@ class CompanionTests(TestCase):
                     os_version=None,
                     architecture=None,
                     companion_info=CompanionInfo(
-                        udid="d", host="remotehost", port=2, is_local=False
+                        udid="d",
+                        address=Address(host="remotehost", port=2),
+                        is_local=False,
                     ),
                     screen_dimensions=None,
                 ),

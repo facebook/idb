@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from idb.common.types import (
+    Address,
     AppProcessState,
     CompanionInfo,
     InstalledAppInfo,
@@ -174,7 +175,7 @@ def human_format_target_info(target: TargetDescription) -> str:
         f" | {target.target_type} | {target.os_version} | {target.architecture}"
     )
     target_info += (
-        f" | {target.companion_info.host}:{target.companion_info.port}"
+        f" | {target.companion_info.address.host}:{target.companion_info.address.port}"
         if target.companion_info
         else f" | No Companion Connected"
     )
@@ -191,8 +192,8 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
         "architecture": target.architecture,
     }
     if target.companion_info:
-        data["host"] = target.companion_info.host
-        data["port"] = target.companion_info.port
+        data["host"] = target.companion_info.address.host
+        data["port"] = target.companion_info.address.port
         data["is_local"] = target.companion_info.is_local
     if target.device is not None:
         data["device"] = target.device
@@ -204,9 +205,9 @@ def json_data_companions(companions: List[CompanionInfo]) -> List[Dict[str, Any]
     for companion in companions:
         data.append(
             {
-                "host": companion.host,
+                "host": companion.address.host,
                 "udid": companion.udid,
-                "port": companion.port,
+                "port": companion.address.port,
                 "is_local": companion.is_local,
             }
         )
@@ -219,8 +220,7 @@ def json_to_companion_info(data: List[Dict[str, Any]]) -> List[CompanionInfo]:
         companion_list.append(
             CompanionInfo(
                 udid=item["udid"],
-                host=item["host"],
-                port=item["port"],
+                address=Address(host=item["host"], port=item["port"]),
                 is_local=item["is_local"],
             )
         )

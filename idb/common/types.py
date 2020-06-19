@@ -91,17 +91,8 @@ ConnectionDestination = Union[str, Address]
 @dataclass(frozen=True)
 class CompanionInfo:
     udid: str
-    host: str
-    port: int
     is_local: bool
-
-    def __eq__(self, other) -> bool:  # pyre-ignore
-        return (
-            self.udid == other.udid
-            and self.host == other.host
-            and self.port == other.port
-            and self.is_local == other.is_local
-        )
+    address: Address
 
 
 @dataclass(frozen=True)

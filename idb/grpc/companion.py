@@ -7,15 +7,15 @@
 
 from typing import List, Sequence
 
-from idb.common.types import CompanionInfo, TargetDescription
+from idb.common.types import Address, CompanionInfo, TargetDescription
 from idb.grpc.idb_pb2 import CompanionInfo as GrpcCompanionInfo
 
 
 def companion_to_grpc(companion: CompanionInfo) -> GrpcCompanionInfo:
     return GrpcCompanionInfo(
         udid=companion.udid,
-        host=companion.host,
-        grpc_port=companion.port,
+        host=companion.address.host,
+        grpc_port=companion.address.port,
         is_local=companion.is_local,
     )
 
@@ -23,8 +23,7 @@ def companion_to_grpc(companion: CompanionInfo) -> GrpcCompanionInfo:
 def companion_to_py(companion: GrpcCompanionInfo) -> CompanionInfo:
     return CompanionInfo(
         udid=companion.udid,
-        host=companion.host,
-        port=companion.grpc_port,
+        address=Address(host=companion.host, port=companion.grpc_port),
         is_local=companion.is_local,
     )
 

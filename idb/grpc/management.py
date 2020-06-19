@@ -71,7 +71,9 @@ class IdbManagementClient(IdbManagementClientBase):
                 self.logger.info(f"spawned a companion for {target_udid}")
                 host = "localhost"
                 companion_info = CompanionInfo(
-                    host=host, port=port, udid=target_udid, is_local=True
+                    address=Address(host=host, port=port),
+                    udid=target_udid,
+                    is_local=True,
                 )
                 await self.direct_companion_manager.add_companion(companion_info)
                 return companion_info
@@ -82,8 +84,8 @@ class IdbManagementClient(IdbManagementClientBase):
     ) -> Optional[TargetDescription]:
         try:
             async with IdbClient.build(
-                host=companion.host,
-                port=companion.port,
+                host=companion.address.host,
+                port=companion.address.port,
                 is_local=False,
                 logger=self.logger,
             ) as client:
@@ -95,9 +97,7 @@ class IdbManagementClient(IdbManagementClientBase):
                 )
                 return None
             self.logger.warning(f"Failed to describe {companion}, removing it")
-            await self.direct_companion_manager.remove_companion(
-                Address(host=companion.host, port=companion.port)
-            )
+            await self.direct_companion_manager.remove_companion(companion.address)
             return None
 
     @asynccontextmanager
@@ -115,8 +115,8 @@ class IdbManagementClient(IdbManagementClientBase):
             if companion_info is None:
                 raise e
         async with IdbClient.build(
-            host=companion_info.host,
-            port=companion_info.port,
+            host=companion_info.address.host,
+            port=companion_info.address.port,
             is_local=companion_info.is_local,
             logger=self.logger,
         ) as client:
@@ -165,8 +165,7 @@ class IdbManagementClient(IdbManagementClientBase):
                     )
             companion = CompanionInfo(
                 udid=response.companion.udid,
-                host=destination.host,
-                port=destination.port,
+                address=Address(host=destination.host, port=destination.port),
                 is_local=response.companion.is_local,
             )
             self.logger.debug(f"Connected directly to {companion}")

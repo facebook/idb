@@ -364,10 +364,7 @@ class IdbClient(IdbClientBase):
         return target_to_py(
             target=target,
             companion=CompanionInfo(
-                host=self.address.host,
-                port=self.address.port,
-                udid=target.udid,
-                is_local=self.is_local,
+                address=self.address, udid=target.udid, is_local=self.is_local
             ),
         )
 

@@ -154,8 +154,8 @@ class DirectCompanionManager:
                 to_remove = [
                     companion
                     for companion in companions
-                    if companion.host == destination.host
-                    and companion.port == destination.port
+                    if companion.address.host == destination.host
+                    and companion.address.port == destination.port
                 ]
             for companion in to_remove:
                 companions.remove(companion)
