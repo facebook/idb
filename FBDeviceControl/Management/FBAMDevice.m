@@ -103,6 +103,11 @@
   return self.allValues[@"BuildVersion"];
 }
 
+- (NSString *)productVersion
+{
+  return self.allValues[@"ProductVersion"];
+}
+
 - (NSString *)name
 {
   return self.allValues[@"DeviceName"];
@@ -115,7 +120,7 @@
 
 - (FBOSVersion *)osVersion
 {
-  NSString *osVersion = [FBAMDevice osVersionForDeviceClass:self.allValues[@"DeviceClass"] productVersion:self.allValues[@"ProductVersion"]];
+  NSString *osVersion = [FBAMDevice osVersionForDeviceClass:self.allValues[@"DeviceClass"] productVersion:self.productVersion];
   return FBiOSTargetConfiguration.nameToOSVersion[osVersion] ?: [FBOSVersion genericWithName:osVersion];
 }
 
