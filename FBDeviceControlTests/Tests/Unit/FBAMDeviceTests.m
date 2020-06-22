@@ -81,6 +81,18 @@ static int ConnectionClose(AFCConnectionRef connection)
   return 0;
 }
 
+static int IsPaired(AMDeviceRef device)
+{
+  [FBAMDeviceTests.events addObject:@"is_paired"];
+  return YES;
+}
+
+static int ValidatePairing(AMDeviceRef device)
+{
+  [FBAMDeviceTests.events addObject:@"validate_pairing"];
+  return 0;
+}
+
 @implementation FBAMDeviceTests
 
 @synthesize device = _device;
@@ -115,6 +127,8 @@ static NSMutableArray<NSString *> *sEvents;
     .StartSession = StartSession,
     .StopSession = StopSession,
     .CopyValue = CopyValue,
+    .IsPaired = IsPaired,
+    .ValidatePairing = ValidatePairing,
     .SecureStartService = SecureStartService,
     .CreateHouseArrestService = CreateHouseArrestService,
     .ServiceConnectionInvalidate = ServiceConnectionInvalidate,
@@ -164,6 +178,8 @@ static NSMutableArray<NSString *> *sEvents;
   NSArray<NSString *> *actual = [FBAMDeviceTests.events copy];
   NSArray<NSString *> *expected = @[
     @"connect",
+    @"is_paired",
+    @"validate_pairing",
     @"start_session",
     @"stop_session",
     @"disconnect",
@@ -186,6 +202,8 @@ static NSMutableArray<NSString *> *sEvents;
   NSArray<NSString *> *actual = [FBAMDeviceTests.events copy];
   NSArray<NSString *> *expected = @[
     @"connect",
+    @"is_paired",
+    @"validate_pairing",
     @"start_session",
     @"stop_session",
     @"disconnect",
@@ -234,6 +252,8 @@ static NSMutableArray<NSString *> *sEvents;
   NSArray<NSString *> *actual = [FBAMDeviceTests.events copy];
   NSArray<NSString *> *expected = @[
     @"connect",
+    @"is_paired",
+    @"validate_pairing",
     @"start_session",
     @"create_house_arrest_service",
   ];
@@ -243,6 +263,8 @@ static NSMutableArray<NSString *> *sEvents;
   actual = [FBAMDeviceTests.events copy];
   expected = @[
     @"connect",
+    @"is_paired",
+    @"validate_pairing",
     @"start_session",
     @"create_house_arrest_service",
     @"connection_close",
@@ -290,6 +312,8 @@ static NSMutableArray<NSString *> *sEvents;
   NSArray<NSString *> *actual = [FBAMDeviceTests.events copy];
   NSArray<NSString *> *expected = @[
     @"connect",
+    @"is_paired",
+    @"validate_pairing",
     @"start_session",
     @"stop_session",
     @"disconnect",

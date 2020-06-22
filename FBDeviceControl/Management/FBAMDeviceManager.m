@@ -29,7 +29,6 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   switch (notificationType) {
     case AMDeviceNotificationTypeConnected: {
       NSError *error = nil;
-      (void)error;
       if (![FBAMDeviceManager startUsing:device calls:calls logger:logger error:&error]) {
         [logger.error logFormat:@"Cannot start session with device, ignoring device %@", error];
         return;
@@ -40,6 +39,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
         [logger.error log:@"Ignoring device as no values were returned for it"];
         return;
       }
+      [logger logFormat:@"Obtained Device Values %@", info];
       [manager deviceConnected:device identifier:identifier info:info];
       return;
     }
@@ -86,16 +86,32 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
       failBool:error];
   }
 
-  [logger logFormat:@"Connecting to AMDevice %@", device];
+  [logger logFormat:@"Connecting to %@", device];
   int status = calls.Connect(device);
   if (status != 0) {
     NSString *errorDescription = CFBridgingRelease(calls.CopyErrorText(status));
     return [[FBDeviceControlError
-      describeFormat:@"Failed to connect to device %@. (%@)", device, errorDescription]
+      describeFormat:@"Failed to connect to %@. (%@)", device, errorDescription]
       failBool:error];
   }
 
-  [logger logFormat:@"Starting Session on AMDevice %@", device];
+  [logger logFormat:@"Checking whether %@ is paired", device];
+  if (!calls.IsPaired(device)) {
+    return [[FBDeviceControlError
+      describeFormat:@"%@ is not paired with this host", device]
+      failBool:error];
+  }
+
+  [logger logFormat:@"Validating Pairing to %@", device];
+  status = calls.ValidatePairing(device);
+  if (status != 0) {
+    NSString *errorDescription = CFBridgingRelease(calls.CopyErrorText(status));
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to validate pairing for %@. (%@)", device, errorDescription]
+      failBool:error];
+  }
+
+  [logger logFormat:@"Starting Session on %@", device];
   status = calls.StartSession(device);
   if (status != 0) {
     calls.Disconnect(device);
@@ -105,19 +121,19 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
       failBool:error];
   }
 
-  [logger logFormat:@"Device %@ ready for use", device];
+  [logger logFormat:@"%@ ready for use", device];
   return YES;
 }
 
 + (BOOL)stopUsing:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  [logger logFormat:@"Stopping Session on AMDevice %@", device];
+  [logger logFormat:@"Stopping Session on %@", device];
   calls.StopSession(device);
 
-  [logger logFormat:@"Disconnecting from AMDevice %@", device];
+  [logger logFormat:@"Disconnecting from %@", device];
   calls.Disconnect(device);
 
-  [logger logFormat:@"Disconnected from AMDevice %@", device];
+  [logger logFormat:@"Disconnected from %@", device];
 
   return YES;
 }
