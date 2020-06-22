@@ -39,6 +39,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
   }
 
   _simulator = simulator;
+
   return self;
 }
 
@@ -51,13 +52,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
   return [[FBLocalizationDefaultsModificationStrategy
     strategyWithSimulator:self.simulator]
     overrideLocalization:localizationOverride];
-}
-
-- (FBFuture<NSNull *> *)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs
-{
-  return [[FBLocationServicesModificationStrategy
-    strategyWithSimulator:self.simulator]
-    approveLocationServicesForBundleIDs:bundleIDs];
 }
 
 - (FBFuture<NSNull *> *)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout
@@ -183,6 +177,13 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
 
 #pragma mark Private
 
+- (FBFuture<NSNull *> *)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs
+{
+  return [[FBLocationServicesModificationStrategy
+    strategyWithSimulator:self.simulator]
+    approveLocationServicesForBundleIDs:bundleIDs];
+}
+
 - (FBFuture<NSNull *> *)modifyTCCDatabaseWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services
 {
   NSString *databasePath = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/TCC/TCC.db"];
@@ -206,8 +207,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
     }]
     mapReplace:NSNull.null];
 }
-
-#pragma mark Private
 
 + (NSDictionary<FBSettingsApprovalService, NSString *> *)tccDatabaseMapping
 {
