@@ -49,6 +49,7 @@ typedef enum : uint64_t {
 typedef NS_ENUM(int, AMDeviceNotificationType) {
   AMDeviceNotificationTypeConnected = 1,
   AMDeviceNotificationTypeDisconnected = 2,
+  AMDeviceNotificationTypeUnsubscribed = 3,
 };
 
 typedef NS_ENUM(int, AMRestorableDeviceNotificationType) {

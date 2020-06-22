@@ -46,8 +46,11 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
     case AMDeviceNotificationTypeDisconnected:
       [manager deviceDisconnected:device identifier:identifier];
       return;
+    case AMDeviceNotificationTypeUnsubscribed:
+      [logger logFormat:@"Unsubscribed from AMDeviceNotificationSubscribe"];
+      return;
     default:
-      [manager.logger logFormat:@"Got Unknown status %d from self.calls.ListenerCallback", notificationType];
+      [manager.logger logFormat:@"Got Unknown status %d from AMDeviceNotificationSubscribe", notificationType];
       return;
   }
 }
