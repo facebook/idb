@@ -22,7 +22,6 @@
 #import "FBAMDeviceManager.h"
 #import "FBAMDevice.h"
 #import "FBAMDevice+Private.h"
-#import "FBDeviceInflationStrategy.h"
 
 @implementation FBDeviceSet
 
@@ -59,8 +58,9 @@
   }
 
   _delegate = delegate;
-  _logger = logger;
+  _logger = [logger withName:@"device_set"];
   _allDevices = @[];
+
   [self recalculateAllDevices];
   [self subscribeToDeviceNotifications];
 
@@ -111,11 +111,6 @@
 
 #pragma mark Private
 
-- (FBDeviceInflationStrategy *)inflationStrategy
-{
-  return [FBDeviceInflationStrategy strategyForSet:self];
-}
-
 - (void)subscribeToDeviceNotifications
 {
   FBAMDeviceManager.sharedManager.delegate = self;
@@ -128,9 +123,52 @@
 
 - (void)recalculateAllDevices
 {
-  _allDevices = [[self.inflationStrategy
-    inflateFromDevices:FBAMDevice.allDevices existingDevices:_allDevices]
+  _allDevices = [[FBDeviceSet
+    inflateFromDevices:FBAMDevice.allDevices existingDevices:_allDevices deviceSet:self]
     sortedArrayUsingSelector:@selector(compare:)];
+}
+
++ (NSArray<FBDevice *> *)inflateFromDevices:(NSArray<FBAMDevice *> *)amDevices existingDevices:(NSArray<FBDevice *> *)devices deviceSet:(FBDeviceSet *)deviceSet
+{
+  // Inflate new Devices that have come along since last time this method was called.
+  NSSet<NSString *> *existingDeviceUDIDs = [NSSet setWithArray:[devices valueForKeyPath:@"udid"]];
+  NSDictionary<NSString *, FBAMDevice *> *availableDevices = [NSDictionary
+    dictionaryWithObjects:amDevices
+    forKeys:[amDevices valueForKeyPath:@"udid"]];
+
+  // Calculate the new Devices that are available.
+  NSMutableSet<NSString *> *devicesToInflate = [NSMutableSet setWithArray:availableDevices.allKeys];
+  [devicesToInflate minusSet:existingDeviceUDIDs];
+
+  // Calculate the Devices that are now gone.
+  NSMutableSet<NSString *> *devicesToCull = [existingDeviceUDIDs mutableCopy];
+  [devicesToCull minusSet:[NSSet setWithArray:availableDevices.allKeys]];
+
+  // The hottest path, so return early to avoid doing any other work.
+  if (devicesToInflate.count == 0 && devicesToCull == 0) {
+    return devices;
+  }
+
+  // Cull Simulators
+  id<FBControlCoreLogger> logger = deviceSet.logger;
+  if (devicesToCull.count > 0) {
+    [logger logFormat:@"Removing %@ from Device Set", [FBCollectionInformation oneLineDescriptionFromArray:devicesToCull.allObjects]];
+    NSPredicate *predicate = [NSCompoundPredicate notPredicateWithSubpredicate:[FBiOSTargetPredicates udids:devicesToCull.allObjects]];
+    devices = [devices filteredArrayUsingPredicate:predicate];
+  }
+
+  if (devicesToInflate.count > 0) {
+    [logger logFormat:@"Adding %@ to Device Set", [FBCollectionInformation oneLineDescriptionFromArray:devicesToInflate.allObjects]];
+    NSMutableArray<FBDevice *> *inflatedDevices = [NSMutableArray array];
+    for (NSString *udid in devicesToInflate) {
+      FBAMDevice *amDevice = availableDevices[udid];
+      FBDevice *device = [[FBDevice alloc] initWithSet:deviceSet amDevice:amDevice logger:[logger withName:udid]];
+      [inflatedDevices addObject:device];
+    }
+    devices = [devices arrayByAddingObjectsFromArray:inflatedDevices];
+  }
+
+  return devices;
 }
 
 #pragma mark FBiOSTargetSetDelegate Implementation
