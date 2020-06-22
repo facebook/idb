@@ -82,10 +82,10 @@
 {
   [self.logger logFormat:@"Device Connected %@", privateDevice];
 
-  // Make sure that we pull from all known FBAMDevice instances.
+  // Make sure that we pull from all known instances created by this class.
   // We do this instead of the attached ones.
-  // The reason for doing so is that consumers of FBAMDevice/FBDevice instances may be holding onto a reference to a device that's been re-connected.
-  // Pulling from the map of referenced devices means that we re-use these referenced devices if they are present.
+  // The reason for doing so is that consumers of these instances may be holding onto a reference to a device that's been re-connected.
+  // Pulling from the map of referenced devices means that we re-use these referenced devices if they are present and the underlying reference is replaced.
   // If the device is no-longer referenced it will have been removed from the referencedDevices mapping as it's values are weakly-held.
   id device = [self.referencedDevices objectForKey:identifier];
   id attachedDevice = self.attachedDevices[identifier];
@@ -94,15 +94,17 @@
     NSAssert(attachedDevice == nil || device == attachedDevice, @"Known referenced device %@ does not match the attached one %@!", device, attachedDevice);
   } else {
     device = [self constructPublic:privateDevice identifier:identifier info:info];
-    [self.logger.info logFormat:@"Created a new FBAMDevice instance %@", device];
+    [self.logger.info logFormat:@"Created a new Device instance %@", device];
     NSAssert(attachedDevice == nil, @"An device is in the attached but it is not in the weak set! Attached device %@", attachedDevice);
   }
+
+  // See whether the Private API reference represents a replacement of something we already know bout.
   PrivateDevice oldPrivateDevice = [self.class extractPrivateReference:device];
   if (oldPrivateDevice == NULL) {
-    [self.logger logFormat:@"New AMDeviceRef '%@' appeared for the first time", device];
+    [self.logger logFormat:@"New '%@' appeared for the first time", privateDevice];
     [self.class updatePublicReference:device privateDevice:privateDevice identifier:identifier info:info];
   } else if (privateDevice != oldPrivateDevice) {
-    [self.logger logFormat:@"New AMDeviceRef '%@' replaces Old Device '%@'", device, oldPrivateDevice];
+    [self.logger logFormat:@"New '%@' replaces Old Device '%@'", privateDevice, oldPrivateDevice];
     [self.class updatePublicReference:device privateDevice:privateDevice identifier:identifier info:info];
   } else {
     [self.logger logFormat:@"Existing Device %@ is the same as the old", privateDevice];
