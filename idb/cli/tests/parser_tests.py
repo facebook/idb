@@ -151,7 +151,7 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["--companion", "thehost:123", "list-apps"])
         self.direct_client_mock.list_apps.assert_called_once()
         self.direct_client_mock.build.assert_called_once_with(
-            host="thehost", port=123, is_local=False, logger=ANY
+            address=Address(host="thehost", port=123), is_local=False, logger=ANY
         )
 
     async def test_connect_with_host_and_port(self) -> None:

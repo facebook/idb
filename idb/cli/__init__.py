@@ -25,9 +25,9 @@ from idb.grpc.management import IdbManagementClient as IdbManagementClientGrpc
 from idb.utils.contextlib import asynccontextmanager
 
 
-def _parse_companion_info(value: str) -> Tuple[str, int]:
+def _parse_address(value: str) -> Address:
     (host, port) = value.rsplit(":", 1)
-    return (host, int(port))
+    return Address(host=host, port=int(port))
 
 
 def _get_management_client(
@@ -46,9 +46,10 @@ async def _get_client(
 ) -> AsyncContextManager[IdbClientGrpc]:
     companion = vars(args).get("companion")
     if companion is not None:
-        (host, port) = _parse_companion_info(companion)
         async with IdbClientGrpc.build(
-            host=host, port=port, is_local=args.companion_local, logger=logger
+            address=_parse_address(companion),
+            is_local=args.companion_local,
+            logger=logger,
         ) as client:
             yield client
     else:

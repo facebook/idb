@@ -197,13 +197,15 @@ class IdbClient(IdbClientBase):
     @classmethod
     @asynccontextmanager
     async def build(
-        cls, host: str, port: int, is_local: bool, logger: logging.Logger
+        cls, address: Address, is_local: bool, logger: logging.Logger
     ) -> AsyncContextManager["IdbClient"]:
-        channel = Channel(host=host, port=port, loop=asyncio.get_event_loop())
+        channel = Channel(
+            host=address.host, port=address.port, loop=asyncio.get_event_loop()
+        )
         try:
             yield IdbClient(
                 stub=CompanionServiceStub(channel=channel),
-                address=Address(host=host, port=port),
+                address=address,
                 is_local=is_local,
                 logger=logger,
             )

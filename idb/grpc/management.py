@@ -84,10 +84,7 @@ class IdbManagementClient(IdbManagementClientBase):
     ) -> Optional[TargetDescription]:
         try:
             async with IdbClient.build(
-                host=companion.address.host,
-                port=companion.address.port,
-                is_local=False,
-                logger=self.logger,
+                address=companion.address, is_local=False, logger=self.logger
             ) as client:
                 return await client.describe()
         except Exception:
@@ -115,8 +112,7 @@ class IdbManagementClient(IdbManagementClientBase):
             if companion_info is None:
                 raise e
         async with IdbClient.build(
-            host=companion_info.address.host,
-            port=companion_info.address.port,
+            address=companion_info.address,
             is_local=companion_info.is_local,
             logger=self.logger,
         ) as client:
@@ -154,18 +150,15 @@ class IdbManagementClient(IdbManagementClientBase):
         self.logger.debug(f"Connecting directly to {destination} with meta {metadata}")
         if isinstance(destination, Address):
             async with IdbClient.build(
-                host=destination.host,
-                port=destination.port,
-                is_local=False,
-                logger=self.logger,
+                address=destination, is_local=False, logger=self.logger
             ) as client:
                 with tempfile.NamedTemporaryFile(mode="w+b") as f:
                     response = await client.stub.connect(
                         ConnectRequest(metadata=metadata, local_file_path=f.name)
                     )
             companion = CompanionInfo(
-                udid=response.companion.udid,
                 address=Address(host=destination.host, port=destination.port),
+                udid=response.companion.udid,
                 is_local=response.companion.is_local,
             )
             self.logger.debug(f"Connected directly to {companion}")
