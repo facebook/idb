@@ -39,13 +39,13 @@ class IdbManagementClient(IdbManagementClientBase):
         logger: Optional[logging.Logger] = None,
     ) -> None:
         os.makedirs(BASE_IDB_FILE_PATH, exist_ok=True)
-        self.logger: logging.Logger = (
+        self._logger: logging.Logger = (
             logger if logger else logging.getLogger("idb_grpc_client")
         )
-        self.direct_companion_manager = DirectCompanionManager(logger=self.logger)
-        self.local_targets_manager = LocalTargetsManager(logger=self.logger)
+        self._direct_companion_manager = DirectCompanionManager(logger=self._logger)
+        self._local_targets_manager = LocalTargetsManager(logger=self._logger)
         self._companion_spawner: Optional[CompanionSpawner] = (
-            CompanionSpawner(companion_path=companion_path, logger=self.logger)
+            CompanionSpawner(companion_path=companion_path, logger=self._logger)
             if companion_path is not None
             else None
         )
@@ -61,21 +61,21 @@ class IdbManagementClient(IdbManagementClientBase):
         companion_spawner = self._companion_spawner
         if companion_spawner is None:
             return None
-        local_target_available = await self.local_targets_manager.is_local_target_available(
+        local_target_available = await self._local_targets_manager.is_local_target_available(
             target_udid=target_udid
         )
         if local_target_available or target_udid == "mac":
-            self.logger.info(f"will attempt to spawn a companion for {target_udid}")
+            self._logger.info(f"will attempt to spawn a companion for {target_udid}")
             port = await companion_spawner.spawn_companion(target_udid=target_udid)
             if port:
-                self.logger.info(f"spawned a companion for {target_udid}")
+                self._logger.info(f"spawned a companion for {target_udid}")
                 host = "localhost"
                 companion_info = CompanionInfo(
                     address=Address(host=host, port=port),
                     udid=target_udid,
                     is_local=True,
                 )
-                await self.direct_companion_manager.add_companion(companion_info)
+                await self._direct_companion_manager.add_companion(companion_info)
                 return companion_info
         return None
 
@@ -84,24 +84,24 @@ class IdbManagementClient(IdbManagementClientBase):
     ) -> Optional[TargetDescription]:
         try:
             async with IdbClient.build(
-                address=companion.address, is_local=False, logger=self.logger
+                address=companion.address, is_local=False, logger=self._logger
             ) as client:
                 return await client.describe()
         except Exception:
             if not self._prune_dead_companion:
-                self.logger.warning(
+                self._logger.warning(
                     f"Failed to describe {companion}, but not removing it"
                 )
                 return None
-            self.logger.warning(f"Failed to describe {companion}, removing it")
-            await self.direct_companion_manager.remove_companion(companion.address)
+            self._logger.warning(f"Failed to describe {companion}, removing it")
+            await self._direct_companion_manager.remove_companion(companion.address)
             return None
 
     @asynccontextmanager
     async def from_udid(self, udid: Optional[str]) -> AsyncContextManager[IdbClient]:
         await self._spawn_notifier()
         try:
-            companion_info = await self.direct_companion_manager.get_companion_info(
+            companion_info = await self._direct_companion_manager.get_companion_info(
                 target_udid=udid
             )
         except IdbException as e:
@@ -114,7 +114,7 @@ class IdbManagementClient(IdbManagementClientBase):
         async with IdbClient.build(
             address=companion_info.address,
             is_local=companion_info.is_local,
-            logger=self.logger,
+            logger=self._logger,
         ) as client:
             yield client
 
@@ -122,8 +122,8 @@ class IdbManagementClient(IdbManagementClientBase):
     async def list_targets(self) -> List[TargetDescription]:
         (_, companions, local_targets) = await asyncio.gather(
             self._spawn_notifier(),
-            self.direct_companion_manager.get_companions(),
-            self.local_targets_manager.get_local_targets(),
+            self._direct_companion_manager.get_companions(),
+            self._local_targets_manager.get_local_targets(),
         )
         connected_targets = [
             target
@@ -147,10 +147,10 @@ class IdbManagementClient(IdbManagementClientBase):
         destination: ConnectionDestination,
         metadata: Optional[Dict[str, str]] = None,
     ) -> CompanionInfo:
-        self.logger.debug(f"Connecting directly to {destination} with meta {metadata}")
+        self._logger.debug(f"Connecting directly to {destination} with meta {metadata}")
         if isinstance(destination, Address):
             async with IdbClient.build(
-                address=destination, is_local=False, logger=self.logger
+                address=destination, is_local=False, logger=self._logger
             ) as client:
                 with tempfile.NamedTemporaryFile(mode="w+b") as f:
                     response = await client.stub.connect(
@@ -161,8 +161,8 @@ class IdbManagementClient(IdbManagementClientBase):
                 udid=response.companion.udid,
                 is_local=response.companion.is_local,
             )
-            self.logger.debug(f"Connected directly to {companion}")
-            await self.direct_companion_manager.add_companion(companion)
+            self._logger.debug(f"Connected directly to {companion}")
+            await self._direct_companion_manager.add_companion(companion)
             return companion
         else:
             companion = await self._spawn_companion(target_udid=destination)
@@ -173,10 +173,10 @@ class IdbManagementClient(IdbManagementClientBase):
 
     @log_call()
     async def disconnect(self, destination: ConnectionDestination) -> None:
-        await self.direct_companion_manager.remove_companion(destination)
+        await self._direct_companion_manager.remove_companion(destination)
 
     @log_call()
     async def kill(self) -> None:
-        await self.direct_companion_manager.clear()
-        await self.local_targets_manager.clear()
-        PidSaver(logger=self.logger).kill_saved_pids()
+        await self._direct_companion_manager.clear()
+        await self._local_targets_manager.clear()
+        PidSaver(logger=self._logger).kill_saved_pids()
