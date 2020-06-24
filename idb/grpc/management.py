@@ -25,8 +25,8 @@ from idb.common.types import (
     TargetDescription,
 )
 from idb.grpc.client import IdbClient
-from idb.grpc.companion import merge_connected_targets
 from idb.grpc.idb_pb2 import ConnectRequest
+from idb.grpc.target import merge_connected_targets
 from idb.utils.contextlib import asynccontextmanager
 
 

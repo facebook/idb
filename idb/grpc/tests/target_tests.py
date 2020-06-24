@@ -7,10 +7,10 @@
 from unittest import TestCase
 
 from idb.common.types import Address, CompanionInfo, TargetDescription
-from idb.grpc.companion import merge_connected_targets
+from idb.grpc.target import merge_connected_targets
 
 
-class CompanionTests(TestCase):
+class TargetTests(TestCase):
     def test_merge_connected_targets(self) -> None:
         merged_targets = merge_connected_targets(
             local_targets=[
