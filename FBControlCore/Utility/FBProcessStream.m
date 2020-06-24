@@ -14,6 +14,8 @@
 #import "FBDataBuffer.h"
 #import "FBFileReader.h"
 #import "FBFileWriter.h"
+#import "FBTask.h"
+#import "FBTaskBuilder.h"
 #import "FBFuture+Sync.h"
 
 static NSTimeInterval ProcessDetachDrainTimeout = 4;
@@ -47,7 +49,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 @interface FBProcessFileOutput_Consumer : NSObject <FBProcessFileOutput>
 
 @property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
-@property (nonatomic, strong, nullable, readwrite) FBFileReader *reader;
+@property (nonatomic, strong, nullable, readwrite) FBTask<NSNull *, id<FBDataConsumer>, NSNull *> *task;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
@@ -128,41 +130,39 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 
 - (FBFuture<NSNull *> *)startReading
 {
-  return [[[[FBFuture
-    onQueue:self.queue resolve:^ FBFuture<FBFileReader *> * {
-      if (self.reader) {
+  return [[FBFuture
+    onQueue:self.queue resolve:^ FBFuture<FBTask<NSNull *, id<FBDataConsumer>, NSNull *> *> *{
+      if (self.task) {
         return [[FBControlCoreError
-          describeFormat:@"Cannot call startReading twice"]
+          describeFormat:@"Cannot start reading, already reading"]
           failFuture];
       }
-      return [FBFileReader readerWithFilePath:self.filePath consumer:self.consumer logger:nil];
+      return [[[[FBTaskBuilder
+        withLaunchPath:@"/bin/cat" arguments:@[self.filePath]]
+        withStdOutConsumer:self.consumer]
+        withStdErrToDevNull]
+        start];
     }]
-    onQueue:self.queue fmap:^(FBFileReader *reader) {
-      return [[reader startReading] mapReplace:reader];
-    }]
-    onQueue:self.queue map:^(FBFileReader *reader) {
-      self.reader = reader;
+    onQueue:self.queue map:^(FBTask<NSNull *, id<FBDataConsumer>, NSNull *> *task) {
+      self.task = task;
       return NSNull.null;
-    }]
-    nameFormat:@"Start reading %@", self.description];
+    }];
 }
 
 - (FBFuture<NSNull *> *)stopReading
 {
-  return [[[FBFuture
-    onQueue:self.queue resolve:^ FBFuture<NSNumber *> * {
-      if (!self.reader) {
-      return [[FBControlCoreError
-        describeFormat:@"No active reader for fifo"]
-        failFuture];
+  return [[FBFuture
+    onQueue:self.queue resolve:^ FBFuture<NSNumber *> *{
+      FBTask<NSNull *, id<FBDataConsumer>, NSNull *> *task = self.task;
+      self.task = nil;
+      if (!task) {
+        return [[FBControlCoreError
+          describeFormat:@"Cannot stop reading, not reading"]
+          failFuture];
       }
-      return [self.reader stopReading];
+      return [task sendSignal:SIGTERM];
     }]
-    onQueue:self.queue map:^(id _) {
-      self.reader = nil;
-      return NSNull.null;
-    }]
-    nameFormat:@"Stop reading %@", self.description];
+    mapReplace:NSNull.null];
 }
 
 #pragma mark NSObject
