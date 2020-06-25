@@ -48,9 +48,17 @@ class TargetType(Enum):
 
 
 @dataclass(frozen=True)
-class Address:
+class TCPAddress:
     host: str
     port: int
+
+
+@dataclass(frozen=True)
+class DomainSocketAddress:
+    path: str
+
+
+Address = Union[TCPAddress, DomainSocketAddress]
 
 
 class AppProcessState(Enum):

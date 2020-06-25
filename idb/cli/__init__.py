@@ -8,7 +8,7 @@ import logging
 import os
 from abc import ABCMeta, abstractmethod
 from argparse import ArgumentParser, Namespace
-from typing import AsyncContextManager, Optional, Tuple
+from typing import AsyncContextManager, Optional
 
 from idb.common import plugin
 from idb.common.command import Command
@@ -16,9 +16,11 @@ from idb.common.companion import Companion
 from idb.common.logging import log_call
 from idb.common.types import (
     Address,
+    DomainSocketAddress,
     IdbClient,
     IdbConnectionException,
     IdbManagementClient,
+    TCPAddress,
 )
 from idb.grpc.client import IdbClient as IdbClientGrpc
 from idb.grpc.management import IdbManagementClient as IdbManagementClientGrpc
@@ -26,8 +28,11 @@ from idb.utils.contextlib import asynccontextmanager
 
 
 def _parse_address(value: str) -> Address:
-    (host, port) = value.rsplit(":", 1)
-    return Address(host=host, port=int(port))
+    values = value.rsplit(":", 1)
+    if len(values) == 1:
+        return DomainSocketAddress(path=value)
+    (host, port) = values
+    return TCPAddress(host=host, port=int(port))
 
 
 def _get_management_client(

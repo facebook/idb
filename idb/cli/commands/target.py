@@ -13,7 +13,7 @@ from idb.cli import ClientCommand, CompanionCommand, ManagementCommand
 from idb.common.companion import Companion
 from idb.common.format import human_format_target_info, json_format_target_info
 from idb.common.signal import signal_handler_event
-from idb.common.types import Address, IdbClient, IdbException, IdbManagementClient
+from idb.common.types import IdbClient, IdbException, IdbManagementClient, TCPAddress
 from idb.common.udid import is_udid
 
 
@@ -29,11 +29,11 @@ class DisconnectCommandException(Exception):
     pass
 
 
-def get_destination(args: Namespace) -> Union[Address, str]:
+def get_destination(args: Namespace) -> Union[TCPAddress, str]:
     if is_udid(args.companion):
         return args.companion
     elif args.port and args.companion:
-        return Address(host=args.companion, port=args.port)
+        return TCPAddress(host=args.companion, port=args.port)
     else:
         raise DestinationCommandException(
             "provide either a UDID or the host and port of the companion"

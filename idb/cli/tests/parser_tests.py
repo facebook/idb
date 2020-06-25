@@ -14,11 +14,12 @@ from unittest.mock import ANY, MagicMock, patch
 from idb.cli.main import gen_main as cli_main
 from idb.common.constants import XCTEST_TIMEOUT
 from idb.common.types import (
-    Address,
     CrashLogQuery,
+    DomainSocketAddress,
     HIDButtonType,
     InstrumentsTimings,
     Permission,
+    TCPAddress,
 )
 from idb.utils.testing import AsyncContextManagerMock, AsyncMock, TestCase
 
@@ -146,12 +147,20 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["list-apps"])
         self.direct_client_mock.list_apps.assert_called_once()
 
-    async def test_list_apps_direct_companion(self) -> None:
+    async def test_list_apps_direct_companion_tcp(self) -> None:
         self.direct_client_mock.list_apps = AsyncMock(return_value=[])
         await cli_main(cmd_input=["--companion", "thehost:123", "list-apps"])
         self.direct_client_mock.list_apps.assert_called_once()
         self.direct_client_mock.build.assert_called_once_with(
-            address=Address(host="thehost", port=123), is_local=False, logger=ANY
+            address=TCPAddress(host="thehost", port=123), is_local=False, logger=ANY
+        )
+
+    async def test_list_apps_direct_companion_uxd(self) -> None:
+        self.direct_client_mock.list_apps = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["--companion", "/foo/sock", "list-apps"])
+        self.direct_client_mock.list_apps.assert_called_once()
+        self.direct_client_mock.build.assert_called_once_with(
+            address=DomainSocketAddress(path="/foo/sock"), is_local=False, logger=ANY
         )
 
     async def test_connect_with_host_and_port(self) -> None:
@@ -160,7 +169,7 @@ class TestParser(TestCase):
         port = 1234
         await cli_main(cmd_input=["connect", host, str(port)])
         self.management_client_mock().connect.assert_called_once_with(
-            destination=Address(host=host, port=port), metadata=ANY
+            destination=TCPAddress(host=host, port=port), metadata=ANY
         )
 
     async def test_connect_with_udid(self) -> None:
@@ -177,7 +186,7 @@ class TestParser(TestCase):
         port = 1234
         await cli_main(cmd_input=["disconnect", host, str(port)])
         self.management_client_mock().disconnect.assert_called_once_with(
-            destination=Address(host=host, port=port)
+            destination=TCPAddress(host=host, port=port)
         )
 
     async def test_disconnect_with_udid(self) -> None:

@@ -20,9 +20,11 @@ from idb.common.types import (
     Address,
     CompanionInfo,
     ConnectionDestination,
+    DomainSocketAddress,
     IdbException,
     IdbManagementClient as IdbManagementClientBase,
     TargetDescription,
+    TCPAddress,
 )
 from idb.grpc.client import IdbClient
 from idb.grpc.idb_pb2 import ConnectRequest
@@ -148,7 +150,9 @@ class IdbManagementClient(IdbManagementClientBase):
         metadata: Optional[Dict[str, str]] = None,
     ) -> CompanionInfo:
         self._logger.debug(f"Connecting directly to {destination} with meta {metadata}")
-        if isinstance(destination, Address):
+        if isinstance(destination, TCPAddress) or isinstance(
+            destination, DomainSocketAddress
+        ):
             async with IdbClient.build(
                 address=destination, is_local=False, logger=self._logger
             ) as client:
@@ -157,7 +161,7 @@ class IdbManagementClient(IdbManagementClientBase):
                         ConnectRequest(metadata=metadata, local_file_path=f.name)
                     )
             companion = CompanionInfo(
-                address=Address(host=destination.host, port=destination.port),
+                address=destination,
                 udid=response.companion.udid,
                 is_local=response.companion.is_local,
             )

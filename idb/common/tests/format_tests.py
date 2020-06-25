@@ -11,12 +11,12 @@ from idb.common.format import (
     target_description_from_json,
 )
 from idb.common.types import (
-    Address,
     AppProcessState,
     CompanionInfo,
     InstalledAppInfo,
     InstalledTestInfo,
     TargetDescription,
+    TCPAddress,
     TestActivity,
     TestRunFailureInfo,
     TestRunInfo,
@@ -58,7 +58,7 @@ INSTALLED_APP_INFO_FIXTURE = InstalledAppInfo(
     debuggable=True,
 )
 COMPANION_INFO_FIXTURE = CompanionInfo(
-    udid="MyUdid", address=Address(host="ThisMac", port=1234), is_local=False
+    udid="MyUdid", address=TCPAddress(host="ThisMac", port=1234), is_local=False
 )
 TARGET_DESCRIPTION_FIXTURE = TargetDescription(
     udid="MyUdid",

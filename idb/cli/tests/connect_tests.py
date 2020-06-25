@@ -7,7 +7,7 @@
 from argparse import Namespace
 
 from idb.cli.commands.target import get_destination
-from idb.common.types import Address
+from idb.common.types import TCPAddress
 from idb.utils.testing import TestCase, ignoreTaskLeaks
 
 
@@ -20,7 +20,7 @@ class TestParser(TestCase):
         namespace.companion = host
         namespace.port = port
         address = get_destination(args=namespace)
-        assert isinstance(address, Address)
+        assert isinstance(address, TCPAddress)
         self.assertEqual(address.host, host)
         self.assertEqual(address.port, port)
 

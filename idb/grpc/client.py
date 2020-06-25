@@ -63,6 +63,7 @@ from idb.common.types import (
     LoggingMetadata,
     Permission,
     TargetDescription,
+    TCPAddress,
     TestRunInfo,
 )
 from idb.grpc.crash import (
@@ -199,8 +200,10 @@ class IdbClient(IdbClientBase):
     async def build(
         cls, address: Address, is_local: bool, logger: logging.Logger
     ) -> AsyncContextManager["IdbClient"]:
-        channel = Channel(
-            host=address.host, port=address.port, loop=asyncio.get_event_loop()
+        channel = (
+            Channel(host=address.host, port=address.port, loop=asyncio.get_event_loop())
+            if isinstance(address, TCPAddress)
+            else Channel(path=address.path, loop=asyncio.get_event_loop())
         )
         try:
             yield IdbClient(

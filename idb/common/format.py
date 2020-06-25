@@ -7,16 +7,18 @@
 import base64
 import json
 from textwrap import indent
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from uuid import uuid4
 
 from idb.common.types import (
     Address,
     AppProcessState,
     CompanionInfo,
+    DomainSocketAddress,
     InstalledAppInfo,
     InstalledTestInfo,
     TargetDescription,
+    TCPAddress,
     TestActivity,
     TestRunInfo,
 )
@@ -172,14 +174,16 @@ def json_format_installed_app_info(app: InstalledAppInfo) -> str:
 def human_format_target_info(target: TargetDescription) -> str:
     target_info = (
         f"{target.name} | {target.udid} | {target.state}"
-        f" | {target.target_type} | {target.os_version} | {target.architecture}"
+        f" | {target.target_type} | {target.os_version} | {target.architecture} | "
     )
-    target_info += (
-        f" | {target.companion_info.address.host}:{target.companion_info.address.port}"
-        if target.companion_info
-        else f" | No Companion Connected"
-    )
-    return target_info
+    companion_info = target.companion_info
+    if companion_info is None:
+        return target_info + "No Companion Connected"
+    address = companion_info.address
+    if isinstance(address, TCPAddress):
+        return target_info + f"{address.host}:{address.port}"
+    else:
+        return target_info + f"{address.path}"
 
 
 def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
@@ -191,40 +195,53 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
         "os_version": target.os_version,
         "architecture": target.architecture,
     }
-    if target.companion_info:
-        data["host"] = target.companion_info.address.host
-        data["port"] = target.companion_info.address.port
-        data["is_local"] = target.companion_info.is_local
+    companion_info = target.companion_info
+    if companion_info is not None:
+        address = companion_info.address
+        if isinstance(address, TCPAddress):
+            data["host"] = address.host
+            data["port"] = address.port
+            data["is_local"] = companion_info.is_local
+        else:
+            data["path"] = address.path
+            data["is_local"] = True
     if target.device is not None:
         data["device"] = target.device
     return data
 
 
-def json_data_companions(companions: List[CompanionInfo]) -> List[Dict[str, Any]]:
-    data: List[Dict[str, Any]] = []
+def json_data_companions(
+    companions: List[CompanionInfo],
+) -> List[Dict[str, Union[str, int]]]:
+    data: List[Dict[str, Union[str, int]]] = []
     for companion in companions:
-        data.append(
-            {
-                "host": companion.address.host,
-                "udid": companion.udid,
-                "port": companion.address.port,
-                "is_local": companion.is_local,
-            }
-        )
+        item: Dict[str, Union[str, int]] = {
+            "udid": companion.udid,
+            "is_local": companion.is_local,
+        }
+        address = companion.address
+        if isinstance(address, TCPAddress):
+            item["host"] = address.host
+            item["port"] = address.port
+        else:
+            item["path"] = address.path
+        data.append(item)
     return data
 
 
 def json_to_companion_info(data: List[Dict[str, Any]]) -> List[CompanionInfo]:
-    companion_list = []
-    for item in data:
-        companion_list.append(
-            CompanionInfo(
-                udid=item["udid"],
-                address=Address(host=item["host"], port=item["port"]),
-                is_local=item["is_local"],
-            )
+    return [
+        CompanionInfo(
+            udid=item["udid"],
+            address=(
+                TCPAddress(host=item["host"], port=item["port"])
+                if "host" in item
+                else DomainSocketAddress(path=item["path"])
+            ),
+            is_local=item["is_local"],
         )
-    return companion_list
+        for item in data
+    ]
 
 
 def target_description_from_json(data: str) -> TargetDescription:

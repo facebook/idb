@@ -6,7 +6,7 @@
 
 from unittest import TestCase
 
-from idb.common.types import Address, CompanionInfo, TargetDescription
+from idb.common.types import CompanionInfo, TargetDescription, TCPAddress
 from idb.grpc.target import merge_connected_targets
 
 
@@ -55,7 +55,7 @@ class TargetTests(TestCase):
                     architecture=None,
                     companion_info=CompanionInfo(
                         udid="a",
-                        address=Address(host="remotehost", port=1),
+                        address=TCPAddress(host="remotehost", port=1),
                         is_local=False,
                     ),
                     screen_dimensions=None,
@@ -69,7 +69,7 @@ class TargetTests(TestCase):
                     architecture=None,
                     companion_info=CompanionInfo(
                         udid="d",
-                        address=Address(host="remotehost", port=2),
+                        address=TCPAddress(host="remotehost", port=2),
                         is_local=False,
                     ),
                     screen_dimensions=None,
@@ -88,7 +88,7 @@ class TargetTests(TestCase):
                     architecture=None,
                     companion_info=CompanionInfo(
                         udid="a",
-                        address=Address(host="remotehost", port=1),
+                        address=TCPAddress(host="remotehost", port=1),
                         is_local=False,
                     ),
                     screen_dimensions=None,
@@ -122,7 +122,7 @@ class TargetTests(TestCase):
                     architecture=None,
                     companion_info=CompanionInfo(
                         udid="d",
-                        address=Address(host="remotehost", port=2),
+                        address=TCPAddress(host="remotehost", port=2),
                         is_local=False,
                     ),
                     screen_dimensions=None,

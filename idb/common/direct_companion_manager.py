@@ -15,7 +15,13 @@ from typing import AsyncGenerator, List, Optional
 
 from idb.common.constants import IDB_STATE_FILE_PATH
 from idb.common.format import json_data_companions, json_to_companion_info
-from idb.common.types import CompanionInfo, ConnectionDestination, IdbException
+from idb.common.types import (
+    CompanionInfo,
+    ConnectionDestination,
+    DomainSocketAddress,
+    IdbException,
+    TCPAddress,
+)
 
 
 @asynccontextmanager
@@ -150,12 +156,24 @@ class DirectCompanionManager:
                     for companion in companions
                     if companion.udid == destination
                 ]
-            else:
+            elif isinstance(destination, TCPAddress):
                 to_remove = [
                     companion
                     for companion in companions
-                    if companion.address.host == destination.host
-                    and companion.address.port == destination.port
+                    if (
+                        isinstance(companion.address, TCPAddress)
+                        and companion.address.host == destination.host
+                        and companion.address.port == destination.port
+                    )
+                ]
+            elif isinstance(destination, DomainSocketAddress):
+                to_remove = [
+                    companion
+                    for companion in companions
+                    if (
+                        isinstance(companion.address, DomainSocketAddress)
+                        and companion.address.path == destination.path
+                    )
                 ]
             for companion in to_remove:
                 companions.remove(companion)
