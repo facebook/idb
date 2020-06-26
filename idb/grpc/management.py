@@ -122,8 +122,8 @@ class IdbManagementClient(IdbManagementClientBase):
 
     @log_call()
     async def list_targets(self) -> List[TargetDescription]:
-        (_, companions, local_targets) = await asyncio.gather(
-            self._spawn_notifier(),
+        await self._spawn_notifier()
+        (companions, local_targets) = await asyncio.gather(
             self._direct_companion_manager.get_companions(),
             self._local_targets_manager.get_local_targets(),
         )
