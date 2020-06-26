@@ -132,6 +132,7 @@ message ApproveRequest {
     CONTACTS = 2;
     URL = 3;
     LOCATION = 4;
+    NOTIFICATION = 5;
   }
   string bundle_id = 1;
   repeated Permission permissions = 2;

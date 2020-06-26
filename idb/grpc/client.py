@@ -143,6 +143,7 @@ APPROVE_MAP: Dict[Permission, ApproveRequest] = {
     Permission.CONTACTS: ApproveRequest.CONTACTS,
     Permission.URL: ApproveRequest.URL,
     Permission.LOCATION: ApproveRequest.LOCATION,
+    Permission.NOTIFICATION: ApproveRequest.NOTIFICATION,
 }
 
 

@@ -40,6 +40,7 @@ class Permission(Enum):
     CONTACTS = 2
     URL = 3
     LOCATION = 4
+    NOTIFICATION = 5
 
 
 class TargetType(Enum):
