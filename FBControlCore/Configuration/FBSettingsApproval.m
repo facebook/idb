@@ -16,6 +16,7 @@ FBSettingsApprovalService const FBSettingsApprovalServiceCamera = @"camera";
 FBSettingsApprovalService const FBSettingsApprovalServiceLocation = @"location";
 FBSettingsApprovalService const FBSettingsApprovalServiceMicrophone = @"microphone";
 FBSettingsApprovalService const FBSettingsApprovalServiceUrl = @"url";
+FBSettingsApprovalService const FBSettingsApprovalServiceNotification = @"notification";
 
 @implementation FBSettingsApproval
 

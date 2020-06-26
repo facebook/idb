@@ -84,6 +84,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
   if ([services containsObject:FBSettingsApprovalServiceLocation]) {
     [futures addObject:[self authorizeLocationSettings:bundleIDs.allObjects]];
   }
+  if ([services containsObject:FBSettingsApprovalServiceNotification]) {
+    [futures addObject:[self authorizeNotificationService:bundleIDs.allObjects]];
+  }
   // Nothing to do with zero futures.
   if (futures.count == 0) {
     return FBFuture.empty;
@@ -196,6 +199,57 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
   return [[FBLocationServicesModificationStrategy
     strategyWithSimulator:self.simulator]
     approveLocationServicesForBundleIDs:bundleIDs];
+}
+
+- (FBFuture<NSNull *> *)authorizeNotificationService:(NSArray<NSString *> *)bundleIDs
+{
+  if ([bundleIDs count] == 0) {
+    return [[FBSimulatorError
+      describe:@"Empty bundleID set provided to notifications approve"]
+      failFuture];
+  }
+
+  NSString *bulletinDirectory = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/BulletinBoard"];
+  NSString *notificationsApprovalPlistPath = [bulletinDirectory stringByAppendingPathComponent:@"VersionedSectionInfo.plist"];
+
+  NSMutableDictionary<NSString *, id> *sectionInfo = [NSMutableDictionary dictionaryWithContentsOfFile:notificationsApprovalPlistPath];
+
+  if (sectionInfo == nil) {
+    return [[FBSimulatorError
+      describe:@"Failed to load sectionInfo"]
+      failFuture];
+  }
+
+  for (NSString *bundleID in bundleIDs) {
+    NSData *data = sectionInfo[@"sectionInfo"][bundleID];
+    if (data == nil) {
+      data = [[sectionInfo[@"sectionInfo"] allValues] firstObject];
+    }
+
+    NSError *readError = nil;
+    NSDictionary<NSString *, id> *properties = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListMutableContainersAndLeaves format:nil error:&readError];
+    if (readError != nil) {
+      return [FBSimulatorError failFutureWithError:readError];
+    }
+    properties[@"$objects"][2] = bundleID;
+    properties[@"$objects"][3][@"allowsNotifications"] = @(YES);
+
+    NSError *writeError = nil;
+    NSData *resultData = [NSPropertyListSerialization dataWithPropertyList:properties format:kCFPropertyListBinaryFormat_v1_0 options:0 error:&writeError];
+    if (writeError != nil) {
+      return [FBSimulatorError failFutureWithError:writeError];
+    }
+    sectionInfo[@"sectionInfo"][bundleID] = resultData;
+  }
+
+  BOOL result = [sectionInfo writeToFile:notificationsApprovalPlistPath atomically:YES];
+  if (!result) {
+    return [[FBSimulatorError
+      describe:@"Failed to write sectionInfo data to plist"]
+      failFuture];
+  }
+
+  return FBFuture.empty;
 }
 
 - (FBFuture<NSNull *> *)modifyTCCDatabaseWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services

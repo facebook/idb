@@ -22,6 +22,7 @@ extern FBSettingsApprovalService const FBSettingsApprovalServiceCamera;
 extern FBSettingsApprovalService const FBSettingsApprovalServiceLocation;
 extern FBSettingsApprovalService const FBSettingsApprovalServiceMicrophone;
 extern FBSettingsApprovalService const FBSettingsApprovalServiceUrl;
+extern FBSettingsApprovalService const FBSettingsApprovalServiceNotification;
 
 /**
  Value container for approval of settings.
