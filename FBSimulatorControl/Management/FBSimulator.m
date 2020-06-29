@@ -316,6 +316,7 @@
   dispatch_once(&onceToken, ^{
     commandClasses = @[
       FBInstrumentsCommands.class,
+      FBSimulatorAccessibilityCommands.class,
       FBSimulatorAgentCommands.class,
       FBSimulatorApplicationCommands.class,
       FBSimulatorApplicationDataCommands.class,

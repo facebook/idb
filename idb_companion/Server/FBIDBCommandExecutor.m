@@ -141,18 +141,15 @@
 
 - (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibility_info_at_point:(nullable NSValue *)value
 {
-  return [[[self
-    connectToSimulatorConnection]
-    onQueue:self.target.workQueue fmap:^(FBSimulatorConnection *connection) {
-      return [connection connectToBridge];
-    }]
-    onQueue:self.target.workQueue fmap:^ FBFuture * (FBSimulatorBridge *bridge) {
+  return [[self
+    accessibilityCommands]
+    onQueue:self.target.workQueue fmap:^ FBFuture * (id<FBSimulatorAccessibilityCommands> commands) {
       if (value) {
-        return [bridge accessibilityElementAtPoint:value.pointValue];
+        return [commands accessibilityElementAtPoint:value.pointValue];
       } else {
-        return [bridge accessibilityElements];
+        return [commands accessibilityElements];
       }
-  }];
+    }];
 }
 
 - (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibility_info
@@ -537,9 +534,21 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [FBFuture futureWithResult:commands];
 }
 
+- (FBFuture<id<FBSimulatorAccessibilityCommands>> *)accessibilityCommands
+{
+  id<FBSimulatorAccessibilityCommands> commands = (id<FBSimulatorAccessibilityCommands>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBSimulatorSettingsCommands)]) {
+    return [[FBIDBError
+      describeFormat:@"Target doesn't conform to FBSimulatorAccessibilityCommands protocol %@", self.target]
+      failFuture];
+  }
+  return [FBFuture futureWithResult:commands];
+}
+
 - (FBFuture<FBSimulatorConnection *> *)connectToSimulatorConnection
 {
-  return [[self lifecycleCommands]
+  return [[self
+    lifecycleCommands]
     onQueue:self.target.workQueue fmap:^ FBFuture<FBSimulatorConnection *> * (id<FBSimulatorLifecycleCommands> commands) {
       NSError *error = nil;
       if (![FBSimulatorControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworks:self.target.logger error:&error]) {
