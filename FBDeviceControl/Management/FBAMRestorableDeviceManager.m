@@ -12,6 +12,14 @@
 #import "FBDeviceControlFrameworkLoader.h"
 #import "FBAMRestorableDevice.h"
 
+@interface FBAMRestorableDeviceManager ()
+
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, assign, readonly) AMDCalls calls;
+@property (nonatomic, assign, readwrite) int registrationID;
+
+@end
+
 static NSString *NotificationTypeToString(AMRestorableDeviceNotificationType status)
 {
   switch (status) {
@@ -53,13 +61,24 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
   }
 }
 
-@interface FBAMRestorableDeviceManager ()
-
-@property (nonatomic, assign, readwrite) int registrationID;
-
-@end
-
 @implementation FBAMRestorableDeviceManager
+
+#pragma mark Initializers
+
+- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
+{
+  self = [super initWithLogger:logger];
+  if (!self) {
+    return nil;
+  }
+
+  _queue = dispatch_get_main_queue();
+  _calls = FBDeviceControlFrameworkLoader.amDeviceCalls;
+
+  return self;
+}
+
+#pragma mark Abstract Implementation
 
 - (BOOL)startListeningWithError:(NSError **)error
 {

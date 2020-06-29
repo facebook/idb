@@ -13,6 +13,8 @@
 
 @interface FBAMDeviceManager ()
 
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, assign, readonly) AMDCalls calls;
 @property (nonatomic, assign, readwrite) AMDNotificationSubscription subscription;
 
 - (NSString *)identifierForDevice:(AMDeviceRef)device;
@@ -65,18 +67,31 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   static FBAMDeviceManager *manager;
   dispatch_once(&onceToken, ^{
     id<FBControlCoreLogger> logger = [FBControlCoreGlobalConfiguration.defaultLogger withName:@"amdevice_manager"];
-    manager = [self managerWithCalls:FBDeviceControlFrameworkLoader.amDeviceCalls Queue:dispatch_get_main_queue() logger:logger];
+    manager = [self managerWithCalls:FBDeviceControlFrameworkLoader.amDeviceCalls queue:dispatch_get_main_queue() logger:logger];
   });
   return manager;
 }
 
-+ (FBAMDeviceManager *)managerWithCalls:(AMDCalls)calls Queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBAMDeviceManager *)managerWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   FBAMDeviceManager *manager = [[self alloc] initWithCalls:calls queue:queue logger:logger];
   NSError *error = nil;
   BOOL success = [manager startListeningWithError:&error];
   NSAssert(success, @"Failed to Start Listening %@", error);
   return manager;
+}
+
+- (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  self = [super initWithLogger:logger];
+  if (!self) {
+    return nil;
+  }
+
+  _queue = queue;
+  _calls = calls;
+
+  return self;
 }
 
 #pragma mark Public

@@ -22,15 +22,13 @@
 
 @synthesize delegate = _delegate;
 
-- (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _calls = calls;
-  _queue = queue;
   _logger = logger;
   _attachedDevices = [NSMutableDictionary dictionary];
   _referencedDevices = [NSMapTable mapTableWithKeyOptions:NSPointerFunctionsCopyIn valueOptions:NSPointerFunctionsWeakMemory];

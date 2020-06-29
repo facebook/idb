@@ -24,12 +24,10 @@ typedef CFTypeRef PrivateDevice;
 /**
  The Desginated Initializer.
 
- @param calls the AMDCalls to use.
- @param queue the queue to do work on.
  @param logger the logger to use.
  @return a new FBDeviceManager instance.
  */
-- (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Public
 
@@ -104,19 +102,9 @@ typedef CFTypeRef PrivateDevice;
 - (void)deviceDisconnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier;
 
 /**
- The AMDCalls to use
- */
-@property (nonatomic, assign, readonly) AMDCalls calls;
-
-/**
  The logger to use.
  */
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-
-/**
- The queue to serialize work on.
- */
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
 
