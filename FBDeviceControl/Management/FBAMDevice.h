@@ -6,8 +6,8 @@
  */
 
 #import <Foundation/Foundation.h>
-
 #import <FBControlCore/FBControlCore.h>
+#import <FBDeviceControl/FBDeviceCommands.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
  - Starting / stopping the same service on the phone (e.g. house_arrest) many times in a short period will cause the error 0xe800005b (Too many instances of this service are already running.)
    Because of this, we pool service connections with a short cooldown to avoid reopening the same service repeatedly during bursts of operations using that service (e.g. recursively enumerating a directory)
  */
-@interface FBAMDevice : NSObject <FBiOSTargetInfo>
+@interface FBAMDevice : NSObject <FBiOSTargetInfo, FBDeviceCommands>
 
 #pragma mark Initializers
 

@@ -71,43 +71,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (instancetype)initWithUDID:(NSString *)udid allValues:(NSDictionary<NSString *, id> *)allValues calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
 
-/**
- Obtain the connection for a device.
-
- @param format the purpose of the connection
- @return a connection wrapped in an async context.
- */
-- (FBFutureContext<FBAMDevice *> *)connectToDeviceWithPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
-
-/**
- Starts test manager daemon service
- */
-- (FBFutureContext<FBAMDServiceConnection *> *)startTestManagerService;
-
-/**
- Starts a Service on the AMDevice.
-
- @param service the service name
- @return a Future wrapping the FBAFCConnection.
- */
-- (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service;
-
-/**
- Starts an AFC Session on the Device.
-
- @return a Future wrapping the AFC connection.
- */
-- (FBFutureContext<FBAFCConnection *> *)startAFCService;
-
-/**
- Starts house arrest for a given bundle id.
-
- @param bundleID the bundle id to use.
- @param afcCalls the AFC calls to inject
- @return a Future context wrapping the AFC Connection.
- */
-- (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls;
-
 @end
 
 NS_ASSUME_NONNULL_END
