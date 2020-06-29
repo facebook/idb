@@ -64,6 +64,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) NSArray<FBDevice *> *allDevices;
 
+/**
+ The Logger for the device set.
+ */
+@property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
+
 @end
 
 NS_ASSUME_NONNULL_END

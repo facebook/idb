@@ -6,7 +6,6 @@
  */
 
 #import "FBDeviceSet.h"
-#import "FBDeviceSet+Private.h"
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBControlCore/FBiOSTargetSet.h>
@@ -22,6 +21,10 @@
 #import "FBAMDeviceManager.h"
 #import "FBAMDevice.h"
 #import "FBAMDevice+Private.h"
+
+@interface FBDeviceSet () <FBiOSTargetSetDelegate>
+
+@end
 
 @implementation FBDeviceSet
 

@@ -20,7 +20,6 @@
 #import "FBDeviceDebuggerCommands.h"
 #import "FBDeviceLogCommands.h"
 #import "FBDeviceScreenshotCommands.h"
-#import "FBDeviceSet+Private.h"
 #import "FBDeviceVideoRecordingCommands.h"
 #import "FBDeviceXCTestCommands.h"
 
