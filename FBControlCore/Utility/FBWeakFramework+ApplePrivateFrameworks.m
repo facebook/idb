@@ -40,4 +40,9 @@
   return [FBWeakFramework frameworkWithPath:@"/System/Library/PrivateFrameworks/MobileDevice.framework" requiredClassNames:@[] requiredFrameworks:@[] rootPermitted:YES];
 }
 
++ (instancetype)AccessibilityPlatformTranslation
+{
+  return [FBWeakFramework frameworkWithPath:@"/System/Library/PrivateFrameworks/AccessibilityPlatformTranslation.framework" requiredClassNames:@[@"AXPTranslationObject"] requiredFrameworks:@[] rootPermitted:NO];
+}
+
 @end

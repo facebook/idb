@@ -917,6 +917,24 @@
 		AA2CD59D1F87C75E0030C56D /* FBListApplicationsConfiguration.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBListApplicationsConfiguration.m; sourceTree = "<group>"; };
 		AA2CD59E1F87C75E0030C56D /* FBListApplicationsConfiguration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBListApplicationsConfiguration.h; sourceTree = "<group>"; };
 		AA2E38E021E626B10065C800 /* FBDebuggerCommands.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBDebuggerCommands.h; sourceTree = "<group>"; };
+		AA2E9B552469617400F94F5D /* NSAccessibilityCustomElementDataProvider-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSAccessibilityCustomElementDataProvider-Protocol.h"; sourceTree = "<group>"; };
+		AA2E9B562469617400F94F5D /* AXPTranslator_iOS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AXPTranslator_iOS.h; sourceTree = "<group>"; };
+		AA2E9B572469617400F94F5D /* AXPMacPlatformElement.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AXPMacPlatformElement.h; sourceTree = "<group>"; };
+		AA2E9B582469617400F94F5D /* AXPTranslationElementProtocol-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "AXPTranslationElementProtocol-Protocol.h"; sourceTree = "<group>"; };
+		AA2E9B592469617400F94F5D /* AXPTranslationObject.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AXPTranslationObject.h; sourceTree = "<group>"; };
+		AA2E9B5A2469617400F94F5D /* CDStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDStructures.h; sourceTree = "<group>"; };
+		AA2E9B5B2469617400F94F5D /* NSSecureCoding-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSSecureCoding-Protocol.h"; sourceTree = "<group>"; };
+		AA2E9B5C2469617400F94F5D /* AXPTranslatorResponse.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AXPTranslatorResponse.h; sourceTree = "<group>"; };
+		AA2E9B5D2469617400F94F5D /* AXPTranslatorRequest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AXPTranslatorRequest.h; sourceTree = "<group>"; };
+		AA2E9B5E2469617400F94F5D /* AXPTranslator_macOS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AXPTranslator_macOS.h; sourceTree = "<group>"; };
+		AA2E9B5F2469617400F94F5D /* NSCoding-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSCoding-Protocol.h"; sourceTree = "<group>"; };
+		AA2E9B602469617400F94F5D /* AXPiOSElementData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AXPiOSElementData.h; sourceTree = "<group>"; };
+		AA2E9B612469617400F94F5D /* NSObject-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSObject-Protocol.h"; sourceTree = "<group>"; };
+		AA2E9B622469617400F94F5D /* NSAccessibilityCustomRotorItemSearchDelegate-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSAccessibilityCustomRotorItemSearchDelegate-Protocol.h"; sourceTree = "<group>"; };
+		AA2E9B632469617400F94F5D /* AXPTranslator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AXPTranslator.h; sourceTree = "<group>"; };
+		AA2E9B642469617400F94F5D /* NSAccessibilityElement-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSAccessibilityElement-Protocol.h"; sourceTree = "<group>"; };
+		AA2E9B652469617400F94F5D /* NSCopying-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSCopying-Protocol.h"; sourceTree = "<group>"; };
+		AA2E9B662469617400F94F5D /* NSAccessibilityCustomRotor-Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSAccessibilityCustomRotor-Private.h"; sourceTree = "<group>"; };
 		AA2F45C01D6ED47B00365A2C /* FBSimulatorServiceContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorServiceContext.h; sourceTree = "<group>"; };
 		AA2F45C11D6ED47B00365A2C /* FBSimulatorServiceContext.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorServiceContext.m; sourceTree = "<group>"; };
 		AA308FF420E37F9A00503C90 /* FBFutureContextManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBFutureContextManager.h; sourceTree = "<group>"; };
@@ -1936,6 +1954,31 @@
 			path = SimulatorKit;
 			sourceTree = "<group>";
 		};
+		AA2E9B542469617400F94F5D /* AccessibilityPlatformTranslation */ = {
+			isa = PBXGroup;
+			children = (
+				AA2E9B552469617400F94F5D /* NSAccessibilityCustomElementDataProvider-Protocol.h */,
+				AA2E9B562469617400F94F5D /* AXPTranslator_iOS.h */,
+				AA2E9B572469617400F94F5D /* AXPMacPlatformElement.h */,
+				AA2E9B582469617400F94F5D /* AXPTranslationElementProtocol-Protocol.h */,
+				AA2E9B592469617400F94F5D /* AXPTranslationObject.h */,
+				AA2E9B5A2469617400F94F5D /* CDStructures.h */,
+				AA2E9B5B2469617400F94F5D /* NSSecureCoding-Protocol.h */,
+				AA2E9B5C2469617400F94F5D /* AXPTranslatorResponse.h */,
+				AA2E9B5D2469617400F94F5D /* AXPTranslatorRequest.h */,
+				AA2E9B5E2469617400F94F5D /* AXPTranslator_macOS.h */,
+				AA2E9B5F2469617400F94F5D /* NSCoding-Protocol.h */,
+				AA2E9B602469617400F94F5D /* AXPiOSElementData.h */,
+				AA2E9B612469617400F94F5D /* NSObject-Protocol.h */,
+				AA2E9B622469617400F94F5D /* NSAccessibilityCustomRotorItemSearchDelegate-Protocol.h */,
+				AA2E9B632469617400F94F5D /* AXPTranslator.h */,
+				AA2E9B642469617400F94F5D /* NSAccessibilityElement-Protocol.h */,
+				AA2E9B652469617400F94F5D /* NSCopying-Protocol.h */,
+				AA2E9B662469617400F94F5D /* NSAccessibilityCustomRotor-Private.h */,
+			);
+			path = AccessibilityPlatformTranslation;
+			sourceTree = "<group>";
+		};
 		AA39D7EF1D5B0B2600A0840F /* CoreSimulator */ = {
 			isa = PBXGroup;
 			children = (
@@ -2057,6 +2100,7 @@
 		AA48775A1BAC74DC007F7D23 /* PrivateHeaders */ = {
 			isa = PBXGroup;
 			children = (
+				AA2E9B542469617400F94F5D /* AccessibilityPlatformTranslation */,
 				EE87FA3D2008C04C002716FE /* AXRuntime */,
 				AA39D7EF1D5B0B2600A0840F /* CoreSimulator */,
 				EE4F0D9F1C91B85800608E89 /* DTXConnectionServices */,
