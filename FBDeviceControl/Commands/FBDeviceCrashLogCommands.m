@@ -155,7 +155,7 @@ static NSString *const PingSuccess = @"ping";
 
 - (FBFuture<NSString *> *)moveCrashReports
 {
-  return [[self.device.amDevice
+  return [[self.device
     startService:CrashReportMoverService]
     // The mover is used first and can be discarded when done.
     onQueue:self.device.asyncQueue pop:^ FBFuture<NSString *> * (FBAMDServiceConnection *connection) {
@@ -180,7 +180,7 @@ static NSString *const PingSuccess = @"ping";
 
 - (FBFutureContext<FBAFCConnection *> *)crashReportFileConnection
 {
-  return [[self.device.amDevice
+  return [[self.device
     startService:CrashReportCopyService]
     // Re-map this into a AFC Connection.
     onQueue:self.device.workQueue push:^(FBAMDServiceConnection *connection) {

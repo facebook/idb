@@ -81,7 +81,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
   // Currently it returns 0 as if it had succeded
   // In case that's not possible, we should look into querying if
   // the app is installed first (FB_AMDeviceLookupApplications)
-  return [[self.device.amDevice
+  return [[self.device
     connectToDeviceWithPurpose:@"uninstall_%@", bundleID]
     onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (FBAMDevice *device) {
       [self.device.logger logFormat:@"Uninstalling Application %@", bundleID];
@@ -211,7 +211,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 
 - (FBFuture<NSNull *> *)secureInstallApplication:(NSURL *)appURL options:(NSDictionary *)options
 {
-  return [[self.device.amDevice
+  return [[self.device
     connectToDeviceWithPurpose:@"install"]
     onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (FBAMDevice *device) {
       [self.device.logger logFormat:@"Installing Application %@", appURL];
@@ -236,7 +236,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 
 - (FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)installedApplicationsData:(NSArray<NSString *> *)returnAttributes
 {
-  return [[self.device.amDevice
+  return [[self.device
     connectToDeviceWithPurpose:@"installed_apps"]
     onQueue:self.device.workQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (FBAMDevice *device) {
       NSDictionary<NSString *, id> *options = @{

@@ -48,7 +48,7 @@ static NSString *const ScreenShotDataKey = @"ScreenShotData";
 
 - (FBFuture<NSData *> *)takeScreenshot:(FBScreenshotFormat)format
 {
-  return [[[[self.device.amDevice
+  return [[[[self.device
     startService:@"com.apple.mobile.screenshotr"]
     onQueue:self.device.workQueue pend:^(FBAMDServiceConnection *connection) {
       return [FBDeviceLinkClient deviceLinkClientWithConnection:connection];

@@ -73,7 +73,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
   return [[self
     mountDeveloperDiskImage]
     onQueue:self.device.workQueue pushTeardown:^(id _) {
-      return [self.device.amDevice startService:@"com.apple.debugserver"];
+      return [self.device startService:@"com.apple.debugserver"];
     }];
 }
 
@@ -88,7 +88,7 @@ static const int DiskImageAlreadyMountedCode = -402653066;  // 0xe8000076 in hex
   if (!diskImage) {
     return [FBFuture futureWithError:error];
   }
-  return [[self.device.amDevice
+  return [[self.device
     connectToDeviceWithPurpose:@"mount_disk_image"]
     onQueue:self.device.workQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (FBAMDevice *device) {
       NSDictionary *options = @{

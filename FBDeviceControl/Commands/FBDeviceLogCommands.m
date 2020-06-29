@@ -96,7 +96,7 @@
     [self.device.logger log:unsupportedArgumentsMessage];
   }
   dispatch_queue_t queue = self.device.asyncQueue;
-  return [[self.device.amDevice
+  return [[self.device
     startService:@"com.apple.syslog_relay"]
     onQueue:queue enter:^(FBAMDServiceConnection *connection, FBMutableFuture<NSNull *> *teardown) {
       FBFuture<NSNull *> *readCompleted = [connection consume:consumer onQueue:dispatch_queue_create("com.facebook.fbdevicecontrol.device_log_consumer", DISPATCH_QUEUE_SERIAL)];

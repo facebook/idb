@@ -608,7 +608,7 @@ static inline NSDate *dateFromString(NSString *date)
 
 - (FBFutureContext<NSNumber *> *)transportForTestManagerService
 {
-  return [[self.device.amDevice
+  return [[self.device
     startTestManagerService]
     onQueue:self.device.workQueue pend:^(FBAMDServiceConnection *connection) {
       return [FBFuture futureWithResult:@(connection.socket)];

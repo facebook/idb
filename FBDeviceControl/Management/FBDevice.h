@@ -8,6 +8,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <FBDeviceControl/FBDeviceCommands.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -17,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A class that represents an iOS Device.
  */
-@interface FBDevice : NSObject <FBiOSTarget>
+@interface FBDevice : NSObject <FBiOSTarget, FBDeviceCommands>
 
 /**
  The Device Set to which the Device Belongs.

@@ -239,6 +239,10 @@
 
 - (id)forwardingTargetForSelector:(SEL)selector
 {
+  // Try the underling FBAMDevice instance>
+  if ([self.amDevice respondsToSelector:selector]) {
+    return self.amDevice;
+  }
   // Try the forwarder.
   id command = [self.forwarder forwardingTargetForSelector:selector];
   if (command) {

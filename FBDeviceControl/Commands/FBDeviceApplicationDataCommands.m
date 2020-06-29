@@ -128,7 +128,7 @@
 
 - (FBFuture *)handleAFCOperation:(id(^)(FBAFCConnection *, NSError **))operationBlock
 {
-  return [[self.device.amDevice
+  return [[self.device
     startAFCService]
     onQueue:self.device.workQueue pop:^(FBAFCConnection *connection) {
       NSError *error = nil;
@@ -158,7 +158,7 @@
 
 - (FBFuture *)handleAFCOperation:(id(^)(FBAFCConnection *, NSError **))operationBlock
 {
-  return [[self.device.amDevice
+  return [[self.device
     houseArrestAFCConnectionForBundleID:self.bundleID afcCalls:self.afcCalls]
     onQueue:self.device.workQueue pop:^(FBAFCConnection *connection) {
       NSError *error = nil;
