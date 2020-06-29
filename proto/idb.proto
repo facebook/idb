@@ -118,7 +118,12 @@ message Point {
 }
 
 message AccessibilityInfoRequest {
+  enum Format {
+    LEGACY = 0;
+    NESTED = 1;
+  }
   Point point = 2;
+  Format format = 3;
 }
 
 message AccessibilityInfoResponse {
