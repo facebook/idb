@@ -174,7 +174,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
   // Report partial results with as little as 1 byte read.
   dispatch_io_set_low_water(self.io, 1);
   dispatch_io_read(self.io, 0, SIZE_MAX, self.readQueue, ^(bool done, dispatch_data_t dispatchData, int errorCode) {
-    if (dispatchData != NULL) {
+    if (dispatchData != NULL && dispatchData != dispatch_data_empty) {
       [consumer consumeData:dispatchData];
     }
     if (done) {
