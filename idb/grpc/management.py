@@ -17,7 +17,6 @@ from idb.common.local_targets_manager import LocalTargetsManager
 from idb.common.logging import log_call
 from idb.common.pid_saver import PidSaver
 from idb.common.types import (
-    Address,
     CompanionInfo,
     ConnectionDestination,
     DomainSocketAddress,
@@ -73,7 +72,7 @@ class IdbManagementClient(IdbManagementClientBase):
                 self._logger.info(f"spawned a companion for {target_udid}")
                 host = "localhost"
                 companion_info = CompanionInfo(
-                    address=Address(host=host, port=port),
+                    address=TCPAddress(host=host, port=port),
                     udid=target_udid,
                     is_local=True,
                 )
