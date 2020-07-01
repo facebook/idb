@@ -139,22 +139,17 @@
     }];
 }
 
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibility_info_at_point:(nullable NSValue *)value
+- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibility_info_at_point:(nullable NSValue *)value nestedFormat:(BOOL)nestedFormat
 {
   return [[self
     accessibilityCommands]
     onQueue:self.target.workQueue fmap:^ FBFuture * (id<FBSimulatorAccessibilityCommands> commands) {
       if (value) {
-        return [commands accessibilityElementAtPoint:value.pointValue nestedFormat:NO];
+        return [commands accessibilityElementAtPoint:value.pointValue nestedFormat:nestedFormat];
       } else {
-        return [commands accessibilityElementsWithNestedFormat:NO];
+        return [commands accessibilityElementsWithNestedFormat:nestedFormat];
       }
     }];
-}
-
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibility_info
-{
-  return [self accessibility_info_at_point:nil];
 }
 
 - (FBFuture<NSNull *> *)add_media:(NSArray<NSURL *> *)filePaths
