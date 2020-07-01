@@ -9,10 +9,9 @@
 #import <Foundation/Foundation.h>
 
 @class NSUUID;
-@protocol SimDeviceIOPortDescriptorInterface;
 
 @protocol SimDeviceIOPortInterface <FoundationXPCProtocolProxyable, NSObject>
-@property (nonatomic, readonly) id<SimDeviceIOPortDescriptorInterface> descriptor;
+@property (nonatomic, readonly) id descriptor;
 @property (nonatomic, readonly) NSUUID *uuid;
 @property (nonatomic, readonly) unsigned short ioPortClass;
 @end

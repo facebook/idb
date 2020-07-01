@@ -168,11 +168,21 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
     if (![port conformsToProtocol:@protocol(SimDeviceIOPortInterface)]) {
       continue;
     }
-    id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> descriptor = (id) [port descriptor];
+    id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> descriptor = [port descriptor];
     if (![descriptor conformsToProtocol:@protocol(SimDisplayRenderable)]) {
       continue;
     }
     if (![descriptor conformsToProtocol:@protocol(SimDisplayIOSurfaceRenderable)]) {
+      continue;
+    }
+    if (![descriptor respondsToSelector:@selector(state)]) {
+      [logger logFormat:@"SimDisplay %@ does not have a state, cannot determine if it is the main display", descriptor];
+      continue;
+    }
+    id<SimDisplayDescriptorState> descriptorState = [descriptor performSelector:@selector(state)];
+    unsigned short displayClass = descriptorState.displayClass;
+    if (displayClass != 0) {
+      [logger logFormat:@"SimDisplay Class is '%d' which is not the main display '0'", displayClass];
       continue;
     }
     return [[FBFramebuffer_IOClient alloc] initWithIOClient:ioClient port:port surface:descriptor logger:logger];
