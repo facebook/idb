@@ -415,7 +415,7 @@ class IdbClient:
         pass
 
     async def accessibility_info(
-        self, point: Optional[Tuple[int, int]]
+        self, point: Optional[Tuple[int, int]], nested: bool
     ) -> AccessibilityInfo:
         pass
 

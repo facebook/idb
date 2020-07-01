@@ -291,11 +291,18 @@ class IdbClient(IdbClientBase):
 
     @log_and_handle_exceptions
     async def accessibility_info(
-        self, point: Optional[Tuple[int, int]]
+        self, point: Optional[Tuple[int, int]], nested: bool
     ) -> AccessibilityInfo:
         grpc_point = Point(x=point[0], y=point[1]) if point is not None else None
         response = await self.stub.accessibility_info(
-            AccessibilityInfoRequest(point=grpc_point)
+            AccessibilityInfoRequest(
+                point=grpc_point,
+                format=(
+                    AccessibilityInfoRequest.Format.NESTED
+                    if nested
+                    else AccessibilityInfoRequest.Format.LEGACY
+                ),
+            )
         )
         return AccessibilityInfo(json=response.json)
 

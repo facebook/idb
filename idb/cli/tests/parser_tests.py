@@ -723,13 +723,29 @@ class TestParser(TestCase):
     async def test_accessibility_info_all(self) -> None:
         self.direct_client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-all"])
-        self.direct_client_mock.accessibility_info.assert_called_once_with(point=None)
+        self.direct_client_mock.accessibility_info.assert_called_once_with(
+            point=None, nested=False
+        )
+
+    async def test_accessibility_info_all_nested(self) -> None:
+        self.direct_client_mock.accessibility_info = AsyncMock()
+        await cli_main(cmd_input=["ui", "describe-all", "--nested"])
+        self.direct_client_mock.accessibility_info.assert_called_once_with(
+            point=None, nested=True
+        )
 
     async def test_accessibility_info_at_point(self) -> None:
         self.direct_client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-point", "10", "20"])
         self.direct_client_mock.accessibility_info.assert_called_once_with(
-            point=(10, 20)
+            point=(10, 20), nested=False
+        )
+
+    async def test_accessibility_info_at_point(self) -> None:
+        self.direct_client_mock.accessibility_info = AsyncMock()
+        await cli_main(cmd_input=["ui", "describe-point", "--nested", "10", "20"])
+        self.direct_client_mock.accessibility_info.assert_called_once_with(
+            point=(10, 20), nested=True
         )
 
     async def test_crash_list_all(self) -> None:

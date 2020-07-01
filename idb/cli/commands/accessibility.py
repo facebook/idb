@@ -19,8 +19,17 @@ class AccessibilityInfoAllCommand(ClientCommand):
     def name(self) -> str:
         return "describe-all"
 
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        super().add_parser_arguments(parser)
+        parser.add_argument(
+            "--nested",
+            help="Will report data in the newer nested format, rather than the flat one",
+            action="store_true",
+            default=False,
+        )
+
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
-        info = await client.accessibility_info(point=None)
+        info = await client.accessibility_info(point=None, nested=args.nested)
         print(info.json)
 
 
@@ -34,10 +43,18 @@ class AccessibilityInfoAtPointCommand(ClientCommand):
         return "describe-point"
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        super().add_parser_arguments(parser)
+        parser.add_argument(
+            "--nested",
+            help="Will report data in the newer nested format, rather than the flat one",
+            action="store_true",
+            default=False,
+        )
         parser.add_argument("x", help="The x-coordinate", type=int)
         parser.add_argument("y", help="The y-coordinate", type=int)
-        super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
-        info = await client.accessibility_info(point=(args.x, args.y))
+        info = await client.accessibility_info(
+            point=(args.x, args.y), nested=args.nested
+        )
         print(info.json)
