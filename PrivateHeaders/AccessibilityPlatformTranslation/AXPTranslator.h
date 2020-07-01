@@ -25,6 +25,19 @@ typedef AXPTranslatorResponse * (^AXPTranslationCallback)(AXPTranslatorRequest *
  */
  - (AXPTranslationCallback)accessibilityTranslationDelegateBridgeCallback;
 
+/**
+ This is used in the construction of Mac accessibility objects.
+ It's the job of this function to translate co-ordinate spaces.
+ This is mostly relevant for Simulator.app where AppKit has a different co-ordinate space to UIKit.
+ */
+ - (CGRect)accessibilityTranslationConvertPlatformFrameToSystem:(CGRect)rect withContext:(id)context postProcess:(id)postProcess;
+
+/**
+ Used to obtain the parent of an accessibility component.
+ Unknown how this is implemented.
+ */
+ - (id)accessibilityTranslationRootParent;
+
 @end
 
 @protocol AXPTranslationTokenDelegateHelper
@@ -33,6 +46,17 @@ typedef AXPTranslatorResponse * (^AXPTranslationCallback)(AXPTranslatorRequest *
  This is the same as the above, except requests can be tokenized.
  */
 - (AXPTranslationCallback)accessibilityTranslationDelegateBridgeCallbackWithToken:(NSString *)token;
+
+/**
+ The same as above, except tokenized.
+ */
+- (CGRect)accessibilityTranslationConvertPlatformFrameToSystem:(CGRect)rect withToken:(NSString *)token;
+
+/**
+ Used to obtain the parent of an accessibility component, except tokenized.
+ Unknown how this is implemented.
+ */
+- (id)accessibilityTranslationRootParentWithToken:(NSString *)token;
 
 @end;
 

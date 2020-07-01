@@ -11,7 +11,7 @@
 #import <CoreSimulator/SimDeviceNotifier-Protocol.h>
 #import <CoreSimulator/CoreSimulator+BlockDefines.h>
 
-@class NSArray, NSDate, NSDictionary, NSMachPort, NSMutableArray, NSMutableDictionary, NSString, NSUUID, SimDeviceBootInfo, SimDeviceNotificationManager, SimDevicePasteboard, SimDeviceSet, SimDeviceType, SimRuntime, SimDeviceBootInfo;
+@class NSArray, NSDate, NSDictionary, NSMachPort, NSMutableArray, NSMutableDictionary, NSString, NSUUID, SimDeviceBootInfo, SimDeviceNotificationManager, SimDevicePasteboard, SimDeviceSet, SimDeviceType, SimRuntime, SimDeviceBootInfo, AXPTranslatorRequest, AXPTranslatorResponse;
 @protocol OS_dispatch_queue, OS_dispatch_source, SimDeviceIOProtocol;
 
 @interface SimDevice : NSObject <SimDeviceNotifier>
@@ -189,6 +189,12 @@
 - (BOOL)setActiveIDSRelayDevice:(id)arg1 error:(id *)arg2;
 - (BOOL)disconnectIDSRelayToDevice:(id)arg1 error:(id *)arg2;
 - (BOOL)connectIDSRelayToDevice:(id)arg1 disconnectMonitorPort:(unsigned int *)arg2 error:(id *)arg3;
+
+// In Xcode 12, this replaces SimulatorBridge related accessibility requests .
+
+- (void)sendAccessibilityRequestAsync:(AXPTranslatorRequest *)request completionQueue:(dispatch_queue_t)completionQueue completionHandler:(void (^)(AXPTranslatorResponse *))completionHandler;
+- (NSString *)accessibilityPlatformTranslationToken;
+- (id)accessibilityConnection;
 
 @end
 

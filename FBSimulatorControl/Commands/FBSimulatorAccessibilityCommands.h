@@ -12,27 +12,37 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- Commands relating to Accessibility.
+ Used for internal and external implementation.
  */
-@protocol FBSimulatorAccessibilityCommands <NSObject, FBiOSTargetCommand>
+@protocol FBSimulatorAccessibility <NSObject>
 
 /**
  The Acessibility Elements.
  Obtain the acessibility elements for the main screen.
  The returned value is fully JSON serializable.
 
+ @param nestedFormat if YES then data is returned in the nested format, NO for flat format
  @return the accessibility elements for the main screen, wrapped in a Future.
  */
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElements;
+- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat;
 
 /**
  Obtain the acessibility element for the main screen at the given point.
  The returned value is fully JSON serializable.
 
  @param point the coordinate at which to obtain the accessibility element.
+ @param nestedFormat if YES then data is returned in the nested format, NO for flat format
  @return the accessibility element at the provided point, wrapped in a Future.
  */
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point;
+- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat;
+
+@end
+
+
+/**
+ Commands relating to Accessibility.
+ */
+@protocol FBSimulatorAccessibilityCommands <NSObject, FBiOSTargetCommand, FBSimulatorAccessibility>
 
 @end
 

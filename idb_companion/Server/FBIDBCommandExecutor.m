@@ -145,9 +145,9 @@
     accessibilityCommands]
     onQueue:self.target.workQueue fmap:^ FBFuture * (id<FBSimulatorAccessibilityCommands> commands) {
       if (value) {
-        return [commands accessibilityElementAtPoint:value.pointValue];
+        return [commands accessibilityElementAtPoint:value.pointValue nestedFormat:NO];
       } else {
-        return [commands accessibilityElements];
+        return [commands accessibilityElementsWithNestedFormat:NO];
       }
     }];
 }
