@@ -56,6 +56,7 @@ public:
   Status open_url(ServerContext *context, const idb::OpenUrlRequest *request, idb::OpenUrlRequest *response);
   Status push(ServerContext *context,grpc::ServerReader<idb::PushRequest> *reader, idb::PushResponse *response);
   Status record(ServerContext *context,grpc::ServerReaderWriter<idb::RecordResponse, idb::RecordRequest> *stream);
+  Status video_stream(ServerContext* context, grpc::ServerReaderWriter<idb::VideoStreamResponse, idb::VideoStreamRequest>* stream);
   Status rm(ServerContext *context, const idb::RmRequest *request, idb::RmResponse *response);
   Status screenshot(ServerContext *context, const idb::ScreenshotRequest *request, idb::ScreenshotResponse *response);
   Status set_location(ServerContext *context, const idb::SetLocationRequest *request, idb::SetLocationResponse *response);

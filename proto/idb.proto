@@ -38,6 +38,7 @@ service CompanionService {
   rpc pull (PullRequest) returns (stream PullResponse) {}
   rpc push (stream PushRequest) returns (PushResponse) {}
   rpc record (stream RecordRequest) returns (stream RecordResponse) {}
+  rpc video_stream (stream VideoStreamRequest) returns (stream VideoStreamResponse) {}
   rpc rm (RmRequest) returns (RmResponse) {}
   rpc screenshot (ScreenshotRequest) returns (ScreenshotResponse) {}
   rpc set_location (SetLocationRequest) returns (SetLocationResponse) {}
@@ -513,6 +514,31 @@ message RecordRequest {
 }
 
 message RecordResponse {
+  oneof output {
+    bytes log_output = 1;
+    Payload payload = 2;
+  }
+}
+
+message VideoStreamRequest {
+  enum Format {
+    H264 = 0;
+    RBGA = 1;
+  }
+  message Start {
+    string file_path = 1;
+    uint64 fps = 2;
+    Format format = 3;
+  }
+  message Stop {
+  }
+  oneof control {
+    Start start = 1;
+    Stop stop = 2;
+  }
+}
+
+message VideoStreamResponse {
   oneof output {
     bytes log_output = 1;
     Payload payload = 2;

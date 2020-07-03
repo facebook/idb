@@ -37,6 +37,43 @@ static NSString *nsstring_from_c_string(const ::std::string& string)
 static int BufferOutputSize = 16384; //  # 16Kb
 
 template <class T>
+static FBFuture<NSNull *> * resolve_next_read(grpc::internal::ReaderInterface<T> *reader)
+{
+  FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.idb.grpc.reader_wait", DISPATCH_QUEUE_SERIAL);
+  dispatch_async(queue, ^{
+    T stop;
+    reader->Read(&stop);
+    [future resolveWithResult:NSNull.null];
+  });
+  return future;
+}
+
+template <class T>
+static id<FBDataConsumer> drain_consumer(grpc::internal::WriterInterface<T> *writer)
+{
+  return [FBBlockDataConsumer asynchronousDataConsumerWithBlock:^(NSData *data) {
+    T response;
+    idb::Payload *payload = response.mutable_payload();
+    payload->set_data(data.bytes, data.length);
+    writer->Write(response);
+  }];
+}
+
+template <class Write, class Read>
+static id<FBDataConsumer> consumer_from_request(grpc::ServerReaderWriter<Write, Read> *stream, Read& request, NSError **error)
+{
+  Read initial;
+  stream->Read(&initial);
+  request = initial;
+  const std::string requestedFilePath = initial.start().file_path();
+  if (requestedFilePath.length() > 0) {
+    return [FBFileWriter syncWriterForFilePath:nsstring_from_c_string(requestedFilePath.c_str()) error:error];
+  }
+  return drain_consumer(stream);
+}
+
+template <class T>
 static Status drain_writer(FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *taskFuture, grpc::internal::WriterInterface<T> *stream)
 {
   NSError *error = nil;
@@ -916,6 +953,39 @@ Status FBIDBServiceHandler::record(grpc::ServerContext *context, grpc::ServerRea
   } else {
     return drain_writer([FBArchiveOperations createGzipForPath:filePath queue:dispatch_queue_create("com.facebook.idb.record", DISPATCH_QUEUE_SERIAL) logger:_target.logger], stream);
   }
+}}
+
+Status FBIDBServiceHandler::video_stream(ServerContext* context, grpc::ServerReaderWriter<idb::VideoStreamResponse, idb::VideoStreamRequest>* stream)
+{@autoreleasepool{
+  NSError *error = nil;
+  idb::VideoStreamRequest request;
+  id<FBDataConsumer> consumer = consumer_from_request(stream, request, &error);
+  if (!consumer) {
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+  idb::VideoStreamRequest_Start start = request.start();
+  NSNumber *framesPerSecond = start.fps() > 0 ? @(start.fps()) : nil;
+  FBBitmapStreamEncoding encoding = start.format() == idb::VideoStreamRequest_Format_RBGA ? FBBitmapStreamEncodingBGRA : FBBitmapStreamEncodingH264;
+  FBBitmapStreamConfiguration *configuration = [FBBitmapStreamConfiguration configurationWithEncoding:encoding framesPerSecond:framesPerSecond];
+  id<FBBitmapStream> bitmapStream = [[_target createStreamWithConfiguration:configuration] block:&error];
+  if (!stream) {
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+  BOOL success = [[bitmapStream startStreaming:consumer] block:&error] != nil;
+  if (success == NO) {
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+
+  // Wait for the client to hangup or stream to stop
+  FBFuture<NSNull *> *clientStopped = resolve_next_read(stream);
+  [[FBFuture race:@[clientStopped, bitmapStream.completed]] block:nil];
+
+  // Stop the streaming for real. It may have stopped already in which case this returns instantly.
+  success = [[bitmapStream stopStreaming] block:&error] != nil;
+  if (success == NO) {
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+  return Status::OK;
 }}
 
 Status FBIDBServiceHandler::push(grpc::ServerContext *context, grpc::ServerReader<idb::PushRequest> *reader, idb::PushResponse *response)
