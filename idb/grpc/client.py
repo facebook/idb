@@ -298,9 +298,9 @@ class IdbClient(IdbClientBase):
             AccessibilityInfoRequest(
                 point=grpc_point,
                 format=(
-                    AccessibilityInfoRequest.Format.NESTED
+                    AccessibilityInfoRequest.NESTED
                     if nested
-                    else AccessibilityInfoRequest.Format.LEGACY
+                    else AccessibilityInfoRequest.LEGACY
                 ),
             )
         )
