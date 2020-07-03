@@ -11,6 +11,7 @@
 #import <IOSurface/IOSurface.h>
 #import <CoreVideo/CoreVideo.h>
 #import <CoreVideo/CVPixelBufferIOSurface.h>
+#import <VideoToolbox/VideoToolbox.h>
 
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 #import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
@@ -25,6 +26,40 @@
 #import <SimulatorKit/SimDisplayRenderable-Protocol.h>
 
 #import "FBSimulatorError.h"
+
+@interface FBSimulatorBitmapStream_Lazy : FBSimulatorBitmapStream
+
+@end
+
+@interface FBSimulatorBitmapStream_Eager : FBSimulatorBitmapStream
+
+@property (nonatomic, assign, readonly) NSUInteger framesPerSecond;
+@property (nonatomic, strong, readwrite) FBDispatchSourceNotifier *timer;
+
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBBitmapStreamEncoding)encoding writeQueue:(dispatch_queue_t)writeQueue framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger;
+
+@end
+
+@interface FBSimulatorBitmapStream ()
+
+@property (nonatomic, weak, readonly) FBFramebuffer *framebuffer;
+@property (nonatomic, copy, readonly) FBBitmapStreamEncoding encoding;
+@property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startedFuture;
+@property (nonatomic, strong, readwrite) FBMutableFuture<NSNull *> *stoppedFuture;
+
+
+@property (nonatomic, assign, readwrite) NSUInteger frameNumber;
+@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> consumer;
+@property (nonatomic, assign, nullable, readwrite) CVPixelBufferRef pixelBuffer;
+@property (nonatomic, assign, readwrite) CFTimeInterval timeAtFirstFrame;
+@property (nonatomic, assign, nullable, readwrite) VTCompressionSessionRef compressionSession;
+@property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, id> *pixelBufferAttributes;
+
+- (void)pushFrame;
+
+@end
 
 static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixelBuffer(CVPixelBufferRef pixelBuffer);
 static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixelBuffer(CVPixelBufferRef pixelBuffer)
@@ -45,35 +80,133 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   };
 }
 
-@interface FBSimulatorBitmapStream_Lazy : FBSimulatorBitmapStream
+static NSData *AnnexBNALUStartCodeData()
+{
+  // https://www.programmersought.com/article/3901815022/
+  // Annex-B is simpler as it is purely based on a start code to denote the start of the NALU.
+  static NSData *data;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    const uint8_t headerCode[] = {0x00, 0x00, 0x00, 0x01};
+    data = [NSData dataWithBytes:headerCode length:sizeof(headerCode)];
+  });
+  return data;
+}
 
-@end
+static const int AVCCHeaderLength = 4;
 
-@interface FBSimulatorBitmapStream_Eager : FBSimulatorBitmapStream
+static void WriteFrameToAnnexBStream(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
+{
+  FBSimulatorBitmapStream *stream = (__bridge FBSimulatorBitmapStream *)(outputCallbackRefCon);
+  id<FBControlCoreLogger> logger = stream.logger;
+  if (encodeStats != noErr) {
+    [logger logFormat:@"Failed encode callback %d", encodeStats];
+    return;
+  }
+  if (!CMSampleBufferDataIsReady(sampleBuffer)) {
+    [logger log:@"Sample Buffer is not ready"];
+    return;
+  }
+  NSData *headerData = AnnexBNALUStartCodeData();
 
-@property (nonatomic, assign, readonly) uint64_t timeInterval;
-@property (nonatomic, strong, readwrite) FBDispatchSourceNotifier *timer;
+  id<FBDataConsumer> consumer = stream.consumer;
+  NSArray<id> *attachmentsArray = (NSArray<id> *) CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
+  BOOL hasKeyframe = attachmentsArray[0][(NSString *) kCMSampleAttachmentKey_NotSync] != nil;
+  if (hasKeyframe) {
+    CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
+    size_t spsSize, spsCount;
+    const uint8_t *spsParameterSet;
+    OSStatus status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
+      format,
+      0,
+      &spsParameterSet,
+      &spsSize,
+      &spsCount,
+      0
+    );
+    if (status != noErr) {
+      [logger logFormat:@"Failed to get SPS Params %d", status];
+      return;
+    }
+    size_t ppsSize, ppsCount;
+    const uint8_t *ppsParameterSet;
+    status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
+      format,
+      1,
+      &ppsParameterSet,
+      &ppsSize,
+      &ppsCount,
+      0
+    );
+    if (status != noErr) {
+      [logger logFormat:@"Failed to get PPS Params %d", status];
+      return;
+    }
+    NSData *spsData = [NSData dataWithBytes:spsParameterSet length:spsSize];
+    NSData *ppsData = [NSData dataWithBytes:ppsParameterSet length:ppsSize];
+    [consumer consumeData:headerData];
+    [consumer consumeData:spsData];
+    [consumer consumeData:headerData];
+    [consumer consumeData:ppsData];
+    [logger logFormat:@"Pushing Keyframe"];
+  }
 
-- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer writeQueue:(dispatch_queue_t)writeQueue timeInterval:(uint64_t)timeInterval logger:(id<FBControlCoreLogger>)logger;
+  // Get the underlying data buffer.
+  CMBlockBufferRef dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer);
+  size_t dataLength;
+  char *dataPointer;
+  OSStatus status = CMBlockBufferGetDataPointer(
+    dataBuffer,
+    0,
+    NULL,
+    &dataLength,
+    &dataPointer
+  );
+  if (status != noErr) {
+    [logger logFormat:@"Failed to get Data Pointer %d", status];
+    return;
+  }
 
-@end
+  // Enumerate the data buffer
+  size_t dataOffset = 0;
+  while (dataOffset < dataLength - AVCCHeaderLength) {
+    // Write start code to the elementary stream
+    [consumer consumeData:headerData];
 
+    // Get our current position in the buffer
+    void *currentDataPointer = dataPointer + dataOffset;
 
-@interface FBSimulatorBitmapStream ()
+    // Get the length of the NAL Unit, this is contained in the current offset.
+    // This will tell us how many bytes to write in the current NAL unit, contained in the buffer.
+    uint32_t nalLength = 0;
+    memcpy(&nalLength, currentDataPointer, AVCCHeaderLength);
+    // Convert the length value from Big-endian to Little-endian.
+    nalLength = CFSwapInt32BigToHost(nalLength);
 
-@property (nonatomic, weak, readonly) FBFramebuffer *framebuffer;
-@property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startFuture;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *stopFuture;
+    // Write the NAL unit without the AVCC length header to the elementary stream
+    void *nalUnitPointer = currentDataPointer + AVCCHeaderLength;
+    NSData *nalUnitData = [NSData dataWithBytes:nalUnitPointer length:nalLength];
+    [consumer consumeData:nalUnitData];
 
-@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> consumer;
-@property (nonatomic, assign, nullable, readwrite) CVPixelBufferRef pixelBuffer;
-@property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, id> *pixelBufferAttributes;
+    // Increment the offset for the next iteration.
+    dataOffset += AVCCHeaderLength + nalLength;
+  }
+}
 
-- (void)pushFrame;
+static NSDictionary<NSString *, id> *SourceImageBufferAttributes(CVPixelBufferRef pixelBuffer)
+{
+  return @{
+    (NSString *) kCVPixelBufferWidthKey: @(CVPixelBufferGetWidth(pixelBuffer)),
+    (NSString *) kCVPixelBufferHeightKey: @(CVPixelBufferGetHeight(pixelBuffer)),
+  };
+}
 
-@end
+static NSDictionary<NSString *, id> * EncoderSpecification()
+{
+  return @{
+    (NSString *) kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder: @YES,
+  };
+}
 
 @implementation FBSimulatorBitmapStream
 
@@ -82,18 +215,17 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   return dispatch_queue_create("com.facebook.FBSimulatorControl.BitmapStream", DISPATCH_QUEUE_SERIAL);
 }
 
-+ (instancetype)lazyStreamWithFramebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger
++ (instancetype)lazyStreamWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBBitmapStreamEncoding)encoding logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  return [[FBSimulatorBitmapStream_Lazy alloc] initWithFramebuffer:framebuffer writeQueue:self.writeQueue logger:logger];
+  return [[FBSimulatorBitmapStream_Lazy alloc] initWithFramebuffer:framebuffer encoding:encoding writeQueue:self.writeQueue logger:logger];
 }
 
-+ (instancetype)eagerStreamWithFramebuffer:(FBFramebuffer *)framebuffer framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)eagerStreamWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBBitmapStreamEncoding)encoding framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  uint64_t timeInterval = NSEC_PER_SEC / framesPerSecond;
-  return [[FBSimulatorBitmapStream_Eager alloc] initWithFramebuffer:framebuffer writeQueue:self.writeQueue timeInterval:timeInterval logger:logger];
+  return [[FBSimulatorBitmapStream_Eager alloc] initWithFramebuffer:framebuffer encoding:encoding writeQueue:self.writeQueue framesPerSecond:framesPerSecond logger:logger];
 }
 
-- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBBitmapStreamEncoding)encoding writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -101,10 +233,11 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   }
 
   _framebuffer = framebuffer;
+  _encoding = encoding;
   _writeQueue = writeQueue;
   _logger = logger;
-  _startFuture = FBMutableFuture.future;
-  _stopFuture = FBMutableFuture.future;
+  _startedFuture = FBMutableFuture.future;
+  _stoppedFuture = FBMutableFuture.future;
 
   return self;
 }
@@ -131,51 +264,65 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 {
   return [[FBFuture
     onQueue:self.writeQueue resolve:^ FBFuture<NSNull *> * {
+      if (self.startedFuture.hasCompleted) {
+        return [[FBSimulatorError
+          describe:@"Cannot start streaming, since streaming is stopped"]
+          failFuture];
+      }
       if (self.consumer) {
         return [[FBSimulatorError
-          describe:@"Cannot start streaming, a consumer is already attached"]
+          describe:@"Cannot start streaming, since streaming has already has started"]
           failFuture];
       }
       self.consumer = consumer;
-
       return [self attachConsumerIfNeeded];
     }]
     onQueue:self.writeQueue fmap:^(id _) {
-      return self.startFuture;
+      return self.startedFuture;
     }];
 }
 
 - (FBFuture<NSNull *> *)stopStreaming
 {
-  if (!self.consumer) {
-    return [[FBSimulatorError
-      describe:@"Cannot stop streaming, no consumer attached"]
-      failFuture];
-  }
-  if (![self.framebuffer.attachedConsumers containsObject:self]) {
-    return [[FBSimulatorError
-      describe:@"Cannot stop streaming, is not attached to a surface"]
-      failFuture];
-  }
-  [self.framebuffer detachConsumer:self];
-  [self.stopFuture resolveWithResult:NSNull.null];
-  return self.stopFuture;
+  return [FBFuture
+    onQueue:self.writeQueue resolve:^ FBFuture<NSNull *> *{
+      if (self.stoppedFuture.hasCompleted) {
+        return self.stoppedFuture;
+      }
+      id<FBDataConsumer> consumer = self.consumer;
+      if (!consumer) {
+        return [[FBSimulatorError
+          describe:@"Cannot stop streaming, no consumer attached"]
+          failFuture];
+      }
+      if (![self.framebuffer.attachedConsumers containsObject:self]) {
+        return [[FBSimulatorError
+          describe:@"Cannot stop streaming, is not attached to a surface"]
+          failFuture];
+      }
+      self.consumer = nil;
+      [self.framebuffer detachConsumer:self];
+      [consumer consumeEndOfFile];
+      [self.stoppedFuture resolveWithResult:NSNull.null];
+      return self.stoppedFuture;
+    }];
 }
 
 #pragma mark Private
 
 - (FBFuture<NSNull *> *)attachConsumerIfNeeded
 {
-  return [FBFuture onQueue:self.writeQueue resolve:^{
-    if ([self.framebuffer isConsumerAttached:self]) {
-      [self.logger logFormat:@"Already attached %@ as a consumer", self];
+  return [FBFuture
+    onQueue:self.writeQueue resolve:^{
+      if ([self.framebuffer isConsumerAttached:self]) {
+        [self.logger logFormat:@"Already attached %@ as a consumer", self];
+        return FBFuture.empty;
+      }
+      // If we have a surface now, we can start rendering, so mount the surface.
+      IOSurfaceRef surface = [self.framebuffer attachConsumer:self onQueue:self.writeQueue];
+      [self didChangeIOSurface:surface];
       return FBFuture.empty;
-    }
-    // If we have a surface now, we can start rendering, so mount the surface.
-    IOSurfaceRef surface = [self.framebuffer attachConsumer:self onQueue:self.writeQueue];
-    [self didChangeIOSurface:surface];
-    return FBFuture.empty;
-  }];
+    }];
 }
 
 #pragma mark FBFramebufferConsumer
@@ -227,18 +374,68 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   self.pixelBuffer = buffer;
   self.pixelBufferAttributes = attributes;
 
+  if ([self.encoding isEqualToString:FBBitmapStreamEncodingH264]) {
+    VTCompressionSessionRef compressionSession = NULL;
+    status = VTCompressionSessionCreate(
+      nil, // Allocator
+      (int32_t) CVPixelBufferGetWidth(buffer),
+      (int32_t) CVPixelBufferGetHeight(buffer),
+      kCMVideoCodecType_H264,
+      (__bridge CFDictionaryRef) EncoderSpecification(),
+      (__bridge CFDictionaryRef) SourceImageBufferAttributes(buffer),
+      nil, // Compressed Data Allocator
+      WriteFrameToAnnexBStream,
+      (__bridge void * _Nullable)(self), // Callback Ref.
+      &compressionSession
+    );
+    if (status != noErr) {
+      return [[FBSimulatorError
+        describeFormat:@"Failed to start Compression Session %d", status]
+        failBool:error];
+    }
+    status = VTSessionSetProperties(
+      compressionSession,
+      (__bridge CFDictionaryRef) self.compressionSessionProperties
+    );
+    if (status != noErr) {
+      return [[FBSimulatorError
+        describeFormat:@"Failed to set compression session properties %d", status]
+        failBool:error];
+    }
+    status = VTCompressionSessionPrepareToEncodeFrames(compressionSession);
+    if (status != noErr) {
+      return [[FBSimulatorError
+        describeFormat:@"Failed to prepare compression session %d", status]
+        failBool:error];
+    }
+    self.compressionSession = compressionSession;
+  }
+
   // Signal that we've started
-  [self.startFuture resolveWithResult:NSNull.null];
+  [self.startedFuture resolveWithResult:NSNull.null];
 
   return YES;
 }
 
 - (void)pushFrame
 {
-  if (!self.pixelBuffer || !self.consumer) {
+  CVPixelBufferRef pixelBufer = self.pixelBuffer;
+  id<FBDataConsumer> consumer = self.consumer;
+  if (!pixelBufer || !consumer) {
     return;
   }
-  [FBSimulatorBitmapStream writeBitmap:self.pixelBuffer consumer:self.consumer];
+  NSUInteger frameNumber = self.frameNumber;
+  if (frameNumber == 0) {
+    self.timeAtFirstFrame = CFAbsoluteTimeGetCurrent();
+  }
+  CFTimeInterval timeAtFirstFrame = self.timeAtFirstFrame;
+  VTCompressionSessionRef compressionSession = self.compressionSession;
+  if (compressionSession) {
+    [FBSimulatorBitmapStream writeEncodedFrame:pixelBufer compressionSession:compressionSession frameNumber:frameNumber timeAtFirstFrame:timeAtFirstFrame];
+  } else {
+    [FBSimulatorBitmapStream writeBitmap:pixelBufer consumer:consumer];
+  }
+  self.frameNumber = frameNumber + 1;
 }
 
 + (void)writeBitmap:(CVPixelBufferRef)pixelBuffer consumer:(id<FBDataConsumer>)consumer
@@ -253,6 +450,31 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
 }
 
++ (void)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer compressionSession:(VTCompressionSessionRef)compressionSession frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame
+{
+  VTEncodeInfoFlags flags;
+  CMTime time = CMTimeMakeWithSeconds(CFAbsoluteTimeGetCurrent() - timeAtFirstFrame, NSEC_PER_SEC);
+  OSStatus status = VTCompressionSessionEncodeFrame(
+    compressionSession,
+    pixelBuffer,
+    time,
+    kCMTimeInvalid,  // Frame duration
+    NULL,  // Frame properties
+    NULL,  // Source Frame Reference for callback.
+    &flags
+  );
+  (void) status;
+}
+
+- (NSDictionary<NSString *, id> *)compressionSessionProperties
+{
+  return @{
+    (NSString *) kVTCompressionPropertyKey_RealTime: @YES,
+    (NSString *) kVTCompressionPropertyKey_ProfileLevel: (NSString *) kVTProfileLevel_H264_High_AutoLevel,
+    (NSString *) kVTCompressionPropertyKey_AllowFrameReordering: @NO,
+  };
+}
+
 #pragma mark FBiOSTargetContinuation
 
 - (FBiOSTargetFutureType)futureType
@@ -262,9 +484,11 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [self.stopFuture onQueue:self.writeQueue respondToCancellation:^{
-    return [self stopStreaming];
-  }];
+  return [[FBMutableFuture.future
+    resolveFromFuture:self.stoppedFuture]
+    onQueue:self.writeQueue respondToCancellation:^{
+      return [self stopStreaming];
+    }];
 }
 
 @end
@@ -276,18 +500,19 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   [self pushFrame];
 }
 
+
 @end
 
 @implementation FBSimulatorBitmapStream_Eager
 
-- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer writeQueue:(dispatch_queue_t)writeQueue timeInterval:(uint64_t)timeInterval logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBBitmapStreamEncoding)encoding writeQueue:(dispatch_queue_t)writeQueue framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super initWithFramebuffer:framebuffer writeQueue:writeQueue logger:logger];
+  self = [super initWithFramebuffer:framebuffer encoding:encoding writeQueue:writeQueue logger:logger];
   if (!self) {
     return nil;
   }
 
-  _timeInterval = timeInterval;
+  _framesPerSecond = framesPerSecond;
 
   return self;
 }
@@ -304,10 +529,23 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
     [self.timer terminate];
     self.timer = nil;
   }
-  self.timer = [FBDispatchSourceNotifier timerNotifierNotifierWithTimeInterval:self.timeInterval queue:self.writeQueue handler:^(FBDispatchSourceNotifier *_) {
+  uint64_t timeInterval = NSEC_PER_SEC / self.framesPerSecond;
+  self.timer = [FBDispatchSourceNotifier timerNotifierNotifierWithTimeInterval:timeInterval queue:self.writeQueue handler:^(FBDispatchSourceNotifier *_) {
     [self pushFrame];
   }];
+
   return YES;
+}
+
+- (NSDictionary<NSString *, id> *)compressionSessionProperties
+{
+  return @{
+    (NSString *) kVTCompressionPropertyKey_RealTime: @YES,
+    (NSString *) kVTCompressionPropertyKey_ProfileLevel: (NSString *) kVTProfileLevel_H264_High_AutoLevel,
+    (NSString *) kVTCompressionPropertyKey_ExpectedFrameRate: @(self.framesPerSecond),
+    (NSString *) kVTCompressionPropertyKey_MaxKeyFrameInterval: @2,
+    (NSString *) kVTCompressionPropertyKey_AllowFrameReordering: @NO,
+  };
 }
 
 @end

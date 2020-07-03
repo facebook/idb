@@ -75,21 +75,22 @@
 
 - (FBFuture<FBSimulatorBitmapStream *> *)createStreamWithConfiguration:(FBBitmapStreamConfiguration *)configuration
 {
-  if (![configuration.encoding isEqualToString:FBBitmapStreamEncodingBGRA]) {
-    return [[FBSimulatorError
-      describe:@"Only BGRA is supported for simulators."]
-      failFuture];
-  }
   id<FBControlCoreLogger> logger = self.simulator.logger;
   return [[self.simulator
     connectToFramebuffer]
-    onQueue:self.simulator.workQueue map:^(FBFramebuffer *framebuffer) {
-      NSNumber *framesPerSecond = configuration.framesPerSecond;
-      if (framesPerSecond) {
-        return [FBSimulatorBitmapStream eagerStreamWithFramebuffer:framebuffer framesPerSecond:framesPerSecond.unsignedIntegerValue logger:logger];
-      }
-      return [FBSimulatorBitmapStream lazyStreamWithFramebuffer:framebuffer logger:logger];
+    onQueue:self.simulator.workQueue fmap:^(FBFramebuffer *framebuffer) {
+      return [FBSimulatorVideoRecordingCommands streamWithFramebuffer:framebuffer encoding:configuration.encoding framesPerSecond:configuration.framesPerSecond logger:logger];
     }];
+}
+
++ (FBFuture<FBSimulatorBitmapStream *> *)streamWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBBitmapStreamEncoding)encoding framesPerSecond:(NSNumber *)framesPerSecond logger:(id<FBControlCoreLogger>)logger
+{
+  return [FBFuture resolveValue:^ FBSimulatorBitmapStream * (NSError **error){
+    if (framesPerSecond) {
+      return [FBSimulatorBitmapStream eagerStreamWithFramebuffer:framebuffer encoding:encoding framesPerSecond:framesPerSecond.unsignedIntegerValue logger:logger error:error];
+    }
+    return [FBSimulatorBitmapStream lazyStreamWithFramebuffer:framebuffer encoding:encoding logger:logger error:error];
+  }];
 }
 
 #pragma mark Private

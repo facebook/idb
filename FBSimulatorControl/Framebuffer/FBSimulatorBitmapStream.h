@@ -31,21 +31,24 @@ NS_ASSUME_NONNULL_BEGIN
  Bitmaps will only be written when there is a new bitmap available.
 
  @param framebuffer the framebuffer to get frames from.
+ @param encoding the encoding to use.
  @param logger the logger to log to.
- @return a new Bitmap Stream object.
+ @param error an error out for any error that occurs
+ @return a new Bitmap Stream object, nil on failure
  */
-+ (instancetype)lazyStreamWithFramebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger;
++ (nullable instancetype)lazyStreamWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBBitmapStreamEncoding)encoding logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Constructs a Bitmap Stream.
  Bitmaps will be written at an interval in seconds, regardless of whether the frame is new or not.
 
  @param framebuffer the framebuffer to get frames from.
+ @param encoding the encoding to use.
  @param framesPerSecond the number of frames to send per second.
  @param logger the logger to log to.
- @return a new Bitmap Stream object.
+ @return a new Bitmap Stream object, nil on failure.
  */
-+ (instancetype)eagerStreamWithFramebuffer:(FBFramebuffer *)framebuffer framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger;
++ (nullable instancetype)eagerStreamWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBBitmapStreamEncoding)encoding framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 @end
 

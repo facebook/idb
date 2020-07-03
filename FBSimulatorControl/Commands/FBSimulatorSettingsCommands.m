@@ -235,7 +235,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
     properties[@"$objects"][3][@"allowsNotifications"] = @(YES);
 
     NSError *writeError = nil;
-    NSData *resultData = [NSPropertyListSerialization dataWithPropertyList:properties format:kCFPropertyListBinaryFormat_v1_0 options:0 error:&writeError];
+    NSData *resultData = [NSPropertyListSerialization dataWithPropertyList:properties format:NSPropertyListBinaryFormat_v1_0 options:0 error:&writeError];
     if (writeError != nil) {
       return [FBSimulatorError failFutureWithError:writeError];
     }
