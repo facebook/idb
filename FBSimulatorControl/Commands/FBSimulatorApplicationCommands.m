@@ -83,15 +83,21 @@
 
 - (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications
 {
-  NSMutableArray<FBInstalledApplication *> *applications = [NSMutableArray array];
-  for (NSDictionary *appInfo in [[self.simulator.device installedAppsWithError:nil] allValues]) {
-    FBInstalledApplication *application = [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:nil];
-    if (!application) {
-      continue;
-    }
-    [applications addObject:application];
-  }
-  return [FBFuture futureWithResult:[applications copy]];
+  return [[FBFuture
+    resolveValue:^ NSDictionary<NSString *, id> * (NSError **error) {
+      return [self.simulator.device installedAppsWithError:error];
+    }]
+    onQueue:self.simulator.asyncQueue map:^(NSDictionary<NSString *, id> *installedApps) {
+      NSMutableArray<FBInstalledApplication *> *applications = [NSMutableArray array];
+      for (NSDictionary *appInfo in installedApps.allValues) {
+        FBInstalledApplication *application = [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:nil];
+        if (!application) {
+          continue;
+        }
+        [applications addObject:application];
+      }
+      return applications;
+    }];
 }
 
 #pragma mark - FBSimulatorApplicationCommands
