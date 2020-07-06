@@ -21,32 +21,41 @@
 
 @end
 
+static BOOL FB_AMDeviceConnected(AMDeviceRef device, FBAMDeviceManager *manager)
+{
+  NSError *error = nil;
+  id<FBControlCoreLogger> logger = manager.logger;
+  NSString *identifier = [manager identifierForDevice:device];
+  if (!identifier) {
+    [logger.error log:@"Cannot start session with device, identifier could not be obtained %@"];
+    return NO;
+  }
+  AMDCalls calls = manager.calls;
+  if (![FBAMDeviceManager startUsing:device calls:calls logger:logger error:&error]) {
+    [logger.error logFormat:@"Cannot start session with device, ignoring device %@", error];
+    return NO;
+  }
+  NSDictionary<NSString *, id> *info = [CFBridgingRelease(calls.CopyValue(device, NULL, NULL)) copy];
+  [FBAMDeviceManager stopUsing:device calls:calls logger:logger error:nil];
+  if (!info) {
+    [logger.error log:@"Ignoring device as no values were returned for it"];
+    return NO;
+  }
+  [logger logFormat:@"Obtained Device Values %@", info];
+  [manager deviceConnected:device identifier:identifier info:info];
+  return YES;
+}
+
 static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAMDeviceManager *manager)
 {
   AMDeviceNotificationType notificationType = notification->status;
   AMDeviceRef device = notification->amDevice;
-  NSString *identifier = [manager identifierForDevice:device];
-  AMDCalls calls = manager.calls;
   id<FBControlCoreLogger> logger = manager.logger;
   switch (notificationType) {
-    case AMDeviceNotificationTypeConnected: {
-      NSError *error = nil;
-      if (![FBAMDeviceManager startUsing:device calls:calls logger:logger error:&error]) {
-        [logger.error logFormat:@"Cannot start session with device, ignoring device %@", error];
-        return;
-      }
-      NSDictionary<NSString *, id> *info = [CFBridgingRelease(calls.CopyValue(device, NULL, NULL)) copy];
-      [FBAMDeviceManager stopUsing:device calls:calls logger:logger error:nil];
-      if (!info) {
-        [logger.error log:@"Ignoring device as no values were returned for it"];
-        return;
-      }
-      [logger logFormat:@"Obtained Device Values %@", info];
-      [manager deviceConnected:device identifier:identifier info:info];
-      return;
-    }
+    case AMDeviceNotificationTypeConnected:
+      FB_AMDeviceConnected(device, manager);
     case AMDeviceNotificationTypeDisconnected:
-      [manager deviceDisconnected:device identifier:identifier];
+      [manager deviceDisconnected:device identifier:[manager identifierForDevice:device]];
       return;
     case AMDeviceNotificationTypeUnsubscribed:
       [logger logFormat:@"Unsubscribed from AMDeviceNotificationSubscribe"];
@@ -234,14 +243,16 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
 
 - (BOOL)populateFromListWithError:(NSError **)error
 {
+  [self.logger log:@"Populating devices from list"];
   _Nullable CFArrayRef array = self.calls.CreateDeviceList();
   if (array == NULL) {
-    return [[FBDeviceControlError describe:@"AMDCreateDeviceList returned NULL"] failBool:error];
+    return [[FBDeviceControlError
+      describe:@"AMDCreateDeviceList returned NULL"]
+      failBool:error];
   }
   for (NSInteger index = 0; index < CFArrayGetCount(array); index++) {
-    AMDeviceRef value = CFArrayGetValueAtIndex(array, index);
-    NSString *identifier = [self identifierForDevice:value];
-    [self deviceConnected:value identifier:identifier info:nil];
+    AMDeviceRef device = CFArrayGetValueAtIndex(array, index);
+    FB_AMDeviceConnected(device, self);
   }
   CFRelease(array);
   return YES;
