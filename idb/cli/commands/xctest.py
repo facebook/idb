@@ -92,9 +92,17 @@ class XctestListTestsCommand(ClientCommand):
             type=str,
             help="Path of the app of the test (needed for app tests)",
         )
+        parser.add_argument(
+            "--install",
+            help="When this option is provided bundle_ids are assumed "
+            "to be paths instead. They are installed before listing.",
+            action="store_true",
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+        if args.install:
+            await self.install_bundles(args, client)
         tests = await client.list_test_bundle(
             test_bundle_id=args.test_bundle_id, app_path=args.app_path
         )
@@ -102,6 +110,10 @@ class XctestListTestsCommand(ClientCommand):
             print(json.dumps(tests))
         else:
             print("\n".join(tests))
+
+    async def install_bundles(self, args: Namespace, client: IdbClient) -> None:
+        async for test in client.install_xctest(args.test_bundle_id):
+            args.test_bundle_id = test.name
 
 
 class CommonRunXcTestCommand(ClientCommand):
