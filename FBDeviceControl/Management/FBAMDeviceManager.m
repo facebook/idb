@@ -54,6 +54,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   switch (notificationType) {
     case AMDeviceNotificationTypeConnected:
       FB_AMDeviceConnected(device, manager);
+      return;
     case AMDeviceNotificationTypeDisconnected:
       [manager deviceDisconnected:device identifier:[manager identifierForDevice:device]];
       return;
