@@ -11,6 +11,8 @@ static NSString *const UnknownValue = @"unknown";
 
 @implementation FBAMRestorableDevice
 
+@synthesize restorableDevice = _restorableDevice;
+
 - (instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef)restorableDevice
 {
   self = [super init];
@@ -111,6 +113,23 @@ static NSString *const UnknownValue = @"unknown";
     default:
       return FBiOSTargetStateUnknown;
   }
+}
+
+- (void)setRestorableDevice:(AMRestorableDeviceRef)restorableDevice
+{
+  AMDeviceRef oldRestorableDevice = _restorableDevice;
+  if (restorableDevice) {
+    CFRetain(restorableDevice);
+  }
+  if (oldRestorableDevice) {
+    CFRelease(oldRestorableDevice);
+  }
+  _restorableDevice = restorableDevice;
+}
+
+- (AMRestorableDeviceRef)restorableDevice
+{
+  return _restorableDevice;
 }
 
 #pragma mark Private
