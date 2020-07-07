@@ -61,7 +61,6 @@
 
 @end
 
-static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixelBuffer(CVPixelBufferRef pixelBuffer);
 static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixelBuffer(CVPixelBufferRef pixelBuffer)
 {
   size_t width = CVPixelBufferGetWidth(pixelBuffer);
@@ -80,117 +79,10 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   };
 }
 
-static NSData *AnnexBNALUStartCodeData()
-{
-  // https://www.programmersought.com/article/3901815022/
-  // Annex-B is simpler as it is purely based on a start code to denote the start of the NALU.
-  static NSData *data;
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    const uint8_t headerCode[] = {0x00, 0x00, 0x00, 0x01};
-    data = [NSData dataWithBytes:headerCode length:sizeof(headerCode)];
-  });
-  return data;
-}
-
-static const int AVCCHeaderLength = 4;
-
-static void WriteFrameToAnnexBStream(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
+static void EncodeCallbck(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
 {
   FBSimulatorBitmapStream *stream = (__bridge FBSimulatorBitmapStream *)(outputCallbackRefCon);
-  id<FBControlCoreLogger> logger = stream.logger;
-  if (encodeStats != noErr) {
-    [logger logFormat:@"Failed encode callback %d", encodeStats];
-    return;
-  }
-  if (!CMSampleBufferDataIsReady(sampleBuffer)) {
-    [logger log:@"Sample Buffer is not ready"];
-    return;
-  }
-  NSData *headerData = AnnexBNALUStartCodeData();
-
-  id<FBDataConsumer> consumer = stream.consumer;
-  NSArray<id> *attachmentsArray = (NSArray<id> *) CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
-  BOOL hasKeyframe = attachmentsArray[0][(NSString *) kCMSampleAttachmentKey_NotSync] != nil;
-  if (hasKeyframe) {
-    CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
-    size_t spsSize, spsCount;
-    const uint8_t *spsParameterSet;
-    OSStatus status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
-      format,
-      0,
-      &spsParameterSet,
-      &spsSize,
-      &spsCount,
-      0
-    );
-    if (status != noErr) {
-      [logger logFormat:@"Failed to get SPS Params %d", status];
-      return;
-    }
-    size_t ppsSize, ppsCount;
-    const uint8_t *ppsParameterSet;
-    status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
-      format,
-      1,
-      &ppsParameterSet,
-      &ppsSize,
-      &ppsCount,
-      0
-    );
-    if (status != noErr) {
-      [logger logFormat:@"Failed to get PPS Params %d", status];
-      return;
-    }
-    NSData *spsData = [NSData dataWithBytes:spsParameterSet length:spsSize];
-    NSData *ppsData = [NSData dataWithBytes:ppsParameterSet length:ppsSize];
-    [consumer consumeData:headerData];
-    [consumer consumeData:spsData];
-    [consumer consumeData:headerData];
-    [consumer consumeData:ppsData];
-    [logger logFormat:@"Pushing Keyframe"];
-  }
-
-  // Get the underlying data buffer.
-  CMBlockBufferRef dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer);
-  size_t dataLength;
-  char *dataPointer;
-  OSStatus status = CMBlockBufferGetDataPointer(
-    dataBuffer,
-    0,
-    NULL,
-    &dataLength,
-    &dataPointer
-  );
-  if (status != noErr) {
-    [logger logFormat:@"Failed to get Data Pointer %d", status];
-    return;
-  }
-
-  // Enumerate the data buffer
-  size_t dataOffset = 0;
-  while (dataOffset < dataLength - AVCCHeaderLength) {
-    // Write start code to the elementary stream
-    [consumer consumeData:headerData];
-
-    // Get our current position in the buffer
-    void *currentDataPointer = dataPointer + dataOffset;
-
-    // Get the length of the NAL Unit, this is contained in the current offset.
-    // This will tell us how many bytes to write in the current NAL unit, contained in the buffer.
-    uint32_t nalLength = 0;
-    memcpy(&nalLength, currentDataPointer, AVCCHeaderLength);
-    // Convert the length value from Big-endian to Little-endian.
-    nalLength = CFSwapInt32BigToHost(nalLength);
-
-    // Write the NAL unit without the AVCC length header to the elementary stream
-    void *nalUnitPointer = currentDataPointer + AVCCHeaderLength;
-    NSData *nalUnitData = [NSData dataWithBytes:nalUnitPointer length:nalLength];
-    [consumer consumeData:nalUnitData];
-
-    // Increment the offset for the next iteration.
-    dataOffset += AVCCHeaderLength + nalLength;
-  }
+  WriteFrameToAnnexBStream(sampleBuffer, stream.consumer, stream.logger, nil);
 }
 
 static NSDictionary<NSString *, id> *SourceImageBufferAttributes(CVPixelBufferRef pixelBuffer)
@@ -384,7 +276,7 @@ static NSDictionary<NSString *, id> * EncoderSpecification()
       (__bridge CFDictionaryRef) EncoderSpecification(),
       (__bridge CFDictionaryRef) SourceImageBufferAttributes(buffer),
       nil, // Compressed Data Allocator
-      WriteFrameToAnnexBStream,
+      EncodeCallbck,
       (__bridge void * _Nullable)(self), // Callback Ref.
       &compressionSession
     );

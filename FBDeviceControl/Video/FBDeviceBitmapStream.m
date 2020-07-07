@@ -213,80 +213,9 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 @implementation FBDeviceBitmapStream_H264
 
-- (void)dispatchPacket:(const void *)data length:(size_t)length
-{
-  static const size_t startCodeLength = 4;
-  static const uint8_t startCode[] = {0x00, 0x00, 0x00, 0x01};
-  [self.consumer consumeData:[NSData dataWithBytesNoCopy:(void *)startCode length:startCodeLength freeWhenDone:NO]];
-  [self.consumer consumeData:[NSData dataWithBytesNoCopy:(void *)data length:length freeWhenDone:NO]];
-}
-
 - (void)consumeSampleBuffer:(CMSampleBufferRef)sampleBuffer
 {
-  BOOL syncFrame = NO;
-  CFArrayRef attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, 0);
-  if (CFArrayGetCount(attachments) > 0) {
-    CFBooleanRef notSyncFrame = NULL;
-    Boolean keyExists = CFDictionaryGetValueIfPresent(CFArrayGetValueAtIndex(attachments, 0),
-                                                      kCMSampleAttachmentKey_NotSync,
-                                                      (const void **)&notSyncFrame);
-    syncFrame = !keyExists || !CFBooleanGetValue(notSyncFrame);
-  }
-
-  CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
-
-  if (!self.pixelBufferAttributes) {
-    CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format);
-    NSDictionary *attributes = @{
-                                 @"width" : @(dimensions.width),
-                                 @"height" : @(dimensions.height),
-                                 @"format" : @"h264",
-                                 };
-    self.pixelBufferAttributes = attributes;
-    [self.logger logFormat:@"Mounting Surface with Attributes: %@", attributes];
-  }
-
-  if (syncFrame || !self.sentH264SPSPPS) {
-    size_t numberOfParameterSets = 0;
-    CMVideoFormatDescriptionGetH264ParameterSetAtIndex(format,
-                                                       0, NULL, NULL,
-                                                       &numberOfParameterSets,
-                                                       NULL);
-
-    for (size_t i = 0; i < numberOfParameterSets; i++) {
-      const uint8_t *data = NULL;
-      size_t length = 0;
-      CMVideoFormatDescriptionGetH264ParameterSetAtIndex(format,
-                                                         i,
-                                                         &data,
-                                                         &length,
-                                                         NULL, NULL);
-
-      [self dispatchPacket:data length:length];
-    }
-
-    self.sentH264SPSPPS = YES;
-  }
-
-  size_t bufferLength = 0;
-  uint8_t *buffer = NULL;
-  CMBlockBufferGetDataPointer(CMSampleBufferGetDataBuffer(sampleBuffer),
-                              0,
-                              NULL,
-                              &bufferLength,
-                              (char **)&buffer);
-
-  size_t currentBufferOffset = 0;
-  static const int headerLength = 4;
-  while (currentBufferOffset < (bufferLength - headerLength)) {
-    uint32_t thisUnitLength = 0;
-    memcpy(&thisUnitLength, buffer + currentBufferOffset, headerLength);
-    thisUnitLength = CFSwapInt32BigToHost(thisUnitLength);
-
-    [self dispatchPacket:(buffer + currentBufferOffset + headerLength) length:thisUnitLength];
-
-    currentBufferOffset += headerLength + thisUnitLength;
-  }
+  WriteFrameToAnnexBStream(sampleBuffer, self.consumer, self.logger, nil);
 }
 
 @end

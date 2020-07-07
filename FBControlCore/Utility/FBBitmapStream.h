@@ -6,6 +6,7 @@
  */
 
 #import <Foundation/Foundation.h>
+#import <CoreMedia/CoreMedia.h>
 
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBiOSTargetFuture.h>
@@ -66,5 +67,16 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming;
 - (FBFuture<NSNull *> *)stopStreaming;
 
 @end
+
+/**
+ Write an H264 frame to the stream, in the Annex-B stream format.
+
+ @param sampleBuffer the Sample buffer to write/
+ @param consumer the consumer to write to.
+ @param logger the logger to use.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+extern BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
 
 NS_ASSUME_NONNULL_END
