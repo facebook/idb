@@ -328,9 +328,17 @@ static NSString *const AXPrefix = @"AX";
 - (FBFuture<id<FBSimulatorAccessibility>> *)implementationWithNestedFormat:(BOOL)nestedFormat
 {
   // Post Xcode 12, FBSimulatorBridge will not work with accessibility.
-  // Nested is CoreSimulator only.
+  // Additionally, CoreSimulator **should** be upgraded, but if it hasn't then this will fail.
+  // The CoreSimulator API **is** backwards compatible, since it updates CoreSimulator.framework at the system level.
+  // However, this API is only usable from CoreSimulator if Xcode 12 has been *installed at some point in the past on the host*.
   FBSimulator *simulator = self.simulator;
-  if (FBXcodeConfiguration.isXcode12OrGreater || nestedFormat) {
+  SimDevice *device = simulator.device;
+  if (nestedFormat || FBXcodeConfiguration.isXcode12OrGreater) {
+    if (![device respondsToSelector:@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:)]) {
+      return [[FBControlCoreError
+        describeFormat:@"-[SimDevice %@] is not present on, you must install Xcode 12 for this to be available", NSStringFromSelector(@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:))]
+        failFuture];
+    }
     return [FBFuture futureWithResult:[[FBSimulatorAccessibilityCommands_CoreSimulator alloc] initWithDevice:simulator.device queue:simulator.asyncQueue logger:simulator.logger]];
   }
   return [[self.simulator
