@@ -205,7 +205,7 @@ static NSString *const AXPrefix = @"AX";
     },
     @"help": element.accessibilityHelp ?: NSNull.null,
     @"enabled": @(element.accessibilityEnabled),
-    @"custom_actions": element.accessibilityCustomActions ?: @[],
+    @"custom_actions": [element.accessibilityCustomActions valueForKey:@"name"] ?: @[],
     @"role": element.accessibilityRole ?: NSNull.null,
     @"role_description": element.accessibilityRoleDescription ?: NSNull.null,
     @"subrole": element.accessibilitySubrole ?: NSNull.null,
