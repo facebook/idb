@@ -198,6 +198,11 @@
   return self.amDevice.buildVersion;
 }
 
+- (NSString *)productVersion
+{
+  return self.amDevice.productVersion;
+}
+
 - (NSOperatingSystemVersion)operatingSystemVersion
 {
   return [FBDevice operatingSystemVersionFromString:self.amDevice.productVersion];

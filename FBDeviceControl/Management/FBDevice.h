@@ -26,11 +26,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak, readonly) FBDeviceSet *set;
 
 /**
- Device's 'Product Version'
- */
-@property (nonatomic, copy, readonly) NSString *buildVersion;
-
-/**
  Interpolated NSOperatingSystemVersion.
  */
 @property (nonatomic, assign, readonly) NSOperatingSystemVersion operatingSystemVersion;

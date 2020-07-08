@@ -53,16 +53,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *allValues;
 
-/**
- The Device's 'Product Version'.
- */
-@property (nonatomic, nullable, copy, readonly) NSString *productVersion;
-
-/**
- The Device's 'Build Version'.
- */
-@property (nonatomic, nullable, copy, readonly) NSString *buildVersion;
-
 @end
 
 NS_ASSUME_NONNULL_END
