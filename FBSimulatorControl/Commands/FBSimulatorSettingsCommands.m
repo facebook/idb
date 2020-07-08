@@ -17,7 +17,6 @@
 #import "FBDefaultsModificationStrategy.h"
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
-static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 
 @interface FBSimulatorSettingsCommands ()
 
@@ -250,11 +249,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
       failFuture];
   }
 
-  if (self.simulator.state == FBiOSTargetStateBooted) {
-    return [[self.simulator stopServiceWithName:SpringBoardServiceName] mapReplace:NSNull.null];
-  } else {
-    return FBFuture.empty;
-  }
+  return FBFuture.empty;
 }
 
 - (FBFuture<NSNull *> *)modifyTCCDatabaseWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services
