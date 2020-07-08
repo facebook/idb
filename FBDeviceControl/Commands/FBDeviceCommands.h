@@ -57,6 +57,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls;
 
+#pragma mark Properties
+
+/**
+ The AMDevice Calls to use.
+ */
+@property (nonatomic, assign, readonly) AMDCalls calls;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -24,8 +24,9 @@
 @implementation FBAMDevice
 
 @synthesize amDevice = _amDevice;
-@synthesize udid = _udid;
+@synthesize calls = _calls;
 @synthesize contextPoolTimeout = _contextPoolTimeout;
+@synthesize udid = _udid;
 
 #pragma mark Initializers
 

@@ -41,11 +41,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) FBAMDeviceServiceManager *serviceManager;
 
 /**
- The AMDCalls to be used.
- */
-@property (nonatomic, assign, readonly) AMDCalls calls;
-
-/**
  The Queue on which work should be performed.
  */
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;

@@ -208,6 +208,11 @@
   return nil;
 }
 
+- (AMDCalls)calls
+{
+  return self.amDevice.calls;
+}
+
 #pragma mark Forwarding
 
 + (NSArray<Class> *)commandResponders

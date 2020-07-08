@@ -106,7 +106,7 @@ static const int DiskImageAlreadyMountedCode = -402653066;  // 0xe8000076 in hex
         [device.logger logFormat:@"There is a disk image already mounted. Assuming that it is correct...."];
       }
       else if (status != 0) {
-        NSString *internalMessage = CFBridgingRelease(self.device.amDevice.calls.CopyErrorText(status));
+        NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
         return [[FBDeviceControlError
           describeFormat:@"Failed to mount image '%@' with error 0x%x (%@)", diskImage.diskImagePath, status, internalMessage]
           failFuture];
