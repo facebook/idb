@@ -95,7 +95,7 @@ async def generate_io_chunks(
     while True:
         chunk = io.read(CHUNK_SIZE)
         if not chunk:
-            logger.debug(f"Finished generating byte chunks")
+            logger.debug("Finished generating byte chunks")
             return
         yield InstallRequest(payload=Payload(data=chunk))
     logger.debug("Finished generating io chunks")

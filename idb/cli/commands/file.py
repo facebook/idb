@@ -280,7 +280,7 @@ class DeprecatedPushCommand(ClientCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
-        self.logger.warning(f"'push' is deprecated, please use 'file push' instead")
+        self.logger.warning("'push' is deprecated, please use 'file push' instead")
         return await FSPushCommand().run_with_bundle(
             bundle_id=args.bundle_id, args=args, client=client
         )
@@ -304,7 +304,7 @@ class DeprecatedPullCommand(ClientCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
-        self.logger.warning(f"'pull' is deprecated, please use 'file pull' instead")
+        self.logger.warning("'pull' is deprecated, please use 'file pull' instead")
         return await FSPullCommand().run_with_bundle(
             bundle_id=args.bundle_id, args=args, client=client
         )

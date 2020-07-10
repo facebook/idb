@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Optional, Union
 from uuid import uuid4
 
 from idb.common.types import (
-    Address,
     AppProcessState,
     CompanionInfo,
     DomainSocketAddress,

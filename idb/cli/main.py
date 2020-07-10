@@ -297,9 +297,9 @@ async def drain_coroutines(pending: Set[asyncio.Task]) -> None:
         await asyncio.wait_for(
             asyncio.shield(asyncio.gather(*pending)), timeout=COROUTINE_DRAIN_TIMEOUT
         )
-        logger.debug(f"Drained all coroutines")
+        logger.debug("Drained all coroutines")
     except asyncio.TimeoutError:
-        logger.debug(f"Timeout waiting for coroutines to drain")
+        logger.debug("Timeout waiting for coroutines to drain")
     except concurrent.futures.CancelledError:
         pass
 

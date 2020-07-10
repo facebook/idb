@@ -625,7 +625,7 @@ class IdbClient(IdbClientBase):
         timings: Optional[InstrumentsTimings] = None,
         post_process_arguments: Optional[List[str]] = None,
     ) -> List[str]:
-        self.logger.info(f"Starting instruments connection")
+        self.logger.info("Starting instruments connection")
         async with self.stub.instruments_run.open() as stream:
             self.logger.info("Sending instruments request")
             await stream.send_message(
@@ -722,7 +722,7 @@ class IdbClient(IdbClientBase):
 
     @log_and_handle_exceptions
     async def record_video(self, stop: asyncio.Event, output_file: str) -> None:
-        self.logger.info(f"Starting connection to backend")
+        self.logger.info("Starting connection to backend")
         async with self.stub.record.open() as stream:
             if self.is_local:
                 self.logger.info(
@@ -732,7 +732,7 @@ class IdbClient(IdbClientBase):
                     RecordRequest(start=RecordRequest.Start(file_path=output_file))
                 )
             else:
-                self.logger.info(f"Starting video recording with response data")
+                self.logger.info("Starting video recording with response data")
                 await stream.send_message(
                     RecordRequest(start=RecordRequest.Start(file_path=None))
                 )
