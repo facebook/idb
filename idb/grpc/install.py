@@ -82,7 +82,7 @@ async def _generate_framework_chunks(
 
 
 async def generate_requests(
-    requests: List[InstallRequest]
+    requests: List[InstallRequest],
 ) -> AsyncIterator[InstallRequest]:
     for request in requests:
         yield request

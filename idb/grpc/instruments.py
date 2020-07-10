@@ -65,7 +65,7 @@ async def instruments_drain_until_stop(
 
 
 def translate_instruments_timings(
-    timings: Optional[InstrumentsTimings]
+    timings: Optional[InstrumentsTimings],
 ) -> Optional[InstrumentsRunRequest.InstrumentsTimings]:
     return (
         InstrumentsRunRequest.InstrumentsTimings(

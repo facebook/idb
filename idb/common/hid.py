@@ -220,7 +220,7 @@ def text_to_events(text: str) -> List[HIDEvent]:
 
 
 async def iterator_to_async_iterator(
-    events: Iterable[HIDEvent]
+    events: Iterable[HIDEvent],
 ) -> AsyncIterator[HIDEvent]:
     for event in events:
         yield event
