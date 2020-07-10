@@ -641,9 +641,7 @@ class TestParser(TestCase):
     async def test_video(self) -> None:
         mock = AsyncMock()
         with patch(
-            "idb.cli.commands.record.RecordVideoCommand._run_impl",
-            new=mock,
-            create=True,
+            "idb.cli.commands.video.VideoRecordCommand._run_impl", new=mock, create=True
         ):
             output_file = "video.mp4"
             await cli_main(cmd_input=["record-video", output_file])

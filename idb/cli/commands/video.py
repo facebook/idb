@@ -12,7 +12,7 @@ from idb.common.signal import signal_handler_event
 from idb.common.types import IdbClient
 
 
-class RecordVideoCommand(ClientCommand):
+class VideoRecordCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Record the target's screen to a mp4 video file"

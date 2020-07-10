@@ -65,7 +65,6 @@ from idb.cli.commands.launch import LaunchCommand
 from idb.cli.commands.location import LocationSetCommand
 from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.media import MediaAddCommand
-from idb.cli.commands.record import RecordVideoCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
 from idb.cli.commands.target import (
     ConnectCommandException,
@@ -82,6 +81,7 @@ from idb.cli.commands.target import (
     TargetShutdownCommand,
 )
 from idb.cli.commands.url import UrlOpenCommand
+from idb.cli.commands.video import VideoRecordCommand
 from idb.cli.commands.xctest import (
     XctestInstallCommand,
     XctestListTestsCommand,
@@ -184,9 +184,9 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         CommandGroup(
             name="record",
             description="Record what the screen is doing",
-            commands=[RecordVideoCommand()],
+            commands=[VideoRecordCommand()],
         ),
-        RecordVideoCommand(),
+        VideoRecordCommand(),
         DeprecatedPushCommand(),
         DeprecatedPullCommand(),
         UrlOpenCommand(),
