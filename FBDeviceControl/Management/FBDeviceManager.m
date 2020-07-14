@@ -7,16 +7,10 @@
 
 #import "FBDeviceManager.h"
 
+#import "FBAMDevice+Private.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
-#import "FBAMDevice+Private.h"
-
-@interface FBDeviceManager ()
-
-@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, id> *attachedDevices;
-@property (nonatomic, strong, readonly) NSMapTable<NSString *, id> *referencedDevices;
-
-@end
+#import "FBDeviceStorage.h"
 
 @implementation FBDeviceManager
 
@@ -30,8 +24,7 @@
   }
 
   _logger = logger;
-  _attachedDevices = [NSMutableDictionary dictionary];
-  _referencedDevices = [NSMapTable mapTableWithKeyOptions:NSPointerFunctionsCopyIn valueOptions:NSPointerFunctionsWeakMemory];
+  _storage = [[FBDeviceStorage alloc] initWithLogger:logger];
 
   return self;
 }
@@ -85,15 +78,12 @@
   // The reason for doing so is that consumers of these instances may be holding onto a reference to a device that's been re-connected.
   // Pulling from the map of referenced devices means that we re-use these referenced devices if they are present and the underlying reference is replaced.
   // If the device is no-longer referenced it will have been removed from the referencedDevices mapping as it's values are weakly-held.
-  id device = [self.referencedDevices objectForKey:identifier];
-  id attachedDevice = self.attachedDevices[identifier];
+  id device = [self.storage deviceForKey:identifier];
   if (device) {
     [self.logger.info logFormat:@"Device has been re-attached %@", device];
-    NSAssert(attachedDevice == nil || device == attachedDevice, @"Known referenced device %@ does not match the attached one %@!", device, attachedDevice);
   } else {
     device = [self constructPublic:privateDevice identifier:identifier info:info];
     [self.logger.info logFormat:@"Created a new Device instance %@", device];
-    NSAssert(attachedDevice == nil, @"An device is in the attached but it is not in the weak set! Attached device %@", attachedDevice);
   }
 
   // See whether the Private API reference represents a replacement of something we already know bout.
@@ -108,29 +98,27 @@
     [self.logger logFormat:@"Existing Device %@ is the same as the old", privateDevice];
   }
 
-  // Set both the strong-memory and the weak-memory device.
-  // If it already exists this is fine, otherwise it will ensure that this mapping is preserved.
-  // Any removed devies will be removed from attachedDevices on disconnect so that abandoned device references are cleaned up.
-  self.attachedDevices[identifier] = device;
-  [self.referencedDevices setObject:device forKey:identifier];
+  // Update the internal state
+  [self.storage deviceAttached:device forKey:identifier];
 
+  // Notify the delegate.
   [self.delegate targetAdded:device inTargetSet:self];
 }
 
 - (void)deviceDisconnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier
 {
   [self.logger logFormat:@"Device Disconnected %@", privateDevice];
-  id device = self.attachedDevices[identifier];
+  id device = [self.storage deviceForKey:identifier];
   if (!device) {
     [self.logger logFormat:@"No Device named %@ from attached devices, nothing to remove", identifier];
     return;
   }
   [self.logger logFormat:@"Removing Device %@ from attached devices", identifier];
 
-  // Remove only from the list of attached devices.
-  // If the device instance is not referenced elsewhere it will be removed from the referencedDevices dictionary.
-  // This is because the values in that dictionary are weakly referenced.
-  [self.attachedDevices removeObjectForKey:identifier];
+  // Update the internal state.
+  [self.storage deviceDetachedForKey:identifier];
+
+  // Notify the delegate
   [self.delegate targetRemoved:device inTargetSet:self];
 }
 
@@ -138,7 +126,7 @@
 
 - (NSArray<id> *)currentDeviceList
 {
-  return [self.attachedDevices.allValues sortedArrayUsingSelector:@selector(udid)];
+  return [self.storage.attached.allValues sortedArrayUsingSelector:@selector(uniqueIdentifier)];
 }
 
 - (NSArray<id<FBiOSTargetInfo>> *)allTargetInfos

@@ -9,6 +9,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBAMDefines.h>
+#import <FBDeviceControl/FBDeviceStorage.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -105,6 +106,11 @@ typedef CFTypeRef PrivateDevice;
  The logger to use.
  */
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+
+/**
+ The Storage of Device instances.
+ */
+@property (nonatomic, strong, readonly) FBDeviceStorage<PublicDevice> *storage;
 
 @end
 
