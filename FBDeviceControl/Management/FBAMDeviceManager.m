@@ -8,6 +8,7 @@
 #import "FBAMDeviceManager.h"
 
 #import "FBAMDevice+Private.h"
+#import "FBAMRestorableDevice.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
 
@@ -25,11 +26,6 @@ static BOOL FB_AMDeviceConnected(AMDeviceRef device, FBAMDeviceManager *manager)
 {
   NSError *error = nil;
   id<FBControlCoreLogger> logger = manager.logger;
-  NSString *identifier = [manager identifierForDevice:device];
-  if (!identifier) {
-    [logger.error log:@"Cannot start session with device, identifier could not be obtained %@"];
-    return NO;
-  }
   AMDCalls calls = manager.calls;
   if (![FBAMDeviceManager startUsing:device calls:calls logger:logger error:&error]) {
     [logger.error logFormat:@"Cannot start session with device, ignoring device %@", error];
@@ -41,7 +37,13 @@ static BOOL FB_AMDeviceConnected(AMDeviceRef device, FBAMDeviceManager *manager)
     [logger.error log:@"Ignoring device as no values were returned for it"];
     return NO;
   }
+  NSNumber *uniqueChipID = info[FBDeviceKeyUniqueChipID];
+  if (!uniqueChipID) {
+    [logger.error log:@"Ignoring device as could not obtain UniqueChipID for it"];
+    return NO;
+  }
   [logger logFormat:@"Obtained Device Values %@", info];
+  NSString *identifier = [uniqueChipID stringValue];
   [manager deviceConnected:device identifier:identifier info:info];
   return YES;
 }
@@ -55,9 +57,15 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
     case AMDeviceNotificationTypeConnected:
       FB_AMDeviceConnected(device, manager);
       return;
-    case AMDeviceNotificationTypeDisconnected:
+    case AMDeviceNotificationTypeDisconnected: {
+      NSString *identifier = [manager identifierForDevice:device];
+      if (!identifier) {
+        [logger logFormat:@"Cannot obtain identifier for device %@", device];
+        return;
+      }
       [manager deviceDisconnected:device identifier:[manager identifierForDevice:device]];
       return;
+    }
     case AMDeviceNotificationTypeUnsubscribed:
       [logger logFormat:@"Unsubscribed from AMDeviceNotificationSubscribe"];
       return;
@@ -259,9 +267,18 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   return YES;
 }
 
-- (NSString *)identifierForDevice:(AMDeviceRef)device
+- (NSString *)identifierForDevice:(AMDeviceRef)amDevice
 {
-  return CFBridgingRelease(self.calls.CopyDeviceIdentifier(device));
+  if (amDevice == NULL) {
+    return nil;
+  }
+  for (FBAMDevice *device in self.storage.referenced.allValues) {
+    if (device.amDevice != amDevice) {
+      continue;
+    }
+    return device.uniqueIdentifier;
+  }
+  return nil;
 }
 
 @end
