@@ -16,9 +16,36 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBAFCConnection;
 
 /**
+ Defines properties that are required on classes related to the implementation of FBDevice.
+ */
+@protocol FBDevice <NSObject>
+
+/**
+ The AMDevice Calls to use.
+ */
+@property (nonatomic, assign, readonly) AMDCalls calls;
+
+/**
+ The Device's 'Product Version'.
+ */
+@property (nonatomic, nullable, copy, readonly) NSString *productVersion;
+
+/**
+ The Device's 'Build Version'.
+ */
+@property (nonatomic, nullable, copy, readonly) NSString *buildVersion;
+
+/**
+ All of the Device Values available.
+ */
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *allValues;
+
+@end
+
+/**
  Defines Device-Specific commands, off which others are based.
  */
-@protocol FBDeviceCommands <NSObject>
+@protocol FBDeviceCommands <FBDevice>
 
 /**
  Obtain the connection for a device.
@@ -56,23 +83,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Future context wrapping the AFC Connection.
  */
 - (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls;
-
-#pragma mark Properties
-
-/**
- The AMDevice Calls to use.
- */
-@property (nonatomic, assign, readonly) AMDCalls calls;
-
-/**
- The Device's 'Product Version'.
- */
-@property (nonatomic, nullable, copy, readonly) NSString *productVersion;
-
-/**
- The Device's 'Build Version'.
- */
-@property (nonatomic, nullable, copy, readonly) NSString *buildVersion;
 
 @end
 

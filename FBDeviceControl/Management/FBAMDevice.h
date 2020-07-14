@@ -46,13 +46,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (NSArray<FBAMDevice *> *)allDevices;
 
-#pragma mark Properties
-
-/**
- All of the Device Values available.
- */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *allValues;
-
 @end
 
 NS_ASSUME_NONNULL_END

@@ -147,6 +147,11 @@
 
 #pragma mark FBDeviceCommands
 
+- (NSDictionary<NSString *, id> *)allValues
+{
+  return self.amDevice.allValues;
+}
+
 - (NSString *)buildVersion
 {
   return self.amDevice.buildVersion;

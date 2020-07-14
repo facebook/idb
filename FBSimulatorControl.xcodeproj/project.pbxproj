@@ -387,7 +387,7 @@
 		AAA1F9C41F1396FB006A4811 /* FBSimulatorLaunchCtlCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AAA1F9C21F1396FB006A4811 /* FBSimulatorLaunchCtlCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAA1F9C51F1396FB006A4811 /* FBSimulatorLaunchCtlCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AAA1F9C31F1396FB006A4811 /* FBSimulatorLaunchCtlCommands.m */; };
 		AAA5B80D24B37FBD0093DAEB /* FBDeviceStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = AAA5B80B24B37FBC0093DAEB /* FBDeviceStorage.m */; };
-		AAA5B80E24B37FBD0093DAEB /* FBDeviceStorage.h in Headers */ = {isa = PBXBuildFile; fileRef = AAA5B80C24B37FBC0093DAEB /* FBDeviceStorage.h */; };
+		AAA5B80E24B37FBD0093DAEB /* FBDeviceStorage.h in Headers */ = {isa = PBXBuildFile; fileRef = AAA5B80C24B37FBC0093DAEB /* FBDeviceStorage.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAAA30C11DE6F40B0028D5AB /* FBDeviceControlFrameworkLoaderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAAA30BD1DE6F40B0028D5AB /* FBDeviceControlFrameworkLoaderTests.m */; };
 		AAAA67C61BC4FED200075197 /* FBSimulatorControlFixtures.m in Sources */ = {isa = PBXBuildFile; fileRef = AAAA67C51BC4FED200075197 /* FBSimulatorControlFixtures.m */; };
 		AAAA67C91BC501BB00075197 /* TableSearch.app in Resources */ = {isa = PBXBuildFile; fileRef = AAAA67C71BC5018500075197 /* TableSearch.app */; };
