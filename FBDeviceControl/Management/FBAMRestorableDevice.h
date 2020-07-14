@@ -12,6 +12,15 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+typedef NSString *FBDeviceKey NS_STRING_ENUM;
+extern FBDeviceKey const FBDeviceKeyChipID;
+extern FBDeviceKey const FBDeviceKeyDeviceClass;
+extern FBDeviceKey const FBDeviceKeyDeviceName;
+extern FBDeviceKey const FBDeviceKeyLocationID;
+extern FBDeviceKey const FBDeviceKeyProductType;
+extern FBDeviceKey const FBDeviceKeySerialNumber;
+extern FBDeviceKey const FBDeviceKeyUniqueChipID;
+
 /**
  An Object Wrapper around AMRestorableDevice
  */
@@ -22,9 +31,10 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param calls the calls to use.
  @param restorableDevice the AMRestorableDeviceRef
+ @param allValues the cached device values.
  @return a new instance.
  */
-- (instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef)restorableDevice;
+- (instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef)restorableDevice allValues:(NSDictionary<NSString *, id> *)allValues;
 
 /**
  The Restorable Device instance.
@@ -34,7 +44,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The AMDCalls to use
  */
-@property (nonatomic, assign, readwrite) AMDCalls calls;
+@property (nonatomic, assign, readonly) AMDCalls calls;
+
+/**
+ Cached Device Values.
+ */
+@property (nonatomic, copy, readwrite) NSDictionary<NSString *, id> *allValues;
 
 /**
  Convert AMRestorableDeviceState to FBiOSTargetState.

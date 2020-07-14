@@ -7,13 +7,23 @@
 
 #import "FBAMRestorableDevice.h"
 
+#import "FBDeviceControlError.h"
+
+FBDeviceKey const FBDeviceKeyChipID = @"ChipID";
+FBDeviceKey const FBDeviceKeyDeviceClass = @"DeviceClass";
+FBDeviceKey const FBDeviceKeyDeviceName = @"DeviceName";
+FBDeviceKey const FBDeviceKeyLocationID = @"LocationID";
+FBDeviceKey const FBDeviceKeyProductType = @"ProductType";
+FBDeviceKey const FBDeviceKeySerialNumber = @"SerialNumber";
+FBDeviceKey const FBDeviceKeyUniqueChipID = @"UniqueChipID";
+
 static NSString *const UnknownValue = @"unknown";
 
 @implementation FBAMRestorableDevice
 
 @synthesize restorableDevice = _restorableDevice;
 
-- (instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef)restorableDevice
+- (instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef)restorableDevice allValues:(NSDictionary<NSString *, id> *)allValues
 {
   self = [super init];
   if (!self) {
@@ -22,6 +32,7 @@ static NSString *const UnknownValue = @"unknown";
 
   _calls = calls;
   _restorableDevice = restorableDevice;
+  _allValues = allValues;
 
   return self;
 }
@@ -30,7 +41,7 @@ static NSString *const UnknownValue = @"unknown";
 
 - (NSString *)uniqueIdentifier
 {
-  return [@(self.UniqueChipID) stringValue];
+  return [self.allValues[FBDeviceKeyUniqueChipID] stringValue];
 }
 
 - (NSString *)udid
@@ -40,7 +51,7 @@ static NSString *const UnknownValue = @"unknown";
 
 - (NSString *)name
 {
-  return CFBridgingRelease(self.calls.RestorableDeviceCopyUserFriendlyName(self.restorableDevice));
+  return self.allValues[FBDeviceKeyDeviceName];
 }
 
 - (FBiOSTargetState)state
@@ -62,7 +73,7 @@ static NSString *const UnknownValue = @"unknown";
 
 - (FBDeviceType *)deviceType
 {
-  NSString *productString = CFBridgingRelease(self.calls.RestorableDeviceCopyProductString(self.restorableDevice));
+  NSString *productString = self.allValues[FBDeviceKeyProductType];
   return [FBDeviceType genericWithName:productString];
 }
 
@@ -84,14 +95,7 @@ static NSString *const UnknownValue = @"unknown";
 - (NSDictionary<NSString *, id> *)extendedInformation
 {
   return @{
-    @"device": @{
-      @"ChipID": @(self.ChipID),
-      @"DeviceClass": @(self.DeviceClass),
-      @"LocationID": @(self.LocationID),
-      @"ProductType": self.ProductString,
-      @"SerialNumber": self.SerialNumber,
-      @"UniqueChipID": @(self.UniqueChipID),
-    },
+    @"device": self.allValues,
   };
 }
 
@@ -130,43 +134,6 @@ static NSString *const UnknownValue = @"unknown";
 - (AMRestorableDeviceRef)restorableDevice
 {
   return _restorableDevice;
-}
-
-#pragma mark Private
-
-- (unsigned long)UniqueChipID
-{
-  return self.calls.RestorableDeviceGetECID(self.restorableDevice);
-}
-
-- (int)LocationID
-{
-  return self.calls.RestorableDeviceGetLocationID(self.restorableDevice);
-}
-
-- (int)ChipID
-{
-  return self.calls.RestorableDeviceGetChipID(self.restorableDevice);
-}
-
-- (int)DeviceClass
-{
-  return self.calls.RestorableDeviceGetDeviceClass(self.restorableDevice);
-}
-
-- (int)ProductType
-{
-  return self.calls.RestorableDeviceGetProductType(self.restorableDevice);
-}
-
-- (NSString *)ProductString
-{
-  return CFBridgingRelease(self.calls.RestorableDeviceCopyProductString(self.restorableDevice));
-}
-
-- (NSString *)SerialNumber
-{
-  return CFBridgingRelease(self.calls.RestorableDeviceCopySerialNumber(self.restorableDevice));
 }
 
 @end
