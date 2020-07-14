@@ -48,14 +48,7 @@
   return self;
 }
 
-#pragma mark FBiOSTarget
-
-- (NSArray<Class> *)actionClasses
-{
-  return @[
-    FBTestLaunchConfiguration.class,
-  ];
-}
+#pragma mark FBiOSTargetInfo
 
 - (NSString *)uniqueIdentifier
 {
@@ -87,22 +80,6 @@
   return self.amDevice.targetType;
 }
 
-- (NSString *)auxillaryDirectory
-{
-  NSString *cwd = NSFileManager.defaultManager.currentDirectoryPath;
-  return [NSFileManager.defaultManager isWritableFileAtPath:cwd] ? cwd : @"/tmp";
-}
-
-- (FBProcessInfo *)containerApplication
-{
-  return nil;
-}
-
-- (FBProcessInfo *)launchdProcess
-{
-  return nil;
-}
-
 - (FBDeviceType *)deviceType
 {
   return self.amDevice.deviceType;
@@ -113,9 +90,18 @@
   return self.amDevice.osVersion;
 }
 
-- (FBiOSTargetDiagnostics *)diagnostics
+- (NSDictionary<NSString *, id> *)extendedInformation
 {
-  return [[FBiOSTargetDiagnostics alloc] initWithStorageDirectory:self.auxillaryDirectory];
+  return self.amDevice.extendedInformation;
+}
+
+#pragma mark FBiOSTarget
+
+- (NSArray<Class> *)actionClasses
+{
+  return @[
+    FBTestLaunchConfiguration.class,
+  ];
 }
 
 - (dispatch_queue_t)workQueue
@@ -128,14 +114,52 @@
   return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
 }
 
-- (NSDictionary<NSString *, id> *)extendedInformation
+- (FBiOSTargetDiagnostics *)diagnostics
 {
-  return self.amDevice.extendedInformation;
+  return [[FBiOSTargetDiagnostics alloc] initWithStorageDirectory:self.auxillaryDirectory];
+}
+
+- (FBProcessInfo *)containerApplication
+{
+  return nil;
+}
+
+- (FBProcessInfo *)launchdProcess
+{
+  return nil;
+}
+
+- (NSString *)auxillaryDirectory
+{
+  NSString *cwd = NSFileManager.defaultManager.currentDirectoryPath;
+  return [NSFileManager.defaultManager isWritableFileAtPath:cwd] ? cwd : @"/tmp";
+}
+
+- (FBiOSTargetScreenInfo *)screenInfo
+{
+  return nil;
 }
 
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target
 {
   return FBiOSTargetComparison(self, target);
+}
+
+#pragma mark FBDeviceCommands
+
+- (NSString *)buildVersion
+{
+  return self.amDevice.buildVersion;
+}
+
+- (NSString *)productVersion
+{
+  return self.amDevice.productVersion;
+}
+
+- (AMDCalls)calls
+{
+  return self.amDevice.calls;
 }
 
 #pragma mark FBDebugDescribeable
@@ -191,31 +215,11 @@
   return version;
 }
 
-#pragma mark Properties
-
-- (NSString *)buildVersion
-{
-  return self.amDevice.buildVersion;
-}
-
-- (NSString *)productVersion
-{
-  return self.amDevice.productVersion;
-}
+#pragma mark FBDevice Properties
 
 - (NSOperatingSystemVersion)operatingSystemVersion
 {
   return [FBDevice operatingSystemVersionFromString:self.amDevice.productVersion];
-}
-
-- (FBiOSTargetScreenInfo *)screenInfo
-{
-  return nil;
-}
-
-- (AMDCalls)calls
-{
-  return self.amDevice.calls;
 }
 
 #pragma mark Forwarding
