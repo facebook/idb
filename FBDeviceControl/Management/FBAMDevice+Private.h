@@ -55,7 +55,6 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer
 
- @param udid the UDID of the AMDevice.
  @param allValues the values from the AMDevice.
  @param calls the calls to use.
  @param connectionReuseTimeout the time to wait before releasing a connection
@@ -64,7 +63,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new FBAMDevice instance.
  */
-- (instancetype)initWithUDID:(NSString *)udid allValues:(NSDictionary<NSString *, id> *)allValues calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithAllValues:(NSDictionary<NSString *, id> *)allValues calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

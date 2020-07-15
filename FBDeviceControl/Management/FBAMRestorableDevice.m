@@ -16,6 +16,7 @@ FBDeviceKey const FBDeviceKeyLocationID = @"LocationID";
 FBDeviceKey const FBDeviceKeyProductType = @"ProductType";
 FBDeviceKey const FBDeviceKeySerialNumber = @"SerialNumber";
 FBDeviceKey const FBDeviceKeyUniqueChipID = @"UniqueChipID";
+FBDeviceKey const FBDeviceKeyUniqueDeviceID = @"UniqueDeviceID";
 
 static NSString *const UnknownValue = @"unknown";
 

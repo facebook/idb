@@ -148,7 +148,7 @@ static NSMutableArray<NSString *> *sEvents;
   NSArray<NSString *> *events = [FBAMDeviceTests.events copy];
   XCTAssertEqualObjects(events, @[]);
 
-  FBAMDevice *device = [[FBAMDevice alloc] initWithUDID:@"foo" allValues:@{} calls:self.stubbedCalls connectionReuseTimeout:connectionReuseTimeout serviceReuseTimeout:serviceReuseTimeout workQueue:dispatch_get_main_queue() logger:FBControlCoreGlobalConfiguration.defaultLogger];
+  FBAMDevice *device = [[FBAMDevice alloc] initWithAllValues:@{@"UniqueDeviceID": @"foo"} calls:self.stubbedCalls connectionReuseTimeout:connectionReuseTimeout serviceReuseTimeout:serviceReuseTimeout workQueue:dispatch_get_main_queue() logger:FBControlCoreGlobalConfiguration.defaultLogger];
   device.amDevice = self.deviceRef;
   events = [FBAMDeviceTests.events copy];
   XCTAssertEqualObjects(events, @[]);

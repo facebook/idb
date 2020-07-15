@@ -42,6 +42,11 @@ static BOOL FB_AMDeviceConnected(AMDeviceRef device, FBAMDeviceManager *manager)
     [logger.error log:@"Ignoring device as could not obtain UniqueChipID for it"];
     return NO;
   }
+  NSString *udid = info[FBDeviceKeyUniqueDeviceID];
+  if (!udid) {
+    [logger.error logFormat:@"Ignoring device as %@ is not present in %@", FBDeviceKeyUniqueDeviceID, info];
+    return NO;
+  }
   [logger logFormat:@"Obtained Device Values %@", info];
   NSString *identifier = [uniqueChipID stringValue];
   [manager deviceConnected:device identifier:identifier info:info];
@@ -234,7 +239,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
 
 - (id)constructPublic:(AMDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
 {
-  return [[FBAMDevice alloc] initWithUDID:identifier allValues:info calls:self.calls connectionReuseTimeout:nil serviceReuseTimeout:@(ServiceReuseTimeout) workQueue:self.queue logger:self.logger];
+  return [[FBAMDevice alloc] initWithAllValues:info calls:self.calls connectionReuseTimeout:nil serviceReuseTimeout:@(ServiceReuseTimeout) workQueue:self.queue logger:self.logger];
 }
 
 + (void)updatePublicReference:(FBAMDevice *)publicDevice privateDevice:(AMDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info

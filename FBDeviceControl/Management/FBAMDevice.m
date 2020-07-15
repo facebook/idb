@@ -16,6 +16,7 @@
 #import "FBAMDeviceManager.h"
 #import "FBAMDeviceServiceManager.h"
 #import "FBAMDServiceConnection.h"
+#import "FBAMRestorableDevice.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
 
@@ -26,7 +27,6 @@
 @synthesize amDevice = _amDevice;
 @synthesize calls = _calls;
 @synthesize contextPoolTimeout = _contextPoolTimeout;
-@synthesize udid = _udid;
 
 #pragma mark Initializers
 
@@ -35,18 +35,17 @@
   return FBAMDeviceManager.sharedManager.currentDeviceList;
 }
 
-- (instancetype)initWithUDID:(NSString *)udid allValues:(NSDictionary<NSString *, id> *)allValues calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithAllValues:(NSDictionary<NSString *, id> *)allValues calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _udid = udid;
   _allValues = allValues;
   _calls = calls;
   _workQueue = workQueue;
-  _logger = [logger withName:udid];
+  _logger = [logger withName:self.udid];
   _connectionContextManager = [FBFutureContextManager managerWithQueue:workQueue delegate:self logger:logger];
   _contextPoolTimeout = connectionReuseTimeout;
   _serviceManager = [FBAMDeviceServiceManager managerWithAMDevice:self serviceTimeout:serviceReuseTimeout];
@@ -92,6 +91,11 @@
 - (NSString *)uniqueIdentifier
 {
   return [self.allValues[@"UniqueChipID"] stringValue];
+}
+
+- (NSString *)udid
+{
+  return self.allValues[FBDeviceKeyUniqueDeviceID];
 }
 
 - (NSString *)architecture
