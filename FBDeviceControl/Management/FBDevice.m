@@ -205,6 +205,67 @@
   _uniqueIdentifier = targetInfo.uniqueIdentifier;
 }
 
+#pragma mark FBDeviceCommands
+
+- (FBFutureContext<FBAMDevice *> *)connectToDeviceWithPurpose:(NSString *)format, ...
+{
+  FBAMDevice *amDevice = self.amDevice;
+  if (amDevice) {
+    va_list args;
+    va_start(args, format);
+    NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
+    va_end(args);
+    return [amDevice connectToDeviceWithPurpose:@"%@", string];
+  }
+  return [[FBDeviceControlError
+    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+    failFutureContext];
+}
+
+- (FBFutureContext<FBAMDServiceConnection *> *)startTestManagerService
+{
+  FBAMDevice *amDevice = self.amDevice;
+  if (amDevice) {
+    return [amDevice startTestManagerService];
+  }
+  return [[FBDeviceControlError
+    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+    failFutureContext];
+}
+
+- (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service
+{
+  FBAMDevice *amDevice = self.amDevice;
+  if (amDevice) {
+    return [amDevice startService:service];
+  }
+  return [[FBDeviceControlError
+    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+    failFutureContext];
+}
+
+- (FBFutureContext<FBAFCConnection *> *)startAFCService
+{
+  FBAMDevice *amDevice = self.amDevice;
+  if (amDevice) {
+    return [amDevice startAFCService];
+  }
+  return [[FBDeviceControlError
+    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+    failFutureContext];
+}
+
+- (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls
+{
+  FBAMDevice *amDevice = self.amDevice;
+  if (amDevice) {
+    return [amDevice houseArrestAFCConnectionForBundleID:bundleID afcCalls:afcCalls];
+  }
+  return [[FBDeviceControlError
+    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+    failFutureContext];
+}
+
 #pragma mark Forwarding
 
 + (NSArray<Class> *)commandResponders
