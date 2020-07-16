@@ -103,15 +103,6 @@
   return [[self query:query] firstObject];
 }
 
-#pragma mark Predicates
-
-+ (NSPredicate *)predicateDeviceWithUDID:(NSString *)udid
-{
-  return [NSPredicate predicateWithBlock:^ BOOL (FBDevice *device, id _) {
-    return [device.udid isEqualToString:udid];
-  }];
-}
-
 #pragma mark FBiOSTargetSet Implementation
 
 - (NSArray<id<FBiOSTarget>> *)allTargetInfos
