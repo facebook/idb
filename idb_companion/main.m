@@ -94,7 +94,7 @@ static FBFuture<FBDeviceSet *> *DeviceSet(id<FBControlCoreLogger> logger)
   if(![FBDeviceControlFrameworkLoader.new loadPrivateFrameworks:logger error:&error]) {
     return [FBFuture futureWithError:error];
   }
-  FBDeviceSet *deviceSet = [FBDeviceSet defaultSetWithLogger:logger error:&error delegate:nil];
+  FBDeviceSet *deviceSet = [FBDeviceSet setWithLogger:logger delegate:nil error:&error];
   if (!deviceSet) {
     return [FBFuture futureWithError:error];
   }

@@ -20,21 +20,14 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Initializers
 
 /**
- Returns the Default Device Set.
+ The Designated Initializer.
 
- @param error an error out for any error that occurs constructing the set.
+ @param logger the logger to use.
  @param delegate a delegate that gets called when device status changes.
+ @param error an error out for any error that occurs constructing the set.
  @return the Default Device Set if successful, nil otherwise.
  */
-+ (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error delegate:(nullable id<FBiOSTargetSetDelegate>)delegate;
-
-/**
- Returns the Default Device Set.
-
-@param error an error out for any error that occurs constructing the set.
-@return the Default Device Set if successful, nil otherwise.
-*/
-+ (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable instancetype)setWithLogger:(id<FBControlCoreLogger>)logger delegate:(nullable id<FBiOSTargetSetDelegate>)delegate error:(NSError **)error;
 
 #pragma mark Querying
 

@@ -44,7 +44,7 @@
   [FBDeviceControlFrameworkLoader.new loadPrivateFrameworksOrAbort];
 }
 
-+ (nullable instancetype)setWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error delegate:(id<FBiOSTargetSetDelegate>)delegate
++ (nullable instancetype)setWithLogger:(id<FBControlCoreLogger>)logger delegate:(id<FBiOSTargetSetDelegate>)delegate error:(NSError **)error
 {
   AMDCalls calls = FBDeviceControlFrameworkLoader.amDeviceCalls;
   dispatch_queue_t queue = dispatch_get_main_queue();
@@ -58,21 +58,6 @@
     return nil;
   }
   return deviceSet;
-}
-
-+ (nullable instancetype)defaultSetWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error delegate:(id<FBiOSTargetSetDelegate>)delegate
-{
-  static dispatch_once_t onceToken;
-  static FBDeviceSet *deviceSet = nil;
-  dispatch_once(&onceToken, ^{
-    deviceSet = [self setWithLogger:logger error:nil delegate:delegate];
-  });
-  return deviceSet;
-}
-
-+ (nullable instancetype)defaultSetWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
-{
-  return [FBDeviceSet defaultSetWithLogger:logger error:error delegate:nil];
 }
 
 - (instancetype)initWithAMDeviceManager:(FBAMDeviceManager *)amDeviceManager restorableDeviceManager:(FBAMRestorableDeviceManager *)restorableDeviceManager logger:(id<FBControlCoreLogger>)logger delegate:(id<FBiOSTargetSetDelegate>)delegate
