@@ -22,6 +22,7 @@ static NSString *const UnknownValue = @"unknown";
 
 @implementation FBAMRestorableDevice
 
+@synthesize calls = _calls;
 @synthesize restorableDevice = _restorableDevice;
 
 - (instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef)restorableDevice allValues:(NSDictionary<NSString *, id> *)allValues
@@ -98,6 +99,18 @@ static NSString *const UnknownValue = @"unknown";
   return @{
     @"device": self.allValues,
   };
+}
+
+#pragma mark FBDevice
+
+- (NSString *)buildVersion
+{
+  return UnknownValue;
+}
+
+- (NSString *)productVersion
+{
+  return UnknownValue;
 }
 
 #pragma mark Public

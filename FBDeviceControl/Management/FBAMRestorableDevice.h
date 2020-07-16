@@ -9,6 +9,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBAMDefines.h>
+#import <FBDeviceControl/FBDeviceCommands.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -25,7 +26,7 @@ extern FBDeviceKey const FBDeviceKeyUniqueDeviceID;
 /**
  An Object Wrapper around AMRestorableDevice
  */
-@interface FBAMRestorableDevice : NSObject <FBiOSTargetInfo>
+@interface FBAMRestorableDevice : NSObject <FBiOSTargetInfo, FBDevice>
 
 /**
  The Designated Initializer.
@@ -41,11 +42,6 @@ extern FBDeviceKey const FBDeviceKeyUniqueDeviceID;
  The Restorable Device instance.
  */
 @property (nonatomic, assign, readwrite) AMRestorableDeviceRef restorableDevice;
-
-/**
- The AMDCalls to use
- */
-@property (nonatomic, assign, readonly) AMDCalls calls;
 
 /**
  Cached Device Values.
