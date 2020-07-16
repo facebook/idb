@@ -39,13 +39,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBAMDevice : NSObject <FBiOSTargetInfo, FBDeviceCommands>
 
-#pragma mark Initializers
-
-/**
- Returns an Array of all the Available Devices.
- */
-+ (NSArray<FBAMDevice *> *)allDevices;
-
 @end
 
 NS_ASSUME_NONNULL_END

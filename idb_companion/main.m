@@ -101,21 +101,6 @@ static FBFuture<FBDeviceSet *> *DeviceSet(id<FBControlCoreLogger> logger)
   return [FBFuture futureWithResult:deviceSet];
 }
 
-static FBFuture<FBAMRestorableDeviceManager *> *RestorableDeviceSet(id<FBControlCoreLogger> logger)
-{
-  // Give a more meaningful message if we can't load the frameworks.
-  NSError *error = nil;
-  if(![FBDeviceControlFrameworkLoader.new loadPrivateFrameworks:logger error:&error]) {
-    return [FBFuture futureWithError:error];
-  }
-  logger = [logger withName:@"restorable_device_manager"];
-  FBDeviceManager *manager = [[FBAMRestorableDeviceManager alloc] initWithLogger:logger];
-  if (![manager startListeningWithError:&error]) {
-    return [FBFuture futureWithError:error];
-  }
-  return [FBFuture futureWithResult:manager];
-}
-
 static FBFuture<NSArray<id<FBiOSTargetSet>> *> *DefaultTargetSets(NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   NSString *only = [userDefaults stringForKey:@"-only"];
@@ -126,10 +111,7 @@ static FBFuture<NSArray<id<FBiOSTargetSet>> *> *DefaultTargetSets(NSUserDefaults
     }
     if ([only.lowercaseString containsString:@"device"]) {
       [logger log:@"'--only' set for Devices"];
-      return [FBFuture futureWithFutures:@[
-        DeviceSet(logger),
-        RestorableDeviceSet(logger),
-      ]];
+      return [FBFuture futureWithFutures:@[DeviceSet(logger)]];
     }
     return [[FBIDBError
       describeFormat:@"%@ is not a valid argument for '--only'", only]
@@ -139,7 +121,6 @@ static FBFuture<NSArray<id<FBiOSTargetSet>> *> *DefaultTargetSets(NSUserDefaults
   return [FBFuture futureWithFutures:@[
     SimulatorSet(userDefaults, logger, reporter),
     DeviceSet(logger),
-    RestorableDeviceSet(logger),
   ]];
 }
 

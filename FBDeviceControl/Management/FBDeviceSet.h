@@ -6,14 +6,11 @@
  */
 
 #import <Foundation/Foundation.h>
-#import <FBControlCore/FBiOSTargetSet.h>
+#import <FBControlCore/FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBDevice;
-@class FBiOSTargetQuery;
-@protocol FBControlCoreLogger;
-@protocol FBiOSTargetSetDelegate;
 
 /**
  Fetches Devices from the list of Available Devices.

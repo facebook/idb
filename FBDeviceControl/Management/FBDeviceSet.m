@@ -15,20 +15,26 @@
 
 #import <objc/runtime.h>
 
-#import "FBDeviceControlFrameworkLoader.h"
-#import "FBDevice.h"
-#import "FBDevice+Private.h"
-#import "FBAMDeviceManager.h"
-#import "FBAMDevice.h"
 #import "FBAMDevice+Private.h"
+#import "FBAMDevice.h"
+#import "FBAMDeviceManager.h"
+#import "FBAMRestorableDevice.h"
+#import "FBAMRestorableDeviceManager.h"
+#import "FBDevice+Private.h"
+#import "FBDevice.h"
+#import "FBDeviceControlFrameworkLoader.h"
+#import "FBDeviceStorage.h"
 
 @interface FBDeviceSet () <FBiOSTargetSetDelegate>
+
+@property (nonatomic, strong, readonly) FBAMDeviceManager *amDeviceManager;
+@property (nonatomic, strong, readonly) FBAMRestorableDeviceManager *restorableDeviceManager;
+@property (nonatomic, strong, readonly) FBDeviceStorage<FBDevice *> *storage;
 
 @end
 
 @implementation FBDeviceSet
 
-@synthesize allDevices = _allDevices;
 @synthesize delegate = _delegate;
 
 #pragma mark Initializers
@@ -38,33 +44,34 @@
   [FBDeviceControlFrameworkLoader.new loadPrivateFrameworksOrAbort];
 }
 
-+ (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error delegate:(nullable id<FBiOSTargetSetDelegate>)delegate
++ (nullable instancetype)defaultSetWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error delegate:(id<FBiOSTargetSetDelegate>)delegate
 {
   static dispatch_once_t onceToken;
   static FBDeviceSet *deviceSet = nil;
   dispatch_once(&onceToken, ^{
-    deviceSet = [[FBDeviceSet alloc] initWithLogger:logger delegate:delegate];
+    deviceSet = [[FBDeviceSet alloc] initWithAMDeviceManager:FBAMDeviceManager.sharedManager restorableDeviceManager:[[FBAMRestorableDeviceManager alloc] initWithLogger:logger] logger:logger delegate:delegate];
   });
   return deviceSet;
 }
 
-+ (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
++ (nullable instancetype)defaultSetWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   return [FBDeviceSet defaultSetWithLogger:logger error:error delegate:nil];
 }
 
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger delegate:(id<FBiOSTargetSetDelegate>)delegate
+- (instancetype)initWithAMDeviceManager:(FBAMDeviceManager *)amDeviceManager restorableDeviceManager:(FBAMRestorableDeviceManager *)restorableDeviceManager logger:(id<FBControlCoreLogger>)logger delegate:(id<FBiOSTargetSetDelegate>)delegate
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _amDeviceManager = amDeviceManager;
+  _restorableDeviceManager = restorableDeviceManager;
   _delegate = delegate;
-  _logger = [logger withName:@"device_set"];
-  _allDevices = @[];
+  _logger = logger;
+  _storage = [[FBDeviceStorage alloc] initWithLogger:logger];
 
-  [self recalculateAllDevices];
   [self subscribeToDeviceNotifications];
 
   return self;
@@ -87,7 +94,7 @@
   if ([query excludesAll:FBiOSTargetTypeDevice]) {
     return @[];
   }
-  return (NSArray<FBDevice *> *)[query filter:_allDevices];
+  return (NSArray<FBDevice *> *)[query filter:self.allDevices];
 }
 
 - (nullable FBDevice *)deviceWithUDID:(NSString *)udid
@@ -116,79 +123,120 @@
 
 - (void)subscribeToDeviceNotifications
 {
-  FBAMDeviceManager.sharedManager.delegate = self;
+  self.amDeviceManager.delegate = self;
+  self.restorableDeviceManager.delegate = self;
+  for (FBAMDevice *amDevice in self.amDeviceManager.currentDeviceList) {
+    [self targetAdded:amDevice inTargetSet:self.amDeviceManager];
+  }
+  for (FBAMRestorableDevice *restorableDevice in self.restorableDeviceManager.currentDeviceList) {
+    [self targetAdded:restorableDevice inTargetSet:self.restorableDeviceManager];
+  }
 }
 
 - (void)unsubscribeFromDeviceNotifications
 {
-  FBAMDeviceManager.sharedManager.delegate = nil;
+  self.amDeviceManager.delegate = nil;
+  self.restorableDeviceManager.delegate = nil;
 }
 
-- (void)recalculateAllDevices
+- (void)amDeviceAdded:(FBAMDevice *)amDevice
 {
-  _allDevices = [[FBDeviceSet
-    inflateFromDevices:FBAMDevice.allDevices existingDevices:_allDevices deviceSet:self]
-    sortedArrayUsingSelector:@selector(compare:)];
+  FBDevice *device = [self.storage deviceForKey:amDevice.uniqueIdentifier];
+  if (device) {
+    device.amDevice = amDevice;
+  } else {
+    device = [[FBDevice alloc] initWithSet:self amDevice:amDevice restorableDevice:nil logger:self.logger];
+    [self.storage deviceAttached:device forKey:amDevice.uniqueIdentifier];
+  }
+  [self.delegate targetAdded:device inTargetSet:self];
 }
 
-+ (NSArray<FBDevice *> *)inflateFromDevices:(NSArray<FBAMDevice *> *)amDevices existingDevices:(NSArray<FBDevice *> *)devices deviceSet:(FBDeviceSet *)deviceSet
+- (void)amDeviceRemoved:(FBAMDevice *)amDevice
 {
-  // Inflate new Devices that have come along since last time this method was called.
-  NSSet<NSString *> *existingDeviceUDIDs = [NSSet setWithArray:[devices valueForKeyPath:@"udid"]];
-  NSDictionary<NSString *, FBAMDevice *> *availableDevices = [NSDictionary
-    dictionaryWithObjects:amDevices
-    forKeys:[amDevices valueForKeyPath:@"udid"]];
-
-  // Calculate the new Devices that are available.
-  NSMutableSet<NSString *> *devicesToInflate = [NSMutableSet setWithArray:availableDevices.allKeys];
-  [devicesToInflate minusSet:existingDeviceUDIDs];
-
-  // Calculate the Devices that are now gone.
-  NSMutableSet<NSString *> *devicesToCull = [existingDeviceUDIDs mutableCopy];
-  [devicesToCull minusSet:[NSSet setWithArray:availableDevices.allKeys]];
-
-  // The hottest path, so return early to avoid doing any other work.
-  if (devicesToInflate.count == 0 && devicesToCull == 0) {
-    return devices;
+  FBDevice *device = [self.storage deviceForKey:amDevice.uniqueIdentifier];
+  if (!device) {
+    [self.logger logFormat:@"%@ was removed, but there's no active device for it", amDevice];
+    return;
   }
-
-  // Cull Simulators
-  id<FBControlCoreLogger> logger = deviceSet.logger;
-  if (devicesToCull.count > 0) {
-    [logger logFormat:@"Removing %@ from Device Set", [FBCollectionInformation oneLineDescriptionFromArray:devicesToCull.allObjects]];
-    NSPredicate *predicate = [NSCompoundPredicate notPredicateWithSubpredicate:[FBiOSTargetPredicates udids:devicesToCull.allObjects]];
-    devices = [devices filteredArrayUsingPredicate:predicate];
+  device.amDevice = NULL;
+  if (device.amDevice || device.restorableDevice) {
+    [self.delegate targetUpdated:device inTargetSet:self];
+  } else {
+    [self.storage deviceDetachedForKey:amDevice.uniqueIdentifier];
+    [self.delegate targetRemoved:device inTargetSet:self];
   }
+}
 
-  if (devicesToInflate.count > 0) {
-    [logger logFormat:@"Adding %@ to Device Set", [FBCollectionInformation oneLineDescriptionFromArray:devicesToInflate.allObjects]];
-    NSMutableArray<FBDevice *> *inflatedDevices = [NSMutableArray array];
-    for (NSString *udid in devicesToInflate) {
-      FBAMDevice *amDevice = availableDevices[udid];
-      FBDevice *device = [[FBDevice alloc] initWithSet:deviceSet amDevice:amDevice restorableDevice:nil logger:[logger withName:udid]];
-      [inflatedDevices addObject:device];
-    }
-    devices = [devices arrayByAddingObjectsFromArray:inflatedDevices];
+- (void)restorableDeviceAdded:(FBAMRestorableDevice *)restorableDevice
+{
+  FBDevice *device = [self.storage deviceForKey:restorableDevice.uniqueIdentifier];
+  if (device) {
+    device.restorableDevice = restorableDevice;
+  } else {
+    device = [[FBDevice alloc] initWithSet:self amDevice:nil restorableDevice:restorableDevice logger:self.logger];
+    [self.storage deviceAttached:device forKey:restorableDevice.uniqueIdentifier];
   }
+  [self.delegate targetAdded:device inTargetSet:self];
+}
 
-  return devices;
+- (void)restorableDeviceRemoved:(FBAMRestorableDevice *)restorableDevice
+{
+  FBDevice *device = [self.storage deviceForKey:restorableDevice.uniqueIdentifier];
+  if (!device) {
+    [self.logger logFormat:@"%@ was removed, but there's no active device for it", restorableDevice];
+    return;
+  }
+  device.restorableDevice = NULL;
+  if (device.amDevice || device.restorableDevice) {
+    [self.delegate targetUpdated:device inTargetSet:self];
+  } else {
+    [self.storage deviceDetachedForKey:restorableDevice.uniqueIdentifier];
+    [self.delegate targetRemoved:device inTargetSet:self];
+  }
+}
+
+#pragma mark Properties
+
+- (NSArray<FBDevice *> *)allDevices
+{
+  return [self.storage.attached.allValues sortedArrayUsingSelector:@selector(uniqueIdentifier)];
 }
 
 #pragma mark FBiOSTargetSetDelegate Implementation
 
 - (void)targetAdded:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
 {
-  [self.delegate targetAdded:targetInfo inTargetSet:targetSet];
+  if ([targetInfo isKindOfClass:FBAMDevice.class]) {
+    [self amDeviceAdded:(FBAMDevice *) targetInfo];
+  } else if ([targetInfo isKindOfClass:FBAMRestorableDevice.class]) {
+    [self restorableDeviceAdded:(FBAMRestorableDevice *) targetInfo];
+  } else {
+    [self.logger logFormat:@"Ignoring %@ as it is not a valid target type", targetInfo];
+  }
 }
 
 - (void)targetRemoved:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
 {
-  [self.delegate targetRemoved:targetInfo inTargetSet:targetSet];
+  if ([targetInfo isKindOfClass:FBAMDevice.class]) {
+    [self amDeviceRemoved:(FBAMDevice *) targetInfo];
+  } else if ([targetInfo isKindOfClass:FBAMRestorableDevice.class]) {
+    [self restorableDeviceRemoved:(FBAMRestorableDevice *) targetInfo];
+  } else {
+    [self.logger logFormat:@"Ignoring %@ as it is not a valid target type", targetInfo];
+  }
 }
 
 - (void)targetUpdated:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
 {
-  [self.delegate targetUpdated:targetInfo inTargetSet:targetSet];
+  FBDevice *device = [self.storage deviceForKey:targetInfo.uniqueIdentifier];
+  if (device && [targetInfo isKindOfClass:FBAMDevice.class]) {
+    device.amDevice = (FBAMDevice *) targetInfo;
+  } else if (device && [targetInfo isKindOfClass:FBAMRestorableDevice.class]) {
+    device.restorableDevice = (FBAMRestorableDevice *) targetInfo;
+  } else {
+    NSAssert(NO, @"No existing device to update for %@", targetInfo);
+  }
+  [self.delegate targetUpdated:device inTargetSet:self];
 }
 
 @end

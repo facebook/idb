@@ -30,11 +30,6 @@
 
 #pragma mark Initializers
 
-+ (NSArray<FBAMDevice *> *)allDevices
-{
-  return FBAMDeviceManager.sharedManager.currentDeviceList;
-}
-
 - (instancetype)initWithAllValues:(NSDictionary<NSString *, id> *)allValues calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];

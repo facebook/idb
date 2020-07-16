@@ -36,10 +36,4 @@
   XCTAssertNotNil(deviceSet.allDevices);
 }
 
-- (void)testReadsFromMobileDevice
-{
-  NSArray<FBAMDevice *> *devices = [FBAMDevice allDevices];
-  XCTAssertNotNil(devices);
-}
-
 @end
