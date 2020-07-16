@@ -62,15 +62,15 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
 
 #pragma mark Initializers
 
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithLogger:logger];
   if (!self) {
     return nil;
   }
 
-  _queue = dispatch_get_main_queue();
-  _calls = FBDeviceControlFrameworkLoader.amDeviceCalls;
+  _queue = queue;
+  _calls = calls;
 
   return self;
 }

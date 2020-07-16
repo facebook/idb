@@ -19,6 +19,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBAMRestorableDeviceManager : FBDeviceManager<FBAMRestorableDevice *>
 
+/**
+ The Designated Initializer
+
+ @param calls the AMDCalls to use.
+ @param queue the queue to serialize on.
+ @param logger the logger to use.
+ @return a new FBAMDeviceManager instance
+ */
+- (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+
 @end
 
 NS_ASSUME_NONNULL_END

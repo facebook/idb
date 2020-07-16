@@ -84,26 +84,6 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 #pragma mark Initializers
 
-+ (FBAMDeviceManager *)sharedManager
-{
-  static dispatch_once_t onceToken;
-  static FBAMDeviceManager *manager;
-  dispatch_once(&onceToken, ^{
-    id<FBControlCoreLogger> logger = [FBControlCoreGlobalConfiguration.defaultLogger withName:@"amdevice_manager"];
-    manager = [self managerWithCalls:FBDeviceControlFrameworkLoader.amDeviceCalls queue:dispatch_get_main_queue() logger:logger];
-  });
-  return manager;
-}
-
-+ (FBAMDeviceManager *)managerWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
-{
-  FBAMDeviceManager *manager = [[self alloc] initWithCalls:calls queue:queue logger:logger];
-  NSError *error = nil;
-  BOOL success = [manager startListeningWithError:&error];
-  NSAssert(success, @"Failed to Start Listening %@", error);
-  return manager;
-}
-
 - (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithLogger:logger];
