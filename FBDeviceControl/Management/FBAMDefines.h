@@ -50,6 +50,7 @@ typedef NS_ENUM(int, AMDeviceNotificationType) {
   AMDeviceNotificationTypeConnected = 1,
   AMDeviceNotificationTypeDisconnected = 2,
   AMDeviceNotificationTypeUnsubscribed = 3,
+  AMDeviceNotificationTypePaired = 4,
 };
 
 typedef NS_ENUM(int, AMRestorableDeviceNotificationType) {

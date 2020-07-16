@@ -66,6 +66,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   id<FBControlCoreLogger> logger = manager.logger;
   switch (notificationType) {
     case AMDeviceNotificationTypeConnected:
+    case AMDeviceNotificationTypePaired:
       FB_AMDeviceConnected(device, manager);
       return;
     case AMDeviceNotificationTypeDisconnected: {

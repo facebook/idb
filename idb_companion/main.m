@@ -44,7 +44,6 @@ Usage: \n \
     --log-file-path PATH       Path to write a log file to e.g ./output.log (default: logs to stdErr).\n\
     --device-set-path PATH     Path to a custom Simulator device set.\n\
     --only FILTER_OPTION       If provided, will limit interaction to a subset of all available targets\n\
-    --ecid ECID                If provided, will ignore all devices that do not match the provided ECID\n\
     --headless VALUE           If VALUE is a true value, the Simulator boot's lifecycle will be tied to the lifecycle of this invocation.\n\
     --terminate-offline VALUE  Terminate if the target goes offline, otherwise the companion will stay alive.\n\
 \n\
