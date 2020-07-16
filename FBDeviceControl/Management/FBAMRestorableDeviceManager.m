@@ -42,14 +42,6 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
   FBiOSTargetState targetState = [FBAMRestorableDevice targetStateForDeviceState:deviceState];
   NSString *identifier = [@(manager.calls.RestorableDeviceGetECID(device)) stringValue];
   [logger logFormat:@"%@ %@ in state %@", device, NotificationTypeToString(status), FBiOSTargetStateStringFromState(targetState)];
-  switch (deviceState) {
-    case AMRestorableDeviceStateBootedOS:
-    case AMRestorableDeviceStateUnknown:
-      [logger logFormat:@"Ignoring %@ as a restorable device as it is %@", device, FBiOSTargetStateStringFromState(targetState)];
-      return;
-    default:
-      break;
-  }
   switch (status) {
     case AMRestorableDeviceNotificationTypeConnected: {
       NSDictionary<NSString *, id> *info = [manager infoForRestorableDevice:device];
