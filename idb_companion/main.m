@@ -43,9 +43,16 @@ Usage: \n \
     --debug-port PORT          Port to connect debugger on (default: 10881).\n\
     --log-file-path PATH       Path to write a log file to e.g ./output.log (default: logs to stdErr).\n\
     --device-set-path PATH     Path to a custom Simulator device set.\n\
-    --only simulator|device    If provided will query only against simulators or devices\n\
+    --only FILTER_OPTION       If provided, will limit interaction to a subset of all available targets\n\
+    --ecid ECID                If provided, will ignore all devices that do not match the provided ECID\n\
     --headless VALUE           If VALUE is a true value, the Simulator boot's lifecycle will be tied to the lifecycle of this invocation.\n\
-    --terminate-offline VALUE  Terminate if the target goes offline, otherwise the companion will stay alive.\n";
+    --terminate-offline VALUE  Terminate if the target goes offline, otherwise the companion will stay alive.\n\
+\n\
+ Filter Options:\n\
+    simulator                  Limit interactions to Simulators only.\n\
+    device                     Limit interactions to Devices only.\n\
+    ecid:ECID                  Limit interactions to a specific Device ECID\n\
+";
 
 static BOOL shouldPrintUsage(void)
 {
@@ -87,14 +94,14 @@ static FBFuture<FBSimulatorSet *> *SimulatorSet(NSUserDefaults *userDefaults, id
   return SimulatorSetWithPath(deviceSetPath, logger, reporter);
 }
 
-static FBFuture<FBDeviceSet *> *DeviceSet(id<FBControlCoreLogger> logger)
+static FBFuture<FBDeviceSet *> *DeviceSet(id<FBControlCoreLogger> logger, NSString *ecidFilter)
 {
   // Give a more meaningful message if we can't load the frameworks.
   NSError *error = nil;
   if(![FBDeviceControlFrameworkLoader.new loadPrivateFrameworks:logger error:&error]) {
     return [FBFuture futureWithError:error];
   }
-  FBDeviceSet *deviceSet = [FBDeviceSet setWithLogger:logger delegate:nil error:&error];
+  FBDeviceSet *deviceSet = [FBDeviceSet setWithLogger:logger delegate:nil ecidFilter:ecidFilter error:&error];
   if (!deviceSet) {
     return [FBFuture futureWithError:error];
   }
@@ -111,7 +118,12 @@ static FBFuture<NSArray<id<FBiOSTargetSet>> *> *DefaultTargetSets(NSUserDefaults
     }
     if ([only.lowercaseString containsString:@"device"]) {
       [logger log:@"'--only' set for Devices"];
-      return [FBFuture futureWithFutures:@[DeviceSet(logger)]];
+      return [FBFuture futureWithFutures:@[DeviceSet(logger, nil)]];
+    }
+    if ([only.lowercaseString hasPrefix:@"ecid:"]) {
+      NSString *ecid = [only.lowercaseString stringByReplacingOccurrencesOfString:@"ecid:" withString:@""];
+      [logger logFormat:@"ECID filter of %@", ecid];
+      return [FBFuture futureWithFutures:@[DeviceSet(logger, ecid)]];
     }
     return [[FBIDBError
       describeFormat:@"%@ is not a valid argument for '--only'", only]
@@ -120,7 +132,7 @@ static FBFuture<NSArray<id<FBiOSTargetSet>> *> *DefaultTargetSets(NSUserDefaults
   [logger log:@"Providing targets across Simulator and Device sets."];
   return [FBFuture futureWithFutures:@[
     SimulatorSet(userDefaults, logger, reporter),
-    DeviceSet(logger),
+    DeviceSet(logger, nil),
   ]];
 }
 

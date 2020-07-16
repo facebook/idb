@@ -24,10 +24,11 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param logger the logger to use.
  @param delegate a delegate that gets called when device status changes.
+ @param ecidFilter a filter to restrict discovery to a single ECID.
  @param error an error out for any error that occurs constructing the set.
  @return the Default Device Set if successful, nil otherwise.
  */
-+ (nullable instancetype)setWithLogger:(id<FBControlCoreLogger>)logger delegate:(nullable id<FBiOSTargetSetDelegate>)delegate error:(NSError **)error;
++ (nullable instancetype)setWithLogger:(id<FBControlCoreLogger>)logger delegate:(nullable id<FBiOSTargetSetDelegate>)delegate ecidFilter:(nullable NSString *)ecidFilter error:(NSError **)error;
 
 #pragma mark Querying
 

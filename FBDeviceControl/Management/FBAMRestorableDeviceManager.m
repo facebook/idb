@@ -17,6 +17,7 @@
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, assign, readonly) AMDCalls calls;
 @property (nonatomic, assign, readwrite) int registrationID;
+@property (nonatomic, copy, readonly) NSString *ecidFilter;
 
 - (NSDictionary<NSString *, id> *)infoForRestorableDevice:(AMRestorableDeviceRef)device;
 
@@ -42,6 +43,10 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
   FBiOSTargetState targetState = [FBAMRestorableDevice targetStateForDeviceState:deviceState];
   NSString *identifier = [@(manager.calls.RestorableDeviceGetECID(device)) stringValue];
   [logger logFormat:@"%@ %@ in state %@", device, NotificationTypeToString(status), FBiOSTargetStateStringFromState(targetState)];
+  if (manager.ecidFilter && ![identifier isEqualToString:manager.ecidFilter]) {
+    [logger logFormat:@"Ignoring %@ as it does not match filter of %@", device, manager.ecidFilter];
+    return;
+  }
   switch (status) {
     case AMRestorableDeviceNotificationTypeConnected: {
       NSDictionary<NSString *, id> *info = [manager infoForRestorableDevice:device];
@@ -62,15 +67,16 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
 
 #pragma mark Initializers
 
-- (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue ecidFilter:(NSString *)ecidFilter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithLogger:logger];
   if (!self) {
     return nil;
   }
 
-  _queue = queue;
   _calls = calls;
+  _queue = queue;
+  _ecidFilter = ecidFilter;
 
   return self;
 }

@@ -30,7 +30,7 @@
 - (void)testConstructsDeviceSet
 {
   NSError *error = nil;
-  FBDeviceSet *deviceSet = [FBDeviceSet setWithLogger:FBControlCoreGlobalConfiguration.defaultLogger delegate:nil error:&error];
+  FBDeviceSet *deviceSet = [FBDeviceSet setWithLogger:FBControlCoreGlobalConfiguration.defaultLogger delegate:nil ecidFilter:nil error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(deviceSet);
   XCTAssertNotNil(deviceSet.allDevices);

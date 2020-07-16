@@ -16,6 +16,7 @@
 
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, assign, readonly) AMDCalls calls;
+@property (nonatomic, copy, nullable, readonly) NSString *ecidFilter;
 @property (nonatomic, assign, readwrite) AMDNotificationSubscription subscription;
 
 - (NSString *)identifierForDevice:(AMDeviceRef)device;
@@ -31,15 +32,21 @@ static BOOL FB_AMDeviceConnected(AMDeviceRef device, FBAMDeviceManager *manager)
     [logger.error logFormat:@"Cannot start session with device, ignoring device %@", error];
     return NO;
   }
+  NSString *uniqueChipID = [CFBridgingRelease(calls.CopyValue(device, NULL, (__bridge CFStringRef)(FBDeviceKeyUniqueChipID))) stringValue];
+  if (!uniqueChipID) {
+    [FBAMDeviceManager stopUsing:device calls:calls logger:logger error:nil];
+    [logger.error logFormat:@"Ignoring device as cannot obtain ECID for it"];
+    return NO;
+  }
+  if (manager.ecidFilter && ![uniqueChipID isEqualToString:manager.ecidFilter]) {
+    [FBAMDeviceManager stopUsing:device calls:calls logger:logger error:nil];
+    [logger.error logFormat:@"Ignoring device as ECID %@ does not match filter %@", uniqueChipID, manager.ecidFilter];
+    return NO;
+  }
   NSDictionary<NSString *, id> *info = [CFBridgingRelease(calls.CopyValue(device, NULL, NULL)) copy];
   [FBAMDeviceManager stopUsing:device calls:calls logger:logger error:nil];
   if (!info) {
     [logger.error log:@"Ignoring device as no values were returned for it"];
-    return NO;
-  }
-  NSNumber *uniqueChipID = info[FBDeviceKeyUniqueChipID];
-  if (!uniqueChipID) {
-    [logger.error log:@"Ignoring device as could not obtain UniqueChipID for it"];
     return NO;
   }
   NSString *udid = info[FBDeviceKeyUniqueDeviceID];
@@ -48,8 +55,7 @@ static BOOL FB_AMDeviceConnected(AMDeviceRef device, FBAMDeviceManager *manager)
     return NO;
   }
   [logger logFormat:@"Obtained Device Values %@", info];
-  NSString *identifier = [uniqueChipID stringValue];
-  [manager deviceConnected:device identifier:identifier info:info];
+  [manager deviceConnected:device identifier:uniqueChipID info:info];
   return YES;
 }
 
@@ -84,15 +90,16 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 #pragma mark Initializers
 
-- (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue ecidFilter:(NSString *)ecidFilter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithLogger:logger];
   if (!self) {
     return nil;
   }
 
-  _queue = queue;
   _calls = calls;
+  _queue = queue;
+  _ecidFilter = ecidFilter;
 
   return self;
 }

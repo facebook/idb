@@ -24,10 +24,11 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param calls the AMDCalls to use.
  @param queue the queue to serialize on.
+ @param ecidFilter an ECID filter to apply.
  @param logger the logger to use.
  @return a new FBAMDeviceManager instance
  */
-- (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue ecidFilter:(nullable NSString *)ecidFilter logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

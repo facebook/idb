@@ -44,12 +44,12 @@
   [FBDeviceControlFrameworkLoader.new loadPrivateFrameworksOrAbort];
 }
 
-+ (nullable instancetype)setWithLogger:(id<FBControlCoreLogger>)logger delegate:(id<FBiOSTargetSetDelegate>)delegate error:(NSError **)error
++ (nullable instancetype)setWithLogger:(id<FBControlCoreLogger>)logger delegate:(id<FBiOSTargetSetDelegate>)delegate ecidFilter:(NSString *)ecidFilter error:(NSError **)error
 {
   AMDCalls calls = FBDeviceControlFrameworkLoader.amDeviceCalls;
   dispatch_queue_t queue = dispatch_get_main_queue();
-  FBAMDeviceManager *amDeviceManager = [[FBAMDeviceManager alloc] initWithCalls:calls queue:queue logger:logger];
-  FBAMRestorableDeviceManager *restorableDeviceManager = [[FBAMRestorableDeviceManager alloc] initWithCalls:calls queue:queue logger:logger];
+  FBAMDeviceManager *amDeviceManager = [[FBAMDeviceManager alloc] initWithCalls:calls queue:queue ecidFilter:ecidFilter logger:logger];
+  FBAMRestorableDeviceManager *restorableDeviceManager = [[FBAMRestorableDeviceManager alloc] initWithCalls:calls queue:queue ecidFilter:ecidFilter logger:logger];
   FBDeviceSet *deviceSet = [[FBDeviceSet alloc] initWithAMDeviceManager:amDeviceManager restorableDeviceManager:restorableDeviceManager logger:logger delegate:delegate];
   if (![amDeviceManager startListeningWithError:error]) {
     return nil;
