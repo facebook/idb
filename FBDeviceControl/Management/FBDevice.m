@@ -13,6 +13,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBAMDevice.h"
+#import "FBAMRestorableDevice.h"
 #import "FBDeviceApplicationCommands.h"
 #import "FBDeviceApplicationDataCommands.h"
 #import "FBDeviceControlError.h"
@@ -40,6 +41,7 @@
 @synthesize name = _name;
 @synthesize osVersion = _osVersion;
 @synthesize productVersion = _productVersion;
+@synthesize restorableDevice = _restorableDevice;
 @synthesize state = _state;
 @synthesize targetType = _targetType;
 @synthesize udid = _udid;
@@ -47,8 +49,9 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithSet:(FBDeviceSet *)set amDevice:(FBAMDevice *)amDevice logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithSet:(FBDeviceSet *)set amDevice:(FBAMDevice *)amDevice restorableDevice:(FBAMRestorableDevice *)restorableDevice logger:(id<FBControlCoreLogger>)logger
 {
+  NSAssert(amDevice || restorableDevice, @"An FBAMDevice or FBAMRestorableDevice must be provided");
   self = [super init];
   if (!self) {
     return nil;
@@ -56,9 +59,10 @@
 
   _set = set;
   _amDevice = amDevice;
-  _logger = [logger withName:amDevice.udid];
+  _restorableDevice = restorableDevice;
+  [self cacheValuesFromInfo:(amDevice ?: restorableDevice) overwrite:YES];
+  _logger = [logger withName:self.udid];
   _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBDevice.commandResponders statefulCommands:FBDevice.statefulCommands];
-  [self cacheValuesFromInfo:amDevice];
 
   return self;
 }
@@ -176,7 +180,7 @@
 - (void)setAmDevice:(FBAMDevice *)amDevice
 {
   _amDevice = amDevice;
-  [self cacheValuesFromInfo:amDevice];
+  [self cacheValuesFromInfo:amDevice overwrite:YES];
 }
 
 - (FBAMDevice *)amDevice
@@ -184,25 +188,62 @@
   return _amDevice;
 }
 
-- (void)cacheValuesFromInfo:(id<FBiOSTargetInfo, FBDevice>)targetInfo
+- (void)setRestorableDevice:(FBAMRestorableDevice *)restorableDevice
+{
+  _restorableDevice = restorableDevice;
+  [self cacheValuesFromInfo:restorableDevice overwrite:NO];
+}
+
+- (FBAMRestorableDevice *)restorableDevice
+{
+  return _restorableDevice;
+}
+
+- (void)cacheValuesFromInfo:(id<FBiOSTargetInfo, FBDevice>)targetInfo overwrite:(BOOL)overwrite
 {
   // Don't overwrite with nil values.
   if (!targetInfo) {
     return;
   }
-  _allValues = targetInfo.allValues;
-  _architecture = targetInfo.architecture;
-  _buildVersion = targetInfo.buildVersion;
+
+  // These values should always be overwitten
   _calls = targetInfo.calls;
-  _deviceType = targetInfo.deviceType;
-  _extendedInformation = targetInfo.extendedInformation;
-  _name = targetInfo.name;
-  _osVersion = targetInfo.osVersion;
-  _productVersion = targetInfo.productVersion;
   _state = targetInfo.state;
-  _targetType = targetInfo.targetType;
-  _udid = targetInfo.udid;
-  _uniqueIdentifier = targetInfo.uniqueIdentifier;
+
+  // Overwrite only if requested (i.e. if is the more information FBAMDevice)
+  if (!_allValues || overwrite) {
+    _allValues = targetInfo.allValues;
+  }
+  if (!_architecture || overwrite) {
+    _architecture = targetInfo.architecture;
+  }
+  if (!_buildVersion || overwrite) {
+    _buildVersion = targetInfo.buildVersion;
+  }
+  if (!_deviceType || overwrite) {
+    _deviceType = targetInfo.deviceType;
+  }
+  if (!_extendedInformation || overwrite) {
+    _extendedInformation = targetInfo.extendedInformation;
+  }
+  if (!_name || overwrite) {
+    _name = targetInfo.name;
+  }
+  if (!_osVersion || overwrite) {
+    _osVersion = targetInfo.osVersion;
+  }
+  if (_productVersion || overwrite) {
+    _productVersion = targetInfo.productVersion;
+  }
+  if (!_targetType || overwrite) {
+    _targetType = targetInfo.targetType;
+  }
+  if (!_udid || overwrite) {
+    _udid = targetInfo.udid;
+  }
+  if (!_uniqueIdentifier || overwrite) {
+    _uniqueIdentifier = targetInfo.uniqueIdentifier;
+  }
 }
 
 #pragma mark FBDeviceCommands

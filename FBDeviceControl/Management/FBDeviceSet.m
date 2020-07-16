@@ -165,7 +165,7 @@
     NSMutableArray<FBDevice *> *inflatedDevices = [NSMutableArray array];
     for (NSString *udid in devicesToInflate) {
       FBAMDevice *amDevice = availableDevices[udid];
-      FBDevice *device = [[FBDevice alloc] initWithSet:deviceSet amDevice:amDevice logger:[logger withName:udid]];
+      FBDevice *device = [[FBDevice alloc] initWithSet:deviceSet amDevice:amDevice restorableDevice:nil logger:[logger withName:udid]];
       [inflatedDevices addObject:device];
     }
     devices = [devices arrayByAddingObjectsFromArray:inflatedDevices];
