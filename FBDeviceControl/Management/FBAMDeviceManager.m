@@ -138,9 +138,15 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
   [logger logFormat:@"Checking whether %@ is paired", device];
   if (!calls.IsPaired(device)) {
-    return [[FBDeviceControlError
-      describeFormat:@"%@ is not paired with this host", device]
-      failBool:error];
+    [logger logFormat:@"%@ is not paired, attempting to pair", device];
+    status = calls.Pair(device);
+    if (status != 0) {
+      NSString *errorDescription = CFBridgingRelease(calls.CopyErrorText(status));
+      return [[FBDeviceControlError
+        describeFormat:@"%@ is not paired with this host %@", device, errorDescription]
+        failBool:error];
+    }
+    [logger logFormat:@"%@ succeeded pairing request", device];
   }
 
   [logger logFormat:@"Validating Pairing to %@", device];

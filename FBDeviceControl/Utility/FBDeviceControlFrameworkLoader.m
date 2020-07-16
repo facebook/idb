@@ -95,6 +95,7 @@ DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
   calls->MountImage = FBGetSymbolFromHandle(handle, "AMDeviceMountImage");
   calls->NotificationSubscribe = FBGetSymbolFromHandle(handle, "AMDeviceNotificationSubscribe");
   calls->NotificationUnsubscribe = FBGetSymbolFromHandle(handle, "AMDeviceNotificationUnsubscribe");
+  calls->Pair = FBGetSymbolFromHandle(handle, "AMDevicePair");
   calls->Release = FBGetSymbolFromHandle(handle, "AMDeviceRelease");
   calls->RestorableDeviceCopyBoardConfig = FBGetSymbolFromHandle(handle, "AMRestorableDeviceCopyBoardConfig");
   calls->RestorableDeviceCopyProductString = FBGetSymbolFromHandle(handle, "AMRestorableDeviceCopyProductString");

@@ -107,9 +107,10 @@ typedef struct {
   int (*Connect)(AMDeviceRef device);
   int (*Disconnect)(AMDeviceRef device);
   int (*IsPaired)(AMDeviceRef device);
-  int (*ValidatePairing)(AMDeviceRef device);
+  int (*Pair)(AMDeviceRef device);
   int (*StartSession)(AMDeviceRef device);
   int (*StopSession)(AMDeviceRef device);
+  int (*ValidatePairing)(AMDeviceRef device);
 
   // Memory Management
   void (*Retain)(AMDeviceRef device);
