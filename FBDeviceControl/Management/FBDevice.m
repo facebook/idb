@@ -29,7 +29,21 @@
 
 @implementation FBDevice
 
+@synthesize allValues = _allValues;
+@synthesize amDevice = _amDevice;
+@synthesize architecture = _architecture;
+@synthesize buildVersion = _buildVersion;
+@synthesize calls = _calls;
+@synthesize deviceType = _deviceType;
+@synthesize extendedInformation = _extendedInformation;
 @synthesize logger = _logger;
+@synthesize name = _name;
+@synthesize osVersion = _osVersion;
+@synthesize productVersion = _productVersion;
+@synthesize state = _state;
+@synthesize targetType = _targetType;
+@synthesize udid = _udid;
+@synthesize uniqueIdentifier = _uniqueIdentifier;
 
 #pragma mark Initializers
 
@@ -44,55 +58,9 @@
   _amDevice = amDevice;
   _logger = [logger withName:amDevice.udid];
   _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBDevice.commandResponders statefulCommands:FBDevice.statefulCommands];
+  [self cacheValuesFromInfo:amDevice];
 
   return self;
-}
-
-#pragma mark FBiOSTargetInfo
-
-- (NSString *)uniqueIdentifier
-{
-  return self.amDevice.uniqueIdentifier;
-}
-
-- (NSString *)udid
-{
-  return self.amDevice.udid;
-}
-
-- (NSString *)name
-{
-  return self.amDevice.name;
-}
-
-- (FBArchitecture)architecture
-{
-  return self.amDevice.architecture;
-}
-
-- (FBiOSTargetState)state
-{
-  return self.amDevice.state;
-}
-
-- (FBiOSTargetType)targetType
-{
-  return self.amDevice.targetType;
-}
-
-- (FBDeviceType *)deviceType
-{
-  return self.amDevice.deviceType;
-}
-
-- (FBOSVersion *)osVersion
-{
-  return self.amDevice.osVersion;
-}
-
-- (NSDictionary<NSString *, id> *)extendedInformation
-{
-  return self.amDevice.extendedInformation;
 }
 
 #pragma mark FBiOSTarget
@@ -143,28 +111,6 @@
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target
 {
   return FBiOSTargetComparison(self, target);
-}
-
-#pragma mark FBDeviceCommands
-
-- (NSDictionary<NSString *, id> *)allValues
-{
-  return self.amDevice.allValues;
-}
-
-- (NSString *)buildVersion
-{
-  return self.amDevice.buildVersion;
-}
-
-- (NSString *)productVersion
-{
-  return self.amDevice.productVersion;
-}
-
-- (AMDCalls)calls
-{
-  return self.amDevice.calls;
 }
 
 #pragma mark FBDebugDescribeable
@@ -225,6 +171,38 @@
 - (NSOperatingSystemVersion)operatingSystemVersion
 {
   return [FBDevice operatingSystemVersionFromString:self.amDevice.productVersion];
+}
+
+- (void)setAmDevice:(FBAMDevice *)amDevice
+{
+  _amDevice = amDevice;
+  [self cacheValuesFromInfo:amDevice];
+}
+
+- (FBAMDevice *)amDevice
+{
+  return _amDevice;
+}
+
+- (void)cacheValuesFromInfo:(id<FBiOSTargetInfo, FBDevice>)targetInfo
+{
+  // Don't overwrite with nil values.
+  if (!targetInfo) {
+    return;
+  }
+  _allValues = targetInfo.allValues;
+  _architecture = targetInfo.architecture;
+  _buildVersion = targetInfo.buildVersion;
+  _calls = targetInfo.calls;
+  _deviceType = targetInfo.deviceType;
+  _extendedInformation = targetInfo.extendedInformation;
+  _name = targetInfo.name;
+  _osVersion = targetInfo.osVersion;
+  _productVersion = targetInfo.productVersion;
+  _state = targetInfo.state;
+  _targetType = targetInfo.targetType;
+  _udid = targetInfo.udid;
+  _uniqueIdentifier = targetInfo.uniqueIdentifier;
 }
 
 #pragma mark Forwarding
