@@ -85,7 +85,7 @@
 
 - (NSString *)uniqueIdentifier
 {
-  return [self.allValues[@"UniqueChipID"] stringValue];
+  return [self.allValues[FBDeviceKeyUniqueChipID] stringValue];
 }
 
 - (NSString *)udid
@@ -95,32 +95,32 @@
 
 - (NSString *)architecture
 {
-  return self.allValues[@"CPUArchitecture"];
+  return self.allValues[FBDeviceKeyCPUArchitecture];
 }
 
 - (NSString *)buildVersion
 {
-  return self.allValues[@"BuildVersion"];
+  return self.allValues[FBDeviceKeyBuildVersion];
 }
 
 - (NSString *)productVersion
 {
-  return self.allValues[@"ProductVersion"];
+  return self.allValues[FBDeviceKeyProductVersion];
 }
 
 - (NSString *)name
 {
-  return self.allValues[@"DeviceName"];
+  return self.allValues[FBDeviceKeyDeviceName];
 }
 
 - (FBDeviceType *)deviceType
 {
-  return FBiOSTargetConfiguration.productTypeToDevice[self.allValues[@"ProductType"]];
+  return FBiOSTargetConfiguration.productTypeToDevice[self.allValues[FBDeviceKeyProductType]];
 }
 
 - (FBOSVersion *)osVersion
 {
-  NSString *osVersion = [FBAMDevice osVersionForDeviceClass:self.allValues[@"DeviceClass"] productVersion:self.productVersion];
+  NSString *osVersion = [FBAMDevice osVersionForDeviceClass:self.allValues[FBDeviceKeyDeviceClass] productVersion:self.productVersion];
   return FBiOSTargetConfiguration.nameToOSVersion[osVersion] ?: [FBOSVersion genericWithName:osVersion];
 }
 
