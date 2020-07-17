@@ -6,11 +6,11 @@
 
 import asyncio
 import errno
-import json
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
+from idb.common.companion import parse_json_line
 from idb.common.constants import IDB_LOCAL_TARGETS_FILE, IDB_LOGS_PATH
 from idb.common.file import get_last_n_lines
 from idb.common.pid_saver import PidSaver
@@ -21,24 +21,12 @@ class CompanionSpawnerException(Exception):
     pass
 
 
-class IdbJsonException(Exception):
-    pass
-
-
-def _parse_json_line(line: bytes) -> Dict[str, Any]:
-    decoded_line = line.decode()
-    try:
-        return json.loads(decoded_line)
-    except json.JSONDecodeError:
-        raise IdbJsonException(f"Failed to parse json from: {decoded_line}")
-
-
 async def _extract_port_from_spawned_companion(stream: asyncio.StreamReader) -> int:
     # The first line of stdout should contain launch info,
     # otherwise something bad has happened
     line = await stream.readline()
     logging.debug(f"Read line from companion: {line}")
-    update = _parse_json_line(line)
+    update = parse_json_line(line)
     logging.debug(f"Got update from companion: {update}")
     return int(update["grpc_port"])
 
@@ -168,6 +156,6 @@ class CompanionSpawner:
             line = await stream.readline()
             if line is None:
                 return
-            update = _parse_json_line(line)
+            update = parse_json_line(line)
             if update["report_initial_state"]:
                 return

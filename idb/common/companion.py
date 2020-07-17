@@ -5,11 +5,12 @@
 # LICENSE file in the root directory of this source tree.
 
 import asyncio
+import json
 import logging
 import subprocess
 from logging import Logger
 from sys import platform
-from typing import AsyncContextManager, List, Optional
+from typing import AsyncContextManager, Dict, List, Optional, Union
 
 from idb.common.format import target_description_from_json
 from idb.common.logging import log_call
@@ -20,6 +21,10 @@ from idb.utils.typing import none_throws
 
 DEFAULT_COMPANION_COMMAND_TIMEOUT = 120
 DEFAULT_COMPANION_TEARDOWN_TIMEOUT = 30
+
+
+class IdbJsonException(Exception):
+    pass
 
 
 async def _terminate_process(
@@ -37,6 +42,14 @@ async def _terminate_process(
     except TimeoutError:
         logger.info(f"Process hasn't exited after {timeout} seconds, SIGKILL'ing...")
         process.kill()
+
+
+def parse_json_line(line: bytes) -> Dict[str, Union[int, str]]:
+    decoded_line = line.decode()
+    try:
+        return json.loads(decoded_line)
+    except json.JSONDecodeError:
+        raise IdbJsonException(f"Failed to parse json from: {decoded_line}")
 
 
 class Companion:
@@ -176,3 +189,18 @@ class Companion:
         if len(details) == 0:
             raise IdbException(f"No device info found, got {all_details}")
         return details[0]
+
+    @asynccontextmanager
+    async def unix_domain_server(
+        self, udid: str, path: str
+    ) -> AsyncContextManager[str]:
+        async with self._start_companion_command(
+            ["--udid", udid, "--grpc-domain-sock", path]
+        ) as process:
+            line = await none_throws(process.stdout).readline()
+            output = parse_json_line(line)
+            grpc_path = output.get("grpc_path")
+            if grpc_path is None:
+                raise IdbException(f"No grpc_path in {line}")
+            self._logger.info(f"Started domain sock server on {grpc_path}")
+            yield grpc_path
