@@ -47,6 +47,10 @@ class log_call(AsyncContextManager[None]):
         self.start = int(time.time())
         await plugin.before_invocation(name=name, metadata=self.metadata)
 
+    # pyre-fixme[14]: `__aexit__` overrides method defined in `AsyncContextManager`
+    #  inconsistently.
+    # pyre-fixme[14]: `__aexit__` overrides method defined in `AsyncContextManager`
+    #  inconsistently.
     async def __aexit__(
         self,
         exc_type: Optional[Type[Exception]],
