@@ -107,8 +107,9 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 + (FBFuture<NSString *> *)confirmExistenceOfRequiredShimsInDirectory:(NSString *)directory
 {
   if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
-    return [[FBXCTestError
+    return [[[FBXCTestError
       describeFormat:@"A shim directory was searched for at '%@', but it was not there", directory]
+      noLogging]
       failFuture];
   }
   NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];
