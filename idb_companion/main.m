@@ -222,9 +222,15 @@ static FBFuture<NSNull *> *ShutdownFuture(NSString *udid, NSUserDefaults *userDe
 
 static FBFuture<NSNull *> *EraseFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
-  return [SimulatorFuture(udid, userDefaults, logger, reporter)
-    onQueue:dispatch_get_main_queue() fmap:^(FBSimulator *simulator) {
-      return [simulator erase];
+  return [TargetForUDID(udid, userDefaults, NO, logger, reporter)
+    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (id<FBiOSTarget> target) {
+      id<FBEraseCommands> commands = (id<FBEraseCommands>) target;
+      if (![commands conformsToProtocol:@protocol(FBEraseCommands)]) {
+        return [[FBIDBError
+          describeFormat:@"Cannot erase %@, does not support erasing", target]
+          failFuture];
+      }
+      return [commands erase];
     }];
 }
 
