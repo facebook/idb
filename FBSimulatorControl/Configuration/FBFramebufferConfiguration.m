@@ -9,10 +9,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBVideoEncoderConfiguration.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorDiagnostics.h"
+#import "FBVideoEncoderConfiguration.h"
 
 @implementation FBFramebufferConfiguration
 
@@ -179,25 +178,12 @@ static NSString *KeyImagePath = @"image_path";
   return [[self.class alloc] initWithScale:self.scale encoder:self.encoder imagePath:imagePath];
 }
 
-+ (instancetype)withImageDiagnostic:(FBDiagnostic *)diagnostic
-{
-  return [self.new withImageDiagnostic:diagnostic];
-}
-
-- (instancetype)withImageDiagnostic:(FBDiagnostic *)diagnostic
-{
-  FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:diagnostic];
-  return [[self.class alloc] initWithScale:self.scale encoder:self.encoder imagePath:builder.createPath];
-}
-
 #pragma mark Simulators
 
 - (instancetype)inSimulator:(FBSimulator *)simulator
 {
-  FBDiagnosticBuilder *imageBuilder = [FBDiagnosticBuilder builderWithDiagnostic:simulator.simulatorDiagnostics.screenshot];
-  FBDiagnosticBuilder *videoBuilder = [FBDiagnosticBuilder builderWithDiagnostic:simulator.simulatorDiagnostics.video];
-  FBVideoEncoderConfiguration *encoder = [self.encoder withFilePath:videoBuilder.createPath];
-  return [[self withEncoder:encoder] withImagePath:imageBuilder.createPath];
+  FBVideoEncoderConfiguration *encoder = [self.encoder withFilePath:FBiOSTargetDefaultVideoPath(simulator.auxillaryDirectory)];
+  return [[self withEncoder:encoder] withImagePath:FBiOSTargetDefaultScreenshotPath(simulator.auxillaryDirectory)];
 }
 
 @end

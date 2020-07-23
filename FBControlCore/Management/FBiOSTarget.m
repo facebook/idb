@@ -132,3 +132,13 @@ NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> r
   }
   return [left.udid compare:right.udid];
 }
+
+NSString *FBiOSTargetDefaultScreenshotPath(NSString *storageDirectory)
+{
+  return [storageDirectory stringByAppendingPathComponent:@"video.mp4"];
+}
+
+NSString *FBiOSTargetDefaultVideoPath(NSString *storageDirectory)
+{
+  return [storageDirectory stringByAppendingPathComponent:@"screenshot.png"];
+}

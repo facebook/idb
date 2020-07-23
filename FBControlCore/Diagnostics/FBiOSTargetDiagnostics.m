@@ -9,6 +9,7 @@
 
 #import "FBDiagnostic.h"
 #import "FBDiagnosticQuery.h"
+#import "FBiOSTarget.h"
 
 FBDiagnosticName const FBDiagnosticNameVideo = @"video";
 FBDiagnosticName const FBDiagnosticNameSyslog = @"system_log";
@@ -32,6 +33,7 @@ FBDiagnosticName const FBDiagnosticNameScreenshot = @"screenshot";
   }
 
   _storageDirectory = storageDirectory;
+
   return self;
 }
 
@@ -47,7 +49,7 @@ FBDiagnosticName const FBDiagnosticNameScreenshot = @"screenshot";
   return [[[[self.baseLogBuilder
     updateShortName:FBDiagnosticNameVideo]
     updateFileType:@"mp4"]
-    updatePathFromDefaultLocation]
+    updatePath:FBiOSTargetDefaultVideoPath(self.storageDirectory)]
     build];
 }
 

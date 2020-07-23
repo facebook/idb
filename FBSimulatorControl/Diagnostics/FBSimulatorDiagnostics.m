@@ -127,7 +127,7 @@ FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap"
   return [[[[self.baseLogBuilder
     updateShortName:FBDiagnosticNameScreenshot]
     updateFileType:@"png"]
-    updatePathFromDefaultLocation]
+    updatePath:FBiOSTargetDefaultScreenshotPath(self.storageDirectory)]
     build];
 }
 

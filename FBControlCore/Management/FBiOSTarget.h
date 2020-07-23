@@ -217,6 +217,22 @@ extern FBiOSTargetType FBiOSTargetTypeFromTargetTypeStrings(NSArray<NSString *> 
  */
 extern NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right);
 
+/**
+ The default screenshot path for a target.
+
+ @param storageDirectory the storage directory of the target to use.
+ @return a file path.
+ */
+extern NSString *FBiOSTargetDefaultScreenshotPath(NSString *storageDirectory);
+
+/**
+ The default video path for a target.
+
+ @param storageDirectory the storage directory of the target to use.
+ @return a file path.
+ */
+extern NSString *FBiOSTargetDefaultVideoPath(NSString *storageDirectory);
+
 #if defined __cplusplus
 };
 #endif

@@ -9,11 +9,10 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBDiagnostic;
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBSimulator;
 @class FBVideoEncoderConfiguration;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Configuration Value for a Framebuffer.
@@ -84,8 +83,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)withImagePath:(NSString *)imagePath;
 - (instancetype)withImagePath:(NSString *)imagePath;
-+ (instancetype)withImageDiagnostic:(FBDiagnostic *)diagnostic;
-- (instancetype)withImageDiagnostic:(FBDiagnostic *)diagnostic;
 
 #pragma mark Simulators
 

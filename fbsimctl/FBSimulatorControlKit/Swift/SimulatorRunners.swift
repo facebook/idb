@@ -107,7 +107,7 @@ struct SimulatorActionRunner: Runner {
       return SimulatorCreationRunner(
         context: context,
         eventName: .clone,
-        futures: [(simulator, simulator.set!.cloneSimulator(simulator))]
+        futures: [(simulator, simulator.set!.cloneSimulator(simulator, toDeviceSet: simulator.set!))]
       )
     case .delete:
       return FutureRunner(
@@ -118,7 +118,7 @@ struct SimulatorActionRunner: Runner {
       )
     case .focus:
       return SimpleRunner(reporter, .focus, simulator.subject) {
-        try simulator.focus()
+        try simulator.focus().await()
       }
     case .keyboardOverride:
       return FutureRunner(
@@ -129,7 +129,7 @@ struct SimulatorActionRunner: Runner {
       )
     case let .open(url):
       return SimpleRunner(reporter, .open, FBEventReporterSubject(string: url.bridgedAbsoluteString)) {
-        try simulator.open(url)
+        try simulator.open(url).await()
       }
     case let .relaunch(processLaunch):
       var appLaunch = FBApplicationLaunchConfiguration(bundleID: processLaunch.bundleID, bundleName: processLaunch.bundleName, arguments: processLaunch.arguments, environment: processLaunch.environment, output: processLaunch.output, launchMode: .relaunchIfRunning)
