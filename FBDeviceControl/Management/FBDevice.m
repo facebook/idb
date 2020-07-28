@@ -285,11 +285,11 @@
     failFutureContext];
 }
 
-- (FBFutureContext<FBAFCConnection *> *)startAFCService
+- (FBFutureContext<FBAFCConnection *> *)startAFCService:(NSString *)service
 {
   FBAMDevice *amDevice = self.amDevice;
   if (amDevice) {
-    return [amDevice startAFCService];
+    return [amDevice startAFCService:service];
   }
   return [[FBDeviceControlError
     describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]

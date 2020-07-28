@@ -73,11 +73,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFutureContext<FBDeviceLinkClient *> *)startDeviceLinkService:(NSString *)service;
 
 /**
- Starts an AFC Session on the Device.
+ Starts a Service, wrapping it in an "AFC" Client.
 
+ @param service the service name.
  @return a Future wrapping the AFC connection.
  */
-- (FBFutureContext<FBAFCConnection *> *)startAFCService;
+- (FBFutureContext<FBAFCConnection *> *)startAFCService:(NSString *)service;
 
 /**
  Starts house arrest for a given bundle id.

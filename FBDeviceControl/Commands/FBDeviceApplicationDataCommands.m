@@ -129,7 +129,7 @@
 - (FBFuture *)handleAFCOperation:(id(^)(FBAFCConnection *, NSError **))operationBlock
 {
   return [[self.device
-    startAFCService]
+    startAFCService:@"com.apple.afc"]
     onQueue:self.device.workQueue pop:^(FBAFCConnection *connection) {
       NSError *error = nil;
       id result = operationBlock(connection, &error);

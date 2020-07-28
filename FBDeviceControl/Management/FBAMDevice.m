@@ -197,10 +197,10 @@
     }];
 }
 
-- (FBFutureContext<FBAFCConnection *> *)startAFCService
+- (FBFutureContext<FBAFCConnection *> *)startAFCService:(NSString *)service
 {
   return [[self
-    startService:@"com.apple.afc"]
+    startService:service]
     onQueue:self.workQueue push:^(FBAMDServiceConnection *connection) {
       return [FBAFCConnection afcFromServiceConnection:connection calls:FBAFCConnection.defaultCalls logger:self.logger queue:self.workQueue];
     }];
