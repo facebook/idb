@@ -9,6 +9,8 @@
 
 @implementation FBCollectionOperations
 
+#pragma mark Public
+
 + (NSArray<NSNumber *> *)arrayFromIndeces:(NSIndexSet *)indeces
 {
   NSMutableArray<NSNumber *> *array = [NSMutableArray array];
@@ -16,6 +18,19 @@
     [array addObject:@(index)];
   }];
   return [array copy];
+}
+
++ (NSDictionary<NSString *, id> *)recursiveFilteredJSONSerializableRepresentationOfDictionary:(NSDictionary<NSString *, id> *)input
+{
+  NSMutableDictionary<NSString *, id> *output = NSMutableDictionary.dictionary;
+  for (NSString *key in input.allKeys) {
+    id value = [self jsonSerializableValueOrNil:input[key]];
+    if (!value) {
+      continue;
+    }
+    output[key] = value;
+  }
+  return output;
 }
 
 + (NSIndexSet *)indecesFromArray:(NSArray<NSNumber *> *)array
@@ -43,6 +58,38 @@
     array[index] = object;
   }
   return [array copy];
+}
+
+#pragma mark Private
+
++ (NSArray<id> *)recursiveFilteredJSONSerializableRepresentationOfArray:(NSArray<id> *)input
+{
+  NSMutableArray<id> *output = NSMutableArray.array;
+  for (id value in input) {
+    id resolved = [self jsonSerializableValueOrNil:value];
+    if (!resolved) {
+      continue;;
+    }
+    [output addObject:resolved];
+  }
+  return output;
+}
+
++ (id)jsonSerializableValueOrNil:(id)value
+{
+  if ([value isKindOfClass:NSString.class]) {
+    return value;
+  }
+  if ([value isKindOfClass:NSNumber.class]) {
+    return value;
+  }
+  if ([value isKindOfClass:NSDictionary.class]) {
+    return [self recursiveFilteredJSONSerializableRepresentationOfDictionary:value];
+  }
+  if ([value isKindOfClass:NSArray.class]) {
+    return [self recursiveFilteredJSONSerializableRepresentationOfArray:value];
+  }
+  return nil;
 }
 
 @end

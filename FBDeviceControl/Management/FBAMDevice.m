@@ -70,18 +70,9 @@
 
 - (NSDictionary<NSString *, id> *)extendedInformation
 {
-  NSDictionary<NSString *, id> *source = self.allValues;
-  NSMutableDictionary<NSString *, id> *destination = NSMutableDictionary.dictionary;
-  for (NSString *key in source.allKeys) {
-    id value = source[key];
-    if ([value isKindOfClass:NSString.class]) {
-      destination[key] = value;
-    }
-    if ([value isKindOfClass:NSNumber.class]) {
-      destination[key] = value;
-    }
-  }
-  return @{@"device": destination};
+  return @{
+    @"device": [FBCollectionOperations recursiveFilteredJSONSerializableRepresentationOfDictionary:self.allValues],
+  };
 }
 
 - (NSString *)uniqueIdentifier
