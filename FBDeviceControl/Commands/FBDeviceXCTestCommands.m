@@ -609,7 +609,7 @@ static inline NSDate *dateFromString(NSString *date)
 - (FBFutureContext<NSNumber *> *)transportForTestManagerService
 {
   return [[self.device
-    startTestManagerService]
+    startService:@"com.apple.testmanagerd.lockdown"]
     onQueue:self.device.workQueue pend:^(FBAMDServiceConnection *connection) {
       return [FBFuture futureWithResult:@(connection.socket)];
     }];

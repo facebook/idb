@@ -196,12 +196,6 @@
     }];
 }
 
-- (FBFutureContext<FBAMDServiceConnection *> *)startTestManagerService
-{
-  // See XCTDaemonControlMobileDevice in Xcode.
-  return [self startService:@"com.apple.testmanagerd.lockdown"];
-}
-
 - (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls
 {
   return [[self

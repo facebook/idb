@@ -263,17 +263,6 @@
     failFutureContext];
 }
 
-- (FBFutureContext<FBAMDServiceConnection *> *)startTestManagerService
-{
-  FBAMDevice *amDevice = self.amDevice;
-  if (amDevice) {
-    return [amDevice startTestManagerService];
-  }
-  return [[FBDeviceControlError
-    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
-    failFutureContext];
-}
-
 - (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service
 {
   FBAMDevice *amDevice = self.amDevice;

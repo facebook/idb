@@ -56,11 +56,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFutureContext<FBAMDevice *> *)connectToDeviceWithPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
 
 /**
- Starts test manager daemon service
- */
-- (FBFutureContext<FBAMDServiceConnection *> *)startTestManagerService;
-
-/**
  Starts a Service on the AMDevice.
 
  @param service the service name
