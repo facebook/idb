@@ -11,9 +11,10 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBAMDevice;
-@class FBAMDServiceConnection;
 @class FBAFCConnection;
+@class FBAMDServiceConnection;
+@class FBAMDevice;
+@class FBDeviceLinkClient;
 
 /**
  Defines properties that are required on classes related to the implementation of FBDevice.
@@ -62,6 +63,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Future wrapping the FBAFCConnection.
  */
 - (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service;
+
+/**
+ Starts a Service, wrapping it in a "Device Link" Plist client.
+
+ @param service the service name.
+ @return a Future context wrapping the FBDeviceLinkClient.
+ */
+- (FBFutureContext<FBDeviceLinkClient *> *)startDeviceLinkService:(NSString *)service;
 
 /**
  Starts an AFC Session on the Device.

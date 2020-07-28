@@ -19,6 +19,7 @@
 #import "FBAMRestorableDevice.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
+#import "FBDeviceLinkClient.h"
 
 #pragma mark - FBAMDevice Implementation
 
@@ -184,6 +185,15 @@
         [self.logger logFormat:@"Invalidated service %@", service];
       }
       return FBFuture.empty;
+    }];
+}
+
+- (FBFutureContext<FBDeviceLinkClient *> *)startDeviceLinkService:(NSString *)service
+{
+  return [[self
+    startService:service]
+    onQueue:self.workQueue pend:^(FBAMDServiceConnection *connection) {
+      return [FBDeviceLinkClient deviceLinkClientWithConnection:connection];
     }];
 }
 
