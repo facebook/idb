@@ -480,6 +480,7 @@ message TargetDescription {
   string os_version = 6;
   string architecture = 7;
   // CompanionInfo companion_info = 8; deprecated
+  bytes extended = 9;
 }
 
 message BootRequest{
