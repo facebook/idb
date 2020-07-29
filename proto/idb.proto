@@ -442,7 +442,6 @@ message LsResponse {
 
 message ConnectRequest {
   map<string, string> metadata = 1;
-  // ConnectionDestination destination = 2; deprecated
   string local_file_path = 4;
 }
 
@@ -451,7 +450,6 @@ message ConnectResponse {
 }
 
 message DisconnectRequest {
-  // ConnectionDestination destination = 1; deprecated
 }
 
 message DisconnectResponse {
@@ -480,7 +478,6 @@ message TargetDescription {
   string target_type = 5;
   string os_version = 6;
   string architecture = 7;
-  // CompanionInfo companion_info = 8; deprecated
   bytes extended = 9;
   bytes diagnostics = 10;
 }
