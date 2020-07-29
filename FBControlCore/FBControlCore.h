@@ -38,6 +38,7 @@
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBDebuggerCommands.h>
 #import <FBControlCore/FBDiagnostic.h>
+#import <FBControlCore/FBDiagnosticInformationCommands.h>
 #import <FBControlCore/FBDiagnosticQuery.h>
 #import <FBControlCore/FBDispatchSourceNotifier.h>
 #import <FBControlCore/FBEraseCommands.h>

@@ -128,7 +128,7 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 /**
  A protocol that defines an interactible and informational target.
  */
-@protocol FBiOSTarget <NSObject, FBiOSTargetInfo,  FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBBitmapStreamingCommands, FBCrashLogCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands, FBInstrumentsCommands, FBDebuggerCommands>
+@protocol FBiOSTarget <NSObject, FBiOSTargetInfo, FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBBitmapStreamingCommands, FBCrashLogCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands, FBInstrumentsCommands, FBDebuggerCommands>
 
 /**
  The Target's Logger.
