@@ -225,6 +225,7 @@ message CrashLogResponse {
 }
 
 message TargetDescriptionRequest {
+  bool fetch_diagnostics = 1;
 }
 
 message TargetDescriptionResponse {
@@ -481,6 +482,7 @@ message TargetDescription {
   string architecture = 7;
   // CompanionInfo companion_info = 8; deprecated
   bytes extended = 9;
+  bytes diagnostics = 10;
 }
 
 message BootRequest{

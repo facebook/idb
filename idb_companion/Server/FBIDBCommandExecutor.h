@@ -417,6 +417,11 @@ This allows to avoid the permission popup the first time we open a deeplink
  */
 - (FBFuture<id<FBLogOperation>> *)tail_companion_logs:(id<FBDataConsumer>)consumer;
 
+/**
+ Fetches diagnostic information
+ */
+- (FBFuture<NSDictionary<NSString *, id> *> *)diagnostic_information;
+
 @end
 
 NS_ASSUME_NONNULL_END

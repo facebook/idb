@@ -457,6 +457,16 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [self.logger tailToConsumer:consumer];
 }
 
+- (FBFuture<NSDictionary<NSString *, id> *> *)diagnostic_information
+{
+  id<FBDiagnosticInformationCommands> commands = (id<FBDiagnosticInformationCommands>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBDiagnosticInformationCommands)]) {
+    // Don't fail, just return empty.
+    return [FBFuture futureWithResult:@{}];
+  }
+  return [commands fetchDiagnosticInformation];
+}
+
 #pragma mark Private Methods
 
 - (FBFuture<id<FBiOSTargetFileCommands>> *)applicationDataContainerCommands:(NSString *)bundleID
