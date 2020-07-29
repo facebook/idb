@@ -14,7 +14,13 @@ from typing import AsyncContextManager, Dict, List, Optional, Union
 
 from idb.common.format import target_description_from_json
 from idb.common.logging import log_call
-from idb.common.types import IdbException, TargetDescription, TargetType
+from idb.common.types import (
+    ECIDFilter,
+    IdbException,
+    OnlyFilter,
+    TargetDescription,
+    TargetType,
+)
 from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws
 
@@ -42,6 +48,14 @@ async def _terminate_process(
     except TimeoutError:
         logger.info(f"Process hasn't exited after {timeout} seconds, SIGKILL'ing...")
         process.kill()
+
+
+def _only_arg_from_filter(only: Optional[OnlyFilter]) -> List[str]:
+    if isinstance(only, TargetType):
+        return ["--only", "simulator" if only is TargetType.SIMULATOR else "device"]
+    elif isinstance(only, ECIDFilter):
+        return ["--only", f"ecid:{only.ecid}"]
+    return []
 
 
 def parse_json_line(line: bytes) -> Dict[str, Union[int, str]]:
@@ -164,13 +178,9 @@ class Companion:
 
     @log_call()
     async def list_targets(
-        self, only: Optional[TargetType] = None
+        self, only: Optional[OnlyFilter] = None
     ) -> List[TargetDescription]:
-        arguments = ["--list", "1"]
-        if only is not None:
-            arguments.extend(
-                ["--only", "simulator" if only is TargetType.SIMULATOR else "device"]
-            )
+        arguments = ["--list", "1"] + _only_arg_from_filter(only=only)
         output = await self._run_companion_command(arguments=arguments)
         return [
             target_description_from_json(data=line.strip())
@@ -180,10 +190,12 @@ class Companion:
 
     @log_call()
     async def target_description(
-        self, udid: str, only: Optional[TargetType] = None
+        self, udid: Optional[str] = None, only: Optional[OnlyFilter] = None
     ) -> TargetDescription:
         all_details = await self.list_targets(only=only)
-        details = [target for target in all_details if target.udid == udid]
+        details = all_details
+        if udid is not None:
+            details = [target for target in all_details if target.udid == udid]
         if len(details) > 1:
             raise IdbException(f"More than one device info found {details}")
         if len(details) == 0:

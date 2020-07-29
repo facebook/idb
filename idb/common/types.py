@@ -49,6 +49,14 @@ class TargetType(Enum):
 
 
 @dataclass(frozen=True)
+class ECIDFilter:
+    ecid: int
+
+
+OnlyFilter = Union[TargetType, ECIDFilter]
+
+
+@dataclass(frozen=True)
 class TCPAddress:
     host: str
     port: int
