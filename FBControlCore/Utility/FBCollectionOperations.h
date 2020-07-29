@@ -37,6 +37,19 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSDictionary<NSString *, id> *)recursiveFilteredJSONSerializableRepresentationOfDictionary:(NSDictionary<NSString *, id> *)input;
 
 /**
+ Returns a recursive copy of the array, filtering out any elements that are not JSON-Serializable. Values that are acceptable are:
+ - NSString
+ - NSNumber
+ - NSNull
+ - NSArray (filtering out all non-serializable elements)
+ - NSDicitionary (filtering out all non-serializable elements)
+
+ @param input the input array.
+ @return a filtered array.
+ */
++ (NSArray<id> *)recursiveFilteredJSONSerializableRepresentationOfArray:(NSArray<id> *)input;
+
+/**
  Creates and returns an Index Set from an Array of Numbers
  Index Sets can be used for storing a collection of Integers, as can Arrays of Numbers.
 

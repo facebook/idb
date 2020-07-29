@@ -94,6 +94,15 @@ typedef CFTypeRef AMDServiceConnectionRef;
  */
 - (id)receiveMessageWithError:(NSError **)error;
 
+/**
+ Send then receive a plist.
+
+ @param message the message to send.
+ @param error an error out for any error that occurs.
+ @return the message received, if successful.
+ */
+- (id)sendAndReceiveMessage:(id)message error:(NSError **)error;
+
 #pragma mark Streams
 
 /**

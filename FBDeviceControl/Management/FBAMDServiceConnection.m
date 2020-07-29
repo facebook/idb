@@ -127,6 +127,14 @@ static size_t ReadBufferSize = 1024 * 4;
   return CFBridgingRelease(message);
 }
 
+- (id)sendAndReceiveMessage:(id)message error:(NSError **)error
+{
+  if (![self sendMessage:message error:error]) {
+    return nil;
+  }
+  return [self receiveMessageWithError:error];
+}
+
 #pragma mark Streams
 
 - (FBFuture<NSNull *> *)consume:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue

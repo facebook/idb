@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A class that represents an iOS Device.
  */
-@interface FBDevice : NSObject <FBiOSTarget, FBDeviceCommands>
+@interface FBDevice : NSObject <FBiOSTarget, FBDeviceCommands, FBDiagnosticInformationCommands>
 
 /**
  The Device Set to which the Device Belongs.

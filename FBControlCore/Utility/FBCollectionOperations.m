@@ -33,6 +33,19 @@
   return output;
 }
 
++ (NSArray<id> *)recursiveFilteredJSONSerializableRepresentationOfArray:(NSArray<id> *)input
+{
+  NSMutableArray<id> *output = NSMutableArray.array;
+  for (id value in input) {
+    id resolved = [self jsonSerializableValueOrNil:value];
+    if (!resolved) {
+      continue;;
+    }
+    [output addObject:resolved];
+  }
+  return output;
+}
+
 + (NSIndexSet *)indecesFromArray:(NSArray<NSNumber *> *)array
 {
   NSMutableIndexSet *indexSet = [NSMutableIndexSet indexSet];
@@ -61,19 +74,6 @@
 }
 
 #pragma mark Private
-
-+ (NSArray<id> *)recursiveFilteredJSONSerializableRepresentationOfArray:(NSArray<id> *)input
-{
-  NSMutableArray<id> *output = NSMutableArray.array;
-  for (id value in input) {
-    id resolved = [self jsonSerializableValueOrNil:value];
-    if (!resolved) {
-      continue;;
-    }
-    [output addObject:resolved];
-  }
-  return output;
-}
 
 + (id)jsonSerializableValueOrNil:(id)value
 {
