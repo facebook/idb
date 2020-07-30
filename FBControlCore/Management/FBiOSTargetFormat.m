@@ -182,7 +182,7 @@ FBiOSTargetFormatKey const FBiOSTargetFormatContainerApplicationProcessIdentifie
     if (!value) {
       continue;
     }
-    [string appendString:([value isKindOfClass:NSString.class] ? value : [value stringValue])];
+    [string appendString:([value respondsToSelector:@selector(stringValue)] ? [value stringValue] : value)];
     if (index >= self.fields.count - 1) {
       continue;
     }
