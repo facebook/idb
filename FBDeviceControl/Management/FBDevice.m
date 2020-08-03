@@ -173,11 +173,6 @@
 
 #pragma mark FBDevice Properties
 
-- (NSOperatingSystemVersion)operatingSystemVersion
-{
-  return [FBDevice operatingSystemVersionFromString:self.amDevice.productVersion];
-}
-
 - (void)setAmDevice:(FBAMDevice *)amDevice
 {
   _amDevice = amDevice;

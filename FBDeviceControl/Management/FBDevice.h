@@ -26,11 +26,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak, readonly) FBDeviceSet *set;
 
 /**
- Interpolated NSOperatingSystemVersion.
- */
-@property (nonatomic, assign, readonly) NSOperatingSystemVersion operatingSystemVersion;
-
-/**
  Constructs an Operating System Version from a string.
 
  @param string the string to interpolate.

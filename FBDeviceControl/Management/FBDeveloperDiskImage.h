@@ -9,7 +9,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBDevice;
+@protocol FBDeviceCommands;
 @protocol FBControlCoreLogger;
 
 @interface FBDeveloperDiskImage : NSObject
@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the path of the disk image.
  */
-+ (nullable FBDeveloperDiskImage *)developerDiskImage:(FBDevice *)device logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable FBDeveloperDiskImage *)developerDiskImage:(id<FBDeviceCommands>)device logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 #pragma mark Properties
 
@@ -48,7 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @param error an error out for any error that occurs.
  */
-+ (NSString *)pathForDeveloperSymbols:(FBDevice *)device logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (NSString *)pathForDeveloperSymbols:(id<FBDeviceCommands>)device logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 @end
 

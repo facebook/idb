@@ -23,7 +23,7 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
 
 #pragma mark Private
 
-+ (NSString *)pathForDeveloperDiskImageDirectory:(FBDevice *)device logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (NSString *)pathForDeveloperDiskImageDirectory:(id<FBDeviceCommands>)device logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSArray<NSString *> *searchPaths = @[
     [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/DeviceSupport"],
@@ -40,7 +40,7 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
     }
   }
   // Construct all of the versions in an array
-  NSOperatingSystemVersion targetVersion = device.operatingSystemVersion;
+  NSOperatingSystemVersion targetVersion = [FBDevice operatingSystemVersionFromString:device.productVersion];
   NSMutableArray<NSString *> *resolvedPaths = NSMutableArray.array;
   [logger logFormat:@"Attempting to find Disk Image directory by Version %ld.%ld", targetVersion.majorVersion, targetVersion.minorVersion];
   for (NSString *searchPath in searchPaths) {
@@ -86,7 +86,7 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
 
 #pragma mark Initializers
 
-+ (FBDeveloperDiskImage *)developerDiskImage:(FBDevice *)device logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (FBDeveloperDiskImage *)developerDiskImage:(id<FBDeviceCommands>)device logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSString *directory = [self pathForDeveloperDiskImageDirectory:device logger:logger error:error];
   if (!directory) {
@@ -123,7 +123,7 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
 
 #pragma mark Public
 
-+ (NSString *)pathForDeveloperSymbols:(FBDevice *)device logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (NSString *)pathForDeveloperSymbols:(id<FBDeviceCommands>)device logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSArray<NSString *> *searchPaths = @[
     [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Developer/Xcode/iOS DeviceSupport"],
