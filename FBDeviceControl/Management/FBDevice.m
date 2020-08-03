@@ -303,6 +303,17 @@
     failFutureContext];
 }
 
+- (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage
+{
+  FBAMDevice *amDevice = self.amDevice;
+  if (amDevice) {
+    return [amDevice mountDeveloperDiskImage];
+  }
+  return [[FBDeviceControlError
+    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
 #pragma mark Forwarding
 
 + (NSArray<Class> *)commandResponders

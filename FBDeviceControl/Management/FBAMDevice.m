@@ -17,9 +17,15 @@
 #import "FBAMDeviceServiceManager.h"
 #import "FBAMDServiceConnection.h"
 #import "FBAMRestorableDevice.h"
+#import "FBDeveloperDiskImage.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
 #import "FBDeviceLinkClient.h"
+
+static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAMDevice *device)
+{
+  [device.logger logFormat:@"Mount Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
+}
 
 #pragma mark - FBAMDevice Implementation
 
@@ -205,6 +211,42 @@
       return [[self.serviceManager
         houseArrestAFCConnectionForBundleID:bundleID afcCalls:afcCalls]
         utilizeWithPurpose:self.udid];
+    }];
+}
+
+static const int DiskImageAlreadyMountedCode = -402653066;  // 0xe8000076 in hex
+
+- (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage
+{
+  NSError *error = nil;
+  FBDeveloperDiskImage *diskImage = [FBDeveloperDiskImage developerDiskImage:self logger:self.logger error:&error];
+  if (!diskImage) {
+    return [FBFuture futureWithError:error];
+  }
+  return [[self
+    connectToDeviceWithPurpose:@"mount_disk_image"]
+    onQueue:self.workQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (FBAMDevice *device) {
+      NSDictionary *options = @{
+        @"ImageSignature": diskImage.signature,
+        @"ImageType": @"Developer",
+      };
+      int status = device.calls.MountImage(
+        device.amDevice,
+        (__bridge CFStringRef)(diskImage.diskImagePath),
+        (__bridge CFDictionaryRef)(options),
+        (AMDeviceProgressCallback) MountCallback,
+        (__bridge void *) (device)
+      );
+      if (status == DiskImageAlreadyMountedCode) {
+        [device.logger logFormat:@"There is a disk image already mounted. Assuming that it is correct...."];
+      }
+      else if (status != 0) {
+        NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to mount image '%@' with error 0x%x (%@)", diskImage.diskImagePath, status, internalMessage]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:diskImage];
     }];
 }
 

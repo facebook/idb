@@ -12,8 +12,9 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBAFCConnection;
-@class FBAMDServiceConnection;
 @class FBAMDevice;
+@class FBAMDServiceConnection;
+@class FBDeveloperDiskImage;
 @class FBDeviceLinkClient;
 
 /**
@@ -88,6 +89,13 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Future context wrapping the AFC Connection.
  */
 - (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls;
+
+/**
+ Mounts the developer disk image.
+
+ @return a Future wrapping the mounted image.
+ */
+- (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage;
 
 @end
 

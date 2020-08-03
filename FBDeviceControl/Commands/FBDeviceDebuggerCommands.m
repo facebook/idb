@@ -23,11 +23,6 @@
 //  - Also effective tracing is to see the commands that lldb has downstream by setting in lldbinit `log enable -v -f /tmp/lldb.log lldb api`
 //  - DebuggerLLDB uses a combination of calls to the C++ LLDB API and executing command strings here.
 
-static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAMDevice *device)
-{
-  [device.logger logFormat:@"Mount Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
-}
-
 @interface FBDeviceDebuggerCommands ()
 
 @property (nonatomic, weak, readonly) FBDevice *device;
@@ -70,7 +65,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
 
 - (FBFutureContext<FBAMDServiceConnection *> *)connectToDebugServer
 {
-  return [[self
+  return [[self.device
     mountDeveloperDiskImage]
     onQueue:self.device.workQueue pushTeardown:^(id _) {
       return [self.device startService:@"com.apple.debugserver"];
@@ -78,42 +73,6 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
 }
 
 #pragma mark Private
-
-static const int DiskImageAlreadyMountedCode = -402653066;  // 0xe8000076 in hex
-
-- (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage
-{
-  NSError *error = nil;
-  FBDeveloperDiskImage *diskImage = [FBDeveloperDiskImage developerDiskImage:self.device logger:self.device.logger error:&error];
-  if (!diskImage) {
-    return [FBFuture futureWithError:error];
-  }
-  return [[self.device
-    connectToDeviceWithPurpose:@"mount_disk_image"]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (FBAMDevice *device) {
-      NSDictionary *options = @{
-        @"ImageSignature": diskImage.signature,
-        @"ImageType": @"Developer",
-      };
-      int status = device.calls.MountImage(
-        device.amDevice,
-        (__bridge CFStringRef)(diskImage.diskImagePath),
-        (__bridge CFDictionaryRef)(options),
-        (AMDeviceProgressCallback) MountCallback,
-        (__bridge void *) (device)
-      );
-      if (status == DiskImageAlreadyMountedCode) {
-        [device.logger logFormat:@"There is a disk image already mounted. Assuming that it is correct...."];
-      }
-      else if (status != 0) {
-        NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-        return [[FBDeviceControlError
-          describeFormat:@"Failed to mount image '%@' with error 0x%x (%@)", diskImage.diskImagePath, status, internalMessage]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:diskImage];
-    }];
-}
 
 - (FBFuture<FBBundleDescriptor *> *)applicationBundleForPath:(NSString *)path
 {
