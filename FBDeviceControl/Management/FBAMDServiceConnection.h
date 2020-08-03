@@ -50,6 +50,15 @@ typedef CFTypeRef AMDServiceConnectionRef;
 - (BOOL)send:(NSData *)data error:(NSError **)error;
 
 /**
+ Synchronously send bytes on the connection, prefixed with a length packet.
+
+ @param data the data to send>
+ @param error an error out for any error that occurs.
+ @return YES if the bytes were sent, NO otherwise.
+ */
+- (BOOL)sendWithLengthHeader:(NSData *)data error:(NSError **)error;
+
+/**
  Synchronously receive bytes from the connection.
 
  @param error an error out for any error that occurs.

@@ -10,6 +10,9 @@
 #import "FBDeviceControlError.h"
 #import "FBServiceConnectionClient.h"
 
+typedef uint32_t HeaderIntType;
+static const NSUInteger HeaderLength = sizeof(HeaderIntType);
+
 @implementation FBAMDServiceConnection
 
 #pragma mark Initializers
@@ -65,6 +68,22 @@ static size_t SendBufferSize = 1024 * 4;
     return [[FBDeviceControlError
       describeFormat:@"Failed to send %zu bytes from AMDServiceConnectionReceive, %zu remaining", data.length, bytesRemaning]
       failBool:error];
+  }
+  return YES;
+}
+
+- (BOOL)sendWithLengthHeader:(NSData *)data error:(NSError **)error
+{
+  HeaderIntType length = (HeaderIntType) data.length;
+  HeaderIntType lengthWire = EndianU32_NtoB(length); // The native length should be converted to big-endian (ARM).
+  NSData *lengthData = [[NSData alloc] initWithBytes:&lengthWire length:HeaderLength];
+  // Write the length data.
+  if (![self send:lengthData error:error]) {
+    return NO;
+  }
+  // Then send the actual payload.
+  if (![self send:data error:error]) {
+   return NO;
   }
   return YES;
 }
