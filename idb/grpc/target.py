@@ -4,6 +4,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import json
 from typing import List, Sequence
 
 from idb.common.types import CompanionInfo, ScreenDimensions, TargetDescription
@@ -29,6 +30,10 @@ def target_to_py(
         os_version=target.os_version,
         architecture=target.architecture,
         companion_info=companion,
+        extended=(json.loads(target.extended.decode()) if len(target.extended) else {}),
+        diagnostics=(
+            json.loads(target.diagnostics.decode()) if len(target.diagnostics) else {}
+        ),
     )
 
 

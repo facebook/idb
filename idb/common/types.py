@@ -136,6 +136,8 @@ class TargetDescription:
     screen_dimensions: Optional[ScreenDimensions]
     model: Optional[str] = None
     device: Optional[DeviceDetails] = None
+    extended: Optional[DeviceDetails] = None
+    diagnostics: Optional[DeviceDetails] = None
 
 
 @dataclass(frozen=True)
@@ -426,7 +428,7 @@ class IdbClient:
     async def contacts_update(self, contacts_path: str) -> None:
         pass
 
-    async def describe(self) -> TargetDescription:
+    async def describe(self, fetch_diagnostics: bool = False) -> TargetDescription:
         # pyre-fixme[7]: Expected `TargetDescription` but got implicit return value
         #  of `None`.
         pass

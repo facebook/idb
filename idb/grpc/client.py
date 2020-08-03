@@ -371,8 +371,10 @@ class IdbClient(IdbClientBase):
         await self.stub.terminate(TerminateRequest(bundle_id=bundle_id))
 
     @log_and_handle_exceptions
-    async def describe(self) -> TargetDescription:
-        response = await self.stub.describe(TargetDescriptionRequest())
+    async def describe(self, fetch_diagnostics: bool = False) -> TargetDescription:
+        response = await self.stub.describe(
+            TargetDescriptionRequest(fetch_diagnostics=fetch_diagnostics)
+        )
         target = response.target_description
         return target_to_py(
             target=target,

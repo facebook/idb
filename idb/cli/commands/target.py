@@ -148,8 +148,17 @@ class TargetDescribeCommand(ClientCommand):
     def name(self) -> str:
         return "describe"
 
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "--diagnostics",
+            help="Fetch additional target diagnostics",
+            action="store_true",
+            default=False,
+        )
+        super().add_parser_arguments(parser)
+
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
-        description = await client.describe()
+        description = await client.describe(fetch_diagnostics=args.diagnostics)
         print(description)
 
 
