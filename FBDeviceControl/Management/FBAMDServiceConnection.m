@@ -54,13 +54,13 @@ static size_t SendBufferSize = 1024 * 4;
     // Send the bytes now
     NSRange sendRange = NSMakeRange(data.length - data.length, MIN(SendBufferSize, bytesRemaning));
     NSData *chunkData = [data subdataWithRange:sendRange];
-    size_t sentBytes = self.calls.ServiceConnectionSend(self.connection, chunkData.bytes, chunkData.length);
+    ssize_t sentBytes = self.calls.ServiceConnectionSend(self.connection, chunkData.bytes, chunkData.length);
     // If there's no data sent then break out now.
     if (sentBytes < 1) {
       break;
     }
     // Otherwise keep going and decrement the number of remaining bytes to send.
-    bytesRemaning -= sentBytes;
+    bytesRemaning -= (size_t) sentBytes;
   }
 
   // Check that we've sent the right number of bytes.
@@ -102,14 +102,14 @@ static size_t ReadBufferSize = 1024 * 4;
   while (bytesRemaining > 0) {
     // Don't read more bytes than are remaining.
     size_t maxReadBytes = MIN(ReadBufferSize, bytesRemaining);
-    size_t readBytes = self.calls.ServiceConnectionReceive(self.connection, buffer, maxReadBytes);
+    ssize_t readBytes = self.calls.ServiceConnectionReceive(self.connection, buffer, maxReadBytes);
     // If there's no more bytes to read then break out now
     if (readBytes < 1) {
       break;
     }
     // Otherwise decrement the number of bytes to read and add it to the return buffer.
-    bytesRemaining -= readBytes;
-    [data appendBytes:buffer length:readBytes];
+    bytesRemaining -= (size_t) readBytes;
+    [data appendBytes:buffer length:(size_t) readBytes];
   }
 
   // Check that we've read the right number of bytes.
@@ -162,12 +162,12 @@ static size_t ReadBufferSize = 1024 * 4;
     onQueue:queue resolve:^{
       void *buffer = alloca(ReadBufferSize);
       while (true) {
-        size_t readBytes = self.calls.ServiceConnectionReceive(self.connection, buffer, ReadBufferSize);
+        ssize_t readBytes = self.calls.ServiceConnectionReceive(self.connection, buffer, ReadBufferSize);
         if (readBytes < 1) {
           [consumer consumeEndOfFile];
           return FBFuture.empty;
         }
-        NSData *data = [[NSData alloc] initWithBytes:buffer length:readBytes];
+        NSData *data = [[NSData alloc] initWithBytes:buffer length:(size_t) readBytes];
         [consumer consumeData:data];
       }
     }];
