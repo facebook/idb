@@ -34,6 +34,7 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHIDEvent.h"
 #import "FBSimulatorLifecycleCommands.h"
+#import "FBSimulatorLocationCommands.h"
 #import "FBSimulatorLogCommands.h"
 #import "FBSimulatorLoggingEventSink.h"
 #import "FBSimulatorMediaCommands.h"
@@ -326,6 +327,7 @@
       FBSimulatorKeychainCommands.class,
       FBSimulatorLaunchCtlCommands.class,
       FBSimulatorLifecycleCommands.class,
+      FBSimulatorLocationCommands.class,
       FBSimulatorLogCommands.class,
       FBSimulatorMediaCommands.class,
       FBSimulatorScreenshotCommands.class,

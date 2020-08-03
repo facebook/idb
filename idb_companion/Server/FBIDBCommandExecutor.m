@@ -250,10 +250,13 @@
 
 - (FBFuture<NSNull *> *)set_location:(double)latitude longitude:(double)longitude
 {
-  return [self.connectToSimulatorBridge
-    onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(FBSimulatorBridge *bridge) {
-      return [bridge setLocationWithLatitude:latitude longitude:longitude];
-    }];
+  id<FBLocationCommands> commands = (id<FBLocationCommands>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBLocationCommands)]) {
+    return [[FBIDBError
+      describeFormat:@"%@ does not conform to FBLocationCommands", commands]
+      failFuture];
+  }
+  return [commands overrideLocationWithLongitude:longitude latitude:latitude];
 }
 
 - (FBFuture<NSNull *> *)clear_keychain
@@ -562,15 +565,6 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
           failFuture];
       }
       return [commands connect];
-    }];
-}
-
-- (FBFuture<FBSimulatorBridge *> *)connectToSimulatorBridge
-{
-  return [[self
-    connectToSimulatorConnection]
-    onQueue:self.target.workQueue fmap:^(FBSimulatorConnection *connection) {
-      return [connection connectToBridge];
     }];
 }
 
