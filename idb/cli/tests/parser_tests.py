@@ -638,7 +638,7 @@ class TestParser(TestCase):
             bundle_id=bundle_id, permissions={Permission.URL}, scheme="fb"
         )
 
-    async def test_video(self) -> None:
+    async def test_video_record(self) -> None:
         mock = AsyncMock()
         with patch(
             "idb.cli.commands.video.VideoRecordCommand._run_impl", new=mock, create=True
@@ -657,6 +657,30 @@ class TestParser(TestCase):
             namespace.json = False
             namespace.output_file = output_file
             mock.assert_called_once_with(namespace)
+
+    async def test_video_stream(self) -> None:
+        mock = AsyncMock()
+        with patch(
+            "idb.cli.commands.video.VideoStreamCommand._run_impl", new=mock, create=True
+        ):
+            output_file = "video.mp4"
+            await cli_main(cmd_input=["video-stream", output_file])
+            mock.assert_called_once_with(
+                Namespace(
+                    companion=None,
+                    companion_path=COMPANION_PATH,
+                    companion_local=False,
+                    prune_dead_companion=True,
+                    log_level="WARNING",
+                    format="h264",
+                    fps=None,
+                    log_level_deprecated=None,
+                    root_command="video-stream",
+                    udid=None,
+                    json=False,
+                    output_file=output_file,
+                )
+            )
 
     async def test_key_sequence(self) -> None:
         self.direct_client_mock.key_sequence = AsyncMock(return_value=[])

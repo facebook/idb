@@ -47,10 +47,16 @@ async def drain_to_stream(
 
 
 async def generate_bytes(
-    stream: AsyncIterator[Any],  # pyre-ignore
+    stream: AsyncIterator[Any], logger: Optional[Logger] = None  # pyre-ignore
 ) -> AsyncIterator[bytes]:
-    async for response in stream:
-        yield response.payload.data
+    async for item in stream:
+        log_output = getattr(item, "log_output", None)
+        if log_output is not None and len(log_output) and logger:
+            logger.info(log_output)
+            continue
+        data = item.payload.data
+        if len(data):
+            yield data
 
 
 async def stop_wrapper(

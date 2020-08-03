@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import (
     Any,
     AsyncContextManager,
+    AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
     Dict,
@@ -30,6 +31,7 @@ from typing import (
 from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.common.constants import TESTS_POLL_INTERVAL
+from idb.common.file import drain_to_file
 from idb.common.gzip import drain_gzip_decompress
 from idb.common.hid import (
     button_press_to_events,
@@ -65,6 +67,7 @@ from idb.common.types import (
     TargetDescription,
     TCPAddress,
     TestRunInfo,
+    VideoFormat,
 )
 from idb.grpc.crash import (
     _to_crash_log,
@@ -104,6 +107,7 @@ from idb.grpc.idb_pb2 import (
     TargetDescriptionRequest,
     TerminateRequest,
     UninstallRequest,
+    VideoStreamRequest,
     XctestListBundlesRequest,
     XctestListTestsRequest,
 )
@@ -146,6 +150,10 @@ APPROVE_MAP: Dict[Permission, ApproveRequest] = {
     Permission.NOTIFICATION: ApproveRequest.NOTIFICATION,
 }
 
+VIDEO_FORMAT_MAP: Dict[VideoFormat, VideoStreamRequest] = {
+    VideoFormat.H264: VideoStreamRequest.H264,
+    VideoFormat.RBGA: VideoStreamRequest.RBGA,
+}
 
 CLIENT_METADATA: LoggingMetadata = {"component": "client"}
 
@@ -751,6 +759,48 @@ class IdbClient(IdbClientBase):
                     generate_video_bytes(stream), output_path=output_file
                 )
                 self.logger.info(f"Finished decompression to {output_file}")
+
+    async def stream_video(
+        self, output_file: Optional[str], fps: Optional[int], format: VideoFormat
+    ) -> AsyncGenerator[bytes, None]:
+        self.logger.info("Starting connection to backend")
+        async with self.stub.video_stream.open() as stream:
+            if self.is_local and output_file:
+                self.logger.info(
+                    f"Streaming locally with companion writing to {output_file}"
+                )
+                await stream.send_message(
+                    VideoStreamRequest(
+                        start=VideoStreamRequest.Start(
+                            file_path=output_file,
+                            fps=fps,
+                            format=VIDEO_FORMAT_MAP[format],
+                        )
+                    )
+                )
+            else:
+                self.logger.info("Starting streaming over the wire")
+                await stream.send_message(
+                    VideoStreamRequest(
+                        start=VideoStreamRequest.Start(
+                            file_path=None, fps=fps, format=VIDEO_FORMAT_MAP[format]
+                        )
+                    )
+                )
+            try:
+                iterator = generate_bytes(stream=stream, logger=self.logger)
+                if output_file and not self.is_local:
+                    self.logger.info(f"Writing wired bytes to {output_file}")
+                    await drain_to_file(stream=iterator, file_path=output_file)
+                else:
+                    async for data in iterator:
+                        yield data
+            finally:
+                self.logger.info("Stopping video streaming")
+                await stream.send_message(
+                    VideoStreamRequest(stop=VideoStreamRequest.Stop())
+                )
+                await stream.end()
 
     @log_and_handle_exceptions
     async def run_xctest(

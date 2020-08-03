@@ -11,6 +11,7 @@ from enum import Enum
 from io import StringIO
 from typing import (
     IO,
+    AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
     Dict,
@@ -54,6 +55,11 @@ class ECIDFilter:
 
 
 OnlyFilter = Union[TargetType, ECIDFilter]
+
+
+class VideoFormat(Enum):
+    H264 = "h264"
+    RBGA = "rbga"
 
 
 @dataclass(frozen=True)
@@ -393,6 +399,11 @@ class IdbClient:
 
     async def record_video(self, stop: asyncio.Event, output_file: str) -> None:
         pass
+
+    async def stream_video(
+        self, output_file: Optional[str], fps: Optional[int], format: VideoFormat
+    ) -> AsyncGenerator[bytes, None]:
+        yield
 
     async def screenshot(self) -> bytes:
         # pyre-fixme[7]: Expected `bytes` but got implicit return value of `None`.

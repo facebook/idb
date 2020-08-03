@@ -81,7 +81,7 @@ from idb.cli.commands.target import (
     TargetShutdownCommand,
 )
 from idb.cli.commands.url import UrlOpenCommand
-from idb.cli.commands.video import VideoRecordCommand
+from idb.cli.commands.video import VideoRecordCommand, VideoStreamCommand
 from idb.cli.commands.xctest import (
     XctestInstallCommand,
     XctestListTestsCommand,
@@ -187,6 +187,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
             commands=[VideoRecordCommand()],
         ),
         VideoRecordCommand(),
+        VideoStreamCommand(),
         DeprecatedPushCommand(),
         DeprecatedPullCommand(),
         UrlOpenCommand(),
