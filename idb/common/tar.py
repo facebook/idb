@@ -38,6 +38,8 @@ async def is_gnu_tar() -> bool:
 
 
 @asynccontextmanager  # noqa T484
+# pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a superclass
+#  but got `AsyncContextManager[asyncio.subprocess.Process]`.
 async def _create_tar_command(
     paths: List[str],
     additional_tar_args: Optional[List[str]],

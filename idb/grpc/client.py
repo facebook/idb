@@ -206,6 +206,8 @@ class IdbClient(IdbClientBase):
 
     @classmethod
     @asynccontextmanager
+    # pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a
+    #  superclass but got `AsyncContextManager[IdbClient]`.
     async def build(
         cls, address: Address, is_local: bool, logger: logging.Logger
     ) -> AsyncContextManager["IdbClient"]:

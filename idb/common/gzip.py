@@ -17,6 +17,8 @@ READ_CHUNK_SIZE: int = 1024 * 1024 * 4  # 4Mb, the default max read for gRPC
 
 
 @asynccontextmanager  # noqa T484
+# pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a superclass
+#  but got `AsyncContextManager[asyncio.subprocess.Process]`.
 async def _create_gzip_decompress_command(
     extract_path: str,
 ) -> AsyncContextManager[asyncio.subprocess.Process]:
@@ -30,6 +32,8 @@ async def _create_gzip_decompress_command(
 
 
 @asynccontextmanager  # noqa T484
+# pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a superclass
+#  but got `AsyncContextManager[asyncio.subprocess.Process]`.
 async def _create_gzip_compress_command(
     path: str,
 ) -> AsyncContextManager[asyncio.subprocess.Process]:

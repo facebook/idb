@@ -46,6 +46,8 @@ def _get_management_client(
 
 
 @asynccontextmanager
+# pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a superclass
+#  but got `AsyncContextManager[IdbClientGrpc]`.
 async def _get_client(
     args: Namespace, logger: logging.Logger
 ) -> AsyncContextManager[IdbClientGrpc]:

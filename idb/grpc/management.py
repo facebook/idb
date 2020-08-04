@@ -99,6 +99,8 @@ class IdbManagementClient(IdbManagementClientBase):
             return None
 
     @asynccontextmanager
+    # pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a
+    #  superclass but got `AsyncContextManager[IdbClient]`.
     async def from_udid(self, udid: Optional[str]) -> AsyncContextManager[IdbClient]:
         await self._spawn_notifier()
         try:

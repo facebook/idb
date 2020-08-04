@@ -82,6 +82,8 @@ class Companion:
         self._companion_teardown_timeout = companion_teardown_timeout
 
     @asynccontextmanager
+    # pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a
+    #  superclass but got `AsyncContextManager[asyncio.subprocess.Process]`.
     async def _start_companion_command(
         self, arguments: List[str]
     ) -> AsyncContextManager[asyncio.subprocess.Process]:
@@ -141,6 +143,8 @@ class Companion:
         await self._run_udid_command(udid=udid, command="boot")
 
     @asynccontextmanager
+    # pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a
+    #  superclass but got `AsyncContextManager[None]`.
     async def boot_headless(self, udid: str) -> AsyncContextManager[None]:
         async with self._start_companion_command(
             ["--headless", "1", "--boot", udid]
@@ -203,6 +207,8 @@ class Companion:
         return details[0]
 
     @asynccontextmanager
+    # pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a
+    #  superclass but got `AsyncContextManager[str]`.
     async def unix_domain_server(
         self, udid: str, path: str
     ) -> AsyncContextManager[str]:
