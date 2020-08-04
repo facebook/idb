@@ -67,7 +67,12 @@
     onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSString *> * (NSString *dataContainer) {
       NSString *source = [dataContainer stringByAppendingPathComponent:containerPath];
       BOOL srcIsDirecory = NO;
-      if ([NSFileManager.defaultManager fileExistsAtPath:source isDirectory:&srcIsDirecory] && !srcIsDirecory) {
+      if (![NSFileManager.defaultManager fileExistsAtPath:source isDirectory:&srcIsDirecory]) {
+        return [[FBSimulatorError
+          describeFormat:@"Source path does not exist: %@", source]
+          failFuture];
+      }
+      if (!srcIsDirecory) {
         NSError *createDirectoryError;
         if (![NSFileManager.defaultManager createDirectoryAtPath:dstPath withIntermediateDirectories:YES attributes:nil error:&createDirectoryError]) {
           return [[[FBSimulatorError
