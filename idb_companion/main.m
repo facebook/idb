@@ -256,11 +256,14 @@ static FBFuture<NSNull *> *ListFuture(NSUserDefaults *userDefaults, id<FBControl
 {
   return [DefaultTargetSets(userDefaults, logger, reporter)
     onQueue:dispatch_get_main_queue() map:^ NSNull * (NSArray<id<FBiOSTargetSet>> *targetSets) {
+      NSUInteger reportedCount = 0;
       for (id<FBiOSTargetSet> targetSet in targetSets) {
         for (id<FBiOSTargetInfo> targetInfo in targetSet.allTargetInfos) {
           WriteTargetToStdOut(targetInfo);
+          reportedCount++;
         }
       }
+      [logger logFormat:@"Reported %lu targets to stdout", reportedCount];
       return NSNull.null;
     }];
 }
