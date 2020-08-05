@@ -95,16 +95,19 @@ static FBFuture<FBSimulatorSet *> *SimulatorSet(NSUserDefaults *userDefaults, id
 
 static FBFuture<FBDeviceSet *> *DeviceSet(id<FBControlCoreLogger> logger, NSString *ecidFilter)
 {
-  // Give a more meaningful message if we can't load the frameworks.
-  NSError *error = nil;
-  if(![FBDeviceControlFrameworkLoader.new loadPrivateFrameworks:logger error:&error]) {
-    return [FBFuture futureWithError:error];
-  }
-  FBDeviceSet *deviceSet = [FBDeviceSet setWithLogger:logger delegate:nil ecidFilter:ecidFilter error:&error];
-  if (!deviceSet) {
-    return [FBFuture futureWithError:error];
-  }
-  return [FBFuture futureWithResult:deviceSet];
+  return [[FBFuture
+    onQueue:dispatch_get_main_queue() resolveValue:^ FBDeviceSet * (NSError **error) {
+      // Give a more meaningful message if we can't load the frameworks.
+      if(![FBDeviceControlFrameworkLoader.new loadPrivateFrameworks:logger error:error]) {
+        return nil;
+      }
+      FBDeviceSet *deviceSet = [FBDeviceSet setWithLogger:logger delegate:nil ecidFilter:ecidFilter error:error];
+      if (!deviceSet) {
+        return nil;
+      }
+      return deviceSet;
+    }]
+    delay:0.2]; // This is needed to give the Restorable Devices time to populate.
 }
 
 static FBFuture<NSArray<id<FBiOSTargetSet>> *> *DefaultTargetSets(NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
