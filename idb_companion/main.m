@@ -25,7 +25,7 @@
 const char *kUsageHelpMessage = "\
 Usage: \n \
   Modes of operation, only one of these may be specified:\n\
-    --udid UDID                Launches a companion server for the specified UDID.\n\
+    --udid UDID|mac|only       Launches a companion server for the specified UDID, 'mac' for a mac companion, or 'only' to run a companion for the only simulator/device available.\n\
     --boot UDID                Boots the simulator with the specified UDID.\n\
     --shutdown UDID            Shuts down the simulator with the specified UDID.\n\
     --erase UDID               Erases the simulator with the specified UDID.\n\

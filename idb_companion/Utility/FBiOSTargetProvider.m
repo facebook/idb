@@ -32,6 +32,13 @@
 + (FBFuture<id<FBiOSTarget>> *)targetWithUDID:(NSString *)udid targetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets warmUp:(BOOL)warmUp logger:(id<FBControlCoreLogger>)logger
 {
   NSError *error = nil;
+  if ([udid.lowercaseString isEqualToString:@"only"]) {
+    id<FBiOSTarget> target = [self fetchSoleTargetForTargetSets:targetSets logger:logger error:&error];
+    if (!target) {
+      return [FBFuture futureWithError:error];
+    }
+    return [FBFuture futureWithResult:target];
+  }
   id<FBiOSTarget> target = [self fetchTargetWithUDID:udid targetSets:targetSets logger:logger error:&error];
   if (!target) {
     return [FBFuture futureWithError:error];
@@ -88,6 +95,25 @@
   return [[FBIDBError
     describeFormat:@"%@ could not be resolved to any target in %@", udid, targetSets]
     fail:error];
+}
+
++ (id<FBiOSTarget>)fetchSoleTargetForTargetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  NSMutableArray<id<FBiOSTarget>> *targets = NSMutableArray.array;
+  for (id<FBiOSTargetSet> targetSet in targetSets) {
+    [targets addObjectsFromArray:(NSArray<id<FBiOSTarget>> *)targetSet.allTargetInfos];
+  }
+  if (targets.count > 1) {
+    return [[FBIDBError
+      describeFormat:@"Cannot get a sole target when multiple found %@", [FBCollectionInformation oneLineDescriptionFromArray:targets]]
+      fail:error];
+  }
+  if (targets.count == 0) {
+    return [[FBIDBError
+      describeFormat:@"Cannot get a sole target when none were found in target sets %@", [FBCollectionInformation oneLineDescriptionFromArray:targetSets]]
+      fail:error];
+  }
+  return targets.firstObject;
 }
 
 @end
