@@ -139,6 +139,9 @@ typedef struct {
   int (*ServiceConnectionSendMessage)(CFTypeRef connection, CFPropertyListRef propertyList, CFPropertyListFormat format, void *unknown0, CFDictionaryKeyCallBacks *keyCallbacks, CFDictionaryValueCallBacks *valueCallbacks);
   int (*ServiceConnectionGetSecureIOContext)(CFTypeRef connection);
 
+  // Managing device recovery.
+  int (*EnterRecovery)(AMDeviceRef device);
+
   // Services
   int (*SecureStartService)(AMDeviceRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, CFTypeRef *serviceOut);
   int (*SecureTransferPath)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);

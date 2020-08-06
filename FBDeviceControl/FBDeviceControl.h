@@ -15,9 +15,11 @@
 #import <FBDeviceControl/FBDeviceCommands.h>
 #import <FBDeviceControl/FBDeviceControlError.h>
 #import <FBDeviceControl/FBDeviceControlFrameworkLoader.h>
+#import <FBDeviceControl/FBDeviceRecoveryCommands.h>
 #import <FBDeviceControl/FBDeviceSet.h>
 #import <FBDeviceControl/FBDeviceVideo.h>
 #import <FBDeviceControl/FBDeviceVideoFileEncoder.h>
 #import <FBDeviceControl/FBDeviceXCTestCommands.h>
 #import <FBDeviceControl/FBGDBClient.h>
 #import <FBDeviceControl/FBServiceConnectionClient.h>
+#import <FBDeviceControl/FBDeviceVideo.h>

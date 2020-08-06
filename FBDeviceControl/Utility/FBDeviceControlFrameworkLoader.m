@@ -92,6 +92,7 @@ DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
   calls->CreateDeviceList = FBGetSymbolFromHandle(handle, "AMDCreateDeviceList");
   calls->CreateHouseArrestService = FBGetSymbolFromHandle(handle, "AMDeviceCreateHouseArrestService");
   calls->Disconnect = FBGetSymbolFromHandle(handle, "AMDeviceDisconnect");
+  calls->EnterRecovery = FBGetSymbolFromHandle(handle, "AMDeviceEnterRecovery");
   calls->InitializeMobileDevice = FBGetSymbolFromHandle(handle, "_InitializeMobileDevice");
   calls->IsPaired = FBGetSymbolFromHandle(handle, "AMDeviceIsPaired");
   calls->LookupApplications = FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");

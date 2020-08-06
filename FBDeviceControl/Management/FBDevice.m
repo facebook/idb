@@ -341,6 +341,7 @@
       FBDeviceDiagnosticInformationCommands.class,
       FBDeviceLocationCommands.class,
       FBDeviceLogCommands.class,
+      FBDeviceRecoveryCommands.class,
       FBDeviceScreenshotCommands.class,
       FBDeviceVideoRecordingCommands.class,
       FBDeviceXCTestCommands.class,

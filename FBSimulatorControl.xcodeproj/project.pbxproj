@@ -392,6 +392,8 @@
 		AA9B24D91D07F9BB00CEE14F /* FBiOSTargetPredicates.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9B24D71D07F9BB00CEE14F /* FBiOSTargetPredicates.m */; };
 		AA9D9AF521DCC51700329509 /* FBDeveloperDiskImage.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9D9AF321DCC51700329509 /* FBDeveloperDiskImage.h */; };
 		AA9D9AF621DCC51700329509 /* FBDeveloperDiskImage.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9D9AF421DCC51700329509 /* FBDeveloperDiskImage.m */; };
+		AA9DB39B24DA9C1F00960765 /* FBDeviceRecoveryCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9DB39924DA9C1E00960765 /* FBDeviceRecoveryCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA9DB39C24DA9C1F00960765 /* FBDeviceRecoveryCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9DB39A24DA9C1F00960765 /* FBDeviceRecoveryCommands.m */; };
 		AAA02A4824A118AB0054F0DC /* FBDeviceCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AAA02A4724A118AB0054F0DC /* FBDeviceCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAA1F9C41F1396FB006A4811 /* FBSimulatorLaunchCtlCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AAA1F9C21F1396FB006A4811 /* FBSimulatorLaunchCtlCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAA1F9C51F1396FB006A4811 /* FBSimulatorLaunchCtlCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AAA1F9C31F1396FB006A4811 /* FBSimulatorLaunchCtlCommands.m */; };
@@ -1324,6 +1326,8 @@
 		AA9B24D71D07F9BB00CEE14F /* FBiOSTargetPredicates.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetPredicates.m; sourceTree = "<group>"; };
 		AA9D9AF321DCC51700329509 /* FBDeveloperDiskImage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBDeveloperDiskImage.h; sourceTree = "<group>"; };
 		AA9D9AF421DCC51700329509 /* FBDeveloperDiskImage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBDeveloperDiskImage.m; sourceTree = "<group>"; };
+		AA9DB39924DA9C1E00960765 /* FBDeviceRecoveryCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceRecoveryCommands.h; sourceTree = "<group>"; };
+		AA9DB39A24DA9C1F00960765 /* FBDeviceRecoveryCommands.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceRecoveryCommands.m; sourceTree = "<group>"; };
 		AAA02A4724A118AB0054F0DC /* FBDeviceCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceCommands.h; sourceTree = "<group>"; };
 		AAA1F9C21F1396FB006A4811 /* FBSimulatorLaunchCtlCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorLaunchCtlCommands.h; sourceTree = "<group>"; };
 		AAA1F9C31F1396FB006A4811 /* FBSimulatorLaunchCtlCommands.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorLaunchCtlCommands.m; sourceTree = "<group>"; };
@@ -2619,6 +2623,8 @@
 				AA8D347D24D04DAE000FAC59 /* FBDeviceLocationCommands.m */,
 				2FB8110E1FB5C97400A848FB /* FBDeviceLogCommands.h */,
 				2FB8110F1FB5C97400A848FB /* FBDeviceLogCommands.m */,
+				AA9DB39924DA9C1E00960765 /* FBDeviceRecoveryCommands.h */,
+				AA9DB39A24DA9C1F00960765 /* FBDeviceRecoveryCommands.m */,
 				AABD19A31FFD1EE50043771C /* FBDeviceScreenshotCommands.h */,
 				AABD19A41FFD1EE50043771C /* FBDeviceScreenshotCommands.m */,
 				AAE248001DF8978700E0949D /* FBDeviceVideoRecordingCommands.h */,
@@ -3212,6 +3218,7 @@
 				AAC8B2511CEC51520034A865 /* FBDevice.h in Headers */,
 				AA4D30701E79983700A9FBD0 /* FBDeviceBitmapStream.h in Headers */,
 				AAB1507420F5ED7600BB17A1 /* FBAMDefines.h in Headers */,
+				AA9DB39B24DA9C1F00960765 /* FBDeviceRecoveryCommands.h in Headers */,
 				AA4E5613222D875B00C95DC4 /* FBDeviceApplicationProcess.h in Headers */,
 				AAC8B22E1CEC51120034A865 /* FBDeviceControl.h in Headers */,
 				AA280F4D1E714779006BB9E0 /* FBDeviceVideo.h in Headers */,
@@ -3918,6 +3925,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA9DB39C24DA9C1F00960765 /* FBDeviceRecoveryCommands.m in Sources */,
 				AA4E5614222D875B00C95DC4 /* FBDeviceApplicationProcess.m in Sources */,
 				AABA7CF020BB3CFF00C1E73A /* FBAMDServiceConnection.m in Sources */,
 				AAC8B2581CEC51520034A865 /* FBDeviceControlError.m in Sources */,
