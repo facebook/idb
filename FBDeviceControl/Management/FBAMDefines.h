@@ -19,6 +19,10 @@ typedef CFTypeRef AMDeviceRef;
  */
 typedef CFTypeRef AFCConnectionRef;
 
+/**
+ The Connection Reference as is typically passed around between functions.
+ */
+typedef CFTypeRef AMDServiceConnectionRef;
 
 /**
  Used inside AFC Operations.

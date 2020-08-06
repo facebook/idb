@@ -11,14 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBServiceConnectionClient;
-
 @protocol FBControlCoreLogger;
-
-/**
- The Connection Reference as is typically passed around between functions.
- */
-typedef CFTypeRef AMDServiceConnectionRef;
+@class FBServiceConnectionClient;
 
 /**
  Wraps the AMDServiceConnection.
