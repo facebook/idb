@@ -37,9 +37,10 @@ extern FBDeviceKey const FBDeviceKeyProductVersion;
  @param calls the calls to use.
  @param restorableDevice the AMRestorableDeviceRef
  @param allValues the cached device values.
+ @param logger the logger to use.
  @return a new instance.
  */
-- (instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef)restorableDevice allValues:(NSDictionary<NSString *, id> *)allValues;
+- (instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef)restorableDevice allValues:(NSDictionary<NSString *, id> *)allValues logger:(id<FBControlCoreLogger>)logger;
 
 /**
  The Restorable Device instance.

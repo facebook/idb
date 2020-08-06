@@ -34,6 +34,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
 @synthesize amDevice = _amDevice;
 @synthesize calls = _calls;
 @synthesize contextPoolTimeout = _contextPoolTimeout;
+@synthesize logger = _logger;
 
 #pragma mark Initializers
 

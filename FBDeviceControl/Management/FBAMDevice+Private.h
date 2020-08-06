@@ -45,11 +45,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 
-/**
- The logger to log to.
- */
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-
 #pragma mark Private Methods
 
 /**

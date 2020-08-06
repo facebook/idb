@@ -28,6 +28,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) AMDCalls calls;
 
 /**
+ The Device's Logger.
+ */
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+
+/**
  The Device's 'Product Version'.
  */
 @property (nonatomic, nullable, copy, readonly) NSString *productVersion;

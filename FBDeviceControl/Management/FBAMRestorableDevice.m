@@ -26,9 +26,10 @@ static NSString *const UnknownValue = @"unknown";
 @implementation FBAMRestorableDevice
 
 @synthesize calls = _calls;
+@synthesize logger = _logger;
 @synthesize restorableDevice = _restorableDevice;
 
-- (instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef)restorableDevice allValues:(NSDictionary<NSString *, id> *)allValues
+- (instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef)restorableDevice allValues:(NSDictionary<NSString *, id> *)allValues logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -38,6 +39,7 @@ static NSString *const UnknownValue = @"unknown";
   _calls = calls;
   _restorableDevice = restorableDevice;
   _allValues = allValues;
+  _logger = logger;
 
   return self;
 }

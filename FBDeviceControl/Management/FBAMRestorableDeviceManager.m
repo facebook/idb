@@ -118,7 +118,7 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
 
 - (FBAMRestorableDevice *)constructPublic:(AMRestorableDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
 {
-  return [[FBAMRestorableDevice alloc] initWithCalls:self.calls restorableDevice:privateDevice allValues:info];
+  return [[FBAMRestorableDevice alloc] initWithCalls:self.calls restorableDevice:privateDevice allValues:info logger:[self.logger withName:identifier]];
 }
 
 + (void)updatePublicReference:(FBAMRestorableDevice *)publicDevice privateDevice:(AMRestorableDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
