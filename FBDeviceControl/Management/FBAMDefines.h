@@ -35,6 +35,11 @@ typedef CFTypeRef AFCOperationRef;
 typedef CFTypeRef AMRestorableDeviceRef;
 
 /**
+ An Alias for the "Recovery Mode Device"
+ */
+typedef CFTypeRef AMRecoveryModeDeviceRef;
+
+/**
  An opaque handle to a notification subscription.
  */
 typedef void *AMDNotificationSubscription;
@@ -141,6 +146,9 @@ typedef struct {
 
   // Managing device recovery.
   int (*EnterRecovery)(AMDeviceRef device);
+  AMRecoveryModeDeviceRef (*RestorableDeviceGetRecoveryModeDevice)(AMRestorableDeviceRef device);
+  int (*RecoveryModeDeviceSetAutoBoot)(AMRecoveryModeDeviceRef device, int enableAutoBoot);
+  int (*RecoveryDeviceReboot)(AMRecoveryModeDeviceRef device);
 
   // Services
   int (*SecureStartService)(AMDeviceRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, CFTypeRef *serviceOut);

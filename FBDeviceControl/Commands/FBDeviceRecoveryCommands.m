@@ -56,4 +56,33 @@
     }];
 }
 
+- (FBFuture<NSNull *> *)exitRecovery
+{
+  id<FBDeviceCommands> device = self.device;
+  return [FBFuture
+    onQueue:self.device.workQueue resolve:^ FBFuture<NSNull *> * {
+      AMRecoveryModeDeviceRef recoveryDevice = device.recoveryModeDeviceRef;
+      if (recoveryDevice == NULL) {
+        return [[FBDeviceControlError
+          describeFormat:@"Device %@ is not in recovery mode", device]
+          failFuture];
+      }
+      int status = device.calls.RecoveryModeDeviceSetAutoBoot(recoveryDevice, 1);
+      if (status != 0) {
+        NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to set autoboot for recovery device %@ %@", recoveryDevice, internalMessage]
+          failFuture];
+      }
+      status = device.calls.RecoveryDeviceReboot(recoveryDevice);
+      if (status != 0) {
+        NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
+        return [[FBDeviceControlError
+          describeFormat:@"Failed have device %@ enter recovery %@", recoveryDevice, internalMessage]
+          failFuture];
+      }
+      return FBFuture.empty;
+    }];
+}
+
 @end

@@ -123,6 +123,11 @@ static NSString *const UnknownValue = @"unknown";
   return NULL;
 }
 
+- (AMRecoveryModeDeviceRef)recoveryModeDeviceRef
+{
+  return self.calls.RestorableDeviceGetRecoveryModeDevice(self.restorableDevice);
+}
+
 #pragma mark Public
 
 // AMRestorableGetStringForState, is a private function so we can't get to it.

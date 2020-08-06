@@ -22,6 +22,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)enterRecovery;
 
+/**
+ Exits recovery mode.
+
+ @return a Future that resolves when removed from recovery.
+ */
+- (FBFuture<NSNull *> *)exitRecovery;
+
 @end
 
 /**

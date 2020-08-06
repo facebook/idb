@@ -133,7 +133,14 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
   return FBiOSTargetTypeDevice;
 }
 
-#pragma mark Public Methods
+#pragma mark FBDevice Protocol Implementation
+
+- (AMRecoveryModeDeviceRef)recoveryModeDeviceRef
+{
+  return NULL;
+}
+
+#pragma mark FBDeviceCommands Protocol Implementation
 
 - (FBFutureContext<FBAMDevice *> *)connectToDeviceWithPurpose:(NSString *)format, ...
 {

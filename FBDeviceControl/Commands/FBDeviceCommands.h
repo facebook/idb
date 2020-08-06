@@ -33,6 +33,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) AMDeviceRef amDeviceRef;
 
 /**
+ The underlying AMRecoveryModeDeviceRef if in recovery.
+ This may be NULL.
+ */
+@property (nonatomic, assign, readonly) AMRecoveryModeDeviceRef recoveryModeDeviceRef;
+
+/**
  The Device's Logger.
  */
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;

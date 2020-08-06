@@ -254,6 +254,15 @@
   return amDevice.amDeviceRef;
 }
 
+- (AMRecoveryModeDeviceRef)recoveryModeDeviceRef
+{
+  FBAMRestorableDevice *restorableDevice = self.restorableDevice;
+  if (!restorableDevice) {
+    return NULL;
+  }
+  return restorableDevice.recoveryModeDeviceRef;
+}
+
 #pragma mark FBDeviceCommands Protocol Implementation
 
 - (FBFutureContext<id<FBDeviceCommands>> *)connectToDeviceWithPurpose:(NSString *)format, ...
