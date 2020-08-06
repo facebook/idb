@@ -21,9 +21,10 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Properties
 
 /**
- The AMDevice Reference
+ The underyling AMDeviceRef.
+ May be NULL.
  */
-@property (nonatomic, assign, readwrite) AMDeviceRef amDevice;
+@property (nonatomic, assign, readwrite) AMDeviceRef amDeviceRef;
 
 /**
  All of the Device Values available.

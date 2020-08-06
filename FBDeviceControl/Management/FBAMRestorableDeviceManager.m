@@ -7,7 +7,6 @@
 
 #import "FBAMRestorableDeviceManager.h"
 
-#import "FBAMDevice+Private.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
 #import "FBAMRestorableDevice.h"

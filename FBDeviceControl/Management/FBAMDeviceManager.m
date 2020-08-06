@@ -238,13 +238,13 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
 
 + (void)updatePublicReference:(FBAMDevice *)publicDevice privateDevice:(AMDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
 {
-  publicDevice.amDevice = privateDevice;
+  publicDevice.amDeviceRef = privateDevice;
   publicDevice.allValues = info;
 }
 
 + (AMDeviceRef)extractPrivateReference:(FBAMDevice *)publicDevice
 {
-  return publicDevice.amDevice;
+  return publicDevice.amDeviceRef;
 }
 
 #pragma mark Private
@@ -272,7 +272,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
     return nil;
   }
   for (FBAMDevice *device in self.storage.referenced.allValues) {
-    if (device.amDevice != amDevice) {
+    if (device.amDeviceRef != amDevice) {
       continue;
     }
     return device.uniqueIdentifier;

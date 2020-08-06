@@ -12,8 +12,6 @@
 #import <objc/runtime.h>
 
 #import "FBDeviceControlError.h"
-#import "FBAMDevice.h"
-#import "FBAMDevice+Private.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"

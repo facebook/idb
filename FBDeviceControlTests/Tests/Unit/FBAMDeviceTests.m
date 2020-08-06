@@ -112,7 +112,7 @@ static NSMutableArray<NSString *> *sEvents;
   sEvents = events;
 }
 
-- (AMDeviceRef)deviceRef
+- (AMDeviceRef)amDeviceRef
 {
   return (AMDeviceRef) CFSTR("A DEVICE");
 }
@@ -149,7 +149,7 @@ static NSMutableArray<NSString *> *sEvents;
   XCTAssertEqualObjects(events, @[]);
 
   FBAMDevice *device = [[FBAMDevice alloc] initWithAllValues:@{@"UniqueDeviceID": @"foo"} calls:self.stubbedCalls connectionReuseTimeout:connectionReuseTimeout serviceReuseTimeout:serviceReuseTimeout workQueue:dispatch_get_main_queue() logger:FBControlCoreGlobalConfiguration.defaultLogger];
-  device.amDevice = self.deviceRef;
+  device.amDeviceRef = self.amDeviceRef;
   events = [FBAMDeviceTests.events copy];
   XCTAssertEqualObjects(events, @[]);
   [FBAMDeviceTests.events removeAllObjects];

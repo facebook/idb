@@ -172,7 +172,7 @@
   return version;
 }
 
-#pragma mark FBDevice Properties
+#pragma mark FBDevice Class Properties
 
 - (void)setAmDevice:(FBAMDevice *)amDevice
 {
@@ -243,9 +243,20 @@
   }
 }
 
-#pragma mark FBDeviceCommands
+#pragma mark FBDevice Protocol Implementation
 
-- (FBFutureContext<FBAMDevice *> *)connectToDeviceWithPurpose:(NSString *)format, ...
+- (AMDeviceRef)amDeviceRef
+{
+  FBAMDevice *amDevice = self.amDevice;
+  if (!amDevice)  {
+    return NULL;
+  }
+  return amDevice.amDeviceRef;
+}
+
+#pragma mark FBDeviceCommands Protocol Implementation
+
+- (FBFutureContext<id<FBDeviceCommands>> *)connectToDeviceWithPurpose:(NSString *)format, ...
 {
   FBAMDevice *amDevice = self.amDevice;
   if (amDevice) {

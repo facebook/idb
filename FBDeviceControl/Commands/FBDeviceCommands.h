@@ -12,7 +12,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBAFCConnection;
-@class FBAMDevice;
 @class FBAMDServiceConnection;
 @class FBDeveloperDiskImage;
 @class FBDeviceLinkClient;
@@ -26,6 +25,12 @@ NS_ASSUME_NONNULL_BEGIN
  The AMDevice Calls to use.
  */
 @property (nonatomic, assign, readonly) AMDCalls calls;
+
+/**
+ The underlying AMDeviceRef.
+ This may be NULL.
+ */
+@property (nonatomic, assign, readonly) AMDeviceRef amDeviceRef;
 
 /**
  The Device's Logger.
@@ -60,7 +65,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param format the purpose of the connection
  @return a connection wrapped in an async context.
  */
-- (FBFutureContext<FBAMDevice *> *)connectToDeviceWithPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+- (FBFutureContext<id<FBDeviceCommands>> *)connectToDeviceWithPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
 
 /**
  Starts a Service on the AMDevice.

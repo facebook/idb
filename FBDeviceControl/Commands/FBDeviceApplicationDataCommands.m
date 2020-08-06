@@ -7,8 +7,6 @@
 
 #import "FBDeviceApplicationDataCommands.h"
 
-#import "FBAMDevice.h"
-#import "FBAMDevice+Private.h"
 #import "FBDevice.h"
 #import "FBDevice+Private.h"
 #import "FBDeviceControlError.h"

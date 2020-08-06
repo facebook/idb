@@ -9,8 +9,6 @@
 
 #import <objc/runtime.h>
 
-#import "FBAMDevice+Private.h"
-#import "FBAMDevice.h"
 #import "FBAMDServiceConnection.h"
 #import "FBDevice+Private.h"
 #import "FBDevice.h"
@@ -19,17 +17,17 @@
 #import "FBDeviceControlError.h"
 #import "FBDeviceDebuggerCommands.h"
 
-static void UninstallCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAMDevice *device)
+static void UninstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id<FBDeviceCommands> device)
 {
   [device.logger logFormat:@"Uninstall Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
 }
 
-static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAMDevice *device)
+static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id<FBDeviceCommands> device)
 {
   [device.logger logFormat:@"Install Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
 }
 
-static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAMDevice *device)
+static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, id<FBDeviceCommands> device)
 {
   [device.logger logFormat:@"Transfer Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
 }
@@ -83,11 +81,11 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
   // the app is installed first (FB_AMDeviceLookupApplications)
   return [[self.device
     connectToDeviceWithPurpose:@"uninstall_%@", bundleID]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (FBAMDevice *device) {
+    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
       [self.device.logger logFormat:@"Uninstalling Application %@", bundleID];
       int status = device.calls.SecureUninstallApplication(
         0,
-        device.amDevice,
+        device.amDeviceRef,
         (__bridge CFStringRef _Nonnull)(bundleID),
         0,
         (AMDeviceProgressCallback) UninstallCallback,
@@ -191,10 +189,10 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 {
   return [[self.device
     connectToDeviceWithPurpose:@"transfer_app"]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (FBAMDevice *device) {
+    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
       int status = self.device.calls.SecureTransferPath(
         0,
-        device.amDevice,
+        device.amDeviceRef,
         (__bridge CFURLRef _Nonnull)(appURL),
         (__bridge CFDictionaryRef _Nonnull)(options),
         (AMDeviceProgressCallback) TransferCallback,
@@ -214,11 +212,11 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 {
   return [[self.device
     connectToDeviceWithPurpose:@"install"]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (FBAMDevice *device) {
+    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
       [self.device.logger logFormat:@"Installing Application %@", appURL];
       int status = device.calls.SecureInstallApplication(
         0,
-        device.amDevice,
+        device.amDeviceRef,
         (__bridge CFURLRef _Nonnull)(appURL),
         (__bridge CFDictionaryRef _Nonnull)(options),
         (AMDeviceProgressCallback) InstallCallback,
@@ -239,13 +237,13 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 {
   return [[self.device
     connectToDeviceWithPurpose:@"installed_apps"]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (FBAMDevice *device) {
+    onQueue:self.device.workQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (id<FBDeviceCommands> device) {
       NSDictionary<NSString *, id> *options = @{
         @"ReturnAttributes": returnAttributes,
       };
       CFDictionaryRef applications;
       int status = device.calls.LookupApplications(
-        device.amDevice,
+        device.amDeviceRef,
         (__bridge CFDictionaryRef _Nullable)(options),
         &applications
       );

@@ -31,7 +31,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
 
 @implementation FBAMDevice
 
-@synthesize amDevice = _amDevice;
+@synthesize amDeviceRef = _amDeviceRef;
 @synthesize calls = _calls;
 @synthesize contextPoolTimeout = _contextPoolTimeout;
 @synthesize logger = _logger;
@@ -58,21 +58,21 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
 
 #pragma mark Properties
 
-- (void)setAmDevice:(AMDeviceRef)amDevice
+- (void)setAmDeviceRef:(AMDeviceRef)amDeviceRef
 {
-  AMDeviceRef oldAMDevice = _amDevice;
-  _amDevice = amDevice;
-  if (amDevice) {
-    self.calls.Retain(amDevice);
+  AMDeviceRef oldAMDeviceRef = _amDeviceRef;
+  _amDeviceRef = amDeviceRef;
+  if (amDeviceRef) {
+    self.calls.Retain(amDeviceRef);
   }
-  if (oldAMDevice) {
-    self.calls.Release(oldAMDevice);
+  if (oldAMDeviceRef) {
+    self.calls.Release(oldAMDeviceRef);
   }
 }
 
 - (AMDeviceRef)amDevice
 {
-  return _amDevice;
+  return _amDeviceRef;
 }
 
 - (NSDictionary<NSString *, id> *)extendedInformation
@@ -154,11 +154,11 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
   //        immediately after the service is started. See longer description in FBAMDevice.h to understand why.
   return [[[self
     connectToDeviceWithPurpose:@"start_service_%@", service]
-    onQueue:self.workQueue pop:^ FBFuture *(FBAMDevice *device) {
+    onQueue:self.workQueue pop:^ FBFuture<FBAMDServiceConnection *> * (id<FBDeviceCommands> device) {
       AMDServiceConnectionRef serviceConnection;
       [self.logger logFormat:@"Starting service %@", service];
       int status = self.calls.SecureStartService(
-        device.amDevice,
+        device.amDeviceRef,
         (__bridge CFStringRef)(service),
         (__bridge CFDictionaryRef)(userInfo),
         &serviceConnection
@@ -170,7 +170,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
           logger:self.logger]
           failFuture];
       }
-      FBAMDServiceConnection *connection = [[FBAMDServiceConnection alloc] initWithServiceConnection:serviceConnection device:device.amDevice calls:self.calls logger:self.logger];
+      FBAMDServiceConnection *connection = [[FBAMDServiceConnection alloc] initWithServiceConnection:serviceConnection device:device.amDeviceRef calls:self.calls logger:self.logger];
       [self.logger logFormat:@"Service %@ started", service];
       return [FBFuture futureWithResult:connection];
     }]
@@ -208,7 +208,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
 {
   return [[self
     connectToDeviceWithPurpose:@"house_arrest"]
-    onQueue:self.workQueue replace:^ FBFutureContext<FBAFCConnection *> * (FBAMDevice *device) {
+    onQueue:self.workQueue replace:^ FBFutureContext<FBAFCConnection *> * (id<FBDeviceCommands> device) {
       return [[self.serviceManager
         houseArrestAFCConnectionForBundleID:bundleID afcCalls:afcCalls]
         utilizeWithPurpose:self.udid];
@@ -226,13 +226,13 @@ static const int DiskImageAlreadyMountedCode = -402653066;  // 0xe8000076 in hex
   }
   return [[self
     connectToDeviceWithPurpose:@"mount_disk_image"]
-    onQueue:self.workQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (FBAMDevice *device) {
+    onQueue:self.workQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (id<FBDeviceCommands> device) {
       NSDictionary *options = @{
         @"ImageSignature": diskImage.signature,
         @"ImageType": @"Developer",
       };
       int status = device.calls.MountImage(
-        device.amDevice,
+        device.amDeviceRef,
         (__bridge CFStringRef)(diskImage.diskImagePath),
         (__bridge CFDictionaryRef)(options),
         (AMDeviceProgressCallback) MountCallback,

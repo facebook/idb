@@ -7,8 +7,6 @@
 
 #import "FBDeviceDebuggerCommands.h"
 
-#import "FBAMDevice+Private.h"
-#import "FBAMDevice.h"
 #import "FBDeveloperDiskImage.h"
 #import "FBDevice+Private.h"
 #import "FBDevice.h"

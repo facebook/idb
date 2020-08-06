@@ -43,7 +43,7 @@
   AFCConnectionRef afcConnection = NULL;
   [logger logFormat:@"Starting house arrest for '%@'", self.bundleID];
   int status = self.device.calls.CreateHouseArrestService(
-    self.device.amDevice,
+    self.device.amDeviceRef,
     (__bridge CFStringRef _Nonnull)(self.bundleID),
     NULL,
     &afcConnection

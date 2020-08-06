@@ -7,8 +7,6 @@
 
 #import "FBDeviceScreenshotCommands.h"
 
-#import "FBAMDevice+Private.h"
-#import "FBAMDevice.h"
 #import "FBAMDServiceConnection.h"
 #import "FBDevice+Private.h"
 #import "FBDevice.h"

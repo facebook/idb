@@ -7,7 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import "FBAMDevice+Private.h"
+#import <FBControlCore/FBControlCore.h>
+#import <FBDeviceControl/FBAMDefines.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

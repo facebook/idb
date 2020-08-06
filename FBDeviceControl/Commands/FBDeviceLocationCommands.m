@@ -10,8 +10,6 @@
 #import "FBDevice.h"
 #import "FBDevice+Private.h"
 #import "FBDeviceControlError.h"
-#import "FBAMDevice.h"
-#import "FBAMDevice+Private.h"
 #import "FBAMDServiceConnection.h"
 #import "FBAFCConnection.h"
 
