@@ -10,6 +10,9 @@
 #import "AXPTranslationRuntimeHelper-Protocol.h"
 #import "SimulatorBridge-Protocol.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 @class CLSimulationManager, NSDistantObject, NSString;
 @protocol AccessibilityNotificationUpstream, OS_dispatch_queue;
 
@@ -61,3 +64,4 @@
 
 @end
 
+#pragma GCC diagnostic pop

@@ -67,7 +67,7 @@ FRAMEWORK_SEARCH_PATHS = $(inherited) $(APPLE_FRAMEWORKS_DIR) $(APPLE_PLUGINS_DI
 HEADER_SEARCH_PATHS = $(inherited) $(SRCROOT)/PrivateHeaders
 
 // SDK & OS Versions
-MACOSX_DEPLOYMENT_TARGET = 10.10
+MACOSX_DEPLOYMENT_TARGET = 10.14
 SDKROOT = macosx
 
 // Language Standards & Features

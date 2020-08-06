@@ -18,6 +18,9 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorAgentOperation.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 static NSString *const KeyAXTraits = @"AXTraits";
 static NSString *const KeyTraits = @"traits";
 static NSString *const KeyType = @"type";
@@ -358,3 +361,5 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
 }
 
 @end
+
+#pragma GCC diagnostic pop
