@@ -8,7 +8,7 @@ import logging
 import os
 from abc import ABCMeta, abstractmethod
 from argparse import ArgumentParser, Namespace
-from typing import AsyncContextManager, Optional
+from typing import AsyncGenerator, Optional
 
 from idb.common import plugin
 from idb.common.command import Command
@@ -46,11 +46,9 @@ def _get_management_client(
 
 
 @asynccontextmanager
-# pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a superclass
-#  but got `AsyncContextManager[IdbClientGrpc]`.
 async def _get_client(
     args: Namespace, logger: logging.Logger
-) -> AsyncContextManager[IdbClientGrpc]:
+) -> AsyncGenerator[IdbClientGrpc, None]:
     companion = vars(args).get("companion")
     if companion is not None:
         async with IdbClientGrpc.build(

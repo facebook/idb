@@ -10,7 +10,7 @@ import logging
 import subprocess
 from logging import Logger
 from sys import platform
-from typing import AsyncContextManager, Dict, List, Optional, Union
+from typing import AsyncGenerator, Dict, List, Optional, Union
 
 from idb.common.format import target_description_from_json
 from idb.common.logging import log_call
@@ -82,11 +82,9 @@ class Companion:
         self._companion_teardown_timeout = companion_teardown_timeout
 
     @asynccontextmanager
-    # pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a
-    #  superclass but got `AsyncContextManager[asyncio.subprocess.Process]`.
     async def _start_companion_command(
         self, arguments: List[str]
-    ) -> AsyncContextManager[asyncio.subprocess.Process]:
+    ) -> AsyncGenerator[asyncio.subprocess.Process, None]:
         companion_path = self._companion_path
         if companion_path is None:
             if platform == "darwin":
@@ -143,9 +141,7 @@ class Companion:
         await self._run_udid_command(udid=udid, command="boot")
 
     @asynccontextmanager
-    # pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a
-    #  superclass but got `AsyncContextManager[None]`.
-    async def boot_headless(self, udid: str) -> AsyncContextManager[None]:
+    async def boot_headless(self, udid: str) -> AsyncGenerator[None, None]:
         async with self._start_companion_command(
             ["--headless", "1", "--boot", udid]
         ) as process:
@@ -207,11 +203,9 @@ class Companion:
         return details[0]
 
     @asynccontextmanager
-    # pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a
-    #  superclass but got `AsyncContextManager[str]`.
     async def unix_domain_server(
         self, udid: str, path: str
-    ) -> AsyncContextManager[str]:
+    ) -> AsyncGenerator[str, None]:
         async with self._start_companion_command(
             ["--udid", udid, "--grpc-domain-sock", path]
         ) as process:

@@ -16,7 +16,6 @@ from io import StringIO
 from pathlib import Path
 from typing import (
     Any,
-    AsyncContextManager,
     AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
@@ -206,11 +205,9 @@ class IdbClient(IdbClientBase):
 
     @classmethod
     @asynccontextmanager
-    # pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a
-    #  superclass but got `AsyncContextManager[IdbClient]`.
     async def build(
         cls, address: Address, is_local: bool, logger: logging.Logger
-    ) -> AsyncContextManager["IdbClient"]:
+    ) -> AsyncGenerator["IdbClient", None]:
         channel = (
             Channel(host=address.host, port=address.port, loop=asyncio.get_event_loop())
             if isinstance(address, TCPAddress)

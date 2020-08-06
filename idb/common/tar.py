@@ -9,7 +9,7 @@ import os
 import sys
 import tempfile
 import uuid
-from typing import AsyncContextManager, AsyncIterator, List, Optional
+from typing import AsyncGenerator, AsyncIterator, List, Optional
 
 from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws
@@ -37,15 +37,13 @@ async def is_gnu_tar() -> bool:
     return proc.returncode == 0
 
 
-@asynccontextmanager  # noqa T484
-# pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a superclass
-#  but got `AsyncContextManager[asyncio.subprocess.Process]`.
+@asynccontextmanager
 async def _create_tar_command(
     paths: List[str],
     additional_tar_args: Optional[List[str]],
     place_in_subfolders: bool,
     verbose: bool = False,
-) -> AsyncContextManager[asyncio.subprocess.Process]:
+) -> AsyncGenerator[asyncio.subprocess.Process, None]:
     with tempfile.TemporaryDirectory(prefix="tar_link_") as temp_dir:
         command = ["tar", "vcf" if verbose else "cf", "-"]
         if additional_tar_args:

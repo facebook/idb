@@ -7,7 +7,7 @@
 
 import asyncio
 import sys
-from typing import AsyncContextManager, AsyncIterator
+from typing import AsyncGenerator, AsyncIterator
 
 from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws
@@ -16,12 +16,10 @@ from idb.utils.typing import none_throws
 READ_CHUNK_SIZE: int = 1024 * 1024 * 4  # 4Mb, the default max read for gRPC
 
 
-@asynccontextmanager  # noqa T484
-# pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a superclass
-#  but got `AsyncContextManager[asyncio.subprocess.Process]`.
+@asynccontextmanager
 async def _create_gzip_decompress_command(
     extract_path: str,
-) -> AsyncContextManager[asyncio.subprocess.Process]:
+) -> AsyncGenerator[asyncio.subprocess.Process, None]:
     process = await asyncio.create_subprocess_shell(
         f"gunzip -v > '{extract_path}'",
         stdin=asyncio.subprocess.PIPE,
@@ -31,12 +29,10 @@ async def _create_gzip_decompress_command(
     yield process
 
 
-@asynccontextmanager  # noqa T484
-# pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a superclass
-#  but got `AsyncContextManager[asyncio.subprocess.Process]`.
+@asynccontextmanager
 async def _create_gzip_compress_command(
     path: str,
-) -> AsyncContextManager[asyncio.subprocess.Process]:
+) -> AsyncGenerator[asyncio.subprocess.Process, None]:
     process = await asyncio.create_subprocess_shell(
         f"gzip -v '{path}' --to-stdout",
         stdin=asyncio.subprocess.PIPE,

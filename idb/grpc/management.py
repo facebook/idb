@@ -8,7 +8,7 @@ import asyncio
 import logging
 import os
 import tempfile
-from typing import AsyncContextManager, Dict, List, Optional
+from typing import AsyncGenerator, Dict, List, Optional
 
 from idb.common.companion_spawner import CompanionSpawner
 from idb.common.constants import BASE_IDB_FILE_PATH
@@ -99,9 +99,7 @@ class IdbManagementClient(IdbManagementClientBase):
             return None
 
     @asynccontextmanager
-    # pyre-fixme[57]: Expected return annotation to be AsyncGenerator or a
-    #  superclass but got `AsyncContextManager[IdbClient]`.
-    async def from_udid(self, udid: Optional[str]) -> AsyncContextManager[IdbClient]:
+    async def from_udid(self, udid: Optional[str]) -> AsyncGenerator[IdbClient, None]:
         await self._spawn_notifier()
         try:
             companion_info = await self._direct_companion_manager.get_companion_info(
