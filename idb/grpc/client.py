@@ -29,6 +29,7 @@ from typing import (
 
 from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
+from idb.common.companion import Companion
 from idb.common.constants import TESTS_POLL_INTERVAL
 from idb.common.file import drain_to_file
 from idb.common.gzip import drain_gzip_decompress
@@ -51,6 +52,7 @@ from idb.common.types import (
     CrashLog,
     CrashLogInfo,
     CrashLogQuery,
+    DomainSocketAddress,
     FileEntryInfo,
     HIDButtonType,
     HIDEvent,
@@ -222,6 +224,23 @@ class IdbClient(IdbClientBase):
             )
         finally:
             channel.close()
+
+    @classmethod
+    @asynccontextmanager
+    async def for_companion(
+        cls, companion: Companion, udid: str, logger: logging.Logger
+    ) -> AsyncGenerator["IdbClient", None]:
+        with tempfile.NamedTemporaryFile() as temp:
+            # Remove the tempfile so we can bind to it first.
+            os.remove(temp.name)
+            async with companion.unix_domain_server(
+                udid=udid, path=temp.name
+            ) as resolved_path, IdbClient.build(
+                address=DomainSocketAddress(path=resolved_path),
+                is_local=True,
+                logger=logger,
+            ) as client:
+                yield client
 
     async def _tail_specific_logs(
         self,
