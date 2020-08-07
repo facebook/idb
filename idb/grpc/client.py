@@ -64,6 +64,7 @@ from idb.common.types import (
     InstalledTestInfo,
     InstrumentsTimings,
     LoggingMetadata,
+    OnlyFilter,
     Permission,
     TargetDescription,
     TCPAddress,
@@ -228,13 +229,17 @@ class IdbClient(IdbClientBase):
     @classmethod
     @asynccontextmanager
     async def for_companion(
-        cls, companion: Companion, udid: str, logger: logging.Logger
+        cls,
+        companion: Companion,
+        udid: str,
+        logger: logging.Logger,
+        only: Optional[OnlyFilter] = None,
     ) -> AsyncGenerator["IdbClient", None]:
         with tempfile.NamedTemporaryFile() as temp:
             # Remove the tempfile so we can bind to it first.
             os.remove(temp.name)
             async with companion.unix_domain_server(
-                udid=udid, path=temp.name
+                udid=udid, path=temp.name, only=only
             ) as resolved_path, IdbClient.build(
                 address=DomainSocketAddress(path=resolved_path),
                 is_local=True,

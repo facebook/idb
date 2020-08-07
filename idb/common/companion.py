@@ -204,10 +204,11 @@ class Companion:
 
     @asynccontextmanager
     async def unix_domain_server(
-        self, udid: str, path: str
+        self, udid: str, path: str, only: Optional[OnlyFilter] = None
     ) -> AsyncGenerator[str, None]:
         async with self._start_companion_command(
             ["--udid", udid, "--grpc-domain-sock", path]
+            + _only_arg_from_filter(only=only)
         ) as process:
             line = await none_throws(process.stdout).readline()
             output = parse_json_line(line)
