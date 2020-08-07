@@ -110,8 +110,10 @@ class Companion:
                 process=process, timeout=self._companion_teardown_timeout, logger=logger
             )
 
-    async def _run_companion_command(self, arguments: List[str]) -> str:
-        timeout = self._companion_command_timeout
+    async def _run_companion_command(
+        self, arguments: List[str], timeout: Optional[int]
+    ) -> str:
+        timeout = timeout or self._companion_command_timeout
         async with self._start_companion_command(arguments=arguments) as process:
             try:
                 (output, _) = await asyncio.wait_for(
@@ -126,19 +128,25 @@ class Companion:
                     f"Timed out after {timeout} secs on command {' '.join(arguments)}"
                 )
 
-    async def _run_udid_command(self, udid: str, command: str) -> str:
-        return await self._run_companion_command(arguments=[f"--{command}", udid])
+    async def _run_udid_command(
+        self, udid: str, command: str, timeout: Optional[int]
+    ) -> str:
+        return await self._run_companion_command(
+            arguments=[f"--{command}", udid], timeout=timeout
+        )
 
     @log_call()
-    async def create(self, device_type: str, os_version: str) -> TargetDescription:
+    async def create(
+        self, device_type: str, os_version: str, timeout: Optional[int] = None
+    ) -> TargetDescription:
         output = await self._run_companion_command(
-            arguments=["--create", f"{device_type},{os_version}"]
+            arguments=["--create", f"{device_type},{os_version}"], timeout=timeout
         )
         return target_description_from_json(output.splitlines()[-1])
 
     @log_call()
-    async def boot(self, udid: str) -> None:
-        await self._run_udid_command(udid=udid, command="boot")
+    async def boot(self, udid: str, timeout: Optional[int] = None) -> None:
+        await self._run_udid_command(udid=udid, command="boot", timeout=timeout)
 
     @asynccontextmanager
     async def boot_headless(self, udid: str) -> AsyncGenerator[None, None]:
@@ -153,35 +161,38 @@ class Companion:
             self._logger.info(f"Done with {target}. Shutting down.")
 
     @log_call()
-    async def shutdown(self, udid: str) -> None:
-        await self._run_udid_command(udid=udid, command="shutdown")
+    async def shutdown(self, udid: str, timeout: Optional[int] = None) -> None:
+        await self._run_udid_command(udid=udid, command="shutdown", timeout=timeout)
 
     @log_call()
-    async def erase(self, udid: str) -> None:
-        await self._run_udid_command(udid=udid, command="erase")
+    async def erase(self, udid: str, timeout: Optional[int] = None) -> None:
+        await self._run_udid_command(udid=udid, command="erase", timeout=timeout)
 
     @log_call()
     async def clone(
-        self, udid: str, destination_device_set: Optional[str] = None
+        self,
+        udid: str,
+        destination_device_set: Optional[str] = None,
+        timeout: Optional[int] = None,
     ) -> TargetDescription:
         arguments = ["--clone", udid]
         if destination_device_set is not None:
             arguments.extend(["--clone-destination-set", destination_device_set])
-        output = await self._run_companion_command(arguments=arguments)
+        output = await self._run_companion_command(arguments=arguments, timeout=timeout)
         return target_description_from_json(output.splitlines()[-1])
 
     @log_call()
-    async def delete(self, udid: Optional[str]) -> None:
+    async def delete(self, udid: Optional[str], timeout: Optional[int] = None) -> None:
         await self._run_udid_command(
-            udid=udid if udid is not None else "all", command="delete"
+            udid=udid if udid is not None else "all", command="delete", timeout=timeout
         )
 
     @log_call()
     async def list_targets(
-        self, only: Optional[OnlyFilter] = None
+        self, only: Optional[OnlyFilter] = None, timeout: Optional[int] = None
     ) -> List[TargetDescription]:
         arguments = ["--list", "1"] + _only_arg_from_filter(only=only)
-        output = await self._run_companion_command(arguments=arguments)
+        output = await self._run_companion_command(arguments=arguments, timeout=timeout)
         return [
             target_description_from_json(data=line.strip())
             for line in output.splitlines()
@@ -190,9 +201,12 @@ class Companion:
 
     @log_call()
     async def target_description(
-        self, udid: Optional[str] = None, only: Optional[OnlyFilter] = None
+        self,
+        udid: Optional[str] = None,
+        only: Optional[OnlyFilter] = None,
+        timeout: Optional[int] = None,
     ) -> TargetDescription:
-        all_details = await self.list_targets(only=only)
+        all_details = await self.list_targets(only=only, timeout=timeout)
         details = all_details
         if udid is not None:
             details = [target for target in all_details if target.udid == udid]
