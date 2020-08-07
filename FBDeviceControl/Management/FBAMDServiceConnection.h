@@ -186,7 +186,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Secure IO Context.
  */
-@property (nonatomic, assign, readonly) BOOL secureIOContext;
+@property (nonatomic, assign, readonly) AMSecureIOContext secureIOContext;
 
 @end
 

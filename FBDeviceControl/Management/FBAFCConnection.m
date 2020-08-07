@@ -48,7 +48,7 @@ static void AFCConnectionCallback(void *connectionRefPtr, void *arg1, void *afcO
 + (FBFutureContext<FBAFCConnection *> *)afcFromServiceConnection:(FBAMDServiceConnection *)serviceConnection calls:(AFCCalls)calls logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue
 {
   return [[FBFuture
-    onQueue:queue resolve:^FBFuture * _Nonnull{
+    onQueue:queue resolve:^{
       AFCConnectionRef afcConnection = calls.Create(
         0x0,
         serviceConnection.socket,
@@ -56,6 +56,11 @@ static void AFCConnectionCallback(void *connectionRefPtr, void *arg1, void *afcO
         AFCConnectionCallback,
         0x0
       );
+      // We need to apply the Secure Context if it's present on the service connection.
+      AMSecureIOContext secureIOContext = serviceConnection.secureIOContext;
+      if (secureIOContext != NULL) {
+        calls.SetSecureContext(afcConnection, secureIOContext);
+      }
       FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:afcConnection calls:calls logger:logger];
       if (![connection connectionIsValid]) {
         return [[FBDeviceControlError

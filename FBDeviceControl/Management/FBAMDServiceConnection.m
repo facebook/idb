@@ -290,9 +290,9 @@ static size_t ReadBufferSize = 1024 * 4;
   return self.calls.ServiceConnectionGetSocket(self.connection);
 }
 
-- (BOOL)secureIOContext
+- (AMSecureIOContext)secureIOContext
 {
-  return (BOOL) self.calls.ServiceConnectionGetSecureIOContext(self.connection);
+  return self.calls.ServiceConnectionGetSecureIOContext(self.connection);
 }
 
 @end
