@@ -13,11 +13,23 @@
 typedef uint32_t HeaderIntType;
 static const NSUInteger HeaderLength = sizeof(HeaderIntType);
 
-@implementation FBAMDServiceConnection
+@interface FBAMDServiceConnection_Transfer : NSObject <FBAMDServiceConnectionTransfer>
 
-#pragma mark Initializers
+@property (nonatomic, strong, readonly) FBAMDServiceConnection *connection;
 
-- (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger;
+@end
+
+@interface FBAMDServiceConnection_Transfer_Raw : FBAMDServiceConnection_Transfer
+
+@end
+
+@interface FBAMDServiceConnection_Transfer_ServiceConnection : FBAMDServiceConnection_Transfer
+
+@end
+
+@implementation FBAMDServiceConnection_Transfer
+
+- (instancetype)initWithConnection:(FBAMDServiceConnection *)connection
 {
   self = [super init];
   if (!self) {
@@ -25,21 +37,9 @@ static const NSUInteger HeaderLength = sizeof(HeaderIntType);
   }
 
   _connection = connection;
-  _device = device;
-  _calls = calls;
-  _logger = logger;
 
   return self;
 }
-
-#pragma mark NSObject
-
-- (NSString *)description
-{
-  return [NSString stringWithFormat:@"%@", self.connection];
-}
-
-#pragma mark Raw Data
 
 // There's an upper limit on the number of bytes we can receive at once
 static size_t SendBufferSize = 1024 * 4;
@@ -54,7 +54,7 @@ static size_t SendBufferSize = 1024 * 4;
     // Send the bytes now
     NSRange sendRange = NSMakeRange(data.length - data.length, MIN(SendBufferSize, bytesRemaning));
     NSData *chunkData = [data subdataWithRange:sendRange];
-    ssize_t sentBytes = self.calls.ServiceConnectionSend(self.connection, chunkData.bytes, chunkData.length);
+    ssize_t sentBytes = [self send:chunkData.bytes size:chunkData.length];
     // If there's no data sent then break out now.
     if (sentBytes < 1) {
       break;
@@ -102,7 +102,7 @@ static size_t ReadBufferSize = 1024 * 4;
   while (bytesRemaining > 0) {
     // Don't read more bytes than are remaining.
     size_t maxReadBytes = MIN(ReadBufferSize, bytesRemaining);
-    ssize_t readBytes = self.calls.ServiceConnectionReceive(self.connection, buffer, maxReadBytes);
+    ssize_t readBytes = [self recieve:buffer size:maxReadBytes];
     // If there's no more bytes to read then break out now
     if (readBytes < 1) {
       break;
@@ -119,6 +119,86 @@ static size_t ReadBufferSize = 1024 * 4;
       fail:error];
   }
   return data;
+}
+
+- (ssize_t)send:(const void *)buffer size:(size_t)size
+{
+  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
+  return -1;
+}
+
+- (ssize_t)recieve:(void *)buffer size:(size_t)size
+{
+  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
+  return -1;
+}
+
+@end
+
+@implementation FBAMDServiceConnection_Transfer_Raw
+
+- (ssize_t)send:(const void *)buffer size:(size_t)size
+{
+  return write(self.connection.socket, buffer, size);
+}
+
+- (ssize_t)recieve:(void *)buffer size:(size_t)size
+{
+  return read(self.connection.socket, buffer, size);
+}
+
+@end
+
+@implementation FBAMDServiceConnection_Transfer_ServiceConnection
+
+- (ssize_t)send:(const void *)buffer size:(size_t)size
+{
+  return self.connection.calls.ServiceConnectionSend(self.connection.connection, buffer, size);
+}
+
+- (ssize_t)recieve:(void *)buffer size:(size_t)size
+{
+  return self.connection.calls.ServiceConnectionReceive(self.connection.connection, buffer, size);
+}
+
+@end
+
+@implementation FBAMDServiceConnection
+
+#pragma mark Initializers
+
+- (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger;
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _connection = connection;
+  _device = device;
+  _calls = calls;
+  _logger = logger;
+
+  return self;
+}
+
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"%@", self.connection];
+}
+
+#pragma mark Raw Data
+
+- (id<FBAMDServiceConnectionTransfer>)rawSocket
+{
+  return [[FBAMDServiceConnection_Transfer_Raw alloc] initWithConnection:self];
+}
+
+- (id<FBAMDServiceConnectionTransfer>)serviceConnectionWrapped
+{
+  return [[FBAMDServiceConnection_Transfer_ServiceConnection alloc] initWithConnection:self];
 }
 
 #pragma mark plist Messaging

@@ -54,17 +54,18 @@ static const int StartCommand = 0x0000000;
     onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (FBAMDServiceConnection *connection) {
       NSData *start = [[NSData alloc] initWithBytes:&StartCommand length:sizeof(StartCommand)];
       NSError *error = nil;
-      if (![connection send:start error:&error]) {
+      id<FBAMDServiceConnectionTransfer> transfer = connection.serviceConnectionWrapped;
+      if (![transfer send:start error:&error]) {
         return [FBFuture futureWithError:error];
       }
       NSString *value = [NSString stringWithFormat:@"%f", latitude];
       NSData *data = [[NSData alloc] initWithBytes:value.UTF8String length:strlen(value.UTF8String)];
-      if (![connection sendWithLengthHeader:data error:&error]) {
+      if (![transfer sendWithLengthHeader:data error:&error]) {
         return [FBFuture futureWithError:error];
       }
       value = [NSString stringWithFormat:@"%f", longitude];
       data = [[NSData alloc] initWithBytes:value.UTF8String length:strlen(value.UTF8String)];
-      if (![connection sendWithLengthHeader:data error:&error]) {
+      if (![transfer sendWithLengthHeader:data error:&error]) {
         return [FBFuture futureWithError:error];
       }
       return FBFuture.empty;

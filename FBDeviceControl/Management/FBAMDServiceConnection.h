@@ -16,24 +16,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBServiceConnectionClient;
 
 /**
- Wraps the AMDServiceConnection.
+ Abstract protocol for defining an interaction
  */
-@interface FBAMDServiceConnection : NSObject
-
-#pragma mark Initializers
-
-/**
- The Designated Initializer.
-
- @param connection the connection to use.
- @param device the device to use.
- @param calls the calls to use.
- @param logger the logger to use.
- @return a FBAMDServiceConnection instance.
- */
-- (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
-
-#pragma mark Raw Data
+@protocol FBAMDServiceConnectionTransfer <NSObject>
 
 /**
  Synchronously send bytes on the connection.
@@ -56,10 +41,43 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Synchronously receive bytes from the connection.
 
+ @param size the number of bytes to read.
  @param error an error out for any error that occurs.
  @return the data.
  */
 - (NSData *)receive:(size_t)size error:(NSError **)error;
+
+@end
+
+/**
+ Wraps the AMDServiceConnection.
+ */
+@interface FBAMDServiceConnection : NSObject
+
+#pragma mark Initializers
+
+/**
+ The Designated Initializer.
+
+ @param connection the connection to use.
+ @param device the device to use.
+ @param calls the calls to use.
+ @param logger the logger to use.
+ @return a FBAMDServiceConnection instance.
+ */
+- (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
+
+#pragma mark Raw Data
+
+/**
+ Obtains a transfer object for raw socket transfer.
+ */
+- (id<FBAMDServiceConnectionTransfer>)rawSocket;
+
+/**
+ Obtains a transfer object for a service-API based transfer.
+ */
+- (id<FBAMDServiceConnectionTransfer>)serviceConnectionWrapped;
 
 #pragma mark plist Messaging
 
