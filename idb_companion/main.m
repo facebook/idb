@@ -33,6 +33,8 @@ Usage: \n \
     --create VALUE             Creates a simulator using the VALUE argument like \"iPhone X,iOS 12.4\"\n\
     --clone UDID               Clones a simulator by a given UDID\n\
     --clone-destination-set    A path to the destination device set in a clone operation, --device-set-path specifies the source simulator.\n\
+    --recover ecid:ECID        Causes the targeted device ECID to enter recovery mode\n\
+    --unrecover ecid:ECID      Causes the targeted device ECID to exit recovery mode\n\
     --notify PATH|stdout       Launches a companion notifier which will stream availability updates to the specified path, or stdout.\n\
     --list 1                   Lists all available devices/simulators in the current context.\n\
     --help                     Show this help message and exit.\n\
@@ -146,6 +148,20 @@ static FBFuture<id<FBiOSTarget>> *TargetForUDID(NSString *udid, NSUserDefaults *
   return [DefaultTargetSets(userDefaults, logger, reporter)
     onQueue:dispatch_get_main_queue() fmap:^(NSArray<id<FBiOSTargetSet>> *targetSets) {
       return [FBiOSTargetProvider targetWithUDID:udid targetSets:targetSets warmUp:warmUp logger:logger];
+    }];
+}
+
+static FBFuture<FBDevice *> *DeviceForECID(NSString *ecid, id<FBControlCoreLogger> logger)
+{
+  return [DeviceSet(logger, [ecid stringByReplacingOccurrencesOfString:@"ecid:" withString:@""])
+    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (FBDeviceSet *deviceSet) {
+      NSArray<FBDevice *> *devices = deviceSet.allDevices;
+      if (devices.count == 0) {
+        return [[FBIDBError
+          describeFormat:@"No devices %@ matching %@", [FBCollectionInformation oneLineDescriptionFromArray:devices], ecid]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:devices.firstObject];
     }];
 }
 
@@ -310,6 +326,21 @@ static FBFuture<NSNull *> *CloneFuture(NSString *udid, NSUserDefaults *userDefau
     }];
 }
 
+static FBFuture<NSNull *> *EnterRecoveryFuture(NSString *ecid, id<FBControlCoreLogger> logger)
+{
+  return [DeviceForECID(ecid, logger)
+    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (FBDevice *device) {
+      return [device enterRecovery];
+    }];
+}
+static FBFuture<NSNull *> *ExitRecoveryFuture(NSString *ecid, id<FBControlCoreLogger> logger)
+{
+  return [DeviceForECID(ecid, logger)
+    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (FBDevice *device) {
+      return [device exitRecovery];
+    }];
+}
+
 static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   BOOL terminateOffline = [userDefaults boolForKey:@"-terminate-offline"];
@@ -369,15 +400,17 @@ static FBFuture<FBFuture<NSNull *> *> *NotiferFuture(NSString *notify, NSUserDef
 }
 
 static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, const char *argv[], NSUserDefaults *userDefaults, FBIDBLogger *logger) {
-  NSString *udid = [userDefaults stringForKey:@"-udid"];
-  NSString *notify = [userDefaults stringForKey:@"-notify"];
   NSString *boot = [userDefaults stringForKey:@"-boot"];
-  NSString *create = [userDefaults stringForKey:@"-create"];
-  NSString *shutdown = [userDefaults stringForKey:@"-shutdown"];
-  NSString *erase = [userDefaults stringForKey:@"-erase"];
-  NSString *delete = [userDefaults stringForKey:@"-delete"];
-  NSString *list = [userDefaults stringForKey:@"-list"];
   NSString *clone = [userDefaults stringForKey:@"-clone"];
+  NSString *create = [userDefaults stringForKey:@"-create"];
+  NSString *delete = [userDefaults stringForKey:@"-delete"];
+  NSString *erase = [userDefaults stringForKey:@"-erase"];
+  NSString *list = [userDefaults stringForKey:@"-list"];
+  NSString *notify = [userDefaults stringForKey:@"-notify"];
+  NSString *recover = [userDefaults stringForKey:@"-recover"];
+  NSString *shutdown = [userDefaults stringForKey:@"-shutdown"];
+  NSString *udid = [userDefaults stringForKey:@"-udid"];
+  NSString *unrecover = [userDefaults stringForKey:@"-unrecover"];
 
   id<FBEventReporter> reporter = FBIDBConfiguration.eventReporter;
   if (udid) {
@@ -406,6 +439,12 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   } else if (clone) {
     [logger.info logFormat:@"Cloning %@", clone];
     return [FBFuture futureWithResult:CloneFuture(clone, userDefaults, logger, reporter)];
+  } else if (recover) {
+    [logger.info logFormat:@"Putting %@ into recovery", recover];
+    return [FBFuture futureWithResult:EnterRecoveryFuture(recover, logger)];
+  } else if (unrecover) {
+    [logger.info logFormat:@"Removing %@ from recovery", recover];
+    return [FBFuture futureWithResult:ExitRecoveryFuture(unrecover, logger)];
   }
   return [[[FBIDBError
     describeFormat:@"You must specify at least one 'Mode of operation'\n\n%s", kUsageHelpMessage]
