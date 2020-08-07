@@ -190,9 +190,10 @@ typedef struct {
 typedef struct {
   // Creating a Connection
   AFCConnectionRef (*Create)(void *_Nullable unknown0, int socket, void *_Nullable unknown1, AFCNotificationCallback callback, void *_Nullable unknown3);
-  int (*ConnectionOpen)(CFTypeRef handle, uint32_t io_timeout,CFTypeRef _Nullable *_Nullable conn);
+  int (*ConnectionOpen)(CFTypeRef handle, uint32_t io_timeout, CFTypeRef _Nullable *_Nullable conn);
   int (*ConnectionClose)(AFCConnectionRef connection);
-  int (*SetSecureContext)(CFTypeRef connection);
+  int (*SetSecureContext)(AFCConnectionRef connection);
+  int (*ConnectionIsValid)(AFCConnectionRef connection);
 
   // Individual Operations
   int (*DirectoryOpen)(AFCConnectionRef connection, const char *path, CFTypeRef _Nullable * _Nullable dir);
