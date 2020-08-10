@@ -18,9 +18,6 @@ service CompanionService {
   rpc clear_keychain (ClearKeychainRequest) returns (ClearKeychainResponse) {}
   rpc connect (ConnectRequest) returns (ConnectResponse) {}
   rpc contacts_update (ContactsUpdateRequest) returns (ContactsUpdateResponse) {}
-  rpc crash_delete (CrashLogQuery) returns (CrashLogResponse) {}
-  rpc crash_list (CrashLogQuery) returns (CrashLogResponse) {}
-  rpc crash_show (CrashShowRequest) returns (CrashShowResponse) {}
   rpc debugserver (stream DebugServerRequest) returns (stream DebugServerResponse) {}
   rpc describe (TargetDescriptionRequest) returns (TargetDescriptionResponse) {}
   rpc disconnect (DisconnectRequest) returns (DisconnectResponse) {}
@@ -31,22 +28,28 @@ service CompanionService {
   rpc launch (stream LaunchRequest) returns (stream LaunchResponse) {}
   rpc list_apps (ListAppsRequest) returns (ListAppsResponse) {}
   rpc log (LogRequest) returns (stream LogResponse) {}
-  rpc ls (LsRequest) returns (LsResponse) {}
-  rpc mkdir (MkdirRequest) returns (MkdirResponse) {}
-  rpc mv (MvRequest) returns (MvResponse) {}
   rpc open_url (OpenUrlRequest) returns (OpenUrlRequest) {}
-  rpc pull (PullRequest) returns (stream PullResponse) {}
-  rpc push (stream PushRequest) returns (PushResponse) {}
   rpc record (stream RecordRequest) returns (stream RecordResponse) {}
-  rpc video_stream (stream VideoStreamRequest) returns (stream VideoStreamResponse) {}
-  rpc rm (RmRequest) returns (RmResponse) {}
   rpc screenshot (ScreenshotRequest) returns (ScreenshotResponse) {}
   rpc set_location (SetLocationRequest) returns (SetLocationResponse) {}
   rpc terminate (TerminateRequest) returns (TerminateResponse) {}
   rpc uninstall (UninstallRequest) returns (UninstallResponse) {}
+  rpc video_stream (stream VideoStreamRequest) returns (stream VideoStreamResponse) {}
+  // Crash Operations
+  rpc crash_delete (CrashLogQuery) returns (CrashLogResponse) {}
+  rpc crash_list (CrashLogQuery) returns (CrashLogResponse) {}
+  rpc crash_show (CrashShowRequest) returns (CrashShowResponse) {}
+  // xctest operations
   rpc xctest_list_bundles (XctestListBundlesRequest) returns (XctestListBundlesResponse) {}
   rpc xctest_list_tests (XctestListTestsRequest) returns (XctestListTestsResponse) {}
   rpc xctest_run (XctestRunRequest) returns (stream XctestRunResponse) {}
+  // File Operations
+  rpc ls (LsRequest) returns (LsResponse) {}
+  rpc mkdir (MkdirRequest) returns (MkdirResponse) {}
+  rpc mv (MvRequest) returns (MvResponse) {}
+  rpc pull (PullRequest) returns (stream PullResponse) {}
+  rpc push (stream PushRequest) returns (PushResponse) {}
+  rpc rm (RmRequest) returns (RmResponse) {}
 }
 
 message Payload {
@@ -194,35 +197,6 @@ message ContactsUpdateRequest {
 message ContactsUpdateResponse {
 }
 
-message CrashShowRequest {
-  string name = 1;
-}
-
-message CrashLogInfo {
-  string name = 1;
-  string bundle_id = 2;
-  string process_name = 3;
-  string parent_process_name = 4;
-  uint64 process_identifier = 5;
-  uint64 parent_process_identifier = 6;
-  uint64 timestamp = 7;
-}
-
-message CrashShowResponse {
-  CrashLogInfo info = 1;
-  string contents = 2;
-}
-
-message CrashLogQuery {
-  uint64 since = 1;
-  uint64 before = 2;
-  string bundle_id = 3;
-  string name = 4;
-}
-
-message CrashLogResponse {
-  repeated CrashLogInfo list = 1;
-}
 
 message TargetDescriptionRequest {
   bool fetch_diagnostics = 1;
@@ -292,152 +266,10 @@ message HIDEvent {
 message HIDResponse {
 }
 
-message XctestListBundlesRequest {
-}
 
-message XctestListBundlesResponse {
-  message Bundles {
-    string name = 1;
-    string bundle_id = 2;
-    repeated string architectures = 3;
-  }
-  repeated Bundles bundles = 1;
-}
-
-message XctestListTestsRequest {
-  string bundle_name = 1;
-  string app_path = 2;
-}
-
-message XctestListTestsResponse {
-  repeated string names = 1;
-}
-
-message XctestRunRequest {
-  message Logic {
-  }
-  message Application {
-    string app_bundle_id = 1;
-  }
-  message UI {
-    string app_bundle_id = 1;
-    string test_host_app_bundle_id = 2;
-  }
-  message Mode {
-    oneof mode {
-      Logic logic = 1;
-      Application application = 2;
-      UI ui = 3;
-    }
-  }
-  Mode mode = 1;
-  string test_bundle_id = 2;
-  repeated string tests_to_run = 3;
-  repeated string tests_to_skip = 4;
-  repeated string arguments = 5;
-  map<string, string> environment = 6;
-  uint64 timeout = 7;
-  bool report_activities = 8;
-  bool collect_coverage = 9;
-  bool report_attachments = 10;
-}
-
-message XctestRunResponse {
-  message TestRunInfo {
-    message TestRunFailureInfo {
-      string failure_message = 1;
-      string file = 2;
-      uint64 line = 3;
-    }
-    message TestAttachment {
-      bytes payload = 1;
-      double timestamp = 2;
-      string name = 3;
-      string uniform_type_identifier = 4;
-    }
-    message TestActivity {
-      string title = 1;
-      double duration = 2;
-      string uuid = 3;
-      string activity_type = 4;
-      double start = 5;
-      double finish = 6;
-      string name = 7;
-      repeated TestAttachment attachments = 8;
-      repeated TestActivity sub_activities = 9;
-    }
-    enum Status {
-      PASSED = 0;
-      FAILED = 1;
-      CRASHED = 2;
-    }
-    Status status = 1;
-    string bundle_name = 2;
-    string class_name = 3;
-    string method_name = 4;
-    double duration = 5;
-    TestRunFailureInfo failure_info = 6;
-    repeated string logs = 7;
-    repeated TestActivity activityLogs = 8;
-  }
-  enum Status {
-    RUNNING = 0;
-    TERMINATED_NORMALLY = 1;
-    TERMINATED_ABNORMALLY = 2;
-  }
-  Status status = 1;
-  repeated TestRunInfo results = 2;
-  repeated string log_output = 3;
-  Payload result_bundle = 4;
-  string coverage_json = 5;
-}
-
-message MkdirRequest {
-  string bundle_id = 1;
-  string path = 2;
-}
-
-message MkdirResponse {
-}
-
-message MvRequest {
-  string bundle_id = 1;
-  repeated string src_paths = 2;
-  string dst_path = 3;
-}
-
-message MvResponse {
-}
-
-message RmRequest {
-  string bundle_id = 1;
-  repeated string paths = 2;
-}
-
-message RmResponse {
-}
-
-message LsRequest {
-  string bundle_id = 1;
-  string path = 2;
-}
-
-message PullRequest {
-  string bundle_id = 1;
-  string src_path = 2;
-  string dst_path = 3;
-}
-
-message PullResponse {
-  Payload payload = 1;
-}
 
 message FileInfo {
   string path = 1;
-}
-
-message LsResponse {
-  repeated FileInfo files = 1;
 }
 
 message ConnectRequest {
@@ -574,20 +406,6 @@ message LaunchResponse {
   Pipe pipe = 2;
 }
 
-message PushRequest {
-  message Inner {
-    string bundle_id = 1;
-    string dst_path = 2;
-  }
-  oneof value {
-    Payload payload = 1;
-    Inner inner = 2;
-  }
-}
-
-message PushResponse {
-}
-
 message AddMediaRequest {
   Payload payload = 1;
 }
@@ -664,3 +482,199 @@ message DebugServerResponse {
     Pipe pipe = 2;
   }
 }
+
+// crashes
+
+message CrashShowRequest {
+  string name = 1;
+}
+
+message CrashLogResponse {
+  repeated CrashLogInfo list = 1;
+}
+
+message CrashLogInfo {
+  string name = 1;
+  string bundle_id = 2;
+  string process_name = 3;
+  string parent_process_name = 4;
+  uint64 process_identifier = 5;
+  uint64 parent_process_identifier = 6;
+  uint64 timestamp = 7;
+}
+
+message CrashShowResponse {
+  CrashLogInfo info = 1;
+  string contents = 2;
+}
+
+message CrashLogQuery {
+  uint64 since = 1;
+  uint64 before = 2;
+  string bundle_id = 3;
+  string name = 4;
+}
+
+// xctest 
+
+message XctestListBundlesRequest {
+}
+
+message XctestListBundlesResponse {
+  message Bundles {
+    string name = 1;
+    string bundle_id = 2;
+    repeated string architectures = 3;
+  }
+  repeated Bundles bundles = 1;
+}
+
+message XctestListTestsRequest {
+  string bundle_name = 1;
+  string app_path = 2;
+}
+
+message XctestListTestsResponse {
+  repeated string names = 1;
+}
+
+message XctestRunRequest {
+  message Logic {
+  }
+  message Application {
+    string app_bundle_id = 1;
+  }
+  message UI {
+    string app_bundle_id = 1;
+    string test_host_app_bundle_id = 2;
+  }
+  message Mode {
+    oneof mode {
+      Logic logic = 1;
+      Application application = 2;
+      UI ui = 3;
+    }
+  }
+  Mode mode = 1;
+  string test_bundle_id = 2;
+  repeated string tests_to_run = 3;
+  repeated string tests_to_skip = 4;
+  repeated string arguments = 5;
+  map<string, string> environment = 6;
+  uint64 timeout = 7;
+  bool report_activities = 8;
+  bool collect_coverage = 9;
+  bool report_attachments = 10;
+}
+
+message XctestRunResponse {
+  message TestRunInfo {
+    message TestRunFailureInfo {
+      string failure_message = 1;
+      string file = 2;
+      uint64 line = 3;
+    }
+    message TestAttachment {
+      bytes payload = 1;
+      double timestamp = 2;
+      string name = 3;
+      string uniform_type_identifier = 4;
+    }
+    message TestActivity {
+      string title = 1;
+      double duration = 2;
+      string uuid = 3;
+      string activity_type = 4;
+      double start = 5;
+      double finish = 6;
+      string name = 7;
+      repeated TestAttachment attachments = 8;
+      repeated TestActivity sub_activities = 9;
+    }
+    enum Status {
+      PASSED = 0;
+      FAILED = 1;
+      CRASHED = 2;
+    }
+    Status status = 1;
+    string bundle_name = 2;
+    string class_name = 3;
+    string method_name = 4;
+    double duration = 5;
+    TestRunFailureInfo failure_info = 6;
+    repeated string logs = 7;
+    repeated TestActivity activityLogs = 8;
+  }
+  enum Status {
+    RUNNING = 0;
+    TERMINATED_NORMALLY = 1;
+    TERMINATED_ABNORMALLY = 2;
+  }
+  Status status = 1;
+  repeated TestRunInfo results = 2;
+  repeated string log_output = 3;
+  Payload result_bundle = 4;
+  string coverage_json = 5;
+}
+
+// Files
+
+message LsResponse {
+  repeated FileInfo files = 1;
+}
+
+message LsRequest {
+  string bundle_id = 1;
+  string path = 2;
+}
+
+
+message MkdirRequest {
+  string bundle_id = 1;
+  string path = 2;
+}
+
+message MkdirResponse {
+}
+
+message MvRequest {
+  string bundle_id = 1;
+  repeated string src_paths = 2;
+  string dst_path = 3;
+}
+
+message MvResponse {
+}
+
+message RmRequest {
+  string bundle_id = 1;
+  repeated string paths = 2;
+}
+
+message RmResponse {
+}
+
+message PushRequest {
+  message Inner {
+    string bundle_id = 1;
+    string dst_path = 2;
+  }
+  oneof value {
+    Payload payload = 1;
+    Inner inner = 2;
+  }
+}
+
+message PushResponse {
+}
+
+message PullRequest {
+  string bundle_id = 1;
+  string src_path = 2;
+  string dst_path = 3;
+}
+
+message PullResponse {
+  Payload payload = 1;
+}
+
