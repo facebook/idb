@@ -14,7 +14,6 @@ service CompanionService {
   rpc accessibility_info (AccessibilityInfoRequest) returns (AccessibilityInfoResponse) {}
   rpc add_media (stream AddMediaRequest) returns (AddMediaResponse) {}
   rpc approve (ApproveRequest) returns (ApproveResponse) {}
-  rpc boot (BootRequest) returns (BootResponse) {}
   rpc clear_keychain (ClearKeychainRequest) returns (ClearKeychainResponse) {}
   rpc connect (ConnectRequest) returns (ConnectResponse) {}
   rpc contacts_update (ContactsUpdateRequest) returns (ContactsUpdateResponse) {}
@@ -312,12 +311,6 @@ message TargetDescription {
   string architecture = 7;
   bytes extended = 9;
   bytes diagnostics = 10;
-}
-
-message BootRequest{
-}
-
-message BootResponse{
 }
 
 message LogRequest {
