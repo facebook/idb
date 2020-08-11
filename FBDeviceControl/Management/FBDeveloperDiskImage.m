@@ -40,7 +40,7 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
     }
   }
   // Construct all of the versions in an array
-  NSOperatingSystemVersion targetVersion = [FBDevice operatingSystemVersionFromString:device.productVersion];
+  NSOperatingSystemVersion targetVersion = [FBOSVersion operatingSystemVersionFromName:device.productVersion];
   NSMutableArray<NSString *> *resolvedPaths = NSMutableArray.array;
   [logger logFormat:@"Attempting to find Disk Image directory by Version %ld.%ld", targetVersion.majorVersion, targetVersion.minorVersion];
   for (NSString *searchPath in searchPaths) {
@@ -51,8 +51,8 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
   }
   // Sort the array such that the best matching version appears at the top.
   [resolvedPaths sortUsingComparator:^NSComparisonResult(NSString *left, NSString *right) {
-    NSOperatingSystemVersion leftVersion = [FBDevice operatingSystemVersionFromString:left.lastPathComponent];
-    NSOperatingSystemVersion rightVersion = [FBDevice operatingSystemVersionFromString:right.lastPathComponent];
+    NSOperatingSystemVersion leftVersion = [FBOSVersion operatingSystemVersionFromName:left.lastPathComponent];
+    NSOperatingSystemVersion rightVersion = [FBOSVersion operatingSystemVersionFromName:right.lastPathComponent];
     NSInteger leftDelta = ScoreVersions(leftVersion, targetVersion);
     NSInteger rightDelta = ScoreVersions(rightVersion, targetVersion);
     if (leftDelta < rightDelta) {
@@ -70,7 +70,7 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
       describeFormat:@"Could not find any DeveloperDiskImage in %@ (Build %@, Version %ld.%ld)", [FBCollectionInformation oneLineDescriptionFromArray:searchPaths], buildVersion, targetVersion.majorVersion, targetVersion.minorVersion]
       fail:error];
   }
-  NSOperatingSystemVersion bestVersion = [FBDevice operatingSystemVersionFromString:best.lastPathComponent];
+  NSOperatingSystemVersion bestVersion = [FBOSVersion operatingSystemVersionFromName:best.lastPathComponent];
   if (bestVersion.majorVersion == targetVersion.majorVersion && bestVersion.minorVersion == targetVersion.minorVersion) {
     [logger logFormat:@"Found the best match for %ld.%ld at %@", targetVersion.majorVersion, targetVersion.minorVersion, best];
     return best;

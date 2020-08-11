@@ -143,35 +143,6 @@
   return [FBiOSTargetFormat.fullFormat extractFrom:self];
 }
 
-#pragma mark Public
-
-+ (NSOperatingSystemVersion)operatingSystemVersionFromString:(NSString *)string
-{
-  NSArray<NSString *> *components = [string componentsSeparatedByCharactersInSet:NSCharacterSet.punctuationCharacterSet];
-  NSOperatingSystemVersion version = {
-    .majorVersion = 0,
-    .minorVersion = 0,
-    .patchVersion = 0,
-  };
-  for (NSUInteger index = 0; index < components.count; index++) {
-    NSInteger value = components[index].integerValue;
-    switch (index) {
-      case 0:
-        version.majorVersion = value;
-        continue;
-      case 1:
-        version.minorVersion = value;
-        continue;
-      case 2:
-        version.patchVersion = value;
-        continue;
-      default:
-        continue;
-    }
-  }
-  return version;
-}
-
 #pragma mark FBDevice Class Properties
 
 - (void)setAmDevice:(FBAMDevice *)amDevice

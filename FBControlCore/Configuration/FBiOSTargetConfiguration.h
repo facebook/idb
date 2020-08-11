@@ -242,6 +242,14 @@ extern FBOSVersionName const FBOSVersionNamemac;
  */
 + (instancetype)genericWithName:(NSString *)name;
 
+/**
+ Construct an NSOperatingSystemVersion from a string.
+
+ @param name the name to process.
+ @return a new NSOperatingSystemVersion
+ */
++ (NSOperatingSystemVersion)operatingSystemVersionFromName:(NSString *)name;
+
 @end
 
 /**

@@ -286,6 +286,36 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
   return self;
 }
 
+#pragma mark Public
+
++ (NSOperatingSystemVersion)operatingSystemVersionFromName:(NSString *)name
+{
+  NSArray<NSString *> *components = [name componentsSeparatedByCharactersInSet:NSCharacterSet.punctuationCharacterSet];
+  NSOperatingSystemVersion version = {
+    .majorVersion = 0,
+    .minorVersion = 0,
+    .patchVersion = 0,
+  };
+  for (NSUInteger index = 0; index < components.count; index++) {
+    NSInteger value = components[index].integerValue;
+    switch (index) {
+      case 0:
+        version.majorVersion = value;
+        continue;
+      case 1:
+        version.minorVersion = value;
+        continue;
+      case 2:
+        version.patchVersion = value;
+        continue;
+      default:
+        continue;
+    }
+  }
+  return version;
+}
+
+
 #pragma mark NSObject
 
 // Version String implies uniqueness
