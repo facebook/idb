@@ -134,7 +134,7 @@
 {
   return [[self
     applicationDataContainerCommands:bundleID]
-    onQueue:self.target.workQueue fmap:^(id<FBFileContainer> targetApplicationData) {
+    onQueue:self.target.workQueue pop:^(id<FBFileContainer> targetApplicationData) {
       return [targetApplicationData createDirectory:directoryPath];
     }];
 }
@@ -164,7 +164,7 @@
 {
   return [[self
     applicationDataContainerCommands:bundleID]
-    onQueue:self.target.workQueue fmap:^(id<FBFileContainer> commands) {
+    onQueue:self.target.workQueue pop:^(id<FBFileContainer> commands) {
       return [commands movePaths:originPaths toDestinationPath:destinationPath];
     }];
 }
@@ -189,7 +189,7 @@
     onQueue:self.target.asyncQueue resolve:^FBFuture<NSNull *> *{
       return [[self
         applicationDataContainerCommands:bundleID]
-        onQueue:self.target.workQueue fmap:^FBFuture *(id<FBFileContainer> targetApplicationsData) {
+        onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> targetApplicationsData) {
           return [targetApplicationsData copyPathsOnHost:paths toDestination:destinationPath];
         }];
   }];
@@ -199,7 +199,7 @@
 {
   return [[self
     applicationDataContainerCommands:bundleID]
-    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBFileContainer> commands) {
+    onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> commands) {
       return [commands copyItemInContainer:path toDestinationOnHost:destinationPath];
     }];
 }
@@ -208,14 +208,15 @@
 {
   __block NSString *tempPath;
 
-  return [[[[self.temporaryDirectory
+  return [[[self.temporaryDirectory
     withTemporaryDirectory]
     onQueue:self.target.workQueue pend:^(NSURL *url) {
       tempPath = [url.path stringByAppendingPathComponent:path.lastPathComponent];
-      return [self applicationDataContainerCommands:bundleID];
-    }]
-    onQueue:self.target.workQueue pend:^(id<FBFileContainer> commands) {
-      return [commands copyItemInContainer:path toDestinationOnHost:tempPath];
+      return [[self
+        applicationDataContainerCommands:bundleID]
+        onQueue:self.target.workQueue pop:^(id<FBFileContainer> container) {
+          return [container copyItemInContainer:path toDestinationOnHost:tempPath];
+        }];
     }]
     onQueue:self.target.workQueue pop:^(id _) {
       return [FBArchiveOperations createGzippedTarDataForPath:tempPath queue:self.target.workQueue logger:self.target.logger];
@@ -234,7 +235,7 @@
 {
   return [[self
     applicationDataContainerCommands:bundleID]
-    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBFileContainer> commands) {
+    onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> commands) {
       return [commands removePaths:paths];
     }];
 }
@@ -243,7 +244,7 @@
 {
   return [[self
     applicationDataContainerCommands:bundleID]
-    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBFileContainer> commands) {
+    onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> commands) {
       return [commands contentsOfDirectory:path];
     }];
 }
@@ -472,18 +473,18 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 #pragma mark Private Methods
 
-- (FBFuture<id<FBFileContainer>> *)applicationDataContainerCommands:(NSString *)bundleID
+- (FBFutureContext<id<FBFileContainer>> *)applicationDataContainerCommands:(NSString *)bundleID
 {
   id<FBFileCommands> commands = (id<FBFileCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBFileCommands)]) {
     return [[FBControlCoreError
-      describeFormat:@"Target doesn't conform to FBFileCommands protocol %@", commands]
-      failFuture];
+      describeFormat:@"Target doesn't conform to FBApplicationDataCommands protocol %@", commands]
+      failFutureContext];
   }
   if (bundleID == nil || bundleID.length == 0) {
-    return [FBFuture futureWithResult:[commands fileCommandsForRootFilesystem]];
+    return [commands fileCommandsForRootFilesystem];
   }
-  return [FBFuture futureWithResult:[commands fileCommandsForContainerApplication:bundleID]];
+  return [commands fileCommandsForContainerApplication:bundleID];
 }
 
 

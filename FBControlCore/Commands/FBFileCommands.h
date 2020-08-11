@@ -21,16 +21,16 @@ NS_ASSUME_NONNULL_BEGIN
  Returns file commands for the given bundle id sandbox.
 
  @param bundleID the bundle ID of the container application.
- @return a Future that resolves with an instance of the file commands
+ @return a Future context resolves with an instance of the file commands
  */
-- (id<FBFileContainer>)fileCommandsForContainerApplication:(NSString *)bundleID;
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForContainerApplication:(NSString *)bundleID;
 
 /**
  Returns file for the root of the filesystem
 
- @return a Future that resolves with an instance of the file commands
+ @return a Future context that resolves with an instance of the file commands
  */
-- (id<FBFileContainer>)fileCommandsForRootFilesystem;
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForRootFilesystem;
 
 @end
 

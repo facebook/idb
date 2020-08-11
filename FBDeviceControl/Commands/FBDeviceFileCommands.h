@@ -14,6 +14,22 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ An implementation of FBFileContainer, backed by an FBAFCConnection
+ */
+@interface FBDeviceFileContainer : NSObject <FBFileContainer>
+
+/**
+ The Designated Initializer.
+
+ @param connection the connection to use.
+ @param queue the queue to perform work on.
+ @return a new FBDeviceFileCommands instance.
+ */
+- (instancetype)initWithAFCConnection:(FBAFCConnection *)connection queue:(dispatch_queue_t)queue;
+
+@end
+
+/**
  An implementation of FBFileCommands for Devices
  */
 @interface FBDeviceFileCommands : NSObject <FBFileCommands, FBiOSTargetCommand>
