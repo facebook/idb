@@ -5,27 +5,27 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBDeviceApplicationDataCommands.h"
+#import "FBDeviceFileCommands.h"
 
 #import "FBDevice.h"
 #import "FBDevice+Private.h"
 #import "FBDeviceControlError.h"
 #import "FBAFCConnection.h"
 
-@interface FBDeviceFileCommands : NSObject <FBFileContainer>
+@interface FBDeviceFileContainer : NSObject <FBFileContainer>
 
 @property (nonatomic, strong, readonly) FBDevice *device;
 @property (nonatomic, assign, readonly) AFCCalls afcCalls;
 
 @end
 
-@interface FBDeviceFileCommands_HouseArrest : FBDeviceFileCommands
+@interface FBDeviceFileContainer_HouseArrest : FBDeviceFileContainer
 
 @property (nonatomic, copy, readonly) NSString *bundleID;
 
 @end
 
-@implementation FBDeviceFileCommands
+@implementation FBDeviceFileContainer
 
 - (instancetype)initWithDevice:(FBDevice *)device afcCalls:(AFCCalls)afcCalls
 {
@@ -140,7 +140,7 @@
 
 @end
 
-@implementation FBDeviceFileCommands_HouseArrest
+@implementation FBDeviceFileContainer_HouseArrest
 
 - (instancetype)initWithDevice:(FBDevice *)device afcCalls:(AFCCalls)afcCalls bundleID:(NSString *)bundleID
 {
@@ -170,14 +170,14 @@
 
 @end
 
-@interface FBDeviceApplicationDataCommands ()
+@interface FBDeviceFileCommands ()
 
 @property (nonatomic, strong, readonly) FBDevice *device;
 @property (nonatomic, assign, readonly) AFCCalls afcCalls;
 
 @end
 
-@implementation FBDeviceApplicationDataCommands
+@implementation FBDeviceFileCommands
 
 #pragma mark Initializers
 
@@ -204,16 +204,16 @@
   return self;
 }
 
-#pragma mark FBApplicationDataCommands
+#pragma mark FBFileCommands
 
 - (id<FBFileContainer>)fileCommandsForContainerApplication:(NSString *)bundleID
 {
-  return [[FBDeviceFileCommands_HouseArrest alloc] initWithDevice:self.device afcCalls:self.afcCalls bundleID:bundleID];
+  return [[FBDeviceFileContainer_HouseArrest alloc] initWithDevice:self.device afcCalls:self.afcCalls bundleID:bundleID];
 }
 
 - (id<FBFileContainer>)fileCommandsForRootFilesystem
 {
-  return [[FBDeviceFileCommands alloc] initWithDevice:self.device afcCalls:self.afcCalls];
+  return [[FBDeviceFileContainer alloc] initWithDevice:self.device afcCalls:self.afcCalls];
 }
 
 @end

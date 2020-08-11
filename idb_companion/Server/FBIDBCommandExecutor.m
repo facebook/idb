@@ -474,10 +474,10 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 - (FBFuture<id<FBFileContainer>> *)applicationDataContainerCommands:(NSString *)bundleID
 {
-  id<FBApplicationDataCommands> commands = (id<FBApplicationDataCommands>) self.target;
-  if (![commands conformsToProtocol:@protocol(FBApplicationDataCommands)]) {
+  id<FBFileCommands> commands = (id<FBFileCommands>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBFileCommands)]) {
     return [[FBControlCoreError
-      describeFormat:@"Target doesn't conform to FBApplicationDataCommands protocol %@", commands]
+      describeFormat:@"Target doesn't conform to FBFileCommands protocol %@", commands]
       failFuture];
   }
   if (bundleID == nil || bundleID.length == 0) {

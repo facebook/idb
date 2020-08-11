@@ -5,24 +5,24 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBSimulatorApplicationDataCommands.h"
+#import "FBSimulatorFileCommands.h"
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 
-@interface FBSimulatorFileCommands : NSObject <FBFileContainer>
+@interface FBSimulatorFileContainer : NSObject <FBFileContainer>
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
 
 @end
 
-@interface FBSimulatorFileCommands_AppContainer : FBSimulatorFileCommands
+@interface FBSimulatorFileContainer_AppContainer : FBSimulatorFileContainer
 
 @property (nonatomic, copy, readonly) NSString *bundleID;
 
 @end
 
-@implementation FBSimulatorFileCommands
+@implementation FBSimulatorFileContainer
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator
 {
@@ -36,7 +36,7 @@
   return self;
 }
 
-#pragma mark FBApplicationDataCommands
+#pragma mark FBFileCommands
 
 - (FBFuture<NSNull *> *)copyPathsOnHost:(NSArray<NSURL *> *)paths toDestination:(NSString *)destinationPath
 {
@@ -182,7 +182,7 @@
 
 @end
 
-@implementation FBSimulatorFileCommands_AppContainer
+@implementation FBSimulatorFileContainer_AppContainer
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator bundleID:(NSString *)bundleID
 {
@@ -228,13 +228,13 @@
 
 @end
 
-@interface FBSimulatorApplicationDataCommands ()
+@interface FBSimulatorFileCommands ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
 
 @end
 
-@implementation FBSimulatorApplicationDataCommands
+@implementation FBSimulatorFileCommands
 
 #pragma mark Initializers
 
@@ -255,16 +255,16 @@
   return self;
 }
 
-#pragma mark FBApplicationDataCommands Implementation
+#pragma mark FBFileCommands Implementation
 
 - (id<FBFileContainer>)fileCommandsForContainerApplication:(NSString *)bundleID
 {
-  return [[FBSimulatorFileCommands_AppContainer alloc] initWithSimulator:self.simulator bundleID:bundleID];
+  return [[FBSimulatorFileContainer_AppContainer alloc] initWithSimulator:self.simulator bundleID:bundleID];
 }
 
 - (id<FBFileContainer>)fileCommandsForRootFilesystem
 {
-  return [[FBSimulatorFileCommands alloc] initWithSimulator:self.simulator];
+  return [[FBSimulatorFileContainer alloc] initWithSimulator:self.simulator];
 }
 
 @end

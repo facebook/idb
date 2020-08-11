@@ -14,9 +14,9 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- An implementation of FBApplicationDataCommands for Devices
+ An implementation of FBFileCommands for Devices
  */
-@interface FBDeviceApplicationDataCommands : NSObject <FBApplicationDataCommands, FBiOSTargetCommand>
+@interface FBDeviceFileCommands : NSObject <FBFileCommands, FBiOSTargetCommand>
 
 #pragma mark Initializers
 

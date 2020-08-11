@@ -14,9 +14,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulator;
 
 /**
- An implementation of FBApplicationDataCommands for Simulators
+ An implementation of FBFileCommands for Simulators
  */
-@interface FBSimulatorApplicationDataCommands : NSObject <FBApplicationDataCommands, FBiOSTargetCommand>
+@interface FBSimulatorFileCommands : NSObject <FBFileCommands, FBiOSTargetCommand>
 
 @end
 

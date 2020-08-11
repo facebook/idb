@@ -15,7 +15,7 @@
 #import "FBAMDevice.h"
 #import "FBAMRestorableDevice.h"
 #import "FBDeviceApplicationCommands.h"
-#import "FBDeviceApplicationDataCommands.h"
+#import "FBDeviceFileCommands.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceCrashLogCommands.h"
 #import "FBDeviceDebuggerCommands.h"
@@ -344,7 +344,7 @@
   dispatch_once(&onceToken, ^{
     commandClasses = @[
       FBDeviceApplicationCommands.class,
-      FBDeviceApplicationDataCommands.class,
+      FBDeviceFileCommands.class,
       FBDeviceCrashLogCommands.class,
       FBDeviceDebuggerCommands.class,
       FBDeviceDiagnosticInformationCommands.class,

@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Defines an interface for interacting with the Data Container of Applications.
  */
-@protocol FBApplicationDataCommands <NSObject, FBiOSTargetCommand>
+@protocol FBFileCommands <NSObject, FBiOSTargetCommand>
 
 /**
  Returns file commands for the given bundle id sandbox.

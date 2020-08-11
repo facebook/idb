@@ -22,7 +22,7 @@
 #import "FBMutableSimulatorEventSink.h"
 #import "FBSimulatorAgentCommands.h"
 #import "FBSimulatorApplicationCommands.h"
-#import "FBSimulatorApplicationDataCommands.h"
+#import "FBSimulatorFileCommands.h"
 #import "FBSimulatorBridgeCommands.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
@@ -320,7 +320,7 @@
       FBSimulatorAccessibilityCommands.class,
       FBSimulatorAgentCommands.class,
       FBSimulatorApplicationCommands.class,
-      FBSimulatorApplicationDataCommands.class,
+      FBSimulatorFileCommands.class,
       FBSimulatorBridgeCommands.class,
       FBSimulatorCrashLogCommands.class,
       FBSimulatorDebuggerCommands.class,
