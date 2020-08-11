@@ -16,6 +16,7 @@
 #import "FBDeviceApplicationProcess.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceDebuggerCommands.h"
+#import "FBInstrumentsClient.h"
 
 static void UninstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id<FBDeviceCommands> device)
 {
@@ -136,10 +137,32 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
    }];
 }
 
-- (FBFuture<NSDictionary<NSString *, FBProcessInfo *> *> *)runningApplications
+- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningApplications
 {
-  // TODO: This is unimplemented, yet. Adding "empty" implementation so that it will not crash on selector forwarding
-  return [FBFuture futureWithResult:@{}];
+  return [[FBFuture
+    futureWithFutures:@[
+      [self runningProcessNameToPID],
+      [self installedApplicationsData:FBDeviceApplicationCommands.namingLookupAttributes],
+    ]]
+    onQueue:self.device.asyncQueue map:^ NSDictionary<NSString *, NSNumber *> * (NSArray<id> *tuple) {
+      NSDictionary<NSString *, NSNumber *> *runningProcessNameToPID = tuple[0];
+      NSDictionary<NSString *, id> *bundleIdentifierToAttributes = tuple[1];
+      NSMutableDictionary<NSString *, NSString *> *bundleNameToBundleIdentifier = NSMutableDictionary.dictionary;
+      for (NSString *bundleIdentifier in bundleIdentifierToAttributes.allKeys) {
+        NSString *bundleName = bundleIdentifierToAttributes[bundleIdentifier][FBApplicationInstallInfoKeyBundleName];
+        bundleNameToBundleIdentifier[bundleName] = bundleIdentifier;
+      }
+      NSMutableDictionary<NSString *, NSNumber *> *bundleNameToPID = NSMutableDictionary.dictionary;
+      for (NSString *processName in runningProcessNameToPID.allKeys) {
+        NSString *bundleName = bundleNameToBundleIdentifier[processName];
+        if (!bundleName) {
+          continue;
+        }
+        NSNumber *pid = runningProcessNameToPID[processName];
+        bundleNameToPID[bundleName] = pid;
+      }
+      return bundleNameToPID;
+    }];
 }
 
 - (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
@@ -151,11 +174,19 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
     }];
 }
 
-- (FBFuture<id> *)processIDWithBundleID:(NSString *)bundleID
+- (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID
 {
-  return [[FBDeviceControlError
-    describeFormat:@"-[%@ %@] is unimplemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
-    failFuture];
+  return [[self
+    runningApplications]
+    onQueue:self.device.asyncQueue fmap:^(NSDictionary<NSString *, NSNumber *> *result) {
+      NSNumber *pid = result[bundleID];
+      if (!pid) {
+        return [[FBDeviceControlError
+          describeFormat:@"No pid for %@", bundleID]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:pid];
+    }];
 }
 
 - (FBFuture<NSNull *> *)killApplicationWithBundleID:(NSString *)bundleID
@@ -271,6 +302,27 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
     }];
 }
 
+- (FBFutureContext<FBInstrumentsClient *> *)remoteInstrumentsClient
+{
+  return [[[self.device
+    mountDeveloperDiskImage]
+    onQueue:self.device.workQueue pushTeardown:^(id _) {
+      return [self.device startService:@"com.apple.instruments.remoteserver"];
+    }]
+    onQueue:self.device.asyncQueue pend:^(FBAMDServiceConnection *connection) {
+      return [FBInstrumentsClient instrumentsClientWithServiceConnection:connection logger:self.device.logger];
+    }];
+}
+
+- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningProcessNameToPID
+{
+  return [[self
+    remoteInstrumentsClient]
+    onQueue:self.device.asyncQueue pop:^(FBInstrumentsClient *client) {
+      return [client runningApplications];
+    }];
+}
+
 + (FBInstalledApplication *)installedApplicationFromDictionary:(NSDictionary<NSString *, id> *)app
 {
   NSString *bundleName = app[FBApplicationInstallInfoKeyBundleName] ?: @"";
@@ -298,6 +350,19 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
       FBApplicationInstallInfoKeyBundleName,
       FBApplicationInstallInfoKeyPath,
       FBApplicationInstallInfoKeySignerIdentity,
+    ];
+  });
+  return lookupAttributes;
+}
+
++ (NSArray<NSString *> *)namingLookupAttributes
+{
+  static dispatch_once_t onceToken;
+  static NSArray<NSString *> *lookupAttributes = nil;
+  dispatch_once(&onceToken, ^{
+    lookupAttributes = @[
+      FBApplicationInstallInfoKeyBundleIdentifier,
+      FBApplicationInstallInfoKeyBundleName,
     ];
   });
   return lookupAttributes;

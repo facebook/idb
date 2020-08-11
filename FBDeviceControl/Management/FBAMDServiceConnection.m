@@ -129,8 +129,17 @@ static size_t ReadBufferSize = 1024 * 4;
 
 - (ssize_t)recieve:(void *)buffer size:(size_t)size
 {
-  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
-  return -1;
+  return read(self.connection.socket, buffer, size);
+}
+
+- (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error
+{
+  NSData *data = [self receive:size error:error];
+  if (!data) {
+    return NO;
+  }
+  memcpy(destination, data.bytes, data.length);
+  return YES;
 }
 
 @end

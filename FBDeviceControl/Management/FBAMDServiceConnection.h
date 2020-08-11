@@ -47,6 +47,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (NSData *)receive:(size_t)size error:(NSError **)error;
 
+/**
+ Synchronously recieve bytes into a buffer.
+
+ @param destination the destination to write into.
+ @param size the number of bytes to read.
+ @param error an error out for any error that occurs.
+ @return YES if all bytes read, NO otherwise.
+ */
+- (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error;
+
 @end
 
 /**
