@@ -44,8 +44,9 @@
 
 + (NSString *)setPathForWorkingDirectory:(NSString *)workingDirectory logger:(id<FBControlCoreLogger>)logger
 {
-  if ([FBXcodeConfiguration.xcodeVersionNumber isEqualTo:[NSDecimalNumber decimalNumberWithString:@"11.5"]]) {
-    [logger logFormat:@"CoreSimulatorService can wedge with custom sets in Xcode 11.5, using the default set"];
+  NSOperatingSystemVersion xcodeVersion = FBXcodeConfiguration.xcodeVersion;
+  if (xcodeVersion.majorVersion == 11 && xcodeVersion.minorVersion >= 5) {
+    [logger logFormat:@"CoreSimulatorService can wedge with custom sets in Xcode %@, using the default set", FBXcodeConfiguration.xcodeVersionNumber];
     return nil;
   }
   NSString *fallbackSetPath = [workingDirectory stringByAppendingPathComponent:@"sim"];

@@ -33,6 +33,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, class) NSDecimalNumber *xcodeVersionNumber;
 
 /**
+ The Version Number for the Xcode defined by the Developer Directory.
+ */
+@property (nonatomic, assign, readonly, class) NSOperatingSystemVersion xcodeVersion;
+
+/**
  The SDK Version for the Xcode defined by the Developer Directory.
  */
 @property (nonatomic, copy, readonly, class) NSDecimalNumber *iosSDKVersionNumber;

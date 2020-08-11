@@ -12,6 +12,7 @@
 #import "FBTaskBuilder.h"
 #import "FBXcodeDirectory.h"
 #import "FBFuture+Sync.h"
+#import "FBiOSTargetConfiguration.h"
 
 @implementation FBXcodeConfiguration
 
@@ -41,6 +42,16 @@
     versionNumber = [NSDecimalNumber decimalNumberWithString:versionNumberString];
   });
   return versionNumber;
+}
+
++ (NSOperatingSystemVersion)xcodeVersion
+{
+  static dispatch_once_t onceToken;
+  static NSOperatingSystemVersion version;
+  dispatch_once(&onceToken, ^{
+    version = [FBOSVersion operatingSystemVersionFromName:self.xcodeVersionNumber.stringValue];
+  });
+  return version;
 }
 
 + (NSString *)iosSDKVersion
