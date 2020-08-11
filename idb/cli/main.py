@@ -47,6 +47,7 @@ from idb.cli.commands.file import (
     FSPullCommand,
     FSPushCommand,
     FSRemoveCommand,
+    FSShowCommand,
 )
 from idb.cli.commands.focus import FocusCommand
 from idb.cli.commands.framework import FrameworkInstallCommand
@@ -173,6 +174,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
                 FSMkdirCommand(),
                 FSRemoveCommand(),
                 FSListCommand(),
+                FSShowCommand(),
             ],
         ),
         CommandGroup(

@@ -6,10 +6,13 @@
 
 import json
 import os
+import sys
+import tempfile
 from abc import abstractmethod
 from argparse import ArgumentParser, Namespace
 from typing import Any, List, NamedTuple, Optional, Tuple
 
+import aiofiles
 from idb.cli import ClientCommand
 from idb.common.types import IdbClient
 
@@ -251,6 +254,38 @@ class FSPullCommand(FSCommand):
         await client.pull(
             bundle_id=bundle_id, src_path=args.src, dest_path=os.path.abspath(args.dst)
         )
+
+
+class FSShowCommand(FSCommand):
+    @property
+    def description(self) -> str:
+        return "Write the contents of a remote file to stdout"
+
+    @property
+    def name(self) -> str:
+        return "show"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "src", help="Relatve Container source path", type=BundleWithPath.parse
+        )
+        super().add_parser_arguments(parser)
+
+    async def run_with_bundle(
+        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
+    ) -> None:
+        with tempfile.TemporaryDirectory() as destination_directory:
+            # Remove the tempfile so that it can be written to.
+            destination_directory = os.path.abspath(destination_directory)
+            destination_file = os.path.join(
+                destination_directory, os.path.basename(args.src)
+            )
+            await client.pull(
+                bundle_id=bundle_id, src_path=args.src, dest_path=destination_directory
+            )
+            async with aiofiles.open(destination_file, "rb") as f:
+                data = await f.read()
+                sys.stdout.buffer.write(data)
 
 
 class DeprecatedPushCommand(ClientCommand):
