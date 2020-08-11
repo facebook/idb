@@ -134,7 +134,7 @@
 {
   return [[self
     applicationDataContainerCommands:bundleID]
-    onQueue:self.target.workQueue fmap:^(id<FBiOSTargetFileCommands> targetApplicationData) {
+    onQueue:self.target.workQueue fmap:^(id<FBFileContainer> targetApplicationData) {
       return [targetApplicationData createDirectory:directoryPath];
     }];
 }
@@ -164,7 +164,7 @@
 {
   return [[self
     applicationDataContainerCommands:bundleID]
-    onQueue:self.target.workQueue fmap:^(id<FBiOSTargetFileCommands> commands) {
+    onQueue:self.target.workQueue fmap:^(id<FBFileContainer> commands) {
       return [commands movePaths:originPaths toDestinationPath:destinationPath];
     }];
 }
@@ -189,7 +189,7 @@
     onQueue:self.target.asyncQueue resolve:^FBFuture<NSNull *> *{
       return [[self
         applicationDataContainerCommands:bundleID]
-        onQueue:self.target.workQueue fmap:^FBFuture *(id<FBiOSTargetFileCommands> targetApplicationsData) {
+        onQueue:self.target.workQueue fmap:^FBFuture *(id<FBFileContainer> targetApplicationsData) {
           return [targetApplicationsData copyPathsOnHost:paths toDestination:destinationPath];
         }];
   }];
@@ -199,7 +199,7 @@
 {
   return [[self
     applicationDataContainerCommands:bundleID]
-    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBiOSTargetFileCommands> commands) {
+    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBFileContainer> commands) {
       return [commands copyItemInContainer:path toDestinationOnHost:destinationPath];
     }];
 }
@@ -214,7 +214,7 @@
       tempPath = [url.path stringByAppendingPathComponent:path.lastPathComponent];
       return [self applicationDataContainerCommands:bundleID];
     }]
-    onQueue:self.target.workQueue pend:^(id<FBiOSTargetFileCommands> commands) {
+    onQueue:self.target.workQueue pend:^(id<FBFileContainer> commands) {
       return [commands copyItemInContainer:path toDestinationOnHost:tempPath];
     }]
     onQueue:self.target.workQueue pop:^(id _) {
@@ -234,7 +234,7 @@
 {
   return [[self
     applicationDataContainerCommands:bundleID]
-    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBiOSTargetFileCommands> commands) {
+    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBFileContainer> commands) {
       return [commands removePaths:paths];
     }];
 }
@@ -243,7 +243,7 @@
 {
   return [[self
     applicationDataContainerCommands:bundleID]
-    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBiOSTargetFileCommands> commands) {
+    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBFileContainer> commands) {
       return [commands contentsOfDirectory:path];
     }];
 }
@@ -472,7 +472,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 #pragma mark Private Methods
 
-- (FBFuture<id<FBiOSTargetFileCommands>> *)applicationDataContainerCommands:(NSString *)bundleID
+- (FBFuture<id<FBFileContainer>> *)applicationDataContainerCommands:(NSString *)bundleID
 {
   id<FBApplicationDataCommands> commands = (id<FBApplicationDataCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBApplicationDataCommands)]) {

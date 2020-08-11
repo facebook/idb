@@ -12,7 +12,7 @@
 #import "FBDeviceControlError.h"
 #import "FBAFCConnection.h"
 
-@interface FBDeviceFileCommands : NSObject <FBiOSTargetFileCommands>
+@interface FBDeviceFileCommands : NSObject <FBFileContainer>
 
 @property (nonatomic, strong, readonly) FBDevice *device;
 @property (nonatomic, assign, readonly) AFCCalls afcCalls;
@@ -206,12 +206,12 @@
 
 #pragma mark FBApplicationDataCommands
 
-- (id<FBiOSTargetFileCommands>)fileCommandsForContainerApplication:(NSString *)bundleID
+- (id<FBFileContainer>)fileCommandsForContainerApplication:(NSString *)bundleID
 {
   return [[FBDeviceFileCommands_HouseArrest alloc] initWithDevice:self.device afcCalls:self.afcCalls bundleID:bundleID];
 }
 
-- (id<FBiOSTargetFileCommands>)fileCommandsForRootFilesystem
+- (id<FBFileContainer>)fileCommandsForRootFilesystem
 {
   return [[FBDeviceFileCommands alloc] initWithDevice:self.device afcCalls:self.afcCalls];
 }

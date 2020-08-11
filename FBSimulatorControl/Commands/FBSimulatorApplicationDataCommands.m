@@ -10,7 +10,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 
-@interface FBSimulatorFileCommands : NSObject <FBiOSTargetFileCommands>
+@interface FBSimulatorFileCommands : NSObject <FBFileContainer>
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
 
@@ -257,12 +257,12 @@
 
 #pragma mark FBApplicationDataCommands Implementation
 
-- (id<FBiOSTargetFileCommands>)fileCommandsForContainerApplication:(NSString *)bundleID
+- (id<FBFileContainer>)fileCommandsForContainerApplication:(NSString *)bundleID
 {
   return [[FBSimulatorFileCommands_AppContainer alloc] initWithSimulator:self.simulator bundleID:bundleID];
 }
 
-- (id<FBiOSTargetFileCommands>)fileCommandsForRootFilesystem
+- (id<FBFileContainer>)fileCommandsForRootFilesystem
 {
   return [[FBSimulatorFileCommands alloc] initWithSimulator:self.simulator];
 }
