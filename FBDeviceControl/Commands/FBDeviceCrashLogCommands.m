@@ -7,11 +7,13 @@
 
 #import "FBDeviceCrashLogCommands.h"
 
-#import "FBDevice.h"
-#import "FBDevice+Private.h"
-#import "FBDeviceControlError.h"
-#import "FBAMDServiceConnection.h"
 #import "FBAFCConnection.h"
+#import "FBAMDServiceConnection.h"
+#import "FBDevice+Private.h"
+#import "FBDevice.h"
+#import "FBDeviceApplicationCommands.h"
+#import "FBDeviceControlError.h"
+#import "FBDeviceFileCommands.h"
 
 @interface FBDeviceCrashLogCommands ()
 
@@ -76,6 +78,15 @@ static NSString *const PingSuccess = @"ping";
       NSArray<FBCrashLogInfo *> *pruned = [self.store pruneCrashLogsMatchingPredicate:predicate];
       [logger logFormat:@"Pruned %@ logs from local cache", [FBCollectionInformation oneLineDescriptionFromArray:[pruned valueForKeyPath:@"name"]]];
       return [self removeCrashLogsFromDevice:pruned logger:logger];
+    }];
+}
+
+- (FBFutureContext<id<FBFileContainer>> *)crashLogFiles
+{
+  return [[self
+    crashReportFileConnection]
+    onQueue:self.device.asyncQueue pend:^(FBAFCConnection *connection) {
+      return [FBFuture futureWithResult:[[FBDeviceFileContainer alloc] initWithAFCConnection:connection queue:self.device.asyncQueue]];
     }];
 }
 

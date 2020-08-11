@@ -10,6 +10,7 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBiOSTargetFuture.h>
+#import <FBControlCore/FBFileContainer.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -45,6 +46,13 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Future that will resolve with the pruned crash logs.
  */
 - (FBFuture<NSArray<FBCrashLogInfo *> *> *)pruneCrashes:(NSPredicate *)predicate;
+
+/**
+ Returns a "File View" of the crash logs.
+
+ @return a Future context that resolves with the file commands.
+ */
+- (FBFutureContext<id<FBFileContainer>> *)crashLogFiles;
 
 @end
 

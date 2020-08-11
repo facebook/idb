@@ -174,6 +174,11 @@
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
+- (nonnull FBFutureContext<id<FBFileContainer>> *)crashLogFiles
+{
+  return [FBFutureContext futureContextWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
+}
+
 - (FBFuture<FBInstrumentsOperation *> *)startInstruments:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];

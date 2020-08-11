@@ -446,6 +446,12 @@
   return nil;
 }
 
+- (nonnull FBFutureContext<id<FBFileContainer>> *)crashLogFiles
+{
+  NSAssert(NO, @"-[%@ %@] is not yet supported", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
 - (FBFuture<FBInstrumentsOperation *> *)startInstruments:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   NSAssert(NO, @"-[%@ %@] is not yet supported", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
