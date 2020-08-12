@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <FBControlCore/FBAccessibilityCommands.h>
 #import <FBControlCore/FBAccessibilityTraits.h>
 #import <FBControlCore/FBAgentLaunchConfiguration.h>
 #import <FBControlCore/FBApplicationCommands.h>
-#import <FBControlCore/FBFileCommands.h>
 #import <FBControlCore/FBApplicationInstallConfiguration.h>
 #import <FBControlCore/FBApplicationLaunchConfiguration.h>
 #import <FBControlCore/FBArchitecture.h>
@@ -46,6 +46,7 @@
 #import <FBControlCore/FBEventInterpreter.h>
 #import <FBControlCore/FBEventReporter.h>
 #import <FBControlCore/FBEventReporterSubject.h>
+#import <FBControlCore/FBFileCommands.h>
 #import <FBControlCore/FBFileContainer.h>
 #import <FBControlCore/FBFileFinder.h>
 #import <FBControlCore/FBFileManager.h>

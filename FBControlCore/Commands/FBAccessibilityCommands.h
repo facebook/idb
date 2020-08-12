@@ -7,23 +7,43 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBiOSTargetCommandForwarder.h>
+#import <FBControlCore/FBFuture.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBBitmapStreamConfiguration;
-@protocol FBBitmapStream;
+/**
+ Used for internal and external implementation.
+ */
+@protocol FBAccessibilityOperations <NSObject>
 
 /**
- Bitmap Streaming Commands.
+ The Acessibility Elements.
+ Obtain the acessibility elements for the main screen.
+ The returned value is fully JSON serializable.
+
+ @param nestedFormat if YES then data is returned in the nested format, NO for flat format
+ @return the accessibility elements for the main screen, wrapped in a Future.
  */
-@protocol FBBitmapStreamingCommands <NSObject, FBiOSTargetCommand>
+- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat;
 
 /**
- Creates a Bitmap Stream for the iOS Target.
+ Obtain the acessibility element for the main screen at the given point.
+ The returned value is fully JSON serializable.
 
- @param configuration the stream configuration.
- @return A future that resolves with the Video Recording session.
+ @param point the coordinate at which to obtain the accessibility element.
+ @param nestedFormat if YES then data is returned in the nested format, NO for flat format
+ @return the accessibility element at the provided point, wrapped in a Future.
  */
-- (FBFuture<id<FBBitmapStream>> *)createStreamWithConfiguration:(FBBitmapStreamConfiguration *)configuration;
+- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat;
+
+@end
+
+
+/**
+ Commands relating to Accessibility.
+ */
+@protocol FBAccessibilityCommands <NSObject, FBiOSTargetCommand, FBAccessibilityOperations>
 
 @end
 

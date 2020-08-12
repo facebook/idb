@@ -39,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An implementation of FBiOSTarget for iOS Simulators.
  */
-@interface FBSimulator : NSObject <FBiOSTarget, FBCrashLogCommands, FBLocationCommands, FBScreenshotCommands, FBSimulatorAccessibilityCommands, FBSimulatorAgentCommands, FBSimulatorApplicationCommands, FBFileCommands, FBSimulatorBridgeCommands, FBSimulatorKeychainCommands, FBSimulatorSettingsCommands, FBSimulatorLifecycleCommands, FBSimulatorLaunchCtlCommands, FBSimulatorMediaCommands>
+@interface FBSimulator : NSObject <FBiOSTarget, FBCrashLogCommands, FBLocationCommands, FBScreenshotCommands, FBAccessibilityCommands, FBSimulatorAgentCommands, FBSimulatorApplicationCommands, FBFileCommands, FBSimulatorBridgeCommands, FBSimulatorKeychainCommands, FBSimulatorSettingsCommands, FBSimulatorLifecycleCommands, FBSimulatorLaunchCtlCommands, FBSimulatorMediaCommands>
 
 #pragma mark Properties
 

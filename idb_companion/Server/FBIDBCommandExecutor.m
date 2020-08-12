@@ -144,7 +144,7 @@
 {
   return [[self
     accessibilityCommands]
-    onQueue:self.target.workQueue fmap:^ FBFuture * (id<FBSimulatorAccessibilityCommands> commands) {
+    onQueue:self.target.workQueue fmap:^ FBFuture * (id<FBAccessibilityCommands> commands) {
       if (value) {
         return [commands accessibilityElementAtPoint:value.pointValue nestedFormat:nestedFormat];
       } else {
@@ -544,12 +544,12 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [FBFuture futureWithResult:commands];
 }
 
-- (FBFuture<id<FBSimulatorAccessibilityCommands>> *)accessibilityCommands
+- (FBFuture<id<FBAccessibilityCommands>> *)accessibilityCommands
 {
-  id<FBSimulatorAccessibilityCommands> commands = (id<FBSimulatorAccessibilityCommands>) self.target;
-  if (![commands conformsToProtocol:@protocol(FBSimulatorSettingsCommands)]) {
+  id<FBAccessibilityCommands> commands = (id<FBAccessibilityCommands>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBAccessibilityCommands)]) {
     return [[FBIDBError
-      describeFormat:@"Target doesn't conform to FBSimulatorAccessibilityCommands protocol %@", self.target]
+      describeFormat:@"Target doesn't conform to FBAccessibilityCommands protocol %@", self.target]
       failFuture];
   }
   return [FBFuture futureWithResult:commands];

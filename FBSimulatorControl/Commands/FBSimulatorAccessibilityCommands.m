@@ -51,7 +51,7 @@
 
 static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDummyBridgeToken";
 
-@interface FBSimulatorAccessibilityCommands_SimulatorBridge : NSObject <FBSimulatorAccessibility>
+@interface FBSimulatorAccessibilityCommands_SimulatorBridge : NSObject <FBAccessibilityOperations>
 
 @property (nonatomic, strong, readonly) FBSimulatorBridge *bridge;
 
@@ -95,7 +95,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @end
 
-@interface FBSimulatorAccessibilityCommands_CoreSimulator : NSObject <FBSimulatorAccessibility, AXPTranslationDelegateHelper, AXPTranslationTokenDelegateHelper>
+@interface FBSimulatorAccessibilityCommands_CoreSimulator : NSObject <FBAccessibilityOperations, AXPTranslationDelegateHelper, AXPTranslationTokenDelegateHelper>
 
 @property (nonatomic, strong, readonly) SimDevice *device;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
@@ -309,7 +309,7 @@ static NSString *const AXPrefix = @"AX";
 {
   return [[self
     implementationWithNestedFormat:nestedFormat]
-    onQueue:self.simulator.workQueue fmap:^(id<FBSimulatorAccessibility> implementation) {
+    onQueue:self.simulator.workQueue fmap:^(id<FBAccessibilityOperations> implementation) {
       return [implementation accessibilityElementsWithNestedFormat:nestedFormat];
     }];
 }
@@ -318,14 +318,14 @@ static NSString *const AXPrefix = @"AX";
 {
   return [[self
     implementationWithNestedFormat:nestedFormat]
-    onQueue:self.simulator.workQueue fmap:^(id<FBSimulatorAccessibility> implementation) {
+    onQueue:self.simulator.workQueue fmap:^(id<FBAccessibilityOperations> implementation) {
       return [implementation accessibilityElementAtPoint:point nestedFormat:nestedFormat];
     }];
 }
 
 #pragma mark Private
 
-- (FBFuture<id<FBSimulatorAccessibility>> *)implementationWithNestedFormat:(BOOL)nestedFormat
+- (FBFuture<id<FBAccessibilityOperations>> *)implementationWithNestedFormat:(BOOL)nestedFormat
 {
   // Post Xcode 12, FBSimulatorBridge will not work with accessibility.
   // Additionally, CoreSimulator **should** be upgraded, but if it hasn't then this will fail.
