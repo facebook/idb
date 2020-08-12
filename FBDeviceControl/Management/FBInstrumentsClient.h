@@ -12,6 +12,9 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBAMDServiceConnection;
+@class FBApplicationLaunchConfiguration;
+
+@protocol FBLaunchedProcess;
 
 /**
  A client for Instruments.
@@ -37,6 +40,22 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Dictionary, mapping process name to pid.
  */
 - (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningApplications;
+
+/**
+ Launches an application.
+
+ @param configuration the app launch configuration.
+ @return a Future that resolves with the pid of the app once it has launched.
+ */
+- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration;
+
+/**
+ Kills an application
+
+ @param processIdentifier the pid of the process to kill.
+ @return a Future that resolves when killed.
+ */
+- (FBFuture<NSNull *> *)killProcess:(pid_t)processIdentifier;
 
 @end
 

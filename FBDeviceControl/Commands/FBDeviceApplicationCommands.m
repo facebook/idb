@@ -12,7 +12,6 @@
 #import "FBAMDServiceConnection.h"
 #import "FBDevice+Private.h"
 #import "FBDevice.h"
-#import "FBDeviceApplicationLaunchStrategy.h"
 #import "FBDeviceApplicationProcess.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceDebuggerCommands.h"
@@ -36,6 +35,45 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
 @interface FBDeviceApplicationCommands ()
 
 @property (nonatomic, weak, readonly) FBDevice *device;
+
+- (FBFuture<NSNull *> *)killApplicationWithProcessIdentifier:(pid_t)processIdentifier;
+
+@end
+
+@interface FBDeviceLaunchedApplication : NSObject <FBLaunchedProcess>
+
+@property (nonatomic, strong, readonly) FBDeviceApplicationCommands *commands;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+
+@end
+
+@implementation FBDeviceLaunchedApplication
+
+@synthesize processIdentifier = _processIdentifier;
+
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier commands:(FBDeviceApplicationCommands *)commands queue:(dispatch_queue_t)queue
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _processIdentifier = processIdentifier;
+  _commands = commands;
+  _queue = queue;
+
+  return self;
+}
+
+- (FBFuture<NSNull *> *)exitCode
+{
+  FBDeviceApplicationCommands *commands = self.commands;
+  pid_t processIdentifier = self.processIdentifier;
+  return [FBMutableFuture.future
+    onQueue:self.queue respondToCancellation:^ FBFuture<NSNull *> *{
+      return [commands killApplicationWithProcessIdentifier:processIdentifier];
+    }];
+}
 
 @end
 
@@ -198,23 +236,26 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
 
 - (FBFuture<id<FBLaunchedProcess>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
-  __block NSString *remoteAppPath = nil;
   return [[[self
-    launchableRemoteApplicationPathForConfiguration:configuration]
-    onQueue:self.device.workQueue pushTeardown:^(NSString *result) {
-      remoteAppPath = result;
-      return [[FBDeviceDebuggerCommands
-        commandsWithTarget:self.device]
-        connectToDebugServer];
+    remoteInstrumentsClient]
+    onQueue:self.device.asyncQueue pop:^(FBInstrumentsClient *client) {
+      return [client launchApplication:configuration];
     }]
-    onQueue:self.device.workQueue pop:^(FBAMDServiceConnection *connection) {
-      return [[FBDeviceApplicationLaunchStrategy
-        strategyWithDevice:self.device debugConnection:connection logger:self.device.logger]
-        launchApplication:configuration remoteAppPath:remoteAppPath];
+    onQueue:self.device.asyncQueue map:^ id<FBLaunchedProcess> (NSNumber *pid) {
+      return [[FBDeviceLaunchedApplication alloc] initWithProcessIdentifier:pid.intValue commands:self queue:self.device.workQueue];
     }];
 }
 
 #pragma mark Private
+
+- (FBFuture<NSNull *> *)killApplicationWithProcessIdentifier:(pid_t)processIdentifier
+{
+  return [[self
+    remoteInstrumentsClient]
+    onQueue:self.device.asyncQueue pop:^(FBInstrumentsClient *client) {
+      return [client killProcess:processIdentifier];
+    }];
+}
 
 - (FBFuture<NSNull *> *)transferAppURL:(NSURL *)appURL options:(NSDictionary *)options
 {
@@ -285,20 +326,6 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
           failFuture];
       }
       return [FBFuture futureWithResult:CFBridgingRelease(applications)];
-    }];
-}
-
-- (FBFuture<NSString *> *)launchableRemoteApplicationPathForConfiguration:(FBApplicationLaunchConfiguration *)configuration
-{
-  return [[self
-    installedApplicationWithBundleID:configuration.bundleID]
-    onQueue:self.device.workQueue fmap:^(FBInstalledApplication *installedApplication) {
-      if (installedApplication.installType != FBApplicationInstallTypeUserDevelopment) {
-        return [[FBDeviceControlError
-          describeFormat:@"Application %@ cannot be launched as it's not signed with a development identity", installedApplication]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:installedApplication.bundle.path];
     }];
 }
 

@@ -132,6 +132,52 @@ static NSString *const DeviceInfoChannel = @"com.apple.instruments.server.servic
     }];
 }
 
+static NSString *const ProcessControlChannel = @"com.apple.instruments.server.services.processcontrol";
+
+- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
+{
+  return [FBFuture
+    onQueue:self.queue resolveValue:^ NSNumber * (NSError **error) {
+      NSDictionary<NSString *, NSNumber *> *options = @{
+        @"StartSuspendedKey": @(configuration.waitForDebugger),
+        @"KillExisting": @(configuration.launchMode != FBApplicationLaunchModeFailIfRunning),
+      };
+      ResponsePayload response = [self
+        onChannelIdentifier:ProcessControlChannel
+        performSelector:@"launchSuspendedProcessWithDevicePath:bundleIdentifier:environment:arguments:options:"
+        argumentsData:@[
+          [FBInstrumentsClient argumentDataForArgument:@""], // devicePath:
+          [FBInstrumentsClient argumentDataForArgument:configuration.bundleID], // bundleIdentifier:
+          [FBInstrumentsClient argumentDataForArgument:configuration.environment], // environment:
+          [FBInstrumentsClient argumentDataForArgument:configuration.arguments], // arguments:
+          [FBInstrumentsClient argumentDataForArgument:options], // options:
+        ]
+        error:error];
+      if (response.success == NO) {
+        return nil;
+      }
+      return response.returnValue;
+    }];
+}
+
+- (FBFuture<NSNull *> *)killProcess:(pid_t)processIdentifier
+{
+  return [FBFuture
+    onQueue:self.queue resolveValue:^ NSNull * (NSError **error) {
+      ResponsePayload response = [self
+        onChannelIdentifier:ProcessControlChannel
+        performSelector:@"killPid:"
+        argumentsData:@[
+          [FBInstrumentsClient argumentDataForArgument:@(processIdentifier)], // pid:
+        ]
+        error:error];
+      if (response.success == NO) {
+        return nil;
+      }
+      return NSNull.null;
+    }];
+}
+
 #pragma mark Private Class Methods
 
 + (NSData *)capabilitiesArgumentData
