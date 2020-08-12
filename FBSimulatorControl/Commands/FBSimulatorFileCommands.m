@@ -225,6 +225,11 @@
   return [FBFutureContext futureContextWithResult:[[FBSimulatorFileContainer alloc] initWithContainerPath:self.simulator.dataDirectory queue:self.simulator.asyncQueue]];
 }
 
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMediaDirectory
+{
+  return [FBFutureContext futureContextWithResult:[[FBSimulatorFileContainer alloc] initWithContainerPath:self.simulator.dataDirectory queue:self.simulator.asyncQueue]];
+}
+
 #pragma mark Private
 
 - (FBFuture<NSString *> *)dataContainerForBundleID:(NSString *)bundleID

@@ -32,6 +32,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForRootFilesystem;
 
+/**
+ Returns file for the 'media' directory.
+
+ @return a Future context that resolves with an instance of the file commands
+ */
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMediaDirectory;
+
 @end
 
 NS_ASSUME_NONNULL_END

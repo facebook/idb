@@ -8,6 +8,7 @@
 #import "FBIDBCommandExecutor.h"
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
+#import <FBDeviceControl/FBDeviceControl.h>
 
 #import "FBIDBStorageManager.h"
 #import "FBIDBError.h"
@@ -482,7 +483,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       failFutureContext];
   }
   if (bundleID == nil || bundleID.length == 0) {
-    return [commands fileCommandsForRootFilesystem];
+    return [self.target isKindOfClass:FBDevice.class] ? [commands fileCommandsForMediaDirectory] : [commands fileCommandsForRootFilesystem];
   }
   return [commands fileCommandsForContainerApplication:bundleID];
 }

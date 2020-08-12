@@ -174,6 +174,13 @@
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForRootFilesystem
 {
+  return [[FBControlCoreError
+    describeFormat:@"%@ not supported on devices, requires a rooted device", NSStringFromSelector(_cmd)]
+    failFutureContext];
+}
+
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMediaDirectory
+{
   return [[self.device
     startAFCService:@"com.apple.afc"]
     onQueue:self.device.asyncQueue pend:^ FBFuture<id<FBFileContainer>> * (FBAFCConnection *connection) {
