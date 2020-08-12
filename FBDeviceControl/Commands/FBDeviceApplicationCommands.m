@@ -229,9 +229,11 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
 
 - (FBFuture<NSNull *> *)killApplicationWithBundleID:(NSString *)bundleID
 {
-  return [[FBDeviceControlError
-    describeFormat:@"-[%@ %@] is unimplemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
-    failFuture];
+  return [[self
+    processIDWithBundleID:bundleID]
+    onQueue:self.device.workQueue fmap:^(NSNumber *processIdentifier) {
+      return [self killApplicationWithProcessIdentifier:processIdentifier.intValue];
+    }];
 }
 
 - (FBFuture<id<FBLaunchedProcess>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
