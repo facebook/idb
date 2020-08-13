@@ -183,11 +183,6 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
       failBool:error];
   }
 
-  BOOL success = [self populateFromListWithError:error];
-  if (!success) {
-    return NO;
-  }
-
   // Perform a bridging retain, so that the context of the callback can be strongly referenced.
   // Tidied up when unsubscribing.
   AMDNotificationSubscription subscription = nil;
@@ -248,23 +243,6 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
 }
 
 #pragma mark Private
-
-- (BOOL)populateFromListWithError:(NSError **)error
-{
-  [self.logger log:@"Populating devices from list"];
-  _Nullable CFArrayRef array = self.calls.CreateDeviceList();
-  if (array == NULL) {
-    return [[FBDeviceControlError
-      describe:@"AMDCreateDeviceList returned NULL"]
-      failBool:error];
-  }
-  for (NSInteger index = 0; index < CFArrayGetCount(array); index++) {
-    AMDeviceRef device = CFArrayGetValueAtIndex(array, index);
-    FB_AMDeviceConnected(device, self);
-  }
-  CFRelease(array);
-  return YES;
-}
 
 - (NSString *)identifierForDevice:(AMDeviceRef)amDevice
 {
