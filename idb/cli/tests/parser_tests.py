@@ -402,28 +402,6 @@ class TestParser(TestCase):
             bundle_id=bundle_id, src_path=src, dest_path=os.path.abspath(dst)
         )
 
-    async def test_push_deprecated(self) -> None:
-        self.direct_client_mock.push = AsyncMock(return_value=[])
-        src_path = "./fileToSend.txt"
-        app_bundle_id = "com.myapp"
-        dest_path = "Library"
-        await cli_main(cmd_input=["push", src_path, app_bundle_id, dest_path])
-        self.direct_client_mock.push.assert_called_once_with(
-            bundle_id=app_bundle_id,
-            src_paths=[os.path.abspath(src_path)],
-            dest_path=dest_path,
-        )
-
-    async def test_pull_deprecated(self) -> None:
-        self.direct_client_mock.pull = AsyncMock(return_value=[])
-        bundle_id = "com.myapp"
-        src = "Library/myFile.txt"
-        dest = "someOutputDir"
-        await cli_main(cmd_input=["pull", bundle_id, src, dest])
-        self.direct_client_mock.pull.assert_called_once_with(
-            bundle_id=bundle_id, src_path=src, dest_path=os.path.abspath(dest)
-        )
-
     async def test_list_targets(self) -> None:
         self.management_client_mock().list_targets = AsyncMock(return_value=[])
         await cli_main(cmd_input=["list-targets"])

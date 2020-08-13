@@ -39,8 +39,6 @@ from idb.cli.commands.debugserver import (
 from idb.cli.commands.dsym import DsymInstallCommand
 from idb.cli.commands.dylib import DylibInstallCommand
 from idb.cli.commands.file import (
-    DeprecatedPullCommand,
-    DeprecatedPushCommand,
     FSListCommand,
     FSMkdirCommand,
     FSMoveCommand,
@@ -190,8 +188,6 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         ),
         VideoRecordCommand(),
         VideoStreamCommand(),
-        DeprecatedPushCommand(),
-        DeprecatedPullCommand(),
         UrlOpenCommand(),
         KeychainClearCommand(),
         LocationSetCommand(),
