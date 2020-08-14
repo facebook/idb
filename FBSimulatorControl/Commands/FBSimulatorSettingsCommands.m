@@ -358,12 +358,22 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
 
 + (FBFuture<NSString *> *)runSqliteCommandOnDatabase:(NSString *)databasePath arguments:(NSArray<NSString *> *)arguments queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  return [[[[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/sqlite3" arguments:[@[databasePath] arrayByAddingObjectsFromArray:arguments]]
+  arguments = [@[databasePath] arrayByAddingObjectsFromArray:arguments];
+  [logger logFormat:@"Running sqlite3 %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
+  return [[[[[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/sqlite3" arguments:arguments]
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]
+    withAcceptableTerminationStatusCodes:[NSSet setWithArray:@[@0, @1]]]
+    withLoggingTo:logger]
     runUntilCompletion]
     onQueue:queue fmap:^(FBTask<NSNull *, NSString *, NSString *> *task) {
+      if (![task.exitCode.result isEqualToNumber:@0]) {
+          return [[[FBSimulatorError
+            describeFormat:@"Task did not exit 0: %@ %@ %@", task.exitCode.result, task.stdOut, task.stdErr]
+            logger:logger]
+            failFuture];
+      }
       if ([task.stdErr hasPrefix:@"Error"]) {
         return [[[FBSimulatorError
           describeFormat:@"Failed to execute sqlite command: %@", task.stdErr]
