@@ -255,9 +255,20 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
 - (FBFuture<NSNull *> *)modifyTCCDatabaseWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services
 {
   NSString *databasePath = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/TCC/TCC.db"];
-  if (!databasePath) {
+  BOOL isDirectory = YES;
+  if (![NSFileManager.defaultManager fileExistsAtPath:databasePath isDirectory:&isDirectory]) {
     return [[FBSimulatorError
       describeFormat:@"Expected file to exist at path %@ but it was not there", databasePath]
+      failFuture];
+  }
+  if (isDirectory) {
+    return [[FBSimulatorError
+      describeFormat:@"Expected file to exist at path %@ but it is a directory", databasePath]
+      failFuture];
+  }
+  if ([NSFileManager.defaultManager isWritableFileAtPath:databasePath] == NO) {
+    return [[FBSimulatorError
+      describeFormat:@"Database file at path %@ is not writable", databasePath]
       failFuture];
   }
 
