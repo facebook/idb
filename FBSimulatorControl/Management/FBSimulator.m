@@ -39,7 +39,6 @@
 #import "FBSimulatorLoggingEventSink.h"
 #import "FBSimulatorMediaCommands.h"
 #import "FBSimulatorMutableState.h"
-#import "FBSimulatorNotificationEventSink.h"
 #import "FBSimulatorScreenshotCommands.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorSettingsCommands.h"
@@ -94,12 +93,11 @@
 
 - (instancetype)attachEventSinkCompositionWithLaunchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess containerApplicationProcess:(nullable FBProcessInfo *)containerApplicationProcess
 {
-  FBSimulatorNotificationNameEventSink *notificationSink = [FBSimulatorNotificationNameEventSink withSimulator:self];
   FBSimulatorLoggingEventSink *loggingSink = [FBSimulatorLoggingEventSink withSimulator:self logger:self.logger];
   FBMutableSimulatorEventSink *mutableSink = [FBMutableSimulatorEventSink new];
   FBSimulatorDiagnostics *diagnosticsSink = [FBSimulatorDiagnostics withSimulator:self];
 
-  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[notificationSink, loggingSink, diagnosticsSink, mutableSink]];
+  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[loggingSink, diagnosticsSink, mutableSink]];
   FBSimulatorMutableState *mutableState = [[FBSimulatorMutableState alloc] initWithLaunchdProcess:launchdSimProcess containerApplication:containerApplicationProcess sink:compositeSink];
 
   _mutableState = mutableState;
