@@ -164,6 +164,17 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
 
 #pragma mark Lifecycle
 
+static size_t MaxArgumentBufferSize = ARG_MAX; // A temporary value that is filled on load
+static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit -u', but twice as large, in ints.
+
++ (void)load
+{
+   int name[2] = {CTL_KERN, KERN_ARGMAX};
+   size_t size = sizeof(MaxArgumentBufferSize);
+   int status = sysctl(name, 2, &MaxArgumentBufferSize, &size, NULL, 0);
+   NSAssert(status != -1, @"Failed to get the KERN_ARGMAX from sysctl %s", strerror(errno));
+}
+
 - (instancetype)init
 {
   self = [super init];
@@ -171,10 +182,10 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
     return nil;
   }
 
-  _argumentBufferSize = sizeof(char) * ARG_MAX;
+  _argumentBufferSize = MaxArgumentBufferSize;
   _argumentBuffer = malloc(_argumentBufferSize);
 
-  _pidBufferSize = sizeof(pid_t) * PID_MAX;
+  _pidBufferSize = MaxPidBufferSize;
   _pidBuffer = malloc(_pidBufferSize);
 
   return self;
