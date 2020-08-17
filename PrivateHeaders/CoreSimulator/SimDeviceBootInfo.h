@@ -11,6 +11,7 @@ typedef NS_ENUM(NSUInteger, SimDeviceBootInfoStatus) {
   SimDeviceBootInfoStatusBooting = 0,
   SimDeviceBootInfoStatusWaitingOnBackboard = 1,
   SimDeviceBootInfoStatusWaitingOnDataMigration = 2,
+  SimDeviceBootInfoStatusDataMigrationFailed = 3,
   SimDeviceBootInfoStatusWaitingOnSystemApp = 4,
   SimDeviceBootInfoStatusBooted = 4294967295,
 };
