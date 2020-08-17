@@ -103,9 +103,9 @@ static NSTimeInterval BootVerificationStallInterval = 1.5; // 60s
       failFuture];
   }
   [self updateBootInfo:bootInfo];
-  if (bootInfo.status != SimDeviceBootInfoStatusBooted) {
+  if (bootInfo.isTerminalStatus == NO) {
     return [[FBSimulatorError
-      describeFormat:@"Not booted, status is %@", bootInfo]
+      describeFormat:@"Not terminal status, status is %@", bootInfo]
       failFuture];
   }
   return FBFuture.empty;
