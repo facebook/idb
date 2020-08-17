@@ -47,6 +47,7 @@ Usage: \n \
     --device-set-path PATH     Path to a custom Simulator device set.\n\
     --only FILTER_OPTION       If provided, will limit interaction to a subset of all available targets\n\
     --headless VALUE           If VALUE is a true value, the Simulator boot's lifecycle will be tied to the lifecycle of this invocation.\n\
+    --verify-booted VALUE      If VALUE is a true value, will verify that the Simulator is in a known-booted state before --boot completes. Default is true.\n\
     --terminate-offline VALUE  Terminate if the target goes offline, otherwise the companion will stay alive.\n\
 \n\
  Filter Options:\n\
@@ -198,6 +199,7 @@ static FBFuture<NSNull *> *TargetOfflineFuture(id<FBiOSTarget> target, id<FBCont
 static FBFuture<FBFuture<NSNull *> *> *BootFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   BOOL headless = [userDefaults boolForKey:@"-headless"];
+  BOOL verifyBooted = [userDefaults objectForKey:@"-verify-booted"] == nil ? YES : [userDefaults boolForKey:@"-verify-booted"];
   return [[SimulatorFuture(udid, userDefaults, logger, reporter)
     onQueue:dispatch_get_main_queue() fmap:^(FBSimulator *simulator) {
       // Boot the simulator with the options provided.
@@ -207,6 +209,14 @@ static FBFuture<FBFuture<NSNull *> *> *BootFuture(NSString *udid, NSUserDefaults
         config = [config withOptions:(config.options | FBSimulatorBootOptionsEnableDirectLaunch)];
       } else {
         [logger logFormat:@"Booting %@ normally", udid];
+        config = [config withOptions:(config.options & ~FBSimulatorBootOptionsEnableDirectLaunch)];
+      }
+      if (verifyBooted) {
+        [logger logFormat:@"Booting %@ with verification", udid];
+        config = [config withOptions:(config.options | FBSimulatorBootOptionsVerifyUsable)];
+      } else {
+        [logger logFormat:@"Booting %@ without verification", udid];
+        config = [config withOptions:(config.options & ~FBSimulatorBootOptionsVerifyUsable)];
       }
       return [[simulator bootWithConfiguration:config] mapReplace:simulator];
     }]
