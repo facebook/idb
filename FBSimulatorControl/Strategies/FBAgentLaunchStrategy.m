@@ -15,7 +15,6 @@
 #import "FBAgentLaunchConfiguration+Simulator.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorAgentOperation.h"
-#import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"

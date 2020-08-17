@@ -8,7 +8,6 @@
 #import "FBProcessLaunchConfiguration+Simulator.h"
 
 #import "FBSimulator.h"
-#import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
 
 #pragma clang diagnostic push

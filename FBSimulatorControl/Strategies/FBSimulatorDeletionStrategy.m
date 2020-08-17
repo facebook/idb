@@ -16,7 +16,6 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorSet+Private.h"
-#import "FBSimulatorDiagnostics.h"
 
 @interface FBSimulatorDeletionStrategy ()
 
