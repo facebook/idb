@@ -10,7 +10,7 @@ import logging
 import subprocess
 from logging import Logger
 from sys import platform
-from typing import AsyncGenerator, Dict, List, Optional, Union
+from typing import AsyncGenerator, Dict, List, Optional, Sequence, Union
 
 from idb.common.format import target_description_from_json
 from idb.common.logging import log_call
@@ -129,8 +129,15 @@ class Companion:
                 )
 
     async def _run_udid_command(
-        self, udid: str, command: str, timeout: Optional[int]
+        self,
+        udid: str,
+        command: str,
+        timeout: Optional[int],
+        extra_arguments: Optional[Sequence[str]] = None,
     ) -> str:
+        arguments = [f"--{command}", udid]
+        if extra_arguments is not None:
+            arguments.extend(extra_arguments)
         return await self._run_companion_command(
             arguments=[f"--{command}", udid], timeout=timeout
         )
@@ -145,13 +152,29 @@ class Companion:
         return target_description_from_json(output.splitlines()[-1])
 
     @log_call()
-    async def boot(self, udid: str, timeout: Optional[int] = None) -> None:
-        await self._run_udid_command(udid=udid, command="boot", timeout=timeout)
+    async def boot(
+        self, udid: str, verify: bool = True, timeout: Optional[int] = None
+    ) -> None:
+        await self._run_udid_command(
+            udid=udid,
+            command="boot",
+            timeout=timeout,
+            extra_arguments=["--verify-booted", "1" if verify else "0"],
+        )
 
     @asynccontextmanager
-    async def boot_headless(self, udid: str) -> AsyncGenerator[None, None]:
+    async def boot_headless(
+        self, udid: str, verify: bool = True
+    ) -> AsyncGenerator[None, None]:
         async with self._start_companion_command(
-            ["--headless", "1", "--boot", udid]
+            [
+                "--headless",
+                "1",
+                "--boot",
+                udid,
+                "--verify-booted",
+                "1" if verify else "0",
+            ]
         ) as process:
             # The first line written to stdout is information about the booted sim.
             line = (await none_throws(process.stdout).readline()).decode()
