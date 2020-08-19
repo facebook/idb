@@ -196,5 +196,11 @@
 - (NSString *)accessibilityPlatformTranslationToken;
 - (id)accessibilityConnection;
 
+// Privacy commands
+
+- (BOOL)setPrivacyAccessForService:(NSString *)service bundleID:(NSString *)bundleID granted:(BOOL)granted error:(NSError **)error;
+
+- (BOOL)resetPrivacyAccessForService:(NSString *)service bundleID:(NSString *)bundleID error:(NSError **)error;
+
 @end
 

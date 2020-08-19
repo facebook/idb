@@ -78,14 +78,35 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
 
   // Composing different futures due to differences in how these operate.
   NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
-  if ([[NSSet setWithArray:FBSimulatorSettingsCommands.tccDatabaseMapping.allKeys] intersectsSet:services]) {
-    [futures addObject:[self modifyTCCDatabaseWithBundleIDs:bundleIDs toServices:services]];
+  NSMutableSet<NSString *> *toApprove = [NSMutableSet setWithSet:services];
+
+  // Go through each of the internal APIs, removing them from the pending set as we go.
+  if ([self.simulator.device respondsToSelector:@selector(setPrivacyAccessForService:bundleID:granted:error:)]) {
+    NSMutableSet<NSString *> *simDeviceServices = [toApprove mutableCopy];
+    [simDeviceServices intersectSet:[NSSet setWithArray:FBSimulatorSettingsCommands.coreSimulatorSettingMapping.allKeys]];
+    [toApprove minusSet:simDeviceServices];
+    [futures addObject:[self coreSimulatorApproveWithBundleIDs:bundleIDs toServices:simDeviceServices]];
   }
-  if ([services containsObject:FBSettingsApprovalServiceLocation]) {
+  if (toApprove.count > 0 && [[NSSet setWithArray:FBSimulatorSettingsCommands.tccDatabaseMapping.allKeys] intersectsSet:toApprove]) {
+    NSMutableSet<NSString *> *tccServices = [toApprove mutableCopy];
+    [tccServices intersectSet:[NSSet setWithArray:FBSimulatorSettingsCommands.tccDatabaseMapping.allKeys]];
+    [toApprove minusSet:tccServices];
+    [futures addObject:[self modifyTCCDatabaseWithBundleIDs:bundleIDs toServices:tccServices]];
+  }
+  if (toApprove.count > 0 && [toApprove containsObject:FBSettingsApprovalServiceLocation]) {
     [futures addObject:[self authorizeLocationSettings:bundleIDs.allObjects]];
+    [toApprove removeObject:FBSettingsApprovalServiceLocation];
   }
-  if ([services containsObject:FBSettingsApprovalServiceNotification]) {
+  if (toApprove.count > 0 && [toApprove containsObject:FBSettingsApprovalServiceNotification]) {
     [futures addObject:[self authorizeNotificationService:bundleIDs.allObjects]];
+    [toApprove removeObject:FBSettingsApprovalServiceNotification];
+  }
+
+  // Error out if there's nothing we can do to handle a specific approval.
+  if (toApprove.count > 0) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot approve %@ since there is no handling of it", [FBCollectionInformation oneLineDescriptionFromArray:toApprove.allObjects]]
+      failFuture];
   }
   // Nothing to do with zero futures.
   if (futures.count == 0) {
@@ -102,14 +123,13 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
 {
   if ([scheme length] == 0) {
     return [[FBSimulatorError
-             describe:@"Empty scheme provided to url approve"]
-            failFuture];
+      describe:@"Empty scheme provided to url approve"]
+      failFuture];
   }
-
   if ([bundleIDs count] == 0) {
     return [[FBSimulatorError
-             describe:@"Empty bundleID set provided to url approve"]
-            failFuture];
+      describe:@"Empty bundleID set provided to url approve"]
+      failFuture];
   }
 
   NSString *preferencesDirectory = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/Preferences"];
@@ -121,8 +141,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
     schemeApprovalProperties = [[NSDictionary dictionaryWithContentsOfFile:schemeApprovalPlistPath] mutableCopy];
     if (schemeApprovalProperties == nil) {
       return [[FBSimulatorError
-               describeFormat:@"Failed to read the file at %@", schemeApprovalPlistPath]
-              failFuture];
+        describeFormat:@"Failed to read the file at %@", schemeApprovalPlistPath]
+        failFuture];
     }
   }
 
@@ -135,20 +155,20 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
   //Write our plist back
   NSError *error = nil;
   BOOL success = [NSFileManager.defaultManager
-                  createDirectoryAtPath:preferencesDirectory
-                  withIntermediateDirectories:YES
-                  attributes:nil
-                  error:&error];
+    createDirectoryAtPath:preferencesDirectory
+    withIntermediateDirectories:YES
+    attributes:nil
+    error:&error];
   if (!success) {
-        return [[FBSimulatorError
-             describe:@"Failed to create folders for scheme approval plist"]
-            failFuture];
+    return [[FBSimulatorError
+      describe:@"Failed to create folders for scheme approval plist"]
+      failFuture];
   }
   success = [schemeApprovalProperties writeToFile:schemeApprovalPlistPath atomically:YES];
   if (!success) {
     return [[FBSimulatorError
-             describe:@"Failed to write scheme approval plist"]
-            failFuture];
+      describe:@"Failed to write scheme approval plist"]
+      failFuture];
   }
   return FBFuture.empty;
 }
@@ -287,6 +307,25 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
     mapReplace:NSNull.null];
 }
 
+- (FBFuture<NSNull *> *)coreSimulatorApproveWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services
+{
+  for (NSString *bundleID in bundleIDs) {
+    for (NSString *service in services) {
+      NSString *internalService = FBSimulatorSettingsCommands.coreSimulatorSettingMapping[service];
+      if (!internalService) {
+        return [[FBSimulatorError
+          describeFormat:@"%@ is not a valid service for CoreSimulator", service]
+          failFuture];
+      }
+      NSError *error = nil;
+      if (![self.simulator.device setPrivacyAccessForService:internalService bundleID:bundleID granted:YES error:&error]) {
+        return [FBFuture futureWithError:error];
+      }
+    }
+  }
+  return FBFuture.empty;
+}
+
 + (NSDictionary<FBSettingsApprovalService, NSString *> *)tccDatabaseMapping
 {
   static dispatch_once_t onceToken;
@@ -296,6 +335,22 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
       FBSettingsApprovalServiceContacts: @"kTCCServiceAddressBook",
       FBSettingsApprovalServicePhotos: @"kTCCServicePhotos",
       FBSettingsApprovalServiceCamera: @"kTCCServiceCamera",
+      FBSettingsApprovalServiceMicrophone: @"kTCCServiceMicrophone",
+    };
+  });
+  return mapping;
+}
+
++ (NSDictionary<FBSettingsApprovalService, NSString *> *)coreSimulatorSettingMapping
+{
+  static dispatch_once_t onceToken;
+  static NSDictionary<FBSettingsApprovalService, NSString *> *mapping;
+  dispatch_once(&onceToken, ^{
+    mapping = @{
+      FBSettingsApprovalServiceContacts: @"kTCCServiceContactsFull",
+      FBSettingsApprovalServicePhotos: @"kTCCServicePhotos",
+      FBSettingsApprovalServiceCamera: @"camera",
+      FBSettingsApprovalServiceLocation: @"__CoreLocationAlways",
       FBSettingsApprovalServiceMicrophone: @"kTCCServiceMicrophone",
     };
   });
