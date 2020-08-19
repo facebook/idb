@@ -13,7 +13,7 @@ typedef NS_ENUM(NSUInteger, SimDeviceBootInfoStatus) {
   SimDeviceBootInfoStatusWaitingOnDataMigration = 2,
   SimDeviceBootInfoStatusDataMigrationFailed = 3,
   SimDeviceBootInfoStatusWaitingOnSystemApp = 4,
-  SimDeviceBootInfoStatusBooted = 4294967295,
+  SimDeviceBootInfoStatusFinished = 4294967295,
 };
 
 @class NSDictionary, NSString;

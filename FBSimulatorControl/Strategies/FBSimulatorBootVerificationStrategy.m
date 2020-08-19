@@ -164,8 +164,8 @@ static NSTimeInterval BootVerificationStallInterval = 1.5; // 60s
       return @"WaitingOnDataMigration";
     case SimDeviceBootInfoStatusWaitingOnSystemApp:
       return @"WaitingOnSystemApp";
-    case SimDeviceBootInfoStatusBooted:
-      return @"Booted";
+    case SimDeviceBootInfoStatusFinished:
+      return @"Finished";
     case SimDeviceBootInfoStatusDataMigrationFailed:
       return @"DataMigrationFailed";
     default:
