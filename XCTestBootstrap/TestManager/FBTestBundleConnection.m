@@ -461,6 +461,14 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
   return nil;
 }
 
+- (id)_XCT_testRunnerReadyWithCapabilities:(XCTCapabilities *)arg1
+{
+  [self.logger logFormat:@"Test Bundle is Ready"];
+  self.state = FBTestBundleConnectionStateTestBundleReady;
+  [self.connectFuture resolveWithResult:FBTestBundleResult.success];
+  return nil;
+}
+
 @end
 
 #pragma clang diagnostic pop

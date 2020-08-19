@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSArray, NSDictionary, NSNumber, NSString, XCAccessibilityElement, XCActivityRecord, XCElementSnapshot;
+@class NSArray, NSDictionary, NSNumber, NSString, XCAccessibilityElement, XCActivityRecord, XCElementSnapshot, XCTCapabilities;
 
 @protocol XCTestManager_IDEInterface
 
@@ -42,6 +42,10 @@
 - (id)_XCT_initializationForUITestingDidFailWithError:(NSError *)arg1;
 - (id)_XCT_didBeginInitializingForUITesting;
 - (id)_XCT_handleCrashReportData:(NSData *)arg1 fromFileWithName:(NSString *)arg2;
+
+// iOS 14.x specific
+
+- (id)_XCT_testRunnerReadyWithCapabilities:(XCTCapabilities *)arg1;
 
 @optional
 - (id)_XCT_testMethod:(NSString *)arg1 ofClass:(NSString *)arg2 didMeasureValues:(NSArray *)arg3 forPerformanceMetricID:(NSString *)arg4 name:(NSString *)arg5 withUnits:(NSString *)arg6 baselineName:(NSString *)arg7 baselineAverage:(NSNumber *)arg8 maxPercentRegression:(NSNumber *)arg9 maxPercentRelativeStandardDeviation:(NSNumber *)arg10 file:(NSString *)arg11 line:(NSNumber *)arg12;

@@ -45,22 +45,6 @@
   [self.mutableStartedTestCases addObject:@[testClass, method]];
 }
 
-- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration
-{
-  NSArray<NSString *> *pairs = @[testClass, method];
-
-  switch (status) {
-    case FBTestReportStatusPassed:
-      [self.mutablePassedTests addObject:pairs];
-      return;
-    case FBTestReportStatusFailed:
-      [self.mutableFailedTests addObject:pairs];
-      return;
-    default:
-      return;
-  }
-}
-
 - (BOOL)printReportWithError:(NSError **)error
 {
   self.printReportWasCalled = YES;
@@ -132,6 +116,27 @@
 - (void)didCopiedTestArtifact:(nonnull NSString *)testArtifactFilename toPath:(nonnull NSString *)path
 {
 
+}
+
+- (void)appUnderTestExited
+{
+
+}
+
+- (void)testCaseDidFinishForTestClass:(nonnull NSString *)testClass method:(nonnull NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(nullable NSArray<NSString *> *)logs
+{
+  NSArray<NSString *> *pairs = @[testClass, method];
+
+  switch (status) {
+    case FBTestReportStatusPassed:
+      [self.mutablePassedTests addObject:pairs];
+      return;
+    case FBTestReportStatusFailed:
+      [self.mutableFailedTests addObject:pairs];
+      return;
+    default:
+      return;
+  }
 }
 
 #pragma mark Accessors

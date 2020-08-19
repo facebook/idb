@@ -418,6 +418,11 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   return [self handleUnimplementedXCTRequest:_cmd];
 }
 
+- (id)_XCT_testRunnerReadyWithCapabilities:(XCTCapabilities *)arg1
+{
+  return [self handleUnimplementedXCTRequest:_cmd];
+}
+
 - (NSString *)unknownMessageForSelector:(SEL)aSelector
 {
   return [NSString stringWithFormat:@"Received call for unhandled method (%@). Probably you should have a look at _IDETestManagerAPIMediator in IDEFoundation.framework and implement it. Good luck!", NSStringFromSelector(aSelector)];
