@@ -46,6 +46,24 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSDictionary<NSString *, NSDictionary<NSString *, NSObject *> *> *)xctestRunProperties:(FBTestLaunchConfiguration *)testLaunch;
 
 /**
+ Create a xctestrun file from a test launch.
+
+ @param directory the directory where the xctestrun file will be written to.
+ @param configuration  the test launch to base off.
+ @param error an error out for any error that occurs.
+ @return the path of the xctestrun file created.
+ */
++ (nullable NSString *)createXCTestRunFileAt:(NSString *)directory fromConfiguration:(FBTestLaunchConfiguration *)configuration error:(NSError **)error;
+
+/**
+ Get the xcodebuild path.
+
+ @param error an error out for any error that occurs.
+ @return xcodebuild path
+ */
++ (NSString *)xcodeBuildPathWithError:(NSError **)error;
+
+/**
  Terminates all reparented xcodebuild processes.
 
  @param udid the udid of the target.
@@ -55,6 +73,19 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Future that resolves when processes have exited.
  */
 + (FBFuture<NSArray<FBProcessInfo *> *> *)terminateAbandonedXcodebuildProcessesForUDID:(NSString *)udid processFetcher:(FBProcessFetcher *)processFetcher queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+
+/**
+ A helper method for overwriting xcTestRunProperties.
+ Creates a new properties dictionary with values from baseProperties
+ overwritten with values from newProperties. It overwrites values only
+ for existing keys. It assumes that the dictionary has XCTestRun file
+ format and that base has a single test with bundle id StubBundleId.
+
+ @param baseProperties base properties
+ @param newProperties base properties will be overwritten with newProperties
+ @returns a new xcTestRunProperites with
+ */
++ (NSDictionary *)overwriteXCTestRunPropertiesWithBaseProperties:(NSDictionary<NSString *, id> *)baseProperties newProperties:(NSDictionary<NSString *, id> *)newProperties;
 
 @end
 

@@ -100,13 +100,13 @@
 {
   NSError *error = nil;
   // Create the .xctestrun file
-  NSString *filePath = [self createXCTestRunFileFromConfiguration:configuration error:&error];
+  NSString *filePath = [FBXcodeBuildOperation createXCTestRunFileAt:self.workingDirectory fromConfiguration:configuration error:&error];
   if (!filePath) {
     return [FBDeviceControlError failFutureWithError:error];
   }
 
   // Find the path to xcodebuild
-  NSString *xcodeBuildPath = [FBDeviceXCTestCommands xcodeBuildPathWithError:&error];
+  NSString *xcodeBuildPath = [FBXcodeBuildOperation xcodeBuildPathWithError:&error];
   if (!xcodeBuildPath) {
     return [FBDeviceControlError failFutureWithError:error];
   }
@@ -149,52 +149,6 @@
   [logger logFormat:@"Test Operation %@ has started for %@, storing it as the sole operation for this target", task, configuration.shortDescription];
 
   return self.operation;
-}
-
-+ (NSDictionary<NSString *, id> *)overwriteXCTestRunPropertiesWithBaseProperties:(NSDictionary<NSString *, id> *)baseProperties newProperties:(NSDictionary<NSString *, id> *)newProperties
-{
-  NSDictionary<NSString *, id> *defaultTestProperties = [newProperties objectForKey:@"StubBundleId"];
-  NSMutableDictionary<NSString *, id> *mutableTestRunProperties = NSMutableDictionary.dictionary;
-  for (NSString *testId in baseProperties) {
-    NSMutableDictionary<NSString *, id> *mutableTestProperties = [[baseProperties objectForKey:testId] mutableCopy];
-    for (id key in defaultTestProperties) {
-      if ([mutableTestProperties objectForKey:key]) {
-        mutableTestProperties[key] =  [defaultTestProperties objectForKey:key];
-      }
-    }
-    mutableTestRunProperties[testId] = mutableTestProperties;
-  }
-  return [mutableTestRunProperties copy];
-}
-
-- (nullable NSString *)createXCTestRunFileFromConfiguration:(FBTestLaunchConfiguration *)configuration error:(NSError **)error
-{
-  NSString *fileName = [NSProcessInfo.processInfo.globallyUniqueString stringByAppendingPathExtension:@"xctestrun"];
-  NSString *path = [self.workingDirectory stringByAppendingPathComponent:fileName];
-
-  NSDictionary<NSString *, id> *defaultTestRunProperties = [FBXcodeBuildOperation xctestRunProperties:configuration];
-
-  NSDictionary<NSString *, id> *testRunProperties = configuration.xcTestRunProperties
-    ? [FBDeviceXCTestCommands overwriteXCTestRunPropertiesWithBaseProperties:configuration.xcTestRunProperties newProperties:defaultTestRunProperties]
-    : defaultTestRunProperties;
-
-  if (![testRunProperties writeToFile:path atomically:false]) {
-    return [[FBDeviceControlError
-      describeFormat:@"Failed to write to file %@", path]
-      fail:error];
-  }
-  return path;
-}
-
-+ (NSString *)xcodeBuildPathWithError:(NSError **)error
-{
-  NSString *path = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"/usr/bin/xcodebuild"];
-  if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
-    return [[FBDeviceControlError
-      describeFormat:@"xcodebuild does not exist at expected path %@", path]
-      fail:error];
-  }
-  return path;
 }
 
 @end

@@ -78,7 +78,7 @@
         }
     };
 
-  NSDictionary<NSString *, id> *realProperties = [FBDeviceXCTestCommands
+  NSDictionary<NSString *, id> *realProperties = [FBXcodeBuildOperation
                                                   overwriteXCTestRunPropertiesWithBaseProperties:baseProperties
                                                   newProperties:newProperties];
 

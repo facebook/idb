@@ -6,6 +6,7 @@
  */
 
 #import "FBXcodeBuildOperation.h"
+#import "XCTestBootstrapError.h"
 
 #import <FBControlCore/FBControlCore.h>
 
@@ -79,6 +80,25 @@ static NSString *XcodebuildDestinationTimeoutSecs = @"180"; // How long xcodebui
   };
 }
 
++ (nullable NSString *)createXCTestRunFileAt:(NSString *)directory fromConfiguration:(FBTestLaunchConfiguration *)configuration error:(NSError **)error
+{
+  NSString *fileName = [NSProcessInfo.processInfo.globallyUniqueString stringByAppendingPathExtension:@"xctestrun"];
+  NSString *path = [directory stringByAppendingPathComponent:fileName];
+
+  NSDictionary<NSString *, id> *defaultTestRunProperties = [FBXcodeBuildOperation xctestRunProperties:configuration];
+
+  NSDictionary<NSString *, id> *testRunProperties = configuration.xcTestRunProperties
+  ? [self overwriteXCTestRunPropertiesWithBaseProperties:configuration.xcTestRunProperties newProperties:defaultTestRunProperties]
+    : defaultTestRunProperties;
+
+  if (![testRunProperties writeToFile:path atomically:false]) {
+    return [[XCTestBootstrapError
+      describeFormat:@"Failed to write to file %@", path]
+      fail:error];
+  }
+  return path;
+}
+
 + (FBFuture<NSArray<FBProcessInfo *> *> *)terminateAbandonedXcodebuildProcessesForUDID:(NSString *)udid processFetcher:(FBProcessFetcher *)processFetcher queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   NSArray<FBProcessInfo *> *processes = [self activeXcodebuildProcessesForUDID:udid processFetcher:processFetcher];
@@ -94,6 +114,33 @@ static NSString *XcodebuildDestinationTimeoutSecs = @"180"; // How long xcodebui
     [futures addObject:termination];
   }
   return [FBFuture futureWithFutures:futures];
+}
+
++ (NSString *)xcodeBuildPathWithError:(NSError **)error
+{
+  NSString *path = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"/usr/bin/xcodebuild"];
+  if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
+    return [[XCTestBootstrapError
+      describeFormat:@"xcodebuild does not exist at expected path %@", path]
+      fail:error];
+  }
+  return path;
+}
+
++ (NSDictionary<NSString *, id> *)overwriteXCTestRunPropertiesWithBaseProperties:(NSDictionary<NSString *, id> *)baseProperties newProperties:(NSDictionary<NSString *, id> *)newProperties
+{
+  NSDictionary<NSString *, id> *defaultTestProperties = [newProperties objectForKey:@"StubBundleId"];
+  NSMutableDictionary<NSString *, id> *mutableTestRunProperties = NSMutableDictionary.dictionary;
+  for (NSString *testId in baseProperties) {
+    NSMutableDictionary<NSString *, id> *mutableTestProperties = [[baseProperties objectForKey:testId] mutableCopy];
+    for (id key in defaultTestProperties) {
+      if ([mutableTestProperties objectForKey:key]) {
+        mutableTestProperties[key] =  [defaultTestProperties objectForKey:key];
+      }
+    }
+    mutableTestRunProperties[testId] = mutableTestProperties;
+  }
+  return [mutableTestRunProperties copy];
 }
 
 #pragma mark Private
