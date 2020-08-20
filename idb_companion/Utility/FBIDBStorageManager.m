@@ -444,7 +444,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   }
   NSString *testHostPath = [testTargetProperties objectForKey:@"TestHostPath"];
   NSString *testRoot = [[xctestrunURL path] stringByDeletingLastPathComponent];
-  testHostPath = [testRoot stringByAppendingPathComponent:[testHostPath lastPathComponent]];
+  testHostPath = [testHostPath stringByReplacingOccurrencesOfString:@"__TESTROOT__" withString:testRoot];
 
   // Get test bundle path and replace __TESTROOT__ and __TESTHOST__ in it
   NSString *testBundlePath = [testTargetProperties objectForKey:@"TestBundlePath"];

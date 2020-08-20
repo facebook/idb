@@ -42,7 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage;
 
 /**
-The Initializer for Logic Tests.
+The Initializer for App Tests.
 
  @param testBundleID the bundle id of the test to run.
  @param appBundleID the bundle id of the application to inject the test bundle into.
@@ -58,7 +58,7 @@ The Initializer for Logic Tests.
 + (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage;
 
 /**
-The Initializer for Logic Tests.
+The Initializer for UI Tests.
 
  @param testBundleID the bundle id of the test to run.
  @param appBundleID the bundle id of the application to automatie.

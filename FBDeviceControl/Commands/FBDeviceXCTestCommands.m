@@ -711,10 +711,10 @@ static inline NSDate *dateFromString(NSString *date)
 
 + (NSDictionary<NSString *, id> *)overwriteXCTestRunPropertiesWithBaseProperties:(NSDictionary<NSString *, id> *)baseProperties newProperties:(NSDictionary<NSString *, id> *)newProperties
 {
-  NSMutableDictionary<NSString *, id> *mutableTestRunProperties = [baseProperties mutableCopy];
-  for (NSString *testId in mutableTestRunProperties) {
-    NSMutableDictionary<NSString *, id> *mutableTestProperties = [[mutableTestRunProperties objectForKey:testId] mutableCopy];
-    NSDictionary<NSString *, id> *defaultTestProperties = [newProperties objectForKey:@"StubBundleId"];
+  NSDictionary<NSString *, id> *defaultTestProperties = [newProperties objectForKey:@"StubBundleId"];
+  NSMutableDictionary<NSString *, id> *mutableTestRunProperties = NSMutableDictionary.dictionary;
+  for (NSString *testId in baseProperties) {
+    NSMutableDictionary<NSString *, id> *mutableTestProperties = [[baseProperties objectForKey:testId] mutableCopy];
     for (id key in defaultTestProperties) {
       if ([mutableTestProperties objectForKey:key]) {
         mutableTestProperties[key] =  [defaultTestProperties objectForKey:key];
