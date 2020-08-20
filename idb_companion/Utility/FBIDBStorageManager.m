@@ -377,61 +377,96 @@ static NSString *const XctestRunExtension = @"xctestrun";
   return [[FBIDBError describeFormat:@"Couldn't find test with url: %@", url] fail:error];
 }
 
-- (NSArray<id<FBXCTestDescriptor>> *)getXCTestRunDescriptorsFromURL:(NSURL *)xcTestRunURL
+- (NSArray<id<FBXCTestDescriptor>> *)getXCTestRunDescriptorsFromURL:(NSURL *)xctestrunURL
+{
+  NSDictionary *contentDict = [NSDictionary dictionaryWithContentsOfURL:xctestrunURL];
+  NSDictionary *xctestrunMetadata = contentDict[@"__xctestrun_metadata__"];
+  // The legacy format of xctestrun file does not contain __xctestrun_metadata__
+  if (xctestrunMetadata) {
+    [self.logger.info logFormat:@"Using xctestrun format version: %@", xctestrunMetadata[@"FormatVersion"]];
+    return [self getDescriptorsFrom:contentDict with:xctestrunURL];
+  } else {
+    [self.logger.info log:@"Using the legacy xctestrun file format"];
+    return [self legacyGetDescriptorsFrom:contentDict with:xctestrunURL];
+  }
+}
+
+// xctestrun for Xcode 11+
+- (NSArray<id<FBXCTestDescriptor>> *)getDescriptorsFrom:(NSDictionary<NSString *, NSDictionary *> *)xctestrunContents with:(NSURL *)xctestrunURL
 {
   NSMutableArray<id<FBXCTestDescriptor>> *descriptors = [[NSMutableArray alloc] init];
+  for (NSString *field in xctestrunContents) {
+    [self.logger.info logFormat:@"Checking the %@ field to extract test descriptors", field];
+    if ([field isEqualToString:@"__xctestrun_metadata__"] || [field isEqualToString:@"CodeCoverageBuildableInfos"]) {
+      continue;
+    }
+    id<FBXCTestDescriptor> descriptor = [self getDescriptorFor:field from:xctestrunContents with:xctestrunURL];
+    if (descriptor != nil) {
+      [descriptors addObject:descriptor];
+    }
+  }
+  return descriptors;
+}
+
+// xctestrun before Xcode 11
+- (NSArray<id<FBXCTestDescriptor>> *)legacyGetDescriptorsFrom:(NSDictionary<NSString *, NSDictionary *> *)xctestrunContents with:(NSURL *)xctestrunURL
+{
+  NSMutableArray<id<FBXCTestDescriptor>> *descriptors = [[NSMutableArray alloc] init];
+  for (NSString *testTarget in xctestrunContents) {
+    id<FBXCTestDescriptor> descriptor = [self getDescriptorFor:testTarget from:xctestrunContents with:xctestrunURL];
+    if (descriptor != nil) {
+      [descriptors addObject:descriptor];
+    }
+  }
+  return descriptors;
+}
+
+- (nullable id<FBXCTestDescriptor>)getDescriptorFor:(NSString *)testTarget from:(NSDictionary<NSString *, NSDictionary *> *)xctestrunContents with:(NSURL *)xctestrunURL
+{
   NSError *error;
 
-  NSDictionary *contentDict = [NSDictionary dictionaryWithContentsOfURL:xcTestRunURL];
-  for (NSString *testName in contentDict) {
-    NSDictionary *testDict = [contentDict objectForKey:testName];
-    NSNumber *useArtifacts = testDict[@"UseDestinationArtifacts"];
-    if ([useArtifacts isKindOfClass:[NSNumber class]] && [useArtifacts boolValue]) {
-      NSString *hostIdentifier = testDict[@"TestHostBundleIdentifier"];
-      NSString *testIdentifier = testDict[@"FB_TestBundleIdentifier"];
-      if (!hostIdentifier) {
-        [self.logger.error log:@"Using UseDestinationArtifacts requires TestHostBundleIdentifier"];
-        continue;
-      }
-      if (!testIdentifier) {
-        [self.logger.error log:@"Using UseDestinationArtifacts requires FB_TestBundleIdentifier"];
-        continue;
-      }
-      FBBundleDescriptor *testBundle = [[FBBundleDescriptor alloc] initWithName:testIdentifier identifier:testIdentifier path:@"" binary:nil];
-      FBBundleDescriptor *hostBundle = [[FBBundleDescriptor alloc] initWithName:hostIdentifier identifier:hostIdentifier path:@"" binary:nil];
-      id<FBXCTestDescriptor> descriptor = [[FBXCodebuildTestRunDescriptor alloc] initWithURL:xcTestRunURL name:testName testBundle:testBundle testHostBundle:hostBundle];
-      [descriptors addObject:descriptor];
-      continue;
+  NSDictionary *testTargetProperties = [xctestrunContents objectForKey:testTarget];
+  NSNumber *useArtifacts = testTargetProperties[@"UseDestinationArtifacts"];
+  if ([useArtifacts isKindOfClass:[NSNumber class]] && [useArtifacts boolValue]) {
+    NSString *hostIdentifier = testTargetProperties[@"TestHostBundleIdentifier"];
+    NSString *testIdentifier = testTargetProperties[@"FB_TestBundleIdentifier"];
+    if (!hostIdentifier) {
+      [self.logger.error log:@"Using UseDestinationArtifacts requires TestHostBundleIdentifier"];
+      return nil;
     }
-    NSString *testHostPath = [testDict objectForKey:@"TestHostPath"];
-    NSString *testRoot = [[xcTestRunURL path] stringByDeletingLastPathComponent];
-    testHostPath = [testRoot stringByAppendingPathComponent:[testHostPath lastPathComponent]];
-
-    // Get test bundle path and replace __TESTROOT__ and __TESTHOST__ in it
-    NSString *testBundlePath = [testDict objectForKey:@"TestBundlePath"];
-    testBundlePath = [testBundlePath
-      stringByReplacingOccurrencesOfString:@"__TESTROOT__"
-      withString:testRoot];
-    testBundlePath = [testBundlePath
-      stringByReplacingOccurrencesOfString:@"__TESTHOST__"
-      withString:testHostPath];
-
-    // Get the bundles for test host and test app
-    FBBundleDescriptor *testHostBundle = [FBBundleDescriptor bundleFromPath:testHostPath error:&error];
-    if (!testHostBundle) {
-      [self.logger.error log:error.description];
-      continue;
+    if (!testIdentifier) {
+      [self.logger.error log:@"Using UseDestinationArtifacts requires FB_TestBundleIdentifier"];
+      return nil;
     }
-    FBBundleDescriptor *testBundle = [FBBundleDescriptor bundleFromPath:testBundlePath error:&error];
-    if (!testBundle) {
-      [self.logger.error log:error.description];
-      continue;
-    }
-    id<FBXCTestDescriptor> descriptor = [[FBXCodebuildTestRunDescriptor alloc] initWithURL:xcTestRunURL name:testName testBundle:testBundle testHostBundle:testHostBundle];
-    [descriptors addObject:descriptor];
+    FBBundleDescriptor *testBundle = [[FBBundleDescriptor alloc] initWithName:testIdentifier identifier:testIdentifier path:@"" binary:nil];
+    FBBundleDescriptor *hostBundle = [[FBBundleDescriptor alloc] initWithName:hostIdentifier identifier:hostIdentifier path:@"" binary:nil];
+    return [[FBXCodebuildTestRunDescriptor alloc] initWithURL:xctestrunURL name:testTarget testBundle:testBundle testHostBundle:hostBundle];
   }
+  NSString *testHostPath = [testTargetProperties objectForKey:@"TestHostPath"];
+  NSString *testRoot = [[xctestrunURL path] stringByDeletingLastPathComponent];
+  testHostPath = [testRoot stringByAppendingPathComponent:[testHostPath lastPathComponent]];
 
-  return descriptors;
+  // Get test bundle path and replace __TESTROOT__ and __TESTHOST__ in it
+  NSString *testBundlePath = [testTargetProperties objectForKey:@"TestBundlePath"];
+  testBundlePath = [testBundlePath
+    stringByReplacingOccurrencesOfString:@"__TESTROOT__"
+    withString:testRoot];
+  testBundlePath = [testBundlePath
+    stringByReplacingOccurrencesOfString:@"__TESTHOST__"
+    withString:testHostPath];
+
+  // Get the bundles for test host and test app
+  FBBundleDescriptor *testHostBundle = [FBBundleDescriptor bundleFromPath:testHostPath error:&error];
+  if (!testHostBundle) {
+    [self.logger.error log:error.description];
+    return nil;
+  }
+  FBBundleDescriptor *testBundle = [FBBundleDescriptor bundleFromPath:testBundlePath error:&error];
+  if (!testBundle) {
+    [self.logger.error log:error.description];
+    return nil;
+  }
+  return [[FBXCodebuildTestRunDescriptor alloc] initWithURL:xctestrunURL name:testTarget testBundle:testBundle testHostBundle:testHostBundle];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)saveTestBundle:(NSURL *)testBundleURL
