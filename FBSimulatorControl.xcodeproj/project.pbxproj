@@ -17,6 +17,8 @@
 		05E1E34E1E3DBA87004F67B8 /* FBTestManagerJUnitGenerator.h in Headers */ = {isa = PBXBuildFile; fileRef = 05E1E34C1E3DBA87004F67B8 /* FBTestManagerJUnitGenerator.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		05E1E34F1E3DBA87004F67B8 /* FBTestManagerJUnitGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = 05E1E34D1E3DBA87004F67B8 /* FBTestManagerJUnitGenerator.m */; };
 		05F1823F1D59B48600DBD35C /* junitResult1.xml in Resources */ = {isa = PBXBuildFile; fileRef = 05F1823E1D59B48600DBD35C /* junitResult1.xml */; };
+		1C5091E824EDB8F600FAB67E /* FBXCTestResultBundleParser.h in Headers */ = {isa = PBXBuildFile; fileRef = 1C5091E624EDB8F600FAB67E /* FBXCTestResultBundleParser.h */; };
+		1C5091E924EDB8F600FAB67E /* FBXCTestResultBundleParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C5091E724EDB8F600FAB67E /* FBXCTestResultBundleParser.m */; };
 		1F6F440E239B6A55001C7F72 /* FBXCTestResultToolOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 1F6F440C239B6A55001C7F72 /* FBXCTestResultToolOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		1F6F440F239B6A55001C7F72 /* FBXCTestResultToolOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F6F440D239B6A55001C7F72 /* FBXCTestResultToolOperation.m */; };
 		1F7596B31DFF6B40006B9053 /* libShimulator.dylib in Resources */ = {isa = PBXBuildFile; fileRef = AA017F4C1BD7784700F45E9D /* libShimulator.dylib */; };
@@ -801,6 +803,8 @@
 		05E1E34C1E3DBA87004F67B8 /* FBTestManagerJUnitGenerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerJUnitGenerator.h; sourceTree = "<group>"; };
 		05E1E34D1E3DBA87004F67B8 /* FBTestManagerJUnitGenerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerJUnitGenerator.m; sourceTree = "<group>"; };
 		05F1823E1D59B48600DBD35C /* junitResult1.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = junitResult1.xml; sourceTree = "<group>"; };
+		1C5091E624EDB8F600FAB67E /* FBXCTestResultBundleParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestResultBundleParser.h; sourceTree = "<group>"; };
+		1C5091E724EDB8F600FAB67E /* FBXCTestResultBundleParser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestResultBundleParser.m; sourceTree = "<group>"; };
 		1DD70E291A4B50E500000000 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		1DD70E291A4B50E500000001 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		1DD70E291AC72D1E00000000 /* DVTiPhoneSimulatorRemoteClient.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; name = DVTiPhoneSimulatorRemoteClient.framework; path = ../SharedFrameworks/DVTiPhoneSimulatorRemoteClient.framework; sourceTree = DEVELOPER_DIR; };
@@ -2916,6 +2920,8 @@
 		EE4F0D691C91B82700608E89 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
+				1C5091E624EDB8F600FAB67E /* FBXCTestResultBundleParser.h */,
+				1C5091E724EDB8F600FAB67E /* FBXCTestResultBundleParser.m */,
 				1F6F440C239B6A55001C7F72 /* FBXCTestResultToolOperation.h */,
 				1F6F440D239B6A55001C7F72 /* FBXCTestResultToolOperation.m */,
 				AABD06B11EE7B84F00135D27 /* FBXcodeBuildOperation.h */,
@@ -3373,6 +3379,7 @@
 				EE2586FD1FB072F700E7526E /* FBMacTestPreparationStrategy.h in Headers */,
 				AA6062EE1EE4A96D00E2EFEE /* FBMacXCTestProcessExecutor.h in Headers */,
 				AA6062EA1EE4A6B100E2EFEE /* FBXCTestProcess.h in Headers */,
+				1C5091E824EDB8F600FAB67E /* FBXCTestResultBundleParser.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4006,6 +4013,7 @@
 				AA9738BB1EE11BED002802F1 /* FBXCTestConfiguration.m in Sources */,
 				AA12D5451CE1086300CCD944 /* FBTestReporterForwarder.m in Sources */,
 				EE2586FE1FB072F700E7526E /* FBMacTestPreparationStrategy.m in Sources */,
+				1C5091E924EDB8F600FAB67E /* FBXCTestResultBundleParser.m in Sources */,
 				AAE5A0821EDF8C9C00A1A811 /* FBXCTestLogger.m in Sources */,
 				AA6062F31EE4B59900E2EFEE /* FBLogicTestRunStrategy.m in Sources */,
 				D7E70C132440A2B40092422C /* FBAttachment.m in Sources */,
