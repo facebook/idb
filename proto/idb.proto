@@ -610,7 +610,19 @@ message XctestRunResponse {
   string coverage_json = 5;
 }
 
-// Files
+// File
+
+message FileContainer {
+  enum Kind {
+    NONE = 0;
+    APPLICATION = 1;
+    ROOT = 2;
+    MEDIA = 3;
+    CRASHES = 4;
+  }
+  Kind kind = 1;
+  string bundle_id = 2;
+}
 
 message LsResponse {
   repeated FileInfo files = 1;
@@ -619,12 +631,14 @@ message LsResponse {
 message LsRequest {
   string bundle_id = 1;
   string path = 2;
+  FileContainer container = 3;
 }
 
 
 message MkdirRequest {
   string bundle_id = 1;
   string path = 2;
+  FileContainer container = 3;
 }
 
 message MkdirResponse {
@@ -634,6 +648,7 @@ message MvRequest {
   string bundle_id = 1;
   repeated string src_paths = 2;
   string dst_path = 3;
+  FileContainer container = 4;
 }
 
 message MvResponse {
@@ -642,6 +657,7 @@ message MvResponse {
 message RmRequest {
   string bundle_id = 1;
   repeated string paths = 2;
+  FileContainer container = 3;
 }
 
 message RmResponse {
@@ -651,6 +667,7 @@ message PushRequest {
   message Inner {
     string bundle_id = 1;
     string dst_path = 2;
+    FileContainer container = 3;
   }
   oneof value {
     Payload payload = 1;
@@ -665,6 +682,7 @@ message PullRequest {
   string bundle_id = 1;
   string src_path = 2;
   string dst_path = 3;
+  FileContainer container = 4;
 }
 
 message PullResponse {

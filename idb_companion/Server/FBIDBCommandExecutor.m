@@ -17,6 +17,10 @@
 #import "FBStorageUtils.h"
 #import "FBTemporaryDirectory.h"
 
+FBFileContainerKind const FBFileContainerKindCrashes = @"crashes";
+FBFileContainerKind const FBFileContainerKindMedia = @"media";
+FBFileContainerKind const FBFileContainerKindRoot = @"root";
+
 @interface FBIDBCommandExecutor ()
 
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
@@ -131,15 +135,6 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)create_directory:(NSString *)directoryPath in_container_of_application:(NSString *)bundleID
-{
-  return [[self
-    applicationDataContainerCommands:bundleID]
-    onQueue:self.target.workQueue pop:^(id<FBFileContainer> targetApplicationData) {
-      return [targetApplicationData createDirectory:directoryPath];
-    }];
-}
-
 - (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibility_info_at_point:(nullable NSValue *)value nestedFormat:(BOOL)nestedFormat
 {
   return [[self
@@ -158,95 +153,6 @@
   return [self.mediaCommands
     onQueue:self.target.asyncQueue fmap:^FBFuture *(id<FBSimulatorMediaCommands> commands) {
       return [commands addMedia:filePaths];
-    }];
-}
-
-- (FBFuture<NSNull *> *)move_paths:(NSArray<NSString *> *)originPaths to_path:(NSString *)destinationPath in_container_of_application:(NSString *)bundleID
-{
-  return [[self
-    applicationDataContainerCommands:bundleID]
-    onQueue:self.target.workQueue pop:^(id<FBFileContainer> commands) {
-      return [commands movePaths:originPaths toDestinationPath:destinationPath];
-    }];
-}
-
-- (FBFuture<NSNull *> *)push_file_from_tar:(NSData *)tarData to_path:(NSString *)destinationPath in_container_of_application:(NSString *)bundleID
-{
-  return [[self.temporaryDirectory
-    withArchiveExtracted:tarData]
-    onQueue:self.target.workQueue pop:^FBFuture *(NSURL *extractionDirectory) {
-      NSError *error;
-      NSArray<NSURL *> *paths = [NSFileManager.defaultManager contentsOfDirectoryAtURL:extractionDirectory includingPropertiesForKeys:@[NSURLIsDirectoryKey] options:0 error:&error];
-      if (!paths) {
-        return [FBFuture futureWithError:error];
-      }
-      return [self push_files:paths to_path:destinationPath in_container_of_application:bundleID];
-   }];
-}
-
-- (FBFuture<NSNull *> *)push_files:(NSArray<NSURL *> *)paths to_path:(NSString *)destinationPath in_container_of_application:(NSString *)bundleID
-{
-  return [FBFuture
-    onQueue:self.target.asyncQueue resolve:^FBFuture<NSNull *> *{
-      return [[self
-        applicationDataContainerCommands:bundleID]
-        onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> targetApplicationsData) {
-          return [targetApplicationsData copyPathsOnHost:paths toDestination:destinationPath];
-        }];
-  }];
-}
-
-- (FBFuture<NSString *> *)pull_file_path:(NSString *)path destination_path:(NSString *)destinationPath in_container_of_application:(NSString *)bundleID
-{
-  return [[self
-    applicationDataContainerCommands:bundleID]
-    onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> commands) {
-      return [commands copyItemInContainer:path toDestinationOnHost:destinationPath];
-    }];
-}
-
-- (FBFuture<NSData *> *)pull_file:(NSString *)path in_container_of_application:(NSString *)bundleID
-{
-  __block NSString *tempPath;
-
-  return [[[self.temporaryDirectory
-    withTemporaryDirectory]
-    onQueue:self.target.workQueue pend:^(NSURL *url) {
-      tempPath = [url.path stringByAppendingPathComponent:path.lastPathComponent];
-      return [[self
-        applicationDataContainerCommands:bundleID]
-        onQueue:self.target.workQueue pop:^(id<FBFileContainer> container) {
-          return [container copyItemInContainer:path toDestinationOnHost:tempPath];
-        }];
-    }]
-    onQueue:self.target.workQueue pop:^(id _) {
-      return [FBArchiveOperations createGzippedTarDataForPath:tempPath queue:self.target.workQueue logger:self.target.logger];
-    }];
-}
-
-- (FBFuture<NSNull *> *)hid:(FBSimulatorHIDEvent *)event
-{
-  return [self.connectToHID
-    onQueue:self.target.workQueue fmap:^FBFuture *(FBSimulatorHID *hid) {
-      return [event performOnHID:hid];
-    }];
-}
-
-- (FBFuture<NSNull *> *)remove_paths:(NSArray<NSString *> *)paths in_container_of_application:(NSString *)bundleID
-{
-  return [[self
-    applicationDataContainerCommands:bundleID]
-    onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> commands) {
-      return [commands removePaths:paths];
-    }];
-}
-
-- (FBFuture<NSArray<NSString *> *> *)list_path:(NSString *)path in_container_of_application:(NSString *)bundleID
-{
-  return [[self
-    applicationDataContainerCommands:bundleID]
-    onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> commands) {
-      return [commands contentsOfDirectory:path];
     }];
 }
 
@@ -472,20 +378,130 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [commands fetchDiagnosticInformation];
 }
 
+- (FBFuture<NSNull *> *)hid:(FBSimulatorHIDEvent *)event
+{
+  return [self.connectToHID
+    onQueue:self.target.workQueue fmap:^FBFuture *(FBSimulatorHID *hid) {
+      return [event performOnHID:hid];
+    }];
+}
+
+#pragma mark File Commands
+
+- (FBFuture<NSNull *> *)move_paths:(NSArray<NSString *> *)originPaths to_path:(NSString *)destinationPath containerType:(NSString *)containerType
+{
+  return [[self
+    applicationDataContainerCommands:containerType]
+    onQueue:self.target.workQueue pop:^(id<FBFileContainer> commands) {
+      return [commands movePaths:originPaths toDestinationPath:destinationPath];
+    }];
+}
+
+- (FBFuture<NSNull *> *)push_file_from_tar:(NSData *)tarData to_path:(NSString *)destinationPath containerType:(NSString *)containerType
+{
+  return [[self.temporaryDirectory
+    withArchiveExtracted:tarData]
+    onQueue:self.target.workQueue pop:^FBFuture *(NSURL *extractionDirectory) {
+      NSError *error;
+      NSArray<NSURL *> *paths = [NSFileManager.defaultManager contentsOfDirectoryAtURL:extractionDirectory includingPropertiesForKeys:@[NSURLIsDirectoryKey] options:0 error:&error];
+      if (!paths) {
+        return [FBFuture futureWithError:error];
+      }
+      return [self push_files:paths to_path:destinationPath containerType:containerType];
+   }];
+}
+
+- (FBFuture<NSNull *> *)push_files:(NSArray<NSURL *> *)paths to_path:(NSString *)destinationPath containerType:(NSString *)containerType
+{
+  return [FBFuture
+    onQueue:self.target.asyncQueue resolve:^FBFuture<NSNull *> *{
+      return [[self
+        applicationDataContainerCommands:containerType]
+        onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> targetApplicationsData) {
+          return [targetApplicationsData copyPathsOnHost:paths toDestination:destinationPath];
+        }];
+  }];
+}
+
+- (FBFuture<NSString *> *)pull_file_path:(NSString *)path destination_path:(NSString *)destinationPath containerType:(NSString *)containerType
+{
+  return [[self
+    applicationDataContainerCommands:containerType]
+    onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> commands) {
+      return [commands copyItemInContainer:path toDestinationOnHost:destinationPath];
+    }];
+}
+
+- (FBFuture<NSData *> *)pull_file:(NSString *)path containerType:(NSString *)containerType
+{
+  __block NSString *tempPath;
+
+  return [[[self.temporaryDirectory
+    withTemporaryDirectory]
+    onQueue:self.target.workQueue pend:^(NSURL *url) {
+      tempPath = [url.path stringByAppendingPathComponent:path.lastPathComponent];
+      return [[self
+        applicationDataContainerCommands:containerType]
+        onQueue:self.target.workQueue pop:^(id<FBFileContainer> container) {
+          return [container copyItemInContainer:path toDestinationOnHost:tempPath];
+        }];
+    }]
+    onQueue:self.target.workQueue pop:^(id _) {
+      return [FBArchiveOperations createGzippedTarDataForPath:tempPath queue:self.target.workQueue logger:self.target.logger];
+    }];
+}
+
+- (FBFuture<NSNull *> *)create_directory:(NSString *)directoryPath containerType:(NSString *)containerType
+{
+  return [[self
+    applicationDataContainerCommands:containerType]
+    onQueue:self.target.workQueue pop:^(id<FBFileContainer> targetApplicationData) {
+      return [targetApplicationData createDirectory:directoryPath];
+    }];
+}
+
+- (FBFuture<NSNull *> *)remove_paths:(NSArray<NSString *> *)paths containerType:(NSString *)containerType
+{
+  return [[self
+    applicationDataContainerCommands:containerType]
+    onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> container) {
+      return [container removePaths:paths];
+    }];
+}
+
+- (FBFuture<NSArray<NSString *> *> *)list_path:(NSString *)path containerType:(NSString *)containerType
+{
+  return [[self
+    applicationDataContainerCommands:containerType]
+    onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> container) {
+      return [container contentsOfDirectory:path];
+    }];
+}
+
 #pragma mark Private Methods
 
-- (FBFutureContext<id<FBFileContainer>> *)applicationDataContainerCommands:(NSString *)bundleID
+- (FBFutureContext<id<FBFileContainer>> *)applicationDataContainerCommands:(NSString *)containerType
 {
+  if ([containerType isEqualToString:FBFileContainerKindCrashes]) {
+    return [self.target crashLogFiles];
+  }
   id<FBFileCommands> commands = (id<FBFileCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBFileCommands)]) {
     return [[FBControlCoreError
-      describeFormat:@"Target doesn't conform to FBApplicationDataCommands protocol %@", commands]
+      describeFormat:@"Target doesn't conform to FBFileCommands protocol %@", commands]
       failFutureContext];
   }
-  if (bundleID == nil || bundleID.length == 0) {
+  if ([containerType isEqualToString:FBFileContainerKindMedia]) {
+    return [commands fileCommandsForMediaDirectory];
+  }
+  if ([containerType isEqualToString:FBFileContainerKindRoot]) {
+    return [commands fileCommandsForRootFilesystem];
+  }
+  if (containerType == nil || containerType.length == 0) {
+    // The Default for no, or null container for back-compat.
     return [self.target isKindOfClass:FBDevice.class] ? [commands fileCommandsForMediaDirectory] : [commands fileCommandsForRootFilesystem];
   }
-  return [commands fileCommandsForContainerApplication:bundleID];
+  return [commands fileCommandsForContainerApplication:containerType];
 }
 
 

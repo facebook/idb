@@ -23,6 +23,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBXCTestReporter;
 
+typedef NSString *FBFileContainerKind NS_STRING_ENUM;
+
+extern FBFileContainerKind const FBFileContainerKindCrashes;
+extern FBFileContainerKind const FBFileContainerKindMedia;
+extern FBFileContainerKind const FBFileContainerKindRoot;
+
 @interface FBIDBCommandExecutor : NSObject
 
 #pragma mark Initializers
@@ -155,15 +161,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSData *> *)take_screenshot:(FBScreenshotFormat)format;
 
 /**
- Creates a directory
-
- @param directoryPath the path of the directory.
- @param bundleID the bundle id of the app.
- @return A Future that resolves when the directory is created.
- */
-- (FBFuture<NSNull *> *)create_directory:(NSString *)directoryPath in_container_of_application:(NSString *)bundleID;
-
-/**
  Returns the accessibility info of a point on the screen
 
  @param point location on the screen (NSValue<NSPoint> *), returns info for the whole screen if nil
@@ -179,73 +176,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return A Future that resolves when complete
  */
 - (FBFuture<NSNull *> *)add_media:(NSArray<NSURL *> *)filePaths;
-
-/**
- Move data within the container to a different path
-
- @param originPaths relative paths to the container where data resides
- @param destinationPath relative path where the data will be moved to
- @param bundleID the Bundle Identifier of the Container.
- @return A future that resolves when successful.
- */
-- (FBFuture<NSNull *> *)move_paths:(NSArray<NSString *> *)originPaths to_path:(NSString *)destinationPath in_container_of_application:(nullable NSString *)bundleID;
-
-/**
- Push files to an applications container from a tar
-
- @param tarData file content
- @param destinationPath relative path to the container where the file will reside
- @param bundleID the Bundle Identifier of the Container.
- @return A future that resolves when successful.
- */
-- (FBFuture<NSNull *> *)push_file_from_tar:(NSData *)tarData to_path:(NSString *)destinationPath in_container_of_application:(nullable NSString *)bundleID;
-
-/**
- Push files to an applications container
-
- @param paths Paths of the files to push
- @param destinationPath relative path to the container where the file will reside
- @param bundleID the Bundle Identifier of the Container.
- @return A future that resolves when successful.
- */
-- (FBFuture<NSNull *> *)push_files:(NSArray<NSURL *> *)paths to_path:(NSString *)destinationPath in_container_of_application:(nullable NSString *)bundleID;
-
-/**
- Pull a file from an applications container
-
- @param path relative path to the container where file resides
- @param destinationPath path to write the file to.
- @param bundleID the Bundle Identifier of the Container.
- @return A future that resolves the path the file is copied to.
- */
-- (FBFuture<NSString *> *)pull_file_path:(NSString *)path destination_path:(nullable NSString *)destinationPath in_container_of_application:(nullable NSString *)bundleID;
-
-/**
- Pull a file from an applications container
-
- @param path relative path to the container where file resides
- @param bundleID the Bundle Identifier of the Container.
- @return A future that resolves the content of that file.
- */
-- (FBFuture<NSData *> *)pull_file:(NSString *)path in_container_of_application:(nullable NSString *)bundleID;
-
-/**
- Remove path within the container
-
- @param paths relative paths to the container where data resides
- @param bundleID the Bundle Identifier of the Container.
- @return A future that resolves when successful.
- */
-- (FBFuture<NSNull *> *)remove_paths:(NSArray<NSString *> *)paths in_container_of_application:(nullable NSString *)bundleID;
-
-/**
- Lists path within the container
-
- @param path relative path to the container where data resides
- @param bundleID the Bundle Identifier of the Container.
- @return A future that resolves with the list of files.
- */
-- (FBFuture<NSArray<NSString *> *> *)list_path:(NSString *)path in_container_of_application:(nullable NSString *)bundleID;
 
 /**
  Perform a hid event on the target
@@ -421,6 +351,84 @@ This allows to avoid the permission popup the first time we open a deeplink
  Fetches diagnostic information
  */
 - (FBFuture<NSDictionary<NSString *, id> *> *)diagnostic_information;
+
+#pragma mark File Operations
+
+/**
+ Move data within the container to a different path
+
+ @param originPaths relative paths to the container where data resides
+ @param destinationPath relative path where the data will be moved to
+ @param containerType the container.
+ @return A future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)move_paths:(NSArray<NSString *> *)originPaths to_path:(NSString *)destinationPath containerType:(nullable NSString *)containerType;
+
+/**
+ Push files to an applications container from a tar
+
+ @param tarData file content
+ @param destinationPath relative path to the container where the file will reside
+ @param containerType the container.
+ @return A future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)push_file_from_tar:(NSData *)tarData to_path:(NSString *)destinationPath containerType:(nullable NSString *)containerType;
+
+/**
+ Push files to an applications container
+
+ @param paths Paths of the files to push
+ @param destinationPath relative path to the container where the file will reside
+ @param containerType the container.
+ @return A future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)push_files:(NSArray<NSURL *> *)paths to_path:(NSString *)destinationPath containerType:(nullable NSString *)containerType;
+
+/**
+ Pull a file from an applications container
+
+ @param path relative path to the container where file resides
+ @param destinationPath path to write the file to.
+ @param containerType the container.
+ @return A future that resolves the path the file is copied to.
+ */
+- (FBFuture<NSString *> *)pull_file_path:(NSString *)path destination_path:(nullable NSString *)destinationPath containerType:(nullable NSString *)containerType;
+
+/**
+ Pull a file from an applications container
+
+ @param path relative path to the container where file resides
+ @param containerType the container.
+ @return A future that resolves the content of that file.
+ */
+- (FBFuture<NSData *> *)pull_file:(NSString *)path containerType:(nullable NSString *)containerType;
+
+/**
+ Remove path within the container
+
+ @param paths relative paths to the container where data resides
+ @param containerType the container.
+ @return A future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)remove_paths:(NSArray<NSString *> *)paths containerType:(nullable NSString *)containerType;
+
+/**
+ Lists path within the container
+
+ @param path relative path to the container where data resides
+ @param containerType the Bundle Identifier of the Container.
+ @return A future that resolves with the list of files.
+ */
+- (FBFuture<NSArray<NSString *> *> *)list_path:(NSString *)path containerType:(nullable NSString *)containerType;
+
+/**
+ Creates a directory
+
+ @param directoryPath the path of the directory.
+ @param containerType the bundle id of the app.
+ @return A Future that resolves when the directory is created.
+ */
+- (FBFuture<NSNull *> *)create_directory:(NSString *)directoryPath containerType:(NSString *)containerType;
 
 @end
 
