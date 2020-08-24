@@ -1020,7 +1020,7 @@ Status FBIDBServiceHandler::push(grpc::ServerContext *context, grpc::ServerReade
   const idb::PushRequest_Inner inner = request.inner();
 
   [[filepaths_from_reader(_commandExecutor.temporaryDirectory, reader, false, _target.logger) onQueue:_target.asyncQueue pop:^FBFuture<NSNull *> *(NSArray<NSURL *> *files) {
-    return [_commandExecutor push_files:files to_path:nsstring_from_c_string(inner.dst_path()) containerType:nsstring_from_c_string(inner.bundle_id())];
+    return [_commandExecutor push_files:files to_path:nsstring_from_c_string(inner.dst_path()) containerType:file_container(inner.container(), inner.bundle_id())];
   }] block:&error];
   if (error) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
