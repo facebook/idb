@@ -16,7 +16,7 @@
 
 @implementation FBTestLaunchConfiguration
 
-- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostPath:(NSString *)testHostPath timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip targetApplicationPath:(NSString *)targetApplicationPath targetApplicationBundleID:(NSString *)targetApplicaitonBundleID xcTestRunProperties:(NSDictionary *)xcTestRunProperties resultBundlePath:(NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coveragePath:(NSString *)coveragePath
+- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostPath:(NSString *)testHostPath timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip targetApplicationPath:(NSString *)targetApplicationPath targetApplicationBundleID:(NSString *)targetApplicaitonBundleID xcTestRunProperties:(NSDictionary *)xcTestRunProperties resultBundlePath:(NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coveragePath:(NSString *)coveragePath
 {
   self = [super init];
   if (!self) {
@@ -28,6 +28,7 @@
   _testHostPath = testHostPath;
   _timeout = timeout;
   _shouldInitializeUITesting = initializeUITesting;
+  _shouldUseXcodebuild = useXcodebuild;
   _testsToRun = testsToRun;
   _testsToSkip = testsToSkip;
   _targetApplicationPath = targetApplicationPath;
@@ -49,6 +50,7 @@
     testHostPath:nil
     timeout:0
     initializeUITesting:NO
+    useXcodebuild:NO
     testsToRun:nil
     testsToSkip:[NSSet set]
     targetApplicationPath:nil
@@ -67,6 +69,7 @@
     testHostPath:self.testHostPath
     timeout:self.timeout
     initializeUITesting:self.shouldInitializeUITesting
+    useXcodebuild:self.shouldUseXcodebuild
     testsToRun:self.testsToRun
     testsToSkip:self.testsToSkip
     targetApplicationPath:self.targetApplicationPath
@@ -85,6 +88,7 @@
     testHostPath:testHostPath
     timeout:self.timeout
     initializeUITesting:self.shouldInitializeUITesting
+    useXcodebuild:self.shouldUseXcodebuild
     testsToRun:self.testsToRun
     testsToSkip:self.testsToSkip
     targetApplicationPath:self.targetApplicationPath
@@ -104,6 +108,7 @@
     testHostPath:self.testHostPath
     timeout:timeout
     initializeUITesting:self.shouldInitializeUITesting
+    useXcodebuild:self.shouldUseXcodebuild
     testsToRun:self.testsToRun
     testsToSkip:self.testsToSkip
     targetApplicationPath:self.targetApplicationPath
@@ -122,6 +127,26 @@
     testHostPath:self.testHostPath
     timeout:self.timeout
     initializeUITesting:shouldInitializeUITesting
+    useXcodebuild:self.shouldUseXcodebuild
+    testsToRun:self.testsToRun
+    testsToSkip:self.testsToSkip
+    targetApplicationPath:self.targetApplicationPath
+    targetApplicationBundleID:self.targetApplicationBundleID
+    xcTestRunProperties: self.xcTestRunProperties
+    resultBundlePath:self.resultBundlePath
+    reportActivities:self.reportActivities
+    coveragePath:self.coveragePath];
+}
+
+- (instancetype)withXcodebuild:(BOOL)shouldUseXcodebuild
+{
+  return [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.testBundlePath
+    applicationLaunchConfiguration:self.applicationLaunchConfiguration
+    testHostPath:self.testHostPath
+    timeout:self.timeout
+    initializeUITesting:self.shouldInitializeUITesting
+    useXcodebuild:shouldUseXcodebuild
     testsToRun:self.testsToRun
     testsToSkip:self.testsToSkip
     targetApplicationPath:self.targetApplicationPath
@@ -140,6 +165,7 @@
     testHostPath:self.testHostPath
     timeout:self.timeout
     initializeUITesting:self.shouldInitializeUITesting
+    useXcodebuild:self.shouldUseXcodebuild
     testsToRun:testsToRun
     testsToSkip:self.testsToSkip
     targetApplicationPath:self.targetApplicationPath
@@ -158,6 +184,7 @@
     testHostPath:self.testHostPath
     timeout:self.timeout
     initializeUITesting:self.shouldInitializeUITesting
+    useXcodebuild:self.shouldUseXcodebuild
     testsToRun:self.testsToRun
     testsToSkip:testsToSkip
     targetApplicationPath:self.targetApplicationPath
@@ -176,6 +203,7 @@
           testHostPath:self.testHostPath
           timeout:self.timeout
           initializeUITesting:self.shouldInitializeUITesting
+          useXcodebuild:self.shouldUseXcodebuild
           testsToRun:self.testsToRun
           testsToSkip:self.testsToSkip
           targetApplicationPath:targetApplicationPath
@@ -195,6 +223,7 @@
           testHostPath:self.testHostPath
           timeout:self.timeout
           initializeUITesting:self.shouldInitializeUITesting
+          useXcodebuild:self.shouldUseXcodebuild
           testsToRun:self.testsToRun
           testsToSkip:self.testsToSkip
           targetApplicationPath:self.targetApplicationPath
@@ -213,6 +242,7 @@
           testHostPath:self.testHostPath
           timeout:self.timeout
           initializeUITesting:self.shouldInitializeUITesting
+          useXcodebuild:self.shouldUseXcodebuild
           testsToRun:self.testsToRun
           testsToSkip:self.testsToSkip
           targetApplicationPath:self.targetApplicationPath
@@ -231,6 +261,7 @@
           testHostPath:self.testHostPath
           timeout:self.timeout
           initializeUITesting:self.shouldInitializeUITesting
+          useXcodebuild:self.shouldUseXcodebuild
           testsToRun:self.testsToRun
           testsToSkip:self.testsToSkip
           targetApplicationPath:self.targetApplicationPath
@@ -249,6 +280,7 @@
           testHostPath:self.testHostPath
           timeout:self.timeout
           initializeUITesting:self.shouldInitializeUITesting
+          useXcodebuild:self.shouldUseXcodebuild
           testsToRun:self.testsToRun
           testsToSkip:self.testsToSkip
           targetApplicationPath:self.targetApplicationPath
@@ -267,6 +299,7 @@
           testHostPath:self.testHostPath
           timeout:self.timeout
           initializeUITesting:self.shouldInitializeUITesting
+          useXcodebuild:self.shouldUseXcodebuild
           testsToRun:self.testsToRun
           testsToSkip:self.testsToSkip
           targetApplicationPath:self.targetApplicationPath
@@ -301,13 +334,14 @@
          (self.testsToSkip == configuration.testsToSkip || [self.testsToSkip isEqual:configuration.testsToSkip]) &&
          self.timeout == configuration.timeout &&
          self.shouldInitializeUITesting == configuration.shouldInitializeUITesting &&
+         self.shouldUseXcodebuild == configuration.shouldUseXcodebuild &&
          (self.xcTestRunProperties == configuration.xcTestRunProperties || [self.xcTestRunProperties isEqual:configuration.xcTestRunProperties]) &&
          (self.resultBundlePath == configuration.resultBundlePath || [self.resultBundlePath isEqual:configuration.resultBundlePath]);
 }
 
 - (NSUInteger)hash
 {
-  return self.testBundlePath.hash ^ self.applicationLaunchConfiguration.hash ^ self.testHostPath.hash ^ (unsigned long) self.timeout ^ (unsigned long) self.shouldInitializeUITesting ^ self.testsToRun.hash ^ self.testsToSkip.hash ^ self.targetApplicationPath.hash ^ self.targetApplicationBundleID.hash ^ self.xcTestRunProperties.hash ^ self.resultBundlePath.hash;
+  return self.testBundlePath.hash ^ self.applicationLaunchConfiguration.hash ^ self.testHostPath.hash ^ (unsigned long) self.timeout ^ (unsigned long) self.shouldInitializeUITesting ^ self.shouldUseXcodebuild ^ self.testsToRun.hash ^ self.testsToSkip.hash ^ self.targetApplicationPath.hash ^ self.targetApplicationBundleID.hash ^ self.xcTestRunProperties.hash ^ self.resultBundlePath.hash;
 }
 
 #pragma mark FBDebugDescribeable
@@ -315,11 +349,12 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"FBTestLaunchConfiguration TestBundlePath %@ | AppConfig %@ | HostPath %@ | UITesting %d | TestsToRun %@ | TestsToSkip %@ | Target application path %@ | Target application bundle id %@ xcTestRunProperties %@ | ResultBundlePath %@",
+    @"FBTestLaunchConfiguration TestBundlePath %@ | AppConfig %@ | HostPath %@ | UITesting %d | UseXcodebuild %d | TestsToRun %@ | TestsToSkip %@ | Target application path %@ | Target application bundle id %@ xcTestRunProperties %@ | ResultBundlePath %@",
     self.testBundlePath,
     self.applicationLaunchConfiguration,
     self.testHostPath,
     self.shouldInitializeUITesting,
+    self.shouldUseXcodebuild,
     self.testsToRun,
     self.testsToSkip,
     self.targetApplicationPath,
@@ -345,6 +380,7 @@ static NSString *const KeyAppLaunch = @"test_app_launch";
 static NSString *const KeyBundlePath = @"test_bundle_path";
 static NSString *const KeyHostPath = @"test_host_path";
 static NSString *const KeyInitializeUITesting = @"ui_testing";
+static NSString *const KeyUseXcodebuild = @"use_xcodebuild";
 static NSString *const KeyTestsToRun = @"tests_to_run";
 static NSString *const KeyTestsToSkip = @"tests_to_skip";
 static NSString *const KeyTimeout = @"timeout";
@@ -363,6 +399,7 @@ static NSString *const KeyCoveragePath = @"coveragePath";
     KeyHostPath : self.testHostPath ?: NSNull.null,
     KeyTimeout : @(self.timeout),
     KeyInitializeUITesting : @(self.shouldInitializeUITesting),
+    KeyUseXcodebuild : @(self.shouldUseXcodebuild),
     KeyTestsToRun : self.testsToRun.allObjects ?: NSNull.null,
     KeyTestsToSkip : self.testsToSkip.allObjects ?: NSNull.null,
     KeyTargetApplicationPath : self.targetApplicationPath ?: NSNull.null,
@@ -422,6 +459,13 @@ static NSString *const KeyCoveragePath = @"coveragePath";
       fail:error];
   }
   BOOL initializeUITesting = initializeUITestingNumber ? initializeUITestingNumber.boolValue : NO;
+  NSNumber *useXcodebuildNumber = [FBCollectionOperations nullableValueForDictionary:json key:KeyUseXcodebuild];
+  if (useXcodebuildNumber && ![useXcodebuildNumber isKindOfClass:NSNumber.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ is not a Number | Null for %@", useXcodebuildNumber, KeyUseXcodebuild]
+      fail:error];
+  }
+  BOOL useXcodebuild = useXcodebuildNumber ? useXcodebuildNumber.boolValue : NO;
   NSArray<NSString *> *testsToRunArray = [FBCollectionOperations nullableValueForDictionary:json key:KeyTestsToRun];
   if (testsToRunArray && ![FBCollectionInformation isArrayHeterogeneous:testsToRunArray withClass:NSString.class]) {
     return [[FBControlCoreError
@@ -468,6 +512,7 @@ static NSString *const KeyCoveragePath = @"coveragePath";
     testHostPath:testHostPath
     timeout:timeout
     initializeUITesting:initializeUITesting
+    useXcodebuild:useXcodebuild
     testsToRun:testsToRun
     testsToSkip:testsToSkip
     targetApplicationPath:targetApplicationPath

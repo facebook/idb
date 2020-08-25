@@ -23,6 +23,7 @@
 @interface FBSimulatorXCTestCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, nullable, readwrite) id<FBiOSTargetContinuation> operation;
 
 @end
 
@@ -51,7 +52,74 @@
 
 - (FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  return [self startTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter logger:logger workingDirectory:self.simulator.auxillaryDirectory];
+  // Use FBXCTestBootstrap to run the test if `shouldUseXcodebuild` is not set in the test launch.
+  if (!testLaunchConfiguration.shouldUseXcodebuild) {
+    return [self startTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter logger:logger workingDirectory:self.simulator.auxillaryDirectory];
+  }
+
+  if (self.operation) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]
+      failFuture];
+  }
+  return [[[FBXcodeBuildOperation
+    terminateAbandonedXcodebuildProcessesForUDID:self.simulator.udid processFetcher:[FBProcessFetcher new] queue:self.simulator.workQueue logger:logger]
+    onQueue:self.simulator.workQueue fmap:^(id _) {
+      return [self _startTestWithLaunchConfiguration:testLaunchConfiguration logger:logger];
+    }]
+    onQueue:self.simulator.workQueue map:^(FBTask *task) {
+      return [self _testOperationStarted:task configuration:testLaunchConfiguration reporter:reporter logger:logger];
+    }];
+}
+
+- (FBFuture<FBTask *> *)_startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
+{
+  NSError *error = nil;
+  NSString *filePath = [FBXcodeBuildOperation createXCTestRunFileAt:self.simulator.auxillaryDirectory fromConfiguration:configuration error:&error];
+  if (!filePath) {
+    return [FBSimulatorError failFutureWithError:error];
+  }
+
+  NSString *xcodeBuildPath = [FBXcodeBuildOperation xcodeBuildPathWithError:&error];
+  if (!xcodeBuildPath) {
+    return [FBSimulatorError failFutureWithError:error];
+  }
+
+  return [FBXcodeBuildOperation
+    operationWithUDID:self.simulator.udid
+    configuration:configuration
+    xcodeBuildPath:xcodeBuildPath
+    testRunFilePath:filePath
+    queue:self.simulator.workQueue
+    logger:[logger withName:@"xcodebuild"]];
+}
+
+- (id<FBiOSTargetContinuation>)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+{
+  FBFuture<NSNull *> *completed = [[[[task
+    completed]
+    onQueue:self.simulator.workQueue fmap:^FBFuture<NSNull *> *(id _) {
+      [logger logFormat:@"xcodebuild operation completed successfully %@", task];
+      if (configuration.resultBundlePath) {
+        [FBXCTestResultBundleParser parse:configuration.resultBundlePath target:self.simulator reporter:reporter logger:logger];
+      }
+      [logger log:@"No result bundle to parse"];
+      return FBFuture.empty;
+    }]
+    onQueue:self.simulator.workQueue fmap:^(id _) {
+      [reporter testManagerMediatorDidFinishExecutingTestPlan:nil];
+      return FBFuture.empty;
+    }]
+    onQueue:self.simulator.workQueue chain:^(FBFuture *future) {
+      [logger logFormat:@"Test Operation has completed for %@, with state '%@' removing it as the sole operation for this target", future, configuration.shortDescription];
+      self.operation = nil;
+      return future;
+    }];
+
+  self.operation = FBiOSTargetContinuationNamed(completed, FBiOSTargetFutureTypeTestOperation);
+  [logger logFormat:@"Test Operation %@ has started for %@, storing it as the sole operation for this target", task, configuration.shortDescription];
+
+  return self.operation;
 }
 
 - (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath

@@ -493,10 +493,11 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   NSString *resultBundleName = [NSString stringWithFormat:@"resultbundle_%@", NSUUID.UUID.UUIDString];
   NSString *resultBundlePath = [self.targetAuxillaryDirectory stringByAppendingPathComponent:resultBundleName];
 
-  return [[[[[[[[[FBTestLaunchConfiguration
+  return [[[[[[[[[[FBTestLaunchConfiguration
     configurationWithTestBundlePath:self.testBundle.path]
     withTestHostPath:self.testHostBundle.path]
     withApplicationLaunchConfiguration:launchConfig]
+    withXcodebuild:YES]
     withUITesting:request.isUITest]
     withXCTestRunProperties:[NSDictionary dictionaryWithContentsOfURL:self.url]]
     withTestsToRun:request.testsToRun]

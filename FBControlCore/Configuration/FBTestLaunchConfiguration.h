@@ -51,6 +51,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, assign, readonly) BOOL shouldInitializeUITesting;
 
+/**
+ Determines whether should use xcodebuild to run the test
+ */
+@property (nonatomic, assign, readonly) BOOL shouldUseXcodebuild;
+
 /*
  Run only these tests. Format: "className/methodName"
  */
@@ -122,6 +127,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return new test launch configuration with changes applied.
  */
 - (instancetype)withUITesting:(BOOL)shouldInitializeUITesting;
+
+/**
+ Determines whether should use xcodebuild to run the test
+
+ @param shouldUseXcodebuild sets whether should use xcodebuild to run the test
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withXcodebuild:(BOOL)shouldUseXcodebuild;
 
 /**
  Adds tests to skip.
