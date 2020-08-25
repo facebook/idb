@@ -51,7 +51,7 @@
 
 #pragma mark Public Methods
 
-- (FBFuture<NSDictionary<id, id> *> *)processMessage:(NSArray<id> *)message
+- (FBFuture<NSDictionary<NSString *, id> *> *)processMessage:(id)message
 {
   return [[self
     sendAndReceivePlist:@[

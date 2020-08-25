@@ -37,10 +37,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Sends a message request.
 
- @param message the message to send.
+ @param message the message to send. Must be plist serializable.
  @return a Future that resolves with the response.
  */
-- (FBFuture<NSDictionary<id, id> *> *)processMessage:(id)message;
+- (FBFuture<NSDictionary<NSString *, id> *> *)processMessage:(id)message;
 
 @end
 
