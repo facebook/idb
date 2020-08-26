@@ -296,13 +296,12 @@ class InstalledArtifact:
     progress: Optional[float]
 
 
-# Exposes the resource-specific commands that imply a connected companion
-class IdbClient:
+class IdbClient(ABC):
+    @abstractmethod
     async def list_apps(self) -> List[InstalledAppInfo]:
-        # pyre-fixme[7]: Expected `List[InstalledAppInfo]` but got implicit return
-        #  value of `None`.
         pass
 
+    @abstractmethod
     async def launch(
         self,
         bundle_id: str,
@@ -313,6 +312,7 @@ class IdbClient:
     ) -> None:
         pass
 
+    @abstractmethod
     async def run_xctest(
         self,
         test_bundle_id: str,
@@ -335,94 +335,113 @@ class IdbClient:
     ) -> AsyncIterator[TestRunInfo]:
         yield
 
+    @abstractmethod
     async def install(
         self, bundle: Union[str, IO[bytes]]
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
+    @abstractmethod
     async def install_dylib(
         self, dylib: Union[str, IO[bytes]]
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
+    @abstractmethod
     async def install_dsym(
         self, dsym: Union[str, IO[bytes]]
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
+    @abstractmethod
     async def install_xctest(
         self, xctest: Union[str, IO[bytes]]
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
+    @abstractmethod
     async def install_framework(
         self, framework_path: Union[str, IO[bytes]]
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
+    @abstractmethod
     async def uninstall(self, bundle_id: str) -> None:
         pass
 
+    @abstractmethod
     async def list_xctests(self) -> List[InstalledTestInfo]:
-        # pyre-fixme[7]: Expected `List[InstalledTestInfo]` but got implicit return
-        #  value of `None`.
         pass
 
+    @abstractmethod
     async def terminate(self, bundle_id: str) -> None:
         pass
 
+    @abstractmethod
     async def list_test_bundle(self, test_bundle_id: str, app_path: str) -> List[str]:
-        # pyre-fixme[7]: Expected `List[str]` but got implicit return value of `None`.
         pass
 
+    @abstractmethod
     async def tail_logs(
         self, stop: asyncio.Event, arguments: Optional[List[str]] = None
     ) -> AsyncIterator[str]:
         yield
 
+    @abstractmethod
     async def tail_companion_logs(self, stop: asyncio.Event) -> AsyncIterator[str]:
         yield
 
+    @abstractmethod
     async def clear_keychain(self) -> None:
         pass
 
+    @abstractmethod
     async def open_url(self, url: str) -> None:
         pass
 
+    @abstractmethod
     async def set_location(self, latitude: float, longitude: float) -> None:
         pass
 
+    @abstractmethod
     async def approve(
         self, bundle_id: str, permissions: Set[Permission], scheme: Optional[str] = None
     ) -> None:
         pass
 
+    @abstractmethod
     async def record_video(self, stop: asyncio.Event, output_file: str) -> None:
         pass
 
+    @abstractmethod
     async def stream_video(
         self, output_file: Optional[str], fps: Optional[int], format: VideoFormat
     ) -> AsyncGenerator[bytes, None]:
         yield
 
+    @abstractmethod
     async def screenshot(self) -> bytes:
-        # pyre-fixme[7]: Expected `bytes` but got implicit return value of `None`.
         pass
 
+    @abstractmethod
     async def tap(self, x: int, y: int, duration: Optional[float] = None) -> None:
         pass
 
+    @abstractmethod
     async def button(
         self, button_type: HIDButtonType, duration: Optional[float] = None
     ) -> None:
         pass
 
+    @abstractmethod
     async def key(self, keycode: int, duration: Optional[float] = None) -> None:
         return
 
+    @abstractmethod
     async def key_sequence(self, key_sequence: List[int]) -> None:
         pass
 
+    @abstractmethod
     async def swipe(
         self,
         p_start: Tuple[int, int],
@@ -432,25 +451,25 @@ class IdbClient:
     ) -> None:
         pass
 
+    @abstractmethod
     async def crash_show(self, name: str) -> CrashLog:
-        # pyre-fixme[7]: Expected `CrashLog` but got implicit return value of `None`.
         pass
 
+    @abstractmethod
     async def contacts_update(self, contacts_path: str) -> None:
         pass
 
+    @abstractmethod
     async def describe(self, fetch_diagnostics: bool = False) -> TargetDescription:
-        # pyre-fixme[7]: Expected `TargetDescription` but got implicit return value
-        #  of `None`.
         pass
 
+    @abstractmethod
     async def accessibility_info(
         self, point: Optional[Tuple[int, int]], nested: bool
     ) -> AccessibilityInfo:
-        # pyre-fixme[7]: Expected `AccessibilityInfo` but got implicit return value
-        #  of `None`.
         pass
 
+    @abstractmethod
     async def run_instruments(
         self,
         stop: asyncio.Event,
@@ -464,65 +483,69 @@ class IdbClient:
         timings: Optional[InstrumentsTimings] = None,
         post_process_arguments: Optional[List[str]] = None,
     ) -> List[str]:
-        # pyre-fixme[7]: Expected `List[str]` but got implicit return value of `None`.
         pass
 
+    @abstractmethod
     async def crash_list(self, query: CrashLogQuery) -> List[CrashLogInfo]:
-        # pyre-fixme[7]: Expected `List[CrashLogInfo]` but got implicit return value
-        #  of `None`.
         pass
 
+    @abstractmethod
     async def crash_delete(self, query: CrashLogQuery) -> List[CrashLogInfo]:
-        # pyre-fixme[7]: Expected `List[CrashLogInfo]` but got implicit return value
-        #  of `None`.
         pass
 
-    async def add_metadata(self, metadata: Optional[Dict[str, str]]) -> None:
-        pass
-
+    @abstractmethod
     async def add_media(self, file_paths: List[str]) -> None:
         pass
 
+    @abstractmethod
     async def focus(self) -> None:
         pass
 
+    @abstractmethod
     async def debugserver_start(self, bundle_id: str) -> List[str]:
-        # pyre-fixme[7]: Expected `List[str]` but got implicit return value of `None`.
         pass
 
+    @abstractmethod
     async def debugserver_stop(self) -> None:
         pass
 
+    @abstractmethod
     async def debugserver_status(self) -> Optional[List[str]]:
         pass
 
+    @abstractmethod
     async def text(self, text: str) -> None:
         return
 
+    @abstractmethod
     async def hid(self, event_iterator: AsyncIterable[HIDEvent]) -> None:
         pass
 
+    @abstractmethod
     async def ls(self, bundle_id: Optional[str], path: str) -> List[FileEntryInfo]:
-        # pyre-fixme[7]: Expected `List[FileEntryInfo]` but got implicit return
-        #  value of `None`.
         pass
 
+    @abstractmethod
     async def mv(
         self, bundle_id: Optional[str], src_paths: List[str], dest_path: str
     ) -> None:
         pass
 
+    @abstractmethod
     async def rm(self, bundle_id: Optional[str], paths: List[str]) -> None:
         pass
 
+    @abstractmethod
     async def mkdir(self, bundle_id: Optional[str], path: str) -> None:
         pass
 
+    @abstractmethod
     async def pull(
         self, bundle_id: Optional[str], src_path: str, dest_path: str
     ) -> None:
         pass
 
+    @abstractmethod
     async def push(
         self, src_paths: List[str], bundle_id: Optional[str], dest_path: str
     ) -> None:
@@ -530,23 +553,23 @@ class IdbClient:
 
 
 class IdbManagementClient:
+    @abstractmethod
     async def connect(
         self,
         destination: ConnectionDestination,
         metadata: Optional[Dict[str, str]] = None,
     ) -> CompanionInfo:
-        # pyre-fixme[7]: Expected `CompanionInfo` but got implicit return value of
-        #  `None`.
         pass
 
+    @abstractmethod
     async def disconnect(self, destination: Union[Address, str]) -> None:
         pass
 
+    @abstractmethod
     async def list_targets(self) -> List[TargetDescription]:
-        # pyre-fixme[7]: Expected `List[TargetDescription]` but got implicit return
-        #  value of `None`.
         pass
 
+    @abstractmethod
     async def kill(self) -> None:
         pass
 
