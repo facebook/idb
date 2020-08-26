@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import asyncio
-from abc import ABCMeta
+from abc import ABC, abstractmethod, abstractproperty
 from dataclasses import dataclass
 from enum import Enum
 from io import StringIO
@@ -551,15 +551,15 @@ class IdbManagementClient:
         pass
 
 
-class Server(metaclass=ABCMeta):
+class Server(ABC):
+    @abstractmethod
     def close(self) -> None:
         pass
 
+    @abstractmethod
     async def wait_closed(self) -> None:
         pass
 
-    @property
+    @abstractproperty
     def ports(self) -> Dict[str, str]:
-        # pyre-fixme[7]: Expected `Dict[str, str]` but got implicit return value of
-        #  `None`.
         pass
