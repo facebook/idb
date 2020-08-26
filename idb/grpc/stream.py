@@ -6,7 +6,7 @@
 
 import asyncio
 from logging import Logger
-from typing import Any, AsyncIterator, Dict, Generic, Optional, TypeVar
+from typing import AsyncIterator, Dict, Generic, Optional, TypeVar
 
 from idb.utils.typing import none_throws
 
@@ -15,9 +15,8 @@ _TSend = TypeVar("_TSend")
 _TRecv = TypeVar("_TRecv")
 
 
-# pyre-fixme[13]: Attribute `metadata` is never initialized.
 class Stream(Generic[_TSend, _TRecv], AsyncIterator[_TRecv]):
-    metadata: Dict[str, str]
+    metadata: Dict[str, str] = {}
 
     async def recv_message(self) -> Optional[_TRecv]:
         ...
@@ -47,16 +46,22 @@ async def drain_to_stream(
 
 
 async def generate_bytes(
-    stream: AsyncIterator[Any], logger: Optional[Logger] = None  # pyre-ignore
+    stream: AsyncIterator[object], logger: Optional[Logger] = None
 ) -> AsyncIterator[bytes]:
     async for item in stream:
         log_output = getattr(item, "log_output", None)
         if log_output is not None and len(log_output) and logger:
             logger.info(log_output)
             continue
-        data = item.payload.data
-        if len(data):
-            yield data
+        payload = getattr(item, "payload", None)
+        if payload is None:
+            continue
+        data = getattr(payload, "data", None)
+        if data is None:
+            continue
+        if not len(data):
+            continue
+        yield data
 
 
 async def stop_wrapper(

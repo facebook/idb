@@ -8,7 +8,7 @@ import asyncio
 import os
 import sys
 from argparse import Namespace
-from typing import Any, Tuple, TypeVar
+from typing import Any, Optional, Tuple, TypeVar
 from unittest.mock import ANY, MagicMock, patch
 
 from idb.cli.main import gen_main as cli_main
@@ -25,8 +25,9 @@ from idb.utils.testing import AsyncContextManagerMock, AsyncMock, TestCase
 
 
 T = TypeVar("T")
-# pyre-fixme[5]: Global expression must be annotated.
-COMPANION_PATH = "/usr/local/bin/idb_companion" if sys.platform == "darwin" else None
+COMPANION_PATH: Optional[
+    str
+] = "/usr/local/bin/idb_companion" if sys.platform == "darwin" else None
 
 
 class AsyncGeneratorMock(AsyncMock):

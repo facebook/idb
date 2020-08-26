@@ -38,9 +38,10 @@ _META_ENVIRON_PREFIX = "IDB_META_"
 
 def on_launch(logger: Logger) -> None:
     for plugin in PLUGINS:
-        if not hasattr(plugin, "on_launch"):
+        on_launch = getattr(plugin, "on_launch", None)
+        if on_launch is None:
             continue
-        plugin.on_launch(logger)  # pyre-ignore
+        on_launch(logger)
 
 
 async def on_close(logger: Logger) -> None:
@@ -76,7 +77,7 @@ async def after_invocation(name: str, duration: int, metadata: LoggingMetadata) 
 
 
 async def failed_invocation(
-    name: str, duration: int, exception: Exception, metadata: LoggingMetadata
+    name: str, duration: int, exception: BaseException, metadata: LoggingMetadata
 ) -> None:
     await asyncio.gather(
         *[
