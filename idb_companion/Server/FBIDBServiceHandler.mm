@@ -1212,11 +1212,6 @@ Status FBIDBServiceHandler::debugserver(grpc::ServerContext *context, grpc::Serv
   }
 }}
 
-Status FBIDBServiceHandler::disconnect(grpc::ServerContext *context, const idb::DisconnectRequest *request, idb::DisconnectResponse *response)
-{@autoreleasepool{
-  return Status::OK;
-}}
-
 Status FBIDBServiceHandler::connect(grpc::ServerContext *context, const idb::ConnectRequest *request, idb::ConnectResponse *response)
 {@autoreleasepool{
   [_eventReporter addMetadata:extract_str_dict(request->metadata())];

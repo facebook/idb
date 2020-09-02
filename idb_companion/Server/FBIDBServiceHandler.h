@@ -42,7 +42,6 @@ public:
   Status pull(ServerContext *context, const idb::PullRequest *request, grpc::ServerWriter<::idb::PullResponse> *writer);
   Status debugserver(ServerContext *context,grpc::ServerReaderWriter<idb::DebugServerResponse, idb::DebugServerRequest> *stream);
   Status describe(ServerContext *context, const idb::TargetDescriptionRequest *request, idb::TargetDescriptionResponse *response);
-  Status disconnect(ServerContext *context, const idb::DisconnectRequest *request, idb::DisconnectResponse *response);
   Status focus(ServerContext *context, const idb::FocusRequest *request, idb::FocusResponse *response);
   Status hid(ServerContext *context,grpc::ServerReader<idb::HIDEvent> *reader, idb::HIDResponse *response);
   Status install(ServerContext *context,grpc::ServerReaderWriter<idb::InstallResponse, idb::InstallRequest> *stream);

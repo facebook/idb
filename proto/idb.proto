@@ -19,7 +19,6 @@ service CompanionService {
   rpc contacts_update (ContactsUpdateRequest) returns (ContactsUpdateResponse) {}
   rpc debugserver (stream DebugServerRequest) returns (stream DebugServerResponse) {}
   rpc describe (TargetDescriptionRequest) returns (TargetDescriptionResponse) {}
-  rpc disconnect (DisconnectRequest) returns (DisconnectResponse) {}
   rpc focus (FocusRequest) returns (FocusResponse) {}
   rpc hid (stream HIDEvent) returns (HIDResponse) {}
   rpc install (stream InstallRequest) returns (stream InstallResponse) {}
@@ -278,12 +277,6 @@ message ConnectRequest {
 
 message ConnectResponse {
    CompanionInfo companion = 1;
-}
-
-message DisconnectRequest {
-}
-
-message DisconnectResponse {
 }
 
 message CompanionInfo {
