@@ -11,6 +11,12 @@
 #import "FBEventInterpreter.h"
 #import "FBDataConsumer.h"
 
+@interface FBEventReporter ()
+
+@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, NSString *> *mutableMetadata;
+
+@end
+
 @implementation FBEventReporter
 
 @synthesize interpreter = _interpreter;
@@ -32,6 +38,7 @@
 
   _interpreter = interpreter;
   _consumer = consumer;
+  _mutableMetadata = NSMutableDictionary.dictionary;
 
   return self;
 }
@@ -47,7 +54,12 @@
 
 - (void)addMetadata:(NSDictionary<NSString *, NSString *> *)metadata
 {
+  [self.mutableMetadata addEntriesFromDictionary:metadata];
+}
 
+- (NSDictionary<NSString *, NSString *> *)metadata
+{
+  return self.mutableMetadata.copy;
 }
 
 @end

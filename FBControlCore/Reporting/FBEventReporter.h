@@ -45,6 +45,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
 
+/**
+ Gets the total metadata.
+ */
+@property (nonatomic, strong, readonly) NSDictionary<NSString *, NSString *> *metadata;
+
 @end
 
 /**

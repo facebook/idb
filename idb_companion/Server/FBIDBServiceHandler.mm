@@ -1222,7 +1222,16 @@ Status FBIDBServiceHandler::connect(grpc::ServerContext *context, const idb::Con
   [_eventReporter addMetadata:extract_str_dict(request->metadata())];
 
   BOOL isLocal = [NSFileManager.defaultManager fileExistsAtPath:nsstring_from_c_string(request->local_file_path())];
-  response->mutable_companion()->set_is_local(isLocal);
-  response->mutable_companion()->set_udid(_target.udid.UTF8String);
+  idb::CompanionInfo * info = response->mutable_companion();
+  info->set_is_local(isLocal);
+  info->set_udid(_target.udid.UTF8String);
+
+  NSDictionary<NSString *, NSString *> *metadata = _eventReporter.metadata ?: @{};
+  NSError *error = nil;
+  NSData *data = [NSJSONSerialization dataWithJSONObject:metadata options:0 error:&error];
+  if (data) {
+    info->set_metadata(data.bytes, data.length);
+  }
+
   return Status::OK;
 }}
