@@ -288,9 +288,7 @@ message DisconnectResponse {
 
 message CompanionInfo {
   string udid = 1;
-  string host = 2;
   bool is_local = 4;
-  uint64 grpc_port = 5;
 }
 
 message ScreenDimensions {

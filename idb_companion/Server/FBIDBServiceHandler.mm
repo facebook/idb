@@ -1224,6 +1224,5 @@ Status FBIDBServiceHandler::connect(grpc::ServerContext *context, const idb::Con
   BOOL isLocal = [NSFileManager.defaultManager fileExistsAtPath:nsstring_from_c_string(request->local_file_path())];
   response->mutable_companion()->set_is_local(isLocal);
   response->mutable_companion()->set_udid(_target.udid.UTF8String);
-  response->mutable_companion()->set_host(NSProcessInfo.processInfo.hostName.UTF8String);
   return Status::OK;
 }}
