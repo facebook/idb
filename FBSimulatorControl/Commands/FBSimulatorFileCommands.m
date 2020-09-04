@@ -133,20 +133,18 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths
+- (FBFuture<NSNull *> *)removePath:(NSString *)path
 {
   return [[self
     dataContainer]
     onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *dataContainer) {
       NSError *error;
-      for (NSString *path in paths) {
-        NSString *fullPath = [dataContainer stringByAppendingPathComponent:path];
-        if (![NSFileManager.defaultManager removeItemAtPath:fullPath error:&error]) {
-          return [[[FBSimulatorError
-            describeFormat:@"Could not remove item at path %@: %@", fullPath, error]
-            causedBy:error]
-            failFuture];
-        }
+      NSString *fullPath = [dataContainer stringByAppendingPathComponent:path];
+      if (![NSFileManager.defaultManager removeItemAtPath:fullPath error:&error]) {
+        return [[[FBSimulatorError
+          describeFormat:@"Could not remove item at path %@: %@", fullPath, error]
+          causedBy:error]
+          failFuture];
       }
       return FBFuture.empty;
     }];

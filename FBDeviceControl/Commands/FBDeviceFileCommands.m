@@ -84,14 +84,12 @@
   }];
 }
 
-- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths
+- (FBFuture<NSNull *> *)removePath:(NSString *)path
 {
   return [self handleAFCOperation:^ NSNull * (FBAFCConnection *afc, NSError **error) {
-    for (NSString *path in paths) {
-      BOOL success = [afc removePath:path recursively:YES error:error];
-      if (!success) {
-        return nil;
-      }
+    BOOL success = [afc removePath:path recursively:YES error:error];
+    if (!success) {
+      return nil;
     }
     return NSNull.null;
   }];

@@ -473,7 +473,11 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [[self
     applicationDataContainerCommands:containerType]
     onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> container) {
-      return [container removePaths:paths];
+      NSMutableArray<FBFuture<NSNull *> *> *futures = NSMutableArray.array;
+      for (NSString *path in paths) {
+        [futures addObject:[container removePath:path]];
+      }
+      return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
     }];
 }
 

@@ -54,12 +54,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSNull *> *)movePath:(NSString *)sourcePath toDestinationPath:(NSString *)destinationPath;
 
 /**
- Remove paths inside the target.
+ Remove a path inside the target.
 
- @param paths relative paths to the container where data resides
+ @param path relative path inside the container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)removePaths:(NSArray<NSString *> *)paths;
+- (FBFuture<NSNull *> *)removePath:(NSString *)path;
 
 /**
  List directory within the target.
