@@ -51,14 +51,27 @@
 
 #pragma mark Public Methods
 
+static NSString *const ProcessMessage = @"DLMessageProcessMessage";
+
 - (FBFuture<NSDictionary<NSString *, id> *> *)processMessage:(id)message
 {
   return [[self
     sendAndReceivePlist:@[
-      @"DLMessageProcessMessage",
+      ProcessMessage,
       message,
     ]]
     onQueue:self.queue fmap:^(NSArray<id> *result) {
+      NSString *responseType = result[0];
+      if (![responseType isKindOfClass:NSString.class]) {
+        return [[FBDeviceControlError
+          describeFormat:@"%@ is not an NSString in %@", responseType, result]
+          failFuture];
+      }
+      if (![responseType isEqualToString:ProcessMessage]) {
+        return [[FBDeviceControlError
+          describeFormat:@"%@ should be a %@", responseType, ProcessMessage]
+          failFuture];
+      }
       NSDictionary<NSString *, id> *response = result[1];
       if (![response isKindOfClass:NSDictionary.class]) {
         return [[FBDeviceControlError
