@@ -434,6 +434,8 @@ static NSString *file_container(idb::FileContainer container, std::string bundle
       return FBFileContainerKindMedia;
     case idb::FileContainer_Kind_CRASHES:
       return FBFileContainerKindCrashes;
+    case idb::FileContainer_Kind_PROVISIONING_PROFILES:
+      return FBFileContainerKindProvisioningProfiles;
     default:
       break;
   }

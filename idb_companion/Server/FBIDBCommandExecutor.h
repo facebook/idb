@@ -28,6 +28,7 @@ typedef NSString *FBFileContainerKind NS_STRING_ENUM;
 extern FBFileContainerKind const FBFileContainerKindCrashes;
 extern FBFileContainerKind const FBFileContainerKindMedia;
 extern FBFileContainerKind const FBFileContainerKindRoot;
+extern FBFileContainerKind const FBFileContainerKindProvisioningProfiles;
 
 @interface FBIDBCommandExecutor : NSObject
 

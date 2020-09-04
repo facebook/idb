@@ -611,6 +611,7 @@ message FileContainer {
     ROOT = 2;
     MEDIA = 3;
     CRASHES = 4;
+    PROVISIONING_PROFILES = 5;
   }
   Kind kind = 1;
   string bundle_id = 2;

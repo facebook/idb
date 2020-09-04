@@ -20,6 +20,7 @@
 FBFileContainerKind const FBFileContainerKindCrashes = @"crashes";
 FBFileContainerKind const FBFileContainerKindMedia = @"media";
 FBFileContainerKind const FBFileContainerKindRoot = @"root";
+FBFileContainerKind const FBFileContainerKindProvisioningProfiles = @"provisioning_profiles";
 
 @interface FBIDBCommandExecutor ()
 
@@ -508,6 +509,9 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   }
   if ([containerType isEqualToString:FBFileContainerKindRoot]) {
     return [commands fileCommandsForRootFilesystem];
+  }
+  if ([containerType isEqualToString:FBFileContainerKindProvisioningProfiles]) {
+    return [commands fileCommandsForProvisioningProfiles];
   }
   if (containerType == nil || containerType.length == 0) {
     // The Default for no, or null container for back-compat.
