@@ -368,7 +368,7 @@ const char *DoubleDot = "..";
 
 - (BOOL)connectionIsValid
 {
-  return self.calls.ConnectionIsValid(self.connection);
+  return (BOOL) self.calls.ConnectionIsValid(self.connection);
 }
 
 + (void)populateCallsFromMobileDevice:(AFCCalls *)calls

@@ -166,7 +166,7 @@ static NSMutableArray<NSString *> *sEvents;
 
 - (void)testConnectToDeviceWithSuccess
 {
-  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue() pop:^(FBAMDevice *result) {
+  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue() pop:^(id<FBDeviceCommands> result) {
     return FBFuture.empty;
   }];
 
@@ -190,7 +190,7 @@ static NSMutableArray<NSString *> *sEvents;
 
 - (void)testConnectToDeviceWithFailure
 {
-  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue() pop:^(FBAMDevice *result) {
+  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue() pop:^(id<FBDeviceCommands> result) {
     return [[FBDeviceControlError describeFormat:@"A bad thing"] failFuture];
   }];
 
@@ -285,19 +285,19 @@ static NSMutableArray<NSString *> *sEvents;
   FBAMDevice *device = self.device;
 
   dispatch_async(schedule, ^{
-    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map pop:^(FBAMDevice *result) {
+    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map pop:^(id<FBDeviceCommands> result) {
       return [FBFuture futureWithResult:@0];
     }];
     [future0 resolveFromFuture:future];
   });
   dispatch_async(schedule, ^{
-    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map pop:^(FBAMDevice *result) {
+    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map pop:^(id<FBDeviceCommands> result) {
       return [FBFuture futureWithResult:@1];
     }];
     [future1 resolveFromFuture:future];
   });
   dispatch_async(schedule, ^{
-    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map pop:^(FBAMDevice *result) {
+    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map pop:^(id<FBDeviceCommands> result) {
       return [FBFuture futureWithResult:@2];
     }];
     [future2 resolveFromFuture:future];
