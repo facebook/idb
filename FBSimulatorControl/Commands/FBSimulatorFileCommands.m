@@ -117,21 +117,19 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toDestinationPath:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)movePath:(NSString *)sourcePath toDestinationPath:(NSString *)destinationPath
 {
   return [[self
     dataContainer]
     onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *dataContainer) {
       NSError *error;
       NSString *fullDestinationPath = [dataContainer stringByAppendingPathComponent:destinationPath];
-      for (NSString *originPath in originPaths) {
-        NSString *fullOriginPath = [dataContainer stringByAppendingPathComponent:originPath];
-        if (![NSFileManager.defaultManager moveItemAtPath:fullOriginPath toPath:fullDestinationPath error:&error]) {
-          return [[[FBSimulatorError
-            describeFormat:@"Could not move item at %@ to %@: %@", fullOriginPath, fullDestinationPath, error]
-            causedBy:error]
-            failFuture];
-        }
+      NSString *fullSourcePath = [dataContainer stringByAppendingPathComponent:sourcePath];
+      if (![NSFileManager.defaultManager moveItemAtPath:fullSourcePath toPath:fullDestinationPath error:&error]) {
+        return [[[FBSimulatorError
+          describeFormat:@"Could not move item at %@ to %@: %@", fullSourcePath, fullDestinationPath, error]
+          causedBy:error]
+          failFuture];
       }
       return FBFuture.empty;
     }];

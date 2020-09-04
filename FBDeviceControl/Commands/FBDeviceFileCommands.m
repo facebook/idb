@@ -75,14 +75,12 @@
   }];
 }
 
-- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toDestinationPath:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)movePath:(NSString *)sourcePath toDestinationPath:(NSString *)destinationPath
 {
   return [self handleAFCOperation:^ NSNull * (FBAFCConnection *afc, NSError **error) {
-    for (NSString *originPath in originPaths) {
-      BOOL success = [afc renamePath:originPath destination:destinationPath error:error];
-      if (!success) {
-        return nil;
-      }
+    BOOL success = [afc renamePath:sourcePath destination:destinationPath error:error];
+    if (!success) {
+      return nil;
     }
     return NSNull.null;
   }];

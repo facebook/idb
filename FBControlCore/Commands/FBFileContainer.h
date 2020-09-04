@@ -45,13 +45,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath;
 
 /**
- Move paths inside the target.
+ Move a path inside the container
 
- @param originPaths relative paths to the container where data resides
+ @param sourcePath relative source path.
  @param destinationPath relative path where the data will be moved to
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)movePaths:(NSArray<NSString *> *)originPaths toDestinationPath:(NSString *)destinationPath;
+- (FBFuture<NSNull *> *)movePath:(NSString *)sourcePath toDestinationPath:(NSString *)destinationPath;
 
 /**
  Remove paths inside the target.
