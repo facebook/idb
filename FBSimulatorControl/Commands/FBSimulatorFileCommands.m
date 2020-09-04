@@ -34,7 +34,7 @@
 
 #pragma mark FBFileCommands
 
-- (FBFuture<NSNull *> *)copyPathsOnHost:(NSArray<NSURL *> *)paths toDestination:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyPathOnHost:(NSURL *)sourcePath toDestination:(NSString *)destinationPath
 {
   return [[self
     dataContainer]
@@ -42,14 +42,12 @@
       NSError *error;
       NSURL *basePathURL =  [NSURL fileURLWithPathComponents:@[dataContainer, destinationPath]];
       NSFileManager *fileManager = NSFileManager.defaultManager;
-      for (NSURL *url in paths) {
-        NSURL *destURL = [basePathURL URLByAppendingPathComponent:url.lastPathComponent];
-        if (![fileManager copyItemAtURL:url toURL:destURL error:&error]) {
-          return [[[FBSimulatorError
-            describeFormat:@"Could not copy from %@ to %@: %@", url, destURL, error]
-            causedBy:error]
-            failFuture];
-        }
+      NSURL *destURL = [basePathURL URLByAppendingPathComponent:sourcePath.lastPathComponent];
+      if (![fileManager copyItemAtURL:sourcePath toURL:destURL error:&error]) {
+        return [[[FBSimulatorError
+          describeFormat:@"Could not copy from %@ to %@: %@", sourcePath, destURL, error]
+          causedBy:error]
+          failFuture];
       }
       return FBFuture.empty;
     }];

@@ -21,11 +21,11 @@ NS_ASSUME_NONNULL_BEGIN
  Copy items to from the host, to the target.
 
  @note Performs a recursive copy
- @param paths Array of source paths on the host. May be Files and/or Directories.
+ @param sourcePath The source path on the host. May be Files and/or Directories.
  @param destinationPath the destination path within the container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)copyPathsOnHost:(NSArray<NSURL *> *)paths toDestination:(NSString *)destinationPath;
+- (FBFuture<NSNull *> *)copyPathOnHost:(NSURL *)sourcePath toDestination:(NSString *)destinationPath;
 
 /**
  Relocate a file from the target, to the host.

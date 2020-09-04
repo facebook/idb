@@ -421,8 +421,12 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     onQueue:self.target.asyncQueue resolve:^FBFuture<NSNull *> *{
       return [[self
         applicationDataContainerCommands:containerType]
-        onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> targetApplicationsData) {
-          return [targetApplicationsData copyPathsOnHost:paths toDestination:destinationPath];
+        onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> container) {
+          NSMutableArray<FBFuture<NSNull *> *> *futures = NSMutableArray.array;
+          for (NSURL *originPath in paths) {
+            [futures addObject:[container copyPathOnHost:originPath toDestination:destinationPath]];
+          }
+          return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
         }];
   }];
 }

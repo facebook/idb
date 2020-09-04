@@ -34,14 +34,12 @@
   return self;
 }
 
-- (FBFuture<NSNull *> *)copyPathsOnHost:(NSArray<NSURL *> *)paths toDestination:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyPathOnHost:(NSURL *)sourcePath toDestination:(NSString *)destinationPath
 {
   return [self handleAFCOperation:^ NSNull * (FBAFCConnection *afc, NSError **error) {
-    for (NSURL *path in paths) {
-      BOOL success = [afc copyFromHost:path toContainerPath:destinationPath error:error];
-      if (!success) {
-        return nil;
-      }
+    BOOL success = [afc copyFromHost:sourcePath toContainerPath:destinationPath error:error];
+    if (!success) {
+      return nil;
     }
     return NSNull.null;
   }];
