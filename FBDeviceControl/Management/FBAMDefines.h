@@ -45,6 +45,11 @@ typedef CFTypeRef AMRecoveryModeDeviceRef;
 typedef void * AMSecureIOContext;
 
 /**
+ An Alias for the MISProfileRef Type.
+ */
+typedef CFTypeRef MISProfileRef;
+
+/**
  An opaque handle to a notification subscription.
  */
 typedef void *AMDNotificationSubscription;
@@ -165,6 +170,15 @@ typedef struct {
 
   // Developer Images
   int (*MountImage)(AMDeviceRef device, CFStringRef image, CFDictionaryRef options, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
+
+  // Provisioning Profiles
+  CFArrayRef (*CopyProvisioningProfiles)(AMDeviceRef device);
+  CFDictionaryRef (*ProvisioningProfileCopyPayload)(CFTypeRef profile);
+  MISProfileRef (*ProvisioningProfileCreateWithData)(CFDataRef data);
+  int (*InstallProvisioningProfile)(AMDeviceRef device, MISProfileRef profile);
+  int (*RemoveProvisioningProfile)(AMDeviceRef device, CFStringRef profileUUID);
+  CFStringRef (*ProvisioningProfileGetUUID)(MISProfileRef profile);
+  CFStringRef (*ProvisioningProfileCopyErrorStringForCode)(int code);
 
   // Restorable Devices: Notifications
   int (*RestorableDeviceRegisterForNotifications)(AMRestorableDeviceNotificationCallback callback, void *context, int arg2, int arg3);

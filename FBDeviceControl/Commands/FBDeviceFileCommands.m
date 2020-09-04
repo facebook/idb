@@ -11,6 +11,7 @@
 #import "FBDevice+Private.h"
 #import "FBDeviceControlError.h"
 #import "FBAFCConnection.h"
+#import "FBDeviceProvisioningProfileCommands.h"
 
 @interface FBDeviceFileContainer ()
 
@@ -180,6 +181,11 @@
     onQueue:self.device.asyncQueue pend:^ FBFuture<id<FBFileContainer>> * (FBAFCConnection *connection) {
       return [FBFuture futureWithResult:[[FBDeviceFileContainer alloc] initWithAFCConnection:connection queue:self.device.asyncQueue]];
     }];
+}
+
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForProvisioningProfiles
+{
+  return [FBFutureContext futureContextWithResult:[FBFileContainer fileContainerForProvisioningProfileCommands:[FBDeviceProvisioningProfileCommands commandsWithTarget:self.device] queue:self.device.workQueue]];
 }
 
 @end

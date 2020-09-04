@@ -12,32 +12,41 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBProvisioningProfileCommands;
+
 /**
  Defines an interface for interacting with the Data Container of Applications.
  */
 @protocol FBFileCommands <NSObject, FBiOSTargetCommand>
 
 /**
- Returns file commands for the given bundle id sandbox.
+ Returns a file container for the given bundle id sandbox.
 
  @param bundleID the bundle ID of the container application.
- @return a Future context resolves with an instance of the file commands
+ @return a Future context that resolves with an implementation of the file container.
  */
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForContainerApplication:(NSString *)bundleID;
 
 /**
- Returns file for the root of the filesystem
+ Returns a file container for the root of the filesystem
 
- @return a Future context that resolves with an instance of the file commands
+ @return a Future context that resolves with an implementation of the file container.
  */
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForRootFilesystem;
 
 /**
- Returns file for the 'media' directory.
+ Returns a file container for the 'media' directory.
 
- @return a Future context that resolves with an instance of the file commands
+ @return a Future context that resolves with an implementation of the file container.
  */
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMediaDirectory;
+
+/**
+ Returns a file container for Provisioning Profiles.
+
+ @return a Future context that resolves with an implementation of the file container.
+ */
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForProvisioningProfiles;
 
 @end
 

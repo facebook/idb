@@ -8,8 +8,11 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
+#import <FBControlCore/FBFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+@protocol FBProvisioningProfileCommands;
 
 /**
  File Commands related to a single target.
@@ -68,6 +71,22 @@ NS_ASSUME_NONNULL_BEGIN
  @return A future containing the list of entries that resolves when successful.
  */
 - (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path;
+
+@end
+
+/**
+ Implementations of File Commands.
+ */
+@interface FBFileContainer : NSObject
+
+/**
+ A file container for a Provisioning Profile Commands implementation.
+
+ @param commands the FBProvisioningProfileCommands instance to wrap.
+ @param queue the queue to do work on.
+ @return a File Container implementation.
+ */
++ (id<FBFileContainer>)fileContainerForProvisioningProfileCommands:(id<FBProvisioningProfileCommands>)commands queue:(dispatch_queue_t)queue;
 
 @end
 
