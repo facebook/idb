@@ -7,15 +7,16 @@
 import json
 from typing import List, Sequence
 
-from idb.common.types import CompanionInfo, ScreenDimensions, TargetDescription
+from idb.common.types import Address, CompanionInfo, ScreenDimensions, TargetDescription
 from idb.grpc.idb_pb2 import (
+    CompanionInfo as GrpcCompanionInfo,
     ScreenDimensions as GrpcScreenDimensions,
     TargetDescription as GrpcTargetDescription,
 )
 
 
 def target_to_py(
-    target: GrpcTargetDescription, companion: CompanionInfo
+    target: GrpcTargetDescription, companion: CompanionInfo, metadata: bytes
 ) -> TargetDescription:
     return TargetDescription(
         udid=target.udid,
@@ -34,6 +35,17 @@ def target_to_py(
         diagnostics=(
             json.loads(target.diagnostics.decode()) if len(target.diagnostics) else {}
         ),
+        metadata=(json.loads(metadata.decode()) if len(metadata) else {}),
+    )
+
+
+def companion_to_py(companion: GrpcCompanionInfo, address: Address) -> CompanionInfo:
+    metadata = companion.metadata
+    return CompanionInfo(
+        address=address,
+        udid=companion.udid,
+        is_local=companion.is_local,
+        metadata=(json.loads(metadata.decode()) if len(metadata) else {}),
     )
 
 

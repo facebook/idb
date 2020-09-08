@@ -27,7 +27,7 @@ from idb.common.types import (
 )
 from idb.grpc.client import IdbClient
 from idb.grpc.idb_pb2 import ConnectRequest
-from idb.grpc.target import merge_connected_targets
+from idb.grpc.target import companion_to_py, merge_connected_targets
 from idb.utils.contextlib import asynccontextmanager
 
 
@@ -159,10 +159,9 @@ class IdbManagementClient(IdbManagementClientBase):
                     response = await client.stub.connect(
                         ConnectRequest(metadata=metadata, local_file_path=f.name)
                     )
-            companion = CompanionInfo(
-                address=destination,
-                udid=response.companion.udid,
-                is_local=response.companion.is_local,
+
+            companion = companion_to_py(
+                companion=response.companion, address=destination
             )
             self._logger.debug(f"Connected directly to {companion}")
             await self._direct_companion_manager.add_companion(companion)

@@ -5,8 +5,9 @@
 # LICENSE file in the root directory of this source tree.
 
 import asyncio
+import json
 from abc import ABC, abstractmethod, abstractproperty
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, field
 from enum import Enum
 from io import StringIO
 from typing import (
@@ -116,6 +117,7 @@ class CompanionInfo:
     udid: str
     is_local: bool
     address: Address
+    metadata: LoggingMetadata = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -144,6 +146,11 @@ class TargetDescription:
     device: Optional[DeviceDetails] = None
     extended: Optional[DeviceDetails] = None
     diagnostics: Optional[DeviceDetails] = None
+    metadata: LoggingMetadata = field(default_factory=dict)
+
+    @property
+    def as_json(self) -> str:
+        return json.dumps(asdict(self))
 
 
 @dataclass(frozen=True)

@@ -415,9 +415,12 @@ class IdbClient(IdbClientBase):
         target = response.target_description
         return target_to_py(
             target=target,
+            # Use the local understanding of the companion instead of the remote's.
             companion=CompanionInfo(
                 address=self.address, udid=target.udid, is_local=self.is_local
             ),
+            # Extract the companion metadata from the response.
+            metadata=response.companion.metadata,
         )
 
     @log_and_handle_exceptions

@@ -73,7 +73,7 @@ class TargetConnectCommand(ManagementCommand):
     ) -> None:
         try:
             destination = get_destination(args=args)
-            connect_response = await client.connect(
+            response = await client.connect(
                 destination=destination,
                 metadata={
                     key: value
@@ -81,20 +81,18 @@ class TargetConnectCommand(ManagementCommand):
                     if isinstance(value, str)
                 },
             )
-            if connect_response:
-                if args.json:
-                    print(
-                        json.dumps(
-                            {
-                                "udid": connect_response.udid,
-                                "is_local": connect_response.is_local,
-                            }
-                        )
+            if args.json:
+                print(
+                    json.dumps(
+                        {
+                            "udid": response.udid,
+                            "is_local": response.is_local,
+                            "metadata": response.metadata,
+                        }
                     )
-                else:
-                    print(
-                        f"udid: {connect_response.udid} is_local: {connect_response.is_local}"
-                    )
+                )
+            else:
+                print(f"udid: {response.udid} is_local: {response.is_local}")
 
         except IdbException:
             raise ConnectCommandException(
@@ -159,7 +157,10 @@ class TargetDescribeCommand(ClientCommand):
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
         description = await client.describe(fetch_diagnostics=args.diagnostics)
-        print(description)
+        if args.json:
+            print(description.as_json)
+        else:
+            print(description)
 
 
 class TargetListCommand(ManagementCommand):
