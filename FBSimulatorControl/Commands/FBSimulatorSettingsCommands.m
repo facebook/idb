@@ -84,8 +84,11 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
   if ([self.simulator.device respondsToSelector:@selector(setPrivacyAccessForService:bundleID:granted:error:)]) {
     NSMutableSet<NSString *> *simDeviceServices = [toApprove mutableCopy];
     [simDeviceServices intersectSet:[NSSet setWithArray:FBSimulatorSettingsCommands.coreSimulatorSettingMapping.allKeys]];
-    [toApprove minusSet:simDeviceServices];
-    [futures addObject:[self coreSimulatorApproveWithBundleIDs:bundleIDs toServices:simDeviceServices]];
+    // Only approve these services, where they are serviced by the CoreSimulator API
+    if (simDeviceServices.count > 0) {
+      [toApprove minusSet:simDeviceServices];
+      [futures addObject:[self coreSimulatorApproveWithBundleIDs:bundleIDs toServices:simDeviceServices]];
+    }
   }
   if (toApprove.count > 0 && [[NSSet setWithArray:FBSimulatorSettingsCommands.tccDatabaseMapping.allKeys] intersectsSet:toApprove]) {
     NSMutableSet<NSString *> *tccServices = [toApprove mutableCopy];
