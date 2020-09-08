@@ -58,6 +58,12 @@ message Payload {
   }
 }
 
+message CompanionInfo {
+  string udid = 1;
+  bool is_local = 4;
+  bytes metadata = 6;
+}
+
 message ListAppsRequest {
 }
 
@@ -202,6 +208,7 @@ message TargetDescriptionRequest {
 
 message TargetDescriptionResponse {
   TargetDescription target_description = 1;
+  CompanionInfo companion = 2;
 }
 
 message HIDEvent {
@@ -264,8 +271,6 @@ message HIDEvent {
 message HIDResponse {
 }
 
-
-
 message FileInfo {
   string path = 1;
 }
@@ -277,12 +282,6 @@ message ConnectRequest {
 
 message ConnectResponse {
    CompanionInfo companion = 1;
-}
-
-message CompanionInfo {
-  string udid = 1;
-  bool is_local = 4;
-  bytes metadata = 6;
 }
 
 message ScreenDimensions {

@@ -230,7 +230,6 @@ static FBFutureContext<NSArray<NSURL *> *> *filepaths_from_reader(FBTemporaryDir
   }
 }
 
-
 static NSDictionary<NSString *, NSString *> *extract_str_dict(const ::google::protobuf::Map<::std::string, ::std::string >& iterator)
 {
   NSMutableDictionary<NSString *, NSString *> *environment = NSMutableDictionary.dictionary;
@@ -249,7 +248,6 @@ static NSArray<NSString *> *extract_string_array(T &input)
   }
   return arguments;
 }
-
 
 static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *request)
 {
@@ -444,6 +442,17 @@ static NSString *file_container(idb::FileContainer container, std::string bundle
     return nil;
   }
   return nsstring_from_c_string(bundleID);
+}
+
+static void populate_companion_info(idb::CompanionInfo *info, id<FBEventReporter> reporter, id<FBiOSTarget> target)
+{
+  info->set_udid(target.udid.UTF8String);
+  NSDictionary<NSString *, NSString *> *metadata = reporter.metadata ?: @{};
+  NSError *error = nil;
+  NSData *data = [NSJSONSerialization dataWithJSONObject:metadata options:0 error:&error];
+  if (data) {
+    info->set_metadata(data.bytes, data.length);
+  }
 }
 
 #pragma mark Constructors
@@ -1057,8 +1066,9 @@ Status FBIDBServiceHandler::pull(ServerContext *context, const ::idb::PullReques
 
 Status FBIDBServiceHandler::describe(ServerContext *context, const idb::TargetDescriptionRequest *request, idb::TargetDescriptionResponse *response)
 {@autoreleasepool{
-  FBiOSTargetScreenInfo *screenInfo = _target.screenInfo;
+  // Populate the default values
   idb::TargetDescription *description = response->mutable_target_description();
+  FBiOSTargetScreenInfo *screenInfo = _target.screenInfo;
   if (screenInfo) {
     idb::ScreenDimensions *dimensions = description->mutable_screen_dimensions();
     dimensions->set_width(screenInfo.widthPixels);
@@ -1073,6 +1083,8 @@ Status FBIDBServiceHandler::describe(ServerContext *context, const idb::TargetDe
   description->set_target_type(FBiOSTargetTypeStringsFromTargetType(_target.targetType).firstObject.lowercaseString.UTF8String);
   description->set_os_version(_target.osVersion.name.UTF8String);
   description->set_architecture(_target.architecture.UTF8String);
+
+  // Add extended information
   NSDictionary<NSString *, id> *extendedInformation = _target.extendedInformation;
   NSError *error = nil;
   NSData *data = [NSJSONSerialization dataWithJSONObject:extendedInformation options:0 error:&error];
@@ -1080,6 +1092,9 @@ Status FBIDBServiceHandler::describe(ServerContext *context, const idb::TargetDe
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   description->set_extended(data.bytes, data.length);
+
+  // Also attach the companion metadata
+  populate_companion_info(response->mutable_companion(), _eventReporter, _target);
 
   // Only fetch diagnostic information when requested.
   if (!request->fetch_diagnostics()) {
@@ -1094,6 +1109,7 @@ Status FBIDBServiceHandler::describe(ServerContext *context, const idb::TargetDe
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   description->set_diagnostics(data.bytes, data.length);
+
   return Status::OK;
 }}
 
@@ -1216,19 +1232,16 @@ Status FBIDBServiceHandler::debugserver(grpc::ServerContext *context, grpc::Serv
 
 Status FBIDBServiceHandler::connect(grpc::ServerContext *context, const idb::ConnectRequest *request, idb::ConnectResponse *response)
 {@autoreleasepool{
+  // Add Meta to Reporter
   [_eventReporter addMetadata:extract_str_dict(request->metadata())];
 
+  // Get the local state
   BOOL isLocal = [NSFileManager.defaultManager fileExistsAtPath:nsstring_from_c_string(request->local_file_path())];
-  idb::CompanionInfo * info = response->mutable_companion();
+  idb::CompanionInfo *info = response->mutable_companion();
   info->set_is_local(isLocal);
-  info->set_udid(_target.udid.UTF8String);
 
-  NSDictionary<NSString *, NSString *> *metadata = _eventReporter.metadata ?: @{};
-  NSError *error = nil;
-  NSData *data = [NSJSONSerialization dataWithJSONObject:metadata options:0 error:&error];
-  if (data) {
-    info->set_metadata(data.bytes, data.length);
-  }
+  // Populate the other values.
+  populate_companion_info(info, _eventReporter, _target);
 
   return Status::OK;
 }}
