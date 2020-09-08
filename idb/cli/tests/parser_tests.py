@@ -203,7 +203,7 @@ class TestParser(TestCase):
         src = "path"
         cmd_input = ["file", "mkdir", src]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.mkdir.assert_called_once_with(bundle_id=None, path=src)
+        self.direct_client_mock.mkdir.assert_called_once_with(container=None, path=src)
 
     async def test_bundled_file_mkdir_flag(self) -> None:
         self.direct_client_mock.mkdir = AsyncMock()
@@ -212,7 +212,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "mkdir", src, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.mkdir.assert_called_once_with(
-            bundle_id=bundle_id, path=src
+            container=bundle_id, path=src
         )
 
     async def test_bundled_file_mkdir_colon(self) -> None:
@@ -220,7 +220,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "mkdir", "com.bundle.id:path"]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.mkdir.assert_called_once_with(
-            bundle_id="com.bundle.id", path="path"
+            container="com.bundle.id", path="path"
         )
 
     async def test_rm(self) -> None:
@@ -228,7 +228,7 @@ class TestParser(TestCase):
         src = "path"
         cmd_input = ["file", "remove", src]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.rm.assert_called_once_with(bundle_id=None, paths=[src])
+        self.direct_client_mock.rm.assert_called_once_with(container=None, paths=[src])
 
     async def test_bundled_file_rmpath_flag(self) -> None:
         self.direct_client_mock.rm = AsyncMock()
@@ -237,7 +237,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "remove", src, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.rm.assert_called_once_with(
-            bundle_id=bundle_id, paths=[src]
+            container=bundle_id, paths=[src]
         )
 
     async def test_bundled_file_rmpath_flag_multiple(self) -> None:
@@ -247,7 +247,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "remove", srcs[0], srcs[1], "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.rm.assert_called_once_with(
-            bundle_id=bundle_id, paths=srcs
+            container=bundle_id, paths=srcs
         )
 
     async def test_bundled_file_rmpath_colon(self) -> None:
@@ -255,7 +255,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "remove", "com.bundle.id:path"]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.rm.assert_called_once_with(
-            bundle_id="com.bundle.id", paths=["path"]
+            container="com.bundle.id", paths=["path"]
         )
 
     async def test_list(self) -> None:
@@ -263,7 +263,7 @@ class TestParser(TestCase):
         src = "path"
         cmd_input = ["file", "list", src]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.ls.assert_called_once_with(bundle_id=None, path=src)
+        self.direct_client_mock.ls.assert_called_once_with(container=None, path=src)
 
     async def test_bundled_file_list_flag(self) -> None:
         self.direct_client_mock.ls = AsyncMock(return_value=[])
@@ -272,7 +272,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "list", src, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.ls.assert_called_once_with(
-            bundle_id=bundle_id, path=src
+            container=bundle_id, path=src
         )
 
     async def test_bundled_file_list_colon(self) -> None:
@@ -280,7 +280,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "list", "com.bundle.id:path"]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.ls.assert_called_once_with(
-            bundle_id="com.bundle.id", path="path"
+            container="com.bundle.id", path="path"
         )
 
     async def test_file_move(self) -> None:
@@ -290,7 +290,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "move", src, dst]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.mv.assert_called_once_with(
-            bundle_id=None, src_paths=[src], dest_path=dst
+            container=None, src_paths=[src], dest_path=dst
         )
 
     async def test_bundled_file_move_flag(self) -> None:
@@ -301,7 +301,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "move", src, dst, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.mv.assert_called_once_with(
-            bundle_id=bundle_id, src_paths=[src], dest_path=dst
+            container=bundle_id, src_paths=[src], dest_path=dst
         )
 
     async def test_bundled_file_move_flag_multiple(self) -> None:
@@ -312,7 +312,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "move", srcs[0], srcs[1], dst, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.mv.assert_called_once_with(
-            bundle_id=bundle_id, src_paths=srcs, dest_path=dst
+            container=bundle_id, src_paths=srcs, dest_path=dst
         )
 
     async def test_bundled_file_move_colon(self) -> None:
@@ -321,7 +321,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "move", src, "com.bundle.id:b"]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.mv.assert_called_once_with(
-            bundle_id="com.bundle.id", src_paths=[src], dest_path="b"
+            container="com.bundle.id", src_paths=[src], dest_path="b"
         )
 
     async def test_file_push(self) -> None:
@@ -331,7 +331,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "push", src, dst]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.push.assert_called_once_with(
-            bundle_id=None, src_paths=[os.path.abspath(src)], dest_path=dst
+            container=None, src_paths=[os.path.abspath(src)], dest_path=dst
         )
 
     async def test_bundled_file_push_single_flag(self) -> None:
@@ -342,7 +342,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "push", src, dst, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.push.assert_called_once_with(
-            bundle_id=bundle_id, src_paths=[os.path.abspath(src)], dest_path=dst
+            container=bundle_id, src_paths=[os.path.abspath(src)], dest_path=dst
         )
 
     async def test_bundled_file_push_multi_flag(self) -> None:
@@ -354,7 +354,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "push", src1, src2, dst, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.push.assert_called_once_with(
-            bundle_id=bundle_id,
+            container=bundle_id,
             src_paths=[os.path.abspath(path) for path in [src1, src2]],
             dest_path=dst,
         )
@@ -365,7 +365,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "push", src, "com.bundle.id:someOutputDir"]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.push.assert_called_once_with(
-            bundle_id="com.bundle.id",
+            container="com.bundle.id",
             src_paths=[os.path.abspath(src)],
             dest_path="someOutputDir",
         )
@@ -377,7 +377,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "push", src1, src2, "com.bundle.id:someOutputDir"]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.push.assert_called_once_with(
-            bundle_id="com.bundle.id",
+            container="com.bundle.id",
             src_paths=[os.path.abspath(path) for path in [src1, src2]],
             dest_path="someOutputDir",
         )
@@ -389,7 +389,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "pull", src, dst]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.pull.assert_called_once_with(
-            bundle_id=None, src_path=src, dest_path=os.path.abspath(dst)
+            container=None, src_path=src, dest_path=os.path.abspath(dst)
         )
 
     async def test_bundled_file_pull(self) -> None:
@@ -400,7 +400,7 @@ class TestParser(TestCase):
         cmd_input = ["file", "pull", src, dst, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.direct_client_mock.pull.assert_called_once_with(
-            bundle_id=bundle_id, src_path=src, dest_path=os.path.abspath(dst)
+            container=bundle_id, src_path=src, dest_path=os.path.abspath(dst)
         )
 
     async def test_list_targets(self) -> None:

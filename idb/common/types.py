@@ -296,6 +296,17 @@ class InstalledArtifact:
     progress: Optional[float]
 
 
+class FileContainerType(Enum):
+    ROOT = "root"
+    MEDIA = "media"
+    CRASHES = "crashes"
+    PROVISIONING_PROFILES = "provisioning_profiles"
+
+
+FileContainer = Optional[Union[str, FileContainerType]]
+
+
+# Exposes the resource-specific commands that imply a connected companion
 class IdbClient(ABC):
     @abstractmethod
     async def list_apps(self) -> List[InstalledAppInfo]:
@@ -522,32 +533,32 @@ class IdbClient(ABC):
         pass
 
     @abstractmethod
-    async def ls(self, bundle_id: Optional[str], path: str) -> List[FileEntryInfo]:
+    async def ls(self, container: FileContainer, path: str) -> List[FileEntryInfo]:
         pass
 
     @abstractmethod
     async def mv(
-        self, bundle_id: Optional[str], src_paths: List[str], dest_path: str
+        self, container: FileContainer, src_paths: List[str], dest_path: str
     ) -> None:
         pass
 
     @abstractmethod
-    async def rm(self, bundle_id: Optional[str], paths: List[str]) -> None:
+    async def rm(self, container: FileContainer, paths: List[str]) -> None:
         pass
 
     @abstractmethod
-    async def mkdir(self, bundle_id: Optional[str], path: str) -> None:
+    async def mkdir(self, container: FileContainer, path: str) -> None:
         pass
 
     @abstractmethod
     async def pull(
-        self, bundle_id: Optional[str], src_path: str, dest_path: str
+        self, container: FileContainer, src_path: str, dest_path: str
     ) -> None:
         pass
 
     @abstractmethod
     async def push(
-        self, src_paths: List[str], bundle_id: Optional[str], dest_path: str
+        self, src_paths: List[str], container: FileContainer, dest_path: str
     ) -> None:
         pass
 

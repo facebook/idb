@@ -53,6 +53,8 @@ from idb.common.types import (
     CrashLogInfo,
     CrashLogQuery,
     DomainSocketAddress,
+    FileContainer,
+    FileContainerType,
     FileEntryInfo,
     HIDButtonType,
     HIDEvent,
@@ -75,6 +77,10 @@ from idb.grpc.crash import (
     _to_crash_log,
     _to_crash_log_info_list,
     _to_crash_log_query_proto,
+)
+from idb.grpc.file import (
+    container_to_bundle_id_deprecated as file_container_to_bundle_id_deprecated,
+    container_to_grpc as file_container_to_grpc,
 )
 from idb.grpc.hid import event_to_grpc
 from idb.grpc.idb_grpc import CompanionServiceStub
@@ -427,23 +433,48 @@ class IdbClient(IdbClientBase):
         await self.stub.uninstall(UninstallRequest(bundle_id=bundle_id))
 
     @log_and_handle_exceptions
-    async def rm(self, bundle_id: str, paths: List[str]) -> None:
-        await self.stub.rm(RmRequest(bundle_id=bundle_id, paths=paths))
-
-    @log_and_handle_exceptions
-    async def mv(self, bundle_id: str, src_paths: List[str], dest_path: str) -> None:
-        await self.stub.mv(
-            MvRequest(bundle_id=bundle_id, src_paths=src_paths, dst_path=dest_path)
+    async def rm(self, container: FileContainer, paths: List[str]) -> None:
+        await self.stub.rm(
+            RmRequest(
+                bundle_id=file_container_to_bundle_id_deprecated(container),
+                paths=paths,
+                container=file_container_to_grpc(container),
+            )
         )
 
     @log_and_handle_exceptions
-    async def ls(self, bundle_id: str, path: str) -> List[FileEntryInfo]:
-        response = await self.stub.ls(LsRequest(bundle_id=bundle_id, path=path))
+    async def mv(
+        self, container: FileContainer, src_paths: List[str], dest_path: str
+    ) -> None:
+        await self.stub.mv(
+            MvRequest(
+                bundle_id=file_container_to_bundle_id_deprecated(container),
+                src_paths=src_paths,
+                dst_path=dest_path,
+                container=file_container_to_grpc(container),
+            )
+        )
+
+    @log_and_handle_exceptions
+    async def ls(self, container: FileContainer, path: str) -> List[FileEntryInfo]:
+        response = await self.stub.ls(
+            LsRequest(
+                bundle_id=file_container_to_bundle_id_deprecated(container),
+                path=path,
+                container=file_container_to_grpc(container),
+            )
+        )
         return [FileEntryInfo(path=file.path) for file in response.files]
 
     @log_and_handle_exceptions
-    async def mkdir(self, bundle_id: str, path: str) -> None:
-        await self.stub.mkdir(MkdirRequest(bundle_id=bundle_id, path=path))
+    async def mkdir(self, container: FileContainer, path: str) -> None:
+        await self.stub.mkdir(
+            MkdirRequest(
+                bundle_id=file_container_to_bundle_id_deprecated(container),
+                path=path,
+                container=file_container_to_grpc(container),
+            )
+        )
 
     @log_and_handle_exceptions
     async def crash_delete(self, query: CrashLogQuery) -> List[CrashLogInfo]:
@@ -498,11 +529,17 @@ class IdbClient(IdbClientBase):
             yield response
 
     @log_and_handle_exceptions
-    async def push(self, src_paths: List[str], bundle_id: str, dest_path: str) -> None:
+    async def push(
+        self, src_paths: List[str], container: FileContainer, dest_path: str
+    ) -> None:
         async with self.stub.push.open() as stream:
             await stream.send_message(
                 PushRequest(
-                    inner=PushRequest.Inner(bundle_id=bundle_id, dst_path=dest_path)
+                    inner=PushRequest.Inner(
+                        bundle_id=file_container_to_bundle_id_deprecated(container),
+                        dst_path=dest_path,
+                        container=file_container_to_grpc(container),
+                    )
                 )
             )
             if self.is_local:
@@ -523,14 +560,17 @@ class IdbClient(IdbClientBase):
                 )
 
     @log_and_handle_exceptions
-    async def pull(self, bundle_id: str, src_path: str, dest_path: str) -> None:
+    async def pull(
+        self, container: FileContainer, src_path: str, dest_path: str
+    ) -> None:
         async with self.stub.pull.open() as stream:
             request = request = PullRequest(
-                bundle_id=bundle_id,
+                bundle_id=file_container_to_bundle_id_deprecated(container),
                 src_path=src_path,
                 # not sending the destination to remote companion
                 # so it streams the file back
                 dst_path=dest_path if self.is_local else None,
+                container=file_container_to_grpc(container),
             )
             await stream.send_message(request)
             await stream.end()

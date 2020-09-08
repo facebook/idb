@@ -14,7 +14,7 @@ from typing import Any, List, NamedTuple, Optional, Tuple
 
 import aiofiles
 from idb.cli import ClientCommand
-from idb.common.types import IdbClient
+from idb.common.types import FileContainer, FileContainerType, IdbClient
 
 
 class BundleWithPath(NamedTuple):
@@ -29,7 +29,7 @@ class BundleWithPath(NamedTuple):
         return BundleWithPath(bundle_id=split[0], path=split[1])
 
 
-def _extract_bundle_id(args: Namespace) -> Optional[str]:
+def _extract_bundle_id(args: Namespace) -> FileContainer:
     if args.bundle_id is not None:
         return args.bundle_id
     values = []
@@ -48,7 +48,7 @@ def _extract_bundle_id(args: Namespace) -> Optional[str]:
     return args.bundle_id
 
 
-def _convert_args(args: Namespace) -> Tuple[Namespace, Optional[str]]:
+def _convert_args(args: Namespace) -> Tuple[Namespace, FileContainer]:
     def convert_value(value: Any) -> Any:  # pyre-ignore
         if isinstance(value, List):
             return [convert_value(x) for x in value]
@@ -62,29 +62,61 @@ def _convert_args(args: Namespace) -> Tuple[Namespace, Optional[str]]:
             if key != "bundle_id"
         }
     )
-    return (args, bundle_id)
+    file_container = bundle_id or args.container_type
+    return (args, file_container)
 
 
 class FSCommand(ClientCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
-        parser.add_argument(
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument(
             "--bundle-id",
             help="Bundle ID of application. If not provided, the 'root' of the target will be used",
             type=str,
             required=False,
             default=None,
         )
+        group.add_argument(
+            "--root",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.ROOT,
+            help="Use the root file container",
+        )
+        group.add_argument(
+            "--media",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.MEDIA,
+            help="Use the media container",
+        )
+        group.add_argument(
+            "--crashes",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.CRASHES,
+            help="Use the crashes container",
+        )
+        group.add_argument(
+            "--provisioning-profiles",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.PROVISIONING_PROFILES,
+            help="Use the provisioning profiles container",
+        )
         super().add_parser_arguments(parser)
 
     @abstractmethod
-    async def run_with_bundle(
-        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
+    async def run_with_container(
+        self, container: FileContainer, args: Namespace, client: IdbClient
     ) -> None:
         pass
 
     async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
-        (args, bundle_id) = _convert_args(args)
-        return await self.run_with_bundle(bundle_id=bundle_id, args=args, client=client)
+        (args, container) = _convert_args(args)
+        return await self.run_with_container(
+            container=container, args=args, client=client
+        )
 
 
 class FSListCommand(FSCommand):
@@ -106,10 +138,10 @@ class FSListCommand(FSCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_bundle(
-        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
+    async def run_with_container(
+        self, container: FileContainer, args: Namespace, client: IdbClient
     ) -> None:
-        paths = await client.ls(bundle_id=bundle_id, path=args.path)
+        paths = await client.ls(container=container, path=args.path)
         if args.json:
             print(json.dumps([{"path": item.path} for item in paths]))
         else:
@@ -132,10 +164,10 @@ class FSMkdirCommand(FSCommand):
             "path", help="Path to directory to create", type=BundleWithPath.parse
         )
 
-    async def run_with_bundle(
-        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
+    async def run_with_container(
+        self, container: FileContainer, args: Namespace, client: IdbClient
     ) -> None:
-        await client.mkdir(bundle_id=bundle_id, path=args.path)
+        await client.mkdir(container=container, path=args.path)
 
 
 class FSMoveCommand(FSCommand):
@@ -165,10 +197,10 @@ class FSMoveCommand(FSCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_bundle(
-        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
+    async def run_with_container(
+        self, container: FileContainer, args: Namespace, client: IdbClient
     ) -> None:
-        await client.mv(bundle_id=bundle_id, src_paths=args.src, dest_path=args.dst)
+        await client.mv(container=container, src_paths=args.src, dest_path=args.dst)
 
 
 class FSRemoveCommand(FSCommand):
@@ -193,10 +225,10 @@ class FSRemoveCommand(FSCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_bundle(
-        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
+    async def run_with_container(
+        self, container: FileContainer, args: Namespace, client: IdbClient
     ) -> None:
-        await client.rm(bundle_id=bundle_id, paths=args.path)
+        await client.rm(container=container, paths=args.path)
 
 
 class FSPushCommand(FSCommand):
@@ -222,11 +254,11 @@ class FSPushCommand(FSCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_bundle(
-        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
+    async def run_with_container(
+        self, container: FileContainer, args: Namespace, client: IdbClient
     ) -> None:
         return await client.push(
-            bundle_id=bundle_id,
+            container=container,
             src_paths=[os.path.abspath(path) for path in args.src_paths],
             dest_path=args.dest_path,
         )
@@ -248,11 +280,11 @@ class FSPullCommand(FSCommand):
         parser.add_argument("dst", help="Local destination path", type=str)
         super().add_parser_arguments(parser)
 
-    async def run_with_bundle(
-        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
+    async def run_with_container(
+        self, container: FileContainer, args: Namespace, client: IdbClient
     ) -> None:
         await client.pull(
-            bundle_id=bundle_id, src_path=args.src, dest_path=os.path.abspath(args.dst)
+            container=container, src_path=args.src, dest_path=os.path.abspath(args.dst)
         )
 
 
@@ -271,8 +303,8 @@ class FSShowCommand(FSCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_bundle(
-        self, bundle_id: Optional[str], args: Namespace, client: IdbClient
+    async def run_with_container(
+        self, container: FileContainer, args: Namespace, client: IdbClient
     ) -> None:
         with tempfile.TemporaryDirectory() as destination_directory:
             # Remove the tempfile so that it can be written to.
@@ -281,7 +313,7 @@ class FSShowCommand(FSCommand):
                 destination_directory, os.path.basename(args.src)
             )
             await client.pull(
-                bundle_id=bundle_id, src_path=args.src, dest_path=destination_directory
+                container=container, src_path=args.src, dest_path=destination_directory
             )
             async with aiofiles.open(destination_file, "rb") as f:
                 data = await f.read()
