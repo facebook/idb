@@ -194,7 +194,7 @@ static NSString *const AXPrefix = @"AX";
     @"AXValue": element.accessibilityValue ?: NSNull.null,
     @"AXUniqueId": element.accessibilityIdentifier ?: NSNull.null,
     // There are additional synthetic values from the old output.
-    @"type": role,
+    @"type": role ?: NSNull.null,
     // These are new values in this output
     @"title": element.accessibilityTitle ?: NSNull.null,
     @"frame": @{
