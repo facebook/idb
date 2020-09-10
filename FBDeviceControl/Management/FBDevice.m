@@ -318,6 +318,7 @@
   static NSArray<Class> *commandClasses;
   dispatch_once(&onceToken, ^{
     commandClasses = @[
+      FBDeviceActivationCommands.class,
       FBDeviceApplicationCommands.class,
       FBDeviceFileCommands.class,
       FBDeviceCrashLogCommands.class,

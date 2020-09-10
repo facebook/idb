@@ -18,6 +18,7 @@
 #import "FBAMDServiceConnection.h"
 #import "FBAMRestorableDevice.h"
 #import "FBDeveloperDiskImage.h"
+#import "FBDeviceActivationCommands.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
 #import "FBDeviceLinkClient.h"

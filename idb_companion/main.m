@@ -35,6 +35,7 @@ Usage: \n \
     --clone-destination-set    A path to the destination device set in a clone operation, --device-set-path specifies the source simulator.\n\
     --recover ecid:ECID        Causes the targeted device ECID to enter recovery mode\n\
     --unrecover ecid:ECID      Causes the targeted device ECID to exit recovery mode\n\
+    --activate ecid:ECID       Causes the device to activate\n\
     --notify PATH|stdout       Launches a companion notifier which will stream availability updates to the specified path, or stdout.\n\
     --list 1                   Lists all available devices/simulators in the current context.\n\
     --help                     Show this help message and exit.\n\
@@ -351,6 +352,14 @@ static FBFuture<NSNull *> *ExitRecoveryFuture(NSString *ecid, id<FBControlCoreLo
     }];
 }
 
+static FBFuture<NSNull *> *ActivateFuture(NSString *ecid, id<FBControlCoreLogger> logger)
+{
+  return [DeviceForECID(ecid, logger)
+    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (FBDevice *device) {
+      return [device activate];
+    }];
+}
+
 static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   BOOL terminateOffline = [userDefaults boolForKey:@"-terminate-offline"];
@@ -421,6 +430,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   NSString *shutdown = [userDefaults stringForKey:@"-shutdown"];
   NSString *udid = [userDefaults stringForKey:@"-udid"];
   NSString *unrecover = [userDefaults stringForKey:@"-unrecover"];
+  NSString *activate = [userDefaults stringForKey:@"-activate"];
 
   id<FBEventReporter> reporter = FBIDBConfiguration.eventReporter;
   if (udid) {
@@ -455,6 +465,9 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   } else if (unrecover) {
     [logger.info logFormat:@"Removing %@ from recovery", recover];
     return [FBFuture futureWithResult:ExitRecoveryFuture(unrecover, logger)];
+  } else if (activate) {
+    [logger.info logFormat:@"Activating %@", activate];
+    return [FBFuture futureWithResult:ActivateFuture(activate, logger)];
   }
   return [[[FBIDBError
     describeFormat:@"You must specify at least one 'Mode of operation'\n\n%s", kUsageHelpMessage]

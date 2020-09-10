@@ -10,6 +10,7 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
 #import <FBDeviceControl/FBDeviceRecoveryCommands.h>
+#import <FBDeviceControl/FBDeviceActivationCommands.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -19,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A class that represents an iOS Device.
  */
-@interface FBDevice : NSObject <FBiOSTarget, FBDeviceCommands, FBDiagnosticInformationCommands, FBLocationCommands, FBDeviceRecoveryCommands>
+@interface FBDevice : NSObject <FBiOSTarget, FBDeviceCommands, FBDiagnosticInformationCommands, FBLocationCommands, FBDeviceRecoveryCommands, FBDeviceActivationCommands>
 
 /**
  The Device Set to which the Device Belongs.
