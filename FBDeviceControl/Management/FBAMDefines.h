@@ -120,6 +120,11 @@ typedef void (*AMRestorableDeviceNotificationCallback)(AMRestorableDeviceRef eve
 typedef void (*AFCNotificationCallback)(void *connectionRefPtr, void *arg1, void *afcOperationPtr);
 
 /**
+ Defines the callback for "AMSEraseDevice".
+ */
+typedef int (*AMSEraseDeviceCallback)(NSString *identifier, int progress, void *_Nullable context);
+
+/**
  A Structure that references to the AMDevice APIs we use.
  */
 typedef struct {
@@ -196,6 +201,10 @@ typedef struct {
   int (*RestorableDeviceGetLocationID)(AMRestorableDeviceRef device);
   int (*RestorableDeviceGetProductType)(AMRestorableDeviceRef device);
   int (*RestorableDeviceGetState)(AMRestorableDeviceRef device);
+
+  // AppleMobileSync
+  int (*AMSInitialize)(int arg0);
+  int (*AMSEraseDevice)(CFStringRef udid, AMSEraseDeviceCallback callback, void *context);
 
   // Debugging
   void (*InitializeMobileDevice)(void);

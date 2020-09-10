@@ -85,6 +85,8 @@ DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
 + (void)populateMobileDeviceSymbols:(AMDCalls *)calls
 {
   void *handle = [[NSBundle bundleWithIdentifier:@"com.apple.mobiledevice"] dlopenExecutablePath];
+  calls->AMSEraseDevice = FBGetSymbolFromHandle(handle, "AMSEraseDevice");
+  calls->AMSInitialize = FBGetSymbolFromHandle(handle, "AMSInitialize");
   calls->Connect = FBGetSymbolFromHandle(handle, "AMDeviceConnect");
   calls->CopyDeviceIdentifier = FBGetSymbolFromHandle(handle, "AMDeviceCopyDeviceIdentifier");
   calls->CopyErrorText = FBGetSymbolFromHandle(handle, "AMDCopyErrorText");

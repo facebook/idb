@@ -20,6 +20,8 @@
 #import "FBDeviceCrashLogCommands.h"
 #import "FBDeviceDebuggerCommands.h"
 #import "FBDeviceDiagnosticInformationCommands.h"
+#import "FBDeviceEraseCommands.h"
+#import "FBDeviceFileCommands.h"
 #import "FBDeviceLocationCommands.h"
 #import "FBDeviceLogCommands.h"
 #import "FBDeviceScreenshotCommands.h"
@@ -320,10 +322,11 @@
     commandClasses = @[
       FBDeviceActivationCommands.class,
       FBDeviceApplicationCommands.class,
-      FBDeviceFileCommands.class,
       FBDeviceCrashLogCommands.class,
       FBDeviceDebuggerCommands.class,
       FBDeviceDiagnosticInformationCommands.class,
+      FBDeviceEraseCommands.class,
+      FBDeviceFileCommands.class,
       FBDeviceLocationCommands.class,
       FBDeviceLogCommands.class,
       FBDeviceRecoveryCommands.class,
