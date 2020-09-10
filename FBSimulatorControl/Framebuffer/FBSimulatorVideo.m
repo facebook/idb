@@ -214,24 +214,22 @@
       NSArray* matches = [regex
         matchesInString:output
         options:0
-        range:NSMakeRange(0, [output length])];
+        range:NSMakeRange(0, output.length)];
 
-      if (matches.count != 1) {
+      // Some versions can output information twice, pick the first one
+      if (matches.count < 1) {
         [self.logger logFormat:@"Couldn't find simctl version from: %@, return 0.0", output];
         return [FBFuture futureWithResult:@"0.0"];
       }
-
       NSTextCheckingResult *match = matches[0];
       NSString *result = [output substringWithRange:[match rangeAtIndex:1]];
 
       return [FBFuture futureWithResult:result];
     }]
     onQueue:self.queue fmap:^(NSString *simctlVersion) {
-      NSArray<NSString *> *recordVideoParameters = @[@"--type=mp4"];
-
+      // Earlier versions use --type=codec instead of --type, so we need to switch on the version of simctl
       NSDecimalNumber *simctlVersionNumber = [NSDecimalNumber decimalNumberWithString:simctlVersion];
-
-      // This is the version of CoreSimulator comes with Xcode 11.2 beta 2
+      NSArray<NSString *> *recordVideoParameters = @[@"--type=mp4"];
       if ([simctlVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"681.14"]]) {
         recordVideoParameters = @[@"--codec=h264", @"--force"];
       }
