@@ -7,6 +7,7 @@
 
 #import "FBXCTestResultBundleParser.h"
 
+int const XCTestOperationTimeoutSecs = 120;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -133,8 +134,10 @@ static inline NSDate *dateFromString(NSString *date)
           FBFuture *operation = [[FBXCTestResultToolOperation
             getJSONFrom:resultBundlePath forId:bundleObjectId queue:target.workQueue logger:logger]
             onQueue:target.workQueue doOnResolved:^void (NSDictionary<NSString *, NSDictionary<NSString *, id> *> *xcresults) {
+              [logger logFormat:@"Parsing summaries for id %@", bundleObjectId];
               NSArray<NSDictionary *> *summaries = accessAndUnwrapValues(xcresults, @"summaries", logger);
               [self reportSummaries:summaries reporter:reporter queue:target.asyncQueue resultBundlePath:resultBundlePath logger:logger];
+              [logger logFormat:@"Done parsing summaries for id %@", bundleObjectId];
             }];
           [operations addObject:operation];
         }
@@ -634,7 +637,7 @@ static inline NSDate *dateFromString(NSString *date)
         else {
           [reporter testManagerMediator:nil testCaseDidFinishForTestClass:testClassName method:testMethodIdentifier withStatus:status duration:[duration doubleValue]];
         }
-      }] await:nil];
+    }] awaitWithTimeout:XCTestOperationTimeoutSecs error:nil];
   }
 }
 
@@ -747,7 +750,7 @@ static inline NSDate *dateFromString(NSString *date)
         NSDictionary<NSString *, NSDictionary *> *payloadRef = attachment[@"payloadRef"];
         NSAssert(payloadRef, @"Screenshot payload reference is empty");
         NSString *screenshotId = (NSString *)accessAndUnwrapValue(payloadRef, @"id", logger);
-        [[FBXCTestResultToolOperation exportFileFrom:resultBundlePath to:exportPath forId:screenshotId queue:queue logger:logger] await:nil];
+        [[FBXCTestResultToolOperation exportFileFrom:resultBundlePath to:exportPath forId:screenshotId queue:queue logger:logger] awaitWithTimeout:XCTestOperationTimeoutSecs error:nil];
       }
     }
   }

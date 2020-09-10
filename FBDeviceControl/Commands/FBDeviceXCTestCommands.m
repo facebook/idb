@@ -135,6 +135,7 @@
       return FBFuture.empty;
     }]
     onQueue:self.device.workQueue fmap:^(id _) {
+      [logger log:@"Reporting test results"];
       [reporter testManagerMediatorDidFinishExecutingTestPlan:nil];
       return FBFuture.empty;
     }]
