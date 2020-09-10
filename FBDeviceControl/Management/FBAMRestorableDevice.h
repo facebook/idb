@@ -25,6 +25,7 @@ extern FBDeviceKey const FBDeviceKeyUniqueDeviceID;
 extern FBDeviceKey const FBDeviceKeyCPUArchitecture;
 extern FBDeviceKey const FBDeviceKeyBuildVersion;
 extern FBDeviceKey const FBDeviceKeyProductVersion;
+extern FBDeviceKey const FBDeviceKeyActivationState;
 
 /**
  An Object Wrapper around AMRestorableDevice

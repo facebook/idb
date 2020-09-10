@@ -20,6 +20,7 @@ FBDeviceKey const FBDeviceKeyUniqueDeviceID = @"UniqueDeviceID";
 FBDeviceKey const FBDeviceKeyCPUArchitecture = @"CPUArchitecture";
 FBDeviceKey const FBDeviceKeyBuildVersion = @"BuildVersion";
 FBDeviceKey const FBDeviceKeyProductVersion = @"ProductVersion";
+FBDeviceKey const FBDeviceKeyActivationState = @"ActivationState";
 
 static NSString *const UnknownValue = @"unknown";
 
@@ -126,6 +127,11 @@ static NSString *const UnknownValue = @"unknown";
 - (AMRecoveryModeDeviceRef)recoveryModeDeviceRef
 {
   return self.calls.RestorableDeviceGetRecoveryModeDevice(self.restorableDevice);
+}
+
+- (FBDeviceActivationState)activationState
+{
+  return FBDeviceActivationStateUnknown;
 }
 
 #pragma mark Public

@@ -140,6 +140,11 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
   return NULL;
 }
 
+- (FBDeviceActivationState)activationState
+{
+  return FBDeviceActivationStateCoerceFromString(self.allValues[FBDeviceKeyActivationState]);
+}
+
 #pragma mark FBDeviceCommands Protocol Implementation
 
 - (FBFutureContext<FBAMDevice *> *)connectToDeviceWithPurpose:(NSString *)format, ...

@@ -17,6 +17,22 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBDeviceLinkClient;
 
 /**
+ An enum representing the activation state of the device.
+ */
+typedef NSString *FBDeviceActivationState NS_STRING_ENUM;
+extern FBDeviceActivationState const FBDeviceActivationStateUnknown;
+extern FBDeviceActivationState const FBDeviceActivationStateUnactivated;
+extern FBDeviceActivationState const FBDeviceActivationStateActivated;
+
+/**
+ Coerce an Activation State string to the String Enum
+
+ @param activationState the string representation of the activation state.
+ @return a FBDeviceActivationState string enum.
+ */
+extern FBDeviceActivationState FBDeviceActivationStateCoerceFromString(NSString *activationState);
+
+/**
  Defines properties that are required on classes related to the implementation of FBDevice.
  */
 @protocol FBDevice <NSObject>
@@ -52,6 +68,11 @@ NS_ASSUME_NONNULL_BEGIN
  The Device's 'Build Version'.
  */
 @property (nonatomic, nullable, copy, readonly) NSString *buildVersion;
+
+/**
+ The Device's 'Activation State'.
+ */
+@property (nonatomic, assign, readonly) FBDeviceActivationState activationState;
 
 /**
  All of the Device Values available.

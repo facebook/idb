@@ -32,6 +32,7 @@
 
 @implementation FBDevice
 
+@synthesize activationState = _activationState;
 @synthesize allValues = _allValues;
 @synthesize amDevice = _amDevice;
 @synthesize architecture = _architecture;
@@ -211,6 +212,9 @@
   }
   if (!_uniqueIdentifier || overwrite) {
     _uniqueIdentifier = targetInfo.uniqueIdentifier;
+  }
+  if (!_activationState || overwrite) {
+    _activationState = targetInfo.activationState;
   }
 }
 
