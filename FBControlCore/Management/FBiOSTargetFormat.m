@@ -179,7 +179,7 @@ FBiOSTargetFormatKey const FBiOSTargetFormatContainerApplicationProcessIdentifie
   for (NSUInteger index = 0; index < self.fields.count; index++) {
     NSString *field = self.fields[index];
     id value = [FBiOSTargetFormat extract:field from:target];
-    if (!value) {
+    if (!value || value == [NSNull null]) {
       continue;
     }
     [string appendString:([value respondsToSelector:@selector(stringValue)] ? [value stringValue] : value)];
