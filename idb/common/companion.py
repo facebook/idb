@@ -26,6 +26,7 @@ from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws
 
 
+DEFAULT_ERASE_COMMAND_TIMEOUT = timedelta(minutes=3)
 DEFAULT_COMPANION_COMMAND_TIMEOUT = timedelta(seconds=120)
 DEFAULT_COMPANION_TEARDOWN_TIMEOUT = timedelta(seconds=30)
 
@@ -189,7 +190,9 @@ class Companion:
         await self._run_udid_command(udid=udid, command="shutdown", timeout=timeout)
 
     @log_call()
-    async def erase(self, udid: str, timeout: Optional[timedelta] = None) -> None:
+    async def erase(
+        self, udid: str, timeout: timedelta = DEFAULT_ERASE_COMMAND_TIMEOUT
+    ) -> None:
         await self._run_udid_command(udid=udid, command="erase", timeout=timeout)
 
     @log_call()
