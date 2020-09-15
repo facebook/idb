@@ -50,9 +50,12 @@ static FBFuture<NSNull *> * resolve_next_read(grpc::internal::ReaderInterface<T>
 }
 
 template <class T>
-static id<FBDataConsumer> drain_consumer(grpc::internal::WriterInterface<T> *writer)
+static id<FBDataConsumer> drain_consumer(grpc::internal::WriterInterface<T> *writer, FBFuture<NSNull *> *done)
 {
   return [FBBlockDataConsumer asynchronousDataConsumerWithBlock:^(NSData *data) {
+    if (done.hasCompleted) {
+      return;
+    }
     T response;
     idb::Payload *payload = response.mutable_payload();
     payload->set_data(data.bytes, data.length);
@@ -61,7 +64,7 @@ static id<FBDataConsumer> drain_consumer(grpc::internal::WriterInterface<T> *wri
 }
 
 template <class Write, class Read>
-static id<FBDataConsumer> consumer_from_request(grpc::ServerReaderWriter<Write, Read> *stream, Read& request, NSError **error)
+static id<FBDataConsumer> consumer_from_request(grpc::ServerReaderWriter<Write, Read> *stream, Read& request, FBFuture<NSNull *> *done, NSError **error)
 {
   Read initial;
   stream->Read(&initial);
@@ -70,7 +73,7 @@ static id<FBDataConsumer> consumer_from_request(grpc::ServerReaderWriter<Write, 
   if (requestedFilePath.length() > 0) {
     return [FBFileWriter syncWriterForFilePath:nsstring_from_c_string(requestedFilePath.c_str()) error:error];
   }
-  return drain_consumer(stream);
+  return drain_consumer(stream, done);
 }
 
 template <class T>
@@ -991,7 +994,8 @@ Status FBIDBServiceHandler::video_stream(ServerContext* context, grpc::ServerRea
 {@autoreleasepool{
   NSError *error = nil;
   idb::VideoStreamRequest request;
-  id<FBDataConsumer> consumer = consumer_from_request(stream, request, &error);
+  FBMutableFuture<NSNull *> *done = FBMutableFuture.future;
+  id<FBDataConsumer> consumer = consumer_from_request(stream, request, done, &error);
   if (!consumer) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
@@ -1014,6 +1018,8 @@ Status FBIDBServiceHandler::video_stream(ServerContext* context, grpc::ServerRea
 
   // Stop the streaming for real. It may have stopped already in which case this returns instantly.
   success = [[bitmapStream stopStreaming] block:&error] != nil;
+  // Signal that we're done so we don't write to a dangling pointer.
+  [done resolveWithResult:NSNull.null];
   if (success == NO) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
