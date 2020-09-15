@@ -336,7 +336,7 @@ static NSString *const AXPrefix = @"AX";
   if (nestedFormat || FBXcodeConfiguration.isXcode12OrGreater) {
     if (![device respondsToSelector:@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:)]) {
       return [[FBControlCoreError
-        describeFormat:@"-[SimDevice %@] is not present on, you must install Xcode 12 for this to be available", NSStringFromSelector(@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:))]
+        describeFormat:@"-[SimDevice %@] is not present on this host, you must install and/or use Xcode 12 to use the nested accessibility format.", NSStringFromSelector(@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:))]
         failFuture];
     }
     return [FBFuture futureWithResult:[[FBSimulatorAccessibilityCommands_CoreSimulator alloc] initWithDevice:simulator.device queue:simulator.asyncQueue logger:simulator.logger]];
