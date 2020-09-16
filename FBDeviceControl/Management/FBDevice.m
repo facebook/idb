@@ -15,15 +15,16 @@
 #import "FBAMDevice.h"
 #import "FBAMRestorableDevice.h"
 #import "FBDeviceApplicationCommands.h"
-#import "FBDeviceFileCommands.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceCrashLogCommands.h"
 #import "FBDeviceDebuggerCommands.h"
 #import "FBDeviceDiagnosticInformationCommands.h"
 #import "FBDeviceEraseCommands.h"
 #import "FBDeviceFileCommands.h"
+#import "FBDeviceFileCommands.h"
 #import "FBDeviceLocationCommands.h"
 #import "FBDeviceLogCommands.h"
+#import "FBDevicePowerCommands.h"
 #import "FBDeviceScreenshotCommands.h"
 #import "FBDeviceVideoRecordingCommands.h"
 #import "FBDeviceXCTestCommands.h"
@@ -329,6 +330,7 @@
       FBDeviceFileCommands.class,
       FBDeviceLocationCommands.class,
       FBDeviceLogCommands.class,
+      FBDevicePowerCommands.class,
       FBDeviceRecoveryCommands.class,
       FBDeviceScreenshotCommands.class,
       FBDeviceVideoRecordingCommands.class,
