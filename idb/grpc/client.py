@@ -354,7 +354,7 @@ class IdbClient(IdbClientBase):
                 await stream.end()
                 await stream.recv_message()
             else:
-                print(file_paths)
+                self.logger.info(f"Adding media from {file_paths}")
                 generator = stream_map(
                     generate_tar(
                         paths=file_paths,
