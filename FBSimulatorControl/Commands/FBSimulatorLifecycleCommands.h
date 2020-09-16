@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Interactions for the Lifecycle of the Simulator.
  */
-@protocol FBSimulatorLifecycleCommands <NSObject, FBiOSTargetCommand, FBEraseCommands>
+@protocol FBSimulatorLifecycleCommands <NSObject, FBiOSTargetCommand, FBEraseCommands, FBPowerCommands>
 
 #pragma mark Boot/Shutdown
 
@@ -44,14 +44,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Future that resolves when the Simulator is booted.
  */
 - (FBFuture<NSNull *> *)bootWithConfiguration:(FBSimulatorBootConfiguration *)configuration;
-
-/**
- Shuts the Simulator down.
- Will fail if the Simulator is not booted.
-
- @return a Future that resolves when the Simulator has shutdown booted.
- */
-- (FBFuture<NSNull *> *)shutdown;
 
 #pragma mark States
 

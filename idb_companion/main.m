@@ -244,9 +244,15 @@ static FBFuture<FBFuture<NSNull *> *> *BootFuture(NSString *udid, NSUserDefaults
 
 static FBFuture<NSNull *> *ShutdownFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
-  return [SimulatorFuture(udid, userDefaults, logger, reporter)
-    onQueue:dispatch_get_main_queue() fmap:^(FBSimulator *simulator) {
-      return [simulator shutdown];
+  return [TargetForUDID(udid, userDefaults, NO, logger, reporter)
+    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (id<FBiOSTarget> target) {
+      id<FBPowerCommands> commands = (id<FBPowerCommands>) target;
+      if (![commands conformsToProtocol:@protocol(FBPowerCommands)]) {
+        return [[FBIDBError
+          describeFormat:@"Cannot shutdown %@, does not support shutting down", target]
+          failFuture];
+      }
+      return [commands shutdown];
     }];
 }
 

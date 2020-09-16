@@ -66,9 +66,20 @@
     boot];
 }
 
+#pragma mark FBPowerCommands
+
 - (FBFuture<NSNull *> *)shutdown
 {
   return [[self.simulator.set killSimulator:self.simulator] mapReplace:NSNull.null];
+}
+
+- (FBFuture<NSNull *> *)reboot
+{
+  return [[self
+    shutdown]
+    onQueue:self.simulator.workQueue fmap:^(id _) {
+      return [self boot];
+    }];
 }
 
 #pragma mark Erase
