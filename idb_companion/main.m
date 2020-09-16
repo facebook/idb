@@ -27,6 +27,7 @@ Usage: \n \
   Modes of operation, only one of these may be specified:\n\
     --udid UDID|mac|only       Launches a companion server for the specified UDID, 'mac' for a mac companion, or 'only' to run a companion for the only simulator/device available.\n\
     --boot UDID                Boots the simulator with the specified UDID.\n\
+    --reboot UDID              Reboots the target with the specified UDID.\n\
     --shutdown UDID            Shuts down the simulator with the specified UDID.\n\
     --erase UDID               Erases the simulator with the specified UDID.\n\
     --delete UDID|all          Deletes the simulator with the specified UDID, or 'all' to delete all simulators in the set.\n\
@@ -256,6 +257,20 @@ static FBFuture<NSNull *> *ShutdownFuture(NSString *udid, NSUserDefaults *userDe
     }];
 }
 
+static FBFuture<NSNull *> *RebootFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
+{
+  return [TargetForUDID(udid, userDefaults, NO, logger, reporter)
+    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (id<FBiOSTarget> target) {
+      id<FBPowerCommands> commands = (id<FBPowerCommands>) target;
+      if (![commands conformsToProtocol:@protocol(FBPowerCommands)]) {
+        return [[FBIDBError
+          describeFormat:@"Cannot shutdown %@, does not support rebooting", target]
+          failFuture];
+      }
+      return [commands reboot];
+    }];
+}
+
 static FBFuture<NSNull *> *EraseFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   return [TargetForUDID(udid, userDefaults, NO, logger, reporter)
@@ -426,6 +441,7 @@ static FBFuture<FBFuture<NSNull *> *> *NotiferFuture(NSString *notify, NSUserDef
 
 static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, const char *argv[], NSUserDefaults *userDefaults, FBIDBLogger *logger) {
   NSString *boot = [userDefaults stringForKey:@"-boot"];
+  NSString *reboot = [userDefaults stringForKey:@"-reboot"];
   NSString *clone = [userDefaults stringForKey:@"-clone"];
   NSString *create = [userDefaults stringForKey:@"-create"];
   NSString *delete = [userDefaults stringForKey:@"-delete"];
@@ -450,9 +466,12 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   } else if (boot) {
     [logger logFormat:@"Booting %@", boot];
     return BootFuture(boot, userDefaults, logger, reporter);
-  } else if(shutdown) {
+  } else if (shutdown) {
     [logger.info logFormat:@"Shutting down %@", shutdown];
     return [FBFuture futureWithResult:ShutdownFuture(shutdown, userDefaults, logger, reporter)];
+  } else if (reboot) {
+    [logger.info logFormat:@"Rebooting %@", reboot];
+    return [FBFuture futureWithResult:ShutdownFuture(reboot, userDefaults, logger, reporter)];
   } else if (erase) {
     [logger.info logFormat:@"Erasing %@", erase];
     return [FBFuture futureWithResult:EraseFuture(erase, userDefaults, logger, reporter)];
