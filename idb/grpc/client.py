@@ -217,20 +217,17 @@ class IdbClient(IdbClientBase):
     async def build(
         cls, address: Address, is_local: bool, logger: logging.Logger
     ) -> AsyncGenerator["IdbClient", None]:
-        channel = (
+        async with (
             Channel(host=address.host, port=address.port, loop=asyncio.get_event_loop())
             if isinstance(address, TCPAddress)
             else Channel(path=address.path, loop=asyncio.get_event_loop())
-        )
-        try:
+        ) as channel:
             yield IdbClient(
                 stub=CompanionServiceStub(channel=channel),
                 address=address,
                 is_local=is_local,
                 logger=logger,
             )
-        finally:
-            channel.close()
 
     @classmethod
     @asynccontextmanager
