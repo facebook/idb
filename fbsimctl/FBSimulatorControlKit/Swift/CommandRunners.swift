@@ -23,7 +23,7 @@ extension Configuration {
     }
     let logger = FBControlCoreGlobalConfiguration.defaultLogger
     try FBDeviceControlFrameworkLoader().loadPrivateFrameworks(logger)
-    return try FBDeviceSet.defaultSet(with: logger)
+    return try FBDeviceSet(logger: logger, delegate: nil, ecidFilter: nil)
   }
 }
 

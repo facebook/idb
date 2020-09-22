@@ -24,6 +24,29 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)addMedia:(NSArray<NSURL *> *)mediaFileURLs;
 
+/**
+ Returns a Predicate that matches against video file paths.
+ @return A predicate that matches against video file paths.
+ */
++ (NSPredicate *)predicateForVideoPaths;
+
+/**
+ Returns a Predicate that matches against photo file paths.
+ @return A predicate that matches against photo file paths.
+ */
++ (NSPredicate *)predicateForPhotoPaths;
+
+/**
+ Returns a Predicate that matches against contact file paths.
+ @return A predicate that matches against contact file paths.
+ */
++ (NSPredicate *)predicateForContactPaths;
+/**
+ Returns a Predicate that matches against photo and video paths.
+ @return A predicate that matches against photo and video paths.
+ */
++ (NSPredicate *)predicateForMediaPaths;
+
 @end
 
 /**

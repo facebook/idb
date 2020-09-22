@@ -215,6 +215,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeActionReader = @"action_reader"
   return [super forwardingTargetForSelector:selector];
 }
 
+@synthesize metadata;
+
 @end
 
 #pragma clang diagnostic push

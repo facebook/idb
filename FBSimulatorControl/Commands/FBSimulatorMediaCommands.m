@@ -53,6 +53,30 @@
   }
 }
 
++ (NSPredicate *)predicateForVideoPaths
+{
+  return [self predicateForPathsMatchingUTIs:@[(NSString *)kUTTypeMovie, (NSString *)kUTTypeMPEG4, (NSString *)kUTTypeQuickTimeMovie]];
+}
+
++ (NSPredicate *)predicateForPhotoPaths
+{
+  return [self predicateForPathsMatchingUTIs:@[(NSString *)kUTTypeImage, (NSString *)kUTTypePNG, (NSString *)kUTTypeJPEG, (NSString *)kUTTypeJPEG2000]];
+}
+
++ (NSPredicate *)predicateForContactPaths
+{
+  return [self predicateForPathsMatchingUTIs:@[(NSString *)kUTTypeVCard]];
+}
+
++ (NSPredicate *)predicateForMediaPaths
+{
+  return [NSCompoundPredicate orPredicateWithSubpredicates:@[
+    self.predicateForVideoPaths,
+    self.predicateForPhotoPaths,
+    self.predicateForContactPaths,
+  ]];
+}
+
 #pragma mark Private
 
 - (BOOL)uploadMedia:(NSArray<NSURL *> *)mediaFileURLs error:(NSError **)error
@@ -108,30 +132,6 @@
   }
 
   return YES;
-}
-
-+ (NSPredicate *)predicateForVideoPaths
-{
-  return [self predicateForPathsMatchingUTIs:@[(NSString *)kUTTypeMovie, (NSString *)kUTTypeMPEG4, (NSString *)kUTTypeQuickTimeMovie]];
-}
-
-+ (NSPredicate *)predicateForPhotoPaths
-{
-  return [self predicateForPathsMatchingUTIs:@[(NSString *)kUTTypeImage, (NSString *)kUTTypePNG, (NSString *)kUTTypeJPEG, (NSString *)kUTTypeJPEG2000]];
-}
-
-+ (NSPredicate *)predicateForContactPaths
-{
-  return [self predicateForPathsMatchingUTIs:@[(NSString *)kUTTypeVCard]];
-}
-
-+ (NSPredicate *)predicateForMediaPaths
-{
-  return [NSCompoundPredicate orPredicateWithSubpredicates:@[
-    self.predicateForVideoPaths,
-    self.predicateForPhotoPaths,
-    self.predicateForContactPaths,
-  ]];
 }
 
 + (NSPredicate *)predicateForPathsMatchingUTIs:(NSArray<NSString *> *)utis
