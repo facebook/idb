@@ -79,7 +79,7 @@ static const ResponsePayload InvalidResponsePayload = {
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbdevicecontrol.fbinstrumentsclient", DISPATCH_QUEUE_SERIAL);
   return [FBFuture
-    onQueue:queue resolveValue:^ NSDictionary<NSString *, id> * (NSError **error) {
+    onQueue:queue resolveValue:^ FBInstrumentsClient * (NSError **error) {
       uint32 responseMessageIdentifier = 0;
       NSDictionary<NSString *, id> *channels = [FBInstrumentsClient getAvailableChannels:connection responseMessageIdentifierOut:&responseMessageIdentifier error:error];
       if (!channels) {
