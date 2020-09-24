@@ -115,7 +115,7 @@ def resolve_metadata(logger: Logger) -> LoggingMetadata:
 
 def append_companion_metadata(
     logger: Logger, metadata: Dict[str, str]
-) -> Dict[str, str]:
+) -> LoggingMetadata:
     for plugin in PLUGINS:
         method = getattr(plugin, "append_companion_metadata", None)
         if not method:

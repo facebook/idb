@@ -163,12 +163,10 @@ VIDEO_FORMAT_MAP: Dict[VideoFormat, VideoStreamRequest] = {
     VideoFormat.RBGA: VideoStreamRequest.RBGA,
 }
 
-CLIENT_METADATA: LoggingMetadata = {"component": "client"}
-
 
 def log_and_handle_exceptions(func):  # pyre-ignore
     @functools.wraps(func)
-    @log_call(name=func.__name__, metadata=CLIENT_METADATA)
+    @log_call(name=func.__name__)
     async def func_wrapper(*args: Any, **kwargs: Any) -> Any:  # pyre-ignore
         try:
             return await func(*args, **kwargs)
@@ -180,7 +178,7 @@ def log_and_handle_exceptions(func):  # pyre-ignore
             raise IdbConnectionException(e.strerror)
 
     @functools.wraps(func)
-    @log_call(name=func.__name__, metadata=CLIENT_METADATA)
+    @log_call(name=func.__name__)
     # pyre-fixme[53]: Captured variable `func` is not annotated.
     async def func_wrapper_gen(*args: Any, **kwargs: Any) -> Any:
         try:
