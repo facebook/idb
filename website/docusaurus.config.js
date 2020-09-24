@@ -16,7 +16,7 @@ module.exports = {
   themeConfig: {
     navbar: {
       title: 'idb',
-      links: [
+      items: [
         { to: 'docs/overview', label: 'Getting Started', position: 'right' },
         { to: 'docs/installation', label: 'Docs', position: 'right' },
         { href: 'https://github.com/facebook/idb', label: 'GitHub', position: 'right' },
