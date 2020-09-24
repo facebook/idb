@@ -5,16 +5,29 @@ title: Architecture
 
 import useBaseUrl from '@docusaurus/useBaseUrl';
 
-idb is formed of two components that have different responsibilities.
+`idb` is formed of two components that have different responsibilities. Both these components are necessary for `idb` to run commands.
 
-## The idb cli
+## The `idb` cli
 
-This is a python3 cli that exposes all of the functionality that idb has to offer. As it is written in Python, we can run this basically anywhere.
-The cli itself just wraps a client class which can also be imported elsewhere. It talks to an idb daemon over gRPC.
+This is a python3 cli that exposes all of the functionality that idb has to offer. As it is written in Python, this does not need to be run from the Mac to which your iPhone or iOS Simulator is attached.
 
-## The idb_companion
+The cli itself is a thin wrapper for a client of the `idb_companion`. All communication to the `idb_companion` is done via `gRPC`. This can be either through TCP or a Unix Domain Socket.
 
-The companion is a gRPC server in Objective-C and C++. It talks to the native APIs that are used for automating Simulators and Devices. It links FBSimulatorControl and FBDeviceControl to perform these tasks.
-The companion is paired with a single iOS target (a device/simulator), handles executing the requested commands.
+This client library can be imported into your own python3 code if you wish, or the CLI can be called from any other kind of automation.
+
+## The `idb_companion`
+
+The `idb_companion` is a `gRPC` server in Objective-C++ that runs on macOS. It talks to the native APIs that are used for automating Simulators and Devices. It links the `FBSimulatorControl` and `FBDeviceControl` Frameworks, which are part of the overall `idb` project.
+
+When the `idb_companion` acts as `gRPC` server, it does so for a *single* iOS target (a device or simulator).
+
+Additionally, the `idb_companion` has some commands that are deliberately unavailable from the python CLI, these operations are related to iOS Device management or operations on the lifecycle of a Simulator.
 
 <img alt="idb architecture" src={useBaseUrl('static/img/idb_architecture.png')} />;
+
+## Connections
+
+The `idb` cli will, by default operate in one of two modes:
+
+- If the `idb` cli is running on macOS, then it will automatically start and stop companions for all targets that are attached to your Mac. This means that you can run commands against any iOS Simulators that you have, as well as any devies that you have connected.
+- If the `idb` cli is running on any other OS, it will not manage companions for you. In this case you can either "attach" companions via `idb connect` or explictly on every call using the `IDB_COMPANION=hostname:port` environment variable. This allows you to perform `idb` commands against companions running on other hosts. These facilities for companion discovery work on macOS also.
