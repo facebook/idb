@@ -22,7 +22,7 @@ jobs:
             git config --global user.name "Website Deployment Script"
             echo "machine github.com login docusaurus-bot password $GITHUB_TOKEN" > ~/.netrc
             echo "Deploying website..."
-            cd website && yarn install && GIT_USER=docusaurus-bot USE_SSH=false yarn run publish-gh-pages
+            cd website && yarn install && GIT_USER=docusaurus-bot USE_SSH=false yarn deploy
 workflows:
   version: 2
   build_and_deploy:
