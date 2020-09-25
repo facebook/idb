@@ -27,6 +27,7 @@ from typing import (
     Tuple,
 )
 
+import idb.common.plugin as plugin
 from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.common.companion import Companion
@@ -54,7 +55,6 @@ from idb.common.types import (
     CrashLogQuery,
     DomainSocketAddress,
     FileContainer,
-    FileContainerType,
     FileEntryInfo,
     HIDButtonType,
     HIDEvent,
@@ -89,6 +89,7 @@ from idb.grpc.idb_pb2 import (
     AddMediaRequest,
     ApproveRequest,
     ClearKeychainRequest,
+    ConnectRequest,
     ContactsUpdateRequest,
     CrashShowRequest,
     DebugServerRequest,
@@ -138,7 +139,7 @@ from idb.grpc.stream import (
     generate_bytes,
     stop_wrapper,
 )
-from idb.grpc.target import target_to_py
+from idb.grpc.target import companion_to_py, target_to_py
 from idb.grpc.video import generate_video_bytes
 from idb.grpc.xctest import (
     make_request,
@@ -201,31 +202,69 @@ class IdbClient(IdbClientBase):
     def __init__(
         self,
         stub: CompanionServiceStub,
-        address: Address,
-        is_local: bool,
+        companion: CompanionInfo,
         logger: logging.Logger,
     ) -> None:
         self.stub = stub
-        self.address = address
-        self.is_local = is_local
+        self.companion = companion
         self.logger = logger
+
+    @property
+    def address(self) -> Address:
+        return self.companion.address
+
+    @property
+    def is_local(self) -> bool:
+        return self.companion.is_local
 
     @classmethod
     @asynccontextmanager
     async def build(
-        cls, address: Address, is_local: bool, logger: logging.Logger
+        cls,
+        address: Address,
+        logger: logging.Logger,
+        is_local: Optional[bool] = None,
+        exchange_metadata: bool = True,
     ) -> AsyncGenerator["IdbClient", None]:
+        metadata_to_companion = (
+            {
+                key: value
+                for (key, value) in plugin.resolve_metadata(logger=logger).items()
+                if isinstance(value, str)
+            }
+            if exchange_metadata
+            else {}
+        )
         async with (
             Channel(host=address.host, port=address.port, loop=asyncio.get_event_loop())
             if isinstance(address, TCPAddress)
             else Channel(path=address.path, loop=asyncio.get_event_loop())
         ) as channel:
-            yield IdbClient(
-                stub=CompanionServiceStub(channel=channel),
-                address=address,
-                is_local=is_local,
-                logger=logger,
+            stub = CompanionServiceStub(channel=channel)
+            with tempfile.NamedTemporaryFile(mode="w+b") as f:
+                try:
+                    response = await stub.connect(
+                        ConnectRequest(
+                            metadata=metadata_to_companion, local_file_path=f.name
+                        )
+                    )
+                except Exception as ex:
+                    raise IdbException(
+                        f"Failed to connect to companion at address {address}: {ex}"
+                    )
+            companion = companion_to_py(
+                companion=response.companion, address=address, is_local=is_local
             )
+            if exchange_metadata:
+                metadata_from_companion = {
+                    key: value
+                    for (key, value) in companion.metadata.items()
+                    if isinstance(value, str)
+                }
+                plugin.append_companion_metadata(
+                    logger=logger, metadata=metadata_from_companion
+                )
+            yield IdbClient(stub=stub, companion=companion, logger=logger)
 
     @classmethod
     @asynccontextmanager

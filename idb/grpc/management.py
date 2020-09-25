@@ -155,14 +155,7 @@ class IdbManagementClient(IdbManagementClientBase):
             async with IdbClient.build(
                 address=destination, is_local=False, logger=self._logger
             ) as client:
-                with tempfile.NamedTemporaryFile(mode="w+b") as f:
-                    response = await client.stub.connect(
-                        ConnectRequest(metadata=metadata, local_file_path=f.name)
-                    )
-
-            companion = companion_to_py(
-                companion=response.companion, address=destination
-            )
+                companion = client.companion
             self._logger.debug(f"Connected directly to {companion}")
             await self._direct_companion_manager.add_companion(companion)
             return companion
