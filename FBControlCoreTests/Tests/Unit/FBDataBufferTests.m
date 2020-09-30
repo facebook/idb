@@ -78,24 +78,25 @@
 
 - (void)testLineBufferedConsumerAsync
 {
+  dispatch_queue_t queue = dispatch_queue_create("testLineBufferedConsumerAsync", DISPATCH_QUEUE_SERIAL);
   NSMutableArray<NSString *> *lines = [NSMutableArray array];
   id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer asynchronousLineConsumerWithBlock:^(NSString *line) {
-    [lines addObject:line];
+    dispatch_sync(queue, ^{ [lines addObject:line]; });
   }];
 
   [consumer consumeData:[@"FOO\n" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"BAR\n" dataUsingEncoding:NSUTF8StringEncoding]];
   usleep(1000);
-  XCTAssertEqualObjects(lines, (@[@"FOO", @"BAR"]));
+  dispatch_sync(queue, ^{ XCTAssertEqualObjects(lines, (@[@"FOO", @"BAR"])); });
   XCTAssertFalse(consumer.finishedConsuming.hasCompleted);
 
   [consumer consumeEndOfFile];
-  XCTAssertEqualObjects(lines, (@[@"FOO", @"BAR"]));
+  dispatch_sync(queue, ^{ XCTAssertEqualObjects(lines, (@[@"FOO", @"BAR"])); });
   XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
 
   [consumer consumeData:[@"NOPE" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeData:[@"NOPE" dataUsingEncoding:NSUTF8StringEncoding]];
-  XCTAssertEqualObjects(lines, (@[@"FOO", @"BAR"]));
+  dispatch_sync(queue, ^{ XCTAssertEqualObjects(lines, (@[@"FOO", @"BAR"])); });
   XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
 }
 
