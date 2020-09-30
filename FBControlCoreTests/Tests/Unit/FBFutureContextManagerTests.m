@@ -13,7 +13,7 @@
 
 @property (nonatomic, strong, readwrite) dispatch_queue_t queue;
 @property (nonatomic, assign, readwrite) NSUInteger prepareCalled;
-@property (nonatomic, assign, readwrite) NSUInteger teardownCalled;
+@property (atomic, assign, readwrite) NSUInteger teardownCalled;
 @property (nonatomic, copy, readwrite) NSNumber *contextPoolTimeout;
 @property (nonatomic, assign, readwrite) BOOL failPrepare;
 @property (nonatomic, assign, readwrite) BOOL resetFailPrepare; // if YES, set failPrepare = NO when prepare fails
