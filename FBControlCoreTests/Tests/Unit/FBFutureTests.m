@@ -580,9 +580,9 @@
     return [FBFuture futureWithError:error];
   }];
   FBFuture *cancelFuture = [FBFuture onQueue:self.queue resolve:^FBFuture *{
-    [cancelCalled fulfill];
     FBMutableFuture *future = [FBMutableFuture future];
     [future cancel];
+    [cancelCalled fulfill];
     return future;
   }];
 
