@@ -10,9 +10,9 @@
 #import "FBDevice.h"
 #import "FBAMDServiceConnection.h"
 #import "FBManagedConfigClient.h"
+#import "FBSpringboardServicesClient.h"
 
 static NSString *const DiagnosticsRelayService = @"com.apple.mobile.diagnostics_relay";
-static NSString *const SpringboardService = @"com.apple.springboardservices";
 
 @interface FBDeviceDiagnosticInformationCommands ()
 
@@ -54,7 +54,7 @@ static NSString *const SpringboardService = @"com.apple.springboardservices";
     onQueue:self.device.asyncQueue map:^(NSArray<id> *results) {
       return @{
         DiagnosticsRelayService: results[0],
-        SpringboardService: results[1],
+        FBSpringboardServiceName: results[1],
         FBManagedConfigService: results[2],
       };
     }];
@@ -81,18 +81,13 @@ static NSString *const SpringboardService = @"com.apple.springboardservices";
     }];
 }
 
-- (FBFuture<NSArray<id> *> *)fetchInformationFromSpringboard
+- (FBFuture<IconLayoutType> *)fetchInformationFromSpringboard
 {
   return [[self.device
-    startService:SpringboardService]
+    startService:FBSpringboardServiceName]
     onQueue:self.device.asyncQueue pop:^(FBAMDServiceConnection *connection) {
-      NSError *error = nil;
-      NSArray<id> *result = [connection sendAndReceiveMessage:@{@"command": @"getIconState"} error:&error];
-      if (!result) {
-        return [FBFuture futureWithError:error];
-      }
-      result = [FBCollectionOperations recursiveFilteredJSONSerializableRepresentationOfArray:result];
-      return [FBFuture futureWithResult:result];
+      FBSpringboardServicesClient *client = [FBSpringboardServicesClient springboardServicesClientWithConnection:connection logger:self.device.logger];
+      return [client getIconLayout];
     }];
 }
 

@@ -147,6 +147,8 @@
 		AA2CD59F1F87C75E0030C56D /* FBListApplicationsConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2CD59D1F87C75E0030C56D /* FBListApplicationsConfiguration.m */; };
 		AA2CD5A01F87C7640030C56D /* FBListApplicationsConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AA2CD59E1F87C75E0030C56D /* FBListApplicationsConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA2E38E121E629C20065C800 /* FBDebuggerCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AA2E38E021E626B10065C800 /* FBDebuggerCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA2F41F2252481C1002279A2 /* FBSpringboardServicesClient.h in Headers */ = {isa = PBXBuildFile; fileRef = AA2F41F0252481C1002279A2 /* FBSpringboardServicesClient.h */; };
+		AA2F41F3252481C1002279A2 /* FBSpringboardServicesClient.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2F41F1252481C1002279A2 /* FBSpringboardServicesClient.m */; };
 		AA2F45C21D6ED47B00365A2C /* FBSimulatorServiceContext.h in Headers */ = {isa = PBXBuildFile; fileRef = AA2F45C01D6ED47B00365A2C /* FBSimulatorServiceContext.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA2F45C31D6ED47B00365A2C /* FBSimulatorServiceContext.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2F45C11D6ED47B00365A2C /* FBSimulatorServiceContext.m */; };
 		AA308FF620E37F9A00503C90 /* FBFutureContextManager.h in Headers */ = {isa = PBXBuildFile; fileRef = AA308FF420E37F9A00503C90 /* FBFutureContextManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -973,6 +975,8 @@
 		AA2E9B642469617400F94F5D /* NSAccessibilityElement-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSAccessibilityElement-Protocol.h"; sourceTree = "<group>"; };
 		AA2E9B652469617400F94F5D /* NSCopying-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSCopying-Protocol.h"; sourceTree = "<group>"; };
 		AA2E9B662469617400F94F5D /* NSAccessibilityCustomRotor-Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSAccessibilityCustomRotor-Private.h"; sourceTree = "<group>"; };
+		AA2F41F0252481C1002279A2 /* FBSpringboardServicesClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSpringboardServicesClient.h; sourceTree = "<group>"; };
+		AA2F41F1252481C1002279A2 /* FBSpringboardServicesClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSpringboardServicesClient.m; sourceTree = "<group>"; };
 		AA2F45C01D6ED47B00365A2C /* FBSimulatorServiceContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorServiceContext.h; sourceTree = "<group>"; };
 		AA2F45C11D6ED47B00365A2C /* FBSimulatorServiceContext.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorServiceContext.m; sourceTree = "<group>"; };
 		AA308FF420E37F9A00503C90 /* FBFutureContextManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBFutureContextManager.h; sourceTree = "<group>"; };
@@ -2611,6 +2615,8 @@
 				AA14131524D8028E00601706 /* FBInstrumentsClient.m */,
 				AAF2CCE32524951000C68D39 /* FBManagedConfigClient.h */,
 				AAF2CCE42524951000C68D39 /* FBManagedConfigClient.m */,
+				AA2F41F0252481C1002279A2 /* FBSpringboardServicesClient.h */,
+				AA2F41F1252481C1002279A2 /* FBSpringboardServicesClient.m */,
 			);
 			path = Management;
 			sourceTree = "<group>";
@@ -3242,6 +3248,7 @@
 				AA9316E1248FB421004D17B3 /* FBAMRestorableDeviceManager.h in Headers */,
 				AA97C7FB20D90D98002B8564 /* FBAMDevice+Private.h in Headers */,
 				AA8D348024D04DAE000FAC59 /* FBDeviceLocationCommands.h in Headers */,
+				AA2F41F2252481C1002279A2 /* FBSpringboardServicesClient.h in Headers */,
 				AAC8B2591CEC51520034A865 /* FBDeviceControlFrameworkLoader.h in Headers */,
 				AA14131824D8028E00601706 /* FBInstrumentsClient.h in Headers */,
 				AAE119622293EF3500173417 /* FBServiceConnectionClient.h in Headers */,
@@ -4012,6 +4019,7 @@
 				AAA8DE952508D4A100964222 /* FBDeviceCommands.m in Sources */,
 				2FB811111FB5C97400A848FB /* FBDeviceLogCommands.m in Sources */,
 				AABD19A61FFD1EE50043771C /* FBDeviceScreenshotCommands.m in Sources */,
+				AA2F41F3252481C1002279A2 /* FBSpringboardServicesClient.m in Sources */,
 				AA4E560F222D86DB00C95DC4 /* FBGDBClient.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
