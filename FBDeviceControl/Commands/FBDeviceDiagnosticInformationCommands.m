@@ -9,6 +9,7 @@
 
 #import "FBDevice.h"
 #import "FBAMDServiceConnection.h"
+#import "FBManagedConfigClient.h"
 
 static NSString *const DiagnosticsRelayService = @"com.apple.mobile.diagnostics_relay";
 static NSString *const SpringboardService = @"com.apple.springboardservices";
@@ -48,11 +49,13 @@ static NSString *const SpringboardService = @"com.apple.springboardservices";
     futureWithFutures:@[
       [self fetchInformationFromDiagnosticsRelay],
       [self fetchInformationFromSpringboard],
+      [self fetchInformationFromMobileConfiguration],
     ]]
     onQueue:self.device.asyncQueue map:^(NSArray<id> *results) {
       return @{
         DiagnosticsRelayService: results[0],
         SpringboardService: results[1],
+        FBManagedConfigService: results[2],
       };
     }];
 }
@@ -90,6 +93,15 @@ static NSString *const SpringboardService = @"com.apple.springboardservices";
       }
       result = [FBCollectionOperations recursiveFilteredJSONSerializableRepresentationOfArray:result];
       return [FBFuture futureWithResult:result];
+    }];
+}
+
+- (FBFuture<NSDictionary<NSString *, id> *> *)fetchInformationFromMobileConfiguration
+{
+  return [[self.device
+    startService:FBManagedConfigService]
+    onQueue:self.device.asyncQueue pop:^(FBAMDServiceConnection *connection) {
+      return [[FBManagedConfigClient managedConfigClientWithConnection:connection logger:self.device.logger] getCloudConfiguration];
     }];
 }
 
