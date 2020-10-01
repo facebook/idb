@@ -12,6 +12,8 @@
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
 
+static NSString *const MobileBackupDomain = @"com.apple.mobile.backup";
+
 @interface FBAMDeviceManager ()
 
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
@@ -43,12 +45,18 @@ static BOOL FB_AMDeviceConnected(AMDeviceRef device, FBAMDeviceManager *manager)
     [logger.error logFormat:@"Ignoring device as ECID %@ does not match filter %@", uniqueChipID, manager.ecidFilter];
     return NO;
   }
-  NSDictionary<NSString *, id> *info = [CFBridgingRelease(calls.CopyValue(device, NULL, NULL)) copy];
+  // Get the values from the default domain.
+  NSMutableDictionary<NSString *, id> *info = [CFBridgingRelease(calls.CopyValue(device, NULL, NULL)) mutableCopy];
+  // Get values from mobile backup.
+  NSDictionary<NSString *, id> * backupInfo = [CFBridgingRelease(calls.CopyValue(device, (__bridge CFStringRef)(MobileBackupDomain), NULL)) copy] ?: @{};
+  // We're done with getting the device values.
   [FBAMDeviceManager stopUsing:device calls:calls logger:logger error:nil];
   if (!info) {
     [logger.error log:@"Ignoring device as no values were returned for it"];
     return NO;
   }
+  // Insert the values from subdomains.
+  info[MobileBackupDomain] = backupInfo;
   NSString *udid = info[FBDeviceKeyUniqueDeviceID];
   if (!udid) {
     [logger.error logFormat:@"Ignoring device as %@ is not present in %@", FBDeviceKeyUniqueDeviceID, info];
