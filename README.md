@@ -102,13 +102,19 @@ After opening the Xcode project you will need to add a `--udid` argument for lau
 - Enter `--udid <UDID copied above>`
 - Run the `idb_companion` target on `My Mac`
 
-Once `idb_companion` has launched, search the console output for the word "port", there will be a few entries and there should be a port number on the same line. Copy that value as you will use it to attach the `idb` python client to the `idb_companion` gRPC server.
+Once `idb_companion` has launched, it will output the TCP port upon which the companion has bound to `stdout`:
 
 ```
-$ idb connect localhost <Port # from above>
+{"grpc_port":10882}
 ```
 
-Now you can execute any `idb` commands and it will go through the `idb_companion` started by Xcode which is now debuggable.
+By default this port is `10882`, it can be bound on a random port with `--port 0` or a port of your choosing. You'll now be able to direct `idb` commands against this companion with the `IDB_COMPANION` environment variable passed to the cli:
+
+```
+$ IDB_COMPANION=localhost:10882 idb describe
+```
+
+As long as you prefix this environment variable before all commands, you'll be able to run commands against the companion that you're currently debugging within Xcode.
 
 ## Documentation
 
