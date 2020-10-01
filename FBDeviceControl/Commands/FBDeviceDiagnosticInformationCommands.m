@@ -63,7 +63,7 @@ static NSString *const SpringboardService = @"com.apple.springboardservices";
 {
   return [[self.device
     startService:DiagnosticsRelayService]
-    onQueue:self.device.workQueue pop:^(FBAMDServiceConnection *connection) {
+    onQueue:self.device.asyncQueue pop:^(FBAMDServiceConnection *connection) {
       NSError *error = nil;
       NSDictionary<NSString *, id> *result = [connection sendAndReceiveMessage:@{@"Request": @"All"} error:&error];
       if (!result) {
@@ -82,7 +82,7 @@ static NSString *const SpringboardService = @"com.apple.springboardservices";
 {
   return [[self.device
     startService:SpringboardService]
-    onQueue:self.device.workQueue pop:^(FBAMDServiceConnection *connection) {
+    onQueue:self.device.asyncQueue pop:^(FBAMDServiceConnection *connection) {
       NSError *error = nil;
       NSArray<id> *result = [connection sendAndReceiveMessage:@{@"command": @"getIconState"} error:&error];
       if (!result) {
