@@ -10,6 +10,9 @@
 #import "FBDevice.h"
 #import "FBAMDServiceConnection.h"
 
+static NSString *const DiagnosticsRelayService = @"com.apple.mobile.diagnostics_relay";
+static NSString *const SpringboardService = @"com.apple.springboardservices";
+
 @interface FBDeviceDiagnosticInformationCommands ()
 
 @property (nonatomic, weak, readonly) FBDevice *device;
@@ -48,8 +51,8 @@
     ]]
     onQueue:self.device.asyncQueue map:^(NSArray<id> *results) {
       return @{
-        @"diag": results[0],
-        @"icon": results[1],
+        DiagnosticsRelayService: results[0],
+        SpringboardService: results[1],
       };
     }];
 }
@@ -59,7 +62,7 @@
 - (FBFuture<NSDictionary<NSString *, id> *> *)fetchInformationFromDiagnosticsRelay
 {
   return [[self.device
-    startService:@"com.apple.mobile.diagnostics_relay"]
+    startService:DiagnosticsRelayService]
     onQueue:self.device.workQueue pop:^(FBAMDServiceConnection *connection) {
       NSError *error = nil;
       NSDictionary<NSString *, id> *result = [connection sendAndReceiveMessage:@{@"Request": @"All"} error:&error];
@@ -78,7 +81,7 @@
 - (FBFuture<NSArray<id> *> *)fetchInformationFromSpringboard
 {
   return [[self.device
-    startService:@"com.apple.springboardservices"]
+    startService:SpringboardService]
     onQueue:self.device.workQueue pop:^(FBAMDServiceConnection *connection) {
       NSError *error = nil;
       NSArray<id> *result = [connection sendAndReceiveMessage:@{@"command": @"getIconState"} error:&error];
