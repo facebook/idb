@@ -216,8 +216,9 @@ static size_t ReadBufferSize = 1024 * 4;
 {
   int result = self.calls.ServiceConnectionSendMessage(self.connection, (__bridge CFPropertyListRef)(message), kCFPropertyListBinaryFormat_v1_0, NULL, NULL, NULL);
   if (result != 0) {
+    NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(result));
     return [[FBDeviceControlError
-      describeFormat:@"Failed to send message %@, code %d", message, result]
+      describeFormat:@"Failed to send message %@ (%@ code %d)", errorDescription, message, result]
       failBool:error];
   }
   return YES;
@@ -228,8 +229,9 @@ static size_t ReadBufferSize = 1024 * 4;
   CFTypeRef message = NULL;
   int result = self.calls.ServiceConnectionReceiveMessage(self.connection, &message, NULL, NULL, NULL, NULL);
   if (result != 0) {
+    NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(result));
     return [[FBDeviceControlError
-      describeFormat:@"Failed to recieve message with code %d", result]
+      describeFormat:@"Failed to recieve message (%@): code %d", errorDescription, result]
       fail:error];
   }
   return CFBridgingRelease(message);
