@@ -23,7 +23,6 @@
 #import "FBSimulatorAgentCommands.h"
 #import "FBSimulatorApplicationCommands.h"
 #import "FBSimulatorFileCommands.h"
-#import "FBSimulatorBridgeCommands.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
@@ -319,7 +318,6 @@
       FBSimulatorAgentCommands.class,
       FBSimulatorApplicationCommands.class,
       FBSimulatorFileCommands.class,
-      FBSimulatorBridgeCommands.class,
       FBSimulatorCrashLogCommands.class,
       FBSimulatorDebuggerCommands.class,
       FBSimulatorKeychainCommands.class,

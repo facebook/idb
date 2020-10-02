@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBSimulatorControl/FBSimulatorBridgeCommands.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -18,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Wraps the 'SimulatorBridge' Connection and Protocol
  */
-@interface FBSimulatorBridge : NSObject <FBJSONSerializable, FBSimulatorBridgeCommands>
+@interface FBSimulatorBridge : NSObject <FBJSONSerializable>
 
 #pragma mark Initializers
 
@@ -37,6 +36,17 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)disconnect;
 
 #pragma mark Interacting with the Simulator
+
+/**
+ Sets latitude and longitude of the Simulator.
+ The behaviour of a directly-launched Simulator differs from Simulator.app slightly, in that the location isn't automatically set.
+ Simulator.app will typically set a location from NSUserDefaults, so Applications will have a default location.
+
+ @param latitude the latitude of the location.
+ @param longitude the longitude of the location.
+ @return a Future that resolves when the location has been sent.
+ */
+- (FBFuture<NSNull *> *)setLocationWithLatitude:(double)latitude longitude:(double)longitude;
 
 /**
  Enables Accessibility on the Simulator.

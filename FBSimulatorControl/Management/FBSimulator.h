@@ -13,7 +13,6 @@
 #import <FBSimulatorControl/FBSimulatorAgentCommands.h>
 #import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
 #import <FBSimulatorControl/FBSimulatorFileCommands.h>
-#import <FBSimulatorControl/FBSimulatorBridgeCommands.h>
 #import <FBSimulatorControl/FBSimulatorKeychainCommands.h>
 #import <FBSimulatorControl/FBSimulatorLaunchCtlCommands.h>
 #import <FBSimulatorControl/FBSimulatorLifecycleCommands.h>
@@ -39,7 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An implementation of FBiOSTarget for iOS Simulators.
  */
-@interface FBSimulator : NSObject <FBiOSTarget, FBCrashLogCommands, FBLocationCommands, FBScreenshotCommands, FBAccessibilityCommands, FBSimulatorAgentCommands, FBSimulatorApplicationCommands, FBFileCommands, FBSimulatorBridgeCommands, FBSimulatorKeychainCommands, FBSimulatorSettingsCommands, FBSimulatorLifecycleCommands, FBSimulatorLaunchCtlCommands, FBSimulatorMediaCommands>
+@interface FBSimulator : NSObject <FBiOSTarget, FBCrashLogCommands, FBLocationCommands, FBScreenshotCommands, FBAccessibilityCommands, FBSimulatorAgentCommands, FBSimulatorApplicationCommands, FBFileCommands, FBSimulatorKeychainCommands, FBSimulatorSettingsCommands, FBSimulatorLifecycleCommands, FBSimulatorLaunchCtlCommands, FBSimulatorMediaCommands>
 
 #pragma mark Properties
 

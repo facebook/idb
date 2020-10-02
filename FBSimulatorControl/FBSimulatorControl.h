@@ -33,7 +33,6 @@
 #import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorBootStrategy.h>
 #import <FBSimulatorControl/FBSimulatorBridge.h>
-#import <FBSimulatorControl/FBSimulatorBridgeCommands.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration+CoreSimulator.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorConnection.h>
