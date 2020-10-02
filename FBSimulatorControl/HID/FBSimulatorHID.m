@@ -75,17 +75,21 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 + (FBFuture<FBSimulatorHID *> *)simulatorKitHidPortForSimulator:(FBSimulator *)simulator clientClass:(Class)clientClass
 {
-  NSError *innerError = nil;
-  SimDeviceLegacyClient *client = [[clientClass alloc] initWithDevice:simulator.device error:&innerError];
+  NSError *error = nil;
+  SimDeviceLegacyClient *client = [[clientClass alloc] initWithDevice:simulator.device error:&error];
   if (!client) {
     return [[[FBSimulatorError
       describeFormat:@"Could not create instance of %@", NSStringFromClass(clientClass)]
-      causedBy:innerError]
+      causedBy:error]
       failFuture];
+  }
+  FBSimulatorIndigoHID *indigo = [FBSimulatorIndigoHID simulatorKitHIDWithError:&error];
+  if (!indigo) {
+    return nil;
   }
   CGSize mainScreenSize = simulator.device.deviceType.mainScreenSize;
   float scale = simulator.device.deviceType.mainScreenScale;
-  FBSimulatorHID *hid = [[FBSimulatorHID_SimulatorKit alloc] initWithIndigo:FBSimulatorIndigoHID.defaultHID mainScreenSize:mainScreenSize mainScreenScale:scale queue:self.workQueue client:client];
+  FBSimulatorHID *hid = [[FBSimulatorHID_SimulatorKit alloc] initWithIndigo:indigo mainScreenSize:mainScreenSize mainScreenScale:scale queue:self.workQueue client:client];
   return [FBFuture futureWithResult:hid];
 }
 

@@ -18,7 +18,17 @@
 
 #import "FBSimulatorControlFrameworkLoader.h"
 
+typedef struct {
+  IndigoMessage *(*MessageForButton)(int keyCode, int op, int target);
+  IndigoMessage *(*MessageForKeyboardArbitrary)(int keyCode, int op);
+  IndigoMessage *(*MessageForMouseNSEvent)(CGPoint *point0, CGPoint *point1, int target, int eventType, BOOL something);
+} IndigoCalls;
+
 @interface FBSimulatorIndigoHID_SimulatorKit : FBSimulatorIndigoHID
+
+@property (nonatomic, assign, readonly) IndigoCalls calls;
+
+- (instancetype)initWithCalls:(IndigoCalls)calls;
 
 @end
 
@@ -30,17 +40,18 @@
 
 #pragma mark Initializers
 
-+ (instancetype)defaultHID
++ (instancetype)simulatorKitHIDWithError:(NSError **)error
 {
-  if (FBXcodeConfiguration.isXcode9OrGreater) {
-    return [self simulatorKit];
+  if (![FBSimulatorControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworks:nil error:error]) {
+    return nil;
   }
-  return [self reimplemented];
-}
-
-+ (instancetype)simulatorKit
-{
-  return [FBSimulatorIndigoHID_SimulatorKit new];
+  void *handle = [[NSBundle bundleWithIdentifier:@"com.apple.SimulatorKit"] dlopenExecutablePath];
+  const IndigoCalls calls = {
+    .MessageForButton = FBGetSymbolFromHandle(handle, "IndigoHIDMessageForButton"),
+    .MessageForKeyboardArbitrary = FBGetSymbolFromHandle(handle, "IndigoHIDMessageForKeyboardArbitrary"),
+    .MessageForMouseNSEvent = FBGetSymbolFromHandle(handle, "IndigoHIDMessageForMouseNSEvent"),
+  };
+  return [[FBSimulatorIndigoHID_SimulatorKit alloc] initWithCalls:calls];
 }
 
 + (instancetype)reimplemented
@@ -53,14 +64,14 @@
 - (NSData *)keyboardWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keyCode
 {
   size_t messageSize;
-  IndigoMessage *message = [self.class keyboardMessageWithDirection:direction keyCode:keyCode messageSizeOut:&messageSize];
+  IndigoMessage *message = [self keyboardMessageWithDirection:direction keyCode:keyCode messageSizeOut:&messageSize];
   return [NSData dataWithBytesNoCopy:message length:messageSize freeWhenDone:YES];
 }
 
 - (NSData *)buttonWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button
 {
   size_t messageSize;
-  IndigoMessage *message = [self.class buttonMessageWithDirection:direction button:button messageSizeOut:&messageSize];
+  IndigoMessage *message = [self buttonMessageWithDirection:direction button:button messageSizeOut:&messageSize];
   return [NSData dataWithBytesNoCopy:message length:messageSize freeWhenDone:YES];
 }
 
@@ -74,25 +85,25 @@
   // Convert Screen Offset to Ratio for Indigo.
   CGPoint point = [self.class screenRatioFromPoint:CGPointMake(x, y) screenSize:screenSize screenScale:screenScale];
   size_t messageSize;
-  IndigoMessage *message = [self.class touchMessageWithPoint:point direction:direction messageSizeOut:&messageSize];
+  IndigoMessage *message = [self touchMessageWithPoint:point direction:direction messageSizeOut:&messageSize];
   return [NSData dataWithBytesNoCopy:message length:messageSize freeWhenDone:YES];
 }
 
 #pragma mark Event Generation
 
-+ (IndigoMessage *)keyboardMessageWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode messageSizeOut:(size_t *)messageSizeOut
+- (IndigoMessage *)keyboardMessageWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode messageSizeOut:(size_t *)messageSizeOut
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
 }
 
-+ (IndigoMessage *)buttonMessageWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button messageSizeOut:(size_t *)messageSizeOut
+- (IndigoMessage *)buttonMessageWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button messageSizeOut:(size_t *)messageSizeOut
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
 }
 
-+ (IndigoMessage *)touchMessageWithPoint:(CGPoint)point direction:(FBSimulatorHIDDirection)direction messageSizeOut:(size_t *)messageSizeOut
+- (IndigoMessage *)touchMessageWithPoint:(CGPoint)point direction:(FBSimulatorHIDDirection)direction messageSizeOut:(size_t *)messageSizeOut
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -181,62 +192,46 @@
 
 @implementation FBSimulatorIndigoHID_SimulatorKit
 
-IndigoMessage *(*IndigoHIDMessageForButton)(int keyCode, int op, int target);
-IndigoMessage *(*IndigoHIDMessageForKeyboardArbitrary)(int keyCode, int op);
-IndigoMessage *(*IndigoHIDMessageForMouseNSEvent)(CGPoint *point0, CGPoint *point1, int target, int eventType, BOOL something);
-
 #pragma mark Initializers
 
-- (instancetype)init
+- (instancetype)initWithCalls:(IndigoCalls)calls
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    [FBSimulatorIndigoHID_SimulatorKit loadAllSymbols];
-  });
+  _calls = calls;
 
   return self;
 }
 
-+ (void)loadAllSymbols
-{
-  [FBSimulatorControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworksOrAbort];
-  void *handle = [[NSBundle bundleWithIdentifier:@"com.apple.SimulatorKit"] dlopenExecutablePath];
-  IndigoHIDMessageForButton = FBGetSymbolFromHandle(handle, "IndigoHIDMessageForButton");
-  IndigoHIDMessageForKeyboardArbitrary = FBGetSymbolFromHandle(handle, "IndigoHIDMessageForKeyboardArbitrary");
-  IndigoHIDMessageForMouseNSEvent = FBGetSymbolFromHandle(handle, "IndigoHIDMessageForMouseNSEvent");
-}
-
 #pragma mark Event Generation
 
-+ (IndigoMessage *)keyboardMessageWithDirection:(FBSimulatorHIDDirection)direction keyCode:(int)keycode messageSizeOut:(size_t *)messageSizeOut
+- (IndigoMessage *)keyboardMessageWithDirection:(FBSimulatorHIDDirection)direction keyCode:(int)keycode messageSizeOut:(size_t *)messageSizeOut
 {
-  IndigoMessage *message = IndigoHIDMessageForKeyboardArbitrary((int) keycode, direction);
+  IndigoMessage *message = self.calls.MessageForKeyboardArbitrary((int) keycode, direction);
   if (messageSizeOut) {
     *messageSizeOut = malloc_size(message);
   }
   return message;
 }
 
-+ (IndigoMessage *)buttonMessageWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button messageSizeOut:(size_t *)messageSizeOut
+- (IndigoMessage *)buttonMessageWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button messageSizeOut:(size_t *)messageSizeOut
 {
-  IndigoMessage *message = IndigoHIDMessageForButton((int) [self eventSourceForButton:button], direction, ButtonEventTargetHardware);
+  IndigoMessage *message = self.calls.MessageForButton((int) [FBSimulatorIndigoHID eventSourceForButton:button], direction, ButtonEventTargetHardware);
   if (messageSizeOut) {
     *messageSizeOut = malloc_size(message);
   }
   return message;
 }
 
-+ (IndigoMessage *)touchMessageWithPoint:(CGPoint)point direction:(FBSimulatorHIDDirection)direction messageSizeOut:(size_t *)messageSizeOut
+- (IndigoMessage *)touchMessageWithPoint:(CGPoint)point direction:(FBSimulatorHIDDirection)direction messageSizeOut:(size_t *)messageSizeOut
 {
-  IndigoMessage *message = IndigoHIDMessageForMouseNSEvent(&point, 0x0, 0x32, (int) [self eventTypeForDirection:direction], 0x0);
+  IndigoMessage *message = self.calls.MessageForMouseNSEvent(&point, 0x0, 0x32, (int) [FBSimulatorIndigoHID eventTypeForDirection:direction], 0x0);
   message->payload.event.touch.xRatio = point.x;
   message->payload.event.touch.yRatio = point.y;
-  return [self touchMessageWithPayload:&(message->payload.event.touch) messageSizeOut:messageSizeOut];
+  return [FBSimulatorIndigoHID touchMessageWithPayload:&(message->payload.event.touch) messageSizeOut:messageSizeOut];
 }
 
 @end
@@ -245,11 +240,11 @@ IndigoMessage *(*IndigoHIDMessageForMouseNSEvent)(CGPoint *point0, CGPoint *poin
 
 #pragma mark Event Generation
 
-+ (IndigoMessage *)keyboardMessageWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode messageSizeOut:(size_t *)messageSizeOut
+- (IndigoMessage *)keyboardMessageWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode messageSizeOut:(size_t *)messageSizeOut
 {
   IndigoButton payload;
   payload.eventSource = ButtonEventSourceKeyboard;
-  payload.eventType = [self eventTypeForDirection:direction];
+  payload.eventType = [FBSimulatorIndigoHID_Reimplemented eventTypeForDirection:direction];
   payload.eventTarget = ButtonEventTargetKeyboard;
   payload.keyCode = keycode;
   payload.field5 = 0x000000cc;
@@ -263,22 +258,22 @@ IndigoMessage *(*IndigoHIDMessageForMouseNSEvent)(CGPoint *point0, CGPoint *poin
       payload.eventType = ButtonEventTypeUp;
       break;
   }
-  return [self buttonMessageWithPayload:&payload messageSizeOut:messageSizeOut];
+  return [FBSimulatorIndigoHID_Reimplemented buttonMessageWithPayload:&payload messageSizeOut:messageSizeOut];
 }
 
-+ (IndigoMessage *)buttonMessageWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button messageSizeOut:(size_t *)messageSizeOut
+- (IndigoMessage *)buttonMessageWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button messageSizeOut:(size_t *)messageSizeOut
 {
   IndigoButton payload;
   payload.keyCode = 0;
   payload.field5 = 0;
-  payload.eventSource = [self eventSourceForButton:button];
-  payload.eventType = [self eventTypeForDirection:direction];
+  payload.eventSource = [FBSimulatorIndigoHID eventSourceForButton:button];
+  payload.eventType = [FBSimulatorIndigoHID eventTypeForDirection:direction];
   payload.eventTarget = ButtonEventTargetHardware;
 
-  return [self buttonMessageWithPayload:&payload messageSizeOut:messageSizeOut];
+  return [FBSimulatorIndigoHID_Reimplemented buttonMessageWithPayload:&payload messageSizeOut:messageSizeOut];
 }
 
-+ (IndigoMessage *)touchMessageWithPoint:(CGPoint)point direction:(FBSimulatorHIDDirection)direction messageSizeOut:(size_t *)messageSizeOut
+- (IndigoMessage *)touchMessageWithPoint:(CGPoint)point direction:(FBSimulatorHIDDirection)direction messageSizeOut:(size_t *)messageSizeOut
 {
   // Set the Common Values between down-and-up.
   IndigoTouch payload;
@@ -319,7 +314,7 @@ IndigoMessage *(*IndigoHIDMessageForMouseNSEvent)(CGPoint *point0, CGPoint *poin
   payload.field17 = 0;
   payload.field18 = 0;
 
-  return [self touchMessageWithPayload:&payload messageSizeOut:messageSizeOut];
+  return [FBSimulatorIndigoHID_Reimplemented touchMessageWithPayload:&payload messageSizeOut:messageSizeOut];
 }
 
 + (IndigoMessage *)buttonMessageWithPayload:(IndigoButton *)payload messageSizeOut:(size_t *)messageSizeOut

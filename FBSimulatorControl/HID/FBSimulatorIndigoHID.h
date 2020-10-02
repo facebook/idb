@@ -35,17 +35,17 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
 @interface FBSimulatorIndigoHID : NSObject
 
 /**
- The Designated Initializer
- */
-+ (instancetype)defaultHID;
-
-/**
  The SimulatorKit Implementation.
+
+ @param error an error out for any error that occurs in construction.
+ @return a new FBSimulatorIndigoHID instance if successful, nil otherwise.
  */
-+ (instancetype)simulatorKit;
++ (nullable instancetype)simulatorKitHIDWithError:(NSError **)error;
 
 /**
- The internal Implementation.
+ An implementation of FBSimulatorIndigoHID, by re-implementing SimulatorKit directly.
+
+ @return a new FBSimulatorIndigoHID instance.
  */
 + (instancetype)reimplemented;
 

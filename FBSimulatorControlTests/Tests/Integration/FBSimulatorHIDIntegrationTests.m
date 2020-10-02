@@ -89,7 +89,7 @@
     return;
   }
 
-  FBSimulatorIndigoHID *simulatorKit = FBSimulatorIndigoHID.simulatorKit;
+  FBSimulatorIndigoHID *simulatorKit = [FBSimulatorIndigoHID simulatorKitHIDWithError:nil];
   FBSimulatorIndigoHID *reimplemented = FBSimulatorIndigoHID.reimplemented;
   [self assertButtonPayload:[simulatorKit buttonWithDirection:FBSimulatorHIDDirectionDown button:FBSimulatorHIDButtonSiri]
                   isEqualTo:[reimplemented buttonWithDirection:FBSimulatorHIDDirectionDown button:FBSimulatorHIDButtonSiri]];
@@ -105,7 +105,7 @@
     return;
   }
 
-  FBSimulatorIndigoHID *simulatorKit = FBSimulatorIndigoHID.simulatorKit;
+  FBSimulatorIndigoHID *simulatorKit = [FBSimulatorIndigoHID simulatorKitHIDWithError:nil];
   FBSimulatorIndigoHID *reimplemented = FBSimulatorIndigoHID.reimplemented;
   [self assertKeyboardPayload:[simulatorKit keyboardWithDirection:FBSimulatorHIDDirectionDown keyCode:12]
                     isEqualTo:[reimplemented keyboardWithDirection:FBSimulatorHIDDirectionDown keyCode:12]];
@@ -119,7 +119,7 @@
     return;
   }
 
-  FBSimulatorIndigoHID *simulatorKit = FBSimulatorIndigoHID.simulatorKit;
+  FBSimulatorIndigoHID *simulatorKit = [FBSimulatorIndigoHID simulatorKitHIDWithError:nil];
   FBSimulatorIndigoHID *reimplemented = FBSimulatorIndigoHID.reimplemented;
   [self assertTouchPayload:[simulatorKit touchScreenSize:CGSizeMake(100, 100) direction:FBSimulatorHIDDirectionDown x:10 y:20]
                  isEqualTo:[reimplemented touchScreenSize:CGSizeMake(100, 100) direction:FBSimulatorHIDDirectionDown x:10 y:20]];
