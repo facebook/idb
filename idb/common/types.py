@@ -414,6 +414,10 @@ class IdbClient(ABC):
         pass
 
     @abstractmethod
+    async def set_hardware_keyboard(self, enabled: bool) -> None:
+        pass
+
+    @abstractmethod
     async def open_url(self, url: str) -> None:
         pass
 

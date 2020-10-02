@@ -65,6 +65,7 @@ from idb.cli.commands.location import LocationSetCommand
 from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.media import MediaAddCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
+from idb.cli.commands.settings import SetCommand
 from idb.cli.commands.target import (
     ConnectCommandException,
     TargetBootCommand,
@@ -253,6 +254,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
             description="commands related to the companion",
             commands=[CompanionLogCommand()],
         ),
+        SetCommand,
     ]
     commands.extend(plugin.get_commands())
     root_command = CommandGroup(

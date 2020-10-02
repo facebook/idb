@@ -113,6 +113,7 @@ from idb.grpc.idb_pb2 import (
     RmRequest,
     ScreenshotRequest,
     SetLocationRequest,
+    SettingRequest,
     TargetDescriptionRequest,
     TerminateRequest,
     UninstallRequest,
@@ -989,3 +990,11 @@ class IdbClient(IdbClientBase):
             source=LogRequest.COMPANION, stop=stop, arguments=None
         ):
             yield message
+
+    @log_and_handle_exceptions
+    async def set_hardware_keyboard(self, enabled: bool) -> None:
+        await self.stub.setting(
+            SettingRequest(
+                hardwareKeyboard=SettingRequest.HardwareKeyboard(enabled=enabled)
+            )
+        )
