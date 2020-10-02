@@ -292,6 +292,16 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
     }];
 }
 
+- (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled
+{
+  return [[self
+    interactWithBridge]
+    onQueue:self.workQueue fmap:^(id<SimulatorBridge> bridge) {
+      [bridge setHardwareKeyboardEnabled:enabled keyboardType:0];
+      return FBFuture.empty;
+    }];
+}
+
 #pragma mark Private
 
 - (FBFuture<id<SimulatorBridge>> *)interactWithBridge

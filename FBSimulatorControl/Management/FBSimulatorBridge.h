@@ -73,6 +73,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point;
 
+/**
+ Enables or disables the hardware keyboard.
+
+ @param enabled YES if enabled, NO if disabled.
+ @return a Future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled;
+
 @end
 
 NS_ASSUME_NONNULL_END

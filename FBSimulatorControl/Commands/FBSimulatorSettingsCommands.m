@@ -11,10 +11,11 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulator.h"
-#import "FBSimulatorError.h"
-#import "FBSimulatorBootConfiguration.h"
 #import "FBDefaultsModificationStrategy.h"
+#import "FBSimulator.h"
+#import "FBSimulatorBootConfiguration.h"
+#import "FBSimulatorBridge.h"
+#import "FBSimulatorError.h"
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval = @"approve";
 static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
@@ -42,6 +43,17 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   _simulator = simulator;
 
   return self;
+}
+
+#pragma mark Public
+
+- (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled
+{
+  return [[self.simulator
+    connectToBridge]
+    onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (FBSimulatorBridge *bridge) {
+      return [bridge setHardwareKeyboardEnabled:enabled];
+    }];
 }
 
 - (FBFuture<NSNull *> *)overridingLocalization:(FBLocalizationOverride *)localizationOverride
