@@ -39,7 +39,6 @@ public:
   Status crash_delete(ServerContext *context, const idb::CrashLogQuery *request, idb::CrashLogResponse *response);
   Status crash_list(ServerContext *context, const idb::CrashLogQuery *request, idb::CrashLogResponse *response);
   Status crash_show(ServerContext *context, const idb::CrashShowRequest *request, idb::CrashShowResponse *response);
-  Status pull(ServerContext *context, const idb::PullRequest *request, grpc::ServerWriter<::idb::PullResponse> *writer);
   Status debugserver(ServerContext *context,grpc::ServerReaderWriter<idb::DebugServerResponse, idb::DebugServerRequest> *stream);
   Status describe(ServerContext *context, const idb::TargetDescriptionRequest *request, idb::TargetDescriptionResponse *response);
   Status focus(ServerContext *context, const idb::FocusRequest *request, idb::FocusResponse *response);
@@ -53,14 +52,16 @@ public:
   Status mkdir(ServerContext *context, const idb::MkdirRequest *request, idb::MkdirResponse *response);
   Status mv(ServerContext *context, const idb::MvRequest *request, idb::MvResponse *response);
   Status open_url(ServerContext *context, const idb::OpenUrlRequest *request, idb::OpenUrlRequest *response);
+  Status pull(ServerContext *context, const idb::PullRequest *request, grpc::ServerWriter<::idb::PullResponse> *writer);
   Status push(ServerContext *context,grpc::ServerReader<idb::PushRequest> *reader, idb::PushResponse *response);
   Status record(ServerContext *context,grpc::ServerReaderWriter<idb::RecordResponse, idb::RecordRequest> *stream);
-  Status video_stream(ServerContext* context, grpc::ServerReaderWriter<idb::VideoStreamResponse, idb::VideoStreamRequest>* stream);
   Status rm(ServerContext *context, const idb::RmRequest *request, idb::RmResponse *response);
   Status screenshot(ServerContext *context, const idb::ScreenshotRequest *request, idb::ScreenshotResponse *response);
   Status set_location(ServerContext *context, const idb::SetLocationRequest *request, idb::SetLocationResponse *response);
+  Status setting(ServerContext* context, const idb::SettingRequest* request, idb::SettingResponse* response);
   Status terminate(ServerContext *context, const idb::TerminateRequest *request, idb::TerminateResponse *response);
   Status uninstall(ServerContext *context, const idb::UninstallRequest *request, idb::UninstallResponse *response);
+  Status video_stream(ServerContext* context, grpc::ServerReaderWriter<idb::VideoStreamResponse, idb::VideoStreamRequest>* stream);
   Status xctest_list_bundles(ServerContext *context, const idb::XctestListBundlesRequest *request, idb::XctestListBundlesResponse *response);
   Status xctest_list_tests(ServerContext *context, const idb::XctestListTestsRequest *request, idb::XctestListTestsResponse *response);
   Status xctest_run(ServerContext *context, const idb::XctestRunRequest *request, grpc::ServerWriter<idb::XctestRunResponse> *response);

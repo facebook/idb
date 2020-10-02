@@ -350,8 +350,18 @@ This allows to avoid the permission popup the first time we open a deeplink
 
 /**
  Fetches diagnostic information
+
+ @return a Future wrapping the diagnostic information
  */
 - (FBFuture<NSDictionary<NSString *, id> *> *)diagnostic_information;
+
+/**
+ Sets the hardware keyboard
+
+ @param enabled YES if enabled, NO if disabled.
+ @return a Future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)set_hardware_keyboard_enabled:(BOOL)enabled;
 
 #pragma mark File Operations
 

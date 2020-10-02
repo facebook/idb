@@ -787,6 +787,22 @@ Status FBIDBServiceHandler::set_location(ServerContext *context, const idb::SetL
   return Status::OK;
 }}
 
+Status FBIDBServiceHandler::setting(ServerContext* context, const idb::SettingRequest* request, idb::SettingResponse* response)
+{@autoreleasepool{
+  switch (request->setting_case()) {
+    case idb::SettingRequest::SettingCase::kHardwareKeyboard: {
+      NSError *error = nil;
+      [[_commandExecutor set_hardware_keyboard_enabled:request->hardwarekeyboard().enabled()] await:&error];
+      if (error) {
+        return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+      }
+      return Status::OK;
+    }
+    default:
+      return Status(grpc::StatusCode::INTERNAL, "Unknown setting case");
+  }
+}}
+
 Status FBIDBServiceHandler::contacts_update(ServerContext *context, const idb::ContactsUpdateRequest *request, idb::ContactsUpdateResponse *response)
 {@autoreleasepool{
   NSError *error = nil;

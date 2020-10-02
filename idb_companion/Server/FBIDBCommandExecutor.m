@@ -387,6 +387,15 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
+- (FBFuture<NSNull *> *)set_hardware_keyboard_enabled:(BOOL)enabled
+{
+  return [[self
+    settingsCommands]
+    onQueue:self.target.workQueue fmap:^(id<FBSimulatorSettingsCommands> commands) {
+      return [commands setHardwareKeyboardEnabled:enabled];
+    }];
+}
+
 #pragma mark File Commands
 
 - (FBFuture<NSNull *> *)move_paths:(NSArray<NSString *> *)originPaths to_path:(NSString *)destinationPath containerType:(NSString *)containerType

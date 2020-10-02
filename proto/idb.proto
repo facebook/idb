@@ -28,6 +28,7 @@ service CompanionService {
   rpc approve (ApproveRequest) returns (ApproveResponse) {}
   rpc clear_keychain (ClearKeychainRequest) returns (ClearKeychainResponse) {}
   rpc contacts_update (ContactsUpdateRequest) returns (ContactsUpdateResponse) {}
+  rpc setting (SettingRequest) returns (SettingResponse) {}
   // App
   rpc launch (stream LaunchRequest) returns (stream LaunchResponse) {}
   rpc list_apps (ListAppsRequest) returns (ListAppsResponse) {}
@@ -67,6 +68,18 @@ message CompanionInfo {
   string udid = 1;
   bool is_local = 4;
   bytes metadata = 6;
+}
+
+message SettingRequest {
+  message HardwareKeyboard {
+    bool enabled = 1;
+  }
+  oneof setting  {
+    HardwareKeyboard hardwareKeyboard = 1;
+  }
+}
+
+message SettingResponse {
 }
 
 message ListAppsRequest {
