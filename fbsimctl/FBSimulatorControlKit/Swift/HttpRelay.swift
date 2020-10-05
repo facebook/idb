@@ -44,6 +44,8 @@ enum ResponseKeys: String {
 }
 
 @objc private class HttpEventReporter: NSObject, EventReporter {
+  var metadata: [String : String] = [:]
+
   var events: [FBEventReporterSubjectProtocol] = []
   let interpreter: EventInterpreter = FBEventInterpreter.jsonEventInterpreter(false)
   let consumer: Writer = FBFileWriter.nullWriter

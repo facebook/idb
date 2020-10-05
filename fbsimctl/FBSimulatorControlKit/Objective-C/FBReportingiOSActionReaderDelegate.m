@@ -127,4 +127,6 @@
   return self.reporter.consumer;
 }
 
+@synthesize metadata;
+
 @end

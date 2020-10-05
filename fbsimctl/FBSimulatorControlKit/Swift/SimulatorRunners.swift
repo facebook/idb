@@ -169,21 +169,21 @@ private struct UploadRunner: Runner {
   }
 
   func run() -> CommandResult {
-    var diagnosticLocations: [(FBDiagnostic, String)] = []
+    var diagnosticLocations: [(FBDiagnostic, URL)] = []
     for diagnostic in diagnostics {
       guard let localPath = diagnostic.asPath else {
         return .failure("Could not get a local path for diagnostic \(diagnostic)")
       }
-      diagnosticLocations.append((diagnostic, localPath))
+      diagnosticLocations.append((diagnostic, URL.init(fileURLWithPath: localPath)))
     }
 
-    let mediaPredicate = NSPredicate.forMediaPaths()
+    let mediaPredicate = FBSimulatorMediaCommands.predicateForMediaPaths()
     let media = diagnosticLocations.filter { _, location in
       mediaPredicate.evaluate(with: location)
     }
 
     if media.count > 0 {
-      let paths = media.map { NSURL.fileURL(withPath: $0.1) }
+      let paths = media.map { $0.1 }
       let runner = FutureRunner(reporter, .upload, reporter.simulator.subject, reporter.simulator.addMedia(paths))
       let result = runner.run()
       switch result.outcome {
