@@ -438,7 +438,6 @@ static NSString *file_container(idb::FileContainer container)
     case idb::FileContainer_Kind_APPLICATION:
     default:
       return nsstring_from_c_string(container.bundle_id());
-      break;
   }
 }
 
@@ -692,14 +691,34 @@ Status FBIDBServiceHandler::rm(grpc::ServerContext *context, const idb::RmReques
 Status FBIDBServiceHandler::ls(grpc::ServerContext *context, const idb::LsRequest *request, idb::LsResponse *response)
 {@autoreleasepool{
   NSError *error = nil;
-  NSArray<NSString *> *paths = [[_commandExecutor list_path:nsstring_from_c_string(request->path()) containerType:file_container(request->container())] block:&error];
-  if (error) {
-    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
-  }
+  if (request->paths_size() > 0) {
+    NSArray<NSString *> *inputPaths = extract_string_array(request->paths());
+    NSDictionary<NSString *, NSArray<NSString *> *> *pathsToPaths = [[_commandExecutor list_paths:inputPaths containerType:file_container(request->container())] block:&error];
+    if (error) {
+      return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+    }
+    
+    for (NSString *containerPath in pathsToPaths.allKeys) {
+      NSArray<NSString *> *paths = pathsToPaths[containerPath];
+      idb::FileListing *listing = response->add_listings();
+      idb::FileInfo *parent = listing->mutable_parent();
+      parent->set_path(containerPath.UTF8String);
+      for (NSString *path in paths) {
+        idb::FileInfo *info = listing->add_files();
+        info->set_path(path.UTF8String);
+      }
+    }
+  } else {
+    // Back-compat with single paths
+    NSArray<NSString *> *paths = [[_commandExecutor list_path:nsstring_from_c_string(request->path()) containerType:file_container(request->container())] block:&error];
+    if (error) {
+      return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+    }
 
-  for (NSString *path in paths) {
-    idb::FileInfo *info = response->add_files();
-    info->set_path(path.UTF8String);
+    for (NSString *path in paths) {
+      idb::FileInfo *info = response->add_files();
+      info->set_path(path.UTF8String);
+    }
   }
 
   return Status::OK;

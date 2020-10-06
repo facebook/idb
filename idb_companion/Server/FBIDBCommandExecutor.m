@@ -500,6 +500,23 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
+- (FBFuture<NSDictionary<NSString *, NSArray<NSString *> *> *> *)list_paths:(NSArray<NSString *> *)paths containerType:(NSString *)containerType
+{
+  return [[[self
+    applicationDataContainerCommands:containerType]
+    onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> container) {
+      NSMutableArray<FBFuture<NSArray<NSString *> *> *> *futures = NSMutableArray.array;
+      for (NSString *path in paths) {
+        [futures addObject:[container contentsOfDirectory:path]];
+      }
+      return [FBFuture futureWithFutures:futures];
+    }]
+    onQueue:self.target.asyncQueue map:^ (NSArray<NSArray<NSString *> *> *listings) {
+      // Dictionary is constructed by attaching paths for ordering within array.
+      return [NSDictionary dictionaryWithObjects:listings forKeys:paths];
+    }];
+}
+
 #pragma mark Private Methods
 
 - (FBFutureContext<id<FBFileContainer>> *)applicationDataContainerCommands:(NSString *)containerType

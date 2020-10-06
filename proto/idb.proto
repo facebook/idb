@@ -219,7 +219,6 @@ message ContactsUpdateRequest {
 message ContactsUpdateResponse {
 }
 
-
 message TargetDescriptionRequest {
   bool fetch_diagnostics = 1;
 }
@@ -289,9 +288,6 @@ message HIDEvent {
 message HIDResponse {
 }
 
-message FileInfo {
-  string path = 1;
-}
 
 message ConnectRequest {
   map<string, string> metadata = 1;
@@ -517,7 +513,7 @@ message CrashLogQuery {
   string name = 4;
 }
 
-// xctest 
+// xctest
 
 message XctestListBundlesRequest {
 }
@@ -634,16 +630,26 @@ message FileContainer {
   string bundle_id = 2;
 }
 
+message FileInfo {
+  string path = 1;
+}
+
+message FileListing {
+  FileInfo parent = 1;
+  repeated FileInfo files = 2;
+}
+
 message LsResponse {
   repeated FileInfo files = 1;
+  repeated FileListing listings = 2;
 }
 
 message LsRequest {
   string bundle_id = 1;
   string path = 2;
   FileContainer container = 3;
+  repeated string paths = 4;
 }
-
 
 message MkdirRequest {
   string bundle_id = 1;
@@ -698,4 +704,3 @@ message PullRequest {
 message PullResponse {
   Payload payload = 1;
 }
-
