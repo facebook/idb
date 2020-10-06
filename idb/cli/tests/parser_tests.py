@@ -259,27 +259,29 @@ class TestParser(TestCase):
         )
 
     async def test_list(self) -> None:
-        self.direct_client_mock.ls = AsyncMock(return_value=[])
+        self.direct_client_mock.ls_single = AsyncMock(return_value=[])
         src = "path"
         cmd_input = ["file", "list", src]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.ls.assert_called_once_with(container=None, path=src)
+        self.direct_client_mock.ls_single.assert_called_once_with(
+            container=None, path=src
+        )
 
     async def test_bundled_file_list_flag(self) -> None:
-        self.direct_client_mock.ls = AsyncMock(return_value=[])
+        self.direct_client_mock.ls_single = AsyncMock(return_value=[])
         src = "path"
         bundle_id = "com.bundle.id"
         cmd_input = ["file", "list", src, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.ls.assert_called_once_with(
+        self.direct_client_mock.ls_single.assert_called_once_with(
             container=bundle_id, path=src
         )
 
     async def test_bundled_file_list_colon(self) -> None:
-        self.direct_client_mock.ls = AsyncMock(return_value=[])
+        self.direct_client_mock.ls_single = AsyncMock(return_value=[])
         cmd_input = ["file", "list", "com.bundle.id:path"]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.ls.assert_called_once_with(
+        self.direct_client_mock.ls_single.assert_called_once_with(
             container="com.bundle.id", path="path"
         )
 

@@ -169,6 +169,12 @@ class FileEntryInfo:
 
 
 @dataclass(frozen=True)
+class FileListing:
+    parent: str
+    entries: List[FileEntryInfo]
+
+
+@dataclass(frozen=True)
 class AccessibilityInfo:
     json: Optional[str]
 
@@ -544,7 +550,13 @@ class IdbClient(ABC):
         pass
 
     @abstractmethod
-    async def ls(self, container: FileContainer, path: str) -> List[FileEntryInfo]:
+    async def ls_single(
+        self, container: FileContainer, path: str
+    ) -> List[FileEntryInfo]:
+        pass
+
+    @abstractmethod
+    async def ls(self, container: FileContainer, paths: List[str]) -> List[FileListing]:
         pass
 
     @abstractmethod

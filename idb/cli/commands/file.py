@@ -134,19 +134,45 @@ class FSListCommand(FSCommand):
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
-            "path", help="Source path", default="./", type=BundleWithPath.parse
+            "paths",
+            help="Source path",
+            nargs="+",
+            default="./",
+            type=BundleWithPath.parse,
+        )
+        parser.add_argument(
+            "--force-new-output",
+            action="store_true",
+            default=False,
+            help="Force multiple-file output even if a single file is passed",
         )
         super().add_parser_arguments(parser)
 
     async def run_with_container(
         self, container: FileContainer, args: Namespace, client: IdbClient
     ) -> None:
-        paths = await client.ls(container=container, path=args.path)
-        if args.json:
-            print(json.dumps([{"path": item.path} for item in paths]))
+        if len(args.paths) > 1 or args.force_new_output:
+            listings_by_path = await client.ls(container=container, paths=args.paths)
+            if args.json:
+                listings_output = {}
+                for listing in listings_by_path:
+                    listings_output[f"{listing.parent}"] = [
+                        entry.path for entry in listing.entries
+                    ]
+                print(json.dumps(listings_output))
+            else:
+                for listing in listings_by_path:
+                    print(f"{listing.parent}:")
+                    for entry in listing.entries:
+                        print(entry.path)
         else:
-            for item in paths:
-                print(item.path)
+            # Handle listing of a single path (no prefixing of the directory)
+            paths = await client.ls_single(container=container, path=args.paths[0])
+            if args.json:
+                print(json.dumps([{"path": item.path} for item in paths]))
+            else:
+                for item in paths:
+                    print(item.path)
 
 
 class FSMkdirCommand(FSCommand):

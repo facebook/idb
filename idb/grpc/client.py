@@ -56,6 +56,7 @@ from idb.common.types import (
     DomainSocketAddress,
     FileContainer,
     FileEntryInfo,
+    FileListing,
     HIDButtonType,
     HIDEvent,
     IdbClient as IdbClientBase,
@@ -494,7 +495,9 @@ class IdbClient(IdbClientBase):
         )
 
     @log_and_handle_exceptions
-    async def ls(self, container: FileContainer, path: str) -> List[FileEntryInfo]:
+    async def ls_single(
+        self, container: FileContainer, path: str
+    ) -> List[FileEntryInfo]:
         response = await self.stub.ls(
             LsRequest(
                 bundle_id=file_container_to_bundle_id_deprecated(container),
@@ -503,6 +506,19 @@ class IdbClient(IdbClientBase):
             )
         )
         return [FileEntryInfo(path=file.path) for file in response.files]
+
+    @log_and_handle_exceptions
+    async def ls(self, container: FileContainer, paths: List[str]) -> List[FileListing]:
+        response = await self.stub.ls(
+            LsRequest(paths=paths, container=file_container_to_grpc(container))
+        )
+        return [
+            FileListing(
+                parent=listing.parent.path,
+                entries=[FileEntryInfo(path=entry.path) for entry in listing.files],
+            )
+            for listing in response.listings
+        ]
 
     @log_and_handle_exceptions
     async def mkdir(self, container: FileContainer, path: str) -> None:
