@@ -49,7 +49,9 @@
   // Setup
   NSError *error = nil;
   NSString *filePath = [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
+  XCTAssertTrue([[NSFileManager defaultManager] createFileAtPath:filePath contents:nil attributes:nil]);
   NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:filePath];
+  XCTAssertNotNil(fileHandle);
   id<FBDataConsumer, FBDataConsumerLifecycle> writer = [FBFileWriter asyncWriterWithFileDescriptor:fileHandle.fileDescriptor closeOnEndOfFile:YES error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(writer);
