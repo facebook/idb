@@ -473,6 +473,14 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  */
 + (FBFutureContext *)futureContextWithError:(NSError *)error;
 
+/**
+ Constructs a FBFutureContext in Parallel.
+
+ @param contexts the contexts to use.
+ @return a new FBFutureContext with the underlying contexts in an array.
+ */
++ (FBFutureContext<NSArray<id> *> *)futureContextWithFutureContexts:(NSArray<FBFutureContext *> *)contexts;
+
 #pragma mark Public Methods
 
 /**

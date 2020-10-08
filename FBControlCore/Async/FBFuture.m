@@ -180,6 +180,18 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return [self futureContextWithFuture:[FBFuture futureWithError:error]];
 }
 
++ (FBFutureContext<NSArray<id> *> *)futureContextWithFutureContexts:(NSArray<FBFutureContext *> *)contexts
+{
+  NSMutableArray<FBFuture *> *futures = NSMutableArray.array;
+  NSMutableArray<FBFutureContext_Teardown *> *teardowns = NSMutableArray.array;
+  for (FBFutureContext *context in contexts) {
+    [futures addObject:context.future];
+    [teardowns addObjectsFromArray:context.teardowns];
+  }
+  FBFuture<NSArray<id> *> *future = [FBFuture futureWithFutures:futures];
+  return [[FBFutureContext alloc] initWithFuture:future teardowns:teardowns];
+}
+
 - (instancetype)initWithFuture:(FBFuture *)future teardowns:(NSMutableArray<FBFutureContext_Teardown *> *)teardowns
 {
   self = [super init];
