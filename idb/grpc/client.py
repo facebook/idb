@@ -79,7 +79,10 @@ from idb.grpc.crash import (
     _to_crash_log_info_list,
     _to_crash_log_query_proto,
 )
-from idb.grpc.file import container_to_grpc as file_container_to_grpc
+from idb.grpc.file import (
+    container_to_bundle_id_deprecated as file_container_to_bundle_id_deprecated,
+    container_to_grpc as file_container_to_grpc,
+)
 from idb.grpc.hid import event_to_grpc
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
@@ -471,7 +474,11 @@ class IdbClient(IdbClientBase):
     @log_and_handle_exceptions
     async def rm(self, container: FileContainer, paths: List[str]) -> None:
         await self.stub.rm(
-            RmRequest(paths=paths, container=file_container_to_grpc(container))
+            RmRequest(
+                bundle_id=file_container_to_bundle_id_deprecated(container),
+                paths=paths,
+                container=file_container_to_grpc(container),
+            )
         )
 
     @log_and_handle_exceptions
@@ -480,6 +487,7 @@ class IdbClient(IdbClientBase):
     ) -> None:
         await self.stub.mv(
             MvRequest(
+                bundle_id=file_container_to_bundle_id_deprecated(container),
                 src_paths=src_paths,
                 dst_path=dest_path,
                 container=file_container_to_grpc(container),
@@ -491,7 +499,11 @@ class IdbClient(IdbClientBase):
         self, container: FileContainer, path: str
     ) -> List[FileEntryInfo]:
         response = await self.stub.ls(
-            LsRequest(path=path, container=file_container_to_grpc(container))
+            LsRequest(
+                bundle_id=file_container_to_bundle_id_deprecated(container),
+                path=path,
+                container=file_container_to_grpc(container),
+            )
         )
         return [FileEntryInfo(path=file.path) for file in response.files]
 
@@ -511,7 +523,11 @@ class IdbClient(IdbClientBase):
     @log_and_handle_exceptions
     async def mkdir(self, container: FileContainer, path: str) -> None:
         await self.stub.mkdir(
-            MkdirRequest(path=path, container=file_container_to_grpc(container))
+            MkdirRequest(
+                bundle_id=file_container_to_bundle_id_deprecated(container),
+                path=path,
+                container=file_container_to_grpc(container),
+            )
         )
 
     @log_and_handle_exceptions
@@ -574,7 +590,9 @@ class IdbClient(IdbClientBase):
             await stream.send_message(
                 PushRequest(
                     inner=PushRequest.Inner(
-                        dst_path=dest_path, container=file_container_to_grpc(container)
+                        bundle_id=file_container_to_bundle_id_deprecated(container),
+                        dst_path=dest_path,
+                        container=file_container_to_grpc(container),
                     )
                 )
             )
@@ -601,6 +619,7 @@ class IdbClient(IdbClientBase):
     ) -> None:
         async with self.stub.pull.open() as stream:
             request = request = PullRequest(
+                bundle_id=file_container_to_bundle_id_deprecated(container),
                 src_path=src_path,
                 # not sending the destination to remote companion
                 # so it streams the file back
