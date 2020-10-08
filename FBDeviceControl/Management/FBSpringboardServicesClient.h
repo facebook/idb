@@ -21,6 +21,14 @@ typedef NSArray<NSArray<NSDictionary<NSString *, id> *> *> * IconLayoutType;
 extern NSString *const FBSpringboardServiceName;
 
 /**
+ A String Enum for wallpaper names.
+ */
+typedef NSString *FBWallpaperName NS_STRING_ENUM;
+extern FBWallpaperName const FBWallpaperNameHomescreen;
+extern FBWallpaperName const FBWallpaperNameLockscreen;
+
+
+/**
  A client for SpringBoardServices.
  */
 @interface FBSpringboardServicesClient : NSObject
@@ -52,6 +60,14 @@ extern NSString *const FBSpringboardServiceName;
  @return a Future that resolves when the icon layout has been set.
  */
 - (FBFuture<NSNull *> *)setIconLayout:(IconLayoutType)iconLayout;
+
+/**
+ Obtains Wallpaper for the Homescreen.
+
+ @param name the name of wallpaper to retrieve.
+ @return a Future with the Image PNG Data.
+ */
+- (FBFuture<NSData *> *)wallpaperImageDataForKind:(FBWallpaperName)name;
 
 /**
  A File Container for Icon Manipulation

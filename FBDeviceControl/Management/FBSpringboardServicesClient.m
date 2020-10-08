@@ -11,6 +11,10 @@
 
 NSString *const FBSpringboardServiceName = @"com.apple.springboardservices";
 
+
+FBWallpaperName const FBWallpaperNameHomescreen = @"homescreen";
+FBWallpaperName const FBWallpaperNameLockscreen = @"lockscreen";
+
 @interface FBSpringboardServicesClient ()
 
 @property (nonatomic, strong, readonly) FBAMDServiceConnection *connection;
@@ -262,6 +266,24 @@ static size_t IconLayoutSize = 4;
         return nil;
       }
       return NSNull.null;
+    }];
+}
+
+- (FBFuture<NSData *> *)wallpaperImageDataForKind:(FBWallpaperName)name
+{
+  return [FBFuture
+    onQueue:self.queue resolveValue:^ NSData * (NSError **error) {
+      NSDictionary<NSString *, id> *response = [self.connection sendAndReceiveMessage:@{@"command": @"getWallpaperPreviewImage", @"wallpaperName": name} error:error];
+      if (!response) {
+        return nil;
+      }
+      NSData *data = response[@"pngData"];
+      if (![data isKindOfClass:NSData.class]) {
+        return [[FBControlCoreError
+          describeFormat:@"No pngData in response %@", response]
+          fail:error];
+      }
+      return data;
     }];
 }
 
