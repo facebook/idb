@@ -55,6 +55,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSpringboardIconLayout;
 
+/**
+ Returns a file container for modification wallpaper.
+
+ @return a Future context that resolves with an implementation of the file container.
+ */
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForWallpaper;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -12,6 +12,7 @@
 #import "FBDevice.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceProvisioningProfileCommands.h"
+#import "FBManagedConfigClient.h"
 #import "FBSpringboardServicesClient.h"
 
 @interface FBDeviceFileContainer ()
@@ -123,6 +124,86 @@
 
 @end
 
+@interface FBDeviceFileContainer_Wallpaper : NSObject <FBFileContainer>
+
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) FBSpringboardServicesClient *springboard;
+@property (nonatomic, strong, readonly) FBManagedConfigClient *managedConfig;
+
+@end
+
+@implementation FBDeviceFileContainer_Wallpaper
+
+- (instancetype)initWithSpringboard:(FBSpringboardServicesClient *)springboard managedConfig:(FBManagedConfigClient *)managedConfig queue:(dispatch_queue_t)queue
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _springboard = springboard;
+  _managedConfig = managedConfig;
+  _queue = queue;
+
+  return self;
+}
+
+#pragma mark FBFileContainer Implementation
+
+- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path
+{
+  return [FBFuture futureWithResult:@[FBWallpaperNameHomescreen, FBWallpaperNameLockscreen]];
+}
+
+- (FBFuture<NSString *> *)copyItemInContainer:(NSString *)containerPath toDestinationOnHost:(NSString *)destinationPath
+{
+  return [[self.springboard
+    wallpaperImageDataForKind:containerPath.lastPathComponent]
+    onQueue:self.queue fmap:^ FBFuture<NSString *> * (NSData *data) {
+      NSError *error = nil;
+      if (![data writeToFile:destinationPath options:NSDataWritingAtomic error:&error]) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:destinationPath];
+    }];
+}
+
+- (FBFuture<NSNull *> *)copyPathOnHost:(NSURL *)sourcePath toDestination:(NSString *)destinationPath
+{
+  return [FBFuture
+    onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
+      NSError *error = nil;
+      NSData *data = [NSData dataWithContentsOfURL:sourcePath options:0 error:&error];
+      if (!data) {
+        return [FBFuture futureWithError:error];
+      }
+      return [self.managedConfig changeWallpaperWithName:destinationPath.lastPathComponent data:data];
+    }];
+}
+
+- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Wallpaper File Containers", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSNull *> *)movePath:(NSString *)sourcePath toDestinationPath:(NSString *)destinationPath
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Wallpaper File Containers", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSNull *> *)removePath:(NSString *)path
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Wallpaper File Containers", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+@end
+
 @interface FBDeviceFileCommands ()
 
 @property (nonatomic, strong, readonly) FBDevice *device;
@@ -195,6 +276,20 @@
     startService:FBSpringboardServiceName]
     onQueue:self.device.asyncQueue pend:^ FBFuture<id<FBFileContainer>> * (FBAMDServiceConnection *connection) {
       return [FBFuture futureWithResult:[[FBSpringboardServicesClient springboardServicesClientWithConnection:connection logger:self.device.logger] iconContainer]];
+    }];
+}
+
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForWallpaper
+{
+  return [[FBFutureContext
+    futureContextWithFutureContexts:@[
+      [self.device startService:FBSpringboardServiceName],
+      [self.device startService:FBManagedConfigService],
+    ]]
+    onQueue:self.device.asyncQueue pend:^ FBFuture<id<FBFileContainer>> * (NSArray<FBAMDServiceConnection *> *connections) {
+      FBSpringboardServicesClient *springboard = [FBSpringboardServicesClient springboardServicesClientWithConnection:connections[0] logger:self.device.logger];
+      FBManagedConfigClient *managedConfig = [FBManagedConfigClient managedConfigClientWithConnection:connections[1] logger:self.device.logger];
+      return [FBFuture futureWithResult:[[FBDeviceFileContainer_Wallpaper alloc] initWithSpringboard:springboard managedConfig:managedConfig queue:self.device.workQueue]];
     }];
 }
 

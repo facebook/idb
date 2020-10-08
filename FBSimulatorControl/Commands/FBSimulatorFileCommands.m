@@ -238,6 +238,13 @@
     failFutureContext];
 }
 
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForWallpaper
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+    failFutureContext];
+}
+
 #pragma mark Private
 
 - (FBFuture<NSString *> *)dataContainerForBundleID:(NSString *)bundleID
