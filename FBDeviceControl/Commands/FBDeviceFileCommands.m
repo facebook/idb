@@ -204,6 +204,77 @@
 
 @end
 
+@interface FBDeviceFileContainer_MDMProfiles : NSObject <FBFileContainer>
+
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) FBManagedConfigClient *managedConfig;
+
+@end
+
+@implementation FBDeviceFileContainer_MDMProfiles
+
+- (instancetype)initWithManagedConfig:(FBManagedConfigClient *)managedConfig queue:(dispatch_queue_t)queue
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _managedConfig = managedConfig;
+  _queue = queue;
+
+  return self;
+}
+
+#pragma mark FBFileContainer Implementation
+
+- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path
+{
+  return [self.managedConfig getProfileList];
+}
+
+- (FBFuture<NSString *> *)copyItemInContainer:(NSString *)containerPath toDestinationOnHost:(NSString *)destinationPath
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for MDM Profile File Containers", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSNull *> *)copyPathOnHost:(NSURL *)sourcePath toDestination:(NSString *)destinationPath
+{
+  return [FBFuture
+    onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
+      NSError *error = nil;
+      NSData *data = [NSData dataWithContentsOfURL:sourcePath options:0 error:&error];
+      if (!data) {
+        return [FBFuture futureWithError:error];
+      }
+      return [self.managedConfig installProfile:data];
+    }];
+}
+
+- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for MDM Profile File Containers", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSNull *> *)movePath:(NSString *)sourcePath toDestinationPath:(NSString *)destinationPath
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for MDM Profile File Containers", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSNull *> *)removePath:(NSString *)path
+{
+  return [self.managedConfig removeProfile:path];
+}
+
+@end
+
+
 @interface FBDeviceFileCommands ()
 
 @property (nonatomic, strong, readonly) FBDevice *device;
@@ -268,6 +339,16 @@
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForProvisioningProfiles
 {
   return [FBFutureContext futureContextWithResult:[FBFileContainer fileContainerForProvisioningProfileCommands:[FBDeviceProvisioningProfileCommands commandsWithTarget:self.device] queue:self.device.workQueue]];
+}
+
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMDMProfiles
+{
+  return [[self.device
+    startService:FBManagedConfigService]
+    onQueue:self.device.asyncQueue pend:^ FBFuture<id<FBFileContainer>> * (FBAMDServiceConnection *connection) {
+      FBManagedConfigClient *managedConfig = [FBManagedConfigClient managedConfigClientWithConnection:connection logger:self.device.logger];
+      return [FBFuture futureWithResult:[[FBDeviceFileContainer_MDMProfiles alloc] initWithManagedConfig:managedConfig queue:self.device.workQueue]];
+    }];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSpringboardIconLayout

@@ -224,6 +224,13 @@
   return [FBFutureContext futureContextWithResult:[[FBSimulatorFileContainer alloc] initWithContainerPath:self.simulator.dataDirectory queue:self.simulator.asyncQueue]];
 }
 
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMDMProfiles
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+    failFutureContext];
+}
+
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForProvisioningProfiles
 {
   return [[FBControlCoreError

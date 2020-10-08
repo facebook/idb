@@ -70,6 +70,79 @@ NSString *const FBManagedConfigService = @"com.apple.mobile.MCInstall";
   ]];
 }
 
+static NSString * const OrderedIdentifiers = @"OrderedIdentifiers";
+static NSString * const ProfileMetadata = @"ProfileMetadata";
+static NSString * const PayloadUUID = @"PayloadUUID";
+static NSString * const PayloadVersion = @"PayloadVersion";
+
+- (FBFuture<NSArray<NSString *> *> *)getProfileList
+{
+  return [FBFuture
+    onQueue:self.queue resolveValue:^ NSArray<NSString *> * (NSError **error) {
+      NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"RequestType": @"GetProfileList"} error:error];
+      if (!result) {
+        return nil;
+      }
+      NSArray<NSString *> *orderedIdentifiers = result[OrderedIdentifiers];
+      if (![FBCollectionInformation isArrayHeterogeneous:orderedIdentifiers withClass:NSString.class]) {
+        return [[FBControlCoreError
+          describeFormat:@"%@ is not an Array<String>", OrderedIdentifiers]
+          fail:error];
+      }
+      return orderedIdentifiers;
+  }];
+}
+
+- (FBFuture<NSNull *> *)installProfile:(NSData *)payload
+{
+  return [FBFuture
+    onQueue:self.queue resolveValue:^ NSDictionary<NSString *, id> * (NSError **error) {
+      NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"RequestType": @"InstallProfile", @"Payload": payload} error:error];
+      if (!result) {
+        return nil;
+      }
+      return [FBCollectionOperations recursiveFilteredJSONSerializableRepresentationOfDictionary:result];
+  }];
+}
+
+- (FBFuture<NSNull *> *)removeProfile:(NSString *)profileName
+{
+  return [FBFuture
+    onQueue:self.queue resolveValue:^ NSNull * (NSError **error) {
+      NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"RequestType": @"GetProfileList"} error:error];
+      if (!result) {
+        return nil;
+      }
+      NSDictionary<NSString *, id> *profileMetadata = result[ProfileMetadata][profileName];
+      if (!profileMetadata) {
+        return [[FBControlCoreError
+          describeFormat:@"%@ is not one of %@", profileName, [FBCollectionInformation oneLineDescriptionFromArray:result[OrderedIdentifiers]]]
+          fail:error];
+      }
+      NSDictionary<NSString *, id> *profileIdentifier = @{
+        @"PayloadType": @"Configuration",
+        @"PayloadIdentifier": profileName,
+        PayloadUUID: profileMetadata[PayloadUUID],
+        PayloadVersion: profileMetadata[PayloadVersion]
+      };
+      NSData *payload = [NSPropertyListSerialization dataWithPropertyList:profileIdentifier format:0xc8 options:0 error:error];
+      if (!payload) {
+        return nil;
+      }
+      result = [self.connection sendAndReceiveMessage:@{@"RequestType": @"RemoveProfile", @"ProfileIdentifier": payload} error:error];
+      if (!result) {
+        return nil;
+      }
+      NSString *status = result[@"Status"];
+      if ([status isEqualToString:@"Error"]) {
+        return [[FBControlCoreError
+          describeFormat:@"Status is Error: %@", result]
+          fail:error];
+      }
+      return NSNull.null;
+    }];
+}
+
 #pragma mark Private Methods
 
 - (FBFuture<NSNull *> *)changeSettings:(NSArray<NSDictionary<NSString *, id> *> *)settings

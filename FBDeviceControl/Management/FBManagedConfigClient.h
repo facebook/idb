@@ -53,6 +53,29 @@ extern NSString *const FBManagedConfigService;
  */
 - (FBFuture<NSNull *> *)changeWallpaperWithName:(FBWallpaperName)name data:(NSData *)data;
 
+/**
+ Returns all of the installed MDM profiles.
+
+ @return a Future with the profile listing.
+ */
+- (FBFuture<NSArray<NSString *> *> *)getProfileList;
+
+/**
+ Installs an MDM profile.
+
+ @param payload data for the MDM Profile.
+ @return a Future with the profile listing.
+ */
+- (FBFuture<NSNull *> *)installProfile:(NSData *)payload;
+
+/**
+ Removes a MDM profile.
+
+ @param profileName the name of the profile
+ @return a Future with the profile listing.
+ */
+- (FBFuture<NSNull *> *)removeProfile:(NSString *)profileName;
+
 @end
 
 NS_ASSUME_NONNULL_END
