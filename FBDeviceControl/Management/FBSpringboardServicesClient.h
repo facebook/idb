@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBAMDServiceConnection;
 
-typedef NSArray<id> * IconLayoutType;
+typedef NSArray<NSArray<NSDictionary<NSString *, id> *> *> * IconLayoutType;
 
 /**
  The Service Name for Managed Config.
@@ -44,6 +44,21 @@ extern NSString *const FBSpringboardServiceName;
  @return a Future wrapping the Icon Layout.
  */
 - (FBFuture<IconLayoutType> *)getIconLayout;
+
+/**
+ Sets the Icon Layout of Springboard.
+
+ @param iconLayout the icon layout to set.
+ @return a Future that resolves when the icon layout has been set.
+ */
+- (FBFuture<NSNull *> *)setIconLayout:(IconLayoutType)iconLayout;
+
+/**
+ A File Container for Icon Manipulation
+
+ @return an FBFileContainer implementation.
+ */
+- (id<FBFileContainer>)iconContainer;
 
 @end
 

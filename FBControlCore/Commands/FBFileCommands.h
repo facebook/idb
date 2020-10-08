@@ -48,6 +48,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForProvisioningProfiles;
 
+/**
+ Returns a file container for modification of the Springboard icon layout.
+
+ @return a Future context that resolves with an implementation of the file container.
+ */
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSpringboardIconLayout;
+
 @end
 
 NS_ASSUME_NONNULL_END

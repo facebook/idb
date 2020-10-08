@@ -7,11 +7,12 @@
 
 #import "FBDeviceFileCommands.h"
 
-#import "FBDevice.h"
-#import "FBDevice+Private.h"
-#import "FBDeviceControlError.h"
 #import "FBAFCConnection.h"
+#import "FBDevice+Private.h"
+#import "FBDevice.h"
+#import "FBDeviceControlError.h"
 #import "FBDeviceProvisioningProfileCommands.h"
+#import "FBSpringboardServicesClient.h"
 
 @interface FBDeviceFileContainer ()
 
@@ -186,6 +187,15 @@
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForProvisioningProfiles
 {
   return [FBFutureContext futureContextWithResult:[FBFileContainer fileContainerForProvisioningProfileCommands:[FBDeviceProvisioningProfileCommands commandsWithTarget:self.device] queue:self.device.workQueue]];
+}
+
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSpringboardIconLayout
+{
+  return [[self.device
+    startService:FBSpringboardServiceName]
+    onQueue:self.device.asyncQueue pend:^ FBFuture<id<FBFileContainer>> * (FBAMDServiceConnection *connection) {
+      return [FBFuture futureWithResult:[[FBSpringboardServicesClient springboardServicesClientWithConnection:connection logger:self.device.logger] iconContainer]];
+    }];
 }
 
 @end
