@@ -625,6 +625,9 @@ message FileContainer {
     MEDIA = 3;
     CRASHES = 4;
     PROVISIONING_PROFILES = 5;
+    MDM_PROFILES = 6;
+    SPRINGBOARD_ICONS = 7;
+    WALLPAPER = 8;
   }
   Kind kind = 1;
   string bundle_id = 2;
