@@ -57,4 +57,41 @@ NSString *const FBManagedConfigService = @"com.apple.mobile.MCInstall";
     }];
 }
 
+- (FBFuture<NSNull *> *)changeWallpaperWithName:(FBWallpaperName)name data:(NSData *)data
+{
+  NSNumber *whereNumber = FBManagedConfigClient.wallpaperWhereForName[name];
+  if (!whereNumber) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ is not a valid Wallpaper Name", name]
+      failFuture];
+  }
+  return [self changeSettings:@[
+    @{@"Item": @"Wallpaper", @"Image": data, @"Where": whereNumber}
+  ]];
+}
+
+#pragma mark Private Methods
+
+- (FBFuture<NSNull *> *)changeSettings:(NSArray<NSDictionary<NSString *, id> *> *)settings
+{
+  return [FBFuture
+    onQueue:self.queue resolveValue:^ NSNull * (NSError **error) {
+      NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"RequestType": @"Settings", @"Settings": settings} error:error];
+      if (!result) {
+        return nil;
+      }
+      return NSNull.null;
+    }];
+}
+
++ (NSDictionary<FBWallpaperName, NSNumber *> *)wallpaperWhereForName
+{
+  static dispatch_once_t onceToken;
+  static NSDictionary<FBWallpaperName, NSNumber *> *value;
+  dispatch_once(&onceToken, ^{
+    value = @{FBWallpaperNameHomescreen: @0, FBWallpaperNameLockscreen: @1};
+  });
+  return value;
+}
+
 @end

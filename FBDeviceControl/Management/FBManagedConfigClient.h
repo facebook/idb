@@ -8,6 +8,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <FBDeviceControl/FBSpringboardServicesClient.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -42,6 +43,15 @@ extern NSString *const FBManagedConfigService;
  @return a Future that resolves with the cloud configuration.
 */
 - (FBFuture<NSDictionary<NSString *, id> *> *)getCloudConfiguration;
+
+/**
+ Changes the Wallpaper.
+
+ @param name the wallpaper name enum.
+ @param data the PNG data of the wallpaper.
+ @return a Future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)changeWallpaperWithName:(FBWallpaperName)name data:(NSData *)data;
 
 @end
 
