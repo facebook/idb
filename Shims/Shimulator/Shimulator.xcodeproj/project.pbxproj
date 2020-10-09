@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		EED62EDC20D12217006E86E5 /* dyld-interposing.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EDA20D12217006E86E5 /* dyld-interposing.h */; };
-		EED62EDD20D12217006E86E5 /* dyld-interposing.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EDA20D12217006E86E5 /* dyld-interposing.h */; };
 		EED62EDE20D12217006E86E5 /* XCTestPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EDB20D12217006E86E5 /* XCTestPrivate.h */; };
 		EED62EDF20D12217006E86E5 /* XCTestPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EDB20D12217006E86E5 /* XCTestPrivate.h */; };
 		EED62EE220D12242006E86E5 /* ReporterEvents.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EE020D12242006E86E5 /* ReporterEvents.h */; };
@@ -35,7 +33,6 @@
 		AA56EAE21EEF08720062C2BC /* libMaculator.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libMaculator.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		EED62ED820D12209006E86E5 /* Maculator.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Maculator.xcconfig; sourceTree = "<group>"; };
 		EED62ED920D12209006E86E5 /* Shimulator.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shimulator.xcconfig; sourceTree = "<group>"; };
-		EED62EDA20D12217006E86E5 /* dyld-interposing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "dyld-interposing.h"; sourceTree = "<group>"; };
 		EED62EDB20D12217006E86E5 /* XCTestPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XCTestPrivate.h; sourceTree = "<group>"; };
 		EED62EE020D12242006E86E5 /* ReporterEvents.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ReporterEvents.h; sourceTree = "<group>"; };
 		EED62EE120D12242006E86E5 /* XCTestReporterShim.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = XCTestReporterShim.m; sourceTree = "<group>"; };
@@ -99,7 +96,6 @@
 		EED62ED520D12134006E86E5 /* Tools */ = {
 			isa = PBXGroup;
 			children = (
-				EED62EDA20D12217006E86E5 /* dyld-interposing.h */,
 				EED62EEB20D12431006E86E5 /* FBDebugLog.h */,
 				EED62EEC20D12432006E86E5 /* FBDebugLog.m */,
 				EED62EEA20D12431006E86E5 /* FBRuntimeTools.h */,
@@ -135,9 +131,6 @@
 			path = TestLoadingShim;
 			sourceTree = "<group>";
 		};
-
-
-
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -148,7 +141,6 @@
 				EED62EF720D1243E006E86E5 /* FBXCTestMain.h in Headers */,
 				EED62EF120D12432006E86E5 /* FBDebugLog.h in Headers */,
 				EED62EE220D12242006E86E5 /* ReporterEvents.h in Headers */,
-				EED62EDC20D12217006E86E5 /* dyld-interposing.h in Headers */,
 				EED62EDE20D12217006E86E5 /* XCTestPrivate.h in Headers */,
 				EED62EEF20D12432006E86E5 /* FBRuntimeTools.h in Headers */,
 			);
@@ -161,7 +153,6 @@
 				EED62EF820D1243E006E86E5 /* FBXCTestMain.h in Headers */,
 				EED62EF220D12432006E86E5 /* FBDebugLog.h in Headers */,
 				EED62EE320D12242006E86E5 /* ReporterEvents.h in Headers */,
-				EED62EDD20D12217006E86E5 /* dyld-interposing.h in Headers */,
 				EED62EDF20D12217006E86E5 /* XCTestPrivate.h in Headers */,
 				EED62EF020D12432006E86E5 /* FBRuntimeTools.h in Headers */,
 			);
@@ -227,6 +218,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = AA017F381BD7776B00F45E9D;

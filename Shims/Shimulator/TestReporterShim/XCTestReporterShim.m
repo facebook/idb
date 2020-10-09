@@ -612,6 +612,7 @@ static void UpdateTestScope()
 }
 
 #pragma mark - Interposes
+
 /*
  *  We need to close opened fds so all pipe readers are notified and unblocked.
  *  The not obvious and weird part is that we need to print "\n" before closing.
@@ -884,7 +885,6 @@ void handle_signal(int signal)
 {
   PrintNewlineAndCloseFDs();
 }
-
 
 __attribute__((constructor)) static void EntryPoint()
 {
