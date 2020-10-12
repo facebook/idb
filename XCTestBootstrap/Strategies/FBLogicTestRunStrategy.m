@@ -135,7 +135,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     }]
     onQueue:queue fmap:^(FBFileReader *reader) {
       [logger logFormat:@"Shim output at %@ has been opened for reading, waiting for xctest process to exit", shimOutput.filePath];
-      return [FBLogicTestRunStrategy onQueue:queue waitForExit:process closingOutput:shimOutput consumer:shimConsumer];
+      return [self waitForExit:process closingOutput:shimOutput consumer:shimConsumer];
     }]
     onQueue:queue handleError:^(NSError *error) {
       [logger logFormat:@"Abnormal exit of xctest process %@", error];
@@ -149,10 +149,13 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     }];
 }
 
-+ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForExit:(id<FBLaunchedProcess>)process closingOutput:(id<FBProcessFileOutput>)output consumer:(id<FBDataConsumerLifecycle>)consumer
+- (FBFuture<NSNull *> *)waitForExit:(id<FBLaunchedProcess>)process closingOutput:(id<FBProcessFileOutput>)output consumer:(id<FBDataConsumerLifecycle>)consumer
 {
+  id<FBControlCoreLogger> logger = self.logger;
+  dispatch_queue_t queue = self.executor.workQueue;
   return [process.exitCode
     onQueue:queue fmap:^(NSNumber *exitCode) {
+      [logger logFormat:@"xctest process %@ terminated, exit code %@", @(process.processIdentifier), exitCode];
       // Since there's no guarantee that the xctest process has closed the writing end of the fifo, we can't rely on getting and end-of-file naturally
       // This means that we have to stop reading manually instead.
       // However, we want to ensure that we've read all the way to the end of the file so that no test results are missing, since the reading is asynchronous.
