@@ -124,7 +124,8 @@ static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
     configurationWithBinary:[FBBinaryDescriptor binaryWithPath:NSProcessInfo.processInfo.arguments[0] error:nil]
     arguments:@[@"BINGBONG"]
     environment:@{@"FIB" : @"BLE"}
-    output:FBProcessOutputConfiguration.outputToDevNull];
+    output:FBProcessOutputConfiguration.outputToDevNull
+    mode:FBAgentLaunchModeDefault];
 }
 
 - (nullable NSString *)iOSUnitTestBundlePath

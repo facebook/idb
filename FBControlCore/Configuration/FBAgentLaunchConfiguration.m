@@ -14,17 +14,12 @@ static NSString *const KeyBinary = @"binary";
 
 @implementation FBAgentLaunchConfiguration
 
-+ (instancetype)configurationWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment
-{
-  return [self configurationWithBinary:agentBinary arguments:arguments environment:environment output:FBProcessOutputConfiguration.defaultOutputToFile];
-}
-
-+ (instancetype)configurationWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output
++ (instancetype)configurationWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output mode:(FBAgentLaunchMode)mode
 {
   if (!agentBinary || !arguments || !environment) {
     return nil;
   }
-  return [[self alloc] initWithBinary:agentBinary arguments:arguments environment:environment output:output];
+  return [[self alloc] initWithBinary:agentBinary arguments:arguments environment:environment output:output mode:mode];
 }
 
 + (instancetype)inflateFromJSON:(id)json error:(NSError **)error
@@ -41,13 +36,14 @@ static NSString *const KeyBinary = @"binary";
   NSArray<NSString *> *arguments = nil;
   NSDictionary<NSString *, NSString *> *environment = nil;
   FBProcessOutputConfiguration *output = nil;
+  NSNumber *mode = json[@"mode"] ?: @(FBAgentLaunchModeDefault);
   if (![FBProcessLaunchConfiguration fromJSON:json extractArguments:&arguments environment:&environment output:&output error:error]) {
     return nil;
   }
-  return [self configurationWithBinary:binary arguments:arguments environment:environment output:output];
+  return [self configurationWithBinary:binary arguments:arguments environment:environment output:output mode:mode.unsignedIntegerValue];
 }
 
-- (instancetype)initWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output
+- (instancetype)initWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output mode:(FBAgentLaunchMode)mode
 {
   self = [super initWithArguments:arguments environment:environment output:output];
   if (!self) {
@@ -55,6 +51,7 @@ static NSString *const KeyBinary = @"binary";
   }
 
   _agentBinary = agentBinary;
+  _mode = mode;
 
   return self;
 }
@@ -86,18 +83,15 @@ static NSString *const KeyBinary = @"binary";
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  return [[self.class alloc]
-    initWithBinary:self.agentBinary
-    arguments:self.arguments
-    environment:self.environment
-    output:self.output];
+  // Object is immutable.
+  return self;
 }
 
 #pragma mark NSObject
 
 - (NSUInteger)hash
 {
-  return [super hash] | self.agentBinary.hash;
+  return [super hash] | self.agentBinary.hash | self.mode;
 }
 
 - (BOOL)isEqual:(FBAgentLaunchConfiguration *)object
@@ -107,7 +101,8 @@ static NSString *const KeyBinary = @"binary";
   }
   return [self.agentBinary isEqual:object.agentBinary] &&
          [self.arguments isEqual:object.arguments] &&
-         [self.environment isEqual:object.environment];
+         [self.environment isEqual:object.environment] &&
+         self.mode == object.mode;
 }
 
 #pragma mark FBJSONSerializable
@@ -116,6 +111,7 @@ static NSString *const KeyBinary = @"binary";
 {
   NSMutableDictionary *representation = [[super jsonSerializableRepresentation] mutableCopy];
   representation[@"binary"] = [self.agentBinary jsonSerializableRepresentation];
+  representation[@"mode"] = @(self.mode);
   return [representation mutableCopy];
 }
 

@@ -63,7 +63,8 @@
    configurationWithBinary:binary
    arguments:arguments
    environment:environment
-   output:output];
+   output:output
+   mode:FBAgentLaunchModeDefault];
 
   return [[FBAgentLaunchStrategy
     strategyWithSimulator:self.simulator]

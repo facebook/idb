@@ -125,7 +125,8 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
     configurationWithBinary:bridgeBinary
     arguments:@[portName]
     environment:@{}
-    output:output];
+    output:output
+    mode:FBAgentLaunchModeDefault];
 
   [logger logFormat:@"Launching SimulatorBridge agent for %@", portName];
   return [[[simulator
