@@ -8,7 +8,7 @@ from argparse import ArgumentParser, Namespace
 from typing import Dict
 
 from idb.cli import ClientCommand
-from idb.common.types import IdbClient, Permission
+from idb.common.types import Client, Permission
 
 
 _ARG_TO_ENUM: Dict[str, Permission] = {
@@ -38,7 +38,7 @@ class ApproveCommand(ClientCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         if "url" in args.permissions and not args.scheme:
             print("You need to specify --scheme when approving url permissions")
             exit(1)

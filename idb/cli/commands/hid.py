@@ -7,7 +7,7 @@
 from argparse import ArgumentParser, Namespace
 
 from idb.cli import ClientCommand
-from idb.common.types import HIDButtonType, IdbClient
+from idb.common.types import Client, HIDButtonType
 
 
 class TapCommand(ClientCommand):
@@ -25,7 +25,7 @@ class TapCommand(ClientCommand):
         parser.add_argument("--duration", help="Press duration", type=float)
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.tap(x=args.x, y=args.y, duration=args.duration)
 
 
@@ -48,7 +48,7 @@ class ButtonCommand(ClientCommand):
         parser.add_argument("--duration", help="Press duration", type=float)
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.button(
             button_type=HIDButtonType[args.button], duration=args.duration
         )
@@ -68,7 +68,7 @@ class KeyCommand(ClientCommand):
         parser.add_argument("--duration", help="Press duration", type=float)
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.key(keycode=args.key, duration=args.duration)
 
 
@@ -89,7 +89,7 @@ class KeySequenceCommand(ClientCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.key_sequence(key_sequence=list(map(int, args.key_sequence)))
 
 
@@ -106,7 +106,7 @@ class TextCommand(ClientCommand):
         parser.add_argument("text", help="Text to input", type=str)
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.text(text=args.text)
 
 
@@ -145,7 +145,7 @@ class SwipeCommand(ClientCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.swipe(
             p_start=(args.x_start, args.y_start),
             p_end=(args.x_end, args.y_end),

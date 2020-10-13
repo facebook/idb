@@ -56,37 +56,35 @@ class TestParser(TestCase):
         super().__init__(*args, loop=asyncio.get_event_loop(), **kws)
 
     def setUp(self) -> None:
-        self.direct_client_mock = MagicMock(name="direct_client_mock")
-        self.direct_client_mock.build.return_value = AsyncContextManagerMock(
-            return_value=self.direct_client_mock
+        self.client_mock = MagicMock(name="client_mock")
+        self.client_mock.build.return_value = AsyncContextManagerMock(
+            return_value=self.client_mock
         )
         self.management_client_mock = MagicMock(name="management_client_mock")
         self.management_client_mock().from_udid.return_value = AsyncContextManagerMock(
-            return_value=self.direct_client_mock
+            return_value=self.client_mock
         )
         self.management_client_patch = patch(
             "idb.cli.IdbManagementClientGrpc", self.management_client_mock
         )
         self.management_client_patch.start()
-        self.direct_client_patch = patch(
-            "idb.cli.IdbClientGrpc", self.direct_client_mock
-        )
-        self.direct_client_patch.start()
+        self.client_patch = patch("idb.cli.GrpcClient", self.client_mock)
+        self.client_patch.start()
         self.companion_mock = MagicMock(name="companion_mock")
         self.companion_patch = patch("idb.cli.Companion", self.companion_mock)
         self.companion_patch.start()
 
     def tearDown(self) -> None:
         self.management_client_patch.stop()
-        self.direct_client_patch.stop()
+        self.client_patch.stop()
         self.companion_patch.stop()
 
     async def test_launch_with_udid(self) -> None:
         bundle_id = "com.foo.app"
         udid = "my udid"
-        self.direct_client_mock.launch = AsyncMock(return_value=bundle_id)
+        self.client_mock.launch = AsyncMock(return_value=bundle_id)
         await cli_main(cmd_input=["launch", "--udid", udid, bundle_id])
-        self.direct_client_mock.launch.assert_called_once_with(
+        self.client_mock.launch.assert_called_once_with(
             bundle_id=bundle_id, env={}, args=[], foreground_if_running=False, stop=None
         )
 
@@ -132,35 +130,35 @@ class TestParser(TestCase):
         self.companion_mock().delete.assert_called_once_with(udid=None)
 
     async def test_install(self) -> None:
-        self.direct_client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
+        self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
         app_path = "testApp.app"
         await cli_main(cmd_input=["install", app_path])
-        self.direct_client_mock.install.assert_called_once_with(app_path)
+        self.client_mock.install.assert_called_once_with(app_path)
 
     async def test_uninstall(self) -> None:
-        self.direct_client_mock.uninstall = AsyncMock()
+        self.client_mock.uninstall = AsyncMock()
         app_path = "com.dummy.app"
         await cli_main(cmd_input=["uninstall", app_path])
-        self.direct_client_mock.uninstall.assert_called_once_with(bundle_id=app_path)
+        self.client_mock.uninstall.assert_called_once_with(bundle_id=app_path)
 
     async def test_list_apps(self) -> None:
-        self.direct_client_mock.list_apps = AsyncMock(return_value=[])
+        self.client_mock.list_apps = AsyncMock(return_value=[])
         await cli_main(cmd_input=["list-apps"])
-        self.direct_client_mock.list_apps.assert_called_once()
+        self.client_mock.list_apps.assert_called_once()
 
     async def test_list_apps_direct_companion_tcp(self) -> None:
-        self.direct_client_mock.list_apps = AsyncMock(return_value=[])
+        self.client_mock.list_apps = AsyncMock(return_value=[])
         await cli_main(cmd_input=["--companion", "thehost:123", "list-apps"])
-        self.direct_client_mock.list_apps.assert_called_once()
-        self.direct_client_mock.build.assert_called_once_with(
+        self.client_mock.list_apps.assert_called_once()
+        self.client_mock.build.assert_called_once_with(
             address=TCPAddress(host="thehost", port=123), is_local=False, logger=ANY
         )
 
     async def test_list_apps_direct_companion_uxd(self) -> None:
-        self.direct_client_mock.list_apps = AsyncMock(return_value=[])
+        self.client_mock.list_apps = AsyncMock(return_value=[])
         await cli_main(cmd_input=["--companion", "/foo/sock", "list-apps"])
-        self.direct_client_mock.list_apps.assert_called_once()
-        self.direct_client_mock.build.assert_called_once_with(
+        self.client_mock.list_apps.assert_called_once()
+        self.client_mock.build.assert_called_once_with(
             address=DomainSocketAddress(path="/foo/sock"), is_local=False, logger=ANY
         )
 
@@ -199,209 +197,201 @@ class TestParser(TestCase):
         )
 
     async def test_mkdir(self) -> None:
-        self.direct_client_mock.mkdir = AsyncMock()
+        self.client_mock.mkdir = AsyncMock()
         src = "path"
         cmd_input = ["file", "mkdir", src]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.mkdir.assert_called_once_with(container=None, path=src)
+        self.client_mock.mkdir.assert_called_once_with(container=None, path=src)
 
     async def test_bundled_file_mkdir_flag(self) -> None:
-        self.direct_client_mock.mkdir = AsyncMock()
+        self.client_mock.mkdir = AsyncMock()
         src = "path"
         bundle_id = "com.bundle.id"
         cmd_input = ["file", "mkdir", src, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.mkdir.assert_called_once_with(
-            container=bundle_id, path=src
-        )
+        self.client_mock.mkdir.assert_called_once_with(container=bundle_id, path=src)
 
     async def test_bundled_file_mkdir_colon(self) -> None:
-        self.direct_client_mock.mkdir = AsyncMock()
+        self.client_mock.mkdir = AsyncMock()
         cmd_input = ["file", "mkdir", "com.bundle.id:path"]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.mkdir.assert_called_once_with(
+        self.client_mock.mkdir.assert_called_once_with(
             container="com.bundle.id", path="path"
         )
 
     async def test_rm(self) -> None:
-        self.direct_client_mock.rm = AsyncMock()
+        self.client_mock.rm = AsyncMock()
         src = "path"
         cmd_input = ["file", "remove", src]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.rm.assert_called_once_with(container=None, paths=[src])
+        self.client_mock.rm.assert_called_once_with(container=None, paths=[src])
 
     async def test_bundled_file_rmpath_flag(self) -> None:
-        self.direct_client_mock.rm = AsyncMock()
+        self.client_mock.rm = AsyncMock()
         src = "path"
         bundle_id = "com.bundle.id"
         cmd_input = ["file", "remove", src, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.rm.assert_called_once_with(
-            container=bundle_id, paths=[src]
-        )
+        self.client_mock.rm.assert_called_once_with(container=bundle_id, paths=[src])
 
     async def test_bundled_file_rmpath_flag_multiple(self) -> None:
-        self.direct_client_mock.rm = AsyncMock()
+        self.client_mock.rm = AsyncMock()
         srcs = ["pathA", "pathB"]
         bundle_id = "com.bundle.id"
         cmd_input = ["file", "remove", srcs[0], srcs[1], "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.rm.assert_called_once_with(
-            container=bundle_id, paths=srcs
-        )
+        self.client_mock.rm.assert_called_once_with(container=bundle_id, paths=srcs)
 
     async def test_bundled_file_rmpath_colon(self) -> None:
-        self.direct_client_mock.rm = AsyncMock()
+        self.client_mock.rm = AsyncMock()
         cmd_input = ["file", "remove", "com.bundle.id:path"]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.rm.assert_called_once_with(
+        self.client_mock.rm.assert_called_once_with(
             container="com.bundle.id", paths=["path"]
         )
 
     async def test_list(self) -> None:
-        self.direct_client_mock.ls_single = AsyncMock(return_value=[])
+        self.client_mock.ls_single = AsyncMock(return_value=[])
         src = "path"
         cmd_input = ["file", "list", src]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.ls_single.assert_called_once_with(
-            container=None, path=src
-        )
+        self.client_mock.ls_single.assert_called_once_with(container=None, path=src)
 
     async def test_bundled_file_list_flag(self) -> None:
-        self.direct_client_mock.ls_single = AsyncMock(return_value=[])
+        self.client_mock.ls_single = AsyncMock(return_value=[])
         src = "path"
         bundle_id = "com.bundle.id"
         cmd_input = ["file", "list", src, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.ls_single.assert_called_once_with(
+        self.client_mock.ls_single.assert_called_once_with(
             container=bundle_id, path=src
         )
 
     async def test_bundled_file_list_colon(self) -> None:
-        self.direct_client_mock.ls_single = AsyncMock(return_value=[])
+        self.client_mock.ls_single = AsyncMock(return_value=[])
         cmd_input = ["file", "list", "com.bundle.id:path"]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.ls_single.assert_called_once_with(
+        self.client_mock.ls_single.assert_called_once_with(
             container="com.bundle.id", path="path"
         )
 
     async def test_file_move(self) -> None:
-        self.direct_client_mock.mv = AsyncMock(return_value=[])
+        self.client_mock.mv = AsyncMock(return_value=[])
         src = "a"
         dst = "b"
         cmd_input = ["file", "move", src, dst]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.mv.assert_called_once_with(
+        self.client_mock.mv.assert_called_once_with(
             container=None, src_paths=[src], dest_path=dst
         )
 
     async def test_bundled_file_move_flag(self) -> None:
-        self.direct_client_mock.mv = AsyncMock(return_value=[])
+        self.client_mock.mv = AsyncMock(return_value=[])
         src = "a"
         dst = "b"
         bundle_id = "com.bundle.id"
         cmd_input = ["file", "move", src, dst, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.mv.assert_called_once_with(
+        self.client_mock.mv.assert_called_once_with(
             container=bundle_id, src_paths=[src], dest_path=dst
         )
 
     async def test_bundled_file_move_flag_multiple(self) -> None:
-        self.direct_client_mock.mv = AsyncMock(return_value=[])
+        self.client_mock.mv = AsyncMock(return_value=[])
         srcs = ["src1", "src2"]
         dst = "b"
         bundle_id = "com.bundle.id"
         cmd_input = ["file", "move", srcs[0], srcs[1], dst, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.mv.assert_called_once_with(
+        self.client_mock.mv.assert_called_once_with(
             container=bundle_id, src_paths=srcs, dest_path=dst
         )
 
     async def test_bundled_file_move_colon(self) -> None:
-        self.direct_client_mock.mv = AsyncMock(return_value=[])
+        self.client_mock.mv = AsyncMock(return_value=[])
         src = "a"
         cmd_input = ["file", "move", src, "com.bundle.id:b"]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.mv.assert_called_once_with(
+        self.client_mock.mv.assert_called_once_with(
             container="com.bundle.id", src_paths=[src], dest_path="b"
         )
 
     async def test_file_push(self) -> None:
-        self.direct_client_mock.push = AsyncMock()
+        self.client_mock.push = AsyncMock()
         src = "Library/myFile.txt"
         dst = "someOutputDir"
         cmd_input = ["file", "push", src, dst]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.push.assert_called_once_with(
+        self.client_mock.push.assert_called_once_with(
             container=None, src_paths=[os.path.abspath(src)], dest_path=dst
         )
 
     async def test_bundled_file_push_single_flag(self) -> None:
-        self.direct_client_mock.push = AsyncMock()
+        self.client_mock.push = AsyncMock()
         bundle_id = "com.myapp"
         src = "Library/myFile.txt"
         dst = "someOutputDir"
         cmd_input = ["file", "push", src, dst, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.push.assert_called_once_with(
+        self.client_mock.push.assert_called_once_with(
             container=bundle_id, src_paths=[os.path.abspath(src)], dest_path=dst
         )
 
     async def test_bundled_file_push_multi_flag(self) -> None:
-        self.direct_client_mock.push = AsyncMock(return_value=[])
+        self.client_mock.push = AsyncMock(return_value=[])
         bundle_id = "com.myapp"
         src1 = "Library/myFile.txt"
         src2 = "Library/myFile2.txt"
         dst = "someOutputDir"
         cmd_input = ["file", "push", src1, src2, dst, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.push.assert_called_once_with(
+        self.client_mock.push.assert_called_once_with(
             container=bundle_id,
             src_paths=[os.path.abspath(path) for path in [src1, src2]],
             dest_path=dst,
         )
 
     async def test_bundled_file_push_single_colon(self) -> None:
-        self.direct_client_mock.push = AsyncMock(return_value=[])
+        self.client_mock.push = AsyncMock(return_value=[])
         src = "Library/myFile.txt"
         cmd_input = ["file", "push", src, "com.bundle.id:someOutputDir"]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.push.assert_called_once_with(
+        self.client_mock.push.assert_called_once_with(
             container="com.bundle.id",
             src_paths=[os.path.abspath(src)],
             dest_path="someOutputDir",
         )
 
     async def test_bundled_file_push_multi_colon(self) -> None:
-        self.direct_client_mock.push = AsyncMock(return_value=[])
+        self.client_mock.push = AsyncMock(return_value=[])
         src1 = "Library/myFile.txt"
         src2 = "Library/myFile2.txt"
         cmd_input = ["file", "push", src1, src2, "com.bundle.id:someOutputDir"]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.push.assert_called_once_with(
+        self.client_mock.push.assert_called_once_with(
             container="com.bundle.id",
             src_paths=[os.path.abspath(path) for path in [src1, src2]],
             dest_path="someOutputDir",
         )
 
     async def test_file_pull(self) -> None:
-        self.direct_client_mock.pull = AsyncMock(return_value=[])
+        self.client_mock.pull = AsyncMock(return_value=[])
         src = "Library/myFile.txt"
         dst = "someOutputDir"
         cmd_input = ["file", "pull", src, dst]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.pull.assert_called_once_with(
+        self.client_mock.pull.assert_called_once_with(
             container=None, src_path=src, dest_path=os.path.abspath(dst)
         )
 
     async def test_bundled_file_pull(self) -> None:
-        self.direct_client_mock.pull = AsyncMock(return_value=[])
+        self.client_mock.pull = AsyncMock(return_value=[])
         bundle_id = "com.myapp"
         src = "Library/myFile.txt"
         dst = "someOutputDir"
         cmd_input = ["file", "pull", src, dst, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
-        self.direct_client_mock.pull.assert_called_once_with(
+        self.client_mock.pull.assert_called_once_with(
             container=bundle_id, src_path=src, dest_path=os.path.abspath(dst)
         )
 
@@ -416,12 +406,10 @@ class TestParser(TestCase):
         self.management_client_mock().kill.assert_called_once_with()
 
     async def test_xctest_install(self) -> None:
-        self.direct_client_mock.install_xctest = MagicMock(
-            return_value=AsyncGeneratorMock()
-        )
+        self.client_mock.install_xctest = MagicMock(return_value=AsyncGeneratorMock())
         test_bundle_path = "testBundle.xctest"
         await cli_main(cmd_input=["xctest", "install", test_bundle_path])
-        self.direct_client_mock.install_xctest.assert_called_once_with(test_bundle_path)
+        self.client_mock.install_xctest.assert_called_once_with(test_bundle_path)
 
     def xctest_run_namespace(self, command: str, test_bundle_id: str) -> Namespace:
         namespace = Namespace()
@@ -506,15 +494,15 @@ class TestParser(TestCase):
             mock.assert_called_once_with(namespace)
 
     async def test_xctest_list(self) -> None:
-        self.direct_client_mock.list_xctests = AsyncMock(return_value=[])
+        self.client_mock.list_xctests = AsyncMock(return_value=[])
         await cli_main(cmd_input=["xctest", "list"])
-        self.direct_client_mock.list_xctests.assert_called_once()
+        self.client_mock.list_xctests.assert_called_once()
 
     async def test_xctest_list_bundles(self) -> None:
-        self.direct_client_mock.list_test_bundle = AsyncMock(return_value=[])
+        self.client_mock.list_test_bundle = AsyncMock(return_value=[])
         bundle_id = "myBundleID"
         await cli_main(cmd_input=["xctest", "list-bundle", bundle_id])
-        self.direct_client_mock.list_test_bundle.assert_called_once_with(
+        self.client_mock.list_test_bundle.assert_called_once_with(
             test_bundle_id=bundle_id, app_path=None
         )
 
@@ -543,11 +531,11 @@ class TestParser(TestCase):
             mock.assert_called_once_with(namespace)
 
     async def test_terminate(self) -> None:
-        self.direct_client_mock.terminate = AsyncMock(return_value=[])
+        self.client_mock.terminate = AsyncMock(return_value=[])
         bundle_id = "com.foo.app"
         udid = "my udid"
         await cli_main(cmd_input=["terminate", bundle_id, "--udid", udid])
-        self.direct_client_mock.terminate.assert_called_once_with(bundle_id)
+        self.client_mock.terminate.assert_called_once_with(bundle_id)
 
     async def test_log(self) -> None:
         mock = AsyncMock()
@@ -584,38 +572,36 @@ class TestParser(TestCase):
             mock.assert_called_once_with(namespace)
 
     async def test_clear_keychain(self) -> None:
-        self.direct_client_mock.clear_keychain = AsyncMock(return_value=[])
+        self.client_mock.clear_keychain = AsyncMock(return_value=[])
         await cli_main(cmd_input=["clear-keychain"])
-        self.direct_client_mock.clear_keychain.assert_called_once()
+        self.client_mock.clear_keychain.assert_called_once()
 
     async def test_open_url(self) -> None:
-        self.direct_client_mock.open_url = AsyncMock(return_value=[])
+        self.client_mock.open_url = AsyncMock(return_value=[])
         url = "http://facebook.com"
         await cli_main(cmd_input=["open", url])
-        self.direct_client_mock.open_url.assert_called_once_with(url)
+        self.client_mock.open_url.assert_called_once_with(url)
 
     async def test_set_location(self) -> None:
-        self.direct_client_mock.set_location = AsyncMock(return_value=[])
+        self.client_mock.set_location = AsyncMock(return_value=[])
         latitude = 1.0
         longitude = 2.0
         await cli_main(cmd_input=["set-location", str(latitude), str(longitude)])
-        self.direct_client_mock.set_location.assert_called_once_with(
-            latitude, longitude
-        )
+        self.client_mock.set_location.assert_called_once_with(latitude, longitude)
 
     async def test_approve(self) -> None:
-        self.direct_client_mock.approve = AsyncMock(return_value=[])
+        self.client_mock.approve = AsyncMock(return_value=[])
         bundle_id = "com.fb.myApp"
         await cli_main(cmd_input=["approve", bundle_id, "photos"])
-        self.direct_client_mock.approve.assert_called_once_with(
+        self.client_mock.approve.assert_called_once_with(
             bundle_id=bundle_id, permissions={Permission.PHOTOS}, scheme=None
         )
 
     async def test_approve_url(self) -> None:
-        self.direct_client_mock.approve = AsyncMock(return_value=[])
+        self.client_mock.approve = AsyncMock(return_value=[])
         bundle_id = "com.fb.myApp"
         await cli_main(cmd_input=["approve", bundle_id, "url", "--scheme", "fb"])
-        self.direct_client_mock.approve.assert_called_once_with(
+        self.client_mock.approve.assert_called_once_with(
             bundle_id=bundle_id, permissions={Permission.URL}, scheme="fb"
         )
 
@@ -664,135 +650,129 @@ class TestParser(TestCase):
             )
 
     async def test_key_sequence(self) -> None:
-        self.direct_client_mock.key_sequence = AsyncMock(return_value=[])
+        self.client_mock.key_sequence = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "key-sequence", "1", "2", "3"])
-        self.direct_client_mock.key_sequence.assert_called_once_with(
-            key_sequence=[1, 2, 3]
-        )
+        self.client_mock.key_sequence.assert_called_once_with(key_sequence=[1, 2, 3])
 
     async def test_tap(self) -> None:
-        self.direct_client_mock.tap = AsyncMock(return_value=[])
+        self.client_mock.tap = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "tap", "10", "20"])
-        self.direct_client_mock.tap.assert_called_once_with(x=10, y=20, duration=None)
+        self.client_mock.tap.assert_called_once_with(x=10, y=20, duration=None)
 
     async def test_button(self) -> None:
-        self.direct_client_mock.button = AsyncMock(return_value=[])
+        self.client_mock.button = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "button", "SIRI"])
-        self.direct_client_mock.button.assert_called_once_with(
+        self.client_mock.button.assert_called_once_with(
             button_type=HIDButtonType.SIRI, duration=None
         )
 
     async def test_key(self) -> None:
-        self.direct_client_mock.key = AsyncMock(return_value=[])
+        self.client_mock.key = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "key", "12"])
-        self.direct_client_mock.key.assert_called_once_with(keycode=12, duration=None)
+        self.client_mock.key.assert_called_once_with(keycode=12, duration=None)
 
     async def test_text_input(self) -> None:
-        self.direct_client_mock.text = AsyncMock(return_value=[])
+        self.client_mock.text = AsyncMock(return_value=[])
         text = "Some Text"
         await cli_main(cmd_input=["ui", "text", text])
-        self.direct_client_mock.text.assert_called_once_with(text=text)
+        self.client_mock.text.assert_called_once_with(text=text)
 
     async def test_swipe_with_delta(self) -> None:
-        self.direct_client_mock.swipe = AsyncMock(return_value=[])
+        self.client_mock.swipe = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "swipe", "1", "2", "3", "4", "--delta", "5"])
-        self.direct_client_mock.swipe.assert_called_once_with(
+        self.client_mock.swipe.assert_called_once_with(
             p_start=(1, 2), p_end=(3, 4), duration=None, delta=5
         )
 
     async def test_swipe_with_duration(self) -> None:
-        self.direct_client_mock.swipe = AsyncMock(return_value=[])
+        self.client_mock.swipe = AsyncMock(return_value=[])
         await cli_main(
             cmd_input=["ui", "swipe", "1", "2", "3", "4", "--duration", "0.5"]
         )
-        self.direct_client_mock.swipe.assert_called_once_with(
+        self.client_mock.swipe.assert_called_once_with(
             p_start=(1, 2), p_end=(3, 4), duration=0.5, delta=None
         )
 
     async def test_swipe_without_extra_params(self) -> None:
-        self.direct_client_mock.swipe = AsyncMock(return_value=[])
+        self.client_mock.swipe = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "swipe", "1", "2", "3", "4"])
-        self.direct_client_mock.swipe.assert_called_once_with(
+        self.client_mock.swipe.assert_called_once_with(
             p_start=(1, 2), p_end=(3, 4), duration=None, delta=None
         )
 
     async def test_contacts_update(self) -> None:
-        self.direct_client_mock.contacts_update = AsyncMock(return_value=[])
+        self.client_mock.contacts_update = AsyncMock(return_value=[])
         await cli_main(cmd_input=["contacts", "update", "/dev/null"])
-        self.direct_client_mock.contacts_update.assert_called_once_with(
+        self.client_mock.contacts_update.assert_called_once_with(
             contacts_path="/dev/null"
         )
 
     async def test_accessibility_info_all(self) -> None:
-        self.direct_client_mock.accessibility_info = AsyncMock()
+        self.client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-all"])
-        self.direct_client_mock.accessibility_info.assert_called_once_with(
+        self.client_mock.accessibility_info.assert_called_once_with(
             point=None, nested=False
         )
 
     async def test_accessibility_info_all_nested(self) -> None:
-        self.direct_client_mock.accessibility_info = AsyncMock()
+        self.client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-all", "--nested"])
-        self.direct_client_mock.accessibility_info.assert_called_once_with(
+        self.client_mock.accessibility_info.assert_called_once_with(
             point=None, nested=True
         )
 
     async def test_accessibility_info_at_point(self) -> None:
-        self.direct_client_mock.accessibility_info = AsyncMock()
+        self.client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-point", "10", "20"])
-        self.direct_client_mock.accessibility_info.assert_called_once_with(
+        self.client_mock.accessibility_info.assert_called_once_with(
             point=(10, 20), nested=False
         )
 
     async def test_accessibility_info_at_point(self) -> None:
-        self.direct_client_mock.accessibility_info = AsyncMock()
+        self.client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-point", "--nested", "10", "20"])
-        self.direct_client_mock.accessibility_info.assert_called_once_with(
+        self.client_mock.accessibility_info.assert_called_once_with(
             point=(10, 20), nested=True
         )
 
     async def test_crash_list_all(self) -> None:
-        self.direct_client_mock.crash_list = AsyncMock(return_value=[])
+        self.client_mock.crash_list = AsyncMock(return_value=[])
         await cli_main(cmd_input=["crash", "list"])
-        self.direct_client_mock.crash_list.assert_called_once_with(
-            query=CrashLogQuery()
-        )
+        self.client_mock.crash_list.assert_called_once_with(query=CrashLogQuery())
 
     async def test_crash_list_with_predicate(self) -> None:
-        self.direct_client_mock.crash_list = AsyncMock(return_value=[])
+        self.client_mock.crash_list = AsyncMock(return_value=[])
         await cli_main(cmd_input=["crash", "list", "--since", "20"])
-        self.direct_client_mock.crash_list.assert_called_once_with(
+        self.client_mock.crash_list.assert_called_once_with(
             query=CrashLogQuery(since=20)
         )
 
     async def test_crash_show(self) -> None:
-        self.direct_client_mock.crash_show = AsyncMock()
+        self.client_mock.crash_show = AsyncMock()
         await cli_main(cmd_input=["crash", "show", "foo"])
-        self.direct_client_mock.crash_show.assert_called_once_with(name="foo")
+        self.client_mock.crash_show.assert_called_once_with(name="foo")
 
     async def test_crash_delete_all(self) -> None:
-        self.direct_client_mock.crash_delete = AsyncMock(return_value=[])
+        self.client_mock.crash_delete = AsyncMock(return_value=[])
         await cli_main(cmd_input=["crash", "delete", "--all"])
-        self.direct_client_mock.crash_delete.assert_called_once_with(
-            query=CrashLogQuery()
-        )
+        self.client_mock.crash_delete.assert_called_once_with(query=CrashLogQuery())
 
     async def test_crash_delete_with_predicate(self) -> None:
-        self.direct_client_mock.crash_delete = AsyncMock(return_value=[])
+        self.client_mock.crash_delete = AsyncMock(return_value=[])
         await cli_main(cmd_input=["crash", "delete", "--since", "20"])
-        self.direct_client_mock.crash_delete.assert_called_once_with(
+        self.client_mock.crash_delete.assert_called_once_with(
             query=CrashLogQuery(since=20)
         )
 
     async def test_crash_delete_with_name(self) -> None:
-        self.direct_client_mock.crash_delete = AsyncMock(return_value=[])
+        self.client_mock.crash_delete = AsyncMock(return_value=[])
         await cli_main(cmd_input=["crash", "delete", "some.foo.bar.crash"])
-        self.direct_client_mock.crash_delete.assert_called_once_with(
+        self.client_mock.crash_delete.assert_called_once_with(
             query=CrashLogQuery(name="some.foo.bar.crash")
         )
 
     async def test_instruments(self) -> None:
-        self.direct_client_mock.run_instruments = AsyncMock()
+        self.client_mock.run_instruments = AsyncMock()
         template_name = "System Trace"
         trace_path = "trace.trace"
         await cli_main(
@@ -804,7 +784,7 @@ class TestParser(TestCase):
                 template_name,
             ]
         )
-        self.direct_client_mock.run_instruments.assert_called_once_with(
+        self.client_mock.run_instruments.assert_called_once_with(
             stop=ANY,
             trace_basename="trace",
             template_name=template_name,
@@ -817,7 +797,7 @@ class TestParser(TestCase):
         )
 
     async def test_instruments_with_post_args(self) -> None:
-        self.direct_client_mock.run_instruments = AsyncMock()
+        self.client_mock.run_instruments = AsyncMock()
         template_name = "Time Profiler"
         trace_path = "trace.trace"
         post_process_arguments = ["instrumental", "convert"]
@@ -832,7 +812,7 @@ class TestParser(TestCase):
                 *post_process_arguments,
             ]
         )
-        self.direct_client_mock.run_instruments.assert_called_once_with(
+        self.client_mock.run_instruments.assert_called_once_with(
             stop=ANY,
             trace_basename="trace",
             template_name=template_name,
@@ -845,7 +825,7 @@ class TestParser(TestCase):
         )
 
     async def test_instruments_with_app_args(self) -> None:
-        self.direct_client_mock.run_instruments = AsyncMock()
+        self.client_mock.run_instruments = AsyncMock()
         template_name = "System Trace"
         trace_path = "trace.trace"
         await cli_main(
@@ -859,7 +839,7 @@ class TestParser(TestCase):
                 "perfLab",
             ]
         )
-        self.direct_client_mock.run_instruments.assert_called_once_with(
+        self.client_mock.run_instruments.assert_called_once_with(
             stop=ANY,
             trace_basename="trace",
             template_name=template_name,
@@ -872,7 +852,7 @@ class TestParser(TestCase):
         )
 
     async def test_instruments_with_all_timings(self) -> None:
-        self.direct_client_mock.run_instruments = AsyncMock()
+        self.client_mock.run_instruments = AsyncMock()
         template_name = "System Trace"
         trace_path = "trace.trace"
         (
@@ -900,7 +880,7 @@ class TestParser(TestCase):
                 launch_error_timeout,
             ]
         )
-        self.direct_client_mock.run_instruments.assert_called_once_with(
+        self.client_mock.run_instruments.assert_called_once_with(
             stop=ANY,
             trace_basename="trace",
             template_name=template_name,
@@ -918,7 +898,7 @@ class TestParser(TestCase):
         )
 
     async def test_instruments_with_partial_timings(self) -> None:
-        self.direct_client_mock.run_instruments = AsyncMock()
+        self.client_mock.run_instruments = AsyncMock()
         template_name = "System Trace"
         trace_path = "trace.trace"
         launch_retry_timeout, terminate_timeout = ("200.0", "200.0")
@@ -937,7 +917,7 @@ class TestParser(TestCase):
                 terminate_timeout,
             ]
         )
-        self.direct_client_mock.run_instruments.assert_called_once_with(
+        self.client_mock.run_instruments.assert_called_once_with(
             stop=ANY,
             trace_basename="trace",
             template_name=template_name,
@@ -955,35 +935,29 @@ class TestParser(TestCase):
         )
 
     async def test_add_media(self) -> None:
-        self.direct_client_mock.add_media = AsyncMock(return_value=["aaa", "bbb"])
+        self.client_mock.add_media = AsyncMock(return_value=["aaa", "bbb"])
         file_paths = ["cat.jpeg", "dog.mov"]
         await cli_main(cmd_input=["add-media"] + file_paths)
-        self.direct_client_mock.add_media.assert_called_once_with(file_paths=file_paths)
+        self.client_mock.add_media.assert_called_once_with(file_paths=file_paths)
 
     async def test_focus(self) -> None:
-        self.direct_client_mock.focus = AsyncMock(return_value=["aaa", "bbb"])
+        self.client_mock.focus = AsyncMock(return_value=["aaa", "bbb"])
         await cli_main(cmd_input=["focus"])
-        self.direct_client_mock.focus.assert_called_once()
+        self.client_mock.focus.assert_called_once()
 
     async def test_debugserver_start(self) -> None:
-        self.direct_client_mock.debugserver_start = AsyncMock(
-            return_value=["aaa", "bbb"]
-        )
+        self.client_mock.debugserver_start = AsyncMock(return_value=["aaa", "bbb"])
         await cli_main(cmd_input=["debugserver", "start", "com.foo.bar"])
-        self.direct_client_mock.debugserver_start.assert_called_once_with(
+        self.client_mock.debugserver_start.assert_called_once_with(
             bundle_id="com.foo.bar"
         )
 
     async def test_debugserver_stop(self) -> None:
-        self.direct_client_mock.debugserver_stop = AsyncMock(
-            return_value=["aaa", "bbb"]
-        )
+        self.client_mock.debugserver_stop = AsyncMock(return_value=["aaa", "bbb"])
         await cli_main(cmd_input=["debugserver", "stop"])
-        self.direct_client_mock.debugserver_stop.assert_called_once()
+        self.client_mock.debugserver_stop.assert_called_once()
 
     async def test_debugserver_status(self) -> None:
-        self.direct_client_mock.debugserver_status = AsyncMock(
-            return_value=["aaa", "bbb"]
-        )
+        self.client_mock.debugserver_status = AsyncMock(return_value=["aaa", "bbb"])
         await cli_main(cmd_input=["debugserver", "status"])
-        self.direct_client_mock.debugserver_status.assert_called_once()
+        self.client_mock.debugserver_status.assert_called_once()

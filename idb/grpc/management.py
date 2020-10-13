@@ -25,9 +25,8 @@ from idb.common.types import (
     TargetDescription,
     TCPAddress,
 )
-from idb.grpc.client import IdbClient
-from idb.grpc.idb_pb2 import ConnectRequest
-from idb.grpc.target import companion_to_py, merge_connected_targets
+from idb.grpc.client import Client
+from idb.grpc.target import merge_connected_targets
 from idb.utils.contextlib import asynccontextmanager
 
 
@@ -84,7 +83,7 @@ class IdbManagementClient(IdbManagementClientBase):
         self, companion: CompanionInfo
     ) -> Optional[TargetDescription]:
         try:
-            async with IdbClient.build(
+            async with Client.build(
                 address=companion.address, is_local=False, logger=self._logger
             ) as client:
                 return await client.describe()
@@ -99,7 +98,7 @@ class IdbManagementClient(IdbManagementClientBase):
             return None
 
     @asynccontextmanager
-    async def from_udid(self, udid: Optional[str]) -> AsyncGenerator[IdbClient, None]:
+    async def from_udid(self, udid: Optional[str]) -> AsyncGenerator[Client, None]:
         await self._spawn_notifier()
         try:
             companion_info = await self._direct_companion_manager.get_companion_info(
@@ -112,7 +111,7 @@ class IdbManagementClient(IdbManagementClientBase):
             companion_info = await self._spawn_companion(target_udid=udid)
             if companion_info is None:
                 raise e
-        async with IdbClient.build(
+        async with Client.build(
             address=companion_info.address,
             is_local=companion_info.is_local,
             logger=self._logger,
@@ -152,7 +151,7 @@ class IdbManagementClient(IdbManagementClientBase):
         if isinstance(destination, TCPAddress) or isinstance(
             destination, DomainSocketAddress
         ):
-            async with IdbClient.build(
+            async with Client.build(
                 address=destination, is_local=False, logger=self._logger
             ) as client:
                 companion = client.companion

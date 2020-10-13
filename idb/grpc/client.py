@@ -48,6 +48,7 @@ from idb.common.types import (
     AccessibilityInfo,
     Address,
     AppProcessState,
+    Client as ClientBase,
     Companion,
     CompanionInfo,
     CrashLog,
@@ -59,7 +60,6 @@ from idb.common.types import (
     FileListing,
     HIDButtonType,
     HIDEvent,
-    IdbClient as IdbClientBase,
     IdbConnectionException,
     IdbException,
     InstalledAppInfo,
@@ -199,7 +199,7 @@ def log_and_handle_exceptions(func):  # pyre-ignore
         return func_wrapper
 
 
-class IdbClient(IdbClientBase):
+class Client(ClientBase):
     def __init__(
         self,
         stub: CompanionServiceStub,
@@ -226,7 +226,7 @@ class IdbClient(IdbClientBase):
         logger: logging.Logger,
         is_local: Optional[bool] = None,
         exchange_metadata: bool = True,
-    ) -> AsyncGenerator["IdbClient", None]:
+    ) -> AsyncGenerator["Client", None]:
         metadata_to_companion = (
             {
                 key: value
@@ -265,7 +265,7 @@ class IdbClient(IdbClientBase):
                 plugin.append_companion_metadata(
                     logger=logger, metadata=metadata_from_companion
                 )
-            yield IdbClient(stub=stub, companion=companion, logger=logger)
+            yield Client(stub=stub, companion=companion, logger=logger)
 
     @classmethod
     @asynccontextmanager
@@ -275,13 +275,13 @@ class IdbClient(IdbClientBase):
         udid: str,
         logger: logging.Logger,
         only: Optional[OnlyFilter] = None,
-    ) -> AsyncGenerator["IdbClient", None]:
+    ) -> AsyncGenerator["Client", None]:
         with tempfile.NamedTemporaryFile() as temp:
             # Remove the tempfile so we can bind to it first.
             os.remove(temp.name)
             async with companion.unix_domain_server(
                 udid=udid, path=temp.name, only=only
-            ) as resolved_path, IdbClient.build(
+            ) as resolved_path, Client.build(
                 address=DomainSocketAddress(path=resolved_path),
                 is_local=True,
                 logger=logger,

@@ -13,7 +13,7 @@ from idb.cli import ClientCommand, CompanionCommand, ManagementCommand
 from idb.common.companion import Companion
 from idb.common.format import human_format_target_info, json_format_target_info
 from idb.common.signal import signal_handler_event
-from idb.common.types import IdbClient, IdbException, IdbManagementClient, TCPAddress
+from idb.common.types import Client, IdbException, IdbManagementClient, TCPAddress
 from idb.common.udid import is_udid
 
 
@@ -155,7 +155,7 @@ class TargetDescribeCommand(ClientCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         description = await client.describe(fetch_diagnostics=args.diagnostics)
         if args.json:
             print(description.as_json)

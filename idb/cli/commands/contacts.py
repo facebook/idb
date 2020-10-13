@@ -7,7 +7,7 @@
 from argparse import ArgumentParser, Namespace
 
 from idb.cli import ClientCommand
-from idb.common.types import IdbClient
+from idb.common.types import Client
 
 
 class ContactsUpdateCommand(ClientCommand):
@@ -27,5 +27,5 @@ class ContactsUpdateCommand(ClientCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.contacts_update(contacts_path=args.contacts_path)

@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from typing import IO, Iterator
 
 from idb.cli import ClientCommand
-from idb.common.types import IdbClient
+from idb.common.types import Client
 
 
 class ScreenshotCommand(ClientCommand):
@@ -30,7 +30,7 @@ class ScreenshotCommand(ClientCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         screenshot = await client.screenshot()
         with screenshot_file(args.dest_path) as f:
             f.write(screenshot)

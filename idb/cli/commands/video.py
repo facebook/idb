@@ -10,7 +10,7 @@ from typing import Dict, List
 
 from idb.cli import ClientCommand
 from idb.common.signal import signal_handler_event, signal_handler_generator
-from idb.common.types import IdbClient, VideoFormat
+from idb.common.types import Client, VideoFormat
 
 
 _FORMAT_CHOICE_MAP: Dict[str, VideoFormat] = {
@@ -35,7 +35,7 @@ class VideoRecordCommand(ClientCommand):
         parser.add_argument("output_file", help="mp4 file to output the video to")
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.record_video(
             stop=signal_handler_event("video"), output_file=args.output_file
         )
@@ -72,7 +72,7 @@ class VideoStreamCommand(ClientCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         async for data in signal_handler_generator(
             iterable=client.stream_video(
                 output_file=args.output_file,

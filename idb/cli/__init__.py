@@ -16,13 +16,13 @@ from idb.common.companion import Companion
 from idb.common.logging import log_call
 from idb.common.types import (
     Address,
+    Client,
     DomainSocketAddress,
-    IdbClient,
     IdbConnectionException,
     IdbManagementClient,
     TCPAddress,
 )
-from idb.grpc.client import IdbClient as IdbClientGrpc
+from idb.grpc.client import Client as GrpcClient
 from idb.grpc.management import IdbManagementClient as IdbManagementClientGrpc
 from idb.utils.contextlib import asynccontextmanager
 
@@ -48,10 +48,10 @@ def _get_management_client(
 @asynccontextmanager
 async def _get_client(
     args: Namespace, logger: logging.Logger
-) -> AsyncGenerator[IdbClientGrpc, None]:
+) -> AsyncGenerator[GrpcClient, None]:
     companion = vars(args).get("companion")
     if companion is not None:
-        async with IdbClientGrpc.build(
+        async with GrpcClient.build(
             address=_parse_address(companion),
             is_local=args.companion_local,
             logger=logger,
@@ -134,7 +134,7 @@ class ClientCommand(BaseCommand):
                 raise ex
 
     @abstractmethod
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         pass
 
 

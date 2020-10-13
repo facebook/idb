@@ -13,7 +13,7 @@ from idb.common.format import (
     human_format_installed_app_info,
     json_format_installed_app_info,
 )
-from idb.common.types import IdbClient, InstalledArtifact
+from idb.common.types import Client, InstalledArtifact
 from idb.utils.typing import none_throws
 
 
@@ -32,7 +32,7 @@ class AppInstallCommand(ClientCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         artifact: Optional[InstalledArtifact] = None
         async for info in client.install(args.bundle_path):
             artifact = info
@@ -70,7 +70,7 @@ class AppUninstallCommand(ClientCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.uninstall(bundle_id=args.bundle_id)
 
 
@@ -87,7 +87,7 @@ class AppTerminateCommand(ClientCommand):
         parser.add_argument("bundle_id", help="Bundle id of the app to kill", type=str)
         super().add_parser_arguments(parser)
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.terminate(args.bundle_id)
 
 
@@ -100,7 +100,7 @@ class AppListCommand(ClientCommand):
     def name(self) -> str:
         return "list-apps"
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         apps = await client.list_apps()
         formatter = human_format_installed_app_info
         if args.json:

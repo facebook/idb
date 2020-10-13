@@ -7,7 +7,7 @@
 from argparse import Namespace
 
 from idb.cli import ClientCommand
-from idb.common.types import IdbClient
+from idb.common.types import Client
 
 
 class KeychainClearCommand(ClientCommand):
@@ -19,5 +19,5 @@ class KeychainClearCommand(ClientCommand):
     def name(self) -> str:
         return "clear-keychain"
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.clear_keychain()

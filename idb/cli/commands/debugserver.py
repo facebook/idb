@@ -7,7 +7,7 @@
 from argparse import ArgumentParser, Namespace
 
 from idb.cli import ClientCommand
-from idb.common.types import IdbClient
+from idb.common.types import Client
 
 
 class DebugServerStartCommand(ClientCommand):
@@ -23,7 +23,7 @@ class DebugServerStartCommand(ClientCommand):
         super().add_parser_arguments(parser)
         parser.add_argument("bundle_id", help="The bundle id to debug")
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         commands = await client.debugserver_start(bundle_id=args.bundle_id)
         print(*commands, sep="\n")
 
@@ -37,7 +37,7 @@ class DebugServerStopCommand(ClientCommand):
     def name(self) -> str:
         return "stop"
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.debugserver_stop()
 
 
@@ -50,7 +50,7 @@ class DebugServerStatusCommand(ClientCommand):
     def name(self) -> str:
         return "status"
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         commands = await client.debugserver_status()
         if commands is None:
             print("Not Running")

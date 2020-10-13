@@ -14,7 +14,7 @@ from typing import Any, List, NamedTuple, Optional, Tuple
 
 import aiofiles
 from idb.cli import ClientCommand
-from idb.common.types import FileContainer, FileContainerType, IdbClient
+from idb.common.types import Client, FileContainer, FileContainerType
 
 
 class BundleWithPath(NamedTuple):
@@ -108,11 +108,11 @@ class FSCommand(ClientCommand):
 
     @abstractmethod
     async def run_with_container(
-        self, container: FileContainer, args: Namespace, client: IdbClient
+        self, container: FileContainer, args: Namespace, client: Client
     ) -> None:
         pass
 
-    async def run_with_client(self, args: Namespace, client: IdbClient) -> None:
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
         (args, container) = _convert_args(args)
         return await self.run_with_container(
             container=container, args=args, client=client
@@ -149,7 +149,7 @@ class FSListCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_container(
-        self, container: FileContainer, args: Namespace, client: IdbClient
+        self, container: FileContainer, args: Namespace, client: Client
     ) -> None:
         if len(args.paths) > 1 or args.force_new_output:
             listings_by_path = await client.ls(container=container, paths=args.paths)
@@ -191,7 +191,7 @@ class FSMkdirCommand(FSCommand):
         )
 
     async def run_with_container(
-        self, container: FileContainer, args: Namespace, client: IdbClient
+        self, container: FileContainer, args: Namespace, client: Client
     ) -> None:
         await client.mkdir(container=container, path=args.path)
 
@@ -224,7 +224,7 @@ class FSMoveCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_container(
-        self, container: FileContainer, args: Namespace, client: IdbClient
+        self, container: FileContainer, args: Namespace, client: Client
     ) -> None:
         await client.mv(container=container, src_paths=args.src, dest_path=args.dst)
 
@@ -252,7 +252,7 @@ class FSRemoveCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_container(
-        self, container: FileContainer, args: Namespace, client: IdbClient
+        self, container: FileContainer, args: Namespace, client: Client
     ) -> None:
         await client.rm(container=container, paths=args.path)
 
@@ -281,7 +281,7 @@ class FSPushCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_container(
-        self, container: FileContainer, args: Namespace, client: IdbClient
+        self, container: FileContainer, args: Namespace, client: Client
     ) -> None:
         return await client.push(
             container=container,
@@ -307,7 +307,7 @@ class FSPullCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_container(
-        self, container: FileContainer, args: Namespace, client: IdbClient
+        self, container: FileContainer, args: Namespace, client: Client
     ) -> None:
         await client.pull(
             container=container, src_path=args.src, dest_path=os.path.abspath(args.dst)
@@ -330,7 +330,7 @@ class FSShowCommand(FSCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_container(
-        self, container: FileContainer, args: Namespace, client: IdbClient
+        self, container: FileContainer, args: Namespace, client: Client
     ) -> None:
         with tempfile.TemporaryDirectory() as destination_directory:
             # Remove the tempfile so that it can be written to.

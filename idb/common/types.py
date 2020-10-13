@@ -386,7 +386,7 @@ class Companion(ABC):
 
 
 # Exposes the resource-specific commands that imply a connected companion
-class IdbClient(ABC):
+class Client(ABC):
     @abstractmethod
     async def list_apps(self) -> List[InstalledAppInfo]:
         pass
