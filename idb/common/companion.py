@@ -16,6 +16,7 @@ from typing import AsyncGenerator, Dict, List, Optional, Sequence, Union
 from idb.common.format import target_description_from_json
 from idb.common.logging import log_call
 from idb.common.types import (
+    Companion as CompanionBase,
     ECIDFilter,
     IdbException,
     OnlyFilter,
@@ -70,7 +71,7 @@ def parse_json_line(line: bytes) -> Dict[str, Union[int, str]]:
         raise IdbJsonException(f"Failed to parse json from: {decoded_line}")
 
 
-class Companion:
+class Companion(CompanionBase):
     def __init__(
         self,
         companion_path: Optional[str],

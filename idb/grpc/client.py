@@ -30,7 +30,6 @@ from typing import (
 import idb.common.plugin as plugin
 from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
-from idb.common.companion import Companion
 from idb.common.constants import TESTS_POLL_INTERVAL
 from idb.common.file import drain_to_file
 from idb.common.gzip import drain_gzip_decompress
@@ -49,6 +48,7 @@ from idb.common.types import (
     AccessibilityInfo,
     Address,
     AppProcessState,
+    Companion,
     CompanionInfo,
     CrashLog,
     CrashLogInfo,
@@ -66,7 +66,6 @@ from idb.common.types import (
     InstalledArtifact,
     InstalledTestInfo,
     InstrumentsTimings,
-    LoggingMetadata,
     OnlyFilter,
     Permission,
     TargetDescription,

@@ -8,10 +8,12 @@ import asyncio
 import json
 from abc import ABC, abstractmethod, abstractproperty
 from dataclasses import asdict, dataclass, field
+from datetime import timedelta
 from enum import Enum
 from io import StringIO
 from typing import (
     IO,
+    AsyncContextManager,
     AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
@@ -317,6 +319,70 @@ class FileContainerType(Enum):
 
 
 FileContainer = Optional[Union[str, FileContainerType]]
+
+
+class Companion(ABC):
+    @abstractmethod
+    async def create(
+        self, device_type: str, os_version: str, timeout: Optional[timedelta] = None
+    ) -> TargetDescription:
+        pass
+
+    @abstractmethod
+    async def boot(
+        self, udid: str, verify: bool = True, timeout: Optional[timedelta] = None
+    ) -> None:
+        pass
+
+    @abstractmethod
+    async def boot_headless(  # pyre-fixme
+        self, udid: str, verify: bool = True
+    ) -> AsyncContextManager[None]:
+        yield
+
+    @abstractmethod
+    async def shutdown(self, udid: str, timeout: Optional[timedelta] = None) -> None:
+        pass
+
+    @abstractmethod
+    async def erase(self, udid: str, timeout: Optional[timedelta] = None) -> None:
+        pass
+
+    @abstractmethod
+    async def clone(
+        self,
+        udid: str,
+        destination_device_set: Optional[str] = None,
+        timeout: Optional[timedelta] = None,
+    ) -> TargetDescription:
+        pass
+
+    @abstractmethod
+    async def delete(
+        self, udid: Optional[str], timeout: Optional[timedelta] = None
+    ) -> None:
+        pass
+
+    @abstractmethod
+    async def list_targets(
+        self, only: Optional[OnlyFilter] = None, timeout: Optional[timedelta] = None
+    ) -> List[TargetDescription]:
+        pass
+
+    @abstractmethod
+    async def target_description(
+        self,
+        udid: Optional[str] = None,
+        only: Optional[OnlyFilter] = None,
+        timeout: Optional[timedelta] = None,
+    ) -> TargetDescription:
+        pass
+
+    @abstractmethod
+    async def unix_domain_server(  # pyre-fixme
+        self, udid: str, path: str, only: Optional[OnlyFilter] = None
+    ) -> AsyncContextManager[str]:
+        yield
 
 
 # Exposes the resource-specific commands that imply a connected companion
