@@ -60,14 +60,14 @@ class TestParser(TestCase):
         self.client_mock.build.return_value = AsyncContextManagerMock(
             return_value=self.client_mock
         )
-        self.management_client_mock = MagicMock(name="management_client_mock")
-        self.management_client_mock().from_udid.return_value = AsyncContextManagerMock(
+        self.client_manager_mock = MagicMock(name="client_manager_mock")
+        self.client_manager_mock().from_udid.return_value = AsyncContextManagerMock(
             return_value=self.client_mock
         )
-        self.management_client_patch = patch(
-            "idb.cli.IdbManagementClientGrpc", self.management_client_mock
+        self.client_manager_patch = patch(
+            "idb.cli.ClientManager", self.client_manager_mock
         )
-        self.management_client_patch.start()
+        self.client_manager_patch.start()
         self.client_patch = patch("idb.cli.GrpcClient", self.client_mock)
         self.client_patch.start()
         self.companion_mock = MagicMock(name="companion_mock")
@@ -75,7 +75,7 @@ class TestParser(TestCase):
         self.companion_patch.start()
 
     def tearDown(self) -> None:
-        self.management_client_patch.stop()
+        self.client_manager_patch.stop()
         self.client_patch.stop()
         self.companion_patch.stop()
 
@@ -163,38 +163,36 @@ class TestParser(TestCase):
         )
 
     async def test_connect_with_host_and_port(self) -> None:
-        self.management_client_mock().connect = AsyncMock()
+        self.client_manager_mock().connect = AsyncMock()
         host = "someHost"
         port = 1234
         await cli_main(cmd_input=["connect", host, str(port)])
-        self.management_client_mock().connect.assert_called_once_with(
+        self.client_manager_mock().connect.assert_called_once_with(
             destination=TCPAddress(host=host, port=port), metadata=ANY
         )
 
     async def test_connect_with_udid(self) -> None:
-        self.management_client_mock().connect = AsyncMock()
+        self.client_manager_mock().connect = AsyncMock()
         udid = "0B3311FA-234C-4665-950F-37544F690B61"
         await cli_main(cmd_input=["connect", udid])
-        self.management_client_mock().connect.assert_called_once_with(
+        self.client_manager_mock().connect.assert_called_once_with(
             destination=udid, metadata=ANY
         )
 
     async def test_disconnect_with_host_and_port(self) -> None:
-        self.management_client_mock().disconnect = AsyncMock()
+        self.client_manager_mock().disconnect = AsyncMock()
         host = "someHost"
         port = 1234
         await cli_main(cmd_input=["disconnect", host, str(port)])
-        self.management_client_mock().disconnect.assert_called_once_with(
+        self.client_manager_mock().disconnect.assert_called_once_with(
             destination=TCPAddress(host=host, port=port)
         )
 
     async def test_disconnect_with_udid(self) -> None:
-        self.management_client_mock().disconnect = AsyncMock()
+        self.client_manager_mock().disconnect = AsyncMock()
         udid = "0B3311FA-234C-4665-950F-37544F690B61"
         await cli_main(cmd_input=["disconnect", udid])
-        self.management_client_mock().disconnect.assert_called_once_with(
-            destination=udid
-        )
+        self.client_manager_mock().disconnect.assert_called_once_with(destination=udid)
 
     async def test_mkdir(self) -> None:
         self.client_mock.mkdir = AsyncMock()
@@ -396,14 +394,14 @@ class TestParser(TestCase):
         )
 
     async def test_list_targets(self) -> None:
-        self.management_client_mock().list_targets = AsyncMock(return_value=[])
+        self.client_manager_mock().list_targets = AsyncMock(return_value=[])
         await cli_main(cmd_input=["list-targets"])
-        self.management_client_mock().list_targets.assert_called_once()
+        self.client_manager_mock().list_targets.assert_called_once()
 
     async def test_kill(self) -> None:
-        self.management_client_mock().kill = AsyncMock(return_value=[])
+        self.client_manager_mock().kill = AsyncMock(return_value=[])
         await cli_main(cmd_input=["kill"])
-        self.management_client_mock().kill.assert_called_once_with()
+        self.client_manager_mock().kill.assert_called_once_with()
 
     async def test_xctest_install(self) -> None:
         self.client_mock.install_xctest = MagicMock(return_value=AsyncGeneratorMock())

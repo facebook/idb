@@ -13,7 +13,7 @@ from idb.cli import ClientCommand, CompanionCommand, ManagementCommand
 from idb.common.companion import Companion
 from idb.common.format import human_format_target_info, json_format_target_info
 from idb.common.signal import signal_handler_event
-from idb.common.types import Client, IdbException, IdbManagementClient, TCPAddress
+from idb.common.types import Client, ClientManager, IdbException, TCPAddress
 from idb.common.udid import is_udid
 
 
@@ -68,12 +68,10 @@ class TargetConnectCommand(ManagementCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_manager(self, args: Namespace, manager: ClientManager) -> None:
         try:
             destination = get_destination(args=args)
-            response = await client.connect(
+            response = await manager.connect(
                 destination=destination,
                 metadata={
                     key: value
@@ -125,12 +123,10 @@ class TargetDisconnectCommand(ManagementCommand):
         )
         super().add_parser_arguments(parser)
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_manager(self, args: Namespace, manager: ClientManager) -> None:
         try:
             destination = get_destination(args=args)
-            await client.disconnect(destination=destination)
+            await manager.disconnect(destination=destination)
         except IdbException:
             raise DisconnectCommandException(
                 f"Could not disconnect from {args.companion:}:{args.port}"
@@ -172,10 +168,8 @@ class TargetListCommand(ManagementCommand):
     def name(self) -> str:
         return "list-targets"
 
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
-        targets = await client.list_targets()
+    async def run_with_manager(self, args: Namespace, manager: ClientManager) -> None:
+        targets = await manager.list_targets()
         if len(targets) == 0:
             if not args.json:
                 print("No available targets")

@@ -652,7 +652,7 @@ class Client(ABC):
         pass
 
 
-class IdbManagementClient:
+class ClientManager:
     @abstractmethod
     async def connect(
         self,

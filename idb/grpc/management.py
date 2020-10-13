@@ -7,7 +7,6 @@
 import asyncio
 import logging
 import os
-import tempfile
 from typing import AsyncGenerator, Dict, List, Optional
 
 from idb.common.companion_spawner import CompanionSpawner
@@ -17,11 +16,11 @@ from idb.common.local_targets_manager import LocalTargetsManager
 from idb.common.logging import log_call
 from idb.common.pid_saver import PidSaver
 from idb.common.types import (
+    ClientManager as ClientManagerBase,
     CompanionInfo,
     ConnectionDestination,
     DomainSocketAddress,
     IdbException,
-    IdbManagementClient as IdbManagementClientBase,
     TargetDescription,
     TCPAddress,
 )
@@ -30,7 +29,7 @@ from idb.grpc.target import merge_connected_targets
 from idb.utils.contextlib import asynccontextmanager
 
 
-class IdbManagementClient(IdbManagementClientBase):
+class ClientManager(ClientManagerBase):
     def __init__(
         self,
         companion_path: Optional[str] = None,

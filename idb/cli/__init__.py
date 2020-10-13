@@ -17,13 +17,13 @@ from idb.common.logging import log_call
 from idb.common.types import (
     Address,
     Client,
+    ClientManager,
     DomainSocketAddress,
     IdbConnectionException,
-    IdbManagementClient,
     TCPAddress,
 )
 from idb.grpc.client import Client as GrpcClient
-from idb.grpc.management import IdbManagementClient as IdbManagementClientGrpc
+from idb.grpc.management import ClientManager
 from idb.utils.contextlib import asynccontextmanager
 
 
@@ -35,10 +35,8 @@ def _parse_address(value: str) -> Address:
     return TCPAddress(host=host, port=int(port))
 
 
-def _get_management_client(
-    logger: logging.Logger, args: Namespace
-) -> IdbManagementClient:
-    return IdbManagementClientGrpc(
+def _get_management_client(logger: logging.Logger, args: Namespace) -> ClientManager:
+    return ClientManager(
         companion_path=args.companion_path,
         logger=logger,
         prune_dead_companion=args.prune_dead_companion,
@@ -58,7 +56,7 @@ async def _get_client(
         ) as client:
             yield client
     else:
-        async with IdbManagementClientGrpc(
+        async with ClientManager(
             logger=logger, companion_path=args.companion_path
         ).from_udid(udid=vars(args).get("udid")) as client:
             yield client
@@ -138,17 +136,15 @@ class ClientCommand(BaseCommand):
         pass
 
 
-# A command that vends the IdbManagementClient interface
+# A command that vends the ClientManagerface
 class ManagementCommand(BaseCommand):
     async def _run_impl(self, args: Namespace) -> None:
-        await self.run_with_client(
-            args=args, client=_get_management_client(logger=self.logger, args=args)
+        await self.run_with_manager(
+            args=args, manager=_get_management_client(logger=self.logger, args=args)
         )
 
     @abstractmethod
-    async def run_with_client(
-        self, args: Namespace, client: IdbManagementClient
-    ) -> None:
+    async def run_with_manager(self, args: Namespace, manager: ClientManager) -> None:
         pass
 
 
