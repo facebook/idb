@@ -64,7 +64,7 @@
    arguments:arguments
    environment:environment
    output:output
-   mode:FBAgentLaunchModeDefault];
+   mode:FBAgentLaunchModePosixSpawn];
 
   return [[FBAgentLaunchStrategy
     strategyWithSimulator:self.simulator]
