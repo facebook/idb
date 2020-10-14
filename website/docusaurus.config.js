@@ -60,7 +60,7 @@ module.exports = {
           customCss: require.resolve('./src/css/custom.css'),
         },
         docs: {
-          path: '../docs',
+          path: './docs',
           sidebarPath: require.resolve('./sidebars.js'),
         },
       },
