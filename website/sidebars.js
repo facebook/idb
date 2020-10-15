@@ -6,14 +6,12 @@
  */
  
 module.exports = {
-  "overview": {
-    "Contents": [
-      "overview",
-      "installation",
-      "guided-tour",
-      "architecture",
-      "commands",
-      "test-execution"
-    ]
-  }
+  "docs": [
+    "overview",
+    "installation",
+    "guided-tour",
+    "architecture",
+    "commands",
+    "test-execution"
+  ]
 };
