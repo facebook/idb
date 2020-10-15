@@ -12,6 +12,7 @@ module.exports = {
     "guided-tour",
     "architecture",
     "commands",
-    "test-execution"
+    "test-execution",
+    "accessibility"
   ]
 };
