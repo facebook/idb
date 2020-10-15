@@ -222,7 +222,7 @@ class TestCase(unittest.TestCase):
 
 
 class AsyncMock(_mock.Mock):
-    """ Mock subclass which can be awaited on. Use this as new_callable
+    """Mock subclass which can be awaited on. Use this as new_callable
     to patch calls on async functions. Can also be used as an async context
     manager - returns self.
     """

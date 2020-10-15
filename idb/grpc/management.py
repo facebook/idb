@@ -60,8 +60,10 @@ class ClientManager(ClientManagerBase):
         companion_spawner = self._companion_spawner
         if companion_spawner is None:
             return None
-        local_target_available = await self._local_targets_manager.is_local_target_available(
-            target_udid=target_udid
+        local_target_available = (
+            await self._local_targets_manager.is_local_target_available(
+                target_udid=target_udid
+            )
         )
         if local_target_available or target_udid == "mac":
             self._logger.info(f"will attempt to spawn a companion for {target_udid}")

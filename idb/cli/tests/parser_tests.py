@@ -25,9 +25,9 @@ from idb.utils.testing import AsyncContextManagerMock, AsyncMock, TestCase
 
 
 T = TypeVar("T")
-COMPANION_PATH: Optional[
-    str
-] = "/usr/local/bin/idb_companion" if sys.platform == "darwin" else None
+COMPANION_PATH: Optional[str] = (
+    "/usr/local/bin/idb_companion" if sys.platform == "darwin" else None
+)
 
 
 class AsyncGeneratorMock(AsyncMock):
