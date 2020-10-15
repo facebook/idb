@@ -29,7 +29,7 @@ function HomeSplash(props) {
               GETTING STARTED
             </Link>
           </div>
-          <div className="col col--4"><img className={styles.itemImage} src="img/idb_Icon_Color.svg" alt="API" /></div>
+          <div className="col col--4"><img className={styles.itemImage} src="img/idb_icon.svg" alt="API" /></div>
         </div>
       </div>
     </header>
