@@ -333,10 +333,13 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
 
 - (FBFutureContext<FBInstrumentsClient *> *)remoteInstrumentsClient
 {
+  // There is a change in service names in iOS 14 that we have to account for.
+  // Both of these channels are fine to use with the same underlying protocol, so long as the secure wrapper is used on the transport.
+  BOOL usesSecureConnection = self.device.osVersion.version.majorVersion >= 14;
   return [[[self.device
     mountDeveloperDiskImage]
     onQueue:self.device.workQueue pushTeardown:^(id _) {
-      return [self.device startService:@"com.apple.instruments.remoteserver"];
+      return [self.device startService:(usesSecureConnection ? @"com.apple.instruments.remoteserver.DVTSecureSocketProxy" : @"com.apple.instruments.remoteserver")];
     }]
     onQueue:self.device.asyncQueue pend:^(FBAMDServiceConnection *connection) {
       return [FBInstrumentsClient instrumentsClientWithServiceConnection:connection logger:self.device.logger];

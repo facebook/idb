@@ -224,8 +224,10 @@ static NSString *const ProcessControlChannel = @"com.apple.instruments.server.se
 
 + (ResponsePayload)onConnection:(FBAMDServiceConnection *)connection requestSendAndReceive:(RequestPayload)request error:(NSError **)error
 {
+  // The Service Connection wrapping is mandatory in iOS 14 and above, since secure transports are necessary.
+  // For pre-iOS 14 raw transfer is sufficient, but using the Service Connection is still fine as this will not apply encryption on the transport.
+  id<FBAMDServiceConnectionTransfer> transfer = connection.serviceConnectionWrapped;
   NSData *requestData = [self requestDataFromRequest:request];
-  id<FBAMDServiceConnectionTransfer> transfer = connection.rawSocket;
   if (![transfer send:requestData error:error]) {
     return InvalidResponsePayload;
   }
