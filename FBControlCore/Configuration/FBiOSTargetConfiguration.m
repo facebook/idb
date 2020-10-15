@@ -339,13 +339,22 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
 
 - (NSDecimalNumber *)number
 {
-  NSString *versionString = [self.name componentsSeparatedByCharactersInSet:NSCharacterSet.whitespaceCharacterSet][1];
-  return [NSDecimalNumber decimalNumberWithString:versionString];
+  return [NSDecimalNumber decimalNumberWithString:self.versionString];
+}
+
+- (NSOperatingSystemVersion)version
+{
+  return [FBOSVersion operatingSystemVersionFromName:self.versionString];
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:@"OS '%@'", self.name];
+}
+
+- (NSString *)versionString
+{
+  return [self.name componentsSeparatedByCharactersInSet:NSCharacterSet.whitespaceCharacterSet][1];
 }
 
 #pragma mark NSCopying

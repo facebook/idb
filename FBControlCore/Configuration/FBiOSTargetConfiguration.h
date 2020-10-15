@@ -227,14 +227,24 @@ extern FBOSVersionName const FBOSVersionNamemac;
 @interface FBOSVersion : NSObject <NSCopying>
 
 /**
- The Version name of the OS.
+ A string representation of the OS Version.
  */
 @property (nonatomic, copy, readonly) FBOSVersionName name;
 
 /**
- A Decimal Number Represnting the Version Number.
+ A String representation of the numeric part of the OS Version.
+ */
+@property (nonatomic, copy, readonly) NSString *versionString;
+
+/**
+ An NSDecimalNumber representation of the numeric part of the OS Version.
  */
 @property (nonatomic, copy, readonly) NSDecimalNumber *number;
+
+/**
+ An NSOperatingSystemVersion representation of the numeric part of the OS Version.
+ */
+@property (nonatomic, assign, readonly) NSOperatingSystemVersion version;
 
 /**
  The Supported Families of the OS Version.
