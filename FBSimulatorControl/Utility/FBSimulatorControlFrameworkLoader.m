@@ -17,7 +17,7 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
   va_start(args, format);
   NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
   va_end(args);
-  id<FBControlCoreLogger> logger = [FBControlCoreGlobalConfiguration.defaultLogger withName:@"CoreSimulator"];
+  id<FBControlCoreLogger> logger = [FBControlCoreGlobalConfiguration.defaultLogger.debug withName:@"CoreSimulator"];
   [logger log:string];
 }
 

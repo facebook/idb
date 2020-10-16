@@ -62,7 +62,7 @@ static BOOL FB_AMDeviceConnected(AMDeviceRef device, FBAMDeviceManager *manager)
     [logger.error logFormat:@"Ignoring device as %@ is not present in %@", FBDeviceKeyUniqueDeviceID, info];
     return NO;
   }
-  [logger logFormat:@"Obtained Device Values %@", info];
+  [logger.debug logFormat:@"Obtained Device Values %@", info];
   [manager deviceConnected:device identifier:uniqueChipID info:info];
   return YES;
 }
