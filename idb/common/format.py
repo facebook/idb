@@ -247,6 +247,12 @@ def target_description_from_json(data: str) -> TargetDescription:
     return target_description_from_dictionary(parsed=json.loads(data))
 
 
+def target_descriptions_from_json(data: str) -> List[TargetDescription]:
+    return [
+        target_description_from_dictionary(parsed=target) for target in json.loads(data)
+    ]
+
+
 def target_description_from_dictionary(parsed: Dict[str, Any]) -> TargetDescription:
     return TargetDescription(
         udid=parsed["udid"],

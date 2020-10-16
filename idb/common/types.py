@@ -370,6 +370,12 @@ class Companion(ABC):
         pass
 
     @abstractmethod
+    async def tail_targets(
+        self, only: Optional[OnlyFilter] = None
+    ) -> AsyncGenerator[List[TargetDescription], None]:
+        yield
+
+    @abstractmethod
     async def target_description(
         self,
         udid: Optional[str] = None,

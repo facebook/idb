@@ -12,7 +12,10 @@ from datetime import timedelta
 from logging import Logger
 from typing import AsyncGenerator, Dict, List, Optional, Sequence, Union
 
-from idb.common.format import target_description_from_json
+from idb.common.format import (
+    target_description_from_json,
+    target_descriptions_from_json,
+)
 from idb.common.logging import log_call
 from idb.common.types import (
     Companion as CompanionBase,
@@ -216,6 +219,14 @@ class Companion(CompanionBase):
             for line in output.splitlines()
             if len(line.strip())
         ]
+
+    async def tail_targets(
+        self, only: Optional[OnlyFilter] = None
+    ) -> AsyncGenerator[List[TargetDescription], None]:
+        arguments = ["--notify", "stdout"] + _only_arg_from_filter(only=only)
+        async with self._start_companion_command(arguments=arguments) as process:
+            async for line in none_throws(process.stdout):
+                yield target_descriptions_from_json(data=line.decode().strip())
 
     @log_call()
     async def target_description(
