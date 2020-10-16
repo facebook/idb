@@ -10,7 +10,6 @@ import logging
 import subprocess
 from datetime import timedelta
 from logging import Logger
-from sys import platform
 from typing import AsyncGenerator, Dict, List, Optional, Sequence, Union
 
 from idb.common.format import target_description_from_json
@@ -73,10 +72,7 @@ def parse_json_line(line: bytes) -> Dict[str, Union[int, str]]:
 
 class Companion(CompanionBase):
     def __init__(
-        self,
-        companion_path: Optional[str],
-        device_set_path: Optional[str],
-        logger: Logger,
+        self, companion_path: str, device_set_path: Optional[str], logger: Logger
     ) -> None:
         self._companion_path = companion_path
         self._device_set_path = device_set_path
@@ -86,15 +82,7 @@ class Companion(CompanionBase):
     async def _start_companion_command(
         self, arguments: List[str]
     ) -> AsyncGenerator[asyncio.subprocess.Process, None]:
-        companion_path = self._companion_path
-        if companion_path is None:
-            if platform == "darwin":
-                raise IdbException("Companion path not provided")
-            else:
-                raise IdbException(
-                    "Companion interactions do not work on non-macOS platforms"
-                )
-        cmd: List[str] = [companion_path]
+        cmd: List[str] = [self._companion_path]
         device_set_path = self._device_set_path
         if device_set_path is not None:
             cmd.extend(["--device-set-path", device_set_path])

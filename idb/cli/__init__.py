@@ -20,6 +20,7 @@ from idb.common.types import (
     ClientManager,
     DomainSocketAddress,
     IdbConnectionException,
+    IdbException,
     TCPAddress,
 )
 from idb.grpc.client import Client as GrpcClient
@@ -151,12 +152,15 @@ class ManagementCommand(BaseCommand):
 # A command that vends the Companion interface
 class CompanionCommand(BaseCommand):
     async def _run_impl(self, args: Namespace) -> None:
+        companion_path = args.companion_path
+        if companion_path is None:
+            raise IdbException(
+                "Companion interactions do not work on non-macOS platforms"
+            )
         await self.run_with_companion(
             args=args,
             companion=Companion(
-                companion_path=args.companion_path,
-                device_set_path=None,
-                logger=self.logger,
+                companion_path=companion_path, device_set_path=None, logger=self.logger
             ),
         )
 

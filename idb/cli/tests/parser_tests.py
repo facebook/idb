@@ -89,16 +89,25 @@ class TestParser(TestCase):
         )
 
     async def test_create(self) -> None:
-        await cli_main(cmd_input=["create", "ipone", "os2"])
+        await cli_main(
+            cmd_input=["--companion-path", "idb_companion", "create", "ipone", "os2"]
+        )
         self.companion_mock().create.assert_called_once_with(
             device_type="ipone", os_version="os2"
         )
 
     async def test_boot(self) -> None:
         for command in [
-            ["boot", "my_udid"],
-            ["boot", "--udid", "my_udid"],
-            ["boot", "--udid", "my_udid_old", "my_udid"],
+            ["--companion-path", "idb_companion", "boot", "my_udid"],
+            ["--companion-path", "idb_companion", "boot", "--udid", "my_udid"],
+            [
+                "--companion-path",
+                "idb_companion",
+                "boot",
+                "--udid",
+                "my_udid_old",
+                "my_udid",
+            ],
         ]:
             self.companion_mock().boot = AsyncMock()
             await cli_main(cmd_input=command)
@@ -106,27 +115,29 @@ class TestParser(TestCase):
 
     async def test_shutdown(self) -> None:
         udid = "my udid"
-        await cli_main(cmd_input=["shutdown", udid])
+        await cli_main(
+            cmd_input=["--companion-path", "idb_companion", "shutdown", udid]
+        )
         self.companion_mock().shutdown.assert_called_once_with(udid=udid)
 
     async def test_erase(self) -> None:
         udid = "my udid"
-        await cli_main(cmd_input=["erase", udid])
+        await cli_main(cmd_input=["--companion-path", "idb_companion", "erase", udid])
         self.companion_mock().erase.assert_called_once_with(udid=udid)
 
     async def test_clone(self) -> None:
         udid = "my udid"
-        await cli_main(cmd_input=["clone", udid])
+        await cli_main(cmd_input=["--companion-path", "idb_companion", "clone", udid])
         self.companion_mock().clone.assert_called_once_with(udid=udid)
 
     async def test_delete(self) -> None:
         udid = "my udid"
-        await cli_main(cmd_input=["delete", udid])
+        await cli_main(cmd_input=["--companion-path", "idb_companion", "delete", udid])
         self.companion_mock().delete.assert_called_once_with(udid=udid)
 
     async def test_delete_all(self) -> None:
         self.companion_mock().delete = AsyncMock()
-        await cli_main(cmd_input=["delete-all"])
+        await cli_main(cmd_input=["--companion-path", "idb_companion", "delete-all"])
         self.companion_mock().delete.assert_called_once_with(udid=None)
 
     async def test_install(self) -> None:
