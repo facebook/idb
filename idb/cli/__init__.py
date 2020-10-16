@@ -12,12 +12,13 @@ from typing import AsyncGenerator, Optional
 
 from idb.common import plugin
 from idb.common.command import Command
-from idb.common.companion import Companion
+from idb.common.companion import Companion as LocalCompanion
 from idb.common.logging import log_call
 from idb.common.types import (
     Address,
     Client,
     ClientManager,
+    Companion,
     DomainSocketAddress,
     IdbConnectionException,
     IdbException,
@@ -159,7 +160,7 @@ class CompanionCommand(BaseCommand):
             )
         await self.run_with_companion(
             args=args,
-            companion=Companion(
+            companion=LocalCompanion(
                 companion_path=companion_path, device_set_path=None, logger=self.logger
             ),
         )

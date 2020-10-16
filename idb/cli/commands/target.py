@@ -10,10 +10,9 @@ from typing import Union
 
 import idb.common.plugin as plugin
 from idb.cli import ClientCommand, CompanionCommand, ManagementCommand
-from idb.common.companion import Companion
 from idb.common.format import human_format_target_info, json_format_target_info
 from idb.common.signal import signal_handler_event
-from idb.common.types import Client, ClientManager, IdbException, TCPAddress
+from idb.common.types import Client, ClientManager, Companion, IdbException, TCPAddress
 from idb.common.udid import is_udid
 
 

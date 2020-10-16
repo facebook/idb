@@ -71,7 +71,7 @@ class TestParser(TestCase):
         self.client_patch = patch("idb.cli.GrpcClient", self.client_mock)
         self.client_patch.start()
         self.companion_mock = MagicMock(name="companion_mock")
-        self.companion_patch = patch("idb.cli.Companion", self.companion_mock)
+        self.companion_patch = patch("idb.cli.LocalCompanion", self.companion_mock)
         self.companion_patch.start()
 
     def tearDown(self) -> None:
