@@ -409,6 +409,9 @@ class Client(ClientBase):
         await self.stub.approve(
             ApproveRequest(
                 bundle_id=bundle_id,
+                # pyre-fixme[6]: Expected
+                #  `Optional[List[ApproveRequest.Permission]]` for 2nd param but got
+                #  `List[ApproveRequest]`.
                 permissions=[APPROVE_MAP[permission] for permission in permissions],
                 scheme=scheme,
             )
@@ -890,6 +893,9 @@ class Client(ClientBase):
                         start=VideoStreamRequest.Start(
                             file_path=output_file,
                             fps=fps,
+                            # pyre-fixme[6]: Expected
+                            #  `Optional[VideoStreamRequest.Format]` for 3rd param but
+                            #  got `VideoStreamRequest`.
                             format=VIDEO_FORMAT_MAP[format],
                         )
                     )
@@ -899,7 +905,12 @@ class Client(ClientBase):
                 await stream.send_message(
                     VideoStreamRequest(
                         start=VideoStreamRequest.Start(
-                            file_path=None, fps=fps, format=VIDEO_FORMAT_MAP[format]
+                            file_path=None,
+                            fps=fps,
+                            # pyre-fixme[6]: Expected
+                            #  `Optional[VideoStreamRequest.Format]` for 3rd param but
+                            #  got `VideoStreamRequest`.
+                            format=VIDEO_FORMAT_MAP[format],
                         )
                     )
                 )
