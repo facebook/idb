@@ -13,18 +13,6 @@
 
 #import <objc/runtime.h>
 
-#import <SimulatorKit/SimDeviceFramebufferService.h>
-#import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
-#import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
-#import <SimulatorKit/SimDisplayRenderable-Protocol.h>
-#import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
-#import <SimulatorKit/SimDisplayDescriptorState-Protocol.h>
-#import <SimulatorKit/SimDeviceIOPortConsumer-Protocol.h>
-#import <SimulatorKit/SimDeviceIOPortDescriptorState-Protocol.h>
-#import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
-#import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
-#import <SimulatorKit/SimDisplayRenderable-Protocol.h>
-
 #import "FBFramebuffer.h"
 #import "FBSimulatorError.h"
 #import "FBSurfaceImageGenerator.h"

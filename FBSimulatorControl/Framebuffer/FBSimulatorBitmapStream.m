@@ -7,23 +7,11 @@
 
 #import "FBSimulatorBitmapStream.h"
 
-#import <FBControlCore/FBControlCore.h>
-#import <IOSurface/IOSurface.h>
 #import <CoreVideo/CoreVideo.h>
 #import <CoreVideo/CVPixelBufferIOSurface.h>
+#import <FBControlCore/FBControlCore.h>
+#import <IOSurface/IOSurface.h>
 #import <VideoToolbox/VideoToolbox.h>
-
-#import <SimulatorKit/SimDeviceFramebufferService.h>
-#import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
-#import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
-#import <SimulatorKit/SimDisplayRenderable-Protocol.h>
-#import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
-#import <SimulatorKit/SimDisplayDescriptorState-Protocol.h>
-#import <SimulatorKit/SimDeviceIOPortConsumer-Protocol.h>
-#import <SimulatorKit/SimDeviceIOPortDescriptorState-Protocol.h>
-#import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
-#import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
-#import <SimulatorKit/SimDisplayRenderable-Protocol.h>
 
 #import "FBSimulatorError.h"
 
@@ -391,7 +379,6 @@ static NSDictionary<NSString *, id> * EncoderSpecification()
 {
   [self pushFrame];
 }
-
 
 @end
 
