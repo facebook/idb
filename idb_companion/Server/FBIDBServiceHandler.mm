@@ -550,7 +550,8 @@ Status FBIDBServiceHandler::list_apps(ServerContext *context, const idb::ListApp
 {@autoreleasepool{
   NSError *error = nil;
   NSSet<NSString *> *persistedBundleIDs = _commandExecutor.storageManager.application.persistedBundleIDs;
-  NSDictionary<FBInstalledApplication *, id> *apps = [[_commandExecutor list_apps] block:&error];
+  BOOL fetchAppProcessState = request->suppress_process_state() == false;
+  NSDictionary<FBInstalledApplication *, id> *apps = [[_commandExecutor list_apps:fetchAppProcessState] block:&error];
   for (FBInstalledApplication *app in apps.allKeys) {
     idb::InstalledAppInfo *appInfo = response->add_apps();
     appInfo->set_bundle_id(app.bundle.identifier.UTF8String ?: "");
@@ -562,6 +563,7 @@ Status FBIDBServiceHandler::list_apps(ServerContext *context, const idb::ListApp
     id processState = apps[app];
     if ([processState isKindOfClass:NSNumber.class]) {
       appInfo->set_process_state(idb::InstalledAppInfo_AppProcessState_RUNNING);
+      appInfo->set_process_identifier([processState unsignedIntegerValue]);
     } else {
       appInfo->set_process_state(idb::InstalledAppInfo_AppProcessState_UNKNOWN);
     }

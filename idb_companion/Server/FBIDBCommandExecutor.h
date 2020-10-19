@@ -69,11 +69,12 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
 #pragma mark Public Methods
 
 /**
- Lists Apps.
+ Lists Applications that are installed, optionally fetching process state.
 
+ @param fetchProcessState YES if the process state should be fetched, NO otherwise.
  @return A future that resolves with the list of installed applications, mapped to NSNull | NSNumber of the running pid.
  */
-- (FBFuture<NSDictionary<FBInstalledApplication *, id> *> *)list_apps;
+- (FBFuture<NSDictionary<FBInstalledApplication *, id> *> *)list_apps:(BOOL)fetchProcessState;
 
 /**
  Install an App via a File Path.

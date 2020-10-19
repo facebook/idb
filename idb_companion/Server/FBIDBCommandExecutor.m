@@ -60,12 +60,12 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 
 #pragma mark Installation
 
-- (FBFuture<NSDictionary<FBInstalledApplication *, id> *> *)list_apps
+- (FBFuture<NSDictionary<FBInstalledApplication *, id> *> *)list_apps:(BOOL)fetchProcessState
 {
   return [[FBFuture
     futureWithFutures:@[
       [self.target installedApplications],
-      [self.target runningApplications],
+      fetchProcessState ? [self.target runningApplications] : [FBFuture futureWithResult:@{}],
     ]]
     onQueue:self.target.workQueue map:^(NSArray<id> *results) {
       NSArray<FBInstalledApplication *> *installed = results[0];

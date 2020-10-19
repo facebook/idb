@@ -83,6 +83,7 @@ message SettingResponse {
 }
 
 message ListAppsRequest {
+  bool suppress_process_state = 1;
 }
 
 message ListAppsResponse {
@@ -101,6 +102,7 @@ message InstalledAppInfo {
   }
   AppProcessState process_state = 5;
   bool debuggable = 6;
+  uint64 process_identifier = 7;
 }
 
 message InstallRequest {
