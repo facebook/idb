@@ -347,8 +347,12 @@ class Client(ClientBase):
         self.logger.info(data.strip())
 
     @log_and_handle_exceptions
-    async def list_apps(self) -> List[InstalledAppInfo]:
-        response = await self.stub.list_apps(ListAppsRequest())
+    async def list_apps(
+        self, fetch_process_state: bool = True
+    ) -> List[InstalledAppInfo]:
+        response = await self.stub.list_apps(
+            ListAppsRequest(suppress_process_state=fetch_process_state is False)
+        )
         return [
             InstalledAppInfo(
                 bundle_id=app.bundle_id,

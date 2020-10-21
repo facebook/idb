@@ -394,7 +394,9 @@ class Companion(ABC):
 # Exposes the resource-specific commands that imply a connected companion
 class Client(ABC):
     @abstractmethod
-    async def list_apps(self) -> List[InstalledAppInfo]:
+    async def list_apps(
+        self, fetch_process_state: bool = True
+    ) -> List[InstalledAppInfo]:
         pass
 
     @abstractmethod

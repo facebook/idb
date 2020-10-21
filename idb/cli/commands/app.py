@@ -100,8 +100,27 @@ class AppListCommand(ClientCommand):
     def name(self) -> str:
         return "list-apps"
 
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        super().add_parser_arguments(parser)
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument(
+            "--fetch-process-state",
+            action="store_true",
+            default=True,
+            dest="fetch_process_state",
+            help="Fetches App Process State",
+            required=False,
+        )
+        group.add_argument(
+            "--no-fetch-process-state",
+            action="store_false",
+            dest="fetch_process_state",
+            help="Disables App Process State fetching",
+            required=False,
+        )
+
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        apps = await client.list_apps()
+        apps = await client.list_apps(fetch_process_state=args.fetch_process_state)
         formatter = human_format_installed_app_info
         if args.json:
             formatter = json_format_installed_app_info
