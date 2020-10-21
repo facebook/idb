@@ -151,7 +151,7 @@ from idb.grpc.xctest import (
 from idb.utils.contextlib import asynccontextmanager
 
 
-APPROVE_MAP: Dict[Permission, ApproveRequest] = {
+APPROVE_MAP: Dict[Permission, "ApproveRequest.Permission"] = {
     Permission.PHOTOS: ApproveRequest.PHOTOS,
     Permission.CAMERA: ApproveRequest.CAMERA,
     Permission.CONTACTS: ApproveRequest.CONTACTS,
@@ -160,7 +160,7 @@ APPROVE_MAP: Dict[Permission, ApproveRequest] = {
     Permission.NOTIFICATION: ApproveRequest.NOTIFICATION,
 }
 
-VIDEO_FORMAT_MAP: Dict[VideoFormat, VideoStreamRequest] = {
+VIDEO_FORMAT_MAP: Dict[VideoFormat, "VideoStreamRequest.Format"] = {
     VideoFormat.H264: VideoStreamRequest.H264,
     VideoFormat.RBGA: VideoStreamRequest.RBGA,
 }
@@ -413,9 +413,6 @@ class Client(ClientBase):
         await self.stub.approve(
             ApproveRequest(
                 bundle_id=bundle_id,
-                # pyre-fixme[6]: Expected
-                #  `Optional[List[ApproveRequest.Permission]]` for 2nd param but got
-                #  `List[ApproveRequest]`.
                 permissions=[APPROVE_MAP[permission] for permission in permissions],
                 scheme=scheme,
             )
@@ -897,9 +894,6 @@ class Client(ClientBase):
                         start=VideoStreamRequest.Start(
                             file_path=output_file,
                             fps=fps,
-                            # pyre-fixme[6]: Expected
-                            #  `Optional[VideoStreamRequest.Format]` for 3rd param but
-                            #  got `VideoStreamRequest`.
                             format=VIDEO_FORMAT_MAP[format],
                         )
                     )
@@ -911,9 +905,6 @@ class Client(ClientBase):
                         start=VideoStreamRequest.Start(
                             file_path=None,
                             fps=fps,
-                            # pyre-fixme[6]: Expected
-                            #  `Optional[VideoStreamRequest.Format]` for 3rd param but
-                            #  got `VideoStreamRequest`.
                             format=VIDEO_FORMAT_MAP[format],
                         )
                     )
