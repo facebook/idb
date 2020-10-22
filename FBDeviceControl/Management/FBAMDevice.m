@@ -183,7 +183,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
           logger:self.logger]
           failFuture];
       }
-      FBAMDServiceConnection *connection = [[FBAMDServiceConnection alloc] initWithServiceConnection:serviceConnection device:device.amDeviceRef calls:self.calls logger:self.logger];
+      FBAMDServiceConnection *connection = [FBAMDServiceConnection connectionWithConnection:serviceConnection device:device.amDeviceRef calls:self.calls logger:self.logger];
       [self.logger logFormat:@"Service %@ started", service];
       return [FBFuture futureWithResult:connection];
     }]

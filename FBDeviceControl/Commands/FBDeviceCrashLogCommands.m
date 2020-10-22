@@ -169,7 +169,7 @@ static NSString *const PingSuccess = @"ping";
     // The mover is used first and can be discarded when done.
     onQueue:self.device.asyncQueue pop:^ FBFuture<NSString *> * (FBAMDServiceConnection *connection) {
       NSError *error = nil;
-      NSData *data = [connection.serviceConnectionWrapped receive:4 error:&error];
+      NSData *data = [connection receive:4 error:&error];
       if (!data) {
         return [[[FBDeviceControlError
           describeFormat:@"Failed to get pingback from %@", CrashReportMoverService]

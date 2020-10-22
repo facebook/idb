@@ -224,14 +224,11 @@ static NSString *const ProcessControlChannel = @"com.apple.instruments.server.se
 
 + (ResponsePayload)onConnection:(FBAMDServiceConnection *)connection requestSendAndReceive:(RequestPayload)request error:(NSError **)error
 {
-  // The Service Connection wrapping is mandatory in iOS 14 and above, since secure transports are necessary.
-  // For pre-iOS 14 raw transfer is sufficient, but using the Service Connection is still fine as this will not apply encryption on the transport.
-  id<FBAMDServiceConnectionTransfer> transfer = connection.serviceConnectionWrapped;
   NSData *requestData = [self requestDataFromRequest:request];
-  if (![transfer send:requestData error:error]) {
+  if (![connection send:requestData error:error]) {
     return InvalidResponsePayload;
   }
-  return [self recieveMessage:transfer request:request error:error];
+  return [self recieveMessage:connection request:request error:error];
 }
 
 static const uint32 DTXMessageHeaderMagic = 0x1F3D5B79;
@@ -377,7 +374,7 @@ static const uint32 Int32ArgumentType = 3;
   return [data subdataWithRange:NSMakeRange(length, data.length - length)];
 }
 
-+ (ResponsePayload)recieveMessage:(id<FBAMDServiceConnectionTransfer>)transfer request:(RequestPayload)request error:(NSError **)error
++ (ResponsePayload)recieveMessage:(FBAMDServiceConnection *)connection request:(RequestPayload)request error:(NSError **)error
 {
   // This header will start the first iteration of the loop, then is overwritten on each iteration.
   DTXMessageHeader messageHeader = {
@@ -396,7 +393,7 @@ static const uint32 Int32ArgumentType = 3;
   // Will execute at least once, exiting when there are no more fragments.
   while (messageHeader.fragmentId < messageHeader.fragmentCount - 1) {
     // Obtain the header payload in this iteration.
-    if (![transfer receive:&messageHeader ofSize:sizeof(messageHeader) error:error]) {
+    if (![connection receive:&messageHeader ofSize:sizeof(messageHeader) error:error]) {
       return InvalidResponsePayload;
     }
     // The data is corrupted in some way if the magic number from the header is missing.
@@ -421,7 +418,7 @@ static const uint32 Int32ArgumentType = 3;
       continue;
     }
     // Consume all data from this fragment and accumilate it.
-    NSData *fragmentData = [transfer receive:messageHeader.length error:error];
+    NSData *fragmentData = [connection receive:messageHeader.length error:error];
     if (!fragmentData) {
       return InvalidResponsePayload;
     }

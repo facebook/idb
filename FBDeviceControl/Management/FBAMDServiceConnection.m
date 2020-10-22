@@ -13,168 +13,28 @@
 typedef uint32_t HeaderIntType;
 static const NSUInteger HeaderLength = sizeof(HeaderIntType);
 
-@interface FBAMDServiceConnection_Transfer : NSObject <FBAMDServiceConnectionTransfer>
-
-@property (nonatomic, strong, readonly) FBAMDServiceConnection *connection;
+@interface FBAMDServiceConnection_TransferRaw : FBAMDServiceConnection
 
 @end
 
-@interface FBAMDServiceConnection_Transfer_Raw : FBAMDServiceConnection_Transfer
-
-@end
-
-@interface FBAMDServiceConnection_Transfer_ServiceConnection : FBAMDServiceConnection_Transfer
-
-@end
-
-@implementation FBAMDServiceConnection_Transfer
-
-- (instancetype)initWithConnection:(FBAMDServiceConnection *)connection
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _connection = connection;
-
-  return self;
-}
-
-// There's an upper limit on the number of bytes we can receive at once
-static size_t SendBufferSize = 1024 * 4;
-
-- (BOOL)send:(NSData *)data error:(NSError **)error
-{
-  // Keep track of the number of bytes we can send.
-  size_t bytesRemaning = data.length;
-
-  // Start a loop that ends when there's no more bytes to send
-  while (bytesRemaning > 0) {
-    // Send the bytes now
-    NSRange sendRange = NSMakeRange(data.length - data.length, MIN(SendBufferSize, bytesRemaning));
-    NSData *chunkData = [data subdataWithRange:sendRange];
-    ssize_t sentBytes = [self send:chunkData.bytes size:chunkData.length];
-    // If there's no data sent then break out now.
-    if (sentBytes < 1) {
-      break;
-    }
-    // Otherwise keep going and decrement the number of remaining bytes to send.
-    bytesRemaning -= (size_t) sentBytes;
-  }
-
-  // Check that we've sent the right number of bytes.
-  if (bytesRemaning != 0) {
-    return [[FBDeviceControlError
-      describeFormat:@"Failed to send %zu bytes from AMDServiceConnectionReceive, %zu remaining", data.length, bytesRemaning]
-      failBool:error];
-  }
-  return YES;
-}
-
-- (BOOL)sendWithLengthHeader:(NSData *)data error:(NSError **)error
-{
-  HeaderIntType length = (HeaderIntType) data.length;
-  HeaderIntType lengthWire = EndianU32_NtoB(length); // The native length should be converted to big-endian (ARM).
-  NSData *lengthData = [[NSData alloc] initWithBytes:&lengthWire length:HeaderLength];
-  // Write the length data.
-  if (![self send:lengthData error:error]) {
-    return NO;
-  }
-  // Then send the actual payload.
-  if (![self send:data error:error]) {
-   return NO;
-  }
-  return YES;
-}
-
-// There's an upper limit on the number of bytes we can read at once
-static size_t ReadBufferSize = 1024 * 4;
-
-- (NSData *)receive:(size_t)size error:(NSError **)error
-{
-  // Create a buffer that contains the data to return and a temp buffer for reading into.
-  NSMutableData *data = NSMutableData.data;
-  void *buffer = alloca(ReadBufferSize);
-
-  // Start reading in a loop, until there's no more bytes to read.
-  size_t bytesRemaining = size;
-  while (bytesRemaining > 0) {
-    // Don't read more bytes than are remaining.
-    size_t maxReadBytes = MIN(ReadBufferSize, bytesRemaining);
-    ssize_t readBytes = [self recieve:buffer size:maxReadBytes];
-    // If there's no more bytes to read then break out now
-    if (readBytes < 1) {
-      break;
-    }
-    // Otherwise decrement the number of bytes to read and add it to the return buffer.
-    bytesRemaining -= (size_t) readBytes;
-    [data appendBytes:buffer length:(size_t) readBytes];
-  }
-
-  // Check that we've read the right number of bytes.
-  if (bytesRemaining != 0) {
-    return [[FBDeviceControlError
-      describeFormat:@"Failed to receive %zu bytes from AMDServiceConnectionReceive, %zu remaining to read", size, bytesRemaining]
-      fail:error];
-  }
-  return data;
-}
-
-- (ssize_t)send:(const void *)buffer size:(size_t)size
-{
-  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
-  return -1;
-}
-
-- (ssize_t)recieve:(void *)buffer size:(size_t)size
-{
-  return read(self.connection.socket, buffer, size);
-}
-
-- (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error
-{
-  NSData *data = [self receive:size error:error];
-  if (!data) {
-    return NO;
-  }
-  memcpy(destination, data.bytes, data.length);
-  return YES;
-}
-
-@end
-
-@implementation FBAMDServiceConnection_Transfer_Raw
-
-- (ssize_t)send:(const void *)buffer size:(size_t)size
-{
-  return write(self.connection.socket, buffer, size);
-}
-
-- (ssize_t)recieve:(void *)buffer size:(size_t)size
-{
-  return read(self.connection.socket, buffer, size);
-}
-
-@end
-
-@implementation FBAMDServiceConnection_Transfer_ServiceConnection
-
-- (ssize_t)send:(const void *)buffer size:(size_t)size
-{
-  return self.connection.calls.ServiceConnectionSend(self.connection.connection, buffer, size);
-}
-
-- (ssize_t)recieve:(void *)buffer size:(size_t)size
-{
-  return self.connection.calls.ServiceConnectionReceive(self.connection.connection, buffer, size);
-}
+@interface FBAMDServiceConnection_TransferServiceConnection : FBAMDServiceConnection
 
 @end
 
 @implementation FBAMDServiceConnection
 
 #pragma mark Initializers
+
++ (instancetype)connectionWithConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger
+{
+  // Use Raw transfer when there's no Secure Context, otherwise we must use the service connection wrapping.
+  AMSecureIOContext secureIOContext = calls.ServiceConnectionGetSecureIOContext(connection);
+  if (secureIOContext == NULL) {
+    return [[FBAMDServiceConnection_TransferRaw alloc] initWithServiceConnection:connection device:device calls:calls logger:logger];
+  } else {
+    return [[FBAMDServiceConnection_TransferServiceConnection alloc] initWithServiceConnection:connection device:device calls:calls logger:logger];
+  }
+}
 
 - (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger;
 {
@@ -196,18 +56,6 @@ static size_t ReadBufferSize = 1024 * 4;
 - (NSString *)description
 {
   return [NSString stringWithFormat:@"%@", self.connection];
-}
-
-#pragma mark Raw Data
-
-- (id<FBAMDServiceConnectionTransfer>)rawSocket
-{
-  return [[FBAMDServiceConnection_Transfer_Raw alloc] initWithConnection:self];
-}
-
-- (id<FBAMDServiceConnectionTransfer>)serviceConnectionWrapped
-{
-  return [[FBAMDServiceConnection_Transfer_ServiceConnection alloc] initWithConnection:self];
 }
 
 #pragma mark plist Messaging
@@ -304,6 +152,138 @@ static size_t ReadBufferSize = 1024 * 4;
 - (AMSecureIOContext)secureIOContext
 {
   return self.calls.ServiceConnectionGetSecureIOContext(self.connection);
+}
+
+#pragma mark FBAMDServiceConnectionTransfer Implementation
+
+// There's an upper limit on the number of bytes we can receive at once
+static size_t SendBufferSize = 1024 * 4;
+
+- (BOOL)send:(NSData *)data error:(NSError **)error
+{
+  // Keep track of the number of bytes we can send.
+  size_t bytesRemaning = data.length;
+
+  // Start a loop that ends when there's no more bytes to send
+  while (bytesRemaning > 0) {
+    // Send the bytes now
+    NSRange sendRange = NSMakeRange(data.length - data.length, MIN(SendBufferSize, bytesRemaning));
+    NSData *chunkData = [data subdataWithRange:sendRange];
+    ssize_t sentBytes = [self send:chunkData.bytes size:chunkData.length];
+    // If there's no data sent then break out now.
+    if (sentBytes < 1) {
+      break;
+    }
+    // Otherwise keep going and decrement the number of remaining bytes to send.
+    bytesRemaning -= (size_t) sentBytes;
+  }
+
+  // Check that we've sent the right number of bytes.
+  if (bytesRemaning != 0) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to send %zu bytes from AMDServiceConnectionReceive, %zu remaining", data.length, bytesRemaning]
+      failBool:error];
+  }
+  return YES;
+}
+
+- (BOOL)sendWithLengthHeader:(NSData *)data error:(NSError **)error
+{
+  HeaderIntType length = (HeaderIntType) data.length;
+  HeaderIntType lengthWire = EndianU32_NtoB(length); // The native length should be converted to big-endian (ARM).
+  NSData *lengthData = [[NSData alloc] initWithBytes:&lengthWire length:HeaderLength];
+  // Write the length data.
+  if (![self send:lengthData error:error]) {
+    return NO;
+  }
+  // Then send the actual payload.
+  if (![self send:data error:error]) {
+   return NO;
+  }
+  return YES;
+}
+
+// There's an upper limit on the number of bytes we can read at once
+static size_t ReadBufferSize = 1024 * 4;
+
+- (NSData *)receive:(size_t)size error:(NSError **)error
+{
+  // Create a buffer that contains the data to return and a temp buffer for reading into.
+  NSMutableData *data = NSMutableData.data;
+  void *buffer = alloca(ReadBufferSize);
+
+  // Start reading in a loop, until there's no more bytes to read.
+  size_t bytesRemaining = size;
+  while (bytesRemaining > 0) {
+    // Don't read more bytes than are remaining.
+    size_t maxReadBytes = MIN(ReadBufferSize, bytesRemaining);
+    ssize_t readBytes = [self recieve:buffer size:maxReadBytes];
+    // If there's no more bytes to read then break out now
+    if (readBytes < 1) {
+      break;
+    }
+    // Otherwise decrement the number of bytes to read and add it to the return buffer.
+    bytesRemaining -= (size_t) readBytes;
+    [data appendBytes:buffer length:(size_t) readBytes];
+  }
+
+  // Check that we've read the right number of bytes.
+  if (bytesRemaining != 0) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to receive %zu bytes from AMDServiceConnectionReceive, %zu remaining to read", size, bytesRemaining]
+      fail:error];
+  }
+  return data;
+}
+
+- (ssize_t)send:(const void *)buffer size:(size_t)size
+{
+  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
+  return -1;
+}
+
+- (ssize_t)recieve:(void *)buffer size:(size_t)size
+{
+  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
+  return -1;
+}
+
+- (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error
+{
+  NSData *data = [self receive:size error:error];
+  if (!data) {
+    return NO;
+  }
+  memcpy(destination, data.bytes, data.length);
+  return YES;
+}
+
+@end
+
+@implementation FBAMDServiceConnection_TransferRaw
+
+- (ssize_t)send:(const void *)buffer size:(size_t)size
+{
+  return write(self.socket, buffer, size);
+}
+
+- (ssize_t)recieve:(void *)buffer size:(size_t)size
+{
+  return read(self.socket, buffer, size);
+}
+
+@end
+
+@implementation FBAMDServiceConnection_TransferServiceConnection
+
+- (ssize_t)send:(const void *)buffer size:(size_t)size
+{
+  return self.calls.ServiceConnectionSend(self.connection, buffer, size);
+}
+
+- (ssize_t)recieve:(void *)buffer size:(size_t)size
+{
+  return self.calls.ServiceConnectionReceive(self.connection, buffer, size);
 }
 
 @end

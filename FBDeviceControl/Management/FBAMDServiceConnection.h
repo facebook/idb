@@ -62,12 +62,13 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Wraps the AMDServiceConnection.
  */
-@interface FBAMDServiceConnection : NSObject
+@interface FBAMDServiceConnection : NSObject <FBAMDServiceConnectionTransfer>
 
 #pragma mark Initializers
 
 /**
  The Designated Initializer.
+ Data transfer uses raw sockets.
 
  @param connection the connection to use.
  @param device the device to use.
@@ -75,19 +76,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a FBAMDServiceConnection instance.
  */
-- (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
-
-#pragma mark Raw Data
-
-/**
- Obtains a transfer object for raw socket transfer.
- */
-- (id<FBAMDServiceConnectionTransfer>)rawSocket;
-
-/**
- Obtains a transfer object for a service-API based transfer.
- */
-- (id<FBAMDServiceConnectionTransfer>)serviceConnectionWrapped;
++ (instancetype)connectionWithConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark plist Messaging
 

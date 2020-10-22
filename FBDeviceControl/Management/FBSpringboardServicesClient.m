@@ -261,7 +261,7 @@ static size_t IconLayoutSize = 4;
         return nil;
       }
       // Recieve some data to know that it reached the other side, in the event of a failure we will recive no bytes. 
-      NSData *data = [self.connection.serviceConnectionWrapped receive:IconLayoutSize error:error];
+      NSData *data = [self.connection receive:IconLayoutSize error:error];
       if (!data) {
         return nil;
       }
