@@ -9,7 +9,7 @@
 
 #import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBArchitecture.h>
-#import <FBControlCore/FBBitmapStreamingCommands.h>
+#import <FBControlCore/FBVideoStreamCommands.h>
 #import <FBControlCore/FBCrashLogCommands.h>
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBDebuggerCommands.h>
@@ -128,7 +128,7 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 /**
  A protocol that defines an interactible and informational target.
  */
-@protocol FBiOSTarget <NSObject, FBiOSTargetInfo, FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBBitmapStreamingCommands, FBCrashLogCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands, FBInstrumentsCommands, FBDebuggerCommands>
+@protocol FBiOSTarget <NSObject, FBiOSTargetInfo, FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBVideoStreamCommands, FBCrashLogCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands, FBInstrumentsCommands, FBDebuggerCommands>
 
 /**
  The Target's Logger.

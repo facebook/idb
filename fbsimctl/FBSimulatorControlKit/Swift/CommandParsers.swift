@@ -796,7 +796,7 @@ extension Action: Parsable {
   static var streamParser: Parser<Action> {
     return Parser
       .ofTwoSequenced(
-        Parser.ofCommandWithArg(EventName.stream.rawValue, FBBitmapStreamConfigurationParser.parser),
+        Parser.ofCommandWithArg(EventName.stream.rawValue, FBVideoStreamConfigurationParser.parser),
         FileOutput.parser
       )
       .fmap(Action.stream)
@@ -1164,13 +1164,13 @@ struct FBProcessOutputConfigurationParser {
   }
 }
 
-struct FBBitmapStreamConfigurationParser {
-  public static var parser: Parser<FBBitmapStreamConfiguration> {
-    let typeParser = Parser<FBBitmapStreamEncoding>
+struct FBVideoStreamConfigurationParser {
+  public static var parser: Parser<FBVideoStreamConfiguration> {
+    let typeParser = Parser<FBVideoStreamEncoding>
       .alternative([
-        Parser<FBBitmapStreamEncoding>
+        Parser<FBVideoStreamEncoding>
           .ofFlag("h264", .H264, "Output in h264 format."),
-        Parser<FBBitmapStreamEncoding>
+        Parser<FBVideoStreamEncoding>
           .ofFlag("bgra", .BGRA, "Output in BGRA format."),
       ])
       .fallback(.BGRA)
@@ -1183,6 +1183,6 @@ struct FBBitmapStreamConfigurationParser {
         typeParser,
         fpsParser
       )
-      .fmap(FBBitmapStreamConfiguration.init)
+      .fmap(FBVideoStreamConfiguration.init)
   }
 }

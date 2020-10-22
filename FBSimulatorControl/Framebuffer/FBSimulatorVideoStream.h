@@ -15,14 +15,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBFramebuffer;
 @protocol FBDataConsumer;
+
 @protocol FBControlCoreLogger;
 
 /**
- A Bitmap Stream of a Simulator's Framebuffer.
+ A Video Stream of a Simulator's Framebuffer.
  This component can be used to provide a real-time stream of a Simulator's Framebuffer.
  This can be connected to additional software via a stream to a File Handle or Fifo.
  */
-@interface FBSimulatorBitmapStream : NSObject <FBFramebufferConsumer, FBBitmapStream>
+@interface FBSimulatorVideoStream : NSObject <FBFramebufferConsumer, FBVideoStream>
 
 #pragma mark Initializers
 
@@ -36,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs
  @return a new Bitmap Stream object, nil on failure
  */
-+ (nullable instancetype)lazyStreamWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBBitmapStreamEncoding)encoding logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable instancetype)lazyStreamWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBVideoStreamEncoding)encoding logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Constructs a Bitmap Stream.
@@ -48,7 +49,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a new Bitmap Stream object, nil on failure.
  */
-+ (nullable instancetype)eagerStreamWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBBitmapStreamEncoding)encoding framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable instancetype)eagerStreamWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBVideoStreamEncoding)encoding framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 @end
 

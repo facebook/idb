@@ -12,13 +12,13 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class AVCaptureSession;
-@class FBBitmapStreamAttributes;
+@class FBVideoStreamAttributes;
 @protocol FBDataConsumer;
 
 /**
- A Video Encoder that Writes to a Stream.
+ An implementation of FBVideoStream, for Devices.
  */
-@interface FBDeviceBitmapStream : NSObject <FBBitmapStream>
+@interface FBDeviceVideoStream : NSObject <FBVideoStream>
 
 #pragma mark Initializers
 
@@ -31,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return a new Video Encoder.
  */
-+ (instancetype)streamWithSession:(AVCaptureSession *)session encoding:(FBBitmapStreamEncoding)encoding logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (instancetype)streamWithSession:(AVCaptureSession *)session encoding:(FBVideoStreamEncoding)encoding logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 @end
 

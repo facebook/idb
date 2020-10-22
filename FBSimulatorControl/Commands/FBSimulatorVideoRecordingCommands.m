@@ -15,7 +15,7 @@
 #import "FBSimulatorSet.h"
 #import "FBFramebuffer.h"
 #import "FBSimulatorVideo.h"
-#import "FBSimulatorBitmapStream.h"
+#import "FBSimulatorVideoStream.h"
 #import "FBVideoEncoderConfiguration.h"
 
 @interface FBSimulatorVideoRecordingCommands ()
@@ -73,7 +73,7 @@
 
 #pragma mark FBSimulatorStreamingCommands
 
-- (FBFuture<FBSimulatorBitmapStream *> *)createStreamWithConfiguration:(FBBitmapStreamConfiguration *)configuration
+- (FBFuture<FBSimulatorVideoStream *> *)createStreamWithConfiguration:(FBVideoStreamConfiguration *)configuration
 {
   id<FBControlCoreLogger> logger = self.simulator.logger;
   return [[self.simulator
@@ -83,13 +83,13 @@
     }];
 }
 
-+ (FBFuture<FBSimulatorBitmapStream *> *)streamWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBBitmapStreamEncoding)encoding framesPerSecond:(NSNumber *)framesPerSecond logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBSimulatorVideoStream *> *)streamWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBVideoStreamEncoding)encoding framesPerSecond:(NSNumber *)framesPerSecond logger:(id<FBControlCoreLogger>)logger
 {
-  return [FBFuture resolveValue:^ FBSimulatorBitmapStream * (NSError **error){
+  return [FBFuture resolveValue:^ FBSimulatorVideoStream * (NSError **error){
     if (framesPerSecond) {
-      return [FBSimulatorBitmapStream eagerStreamWithFramebuffer:framebuffer encoding:encoding framesPerSecond:framesPerSecond.unsignedIntegerValue logger:logger error:error];
+      return [FBSimulatorVideoStream eagerStreamWithFramebuffer:framebuffer encoding:encoding framesPerSecond:framesPerSecond.unsignedIntegerValue logger:logger error:error];
     }
-    return [FBSimulatorBitmapStream lazyStreamWithFramebuffer:framebuffer encoding:encoding logger:logger error:error];
+    return [FBSimulatorVideoStream lazyStreamWithFramebuffer:framebuffer encoding:encoding logger:logger error:error];
   }];
 }
 

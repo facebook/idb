@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBBitmapStream.h"
+#import "FBVideoStream.h"
 
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
@@ -125,7 +125,7 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming = @"VideoStreaming";
 
-@implementation FBBitmapStreamAttributes
+@implementation FBVideoStreamAttributes
 
 - (instancetype)initWithAttributes:(NSDictionary<NSString *, id> *)attributes
 {

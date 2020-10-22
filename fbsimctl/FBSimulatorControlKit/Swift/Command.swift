@@ -86,7 +86,7 @@ public enum Action {
   case record(Record)
   case relaunch(FBApplicationLaunchConfiguration)
   case setLocation(Double, Double)
-  case stream(FBBitmapStreamConfiguration, FileOutput)
+  case stream(FBVideoStreamConfiguration, FileOutput)
   case terminate(String)
   case uninstall(String)
   case upload([FBDiagnostic])

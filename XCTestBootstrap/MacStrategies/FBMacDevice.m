@@ -386,7 +386,7 @@
 
 #pragma mark Not supported
 
-- (FBFuture<id<FBBitmapStream>> *)createStreamWithConfiguration:(FBBitmapStreamConfiguration *)configuration
+- (FBFuture<id<FBVideoStream>> *)createStreamWithConfiguration:(FBVideoStreamConfiguration *)configuration
 {
   NSAssert(nil, @"createStreamWithConfiguration: is not yet supported");
   return nil;

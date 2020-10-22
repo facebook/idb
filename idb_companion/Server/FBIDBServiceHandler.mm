@@ -1039,23 +1039,23 @@ Status FBIDBServiceHandler::video_stream(ServerContext* context, grpc::ServerRea
   }
   idb::VideoStreamRequest_Start start = request.start();
   NSNumber *framesPerSecond = start.fps() > 0 ? @(start.fps()) : nil;
-  FBBitmapStreamEncoding encoding = start.format() == idb::VideoStreamRequest_Format_RBGA ? FBBitmapStreamEncodingBGRA : FBBitmapStreamEncodingH264;
-  FBBitmapStreamConfiguration *configuration = [FBBitmapStreamConfiguration configurationWithEncoding:encoding framesPerSecond:framesPerSecond];
-  id<FBBitmapStream> bitmapStream = [[_target createStreamWithConfiguration:configuration] block:&error];
+  FBVideoStreamEncoding encoding = start.format() == idb::VideoStreamRequest_Format_RBGA ? FBVideoStreamEncodingBGRA : FBVideoStreamEncodingH264;
+  FBVideoStreamConfiguration *configuration = [FBVideoStreamConfiguration configurationWithEncoding:encoding framesPerSecond:framesPerSecond];
+  id<FBVideoStream> videoStream = [[_target createStreamWithConfiguration:configuration] block:&error];
   if (!stream) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
-  BOOL success = [[bitmapStream startStreaming:consumer] block:&error] != nil;
+  BOOL success = [[videoStream startStreaming:consumer] block:&error] != nil;
   if (success == NO) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
 
   // Wait for the client to hangup or stream to stop
   FBFuture<NSNull *> *clientStopped = resolve_next_read(stream);
-  [[FBFuture race:@[clientStopped, bitmapStream.completed]] block:nil];
+  [[FBFuture race:@[clientStopped, videoStream.completed]] block:nil];
 
   // Stop the streaming for real. It may have stopped already in which case this returns instantly.
-  success = [[bitmapStream stopStreaming] block:&error] != nil;
+  success = [[videoStream stopStreaming] block:&error] != nil;
   // Signal that we're done so we don't write to a dangling pointer.
   [done resolveWithResult:NSNull.null];
   if (success == NO) {

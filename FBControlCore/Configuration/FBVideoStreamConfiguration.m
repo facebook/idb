@@ -5,25 +5,25 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBBitmapStreamConfiguration.h"
+#import "FBVideoStreamConfiguration.h"
 
 #import "FBControlCoreError.h"
 #import "FBCollectionInformation.h"
 #import "FBCollectionOperations.h"
 
-FBBitmapStreamEncoding const FBBitmapStreamEncodingH264 = @"h264";
-FBBitmapStreamEncoding const FBBitmapStreamEncodingBGRA = @"bgra";
+FBVideoStreamEncoding const FBVideoStreamEncodingH264 = @"h264";
+FBVideoStreamEncoding const FBVideoStreamEncodingBGRA = @"bgra";
 
-@implementation FBBitmapStreamConfiguration
+@implementation FBVideoStreamConfiguration
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithEncoding:(FBBitmapStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond
++ (instancetype)configurationWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond
 {
   return [[self alloc] initWithEncoding:encoding framesPerSecond:framesPerSecond];
 }
 
-- (instancetype)initWithEncoding:(FBBitmapStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond
+- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond
 {
   self = [super init];
   if (!self) {
@@ -45,7 +45,7 @@ FBBitmapStreamEncoding const FBBitmapStreamEncodingBGRA = @"bgra";
 
 #pragma mark NSObject
 
-- (BOOL)isEqual:(FBBitmapStreamConfiguration *)object
+- (BOOL)isEqual:(FBVideoStreamConfiguration *)object
 {
   if (![object isKindOfClass:self.class]) {
     return NO;
@@ -89,7 +89,7 @@ static NSString *const KeyFramesPerSecond = @"frames_per_second";
       describeFormat:@"%@ is not a Dictionary<String, Object>", json]
       fail:error];
   }
-  FBBitmapStreamEncoding encoding = json[KeyStreamEncoding];
+  FBVideoStreamEncoding encoding = json[KeyStreamEncoding];
   if (![encoding isKindOfClass:NSString.class]) {
     return [[FBControlCoreError
       describeFormat:@"%@ is not a String for %@", encoding, KeyStreamEncoding]

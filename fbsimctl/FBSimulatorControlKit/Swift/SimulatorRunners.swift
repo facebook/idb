@@ -38,8 +38,8 @@ extension iOSRunnerContext {
   }
 }
 
-extension FBBitmapStreamingCommands {
-  func startStreaming(configuration: FBBitmapStreamConfiguration, output: FileOutput) -> FBFuture<FBiOSTargetContinuation> {
+extension FBVideoStreamCommands {
+  func startStreaming(configuration: FBVideoStreamConfiguration, output: FileOutput) -> FBFuture<FBiOSTargetContinuation> {
     do {
       let writer = try output.makeWriter()
       let stream = try createStream(with: configuration).await()

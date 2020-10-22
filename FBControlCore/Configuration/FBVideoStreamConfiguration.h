@@ -12,16 +12,16 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- The Encoding of the Bitmap Stream.
+ The Encoding of the Video Stream.
  */
-typedef NSString *FBBitmapStreamEncoding NS_STRING_ENUM;
-extern FBBitmapStreamEncoding const FBBitmapStreamEncodingH264;
-extern FBBitmapStreamEncoding const FBBitmapStreamEncodingBGRA;
+typedef NSString *FBVideoStreamEncoding NS_STRING_ENUM;
+extern FBVideoStreamEncoding const FBVideoStreamEncodingH264;
+extern FBVideoStreamEncoding const FBVideoStreamEncodingBGRA;
 
 /**
- A Configuration Object for a Bitmap Stream
+ A Configuration Object for a Video Stream.
  */
-@interface FBBitmapStreamConfiguration : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+@interface FBVideoStreamConfiguration : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
 
 /**
  The Designated Initializer.
@@ -29,12 +29,12 @@ extern FBBitmapStreamEncoding const FBBitmapStreamEncodingBGRA;
  @param encoding the stream type to use.
  @param framesPerSecond the number of frames per second for an eager stream. nil if a lazy stream.
  */
-+ (instancetype)configurationWithEncoding:(FBBitmapStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond;
++ (instancetype)configurationWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond;
 
 /**
  The encoding of the stream.
  */
-@property (nonatomic, assign, readonly) FBBitmapStreamEncoding encoding;
+@property (nonatomic, assign, readonly) FBVideoStreamEncoding encoding;
 
 /**
  The number of frames per second to use if using an eager stream.

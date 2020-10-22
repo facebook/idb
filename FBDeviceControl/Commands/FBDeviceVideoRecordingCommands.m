@@ -13,7 +13,7 @@
 #import "FBDevice.h"
 #import "FBDevice+Private.h"
 #import "FBDeviceControlError.h"
-#import "FBDeviceBitmapStream.h"
+#import "FBDeviceVideoStream.h"
 
 @interface FBDeviceVideoRecordingCommands ()
 
@@ -73,15 +73,15 @@
   return [video stopRecording];
 }
 
-#pragma mark FBBitmapStreamingCommands
+#pragma mark FBVideoStreamCommands
 
-- (FBFuture<id<FBBitmapStream>> *)createStreamWithConfiguration:(FBBitmapStreamConfiguration *)configuration
+- (FBFuture<id<FBVideoStream>> *)createStreamWithConfiguration:(FBVideoStreamConfiguration *)configuration
 {
   return [[FBDeviceVideo
     captureSessionForDevice:self.device]
     onQueue:self.device.workQueue fmap:^(AVCaptureSession *session) {
       NSError *error = nil;
-      FBDeviceBitmapStream *stream = [FBDeviceBitmapStream streamWithSession:session encoding:configuration.encoding logger:self.device.logger error:&error];
+      FBDeviceVideoStream *stream = [FBDeviceVideoStream streamWithSession:session encoding:configuration.encoding logger:self.device.logger error:&error];
       if (!stream) {
         return [FBFuture futureWithError:error];
       }

@@ -12,12 +12,12 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
-@class FBSimulatorBitmapStream;
+@class FBSimulatorVideoStream;
 
 /**
  An implementation of Video Recording Commands for Simulators.
  */
-@interface FBSimulatorVideoRecordingCommands : NSObject <FBVideoRecordingCommands, FBBitmapStreamingCommands>
+@interface FBSimulatorVideoRecordingCommands : NSObject <FBVideoRecordingCommands, FBVideoStreamCommands>
 
 @end
 

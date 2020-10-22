@@ -7,6 +7,8 @@
 
 #import <Foundation/Foundation.h>
 #import <CoreMedia/CoreMedia.h>
+#import <CoreVideo/CoreVideo.h>
+#import <CoreImage/CoreImage.h>
 
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBiOSTargetFuture.h>
@@ -21,7 +23,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming;
 /**
  A Value container for Stream Attributes.
  */
-@interface FBBitmapStreamAttributes : NSObject <FBJSONSerializable>
+@interface FBVideoStreamAttributes : NSObject <FBJSONSerializable>
 
 /**
  The Underlying Dictionary Representation.
@@ -40,7 +42,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming;
 /**
  Streams Bitmaps to a File Sink
  */
-@protocol FBBitmapStream <FBiOSTargetContinuation>
+@protocol FBVideoStream <FBiOSTargetContinuation>
 
 #pragma mark Public Methods
 
@@ -49,7 +51,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming;
 
  @return a Future wrapping the stream attributes.
  */
-- (FBFuture<FBBitmapStreamAttributes *> *)streamAttributes;
+- (FBFuture<FBVideoStreamAttributes *> *)streamAttributes;
 
 /**
  Starts the Streaming, to a Data Consumer.
@@ -71,7 +73,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming;
 /**
  Write an H264 frame to the stream, in the Annex-B stream format.
 
- @param sampleBuffer the Sample buffer to write/
+ @param sampleBuffer the Sample buffer to write.
  @param consumer the consumer to write to.
  @param logger the logger to use.
  @param error an error out for any error that occurs.

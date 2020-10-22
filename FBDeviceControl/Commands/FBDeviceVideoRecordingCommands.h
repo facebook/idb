@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A FBVideoRecordingCommands implementation for devices
  */
-@interface FBDeviceVideoRecordingCommands : NSObject <FBVideoRecordingCommands, FBBitmapStreamingCommands>
+@interface FBDeviceVideoRecordingCommands : NSObject <FBVideoRecordingCommands, FBVideoStreamCommands>
 
 @end
 
