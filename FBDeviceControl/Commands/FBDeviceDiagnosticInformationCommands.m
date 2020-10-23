@@ -51,12 +51,12 @@ static NSString *const DiagnosticsRelayService = @"com.apple.mobile.diagnostics_
       [self fetchInformationFromSpringboard],
       [self fetchInformationFromMobileConfiguration],
     ]]
-    onQueue:self.device.asyncQueue map:^(NSArray<id> *results) {
-      return @{
+    onQueue:self.device.asyncQueue map:^ NSDictionary<NSString *, id> * (NSArray<id> *results) {
+      return [FBCollectionOperations recursiveFilteredJSONSerializableRepresentationOfDictionary:@{
         DiagnosticsRelayService: results[0],
         FBSpringboardServiceName: results[1],
         FBManagedConfigService: results[2],
-      };
+      }];
     }];
 }
 
