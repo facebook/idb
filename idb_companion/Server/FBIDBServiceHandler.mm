@@ -50,9 +50,9 @@ static FBFuture<NSNull *> * resolve_next_read(grpc::internal::ReaderInterface<T>
 }
 
 template <class T>
-static id<FBDataConsumer> drain_consumer(grpc::internal::WriterInterface<T> *writer, FBFuture<NSNull *> *done)
+static id<FBDataConsumer, FBDataConsumerStackConsuming> drain_consumer(grpc::internal::WriterInterface<T> *writer, FBFuture<NSNull *> *done)
 {
-  return [FBBlockDataConsumer asynchronousDataConsumerWithBlock:^(NSData *data) {
+  return [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
     if (done.hasCompleted) {
       return;
     }
@@ -64,7 +64,7 @@ static id<FBDataConsumer> drain_consumer(grpc::internal::WriterInterface<T> *wri
 }
 
 template <class Write, class Read>
-static id<FBDataConsumer> consumer_from_request(grpc::ServerReaderWriter<Write, Read> *stream, Read& request, FBFuture<NSNull *> *done, NSError **error)
+static id<FBDataConsumer, FBDataConsumerStackConsuming> consumer_from_request(grpc::ServerReaderWriter<Write, Read> *stream, Read& request, FBFuture<NSNull *> *done, NSError **error)
 {
   Read initial;
   stream->Read(&initial);
@@ -1033,7 +1033,7 @@ Status FBIDBServiceHandler::video_stream(ServerContext* context, grpc::ServerRea
   NSError *error = nil;
   idb::VideoStreamRequest request;
   FBMutableFuture<NSNull *> *done = FBMutableFuture.future;
-  id<FBDataConsumer> consumer = consumer_from_request(stream, request, done, &error);
+  id<FBDataConsumer, FBDataConsumerStackConsuming> consumer = consumer_from_request(stream, request, done, &error);
   if (!consumer) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }

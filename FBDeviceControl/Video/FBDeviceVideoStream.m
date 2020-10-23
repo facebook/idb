@@ -52,7 +52,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startFuture;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *stopFuture;
 
-@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> consumer;
+@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer, FBDataConsumerStackConsuming> consumer;
 @property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, id> *pixelBufferAttributes;
 
 @end
@@ -116,7 +116,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   return [FBFuture futureWithResult:attributes];
 }
 
-- (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer>)consumer
+- (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer
 {
   if (self.consumer) {
     return [[FBDeviceControlError

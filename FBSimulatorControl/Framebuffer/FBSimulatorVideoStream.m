@@ -39,7 +39,7 @@
 
 
 @property (nonatomic, assign, readwrite) NSUInteger frameNumber;
-@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> consumer;
+@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer, FBDataConsumerStackConsuming> consumer;
 @property (nonatomic, assign, nullable, readwrite) CVPixelBufferRef pixelBuffer;
 @property (nonatomic, assign, readwrite) CFTimeInterval timeAtFirstFrame;
 @property (nonatomic, assign, nullable, readwrite) VTCompressionSessionRef compressionSession;
@@ -140,7 +140,7 @@ static NSDictionary<NSString *, id> * EncoderSpecification()
     }];
 }
 
-- (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer>)consumer
+- (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer
 {
   return [[FBFuture
     onQueue:self.writeQueue resolve:^ FBFuture<NSNull *> * {
