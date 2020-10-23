@@ -18,6 +18,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Consumes the provided binary data.
+ If the reciever implements FBDataConsumerStackConsuming, then stack allocated data is permitted.
+ Otherwise, the underlying buffer must survive data being consumed on a separate thread.
 
  @param data the data to consume.
  */
@@ -46,6 +48,15 @@ NS_ASSUME_NONNULL_BEGIN
  Consumes an end-of-file.
  */
 - (void)consumeEndOfFile;
+
+@end
+
+/**
+ Members of this protocol will have any underlying data buffers that are passed in within `consumeData:`.
+ This allows the caller to avoid copying data that may be stack-allocated.
+ This is exposed as a more restrictive type in order to prevent non-stack consuming implementors performing a use-after-free.
+ */
+@protocol FBDataConsumerStackConsuming <NSObject>
 
 @end
 
@@ -106,7 +117,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the block to call when new data is available
  @return a new consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)synchronousDataConsumerWithBlock:(void (^)(NSData *))consumer;
++ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerStackConsuming>)synchronousDataConsumerWithBlock:(void (^)(NSData *))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -115,7 +126,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)synchronousLineConsumerWithBlock:(void (^)(NSString *))consumer;
++ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerStackConsuming>)synchronousLineConsumerWithBlock:(void (^)(NSString *))consumer;
 
 /**
  Creates a consumer that delivers data when available.

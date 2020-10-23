@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
  @return a data consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)syncWriterWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile;
++ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerStackConsuming>)syncWriterWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile;
 
 /**
  Creates a non-blocking Data Consumer from a file handle.
@@ -63,7 +63,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return a data consumer on success, nil otherwise.
  */
-+ (nullable id<FBDataConsumer, FBDataConsumerLifecycle>)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error;
++ (nullable id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerStackConsuming>)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error;
 
 /**
  Creates a non-blocking Data Consumer from a file path.
