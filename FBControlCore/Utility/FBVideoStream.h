@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 #import <CoreMedia/CoreMedia.h>
-#import <CoreVideo/CoreVideo.h>
-#import <CoreImage/CoreImage.h>
 
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBiOSTargetFuture.h>
@@ -81,5 +79,16 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming;
  @return YES if successful, NO otherwise.
  */
 extern BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer, FBDataConsumerStackConsuming> consumer, id<FBControlCoreLogger> logger, NSError **error);
+
+/**
+ Write a JPEG frame to the MJPEG stream.
+
+ @param jpegDataBuffer the JPEG data to write.
+ @param consumer the consumer to write to.
+ @param logger the logger to use.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+extern BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer, FBDataConsumerStackConsuming> consumer, id<FBControlCoreLogger> logger, NSError **error);
 
 NS_ASSUME_NONNULL_END

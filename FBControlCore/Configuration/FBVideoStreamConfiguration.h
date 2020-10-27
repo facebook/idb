@@ -17,6 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 typedef NSString *FBVideoStreamEncoding NS_STRING_ENUM;
 extern FBVideoStreamEncoding const FBVideoStreamEncodingH264;
 extern FBVideoStreamEncoding const FBVideoStreamEncodingBGRA;
+extern FBVideoStreamEncoding const FBVideoStreamEncodingMJPEG;
 
 /**
  A Configuration Object for a Video Stream.

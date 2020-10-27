@@ -1039,7 +1039,20 @@ Status FBIDBServiceHandler::video_stream(ServerContext* context, grpc::ServerRea
   }
   idb::VideoStreamRequest_Start start = request.start();
   NSNumber *framesPerSecond = start.fps() > 0 ? @(start.fps()) : nil;
-  FBVideoStreamEncoding encoding = start.format() == idb::VideoStreamRequest_Format_RBGA ? FBVideoStreamEncodingBGRA : FBVideoStreamEncodingH264;
+  FBVideoStreamEncoding encoding = @"";
+  switch (start.format()) {
+    case idb::VideoStreamRequest_Format_RBGA:
+      encoding = FBVideoStreamEncodingBGRA;
+      break;
+    case idb::VideoStreamRequest_Format_H264:
+      encoding = FBVideoStreamEncodingH264;
+      break;
+    case idb::VideoStreamRequest_Format_MJPEG:
+      encoding = FBVideoStreamEncodingMJPEG;
+      break;
+    default:
+      return Status(grpc::StatusCode::INTERNAL, "Invalid Video format provided");
+  }
   FBVideoStreamConfiguration *configuration = [FBVideoStreamConfiguration configurationWithEncoding:encoding framesPerSecond:framesPerSecond];
   id<FBVideoStream> videoStream = [[_target createStreamWithConfiguration:configuration] block:&error];
   if (!stream) {

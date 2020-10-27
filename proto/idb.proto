@@ -356,6 +356,7 @@ message VideoStreamRequest {
   enum Format {
     H264 = 0;
     RBGA = 1;
+    MJPEG = 2;
   }
   message Start {
     string file_path = 1;

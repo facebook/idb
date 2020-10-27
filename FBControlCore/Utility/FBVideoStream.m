@@ -122,6 +122,36 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer,
   return YES;
 }
 
+BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer, FBDataConsumerStackConsuming> consumer, id<FBControlCoreLogger> logger, NSError **error)
+{
+  // Enumerate the data buffer
+  size_t dataLength = CMBlockBufferGetDataLength(jpegDataBuffer);
+  size_t offset = 0;
+  while (offset < dataLength) {
+    char *dataPointer;
+    size_t lengthAtOffset;
+    OSStatus status = CMBlockBufferGetDataPointer(
+      jpegDataBuffer,
+      offset,
+      &lengthAtOffset,
+      NULL,
+      &dataPointer
+    );
+    if (status != noErr) {
+      return [[FBControlCoreError
+        describeFormat:@"Failed to get Data Pointer %d", status]
+        failBool:error];
+    }
+    // Get our current position in the buffer.
+    // The consumer will have finished it's use of the buffer upon return, so we don't need to create a copy of the data.
+    NSData *data = [NSData dataWithBytesNoCopy:dataPointer length:lengthAtOffset freeWhenDone:NO];
+    [consumer consumeData:data];
+
+    // Increment the offset for the next iteration.
+    offset += lengthAtOffset;
+  }
+  return YES;
+}
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming = @"VideoStreaming";
 
@@ -135,6 +165,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming = @"VideoStreami
   }
 
   _attributes = attributes;
+
   return self;
 }
 

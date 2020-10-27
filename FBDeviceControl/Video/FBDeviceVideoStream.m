@@ -43,6 +43,10 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 @end
 
+@interface FBDeviceVideoStream_MJPEG : FBDeviceVideoStream
+
+@end
+
 @interface FBDeviceVideoStream () <AVCaptureVideoDataOutputSampleBufferDelegate>
 
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
@@ -110,6 +114,9 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   }
   if ([encoding isEqualToString:FBVideoStreamEncodingH264]) {
     return FBDeviceVideoStream_H264.class;
+  }
+  if ([encoding isEqualToString:FBVideoStreamEncodingMJPEG]) {
+    return FBDeviceVideoStream_MJPEG.class;
   }
   return nil;
 }
@@ -260,6 +267,36 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 - (void)consumeSampleBuffer:(CMSampleBufferRef)sampleBuffer
 {
   WriteFrameToAnnexBStream(sampleBuffer, self.consumer, self.logger, nil);
+}
+
+@end
+
+@implementation FBDeviceVideoStream_MJPEG
+
+- (void)consumeSampleBuffer:(CMSampleBufferRef)sampleBuffer
+{
+  CMBlockBufferRef jpegDataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer);
+  WriteJPEGDataToMJPEGStream(jpegDataBuffer, self.consumer, self.logger, nil);
+}
+
++ (BOOL)configureVideoOutput:(AVCaptureVideoDataOutput *)output configuration:(FBVideoStreamConfiguration *)configuration error:(NSError **)error;
+{
+  if (![super configureVideoOutput:output configuration:configuration error:error]) {
+    return NO;
+  }
+  output.alwaysDiscardsLateVideoFrames = YES;
+  if (![output.availableVideoCodecTypes containsObject:AVVideoCodecTypeJPEG]) {
+    return [[FBDeviceControlError
+      describe:@"AVVideoCodecTypeJPEG is not a supported codec type"]
+      failBool:error];
+  }
+  output.videoSettings = @{
+    AVVideoCodecKey: AVVideoCodecTypeJPEG,
+    AVVideoCompressionPropertiesKey: @{
+      AVVideoQualityKey: @(0.2),
+    },
+  };
+  return YES;
 }
 
 @end
