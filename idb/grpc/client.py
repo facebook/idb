@@ -163,6 +163,8 @@ APPROVE_MAP: Dict[Permission, "ApproveRequest.Permission"] = {
 VIDEO_FORMAT_MAP: Dict[VideoFormat, "VideoStreamRequest.Format"] = {
     VideoFormat.H264: VideoStreamRequest.H264,
     VideoFormat.RBGA: VideoStreamRequest.RBGA,
+    VideoFormat.MJPEG: VideoStreamRequest.MJPEG,
+    VideoFormat.MINICAP: VideoStreamRequest.MINICAP,
 }
 
 

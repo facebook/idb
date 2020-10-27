@@ -63,6 +63,8 @@ OnlyFilter = Union[TargetType, ECIDFilter]
 class VideoFormat(Enum):
     H264 = "h264"
     RBGA = "rbga"
+    MJPEG = "mjpeg"
+    MINICAP = "minicap"
 
 
 @dataclass(frozen=True)
