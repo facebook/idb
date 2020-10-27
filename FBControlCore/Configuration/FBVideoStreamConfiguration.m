@@ -14,6 +14,7 @@
 FBVideoStreamEncoding const FBVideoStreamEncodingH264 = @"h264";
 FBVideoStreamEncoding const FBVideoStreamEncodingBGRA = @"bgra";
 FBVideoStreamEncoding const FBVideoStreamEncodingMJPEG = @"mjpeg";
+FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
 
 @implementation FBVideoStreamConfiguration
 

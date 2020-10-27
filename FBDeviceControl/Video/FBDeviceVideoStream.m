@@ -47,6 +47,12 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 @end
 
+@interface FBDeviceVideoStream_Minicap : FBDeviceVideoStream_MJPEG
+
+@property (nonatomic, assign, readwrite) BOOL hasSentHeader;
+
+@end
+
 @interface FBDeviceVideoStream () <AVCaptureVideoDataOutputSampleBufferDelegate>
 
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
@@ -117,6 +123,9 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   }
   if ([encoding isEqualToString:FBVideoStreamEncodingMJPEG]) {
     return FBDeviceVideoStream_MJPEG.class;
+  }
+  if ([encoding isEqualToString:FBVideoStreamEncodingMinicap]) {
+    return FBDeviceVideoStream_Minicap.class;
   }
   return nil;
 }
@@ -297,6 +306,22 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
     },
   };
   return YES;
+}
+
+@end
+
+@implementation FBDeviceVideoStream_Minicap
+
+- (void)consumeSampleBuffer:(CMSampleBufferRef)sampleBuffer
+{
+  if (!self.hasSentHeader) {
+    CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
+    CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format);
+    WriteMinicapHeaderToStream(dimensions.width, dimensions.height, self.consumer, self.logger, nil);
+    self.hasSentHeader = YES;
+  }
+  CMBlockBufferRef jpegDataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer);
+  WriteJPEGDataToMinicapStream(jpegDataBuffer, self.consumer, self.logger, nil);
 }
 
 @end

@@ -1050,6 +1050,9 @@ Status FBIDBServiceHandler::video_stream(ServerContext* context, grpc::ServerRea
     case idb::VideoStreamRequest_Format_MJPEG:
       encoding = FBVideoStreamEncodingMJPEG;
       break;
+    case idb::VideoStreamRequest_Format_MINICAP:
+      encoding = FBVideoStreamEncodingMinicap;
+      break;
     default:
       return Status(grpc::StatusCode::INTERNAL, "Invalid Video format provided");
   }

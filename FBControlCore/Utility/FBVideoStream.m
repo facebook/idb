@@ -153,6 +153,54 @@ BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsum
   return YES;
 }
 
+BOOL WriteJPEGDataToMinicapStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer, FBDataConsumerStackConsuming> consumer, id<FBControlCoreLogger> logger, NSError **error)
+{
+  // Write the header length first
+  size_t dataLength = CMBlockBufferGetDataLength(jpegDataBuffer);
+  uint32 imageLength = OSSwapHostToLittleInt32(dataLength);
+  NSData *lengthData = [[NSData alloc] initWithBytes:&imageLength length:sizeof(imageLength)];
+  [consumer consumeData:lengthData];
+
+  return WriteJPEGDataToMJPEGStream(jpegDataBuffer, consumer, logger, error);
+}
+
+// 1-byte alignment needed for the header to ensure correct sizing of the structure.
+#pragma pack(push, 1)
+
+// Should be 24 bytes long
+// All integers are little-endian (https://github.com/openstf/minicap#usage)
+struct MinicapHeader {
+  unsigned char version;
+  unsigned char headerSize;
+  uint32 pid;
+  uint32 displayWidth;
+  uint32 displayHeight;
+  uint32 virtualDisplayWidth;
+  uint32 virtualDisplayHeight;
+  unsigned char displayOrientation;
+  unsigned char quirks;
+};
+
+#pragma pack(pop)
+
+BOOL WriteMinicapHeaderToStream(uint32 width, uint32 height, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
+{
+  struct MinicapHeader header = {
+    .version = 1,
+    .headerSize = sizeof(struct MinicapHeader),
+    .pid = OSSwapHostToLittleInt32(NSProcessInfo.processInfo.processIdentifier),
+    .displayWidth = OSSwapHostToLittleInt32(width),
+    .displayHeight = OSSwapHostToLittleInt32(height),
+    .virtualDisplayWidth = OSSwapHostToLittleInt32(width),
+    .virtualDisplayHeight = OSSwapHostToLittleInt32(height),
+    .displayOrientation = 0,
+    .quirks = 0,
+  };
+  NSData *data = [[NSData alloc] initWithBytes:&header length:header.headerSize];
+  [consumer consumeData:data];
+  return YES;
+}
+
 FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming = @"VideoStreaming";
 
 @implementation FBVideoStreamAttributes

@@ -357,6 +357,7 @@ message VideoStreamRequest {
     H264 = 0;
     RBGA = 1;
     MJPEG = 2;
+    MINICAP = 3;
   }
   message Start {
     string file_path = 1;

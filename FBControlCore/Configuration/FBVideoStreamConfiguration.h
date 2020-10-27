@@ -18,6 +18,7 @@ typedef NSString *FBVideoStreamEncoding NS_STRING_ENUM;
 extern FBVideoStreamEncoding const FBVideoStreamEncodingH264;
 extern FBVideoStreamEncoding const FBVideoStreamEncodingBGRA;
 extern FBVideoStreamEncoding const FBVideoStreamEncodingMJPEG;
+extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
 
 /**
  A Configuration Object for a Video Stream.
