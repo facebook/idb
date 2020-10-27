@@ -12,8 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class AVCaptureSession;
-@class FBVideoStreamAttributes;
-@protocol FBDataConsumer;
+@class FBVideoStreamConfiguration;
 
 /**
  An implementation of FBVideoStream, for Devices.
@@ -26,12 +25,12 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Initializer.
 
  @param session the Session to record from.
- @param encoding The encoding of the stream
+ @param configuration The configuration of the stream.
  @param logger the logger to log to.
  @param error an error out for any error that occurs.
  @return a new Video Encoder.
  */
-+ (instancetype)streamWithSession:(AVCaptureSession *)session encoding:(FBVideoStreamEncoding)encoding logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (instancetype)streamWithSession:(AVCaptureSession *)session configuration:(FBVideoStreamConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 @end
 

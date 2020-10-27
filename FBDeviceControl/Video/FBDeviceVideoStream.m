@@ -59,12 +59,20 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 @implementation FBDeviceVideoStream
 
-+ (instancetype)streamWithSession:(AVCaptureSession *)session encoding:(FBVideoStreamEncoding)encoding logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (instancetype)streamWithSession:(AVCaptureSession *)session configuration:(FBVideoStreamConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
+  // Get the class to project into
+  Class streamClass = [self classForEncoding:configuration.encoding];
+  if (!streamClass) {
+    return [[FBDeviceControlError
+      describeFormat:@"%@ is not a valid stream encoding", configuration.encoding]
+      fail:error];
+  }
   // Create the output.
   AVCaptureVideoDataOutput *output = [[AVCaptureVideoDataOutput alloc] init];
-  output.alwaysDiscardsLateVideoFrames = YES;
-  output.videoSettings = [FBDeviceVideoStream videoSettingsForEncoding:encoding];
+  if (![streamClass configureVideoOutput:output configuration:configuration error:error]) {
+    return nil;
+  }
   if (![session canAddOutput:output]) {
     return [[FBDeviceControlError
       describe:@"Cannot add Data Output to session"]
@@ -72,17 +80,45 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   }
   [session addOutput:output];
 
+  // Set the minimum duration between frames as a frame limiter
+  if (configuration.framesPerSecond) {
+    if (@available(macOS 10.15, *)) {
+      AVCaptureConnection *connection = session.connections.firstObject;
+      if (!connection) {
+        return [[FBDeviceControlError
+          describe:@"No capture connection available!"]
+          fail:error];
+      }
+      Float64 frameTime = 1 / configuration.framesPerSecond.unsignedIntegerValue;
+      connection.videoMinFrameDuration = CMTimeMakeWithSeconds(frameTime, NSEC_PER_SEC);
+    } else {
+      return [[FBDeviceControlError
+        describeFormat:@"Cannot set FPS on an OS prior to 10.15"]
+        fail:error];
+    }
+  }
+
   // Create a serial queue to handle processing of frames
   dispatch_queue_t writeQueue = dispatch_queue_create("com.facebook.fbdevicecontrol.streamencoder", NULL);
+  return [[streamClass alloc] initWithSession:session output:output writeQueue:writeQueue logger:logger];
+}
+
++ (Class)classForEncoding:(FBVideoStreamEncoding)encoding
+{
   if ([encoding isEqualToString:FBVideoStreamEncodingBGRA]) {
-    return [[FBDeviceVideoStream_BGRA alloc] initWithSession:session output:output writeQueue:writeQueue logger:logger];
+    return FBDeviceVideoStream_BGRA.class;
   }
   if ([encoding isEqualToString:FBVideoStreamEncodingH264]) {
-    return [[FBDeviceVideoStream_H264 alloc] initWithSession:session output:output writeQueue:writeQueue logger:logger];
+    return FBDeviceVideoStream_H264.class;
   }
-  return [[FBDeviceControlError
-    describeFormat:@"%@ is not a valid stream encoding", encoding]
-    fail:error];
+  return nil;
+}
+
++ (BOOL)configureVideoOutput:(AVCaptureVideoDataOutput *)output configuration:(FBVideoStreamConfiguration *)configuration error:(NSError **)error;
+{
+  output.alwaysDiscardsLateVideoFrames = YES;
+  output.videoSettings = @{};
+  return YES;
 }
 
 - (instancetype)initWithSession:(AVCaptureSession *)session output:(AVCaptureVideoDataOutput *)output writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger
@@ -139,14 +175,6 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   [self.session stopRunning];
   [self.stopFuture resolveWithResult:NSNull.null];
   return self.stopFuture;
-}
-
-+ (NSDictionary<NSString *, id> *)videoSettingsForEncoding:(FBVideoStreamEncoding)encoding
-{
-  if ([encoding isEqualToString:FBVideoStreamEncodingBGRA]) {
-    return @{(id)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA)};
-  }
-  return @{};
 }
 
 #pragma mark AVCaptureAudioDataOutputSampleBufferDelegate
@@ -207,6 +235,22 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
     self.pixelBufferAttributes = attributes;
     [self.logger logFormat:@"Mounting Surface with Attributes: %@", attributes];
   }
+}
+
++ (BOOL)configureVideoOutput:(AVCaptureVideoDataOutput *)output configuration:(FBVideoStreamConfiguration *)configuration error:(NSError **)error;
+{
+  if (![super configureVideoOutput:output configuration:configuration error:error]) {
+    return NO;
+  }
+  if (![output.availableVideoCVPixelFormatTypes containsObject:@(kCVPixelFormatType_32BGRA)]) {
+    return [[FBDeviceControlError
+      describe:@"kCVPixelFormatType_32BGRA is not a supported output type"]
+      failBool:error];
+  }
+  output.videoSettings = @{
+    (id)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA),
+  };
+  return YES;
 }
 
 @end

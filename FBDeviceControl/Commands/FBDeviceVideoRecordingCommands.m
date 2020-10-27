@@ -81,7 +81,7 @@
     captureSessionForDevice:self.device]
     onQueue:self.device.workQueue fmap:^(AVCaptureSession *session) {
       NSError *error = nil;
-      FBDeviceVideoStream *stream = [FBDeviceVideoStream streamWithSession:session encoding:configuration.encoding logger:self.device.logger error:&error];
+      FBDeviceVideoStream *stream = [FBDeviceVideoStream streamWithSession:session configuration:configuration logger:self.device.logger error:&error];
       if (!stream) {
         return [FBFuture futureWithError:error];
       }
