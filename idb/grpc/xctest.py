@@ -56,6 +56,8 @@ def extract_paths_from_xctestrun(path: str) -> List[str]:
     with open(path, "rb") as f:
         xctestrun_dict: Dict[str, Any] = plistlib.load(f)
         for _test_id, test_dict in xctestrun_dict.items():
+            if _test_id == "__xctestrun_metadata__":
+                continue
             result.append(test_dict["TestHostPath"].replace("__TESTROOT__", test_root))
     return result
 
