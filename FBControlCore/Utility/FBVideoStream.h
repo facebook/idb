@@ -80,6 +80,6 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming;
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-extern BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
+extern BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer, FBDataConsumerStackConsuming> consumer, id<FBControlCoreLogger> logger, NSError **error);
 
 NS_ASSUME_NONNULL_END

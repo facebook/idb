@@ -27,7 +27,7 @@ static NSData *AnnexBNALUStartCodeData()
 
 static const int AVCCHeaderLength = 4;
 
-BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
+BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer, FBDataConsumerStackConsuming> consumer, id<FBControlCoreLogger> logger, NSError **error)
 {
   if (!CMSampleBufferDataIsReady(sampleBuffer)) {
     return [[FBControlCoreError
@@ -113,7 +113,7 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
 
     // Write the NAL unit without the AVCC length header to the elementary stream
     void *nalUnitPointer = currentDataPointer + AVCCHeaderLength;
-    NSData *nalUnitData = [NSData dataWithBytes:nalUnitPointer length:nalLength];
+    NSData *nalUnitData = [NSData dataWithBytesNoCopy:nalUnitPointer length:nalLength freeWhenDone:NO];
     [consumer consumeData:nalUnitData];
 
     // Increment the offset for the next iteration.
