@@ -102,7 +102,8 @@ void XTSwizzleSelectorForFunction(Class cls, SEL sel, IMP newImp)
   class_addMethod(cls, newSelector, newImp, typeEncoding);
 
   Method newMethod = class_getInstanceMethod(cls, newSelector);
-  if (class_addMethod(cls, sel,newImp, typeEncoding)) {
+  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
+  if (class_addMethod(cls, sel, newImp, typeEncoding)) {
     class_replaceMethod(cls, newSelector, method_getImplementation(originalMethod), typeEncoding);
   } else {
     method_exchangeImplementations(originalMethod, newMethod);
@@ -886,6 +887,36 @@ void handle_signal(int signal)
   PrintNewlineAndCloseFDs();
 }
 
+static id SimServiceContext_deviceSetWithPath_error(id cls, SEL sel, NSString *path, NSError **error)
+{
+  id (*msgsend)(id, SEL, NSString *, NSError **) = (void *) objc_msgSend;
+  SEL originalSelector = @selector(__SimServiceContext_deviceSetWithPath:error:);
+  NSString *simDeviceSetPath = NSProcessInfo.processInfo.environment[@"SIM_DEVICE_SET_PATH"];
+  NSLog(@"Calling original -[SimServiceContext deviceSetWithPath:error:] with a custom path: %@", simDeviceSetPath);
+  return msgsend(cls, originalSelector, simDeviceSetPath, error);
+}
+
+static void SwizzleXcodebuildMethods()
+{
+  static dispatch_once_t token;
+  dispatch_once(&token, ^{
+    NSLog(@"Swizzling -[SimServiceContext deviceSetWithPath:error:]");
+    NSBundle *bundle = [[NSBundle alloc] initWithPath:@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework"];
+    NSError *error = nil;
+    [bundle loadAndReturnError:&error];
+    if (error) {
+      NSLog(@"ERROR: failed to load CoreSimulator.framework: %@", [error localizedFailureReason]);
+      exit(1);
+    }
+    XTSwizzleSelectorForFunction(
+      // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
+      objc_getClass("SimServiceContext"),
+      @selector(deviceSetWithPath:error:),
+      (IMP)SimServiceContext_deviceSetWithPath_error
+    );
+  });
+}
+
 __attribute__((constructor)) static void EntryPoint()
 {
   // Unset so we don't cascade into any other process that might be spawned.
@@ -911,6 +942,20 @@ __attribute__((constructor)) static void EntryPoint()
 
     // Then Swizzle
     SwizzleXCTestMethodsIfAvailable();
+    return;
+  }
+  NSString *simDeviceSetPath = NSProcessInfo.processInfo.environment[@"SIM_DEVICE_SET_PATH"];
+  if (simDeviceSetPath) {
+    BOOL isDir = NO;
+    if (![[NSFileManager defaultManager] fileExistsAtPath:simDeviceSetPath isDirectory:&isDir]) {
+      NSLog(@"ERROR: SIM_DEVICE_SET_PATH (%@) does not exist", simDeviceSetPath);
+      exit(1);
+    }
+    if (!isDir) {
+      NSLog(@"ERROR: SIM_DEVICE_SET_PATH (%@) is not a directory", simDeviceSetPath);
+      exit(1);
+    }
+    SwizzleXcodebuildMethods();
     return;
   }
 }
