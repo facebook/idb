@@ -95,14 +95,13 @@ static NSDictionary<NSString *, id> * EncoderSpecification()
   return dispatch_queue_create("com.facebook.FBSimulatorControl.BitmapStream", DISPATCH_QUEUE_SERIAL);
 }
 
-+ (instancetype)lazyStreamWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBVideoStreamEncoding)encoding logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (nullable instancetype)streamWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBSimulatorVideoStream_Lazy alloc] initWithFramebuffer:framebuffer encoding:encoding writeQueue:self.writeQueue logger:logger];
-}
-
-+ (instancetype)eagerStreamWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBVideoStreamEncoding)encoding framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
-{
-  return [[FBSimulatorVideoStream_Eager alloc] initWithFramebuffer:framebuffer encoding:encoding writeQueue:self.writeQueue framesPerSecond:framesPerSecond logger:logger];
+  NSNumber *framesPerSecond = configuration.framesPerSecond;
+  if (framesPerSecond) {
+    return [[FBSimulatorVideoStream_Eager alloc] initWithFramebuffer:framebuffer encoding:configuration.encoding writeQueue:self.writeQueue framesPerSecond:framesPerSecond logger:logger];
+  }
+  return [[FBSimulatorVideoStream_Lazy alloc] initWithFramebuffer:framebuffer encoding:configuration.encoding writeQueue:self.writeQueue logger:logger];
 }
 
 - (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBVideoStreamEncoding)encoding writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger

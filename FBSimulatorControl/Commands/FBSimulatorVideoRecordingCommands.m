@@ -78,19 +78,9 @@
   id<FBControlCoreLogger> logger = self.simulator.logger;
   return [[self.simulator
     connectToFramebuffer]
-    onQueue:self.simulator.workQueue fmap:^(FBFramebuffer *framebuffer) {
-      return [FBSimulatorVideoRecordingCommands streamWithFramebuffer:framebuffer encoding:configuration.encoding framesPerSecond:configuration.framesPerSecond logger:logger];
+    onQueue:self.simulator.workQueue map:^ FBSimulatorVideoStream * (FBFramebuffer *framebuffer) {
+      return [FBSimulatorVideoStream streamWithFramebuffer:framebuffer configuration:configuration logger:logger];
     }];
-}
-
-+ (FBFuture<FBSimulatorVideoStream *> *)streamWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBVideoStreamEncoding)encoding framesPerSecond:(NSNumber *)framesPerSecond logger:(id<FBControlCoreLogger>)logger
-{
-  return [FBFuture resolveValue:^ FBSimulatorVideoStream * (NSError **error){
-    if (framesPerSecond) {
-      return [FBSimulatorVideoStream eagerStreamWithFramebuffer:framebuffer encoding:encoding framesPerSecond:framesPerSecond.unsignedIntegerValue logger:logger error:error];
-    }
-    return [FBSimulatorVideoStream lazyStreamWithFramebuffer:framebuffer encoding:encoding logger:logger error:error];
-  }];
 }
 
 #pragma mark Private
