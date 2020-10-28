@@ -162,26 +162,39 @@ static size_t SendBufferSize = 1024 * 4;
 - (BOOL)send:(NSData *)data error:(NSError **)error
 {
   // Keep track of the number of bytes we can send.
-  size_t bytesRemaning = data.length;
+  size_t bytesRemaining = data.length;
 
   // Start a loop that ends when there's no more bytes to send
-  while (bytesRemaning > 0) {
+  while (bytesRemaining > 0) {
     // Send the bytes now
-    NSRange sendRange = NSMakeRange(data.length - data.length, MIN(SendBufferSize, bytesRemaning));
+    NSRange sendRange = NSMakeRange(data.length - data.length, MIN(SendBufferSize, bytesRemaining));
     NSData *chunkData = [data subdataWithRange:sendRange];
-    ssize_t sentBytes = [self send:chunkData.bytes size:chunkData.length];
-    // If there's no data sent then break out now.
-    if (sentBytes < 1) {
+    ssize_t result = [self send:chunkData.bytes size:chunkData.length];
+    // A negative return indicates error.
+    if (result == -1) {
+      return [[FBDeviceControlError
+        describeFormat:@"Failure in send of %zu bytes: %s", chunkData.length, strerror(errno)]
+        failBool:error];
+    }
+    // End of file.
+    if (result == 0) {
       break;
     }
+    // Check an over-write to prevent unsigned integer overflow.
+    size_t sentBytes = (size_t) result;
+    if (sentBytes > bytesRemaining) {
+      return [[FBDeviceControlError
+        describeFormat:@"Failure in send: Sent %zu bytes but only %zu bytes remaining", sentBytes, bytesRemaining]
+        failBool:error];
+    }
     // Otherwise keep going and decrement the number of remaining bytes to send.
-    bytesRemaning -= (size_t) sentBytes;
+    bytesRemaining -= sentBytes;
   }
 
   // Check that we've sent the right number of bytes.
-  if (bytesRemaning != 0) {
+  if (bytesRemaining != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to send %zu bytes from AMDServiceConnectionReceive, %zu remaining", data.length, bytesRemaning]
+      describeFormat:@"Failed to send %zu bytes, %zu remaining", data.length, bytesRemaining]
       failBool:error];
   }
   return YES;
@@ -217,20 +230,33 @@ static size_t ReadBufferSize = 1024 * 4;
   while (bytesRemaining > 0) {
     // Don't read more bytes than are remaining.
     size_t maxReadBytes = MIN(ReadBufferSize, bytesRemaining);
-    ssize_t readBytes = [self recieve:buffer size:maxReadBytes];
-    // If there's no more bytes to read then break out now
-    if (readBytes < 1) {
+    ssize_t result = [self recieve:buffer size:maxReadBytes];
+    // End of file.
+    if (result == 0) {
       break;
     }
-    // Otherwise decrement the number of bytes to read and add it to the return buffer.
-    bytesRemaining -= (size_t) readBytes;
-    [data appendBytes:buffer length:(size_t) readBytes];
+    // A negative return indicates an error
+    if (result == -1) {
+      return [[FBDeviceControlError
+        describeFormat:@"Failure in receive of %zu bytes: %s", maxReadBytes, strerror(errno)]
+        fail:error];
+    }
+    // Check an over-read to prevent unsigned integer overflow.
+    size_t readBytes = (size_t) result;
+    if (readBytes > bytesRemaining) {
+      return [[FBDeviceControlError
+        describeFormat:@"Failure in receive: Read %zu bytes but only %zu bytes remaining", readBytes, bytesRemaining]
+        fail:error];
+    }
+    // Decrement the number of bytes to read and add it to the return buffer.
+    bytesRemaining -= readBytes;
+    [data appendBytes:buffer length:readBytes];
   }
 
   // Check that we've read the right number of bytes.
   if (bytesRemaining != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to receive %zu bytes from AMDServiceConnectionReceive, %zu remaining to read", size, bytesRemaining]
+      describeFormat:@"Failed to receive %zu bytes, %zu remaining to read", size, bytesRemaining]
       fail:error];
   }
   return data;

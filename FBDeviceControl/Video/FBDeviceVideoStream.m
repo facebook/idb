@@ -317,7 +317,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   if (!self.hasSentHeader) {
     CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
     CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format);
-    WriteMinicapHeaderToStream(dimensions.width, dimensions.height, self.consumer, self.logger, nil);
+    WriteMinicapHeaderToStream((uint32) dimensions.width, (uint32) dimensions.height, self.consumer, self.logger, nil);
     self.hasSentHeader = YES;
   }
   CMBlockBufferRef jpegDataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer);

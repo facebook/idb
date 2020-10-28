@@ -153,9 +153,9 @@ typedef struct {
   // Using Connections.
   int (*ServiceConnectionGetSocket)(CFTypeRef connection);
   int (*ServiceConnectionInvalidate)(CFTypeRef connection);
-  ssize_t (*ServiceConnectionReceive)(CFTypeRef connection, void *buffer, size_t bytes);
+  int32_t (*ServiceConnectionReceive)(CFTypeRef connection, void *buffer, size_t bytes);
   int (*ServiceConnectionReceiveMessage)(CFTypeRef connection, CFPropertyListRef *messageOut, CFPropertyListFormat *formatOut, void *unknown0, void *unknown1, void *unknown2);
-  ssize_t (*ServiceConnectionSend)(CFTypeRef connection, const void *buffer, size_t bytes);
+  int32_t (*ServiceConnectionSend)(CFTypeRef connection, const void *buffer, size_t bytes);
   int (*ServiceConnectionSendMessage)(CFTypeRef connection, CFPropertyListRef propertyList, CFPropertyListFormat format, void *unknown0, CFDictionaryKeyCallBacks *keyCallbacks, CFDictionaryValueCallBacks *valueCallbacks);
   AMSecureIOContext (*ServiceConnectionGetSecureIOContext)(CFTypeRef connection);
 
