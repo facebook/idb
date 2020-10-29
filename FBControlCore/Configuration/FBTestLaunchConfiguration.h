@@ -12,6 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationLaunchConfiguration;
+@class FBXCTestShimConfiguration;
 
 /**
  A Value object with the information required to launch a XCTest.
@@ -95,6 +96,11 @@ NS_ASSUME_NONNULL_BEGIN
  Path to coverage file
  */
 @property (nonatomic, copy, readonly, nullable) NSString *coveragePath;
+
+/**
+ Shims to be applied to test execution
+ */
+@property (nonatomic, copy, readonly, nullable) FBXCTestShimConfiguration *shims;
 
 /**
  Adds application launch configuration
@@ -201,6 +207,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return new test launch configuration with changes applied.
  */
 - (instancetype)withCoveragePath:(NSString *)coveragePath;
+
+/**
+ Add shim files
+
+ @param shims  shims to be applied to test execution
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withShims:(FBXCTestShimConfiguration *)shims;
 
 @end
 

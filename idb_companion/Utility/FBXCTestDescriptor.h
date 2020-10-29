@@ -201,10 +201,11 @@ The Initializer for UI Tests.
 
  @param request the xctest run request
  @param testApps the materialized Applications that are used as a part of testing.
+ @param shims the shims to use for relevant test runs
  @param logger the logger to log to
  @return a test launch configuration.
  */
-- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps logger:(id<FBControlCoreLogger>)logger;
+- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(nullable FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Obtains the Test Application Components for the provided target and request

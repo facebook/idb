@@ -10,8 +10,10 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-static NSString *XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID";
-static NSString *XcodebuildDestinationTimeoutSecs = @"180"; // How long xcodebuild should wait for the device to be available
+static NSString *const XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID";
+static NSString *const XcodebuildEnvironmentDeviceSetPath = @"SIM_DEVICE_SET_PATH";
+static NSString *const XcodebuildEnvironmentInsertDylib = @"DYLD_INSERT_LIBRARIES";
+static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xcodebuild should wait for the device to be available
 
 @implementation FBXcodeBuildOperation
 
@@ -42,8 +44,22 @@ static NSString *XcodebuildDestinationTimeoutSecs = @"180"; // How long xcodebui
 
   NSMutableDictionary<NSString *, NSString *> *environment = [NSProcessInfo.processInfo.environment mutableCopy];
   environment[XcodebuildEnvironmentTargetUDID] = udid;
+  
+  NSString *simDeviceSetPath = configuration.applicationLaunchConfiguration.environment[XcodebuildEnvironmentDeviceSetPath];
+  if (simDeviceSetPath) {
+    if (!configuration.shims || !configuration.shims.macOSTestShimPath) {
+      return [[XCTestBootstrapError describe:@"Failed to locate the shim file for xcodebuild method swizzling"] failFuture];
+    }
+    environment[XcodebuildEnvironmentDeviceSetPath] = simDeviceSetPath;
+    if (environment[XcodebuildEnvironmentInsertDylib]) {
+      environment[XcodebuildEnvironmentInsertDylib] = [NSString stringWithFormat:@"%@%@%@", environment[XcodebuildEnvironmentInsertDylib], @":", configuration.shims.macOSTestShimPath];
+    }
+    else {
+      environment[XcodebuildEnvironmentInsertDylib] = configuration.shims.macOSTestShimPath;
+    }
+  }
 
-  [logger logFormat:@"Starting test with xcodebuild %@", [arguments componentsJoinedByString:@" "]];
+  [logger logFormat:@"Starting test with xcodebuild | Arguments: %@ | Environments: %@", [arguments componentsJoinedByString:@" "], [environment description]];
   FBTaskBuilder *builder = [[[FBTaskBuilder
     withLaunchPath:xcodeBuildPath arguments:arguments]
     withEnvironment:environment]
