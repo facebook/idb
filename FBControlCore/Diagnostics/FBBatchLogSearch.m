@@ -197,8 +197,8 @@ static NSString *const KeyMapping = @"mapping";
   for (NSArray *key in self.mapping) {
     mappingDictionary[key] = [self.mapping[key] valueForKey:@"jsonSerializableRepresentation"];
   }
-  BOOL lines = self.options & FBBatchLogSearchOptionsFullLines;
-  BOOL first = self.options & FBBatchLogSearchOptionsFirstMatch;
+  BOOL lines = (self.options & FBBatchLogSearchOptionsFullLines) ? YES : NO;
+  BOOL first = (self.options & FBBatchLogSearchOptionsFirstMatch) ? YES : NO;
   return @{
     KeyLines: @(lines),
     KeyFirst: @(first),
@@ -299,8 +299,8 @@ static NSString *const KeyMapping = @"mapping";
 
 + (NSArray<NSString *> *)search:(FBDiagnosticLogSearch *)search withOptions:(FBBatchLogSearchOptions)options
 {
-  BOOL lines = options & FBBatchLogSearchOptionsFullLines;
-  BOOL first = options & FBBatchLogSearchOptionsFirstMatch;
+  BOOL lines = (options & FBBatchLogSearchOptionsFullLines) ? YES : NO;
+  BOOL first = (options & FBBatchLogSearchOptionsFirstMatch) ? YES : NO;
   if (first) {
     NSString *line = lines ? search.firstMatchingLine : search.firstMatch;
     return line ? @[line] : @[];

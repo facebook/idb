@@ -48,6 +48,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSArray<NSDictionary<NSString *, id> *> *)accessibilityElements;
 
 /**
+ Enables Accessibility on the Simulator.
+ */
+- (void)enableAccessibility;
+
+/**
  Sets latitude and longitude of the Simulator.
  The behaviour of a directly-launched Simulator differs from Simulator.app slightly, in that the location isn't automatically set.
  Simulator.app will typically set a location from NSUserDefaults, so Applications will have a default location.

@@ -71,8 +71,12 @@ extern FBDeviceModel const FBDeviceModeliPadPro_12_9_Inch_2ndGeneration;
 extern FBDeviceModel const FBDeviceModeliPadPro_10_5_Inch;
 extern FBDeviceModel const FBDeviceModeliPad_6thGeneration;
 extern FBDeviceModel const FBDeviceModeliPad_7thGeneration;
+extern FBDeviceModel const FBDeviceModeliPad_8thGeneration;
+extern FBDeviceModel const FBDeviceModeliPadAir_4thGeneration;
 extern FBDeviceModel const FBDeviceModeliPadPro_11_Inch;
-extern FBDeviceModel const FBDeviceModeliPadPro_12_9_Inch_3ndGeneration;
+extern FBDeviceModel const FBDeviceModeliPadPro_11_Inch_2ndGeneration;
+extern FBDeviceModel const FBDeviceModeliPadPro_12_9_Inch_3rdGeneration;
+extern FBDeviceModel const FBDeviceModeliPadPro_12_9_Inch_4thGeneration;
 extern FBDeviceModel const FBDeviceModelAppleTV;
 extern FBDeviceModel const FBDeviceModelAppleTV4K;
 extern FBDeviceModel const FBDeviceModelAppleTV4KAt1080p;
@@ -86,6 +90,10 @@ extern FBDeviceModel const FBDeviceModelAppleWatchSeries4_40mm;
 extern FBDeviceModel const FBDeviceModelAppleWatchSeries4_44mm;
 extern FBDeviceModel const FBDeviceModelAppleWatchSeries5_40mm;
 extern FBDeviceModel const FBDeviceModelAppleWatchSeries5_44mm;
+extern FBDeviceModel const FBDeviceModelAppleWatchSE_40mm;
+extern FBDeviceModel const FBDeviceModelAppleWatchSE_44mm;
+extern FBDeviceModel const FBDeviceModelAppleWatchSeries6_40mm;
+extern FBDeviceModel const FBDeviceModelAppleWatchSeries6_44mm;
 
 /**
  OS Versions Name Enumeration.
@@ -128,6 +136,8 @@ extern FBOSVersionName const FBOSVersionNameiOS_13_3;
 extern FBOSVersionName const FBOSVersionNameiOS_13_3_1;
 extern FBOSVersionName const FBOSVersionNameiOS_13_4;
 extern FBOSVersionName const FBOSVersionNameiOS_13_5;
+extern FBOSVersionName const FBOSVersionNameiOS_13_7;
+extern FBOSVersionName const FBOSVersionNameiOS_14_0;
 extern FBOSVersionName const FBOSVersionNametvOS_9_0;
 extern FBOSVersionName const FBOSVersionNametvOS_9_1;
 extern FBOSVersionName const FBOSVersionNametvOS_9_2;
@@ -143,6 +153,9 @@ extern FBOSVersionName const FBOSVersionNametvOS_12_0;
 extern FBOSVersionName const FBOSVersionNametvOS_12_1;
 extern FBOSVersionName const FBOSVersionNametvOS_12_2;
 extern FBOSVersionName const FBOSVersionNametvOS_13_0;
+extern FBOSVersionName const FBOSVersionNametvOS_13_2;
+extern FBOSVersionName const FBOSVersionNametvOS_13_3;
+extern FBOSVersionName const FBOSVersionNametvOS_13_4;
 extern FBOSVersionName const FBOSVersionNamewatchOS_2_0;
 extern FBOSVersionName const FBOSVersionNamewatchOS_2_1;
 extern FBOSVersionName const FBOSVersionNamewatchOS_2_2;
@@ -160,6 +173,7 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_5_3;
 extern FBOSVersionName const FBOSVersionNamewatchOS_6_0;
 extern FBOSVersionName const FBOSVersionNamewatchOS_6_1;
 extern FBOSVersionName const FBOSVersionNamewatchOS_6_2;
+extern FBOSVersionName const FBOSVersionNamewatchOS_7_0;
 
 #pragma mark Devices
 

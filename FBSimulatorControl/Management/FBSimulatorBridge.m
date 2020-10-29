@@ -54,8 +54,11 @@
     return nil;
   }
 
-  // Load Accessibility, return early if this fails
-  [bridge enableAccessibility];
+  // Load Accessibility.
+  SEL enableAccessibilitySelector = @selector(enableAccessibility);
+  if ([bridge respondsToSelector:enableAccessibilitySelector]) {
+    [bridge enableAccessibility];
+  }
   SEL knownSelector = @selector(setLocationScenarioWithPath:);
   if (![bridge respondsToSelector:knownSelector]) {
     return [[FBSimulatorError
@@ -158,6 +161,16 @@
 {
   id elements = [self.bridge accessibilityElementsWithDisplayId:0];
   return [FBSimulatorBridge jsonSerializableAccessibility:elements] ?: @[];
+}
+
+- (void)enableAccessibility
+{
+    SEL enableAccessibilitySelector = @selector(enableAccessibility);
+    if ([self.bridge respondsToSelector:(enableAccessibilitySelector)]) {
+      [self.bridge enableAccessibility];
+    } else {
+      return;
+    }
 }
 
 - (void)setLocationWithLatitude:(double)latitude longitude:(double)longitude
