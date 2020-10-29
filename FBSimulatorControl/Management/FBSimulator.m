@@ -85,7 +85,7 @@
     wrap:[FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBSimulator.commandResponders statefulCommands:FBSimulator.statefulCommands]
     simplifiedNaming:NO
     eventReporter:reporter
-    logger:nil];
+    logger:logger];
 
   return self;
 }
