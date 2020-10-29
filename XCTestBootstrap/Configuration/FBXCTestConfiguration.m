@@ -7,10 +7,11 @@
 
 #import "FBXCTestConfiguration.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestProcess.h"
 #import "FBXCTestProcessExecutor.h"
-#import "FBXCTestShimConfiguration.h"
 #import "XCTestBootstrapError.h"
 
 FBXCTestType const FBXCTestTypeApplicationTest = FBXCTestTypeApplicationTestValue;

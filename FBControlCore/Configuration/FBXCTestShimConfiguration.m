@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "XCTestBootstrapError.h"
-
 NSString *const FBXCTestShimDirectoryEnvironmentOverride = @"TEST_SHIMS_DIRECTORY";
 
 static NSString *const KeySimulatorTestShim = @"ios_simulator_test_shim";
@@ -107,7 +105,7 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 + (FBFuture<NSString *> *)confirmExistenceOfRequiredShimsInDirectory:(NSString *)directory
 {
   if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
-    return [[[FBXCTestError
+    return [[[FBControlCoreError
       describeFormat:@"A shim directory was searched for at '%@', but it was not there", directory]
       noLogging]
       failFuture];
@@ -208,25 +206,25 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 + (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, NSString *> *)json error:(NSError **)error
 {
   if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSString.class]) {
-    return [[FBXCTestError
+    return [[FBControlCoreError
       describeFormat:@"%@ is not a Dictionary<String, String>", json]
       fail:error];
   }
   NSString *simulatorTestShim = json[KeySimulatorTestShim];
   if (![simulatorTestShim isKindOfClass:NSString.class]) {
-    return [[FBXCTestError
+    return [[FBControlCoreError
       describeFormat:@"%@ is not a String for %@", simulatorTestShim, KeySimulatorTestShim]
       fail:error];
   }
   NSString *macTestShim = json[KeyMacTestShim];
   if (![macTestShim isKindOfClass:NSString.class]) {
-    return [[FBXCTestError
+    return [[FBControlCoreError
       describeFormat:@"%@ is not a String for %@", macTestShim, KeyMacTestShim]
       fail:error];
   }
   NSString *macOSQueryShimPath = json[KeyMacQueryShim];
   if (![macOSQueryShimPath isKindOfClass:NSString.class]) {
-    return [[FBXCTestError
+    return [[FBControlCoreError
       describeFormat:@"%@ is not a String for %@", macOSQueryShimPath, KeyMacQueryShim]
       fail:error];
   }

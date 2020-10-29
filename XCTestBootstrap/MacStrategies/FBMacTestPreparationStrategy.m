@@ -14,7 +14,6 @@
 #import "FBTestConfiguration.h"
 #import "FBTestRunnerConfiguration.h"
 #import "XCTestBootstrapError.h"
-#import "FBXCTestShimConfiguration.h"
 
 @interface FBMacTestPreparationStrategy ()
 

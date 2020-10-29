@@ -12,7 +12,6 @@
 #import "FBMacDevice.h"
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestProcess.h"
-#import "FBXCTestShimConfiguration.h"
 
 @interface FBMacXCTestProcessExecutor ()
 

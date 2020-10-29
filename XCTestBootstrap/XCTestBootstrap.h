@@ -44,6 +44,5 @@
 #import <XCTestBootstrap/FBXCTestResultToolOperation.h>
 #import <XCTestBootstrap/FBXCTestRunner.h>
 #import <XCTestBootstrap/FBXCTestRunStrategy.h>
-#import <XCTestBootstrap/FBXCTestShimConfiguration.h>
 #import <XCTestBootstrap/XCTestBootstrapError.h>
 #import <XCTestBootstrap/XCTestBootstrapFrameworkLoader.h>
