@@ -38,6 +38,10 @@ module.exports = {
               label: 'Twitter',
               to: 'https://twitter.com/fbOpenSource'
             },
+            {
+              label: 'Discord',
+              to: 'https://discord.gg/SF26Yqw'
+            }
           ]
         },
         {

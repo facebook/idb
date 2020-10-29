@@ -120,6 +120,8 @@ As long as you prefix this environment variable before all commands, you'll be a
 
 Find the full documentation for this project at [fbidb.io](https://www.fbidb.io/)
 
+We also have a [public Discord Server that you can join](https://discord.gg/SF26Yqw)
+
 ## Contributing
 
 We've released `idb` because it's a big part of how we scale iOS automation at Facebook. We hope that others will be able to benefit from the project where they may have needs that aren't currently serviced by the standard Xcode toolchain.
