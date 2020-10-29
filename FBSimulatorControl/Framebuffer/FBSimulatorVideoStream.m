@@ -99,7 +99,7 @@ static NSDictionary<NSString *, id> * EncoderSpecification()
 {
   NSNumber *framesPerSecond = configuration.framesPerSecond;
   if (framesPerSecond) {
-    return [[FBSimulatorVideoStream_Eager alloc] initWithFramebuffer:framebuffer encoding:configuration.encoding writeQueue:self.writeQueue framesPerSecond:framesPerSecond logger:logger];
+    return [[FBSimulatorVideoStream_Eager alloc] initWithFramebuffer:framebuffer encoding:configuration.encoding writeQueue:self.writeQueue framesPerSecond:framesPerSecond.unsignedIntegerValue logger:logger];
   }
   return [[FBSimulatorVideoStream_Lazy alloc] initWithFramebuffer:framebuffer encoding:configuration.encoding writeQueue:self.writeQueue logger:logger];
 }
