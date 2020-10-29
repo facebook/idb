@@ -99,7 +99,7 @@
 
 + (id<FBEventReporterSubject>)subjectForBeforeInvocation:(NSString *)methodName descriptionOfArguments:(NSArray<NSString *> *)descriptionOfArguments logger:(id<FBControlCoreLogger>)logger
 {
-  [logger.info logFormat:@"%@ called with: %@", methodName, descriptionOfArguments];
+  [logger.info logFormat:@"%@ called with: %@", methodName, [FBCollectionInformation oneLineDescriptionFromArray:descriptionOfArguments]];
   return [FBEventReporterSubject subjectForStartedCall:methodName arguments:descriptionOfArguments];
 }
 
