@@ -28,8 +28,8 @@ Usage: \n \
     --udid UDID|mac|only       Launches a companion server for the specified UDID, 'mac' for a mac companion, or 'only' to run a companion for the only simulator/device available.\n\
     --boot UDID                Boots the simulator with the specified UDID.\n\
     --reboot UDID              Reboots the target with the specified UDID.\n\
-    --shutdown UDID            Shuts down the simulator with the specified UDID.\n\
-    --erase UDID               Erases the simulator with the specified UDID.\n\
+    --shutdown UDID            Shuts down the target with the specified UDID.\n\
+    --erase UDID               Erases the target with the specified UDID.\n\
     --delete UDID|all          Deletes the simulator with the specified UDID, or 'all' to delete all simulators in the set.\n\
     --create VALUE             Creates a simulator using the VALUE argument like \"iPhone X,iOS 12.4\"\n\
     --clone UDID               Clones a simulator by a given UDID\n\
