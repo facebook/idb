@@ -89,7 +89,7 @@
       return [self activationRecordFromDRMHandshakePayload:drmHandhakePayload];
     }]
     onQueue:self.device.workQueue fmap:^(NSData *activationRecordPayload) {
-      [logger logFormat:@"Obtaining Activation record from DRM Handshake Payload"];
+      [logger logFormat:@"Performing activation from activation record"];
       return [self activateFromActivationRecord:activationRecordPayload];
     }]
     onQueue:self.device.workQueue fmap:^(id _) {
