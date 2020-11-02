@@ -91,7 +91,7 @@ static void RemoveGlobalLogger(id<FBControlCoreLogger> logger)
 {
   BOOL debugLogging = [[userDefaults stringForKey:@"-log-level"].lowercaseString isEqualToString:@"info"] ? NO : YES;
   id<FBControlCoreLogger> systemLogger = [FBControlCoreLogger systemLoggerWritingToStderr:YES withDebugLogging:debugLogging];
-  NSMutableArray<id<FBControlCoreLogger>> *loggers = [NSMutableArray arrayWithObject:[FBControlCoreLogger systemLoggerWritingToStderr:YES withDebugLogging:debugLogging]];
+  NSMutableArray<id<FBControlCoreLogger>> *loggers = [NSMutableArray arrayWithObject:systemLogger];
 
   NSError *error;
   NSString *logFilePath = [userDefaults stringForKey:@"-log-file-path"];
