@@ -56,6 +56,19 @@ static void MJPEGCompressorCallback(void *outputCallbackRefCon, void *sourceFram
   WriteJPEGDataToMJPEGStream(blockBufffer, pusher.consumer, pusher.logger, nil);
 }
 
+static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
+{
+  NSUInteger frameNumber = (NSUInteger) sourceFrameRefCon;
+  FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = (__bridge FBSimulatorVideoStreamFramePusher_VideoToolbox *)(outputCallbackRefCon);
+  if (frameNumber == 0) {
+    CMFormatDescriptionRef formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer);
+    CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription);
+    WriteMinicapHeaderToStream((uint32) dimensions.width, (uint32) dimensions.height, pusher.consumer, pusher.logger, nil);
+  }
+  CMBlockBufferRef blockBufffer = CMSampleBufferGetDataBuffer(sampleBuffer);
+  WriteJPEGDataToMinicapStream(blockBufffer, pusher.consumer, pusher.logger, nil);
+}
+
 @implementation FBSimulatorVideoStreamFramePusher_Bitmap
 
 - (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer
@@ -173,7 +186,7 @@ static void MJPEGCompressorCallback(void *outputCallbackRefCon, void *sourceFram
     time,
     kCMTimeInvalid,  // Frame duration
     NULL,  // Frame properties
-    NULL,  // Source Frame Reference for callback.
+    (void *) frameNumber,  // Source Frame Reference for callback.
     &flags
   );
   if (status != 0) {
@@ -461,6 +474,10 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   if ([self.encoding isEqualToString:FBVideoStreamEncodingMJPEG]) {
     compressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = @(0.2);
     return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc] initWithConsumer:consumer compressionSessionProperties:compressionSessionProperties videoCodec:kCMVideoCodecType_JPEG compressorCallback:MJPEGCompressorCallback logger:self.logger];
+  }
+  if ([self.encoding isEqualToString:FBVideoStreamEncodingMinicap]) {
+    compressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = @(0.2);
+    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc] initWithConsumer:consumer compressionSessionProperties:compressionSessionProperties videoCodec:kCMVideoCodecType_JPEG compressorCallback:MinicapCompressorCallback logger:self.logger];
   }
   if ([self.encoding isEqual:FBVideoStreamEncodingBGRA]) {
     return [[FBSimulatorVideoStreamFramePusher_Bitmap alloc] initWithConsumer:consumer];
