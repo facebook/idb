@@ -32,19 +32,28 @@
 
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox : NSObject <FBSimulatorVideoStreamFramePusher>
 
-- (instancetype)initWithConsumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConsumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger;
 
 @property (nonatomic, assign, nullable, readwrite) VTCompressionSessionRef compressionSession;
+@property (nonatomic, assign, readonly) CMVideoCodecType videoCodec;
+@property (nonatomic, assign, readonly) VTCompressionOutputCallback compressorCallback;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBDataConsumer, FBDataConsumerStackConsuming> consumer;
 @property (nonatomic, strong, readonly) NSDictionary<NSString *, id> *compressionSessionProperties;
 
 @end
 
-static void EncodeCallbck(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
+static void H264AnnexBCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
 {
   FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = (__bridge FBSimulatorVideoStreamFramePusher_VideoToolbox *)(outputCallbackRefCon);
   WriteFrameToAnnexBStream(sampleBuffer, pusher.consumer, pusher.logger, nil);
+}
+
+static void MJPEGCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
+{
+  FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = (__bridge FBSimulatorVideoStreamFramePusher_VideoToolbox *)(outputCallbackRefCon);
+  CMBlockBufferRef blockBufffer = CMSampleBufferGetDataBuffer(sampleBuffer);
+  WriteJPEGDataToMJPEGStream(blockBufffer, pusher.consumer, pusher.logger, nil);
 }
 
 @implementation FBSimulatorVideoStreamFramePusher_Bitmap
@@ -84,7 +93,7 @@ static void EncodeCallbck(void *outputCallbackRefCon, void *sourceFrameRefCon, O
 
 @implementation FBSimulatorVideoStreamFramePusher_VideoToolbox
 
-- (instancetype)initWithConsumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConsumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -92,8 +101,10 @@ static void EncodeCallbck(void *outputCallbackRefCon, void *sourceFrameRefCon, O
   }
 
   _compressionSessionProperties = compressionSessionProperties;
+  _compressorCallback = compressorCallback;
   _consumer = consumer;
   _logger = logger;
+  _videoCodec = videoCodec;
 
   return self;
 }
@@ -113,11 +124,11 @@ static void EncodeCallbck(void *outputCallbackRefCon, void *sourceFrameRefCon, O
     nil, // Allocator
     (int32_t) CVPixelBufferGetWidth(pixelBuffer),
     (int32_t) CVPixelBufferGetHeight(pixelBuffer),
-    kCMVideoCodecType_H264,
+    self.videoCodec,
     (__bridge CFDictionaryRef) encoderSpecification,
     (__bridge CFDictionaryRef) sourceImageBufferAttributes,
     nil, // Compressed Data Allocator
-    EncodeCallbck,
+    self.compressorCallback,
     (__bridge void * _Nullable)(self), // Callback Ref.
     &compressionSession
   );
@@ -437,15 +448,19 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 - (id<FBSimulatorVideoStreamFramePusher>)framePusherForEncoding:(FBVideoStreamEncoding)encoding consumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer error:(NSError **)error
 {
+  // Get the base compression session properties, and add the class-cluster properties to them.
+  NSMutableDictionary<NSString *, id> *compressionSessionProperties = [NSMutableDictionary dictionaryWithDictionary:@{
+    (NSString *) kVTCompressionPropertyKey_RealTime: @YES,
+    (NSString *) kVTCompressionPropertyKey_AllowFrameReordering: @NO,
+  }];
+  [compressionSessionProperties addEntriesFromDictionary:self.compressionSessionProperties];
   if ([self.encoding isEqualToString:FBVideoStreamEncodingH264]) {
-    // Get the base compression session properties, and add the class-cluster properties to them.
-    NSMutableDictionary<NSString *, id> *compressionSessionProperties = [NSMutableDictionary dictionaryWithDictionary:@{
-      (NSString *) kVTCompressionPropertyKey_RealTime: @YES,
-      (NSString *) kVTCompressionPropertyKey_ProfileLevel: (NSString *) kVTProfileLevel_H264_High_AutoLevel,
-      (NSString *) kVTCompressionPropertyKey_AllowFrameReordering: @NO,
-    }];
-    [compressionSessionProperties addEntriesFromDictionary:self.compressionSessionProperties];
-    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc] initWithConsumer:consumer compressionSessionProperties:compressionSessionProperties logger:self.logger];
+    compressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *) kVTProfileLevel_H264_High_AutoLevel;
+    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc] initWithConsumer:consumer compressionSessionProperties:compressionSessionProperties videoCodec:kCMVideoCodecType_H264 compressorCallback:H264AnnexBCompressorCallback logger:self.logger];
+  }
+  if ([self.encoding isEqualToString:FBVideoStreamEncodingMJPEG]) {
+    compressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = @(0.2);
+    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc] initWithConsumer:consumer compressionSessionProperties:compressionSessionProperties videoCodec:kCMVideoCodecType_JPEG compressorCallback:MJPEGCompressorCallback logger:self.logger];
   }
   if ([self.encoding isEqual:FBVideoStreamEncodingBGRA]) {
     return [[FBSimulatorVideoStreamFramePusher_Bitmap alloc] initWithConsumer:consumer];
