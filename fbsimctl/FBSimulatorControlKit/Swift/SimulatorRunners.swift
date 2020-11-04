@@ -9,7 +9,7 @@ import FBSimulatorControl
 import Foundation
 
 extension FileOutput {
-  func makeWriter() throws -> FBDataConsumer {
+  func makeWriter() throws -> (FBDataConsumer & FBDataConsumerStackConsuming) {
     switch self {
     case let .path(path):
       return try FBFileWriter.syncWriter(forFilePath: path)
@@ -142,7 +142,7 @@ struct SimulatorActionRunner: Runner {
         reporter,
         .setLocation,
         simulator.subject,
-        simulator.setLocationWithLatitude(latitude, longitude: longitude)
+        simulator.overrideLocation(withLongitude: longitude, latitude: latitude)
       )
     case let .upload(diagnostics):
       return UploadRunner(reporter, diagnostics)

@@ -1121,7 +1121,7 @@ struct FBProcessLaunchConfigurationParsers {
         argumentParser
       )
       .fmap { output, binary, arguments in
-        FBAgentLaunchConfiguration(binary: binary, arguments: arguments, environment: [:], output: output)
+        FBAgentLaunchConfiguration(binary: binary, arguments: arguments, environment: [:], output: output, mode: .default)
       }
   }
 
