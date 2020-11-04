@@ -15,6 +15,166 @@
 
 #import "FBSimulatorError.h"
 
+@protocol FBSimulatorVideoStreamFramePusher <NSObject>
+
+- (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error;
+- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame error:(NSError **)error;
+
+@end
+
+@interface FBSimulatorVideoStreamFramePusher_Bitmap : NSObject <FBSimulatorVideoStreamFramePusher>
+
+- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer;
+
+@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+
+@end
+
+@interface FBSimulatorVideoStreamFramePusher_VideoToolbox : NSObject <FBSimulatorVideoStreamFramePusher>
+
+- (instancetype)initWithConsumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties logger:(id<FBControlCoreLogger>)logger;
+
+@property (nonatomic, assign, nullable, readwrite) VTCompressionSessionRef compressionSession;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) id<FBDataConsumer, FBDataConsumerStackConsuming> consumer;
+@property (nonatomic, strong, readonly) NSDictionary<NSString *, id> *compressionSessionProperties;
+
+@end
+
+static void EncodeCallbck(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
+{
+  FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = (__bridge FBSimulatorVideoStreamFramePusher_VideoToolbox *)(outputCallbackRefCon);
+  WriteFrameToAnnexBStream(sampleBuffer, pusher.consumer, pusher.logger, nil);
+}
+
+@implementation FBSimulatorVideoStreamFramePusher_Bitmap
+
+- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _consumer = consumer;
+
+  return self;
+}
+
+- (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error
+{
+  return YES;
+}
+
+- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame error:(NSError **)error
+{
+  CVPixelBufferLockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
+
+  void *baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer);
+  size_t size = CVPixelBufferGetDataSize(pixelBuffer);
+  NSData *data = [NSData dataWithBytesNoCopy:baseAddress length:size freeWhenDone:NO];
+  [self.consumer consumeData:data];
+
+  CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
+
+  return YES;
+}
+
+@end
+
+@implementation FBSimulatorVideoStreamFramePusher_VideoToolbox
+
+- (instancetype)initWithConsumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties logger:(id<FBControlCoreLogger>)logger
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _compressionSessionProperties = compressionSessionProperties;
+  _consumer = consumer;
+  _logger = logger;
+
+  return self;
+}
+
+- (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error
+{
+  NSDictionary<NSString *, id> * encoderSpecification = @{
+    (NSString *) kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder: @YES,
+  };
+  NSDictionary<NSString *, id> *sourceImageBufferAttributes = @{
+    (NSString *) kCVPixelBufferWidthKey: @(CVPixelBufferGetWidth(pixelBuffer)),
+    (NSString *) kCVPixelBufferHeightKey: @(CVPixelBufferGetHeight(pixelBuffer)),
+  };
+
+  VTCompressionSessionRef compressionSession = NULL;
+  OSStatus status = VTCompressionSessionCreate(
+    nil, // Allocator
+    (int32_t) CVPixelBufferGetWidth(pixelBuffer),
+    (int32_t) CVPixelBufferGetHeight(pixelBuffer),
+    kCMVideoCodecType_H264,
+    (__bridge CFDictionaryRef) encoderSpecification,
+    (__bridge CFDictionaryRef) sourceImageBufferAttributes,
+    nil, // Compressed Data Allocator
+    EncodeCallbck,
+    (__bridge void * _Nullable)(self), // Callback Ref.
+    &compressionSession
+  );
+  if (status != noErr) {
+    return [[FBSimulatorError
+      describeFormat:@"Failed to start Compression Session %d", status]
+      failBool:error];
+  }
+  status = VTSessionSetProperties(
+    compressionSession,
+    (__bridge CFDictionaryRef) self.compressionSessionProperties
+  );
+  if (status != noErr) {
+    return [[FBSimulatorError
+      describeFormat:@"Failed to set compression session properties %d", status]
+      failBool:error];
+  }
+  status = VTCompressionSessionPrepareToEncodeFrames(compressionSession);
+  if (status != noErr) {
+    return [[FBSimulatorError
+      describeFormat:@"Failed to prepare compression session %d", status]
+      failBool:error];
+  }
+  self.compressionSession = compressionSession;
+  return YES;
+}
+
+- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame error:(NSError **)error
+{
+  VTCompressionSessionRef compressionSession = self.compressionSession;
+  if (!compressionSession) {
+    return [[FBControlCoreError
+      describeFormat:@"No compression session"]
+      failBool:error];
+  }
+
+  VTEncodeInfoFlags flags;
+  CMTime time = CMTimeMakeWithSeconds(CFAbsoluteTimeGetCurrent() - timeAtFirstFrame, NSEC_PER_SEC);
+  OSStatus status = VTCompressionSessionEncodeFrame(
+    compressionSession,
+    pixelBuffer,
+    time,
+    kCMTimeInvalid,  // Frame duration
+    NULL,  // Frame properties
+    NULL,  // Source Frame Reference for callback.
+    &flags
+  );
+  if (status != 0) {
+    return [[FBControlCoreError
+      describeFormat:@"Failed to compress %d", status]
+      failBool:error];
+  }
+  return YES;
+}
+
+@end
+
 @interface FBSimulatorVideoStream_Lazy : FBSimulatorVideoStream
 
 @end
@@ -35,15 +195,14 @@
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startedFuture;
-@property (nonatomic, strong, readwrite) FBMutableFuture<NSNull *> *stoppedFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *stoppedFuture;
 
-
-@property (nonatomic, assign, readwrite) NSUInteger frameNumber;
-@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer, FBDataConsumerStackConsuming> consumer;
 @property (nonatomic, assign, nullable, readwrite) CVPixelBufferRef pixelBuffer;
 @property (nonatomic, assign, readwrite) CFTimeInterval timeAtFirstFrame;
-@property (nonatomic, assign, nullable, readwrite) VTCompressionSessionRef compressionSession;
+@property (nonatomic, assign, readwrite) NSUInteger frameNumber;
 @property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, id> *pixelBufferAttributes;
+@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer, FBDataConsumerStackConsuming> consumer;
+@property (nonatomic, strong, nullable, readwrite) id<FBSimulatorVideoStreamFramePusher> framePusher;
 
 - (void)pushFrame;
 
@@ -64,27 +223,6 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
     @"row_size" : @(rowSize),
     @"frame_size" : @(frameSize),
     @"format" : pixelFormatString,
-  };
-}
-
-static void EncodeCallbck(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
-{
-  FBSimulatorVideoStream *stream = (__bridge FBSimulatorVideoStream *)(outputCallbackRefCon);
-  WriteFrameToAnnexBStream(sampleBuffer, stream.consumer, stream.logger, nil);
-}
-
-static NSDictionary<NSString *, id> *SourceImageBufferAttributes(CVPixelBufferRef pixelBuffer)
-{
-  return @{
-    (NSString *) kCVPixelBufferWidthKey: @(CVPixelBufferGetWidth(pixelBuffer)),
-    (NSString *) kCVPixelBufferHeightKey: @(CVPixelBufferGetHeight(pixelBuffer)),
-  };
-}
-
-static NSDictionary<NSString *, id> * EncoderSpecification()
-{
-  return @{
-    (NSString *) kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder: @YES,
   };
 }
 
@@ -245,6 +383,13 @@ static NSDictionary<NSString *, id> * EncoderSpecification()
       failBool:error];
   }
 
+  id<FBDataConsumer, FBDataConsumerStackConsuming> consumer = self.consumer;
+  if (!consumer) {
+    return [[FBSimulatorError
+      describe:@"Cannot mount surface when there is no consumer"]
+      failBool:error];
+  }
+
   // Get the Attributes
   NSDictionary<NSString *, id> *attributes = FBBitmapStreamPixelBufferAttributesFromPixelBuffer(buffer);
   [self.logger logFormat:@"Mounting Surface with Attributes: %@", attributes];
@@ -253,42 +398,14 @@ static NSDictionary<NSString *, id> * EncoderSpecification()
   self.pixelBuffer = buffer;
   self.pixelBufferAttributes = attributes;
 
-  if ([self.encoding isEqualToString:FBVideoStreamEncodingH264]) {
-    VTCompressionSessionRef compressionSession = NULL;
-    status = VTCompressionSessionCreate(
-      nil, // Allocator
-      (int32_t) CVPixelBufferGetWidth(buffer),
-      (int32_t) CVPixelBufferGetHeight(buffer),
-      kCMVideoCodecType_H264,
-      (__bridge CFDictionaryRef) EncoderSpecification(),
-      (__bridge CFDictionaryRef) SourceImageBufferAttributes(buffer),
-      nil, // Compressed Data Allocator
-      EncodeCallbck,
-      (__bridge void * _Nullable)(self), // Callback Ref.
-      &compressionSession
-    );
-    if (status != noErr) {
-      return [[FBSimulatorError
-        describeFormat:@"Failed to start Compression Session %d", status]
-        failBool:error];
-    }
-    status = VTSessionSetProperties(
-      compressionSession,
-      (__bridge CFDictionaryRef) self.compressionSessionProperties
-    );
-    if (status != noErr) {
-      return [[FBSimulatorError
-        describeFormat:@"Failed to set compression session properties %d", status]
-        failBool:error];
-    }
-    status = VTCompressionSessionPrepareToEncodeFrames(compressionSession);
-    if (status != noErr) {
-      return [[FBSimulatorError
-        describeFormat:@"Failed to prepare compression session %d", status]
-        failBool:error];
-    }
-    self.compressionSession = compressionSession;
+  id<FBSimulatorVideoStreamFramePusher> framePusher = [self framePusherForEncoding:self.encoding consumer:consumer error:error];
+  if (!framePusher) {
+    return NO;
   }
+  if (![framePusher setupWithPixelBuffer:buffer error:error]) {
+    return NO;
+  }
+  self.framePusher = framePusher;
 
   // Signal that we've started
   [self.startedFuture resolveWithResult:NSNull.null];
@@ -298,9 +415,11 @@ static NSDictionary<NSString *, id> * EncoderSpecification()
 
 - (void)pushFrame
 {
+  // Ensure that we have all preconditions in place before pushing.
   CVPixelBufferRef pixelBufer = self.pixelBuffer;
   id<FBDataConsumer> consumer = self.consumer;
-  if (!pixelBufer || !consumer) {
+  id<FBSimulatorVideoStreamFramePusher> framePusher = self.framePusher;
+  if (!pixelBufer || !consumer || !framePusher) {
     return;
   }
   NSUInteger frameNumber = self.frameNumber;
@@ -308,50 +427,37 @@ static NSDictionary<NSString *, id> * EncoderSpecification()
     self.timeAtFirstFrame = CFAbsoluteTimeGetCurrent();
   }
   CFTimeInterval timeAtFirstFrame = self.timeAtFirstFrame;
-  VTCompressionSessionRef compressionSession = self.compressionSession;
-  if (compressionSession) {
-    [FBSimulatorVideoStream writeEncodedFrame:pixelBufer compressionSession:compressionSession frameNumber:frameNumber timeAtFirstFrame:timeAtFirstFrame];
-  } else {
-    [FBSimulatorVideoStream writeBitmap:pixelBufer consumer:consumer];
-  }
+
+  // Push the Frame
+  [framePusher writeEncodedFrame:pixelBufer frameNumber:frameNumber timeAtFirstFrame:timeAtFirstFrame error:nil];
+
+  // Increment frame counter
   self.frameNumber = frameNumber + 1;
 }
 
-+ (void)writeBitmap:(CVPixelBufferRef)pixelBuffer consumer:(id<FBDataConsumer>)consumer
+- (id<FBSimulatorVideoStreamFramePusher>)framePusherForEncoding:(FBVideoStreamEncoding)encoding consumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer error:(NSError **)error
 {
-  CVPixelBufferLockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
-
-  void *baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer);
-  size_t size = CVPixelBufferGetDataSize(pixelBuffer);
-  NSData *data = [NSData dataWithBytesNoCopy:baseAddress length:size freeWhenDone:NO];
-  [consumer consumeData:data];
-
-  CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
-}
-
-+ (void)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer compressionSession:(VTCompressionSessionRef)compressionSession frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame
-{
-  VTEncodeInfoFlags flags;
-  CMTime time = CMTimeMakeWithSeconds(CFAbsoluteTimeGetCurrent() - timeAtFirstFrame, NSEC_PER_SEC);
-  OSStatus status = VTCompressionSessionEncodeFrame(
-    compressionSession,
-    pixelBuffer,
-    time,
-    kCMTimeInvalid,  // Frame duration
-    NULL,  // Frame properties
-    NULL,  // Source Frame Reference for callback.
-    &flags
-  );
-  (void) status;
+  if ([self.encoding isEqualToString:FBVideoStreamEncodingH264]) {
+    // Get the base compression session properties, and add the class-cluster properties to them.
+    NSMutableDictionary<NSString *, id> *compressionSessionProperties = [NSMutableDictionary dictionaryWithDictionary:@{
+      (NSString *) kVTCompressionPropertyKey_RealTime: @YES,
+      (NSString *) kVTCompressionPropertyKey_ProfileLevel: (NSString *) kVTProfileLevel_H264_High_AutoLevel,
+      (NSString *) kVTCompressionPropertyKey_AllowFrameReordering: @NO,
+    }];
+    [compressionSessionProperties addEntriesFromDictionary:self.compressionSessionProperties];
+    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc] initWithConsumer:consumer compressionSessionProperties:compressionSessionProperties logger:self.logger];
+  }
+  if ([self.encoding isEqual:FBVideoStreamEncodingBGRA]) {
+    return [[FBSimulatorVideoStreamFramePusher_Bitmap alloc] initWithConsumer:consumer];
+  }
+  return [[FBControlCoreError
+    describeFormat:@"%@ is not supported for Simulators", self.encoding]
+    fail:error];
 }
 
 - (NSDictionary<NSString *, id> *)compressionSessionProperties
 {
-  return @{
-    (NSString *) kVTCompressionPropertyKey_RealTime: @YES,
-    (NSString *) kVTCompressionPropertyKey_ProfileLevel: (NSString *) kVTProfileLevel_H264_High_AutoLevel,
-    (NSString *) kVTCompressionPropertyKey_AllowFrameReordering: @NO,
-  };
+  return @{};
 }
 
 #pragma mark FBiOSTargetContinuation
@@ -418,11 +524,8 @@ static NSDictionary<NSString *, id> * EncoderSpecification()
 - (NSDictionary<NSString *, id> *)compressionSessionProperties
 {
   return @{
-    (NSString *) kVTCompressionPropertyKey_RealTime: @YES,
-    (NSString *) kVTCompressionPropertyKey_ProfileLevel: (NSString *) kVTProfileLevel_H264_High_AutoLevel,
     (NSString *) kVTCompressionPropertyKey_ExpectedFrameRate: @(self.framesPerSecond),
     (NSString *) kVTCompressionPropertyKey_MaxKeyFrameInterval: @2,
-    (NSString *) kVTCompressionPropertyKey_AllowFrameReordering: @NO,
   };
 }
 
