@@ -101,7 +101,7 @@
     onQueue:self.simulator.workQueue fmap:^FBFuture<NSNull *> *(id _) {
       [logger logFormat:@"xcodebuild operation completed successfully %@", task];
       if (configuration.resultBundlePath) {
-        [FBXCTestResultBundleParser parse:configuration.resultBundlePath target:self.simulator reporter:reporter logger:logger];
+        return [FBXCTestResultBundleParser parse:configuration.resultBundlePath target:self.simulator reporter:reporter logger:logger];
       }
       [logger log:@"No result bundle to parse"];
       return FBFuture.empty;
