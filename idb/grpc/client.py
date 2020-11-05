@@ -228,12 +228,16 @@ class Client(ClientBase):
         logger: logging.Logger,
         is_local: Optional[bool] = None,
         exchange_metadata: bool = True,
+        extra_metadata: Optional[Dict[str, str]] = None,
     ) -> AsyncGenerator["Client", None]:
         metadata_to_companion = (
             {
-                key: value
-                for (key, value) in plugin.resolve_metadata(logger=logger).items()
-                if isinstance(value, str)
+                **{
+                    key: value
+                    for (key, value) in plugin.resolve_metadata(logger=logger).items()
+                    if isinstance(value, str)
+                },
+                **(extra_metadata or {}),
             }
             if exchange_metadata
             else {}
