@@ -45,7 +45,7 @@
   _deviceSetPath = deviceSetPath;
   _deviceUUID = deviceUUID;
   _logger = logger;
-  _queue = dispatch_queue_create("com.facebook.fbsimulatorcontrol.fbsimctl", DISPATCH_QUEUE_SERIAL);
+  _queue = dispatch_queue_create("com.facebook.fbsimulatorcontrol.simctl_executor", DISPATCH_QUEUE_SERIAL);
 
   return self;
 }
