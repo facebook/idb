@@ -33,6 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  An Implementation of FBDeviceActivationCommands.
+ URLs used in the activation process can be overriden via IDB_DRM_HANDSHAKE_URL & IDB_ACTIVATION_URL environment variables.
  */
 @interface FBDeviceActivationCommands : NSObject <FBDeviceActivationCommands>
 

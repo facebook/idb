@@ -10,6 +10,9 @@
 #import "FBDevice.h"
 #import "FBAMDServiceConnection.h"
 
+static NSString *const DefaultDRMHandshakeURL = @"https://albert.apple.com/deviceservices/drmHandshake";
+static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/deviceservices/deviceActivation";
+
 @interface FBDeviceActivationCommands ()
 
 @property (nonatomic, weak, readonly) FBDevice *device;
@@ -185,7 +188,7 @@
     return [FBFuture futureWithError:error];
   }
 
-  NSURL *url = [NSURL URLWithString:@"https://albert.apple.com/deviceservices/drmHandshake"];
+  NSURL *url = [NSURL URLWithString:NSProcessInfo.processInfo.environment[@"IDB_DRM_HANDSHAKE_URL"] ?: DefaultDRMHandshakeURL];
   NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
   request.HTTPMethod = @"POST";
   request.HTTPBody = body;
@@ -224,7 +227,7 @@
   NSString *boundaryConstant = NSUUID.UUID.UUIDString;
   NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundaryConstant];
 
-  NSURL *url = [NSURL URLWithString:@"https://albert.apple.com/deviceservices/deviceActivation"];
+  NSURL *url = [NSURL URLWithString:NSProcessInfo.processInfo.environment[@"IDB_ACTIVATION_URL"] ?: DefaultDeviceActivationURL];
   NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
   request.HTTPMethod = @"POST";
   request.HTTPBody = [self multipartDataFromRequestPayload:payloadData key:@"activation-info" boundary:boundaryConstant];
