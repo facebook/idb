@@ -20,12 +20,12 @@ NS_ASSUME_NONNULL_BEGIN
  Finds the Disk Image for the given device, if one can be found.
  If an exact match is not found, the closest match will be used.
 
- @param device the device to find for.
+ @param targetVersion the device to target.
  @param logger the logger to log to.
  @param error an error out for any error that occurs.
  @return the path of the disk image.
  */
-+ (nullable instancetype)developerDiskImage:(id<FBDeviceCommands>)device logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable instancetype)developerDiskImage:(NSOperatingSystemVersion)targetVersion logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Returns all of the Developern Disk Images.
@@ -54,11 +54,11 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Returns the path for the symbols of the device.
 
- @param device the device to find for.
+ @param buildVersion the device build version to target.
  @param logger the logger to log to.
  @param error an error out for any error that occurs.
  */
-+ (NSString *)pathForDeveloperSymbols:(id<FBDeviceCommands>)device logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (NSString *)pathForDeveloperSymbols:(NSString *)buildVersion logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Returns the best match for the provided image list.

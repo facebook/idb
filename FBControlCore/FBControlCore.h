@@ -34,6 +34,7 @@
 #import <FBControlCore/FBDataConsumer.h>
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBDebuggerCommands.h>
+#import <FBControlCore/FBDeveloperDiskImage.h>
 #import <FBControlCore/FBDiagnostic.h>
 #import <FBControlCore/FBDiagnosticInformationCommands.h>
 #import <FBControlCore/FBDiagnosticQuery.h>

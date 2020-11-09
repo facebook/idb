@@ -7,7 +7,6 @@
 
 #import "FBDeviceDebuggerCommands.h"
 
-#import "FBDeveloperDiskImage.h"
 #import "FBDevice+Private.h"
 #import "FBDevice.h"
 #import "FBDeviceControlError.h"
@@ -97,7 +96,7 @@
 {
   return [[FBFuture
     resolveValue:^(NSError **error) {
-      return [FBDeveloperDiskImage pathForDeveloperSymbols:self.device logger:self.device.logger error:error];
+      return [FBDeveloperDiskImage pathForDeveloperSymbols:self.device.buildVersion logger:self.device.logger error:error];
     }]
     onQueue:self.device.workQueue map:^(NSString *path) {
       return [NSString stringWithFormat:@"platform select remote-ios --sysroot '%@'", path];

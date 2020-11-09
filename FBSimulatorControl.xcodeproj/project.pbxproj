@@ -254,6 +254,8 @@
 		AA682B201CECD49B009B6ECA /* FBAMDevice.h in Headers */ = {isa = PBXBuildFile; fileRef = AA682B1E1CECD49B009B6ECA /* FBAMDevice.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA682B211CECD49B009B6ECA /* FBAMDevice.m in Sources */ = {isa = PBXBuildFile; fileRef = AA682B1F1CECD49B009B6ECA /* FBAMDevice.m */; };
 		AA682B2F1CEDC4F3009B6ECA /* FBiOSTarget.h in Headers */ = {isa = PBXBuildFile; fileRef = AA682B2E1CEDC435009B6ECA /* FBiOSTarget.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA685CB22550252100E2DD9D /* FBDeveloperDiskImage.h in Headers */ = {isa = PBXBuildFile; fileRef = AA685CB02550252100E2DD9D /* FBDeveloperDiskImage.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA685CB32550252100E2DD9D /* FBDeveloperDiskImage.m in Sources */ = {isa = PBXBuildFile; fileRef = AA685CB12550252100E2DD9D /* FBDeveloperDiskImage.m */; };
 		AA6872911EE1232200D559E6 /* FBListTestStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA68728F1EE1232200D559E6 /* FBListTestStrategy.m */; };
 		AA6872921EE1232200D559E6 /* FBListTestStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA6872901EE1232200D559E6 /* FBListTestStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA6A3B091CC0C96E00E016C4 /* FBCollectionOperations.h in Headers */ = {isa = PBXBuildFile; fileRef = AA6A3B071CC0C96E00E016C4 /* FBCollectionOperations.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -399,8 +401,6 @@
 		AA9AAAEC1DE4C3F60056B127 /* FBProcessOutputConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9AAAEA1DE4C3F60056B127 /* FBProcessOutputConfiguration.m */; };
 		AA9B24D81D07F9BB00CEE14F /* FBiOSTargetPredicates.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9B24D61D07F9BB00CEE14F /* FBiOSTargetPredicates.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA9B24D91D07F9BB00CEE14F /* FBiOSTargetPredicates.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9B24D71D07F9BB00CEE14F /* FBiOSTargetPredicates.m */; };
-		AA9D9AF521DCC51700329509 /* FBDeveloperDiskImage.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9D9AF321DCC51700329509 /* FBDeveloperDiskImage.h */; };
-		AA9D9AF621DCC51700329509 /* FBDeveloperDiskImage.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9D9AF421DCC51700329509 /* FBDeveloperDiskImage.m */; };
 		AA9DB39B24DA9C1F00960765 /* FBDeviceRecoveryCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9DB39924DA9C1E00960765 /* FBDeviceRecoveryCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA9DB39C24DA9C1F00960765 /* FBDeviceRecoveryCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9DB39A24DA9C1F00960765 /* FBDeviceRecoveryCommands.m */; };
 		AAA02A4824A118AB0054F0DC /* FBDeviceCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AAA02A4724A118AB0054F0DC /* FBDeviceCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1204,6 +1204,8 @@
 		AA682B1F1CECD49B009B6ECA /* FBAMDevice.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBAMDevice.m; sourceTree = "<group>"; };
 		AA682B231CEDA237009B6ECA /* FBAMDevice+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FBAMDevice+Private.h"; sourceTree = "<group>"; };
 		AA682B2E1CEDC435009B6ECA /* FBiOSTarget.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBiOSTarget.h; sourceTree = "<group>"; };
+		AA685CB02550252100E2DD9D /* FBDeveloperDiskImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeveloperDiskImage.h; sourceTree = "<group>"; };
+		AA685CB12550252100E2DD9D /* FBDeveloperDiskImage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeveloperDiskImage.m; sourceTree = "<group>"; };
 		AA68728F1EE1232200D559E6 /* FBListTestStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBListTestStrategy.m; sourceTree = "<group>"; };
 		AA6872901EE1232200D559E6 /* FBListTestStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBListTestStrategy.h; sourceTree = "<group>"; };
 		AA6A3B071CC0C96E00E016C4 /* FBCollectionOperations.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCollectionOperations.h; sourceTree = "<group>"; };
@@ -1349,8 +1351,6 @@
 		AA9AAAEA1DE4C3F60056B127 /* FBProcessOutputConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProcessOutputConfiguration.m; sourceTree = "<group>"; };
 		AA9B24D61D07F9BB00CEE14F /* FBiOSTargetPredicates.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetPredicates.h; sourceTree = "<group>"; };
 		AA9B24D71D07F9BB00CEE14F /* FBiOSTargetPredicates.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetPredicates.m; sourceTree = "<group>"; };
-		AA9D9AF321DCC51700329509 /* FBDeveloperDiskImage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBDeveloperDiskImage.h; sourceTree = "<group>"; };
-		AA9D9AF421DCC51700329509 /* FBDeveloperDiskImage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBDeveloperDiskImage.m; sourceTree = "<group>"; };
 		AA9DB39924DA9C1E00960765 /* FBDeviceRecoveryCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceRecoveryCommands.h; sourceTree = "<group>"; };
 		AA9DB39A24DA9C1F00960765 /* FBDeviceRecoveryCommands.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceRecoveryCommands.m; sourceTree = "<group>"; };
 		AAA02A4724A118AB0054F0DC /* FBDeviceCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceCommands.h; sourceTree = "<group>"; };
@@ -2594,8 +2594,6 @@
 				AA9316DC248FB421004D17B3 /* FBAMRestorableDevice.m */,
 				AA9316DD248FB421004D17B3 /* FBAMRestorableDeviceManager.h */,
 				AA9316DF248FB421004D17B3 /* FBAMRestorableDeviceManager.m */,
-				AA9D9AF321DCC51700329509 /* FBDeveloperDiskImage.h */,
-				AA9D9AF421DCC51700329509 /* FBDeveloperDiskImage.m */,
 				AAC8B2451CEC51520034A865 /* FBDevice.h */,
 				AAC8B2461CEC51520034A865 /* FBDevice.m */,
 				AA682B1D1CECB2EE009B6ECA /* FBDevice+Private.h */,
@@ -3175,6 +3173,8 @@
 				AABCA13A222A7C360015DBAB /* FBDataBuffer.m */,
 				AA4A7E2F1DD9F525001F9D8E /* FBDataConsumer.h */,
 				AA4A7E301DD9F525001F9D8E /* FBDataConsumer.m */,
+				AA685CB02550252100E2DD9D /* FBDeveloperDiskImage.h */,
+				AA685CB12550252100E2DD9D /* FBDeveloperDiskImage.m */,
 				AAB123801DB4B16900F20555 /* FBDispatchSourceNotifier.h */,
 				AAB123811DB4B16900F20555 /* FBDispatchSourceNotifier.m */,
 				AACA33561C96F8D100DC9704 /* FBFileFinder.h */,
@@ -3247,7 +3247,6 @@
 				AA14131824D8028E00601706 /* FBInstrumentsClient.h in Headers */,
 				AAE119622293EF3500173417 /* FBServiceConnectionClient.h in Headers */,
 				AAA5B80E24B37FBD0093DAEB /* FBDeviceStorage.h in Headers */,
-				AA9D9AF521DCC51700329509 /* FBDeveloperDiskImage.h in Headers */,
 				AA3E44401F14AE2C00F333D2 /* FBDeviceApplicationCommands.h in Headers */,
 				AA758B4C20E3C0720064EC18 /* FBAMDeviceServiceManager.h in Headers */,
 				AAE248021DF8978700E0949D /* FBDeviceVideoRecordingCommands.h in Headers */,
@@ -3527,6 +3526,7 @@
 				D76F95091F56D65C0003D341 /* FBXCTestCommands.h in Headers */,
 				AAB123821DB4B16900F20555 /* FBDispatchSourceNotifier.h in Headers */,
 				D76C2AEE1F13F61E000EF13D /* FBEventReporterSubject.h in Headers */,
+				AA685CB22550252100E2DD9D /* FBDeveloperDiskImage.h in Headers */,
 				D76C2AF41F13F783000EF13D /* FBEventInterpreter.h in Headers */,
 				D76C2AE41F13F2E8000EF13D /* FBEventConstants.h in Headers */,
 				AA7728AE1E5238A6008FCF7C /* FBFileWriter.h in Headers */,
@@ -3994,7 +3994,6 @@
 				AA280F4E1E714779006BB9E0 /* FBDeviceVideo.m in Sources */,
 				AAD4B12424892FC30021487B /* FBDeviceManager.m in Sources */,
 				AAA8DE9F2508D5B300964222 /* FBDeviceActivationCommands.m in Sources */,
-				AA9D9AF621DCC51700329509 /* FBDeveloperDiskImage.m in Sources */,
 				AA9316E0248FB421004D17B3 /* FBAMRestorableDevice.m in Sources */,
 				AA682B211CECD49B009B6ECA /* FBAMDevice.m in Sources */,
 				AABA7CF920BB45B900C1E73A /* FBDeviceCrashLogCommands.m in Sources */,
@@ -4117,6 +4116,7 @@
 				AA5CB9151E8A45200099F048 /* FBAgentLaunchConfiguration.m in Sources */,
 				AABBF3241DAC110000E2B6AF /* FBTaskBuilder.m in Sources */,
 				AA4424CD1F4C11A9006B5E5D /* FBiOSTargetCommandForwarder.m in Sources */,
+				AA685CB32550252100E2DD9D /* FBDeveloperDiskImage.m in Sources */,
 				AAEA9C261DB4EB16009642CB /* FBDiagnosticQuery.m in Sources */,
 				EE9E1E4A1D6CB2CC00860830 /* FBProcessLaunchConfiguration.m in Sources */,
 				AA4AF523224A9461008DDDC0 /* FBFuture+Sync.m in Sources */,

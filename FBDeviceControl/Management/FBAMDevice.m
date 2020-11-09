@@ -17,7 +17,6 @@
 #import "FBAMDeviceServiceManager.h"
 #import "FBAMDServiceConnection.h"
 #import "FBAMRestorableDevice.h"
-#import "FBDeveloperDiskImage.h"
 #import "FBDeviceActivationCommands.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
@@ -236,7 +235,8 @@ static const int DiskImageAlreadyMountedCode = -402653066;  // 0xe8000076 in hex
 - (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage
 {
   NSError *error = nil;
-  FBDeveloperDiskImage *diskImage = [FBDeveloperDiskImage developerDiskImage:self logger:self.logger error:&error];
+  NSOperatingSystemVersion targetVersion = [FBOSVersion operatingSystemVersionFromName:self.productVersion];
+  FBDeveloperDiskImage *diskImage = [FBDeveloperDiskImage developerDiskImage:targetVersion logger:self.logger error:&error];
   if (!diskImage) {
     return [FBFuture futureWithError:error];
   }
