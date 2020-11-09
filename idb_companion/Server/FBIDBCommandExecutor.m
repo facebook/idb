@@ -24,6 +24,7 @@ FBFileContainerKind const FBFileContainerKindProvisioningProfiles = @"provisioni
 FBFileContainerKind const FBFileContainerKindMDMProfiles = @"mdm_profiles";
 FBFileContainerKind const FBFileContainerKindSpringboardIcons = @"springboard_icons";
 FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
+FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
 
 @interface FBIDBCommandExecutor ()
 
@@ -550,6 +551,9 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   }
   if ([containerType isEqualToString:FBFileContainerKindWallpaper]) {
     return [commands fileCommandsForWallpaper];
+  }
+  if ([containerType isEqualToString:FBFileContainerKindDiskImages]) {
+    return [commands fileCommandsForDiskImages];
   }
   if (containerType == nil || containerType.length == 0) {
     // The Default for no, or null container for back-compat.

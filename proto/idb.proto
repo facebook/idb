@@ -632,6 +632,7 @@ message FileContainer {
     MDM_PROFILES = 6;
     SPRINGBOARD_ICONS = 7;
     WALLPAPER = 8;
+    DISK_IMAGES = 9;
   }
   Kind kind = 1;
   string bundle_id = 2;

@@ -32,6 +32,7 @@ extern FBFileContainerKind const FBFileContainerKindProvisioningProfiles;
 extern FBFileContainerKind const FBFileContainerKindMDMProfiles;
 extern FBFileContainerKind const FBFileContainerKindSpringboardIcons;
 extern FBFileContainerKind const FBFileContainerKindWallpaper;
+extern FBFileContainerKind const FBFileContainerKindDiskImages;
 
 @interface FBIDBCommandExecutor : NSObject
 

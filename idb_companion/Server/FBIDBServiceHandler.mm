@@ -423,6 +423,8 @@ static NSString *file_container(idb::FileContainer container)
       return FBFileContainerKindSpringboardIcons;
     case idb::FileContainer_Kind_WALLPAPER:
       return FBFileContainerKindWallpaper;
+    case idb::FileContainer_Kind_DISK_IMAGES:
+      return FBFileContainerKindDiskImages;
     case idb::FileContainer_Kind_APPLICATION:
     default:
       return nsstring_from_c_string(container.bundle_id());
