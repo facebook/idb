@@ -30,7 +30,7 @@ static NSString *const UnknownValue = @"unknown";
 @synthesize logger = _logger;
 @synthesize restorableDevice = _restorableDevice;
 
-- (instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef)restorableDevice allValues:(NSDictionary<NSString *, id> *)allValues logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef)restorableDevice allValues:(NSDictionary<NSString *, id> *)allValues workQueue:(dispatch_queue_t)workQueue asyncQueue:(dispatch_queue_t)asyncQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -40,6 +40,8 @@ static NSString *const UnknownValue = @"unknown";
   _calls = calls;
   _restorableDevice = restorableDevice;
   _allValues = allValues;
+  _workQueue = workQueue;
+  _asyncQueue = asyncQueue;
   _logger = logger;
 
   return self;

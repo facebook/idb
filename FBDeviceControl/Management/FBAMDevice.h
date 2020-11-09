@@ -39,6 +39,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBAMDevice : NSObject <FBiOSTargetInfo, FBDeviceCommands>
 
+/**
+ The queue on which work should be serialized.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
+
+/**
+ The queue on which asynchronous work can be performed sequentially.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
+
 @end
 
 NS_ASSUME_NONNULL_END

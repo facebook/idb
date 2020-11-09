@@ -47,9 +47,10 @@
 + (nullable instancetype)setWithLogger:(id<FBControlCoreLogger>)logger delegate:(id<FBiOSTargetSetDelegate>)delegate ecidFilter:(NSString *)ecidFilter error:(NSError **)error
 {
   AMDCalls calls = FBDeviceControlFrameworkLoader.amDeviceCalls;
-  dispatch_queue_t queue = dispatch_get_main_queue();
-  FBAMDeviceManager *amDeviceManager = [[FBAMDeviceManager alloc] initWithCalls:calls queue:queue ecidFilter:ecidFilter logger:logger];
-  FBAMRestorableDeviceManager *restorableDeviceManager = [[FBAMRestorableDeviceManager alloc] initWithCalls:calls queue:queue ecidFilter:ecidFilter logger:logger];
+  dispatch_queue_t workQueue = dispatch_get_main_queue();
+  dispatch_queue_t asyncQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+  FBAMDeviceManager *amDeviceManager = [[FBAMDeviceManager alloc] initWithCalls:calls workQueue:workQueue asyncQueue:asyncQueue ecidFilter:ecidFilter logger:logger];
+  FBAMRestorableDeviceManager *restorableDeviceManager = [[FBAMRestorableDeviceManager alloc] initWithCalls:calls workQueue:workQueue asyncQueue:asyncQueue ecidFilter:ecidFilter logger:logger];
   FBDeviceSet *deviceSet = [[FBDeviceSet alloc] initWithAMDeviceManager:amDeviceManager restorableDeviceManager:restorableDeviceManager logger:logger delegate:delegate];
   if (![amDeviceManager startListeningWithError:error]) {
     return nil;

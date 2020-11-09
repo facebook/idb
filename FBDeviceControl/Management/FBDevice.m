@@ -84,12 +84,12 @@
 
 - (dispatch_queue_t)workQueue
 {
-  return dispatch_get_main_queue();
+  return self.amDevice.workQueue ?: self.restorableDevice.workQueue;
 }
 
 - (dispatch_queue_t)asyncQueue
 {
-  return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+  return self.amDevice.asyncQueue ?: self.restorableDevice.asyncQueue;
 }
 
 - (FBiOSTargetDiagnostics *)diagnostics

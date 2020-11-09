@@ -61,7 +61,7 @@ static int EraseCallback(NSString *identifier, int progress, void *context)
   _logger = logger;
   _calls = calls;
   _queue = queue;
-  _deviceManager = [[FBAMRestorableDeviceManager alloc] initWithCalls:calls queue:queue ecidFilter:ecid logger:logger];
+  _deviceManager = [[FBAMRestorableDeviceManager alloc] initWithCalls:calls workQueue:queue asyncQueue:queue ecidFilter:ecid logger:logger];
   _deviceManager.delegate = self;
   _eraseCallbackResult = FBMutableFuture.future;
   _deviceDetected = FBMutableFuture.future;

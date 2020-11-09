@@ -23,12 +23,13 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Initializer
 
  @param calls the AMDCalls to use.
- @param queue the queue to serialize on.
+ @param workQueue the queue on which work should be serialized.
+ @param asyncQueue the queue on which asynchronous work can be performed sequentially.
  @param ecidFilter an ECID filter to apply.
  @param logger the logger to use.
  @return a new FBAMDeviceManager instance
  */
-- (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue ecidFilter:(nullable NSString *)ecidFilter logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithCalls:(AMDCalls)calls workQueue:(dispatch_queue_t)workQueue asyncQueue:(dispatch_queue_t)asyncQueue ecidFilter:(NSString *)ecidFilter logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Starts using the AMDeviceRef via Connections.

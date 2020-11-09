@@ -41,11 +41,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, readonly) FBAMDeviceServiceManager *serviceManager;
 
-/**
- The Queue on which work should be performed.
- */
-@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
-
 #pragma mark Private Methods
 
 /**
@@ -55,11 +50,12 @@ NS_ASSUME_NONNULL_BEGIN
  @param calls the calls to use.
  @param connectionReuseTimeout the time to wait before releasing a connection
  @param serviceReuseTimeout the time to wait before releasing a service
- @param workQueue the queue to perform work on.
+ @param workQueue the queue on which work should be serialized.
+ @param asyncQueue the queue on which asynchronous work can be performed sequentially.
  @param logger the logger to use.
  @return a new FBAMDevice instance.
  */
-- (instancetype)initWithAllValues:(NSDictionary<NSString *, id> *)allValues calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithAllValues:(NSDictionary<NSString *, id> *)allValues calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue asyncQueue:(dispatch_queue_t)asyncQueue logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

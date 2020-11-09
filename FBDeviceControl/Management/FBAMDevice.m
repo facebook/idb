@@ -33,13 +33,15 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
 @implementation FBAMDevice
 
 @synthesize amDeviceRef = _amDeviceRef;
+@synthesize asyncQueue = _asyncQueue;
 @synthesize calls = _calls;
 @synthesize contextPoolTimeout = _contextPoolTimeout;
 @synthesize logger = _logger;
+@synthesize workQueue = _workQueue;
 
 #pragma mark Initializers
 
-- (instancetype)initWithAllValues:(NSDictionary<NSString *, id> *)allValues calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithAllValues:(NSDictionary<NSString *, id> *)allValues calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue asyncQueue:(dispatch_queue_t)asyncQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -49,6 +51,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, FBAM
   _allValues = allValues;
   _calls = calls;
   _workQueue = workQueue;
+  _asyncQueue = asyncQueue;
   _logger = [logger withName:self.udid];
   _connectionContextManager = [FBFutureContextManager managerWithQueue:workQueue delegate:self logger:logger];
   _contextPoolTimeout = connectionReuseTimeout;

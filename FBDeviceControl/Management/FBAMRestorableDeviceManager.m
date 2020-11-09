@@ -13,7 +13,8 @@
 
 @interface FBAMRestorableDeviceManager ()
 
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
+@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
 @property (nonatomic, assign, readonly) AMDCalls calls;
 @property (nonatomic, assign, readwrite) int registrationID;
 @property (nonatomic, copy, readonly) NSString *ecidFilter;
@@ -66,7 +67,7 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
 
 #pragma mark Initializers
 
-- (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue ecidFilter:(NSString *)ecidFilter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithCalls:(AMDCalls)calls workQueue:(dispatch_queue_t)workQueue asyncQueue:(dispatch_queue_t)asyncQueue ecidFilter:(NSString *)ecidFilter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithLogger:logger];
   if (!self) {
@@ -74,7 +75,8 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
   }
 
   _calls = calls;
-  _queue = queue;
+  _workQueue = workQueue;
+  _asyncQueue = asyncQueue;
   _ecidFilter = ecidFilter;
 
   return self;
@@ -117,7 +119,7 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
 
 - (FBAMRestorableDevice *)constructPublic:(AMRestorableDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
 {
-  return [[FBAMRestorableDevice alloc] initWithCalls:self.calls restorableDevice:privateDevice allValues:info logger:[self.logger withName:identifier]];
+  return [[FBAMRestorableDevice alloc] initWithCalls:self.calls restorableDevice:privateDevice allValues:info workQueue:self.workQueue asyncQueue:self.asyncQueue logger:[self.logger withName:identifier]];
 }
 
 + (void)updatePublicReference:(FBAMRestorableDevice *)publicDevice privateDevice:(AMRestorableDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info

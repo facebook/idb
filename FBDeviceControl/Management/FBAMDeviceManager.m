@@ -16,7 +16,8 @@ static NSString *const MobileBackupDomain = @"com.apple.mobile.backup";
 
 @interface FBAMDeviceManager ()
 
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
+@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
 @property (nonatomic, assign, readonly) AMDCalls calls;
 @property (nonatomic, copy, nullable, readonly) NSString *ecidFilter;
 @property (nonatomic, assign, readwrite) AMDNotificationSubscription subscription;
@@ -99,7 +100,7 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 #pragma mark Initializers
 
-- (instancetype)initWithCalls:(AMDCalls)calls queue:(dispatch_queue_t)queue ecidFilter:(NSString *)ecidFilter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithCalls:(AMDCalls)calls workQueue:(dispatch_queue_t)workQueue asyncQueue:(dispatch_queue_t)asyncQueue ecidFilter:(NSString *)ecidFilter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithLogger:logger];
   if (!self) {
@@ -107,7 +108,8 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   }
 
   _calls = calls;
-  _queue = queue;
+  _workQueue = workQueue;
+  _asyncQueue = asyncQueue;
   _ecidFilter = ecidFilter;
 
   return self;
@@ -236,7 +238,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
 
 - (id)constructPublic:(AMDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
 {
-  return [[FBAMDevice alloc] initWithAllValues:info calls:self.calls connectionReuseTimeout:nil serviceReuseTimeout:@(ServiceReuseTimeout) workQueue:self.queue logger:self.logger];
+  return [[FBAMDevice alloc] initWithAllValues:info calls:self.calls connectionReuseTimeout:nil serviceReuseTimeout:@(ServiceReuseTimeout) workQueue:self.workQueue asyncQueue:self.asyncQueue logger:self.logger];
 }
 
 + (void)updatePublicReference:(FBAMDevice *)publicDevice privateDevice:(AMDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info

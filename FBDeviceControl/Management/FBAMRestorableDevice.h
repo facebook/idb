@@ -38,10 +38,12 @@ extern FBDeviceKey const FBDeviceKeyActivationState;
  @param calls the calls to use.
  @param restorableDevice the AMRestorableDeviceRef
  @param allValues the cached device values.
+ @param workQueue the queue on which work should be serialized.
+ @param asyncQueue the queue on which asynchronous work can be performed sequentially.
  @param logger the logger to use.
  @return a new instance.
  */
-- (instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef)restorableDevice allValues:(NSDictionary<NSString *, id> *)allValues logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef)restorableDevice allValues:(NSDictionary<NSString *, id> *)allValues workQueue:(dispatch_queue_t)workQueue asyncQueue:(dispatch_queue_t)asyncQueue logger:(id<FBControlCoreLogger>)logger;
 
 /**
  The Restorable Device instance.
@@ -52,6 +54,16 @@ extern FBDeviceKey const FBDeviceKeyActivationState;
  Cached Device Values.
  */
 @property (nonatomic, copy, readwrite) NSDictionary<NSString *, id> *allValues;
+
+/**
+ The queue on which work should be serialized.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
+
+/**
+ The queue on which asynchronous work can be performed sequentially.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
 
 /**
  Convert AMRestorableDeviceState to FBiOSTargetState.
