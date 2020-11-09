@@ -274,6 +274,104 @@
 
 @end
 
+static NSString *const MountedDeveloperDirectory = @"Developer";
+
+@interface FBDeviceFileCommands_DiskImages : NSObject <FBFileContainer>
+
+@property (nonatomic, strong, readonly) id<FBDeveloperDiskImageCommands> commands;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+
+@end
+
+@implementation FBDeviceFileCommands_DiskImages
+
+- (instancetype)initWithCommands:(id<FBDeveloperDiskImageCommands>)commands queue:(dispatch_queue_t)queue
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _commands = commands;
+  _queue = queue;
+
+  return self;
+}
+
+- (FBFuture<NSNull *> *)copyPathOnHost:(NSURL *)sourcePath toDestination:(NSString *)destinationPath
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Disk Images", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSString *> *)copyItemInContainer:(NSString *)containerPath toDestinationOnHost:(NSString *)destinationPath
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Disk Images", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Disk Images", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSNull *> *)movePath:(NSString *)sourcePath toDestinationPath:(NSString *)destinationPath
+{
+  if (![destinationPath hasPrefix:MountedDeveloperDirectory]) {
+    return [[FBDeviceControlError
+      describeFormat:@"%@ only mounts can be moved", destinationPath]
+      failFuture];
+  }
+  NSArray<FBDeveloperDiskImage *> *images = self.commands.availableDeveloperDiskImages;
+  NSDictionary<NSString *, FBDeveloperDiskImage *> *imagesByPath = [NSDictionary dictionaryWithObjects:images forKeys:[images valueForKey:@"diskImagePath"]];
+  FBDeveloperDiskImage *image = imagesByPath[sourcePath];
+  if (!image) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ is not one of %@", sourcePath, [FBCollectionInformation oneLineDescriptionFromArray:images]]
+      failFuture];
+  }
+  return [[self.commands
+    mountDeveloperDiskImage:image]
+    mapReplace:NSNull.null];
+}
+
+- (FBFuture<NSNull *> *)removePath:(NSString *)path
+{
+  if (![path hasPrefix:MountedDeveloperDirectory]) {
+    return [[FBDeviceControlError
+      describeFormat:@"%@ cannot be removed, only mounts can be removed", path]
+      failFuture];
+  }
+  return [[self.commands
+    unmountDeveloperDiskImage]
+    mapReplace:NSNull.null];
+}
+
+- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path
+{
+  if ([path isEqualToString:MountedDeveloperDirectory]) {
+    return [[self.commands
+      mountedDeveloperDiskImage]
+      onQueue:self.queue map:^(FBDeveloperDiskImage *image) {
+        return @[image.diskImagePath];
+      }];
+  }
+  return [[self.commands
+    mountedDeveloperDiskImage]
+    onQueue:self.queue chain:^(FBFuture *result) {
+      NSMutableArray<NSString *> *images = [[self.commands.availableDeveloperDiskImages valueForKey:@"diskImagePath"] mutableCopy];
+      if (result.result) {
+        [images addObject:MountedDeveloperDirectory];
+      }
+      return [FBFuture futureWithResult:images];
+    }];
+}
+
+@end
 
 @interface FBDeviceFileCommands ()
 
@@ -372,6 +470,11 @@
       FBManagedConfigClient *managedConfig = [FBManagedConfigClient managedConfigClientWithConnection:connections[1] logger:self.device.logger];
       return [FBFuture futureWithResult:[[FBDeviceFileContainer_Wallpaper alloc] initWithSpringboard:springboard managedConfig:managedConfig queue:self.device.workQueue]];
     }];
+}
+
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForDiskImages
+{
+  return [FBFutureContext futureContextWithResult:[[FBDeviceFileCommands_DiskImages alloc] initWithCommands:self.device queue:self.device.asyncQueue]];
 }
 
 @end

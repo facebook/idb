@@ -23,6 +23,35 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<FBDeveloperDiskImage *> *)ensureDiskImageIsMounted;
 
+/**
+ Mounts the provided developer disk image.
+
+ @param diskImage the image to mount
+ @return a Future wrapping the mounted image.
+ */
+- (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage:(FBDeveloperDiskImage *)diskImage;
+
+/**
+ Returns the mounted disk image. Fails if no image is mounted.
+
+ @return a Future wrapping the mounted image.
+ */
+- (FBFuture<FBDeveloperDiskImage *> *)mountedDeveloperDiskImage;
+
+/**
+ Unmounts a developer disk image. Fails if no image is mounted.
+
+ @return a Future when the image is unmounted.
+ */
+- (FBFuture<NSNull *> *)unmountDeveloperDiskImage;
+
+/**
+ Returns all disk images.
+
+ @return the array of disk images.
+ */
+- (NSArray<FBDeveloperDiskImage *> *)availableDeveloperDiskImages;
+
 @end
 
 NS_ASSUME_NONNULL_END

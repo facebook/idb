@@ -69,6 +69,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForWallpaper;
 
+/**
+ Returns a file container for disk image modification
+
+ @return a Future context that resolves with an implementation of the file container.
+ */
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForDiskImages;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -252,6 +252,13 @@
     failFutureContext];
 }
 
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForDiskImages
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+    failFutureContext];
+}
+
 #pragma mark Private
 
 - (FBFuture<NSString *> *)dataContainerForBundleID:(NSString *)bundleID
