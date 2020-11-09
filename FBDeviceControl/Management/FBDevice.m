@@ -18,6 +18,7 @@
 #import "FBDeviceControlError.h"
 #import "FBDeviceCrashLogCommands.h"
 #import "FBDeviceDebuggerCommands.h"
+#import "FBDeviceDeveloperDiskImageCommands.h"
 #import "FBDeviceDiagnosticInformationCommands.h"
 #import "FBDeviceEraseCommands.h"
 #import "FBDeviceFileCommands.h"
@@ -302,17 +303,6 @@
     failFutureContext];
 }
 
-- (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage
-{
-  FBAMDevice *amDevice = self.amDevice;
-  if (amDevice) {
-    return [amDevice mountDeveloperDiskImage];
-  }
-  return [[FBDeviceControlError
-    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
-    failFuture];
-}
-
 #pragma mark Forwarding
 
 + (NSArray<Class> *)commandResponders
@@ -325,6 +315,7 @@
       FBDeviceApplicationCommands.class,
       FBDeviceCrashLogCommands.class,
       FBDeviceDebuggerCommands.class,
+      FBDeviceDeveloperDiskImageCommands.class,
       FBDeviceDiagnosticInformationCommands.class,
       FBDeviceEraseCommands.class,
       FBDeviceFileCommands.class,

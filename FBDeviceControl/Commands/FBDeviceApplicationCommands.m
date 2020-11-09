@@ -337,7 +337,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
   // Both of these channels are fine to use with the same underlying protocol, so long as the secure wrapper is used on the transport.
   BOOL usesSecureConnection = self.device.osVersion.version.majorVersion >= 14;
   return [[[self.device
-    mountDeveloperDiskImage]
+    ensureDiskImageIsMounted]
     onQueue:self.device.workQueue pushTeardown:^(id _) {
       return [self.device startService:(usesSecureConnection ? @"com.apple.instruments.remoteserver.DVTSecureSocketProxy" : @"com.apple.instruments.remoteserver")];
     }]

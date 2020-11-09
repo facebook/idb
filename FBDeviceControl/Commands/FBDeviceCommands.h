@@ -127,13 +127,6 @@ extern FBDeviceActivationState FBDeviceActivationStateCoerceFromString(NSString 
  */
 - (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls;
 
-/**
- Mounts the developer disk image.
-
- @return a Future wrapping the mounted image.
- */
-- (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage;
-
 @end
 
 NS_ASSUME_NONNULL_END

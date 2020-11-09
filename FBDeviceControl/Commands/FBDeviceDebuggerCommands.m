@@ -63,7 +63,7 @@
 - (FBFutureContext<FBAMDServiceConnection *> *)connectToDebugServer
 {
   return [[self.device
-    mountDeveloperDiskImage]
+    ensureDiskImageIsMounted]
     onQueue:self.device.workQueue pushTeardown:^(id _) {
       return [self.device startService:@"com.apple.debugserver"];
     }];

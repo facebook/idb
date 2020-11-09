@@ -47,7 +47,7 @@ static const int StartCommand = 0x0000000;
 - (FBFuture<NSNull *> *)overrideLocationWithLongitude:(double)longitude latitude:(double)latitude
 {
   return [[[self.device
-    mountDeveloperDiskImage]
+    ensureDiskImageIsMounted]
     onQueue:self.device.workQueue pushTeardown:^(id _) {
       return [self.device startService:@"com.apple.dt.simulatelocation"];
     }]
