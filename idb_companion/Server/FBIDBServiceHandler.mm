@@ -406,24 +406,6 @@ static idb::DebugServerResponse translate_debugserver_status(id<FBDebugServer> d
   return response;
 }
 
-static idb::TargetDescription description_of_target(id<FBiOSTarget> target)
-{
-  idb::TargetDescription description;
-  description.set_udid(target.udid.UTF8String);
-  description.set_name(target.name.UTF8String);
-  idb::ScreenDimensions *screenDimensions = description.mutable_screen_dimensions();
-  screenDimensions->set_width(target.screenInfo.widthPixels);
-  screenDimensions->set_height(target.screenInfo.heightPixels);
-  screenDimensions->set_density(target.screenInfo.scale);
-  screenDimensions->set_width_points(target.screenInfo.widthPixels / target.screenInfo.scale);
-  screenDimensions->set_height_points(target.screenInfo.heightPixels / target.screenInfo.scale);
-  description.set_state(FBiOSTargetStateStringFromState(target.state).UTF8String);
-  description.set_target_type(FBiOSTargetTypeStringsFromTargetType(target.targetType)[0].UTF8String);
-  description.set_target_type(target.osVersion.name.UTF8String);
-  description.set_target_type(target.architecture.UTF8String);
-  return description;
-}
-
 static NSString *file_container(idb::FileContainer container)
 {
   switch (container.kind()) {

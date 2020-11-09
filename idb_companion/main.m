@@ -472,7 +472,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
     return [FBFuture futureWithResult:ShutdownFuture(shutdown, userDefaults, logger, reporter)];
   } else if (reboot) {
     [logger.info logFormat:@"Rebooting %@", reboot];
-    return [FBFuture futureWithResult:ShutdownFuture(reboot, userDefaults, logger, reporter)];
+    return [FBFuture futureWithResult:RebootFuture(reboot, userDefaults, logger, reporter)];
   } else if (erase) {
     [logger.info logFormat:@"Erasing %@", erase];
     return [FBFuture futureWithResult:EraseFuture(erase, userDefaults, logger, reporter)];
