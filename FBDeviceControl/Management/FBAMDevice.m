@@ -242,7 +242,7 @@ static const int DiskImageAlreadyMountedCode = -402653066;  // 0xe8000076 in hex
   }
   return [[self
     connectToDeviceWithPurpose:@"mount_disk_image"]
-    onQueue:self.workQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (id<FBDeviceCommands> device) {
+    onQueue:self.asyncQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (id<FBDeviceCommands> device) {
       NSDictionary *options = @{
         @"ImageSignature": diskImage.signature,
         @"ImageType": @"Developer",
