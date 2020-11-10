@@ -750,7 +750,10 @@ static inline NSDate *dateFromString(NSString *date)
         NSDictionary<NSString *, NSDictionary *> *payloadRef = attachment[@"payloadRef"];
         NSAssert(payloadRef, @"Screenshot payload reference is empty");
         NSString *screenshotId = (NSString *)accessAndUnwrapValue(payloadRef, @"id", logger);
-        [[FBXCTestResultToolOperation exportFileFrom:resultBundlePath to:exportPath forId:screenshotId queue:queue logger:logger] awaitWithTimeout:XCTestOperationTimeoutSecs error:nil];
+        NSString *screenshotType = (NSString *)accessAndUnwrapValue(attachment, @"uniformTypeIdentifier", logger);
+        [[FBXCTestResultToolOperation
+         exportJPEGFrom:resultBundlePath to:exportPath forId:screenshotId type:screenshotType queue:queue logger:logger]
+         awaitWithTimeout:XCTestOperationTimeoutSecs error:nil];
       }
     }
   }

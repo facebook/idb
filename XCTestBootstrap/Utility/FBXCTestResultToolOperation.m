@@ -10,6 +10,9 @@
 NS_ASSUME_NONNULL_BEGIN
 
 NSString *const XcrunPath = @"/usr/bin/xcrun";
+NSString *const SipsPath = @"/usr/bin/sips";
+NSString *const HEIC = @"public.heic";
+NSString *const JPEG = @"public.jpeg";
 
 @implementation FBXCTestResultToolOperation
 
@@ -59,6 +62,26 @@ NSString *const XcrunPath = @"/usr/bin/xcrun";
 + (FBFuture<FBTask *> *)exportFileFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   return [FBXCTestResultToolOperation exportFrom:path to:destination forId:bundleObjectId withType:@"file" queue:queue logger:logger];
+}
+
++ (FBFuture<FBTask *> *)exportJPEGFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId type:(NSString *)encodeType queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
+{
+  return [[FBXCTestResultToolOperation
+   exportFileFrom:path to:destination forId:bundleObjectId queue:queue logger:logger]
+   onQueue:queue fmap:^ FBFuture * (FBTask *task) {
+     if ([encodeType isEqualToString:HEIC]) {
+       NSArray<NSString *> *arguments = @[@"-s", @"format", @"jpeg", destination, @"--out", destination];
+       return [[[[FBTaskBuilder
+         withLaunchPath:SipsPath]
+         withArguments:arguments]
+         withStdErrToLogger:logger]
+         runUntilCompletion];
+     } else if ([encodeType isEqualToString:JPEG]) {
+       return [FBFuture futureWithResult:task];
+     } else {
+       return [[FBControlCoreError describeFormat:@"Unrecognized XCTest screenshot encoding: %@", encodeType] failFuture];
+     }
+  }];
 }
 
 + (FBFuture<FBTask *> *)exportDirectoryFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
