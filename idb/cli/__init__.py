@@ -4,6 +4,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import json
 import logging
 import os
 from abc import ABCMeta, abstractmethod
@@ -22,6 +23,7 @@ from idb.common.types import (
     DomainSocketAddress,
     IdbConnectionException,
     IdbException,
+    LoggingMetadata,
     TCPAddress,
 )
 from idb.grpc.client import Client as GrpcClient
@@ -95,8 +97,11 @@ class BaseCommand(Command, metaclass=ABCMeta):
             self.logger.warning(
                 "Setting --log after the command is deprecated, please place it at the start of the invocation"
             )
+        metadata: LoggingMetadata = plugin.resolve_metadata(logger=self.logger)
+        metadata["arguments"] = json.dumps(args.__dict__, default=lambda v: str(v))
         async with log_call(
-            name=name, metadata=plugin.resolve_metadata(logger=self.logger)
+            name=name,
+            metadata=metadata,
         ):
             await self._run_impl(args)
 
