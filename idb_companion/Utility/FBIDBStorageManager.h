@@ -60,6 +60,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *replacementMapping;
 
+/**
+ Cleans all storage
+
+ @param error set if cleaning fails
+ @return bool representing success
+ */
+- (BOOL)clean:(NSError **)error;
+
 @end
 
 /**
@@ -236,6 +244,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return an array with the replacement defined
  */
 - (nullable NSArray<NSString *> *)interpolateArgumentReplacements:(nullable NSArray<NSString *> *)arguments;
+
+/**
+ Cleans all storage
+
+ @param error set if cleaning fails
+ @return bool representing success
+ */
+- (BOOL)clean:(NSError **)error;
 
 @end
 

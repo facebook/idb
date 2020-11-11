@@ -455,6 +455,13 @@ This allows to avoid the permission popup the first time we open a deeplink
  */
 - (FBFuture<NSNull *> *)create_directory:(NSString *)directoryPath containerType:(NSString *)containerType;
 
+/**
+ Attemps to return the simulator back to a clean state by uninstalling everything
+
+ @return null future
+ */
+- (FBFuture<NSNull *> *)clean;
+
 @end
 
 NS_ASSUME_NONNULL_END

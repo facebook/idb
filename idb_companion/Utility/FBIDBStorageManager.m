@@ -60,6 +60,16 @@
   return replacementMapping;
 }
 
+-(BOOL)clean:(NSError **)error
+{
+  for (NSURL *url in [NSFileManager.defaultManager contentsOfDirectoryAtURL:self.basePath includingPropertiesForKeys:nil options:0 error:nil]) {
+    if (![NSFileManager.defaultManager removeItemAtPath:url.path error:error]) {
+      return NO;
+    }
+  }
+  return YES;
+}
+
 @end
 
 @implementation FBFileStorage
@@ -602,6 +612,11 @@ static NSString *const XctestRunExtension = @"xctestrun";
 }
 
 #pragma mark Public Methods
+
+- (BOOL)clean:(NSError **)error
+{
+  return [self.xctest clean:error] && [self.application clean:error] && [self.dylib clean:error] && [self.dsym clean:error] && [self.framework clean:error];
+}
 
 - (NSDictionary<NSString *, NSString *> *)interpolateEnvironmentReplacements:(NSDictionary<NSString *, NSString *> *)environment
 {

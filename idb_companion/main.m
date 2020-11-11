@@ -21,6 +21,8 @@
 #import "FBStorageUtils.h"
 #import "FBTemporaryDirectory.h"
 #import "FBiOSTargetDescription.h"
+#import "FBIDBStorageManager.h"
+#import "FBIDBCommandExecutor.h"
 
 const char *kUsageHelpMessage = "\
 Usage: \n \
@@ -30,6 +32,7 @@ Usage: \n \
     --reboot UDID              Reboots the target with the specified UDID.\n\
     --shutdown UDID            Shuts down the target with the specified UDID.\n\
     --erase UDID               Erases the target with the specified UDID.\n\
+    --clean UDID               Performs a soft reset to the specified UDID.\n\
     --delete UDID|all          Deletes the simulator with the specified UDID, or 'all' to delete all simulators in the set.\n\
     --create VALUE             Creates a simulator using the VALUE argument like \"iPhone X,iOS 12.4\"\n\
     --clone UDID               Clones a simulator by a given UDID\n\
@@ -382,6 +385,25 @@ static FBFuture<NSNull *> *ActivateFuture(NSString *ecid, id<FBControlCoreLogger
     }];
 }
 
+static FBFuture<NSNull *> *CleanFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
+{
+  return [TargetForUDID(udid, userDefaults, YES, logger, reporter)
+          onQueue:dispatch_get_main_queue() fmap:^FBFuture<NSNull *> *(id<FBiOSTarget> target) {
+      NSError *error = nil;
+      FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:&error];
+      if (!storageManager) {
+        return [FBFuture futureWithError:error];
+      }
+      FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
+        commandExecutorForTarget:target
+        storageManager:storageManager
+        temporaryDirectory:[FBTemporaryDirectory temporaryDirectoryWithLogger:logger]
+        ports:[FBIDBPortsConfiguration portsWithArguments:userDefaults]
+        logger:logger];
+      return [commandExecutor clean];
+    }];
+}
+
 static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   BOOL terminateOffline = [userDefaults boolForKey:@"-terminate-offline"];
@@ -454,6 +476,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   NSString *udid = [userDefaults stringForKey:@"-udid"];
   NSString *unrecover = [userDefaults stringForKey:@"-unrecover"];
   NSString *activate = [userDefaults stringForKey:@"-activate"];
+  NSString *clean = [userDefaults stringForKey:@"-clean"];
 
   id<FBEventReporter> reporter = FBIDBConfiguration.eventReporter;
   if (udid) {
@@ -494,6 +517,9 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
   } else if (activate) {
     [logger.info logFormat:@"Activating %@", activate];
     return [FBFuture futureWithResult:ActivateFuture(activate, logger)];
+  } else if (clean) {
+    [logger.info logFormat:@"Cleaning %@", clean];
+    return [FBFuture futureWithResult:CleanFuture(clean, userDefaults, logger, reporter)];
   }
   return [[[FBIDBError
     describeFormat:@"You must specify at least one 'Mode of operation'\n\n%s", kUsageHelpMessage]
