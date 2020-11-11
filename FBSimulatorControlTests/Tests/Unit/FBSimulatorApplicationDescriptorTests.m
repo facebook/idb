@@ -24,7 +24,7 @@
 {
   FBSimulator *simulator = [self assertObtainsSimulator];
   XCTAssertNotNil([FBBundleDescriptor systemApplicationNamed:@"MobileSafari" simulator:simulator error:nil]);
-  XCTAssertNotNil([FBBundleDescriptor systemApplicationNamed:@"Camera" simulator:simulator error:nil]);
+  XCTAssertNotNil([FBBundleDescriptor systemApplicationNamed:@"Preferences" simulator:simulator error:nil]);
   XCTAssertNotNil([FBBundleDescriptor systemApplicationNamed:@"Maps" simulator:simulator error:nil]);
 }
 
