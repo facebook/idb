@@ -29,8 +29,9 @@
   FBSimulatorBootConfiguration *bootConfiguration = self.bootConfiguration;
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration bootConfiguration:bootConfiguration];
 
+  NSString *filePath = [[NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString] stringByAppendingPathExtension:@"mp4"];
   NSError *error = nil;
-  id success = [[simulator startRecordingToFile:nil] await:&error];
+  id success = [[simulator startRecordingToFile:filePath] await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(success);
 

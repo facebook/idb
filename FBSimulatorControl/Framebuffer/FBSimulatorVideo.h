@@ -46,10 +46,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Starts Recording Video.
 
- @param filePath the (optional) file path to record to. If nil is provided, a default path will be used.
+ @param filePath the file path to record to.
  @return A Future that resolves when recording has started.
  */
-- (FBFuture<NSNull *> *)startRecordingToFile:(nullable NSString *)filePath;
+- (FBFuture<NSNull *> *)startRecordingToFile:(NSString *)filePath;
 
 /**
  Stops Recording Video.

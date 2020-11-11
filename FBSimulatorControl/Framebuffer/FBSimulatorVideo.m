@@ -80,7 +80,7 @@
 
 #pragma mark Public Methods
 
-- (FBFuture<FBSimulatorVideo *> *)startRecordingToFile:(nullable NSString *)filePath
+- (FBFuture<FBSimulatorVideo *> *)startRecordingToFile:(NSString *)filePath
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -121,7 +121,7 @@
 
   BOOL pendingStart = (configuration.options & FBVideoEncoderOptionsAutorecord) == FBVideoEncoderOptionsAutorecord;
   if (pendingStart) {
-    [self startRecordingToFile:nil];
+    [self startRecordingToFile:configuration.filePath];
   }
 
   return self;
@@ -136,11 +136,9 @@
       describe:@"Cannot Start Recording, there is already an active encoder"]
       failFuture];
   }
-  // Choose the Path for the Log
-  NSString *path = filePath ?: self.configuration.filePath;
 
   // Create and start the encoder.
-  self.encoder = [FBVideoEncoderSimulatorKit encoderWithFramebuffer:self.framebuffer videoPath:path logger:self.logger];
+  self.encoder = [FBVideoEncoderSimulatorKit encoderWithFramebuffer:self.framebuffer videoPath:filePath logger:self.logger];
   FBFuture<NSNull *> *future = [self.encoder startRecording];
 
   return future;
