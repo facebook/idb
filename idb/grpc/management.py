@@ -105,19 +105,30 @@ class ClientManager(ClientManagerBase):
             companion_info = await self._direct_companion_manager.get_companion_info(
                 target_udid=udid
             )
+            self._logger.debug(f"Got existing companion {companion_info}")
+            async with Client.build(
+                address=companion_info.address,
+                is_local=companion_info.is_local,
+                logger=self._logger,
+            ) as client:
+                self._logger.debug(f"Constructed client for companion {udid}")
+                yield client
         except IdbException as e:
+            self._logger.debug(f"No companion info for {udid}, spawning one...")
             # will try to spawn a companion if on mac.
             if udid is None:
                 raise e
             companion_info = await self._spawn_companion(target_udid=udid)
             if companion_info is None:
                 raise e
-        async with Client.build(
-            address=companion_info.address,
-            is_local=companion_info.is_local,
-            logger=self._logger,
-        ) as client:
-            yield client
+            self._logger.debug(f"Got newly launched {companion_info} for udid {udid}")
+            async with Client.build(
+                address=companion_info.address,
+                is_local=companion_info.is_local,
+                logger=self._logger,
+            ) as client:
+                self._logger.debug(f"Constructed client for companion {udid}")
+                yield client
 
     @log_call()
     async def list_targets(self) -> List[TargetDescription]:
