@@ -4,10 +4,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pathlib import Path
-from posix import chmod
 import os
 import sys
+from pathlib import Path
+from posix import chmod
+
 import setuptools
 import setuptools.command.build_py
 
@@ -74,8 +75,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/facebook/idb",
     packages=setuptools.find_packages(),
-    data_files=[("proto", ["proto/idb.proto"]),
-                ("", ["protoc_compiler_template.py"])],
+    data_files=[("proto", ["proto/idb.proto"]), ("", ["protoc_compiler_template.py"])],
     license="MIT",
     classifiers=[
         "Programming Language :: Python :: 3.6",
