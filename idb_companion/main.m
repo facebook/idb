@@ -501,7 +501,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
     failFuture];
 }
 
-static FBFuture<NSNumber *> *signalHandlerFuture(int signalCode, NSString *exitMessage, id<FBControlCoreLogger> logger)
+static FBFuture<NSNumber *> *signalHandlerFuture(uintptr_t signalCode, NSString *exitMessage, id<FBControlCoreLogger> logger)
 {
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
   FBMutableFuture<NSNumber *> *future = FBMutableFuture.future;
