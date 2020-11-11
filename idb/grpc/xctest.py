@@ -18,6 +18,7 @@ from idb.common.types import (
     TestRunInfo,
 )
 from idb.grpc.idb_pb2 import XctestRunRequest, XctestRunResponse
+from idb.grpc.xctest_log_parser import XCTestLogParser
 
 
 Mode = XctestRunRequest.Mode
@@ -133,13 +134,18 @@ async def write_result_bundle(
     logger.info(f"Finished writing result bundle to {output_path}")
 
 
-def make_results(response: XctestRunResponse) -> List[TestRunInfo]:
+def make_results(
+    response: XctestRunResponse, log_parser: XCTestLogParser
+) -> List[TestRunInfo]:
     return [
         TestRunInfo(
             bundle_name=result.bundle_name,
             class_name=result.class_name,
             method_name=result.method_name,
-            logs=list(result.logs),
+            logs=(
+                list(result.logs)
+                + log_parser.get_logs_for_test(result.class_name, result.method_name)
+            ),
             duration=result.duration,
             passed=result.status == XctestRunResponse.TestRunInfo.PASSED,
             failure_info=(

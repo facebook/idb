@@ -82,6 +82,7 @@ from idb.grpc.file import (
     container_to_bundle_id_deprecated as file_container_to_bundle_id_deprecated,
     container_to_grpc as file_container_to_grpc,
 )
+from idb.grpc.xctest_log_parser import XCTestLogParser
 from idb.grpc.hid import event_to_grpc
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
@@ -972,6 +973,7 @@ class Client(ClientBase):
                 report_attachments=report_attachments,
                 collect_coverage=coverage_output_path is not None,
             )
+            log_parser = XCTestLogParser()
             await stream.send_message(request)
             await stream.end()
             async for response in stream:
@@ -982,9 +984,11 @@ class Client(ClientBase):
                     for lines in response.log_output
                     for line in lines.splitlines(keepends=True)
                 ]:
+                    log_parser.parse_streaming_log(line.rstrip())
                     self._log_from_companion(line)
                     if idb_log_buffer:
                         idb_log_buffer.write(line)
+
                 if result_bundle_path:
                     await write_result_bundle(
                         response=response,
@@ -994,7 +998,7 @@ class Client(ClientBase):
                 if response.coverage_json and coverage_output_path:
                     with open(coverage_output_path, "w") as f:
                         f.write(response.coverage_json)
-                for result in make_results(response):
+                for result in make_results(response, log_parser):
                     if activities_output_path:
                         save_attachments(
                             run_info=result,
