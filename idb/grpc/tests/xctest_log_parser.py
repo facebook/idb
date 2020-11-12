@@ -7,6 +7,7 @@
 
 import json
 from unittest import TestCase
+
 from idb.grpc.xctest_log_parser import XCTestLogParser
 
 

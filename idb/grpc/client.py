@@ -82,7 +82,6 @@ from idb.grpc.file import (
     container_to_bundle_id_deprecated as file_container_to_bundle_id_deprecated,
     container_to_grpc as file_container_to_grpc,
 )
-from idb.grpc.xctest_log_parser import XCTestLogParser
 from idb.grpc.hid import event_to_grpc
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
@@ -149,6 +148,7 @@ from idb.grpc.xctest import (
     save_attachments,
     write_result_bundle,
 )
+from idb.grpc.xctest_log_parser import XCTestLogParser
 from idb.utils.contextlib import asynccontextmanager
 
 
