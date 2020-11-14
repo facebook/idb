@@ -738,7 +738,7 @@ static inline NSDate *dateFromString(NSString *date)
                                    logger:(id<FBControlCoreLogger>)logger
 {
   NSError *error = nil;
-  NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"^Screenshot_.*\\.jpg$" options:0 error:&error];
+  NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"^Screenshot_.*" options:0 error:&error];
   NSAssert(regex, @"Screenshot filename regex failed to compile %@", error);
   for (NSDictionary<NSString *, NSDictionary *> *attachment in attachments) {
     if (attachment[@"filename"]) {
@@ -746,6 +746,7 @@ static inline NSDate *dateFromString(NSString *date)
       NSTextCheckingResult *matchResult = [regex firstMatchInString:filename options:0 range:NSMakeRange(0, [filename length])];
       if (attachment[@"payloadRef"] && matchResult) {
         NSString *timestamp = (NSString *)accessAndUnwrapValue(attachment, @"timestamp", logger);
+        filename = [[filename stringByDeletingPathExtension] stringByAppendingPathExtension:@"jpg"];
         NSString *exportPath = [destination stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_%@", timestamp, filename]];
         NSDictionary<NSString *, NSDictionary *> *payloadRef = attachment[@"payloadRef"];
         NSAssert(payloadRef, @"Screenshot payload reference is empty");
