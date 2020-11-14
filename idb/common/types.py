@@ -366,6 +366,10 @@ class Companion(ABC):
         pass
 
     @abstractmethod
+    async def clean(self, udid: str, timeout: Optional[timedelta] = None) -> None:
+        pass
+
+    @abstractmethod
     async def list_targets(
         self, only: Optional[OnlyFilter] = None, timeout: Optional[timedelta] = None
     ) -> List[TargetDescription]:

@@ -209,6 +209,10 @@ class Companion(CompanionBase):
         )
 
     @log_call()
+    async def clean(self, udid: str, timeout: Optional[timedelta] = None) -> None:
+        await self._run_udid_command(udid=udid, command="clean", timeout=timeout)
+
+    @log_call()
     async def list_targets(
         self, only: Optional[OnlyFilter] = None, timeout: Optional[timedelta] = None
     ) -> List[TargetDescription]:
