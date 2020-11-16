@@ -294,25 +294,7 @@ static void PrintJSON(id JSONObject)
   fflush(__stdout);
 }
 
-#pragma mark - XCToolLog function declarations
-
-static void XCToolLog_testSuiteDidStart(NSString *testDescription);
-static void XCToolLog_testSuiteDidStop(NSString *testSuiteName, XCTestSuiteRun *testRun);
-static void XCToolLog_testCaseDidStart(NSString *fullTestName);
-static void XCToolLog_testCaseDidStop(NSString *fullTestName, NSNumber *unexpectedExceptionCount, NSNumber *failureCount, NSNumber *totalDuration);
-static void XCToolLog_testCaseDidFail(NSDictionary *exceptionInfo);
-
 #pragma mark - testSuiteDidStart
-
-static void XCTestLog_testSuiteDidStart(id self, SEL sel, XCTestSuiteRun *run)
-{
-  XCToolLog_testSuiteDidStart(kReporter_TestSuite_TopLevelSuiteName);
-}
-
-static void XCTestLog_testSuiteWillStart(id self, SEL sel, XCTestSuite *suite)
-{
-  XCToolLog_testSuiteDidStart(suite.name);
-}
 
 static void XCToolLog_testSuiteDidStart(NSString *name)
 {
@@ -327,16 +309,17 @@ static void XCToolLog_testSuiteDidStart(NSString *name)
   __testSuiteDepth++;
 }
 
-#pragma mark - testSuiteDidStop
-static void XCTestLog_testSuiteDidStop(id self, SEL sel, XCTestSuiteRun *run)
+static void XCTestLog_testSuiteDidStart(id self, SEL sel, XCTestSuiteRun *run)
 {
-  XCToolLog_testSuiteDidStop(kReporter_TestSuite_TopLevelSuiteName, run);
+  XCToolLog_testSuiteDidStart(kReporter_TestSuite_TopLevelSuiteName);
 }
 
-static void XCTestLog_testSuiteDidFinish(id self, SEL sel, XCTestSuite *suite)
+static void XCTestLog_testSuiteWillStart(id self, SEL sel, XCTestSuite *suite)
 {
-  XCToolLog_testSuiteDidStop(suite.name, (id)suite.testRun);
+  XCToolLog_testSuiteDidStart(suite.name);
 }
+
+#pragma mark - testSuiteDidStop
 
 static void XCToolLog_testSuiteDidStop(NSString *testSuiteName, XCTestSuiteRun *run)
 {
@@ -359,19 +342,17 @@ static void XCToolLog_testSuiteDidStop(NSString *testSuiteName, XCTestSuiteRun *
   }
 }
 
+static void XCTestLog_testSuiteDidStop(id self, SEL sel, XCTestSuiteRun *run)
+{
+  XCToolLog_testSuiteDidStop(kReporter_TestSuite_TopLevelSuiteName, run);
+}
+
+static void XCTestLog_testSuiteDidFinish(id self, SEL sel, XCTestSuite *suite)
+{
+  XCToolLog_testSuiteDidStop(suite.name, (id)suite.testRun);
+}
+
 #pragma mark - testCaseDidStart
-
-static void XCTestLog_testCaseDidStart(id self, SEL sel, XCTestCaseRun *run)
-{
-  NSString *fullTestName = [[run test] name];
-  XCToolLog_testCaseDidStart(fullTestName);
-}
-
-static void XCTestLog_testCaseWillStart(id self, SEL sel, XCTestCase *testCase)
-{
-  id (*msgsend)(id, SEL) = (void *) objc_msgSend;
-  XCTestLog_testCaseDidStart(self, sel, msgsend(testCase, @selector(testRun)));
-}
 
 static void XCToolLog_testCaseDidStart(NSString *fullTestName)
 {
@@ -391,19 +372,19 @@ static void XCToolLog_testCaseDidStart(NSString *fullTestName)
   });
 }
 
-#pragma mark - testCaseDidStop
-
-static void XCTestLog_testCaseDidStop(id self, SEL sel, XCTestCaseRun *run)
+static void XCTestLog_testCaseDidStart(id self, SEL sel, XCTestCaseRun *run)
 {
   NSString *fullTestName = [[run test] name];
-  XCToolLog_testCaseDidStop(fullTestName, @([run unexpectedExceptionCount]), @([run failureCount]), @([run totalDuration]));
+  XCToolLog_testCaseDidStart(fullTestName);
 }
 
-static void XCTestLog_testCaseDidFinish(id self, SEL sel, XCTestCase *testCase)
+static void XCTestLog_testCaseWillStart(id self, SEL sel, XCTestCase *testCase)
 {
   id (*msgsend)(id, SEL) = (void *) objc_msgSend;
-  XCTestLog_testCaseDidStop(self, sel, msgsend(testCase, @selector(testRun)));
+  XCTestLog_testCaseDidStart(self, sel, msgsend(testCase, @selector(testRun)));
 }
+
+#pragma mark - testCaseDidStop
 
 static void XCToolLog_testCaseDidStop(NSString *fullTestName, NSNumber *unexpectedExceptionCount, NSNumber *failureCount, NSNumber *totalDuration)
 {
@@ -442,7 +423,26 @@ static void XCToolLog_testCaseDidStop(NSString *fullTestName, NSNumber *unexpect
   });
 }
 
+static void XCTestLog_testCaseDidStop(id self, SEL sel, XCTestCaseRun *run)
+{
+  NSString *fullTestName = [[run test] name];
+  XCToolLog_testCaseDidStop(fullTestName, @([run unexpectedExceptionCount]), @([run failureCount]), @([run totalDuration]));
+}
+
+static void XCTestLog_testCaseDidFinish(id self, SEL sel, XCTestCase *testCase)
+{
+  id (*msgsend)(id, SEL) = (void *) objc_msgSend;
+  XCTestLog_testCaseDidStop(self, sel, msgsend(testCase, @selector(testRun)));
+}
+
 #pragma mark - testCaseDidFail
+
+static void XCToolLog_testCaseDidFail(NSDictionary *exceptionInfo)
+{
+  dispatch_sync(EventQueue(), ^{
+    [__testExceptions addObject:exceptionInfo];
+  });
+}
 
 static void XCTestLog_testCaseDidFail(id self, SEL sel, XCTestCaseRun *run, NSString *description, NSString *file, NSUInteger line)
 {
@@ -457,13 +457,6 @@ static void XCTestLog_testCaseDidFailWithDescription(id self, SEL sel, XCTestCas
 {
   id (*msgsend)(id, SEL) = (void *) objc_msgSend;
   XCTestLog_testCaseDidFail(self, sel, msgsend(testCase, @selector(testRun)), description, file, line);
-}
-
-static void XCToolLog_testCaseDidFail(NSDictionary *exceptionInfo)
-{
-  dispatch_sync(EventQueue(), ^{
-    [__testExceptions addObject:exceptionInfo];
-  });
 }
 
 #pragma mark - performTest
