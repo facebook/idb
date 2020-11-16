@@ -16,7 +16,7 @@
 
 #include "TargetConditionals.h"
 
-#if TARGET_IPHONE_SIMULATOR
+#if TARGET_OS_IPHONE
 #import <UIKit/UIKit.h>
 #elif TARGET_OS_MAC
 #import <AppKit/AppKit.h>
@@ -61,7 +61,7 @@ BOOL FBLoadXCTestIfNeeded()
 }
 
 void FBDeployBlockWhenAppLoads(void(^mainBlock)()) {
-#if TARGET_IPHONE_SIMULATOR
+#if TARGET_OS_IPHONE
   NSString *notification = UIApplicationDidFinishLaunchingNotification;
 #elif TARGET_OS_MAC
   NSString *notification = NSApplicationDidFinishLaunchingNotification;
