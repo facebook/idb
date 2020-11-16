@@ -294,6 +294,43 @@ static void PrintJSON(id JSONObject)
   fflush(__stdout);
 }
 
+static void parseXCTestCase(XCTestCase *testCase, NSString **classNameOut, NSString **methodNameOut, NSString **testKeyOut)
+{
+  NSString *className = NSStringFromClass(testCase.class);
+  NSString *methodName = NSStringFromSelector([testCase.invocation selector]);
+  NSString *testKey = [NSString stringWithFormat:@"-[%@ %@]", className, methodName];
+  if (classNameOut) {
+    *classNameOut = className;
+  }
+  if (methodNameOut) {
+    *methodNameOut = methodName;
+  }
+  if (testKeyOut) {
+    *testKeyOut = testKey;
+  }
+}
+
+static NSString *parseXCTestSuiteKey(XCTestSuite *suite)
+{
+  NSString *testKey = nil;
+  for (id test in suite.tests) {
+    if (![test isKindOfClass:NSClassFromString(@"XCTestCase")]) {
+      return [suite name];
+    }
+    XCTestCase *testCase = test;
+    NSString *innerTestKey = nil;
+    parseXCTestCase(testCase, &innerTestKey, nil, nil);
+    if (!testKey) {
+      testKey = innerTestKey;
+      continue;
+    }
+    if (![innerTestKey isEqualToString:testKey]) {
+      return [suite name];
+    }
+  }
+  return testKey ?: [suite name];
+}
+
 #pragma mark - testSuiteDidStart
 
 static void XCToolLog_testSuiteDidStart(NSString *name)
@@ -316,7 +353,7 @@ static void XCTestLog_testSuiteDidStart(id self, SEL sel, XCTestSuiteRun *run)
 
 static void XCTestLog_testSuiteWillStart(id self, SEL sel, XCTestSuite *suite)
 {
-  XCToolLog_testSuiteDidStart(suite.name);
+  XCToolLog_testSuiteDidStart(parseXCTestSuiteKey(suite));
 }
 
 #pragma mark - testSuiteDidStop
@@ -349,24 +386,26 @@ static void XCTestLog_testSuiteDidStop(id self, SEL sel, XCTestSuiteRun *run)
 
 static void XCTestLog_testSuiteDidFinish(id self, SEL sel, XCTestSuite *suite)
 {
-  XCToolLog_testSuiteDidStop(suite.name, (id)suite.testRun);
+  XCToolLog_testSuiteDidStop(parseXCTestSuiteKey(suite), (id)suite.testRun);
 }
 
 #pragma mark - testCaseDidStart
 
-static void XCToolLog_testCaseDidStart(NSString *fullTestName)
+static void XCToolLog_testCaseDidStart(XCTestCase *testCase)
 {
   dispatch_sync(EventQueue(), ^{
-    NSString *className = nil;
-    NSString *methodName = nil;
-    ParseClassAndMethodFromTestName(&className, &methodName, fullTestName);
+    NSString *testKey;
+    NSString *className;
+    NSString *methodName;
+    parseXCTestCase(testCase, &className, &methodName, &testKey);
 
     PrintJSON(EventDictionaryWithNameAndContent(
       kReporter_Events_BeginTest, @{
-        kReporter_BeginTest_TestKey : fullTestName,
+        kReporter_BeginTest_TestKey : testKey,
         kReporter_BeginTest_ClassNameKey : className,
         kReporter_BeginTest_MethodNameKey : methodName,
-    }));
+      }
+    ));
 
     __testExceptions = [[NSMutableArray alloc] init];
   });
@@ -374,8 +413,7 @@ static void XCToolLog_testCaseDidStart(NSString *fullTestName)
 
 static void XCTestLog_testCaseDidStart(id self, SEL sel, XCTestCaseRun *run)
 {
-  NSString *fullTestName = [[run test] name];
-  XCToolLog_testCaseDidStart(fullTestName);
+  XCToolLog_testCaseDidStart([run test]);
 }
 
 static void XCTestLog_testCaseWillStart(id self, SEL sel, XCTestCase *testCase)
@@ -386,12 +424,13 @@ static void XCTestLog_testCaseWillStart(id self, SEL sel, XCTestCase *testCase)
 
 #pragma mark - testCaseDidStop
 
-static void XCToolLog_testCaseDidStop(NSString *fullTestName, NSNumber *unexpectedExceptionCount, NSNumber *failureCount, NSNumber *totalDuration)
+static void XCToolLog_testCaseDidStop(XCTestCase *testCase, NSNumber *unexpectedExceptionCount, NSNumber *failureCount, NSNumber *totalDuration)
 {
   dispatch_sync(EventQueue(), ^{
     NSString *className = nil;
     NSString *methodName = nil;
-    ParseClassAndMethodFromTestName(&className, &methodName, fullTestName);
+    NSString *testKey = nil;
+    parseXCTestCase(testCase, &className, &methodName, &testKey);
 
     BOOL errored = [unexpectedExceptionCount integerValue] > 0;
     BOOL failed = [failureCount integerValue] > 0;
@@ -410,7 +449,7 @@ static void XCToolLog_testCaseDidStop(NSString *fullTestName, NSNumber *unexpect
     NSArray *retExceptions = [__testExceptions copy];
     NSDictionary *json = EventDictionaryWithNameAndContent(
       kReporter_Events_EndTest, @{
-        kReporter_EndTest_TestKey : fullTestName,
+        kReporter_EndTest_TestKey : testKey,
         kReporter_EndTest_ClassNameKey : className,
         kReporter_EndTest_MethodNameKey : methodName,
         kReporter_EndTest_SucceededKey: @(succeeded),
@@ -425,8 +464,7 @@ static void XCToolLog_testCaseDidStop(NSString *fullTestName, NSNumber *unexpect
 
 static void XCTestLog_testCaseDidStop(id self, SEL sel, XCTestCaseRun *run)
 {
-  NSString *fullTestName = [[run test] name];
-  XCToolLog_testCaseDidStop(fullTestName, @([run unexpectedExceptionCount]), @([run failureCount]), @([run totalDuration]));
+  XCToolLog_testCaseDidStop([run test], @([run unexpectedExceptionCount]), @([run failureCount]), @([run totalDuration]));
 }
 
 static void XCTestLog_testCaseDidFinish(id self, SEL sel, XCTestCase *testCase)
