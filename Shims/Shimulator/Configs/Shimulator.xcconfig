@@ -8,3 +8,4 @@ EXECUTABLE_PREFIX = lib
 SDKROOT = iphoneos
 IPHONEOS_DEPLOYMENT_TARGET = 8.0
 COPY_PHASE_STRIP = NO
+CODE_SIGN_IDENTITY = "-"  // Simulator Shims must be CodeSigned, to work for injection.
