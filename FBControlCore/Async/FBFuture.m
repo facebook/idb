@@ -41,15 +41,15 @@
 
 - (void)addObject:(FBFutureContext_Teardown *)object {
   dispatch_sync(_queue, ^{
-    [_data addObject:object];
+    [self->_data addObject:object];
   });
 }
 
 - (FBFutureContext_Teardown *)pop {
   __block FBFutureContext_Teardown *result;
   dispatch_sync(_queue, ^{
-    result = [_data lastObject];
-    [_data removeLastObject];
+    result = [self->_data lastObject];
+    [self->_data removeLastObject];
   });
   return result;
 
@@ -57,14 +57,14 @@
 
 - (void)addObjectsFromArray:(NSArray<FBFutureContext_Teardown *> *)array {
   dispatch_sync(_queue, ^{
-    [_data addObjectsFromArray:array];
+    [self->_data addObjectsFromArray:array];
   });
 }
 
 - (NSArray<FBFutureContext_Teardown *> *)asArray {
   __block NSArray<FBFutureContext_Teardown *> *result;
   dispatch_sync(_queue, ^{
-    result = [_data copy];
+    result = [self->_data copy];
   });
   return result;
 }
