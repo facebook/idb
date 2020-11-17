@@ -95,10 +95,10 @@ void XTSwizzleSelectorForFunction(Class cls, SEL sel, IMP newImp)
   }
 }
 
-NSArray *TestsFromSuite(id testSuite)
+NSArray<XCTestCase *> *TestsFromSuite(id testSuite)
 {
-  NSMutableArray *tests = [NSMutableArray array];
-  NSMutableArray *queue = [NSMutableArray array];
+  NSMutableArray<XCTestCase *> *tests = [NSMutableArray array];
+  NSMutableArray<id> *queue = [NSMutableArray array];
   [queue addObject:testSuite];
 
   while ([queue count] > 0) {
@@ -115,7 +115,6 @@ NSArray *TestsFromSuite(id testSuite)
       [tests addObject:test];
     }
   }
-
   return tests;
 }
 
@@ -754,26 +753,6 @@ static void SwizzleXCTestMethodsIfAvailable()
   });
 }
 
-/**
- Crawls through the test suite hierarchy and returns a list of all test case
- names in the format of ...
-
- @[@"-[SomeClass someMethod]",
- @"-[SomeClass otherMethod]"]
- */
-static NSArray<NSString *> *testNamesFromSuite(id testSuite)
-{
-  NSMutableArray *names = [NSMutableArray array];
-
-  for (id test in TestsFromSuite(testSuite)) {
-    NSString *name = [test performSelector:@selector(description)];
-    NSCAssert(name != nil, @"Can't get name for test: %@", test);
-    [names addObject:name];
-  }
-
-  return names;
-}
-
 static void queryTestBundlePath(NSString *testBundlePath)
 {
   NSString *outputFile = NSProcessInfo.processInfo.environment[@"OTEST_QUERY_OUTPUT_FILE"];
@@ -831,21 +810,33 @@ static void queryTestBundlePath(NSString *testBundlePath)
   // By setting `-XCTest None`, we'll make `-[XCTestSuite allTests]`
   // return all tests.
   [NSUserDefaults.standardUserDefaults setObject:@"None" forKey:XCTestFilterArg];
-  id allTestsSuite = [testSuiteClass performSelector:@selector(allTests)];
+  XCTestSuite *allTestsSuite = [testSuiteClass performSelector:@selector(allTests)];
   NSCAssert(allTestsSuite, @"Should have gotten a test suite from allTests");
 
-  NSArray<NSString *> *fullTestNames = [testNamesFromSuite(allTestsSuite) sortedArrayUsingSelector:@selector(compare:)];
-  for (NSUInteger index = 0; index < fullTestNames.count; index++) {
-    NSString *fullTestName = fullTestNames[index];
+  // Enumerate the test cases, constructing the reported name for them.
+  NSArray<XCTestCase *> *allTestCases = TestsFromSuite(allTestsSuite);
+  NSMutableArray<NSString *> *namesToReport = NSMutableArray.array;
+  for (XCTestCase *testCase in allTestCases) {
     NSString *className = nil;
     NSString *methodName = nil;
-    ParseClassAndMethodFromTestName(&className, &methodName, fullTestName);
-    NSString *line = index == 0
-      ? [NSString stringWithFormat:@"%@/%@", className, methodName]
-      : [NSString stringWithFormat:@"\n%@/%@", className, methodName];
+    parseXCTestCase(testCase, &className, &methodName, nil);
+    NSString *name = [NSString stringWithFormat:@"%@/%@", className, methodName];
+    [namesToReport addObject:name];
+  }
+
+  // Now write them out after sorting
+  [namesToReport sortUsingSelector:@selector(compare:)];
+  BOOL writtenFirstLine = NO;
+  for (NSString *name in namesToReport) {
+    NSString *line = name;
+    if (writtenFirstLine) {
+      line = [NSString stringWithFormat:@"\n%@", line];
+    }
     NSData *output = [line dataUsingEncoding:NSUTF8StringEncoding];
     [fileHandle writeData:output];
+    writtenFirstLine = YES;
   }
+
   // Close the file so the other end knows this is the end of the input.
   [fileHandle closeFile];
   exit(kSuccess);
