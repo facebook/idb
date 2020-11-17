@@ -17,35 +17,47 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundeclared-selector"
 
-void ParseClassAndMethodFromTestName(NSString **className, NSString **methodName, NSString *testName)
-{
-  NSCAssert(className, @"className should be non-nil");
-  NSCAssert(methodName, @"methodName should be non-nil");
-  NSCAssert(testName, @"testName should be non-nil");
-
-  static dispatch_once_t onceToken;
-  static NSRegularExpression *testNameRegex;
-  dispatch_once(&onceToken, ^{
-    testNameRegex = [[NSRegularExpression alloc] initWithPattern:@"^-\\[([\\w.]+) ([\\w\\:]+)\\]$"
-                                                         options:0
-                                                           error:nil];
-  });
-
-  NSTextCheckingResult *match =
-  [testNameRegex firstMatchInString:testName
-                            options:0
-                              range:NSMakeRange(0, [testName length])];
-  NSCAssert(match && [match numberOfRanges] == 3,
-            @"Test name seems to be malformed: %@", testName);
-
-  *className = [testName substringWithRange:[match rangeAtIndex:1]];
-  *methodName = [testName substringWithRange:[match rangeAtIndex:2]];
-}
-
 static NSString *const XCTestFilterArg = @"XCTest";
 static NSString *const XCTestFrameworkName = @"XCTest";
 static NSString *const XCTestProbeClassName = @"XCTestProbe";
 static NSString *const XCTestSuiteClassName = @"XCTestSuite";
+
+static void parseXCTestCase(XCTestCase *testCase, NSString **classNameOut, NSString **methodNameOut, NSString **testKeyOut)
+{
+  NSString *className = NSStringFromClass(testCase.class);
+  NSString *methodName = NSStringFromSelector([testCase.invocation selector]);
+  NSString *testKey = [NSString stringWithFormat:@"-[%@ %@]", className, methodName];
+  if (classNameOut) {
+    *classNameOut = className;
+  }
+  if (methodNameOut) {
+    *methodNameOut = methodName;
+  }
+  if (testKeyOut) {
+    *testKeyOut = testKey;
+  }
+}
+
+static NSString *parseXCTestSuiteKey(XCTestSuite *suite)
+{
+  NSString *testKey = nil;
+  for (id test in suite.tests) {
+    if (![test isKindOfClass:NSClassFromString(@"XCTestCase")]) {
+      return [suite name];
+    }
+    XCTestCase *testCase = test;
+    NSString *innerTestKey = nil;
+    parseXCTestCase(testCase, &innerTestKey, nil, nil);
+    if (!testKey) {
+      testKey = innerTestKey;
+      continue;
+    }
+    if (![innerTestKey isEqualToString:testKey]) {
+      return [suite name];
+    }
+  }
+  return testKey ?: [suite name];
+}
 
 NSDictionary *EventDictionaryWithNameAndContent(NSString *name, NSDictionary *content)
 {
@@ -128,41 +140,36 @@ static NSString *TestCase_nameOrDescription(id self, SEL cmd)
   return description;
 }
 
-static NSString *TestNameWithCount(NSString *name, NSUInteger count) {
-  NSString *className = nil;
-  NSString *methodName = nil;
-  ParseClassAndMethodFromTestName(&className, &methodName, name);
-
-  return [NSString stringWithFormat:@"-[%@ %@_%ld]",
-          className,
-          methodName,
-          (unsigned long)count];
-}
-
-static void ProcessTestSuite(id testSuite)
+static void ProcessTestSuite(XCTestSuite *testSuite)
 {
-  NSCountedSet *seenCounts = [NSCountedSet set];
-  NSMutableSet *classesToSwizzle = [NSMutableSet set];
+  NSCountedSet<NSString *> *seenCounts = [NSCountedSet set];
+  NSMutableSet<Class> *classesToSwizzle = [NSMutableSet set];
 
-  for (id test in TestsFromSuite(testSuite)) {
-    NSString *testName = [test respondsToSelector:@selector(nameForLegacyLogging)]
-      ? [test nameForLegacyLogging]
-      : [test description];
+  for (XCTestCase *testCase in TestsFromSuite(testSuite)) {
+    NSString *className = nil;
+    NSString *methodName = nil;
+    NSString *testName = nil;
+    parseXCTestCase(testCase, &className, &methodName, &testName);
 
     [seenCounts addObject:testName];
     NSUInteger seenCount = [seenCounts countForObject:testName];
 
     if (seenCount > 1) {
       // It's a duplicate - we need to override the name.
-      testName = TestNameWithCount(testName, seenCount);
+      testName = [NSString stringWithFormat:
+        @"-[%@ %@_%ld]",
+        className,
+        methodName,
+        seenCount
+      ];
     }
     objc_setAssociatedObject(
-      test,
+      testCase,
       &TestDescriptionKey,
       testName,
       OBJC_ASSOCIATION_RETAIN_NONATOMIC
     );
-    [classesToSwizzle addObject:[test class]];
+    [classesToSwizzle addObject:[testCase class]];
   }
 
   for (Class cls in classesToSwizzle) {
@@ -275,43 +282,6 @@ static void PrintJSON(id JSONObject)
   fwrite([data bytes], 1, [data length], __stdout);
   fputs("\n", __stdout);
   fflush(__stdout);
-}
-
-static void parseXCTestCase(XCTestCase *testCase, NSString **classNameOut, NSString **methodNameOut, NSString **testKeyOut)
-{
-  NSString *className = NSStringFromClass(testCase.class);
-  NSString *methodName = NSStringFromSelector([testCase.invocation selector]);
-  NSString *testKey = [NSString stringWithFormat:@"-[%@ %@]", className, methodName];
-  if (classNameOut) {
-    *classNameOut = className;
-  }
-  if (methodNameOut) {
-    *methodNameOut = methodName;
-  }
-  if (testKeyOut) {
-    *testKeyOut = testKey;
-  }
-}
-
-static NSString *parseXCTestSuiteKey(XCTestSuite *suite)
-{
-  NSString *testKey = nil;
-  for (id test in suite.tests) {
-    if (![test isKindOfClass:NSClassFromString(@"XCTestCase")]) {
-      return [suite name];
-    }
-    XCTestCase *testCase = test;
-    NSString *innerTestKey = nil;
-    parseXCTestCase(testCase, &innerTestKey, nil, nil);
-    if (!testKey) {
-      testKey = innerTestKey;
-      continue;
-    }
-    if (![innerTestKey isEqualToString:testKey]) {
-      return [suite name];
-    }
-  }
-  return testKey ?: [suite name];
 }
 
 #pragma mark - testSuiteDidStart
