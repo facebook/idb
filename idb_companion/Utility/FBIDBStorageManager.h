@@ -11,6 +11,12 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+extern NSString *const IdbTestBundlesFolder;
+extern NSString *const IdbApplicationsFolder;
+extern NSString *const IdbDylibsFolder;
+extern NSString *const IdbDsymsFolder;
+extern NSString *const IdbFrameworksFolder;
+
 /**
  A wrapper around an installed artifact
  */

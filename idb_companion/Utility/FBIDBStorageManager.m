@@ -13,6 +13,12 @@
 #import "FBStorageUtils.h"
 #import "FBXCTestDescriptor.h"
 
+NSString *const IdbTestBundlesFolder = @"idb-test-bundles";
+NSString *const IdbApplicationsFolder = @"idb-applications";
+NSString *const IdbDylibsFolder = @"idb-dylibs";
+NSString *const IdbDsymsFolder = @"idb-dsyms";
+NSString *const IdbFrameworksFolder = @"idb-frameworks";
+
 @implementation FBInstalledArtifact
 
 - (instancetype)initWithName:(NSString *)name uuid:(NSUUID *)uuid
@@ -561,31 +567,31 @@ static NSString *const XctestRunExtension = @"xctestrun";
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.idb.bundle_storage", DISPATCH_QUEUE_SERIAL);
 
-  NSURL *basePath = [self prepareStoragePathWithName:@"idb-test-bundles" target:target error:error];
+  NSURL *basePath = [self prepareStoragePathWithName:IdbTestBundlesFolder target:target error:error];
   if (!basePath) {
     return nil;
   }
   FBXCTestBundleStorage *xctest = [[FBXCTestBundleStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger relocateLibraries:YES];
 
-  basePath = [self prepareStoragePathWithName:@"idb-applications" target:target error:error];
+  basePath = [self prepareStoragePathWithName:IdbApplicationsFolder target:target error:error];
   if (!basePath) {
     return nil;
   }
   FBBundleStorage *application = [[FBBundleStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger relocateLibraries:NO];
 
-  basePath = [self prepareStoragePathWithName:@"idb-dylibs" target:target error:error];
+  basePath = [self prepareStoragePathWithName:IdbDylibsFolder target:target error:error];
   if (!basePath) {
     return nil;
   }
   FBFileStorage *dylib = [[FBFileStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
 
-  basePath = [self prepareStoragePathWithName:@"idb-dsyms" target:target error:error];
+  basePath = [self prepareStoragePathWithName:IdbDsymsFolder target:target error:error];
   if (!basePath) {
     return nil;
   }
   FBFileStorage *dsym = [[FBFileStorage alloc] initWithTarget:target basePath:basePath queue:queue logger:logger];
 
-  basePath = [self prepareStoragePathWithName:@"idb-frameworks" target:target error:error];
+  basePath = [self prepareStoragePathWithName:IdbFrameworksFolder target:target error:error];
   if (!basePath) {
     return nil;
   }
