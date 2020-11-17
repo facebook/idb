@@ -42,25 +42,10 @@ void ParseClassAndMethodFromTestName(NSString **className, NSString **methodName
   *methodName = [testName substringWithRange:[match rangeAtIndex:2]];
 }
 
-
-NSString *const kTestingFrameworkTestProbeClassName = @"kTestingFrameworkTestProbeClassName";
-NSString *const kTestingFrameworkTestSuiteClassName = @"kTestingFrameworkTestSuiteClassName";
-NSString *const kTestingFrameworkIOSTestrunnerName = @"ios_executable";
-NSString *const kTestingFrameworkOSXTestrunnerName = @"osx_executable";
-NSString *const kTestingFrameworkInvertScopeKey = @"invertScope";
-NSString *const kTestingFrameworkFilterTestArgsKey = @"filterTestcasesArg";
-
-static NSDictionary<NSString *, NSString *> *XCTestFrameworkInfo()
-{
-  return @{
-    kTestingFrameworkTestProbeClassName: @"XCTestProbe",
-    kTestingFrameworkTestSuiteClassName: @"XCTestSuite",
-    kTestingFrameworkIOSTestrunnerName: @"usr/bin/xctest",
-    kTestingFrameworkOSXTestrunnerName: @"usr/bin/xctest",
-    kTestingFrameworkFilterTestArgsKey: @"XCTest",
-    kTestingFrameworkInvertScopeKey: @"XCTestInvertScope"
-  };
-}
+static NSString *const XCTestFilterArg = @"XCTest";
+static NSString *const XCTestFrameworkName = @"XCTest";
+static NSString *const XCTestProbeClassName = @"XCTestProbe";
+static NSString *const XCTestSuiteClassName = @"XCTestSuite";
 
 NSDictionary *EventDictionaryWithNameAndContent(NSString *name, NSDictionary *content)
 {
@@ -122,8 +107,7 @@ NSArray *TestsFromSuite(id testSuite)
 
     if ([test isKindOfClass:[testSuite class]] ||
         [test respondsToSelector:@selector(tests)]) {
-      // Both SenTestSuite and XCTestSuite keep a list of tests in an ivar
-      // called 'tests'.
+      // XCTestSuite keep a list of tests in an ivar called 'tests'.
       id testsInSuite = [test valueForKey:@"tests"];
       NSCAssert(testsInSuite != nil, @"Can't get tests for suite: %@", testSuite);
       [queue addObjectsFromArray:testsInSuite];
@@ -183,7 +167,7 @@ static void ProcessTestSuite(id testSuite)
   }
 
   for (Class cls in classesToSwizzle) {
-    // In all versions of XCTest.framework and SenTestingKit.framework I can
+    // In all versions of XCTest.framework and I can
     // find, the `name` method generates the actual string, and `description`
     // just calls `name`.  We override both, because we don't know which things
     // call which.
@@ -212,7 +196,7 @@ static id TestSuite_allTests(Class cls, SEL cmd)
 
 void ApplyDuplicateTestNameFix(NSString *testProbeClassName, NSString *testSuiteClassName)
 {
-  // Hooks into `[-(Sen|XC)TestProbe specifiedTestSuite]` so we have a chance
+  // Hooks into `-[XCTestProbe specifiedTestSuite]` so we have a chance
   // to 1) scan over the entire list of tests to be run, 2) rewrite any
   // duplicate names we find, and 3) return the modified list to the caller.
   XTSwizzleClassSelectorForFunction(
@@ -221,7 +205,7 @@ void ApplyDuplicateTestNameFix(NSString *testProbeClassName, NSString *testSuite
     (IMP)TestProbe_specifiedTestSuite
   );
 
-  // Hooks into `[-(Sen|XC)TestSuite allTests]` so we have a chance
+  // Hooks into `-[XCTestSuite allTests]` so we have a chance
   // to 1) scan over the entire list of tests to be run, 2) rewrite any
   // duplicate names we find, and 3) return the modified list to the caller.
   XTSwizzleClassSelectorForFunction(
@@ -766,11 +750,7 @@ static void SwizzleXCTestMethodsIfAvailable()
         (IMP)XCTestCase__enableSymbolication
       );
     }
-    NSDictionary<NSString *, NSString *> *frameworkInfo = XCTestFrameworkInfo();
-    ApplyDuplicateTestNameFix(
-      frameworkInfo[kTestingFrameworkTestProbeClassName],
-      frameworkInfo[kTestingFrameworkTestSuiteClassName]
-    );
+    ApplyDuplicateTestNameFix(XCTestProbeClassName, XCTestSuiteClassName);
   });
 }
 
@@ -809,20 +789,12 @@ static void queryTestBundlePath(NSString *testBundlePath)
     );
     exit(kBundleOpenError);
   }
-
-  NSDictionary<NSString *, id> *framework = XCTestFrameworkInfo();
-  if (!framework) {
-    const char *bundleExtension = testBundlePath.pathExtension.UTF8String;
-    fprintf(stderr, "The bundle extension '%s' is not supported.\n", bundleExtension);
-    exit(kUnsupportedFramework);
-  }
-
   if (![bundle executablePath]) {
     fprintf(stderr, "The bundle at %s does not contain an executable.\n", [testBundlePath UTF8String]);
     exit(kMissingExecutable);
   }
 
-  // Make sure the 'SenTest' or 'XCTest' preference is cleared before we load the
+  // Make sure the 'XCTest' preference is cleared before we load the
   // test bundle - otherwise otest-query will accidentally start running tests.
   //
   // Instead of seeing the JSON list of test methods, you'll see output like ...
@@ -832,14 +804,12 @@ static void queryTestBundlePath(NSString *testBundlePath)
   //   Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
   //
   // Here's what happens -- As soon as we dlopen() the test bundle, it will also
-  // trigger the linker to load SenTestingKit.framework or XCTest.framework since
-  // those are linked by the test bundle.  And, as soon as the testing framework
-  // loads, the class initializer '+[SenTestSuite initialize]' is triggered.  If
-  // the initializer sees that the 'SenTest' preference is set, it goes ahead
-  // and runs tests.
+  // trigger the linker to load XCTest.framework since those are linked by the test bundle.
+  // And, as soon as the testing framework loads, the class initializer
+  // '+[XCTestSuite initialize]' is triggered.
   //
   // By clearing the preference, we can prevent tests from running.
-  [NSUserDefaults.standardUserDefaults removeObjectForKey:framework[kTestingFrameworkFilterTestArgsKey]];
+  [NSUserDefaults.standardUserDefaults removeObjectForKey:XCTestFrameworkName];
   [NSUserDefaults.standardUserDefaults synchronize];
 
   // We use dlopen() instead of -[NSBundle loadAndReturnError] because, if
@@ -849,19 +819,18 @@ static void queryTestBundlePath(NSString *testBundlePath)
     exit(kDLOpenError);
   }
 
+  // Load the bundle
   [NSBundle.allFrameworks makeObjectsPerformSelector:@selector(principalClass)];
 
-  ApplyDuplicateTestNameFix(
-    framework[kTestingFrameworkTestProbeClassName],
-    framework[kTestingFrameworkTestSuiteClassName]
-  );
+  ApplyDuplicateTestNameFix(XCTestProbeClassName, XCTestSuiteClassName);
 
-  Class testSuiteClass = NSClassFromString(framework[kTestingFrameworkTestSuiteClassName]);
-  NSCAssert(testSuiteClass, @"Should have *TestSuite class");
+  // Ensure that the principal class exists.
+  Class testSuiteClass = NSClassFromString(XCTestSuiteClassName);
+  NSCAssert(testSuiteClass, @"Should have %@ class", XCTestFrameworkName);
 
-  // By setting `-(XC|Sen)Test None`, we'll make `-[(XC|Sen)TestSuite allTests]`
+  // By setting `-XCTest None`, we'll make `-[XCTestSuite allTests]`
   // return all tests.
-  [NSUserDefaults.standardUserDefaults setObject:@"None" forKey:framework[kTestingFrameworkFilterTestArgsKey]];
+  [NSUserDefaults.standardUserDefaults setObject:@"None" forKey:XCTestFilterArg];
   id allTestsSuite = [testSuiteClass performSelector:@selector(allTests)];
   NSCAssert(allTestsSuite, @"Should have gotten a test suite from allTests");
 
