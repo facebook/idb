@@ -48,7 +48,7 @@ async def _generate_xctest_chunks(
     path: str, logger: Logger
 ) -> AsyncIterator[InstallRequest]:
     logger.debug(f"Generating chunks for {path}")
-    async for chunk in tar.generate_tar(xctest_paths_to_tar(path)):
+    async for chunk in tar.generate_tar(xctest_paths_to_tar(path, logger)):
         yield InstallRequest(payload=Payload(data=chunk))
     logger.debug(f"Finished generating chunks {path}")
 

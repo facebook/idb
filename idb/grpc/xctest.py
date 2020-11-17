@@ -44,12 +44,14 @@ def _get_xctest_type(path: str) -> _XCTestType:
     raise XCTestException(f"{path} is not a valid xctest target")
 
 
-def extract_paths_from_xctestrun(path: str) -> List[str]:
+def extract_paths_from_xctestrun(
+    path: str, logger: Optional[Logger] = None
+) -> List[str]:
     """
     When using xctestrun we need to copy:
     - the xctestrun file
     - the host app directory that is specified in the xctestrun file for
-    every test.
+    every test if the directory exists on the client host.
     This method returns paths to those.
     """
     result = [path]
@@ -59,11 +61,18 @@ def extract_paths_from_xctestrun(path: str) -> List[str]:
         for _test_id, test_dict in xctestrun_dict.items():
             if _test_id == "__xctestrun_metadata__":
                 continue
-            result.append(test_dict["TestHostPath"].replace("__TESTROOT__", test_root))
+            testHostPath = test_dict["TestHostPath"].replace("__TESTROOT__", test_root)
+            if os.path.exists(testHostPath):
+                result.append(testHostPath)
+            elif logger:
+                logger.info(
+                    f"{testHostPath} does not exist on the client host. "
+                    + "It should be a valid path on the companion host."
+                )
     return result
 
 
-def xctest_paths_to_tar(bundle_path: str) -> List[str]:
+def xctest_paths_to_tar(bundle_path: str, logger: Optional[Logger] = None) -> List[str]:
     test_type = _get_xctest_type(bundle_path)
     if test_type is _XCTestType.XCTest:
         return [bundle_path]
@@ -74,7 +83,7 @@ def xctest_paths_to_tar(bundle_path: str) -> List[str]:
         )
 
     if not all(use_artifacts):
-        return extract_paths_from_xctestrun(bundle_path)
+        return extract_paths_from_xctestrun(bundle_path, logger)
     else:
         return [bundle_path]
 
