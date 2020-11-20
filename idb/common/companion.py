@@ -263,4 +263,6 @@ class Companion(CompanionBase):
             if grpc_path is None:
                 raise IdbException(f"No grpc_path in {line}")
             self._logger.info(f"Started domain sock server on {grpc_path}")
+            # pyre-fixme[7]: Expected `AsyncGenerator[str, None]` but got
+            #  `AsyncGenerator[Union[int, str], None]`.
             yield grpc_path

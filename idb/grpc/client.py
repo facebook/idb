@@ -185,6 +185,7 @@ def log_and_handle_exceptions(func):  # pyre-ignore
     @functools.wraps(func)
     @log_call(name=func.__name__)
     # pyre-fixme[53]: Captured variable `func` is not annotated.
+    # pyre-fixme[3]: Return annotation cannot be `Any`.
     async def func_wrapper_gen(*args: Any, **kwargs: Any) -> Any:
         try:
             async for item in func(*args, **kwargs):

@@ -77,6 +77,8 @@ async def stop_wrapper(
             read.cancel()
             return
         else:
+            # pyre-fixme[7]: Expected `AsyncIterator[Variable[_TRecv]]` but got
+            #  `AsyncGenerator[Optional[Variable[_TRecv]], None]`.
             yield read.result()
 
 
