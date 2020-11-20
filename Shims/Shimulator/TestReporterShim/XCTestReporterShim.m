@@ -768,8 +768,15 @@ static void queryTestBundlePath(NSString *testBundlePath)
     exit(kDLOpenError);
   }
 
-  // Load the bundle
-  [NSBundle.allFrameworks makeObjectsPerformSelector:@selector(principalClass)];
+  // Load the Test Bundle's 'Principal Class' and initialize it.
+  // This is necessary for some Testing Frameworks that dynamically add XCTests
+  // inside the basic `-init` method.
+  Class principalClass = [bundle principalClass];
+  if (principalClass && [principalClass instancesRespondToSelector:@selector(init)]) {
+    NSLog(@"Calling Principal Class initializer -[%@ init]", NSStringFromClass(principalClass));
+    id principalObject = [[principalClass alloc] init];
+    NSLog(@"Principal Class %@ initialized", principalObject);
+  }
 
   ApplyDuplicateTestNameFix(XCTestProbeClassName, XCTestSuiteClassName);
 
