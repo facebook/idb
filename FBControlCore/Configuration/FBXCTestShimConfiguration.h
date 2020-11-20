@@ -40,10 +40,9 @@ extern NSString *const FBXCTestShimDirectoryEnvironmentOverride;
  The Designated Intializer.
 
  @param iosSimulatorTestShim The Path to he iOS Simulator Test Shim.
- @param macOSTestShimPath The Path to the Mac Test Shim.
- @param macOSQueryShimPath The Path to the Mac Query Shim.
+ @param macOSTestShimPath The Path to the macOS Test Shim.
  */
-- (instancetype)initWithiOSSimulatorTestShimPath:(NSString *)iosSimulatorTestShim macOSTestShimPath:(NSString *)macOSTestShimPath macOSQueryShimPath:(NSString *)macOSQueryShimPath;
+- (instancetype)initWithiOSSimulatorTestShimPath:(NSString *)iosSimulatorTestShim macOSTestShimPath:(NSString *)macOSTestShimPath;
 
 #pragma mark Helpers
 
@@ -58,19 +57,14 @@ extern NSString *const FBXCTestShimDirectoryEnvironmentOverride;
 #pragma mark Properties
 
 /**
- The location of the shim used to run iOS Simulator Logic Tests.
+ The location of the shim used to run & list iOS Simulator Tests.
  */
 @property (nonatomic, copy, readonly) NSString *iOSSimulatorTestShimPath;
 
 /**
- The location of the shim used to run Mac Logic Tests.
+ The location of the shim used to run & list macOS Tests.
  */
 @property (nonatomic, copy, readonly) NSString *macOSTestShimPath;
-
-/**
- The location of the shim used to query Mac Tests.
- */
-@property (nonatomic, copy, readonly) NSString *macOSQueryShimPath;
 
 @end
 

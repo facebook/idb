@@ -42,11 +42,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSString *shimPath;
 
 /**
- The path to the Query Shim dylib used for listing test output.
- */
-@property (nonatomic, copy, readonly) NSString *queryShimPath;
-
-/**
  A queue to serialize work on.
  */
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;

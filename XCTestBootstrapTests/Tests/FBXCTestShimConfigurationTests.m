@@ -20,7 +20,7 @@
 - (void)testShimConfiguration
 {
   NSArray<FBXCTestShimConfiguration *> *values = @[
-    [[FBXCTestShimConfiguration alloc] initWithiOSSimulatorTestShimPath:@"/ios_test.x" macOSTestShimPath:@"/mac_test.x" macOSQueryShimPath:@"/mac_query.x"],
+    [[FBXCTestShimConfiguration alloc] initWithiOSSimulatorTestShimPath:@"/ios_test.x" macOSTestShimPath:@"/mac_test.x"],
   ];
   [self assertEqualityOfCopy:values];
   [self assertJSONSerialization:values];

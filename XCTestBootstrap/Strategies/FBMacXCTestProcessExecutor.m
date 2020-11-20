@@ -66,11 +66,6 @@
   return self.shims.macOSTestShimPath;
 }
 
-- (NSString *)queryShimPath
-{
-  return self.shims.macOSQueryShimPath;
-}
-
 - (dispatch_queue_t)workQueue
 {
   return self.macDevice.workQueue;

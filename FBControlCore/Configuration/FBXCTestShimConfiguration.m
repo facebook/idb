@@ -13,7 +13,6 @@ NSString *const FBXCTestShimDirectoryEnvironmentOverride = @"TEST_SHIMS_DIRECTOR
 
 static NSString *const KeySimulatorTestShim = @"ios_simulator_test_shim";
 static NSString *const KeyMacTestShim = @"mac_test_shim";
-static NSString *const KeyMacQueryShim = @"mac_query_shim";
 
 static NSString *const shimulatorFileName = @"libShimulator.dylib";
 static NSString *const maculatorShimFileName = @"libMaculator.dylib";
@@ -32,7 +31,6 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
   return @{
     KeySimulatorTestShim: shimulatorFileName,
     KeyMacTestShim: maculatorShimFileName,
-    KeyMacQueryShim: maculatorShimFileName,
   };
 }
 
@@ -40,7 +38,6 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 {
   return @{
     KeySimulatorTestShim: @(FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid),
-    KeyMacQueryShim: @NO,
     KeyMacTestShim: @NO,
   };
 }
@@ -138,11 +135,10 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
       return [FBFuture futureWithFutures:@[
         [self pathForCanonicallyNamedShim:KeySimulatorTestShim inDirectory:shimDirectory],
         [self pathForCanonicallyNamedShim:KeyMacTestShim inDirectory:shimDirectory],
-        [self pathForCanonicallyNamedShim:KeyMacQueryShim inDirectory:shimDirectory],
       ]];
     }]
     onQueue:queue map:^(NSArray<NSString *> *shims) {
-      return [[self alloc] initWithiOSSimulatorTestShimPath:shims[0] macOSTestShimPath:shims[1] macOSQueryShimPath:shims[2]];
+      return [[self alloc] initWithiOSSimulatorTestShimPath:shims[0] macOSTestShimPath:shims[1]];
     }];
 }
 
@@ -159,11 +155,10 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
   return [NSFileManager.defaultManager fileExistsAtPath:path] ? path : nil;
 }
 
-- (instancetype)initWithiOSSimulatorTestShimPath:(NSString *)iosSimulatorTestShim macOSTestShimPath:(NSString *)macOSTestShimPath macOSQueryShimPath:(NSString *)macOSQueryShimPath
+- (instancetype)initWithiOSSimulatorTestShimPath:(NSString *)iosSimulatorTestShim macOSTestShimPath:(NSString *)macOSTestShimPath
 {
   NSParameterAssert(iosSimulatorTestShim);
   NSParameterAssert(macOSTestShimPath);
-  NSParameterAssert(macOSQueryShimPath);
 
   self = [super init];
   if (!self) {
@@ -172,7 +167,6 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 
   _iOSSimulatorTestShimPath = iosSimulatorTestShim;
   _macOSTestShimPath = macOSTestShimPath;
-  _macOSQueryShimPath = macOSQueryShimPath;
 
   return self;
 }
@@ -192,13 +186,12 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
     return NO;
   }
   return [self.iOSSimulatorTestShimPath isEqualToString:object.iOSSimulatorTestShimPath]
-      && [self.macOSTestShimPath isEqualToString:object.macOSTestShimPath]
-      && [self.macOSQueryShimPath isEqualToString:object.macOSQueryShimPath];
+      && [self.macOSTestShimPath isEqualToString:object.macOSTestShimPath];
 }
 
 - (NSUInteger)hash
 {
-  return self.iOSSimulatorTestShimPath.hash ^ self.macOSTestShimPath.hash ^ self.macOSQueryShimPath.hash;
+  return self.iOSSimulatorTestShimPath.hash ^ self.macOSTestShimPath.hash;
 }
 
 #pragma mark JSON
@@ -222,13 +215,7 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
       describeFormat:@"%@ is not a String for %@", macTestShim, KeyMacTestShim]
       fail:error];
   }
-  NSString *macOSQueryShimPath = json[KeyMacQueryShim];
-  if (![macOSQueryShimPath isKindOfClass:NSString.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ is not a String for %@", macOSQueryShimPath, KeyMacQueryShim]
-      fail:error];
-  }
-  return [[FBXCTestShimConfiguration alloc] initWithiOSSimulatorTestShimPath:simulatorTestShim macOSTestShimPath:macTestShim macOSQueryShimPath:macOSQueryShimPath];
+  return [[FBXCTestShimConfiguration alloc] initWithiOSSimulatorTestShimPath:simulatorTestShim macOSTestShimPath:macTestShim];
 }
 
 - (id)jsonSerializableRepresentation
@@ -236,7 +223,6 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
   return @{
     KeySimulatorTestShim: self.iOSSimulatorTestShimPath,
     KeyMacTestShim: self.macOSTestShimPath,
-    KeyMacQueryShim: self.macOSQueryShimPath,
   };
 }
 

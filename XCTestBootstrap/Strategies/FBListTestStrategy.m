@@ -102,9 +102,8 @@
 
 - (FBFuture<NSArray<NSString *> *> *)listTestsWithShimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBConsumableBuffer>)shimConsumer
 {
-  NSString *otestQueryShimPath = self.executor.queryShimPath;
   NSDictionary<NSString *, NSString *> *environment = @{
-    @"DYLD_INSERT_LIBRARIES": otestQueryShimPath,
+    @"DYLD_INSERT_LIBRARIES": self.executor.shimPath,
     @"OTEST_QUERY_OUTPUT_FILE": shimOutput.filePath,
     @"OtestQueryBundlePath": self.configuration.testBundlePath,
   };
