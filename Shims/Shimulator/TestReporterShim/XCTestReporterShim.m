@@ -723,12 +723,9 @@ static void SwizzleXCTestMethodsIfAvailable()
   });
 }
 
-static void queryTestBundlePath(NSString *testBundlePath)
+static void listBundle(NSString *testBundlePath, NSString *outputFile)
 {
-  NSString *outputFile = NSProcessInfo.processInfo.environment[@"OTEST_QUERY_OUTPUT_FILE"];
-  NSCAssert(outputFile, @"Output path wasn't set in the enviroment: %@", NSProcessInfo.processInfo.environment);
   NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:outputFile];
-
   NSBundle *bundle = [NSBundle bundleWithPath:testBundlePath];
   if (!bundle) {
     fprintf(
@@ -890,15 +887,19 @@ __attribute__((constructor)) static void EntryPoint()
   // Unset so we don't cascade into any other process that might be spawned.
   unsetenv("DYLD_INSERT_LIBRARIES");
 
-  NSString *bundleQueryPath = NSProcessInfo.processInfo.environment[@"OtestQueryBundlePath"];
-  if (bundleQueryPath) {
+  NSString *bundlePath = NSProcessInfo.processInfo.environment[@"TEST_SHIM_BUNDLE_PATH"];
+  if (bundlePath) {
     assignOutputFiles();
-    queryTestBundlePath(bundleQueryPath);
-    return;
-  }
-  NSString *bundleRunPath = NSProcessInfo.processInfo.environment[@"TEST_SHIM_BUNDLE_PATH"];
-  if (bundleRunPath) {
-    assignOutputFiles();
+
+    // Listing takes a different path, if the 'TEST_SHIM_OUTPUT_PATH' is set.
+    NSString *listPath = NSProcessInfo.processInfo.environment[@"TEST_SHIM_OUTPUT_PATH"];
+    if (listPath) {
+      NSLog(@"Querying Bundle %@ to Path %@", bundlePath, listPath);
+      listBundle(bundlePath, listPath);
+      return;
+    }
+
+    // Otherwise we execute the tests.
     UpdateTestScope();
 
     struct sigaction sa_abort;
@@ -912,6 +913,7 @@ __attribute__((constructor)) static void EntryPoint()
     SwizzleXCTestMethodsIfAvailable();
     return;
   }
+
   NSString *simDeviceSetPath = NSProcessInfo.processInfo.environment[@"SIM_DEVICE_SET_PATH"];
   if (simDeviceSetPath) {
     BOOL isDir = NO;

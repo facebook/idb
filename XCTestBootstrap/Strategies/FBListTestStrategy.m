@@ -104,8 +104,8 @@
 {
   NSDictionary<NSString *, NSString *> *environment = @{
     @"DYLD_INSERT_LIBRARIES": self.executor.shimPath,
-    @"OTEST_QUERY_OUTPUT_FILE": shimOutput.filePath,
-    @"OtestQueryBundlePath": self.configuration.testBundlePath,
+    @"TEST_SHIM_OUTPUT_PATH": shimOutput.filePath,
+    @"TEST_SHIM_BUNDLE_PATH": self.configuration.testBundlePath,
   };
 
   return [[self.configuration
