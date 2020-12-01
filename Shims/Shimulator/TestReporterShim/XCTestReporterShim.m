@@ -251,8 +251,6 @@ static FILE *__stderr;
 static NSMutableArray *__testExceptions = nil;
 static int __testSuiteDepth = 0;
 
-static NSString *__testScope = nil;
-
 static dispatch_queue_t EventQueue()
 {
   static dispatch_queue_t eventQueue = {0};
@@ -572,30 +570,6 @@ static BOOL XCTestCase__enableSymbolication(id self, SEL sel)
   return NO;
 }
 
-#pragma mark - Test Scope
-
-static void UpdateTestScope()
-{
-  static NSString *const testListFileKey = @"OTEST_TESTLIST_FILE";
-  static NSString *const testingFrameworkFilterTestArgsKeyKey = @"OTEST_FILTER_TEST_ARGS_KEY";
-
-  NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-  NSString *testListFilePath = [defaults objectForKey:testListFileKey];
-  NSString *testingFrameworkFilterTestArgsKey = [defaults objectForKey:testingFrameworkFilterTestArgsKeyKey];
-  if (!testListFilePath && !testingFrameworkFilterTestArgsKey) {
-    return;
-  }
-  NSCAssert(testListFilePath, @"Path to file with list of tests should be specified");
-  NSCAssert(testingFrameworkFilterTestArgsKey, @"Testing framework filter test args key should be specified");
-
-  NSError *readError = nil;
-  NSString *testList = [NSString stringWithContentsOfFile:testListFilePath encoding:NSUTF8StringEncoding error:&readError];
-  NSCAssert(testList, @"Failed to read file at path %@ with error %@", testListFilePath, readError);
-  [defaults setValue:testList forKey:testingFrameworkFilterTestArgsKey];
-
-  __testScope = testList;
-}
-
 #pragma mark - Interposes
 
 /*
@@ -741,7 +715,7 @@ static void listBundle(NSString *testBundlePath, NSString *outputFile)
   }
 
   // Make sure the 'XCTest' preference is cleared before we load the
-  // test bundle - otherwise otest-query will accidentally start running tests.
+  // test bundle - otherwise we may accidentally start running tests.
   //
   // Instead of seeing the JSON list of test methods, you'll see output like ...
   //
@@ -899,9 +873,8 @@ __attribute__((constructor)) static void EntryPoint()
       return;
     }
 
-    // Otherwise we execute the tests.
-    UpdateTestScope();
 
+  // Install a signal handler to deal with tests crashing.
     struct sigaction sa_abort;
     sa_abort.sa_handler = &handle_signal;
     sigaction(SIGABRT, &sa_abort, NULL);
