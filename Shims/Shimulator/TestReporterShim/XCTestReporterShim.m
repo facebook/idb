@@ -140,87 +140,6 @@ static NSString *TestCase_nameOrDescription(id self, SEL cmd)
   return description;
 }
 
-static void ProcessTestSuite(XCTestSuite *testSuite)
-{
-  NSCountedSet<NSString *> *seenCounts = [NSCountedSet set];
-  NSMutableSet<Class> *classesToSwizzle = [NSMutableSet set];
-
-  for (XCTestCase *testCase in TestsFromSuite(testSuite)) {
-    NSString *className = nil;
-    NSString *methodName = nil;
-    NSString *testName = nil;
-    parseXCTestCase(testCase, &className, &methodName, &testName);
-
-    [seenCounts addObject:testName];
-    NSUInteger seenCount = [seenCounts countForObject:testName];
-
-    if (seenCount > 1) {
-      // It's a duplicate - we need to override the name.
-      testName = [NSString stringWithFormat:
-        @"-[%@ %@_%ld]",
-        className,
-        methodName,
-        seenCount
-      ];
-    }
-    objc_setAssociatedObject(
-      testCase,
-      &TestDescriptionKey,
-      testName,
-      OBJC_ASSOCIATION_RETAIN_NONATOMIC
-    );
-    [classesToSwizzle addObject:[testCase class]];
-  }
-
-  for (Class cls in classesToSwizzle) {
-    // In all versions of XCTest.framework and I can
-    // find, the `name` method generates the actual string, and `description`
-    // just calls `name`.  We override both, because we don't know which things
-    // call which.
-    class_replaceMethod(cls, @selector(description), (IMP)TestCase_nameOrDescription, "@@:");
-    class_replaceMethod(cls, @selector(name), (IMP)TestCase_nameOrDescription, "@@:");
-  }
-}
-
-static id TestProbe_specifiedTestSuite(Class cls, SEL cmd)
-{
-  id (*msgsend)(id, SEL) = (void *) objc_msgSend;
-  NSString *selectorName = [NSString stringWithFormat:@"__%s_specifiedTestSuite", class_getName(cls)];
-  id testSuite = msgsend(cls, sel_registerName(selectorName.UTF8String));
-  ProcessTestSuite(testSuite);
-  return testSuite;
-}
-
-static id TestSuite_allTests(Class cls, SEL cmd)
-{
-  id (*msgsend)(id, SEL) = (void *) objc_msgSend;
-  NSString *selectorName = [NSString stringWithFormat:@"__%s_allTests", class_getName(cls)];
-  id testSuite = msgsend(cls, sel_registerName(selectorName.UTF8String));
-  ProcessTestSuite(testSuite);
-  return testSuite;
-}
-
-void ApplyDuplicateTestNameFix(NSString *testProbeClassName, NSString *testSuiteClassName)
-{
-  // Hooks into `-[XCTestProbe specifiedTestSuite]` so we have a chance
-  // to 1) scan over the entire list of tests to be run, 2) rewrite any
-  // duplicate names we find, and 3) return the modified list to the caller.
-  XTSwizzleClassSelectorForFunction(
-    NSClassFromString(testProbeClassName),
-    @selector(specifiedTestSuite),
-    (IMP)TestProbe_specifiedTestSuite
-  );
-
-  // Hooks into `-[XCTestSuite allTests]` so we have a chance
-  // to 1) scan over the entire list of tests to be run, 2) rewrite any
-  // duplicate names we find, and 3) return the modified list to the caller.
-  XTSwizzleClassSelectorForFunction(
-    NSClassFromString(testSuiteClassName),
-    @selector(allTests),
-    (IMP)TestSuite_allTests
-  );
-}
-
 static char *const kEventQueueLabel = "xctool.events";
 
 @interface XCToolAssertionHandler : NSAssertionHandler
@@ -693,7 +612,6 @@ static void SwizzleXCTestMethodsIfAvailable()
         (IMP)XCTestCase__enableSymbolication
       );
     }
-    ApplyDuplicateTestNameFix(XCTestProbeClassName, XCTestSuiteClassName);
   });
 }
 
@@ -748,8 +666,6 @@ static void listBundle(NSString *testBundlePath, NSString *outputFile)
     id principalObject = [[principalClass alloc] init];
     NSLog(@"Principal Class %@ initialized", principalObject);
   }
-
-  ApplyDuplicateTestNameFix(XCTestProbeClassName, XCTestSuiteClassName);
 
   // Ensure that the principal class exists.
   Class testSuiteClass = NSClassFromString(XCTestSuiteClassName);
