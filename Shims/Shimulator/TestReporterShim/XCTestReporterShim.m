@@ -22,6 +22,12 @@ static NSString *const XCTestFrameworkName = @"XCTest";
 static NSString *const XCTestProbeClassName = @"XCTestProbe";
 static NSString *const XCTestSuiteClassName = @"XCTestSuite";
 
+static FILE *__stdout;
+static FILE *__stderr;
+
+static NSMutableArray<NSDictionary<NSString *, id> *> *__testExceptions = nil;
+static int __testSuiteDepth = 0;
+
 static void parseXCTestCase(XCTestCase *testCase, NSString **classNameOut, NSString **methodNameOut, NSString **testKeyOut)
 {
   NSString *className = NSStringFromClass(testCase.class);
@@ -59,9 +65,9 @@ static NSString *parseXCTestSuiteKey(XCTestSuite *suite)
   return testKey ?: [suite name];
 }
 
-NSDictionary *EventDictionaryWithNameAndContent(NSString *name, NSDictionary *content)
+NSDictionary<NSString *, id> *EventDictionaryWithNameAndContent(NSString *name, NSDictionary *content)
 {
-  NSMutableDictionary *eventJSON = [NSMutableDictionary dictionaryWithDictionary:@{
+  NSMutableDictionary<NSString *, id> *eventJSON = [NSMutableDictionary dictionaryWithDictionary:@{
     kReporter_Event_Key: name,
     kReporter_TimestampKey: @([[NSDate date] timeIntervalSince1970])
   }];
@@ -164,12 +170,6 @@ static char *const kEventQueueLabel = "xctool.events";
 
 @end
 
-static FILE *__stdout;
-static FILE *__stderr;
-
-static NSMutableArray *__testExceptions = nil;
-static int __testSuiteDepth = 0;
-
 static dispatch_queue_t EventQueue()
 {
   static dispatch_queue_t eventQueue = {0};
@@ -233,7 +233,7 @@ static void XCToolLog_testSuiteDidStop(NSString *testSuiteName, XCTestSuiteRun *
   __testSuiteDepth--;
 
   if (__testSuiteDepth > 0) {
-    NSDictionary *content =
+    NSDictionary<NSString *, id> *content =
       @{
         kReporter_EndTestSuite_SuiteKey : testSuiteName,
         kReporter_EndTestSuite_TestCaseCountKey : @([run testCaseCount]),
@@ -242,7 +242,7 @@ static void XCToolLog_testSuiteDidStop(NSString *testSuiteName, XCTestSuiteRun *
         kReporter_EndTestSuite_TestDurationKey: @([run testDuration]),
         kReporter_EndTestSuite_TotalDurationKey : @([run totalDuration]),
       };
-    NSDictionary *json = EventDictionaryWithNameAndContent(kReporter_Events_EndTestSuite, content);
+    NSDictionary<NSString *, id> *json = EventDictionaryWithNameAndContent(kReporter_Events_EndTestSuite, content);
     dispatch_sync(EventQueue(), ^{
       PrintJSON(json);
     });
@@ -316,8 +316,8 @@ static void XCToolLog_testCaseDidStop(XCTestCase *testCase, NSNumber *unexpected
     }
 
     // report test results
-    NSArray *retExceptions = [__testExceptions copy];
-    NSDictionary *json = EventDictionaryWithNameAndContent(
+    NSArray<NSDictionary<NSString *, id> *> *retExceptions = [__testExceptions copy];
+    NSDictionary<NSString *, id> *json = EventDictionaryWithNameAndContent(
       kReporter_Events_EndTest, @{
         kReporter_EndTest_TestKey : testKey,
         kReporter_EndTest_ClassNameKey : className,
@@ -431,7 +431,7 @@ static void XCWaitForDebuggerIfNeeded()
 {
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
-    NSDictionary *env = [[NSProcessInfo processInfo] environment];
+    NSDictionary<NSString *, NSString *> *env = [[NSProcessInfo processInfo] environment];
     BOOL waitForDebugger = [env[@"XCTOOL_WAIT_FOR_DEBUGGER"] isEqualToString:@"YES"];
     if (waitForDebugger) {
       int pid = [[NSProcessInfo processInfo] processIdentifier];
