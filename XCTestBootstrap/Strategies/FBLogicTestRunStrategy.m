@@ -96,10 +96,10 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   NSString *xctestPath = self.executor.xctestPath;
   NSString *shimPath = self.executor.shimPath;
 
-  // The environment requires the shim path and otest-shim path.
+  // The environment the bundle path to the xctest target and where to redirect stdout to.
   NSMutableDictionary<NSString *, NSString *> *environment = [NSMutableDictionary dictionaryWithDictionary:@{
     @"DYLD_INSERT_LIBRARIES": shimPath,
-    @"OTEST_SHIM_STDOUT_FILE": shimOutput.filePath,
+    @"TEST_SHIM_STDOUT_PATH": shimOutput.filePath,
     @"TEST_SHIM_BUNDLE_PATH": self.configuration.testBundlePath,
     @"FB_TEST_TIMEOUT": @(self.configuration.testTimeout).stringValue,
   }];

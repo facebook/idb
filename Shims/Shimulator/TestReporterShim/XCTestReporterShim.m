@@ -455,7 +455,7 @@ static void XCTestLog_testCaseDidFailWithDescription(id self, SEL sel, XCTestCas
 static void XCPerformTestWithSuppressedExpectedAssertionFailures(id self, SEL origSel, id arg1)
 {
   void (*msgsend)(id, SEL, id) = (void *) objc_msgSend;
-  int timeout = [@(getenv("OTEST_SHIM_TEST_TIMEOUT") ?: "0") intValue];
+  int timeout = [@(getenv("TEST_SHIM_TEST_TIMEOUT") ?: "0") intValue];
 
   NSAssertionHandler *handler = [[XCToolAssertionHandler alloc] init];
   NSThread *currentThread = [NSThread currentThread];
@@ -827,7 +827,7 @@ static BOOL NSBundle_loadAndReturnError(id self, SEL sel, NSError **error)
 
 static void assignOutputFiles(void)
 {
-  const char *stdoutFileKey = "OTEST_SHIM_STDOUT_FILE";
+  static const char *stdoutFileKey = "TEST_SHIM_STDOUT_PATH";
   FILE *shimStdoutFile = fopen(getenv(stdoutFileKey), "w");
   if (shimStdoutFile) {
     __stdout = shimStdoutFile;
@@ -837,7 +837,7 @@ static void assignOutputFiles(void)
   }
   setvbuf(__stdout, NULL, _IONBF, 0);
 
-  const char *stderrFileKey = "OTEST_SHIM_STDERR_FILE";
+  static const char *stderrFileKey = "TEST_SHIM_STDERR_PATH";
   FILE *shimStderrFile = fopen(getenv(stderrFileKey), "w");
   if (shimStderrFile) {
     __stderr = shimStderrFile;
