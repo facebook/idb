@@ -93,6 +93,7 @@
   return [[self.device
     startService:@"com.apple.syslog_relay"]
     onQueue:queue enter:^(FBAMDServiceConnection *connection, FBMutableFuture<NSNull *> *teardown) {
+      connection.readBufferSize = 1;
       FBFuture<NSNull *> *readCompleted = [connection consume:consumer onQueue:dispatch_queue_create("com.facebook.fbdevicecontrol.device_log_consumer", DISPATCH_QUEUE_SERIAL)];
       return [[FBDeviceLogOperation alloc] initWithConsumer:consumer readCompleted:readCompleted serviceCompleted:teardown];
     }];

@@ -47,6 +47,8 @@ static const NSUInteger HeaderLength = sizeof(HeaderIntType);
   _device = device;
   _calls = calls;
   _logger = logger;
+  // There's an upper limit on the number of bytes we can read at once
+  _readBufferSize = 1024 * 4;
 
   return self;
 }
@@ -99,9 +101,9 @@ static const NSUInteger HeaderLength = sizeof(HeaderIntType);
 {
   return [FBFuture
     onQueue:queue resolve:^{
-      void *buffer = alloca(ReadBufferSize);
+      void *buffer = alloca(self.readBufferSize);
       while (true) {
-        ssize_t readBytes = self.calls.ServiceConnectionReceive(self.connection, buffer, ReadBufferSize);
+        ssize_t readBytes = self.calls.ServiceConnectionReceive(self.connection, buffer, (size_t)self.readBufferSize);
         if (readBytes < 1) {
           [consumer consumeEndOfFile];
           return FBFuture.empty;

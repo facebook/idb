@@ -187,6 +187,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, assign, readonly) AMSecureIOContext secureIOContext;
 
+/**
+  The size of the read buffer. Public so specific services(such as syslog) can override the default.
+ */
+@property (nonatomic, assign) int readBufferSize;
+
 @end
 
 NS_ASSUME_NONNULL_END

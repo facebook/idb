@@ -17,6 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
  An implementation of Log Commands for Devices.
  */
 @interface FBDeviceLogCommands : NSObject <FBLogCommands, FBiOSTargetCommand>
++ (instancetype)commandsWithTarget:(FBDevice *)target;
+- (FBFuture<id<FBLogOperation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer;
 
 @end
 

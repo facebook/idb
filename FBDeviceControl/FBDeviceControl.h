@@ -9,12 +9,16 @@
 #import <FBDeviceControl/FBAMDefines.h>
 #import <FBDeviceControl/FBAMDevice+Private.h>
 #import <FBDeviceControl/FBAMDevice.h>
+#import <FBDeviceControl/FBAMDeviceManager.h>
 #import <FBDeviceControl/FBAMRestorableDeviceManager.h>
 #import <FBDeviceControl/FBDevice.h>
 #import <FBDeviceControl/FBDeviceActivationCommands.h>
+#import <FBDeviceControl/FBDeviceApplicationCommands.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
 #import <FBDeviceControl/FBDeviceControlError.h>
 #import <FBDeviceControl/FBDeviceControlFrameworkLoader.h>
+#import <FBDeviceControl/FBDeviceFileCommands.h>
+#import <FBDeviceControl/FBDeviceLogCommands.h>
 #import <FBDeviceControl/FBDevicePowerCommands.h>
 #import <FBDeviceControl/FBDeviceRecoveryCommands.h>
 #import <FBDeviceControl/FBDeviceSet.h>

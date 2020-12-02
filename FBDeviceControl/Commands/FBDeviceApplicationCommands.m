@@ -111,6 +111,24 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
     }];
 }
 
+- (FBFuture<NSNull *> *)deltaInstallApplicationWithPath:(NSString *)path andShadowDirectory:(NSString *)shadowDir
+{
+  NSString *cacheDirectory = shadowDir;
+  if (cacheDirectory == nil) {
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+    cacheDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"idb"];
+  }
+
+  // Ensure that the shadow directory exists as the Apple API will not create it.
+  NSError *error = nil;
+  [[NSFileManager defaultManager] createDirectoryAtPath:cacheDirectory withIntermediateDirectories:TRUE attributes:nil error:&error];
+
+  NSDictionary *options = @{@"PackageType" : @"Developer", @"ShadowParentKey" : [NSURL fileURLWithPath:cacheDirectory]};
+  NSURL *appURL = [NSURL fileURLWithPath:path isDirectory:YES];
+
+  return [self secureDeltaInstallApplication:appURL options:options];
+}
+
 - (FBFuture<id> *)uninstallApplicationWithBundleID:(NSString *)bundleID
 {
   // It may be better to investigate if FB_AMDeviceSecureUninstallApplication
@@ -307,6 +325,30 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
     }];
 }
 
+- (FBFuture<NSNull *> *)secureDeltaInstallApplication:(NSURL *)appURL options:(NSDictionary *)options
+{
+  return [[self.device
+    connectToDeviceWithPurpose:@"install"]
+    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
+      [self.device.logger logFormat:@"Installing Application %@", appURL];
+      int status = device.calls.SecureInstallApplicationBundle(
+        device.amDeviceRef,
+        (__bridge CFURLRef _Nonnull)(appURL),
+        (__bridge CFDictionaryRef _Nonnull)(options),
+        (AMDeviceProgressCallback) InstallCallback,
+        (__bridge void *) (device)
+      );
+      if (status != 0) {
+        NSString *errorMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to install application %@ 0x%x (%@)", [appURL lastPathComponent], status, errorMessage]
+          failFuture];
+      }
+      [self.device.logger logFormat:@"Installed Application %@", appURL];
+      return FBFuture.empty;
+    }];
+}
+
 - (FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)installedApplicationsData:(NSArray<NSString *> *)returnAttributes
 {
   return [[self.device
@@ -335,6 +377,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
 {
   // There is a change in service names in iOS 14 that we have to account for.
   // Both of these channels are fine to use with the same underlying protocol, so long as the secure wrapper is used on the transport.
+    // FIXME: iOS 13.7 requires secure. 13.3.1 does not. Figure out when that changed
   BOOL usesSecureConnection = self.device.osVersion.version.majorVersion >= 14;
   return [[[self.device
     ensureDiskImageIsMounted]

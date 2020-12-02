@@ -17,6 +17,14 @@ NS_ASSUME_NONNULL_BEGIN
  An Implementation of FBApplicationCommands for Devices
  */
 @interface FBDeviceApplicationCommands : NSObject <FBApplicationCommands>
+/**
+ Instantiates the Commands instance.
+
+ @param target the target to use.
+ @return a new instance of the Command.
+ */
++ (instancetype)commandsWithTarget:(FBDevice *)target;
+- (FBFuture<NSNull *> *)deltaInstallApplicationWithPath:(NSString *)path andShadowDirectory:(NSString *)shadowDir;
 
 @end
 
