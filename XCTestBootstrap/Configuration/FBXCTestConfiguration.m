@@ -311,10 +311,9 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   }
 
   NSString *xctestPath = executor.xctestPath;
-  NSArray<NSString *> *arguments = @[@"-XCTest", @"All", self.testBundlePath];
   return [FBXCTestProcess
     startWithLaunchPath:xctestPath
-    arguments:arguments
+    arguments:@[] // xctest needs no arguments as the shim will disregard & bypass them.
     environment:environment
     waitForDebugger:NO
     stdOutConsumer:stdOutConsumer
