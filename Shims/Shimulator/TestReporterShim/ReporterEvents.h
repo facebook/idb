@@ -50,6 +50,9 @@ typedef NS_ENUM(NSInteger, OTestExitCode) {
 #define kReporter_EndTest_Exception_FilePathInProjectKey @"filePathInProject"
 #define kReporter_EndTest_Exception_LineNumberKey @"lineNumber"
 #define kReporter_EndTest_Exception_ReasonKey @"reason"
+#define kReporter_EndTest_ResultValueError @"error"
+#define kReporter_EndTest_ResultValueFailure @"failure"
+#define kReporter_EndTest_ResultValueSuccess @"success"
 
 #define kReporter_BeginStatus_MessageKey @"message"
 #define kReporter_BeginStatus_LevelKey @"level"

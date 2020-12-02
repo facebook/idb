@@ -307,11 +307,11 @@ static void XCToolLog_testCaseDidStop(XCTestCase *testCase, NSNumber *unexpected
     BOOL succeeded = NO;
     NSString *result;
     if (errored) {
-      result = @"error";
+      result = kReporter_EndTest_ResultValueError;
     } else if (failed) {
-      result = @"failure";
+      result = kReporter_EndTest_ResultValueFailure;
     } else {
-      result = @"success";
+      result = kReporter_EndTest_ResultValueSuccess;
       succeeded = YES;
     }
 
