@@ -1,0 +1,12 @@
+---
+id: faqs
+title: Frequently Asked Questions
+---
+
+## Why use gRPC?
+
+`gRPC` has a number of benefits for this project:
+
+- Evolution of interfaces means that features can be added for particular calls added, without the need for numeric versioning.
+- `gRPC` supports bidirectional streams. This is hugely beneficial for commands that produce incremental output of an indeterminate length. For example, this is heavily used in streaming video or logs from iOS.
+- `gRPC` provides flexibility in the implementation of the server/companion. This may allow us to migrate `idb`'s companion server to a Swift implementation away from a Objective-C++ one without affecting the client's implementation.

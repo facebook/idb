@@ -13,6 +13,7 @@ module.exports = {
     "architecture",
     "commands",
     "test-execution",
-    "accessibility"
+    "accessibility",
+    "faqs"
   ]
 };
