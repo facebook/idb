@@ -13,6 +13,8 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+#import "ReporterEvents.h"
+
 @interface FBListTestStrategy ()
 
 @property (nonatomic, strong, readonly) id<FBXCTestProcessExecutor> executor;
@@ -127,19 +129,20 @@
       return [FBListTestStrategy onQueue:queue confirmExit:processInfo closingOutput:shimOutput consumer:shimConsumer];
     }]
     onQueue:queue fmap:^(id _) {
+      NSError *error = nil;
+      NSArray<NSDictionary<NSString *, NSString *> *> *tests = [NSJSONSerialization JSONObjectWithData:shimConsumer.data options:0 error:&error];
+      if (!tests) {
+        return [FBFuture futureWithError:error];
+      }
       NSMutableArray<NSString *> *testNames = [NSMutableArray array];
-      for (NSString *line in shimConsumer.lines) {
-        if (line.length == 0) {
-          // Ignore empty lines
-          continue;
-        }
-        NSRange slashRange = [line rangeOfString:@"/"];
-        if (slashRange.length == 0) {
+      for (NSDictionary<NSString *, NSString *> * test in tests) {
+        NSString *testName = test[kReporter_ListTest_LegacyTestNameKey];
+        if (![testName isKindOfClass:NSString.class]) {
           return [[FBXCTestError
-            describeFormat:@"Received unexpected test name from shim: %@", line]
+            describeFormat:@"Received unexpected test name from shim: %@", testName]
             failFuture];
         }
-        [testNames addObject:line];
+        [testNames addObject:testName];
       }
       return [FBFuture futureWithResult:[testNames copy]];
   }];

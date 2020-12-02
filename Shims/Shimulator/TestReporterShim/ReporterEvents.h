@@ -40,6 +40,11 @@ typedef NS_ENUM(NSInteger, OTestExitCode) {
 #define kReporter_BeginTest_ClassNameKey @"className"
 #define kReporter_BeginTest_MethodNameKey @"methodName"
 
+#define kReporter_ListTest_TestKey @"test"
+#define kReporter_ListTest_ClassNameKey @"className"
+#define kReporter_ListTest_MethodNameKey @"methodName"
+#define kReporter_ListTest_LegacyTestNameKey @"legacyTestName"
+
 #define kReporter_EndTest_TestKey @"test"
 #define kReporter_EndTest_ClassNameKey @"className"
 #define kReporter_EndTest_MethodNameKey @"methodName"

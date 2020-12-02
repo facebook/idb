@@ -679,27 +679,29 @@ static void listBundle(NSString *testBundlePath, NSString *outputFile)
 
   // Enumerate the test cases, constructing the reported name for them.
   NSArray<XCTestCase *> *allTestCases = TestsFromSuite(allTestsSuite);
-  NSMutableArray<NSString *> *namesToReport = NSMutableArray.array;
+  NSMutableArray<NSDictionary<NSString *, NSString *> *> *testsToReport = NSMutableArray.array;
   for (XCTestCase *testCase in allTestCases) {
     NSString *className = nil;
     NSString *methodName = nil;
-    parseXCTestCase(testCase, &className, &methodName, nil);
-    NSString *name = [NSString stringWithFormat:@"%@/%@", className, methodName];
-    [namesToReport addObject:name];
+    NSString *testKey = nil;
+    parseXCTestCase(testCase, &className, &methodName, &testKey);
+    NSString *legacyTestName = [NSString stringWithFormat:@"%@/%@", className, methodName];
+    [testsToReport addObject:@{
+      kReporter_ListTest_LegacyTestNameKey: legacyTestName,
+      kReporter_ListTest_ClassNameKey: className,
+      kReporter_ListTest_MethodNameKey: methodName,
+      kReporter_ListTest_TestKey: testKey,
+    }];
   }
 
   // Now write them out after sorting
-  [namesToReport sortUsingSelector:@selector(compare:)];
-  BOOL writtenFirstLine = NO;
-  for (NSString *name in namesToReport) {
-    NSString *line = name;
-    if (writtenFirstLine) {
-      line = [NSString stringWithFormat:@"\n%@", line];
-    }
-    NSData *output = [line dataUsingEncoding:NSUTF8StringEncoding];
-    [fileHandle writeData:output];
-    writtenFirstLine = YES;
-  }
+  [testsToReport sortUsingComparator:^ NSComparisonResult (NSDictionary<NSString *, NSString *> *left, NSDictionary<NSString *, NSString *> *right) {
+    return [left[kReporter_ListTest_LegacyTestNameKey] compare:right[kReporter_ListTest_LegacyTestNameKey]];
+  }];
+  NSError *error = nil;
+  NSData *output = [NSJSONSerialization dataWithJSONObject:testsToReport options:0 error:&error];
+  NSCAssert(output, @"Failed to generate list test JSON", error);
+  [fileHandle writeData:output];
 
   // Close the file so the other end knows this is the end of the input.
   [fileHandle closeFile];
