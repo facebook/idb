@@ -28,8 +28,6 @@ The original use-case for `FBSimulatorControl` was to boot Simulators to run End
 As `FBSimulatorControl` nears a stable version, the API may change but can be considered mostly stable.
 
 ## Installation
-The fastest way to get a usable installation of the Framework is [to install `fbsimctl` with `homebrew`](fbsimctl/README.md). This will build the `FBSimulatorFramework` at the same time and install it to `/usr/local/Cellar/fbsimctl/Frameworks` by default.
-
 The homebrew installation is derived from [the `build.sh`](build.sh) script in this directory. You can build `FBSimulatorControl` with the following: `build.sh framework build`
 
 The `FBSimulatorControl.xcodeproj` will build the `FBSimulatorControl.framework` and the `FBSimulatorControlTests.xctest` bundles without any additional dependencies. The Project File is checked into the repo and the Framework can be build from this project.
@@ -117,14 +115,10 @@ However, this mode of operation does limit the amount that `FBSimulatorControl` 
 
 Direct Launching does not currently support manipulation of the UI within the Simulator, so is much better suited to a use-case where the [UI is manipulated by other means](https://github.com/facebook/webdriveragent).
 
-## `fbsimctl`
-[`fbsimctl` is a Command Line Interface](https://github.com/facebook/FBSimulatorControl/blob/master/fbsimctl/README.md) for `FBSimulatorControl` API calls, so `FBSimulatorControl` functionality can be used without the need to integrate with the Framework. It is currently under development. As `fbsimctl` is under active development, the User Interface will be prone to change.
-
 ## Contributing
 See the [CONTRIBUTING](CONTRIBUTING) file for how to help out. There's plenty to work on the issues!
 
 ## Example Projects
 
-* [fbsimctl](https://github.com/facebook/FBSimulatorControl/blob/master/fbsimctl/README.md): Command line interface
 * [SimulatorController](https://github.com/davidlawson/SimulatorController): GUI interface written in Swift
 * [FBSimulatorClient](https://github.com/tapthaker/FBSimulatorClient): Simulator interface using REST requests

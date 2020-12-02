@@ -12,7 +12,6 @@ if hash xcpretty 2>/dev/null; then
 fi
 
 BUILD_DIRECTORY=build
-CLI_E2E_PATH=fbsimctl/cli-tests/executable-under-test
 
 function invoke_xcodebuild() {
   local arguments=$@
@@ -28,17 +27,6 @@ function assert_has_carthage() {
       echo "build needs 'carthage' to bootstrap dependencies"
       echo "You can install it using brew. E.g. $ brew install carthage"
       exit 1;
-  fi
-}
-
-function build_fbsimctl_deps() {
-  if [ -z "$CUSTOM_FBSIMCTL_DEPS_SCRIPT" ]; then
-    assert_has_carthage
-    pushd fbsimctl
-    carthage bootstrap --platform Mac
-    popd
-  else
-    "$CUSTOM_FBSIMCTL_DEPS_SCRIPT"
   fi
 }
 
@@ -225,14 +213,6 @@ Supported Commands:
     Build the FBSimulatorControl.framework. Optionally copies the Framework to <output-directory>
   framework test
     Build then Test the FBSimulatorControl.framework.
-  fbsimctl build <output-directory>
-    Build the fbsimctl exectutable. Optionally copies the executable and its dependencies to <output-directory>
-  fbsimctl test
-    Build the FBSimulatorControlKit.framework and runs the tests.
-  fbsimctl e2e-test
-    Build the fbsimctl executable and run fbsimctl's e2e tests against it. Requires python3.
-  fbxctest build <output-directory>
-    Build the xctest exectutable. Optionally copies the executable and its dependencies to <output-directory>
   fbxctest test
     Builds the FBXCTestKit.framework and runs the tests.
 EOF
@@ -281,22 +261,6 @@ case $TARGET in
         all_frameworks_test;;
       *)
         echo "Unknown Command $2"
-        exit 1;;
-    esac;;
-  fbsimctl)
-    build_fbsimctl_deps
-    case $COMMAND in
-      build)
-        cli_build fbsimctl $OUTPUT_DIRECTORY;;
-      test)
-        build_test_deps
-        cli_framework_test fbsimctl;;
-      e2e-test)
-        rm -r "$CLI_E2E_PATH" || true
-        cli_build fbsimctl "$CLI_E2E_PATH"
-        cli_e2e_test fbsimctl;;
-      *)
-        echo "Unknown Command $COMMAND"
         exit 1;;
     esac;;
   fbxctest)

@@ -9,12 +9,6 @@ matrix:
       env: TARGET=framework COMMAND=test FBSIMULATORCONTROL_DEVICE_SET=custom FBSIMULATORCONTROL_LAUNCH_TYPE=direct
     - os: osx
       osx_image: xcode12.2
-      env: TARGET=fbsimctl COMMAND=test
-    - os: osx
-      osx_image: xcode12.2
-      env: TARGET=fbsimctl COMMAND=e2e-test
-    - os: osx
-      osx_image: xcode12.2
       env: TARGET=fbxctest COMMAND=test
 script: ./build.sh
 branches:
