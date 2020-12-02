@@ -378,7 +378,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
   // There is a change in service names in iOS 14 that we have to account for.
   // Both of these channels are fine to use with the same underlying protocol, so long as the secure wrapper is used on the transport.
     // FIXME: iOS 13.7 requires secure. 13.3.1 does not. Figure out when that changed
-  BOOL usesSecureConnection = self.device.osVersion.version.majorVersion >= 14;
+  BOOL usesSecureConnection = self.device.osVersion.version.majorVersion >= 13 && self.device.osVersion.version.minorVersion >= 7;
   return [[[self.device
     ensureDiskImageIsMounted]
     onQueue:self.device.workQueue pushTeardown:^(id _) {
