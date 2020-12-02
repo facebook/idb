@@ -7,8 +7,8 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@docusaurus/core": "^2.0.0-alpha.65",
-    "@docusaurus/preset-classic": "^2.0.0-alpha.65",
+    "@docusaurus/core": "^2.0.0-alpha.69",
+    "@docusaurus/preset-classic": "^2.0.0-alpha.69",
     "classnames": "^2.2.6",
     "react": "^16.14.0",
     "react-dom": "^16.14.0"
