@@ -59,10 +59,11 @@
 
 - (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
 {
-  return [[self.simulator
-    installedApplicationWithBundleID:bundleID]
-    onQueue:self.simulator.asyncQueue chain:^FBFuture *(FBFuture *future) {
-      return [FBFuture futureWithResult:@(future.result != nil)];
+  return [FBFuture
+    onQueue:self.simulator.workQueue resolveValue:^ NSNumber * (NSError ** error) {
+      NSString *applicationType = nil;
+      BOOL applicationIsInstalled = [self.simulator.device applicationIsInstalled:bundleID type:&applicationType error:error];
+      return @(applicationIsInstalled);
     }];
 }
 
@@ -100,10 +101,6 @@
     }];
 }
 
-#pragma mark - FBSimulatorApplicationCommands
-
-#pragma mark Application Lifecycle
-
 - (FBFuture<NSNull *> *)uninstallApplicationWithBundleID:(NSString *)bundleID
 {
   NSParameterAssert(bundleID);
@@ -133,26 +130,26 @@
     }];
 }
 
-#pragma mark Querying Application State
-
 - (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID
 {
-  NSParameterAssert(bundleID);
-
-  NSError *error = nil;
-  // appInfo is usually always returned, even if there is no app installed.
-  NSDictionary *appInfo = [self.simulator.device propertiesOfApplication:bundleID error:&error];
-  if (!appInfo) {
-    return [FBFuture futureWithError:error];
-  }
-  // Therefore we have to parse the app info to see that it is actually a real app.
-  FBInstalledApplication *application = [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:&error];
-  if (!application) {
-    return [[FBSimulatorError
-      describeFormat:@"Application Info %@ could not be parsed (it's probably not installed): %@", [FBCollectionInformation oneLineDescriptionFromDictionary:appInfo], error]
-      failFuture];
-  }
-  return [FBFuture futureWithResult:application];
+  return [[self
+    confirmApplicationIsInstalled:bundleID]
+    onQueue:self.simulator.workQueue fmap:^ FBFuture<FBInstalledApplication *> * (id _) {
+      // appInfo is usually always returned, even if there is no app installed.
+      NSError *error = nil;
+      NSDictionary<NSString *, id> *appInfo = [self.simulator.device propertiesOfApplication:bundleID error:&error];
+      if (!appInfo) {
+        return [FBFuture futureWithError:error];
+      }
+      // Therefore we have to parse the app info to see that it is actually a real app.
+      FBInstalledApplication *application = [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:&error];
+      if (!application) {
+        return [[FBSimulatorError
+          describeFormat:@"Application Info %@ could not be parsed (it's probably not installed): %@", [FBCollectionInformation oneLineDescriptionFromDictionary:appInfo], error]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:application];
+    }];
 }
 
 - (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningApplications
@@ -172,6 +169,17 @@
     }];
 }
 
+- (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID
+{
+  return [[self
+    runningApplicationWithBundleID:bundleID]
+    onQueue:self.simulator.workQueue map:^(FBProcessInfo *info) {
+      return @(info.processIdentifier);
+    }];
+}
+
+#pragma mark FBSimulatorApplicationCommands
+
 - (FBFuture<FBProcessInfo *> *)runningApplicationWithBundleID:(NSString *)bundleID
 {
   NSParameterAssert(bundleID);
@@ -190,15 +198,6 @@
           failFuture];
       }
       return [FBFuture futureWithResult:processInfo];
-    }];
-}
-
-- (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID
-{
-  return [[self
-    runningApplicationWithBundleID:bundleID]
-    onQueue:self.simulator.workQueue map:^(FBProcessInfo *info) {
-      return @(info.processIdentifier);
     }];
 }
 
@@ -321,6 +320,20 @@ static NSString *const KeyDataContainer = @"DataContainer";
           failFuture];
       }
       return [FBFuture futureWithResult:application];
+    }];
+}
+
+- (FBFuture<NSNull *> *)confirmApplicationIsInstalled:(NSString *)bundleID
+{
+  return [[self
+    isApplicationInstalledWithBundleID:bundleID]
+    onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (NSNumber *installed) {
+      if (installed.boolValue == NO) {
+        return [[FBSimulatorError
+          describeFormat:@"%@ is not installed", bundleID]
+          failFuture];
+      }
+      return FBFuture.empty;
     }];
 }
 

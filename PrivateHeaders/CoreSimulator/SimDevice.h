@@ -74,8 +74,8 @@
 - (int)launchApplicationWithID:(id)arg1 options:(id)arg2 error:(id *)arg3;
 - (void)launchApplicationAsyncWithID:(id)arg1 options:(id)arg2 completionQueue:(id)arg3 completionHandler:(void(^)(NSError *, pid_t))arg4;
 - (id)installedAppsWithError:(id *)arg1;
-- (id)propertiesOfApplication:(id)arg1 error:(id *)arg2;
-- (BOOL)applicationIsInstalled:(id)arg1 type:(id *)arg2 error:(id *)arg3;
+- (NSDictionary<NSString *, id> *)propertiesOfApplication:(NSString *)bundleID error:(NSError **)error;
+- (BOOL)applicationIsInstalled:(NSString *)bundleID type:(NSString **)typeOut error:(NSError **)error;
 - (BOOL)uninstallApplication:(id)arg1 withOptions:(id)arg2 error:(id *)arg3;
 - (BOOL)installApplication:(id)arg1 withOptions:(id)arg2 error:(id *)arg3;
 - (BOOL)setKeyboardLanguage:(id)arg1 error:(id *)arg2;
