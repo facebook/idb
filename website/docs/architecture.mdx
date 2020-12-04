@@ -31,3 +31,47 @@ The `idb` cli will, by default operate in one of two modes:
 
 - If the `idb` cli is running on macOS, then it will automatically start and stop companions for all targets that are attached to your Mac. This means that you can run commands against any iOS Simulators that you have, as well as any devies that you have connected.
 - If the `idb` cli is running on any other OS, it will not manage companions for you. In this case you can either "attach" companions via `idb connect` or explictly on every call using the `IDB_COMPANION=hostname:port` environment variable. This allows you to perform `idb` commands against companions running on other hosts. These facilities for companion discovery work on macOS also.
+
+## Differences between Devices, Simulators & Emulators
+
+iOS Devices and Simulators behave in substantially different ways, as well as Simulators behaving very differently to Emulators (for instance Android emulators):
+
+- iOS Simulators and their child processes, appear as regular processes on the host operating system.
+- iOS Simulators run executables that are native to macOS. This is unlike emulators for Android which may run across a variety of host operating systems, will always run native Android executables and may translate [between ISAs](https://en.wikipedia.org/wiki/Instruction_set_architecture).
+- As iOS Simulators appear as native processes to macOS, many of the macOS level APIs for interacting with files and processes work just the same. This is useful in implementing Simulator functionality.
+- iOS Simulators do not use exactly the same system frameworks as macOS. These Frameworks are implemented in the "Simulator Runtime" that is bundled within Xcode. The runtime contains Frameworks that are broadly the same as those on an iOS Device, except they are compiled for the macOS host archiecture.
+- As Simulators run natively, they have similar performance characteristics to that of the host. In a sense Simulator Applications perform in a similar way to a macOS application running on macOS. This usually means that Simulators are substantially more performant than emulators, even when an emulator has access to a hypervisor and is running the same ISA.
+- iOS Simulators have the concept of a "root" directory, which can be thought of as the Simulator's Filesystem. Applications running inside the Simulator still have access to files outside of this root (there is no [`chroot`'ing](https://en.wikipedia.org/wiki/Chroot) inside of the Simulator), so are able to manipulate files that outside of this root. Applications are also able to manipulate files outside of their own "Application Sandbox" which is not the case on iOS Devices.
+- This lack of isolation in iOS Simulators is a double edged sword. It can make certain automation cases more convenient to implement, but it is not easy to ensure that a Simulator has access to a limited amount of system resources. For example, emulators typically allow setting an upper limit on the number of cores or memory that can be consumed by the "guest" OS, where iOS Simulators can access the same resources that any application on the host can. This makes it harder to isolate multiple iOS Simulators running on the same host from each other. For instance, an iOS Simulator Application that consumes extreme amounts of system resources will exhaust these resources for other applications, processes or Simulators running on the same host.
+- iOS Devices are very strict about isolating processes from each other as well as the host to which it is attached. Interaction between the host and attached iOS Device is only possible through purpose-built APIs that exposes functionality for existing host-device behaviours. For instance, iOS App launching is implemented on iOS Devices through APIs that are used by the "Instruments" Application. This functionality is typically provided over a socket transport, with varying different protocol implementations depending on the domain. Access to these services is arbitrated via a `lockdown` service running on the iOS Device.
+- As such, the implementations for functionality across iOS Simulators & Devices are drastically different, even within Xcode's own Frameworks.
+
+## Framework Concepts
+
+There are two frameworks in `FBSimulatorControl` and `FBDeviceControl` that exist to implement the majority of the functionality used by `idb`. Additionally, there is the `FBControlCore` Framework that exists to define common interfaces for the Device and Simulator Frameworks and to provide other functionality that is common to both. These Frameworks are able to be used independently of `idb` itself. This is an overview of how these Frameworks are designed together
+
+### Targets
+
+A instance of a target (`FBiOSTarget`) is an object that represents a single iOS Simulator or Device. `FBiOSTarget` is a protocol definition that describes the functionality that is implemented by both `FBSimulator` and `FBDevice`. This abstraction means that higher-level applications and Frameworks are able to treat a target then same, regardless of whether it is an iOS Simulator or Device.
+
+As there are substantial differences in the way that iOS Simulators and Devices operate, this level of abstraction allows the Frameworks to smooth over the differences present in implementing common functionality.
+
+### Target Sets
+
+A "Target Set" (`FBiOSTargetSet`) represents a collection of targets. These are implemented in both `FBSimulatorSet` and `FBDeviceSet`. A Simulator set represents a root directory that is common to a number of Simulators. A Device Set represents all of the Devices attached to the host.
+
+This abstraction allows for interfaces to "CRUD" operations on both Simulators and Devices, despite having different implementations. For instance the same API is used across Simulators and Devices for `erasing` them.
+
+### Configuration Values
+
+Across the Frameworks, there are "Configuration" values, implemented as Objective-C classes. These are typically used for consolidating all the information required for a particular API call. For instance `FBApplicationLaunchConfiguration` defines launch arguments, environment and launch modes.
+
+These types exist so that APIs do not require extremely long and cumbersome argument lists, as well as providing sane defaults. These types are intentionally as behaviour-less as possible, close to pure value types.
+
+### Command Protocols & Implementations
+
+The protocols provide common APIs across Simulators and Devices. This allows the caller to treat the reciever the same, whether it is a Simulator or Device. There may be some protocols that are only supported by one or the other, depending on the target. For instance there is no concept of "Activation" on a iOS Simulator, so `FBDeviceActivationCommands` is only implemented by `FBDevice`.
+
+Implementations across Simulators & Devices are completely separated and implemented in their respective Frameworks. As an example, `FBApplicationCommands` (which provides an API for launching and listing Applications on an iOS Target), is implemented separately in `FBSimulatorApplicationCommands` and `FBDeviceApplicationCommands`.
+
+If functionality is common to both Simulators & Devices, it's protocol is added to `FBiOSTarget` so that implementors of `FBiOSTarget` are required to implement it. For functionality that is not common, the relevant protocol is added to the definition of the concrete `FBSimulator` or `FBDevice` class. For non-common protocols, the caller must either check for protocol conformance before calling an API, or use the concrete type directly.
