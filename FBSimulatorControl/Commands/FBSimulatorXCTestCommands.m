@@ -13,12 +13,15 @@
 #import <sys/un.h>
 
 #import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceSet.h>
 
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorXCTestProcessExecutor.h"
 #import "FBSimulatorTestPreparationStrategy.h"
+
+static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator/Devices";
 
 @interface FBSimulatorXCTestCommands ()
 
@@ -90,6 +93,7 @@
     configuration:configuration
     xcodeBuildPath:xcodeBuildPath
     testRunFilePath:filePath
+    simDeviceSet:[self.simulator.device.deviceSet.setPath isEqualToString:[DefaultSimDeviceSet stringByExpandingTildeInPath]] ? nil : self.simulator.device.deviceSet.setPath
     queue:self.simulator.workQueue
     logger:[logger withName:@"xcodebuild"]];
 }

@@ -29,11 +29,12 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the configuration to use.
  @param xcodeBuildPath the path to xcodebuild.
  @param testRunFilePath the path to the xcodebuild.xctestrun file
+ @param simDeviceSet an optional path to the simulator device set
  @param queue the queue to use for serialization.
  @param logger the logger to log to.
  @return a future that resolves when the task has launched.
  */
-+ (FBFuture<FBTask *> *)operationWithUDID:(NSString *)udid configuration:(FBTestLaunchConfiguration *)configuration xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBFuture<FBTask *> *)operationWithUDID:(NSString *)udid configuration:(FBTestLaunchConfiguration *)configuration xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath simDeviceSet:(nullable NSString *)simDeviceSetPath queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 

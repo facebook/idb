@@ -117,6 +117,7 @@
     configuration:configuration
     xcodeBuildPath:xcodeBuildPath
     testRunFilePath:filePath
+    simDeviceSet:nil
     queue:self.device.workQueue
     logger:[logger withName:@"xcodebuild"]];
 }

@@ -17,7 +17,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
 
 @implementation FBXcodeBuildOperation
 
-+ (FBFuture<FBTask *> *)operationWithUDID:(NSString *)udid configuration:(FBTestLaunchConfiguration *)configuration xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
++ (FBFuture<FBTask *> *)operationWithUDID:(NSString *)udid configuration:(FBTestLaunchConfiguration *)configuration xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath simDeviceSet:(nullable NSString *)simDeviceSetPath queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   NSMutableArray<NSString *> *arguments = [[NSMutableArray alloc] init];
   [arguments addObjectsFromArray:@[
@@ -45,7 +45,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
   NSMutableDictionary<NSString *, NSString *> *environment = [NSProcessInfo.processInfo.environment mutableCopy];
   environment[XcodebuildEnvironmentTargetUDID] = udid;
   
-  NSString *simDeviceSetPath = configuration.applicationLaunchConfiguration.environment[XcodebuildEnvironmentDeviceSetPath];
+  // Add environments for xcodebuild method swizzling if a simulator device set is provided
   if (simDeviceSetPath) {
     if (!configuration.shims || !configuration.shims.macOSTestShimPath) {
       return [[XCTestBootstrapError describe:@"Failed to locate the shim file for xcodebuild method swizzling"] failFuture];
