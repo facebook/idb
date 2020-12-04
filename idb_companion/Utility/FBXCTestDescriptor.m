@@ -34,6 +34,62 @@ static FBApplicationLaunchConfiguration *BuildAppLaunchConfig(NSString *bundleID
 
 static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
+@implementation FBXCTestRunFileReader : NSObject
+
++ (NSDictionary<NSString *, id> *)readContentsOf:(NSURL *)xctestrunURL expandPlaceholderWithPath:(NSString *)path error:(NSError **)error
+{
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  if(![fileManager fileExistsAtPath:[xctestrunURL path]]) {
+    if (error) {
+      *error = [FBXCTestError errorForFormat:@"xctestrun file does not exist at expected location: %@", xctestrunURL];
+    }
+    return nil;
+  }
+  NSString *testRoot = [[xctestrunURL path] stringByDeletingLastPathComponent];
+  NSString *idbAppStoragePath = [path stringByAppendingPathComponent:IdbApplicationsFolder];
+  if (![fileManager fileExistsAtPath:idbAppStoragePath]) {
+    if (error) {
+      *error = [FBXCTestError errorForFormat:@"IDB app storage folder does not exist at: %@", idbAppStoragePath];
+    }
+    return nil;
+  }
+  // dictionaryWithContentsOfURL:error: is only available in NSDictionary not in NSMutableDictionary
+  NSMutableDictionary<NSString *, id> *xctestrunContents = [[NSDictionary dictionaryWithContentsOfURL:xctestrunURL error:error] mutableCopy];
+  if (!xctestrunContents) {
+    return nil;
+  }
+  for (NSString *testTarget in xctestrunContents) {
+    if ([testTarget isEqualToString:@"__xctestrun_metadata__"] || [testTarget isEqualToString:@"CodeCoverageBuildableInfos"]) {
+      continue;
+    }
+    NSMutableDictionary<NSString *, id> *testTargetProperties = [[xctestrunContents objectForKey:testTarget] mutableCopy];
+    // Expand __TESTROOT__ and __IDB_APPSTORAGE__ in TestHostPath
+    NSString *testHostPath = [testTargetProperties objectForKey:@"TestHostPath"];
+    if (testHostPath != nil) {
+      testHostPath = [testHostPath stringByReplacingOccurrencesOfString:@"__TESTROOT__" withString:testRoot];
+      testHostPath = [testHostPath stringByReplacingOccurrencesOfString:@"__IDB_APPSTORAGE__" withString:idbAppStoragePath];
+      [testTargetProperties setObject:testHostPath forKey:@"TestHostPath"];
+    }
+    // Expand __TESTROOT__ and __TESTHOST__ in TestBundlePath
+    NSString *testBundlePath = [testTargetProperties objectForKey:@"TestBundlePath"];
+    if (testBundlePath != nil) {
+      testBundlePath = [testBundlePath stringByReplacingOccurrencesOfString:@"__TESTROOT__" withString:testRoot];
+      testBundlePath = [testBundlePath stringByReplacingOccurrencesOfString:@"__TESTHOST__" withString:testHostPath];
+      [testTargetProperties setObject:testBundlePath forKey:@"TestBundlePath"];
+    }
+    // Expand __IDB_APPSTORAGE__ in UITargetAppPath
+    NSString *targetAppPath = [testTargetProperties objectForKey:@"UITargetAppPath"];
+    if (targetAppPath != nil) {
+      targetAppPath = [targetAppPath stringByReplacingOccurrencesOfString:@"__IDB_APPSTORAGE__" withString:idbAppStoragePath];
+      [testTargetProperties setObject:targetAppPath forKey:@"UITargetAppPath"];
+    }
+    [xctestrunContents setObject:testTargetProperties forKey:testTarget];
+  }
+  return xctestrunContents;
+}
+
+@end
+
 @interface FBXCTestRunRequest_LogicTest : FBXCTestRunRequest
 
 @end
@@ -150,7 +206,11 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
         testAppPairForRequest:self target:target]
         onQueue:target.workQueue fmap:^ FBFuture<FBIDBTestOperation *> * (FBTestApplicationsPair *pair) {
           [logger logFormat:@"Obtaining launch configuration for App Pair %@ on descriptor %@", pair, testDescriptor];
-          FBTestLaunchConfiguration *testConfig = [testDescriptor testConfigWithRunRequest:self testApps:pair shims:shims logger:logger];
+          NSError *error = nil;
+          FBTestLaunchConfiguration *testConfig = [testDescriptor testConfigWithRunRequest:self testApps:pair shims:shims logger:logger error:&error];
+          if (!testConfig) {
+            return [FBFuture futureWithError:error];
+          }
           [logger logFormat:@"Obtained launch configuration %@", testConfig];
           return [FBXCTestRunRequest_AppTest startTestExecution:testConfig target:target reporter:reporter logger:logger];
         }];
@@ -398,7 +458,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     }];
 }
 
-- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger
+- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   FBTestLaunchConfiguration *config = [[[[FBTestLaunchConfiguration
   configurationWithTestBundlePath:self.testBundle.path]
@@ -492,19 +552,23 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 }
 
 
-- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger
+- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   FBApplicationLaunchConfiguration *launchConfig = BuildAppLaunchConfig(request.appBundleID, request.environment, request.arguments, logger);
   NSString *resultBundleName = [NSString stringWithFormat:@"resultbundle_%@", NSUUID.UUID.UUIDString];
   NSString *resultBundlePath = [self.targetAuxillaryDirectory stringByAppendingPathComponent:resultBundleName];
 
+  NSDictionary<NSString *, id> *properties = [FBXCTestRunFileReader readContentsOf:self.url expandPlaceholderWithPath:self.targetAuxillaryDirectory error:error];
+  if (!properties) {
+    return nil;
+  }
   return [[[[[[[[[[[FBTestLaunchConfiguration
     configurationWithTestBundlePath:self.testBundle.path]
     withTestHostPath:self.testHostBundle.path]
     withApplicationLaunchConfiguration:launchConfig]
     withXcodebuild:YES]
     withUITesting:request.isUITest]
-    withXCTestRunProperties:[NSDictionary dictionaryWithContentsOfURL:self.url]]
+    withXCTestRunProperties:properties]
     withTestsToRun:request.testsToRun]
     withTestsToSkip:request.testsToSkip]
     withResultBundlePath:resultBundlePath]

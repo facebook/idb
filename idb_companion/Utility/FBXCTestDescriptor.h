@@ -20,6 +20,26 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 
 /**
+ Read and expand contents of a xctestrun file
+ */
+@interface FBXCTestRunFileReader : NSObject
+
+#pragma mark Public Methods
+
+/**
+ Read a xctestrun file and expand placeholders
+
+ @param xctestrunURL URL of a xctestrun file
+ @param path auxiliary directory for the test target
+ @param error an error out for any oeeor that occurs
+ @return a dictionary with expanded xctestrun contents if the xctestrun file could be read successfully
+ */
++ (nullable NSDictionary<NSString *, id> *)readContentsOf:(NSURL *)xctestrunURL expandPlaceholderWithPath:(NSString *)path error:(NSError **)error;
+
+@end
+
+
+/**
  Describes the necessary information to start a test run.
  */
 @interface FBXCTestRunRequest : NSObject
@@ -203,9 +223,10 @@ The Initializer for UI Tests.
  @param testApps the materialized Applications that are used as a part of testing.
  @param shims the shims to use for relevant test runs
  @param logger the logger to log to
- @return a test launch configuration.
+ @param error an error out for any error that occurs
+ @return a test launch configuration if constructed successfully.
  */
-- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(nullable FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger;
+- (nullable FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(nullable FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Obtains the Test Application Components for the provided target and request

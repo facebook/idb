@@ -322,7 +322,10 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
   // Get info out of xctestrun files
   for (NSURL *xcTestRunURL in xcTestRunURLS) {
-    NSArray<id<FBXCTestDescriptor>> *descriptors = [self getXCTestRunDescriptorsFromURL:xcTestRunURL];
+    NSArray<id<FBXCTestDescriptor>> *descriptors = [self getXCTestRunDescriptorsFromURL:xcTestRunURL error:error];
+    if (!descriptors) {
+      return nil;
+    }
     [testDescriptors addObjectsFromArray:descriptors];
   }
 
@@ -393,10 +396,13 @@ static NSString *const XctestRunExtension = @"xctestrun";
   return [[FBIDBError describeFormat:@"Couldn't find test with url: %@", url] fail:error];
 }
 
-- (NSArray<id<FBXCTestDescriptor>> *)getXCTestRunDescriptorsFromURL:(NSURL *)xctestrunURL
+- (nullable NSArray<id<FBXCTestDescriptor>> *)getXCTestRunDescriptorsFromURL:(NSURL *)xctestrunURL error:(NSError **)error
 {
-  NSDictionary *contentDict = [NSDictionary dictionaryWithContentsOfURL:xctestrunURL];
-  NSDictionary *xctestrunMetadata = contentDict[@"__xctestrun_metadata__"];
+  NSDictionary<NSString *, id> *contentDict = [FBXCTestRunFileReader readContentsOf:xctestrunURL expandPlaceholderWithPath:self.target.auxillaryDirectory error:error];
+  if (!contentDict) {
+    return nil;
+  }
+  NSDictionary<NSString *, NSNumber *> *xctestrunMetadata = contentDict[@"__xctestrun_metadata__"];
   // The legacy format of xctestrun file does not contain __xctestrun_metadata__
   if (xctestrunMetadata) {
     [self.logger.info logFormat:@"Using xctestrun format version: %@", xctestrunMetadata[@"FormatVersion"]];
@@ -441,7 +447,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
 {
   NSError *error;
 
-  NSDictionary *testTargetProperties = [xctestrunContents objectForKey:testTarget];
+  NSDictionary<NSString *, id> *testTargetProperties = [xctestrunContents objectForKey:testTarget];
   NSNumber *useArtifacts = testTargetProperties[@"UseDestinationArtifacts"];
   if ([useArtifacts isKindOfClass:[NSNumber class]] && [useArtifacts boolValue]) {
     NSString *hostIdentifier = testTargetProperties[@"TestHostBundleIdentifier"];
@@ -459,18 +465,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
     return [[FBXCodebuildTestRunDescriptor alloc] initWithURL:xctestrunURL name:testTarget testBundle:testBundle testHostBundle:hostBundle];
   }
   NSString *testHostPath = [testTargetProperties objectForKey:@"TestHostPath"];
-  NSString *testRoot = [[xctestrunURL path] stringByDeletingLastPathComponent];
-  testHostPath = [testHostPath stringByReplacingOccurrencesOfString:@"__TESTROOT__" withString:testRoot];
-
-  // Get test bundle path and replace __TESTROOT__ and __TESTHOST__ in it
   NSString *testBundlePath = [testTargetProperties objectForKey:@"TestBundlePath"];
-  testBundlePath = [testBundlePath
-    stringByReplacingOccurrencesOfString:@"__TESTROOT__"
-    withString:testRoot];
-  testBundlePath = [testBundlePath
-    stringByReplacingOccurrencesOfString:@"__TESTHOST__"
-    withString:testHostPath];
-
   // Get the bundles for test host and test app
   FBBundleDescriptor *testHostBundle = [FBBundleDescriptor bundleFromPath:testHostPath error:&error];
   if (!testHostBundle) {
@@ -498,8 +493,12 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
 - (FBFuture<FBInstalledArtifact *> *)saveTestRun:(NSURL *)XCTestRunURL
 {
+  NSError *error = nil;
   // Delete old xctestrun with the same id if it exists
-  NSArray<id<FBXCTestDescriptor>> *descriptors = [self getXCTestRunDescriptorsFromURL:XCTestRunURL];
+  NSArray<id<FBXCTestDescriptor>> *descriptors = [self getXCTestRunDescriptorsFromURL:XCTestRunURL error:&error];
+  if (!descriptors) {
+    return [FBFuture futureWithError:error];
+  }
   if (descriptors.count != 1) {
     return [[FBIDBError
       describeFormat:@"Expected exactly one test in the xctestrun file, got: %lu", descriptors.count]
@@ -507,7 +506,6 @@ static NSString *const XctestRunExtension = @"xctestrun";
   }
 
   id<FBXCTestDescriptor> descriptor = descriptors[0];
-  NSError *error = nil;
   id<FBXCTestDescriptor> toDelete = [self testDescriptorWithID:descriptor.testBundleID error:&error];
   if (toDelete) {
     if (![NSFileManager.defaultManager removeItemAtURL:[toDelete.url URLByDeletingLastPathComponent] error:&error]) {
