@@ -271,6 +271,9 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
     if (error) {
       [future resolveWithError:error];
     }
+    if (responseData == nil) {
+      [future resolveWithError:[[FBControlCoreError describeFormat:@"No response data in response %@", response] build]];
+    }
     [future resolveWithResult:@[response, responseData]];
   }];
   [task resume];
