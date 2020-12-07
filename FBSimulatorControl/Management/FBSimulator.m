@@ -18,7 +18,6 @@
 
 #import "FBAppleSimctlCommandExecutor.h"
 #import "FBCompositeSimulatorEventSink.h"
-#import "FBMutableSimulatorEventSink.h"
 #import "FBSimulatorAgentCommands.h"
 #import "FBSimulatorApplicationCommands.h"
 #import "FBSimulatorFileCommands.h"
@@ -92,14 +91,11 @@
 - (instancetype)attachEventSinkCompositionWithLaunchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess containerApplicationProcess:(nullable FBProcessInfo *)containerApplicationProcess
 {
   FBSimulatorLoggingEventSink *loggingSink = [FBSimulatorLoggingEventSink withSimulator:self logger:self.logger];
-  FBMutableSimulatorEventSink *mutableSink = [FBMutableSimulatorEventSink new];
   FBSimulatorDiagnostics *diagnosticsSink = [FBSimulatorDiagnostics withSimulator:self];
-
-  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[loggingSink, diagnosticsSink, mutableSink]];
+  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[loggingSink, diagnosticsSink]];
   FBSimulatorMutableState *mutableState = [[FBSimulatorMutableState alloc] initWithLaunchdProcess:launchdSimProcess containerApplication:containerApplicationProcess sink:compositeSink];
 
   _mutableState = mutableState;
-  _mutableSink = mutableSink;
   _simulatorDiagnostics = diagnosticsSink;
 
   return self;
@@ -220,16 +216,6 @@
 - (id<FBSimulatorEventSink>)eventSink
 {
   return self.mutableState;
-}
-
-- (id<FBSimulatorEventSink>)userEventSink
-{
-  return self.mutableSink.eventSink;
-}
-
-- (void)setUserEventSink:(id<FBSimulatorEventSink>)userEventSink
-{
-  self.mutableSink.eventSink = userEventSink;
 }
 
 - (FBAppleSimctlCommandExecutor *)simctlExecutor

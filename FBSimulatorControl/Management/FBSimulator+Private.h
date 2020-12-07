@@ -20,7 +20,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulator ()
 
 @property (nonatomic, strong, readonly) FBSimulatorMutableState *mutableState;
-@property (nonatomic, strong, readonly, nullable) FBMutableSimulatorEventSink *mutableSink;
 @property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 @property (nonatomic, strong, readonly) id forwarder;
 

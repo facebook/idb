@@ -7,15 +7,14 @@
 
 #import <FBSimulatorControl/FBAgentLaunchStrategy.h>
 #import <FBSimulatorControl/FBBundleDescriptor+Simulator.h>
-#import <FBSimulatorControl/FBCompositeSimulatorEventSink.h>
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
 #import <FBSimulatorControl/FBCoreSimulatorTerminationStrategy.h>
 #import <FBSimulatorControl/FBDefaultsModificationStrategy.h>
 #import <FBSimulatorControl/FBFramebuffer.h>
 #import <FBSimulatorControl/FBFramebuffer.h>
 #import <FBSimulatorControl/FBFramebufferConfiguration.h>
-#import <FBSimulatorControl/FBMutableSimulatorEventSink.h>
 #import <FBSimulatorControl/FBProcessLaunchConfiguration+Simulator.h>
+#import <FBSimulatorControl/FBCompositeSimulatorEventSink.h>
 #import <FBSimulatorControl/FBSimulator+Private.h>
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorAccessibilityCommands.h>

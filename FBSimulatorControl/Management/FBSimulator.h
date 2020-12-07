@@ -63,13 +63,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly, nullable) id<FBSimulatorEventSink> eventSink;
 
 /**
- An Event Sink that can be updated to the user's choosing.
- Will be called when sending events to `eventSink`.
- Events should be sent to `eventSink` and not this property; events will propogate here automatically.
- */
-@property (nonatomic, strong, readwrite, nullable) id<FBSimulatorEventSink> userEventSink;
-
-/**
  The State of the allocated Simulator.
  */
 @property (nonatomic, assign, readonly) FBiOSTargetState state;
