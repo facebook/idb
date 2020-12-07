@@ -12,7 +12,6 @@
 #import <CoreSimulator/SimDevice.h>
 
 #import "FBProcessLaunchConfiguration+Simulator.h"
-#import "FBAgentLaunchConfiguration+Simulator.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorAgentOperation.h"
 #import "FBSimulatorError.h"
