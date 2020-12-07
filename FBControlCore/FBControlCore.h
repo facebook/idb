@@ -9,7 +9,6 @@
 #import <FBControlCore/FBAccessibilityTraits.h>
 #import <FBControlCore/FBAgentLaunchConfiguration.h>
 #import <FBControlCore/FBApplicationCommands.h>
-#import <FBControlCore/FBApplicationInstallConfiguration.h>
 #import <FBControlCore/FBApplicationLaunchConfiguration.h>
 #import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBArchiveOperations.h>
