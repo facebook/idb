@@ -164,15 +164,4 @@
   [self assertEqualityOfCopy:values];
 }
 
-- (void)testContactsUpdate
-{
-  NSArray<FBContactsUpdateConfiguration *> *values = @[
-    [FBContactsUpdateConfiguration configurationWithDatabaseDirectory:@"/tmp"],
-    [FBContactsUpdateConfiguration configurationWithDatabaseDirectory:@"/foo/bar"],
-  ];
-  [self assertEqualityOfCopy:values];
-  [self assertJSONSerialization:values];
-  [self assertJSONDeserialization:values];
-}
-
 @end

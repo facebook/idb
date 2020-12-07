@@ -8,7 +8,6 @@
 #import <FBSimulatorControl/FBAgentLaunchStrategy.h>
 #import <FBSimulatorControl/FBBundleDescriptor+Simulator.h>
 #import <FBSimulatorControl/FBCompositeSimulatorEventSink.h>
-#import <FBSimulatorControl/FBContactsUpdateConfiguration.h>
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
 #import <FBSimulatorControl/FBCoreSimulatorTerminationStrategy.h>
 #import <FBSimulatorControl/FBDefaultsModificationStrategy.h>
