@@ -16,7 +16,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBAccessibilityFetch.h"
 #import "FBAppleSimctlCommandExecutor.h"
 #import "FBCompositeSimulatorEventSink.h"
 #import "FBMutableSimulatorEventSink.h"
