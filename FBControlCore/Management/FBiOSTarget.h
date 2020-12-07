@@ -136,12 +136,6 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 @property (nonatomic, strong, readonly, nullable) id<FBControlCoreLogger> logger;
 
 /**
- The Action Classes supported by the receiver.
- */
-@property (nonatomic, strong, readonly) NSArray<Class> *actionClasses;
-
-
-/**
  The Directory that the target uses to store per-target files on the host.
  */
 @property (nonatomic, copy, readonly) NSString *auxillaryDirectory;

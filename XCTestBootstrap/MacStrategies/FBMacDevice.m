@@ -219,7 +219,6 @@
 @synthesize screenInfo = _screenInfo;
 
 // Not used or set
-@synthesize actionClasses;
 @synthesize containerApplication;
 @synthesize deviceType;
 @synthesize diagnostics;

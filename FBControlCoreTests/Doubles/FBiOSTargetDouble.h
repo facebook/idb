@@ -11,8 +11,6 @@
 
 @interface FBiOSTargetDouble : NSObject <FBiOSTarget>
 
-@property (nonatomic, strong, readonly) NSArray<Class> *actionClasses;
-
 @property (nonatomic, copy, readwrite) NSString *uniqueIdentifier;
 
 @property (nonatomic, copy, readwrite) NSString *udid;

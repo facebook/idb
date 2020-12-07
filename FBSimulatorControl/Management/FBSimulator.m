@@ -108,17 +108,6 @@
 
 #pragma mark FBiOSTarget
 
-- (NSArray<Class> *)actionClasses
-{
-  return @[
-    FBAccessibilityFetch.class,
-    FBAgentLaunchConfiguration.class,
-    FBLogTailConfiguration.class,
-    FBSimulatorHIDEvent.class,
-    FBTestLaunchConfiguration.class,
-  ];
-}
-
 - (NSString *)uniqueIdentifier
 {
   return self.udid;

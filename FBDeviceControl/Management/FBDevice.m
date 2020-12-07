@@ -76,13 +76,6 @@
 
 #pragma mark FBiOSTarget
 
-- (NSArray<Class> *)actionClasses
-{
-  return @[
-    FBTestLaunchConfiguration.class,
-  ];
-}
-
 - (dispatch_queue_t)workQueue
 {
   return self.amDevice.workQueue ?: self.restorableDevice.workQueue;
