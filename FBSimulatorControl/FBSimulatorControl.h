@@ -34,7 +34,6 @@
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorControlFrameworkLoader.h>
 #import <FBSimulatorControl/FBSimulatorDiagnostics.h>
-#import <FBSimulatorControl/FBSimulatorEraseConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorError.h>
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 #import <FBSimulatorControl/FBSimulatorFileCommands.h>
