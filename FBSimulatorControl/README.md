@@ -2,32 +2,30 @@
 
 A macOS library for managing, booting and interacting with multiple iOS Simulators simultaneously.
 
-`FBSimulatorControl` is now intended to be an implementation detail of `idb`, but can still be used as a standalone Framework. We strongly encourage using `idb` directly since it is a "batteries included" cli and is simpler to setup and use.
+`FBSimulatorControl` is now intended to be an implementation detail of `idb`, but can still be used as a standalone Framework. We strongly encourage using `idb` directly since it is a "batteries included" command line interface that exposes all `FBSimulatorControl` functionality.
 
 ## Features
-- Enables 'Multisim' for iOS: Booting of multiple Simulators on the same host OS.
-- Runs independently of Xcode and `xcodebuild`. Uses the toolchain defined by `xcode-select`.
-- Boots iPhone & iPad Simulators for iOS 8, 9 & 10.
-- Launches both 'Agent' and 'Application' processes, with Arguments and Environment.
-- Can boot Simulators via Xcode's `Simulator.app` or by launching 'Directly' in `CoreSimulator`.
-- 'Direct Launch' supports video recording, screenshot fetching & interfacing with the `SimulatorBridge`.
+
+- Supports 'Multisim' for iOS: Booting of multiple Simulators on the same host OS.
+- Boots iOS Simulators across a range of Xcode and iOS Versions.
+- Runs independently of Xcode and `xcodebuild` without requiring embedding in a Graphical User Interface. Uses whatever Xcode toolchain is defined by `xcode-select`.
+- Exposes a broad range of functionality that is available in `simctl` and Xcode.
+- Implements additional functionality not available in `simctl` including hardware encoded video streaming, file manipulation, accessibility fetching, direct input event injection and more.
 - 'Diagnostic' API for fetching System, App & Crash logs as well as Screenshots & Video.
 - An 'Event Bus' that exposes the details of a Simulator's lifecycle including Applications, Agents & the Simulator itself.
 - `NSNotification`s interface for the 'Event Bus'.
-- Stateless by Default: Knowledge the current state of Simulators can be re-built when `FBSimulatorControl` is launched.
-- BFFs with [`WebDriverAgent`](https://github.com/facebook/webdriveragent).
 - No external dependencies.
 - A Pure Objective-C Framework, so as not to force a Swift-Version dependency.
-- An API designed with Swift in mind.
+- An API designed to be easily integrated into other Frameworks or Applications, including with Swift clients.
 
 ## About
-The original use-case for `FBSimulatorControl` was to boot Simulators to run End-to-End tests with `WebDriverAgent`. As `FBSimulatorControl` is a macOS framework, it can be linked to from inside any macOS Library, Application, or `xctest` target. There may be additional use-cases that you may find beyond UI Test Automation.
 
-`FBSimulatorControl` works by linking with the private `DVTFoundation`, `CoreSimulator` and `DVTiPhoneSimulatorRemoteClient` frameworks that are present inside the Xcode bundle. Doing this allows  `FBSimulatorControl` to talk directly to the same APIs that Xcode and `simctl` do. This, combined with launching the Simulator binaries directly, means that multiple Simulators can be launched simultaneously. Test targets can be made that don't depend on any Application targets, or that launch multiple Application targets. This enables running against pre-built and archived Application binaries, rather than a binary that is built by a Test Target.
+The original use-case for `FBSimulatorControl` was to boot multiple Simulators on the same host, before this was officially supported in Xcode.
 
-As `FBSimulatorControl` nears a stable version, the API may change but can be considered mostly stable.
+`FBSimulatorControl` works by linking with the private `CoreSimulator` and `SimulatorKit` frameworks that are installed as part of Xcode. Doing this allows  `FBSimulatorControl` to talk directly to the same APIs that Xcode and `simctl` use. `FBSimulatorControl` also adds features that aren't present in Xcode or the iOS Simulator, such as accessibility fetching.
 
 ## Installation
+
 The homebrew installation is derived from [the `build.sh`](build.sh) script in this directory. You can build `FBSimulatorControl` with the following: `build.sh framework build`
 
 The `FBSimulatorControl.xcodeproj` will build the `FBSimulatorControl.framework` and the `FBSimulatorControlTests.xctest` bundles without any additional dependencies. The Project File is checked into the repo and the Framework can be build from this project.
@@ -37,9 +35,10 @@ Once you build the `FBSimulatorControl.framework`, it can be linked like any oth
 - Ensure that `FBSimulatorControl` is copied into the Target's bundle (if your Target is an Application or Framework) or a path relative to the Executable if your project does not have a bundle.
 
 ## Usage
-In order to support different Xcode versions and system environments, `FBSimulatorControl` weakly links against Xcode's Private Frameworks and load these Frameworks when they are needed. `FBSimulatorControl` will link against the version of Xcode that you have set with [`xcode-select`](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/xcode-select.1.html). The Xcode version can be overridden by setting the `DEVELOPER_DIR` environment variable in the process that links with `FBSimulatorControl`.
 
-Since the Frameworks upon which `FBSimulatorControl` depends are loaded lazily, they must be loaded before using the Framework. Any of the `FBSimulatorControl` classes that have this runtime dependency will load these Private Frameworks when they are used for the first time.
+In order to support different Xcode versions and system environments, `FBSimulatorControl` weakly links against Xcode's Private Frameworks and loads these Frameworks when they are needed. `FBSimulatorControl` will link against the version of Xcode that you have set with [`xcode-select`](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/xcode-select.1.html). It is not recommended to run against multiple versions of Xcode on the same host as `CoreSimulator` has user-level daemons that cannot run against multiple versions of Xcode concurrently.
+
+Since the Frameworks upon which `FBSimulatorControl` depends are loaded lazily, they must be loaded before the Framework is functional. However, you do not have to do this manually as any of the `FBSimulatorControl` functionality that has this dependency will load these Private Frameworks when they are used for the first time.
 
 [The tests](FBSimulatorControlTests/Tests) should provide you with some basic guidance for using the API. `FBSimulatorControl` has an umbrella header that can be imported to give access to the entire API.
 
