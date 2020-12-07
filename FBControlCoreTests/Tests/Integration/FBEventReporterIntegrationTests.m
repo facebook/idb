@@ -83,18 +83,4 @@
   ]];
 }
 
-- (void)testLogTail
-{
-  FBLogTailConfiguration *logTail = [FBLogTailConfiguration configurationWithArguments:@[@"--again"]];
-  id<FBEventReporterSubject> subject = [FBEventReporterSubject compositeSubjectWithArray:@[
-    [FBEventReporterSubject subjectWithName:FBEventNameLog type:FBEventTypeStarted value:logTail],
-    [FBEventReporterSubject subjectWithName:FBEventNameLog type:FBEventTypeEnded value:logTail],
-  ]];
-
-  [self assertSubject:subject hasJSONContents:@[
-    @{@"event_name" : @"log", @"event_type" : @"started", @"subject": @{@"arguments" : @[@"--again"]}},
-    @{@"event_name" : @"log", @"event_type" : @"ended", @"subject":  @{@"arguments" : @[@"--again"]}},
-  ]];
-}
-
 @end

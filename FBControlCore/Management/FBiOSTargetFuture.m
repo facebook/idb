@@ -17,6 +17,8 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeAgentLaunch = @"agentlaunch";
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch = @"launch_xctest";
 
+FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
+
 @interface FBiOSTargetContinuation_Named : NSObject <FBiOSTargetContinuation>
 
 @end

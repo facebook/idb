@@ -40,6 +40,11 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeAgentLaunch;
 extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch;
 
 /**
+ The Action Type for Log Tails.
+ */
+extern FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail;
+
+/**
  The Result of invoking an FBiOSTargetFuture.
  Represents the execution state of the underlying operation.
  */
