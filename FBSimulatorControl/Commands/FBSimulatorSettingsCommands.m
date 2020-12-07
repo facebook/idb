@@ -496,24 +496,3 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 
 @end
 
-@implementation FBSettingsApproval (FBiOSTargetFuture)
-
-+ (FBiOSTargetFutureType)futureType
-{
-  return FBiOSTargetFutureTypeApproval;
-}
-
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
-{
-  id<FBSimulatorSettingsCommands> commands = (id<FBSimulatorSettingsCommands>) target;
-  if (![target conformsToProtocol:@protocol(FBSimulatorSettingsCommands)]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ does not conform to FBSimulatorSettingsCommands", target]
-      failFuture];
-  }
-  return [[commands
-    grantAccess:[NSSet setWithArray:self.bundleIDs] toServices:[NSSet setWithArray:self.services]]
-    mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
-}
-
-@end

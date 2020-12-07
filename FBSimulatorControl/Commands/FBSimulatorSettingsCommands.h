@@ -95,11 +95,4 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeApproval;
 
 @end
 
-/**
- Bridges FBSettingsApproval to Simulators.
- */
-@interface FBSettingsApproval (FBiOSTargetFuture) <FBiOSTargetFuture>
-
-@end
-
 NS_ASSUME_NONNULL_END
