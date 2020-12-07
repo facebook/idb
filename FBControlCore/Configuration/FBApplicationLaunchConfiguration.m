@@ -200,16 +200,4 @@ static NSString *const KeyLaunchMode = @"launch_mode";
   return [representation mutableCopy];
 }
 
-#pragma mark FBiOSTargetFuture
-
-+ (FBiOSTargetFutureType)futureType
-{
-  return FBiOSTargetFutureTypeApplicationLaunch;
-}
-
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
-{
-  return [[target launchApplication:self] mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
-}
-
 @end

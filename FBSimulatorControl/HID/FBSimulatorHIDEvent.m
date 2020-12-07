@@ -55,62 +55,6 @@ static NSString *const KeyEvents = @"events";
   return self;
 }
 
-+ (instancetype)inflateFromJSON:(id)json error:(NSError **)error
-{
-  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
-    return [[FBSimulatorError
-      describe:@"Expected an input of Dictionary<String, Object>"]
-      fail:error];
-  }
-  NSString *class = json[KeyEventClass];
-  if (![class isEqualToString:EventClassStringComposite]) {
-    return [[FBSimulatorError
-      describeFormat:@"Expected %@ to be %@", class, EventClassStringComposite]
-      fail:error];
-  }
-  NSArray<NSDictionary *> *eventsJSON = json[KeyEvents];
-  if (![FBCollectionInformation isArrayHeterogeneous:eventsJSON withClass:NSDictionary.class]) {
-    return [[FBSimulatorError
-      describeFormat:@"Expected %@ to be Array<Dictionary>", class]
-      fail:error];
-  }
-  NSArray<FBSimulatorHIDEvent *> *events = [self eventsFromJSONEvents:eventsJSON error:error];
-  if (!events) {
-    return nil;
-  }
-  return [[self alloc] initWithEvents:events];
-}
-
-- (id)jsonSerializableRepresentation
-{
-  return @{
-    KeyEvents: [FBSimulatorHIDEvent_Composite eventsJSONFromEvents:self.events],
-    KeyEventClass: EventClassStringComposite,
-  };
-}
-
-+ (nullable NSArray<FBSimulatorHIDEvent *> *)eventsFromJSONEvents:(NSArray<NSDictionary *> *)eventsJSON error:(NSError **)error
-{
-  NSMutableArray<FBSimulatorHIDEvent *> *events = [NSMutableArray arrayWithCapacity:eventsJSON.count];
-  for (NSDictionary *json in eventsJSON) {
-    FBSimulatorHIDEvent *event = [FBSimulatorHIDEvent inflateFromJSON:json error:error];
-    if (!event) {
-      return nil;
-    }
-    [events addObject:event];
-  }
-  return [events copy];
-}
-
-+ (NSArray<NSDictionary *> *)eventsJSONFromEvents:(NSArray<FBSimulatorHIDEvent *> *)events
-{
-  NSMutableArray<NSDictionary *> *eventsJSON = [NSMutableArray arrayWithCapacity:events.count];
-  for (FBSimulatorHIDEvent *event in events) {
-    [eventsJSON addObject:event.jsonSerializableRepresentation];
-  }
-  return [eventsJSON copy];
-}
-
 - (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
 {
   return [self performEvents:self.events onHid:hid];
@@ -752,32 +696,6 @@ static NSString *const DirectionUp = @"up";
     default:
       return nil;
   }
-}
-
-#pragma mark FBiOSTargetFuture
-
-+ (FBiOSTargetFutureType)futureType
-{
-  return FBiOSTargetFutureTypeHID;
-}
-
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
-{
-  id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
-  if (![target conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
-    return [[FBSimulatorError
-      describeFormat:@"%@ is not a Simulator", target]
-      failFuture];
-  }
-  return [[[[commands
-    connect]
-    onQueue:target.workQueue fmap:^(FBSimulatorConnection *connection) {
-      return [connection connectToHID];
-    }]
-    onQueue:target.workQueue fmap:^(FBSimulatorHID *hid) {
-      return [self performOnHID:hid];
-    }]
-    mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
 }
 
 @end

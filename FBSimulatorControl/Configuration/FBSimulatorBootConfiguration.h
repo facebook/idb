@@ -31,7 +31,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeBoot;
 /**
  A Value Object for defining how to launch a Simulator.
  */
-@interface FBSimulatorBootConfiguration : NSObject <NSCopying, FBiOSTargetFuture, FBDebugDescribeable>
+@interface FBSimulatorBootConfiguration : NSObject <NSCopying, FBDebugDescribeable>
 
 /**
  Options for how the Simulator should be launched.

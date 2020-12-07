@@ -572,31 +572,4 @@ static NSString *const KeyShims = @"shims";
     shims:shims];
 }
 
-#pragma mark FBiOSTargetFuture
-
-+ (FBiOSTargetFutureType)futureType
-{
-  return FBiOSTargetFutureTypeTestLaunch;
-}
-
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
-{
-  id<FBXCTestCommands> commands = (id<FBXCTestCommands>) target;
-  if (![commands conformsToProtocol:@protocol(FBXCTestCommands)]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ does not conform to %@", target, NSStringFromProtocol(@protocol(FBXCTestCommands))]
-      failFuture];
-  }
-
-  FBiOSTargetFutureType futureType = self.class.futureType;
-  FBFuture<id<FBiOSTargetContinuation>> *future = [[commands
-    startTestWithLaunchConfiguration:self reporter:nil logger:target.logger]
-    onQueue:target.workQueue map:^(id<FBiOSTargetContinuation> baseAwaitable) {
-      return FBiOSTargetContinuationRenamed(baseAwaitable, futureType);
-    }];
-  return self.timeout > 0
-    ? [future timeout:self.timeout waitingFor:@"Test Execution to complete"]
-    : future;
-}
-
 @end

@@ -89,8 +89,6 @@
       withScale:FBScale25]
   ];
   [self assertEqualityOfCopy:values];
-  [self assertJSONSerialization:values];
-  [self assertJSONDeserialization:values];
 }
 
 - (void)testLaunchConfigurationScaleAppliedToFramebufferConfiguration
@@ -164,8 +162,6 @@
     [FBSimulatorHIDEvent shortKeyPress:kVK_ANSI_O],
   ];
   [self assertEqualityOfCopy:values];
-  [self assertJSONSerialization:values];
-  [self assertJSONDeserialization:values];
 }
 
 - (void)testServiceInfo

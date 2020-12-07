@@ -22,7 +22,7 @@ extern double const DEFAULT_SWIPE_DELTA;
 /**
  A Value representing a call to the HID System.
  */
-@interface FBSimulatorHIDEvent : NSObject <NSCopying, FBiOSTargetFuture>
+@interface FBSimulatorHIDEvent : NSObject <NSCopying>
 
 #pragma mark Initializers
 

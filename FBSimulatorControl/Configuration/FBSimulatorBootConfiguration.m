@@ -246,22 +246,4 @@ static NSString *const BootOptionStringUseNSWorkspace = @"Use NSWorkspace";
   return options;
 }
 
-#pragma mark FBiOSTargetFuture
-
-+ (FBiOSTargetFutureType)futureType
-{
-  return FBiOSTargetFutureTypeBoot;
-}
-
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
-{
-  id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
-  if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
-    return [[FBSimulatorError
-      describeFormat:@"%@ cannot be booted", target]
-      failFuture];
-  }
-  return [[commands bootWithConfiguration:self] mapReplace:FBiOSTargetContinuationDone(self.class.futureType)];
-}
-
 @end
