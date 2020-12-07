@@ -90,7 +90,6 @@
 #import <FBControlCore/FBScreenshotCommands.h>
 #import <FBControlCore/FBServiceManagement.h>
 #import <FBControlCore/FBSettingsApproval.h>
-#import <FBControlCore/FBSocketConnectionManager.h>
 #import <FBControlCore/FBSocketServer.h>
 #import <FBControlCore/FBTask+Helpers.h>
 #import <FBControlCore/FBTask.h>
