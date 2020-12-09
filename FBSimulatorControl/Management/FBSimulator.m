@@ -26,7 +26,6 @@
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorCrashLogCommands.h"
 #import "FBSimulatorDebuggerCommands.h"
-#import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHIDEvent.h"
@@ -90,11 +89,8 @@
 - (instancetype)attachEventSinkCompositionWithLaunchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess containerApplicationProcess:(nullable FBProcessInfo *)containerApplicationProcess
 {
   FBSimulatorLoggingEventSink *loggingSink = [FBSimulatorLoggingEventSink withSimulator:self logger:self.logger];
-  FBSimulatorDiagnostics *diagnosticsSink = [FBSimulatorDiagnostics withSimulator:self];
-  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[loggingSink, diagnosticsSink]];
 
-  _simulatorDiagnostics = diagnosticsSink;
-  _eventSink = compositeSink;
+  _eventSink = loggingSink;
   _launchdProcess = launchdSimProcess;
   _containerApplication = containerApplicationProcess;
 
@@ -147,11 +143,6 @@
 {
   SimDeviceType *deviceType = self.device.deviceType;
   return [[FBiOSTargetScreenInfo alloc] initWithWidthPixels:(NSUInteger)deviceType.mainScreenSize.width heightPixels:(NSUInteger)deviceType.mainScreenSize.height scale:deviceType.mainScreenScale];
-}
-
-- (FBiOSTargetDiagnostics *)diagnostics
-{
-  return self.simulatorDiagnostics;
 }
 
 - (dispatch_queue_t)workQueue

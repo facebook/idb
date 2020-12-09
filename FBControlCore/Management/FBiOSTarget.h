@@ -141,11 +141,6 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 @property (nonatomic, copy, readonly) NSString *auxillaryDirectory;
 
 /**
- The Diagnostics instance for the Target.
- */
-@property (nonatomic, strong, readonly) FBiOSTargetDiagnostics *diagnostics;
-
-/**
  The Screen Info for the Target.
  */
 @property (nonatomic, copy, nullable, readonly) FBiOSTargetScreenInfo *screenInfo;
