@@ -35,7 +35,6 @@
 #import "FBSimulatorLogCommands.h"
 #import "FBSimulatorLoggingEventSink.h"
 #import "FBSimulatorMediaCommands.h"
-#import "FBSimulatorMutableState.h"
 #import "FBSimulatorScreenshotCommands.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorSettingsCommands.h"
@@ -93,10 +92,11 @@
   FBSimulatorLoggingEventSink *loggingSink = [FBSimulatorLoggingEventSink withSimulator:self logger:self.logger];
   FBSimulatorDiagnostics *diagnosticsSink = [FBSimulatorDiagnostics withSimulator:self];
   FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[loggingSink, diagnosticsSink]];
-  FBSimulatorMutableState *mutableState = [[FBSimulatorMutableState alloc] initWithLaunchdProcess:launchdSimProcess containerApplication:containerApplicationProcess sink:compositeSink];
 
-  _mutableState = mutableState;
   _simulatorDiagnostics = diagnosticsSink;
+  _eventSink = compositeSink;
+  _launchdProcess = launchdSimProcess;
+  _containerApplication = containerApplicationProcess;
 
   return self;
 }
@@ -201,21 +201,6 @@
 - (NSString *)dataDirectory
 {
   return self.device.dataPath;
-}
-
-- (FBProcessInfo *)launchdProcess
-{
-  return self.mutableState.launchdProcess;
-}
-
-- (FBProcessInfo *)containerApplication
-{
-  return self.mutableState.containerApplication;
-}
-
-- (id<FBSimulatorEventSink>)eventSink
-{
-  return self.mutableState;
 }
 
 - (FBAppleSimctlCommandExecutor *)simctlExecutor

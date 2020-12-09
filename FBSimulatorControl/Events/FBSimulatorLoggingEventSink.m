@@ -42,16 +42,6 @@
 
 #pragma mark FBSimulatorEventSink Implementation
 
-- (void)containerApplicationDidLaunch:(FBProcessInfo *)applicationProcess
-{
-  [self.logger logFormat:@"Container Application Did Launch => %@", applicationProcess.shortDescription];
-}
-
-- (void)containerApplicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
-{
-  [self.logger logFormat:@"Container Application Did Terminate => %@ Expected %d", applicationProcess.shortDescription, expected];
-}
-
 - (void)connectionDidConnect:(FBSimulatorConnection *)connection
 {
   [self.logger logFormat:@"Connection Did Connect => %@", connection];
@@ -60,16 +50,6 @@
 - (void)connectionDidDisconnect:(FBSimulatorConnection *)connection expected:(BOOL)expected
 {
   [self.logger logFormat:@"Connection Did Disconnect => %@ Expected %d", connection, expected];
-}
-
-- (void)simulatorDidLaunch:(FBProcessInfo *)launchdProcess
-{
-  [self.logger logFormat:@"Simulator Did launch => %@", launchdProcess.shortDescription];
-}
-
-- (void)simulatorDidTerminate:(FBProcessInfo *)launchdProcess expected:(BOOL)expected
-{
-  [self.logger logFormat:@"Simulator Did Terminate => %@ Expected %d", launchdProcess.shortDescription, expected];
 }
 
 - (void)agentDidLaunch:(FBSimulatorAgentOperation *)operation

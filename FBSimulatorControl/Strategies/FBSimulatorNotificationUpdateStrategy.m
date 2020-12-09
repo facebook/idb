@@ -15,6 +15,7 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSet.h"
+#import "FBSimulator+Private.h"
 
 @interface FBSimulatorNotificationUpdateStrategy ()
 
@@ -101,7 +102,7 @@
   if (!launchdSim) {
     return;
   }
-  [simulator.eventSink simulatorDidLaunch:launchdSim];
+  simulator.launchdProcess = launchdSim;
 }
 
 - (void)discardLaunchdSimInfoFromShutdownOfSimulator:(FBSimulator *)simulator
@@ -113,7 +114,7 @@
   }
 
   // Notify of Simulator Termination.
-  [simulator.eventSink simulatorDidTerminate:launchdProcess expected:NO];
+  simulator.launchdProcess = nil;
 }
 
 - (FBSimulatorProcessFetcher *)processFetcher

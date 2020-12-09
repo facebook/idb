@@ -32,20 +32,6 @@
   return self;
 }
 
-- (void)containerApplicationDidLaunch:(FBProcessInfo *)applicationProcess
-{
-  for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink containerApplicationDidLaunch:applicationProcess];
-  }
-}
-
-- (void)containerApplicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
-{
-  for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink containerApplicationDidTerminate:applicationProcess expected:expected];
-  }
-}
-
 - (void)connectionDidConnect:(FBSimulatorConnection *)connection
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
@@ -57,20 +43,6 @@
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
     [sink connectionDidDisconnect:connection expected:expected];
-  }
-}
-
-- (void)simulatorDidLaunch:(FBProcessInfo *)launchdProcess
-{
-  for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink simulatorDidLaunch:launchdProcess];
-  }
-}
-
-- (void)simulatorDidTerminate:(FBProcessInfo *)launchdProcess expected:(BOOL)expected
-{
-  for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink simulatorDidTerminate:launchdProcess expected:expected];
   }
 }
 

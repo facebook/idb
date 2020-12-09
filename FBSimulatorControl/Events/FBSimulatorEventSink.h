@@ -24,23 +24,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBSimulatorEventSink <NSObject>
 
 /**
- Event for the launch of a Simulator's Container Application Process.
- This is the Simulator.app's Process.
-
- @param applicationProcess the Process Information for the launched Application Process.
- */
-- (void)containerApplicationDidLaunch:(FBProcessInfo *)applicationProcess;
-
-/**
- Event for the launch of a Simulator's Container Application Process.
- This is the Simulator.app's Process.
-
- @param applicationProcess the Process Information for the terminated Application Process.
- @param expected whether the termination was expected or not.
- */
-- (void)containerApplicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected;
-
-/**
  Event for the Direct Launch of a Simulator Bridge.
 
  @param connection the Simulator Bridge of the Simulator.
@@ -54,20 +37,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param expected whether the termination was expected or not.
  */
 - (void)connectionDidDisconnect:(FBSimulatorConnection *)connection expected:(BOOL)expected;
-
-/**
- Event for the launch of a Simulator's launchd_sim.
-
- @param launchdProcess the launchd_sim process
- */
-- (void)simulatorDidLaunch:(FBProcessInfo *)launchdProcess;
-
-/**
- Event for the termination of a Simulator's launchd_sim.
-
- @param launchdProcess the launchd_sim process
- */
-- (void)simulatorDidTerminate:(FBProcessInfo *)launchdProcess expected:(BOOL)expected;
 
 /**
  Event for the launch of an Agent.

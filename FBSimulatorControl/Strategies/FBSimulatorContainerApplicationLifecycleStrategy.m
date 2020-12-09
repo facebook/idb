@@ -14,6 +14,7 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSet.h"
+#import "FBSimulator+Private.h"
 
 @interface FBSimulatorContainerApplicationLifecycleStrategy ()
 
@@ -78,7 +79,7 @@
     return;
   }
   [self.processToSimulator setObject:simulator forKey:@(process.processIdentifier)];
-  [simulator.eventSink containerApplicationDidLaunch:process];
+  simulator.containerApplication = process;
 }
 
 - (void)workspaceApplicationDidTerminate:(NSNotification *)notification
@@ -97,7 +98,7 @@
   }
 
   // Notify of Simulator Termination.
-  [simulator.eventSink containerApplicationDidTerminate:container expected:NO];
+  simulator.containerApplication = nil;
 }
 
 - (FBSimulator *)simulatorForNotification:(NSNotification *)notification launchedProcessOut:(FBProcessInfo **)launchedProcessOut

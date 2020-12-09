@@ -27,8 +27,8 @@ extern NSString *const FBSimulatorControlTestsLaunchTypeDirect;
 /**
  The default models for integration tests.
  */
-#define SimulatorControlTestsDefaultiPhoneModel FBDeviceModeliPhone6S
-#define SimulatorControlTestsDefaultiPadModel FBDeviceModeliPadAir
+#define SimulatorControlTestsDefaultiPhoneModel FBDeviceModeliPhone8
+#define SimulatorControlTestsDefaultiPadModel FBDeviceModeliPadAir2
 
 /**
  A Test Case that boostraps a FBSimulatorControl instance.

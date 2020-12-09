@@ -479,7 +479,7 @@
           describe:@"Could not obtain process info for container application"]
           failFuture];
       }
-      [self.simulator.eventSink containerApplicationDidLaunch:containerApplication];
+      self.simulator.containerApplication = containerApplication;
       return FBFuture.empty;
     }];
 }
@@ -587,7 +587,7 @@
       inSimulator:self.simulator]
       failFuture];
   }
-  [self.simulator.eventSink simulatorDidLaunch:launchdProcess];
+  self.simulator.launchdProcess = launchdProcess;
 
   // Return early if we're not awaiting services.
   if ((self.configuration.options & FBSimulatorBootOptionsVerifyUsable) != FBSimulatorBootOptionsVerifyUsable) {

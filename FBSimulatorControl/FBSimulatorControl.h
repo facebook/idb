@@ -44,7 +44,6 @@
 #import <FBSimulatorControl/FBSimulatorLifecycleCommands.h>
 #import <FBSimulatorControl/FBSimulatorLoggingEventSink.h>
 #import <FBSimulatorControl/FBSimulatorMediaCommands.h>
-#import <FBSimulatorControl/FBSimulatorMutableState.h>
 #import <FBSimulatorControl/FBSimulatorPredicates.h>
 #import <FBSimulatorControl/FBSimulatorProcessFetcher.h>
 #import <FBSimulatorControl/FBSimulatorScreenshotCommands.h>

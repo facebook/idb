@@ -123,9 +123,6 @@
 
 - (FBFuture<FBSimulator *> *)killSimulator:(FBSimulator *)simulator
 {
-  // Before doing anything, get a reference to the current launchd process.
-  FBProcessInfo *launchdProcess = simulator.launchdProcess ?: [self.processFetcher launchdProcessForSimDevice:simulator.device];
-
   // The Simulator Connection for this process should be tidied up first.
   FBFuture<NSNull *> *disconnectFuture = [simulator disconnectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout logger:self.logger];
 
@@ -138,7 +135,7 @@
     simulatorAppProcessKillFuture = [[self.processTerminationStrategy
       killProcess:simulatorProcess]
       onQueue:simulator.workQueue map:^(id _) {
-        [simulator.eventSink containerApplicationDidTerminate:simulatorProcess expected:YES];
+        simulator.containerApplication = nil;
         return NSNull.null;
       }];
   } else {
@@ -158,9 +155,7 @@
         shutdown];
     }]
     onQueue:simulator.workQueue map:^(id _) {
-      if (launchdProcess) {
-        [simulator.eventSink simulatorDidTerminate:launchdProcess expected:YES];
-      }
+      simulator.launchdProcess = nil;
       return simulator;
     }];
 }

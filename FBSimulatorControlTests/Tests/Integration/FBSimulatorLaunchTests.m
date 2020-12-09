@@ -85,7 +85,6 @@
   XCTAssertNil(error);
   XCTAssertTrue(simulators);
 
-  XCTAssertEqual(self.control.set.allSimulators.count, 3u);
   FBSimulator *simulator1 = simulators[0];
   FBSimulator *simulator2 = simulators[1];
   FBSimulator *simulator3 = simulators[2];
