@@ -101,7 +101,6 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     @"DYLD_INSERT_LIBRARIES": shimPath,
     @"TEST_SHIM_STDOUT_PATH": shimOutput.filePath,
     @"TEST_SHIM_BUNDLE_PATH": self.configuration.testBundlePath,
-    @"FB_TEST_TIMEOUT": @(self.configuration.testTimeout).stringValue,
   }];
   [environment addEntriesFromDictionary:self.configuration.processUnderTestEnvironment];
 
