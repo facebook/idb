@@ -150,6 +150,9 @@ typedef void (^dataBlock)(NSData *);
 static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString *)) {
   return ^(NSData *data){
     NSString *line = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    if (line == nil) {
+      line = @"non-utf8";
+    }
     consumer(line);
   };
 }
