@@ -265,27 +265,14 @@
 {
   return [[self.simulator
     installedApplicationWithBundleID:bundleID]
-    onQueue:self.simulator.asyncQueue chain:^FBFuture<NSString *> *(FBFuture<FBInstalledApplication *> *future) {
-      NSString *container = future.result.dataContainer;
-      if (container) {
-        return [FBFuture futureWithResult:container];
-      }
-      return [self fallbackDataContainerForBundleID:bundleID];
-    }];
-}
-
-- (FBFuture<NSString *> *)fallbackDataContainerForBundleID:(NSString *)bundleID
-{
-  return [[self.simulator
-    runningApplicationWithBundleID:bundleID]
-    onQueue:self.simulator.asyncQueue fmap:^(FBProcessInfo *runningApplication) {
-      NSString *homeDirectory = runningApplication.environment[@"HOME"];
-      if (![NSFileManager.defaultManager fileExistsAtPath:homeDirectory]) {
+    onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSString *> * (FBInstalledApplication *installedApplication) {
+      NSString *container = installedApplication.dataContainer;
+      if (!container) {
         return [[FBSimulatorError
-          describeFormat:@"App Home Directory does not exist at path %@", homeDirectory]
+          describeFormat:@"No data container present for application %@", installedApplication]
           failFuture];
       }
-      return [FBFuture futureWithResult:homeDirectory];
+      return [FBFuture futureWithResult:container];
     }];
 }
 
