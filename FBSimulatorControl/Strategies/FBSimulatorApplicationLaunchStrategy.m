@@ -141,10 +141,10 @@
 - (FBFuture<NSNumber *> *)isApplicationRunning:(NSString *)bundleID
 {
   return [[self.simulator
-    runningApplicationWithBundleID:bundleID]
-    onQueue:self.simulator.workQueue chain:^(FBFuture<FBProcessInfo *> *future){
-      FBProcessInfo *process = future.result;
-      return process ? [FBFuture futureWithResult:@YES] : [FBFuture futureWithResult:@NO];
+    processIDWithBundleID:bundleID]
+    onQueue:self.simulator.workQueue chain:^(FBFuture<NSNumber *> *future){
+      NSNumber *processIdentifier = future.result;
+      return processIdentifier ? [FBFuture futureWithResult:@YES] : [FBFuture futureWithResult:@NO];
     }];
 }
 
