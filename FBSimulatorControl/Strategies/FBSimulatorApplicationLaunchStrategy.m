@@ -104,15 +104,15 @@
 {
   FBSimulator *simulator = self.simulator;
   return [[simulator
-    runningApplicationWithBundleID:bundleID]
-    onQueue:simulator.asyncQueue chain:^FBFuture<NSNull *> *(FBFuture<FBProcessInfo *> *processFuture) {
-      FBProcessInfo *process = processFuture.result;
-      if (!process) {
+    processIDWithBundleID:bundleID]
+    onQueue:simulator.asyncQueue chain:^ FBFuture<NSNull *> * (FBFuture<NSNumber *> *processFuture) {
+      NSNumber *processID = processFuture.result;
+      if (!processID) {
         return FBFuture.empty;
       }
       if (launchMode == FBApplicationLaunchModeFailIfRunning) {
         return [[FBSimulatorError
-          describeFormat:@"App %@ can't be launched as is running (%@)", bundleID, process.shortDescription]
+          describeFormat:@"App %@ can't be launched as is running (PID=%@)", bundleID, processID]
           failFuture];
       } else if (launchMode == FBApplicationLaunchModeRelaunchIfRunning) {
         return [[FBSimulatorSubprocessTerminationStrategy
