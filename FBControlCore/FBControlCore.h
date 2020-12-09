@@ -12,6 +12,7 @@
 #import <FBControlCore/FBApplicationLaunchConfiguration.h>
 #import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBArchiveOperations.h>
+#import <FBControlCore/FBBatchLogSearch.h>
 #import <FBControlCore/FBBinaryDescriptor.h>
 #import <FBControlCore/FBBundleDescriptor+Application.h>
 #import <FBControlCore/FBBundleDescriptor.h>
@@ -34,7 +35,9 @@
 #import <FBControlCore/FBDebuggerCommands.h>
 #import <FBControlCore/FBDeveloperDiskImage.h>
 #import <FBControlCore/FBDeveloperDiskImageCommands.h>
+#import <FBControlCore/FBDiagnostic.h>
 #import <FBControlCore/FBDiagnosticInformationCommands.h>
+#import <FBControlCore/FBDiagnosticQuery.h>
 #import <FBControlCore/FBDispatchSourceNotifier.h>
 #import <FBControlCore/FBEraseCommands.h>
 #import <FBControlCore/FBEventConstants.h>
@@ -57,6 +60,7 @@
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBiOSTargetConfiguration.h>
+#import <FBControlCore/FBiOSTargetDiagnostics.h>
 #import <FBControlCore/FBiOSTargetFormat.h>
 #import <FBControlCore/FBiOSTargetFuture.h>
 #import <FBControlCore/FBiOSTargetPredicates.h>

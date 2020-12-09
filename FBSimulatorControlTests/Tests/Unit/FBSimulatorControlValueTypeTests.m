@@ -133,6 +133,18 @@
   [self assertJSONDeserialization:values];
 }
 
+- (void)testDiagnosticQueries
+{
+  NSArray<FBDiagnosticQuery *> *values = @[
+    [FBDiagnosticQuery all],
+    [FBDiagnosticQuery named:@[@"foo", @"bar", @"baz"]],
+    [FBDiagnosticQuery crashesOfType:FBCrashLogInfoProcessTypeCustomAgent | FBCrashLogInfoProcessTypeApplication since:[NSDate dateWithTimeIntervalSince1970:100]],
+  ];
+  [self assertEqualityOfCopy:values];
+  [self assertJSONSerialization:values];
+  [self assertJSONDeserialization:values];
+}
+
 - (void)testHIDEvents
 {
   NSArray<FBSimulatorHIDEvent *> *values = @[

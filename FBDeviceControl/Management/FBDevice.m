@@ -86,6 +86,11 @@
   return self.amDevice.asyncQueue ?: self.restorableDevice.asyncQueue;
 }
 
+- (FBiOSTargetDiagnostics *)diagnostics
+{
+  return [[FBiOSTargetDiagnostics alloc] initWithStorageDirectory:self.auxillaryDirectory];
+}
+
 - (FBProcessInfo *)containerApplication
 {
   return nil;

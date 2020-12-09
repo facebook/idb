@@ -99,6 +99,8 @@ typedef NS_OPTIONS(NSUInteger, FBVideoEncoderOptions) {
  */
 - (instancetype)withFilePath:(NSString *)filePath;
 + (instancetype)withFilePath:(NSString *)filePath;
+- (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic;
++ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic;
 
 #pragma mark File Type
 

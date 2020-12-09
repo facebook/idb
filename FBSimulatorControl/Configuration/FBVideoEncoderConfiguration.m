@@ -215,6 +215,17 @@ static NSString *const KeyFileType = @"file_type";
   return [[self.class alloc] initWithOptions:self.options timescale:self.timescale roundingMethod:self.roundingMethod filePath:filePath fileType:self.fileType];
 }
 
++ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic
+{
+  return [self.defaultConfiguration withDiagnostic:diagnostic];
+}
+
+- (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic
+{
+  FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:diagnostic];
+  return [[self.class alloc] initWithOptions:self.options timescale:self.timescale roundingMethod:self.roundingMethod filePath:builder.createPath fileType:self.fileType];
+}
+
 #pragma mark File Type
 
 + (instancetype)withFileType:(NSString *)fileType

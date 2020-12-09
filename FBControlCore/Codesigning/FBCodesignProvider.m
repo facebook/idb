@@ -10,7 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBControlCoreError.h"
-#import "FBLogSearch.h"
 
 static NSString *const CDHashPrefix = @"CDHash=";
 
