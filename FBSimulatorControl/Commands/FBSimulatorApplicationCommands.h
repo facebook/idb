@@ -13,28 +13,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
 @class FBSimulatorApplicationOperation;
-
-/**
- Simulator-Specific Application Commands.
- */
-@protocol FBSimulatorApplicationCommands <FBApplicationCommands, FBiOSTargetCommand>
-
-#pragma mark Querying Application State
-
-/**
- Returns the Process Info for a Application by Bundle ID.
-
- @param bundleID the Bundle ID to fetch an installed application for.
- @return A future that resolves with the process info of the running application.
- */
-- (FBFuture<FBProcessInfo *> *)runningApplicationWithBundleID:(NSString *)bundleID;
-
-@end
-
 /**
  Implementation of FBApplicationCommands for Simulators.
  */
-@interface FBSimulatorApplicationCommands : NSObject <FBSimulatorApplicationCommands>
+@interface FBSimulatorApplicationCommands : NSObject <FBApplicationCommands>
 
 @end
 

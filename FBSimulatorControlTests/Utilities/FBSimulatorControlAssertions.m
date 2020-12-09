@@ -65,9 +65,9 @@
 - (void)assertSimulator:(FBSimulator *)simulator isRunningApplicationFromConfiguration:(FBApplicationLaunchConfiguration *)launchConfiguration
 {
   NSError *error = nil;
-  FBProcessInfo *process = [[simulator runningApplicationWithBundleID:launchConfiguration.bundleID] await:&error];
+  NSNumber *processID = [[simulator processIDWithBundleID:launchConfiguration.bundleID] await:&error];
   XCTAssertNil(error);
-  XCTAssertNotNil(process);
+  XCTAssertNotNil(processID);
 }
 
 #pragma mark Private
@@ -176,13 +176,13 @@
   BOOL success = [[simulator launchApplication:launchConfiguration] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  FBProcessInfo *firstLaunch = [[simulator runningApplicationWithBundleID:launchConfiguration.bundleID] await:nil];
+  NSNumber *firstLaunch = [[simulator processIDWithBundleID:launchConfiguration.bundleID] await:nil];
 
   success = [[simulator launchApplication:launchConfiguration] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
-  FBProcessInfo *secondLaunch = [[simulator runningApplicationWithBundleID:launchConfiguration.bundleID] await:nil];
+  NSNumber *secondLaunch = [[simulator processIDWithBundleID:launchConfiguration.bundleID] await:nil];
   XCTAssertNotEqualObjects(firstLaunch, secondLaunch);
 
   return simulator;

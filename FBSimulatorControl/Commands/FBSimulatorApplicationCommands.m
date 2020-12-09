@@ -17,7 +17,6 @@
 #import "FBSimulatorApplicationOperation.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorLaunchCtlCommands.h"
-#import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSubprocessTerminationStrategy.h"
 
 @interface FBSimulatorApplicationCommands ()
@@ -171,33 +170,13 @@
 
 - (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID
 {
-  return [[self
-    runningApplicationWithBundleID:bundleID]
-    onQueue:self.simulator.workQueue map:^(FBProcessInfo *info) {
-      return @(info.processIdentifier);
-    }];
-}
-
-#pragma mark FBSimulatorApplicationCommands
-
-- (FBFuture<FBProcessInfo *> *)runningApplicationWithBundleID:(NSString *)bundleID
-{
-  NSParameterAssert(bundleID);
-  return [[[self
-    installedApplicationWithBundleID:bundleID]
-    onQueue:self.simulator.workQueue fmap:^(FBInstalledApplication *_) {
+  return [[FBFuture
+    onQueue:self.simulator.workQueue resolve:^{
       NSString *serviceName = [NSString stringWithFormat:@"UIKitApplication:%@", bundleID];
       return [self.simulator serviceNameAndProcessIdentifierForSubstring:serviceName];
     }]
-    onQueue:self.simulator.workQueue fmap:^(NSArray<id> *result) {
-      NSNumber *processIdentifier = result[1];
-      FBProcessInfo *processInfo = [self.simulator.processFetcher.processFetcher processInfoFor:processIdentifier.intValue];
-      if (!processInfo) {
-        return [[FBSimulatorError
-          describeFormat:@"Could not fetch process info for %@", processIdentifier]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:processInfo];
+    onQueue:self.simulator.workQueue map:^(NSArray<id> *result) {
+      return result[1];
     }];
 }
 
