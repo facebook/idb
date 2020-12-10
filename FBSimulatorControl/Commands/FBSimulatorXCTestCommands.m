@@ -120,7 +120,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
       return future;
     }];
 
-  self.operation = FBiOSTargetOperationNamed(completed, FBiOSTargetFutureTypeTestOperation);
+  self.operation = FBiOSTargetOperationNamed(completed, FBiOSTargetOperationTypeTestOperation);
   [logger logFormat:@"Test Operation %@ has started for %@, storing it as the sole operation for this target", task, configuration.shortDescription];
 
   return self.operation;

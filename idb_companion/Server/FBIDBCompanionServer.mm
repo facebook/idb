@@ -131,7 +131,7 @@ using namespace std;
   return self.serverTerminated;
 }
 
-- (NSString *)futureType
+- (NSString *)operationType
 {
   return @"grpc_server";
 }

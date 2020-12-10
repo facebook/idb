@@ -43,7 +43,7 @@
 }
 #pragma clang diagnostic pop
 
-- (FBiOSTargetFutureType)futureType
+- (FBiOSTargetOperationType)operationType
 {
   return @"debug";
 }

@@ -12,7 +12,7 @@
 
 #import "FBXCTestDestination.h"
 
-FBiOSTargetFutureType const FBiOSTargetFutureTypeFBXCTest = @"fbxctest";
+FBiOSTargetOperationType const FBiOSTargetOperationTypeFBXCTest = @"fbxctest";
 
 @implementation FBXCTestCommandLine
 

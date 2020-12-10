@@ -494,9 +494,9 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark FBiOSTargetOperation
 
-- (FBiOSTargetFutureType)futureType
+- (FBiOSTargetOperationType)operationType
 {
-  return FBiOSTargetFutureTypeVideoStreaming;
+  return FBiOSTargetOperationTypeVideoStreaming;
 }
 
 - (FBFuture<NSNull *> *)completed

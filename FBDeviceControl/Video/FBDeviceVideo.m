@@ -150,9 +150,9 @@
 
 #pragma mark FBiOSTargetOperation
 
-- (FBiOSTargetFutureType)futureType
+- (FBiOSTargetOperationType)operationType
 {
-  return FBiOSTargetFutureTypeVideoRecording;
+  return FBiOSTargetOperationTypeVideoRecording;
 }
 
 - (FBFuture<NSNull *> *)completed

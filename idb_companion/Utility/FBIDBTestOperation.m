@@ -54,9 +54,9 @@
   return [NSString stringWithFormat:@"Test Run (%@)", self.configuration.jsonSerializableRepresentation];
 }
 
-- (FBiOSTargetFutureType)futureType
+- (FBiOSTargetOperationType)operationType
 {
-  return FBiOSTargetFutureTypeTestOperation;
+  return FBiOSTargetOperationTypeTestOperation;
 }
 
 @end

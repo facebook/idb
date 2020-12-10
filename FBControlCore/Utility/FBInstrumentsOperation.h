@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Termination Handle Type for an instruments operation.
  */
-extern FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments;
+extern FBiOSTargetOperationType const FBiOSTargetOperationTypeInstruments;
 
 /**
  Represents an operation of the instruments command-line.

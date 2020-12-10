@@ -201,7 +201,7 @@ BOOL WriteMinicapHeaderToStream(uint32 width, uint32 height, id<FBDataConsumer> 
   return YES;
 }
 
-FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming = @"VideoStreaming";
+FBiOSTargetOperationType const FBiOSTargetOperationTypeVideoStreaming = @"VideoStreaming";
 
 @implementation FBVideoStreamAttributes
 

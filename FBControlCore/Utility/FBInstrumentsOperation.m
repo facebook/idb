@@ -22,7 +22,7 @@ const NSTimeInterval DefaultInstrumentsTerminateTimeout = 600.0;
 const NSTimeInterval DefaultInstrumentsLaunchErrorTimeout = 15.0;
 const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
 
-FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
+FBiOSTargetOperationType const FBiOSTargetOperationTypeInstruments = @"instruments";
 
 @interface FBInstrumentsConsumer : NSObject <FBDataConsumer>
 
@@ -216,9 +216,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments = @"instruments";
 
 #pragma mark FBiOSTargetOperation
 
-- (FBiOSTargetFutureType)futureType
+- (FBiOSTargetOperationType)operationType
 {
-  return FBiOSTargetFutureTypeInstruments;
+  return FBiOSTargetOperationTypeInstruments;
 }
 
 - (FBFuture<NSNull *> *)completed

@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Termination Handle Type.
  */
-extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestOperation;
+extern FBiOSTargetOperationType const FBiOSTargetOperationTypeTestOperation;
 
 /**
  Commands related to XCTest Execution.

@@ -148,7 +148,7 @@
   return self.teardown;
 }
 
-- (FBiOSTargetFutureType)futureType
+- (FBiOSTargetOperationType)operationType
 {
   return @"debug";
 }

@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Future Type for an Agent Launched on a Simulator.
  */
-extern FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent;
+extern FBiOSTargetOperationType const FBiOSTargetOperationTypeSimulatorAgent;
 
 /**
  An Operation for an Agent.

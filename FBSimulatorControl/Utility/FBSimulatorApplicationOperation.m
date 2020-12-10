@@ -70,9 +70,9 @@
 
 #pragma mark FBiOSTargetOperation
 
-- (FBiOSTargetFutureType)futureType
+- (FBiOSTargetOperationType)operationType
 {
-  return FBiOSTargetFutureTypeApplicationLaunch;
+  return FBiOSTargetOperationTypeApplicationLaunch;
 }
 
 #pragma mark FBLaunchedProcess

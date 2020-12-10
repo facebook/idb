@@ -11,7 +11,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 
-FBiOSTargetFutureType const FBiOSTargetFutureTypeBoot = @"boot";
+FBiOSTargetOperationType const FBiOSTargetOperationTypeBoot = @"boot";
 
 @implementation FBSimulatorBootConfiguration
 

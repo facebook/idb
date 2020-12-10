@@ -38,9 +38,9 @@
   return self;
 }
 
-- (FBiOSTargetFutureType)futureType
+- (FBiOSTargetOperationType)operationType
 {
-  return FBiOSTargetFutureTypeLogTail;
+  return FBiOSTargetOperationTypeLogTail;
 }
 
 - (FBFuture<NSNull *> *)completed

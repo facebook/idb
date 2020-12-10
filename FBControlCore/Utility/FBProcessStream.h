@@ -125,7 +125,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 /**
  The Termination Handle Type for Process Output.
  */
-extern FBiOSTargetFutureType const FBiOSTargetFutureTypeProcessOutput;
+extern FBiOSTargetOperationType const FBiOSTargetOperationTypeProcessOutput;
 
 /**
  A container object for the output of a process.

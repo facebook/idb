@@ -11,13 +11,13 @@
 
 #import "FBFuture+Sync.h"
 
-FBiOSTargetFutureType const FBiOSTargetFutureTypeApplicationLaunch = @"applaunch";
+FBiOSTargetOperationType const FBiOSTargetOperationTypeApplicationLaunch = @"applaunch";
 
-FBiOSTargetFutureType const FBiOSTargetFutureTypeAgentLaunch = @"agentlaunch";
+FBiOSTargetOperationType const FBiOSTargetOperationTypeAgentLaunch = @"agentlaunch";
 
-FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch = @"launch_xctest";
+FBiOSTargetOperationType const FBiOSTargetOperationTypeTestLaunch = @"launch_xctest";
 
-FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
+FBiOSTargetOperationType const FBiOSTargetOperationTypeLogTail = @"logtail";
 
 @interface FBiOSTargetOperation_Named : NSObject <FBiOSTargetOperation>
 
@@ -26,9 +26,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
 @implementation FBiOSTargetOperation_Named
 
 @synthesize completed = _completed;
-@synthesize futureType = _futureType;
+@synthesize operationType = _operationType;
 
-- (instancetype)initWithCompleted:(FBFuture<NSNull *> *)completed futureType:(FBiOSTargetFutureType)futureType
+- (instancetype)initWithCompleted:(FBFuture<NSNull *> *)completed operationType:(FBiOSTargetOperationType)operationType
 {
   self = [super init];
   if (!self) {
@@ -36,7 +36,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
   }
 
   _completed = completed;
-  _futureType = futureType;
+  _operationType = operationType;
 
   return self;
 }
@@ -46,9 +46,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
   return _completed;
 }
 
-- (FBiOSTargetFutureType)futureType
+- (FBiOSTargetOperationType)operationType
 {
-  return _futureType;
+  return _operationType;
 }
 
 @end
@@ -61,9 +61,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
 
 @implementation FBiOSTargetOperation_Renamed
 
-@synthesize futureType = _futureType;
+@synthesize operationType = _operationType;
 
-- (instancetype)initWithAwaitable:(id<FBiOSTargetOperation>)operation futureType:(FBiOSTargetFutureType)futureType
+- (instancetype)initWithAwaitable:(id<FBiOSTargetOperation>)operation operationType:(FBiOSTargetOperationType)operationType
 {
   self = [super init];
   if (!self) {
@@ -71,7 +71,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
   }
 
   _operation = operation;
-  _futureType = futureType;
+  _operationType = operationType;
 
   return self;
 }
@@ -81,9 +81,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
   return [self.operation completed];
 }
 
-- (FBiOSTargetFutureType)futureType
+- (FBiOSTargetOperationType)operationType
 {
-  return _futureType;
+  return _operationType;
 }
 
 @end
@@ -94,16 +94,16 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
 
 @implementation FBiOSTargetOperation_Done
 
-@synthesize futureType = _futureType;
+@synthesize operationType = _operationType;
 
-- (instancetype)initWithFutureType:(FBiOSTargetFutureType)futureType
+- (instancetype)initWithOperationType:(FBiOSTargetOperationType)operationType
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _futureType = futureType;
+  _operationType = operationType;
 
   return self;
 }
@@ -113,26 +113,26 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
   return FBFuture.empty;
 }
 
-- (FBiOSTargetFutureType)futureType
+- (FBiOSTargetOperationType)operationType
 {
-  return _futureType;
+  return _operationType;
 }
 
 @end
 
-id<FBiOSTargetOperation> FBiOSTargetOperationNamed(FBFuture<NSNull *> *completed, FBiOSTargetFutureType futureType)
+id<FBiOSTargetOperation> FBiOSTargetOperationNamed(FBFuture<NSNull *> *completed, FBiOSTargetOperationType operationType)
 {
-  return [[FBiOSTargetOperation_Named alloc] initWithCompleted:completed futureType:futureType];
+  return [[FBiOSTargetOperation_Named alloc] initWithCompleted:completed operationType:operationType];
 }
 
-id<FBiOSTargetOperation> FBiOSTargetOperationRenamed(id<FBiOSTargetOperation> operation, FBiOSTargetFutureType futureType)
+id<FBiOSTargetOperation> FBiOSTargetOperationRenamed(id<FBiOSTargetOperation> operation, FBiOSTargetOperationType operationType)
 {
-  return [[FBiOSTargetOperation_Renamed alloc] initWithAwaitable:operation futureType:futureType];
+  return [[FBiOSTargetOperation_Renamed alloc] initWithAwaitable:operation operationType:operationType];
 }
 
-id<FBiOSTargetOperation> FBiOSTargetOperationDone(FBiOSTargetFutureType futureType)
+id<FBiOSTargetOperation> FBiOSTargetOperationDone(FBiOSTargetOperationType operationType)
 {
-  return [[FBiOSTargetOperation_Done alloc] initWithFutureType:futureType];
+  return [[FBiOSTargetOperation_Done alloc] initWithOperationType:operationType];
 }
 
 @implementation FBiOSTargetFutureSimple

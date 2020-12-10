@@ -7,4 +7,4 @@
 
 #import "FBXCTestCommands.h"
 
-FBiOSTargetFutureType const FBiOSTargetFutureTypeTestOperation = @"TestOperation";
+FBiOSTargetOperationType const FBiOSTargetOperationTypeTestOperation = @"TestOperation";

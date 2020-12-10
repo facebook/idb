@@ -7,4 +7,4 @@
 
 #import "FBVideoRecordingCommands.h"
 
-FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoRecording = @"VideoRecording";
+FBiOSTargetOperationType const FBiOSTargetOperationTypeVideoRecording = @"VideoRecording";

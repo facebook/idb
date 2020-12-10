@@ -93,9 +93,9 @@
 
 #pragma mark FBiOSTargetOperation
 
-- (FBiOSTargetFutureType)futureType
+- (FBiOSTargetOperationType)operationType
 {
-  return FBiOSTargetFutureTypeTestOperation;
+  return FBiOSTargetOperationTypeTestOperation;
 }
 
 - (FBFuture<NSNull *> *)completed

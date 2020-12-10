@@ -11,7 +11,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorProcessFetcher.h"
 
-FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
+FBiOSTargetOperationType const FBiOSTargetOperationTypeSimulatorAgent = @"agent";
 
 @interface FBSimulatorAgentOperation ()
 
@@ -110,9 +110,9 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
 
 #pragma mark FBiOSTargetOperation
 
-- (FBiOSTargetFutureType)futureType
+- (FBiOSTargetOperationType)operationType
 {
-  return FBiOSTargetFutureTypeSimulatorAgent;
+  return FBiOSTargetOperationTypeSimulatorAgent;
 }
 
 - (FBFuture<NSNull *> *)completed

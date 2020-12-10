@@ -66,7 +66,7 @@ static void RemoveGlobalLogger(id<FBControlCoreLogger> logger)
   }];
 }
 
-- (NSString *)futureType
+- (NSString *)operationType
 {
   return @"companion_log";
 }

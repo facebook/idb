@@ -22,27 +22,27 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An extensible string enum representing an Action Type.
  */
-typedef NSString *FBiOSTargetFutureType NS_EXTENSIBLE_STRING_ENUM;
+typedef NSString *FBiOSTargetOperationType NS_EXTENSIBLE_STRING_ENUM;
 
 /**
  The Action Type for an Application Launch.
  */
-extern FBiOSTargetFutureType const FBiOSTargetFutureTypeApplicationLaunch;
+extern FBiOSTargetOperationType const FBiOSTargetOperationTypeApplicationLaunch;
 
 /**
  The Action Type for an Agent Launch.
  */
-extern FBiOSTargetFutureType const FBiOSTargetFutureTypeAgentLaunch;
+extern FBiOSTargetOperationType const FBiOSTargetOperationTypeAgentLaunch;
 
 /**
  The Action Type for a Test Launch.
  */
-extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch;
+extern FBiOSTargetOperationType const FBiOSTargetOperationTypeTestLaunch;
 
 /**
  The Action Type for Log Tails.
  */
-extern FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail;
+extern FBiOSTargetOperationType const FBiOSTargetOperationTypeLogTail;
 
 /**
  A protocol that represents an operation of indeterminate length.
@@ -59,7 +59,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail;
 /**
  The Type of the Future, used for identifying kinds of the receiver.
  */
-@property (nonatomic, copy, readonly) FBiOSTargetFutureType futureType;
+@property (nonatomic, copy, readonly) FBiOSTargetOperationType operationType;
 
 @end
 
@@ -67,28 +67,28 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail;
  Creates a new operation.
 
  @param completed the completion future
- @param futureType the Future Type.
+ @param operationType the Future Type.
  @return a new Contiunation
  */
-extern id<FBiOSTargetOperation> FBiOSTargetOperationNamed(FBFuture<NSNull *> *completed, FBiOSTargetFutureType futureType);
+extern id<FBiOSTargetOperation> FBiOSTargetOperationNamed(FBFuture<NSNull *> *completed, FBiOSTargetOperationType operationType);
 
 /**
  Re-Names an existing operation.
  Useful when a lower-level operation should be hoisted to a higher-level naming.
 
  @param operation the operation to wrap
- @param futureType the Future Type.
+ @param operationType the Future Type.
  @return a new Contiunation
  */
-extern id<FBiOSTargetOperation> FBiOSTargetOperationRenamed(id<FBiOSTargetOperation> operation, FBiOSTargetFutureType futureType);
+extern id<FBiOSTargetOperation> FBiOSTargetOperationRenamed(id<FBiOSTargetOperation> operation, FBiOSTargetOperationType operationType);
 
 /**
  Makes a operation that has nothing left to do.
 
- @param futureType the Future Type.
+ @param operationType the Future Type.
  @return a new Contiunation.
  */
-extern id<FBiOSTargetOperation> FBiOSTargetOperationDone(FBiOSTargetFutureType futureType);
+extern id<FBiOSTargetOperation> FBiOSTargetOperationDone(FBiOSTargetOperationType operationType);
 
 /**
  A protocol that can be bridged to FBiOSTargetFutureDelegate
@@ -98,7 +98,7 @@ extern id<FBiOSTargetOperation> FBiOSTargetOperationDone(FBiOSTargetFutureType f
 /**
  The Action Type of the Receiver.
  */
-@property (nonatomic, copy, class, readonly) FBiOSTargetFutureType futureType;
+@property (nonatomic, copy, class, readonly) FBiOSTargetOperationType operationType;
 
 /**
  Starts the action represented by the receiver.
@@ -108,7 +108,7 @@ extern id<FBiOSTargetOperation> FBiOSTargetOperationDone(FBiOSTargetFutureType f
  @param reporter the reporter to report structured data to.
  @return a Future wrapping the action type.
  */
-- (FBFuture<FBiOSTargetFutureType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter;
+- (FBFuture<FBiOSTargetOperationType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter;
 
 @end
 
