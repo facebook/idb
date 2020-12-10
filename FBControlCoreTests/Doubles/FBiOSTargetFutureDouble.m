@@ -55,10 +55,10 @@ static NSString *const KeySucceed = @"succeed";
   };
 }
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
+- (FBFuture<id<FBiOSTargetOperation>> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter
 {
   if (self.succeed) {
-    return [FBFuture futureWithResult:FBiOSTargetContinuationDone(self.class.futureType)];
+    return [FBFuture futureWithResult:FBiOSTargetOperationDone(self.class.futureType)];
   } else {
     NSError *error = [NSError errorWithDomain:@"" code:0 userInfo:nil];
     return [FBFuture futureWithError:error];

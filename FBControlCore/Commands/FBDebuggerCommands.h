@@ -9,7 +9,7 @@
 
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
-#import <FBControlCore/FBiOSTargetFuture.h>
+#import <FBControlCore/FBiOSTargetOperation.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A protocol for a running debug server.
  */
-@protocol FBDebugServer <FBiOSTargetContinuation>
+@protocol FBDebugServer <FBiOSTargetOperation>
 
 /**
  The commands to execute within lldb to start a debug server.

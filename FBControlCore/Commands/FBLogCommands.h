@@ -9,7 +9,7 @@
 
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
-#import <FBControlCore/FBiOSTargetFuture.h>
+#import <FBControlCore/FBiOSTargetOperation.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A logging operation of indeterminate duration.
  */
-@protocol FBLogOperation <FBiOSTargetContinuation>
+@protocol FBLogOperation <FBiOSTargetOperation>
 
 /**
  The consumer of the operation.

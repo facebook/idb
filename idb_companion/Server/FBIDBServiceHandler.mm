@@ -996,7 +996,7 @@ Status FBIDBServiceHandler::record(grpc::ServerContext *context, grpc::ServerRea
   NSError *error = nil;
   const std::string requestedFilePath = initial.start().file_path();
   NSString *filePath = requestedFilePath.length() > 0 ? nsstring_from_c_string(requestedFilePath.c_str()) : [[_target.auxillaryDirectory stringByAppendingPathComponent:@"idb_encode"] stringByAppendingPathExtension:@"mp4"];
-  id<FBiOSTargetContinuation> operation = [[_target startRecordingToFile:filePath] block:&error];
+  id<FBiOSTargetOperation> operation = [[_target startRecordingToFile:filePath] block:&error];
   if (!operation) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }

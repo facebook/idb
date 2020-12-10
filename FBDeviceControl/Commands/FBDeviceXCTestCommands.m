@@ -21,7 +21,7 @@
 @property (nonatomic, weak, readonly) FBDevice *device;
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
 @property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
-@property (nonatomic, strong, nullable, readwrite) id<FBiOSTargetContinuation> operation;
+@property (nonatomic, strong, nullable, readwrite) id<FBiOSTargetOperation> operation;
 
 @end
 
@@ -50,7 +50,7 @@
 
 #pragma mark FBXCTestCommands Implementation
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<id<FBiOSTargetOperation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   // Return early and fail if there is already a test run for the device.
   // There should only ever be one test run per-device.
@@ -67,14 +67,14 @@
       return [self _startTestWithLaunchConfiguration:testLaunchConfiguration logger:logger];
     }]
     onQueue:self.device.workQueue map:^(FBTask *task) {
-      // Then wrap the started task, so that we can augment it with logging and adapt it to the FBiOSTargetContinuation interface.
+      // Then wrap the started task, so that we can augment it with logging and adapt it to the FBiOSTargetOperation interface.
       return [self _testOperationStarted:task configuration:testLaunchConfiguration reporter:reporter logger:logger];
     }];
 }
 
-- (NSArray<id<FBiOSTargetContinuation>> *)testOperations
+- (NSArray<id<FBiOSTargetOperation>> *)testOperations
 {
-  id<FBiOSTargetContinuation> operation = self.operation;
+  id<FBiOSTargetOperation> operation = self.operation;
   return operation ? @[operation] : @[];
 }
 
@@ -122,7 +122,7 @@
     logger:[logger withName:@"xcodebuild"]];
 }
 
-- (id<FBiOSTargetContinuation>)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (id<FBiOSTargetOperation>)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   FBFuture<NSNull *> *completed = [[[[task
     completed]
@@ -147,7 +147,7 @@
       return future;
     }];
 
-  self.operation = FBiOSTargetContinuationNamed(completed, FBiOSTargetFutureTypeTestOperation);
+  self.operation = FBiOSTargetOperationNamed(completed, FBiOSTargetFutureTypeTestOperation);
   [logger logFormat:@"Test Operation %@ has started for %@, storing it as the sole operation for this target", task, configuration.shortDescription];
 
   return self.operation;

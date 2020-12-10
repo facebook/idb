@@ -26,7 +26,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
 @interface FBSimulatorXCTestCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, nullable, readwrite) id<FBiOSTargetContinuation> operation;
+@property (nonatomic, strong, nullable, readwrite) id<FBiOSTargetOperation> operation;
 
 @end
 
@@ -53,7 +53,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
 
 #pragma mark Public
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<id<FBiOSTargetOperation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   // Use FBXCTestBootstrap to run the test if `shouldUseXcodebuild` is not set in the test launch.
   if (!testLaunchConfiguration.shouldUseXcodebuild) {
@@ -98,7 +98,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
     logger:[logger withName:@"xcodebuild"]];
 }
 
-- (id<FBiOSTargetContinuation>)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (id<FBiOSTargetOperation>)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   FBFuture<NSNull *> *completed = [[[[task
     completed]
@@ -120,7 +120,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
       return future;
     }];
 
-  self.operation = FBiOSTargetContinuationNamed(completed, FBiOSTargetFutureTypeTestOperation);
+  self.operation = FBiOSTargetOperationNamed(completed, FBiOSTargetFutureTypeTestOperation);
   [logger logFormat:@"Test Operation %@ has started for %@, storing it as the sole operation for this target", task, configuration.shortDescription];
 
   return self.operation;
@@ -178,7 +178,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
 
 #pragma mark Private
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger workingDirectory:(nullable NSString *)workingDirectory
+- (FBFuture<id<FBiOSTargetOperation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger workingDirectory:(nullable NSString *)workingDirectory
 {
   if (self.simulator.state != FBiOSTargetStateBooted) {
     return [[[FBSimulatorError
@@ -189,7 +189,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
   FBSimulatorTestPreparationStrategy *testPreparationStrategy = [FBSimulatorTestPreparationStrategy
     strategyWithTestLaunchConfiguration:testLaunchConfiguration
     workingDirectory:workingDirectory];
-  return (FBFuture<id<FBiOSTargetContinuation>> *) [[FBManagedTestRunStrategy
+  return (FBFuture<id<FBiOSTargetOperation>> *) [[FBManagedTestRunStrategy
     strategyWithTarget:self.simulator configuration:testLaunchConfiguration reporter:reporter logger:logger testPreparationStrategy:testPreparationStrategy]
     connectAndStart];
 }

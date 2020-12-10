@@ -141,7 +141,7 @@
     }];
 }
 
-#pragma mark FBiOSTargetContinuation
+#pragma mark FBiOSTargetOperation
 
 - (FBFuture<NSNull *> *)completed
 {

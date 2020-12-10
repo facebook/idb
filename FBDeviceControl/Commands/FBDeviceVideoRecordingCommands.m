@@ -44,7 +44,7 @@
 
 #pragma mark FBVideoRecordingCommands
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)startRecordingToFile:(NSString *)filePath
+- (FBFuture<id<FBiOSTargetOperation>> *)startRecordingToFile:(NSString *)filePath
 {
   NSParameterAssert(filePath);
   if (self.video) {

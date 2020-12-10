@@ -52,7 +52,7 @@
 - (void)assertLaunchesTestWithConfiguration:(FBTestLaunchConfiguration *)testLaunch reporter:(id<FBTestManagerTestReporter>)reporter simulator:(FBSimulator *)simulator
 {
   NSError *error = nil;
-  id<FBiOSTargetContinuation> operation = [[simulator startTestWithLaunchConfiguration:testLaunch reporter:reporter logger:simulator.logger] await:&error];
+  id<FBiOSTargetOperation> operation = [[simulator startTestWithLaunchConfiguration:testLaunch reporter:reporter logger:simulator.logger] await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(operation);
 

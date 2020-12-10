@@ -58,7 +58,7 @@
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBiOSTargetConfiguration.h>
 #import <FBControlCore/FBiOSTargetFormat.h>
-#import <FBControlCore/FBiOSTargetFuture.h>
+#import <FBControlCore/FBiOSTargetOperation.h>
 #import <FBControlCore/FBiOSTargetPredicates.h>
 #import <FBControlCore/FBiOSTargetQuery.h>
 #import <FBControlCore/FBiOSTargetSet.h>

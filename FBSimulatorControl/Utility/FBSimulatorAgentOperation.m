@@ -108,7 +108,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
     mapReplace:NSNull.null];
 }
 
-#pragma mark FBiOSTargetContinuation
+#pragma mark FBiOSTargetOperation
 
 - (FBiOSTargetFutureType)futureType
 {

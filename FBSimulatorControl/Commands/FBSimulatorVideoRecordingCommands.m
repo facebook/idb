@@ -46,7 +46,7 @@
 
 #pragma mark FBVideoRecordingCommands Implementation
 
-- (FBFuture<id<FBiOSTargetContinuation>> *)startRecordingToFile:(NSString *)filePath
+- (FBFuture<id<FBiOSTargetOperation>> *)startRecordingToFile:(NSString *)filePath
 {
   return [[self
     obtainVideo]

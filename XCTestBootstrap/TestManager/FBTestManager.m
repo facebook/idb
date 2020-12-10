@@ -91,7 +91,7 @@
   return [self.terminationFuture cancel];
 }
 
-#pragma mark FBiOSTargetContinuation
+#pragma mark FBiOSTargetOperation
 
 - (FBiOSTargetFutureType)futureType
 {

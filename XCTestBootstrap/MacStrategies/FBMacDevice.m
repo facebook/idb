@@ -346,13 +346,13 @@
   return [FBFuture futureWithResult:runningProcesses];
 }
 
-- (nonnull FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
+- (nonnull FBFuture<id<FBiOSTargetOperation>> *)startTestWithLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
 {
   FBMacTestPreparationStrategy *testPreparationStrategy =
     [FBMacTestPreparationStrategy
      strategyWithTestLaunchConfiguration:testLaunchConfiguration
      workingDirectory:self.workingDirectory];
-  return (FBFuture<id<FBiOSTargetContinuation>> *)
+  return (FBFuture<id<FBiOSTargetOperation>> *)
     [[FBManagedTestRunStrategy
       strategyWithTarget:self
       configuration:testLaunchConfiguration
@@ -390,7 +390,7 @@
   return nil;
 }
 
-- (nonnull FBFuture<id<FBiOSTargetContinuation>> *)startRecordingToFile:(NSString *)filePath
+- (nonnull FBFuture<id<FBiOSTargetOperation>> *)startRecordingToFile:(NSString *)filePath
 {
   NSAssert(nil, @"startRecordingToFile: is not yet supported");
   return nil;
@@ -414,7 +414,7 @@
   return nil;
 }
 
-- (nonnull FBFuture<id<FBiOSTargetContinuation>> *)tailLog:(nonnull NSArray<NSString *> *)arguments consumer:(nonnull id<FBDataConsumer>)consumer
+- (nonnull FBFuture<id<FBiOSTargetOperation>> *)tailLog:(nonnull NSArray<NSString *> *)arguments consumer:(nonnull id<FBDataConsumer>)consumer
 {
   NSAssert(nil, @"tailLog:consumer: is not yet supported");
   return nil;

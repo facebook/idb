@@ -36,7 +36,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestOperation;
  @param logger the logger to log to.
  @return a Future, wrapping a test operation.
  */
-- (FBFuture<id<FBiOSTargetContinuation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
+- (FBFuture<id<FBiOSTargetOperation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Lists the testables for a provided test bundle.

@@ -9,7 +9,7 @@
 
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
-#import <FBControlCore/FBiOSTargetFuture.h>
+#import <FBControlCore/FBiOSTargetOperation.h>
 #import <FBControlCore/FBFileContainer.h>
 
 NS_ASSUME_NONNULL_BEGIN

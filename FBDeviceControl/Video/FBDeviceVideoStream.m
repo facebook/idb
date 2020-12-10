@@ -216,7 +216,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
 }
 
-#pragma mark FBiOSTargetContinuation
+#pragma mark FBiOSTargetOperation
 
 - (FBiOSTargetFutureType)futureType
 {

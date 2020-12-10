@@ -27,7 +27,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent;
  This class is explicitly a reference type as it retains the File Handles that are used by the Agent Process.
  The lifecycle of the process is managed internally and this class should not be instantiated directly by consumers.
  */
-@interface FBSimulatorAgentOperation : NSObject <FBiOSTargetContinuation, FBLaunchedProcess, FBJSONSerializable>
+@interface FBSimulatorAgentOperation : NSObject <FBiOSTargetOperation, FBLaunchedProcess, FBJSONSerializable>
 
 #pragma mark Helper Methods
 

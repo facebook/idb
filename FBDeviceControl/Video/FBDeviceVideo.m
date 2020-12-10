@@ -148,7 +148,7 @@
   return [self.encoder stopRecording];
 }
 
-#pragma mark FBiOSTargetContinuation
+#pragma mark FBiOSTargetOperation
 
 - (FBiOSTargetFutureType)futureType
 {

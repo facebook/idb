@@ -68,7 +68,7 @@
     }];
 }
 
-#pragma mark FBiOSTargetContinuation
+#pragma mark FBiOSTargetOperation
 
 - (FBiOSTargetFutureType)futureType
 {

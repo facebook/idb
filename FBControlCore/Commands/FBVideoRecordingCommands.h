@@ -9,7 +9,7 @@
 
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
-#import <FBControlCore/FBiOSTargetFuture.h>
+#import <FBControlCore/FBiOSTargetOperation.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -31,7 +31,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoRecording;
  @param filePath the filePath to write to.
  @return A Future, wrapping the recording session.
  */
-- (FBFuture<id<FBiOSTargetContinuation>> *)startRecordingToFile:(NSString *)filePath;
+- (FBFuture<id<FBiOSTargetOperation>> *)startRecordingToFile:(NSString *)filePath;
 
 /**
  Stops the Recording of Video.

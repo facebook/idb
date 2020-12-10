@@ -9,7 +9,7 @@
 #import <CoreMedia/CoreMedia.h>
 
 #import <FBControlCore/FBJSONConversion.h>
-#import <FBControlCore/FBiOSTargetFuture.h>
+#import <FBControlCore/FBiOSTargetOperation.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -41,7 +41,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeVideoStreaming;
 /**
  Streams Bitmaps to a File Sink
  */
-@protocol FBVideoStream <FBiOSTargetContinuation>
+@protocol FBVideoStream <FBiOSTargetOperation>
 
 #pragma mark Public Methods
 

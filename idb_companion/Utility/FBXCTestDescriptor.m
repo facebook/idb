@@ -224,8 +224,8 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     NSString *binaryPath = [FBProductBundleBuilder productBundleFromInstalledApplication:installedApp error:nil].binaryPath;
     return [[target
       startTestWithLaunchConfiguration:configuration reporter:adapter logger:logger]
-      onQueue:target.workQueue map:^(id<FBiOSTargetContinuation> continuation) {
-        return [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:configuration.resultBundlePath coveragePath:configuration.coveragePath binaryPath:binaryPath reporter:reporter logger:logger completed:continuation.completed queue:target.workQueue];
+      onQueue:target.workQueue map:^(id<FBiOSTargetOperation> operation) {
+        return [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:configuration.resultBundlePath coveragePath:configuration.coveragePath binaryPath:binaryPath reporter:reporter logger:logger completed:operation.completed queue:target.workQueue];
       }];
   }];
 }

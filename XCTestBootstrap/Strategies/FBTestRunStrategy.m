@@ -106,7 +106,7 @@
     logger:self.target.logger
     testPreparationStrategy:testPreparationStrategy];
 
-  __block id<FBiOSTargetContinuation> tailLogContinuation = nil;
+  __block id<FBiOSTargetOperation> tailLogOperation = nil;
 
   return [[[[[[runner
     connectAndStart]
@@ -124,7 +124,7 @@
     onQueue:self.target.workQueue fmap:^(NSArray<id> *results) {
       FBTestManager *manager = results[0];
       if (results[2] != nil && ![results[2] isEqual:NSNull.null]) {
-        tailLogContinuation = results[2];
+        tailLogOperation = results[2];
       }
       return [manager execute];
     }]
@@ -132,8 +132,8 @@
       FBFuture *stoppedVideoRecording = self.configuration.videoRecordingPath != nil
         ? [self.target stopRecording]
         : FBFuture.empty;
-      FBFuture *stopTailLog = tailLogContinuation != nil
-        ? [tailLogContinuation.completed cancel]
+      FBFuture *stopTailLog = tailLogOperation != nil
+        ? [tailLogOperation.completed cancel]
         : FBFuture.empty;
       return [FBFuture futureWithFutures:@[[FBFuture futureWithResult:result], stoppedVideoRecording, stopTailLog]];
     }]

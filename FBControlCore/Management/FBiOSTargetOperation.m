@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBiOSTargetFuture.h"
+#import "FBiOSTargetOperation.h"
 
 #import <objc/runtime.h>
 
@@ -19,11 +19,11 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch = @"launch_xctest";
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
 
-@interface FBiOSTargetContinuation_Named : NSObject <FBiOSTargetContinuation>
+@interface FBiOSTargetOperation_Named : NSObject <FBiOSTargetOperation>
 
 @end
 
-@implementation FBiOSTargetContinuation_Named
+@implementation FBiOSTargetOperation_Named
 
 @synthesize completed = _completed;
 @synthesize futureType = _futureType;
@@ -53,24 +53,24 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
 
 @end
 
-@interface FBiOSTargetContinuation_Renamed : NSObject <FBiOSTargetContinuation>
+@interface FBiOSTargetOperation_Renamed : NSObject <FBiOSTargetOperation>
 
-@property (nonatomic, strong, readonly) id<FBiOSTargetContinuation> continuation;
+@property (nonatomic, strong, readonly) id<FBiOSTargetOperation> operation;
 
 @end
 
-@implementation FBiOSTargetContinuation_Renamed
+@implementation FBiOSTargetOperation_Renamed
 
 @synthesize futureType = _futureType;
 
-- (instancetype)initWithAwaitable:(id<FBiOSTargetContinuation>)continuation futureType:(FBiOSTargetFutureType)futureType
+- (instancetype)initWithAwaitable:(id<FBiOSTargetOperation>)operation futureType:(FBiOSTargetFutureType)futureType
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _continuation = continuation;
+  _operation = operation;
   _futureType = futureType;
 
   return self;
@@ -78,7 +78,7 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [self.continuation completed];
+  return [self.operation completed];
 }
 
 - (FBiOSTargetFutureType)futureType
@@ -88,11 +88,11 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
 
 @end
 
-@interface FBiOSTargetContinuation_Done : NSObject <FBiOSTargetContinuation>
+@interface FBiOSTargetOperation_Done : NSObject <FBiOSTargetOperation>
 
 @end
 
-@implementation FBiOSTargetContinuation_Done
+@implementation FBiOSTargetOperation_Done
 
 @synthesize futureType = _futureType;
 
@@ -120,19 +120,19 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail = @"logtail";
 
 @end
 
-id<FBiOSTargetContinuation> FBiOSTargetContinuationNamed(FBFuture<NSNull *> *completed, FBiOSTargetFutureType futureType)
+id<FBiOSTargetOperation> FBiOSTargetOperationNamed(FBFuture<NSNull *> *completed, FBiOSTargetFutureType futureType)
 {
-  return [[FBiOSTargetContinuation_Named alloc] initWithCompleted:completed futureType:futureType];
+  return [[FBiOSTargetOperation_Named alloc] initWithCompleted:completed futureType:futureType];
 }
 
-id<FBiOSTargetContinuation> FBiOSTargetContinuationRenamed(id<FBiOSTargetContinuation> continuation, FBiOSTargetFutureType futureType)
+id<FBiOSTargetOperation> FBiOSTargetOperationRenamed(id<FBiOSTargetOperation> operation, FBiOSTargetFutureType futureType)
 {
-  return [[FBiOSTargetContinuation_Renamed alloc] initWithAwaitable:continuation futureType:futureType];
+  return [[FBiOSTargetOperation_Renamed alloc] initWithAwaitable:operation futureType:futureType];
 }
 
-id<FBiOSTargetContinuation> FBiOSTargetContinuationDone(FBiOSTargetFutureType futureType)
+id<FBiOSTargetOperation> FBiOSTargetOperationDone(FBiOSTargetFutureType futureType)
 {
-  return [[FBiOSTargetContinuation_Done alloc] initWithFutureType:futureType];
+  return [[FBiOSTargetOperation_Done alloc] initWithFutureType:futureType];
 }
 
 @implementation FBiOSTargetFutureSimple

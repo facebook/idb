@@ -33,7 +33,7 @@
   return self;
 }
 
-#pragma mark FBiOSTargetContinuation
+#pragma mark FBiOSTargetOperation
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-property-ivar"

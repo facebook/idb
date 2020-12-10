@@ -8,7 +8,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBDataConsumer.h>
-#import <FBControlCore/FBiOSTargetFuture.h>
+#import <FBControlCore/FBiOSTargetOperation.h>
 #import <FBControlCore/FBFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN

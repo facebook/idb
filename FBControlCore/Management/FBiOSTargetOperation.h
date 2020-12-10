@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBEventReporter;
 @protocol FBiOSTarget;
 @protocol FBiOSTargetFutureDelegate;
-@protocol FBiOSTargetContinuation;
+@protocol FBiOSTargetOperation;
 
 /**
  An extensible string enum representing an Action Type.
@@ -45,15 +45,14 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeTestLaunch;
 extern FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail;
 
 /**
- The Result of invoking an FBiOSTargetFuture.
- Represents the execution state of the underlying operation.
+ A protocol that represents an operation of indeterminate length.
  */
-@protocol FBiOSTargetContinuation <NSObject>
+@protocol FBiOSTargetOperation <NSObject>
 
 /**
- A Optional Future that resolves when the operation started from the FBiOSTargetFuture has completed.
- For any FBiOSTargetFuture that performs ongoing work, this will be non-nil.
- For any FBiOSTargetFuture that has finished it's work when resolved, this will be nil.
+ A Optional Future that resolves when the operation has completed.
+ For any FBiOSTargetOperation that performs ongoing work, this will be non-nil.
+ For any FBiOSTargetOperation that has finished it's work when resolved, this will be nil.
  */
 @property (nonatomic, strong, nullable, readonly) FBFuture<NSNull *> *completed;
 
@@ -65,31 +64,31 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeLogTail;
 @end
 
 /**
- Creates a new continuation.
+ Creates a new operation.
 
  @param completed the completion future
  @param futureType the Future Type.
  @return a new Contiunation
  */
-extern id<FBiOSTargetContinuation> FBiOSTargetContinuationNamed(FBFuture<NSNull *> *completed, FBiOSTargetFutureType futureType);
+extern id<FBiOSTargetOperation> FBiOSTargetOperationNamed(FBFuture<NSNull *> *completed, FBiOSTargetFutureType futureType);
 
 /**
- Re-Names an existing continuation.
- Useful when a lower-level continuation should be hoisted to a higher-level naming.
+ Re-Names an existing operation.
+ Useful when a lower-level operation should be hoisted to a higher-level naming.
 
- @param continuation the continuation to wrap
+ @param operation the operation to wrap
  @param futureType the Future Type.
  @return a new Contiunation
  */
-extern id<FBiOSTargetContinuation> FBiOSTargetContinuationRenamed(id<FBiOSTargetContinuation> continuation, FBiOSTargetFutureType futureType);
+extern id<FBiOSTargetOperation> FBiOSTargetOperationRenamed(id<FBiOSTargetOperation> operation, FBiOSTargetFutureType futureType);
 
 /**
- Makes a continuation that has nothing left to do.
+ Makes a operation that has nothing left to do.
 
  @param futureType the Future Type.
  @return a new Contiunation.
  */
-extern id<FBiOSTargetContinuation> FBiOSTargetContinuationDone(FBiOSTargetFutureType futureType);
+extern id<FBiOSTargetOperation> FBiOSTargetOperationDone(FBiOSTargetFutureType futureType);
 
 /**
  A protocol that can be bridged to FBiOSTargetFutureDelegate

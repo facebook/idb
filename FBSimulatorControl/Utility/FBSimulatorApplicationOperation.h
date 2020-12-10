@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An Operation for an Application.
  */
-@interface FBSimulatorApplicationOperation : NSObject <FBLaunchedProcess, FBiOSTargetContinuation, FBJSONSerializable>
+@interface FBSimulatorApplicationOperation : NSObject <FBLaunchedProcess, FBiOSTargetOperation, FBJSONSerializable>
 
 #pragma mark Helper Methods
 

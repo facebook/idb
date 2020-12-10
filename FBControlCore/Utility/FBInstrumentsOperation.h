@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSTargetFuture.h>
+#import <FBControlCore/FBiOSTargetOperation.h>
 
 extern const NSTimeInterval DefaultInstrumentsOperationDuration; // Operation duration
 extern const NSTimeInterval DefaultInstrumentsTerminateTimeout; // When stopping instruments with SIGINT, wait this long before SIGKILLing it
@@ -30,7 +30,7 @@ extern FBiOSTargetFutureType const FBiOSTargetFutureTypeInstruments;
 /**
  Represents an operation of the instruments command-line.
  */
-@interface FBInstrumentsOperation : NSObject <FBiOSTargetContinuation>
+@interface FBInstrumentsOperation : NSObject <FBiOSTargetOperation>
 
 #pragma mark Initializers
 
