@@ -16,7 +16,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBDataConsumer;
 @protocol FBEventReporter;
 @protocol FBiOSTarget;
-@protocol FBiOSTargetFutureDelegate;
 @protocol FBiOSTargetOperation;
 
 /**
@@ -89,35 +88,5 @@ extern id<FBiOSTargetOperation> FBiOSTargetOperationRenamed(id<FBiOSTargetOperat
  @return a new Contiunation.
  */
 extern id<FBiOSTargetOperation> FBiOSTargetOperationDone(FBiOSTargetOperationType operationType);
-
-/**
- A protocol that can be bridged to FBiOSTargetFutureDelegate
- */
-@protocol FBiOSTargetFuture <NSObject, FBJSONSerializable, FBJSONDeserializable>
-
-/**
- The Action Type of the Receiver.
- */
-@property (nonatomic, copy, class, readonly) FBiOSTargetOperationType operationType;
-
-/**
- Starts the action represented by the receiver.
-
- @param target the target to run against.
- @param consumer the consumer to report binary data to.
- @param reporter the reporter to report structured data to.
- @return a Future wrapping the action type.
- */
-- (FBFuture<FBiOSTargetOperationType> *)runWithTarget:(id<FBiOSTarget>)target consumer:(id<FBDataConsumer>)consumer reporter:(id<FBEventReporter>)reporter;
-
-@end
-
-/**
- A base class for convenient FBiOSTargetFuture implementations.
- Most useful when there is an empty payload.
- */
-@interface FBiOSTargetFutureSimple : NSObject <FBJSONSerializable, FBJSONDeserializable, NSCopying>
-
-@end
 
 NS_ASSUME_NONNULL_END
