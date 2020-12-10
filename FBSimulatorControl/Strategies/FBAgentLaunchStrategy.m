@@ -15,7 +15,6 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulatorAgentOperation.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"
 
 typedef void (^FBAgentTerminationHandler)(int stat_loc);
@@ -82,20 +81,13 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
         processStatusFuture:processStatusFuture];
 
       // Wrap in the container object
-      return [[FBSimulatorAgentOperation
+      return [FBSimulatorAgentOperation
         operationWithSimulator:simulator
         configuration:agentLaunch
         stdOut:io.stdOut
         stdErr:io.stdErr
         launchFuture:launchFuture
-        processStatusFuture:processStatusFuture]
-        onQueue:self.simulator.workQueue notifyOfCompletion:^(FBFuture<FBSimulatorAgentOperation *> *future) {
-          FBSimulatorAgentOperation *operation = future.result;
-          if (!operation) {
-            return;
-          }
-          [simulator.eventSink agentDidLaunch:operation];
-        }];
+        processStatusFuture:processStatusFuture];
     }];
 }
 

@@ -21,7 +21,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorBridge.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorEventSink.h"
 #import "FBSimulatorHID.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorProcessFetcher.h"
@@ -139,7 +138,6 @@
   self.framebuffer = nil;
   self.hid = nil;
   self.bridge = nil;
-  [self.simulator.eventSink connectionDidDisconnect:self expected:YES];
 
   return FBFuture.empty;
 }

@@ -34,19 +34,6 @@
   [self assertNeedle:needle inHaystack:haystack];
 }
 
-- (void)testSystemLog
-{
-  if (FBSimulatorControlTestCase.isRunningOnTravis) {
-    return;
-  }
-
-  FBSimulator *simulator = [self assertObtainsBootedSimulator];
-
-  [self assertFindsNeedle:@"syslogd" fromHaystackBlock:^ NSString * {
-    return simulator.simulatorDiagnostics.syslog.asString;
-  }];
-}
-
 - (void)testLaunchedApplicationLogs
 {
   if (FBSimulatorControlTestCase.isRunningOnTravis) {

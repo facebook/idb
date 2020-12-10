@@ -9,7 +9,6 @@
 
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
-#import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"
 
 FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
@@ -83,7 +82,6 @@ FBiOSTargetFutureType const FBiOSTargetFutureTypeSimulatorAgent = @"agent";
 - (FBFuture<NSNull *> *)processDidTerminate:(int)stat_loc
 {
   FBFuture<NSNull *> *teardown = [self performTeardown];
-  [self.simulator.eventSink agentDidTerminate:self statLoc:stat_loc];
   return teardown;
 }
 

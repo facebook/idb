@@ -15,7 +15,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBFramebuffer;
 @class FBVideoEncoderConfiguration;
 @protocol FBControlCoreLogger;
-@protocol FBSimulatorEventSink;
 
 /**
  Controls the Recording of a Simulator's Framebuffer to a Video.

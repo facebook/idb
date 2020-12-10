@@ -12,7 +12,6 @@
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBSimulator.h"
-#import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulator+Private.h"
@@ -79,7 +78,6 @@
     return;
   }
   FBSimulator *simulator = simulators.firstObject;
-  [simulator.eventSink didChangeState:state];
 
   // Update State in response to boot/shutdown
   if (state == FBiOSTargetStateBooted) {

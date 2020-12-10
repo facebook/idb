@@ -28,7 +28,6 @@
 #import "FBSimulatorBridge.h"
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorEventSink.h"
 #import "FBSimulatorHID.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorBootConfiguration.h"

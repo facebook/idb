@@ -12,7 +12,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBFramebuffer;
-@protocol FBSimulatorEventSink;
 
 /**
  Provides access to an Image Representation of a Simulator's Framebuffer.

@@ -24,7 +24,6 @@
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorEventSink.h"
 
 @interface FBFramebufferConnectStrategy ()
 

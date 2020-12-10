@@ -20,7 +20,6 @@
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorEventSink.h"
 #import "FBSimulatorSubprocessTerminationStrategy.h"
 #import "FBSimulatorTerminationStrategy.h"
 
@@ -137,7 +136,6 @@
 
   FBSimulatorConnection *connection = [[FBSimulatorConnection alloc] initWithSimulator:simulator framebuffer:framebuffer hid:hid];
   self.connection = connection;
-  [simulator.eventSink connectionDidConnect:connection];
   return [FBFuture futureWithResult:connection];
 }
 
@@ -157,7 +155,6 @@
     timeout:timeout waitingFor:@"The Simulator Connection to teardown"]
     onQueue:self.simulator.workQueue map:^(id _) {
       [logger.debug logFormat:@"Simulator connection %@ torn down in %f seconds", connection, [NSDate.date timeIntervalSinceDate:date]];
-      [self.simulator.eventSink connectionDidDisconnect:connection expected:YES];
       return NSNull.null;
     }];
 }

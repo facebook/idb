@@ -9,7 +9,6 @@
 
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
-#import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"
 
 @interface FBSimulatorApplicationOperation ()
@@ -31,7 +30,6 @@
       pid_t processIdentifier = processIdentifierNumber.intValue;
       FBFuture<NSNull *> *terminationFuture = [FBSimulatorApplicationOperation terminationFutureForSimulator:simulator processIdentifier:processIdentifier];
       FBSimulatorApplicationOperation *operation = [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr processIdentifier:processIdentifier terminationFuture:terminationFuture];
-      [simulator.eventSink applicationDidLaunch:operation];
       return operation;
     }];
 }
@@ -105,8 +103,6 @@
 
 - (FBFuture<NSNull *> *)performTeardown
 {
-  [self.simulator.eventSink applicationDidTerminate:self expected:NO];
-
   return [[FBFuture
     futureWithFutures:@[
       [self.stdOut stopReading],

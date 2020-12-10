@@ -11,8 +11,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBDiagnostic;
-
 /**
  A Predicate for finding substrings in text.
  */
@@ -65,6 +63,16 @@ NS_ASSUME_NONNULL_BEGIN
 + (FBLogSearch *)withText:(NSString *)text predicate:(FBLogSearchPredicate *)predicate;
 
 /**
+ An internal initializer, do not use.
+
+ @param predicate the predicate to use.
+ @return a new log search.
+ */
+- (instancetype)initWithPrediate:(FBLogSearchPredicate *)predicate;
+
+#pragma mark Public Methods
+
+/**
  Returns all of the Lines that will be Searched.
  */
 - (NSArray<NSString *> *)lines;
@@ -99,34 +107,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable NSString *)firstMatchingLine;
 
+#pragma mark Properties
+
 /**
  The Predicate to Search with.
  */
 @property (nonatomic, copy, readonly) FBLogSearchPredicate *predicate;
-
-@end
-
-/**
- Wraps FBDiagnostic with Log Searching Abilities by augmenting FBLogSearch.
-
- Most Diagnostics have effectively constant content, except for file backed diagnostics.
- The content of file logs will be lazily fetched, so it's contents may change if the file backing it changes.
- This is worth bearing in mind of the caller expects idempotent results.
- */
-@interface FBDiagnosticLogSearch : FBLogSearch
-
-/**
- Creates a Log Searcher for the given diagnostic.
-
- @param diagnostic the diagnostic to search.
- @param predicate the predicate to search with.
- */
-+ (FBDiagnosticLogSearch *)withDiagnostic:(FBDiagnostic *)diagnostic predicate:(FBLogSearchPredicate *)predicate;
-
-/**
- The Diagnostic that will be Searched.
- */
-@property (nonatomic, copy, readonly) FBDiagnostic *diagnostic;
 
 @end
 

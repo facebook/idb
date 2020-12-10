@@ -61,21 +61,6 @@
 @interface XCTestCase (FBControlCoreFixtures)
 
 /**
- A System Log.
- */
-- (FBDiagnostic *)simulatorSystemLog;
-
-/**
- A Diagnostic for the WebDriverAgent Element Tree of Springboard.
- */
-- (FBDiagnostic *)treeJSONDiagnostic;
-
-/**
- A Diagnostic of a PNG.
- */
-- (FBDiagnostic *)photoDiagnostic;
-
-/**
  A Process.
  */
 - (FBProcessInfo *)launchCtlProcess;

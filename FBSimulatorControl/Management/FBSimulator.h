@@ -23,7 +23,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBSimulatorEventSink;
 @protocol FBControlCoreLogger;
 
 @class FBAppleSimctlCommandExecutor;
@@ -56,11 +55,6 @@ NS_ASSUME_NONNULL_BEGIN
  The Simulator Set that the Simulator belongs to.
  */
 @property (nonatomic, weak, readonly, nullable) FBSimulatorSet *set;
-
-/**
- Where the events for the Simulator should be sent.
- */
-@property (nonatomic, strong, readonly, nullable) id<FBSimulatorEventSink> eventSink;
 
 /**
  The State of the allocated Simulator.

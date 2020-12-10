@@ -11,7 +11,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulator.h"
-#import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulator+Private.h"

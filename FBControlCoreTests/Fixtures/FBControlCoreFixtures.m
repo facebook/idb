@@ -55,27 +55,6 @@
 
 @implementation XCTestCase (FBControlCoreFixtures)
 
-- (FBDiagnostic *)simulatorSystemLog
-{
-  return [[[FBDiagnosticBuilder builder]
-    updatePath:FBControlCoreFixtures.simulatorSystemLogPath]
-    build];
-}
-
-- (FBDiagnostic *)treeJSONDiagnostic
-{
-  return [[[FBDiagnosticBuilder builder]
-    updatePath:FBControlCoreFixtures.treeJSONPath]
-    build];
-}
-
-- (FBDiagnostic *)photoDiagnostic
-{
-  return [[[FBDiagnosticBuilder builder]
-    updatePath:FBControlCoreFixtures.photo0Path]
-    build];
-}
-
 - (FBProcessInfo *)launchCtlProcess
 {
   return [[FBProcessFetcher new] processInfoFor:NSProcessInfo.processInfo.processIdentifier];

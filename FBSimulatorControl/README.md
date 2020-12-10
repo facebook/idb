@@ -11,7 +11,6 @@ A macOS library for managing, booting and interacting with multiple iOS Simulato
 - Runs independently of Xcode and `xcodebuild` without requiring embedding in a Graphical User Interface. Uses whatever Xcode toolchain is defined by `xcode-select`.
 - Exposes a broad range of functionality that is available in `simctl` and Xcode.
 - Implements additional functionality not available in `simctl` including hardware encoded video streaming, file manipulation, accessibility fetching, direct input event injection and more.
-- 'Diagnostic' API for fetching System, App & Crash logs as well as Screenshots & Video.
 - An 'Event Bus' that exposes the details of a Simulator's lifecycle including Applications, Agents & the Simulator itself.
 - `NSNotification`s interface for the 'Event Bus'.
 - No external dependencies.

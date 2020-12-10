@@ -221,7 +221,6 @@
 // Not used or set
 @synthesize containerApplication;
 @synthesize deviceType;
-@synthesize diagnostics;
 
 
 + (nonnull instancetype)commandsWithTarget:(nonnull id<FBiOSTarget>)target

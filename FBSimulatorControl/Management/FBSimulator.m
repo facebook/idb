@@ -17,7 +17,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBAppleSimctlCommandExecutor.h"
-#import "FBCompositeSimulatorEventSink.h"
 #import "FBSimulatorAgentCommands.h"
 #import "FBSimulatorApplicationCommands.h"
 #import "FBSimulatorFileCommands.h"
@@ -26,14 +25,11 @@
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorCrashLogCommands.h"
 #import "FBSimulatorDebuggerCommands.h"
-#import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorEventSink.h"
 #import "FBSimulatorHIDEvent.h"
 #import "FBSimulatorLifecycleCommands.h"
 #import "FBSimulatorLocationCommands.h"
 #import "FBSimulatorLogCommands.h"
-#import "FBSimulatorLoggingEventSink.h"
 #import "FBSimulatorMediaCommands.h"
 #import "FBSimulatorScreenshotCommands.h"
 #import "FBSimulatorSet.h"
@@ -54,18 +50,19 @@
 
 + (instancetype)fromSimDevice:(SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration launchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess containerApplicationProcess:(nullable FBProcessInfo *)containerApplicationProcess set:(FBSimulatorSet *)set
 {
-  return [[[FBSimulator alloc]
+  return [[FBSimulator alloc]
     initWithDevice:device
     configuration:configuration ?: [FBSimulatorConfiguration inferSimulatorConfigurationFromDeviceSynthesizingMissing:device]
     set:set
     processFetcher:set.processFetcher
+    launchdSimProcess:launchdSimProcess
+    containerApplicationProcess:containerApplicationProcess
     auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device configuration:configuration]
     logger:set.logger
-    reporter:set.reporter]
-    attachEventSinkCompositionWithLaunchdSimProcess:launchdSimProcess containerApplicationProcess:containerApplicationProcess];
+    reporter:set.reporter];
 }
 
-- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set processFetcher:(FBSimulatorProcessFetcher *)processFetcher auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set processFetcher:(FBSimulatorProcessFetcher *)processFetcher launchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess containerApplicationProcess:(nullable FBProcessInfo *)containerApplicationProcess auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
 {
   self = [super init];
   if (!self) {
@@ -77,26 +74,14 @@
   _set = set;
   _processFetcher = processFetcher;
   _auxillaryDirectory = auxillaryDirectory;
+  _launchdProcess = launchdSimProcess;
+  _containerApplication = containerApplicationProcess;
   _logger = [logger withName:device.UDID.UUIDString];
   _forwarder = [FBLoggingWrapper
     wrap:[FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBSimulator.commandResponders statefulCommands:FBSimulator.statefulCommands]
     simplifiedNaming:NO
     eventReporter:reporter
     logger:logger];
-
-  return self;
-}
-
-- (instancetype)attachEventSinkCompositionWithLaunchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess containerApplicationProcess:(nullable FBProcessInfo *)containerApplicationProcess
-{
-  FBSimulatorLoggingEventSink *loggingSink = [FBSimulatorLoggingEventSink withSimulator:self logger:self.logger];
-  FBSimulatorDiagnostics *diagnosticsSink = [FBSimulatorDiagnostics withSimulator:self];
-  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[loggingSink, diagnosticsSink]];
-
-  _simulatorDiagnostics = diagnosticsSink;
-  _eventSink = compositeSink;
-  _launchdProcess = launchdSimProcess;
-  _containerApplication = containerApplicationProcess;
 
   return self;
 }
@@ -147,11 +132,6 @@
 {
   SimDeviceType *deviceType = self.device.deviceType;
   return [[FBiOSTargetScreenInfo alloc] initWithWidthPixels:(NSUInteger)deviceType.mainScreenSize.width heightPixels:(NSUInteger)deviceType.mainScreenSize.height scale:deviceType.mainScreenScale];
-}
-
-- (FBiOSTargetDiagnostics *)diagnostics
-{
-  return self.simulatorDiagnostics;
 }
 
 - (dispatch_queue_t)workQueue

@@ -10,7 +10,6 @@
 #import "FBCollectionInformation.h"
 #import "FBConcurrentCollectionOperations.h"
 #import "FBControlCoreError.h"
-#import "FBDiagnostic.h"
 #import "NSPredicate+FBControlCore.h"
 
 static NSString *const KeySubstrings = @"substrings";
@@ -346,36 +345,6 @@ static NSString *const KeyRegex = @"regex";
 - (NSString *)firstMatchingLine
 {
   return [self.matchingLines firstObject];
-}
-
-@end
-
-@implementation FBDiagnosticLogSearch
-
-#pragma mark Initializers
-
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic predicate:(FBLogSearchPredicate *)predicate
-{
-  return [[FBDiagnosticLogSearch alloc] initWithDiagnostic:diagnostic predicate:predicate];
-}
-
-- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic predicate:(FBLogSearchPredicate *)predicate
-{
-  self = [super initWithPrediate:predicate];
-  if (!self) {
-    return nil;
-  }
-
-  _diagnostic = diagnostic;
-
-  return self;
-}
-
-- (NSArray<NSString *> *)lines
-{
-  return self.diagnostic.isSearchableAsText
-    ? [self.diagnostic.asString componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet]
-    : @[];
 }
 
 @end
