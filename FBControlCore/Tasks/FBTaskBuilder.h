@@ -85,10 +85,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Set of Return Codes that are considered non-erroneous.
 
- @param statusCodes the non-erroneous stats codes.
+ @param exitCodes the non-erroneous stats codes.
  @return the receiver, for chaining.
  */
-- (instancetype)withAcceptableTerminationStatusCodes:(NSSet<NSNumber *> *)statusCodes;
+- (instancetype)withAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes;
 
 #pragma mark stdin
 

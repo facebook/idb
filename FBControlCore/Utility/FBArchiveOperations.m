@@ -23,7 +23,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     withArguments:@[@"-vzxp", @"-C", extractPath, @"-f", path]]
     withStdErrToLoggerAndErrorMessage:logger.debug]
     withStdOutToLogger:logger.debug]
-    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
+    withAcceptableExitCodes:[NSSet setWithObject:@0]]
     runUntilCompletion]
     mapReplace:extractPath];
 }
@@ -36,7 +36,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     withStdIn:stream]
     withStdErrToLoggerAndErrorMessage:logger.debug]
     withStdOutToLogger:logger.debug]
-    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
+    withAcceptableExitCodes:[NSSet setWithObject:@0]]
     runUntilCompletion]
     mapReplace:extractPath];
 }
@@ -49,7 +49,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     withStdIn:stream]
     withStdErrToLoggerAndErrorMessage:logger.debug]
     withStdOutPath:extractPath]
-    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
+    withAcceptableExitCodes:[NSSet setWithObject:@0]]
     runUntilCompletion]
     mapReplace:extractPath];
 }
@@ -61,7 +61,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     withArguments:@[@"--to-stdout", @"--verbose", path]]
     withStdErrToLoggerAndErrorMessage:logger]
     withStdOutToInputStream]
-    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
+    withAcceptableExitCodes:[NSSet setWithObject:@0]]
     start];
 }
 
@@ -127,7 +127,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     withArguments:@[@"-zvc", @"-f", @"-", @"-C", directory, fileName]]
     withStdOutInMemoryAsData]
     withStdErrToLoggerAndErrorMessage:logger]
-    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]];
+    withAcceptableExitCodes:[NSSet setWithObject:@0]];
 }
 
 @end

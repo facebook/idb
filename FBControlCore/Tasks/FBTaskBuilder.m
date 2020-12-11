@@ -21,7 +21,7 @@
 @property (nonatomic, copy, readwrite) NSString *launchPath;
 @property (nonatomic, copy, readwrite) NSArray<NSString *> *arguments;
 @property (nonatomic, copy, readwrite) NSDictionary<NSString *, NSString *> *environment;
-@property (nonatomic, copy, readwrite) NSSet<NSNumber *> *acceptableStatusCodes;
+@property (nonatomic, copy, readwrite) NSSet<NSNumber *> *acceptableExitCodes;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdOut;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdErr;
 @property (nonatomic, strong, nullable, readwrite) FBProcessInput *stdIn;
@@ -44,7 +44,7 @@
   _launchPath = launchPath;
   _arguments = @[];
   _environment = FBTaskBuilder.defaultEnvironmentForSubprocess;
-  _acceptableStatusCodes = [NSSet setWithObject:@0];
+  _acceptableExitCodes = [NSSet setWithObject:@0];
   _stdOut = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   _stdErr = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   _stdIn = nil;
@@ -98,10 +98,10 @@
   return [self withEnvironment:[dictionary copy]];
 }
 
-- (instancetype)withAcceptableTerminationStatusCodes:(NSSet<NSNumber *> *)statusCodes
+- (instancetype)withAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes
 {
-  NSParameterAssert(statusCodes);
-  self.acceptableStatusCodes = statusCodes;
+  NSParameterAssert(exitCodes);
+  self.acceptableExitCodes = exitCodes;
   return self;
 }
 
@@ -275,7 +275,7 @@
     initWithLaunchPath:self.launchPath
     arguments:self.arguments
     environment:self.environment
-    acceptableStatusCodes:self.acceptableStatusCodes
+    acceptableExitCodes:self.acceptableExitCodes
     io:[[FBProcessIO alloc] initWithStdIn:self.stdIn stdOut:self.stdOut stdErr:self.stdErr]
     logger:self.logger
     programName:self.programName];

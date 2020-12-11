@@ -63,7 +63,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
   FBTaskBuilder *builder = [[[FBTaskBuilder
     withLaunchPath:xcodeBuildPath arguments:arguments]
     withEnvironment:environment]
-    withAcceptableTerminationStatusCodes:[NSSet setWithObjects:@0, @65, nil]];
+    withAcceptableExitCodes:[NSSet setWithObjects:@0, @65, nil]];
   if (logger) {
     [builder withStdOutToLoggerAndErrorMessage:logger];
     [builder withStdErrToLoggerAndErrorMessage:logger];

@@ -167,7 +167,7 @@
       [logger logFormat:@"Updating rpaths for binary %@", [FBCollectionInformation oneLineDescriptionFromDictionary:replacements]];
       return [[[[[FBTaskBuilder
         withLaunchPath:@"/usr/bin/install_name_tool" arguments:arguments]
-        withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
+        withAcceptableExitCodes:[NSSet setWithObject:@0]]
         withStdErrToLogger:logger]
         runUntilCompletion]
         mapReplace:replacements];

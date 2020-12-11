@@ -207,7 +207,7 @@ FBiOSTargetOperationType const FBiOSTargetOperationTypeInstruments = @"instrumen
     withStdInConnected]
     withStdOutToLogger:logger]
     withStdErrToLogger:logger]
-    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
+    withAcceptableExitCodes:[NSSet setWithObject:@0]]
     runUntilCompletion]
     onQueue:queue map:^(id _) {
       return outputTraceFile;

@@ -450,7 +450,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     withLaunchPath:@"/usr/bin/sqlite3" arguments:arguments]
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]
-    withAcceptableTerminationStatusCodes:[NSSet setWithArray:@[@0, @1]]]
+    withAcceptableExitCodes:[NSSet setWithArray:@[@0, @1]]]
     withLoggingTo:logger]
     runUntilCompletion]
     onQueue:queue fmap:^(FBTask<NSNull *, NSString *, NSString *> *task) {

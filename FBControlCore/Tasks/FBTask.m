@@ -215,7 +215,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 @interface FBTask ()
 
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, copy, readonly) NSSet<NSNumber *> *acceptableStatusCodes;
+@property (nonatomic, copy, readonly) NSSet<NSNumber *> *acceptableExitCodes;
 @property (nonatomic, copy, readonly) NSString *configurationDescription;
 @property (nonatomic, copy, readonly) NSString *programName;
 
@@ -242,13 +242,13 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
         initWithProcess:process
         io:configuration.io
         queue:queue
-        acceptableStatusCodes:configuration.acceptableStatusCodes
+        acceptableExitCodes:configuration.acceptableExitCodes
         configurationDescription:configuration.description
         programName:configuration.programName];
     }];
 }
 
-- (instancetype)initWithProcess:(id<FBTaskProcess>)process io:(FBProcessIO *)io queue:(dispatch_queue_t)queue acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription programName:(NSString *)programName
+- (instancetype)initWithProcess:(id<FBTaskProcess>)process io:(FBProcessIO *)io queue:(dispatch_queue_t)queue acceptableExitCodes:(NSSet<NSNumber *> *)acceptableExitCodes configurationDescription:(NSString *)configurationDescription programName:(NSString *)programName
 {
   self = [super init];
   if (!self) {
@@ -256,7 +256,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   }
 
   _process = process;
-  _acceptableStatusCodes = acceptableStatusCodes;
+  _acceptableExitCodes = acceptableExitCodes;
   _io = io;
   _queue = queue;
   _configurationDescription = configurationDescription;
@@ -339,7 +339,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     }]
     onQueue:self.queue fmap:^(NSNumber *exitCode) {
       // Then check whether the exit code honours the acceptable codes.
-      if (![self.acceptableStatusCodes containsObject:exitCode]) {
+      if (![self.acceptableExitCodes containsObject:exitCode]) {
         NSString *message = [NSString stringWithFormat:@"%@ Returned non-zero status code %@", self.programName, exitCode];
         if ([self.stdErr conformsToProtocol:@protocol(FBAccumulatingBuffer)]) {
           NSData *outputData = [self.stdErr data];

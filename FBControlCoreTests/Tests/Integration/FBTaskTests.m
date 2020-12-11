@@ -55,7 +55,7 @@
 {
   FBFuture *futureTask = [[[FBTaskBuilder
     withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"false"]]
-    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@1]]
+    withAcceptableExitCodes:[NSSet setWithObject:@1]]
     runUntilCompletion];
 
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
