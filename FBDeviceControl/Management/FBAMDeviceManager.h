@@ -32,7 +32,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithCalls:(AMDCalls)calls workQueue:(dispatch_queue_t)workQueue asyncQueue:(dispatch_queue_t)asyncQueue ecidFilter:(NSString *)ecidFilter logger:(id<FBControlCoreLogger>)logger;
 
 /**
- Starts using the AMDeviceRef via Connections.
+ Starts using the AMDeviceRef by doing the following:
+ - Starts a Connection with the device
+ - Performing and validating pairing.
+ - Starts a session.
 
  @param device the device to use.
  @param calls the calls to use.
@@ -44,6 +47,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Stops using the AMDeviceRef connections.
+ - Stops the session with the device.
+ - Stops the connection with the device.
 
  @param device the device to use.
  @param calls the calls to use.
