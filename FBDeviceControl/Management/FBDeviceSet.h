@@ -30,6 +30,20 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable instancetype)setWithLogger:(id<FBControlCoreLogger>)logger delegate:(nullable id<FBiOSTargetSetDelegate>)delegate ecidFilter:(nullable NSString *)ecidFilter error:(NSError **)error;
 
+/**
+ Advanced initializer that allows to set custom work queues.
+ This is useful e.g. for console applications which don't have the main queue continously fed or components embedded in systems that are not aware of the main dispatch queue.
+
+ @param workQueue the main sync work queue to use (typically the main queue, dispatch_get_main_queue).
+ @param asyncQueue work queue for async tasks.
+ @param logger the logger to use.
+ @param delegate a delegate that gets called when device status changes.
+ @param ecidFilter a filter to restrict discovery to a single ECID.
+ @param error an error out for any error that occurs constructing the set.
+ @return the Default Device Set if successful, nil otherwise.
+ */
++ (nullable instancetype)setWithWorkQueue:(dispatch_queue_t)workQueue asyncQueue:(dispatch_queue_t)asyncQueue logger:(id<FBControlCoreLogger>)logger delegate:(nullable id<FBiOSTargetSetDelegate>)delegate ecidFilter:(nullable NSString *)ecidFilter error:(NSError **)error;
+
 #pragma mark Querying
 
 /**
