@@ -140,7 +140,8 @@ static NSString *const ProcessControlChannel = @"com.apple.instruments.server.se
     onQueue:self.queue resolveValue:^ NSNumber * (NSError **error) {
       NSDictionary<NSString *, NSNumber *> *options = @{
         @"StartSuspendedKey": @(configuration.waitForDebugger),
-        @"KillExisting": @(configuration.launchMode != FBApplicationLaunchModeFailIfRunning),
+        // FBApplicationLaunchModeFailIfRunning needs to be taken care of prior to this call.
+        @"KillExisting": @(configuration.launchMode == FBApplicationLaunchModeRelaunchIfRunning),
       };
       ResponsePayload response = [self
         onChannelIdentifier:ProcessControlChannel
