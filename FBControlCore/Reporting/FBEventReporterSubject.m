@@ -15,7 +15,7 @@
 
 @interface FBSimpleSubject : FBSingleItemSubject
 
-- (instancetype)initWithEventName:(FBEventName)eventName eventType:(FBEventType)eventType subject:(FBEventReporterSubject *)subject;
+- (instancetype)initWithEventName:(NSString *)eventName eventType:(FBEventType)eventType subject:(FBEventReporterSubject *)subject;
 
 @end
 
@@ -33,7 +33,7 @@
 
 @interface FBiOSTargetWithSubject : FBSingleItemSubject
 
-- (instancetype)initWithTargetSubject:(FBiOSTargetSubject *)targetSubject eventName:(FBEventName)eventName eventType:(FBEventType)eventType subject:(id<FBEventReporterSubject>)subject;
+- (instancetype)initWithTargetSubject:(FBiOSTargetSubject *)targetSubject eventName:(NSString *)eventName eventType:(FBEventType)eventType subject:(id<FBEventReporterSubject>)subject;
 
 @end
 
@@ -77,18 +77,18 @@
 
 #pragma mark Initializers
 
-+ (instancetype)subjectWithName:(FBEventName)name type:(FBEventType)type subject:(id<FBEventReporterSubject>)subject
++ (instancetype)subjectWithName:(NSString *)name type:(FBEventType)type subject:(id<FBEventReporterSubject>)subject
 {
   return [[FBSimpleSubject alloc] initWithEventName:name eventType:type subject:subject];
 }
 
-+ (instancetype)subjectWithName:(FBEventName)name type:(FBEventType)type value:(id<FBJSONSerializable>)value
++ (instancetype)subjectWithName:(NSString *)name type:(FBEventType)type value:(id<FBJSONSerializable>)value
 {
   id<FBEventReporterSubject> subject = [self subjectWithControlCoreValue:value];
   return [self subjectWithName:name type:type subject:subject];
 }
 
-+ (instancetype)subjectWithName:(FBEventName)name type:(FBEventType)type values:(NSArray<id<FBJSONSerializable>> *)values
++ (instancetype)subjectWithName:(NSString *)name type:(FBEventType)type values:(NSArray<id<FBJSONSerializable>> *)values
 {
   NSMutableArray<id<FBEventReporterSubject>> *subjects = [NSMutableArray array];
   for (id<FBJSONSerializable> value in values) {
@@ -108,7 +108,7 @@
   return [[FBiOSTargetSubject alloc] initWithTarget:target format:format];
 }
 
-+ (instancetype)subjectWithTarget:(id<FBiOSTarget>)target format:(FBiOSTargetFormat *)format eventName:(FBEventName)eventName eventType:(FBEventType)eventType subject:(id<FBEventReporterSubject>)subject
++ (instancetype)subjectWithTarget:(id<FBiOSTarget>)target format:(FBiOSTargetFormat *)format eventName:(NSString *)eventName eventType:(FBEventType)eventType subject:(id<FBEventReporterSubject>)subject
 {
   FBiOSTargetSubject *targetSubject = [[FBiOSTargetSubject alloc] initWithTarget:target format:format];
   return [[FBiOSTargetWithSubject alloc] initWithTargetSubject:targetSubject eventName:eventName eventType:eventType subject:subject];
@@ -134,7 +134,7 @@
   return [[FBCompositeSubject alloc] initWithArray:subjects];
 }
 
-+ (instancetype)subjectForEvent:(FBEventName)eventName
++ (instancetype)subjectForEvent:(NSString *)eventName
 {
   return [[FBCallSubject alloc] initWithEventName:eventName eventType:FBEventTypeDiscrete argument:nil arguments:nil duration:nil size:nil message:nil];
 }
@@ -174,12 +174,12 @@
   return [self initWithEventName:nil eventType:nil];
 }
 
-- (instancetype)initWithEventName:(FBEventName)eventName eventType:(FBEventType)eventType
+- (instancetype)initWithEventName:(NSString *)eventName eventType:(FBEventType)eventType
 {
   return [self initWithEventName:eventName eventType:eventType argument:nil arguments:nil duration:nil size:nil message:nil];
 }
 
-- (instancetype)initWithEventName:(FBEventName)eventName eventType:(FBEventType)eventType argument:(NSDictionary<NSString *, NSString *> *)argument arguments:(NSArray<NSString *> *)arguments duration:(NSNumber *)duration size:(NSNumber *)size message:(NSString *)message
+- (instancetype)initWithEventName:(NSString *)eventName eventType:(FBEventType)eventType argument:(NSDictionary<NSString *, NSString *> *)argument arguments:(NSArray<NSString *> *)arguments duration:(NSNumber *)duration size:(NSNumber *)size message:(NSString *)message
 {
   self = [super init];
   if (!self) {
@@ -253,7 +253,7 @@
 
 @implementation FBSimpleSubject
 
-- (instancetype)initWithEventName:(FBEventName)eventName eventType:(FBEventType)eventType subject:(FBEventReporterSubject *)subject
+- (instancetype)initWithEventName:(NSString *)eventName eventType:(FBEventType)eventType subject:(FBEventReporterSubject *)subject
 {
   self = [super initWithEventName:eventName eventType:eventType];
   if (!self) {
@@ -369,7 +369,7 @@
 
 @implementation FBiOSTargetWithSubject
 
-- (instancetype)initWithTargetSubject:(FBiOSTargetSubject *)targetSubject eventName:(FBEventName)eventName eventType:(FBEventType)eventType subject:(FBEventReporterSubject *)subject
+- (instancetype)initWithTargetSubject:(FBiOSTargetSubject *)targetSubject eventName:(NSString *)eventName eventType:(FBEventType)eventType subject:(FBEventReporterSubject *)subject
 {
   self = [super initWithEventName:eventName eventType:eventType];
   if (!self) {
@@ -434,7 +434,7 @@
     FBJSONKeyTimestamp : [NSNumber numberWithInt:(int)[[NSDate date] timeIntervalSince1970]],
     FBJSONKeyLevel     : self.levelString,
     FBJSONKeySubject   : self.logString,
-    FBJSONKeyEventName : FBEventNameLog,
+    FBJSONKeyEventName : @"log",
   };
 }
 

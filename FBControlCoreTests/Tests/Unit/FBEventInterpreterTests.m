@@ -9,6 +9,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#define FBEventNameLaunch @"launch"
+
 @interface FBControlCoreValueDouble : NSObject <FBJSONSerializable>
 
 @end

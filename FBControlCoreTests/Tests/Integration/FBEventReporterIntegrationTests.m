@@ -9,6 +9,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#define FBEventNameLaunch @"launch"
+#define FBEventNameApprove @"approve"
+
 @interface FBEventReporterIntegrationTests : XCTestCase
 
 @end

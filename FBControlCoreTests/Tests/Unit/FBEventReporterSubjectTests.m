@@ -9,13 +9,16 @@
 #import <FBControlCore/FBControlCore.h>
 #import <asl.h>
 
+#define FBEventNameTap @"tap"
+#define FBEventNameLog @"log"
+
 @interface FBEventReporterSubjectTests : XCTestCase
 
 @end
 
 @implementation FBEventReporterSubjectTests
 
-- (void)checkJsonFields:(id)json name:(FBEventName)name type:(FBEventType)type
+- (void)checkJsonFields:(id)json name:(NSString *)name type:(FBEventType)type
 {
   XCTAssertEqualObjects(json[FBJSONKeyEventName], name, @"Event name not set correctly: %@ =/= %@", json[FBJSONKeyEventName], name);
   XCTAssertEqualObjects(json[FBJSONKeyEventType], type, @"Event type not set correctly: %@ =/= %@", json[FBJSONKeyEventType], type);

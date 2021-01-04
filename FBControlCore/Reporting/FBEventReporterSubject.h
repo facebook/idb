@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Event Name, if present
  */
-@property (nonatomic, copy, nullable, readonly) FBEventName eventName;
+@property (nonatomic, copy, nullable, readonly) NSString * eventName;
 
 /**
  The Event Type, if present
@@ -74,7 +74,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param subject the other content.
  @return a Event Reporter Subject.
  */
-+ (instancetype)subjectWithName:(FBEventName)name type:(FBEventType)type subject:(id<FBEventReporterSubject>)subject NS_SWIFT_NAME(init(name:type:subject:));
++ (instancetype)subjectWithName:(NSString *)name type:(FBEventType)type subject:(id<FBEventReporterSubject>)subject NS_SWIFT_NAME(init(name:type:subject:));
 
 /**
  An FBEventReporterSubject containing an event name, event type and another value.
@@ -84,7 +84,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param value the value.
  @return a Event Reporter Subject.
  */
-+ (instancetype)subjectWithName:(FBEventName)name type:(FBEventType)type value:(id<FBJSONSerializable>)value NS_SWIFT_NAME(init(name:type:value:));
++ (instancetype)subjectWithName:(NSString *)name type:(FBEventType)type value:(id<FBJSONSerializable>)value NS_SWIFT_NAME(init(name:type:value:));
 
 /**
  An FBEventReporterSubject containing an event name, event type and some values.
@@ -94,7 +94,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param values the Serializable Values.
  @return a Event Reporter Subject.
  */
-+ (instancetype)subjectWithName:(FBEventName)name type:(FBEventType)type values:(NSArray<id<FBJSONSerializable>> *)values NS_SWIFT_NAME(init(name:type:values:));
++ (instancetype)subjectWithName:(NSString *)name type:(FBEventType)type values:(NSArray<id<FBJSONSerializable>> *)values NS_SWIFT_NAME(init(name:type:values:));
 
 /**
  An FBEventReporterSubject for a reportable value.
@@ -122,7 +122,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param eventType the Event Type.
  @param subject the other content.
  */
-+ (instancetype)subjectWithTarget:(id<FBiOSTarget>)target format:(FBiOSTargetFormat *)format eventName:(FBEventName)eventName eventType:(FBEventType)eventType subject:(id<FBEventReporterSubject>)subject NS_SWIFT_NAME(init(target:format:name:type:subject:));
++ (instancetype)subjectWithTarget:(id<FBiOSTarget>)target format:(FBiOSTargetFormat *)format eventName:(NSString *)eventName eventType:(FBEventType)eventType subject:(id<FBEventReporterSubject>)subject NS_SWIFT_NAME(init(target:format:name:type:subject:));
 
 /**
  A Subject of a single String.
@@ -163,7 +163,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param eventName the event name
  @return a scuba sample
  */
-+ (id<FBEventReporterSubject>)subjectForEvent:(FBEventName)eventName;
++ (id<FBEventReporterSubject>)subjectForEvent:(NSString *)eventName;
 
 /**
  Construct a sample for a started call.

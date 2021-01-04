@@ -410,7 +410,7 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
   return [TargetForUDID(udid, userDefaults, YES, logger, reporter)
     onQueue:dispatch_get_main_queue() fmap:^(id<FBiOSTarget> target) {
       [reporter addMetadata:@{@"udid": udid}];
-      [reporter report:[FBEventReporterSubject subjectForEvent:FBEventNameLaunched]];
+      [reporter report:[FBEventReporterSubject subjectForEvent:@"launched"]];
       // Start up the companion
       FBIDBPortsConfiguration *ports = [FBIDBPortsConfiguration portsWithArguments:userDefaults];
       FBTemporaryDirectory *temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:logger];
