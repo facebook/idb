@@ -39,11 +39,6 @@
   return self;
 }
 
-- (FBiOSTargetOperationType)operationType
-{
-  return FBiOSTargetOperationTypeLogTail;
-}
-
 - (FBFuture<NSNull *> *)completed
 {
   return self.serviceCompleted;

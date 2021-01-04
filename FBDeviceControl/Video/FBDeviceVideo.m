@@ -150,11 +150,6 @@
 
 #pragma mark FBiOSTargetOperation
 
-- (FBiOSTargetOperationType)operationType
-{
-  return FBiOSTargetOperationTypeVideoRecording;
-}
-
 - (FBFuture<NSNull *> *)completed
 {
   FBDeviceVideoFileEncoder *encoder = self.encoder;

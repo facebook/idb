@@ -43,11 +43,6 @@
 }
 #pragma clang diagnostic pop
 
-- (FBiOSTargetOperationType)operationType
-{
-  return @"debug";
-}
-
 @end
 
 @interface FBSimulatorDebuggerCommands ()

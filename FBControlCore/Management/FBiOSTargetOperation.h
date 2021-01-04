@@ -53,38 +53,14 @@ extern FBiOSTargetOperationType const FBiOSTargetOperationTypeLogTail;
  */
 @property (nonatomic, strong, readonly) FBFuture<NSNull *> *completed;
 
-/**
- The Type of the Future, used for identifying kinds of the receiver.
- */
-@property (nonatomic, copy, readonly) FBiOSTargetOperationType operationType;
-
 @end
 
 /**
  Creates a new operation.
 
  @param completed the completion future
- @param operationType the Future Type.
- @return a new Contiunation
+ @return an Operation wrapping the Future
  */
-extern id<FBiOSTargetOperation> FBiOSTargetOperationNamed(FBFuture<NSNull *> *completed, FBiOSTargetOperationType operationType);
-
-/**
- Re-Names an existing operation.
- Useful when a lower-level operation should be hoisted to a higher-level naming.
-
- @param operation the operation to wrap
- @param operationType the Future Type.
- @return a new Contiunation
- */
-extern id<FBiOSTargetOperation> FBiOSTargetOperationRenamed(id<FBiOSTargetOperation> operation, FBiOSTargetOperationType operationType);
-
-/**
- Makes a operation that has nothing left to do.
-
- @param operationType the Future Type.
- @return a new Contiunation.
- */
-extern id<FBiOSTargetOperation> FBiOSTargetOperationDone(FBiOSTargetOperationType operationType);
+extern id<FBiOSTargetOperation> FBiOSTargetOperationFromFuture(FBFuture<NSNull *> *completed);
 
 NS_ASSUME_NONNULL_END

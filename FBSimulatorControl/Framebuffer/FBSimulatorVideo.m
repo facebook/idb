@@ -94,11 +94,6 @@
 
 #pragma mark FBiOSTargetOperation
 
-- (FBiOSTargetOperationType)operationType
-{
-  return FBiOSTargetOperationTypeVideoRecording;
-}
-
 - (FBFuture<NSNull *> *)completed
 {
   return [self.completedFuture onQueue:self.queue respondToCancellation:^{

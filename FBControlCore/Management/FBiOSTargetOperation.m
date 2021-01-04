@@ -18,17 +18,15 @@ FBiOSTargetOperationType const FBiOSTargetOperationTypeAgentLaunch = @"agentlaun
 FBiOSTargetOperationType const FBiOSTargetOperationTypeTestLaunch = @"launch_xctest";
 
 FBiOSTargetOperationType const FBiOSTargetOperationTypeLogTail = @"logtail";
-
-@interface FBiOSTargetOperation_Named : NSObject <FBiOSTargetOperation>
+@interface FBiOSTargetOperation_Wrapper : NSObject <FBiOSTargetOperation>
 
 @end
 
-@implementation FBiOSTargetOperation_Named
+@implementation FBiOSTargetOperation_Wrapper
 
 @synthesize completed = _completed;
-@synthesize operationType = _operationType;
 
-- (instancetype)initWithCompleted:(FBFuture<NSNull *> *)completed operationType:(FBiOSTargetOperationType)operationType
+- (instancetype)initWithCompleted:(FBFuture<NSNull *> *)completed
 {
   self = [super init];
   if (!self) {
@@ -36,7 +34,6 @@ FBiOSTargetOperationType const FBiOSTargetOperationTypeLogTail = @"logtail";
   }
 
   _completed = completed;
-  _operationType = operationType;
 
   return self;
 }
@@ -46,91 +43,9 @@ FBiOSTargetOperationType const FBiOSTargetOperationTypeLogTail = @"logtail";
   return _completed;
 }
 
-- (FBiOSTargetOperationType)operationType
-{
-  return _operationType;
-}
-
 @end
 
-@interface FBiOSTargetOperation_Renamed : NSObject <FBiOSTargetOperation>
-
-@property (nonatomic, strong, readonly) id<FBiOSTargetOperation> operation;
-
-@end
-
-@implementation FBiOSTargetOperation_Renamed
-
-@synthesize operationType = _operationType;
-
-- (instancetype)initWithAwaitable:(id<FBiOSTargetOperation>)operation operationType:(FBiOSTargetOperationType)operationType
+id<FBiOSTargetOperation> FBiOSTargetOperationFromFuture(FBFuture<NSNull *> *completed)
 {
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _operation = operation;
-  _operationType = operationType;
-
-  return self;
-}
-
-- (FBFuture<NSNull *> *)completed
-{
-  return [self.operation completed];
-}
-
-- (FBiOSTargetOperationType)operationType
-{
-  return _operationType;
-}
-
-@end
-
-@interface FBiOSTargetOperation_Done : NSObject <FBiOSTargetOperation>
-
-@end
-
-@implementation FBiOSTargetOperation_Done
-
-@synthesize operationType = _operationType;
-
-- (instancetype)initWithOperationType:(FBiOSTargetOperationType)operationType
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _operationType = operationType;
-
-  return self;
-}
-
-- (FBFuture<NSNull *> *)completed
-{
-  return FBFuture.empty;
-}
-
-- (FBiOSTargetOperationType)operationType
-{
-  return _operationType;
-}
-
-@end
-
-id<FBiOSTargetOperation> FBiOSTargetOperationNamed(FBFuture<NSNull *> *completed, FBiOSTargetOperationType operationType)
-{
-  return [[FBiOSTargetOperation_Named alloc] initWithCompleted:completed operationType:operationType];
-}
-
-id<FBiOSTargetOperation> FBiOSTargetOperationRenamed(id<FBiOSTargetOperation> operation, FBiOSTargetOperationType operationType)
-{
-  return [[FBiOSTargetOperation_Renamed alloc] initWithAwaitable:operation operationType:operationType];
-}
-
-id<FBiOSTargetOperation> FBiOSTargetOperationDone(FBiOSTargetOperationType operationType)
-{
-  return [[FBiOSTargetOperation_Done alloc] initWithOperationType:operationType];
+  return [[FBiOSTargetOperation_Wrapper alloc] initWithCompleted:completed];
 }

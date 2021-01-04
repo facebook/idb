@@ -68,13 +68,6 @@
     }];
 }
 
-#pragma mark FBiOSTargetOperation
-
-- (FBiOSTargetOperationType)operationType
-{
-  return FBiOSTargetOperationTypeApplicationLaunch;
-}
-
 #pragma mark FBLaunchedProcess
 
 - (FBFuture<NSNull *> *)exitCode

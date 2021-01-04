@@ -216,11 +216,6 @@ FBiOSTargetOperationType const FBiOSTargetOperationTypeInstruments = @"instrumen
 
 #pragma mark FBiOSTargetOperation
 
-- (FBiOSTargetOperationType)operationType
-{
-  return FBiOSTargetOperationTypeInstruments;
-}
-
 - (FBFuture<NSNull *> *)completed
 {
   return [[[self.task.completed

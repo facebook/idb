@@ -218,11 +218,6 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark FBiOSTargetOperation
 
-- (FBiOSTargetOperationType)operationType
-{
-  return FBiOSTargetOperationTypeVideoStreaming;
-}
-
 - (FBFuture<NSNull *> *)completed
 {
   return [self.stopFuture onQueue:self.writeQueue respondToCancellation:^{

@@ -110,11 +110,6 @@ FBiOSTargetOperationType const FBiOSTargetOperationTypeSimulatorAgent = @"agent"
 
 #pragma mark FBiOSTargetOperation
 
-- (FBiOSTargetOperationType)operationType
-{
-  return FBiOSTargetOperationTypeSimulatorAgent;
-}
-
 - (FBFuture<NSNull *> *)completed
 {
   return [self.exitCode mapReplace:NSNull.null];

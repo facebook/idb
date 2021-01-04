@@ -148,11 +148,6 @@
   return self.teardown;
 }
 
-- (FBiOSTargetOperationType)operationType
-{
-  return @"debug";
-}
-
 #pragma mark Private Methods
 
 - (FBFutureContext<FBDeviceDebugServer *> *)startListening

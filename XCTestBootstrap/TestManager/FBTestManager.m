@@ -93,11 +93,6 @@
 
 #pragma mark FBiOSTargetOperation
 
-- (FBiOSTargetOperationType)operationType
-{
-  return FBiOSTargetOperationTypeTestOperation;
-}
-
 - (FBFuture<NSNull *> *)completed
 {
   return [[[self.connect
