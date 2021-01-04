@@ -64,13 +64,13 @@ extern FBDeviceActivationState FBDeviceActivationStateCoerceFromString(NSString 
  The underlying AMDeviceRef.
  This may be NULL.
  */
-@property (nonatomic, assign, readonly) AMDeviceRef amDeviceRef;
+@property (nonatomic, nullable, assign, readonly) AMDeviceRef amDeviceRef;
 
 /**
  The underlying AMRecoveryModeDeviceRef if in recovery.
  This may be NULL.
  */
-@property (nonatomic, assign, readonly) AMRecoveryModeDeviceRef recoveryModeDeviceRef;
+@property (nonatomic, nullable, assign, readonly) AMRecoveryModeDeviceRef recoveryModeDeviceRef;
 
 /**
  The Device's Logger.

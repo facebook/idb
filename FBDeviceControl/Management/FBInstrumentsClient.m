@@ -448,7 +448,7 @@ static const uint32 Int32ArgumentType = 3;
   size_t returnValueDataLength = payloadHeader.totalLength - payloadHeader.auxiliaryLength;
   NSData *returnValueData = nil;
   if (returnValueDataLength) {
-    payloadData = [self advanceData:payloadData dataOut:&returnValueData length:returnValueDataLength];
+    [self advanceData:payloadData dataOut:&returnValueData length:returnValueDataLength];
   }
 
   // Then parse the payload items.

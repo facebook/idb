@@ -111,9 +111,9 @@ NS_ASSUME_NONNULL_BEGIN
  Synchronously recieve a plist-based packet used by lockdown.
 
  @param error an error out for any error that occurs.
- @return the read plist.
+ @return the read plist on success, nil on error.
  */
-- (id)receiveMessageWithError:(NSError **)error;
+- (nullable id)receiveMessageWithError:(NSError **)error;
 
 /**
  Send then receive a plist.
@@ -122,7 +122,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the message received, if successful.
  */
-- (id)sendAndReceiveMessage:(id)message error:(NSError **)error;
+- (nullable id)sendAndReceiveMessage:(id)message error:(NSError **)error;
 
 #pragma mark Streams
 

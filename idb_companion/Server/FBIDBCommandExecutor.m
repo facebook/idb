@@ -262,7 +262,9 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 - (FBFuture<NSArray<NSString *> *> *)list_tests_in_bundle:(NSString *)bundleID with_app:(NSString *)appPath
 {
-  if([appPath isEqualToString:@""]) appPath = nil;
+  if ([appPath isEqualToString:@""]) {
+    appPath = nil;
+  }
   return [FBFuture onQueue:self.target.workQueue resolve:^ FBFuture<NSArray<NSString *> *> * {
     NSError *error = nil;
     id<FBXCTestDescriptor> testDescriptor = [self.storageManager.xctest testDescriptorWithID:bundleID error:&error];
