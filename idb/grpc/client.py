@@ -837,6 +837,7 @@ class Client(ClientBase):
         args: Optional[List[str]] = None,
         env: Optional[Dict[str, str]] = None,
         foreground_if_running: bool = False,
+        wait_for_debugger: bool = False,
         stop: Optional[asyncio.Event] = None,
     ) -> None:
         async with self.stub.launch.open() as stream:
@@ -846,6 +847,7 @@ class Client(ClientBase):
                     env=env,
                     app_args=args,
                     foreground_if_running=foreground_if_running,
+                    wait_for_debugger=wait_for_debugger,
                     wait_for=True if stop else False,
                 )
             )

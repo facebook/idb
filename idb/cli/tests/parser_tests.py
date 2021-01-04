@@ -85,7 +85,12 @@ class TestParser(TestCase):
         self.client_mock.launch = AsyncMock(return_value=bundle_id)
         await cli_main(cmd_input=["launch", "--udid", udid, bundle_id])
         self.client_mock.launch.assert_called_once_with(
-            bundle_id=bundle_id, env={}, args=[], foreground_if_running=False, stop=None
+            bundle_id=bundle_id,
+            env={},
+            args=[],
+            foreground_if_running=False,
+            wait_for_debugger=False,
+            stop=None,
         )
 
     async def test_create(self) -> None:

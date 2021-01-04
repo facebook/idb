@@ -689,7 +689,7 @@ Status FBIDBServiceHandler::ls(grpc::ServerContext *context, const idb::LsReques
     if (error) {
       return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
     }
-    
+
     for (NSString *containerPath in pathsToPaths.allKeys) {
       NSArray<NSString *> *paths = pathsToPaths[containerPath];
       idb::FileListing *listing = response->add_listings();
@@ -850,6 +850,12 @@ Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerRea
     environment:extract_str_dict(start.env())
     output:output
     launchMode:start.foreground_if_running() ? FBApplicationLaunchModeForegroundIfRunning : FBApplicationLaunchModeFailIfRunning];
+  if (start.wait_for_debugger()) {
+    configuration = [configuration withWaitForDebugger:&error];
+    if (error) {
+      return Status(grpc::StatusCode::FAILED_PRECONDITION, error.localizedDescription.UTF8String);
+    }
+  }
   id<FBLaunchedProcess> process = [[_commandExecutor launch_app:configuration] block:&error];
   if (!process) {
     if (error.code != 0) {

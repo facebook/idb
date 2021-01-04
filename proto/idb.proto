@@ -386,6 +386,7 @@ message LaunchRequest {
     repeated string app_args = 3;
     bool foreground_if_running = 4;
     bool wait_for = 5;
+    bool wait_for_debugger = 6;
   }
   message Stop {
 

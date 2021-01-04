@@ -35,6 +35,12 @@ class LaunchCommand(ClientCommand):
             nargs=REMAINDER,
         )
         parser.add_argument(
+            "-d",
+            "--wait-for-debugger",
+            help="Suspend application right after the launch to facilitate attaching of a debugger (ex, lldb).",
+            action="store_true",
+        )
+        parser.add_argument(
             "-f",
             "--foreground-if-running",
             help="If the app is already running foreground that process",
@@ -54,5 +60,6 @@ class LaunchCommand(ClientCommand):
             args=args.app_arguments,
             env=get_env_with_idb_prefix(),
             foreground_if_running=args.foreground_if_running,
+            wait_for_debugger=args.wait_for_debugger,
             stop=signal_handler_event("launch") if args.wait_for else None,
         )

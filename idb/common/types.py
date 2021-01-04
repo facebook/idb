@@ -412,6 +412,7 @@ class Client(ABC):
         env: Optional[Dict[str, str]] = None,
         args: Optional[List[str]] = None,
         foreground_if_running: bool = False,
+        wait_for_debugger: bool = False,
         stop: Optional[asyncio.Event] = None,
     ) -> None:
         pass
