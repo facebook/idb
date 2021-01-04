@@ -6,8 +6,10 @@
 
 import asyncio
 import importlib
+import logging
 import os
 from argparse import ArgumentParser
+from functools import wraps
 from logging import Logger
 from types import ModuleType
 from typing import Dict, List
@@ -34,8 +36,33 @@ PLUGINS: List[ModuleType] = [
     if package is not None
 ]
 _META_ENVIRON_PREFIX = "IDB_META_"
+logger: logging.Logger = logging.getLogger(__name__)
 
 
+# pyre-ignore
+def swallow_exceptions(f):
+    if asyncio.iscoroutinefunction(f):
+
+        @wraps(f)
+        async def inner(*args, **kwargs) -> None:
+            try:
+                return await f(*args, **kwargs)
+            except Exception:
+                logger.exception(f"{f.__name__} plugin failed, swallowing exception")
+
+    else:
+
+        @wraps(f)
+        def inner(*args, **kwargs) -> None:  # pyre-ignore
+            try:
+                return f(*args, **kwargs)
+            except Exception:
+                logger.exception(f"{f.__name__} plugin failed, swallowing exception")
+
+    return inner
+
+
+@swallow_exceptions
 def on_launch(logger: Logger) -> None:
     for plugin in PLUGINS:
         on_launch = getattr(plugin, "on_launch", None)
@@ -44,16 +71,18 @@ def on_launch(logger: Logger) -> None:
         on_launch(logger)
 
 
+@swallow_exceptions
 async def on_close(logger: Logger) -> None:
     await asyncio.gather(
         *[
             plugin.on_close(logger)  # pyre-ignore
             for plugin in PLUGINS
             if hasattr(plugin, "on_close")
-        ]
+        ],
     )
 
 
+@swallow_exceptions
 async def before_invocation(name: str, metadata: LoggingMetadata) -> None:
     await asyncio.gather(
         *[
@@ -64,6 +93,7 @@ async def before_invocation(name: str, metadata: LoggingMetadata) -> None:
     )
 
 
+@swallow_exceptions
 async def after_invocation(name: str, duration: int, metadata: LoggingMetadata) -> None:
     await asyncio.gather(
         *[
@@ -76,6 +106,7 @@ async def after_invocation(name: str, duration: int, metadata: LoggingMetadata) 
     )
 
 
+@swallow_exceptions
 async def failed_invocation(
     name: str, duration: int, exception: BaseException, metadata: LoggingMetadata
 ) -> None:
@@ -90,6 +121,7 @@ async def failed_invocation(
     )
 
 
+@swallow_exceptions
 def on_connecting_parser(parser: ArgumentParser, logger: Logger) -> None:
     for plugin in PLUGINS:
         plugin_parser = getattr(plugin, "on_connecting_parser", None)
