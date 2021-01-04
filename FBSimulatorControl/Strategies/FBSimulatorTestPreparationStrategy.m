@@ -19,7 +19,7 @@
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
 @property (nonatomic, copy, readonly) FBTestLaunchConfiguration *testLaunchConfiguration;
 @property (nonatomic, strong, readonly) id<FBFileManager> fileManager;
-@property (nonatomic, strong, readonly) id<FBCodesignProvider> codesign;
+@property (nonatomic, strong, readonly) FBCodesignProvider * codesign;
 
 @end
 
@@ -30,11 +30,11 @@
 + (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration workingDirectory:(NSString *)workingDirectory
 {
   id<FBFileManager> fileManager = NSFileManager.defaultManager;
-  id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
+  FBCodesignProvider * codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
   return [[self alloc] initWithTestLaunchConfiguration:testLaunchConfiguration  workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
 }
 
-- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration workingDirectory:(NSString *)workingDirectory fileManager:(id<FBFileManager>)fileManager codesign:(id<FBCodesignProvider>)codesign
+- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration workingDirectory:(NSString *)workingDirectory fileManager:(id<FBFileManager>)fileManager codesign:(FBCodesignProvider *)codesign
 {
   self = [super init];
   if (!self) {

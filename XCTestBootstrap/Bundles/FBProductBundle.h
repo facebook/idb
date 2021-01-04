@@ -13,7 +13,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBInstalledApplication;
 
-@protocol FBCodesignProvider;
 @protocol FBFileManager;
 
 /**

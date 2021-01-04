@@ -12,9 +12,9 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBTestRunnerConfiguration;
+
 @protocol FBiOSTarget;
 @protocol FBFileManager;
-@protocol FBCodesignProvider;
 
 /**
  A protocol that defines an interface for preparing a test configuration.

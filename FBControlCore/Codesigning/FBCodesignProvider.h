@@ -12,9 +12,31 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- A Protocol for providing a codesigning implementation.
+ A Default implementation of a Codesign Provider.
  */
-@protocol FBCodesignProvider <NSObject>
+@interface FBCodesignProvider : NSObject
+
+#pragma mark Initializers
+
+/**
+ @param identityName identity used to codesign bundle
+ @return code sign command that signs bundles with given identity
+ */
++ (instancetype)codeSignCommandWithIdentityName:(NSString *)identityName;
+
+/**
+ @return code sign command that signs bundles with the ad hoc identity.
+ */
++ (instancetype)codeSignCommandWithAdHocIdentity;
+
+#pragma mark Properties
+
+/**
+ Identity used to codesign bundle.
+ */
+@property (nonatomic, copy, readonly) NSString *identityName;
+
+#pragma mark Public Methods
 
 /**
  Requests that the receiver codesigns a bundle. This only signs the main bundle, not any bundles nested within.
@@ -39,29 +61,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return A future that resolves with the CDHash.
  */
 - (FBFuture<NSString *> *)cdHashForBundleAtPath:(NSString *)bundlePath;
-
-@end
-
-/**
- A Default implementation of a Codesign Provider.
- */
-@interface FBCodesignProvider : NSObject <FBCodesignProvider>
-
-/**
- Identity used to codesign bundle.
- */
-@property (nonatomic, copy, readonly) NSString *identityName;
-
-/**
- @param identityName identity used to codesign bundle
- @return code sign command that signs bundles with given identity
- */
-+ (instancetype)codeSignCommandWithIdentityName:(NSString *)identityName;
-
-/**
- @return code sign command that signs bundles with the ad hoc identity.
- */
-+ (instancetype)codeSignCommandWithAdHocIdentity;
 
 @end
 

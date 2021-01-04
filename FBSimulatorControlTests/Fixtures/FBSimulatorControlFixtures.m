@@ -131,7 +131,7 @@ static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
 - (nullable NSString *)iOSUnitTestBundlePath
 {
   NSString *bundlePath = FBSimulatorControlFixtures.iOSUnitTestBundlePath;
-  id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
+  FBCodesignProvider *codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
   if ([[codesign cdHashForBundleAtPath:bundlePath] await:nil]) {
     return bundlePath;
   }

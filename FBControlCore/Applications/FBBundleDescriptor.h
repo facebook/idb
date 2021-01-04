@@ -14,9 +14,9 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBBinaryDescriptor;
+@class FBCodesignProvider;
 
 @protocol FBControlCoreLogger;
-@protocol FBCodesignProvider;
 
 /**
  Concrete value wrapper around a Bundle on disk.
@@ -70,7 +70,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param queue the queue to do work on.
  @return a Future that resolves with the relocation replacements.
  */
-- (FBFuture<NSDictionary<NSString *, NSString *> *> *)updatePathsForRelocationWithCodesign:(id<FBCodesignProvider>)codesign logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;
+- (FBFuture<NSDictionary<NSString *, NSString *> *> *)updatePathsForRelocationWithCodesign:(FBCodesignProvider *)codesign logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;
 
 #pragma mark Properties
 

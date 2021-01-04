@@ -21,7 +21,7 @@
 @property (nonatomic, copy, readonly) FBTestLaunchConfiguration *testLaunchConfiguration;
 @property (nonatomic, copy, readonly) FBXCTestShimConfiguration *shims;
 @property (nonatomic, strong, readonly) id<FBFileManager> fileManager;
-@property (nonatomic, strong, readonly) id<FBCodesignProvider> codesign;
+@property (nonatomic, strong, readonly) FBCodesignProvider *codesign;
 
 @end
 
@@ -31,7 +31,7 @@
                                    workingDirectory:(NSString *)workingDirectory
 {
   id<FBFileManager> fileManager = NSFileManager.defaultManager;
-  id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
+  FBCodesignProvider * codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
   FBXCTestShimConfiguration *shims = [[FBXCTestShimConfiguration defaultShimConfiguration] await:nil];
   return [self strategyWithTestLaunchConfiguration:testLaunchConfiguration shims:shims workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
 }
@@ -41,7 +41,7 @@
                                               shims:(FBXCTestShimConfiguration *)shims
                                    workingDirectory:(NSString *)workingDirectory
                                         fileManager:(id<FBFileManager>)fileManager
-                                           codesign:(id<FBCodesignProvider>)codesign
+                                           codesign:(FBCodesignProvider *)codesign
 {
   return [[self alloc] initWithTestLaunchConfiguration:testLaunchConfiguration shims:shims workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
 }
@@ -51,7 +51,7 @@
                                           shims:(FBXCTestShimConfiguration *)shims
                                workingDirectory:(NSString *)workingDirectory
                                     fileManager:(id<FBFileManager>)fileManager
-                                       codesign:(id<FBCodesignProvider>)codesign
+                                       codesign:(FBCodesignProvider *)codesign
 {
   self = [super init];
   if (!self) {

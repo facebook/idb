@@ -8,11 +8,11 @@
 #import <Foundation/Foundation.h>
 #import <XCTestBootstrap/FBXCTestPreparationStrategy.h>
 
+@class FBCodesignProvider;
 @class FBTestLaunchConfiguration;
 @class FBXCTestShimConfiguration;
 
 @protocol FBFileManager;
-@protocol FBCodesignProvider;
 
 /**
  Strategy used to run XCTest with MacOSX.
@@ -46,6 +46,6 @@
                                               shims:(FBXCTestShimConfiguration *)shims
                                    workingDirectory:(NSString *)workingDirectory
                                         fileManager:(id<FBFileManager>)fileManager
-                                           codesign:(id<FBCodesignProvider>)codesign;
+                                           codesign:(FBCodesignProvider *)codesign;
 
 @end

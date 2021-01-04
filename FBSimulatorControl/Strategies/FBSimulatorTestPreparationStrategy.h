@@ -11,12 +11,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBTestLaunchConfiguration;
-@class FBXCTestShimConfiguration;
-
-@protocol FBFileManager;
-@protocol FBCodesignProvider;
-
 /**
  Strategy used to run XCTest with Simulators.
  It will copy the Test Bundle to a working directory and update with an appropriate xctestconfiguration.
