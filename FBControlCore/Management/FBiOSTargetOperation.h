@@ -50,10 +50,8 @@ extern FBiOSTargetOperationType const FBiOSTargetOperationTypeLogTail;
 
 /**
  A Optional Future that resolves when the operation has completed.
- For any FBiOSTargetOperation that performs ongoing work, this will be non-nil.
- For any FBiOSTargetOperation that has finished it's work when resolved, this will be nil.
  */
-@property (nonatomic, strong, nullable, readonly) FBFuture<NSNull *> *completed;
+@property (nonatomic, strong, readonly) FBFuture<NSNull *> *completed;
 
 /**
  The Type of the Future, used for identifying kinds of the receiver.
