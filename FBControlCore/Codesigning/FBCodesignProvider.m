@@ -56,11 +56,24 @@ static NSString *const CDHashPrefix = @"CDHash=";
 
 - (FBFuture<NSNull *> *)signBundleAtPath:(NSString *)bundlePath
 {
-  [self.logger logFormat:@"Signing bundle %@ with identity %@", bundlePath, self.identityName];
-  return [[[FBTaskBuilder
+  id<FBControlCoreLogger> logger = self.logger;
+  [logger logFormat:@"Signing bundle %@ with identity %@", bundlePath, self.identityName];
+  return [[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
+    withNoUnacceptableStatusCodes]
+    withStdOutInMemoryAsString]
+    withStdErrInMemoryAsString]
     runUntilCompletion]
-    mapReplace:NSNull.null];
+    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (FBTask<NSNull *, NSString *, NSString *> *task) {
+      NSNumber *exitCode = task.exitCode.result;
+      if (![exitCode isEqualTo:@0]) {
+        return [[FBControlCoreError
+          describeFormat:@"Codesigning failed with exit code %@, %@\n%@", exitCode, task.stdOut, task.stdErr]
+          failFuture];
+      }
+      [logger logFormat:@"Successfully signed bundle %@", task.stdErr];
+      return FBFuture.empty;
+    }];
 }
 
 - (FBFuture<NSNull *> *)recursivelySignBundleAtPath:(NSString *)bundlePath
@@ -88,10 +101,19 @@ static NSString *const CDHashPrefix = @"CDHash=";
 {
   id<FBControlCoreLogger> logger = self.logger;
   [logger logFormat:@"Obtaining CDHash for bundle at path %@", bundlePath];
-  return [[[FBTaskBuilder
+  return [[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-dvvvv", bundlePath]]
+    withNoUnacceptableStatusCodes]
+    withStdOutInMemoryAsString]
+    withStdErrInMemoryAsString]
     runUntilCompletion]
-    onQueue:self.queue fmap:^(FBTask *task) {
+    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (FBTask<NSNull *,NSString *,NSString *> *task) {
+      NSNumber *exitCode = task.exitCode.result;
+      if (![exitCode isEqualTo:@0]) {
+        return [[FBControlCoreError
+          describeFormat:@"Checking CDHash of codesign execution failed %@, %@\n%@", exitCode, task.stdOut, task.stdErr]
+          failFuture];
+      }
       NSString *output = task.stdErr;
       NSString *cdHash = [[[FBLogSearch
         withText:output predicate:FBCodesignProvider.logSearchPredicateForCDHash]
@@ -102,8 +124,8 @@ static NSString *const CDHashPrefix = @"CDHash=";
           describeFormat:@"Could not find '%@' in output: %@", CDHashPrefix, output]
           failFuture];
       }
-      [logger logFormat:@"Obtained CDHash %@", cdHash];
-      return [FBFuture futureWithResult:cdHash];
+      [logger logFormat:@"Successfully obtained hash %@ from bundle %@", cdHash, bundlePath];
+      return FBFuture.empty;
     }];
 }
 
