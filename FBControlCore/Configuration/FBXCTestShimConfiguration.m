@@ -45,7 +45,7 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 + (FBFuture<NSString *> *)pathForCanonicallyNamedShim:(NSString *)canonicalName inDirectory:(NSString *)directory
 {
   NSString *filename = self.canonicalShimNameToShimFilenames[canonicalName];
-  FBCodesignProvider *codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
+  FBCodesignProvider *codesign = [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:nil];
   BOOL signingRequired = self.canonicalShimNameToCodesigningRequired[canonicalName].boolValue;
 
   NSString *shimPath = [directory stringByAppendingPathComponent:filename];

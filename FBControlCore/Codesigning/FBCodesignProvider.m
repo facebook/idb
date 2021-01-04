@@ -16,23 +16,24 @@ static NSString *const CDHashPrefix = @"CDHash=";
 
 @interface FBCodesignProvider ()
 
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
 
 @implementation FBCodesignProvider
 
-+ (instancetype)codeSignCommandWithIdentityName:(NSString *)identityName
++ (instancetype)codeSignCommandWithIdentityName:(NSString *)identityName logger:(id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithIdentityName:identityName];
+  return [[self alloc] initWithIdentityName:identityName logger:logger];
 }
 
-+ (instancetype)codeSignCommandWithAdHocIdentity
++ (instancetype)codeSignCommandWithAdHocIdentityWithLogger:(id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithIdentityName:@"-"];
+  return [[self alloc] initWithIdentityName:@"-" logger:logger];
 }
 
-- (instancetype)initWithIdentityName:(NSString *)identityName
+- (instancetype)initWithIdentityName:(NSString *)identityName logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -40,6 +41,7 @@ static NSString *const CDHashPrefix = @"CDHash=";
   }
 
   _identityName = identityName;
+  _logger = logger;
   _queue = dispatch_queue_create("com.facebook.fbcontrolcore.codesign", DISPATCH_QUEUE_CONCURRENT);
 
   return self;
@@ -54,6 +56,7 @@ static NSString *const CDHashPrefix = @"CDHash=";
 
 - (FBFuture<NSNull *> *)signBundleAtPath:(NSString *)bundlePath
 {
+  [self.logger logFormat:@"Signing bundle %@ with identity %@", bundlePath, self.identityName];
   return [[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
     runUntilCompletion]
@@ -83,6 +86,8 @@ static NSString *const CDHashPrefix = @"CDHash=";
 
 - (FBFuture<NSString *> *)cdHashForBundleAtPath:(NSString *)bundlePath
 {
+  id<FBControlCoreLogger> logger = self.logger;
+  [logger logFormat:@"Obtaining CDHash for bundle at path %@", bundlePath];
   return [[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-dvvvv", bundlePath]]
     runUntilCompletion]
@@ -97,6 +102,7 @@ static NSString *const CDHashPrefix = @"CDHash=";
           describeFormat:@"Could not find '%@' in output: %@", CDHashPrefix, output]
           failFuture];
       }
+      [logger logFormat:@"Obtained CDHash %@", cdHash];
       return [FBFuture futureWithResult:cdHash];
     }];
 }

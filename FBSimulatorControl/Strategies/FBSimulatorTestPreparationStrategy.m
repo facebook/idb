@@ -30,7 +30,7 @@
 + (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration workingDirectory:(NSString *)workingDirectory
 {
   id<FBFileManager> fileManager = NSFileManager.defaultManager;
-  FBCodesignProvider * codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
+  FBCodesignProvider * codesign = [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:nil];
   return [[self alloc] initWithTestLaunchConfiguration:testLaunchConfiguration  workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
 }
 

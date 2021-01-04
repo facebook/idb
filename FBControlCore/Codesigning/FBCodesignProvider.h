@@ -19,15 +19,21 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Initializers
 
 /**
+ Create a codesigner with an identity.
+
  @param identityName identity used to codesign bundle
+ @param logger the logger to use for logging
  @return code sign command that signs bundles with given identity
  */
-+ (instancetype)codeSignCommandWithIdentityName:(NSString *)identityName;
++ (instancetype)codeSignCommandWithIdentityName:(NSString *)identityName logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
+ Create a codesigner with the ad-hoc identity
+
+ @param logger the logger to use for logging
  @return code sign command that signs bundles with the ad hoc identity.
  */
-+ (instancetype)codeSignCommandWithAdHocIdentity;
++ (instancetype)codeSignCommandWithAdHocIdentityWithLogger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Properties
 

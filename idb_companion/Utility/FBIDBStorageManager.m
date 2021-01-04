@@ -160,8 +160,9 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
   if (!bundle) {
     return [FBFuture futureWithError:error];
   }
+  FBCodesignProvider *provider = [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:self.logger];
   return [[bundle
-    updatePathsForRelocationWithCodesign:FBCodesignProvider.codeSignCommandWithAdHocIdentity logger:self.logger queue:self.queue]
+    updatePathsForRelocationWithCodesign:provider logger:self.logger queue:self.queue]
     mapReplace:artifact];
 }
 
