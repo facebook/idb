@@ -101,13 +101,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return builder
  */
 - (instancetype)withWorkingDirectory:(NSString *)workingDirectory;
-
-/**
- @param codesignProvider object used to codesign product bundle
- @return builder
- */
-- (instancetype)withCodesignProvider:(id<FBCodesignProvider>)codesignProvider;
-
 /**
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return prepared product bundle if the operation succeeds, otherwise nil.

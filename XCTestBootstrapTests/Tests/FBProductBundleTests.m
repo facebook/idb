@@ -89,22 +89,6 @@
   [fileManagerMock verify];
 }
 
-- (void)testCodesigning
-{
-  NSBundle *bundle = [NSBundle bundleForClass:self.class];
-
-  OCMockObject<FBCodesignProvider> *codesignerMock = [OCMockObject mockForProtocol:@protocol(FBCodesignProvider)];
-  [[[codesignerMock expect] andReturn:FBFuture.empty] signBundleAtPath:bundle.bundlePath];
-
-  NSError *error;
-  [[[[FBProductBundleBuilder builder]
-     withBundlePath:bundle.bundlePath]
-    withCodesignProvider:codesignerMock]
-   buildWithError:&error];
-  XCTAssertNil(error);
-  [codesignerMock verify];
-}
-
 - (void)testFromInstalledApplication
 {
   FBInstalledApplication *application = [FBInstalledApplication

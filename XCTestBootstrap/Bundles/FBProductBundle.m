@@ -62,12 +62,6 @@
   return self;
 }
 
-- (instancetype)withCodesignProvider:(id<FBCodesignProvider>)codesignProvider
-{
-  self.codesignProvider = codesignProvider;
-  return self;
-}
-
 - (instancetype)withWorkingDirectory:(NSString *)workingDirectory
 {
   self.workingDirectory = workingDirectory;
@@ -100,15 +94,6 @@
       return nil;
     }
   }
-
-  NSError *innerError = nil;
-  if (self.codesignProvider && ![[self.codesignProvider signBundleAtPath:targetBundlePath] await:&innerError]) {
-    return [[[XCTestBootstrapError
-      describeFormat:@"Failed to codesign %@", targetBundlePath]
-      causedBy:innerError]
-      fail:error];
-  }
-
   // Use the infoPlist if these values aren't already set.
   NSDictionary *infoPlist = [self.fileManager dictionaryWithPath:[self.bundlePath stringByAppendingPathComponent:@"Info.plist"]];
   if (!infoPlist) {
