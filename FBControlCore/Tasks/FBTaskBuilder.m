@@ -21,7 +21,7 @@
 @property (nonatomic, copy, readwrite) NSString *launchPath;
 @property (nonatomic, copy, readwrite) NSArray<NSString *> *arguments;
 @property (nonatomic, copy, readwrite) NSDictionary<NSString *, NSString *> *environment;
-@property (nonatomic, copy, readwrite) NSSet<NSNumber *> *acceptableExitCodes;
+@property (nonatomic, copy, nullable, readwrite) NSSet<NSNumber *> *acceptableExitCodes;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdOut;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdErr;
 @property (nonatomic, strong, nullable, readwrite) FBProcessInput *stdIn;
@@ -102,6 +102,12 @@
 {
   NSParameterAssert(exitCodes);
   self.acceptableExitCodes = exitCodes;
+  return self;
+}
+
+- (instancetype)withNoUnacceptableStatusCodes
+{
+  self.acceptableExitCodes = nil;
   return self;
 }
 

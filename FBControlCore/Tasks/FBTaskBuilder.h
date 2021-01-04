@@ -83,12 +83,20 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)withEnvironmentAdditions:(NSDictionary<NSString *, NSString *> *)environment;
 
 /**
- The Set of Return Codes that are considered non-erroneous.
+ Sets the return codes of the task that are considered non-erroneous when the task has completed.
+ If any status code is resolved outside of these, then the task will error.
 
  @param exitCodes the non-erroneous stats codes.
  @return the receiver, for chaining.
  */
 - (instancetype)withAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes;
+
+/**
+ Any status code is permitted in the created task.
+
+ @return the receiver, for chaining.
+ */
+- (instancetype)withNoUnacceptableStatusCodes;
 
 #pragma mark stdin
 
