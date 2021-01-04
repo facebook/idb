@@ -9,6 +9,8 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+#include <glob.h>
+
 @interface FBTestRunStrategy ()
 
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
@@ -174,7 +176,7 @@
     installedApplicationWithBundleID:testRunnerApp.identifier]
     onQueue:self.target.asyncQueue fmap:^ FBFuture<NSNull *> * (FBInstalledApplication *application) {
       NSString *directory = application.dataContainer;
-      NSArray<NSString *> *paths = [FBFileFinder recursiveFindByFilenameGlobs:filenameGlobs inDirectory:directory];
+      NSArray<NSString *> *paths = [FBTestRunStrategy recursiveFindByFilenameGlobs:filenameGlobs inDirectory:directory];
       if (paths.count == 0) {
         return FBFuture.empty;
       }
@@ -210,6 +212,54 @@
   }
 
   return [self.target tailLog:@[@"--style", @"syslog", @"--level", @"debug"] consumer:logFileWriter];
+}
+
++ (NSArray<NSString *> *)recursiveFindByFilenameGlobs:(NSArray<NSString *> *)filenameGlobs inDirectory:(NSString *)directory
+{
+  NSParameterAssert(filenameGlobs);
+  NSParameterAssert(directory);
+
+  BOOL isDirectory = NO;
+  if (![NSFileManager.defaultManager fileExistsAtPath:directory isDirectory:&isDirectory]) {
+    return @[];
+  }
+  if (!isDirectory) {
+    return @[];
+  }
+
+  NSMutableArray<NSString *> *foundFiles = [NSMutableArray array];
+
+  NSArray<NSString *> *subdirectories = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:directory error:nil];
+  NSEnumerator *dirsEnumerator = [subdirectories objectEnumerator];
+  NSString *subdirectory;
+  while (subdirectory = [dirsEnumerator nextObject]) {
+    NSString *fullDirectory = [directory stringByAppendingPathComponent:subdirectory];
+
+    for (NSString *filenameGlob in filenameGlobs) {
+      NSString *globPathComponent = [NSString stringWithFormat: @"/%@", filenameGlob];
+      const char *fullPattern = [[fullDirectory stringByAppendingPathComponent: globPathComponent] UTF8String];
+
+      glob_t gt;
+      if (glob(fullPattern, 0, NULL, &gt) == 0) {
+        for (int i = 0; i < gt.gl_matchc; i++) {
+          size_t len = strlen(gt.gl_pathv[i]);
+          NSString *filePath = [[NSFileManager defaultManager] stringWithFileSystemRepresentation:gt.gl_pathv[i] length:len];
+
+          if (![NSFileManager.defaultManager fileExistsAtPath:filePath isDirectory:&isDirectory]) {
+            continue;
+          }
+          if (isDirectory) {
+            continue; // Don't copy directory.
+          }
+
+          [foundFiles addObject:filePath];
+        }
+      }
+      globfree(&gt);
+    }
+  }
+
+  return [NSArray arrayWithArray:foundFiles];
 }
 
 @end
