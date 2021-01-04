@@ -129,7 +129,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
 - (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
 {
   return [[FBXCTestShimConfiguration
-    defaultShimConfiguration]
+    defaultShimConfigurationWithLogger:self.simulator.logger]
     onQueue:self.simulator.workQueue fmap:^(FBXCTestShimConfiguration *shims) {
       FBListTestConfiguration *configuration = [FBListTestConfiguration
         configurationWithShims:shims

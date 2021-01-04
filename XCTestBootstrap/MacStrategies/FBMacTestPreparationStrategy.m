@@ -32,7 +32,7 @@
 {
   id<FBFileManager> fileManager = NSFileManager.defaultManager;
   FBCodesignProvider *codesign = [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:nil];
-  FBXCTestShimConfiguration *shims = [[FBXCTestShimConfiguration defaultShimConfiguration] await:nil];
+  FBXCTestShimConfiguration *shims = [[FBXCTestShimConfiguration defaultShimConfigurationWithLogger:nil] await:nil];
   return [self strategyWithTestLaunchConfiguration:testLaunchConfiguration shims:shims workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
 }
 

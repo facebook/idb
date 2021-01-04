@@ -24,17 +24,19 @@ extern NSString *const FBXCTestShimDirectoryEnvironmentOverride;
 /**
  Constructs a Shim Configuration from the default base directory.
 
+ @param logger to use for logging.
  @return a future wrapping the Shim Configuration.
  */
-+ (FBFuture<FBXCTestShimConfiguration *> *)defaultShimConfiguration;
++ (FBFuture<FBXCTestShimConfiguration *> *)defaultShimConfigurationWithLogger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Constructs a Shim Configuration from the given base directory.
 
  @param directory the base directory of the shims
+ @param logger to use for logging.
  @return a future wrapping the Shim Configuration.
  */
-+ (FBFuture<FBXCTestShimConfiguration *> *)shimConfigurationWithDirectory:(NSString *)directory;
++ (FBFuture<FBXCTestShimConfiguration *> *)shimConfigurationWithDirectory:(NSString *)directory logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  The Designated Intializer.
@@ -50,9 +52,10 @@ extern NSString *const FBXCTestShimDirectoryEnvironmentOverride;
  Determines the location of the shim directory, or fails
 
  @param queue the queue to use
+ @param logger to use for logging.
  @return a Path to the Shim Configuration.
  */
-+ (FBFuture<NSString *> *)findShimDirectoryOnQueue:(dispatch_queue_t)queue;
++ (FBFuture<NSString *> *)findShimDirectoryOnQueue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Properties
 

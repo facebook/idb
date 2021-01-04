@@ -124,7 +124,7 @@
         [FBFuture resolveValue:^(NSError **innerError) {
           return [FBProductBundleBuilder productBundleFromInstalledApplication:installedApplication error:innerError];
         }],
-        [FBXCTestShimConfiguration defaultShimConfiguration],
+        [FBXCTestShimConfiguration defaultShimConfigurationWithLogger:simulator.logger],
       ]];
     }]
     onQueue:simulator.workQueue map:^(NSArray<id> *tuple) {

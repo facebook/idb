@@ -209,7 +209,7 @@ FBiOSTargetOperationType const FBiOSTargetOperationTypeFBXCTest = @"fbxctest";
 
   if (shimsRequired) {
     NSError *innerError = nil;
-    FBXCTestShimConfiguration *shimConfiguration = [[FBXCTestShimConfiguration defaultShimConfiguration] await:&innerError];
+    FBXCTestShimConfiguration *shimConfiguration = [[FBXCTestShimConfiguration defaultShimConfigurationWithLogger:nil] await:&innerError];
     if (!shimConfiguration) {
       return [FBXCTestError failBoolWithError:innerError errorOut:error];
     }

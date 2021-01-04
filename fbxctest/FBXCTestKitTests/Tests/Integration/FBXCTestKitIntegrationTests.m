@@ -48,7 +48,7 @@
 - (BOOL)validateShimsForTestExecution
 {
   NSError *error = nil;
-  if ([[FBXCTestShimConfiguration findShimDirectoryOnQueue:dispatch_get_main_queue()] await:&error]) {
+  if ([[FBXCTestShimConfiguration findShimDirectoryOnQueue:dispatch_get_main_queue() logger:nil] await:&error]) {
     return YES;
   }
   NSLog(@"Could not locate a shim directory, skipping %@", error);
