@@ -36,16 +36,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)addMetadata:(NSDictionary<NSString *, NSString *> *)metadata;
 
 /**
- The Event Interpreter.
- */
-@property (nonatomic, strong, readonly) id<FBEventInterpreter> interpreter;
-
-/**
- The Consumer
- */
-@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
-
-/**
  Gets the total metadata.
  */
 @property (nonatomic, strong, readonly) NSDictionary<NSString *, NSString *> *metadata;
@@ -53,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- Implementations of FBEventReporter.
+ An implementation of an FBEventReporter, by composing other protocols.
  */
 @interface FBEventReporter : NSObject <FBEventReporter>
 
@@ -65,6 +55,16 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new Event Reporter.
  */
 + (id<FBEventReporter>)reporterWithInterpreter:(id<FBEventInterpreter>)interpreter consumer:(id<FBDataConsumer>)consumer;
+
+/**
+ The Event Interpreter.
+ */
+@property (nonatomic, strong, readonly) id<FBEventInterpreter> interpreter;
+
+/**
+ The Consumer
+ */
+@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
 
 @end
 

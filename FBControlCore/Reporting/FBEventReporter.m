@@ -19,9 +19,6 @@
 
 @implementation FBEventReporter
 
-@synthesize interpreter = _interpreter;
-@synthesize consumer = _consumer;
-
 #pragma mark Initializers
 
 + (id<FBEventReporter>)reporterWithInterpreter:(id<FBEventInterpreter>)interpreter consumer:(id<FBDataConsumer>)consumer
