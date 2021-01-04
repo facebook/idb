@@ -23,11 +23,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBiOSTarget;
 
 /**
- The Termination Handle Type for an instruments operation.
- */
-extern FBiOSTargetOperationType const FBiOSTargetOperationTypeInstruments;
-
-/**
  Represents an operation of the instruments command-line.
  */
 @interface FBInstrumentsOperation : NSObject <FBiOSTargetOperation>

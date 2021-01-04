@@ -14,8 +14,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorConnection.h"
 
-FBiOSTargetOperationType const FBiOSTargetOperationTypeHID = @"hid";
-
 static NSString *const KeyEventClass = @"class";
 static NSString *const KeyDirection = @"direction";
 

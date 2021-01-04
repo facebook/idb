@@ -7,17 +7,6 @@
 
 #import "FBiOSTargetOperation.h"
 
-#import <objc/runtime.h>
-
-#import "FBFuture+Sync.h"
-
-FBiOSTargetOperationType const FBiOSTargetOperationTypeApplicationLaunch = @"applaunch";
-
-FBiOSTargetOperationType const FBiOSTargetOperationTypeAgentLaunch = @"agentlaunch";
-
-FBiOSTargetOperationType const FBiOSTargetOperationTypeTestLaunch = @"launch_xctest";
-
-FBiOSTargetOperationType const FBiOSTargetOperationTypeLogTail = @"logtail";
 @interface FBiOSTargetOperation_Wrapper : NSObject <FBiOSTargetOperation>
 
 @end

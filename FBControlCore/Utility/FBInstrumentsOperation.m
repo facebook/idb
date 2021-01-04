@@ -22,8 +22,6 @@ const NSTimeInterval DefaultInstrumentsTerminateTimeout = 600.0;
 const NSTimeInterval DefaultInstrumentsLaunchErrorTimeout = 15.0;
 const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
 
-FBiOSTargetOperationType const FBiOSTargetOperationTypeInstruments = @"instruments";
-
 @interface FBInstrumentsConsumer : NSObject <FBDataConsumer>
 
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *hasStoppedRecording;

@@ -17,7 +17,6 @@
 #import "FBSimulatorBridge.h"
 #import "FBSimulatorError.h"
 
-FBiOSTargetOperationType const FBiOSTargetOperationTypeApproval = @"approve";
 static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 
 @interface FBSimulatorSettingsCommands ()

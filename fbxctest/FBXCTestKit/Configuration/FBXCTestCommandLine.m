@@ -12,8 +12,6 @@
 
 #import "FBXCTestDestination.h"
 
-FBiOSTargetOperationType const FBiOSTargetOperationTypeFBXCTest = @"fbxctest";
-
 @implementation FBXCTestCommandLine
 
 #pragma mark Initializers

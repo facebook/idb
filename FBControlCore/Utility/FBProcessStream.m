@@ -251,8 +251,6 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 
 #pragma mark - FBProcessOutput
 
-FBiOSTargetOperationType const FBiOSTargetOperationTypeProcessOutput = @"process_output";
-
 @interface FBProcessOutput ()
 
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;

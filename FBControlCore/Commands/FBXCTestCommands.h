@@ -18,11 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBTestManagerTestReporter;
 
 /**
- The Termination Handle Type.
- */
-extern FBiOSTargetOperationType const FBiOSTargetOperationTypeTestOperation;
-
-/**
  Commands related to XCTest Execution.
  */
 @protocol FBXCTestCommands <NSObject, FBiOSTargetCommand>

@@ -24,11 +24,6 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorBootOptions) {
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- The Action Type for a Boot.
- */
-extern FBiOSTargetOperationType const FBiOSTargetOperationTypeBoot;
-
-/**
  A Value Object for defining how to launch a Simulator.
  */
 @interface FBSimulatorBootConfiguration : NSObject <NSCopying, FBDebugDescribeable>

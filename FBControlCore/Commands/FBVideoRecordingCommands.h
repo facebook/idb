@@ -16,11 +16,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBDataConsumer;
 
 /**
- The Termination Handle Type for an Recording Operation.
- */
-extern FBiOSTargetOperationType const FBiOSTargetOperationTypeVideoRecording;
-
-/**
  Defines an interface for Video Recording.
  */
 @protocol FBVideoRecordingCommands <NSObject, FBiOSTargetCommand>

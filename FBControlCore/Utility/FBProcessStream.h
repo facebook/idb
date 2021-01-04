@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBDataConsumer.h>
-#import <FBControlCore/FBiOSTargetOperation.h>
 #import <FBControlCore/FBFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -121,11 +120,6 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 - (FBFuture<id<FBDataConsumer>> *)providedThroughConsumer;
 
 @end
-
-/**
- The Termination Handle Type for Process Output.
- */
-extern FBiOSTargetOperationType const FBiOSTargetOperationTypeProcessOutput;
 
 /**
  A container object for the output of a process.

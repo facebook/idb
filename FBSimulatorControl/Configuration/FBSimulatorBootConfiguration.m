@@ -11,8 +11,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 
-FBiOSTargetOperationType const FBiOSTargetOperationTypeBoot = @"boot";
-
 @implementation FBSimulatorBootConfiguration
 
 @synthesize scale = _scale;

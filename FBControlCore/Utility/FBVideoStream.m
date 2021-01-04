@@ -201,8 +201,6 @@ BOOL WriteMinicapHeaderToStream(uint32 width, uint32 height, id<FBDataConsumer> 
   return YES;
 }
 
-FBiOSTargetOperationType const FBiOSTargetOperationTypeVideoStreaming = @"VideoStreaming";
-
 @implementation FBVideoStreamAttributes
 
 - (instancetype)initWithAttributes:(NSDictionary<NSString *, id> *)attributes

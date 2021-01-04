@@ -11,8 +11,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorProcessFetcher.h"
 
-FBiOSTargetOperationType const FBiOSTargetOperationTypeSimulatorAgent = @"agent";
-
 @interface FBSimulatorAgentOperation ()
 
 @property (nonatomic, weak, nullable, readonly) FBSimulator *simulator;
