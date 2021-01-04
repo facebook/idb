@@ -20,7 +20,7 @@ static NSString *const MobileBackupDomain = @"com.apple.mobile.backup";
 + (BOOL)startSessionByPairingWithDevice:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 + (BOOL)stopConnectionToDevice:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 + (BOOL)stopSessionWithDevice:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
-
++ (NSDictionary<NSString *, id> *)obtainDeviceValues:(AMDeviceRef)device calls:(AMDCalls)calls;
 
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 @property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
@@ -61,10 +61,8 @@ static BOOL FB_AMDeviceConnected(AMDeviceRef device, FBAMDeviceManager *manager)
     [logger logFormat:@"Device is not paired, degraded device information will be provied %@", pairingError];
   }
 
-  // Get the values from the default domain, this will obtain information regardless of whether pairing was successful or not.
-  NSMutableDictionary<NSString *, id> *info = [CFBridgingRelease(calls.CopyValue(device, NULL, NULL)) mutableCopy];
-  // Get values from mobile backup, this will only return meaningful information if paired.
-  NSDictionary<NSString *, id> * backupInfo = [CFBridgingRelease(calls.CopyValue(device, (__bridge CFStringRef)(MobileBackupDomain), NULL)) copy] ?: @{};
+  // Now extract all of the values.
+  NSDictionary<NSString *, id> * info = [FBAMDeviceManager obtainDeviceValues:device calls:calls];
 
   // Stop the session if one was created.
   if (pairedWithSession) {
@@ -77,8 +75,6 @@ static BOOL FB_AMDeviceConnected(AMDeviceRef device, FBAMDeviceManager *manager)
     [logger.error log:@"Ignoring device as no values were returned for it"];
     return NO;
   }
-  // Insert the values from subdomains.
-  info[MobileBackupDomain] = backupInfo;
   NSString *udid = info[FBDeviceKeyUniqueDeviceID];
   if (!udid) {
     [logger.error logFormat:@"Ignoring device as %@ is not present in %@", FBDeviceKeyUniqueDeviceID, info];
@@ -319,6 +315,26 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   calls.Disconnect(device);
   [logger logFormat:@"Disconnected from %@", device];
   return YES;
+}
+
++ (NSDictionary<NSString *, id> *)obtainDeviceValues:(AMDeviceRef)device calls:(AMDCalls)calls
+{
+  // Get the values from the default domain, this will obtain information regardless of whether pairing was successful or not.
+  NSMutableDictionary<NSString *, id> *info = [CFBridgingRelease(calls.CopyValue(device, NULL, NULL)) mutableCopy];
+  if (!info) {
+    return nil;
+  }
+
+  // Synthetic Values.
+  BOOL isPaired = calls.IsPaired(device) != 0;
+  info[FBDeviceKeyIsPaired] = @(isPaired);
+
+  // Get values from mobile backup, this will only return meaningful information if paired.
+  NSDictionary<NSString *, id> * backupInfo = [CFBridgingRelease(calls.CopyValue(device, (__bridge CFStringRef)(MobileBackupDomain), NULL)) copy] ?: @{};
+  // Insert the values from subdomains.
+  info[MobileBackupDomain] = backupInfo;
+
+  return info;
 }
 
 @end

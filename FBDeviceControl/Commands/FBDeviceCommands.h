@@ -25,6 +25,24 @@ extern FBDeviceActivationState const FBDeviceActivationStateUnactivated;
 extern FBDeviceActivationState const FBDeviceActivationStateActivated;
 
 /**
+ A string enum representing keys within device information.
+ */
+typedef NSString *FBDeviceKey NS_STRING_ENUM;
+extern FBDeviceKey const FBDeviceKeyChipID;
+extern FBDeviceKey const FBDeviceKeyDeviceClass;
+extern FBDeviceKey const FBDeviceKeyDeviceName;
+extern FBDeviceKey const FBDeviceKeyLocationID;
+extern FBDeviceKey const FBDeviceKeyProductType;
+extern FBDeviceKey const FBDeviceKeySerialNumber;
+extern FBDeviceKey const FBDeviceKeyUniqueChipID;
+extern FBDeviceKey const FBDeviceKeyUniqueDeviceID;
+extern FBDeviceKey const FBDeviceKeyCPUArchitecture;
+extern FBDeviceKey const FBDeviceKeyBuildVersion;
+extern FBDeviceKey const FBDeviceKeyProductVersion;
+extern FBDeviceKey const FBDeviceKeyActivationState;
+extern FBDeviceKey const FBDeviceKeyIsPaired;
+
+/**
  Coerce an Activation State string to the String Enum
 
  @param activationState the string representation of the activation state.

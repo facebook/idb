@@ -13,20 +13,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-typedef NSString *FBDeviceKey NS_STRING_ENUM;
-extern FBDeviceKey const FBDeviceKeyChipID;
-extern FBDeviceKey const FBDeviceKeyDeviceClass;
-extern FBDeviceKey const FBDeviceKeyDeviceName;
-extern FBDeviceKey const FBDeviceKeyLocationID;
-extern FBDeviceKey const FBDeviceKeyProductType;
-extern FBDeviceKey const FBDeviceKeySerialNumber;
-extern FBDeviceKey const FBDeviceKeyUniqueChipID;
-extern FBDeviceKey const FBDeviceKeyUniqueDeviceID;
-extern FBDeviceKey const FBDeviceKeyCPUArchitecture;
-extern FBDeviceKey const FBDeviceKeyBuildVersion;
-extern FBDeviceKey const FBDeviceKeyProductVersion;
-extern FBDeviceKey const FBDeviceKeyActivationState;
-
 /**
  An Object Wrapper around AMRestorableDevice
  */

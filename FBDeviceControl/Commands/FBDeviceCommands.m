@@ -11,6 +11,19 @@ FBDeviceActivationState const FBDeviceActivationStateUnknown = @"Unknown";
 FBDeviceActivationState const FBDeviceActivationStateUnactivated = @"Unactivated";
 FBDeviceActivationState const FBDeviceActivationStateActivated = @"Activated";
 
+FBDeviceKey const FBDeviceKeyChipID = @"ChipID";
+FBDeviceKey const FBDeviceKeyDeviceClass = @"DeviceClass";
+FBDeviceKey const FBDeviceKeyDeviceName = @"DeviceName";
+FBDeviceKey const FBDeviceKeyLocationID = @"LocationID";
+FBDeviceKey const FBDeviceKeyProductType = @"ProductType";
+FBDeviceKey const FBDeviceKeySerialNumber = @"SerialNumber";
+FBDeviceKey const FBDeviceKeyUniqueChipID = @"UniqueChipID";
+FBDeviceKey const FBDeviceKeyUniqueDeviceID = @"UniqueDeviceID";
+FBDeviceKey const FBDeviceKeyCPUArchitecture = @"CPUArchitecture";
+FBDeviceKey const FBDeviceKeyBuildVersion = @"BuildVersion";
+FBDeviceKey const FBDeviceKeyProductVersion = @"ProductVersion";
+FBDeviceKey const FBDeviceKeyActivationState = @"ActivationState";
+FBDeviceKey const FBDeviceKeyIsPaired = @"IsPaired";
 
 FBDeviceActivationState FBDeviceActivationStateCoerceFromString(NSString *activationState)
 {
