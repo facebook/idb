@@ -270,9 +270,11 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
   NSURLSessionDataTask *task = [session dataTaskWithRequest:request completionHandler:^(NSData *responseData, NSURLResponse *response, NSError *error) {
     if (error) {
       [future resolveWithError:error];
+      return;
     }
     if (responseData == nil) {
       [future resolveWithError:[[FBControlCoreError describeFormat:@"No response data in response %@", response] build]];
+      return;
     }
     [future resolveWithResult:@[response, responseData]];
   }];
