@@ -4019,6 +4019,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				ONLY_ACTIVE_ARCH = NO;
 			};
 			name = Release;
@@ -4073,6 +4074,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				ONLY_ACTIVE_ARCH = NO;
 			};
 			name = Release;
@@ -4129,6 +4131,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Shims/Binaries",
@@ -4202,6 +4205,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				ONLY_ACTIVE_ARCH = NO;
 			};
 			name = Release;
