@@ -71,39 +71,4 @@ FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
   ];
 }
 
-#pragma mark JSON
-
-static NSString *const KeyStreamEncoding = @"encoding";
-static NSString *const KeyFramesPerSecond = @"frames_per_second";
-
-- (id)jsonSerializableRepresentation
-{
-  return @{
-    KeyStreamEncoding: self.encoding,
-    KeyFramesPerSecond: self.framesPerSecond ?: NSNull.null,
-  };
-}
-
-+ (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
-{
-  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ is not a Dictionary<String, Object>", json]
-      fail:error];
-  }
-  FBVideoStreamEncoding encoding = json[KeyStreamEncoding];
-  if (![encoding isKindOfClass:NSString.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ is not a String for %@", encoding, KeyStreamEncoding]
-      fail:error];
-  }
-  NSNumber *framesPerSecond = [FBCollectionOperations nullableValueForDictionary:json key:KeyFramesPerSecond];
-  if (framesPerSecond && ![framesPerSecond isKindOfClass:NSNumber.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ is not a Number for %@", framesPerSecond, KeyFramesPerSecond]
-      fail:error];
-  }
-  return [[self alloc] initWithEncoding:encoding framesPerSecond:framesPerSecond];
-}
-
 @end

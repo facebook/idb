@@ -23,7 +23,7 @@ extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
 /**
  A Configuration Object for a Video Stream.
  */
-@interface FBVideoStreamConfiguration : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+@interface FBVideoStreamConfiguration : NSObject <NSCopying>
 
 /**
  The Designated Initializer.

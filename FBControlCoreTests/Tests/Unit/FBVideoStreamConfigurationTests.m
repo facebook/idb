@@ -25,8 +25,6 @@
   ];
 
   [self assertEqualityOfCopy:configurations];
-  [self assertJSONSerialization:configurations];
-  [self assertJSONDeserialization:configurations];
 }
 
 @end
