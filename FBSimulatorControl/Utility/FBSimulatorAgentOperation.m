@@ -120,14 +120,4 @@
   return [NSString stringWithFormat:@"Agent Operation %@ | pid %d | State %@", self.configuration.shortDescription, self.processIdentifier, self.processStatus];
 }
 
-#pragma mark FBJSONSerialization
-
-- (id)jsonSerializableRepresentation
-{
-  return @{
-    @"config": self.configuration.jsonSerializableRepresentation,
-    @"pid" : @(self.processIdentifier),
-  };
-}
-
 @end

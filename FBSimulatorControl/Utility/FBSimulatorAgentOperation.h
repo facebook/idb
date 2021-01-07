@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
  This class is explicitly a reference type as it retains the File Handles that are used by the Agent Process.
  The lifecycle of the process is managed internally and this class should not be instantiated directly by consumers.
  */
-@interface FBSimulatorAgentOperation : NSObject <FBiOSTargetOperation, FBLaunchedProcess, FBJSONSerializable>
+@interface FBSimulatorAgentOperation : NSObject <FBiOSTargetOperation, FBLaunchedProcess>
 
 #pragma mark Helper Methods
 
