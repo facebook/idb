@@ -17,18 +17,6 @@
 
 @implementation FBLocalizationOverrideTests
 
-- (void)testValueSemantics
-{
-  NSArray<FBLocalizationOverride *> *overrides = @[
-    [FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"es_ES"]],
-    [FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]],
-  ];
-
-  [self assertEqualityOfCopy:overrides];
-  [self assertJSONSerialization:overrides];
-  [self assertJSONDeserialization:overrides];
-}
-
 - (void)testArguments
 {
   FBLocalizationOverride *override = [FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"es_ES"]];

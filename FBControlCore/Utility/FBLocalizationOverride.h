@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Model Representing the Override of Language & Keyboard Settings.
  */
-@interface FBLocalizationOverride : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+@interface FBLocalizationOverride : NSObject <NSCopying>
 
 /**
  A Language Override with the given locale.

@@ -46,51 +46,12 @@ static NSString *const KeyboardsExpandedKey = @"AppleKeyboardsExpanded";
   return self;
 }
 
-#pragma mark FBJSONConversion
-
-+ (instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
-{
-  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ is not an Dictionary<String, Object>", json]
-      fail:error];
-  }
-  NSString *localeIdentifier = json[@"locale_identifier"];
-  if (![localeIdentifier isKindOfClass:NSString.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"locale_identifier %@ should be an String but isn't", localeIdentifier]
-      fail:error];
-  }
-  NSLocale *locale = [NSLocale localeWithLocaleIdentifier:localeIdentifier];
-  NSArray<NSString *> *keyboards = json[@"keyboards"];
-  if (![FBCollectionInformation isArrayHeterogeneous:keyboards withClass:NSString.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"keyboards %@ should be an Array<String> but isn't", keyboards]
-      fail:error];
-  }
-  NSNumber *enableKeyboardExpansion = json[@"enable_keyboard_expansion"] ?: @YES;
-  if (![enableKeyboardExpansion isKindOfClass:NSNumber.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"enable_keyboard_expansion %@ should be an Number but isn't", enableKeyboardExpansion]
-      fail:error];
-  }
-  return [[FBLocalizationOverride alloc] initWithLocale:locale keyboards:keyboards enableKeyboardExpansion:enableKeyboardExpansion.boolValue];
-}
-
-- (NSDictionary *)jsonSerializableRepresentation
-{
-  return @{
-    @"locale_identifier" : self.localeIdentifier,
-    @"keyboards" : self.keyboards,
-    @"enable_keyboard_expansion" : @(self.enableKeyboardExpansion)
-  };
-}
-
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  return [[FBLocalizationOverride alloc] initWithLocale:self.locale keyboards:self.keyboards enableKeyboardExpansion:self.enableKeyboardExpansion];
+  // Object is immutable.
+  return self;
 }
 
 #pragma mark Properties
@@ -112,6 +73,8 @@ static NSString *const KeyboardsExpandedKey = @"AppleKeyboardsExpanded";
     [NSString stringWithFormat:@"-%@", LanguagesKey], [NSString stringWithFormat:@"(%@)", self.languageIdentifier],
   ];
 }
+
+#pragma mark Private
 
 - (NSString *)localeIdentifier
 {
