@@ -84,21 +84,6 @@ FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdentity = @"
   return self;
 }
 
-#pragma mark JSON Serialization
-
-static NSString *const KeyBundle = @"bundle";
-static NSString *const KeyInstallType = @"install_type";
-static NSString *const KeyDataContainer = @"data_container";
-
-- (id)jsonSerializableRepresentation
-{
-  return @{
-    KeyBundle: self.bundle.jsonSerializableRepresentation,
-    KeyInstallType: [FBInstalledApplication stringFromApplicationInstallType:self.installType],
-    KeyDataContainer: self.dataContainer ?: NSNull.null,
-  };
-}
-
 #pragma mark Install Type
 
 + (FBApplicationInstallTypeString)stringFromApplicationInstallType:(FBApplicationInstallType)installType

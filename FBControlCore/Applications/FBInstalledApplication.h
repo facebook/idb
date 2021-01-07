@@ -49,7 +49,7 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdenti
 /**
  A container for an Application Bundle and how it is installed.
  */
-@interface FBInstalledApplication : NSObject <NSCopying, FBJSONSerializable>
+@interface FBInstalledApplication : NSObject <NSCopying>
 
 #pragma mark Initializers
 
