@@ -56,6 +56,11 @@ static NSString *const CDHashPrefix = @"CDHash=";
 
 - (FBFuture<NSNull *> *)signBundleAtPath:(NSString *)bundlePath
 {
+  NSError *error = nil;
+  [self makeCodesignatureWritable:bundlePath error:&error];
+  if (error) {
+    return [FBFuture futureWithError:error];
+  }
   id<FBControlCoreLogger> logger = self.logger;
   [logger logFormat:@"Signing bundle %@ with identity %@", bundlePath, self.identityName];
   return [[[[[[FBTaskBuilder
@@ -74,6 +79,31 @@ static NSString *const CDHashPrefix = @"CDHash=";
       [logger logFormat:@"Successfully signed bundle %@", task.stdErr];
       return FBFuture.empty;
     }];
+}
+
+- (void)makeCodesignatureWritable:(NSString *)bundlePath error:(NSError **)error
+{
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  NSString *codeSignatureFile = [bundlePath stringByAppendingString:@"/_CodeSignature/CodeResources"];
+  if (![fileManager fileExistsAtPath:codeSignatureFile]) {
+    return;
+  }
+  if ([fileManager isWritableFileAtPath:codeSignatureFile]) {
+    return;
+  }
+  NSMutableDictionary<NSFileAttributeKey, id> *attributes = [NSMutableDictionary dictionaryWithDictionary:[fileManager attributesOfItemAtPath:codeSignatureFile error:error]];
+  if (*error) {
+    [self.logger logFormat:@"Failed to get attributes of code sign file: %@", *error];
+    return;
+  }
+  // Add user writable
+  short newPermissions = [(NSNumber *)attributes[NSFilePosixPermissions] shortValue] | 0b010000000;
+  attributes[NSFilePosixPermissions] = [NSNumber numberWithShort:newPermissions];
+  [fileManager setAttributes:[NSDictionary dictionaryWithDictionary:attributes] ofItemAtPath:codeSignatureFile error:error];
+  if (*error) {
+    [self.logger logFormat:@"Failed to set attributes of code sign file: %@", *error];
+  }
+  [self.logger log:@"Added user writable permission to code sign file"];
 }
 
 - (FBFuture<NSNull *> *)recursivelySignBundleAtPath:(NSString *)bundlePath
