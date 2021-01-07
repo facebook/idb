@@ -108,19 +108,6 @@
   XCTAssertNotEqualObjects(launchConfiguration.framebuffer.scale, FBScale50);
 }
 
-- (void)testEncoderConfigurations
-{
-  NSArray<FBVideoEncoderConfiguration *> *values = @[
-    FBVideoEncoderConfiguration.prudentConfiguration,
-    FBVideoEncoderConfiguration.defaultConfiguration,
-    [[[FBVideoEncoderConfiguration withOptions:FBVideoEncoderOptionsAutorecord | FBVideoEncoderOptionsFinalFrame ] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardZero] withFileType:@"foo"],
-    [[[FBVideoEncoderConfiguration withOptions:FBVideoEncoderOptionsImmediateFrameStart] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardNegativeInfinity] withFileType:@"bar"]
-  ];
-  [self assertEqualityOfCopy:values];
-  [self assertJSONSerialization:values];
-  [self assertJSONDeserialization:values];
-}
-
 - (void)testHIDEvents
 {
   NSArray<FBSimulatorHIDEvent *> *values = @[
