@@ -63,39 +63,4 @@ FBSettingsApprovalService const FBSettingsApprovalServiceNotification = @"notifi
   return self;
 }
 
-#pragma mark JSON
-
-static NSString *const KeyBundleIDs = @"bundle_ids";
-static NSString *const KeyServices = @"services";
-
-+ (instancetype)inflateFromJSON:(NSDictionary<NSString *, NSArray<NSString *> *> *)json error:(NSError **)error
-{
-  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSArray.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ is not a Dictionary<String, Array<String>>", json]
-      fail:error];
-  }
-  NSArray<NSString *> *bundleIDs = json[KeyBundleIDs];
-  if (![FBCollectionInformation isArrayHeterogeneous:bundleIDs withClass:NSString.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ is not a Array<String> for %@", bundleIDs, KeyBundleIDs]
-      fail:error];
-  }
-  NSArray<FBSettingsApprovalService> *approvals = json[KeyServices];
-  if (![FBCollectionInformation isArrayHeterogeneous:approvals withClass:NSString.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ is not a Array<String> for %@", approvals, KeyServices]
-      fail:error];
-  }
-  return [[self alloc] initWithBundleIDs:bundleIDs services:approvals];
-}
-
-- (id)jsonSerializableRepresentation
-{
-  return @{
-    KeyBundleIDs: self.bundleIDs,
-    KeyServices: self.services,
-  };
-}
-
 @end

@@ -27,7 +27,7 @@ extern FBSettingsApprovalService const FBSettingsApprovalServiceNotification;
 /**
  Value container for approval of settings.
  */
-@interface FBSettingsApproval : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+@interface FBSettingsApproval : NSObject <NSCopying>
 
 #pragma mark Initializers
 

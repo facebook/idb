@@ -72,18 +72,4 @@
   ]];
 }
 
-- (void)testSettingsApproval
-{
-  FBSettingsApproval *settingsApproval = [FBSettingsApproval approvalWithBundleIDs:@[@"com.foo.bar", @"bing.bong"] services:@[FBSettingsApprovalServiceContacts]];
-  id<FBEventReporterSubject> subject = [FBEventReporterSubject compositeSubjectWithArray:@[
-    [FBEventReporterSubject subjectWithName:FBEventNameApprove type:FBEventTypeStarted value:settingsApproval],
-    [FBEventReporterSubject subjectWithName:FBEventNameApprove type:FBEventTypeEnded value:settingsApproval],
-  ]];
-
-  [self assertSubject:subject hasJSONContents:@[
-    @{@"event_name" : @"approve", @"event_type" : @"started", @"subject": @{@"bundle_ids" : @[@"com.foo.bar", @"bing.bong"], @"services": @[@"contacts"]}},
-    @{@"event_name" : @"approve", @"event_type" : @"ended", @"subject": @{@"bundle_ids" : @[@"com.foo.bar", @"bing.bong"], @"services": @[@"contacts"]}},
-  ]];
-}
-
 @end
