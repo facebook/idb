@@ -121,18 +121,6 @@
   [self assertJSONDeserialization:values];
 }
 
-- (void)testFramebufferConfigurations
-{
-  NSArray<FBFramebufferConfiguration *> *values = @[
-    FBFramebufferConfiguration.defaultConfiguration,
-    [FBFramebufferConfiguration configurationWithScale:FBScale25 encoder:FBVideoEncoderConfiguration.defaultConfiguration imagePath:@"/img.png"],
-    [FBFramebufferConfiguration configurationWithScale:FBScale75 encoder:FBVideoEncoderConfiguration.prudentConfiguration imagePath:@"/img.png"],
-  ];
-  [self assertEqualityOfCopy:values];
-  [self assertJSONSerialization:values];
-  [self assertJSONDeserialization:values];
-}
-
 - (void)testHIDEvents
 {
   NSArray<FBSimulatorHIDEvent *> *values = @[
