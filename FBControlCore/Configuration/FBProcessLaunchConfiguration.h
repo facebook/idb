@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An abstract value object for launching both agents and applications
  */
-@interface FBProcessLaunchConfiguration : NSObject <NSCopying, FBJSONSerializable, FBDebugDescribeable>
+@interface FBProcessLaunchConfiguration : NSObject <NSCopying, FBDebugDescribeable>
 
 /**
  An NSArray<NSString *> of arguments to the process. Will not be nil.
@@ -60,18 +60,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new FBProcessLaunchConfiguration Instance.
  */
 - (instancetype)initWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output;
-
-/**
- Extracts Common Values from JSON.
-
- @param json the JSON to extract from.
- @param argumentsOut an outparam for the Arguments.
- @param environmentOut an outparam for the Environment.
- @param outputOut an outparam for the Process Output.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
- */
-+ (BOOL)fromJSON:(id)json extractArguments:(NSArray<NSString *> *_Nullable*_Nullable)argumentsOut environment:(NSDictionary<NSString *, NSString *> *_Nullable*_Nullable)environmentOut output:(FBProcessOutputConfiguration *_Nullable*_Nullable)outputOut error:(NSError **)error;
 
 @end
 

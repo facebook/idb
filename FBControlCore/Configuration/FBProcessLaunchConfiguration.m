@@ -98,49 +98,4 @@ static NSString *const KeyOutput = @"output";
   return [self debugDescription];
 }
 
-#pragma mark FBJSONSerializable
-
-- (NSDictionary *)jsonSerializableRepresentation
-{
-  return @{
-    KeyArguments : self.arguments,
-    KeyEnvironment : self.environment,
-    KeyOutput : self.output.jsonSerializableRepresentation,
-  };
-}
-
-+ (BOOL)fromJSON:(id)json extractArguments:(NSArray<NSString *> **)argumentsOut environment:(NSDictionary<NSString *, NSString *> **)environmentOut output:(FBProcessOutputConfiguration **)outputOut error:(NSError **)error
-{
-  NSArray<NSString *> *arguments = json[KeyArguments] ?: @[];
-  if (![FBCollectionInformation isArrayHeterogeneous:arguments withClass:NSString.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ is not an array of strings for %@", arguments, KeyArguments]
-      failBool:error];
-  }
-  NSDictionary<NSString *, NSString *> *environment = json[KeyEnvironment] ?: @{};
-  if (![FBCollectionInformation isDictionaryHeterogeneous:environment keyClass:NSString.class valueClass:NSString.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ is not an dictionary of <string, strings> for %@", arguments, KeyEnvironment]
-      failBool:error];
-  }
-  FBProcessOutputConfiguration *output = [[FBProcessOutputConfiguration alloc] init];
-  NSDictionary *outputDictionary = json[KeyOutput];
-  if (outputDictionary) {
-    output = [FBProcessOutputConfiguration inflateFromJSON:outputDictionary error:error];
-    if (!output) {
-      return NO;
-    }
-  }
-  if (argumentsOut) {
-    *argumentsOut = arguments;
-  }
-  if (environmentOut) {
-    *environmentOut = environment;
-  }
-  if (outputOut) {
-    *outputOut = output;
-  }
-  return YES;
-}
-
 @end
