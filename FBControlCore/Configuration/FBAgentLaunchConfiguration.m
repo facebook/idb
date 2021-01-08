@@ -21,28 +21,6 @@ static NSString *const KeyBinary = @"binary";
   }
   return [[self alloc] initWithBinary:agentBinary arguments:arguments environment:environment output:output mode:mode];
 }
-
-+ (instancetype)inflateFromJSON:(id)json error:(NSError **)error
-{
-  NSError *innerError = nil;
-  NSDictionary *binaryJSON = json[KeyBinary];
-  FBBinaryDescriptor *binary = [FBBinaryDescriptor inflateFromJSON:binaryJSON error:&innerError];
-  if (!binary) {
-    return [[[FBControlCoreError
-      describeFormat:@"Could not build %@ from json %@", KeyBinary, binaryJSON]
-      causedBy:innerError]
-      fail:error];
-  }
-  NSArray<NSString *> *arguments = nil;
-  NSDictionary<NSString *, NSString *> *environment = nil;
-  FBProcessOutputConfiguration *output = nil;
-  NSNumber *mode = json[@"mode"] ?: @(FBAgentLaunchModeDefault);
-  if (![FBProcessLaunchConfiguration fromJSON:json extractArguments:&arguments environment:&environment output:&output error:error]) {
-    return nil;
-  }
-  return [self configurationWithBinary:binary arguments:arguments environment:environment output:output mode:mode.unsignedIntegerValue];
-}
-
 - (instancetype)initWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output mode:(FBAgentLaunchMode)mode
 {
   self = [super initWithArguments:arguments environment:environment output:output];
@@ -103,16 +81,6 @@ static NSString *const KeyBinary = @"binary";
          [self.arguments isEqual:object.arguments] &&
          [self.environment isEqual:object.environment] &&
          self.mode == object.mode;
-}
-
-#pragma mark FBJSONSerializable
-
-- (NSDictionary *)jsonSerializableRepresentation
-{
-  NSMutableDictionary *representation = [[super jsonSerializableRepresentation] mutableCopy];
-  representation[@"binary"] = [self.agentBinary jsonSerializableRepresentation];
-  representation[@"mode"] = @(self.mode);
-  return [representation mutableCopy];
 }
 
 @end

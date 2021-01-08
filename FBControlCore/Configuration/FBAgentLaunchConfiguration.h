@@ -28,7 +28,7 @@ typedef NS_ENUM(NSUInteger, FBAgentLaunchMode) {
 /**
  A Value object with the information required to launch a Binary Agent.
  */
-@interface FBAgentLaunchConfiguration : FBProcessLaunchConfiguration <FBJSONDeserializable>
+@interface FBAgentLaunchConfiguration : FBProcessLaunchConfiguration
 
 /**
  Creates and returns a new Configuration with the provided parameters

@@ -31,23 +31,6 @@
   [self assertJSONDeserialization:values];
 }
 
-- (void)testAgentLaunchLaunchConfigurations
-{
-  NSArray<FBAgentLaunchConfiguration *> *values = @[
-    self.agentLaunch1,
-  ];
-  [self assertEqualityOfCopy:values];
-  [self assertJSONSerialization:values];
-  [self assertJSONDeserialization:values];
-}
-
-- (void)testAgentLaunchConfigurations
-{
-  NSArray<FBAgentLaunchConfiguration *> *values = @[self.agentLaunch1];
-  [self assertEqualityOfCopy:values];
-  [self assertJSONSerialization:values];
-}
-
 - (void)testSimulatorConfigurations
 {
   NSArray<FBSimulatorConfiguration *> *values = @[
