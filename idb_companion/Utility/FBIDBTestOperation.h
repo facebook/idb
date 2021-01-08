@@ -28,7 +28,7 @@ typedef NS_ENUM(NSUInteger, FBIDBTestOperationState) {
  */
 @interface FBIDBTestOperation : NSObject <FBiOSTargetOperation>
 
-- (instancetype)initWithConfiguration:(id<FBJSONSerializable>)configuration resultBundlePath:(nullable NSString *)resultBundlePath coveragePath:(nullable NSString *)coveragePath binaryPath:(nullable NSString *)binaryPath reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue;
+- (instancetype)initWithConfiguration:(id)configuration resultBundlePath:(nullable NSString *)resultBundlePath coveragePath:(nullable NSString *)coveragePath binaryPath:(nullable NSString *)binaryPath reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue;
 
 /**
  The Execution State.

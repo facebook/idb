@@ -9,7 +9,7 @@
 
 @interface FBIDBTestOperation ()
 
-@property (nonatomic, strong, readonly) id<FBJSONSerializable> configuration;
+@property (nonatomic, strong, readonly) id configuration;
 
 @end
 
@@ -17,7 +17,7 @@
 
 @synthesize completed = _completed;
 
-- (instancetype)initWithConfiguration:(id<FBJSONSerializable>)configuration resultBundlePath:(NSString *)resultBundlePath coveragePath:(NSString *)coveragePath  binaryPath:(nullable NSString *)binaryPath reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue
+- (instancetype)initWithConfiguration:(id)configuration resultBundlePath:(NSString *)resultBundlePath coveragePath:(NSString *)coveragePath  binaryPath:(nullable NSString *)binaryPath reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -51,7 +51,7 @@
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Test Run (%@)", self.configuration.jsonSerializableRepresentation];
+  return [NSString stringWithFormat:@"Test Run (%@)", self.configuration];
 }
 
 @end
