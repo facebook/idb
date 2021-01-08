@@ -20,17 +20,6 @@
 
 @implementation FBSimulatorControlValueTypeTests
 
-- (void)testAppLaunchConfigurations
-{
-  NSArray<FBApplicationLaunchConfiguration *> *values = @[
-    self.safariAppLaunch,
-    self.tableSearchAppLaunch,
-  ];
-  [self assertEqualityOfCopy:values];
-  [self assertJSONSerialization:values];
-  [self assertJSONDeserialization:values];
-}
-
 - (void)testSimulatorConfigurations
 {
   NSArray<FBSimulatorConfiguration *> *values = @[

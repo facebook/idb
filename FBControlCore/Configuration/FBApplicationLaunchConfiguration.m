@@ -28,17 +28,6 @@ static NSString *LaunchModeStringFromLaunchMode(FBApplicationLaunchMode launchMo
   }
 }
 
-static FBApplicationLaunchMode LaunchModeFromLaunchModeString(NSString *string)
-{
-  if ([string isEqualToString:ForegroundIfRunning]) {
-    return FBApplicationLaunchModeForegroundIfRunning;
-  }
-  if ([string isEqualToString:RelaunchIfRunning]) {
-    return FBApplicationLaunchModeRelaunchIfRunning;
-  }
-  return FBApplicationLaunchModeFailIfRunning;
-}
-
 static NSString *const KeyBundleID = @"bundle_id";
 static NSString *const KeyBundleName = @"bundle_name";
 static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
@@ -63,34 +52,6 @@ static NSString *const KeyLaunchMode = @"launch_mode";
   }
 
   return [[self alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment waitForDebugger:NO output:output launchMode:launchMode];
-}
-
-+ (instancetype)inflateFromJSON:(id)json error:(NSError **)error
-{
-  NSString *bundleID = json[KeyBundleID];
-  if (![bundleID isKindOfClass:NSString.class]) {
-    return [[FBControlCoreError describeFormat:@"%@ is not a bundle_id", bundleID] fail:error];
-  }
-  NSString *bundleName = json[KeyBundleName];
-  if (bundleName && ![bundleName isKindOfClass:NSString.class]) {
-    return [[FBControlCoreError describeFormat:@"%@ is not a bundle_name", bundleName] fail:error];
-  }
-  NSNumber *waitForDebugger = json[KeyWaitForDebugger] ?: @NO;
-  if (![waitForDebugger isKindOfClass:NSNumber.class]) {
-    return [[FBControlCoreError describeFormat:@"%@ is not a boolean signalizing whether to wait for debugger", waitForDebugger] fail:error];
-  }
-  FBApplicationLaunchMode launchMode = LaunchModeFromLaunchModeString(json[KeyLaunchMode]);
-  NSArray<NSString *> *arguments = nil;
-  NSDictionary<NSString *, NSString *> *environment = nil;
-  FBProcessOutputConfiguration *output = nil;
-  if (![FBProcessLaunchConfiguration fromJSON:json extractArguments:&arguments environment:&environment output:&output error:error]) {
-    return nil;
-  }
-  if (waitForDebugger.boolValue && launchMode == FBApplicationLaunchModeForegroundIfRunning) {
-    *error = [FBControlCoreError errorForDescription:@"Can't wait for a debugger when launchMode = FBApplicationLaunchModeForegroundIfRunning"];
-    return nil;
-  }
-  return [[FBApplicationLaunchConfiguration alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment waitForDebugger:waitForDebugger.boolValue output:output launchMode:launchMode];
 }
 
 - (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output launchMode:(FBApplicationLaunchMode)launchMode
@@ -186,18 +147,6 @@ static NSString *const KeyLaunchMode = @"launch_mode";
     self.waitForDebugger == self.waitForDebugger &&
     self.launchMode == object.launchMode;
 
-}
-
-#pragma mark FBJSONSerializable
-
-- (NSDictionary *)jsonSerializableRepresentation
-{
-  NSMutableDictionary *representation = [[super jsonSerializableRepresentation] mutableCopy];
-  representation[KeyBundleID] = self.bundleID;
-  representation[KeyBundleName] = self.bundleName;
-  representation[KeyWaitForDebugger] = @(self.waitForDebugger);
-  representation[KeyLaunchMode] = LaunchModeStringFromLaunchMode(self.launchMode);
-  return [representation mutableCopy];
 }
 
 @end

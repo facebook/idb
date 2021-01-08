@@ -52,24 +52,4 @@
   }
 }
 
-- (void)testApplicationLaunch
-{
-  FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-    configurationWithBundleID:@"com.foo.bar"
-    bundleName:@"FooBar"
-    arguments:@[@"bar"]
-    environment:@{}
-    waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull];
-  id<FBEventReporterSubject> subject = [FBEventReporterSubject compositeSubjectWithArray:@[
-    [FBEventReporterSubject subjectWithName:FBEventNameLaunch type:FBEventTypeStarted value:appLaunch],
-    [FBEventReporterSubject subjectWithName:FBEventNameLaunch type:FBEventTypeEnded value:appLaunch],
-  ]];
-
-  [self assertSubject:subject hasJSONContents:@[
-    @{@"event_name" : @"launch", @"event_type" : @"started", @"subject": @{@"bundle_id" : @"com.foo.bar"}},
-    @{@"event_name" : @"launch", @"event_type" : @"ended", @"subject": @{@"bundle_id" : @"com.foo.bar"}},
-  ]];
-}
-
 @end
