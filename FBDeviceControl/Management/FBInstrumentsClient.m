@@ -125,8 +125,8 @@ static NSString *const DeviceInfoChannel = @"com.apple.instruments.server.servic
           continue;
         }
         NSNumber *pid = process[@"pid"];
-        NSString *processName = process[@"name"];
-        nameToPid[processName] = pid;
+        NSString *realAppName = process[@"realAppName"];
+        nameToPid[realAppName] = pid;
       }
       return nameToPid;
     }];

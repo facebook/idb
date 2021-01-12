@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Returns the list of running applications.
 
- @return a Dictionary, mapping process name to pid.
+ @return a Dictionary, mapping process realAppName to pid.
  */
 - (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningApplications;
 

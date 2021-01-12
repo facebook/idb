@@ -197,27 +197,35 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
 {
   return [[FBFuture
     futureWithFutures:@[
-      [self runningProcessNameToPID],
-      [self installedApplicationsData:FBDeviceApplicationCommands.namingLookupAttributes],
+      [self runningProcessPathToPID],
+      [self installedApplicationsData:FBDeviceApplicationCommands.pathLookupAttributes],
     ]]
     onQueue:self.device.asyncQueue map:^ NSDictionary<NSString *, NSNumber *> * (NSArray<id> *tuple) {
-      NSDictionary<NSString *, NSNumber *> *runningProcessNameToPID = tuple[0];
+      NSDictionary<NSString *, NSNumber *> *runningProcessRealAppNameToPID = tuple[0];
       NSDictionary<NSString *, id> *bundleIdentifierToAttributes = tuple[1];
-      NSMutableDictionary<NSString *, NSString *> *bundleNameToBundleIdentifier = NSMutableDictionary.dictionary;
+      NSMutableDictionary<NSString *, NSString *> *bundlePathToBundleIdentifier = NSMutableDictionary.dictionary;
       for (NSString *bundleIdentifier in bundleIdentifierToAttributes.allKeys) {
-        NSString *bundleName = bundleIdentifierToAttributes[bundleIdentifier][FBApplicationInstallInfoKeyBundleName];
-        bundleNameToBundleIdentifier[bundleName] = bundleIdentifier;
+        NSString *bundlePath = bundleIdentifierToAttributes[bundleIdentifier][FBApplicationInstallInfoKeyPath];
+        bundlePathToBundleIdentifier[bundlePath] = bundleIdentifier;
       }
-      NSMutableDictionary<NSString *, NSNumber *> *bundleNameToPID = NSMutableDictionary.dictionary;
-      for (NSString *processName in runningProcessNameToPID.allKeys) {
-        NSString *bundleName = bundleNameToBundleIdentifier[processName];
-        if (!bundleName) {
-          continue;
+      NSMutableDictionary<NSString *, NSNumber *> *bundleIdentifierToPID = NSMutableDictionary.dictionary;
+      for (NSString *processRealName in runningProcessRealAppNameToPID.allKeys) {
+        // processRealName points is the executable within the .app bundle (can it be nested more deeply?)
+        NSString *bundlePath = [processRealName stringByDeletingLastPathComponent];
+        NSString *bundleIdentifier = bundlePathToBundleIdentifier[bundlePath];
+        if (!bundleIdentifier) {
+          // '/private' is sometimes missing from the path
+          bundlePath = [@"/private" stringByAppendingString:bundlePath];
+          bundleIdentifier = bundlePathToBundleIdentifier[bundlePath];
+          if (!bundleIdentifier) {
+            [[self.device.logger debug] logFormat:@"Was not able to map realAppName \"%@\" of a running process to a bundle identifier", processRealName];
+            continue;
+          }
         }
-        NSNumber *pid = runningProcessNameToPID[processName];
-        bundleNameToPID[bundleName] = pid;
+        NSNumber *pid = runningProcessRealAppNameToPID[processRealName];
+        bundleIdentifierToPID[bundleIdentifier] = pid;
       }
-      return bundleNameToPID;
+      return bundleIdentifierToPID;
     }];
 }
 
@@ -406,7 +414,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
     }];
 }
 
-- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningProcessNameToPID
+- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningProcessPathToPID
 {
   return [[self
     remoteInstrumentsClient]
@@ -447,14 +455,14 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
   return lookupAttributes;
 }
 
-+ (NSArray<NSString *> *)namingLookupAttributes
++ (NSArray<NSString *> *)pathLookupAttributes
 {
   static dispatch_once_t onceToken;
   static NSArray<NSString *> *lookupAttributes = nil;
   dispatch_once(&onceToken, ^{
     lookupAttributes = @[
       FBApplicationInstallInfoKeyBundleIdentifier,
-      FBApplicationInstallInfoKeyBundleName,
+      FBApplicationInstallInfoKeyPath,
     ];
   });
   return lookupAttributes;
