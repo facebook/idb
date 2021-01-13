@@ -11,30 +11,30 @@ from typing import Dict, List, Optional
 
 class Command(metaclass=ABCMeta):
     @property
-    @abstractmethod
-    def description(self) -> str:
-        raise Exception("subclass")
-
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        raise Exception("subclass")
-
-    @property
     def aliases(self) -> List[str]:
         return []
-
-    @abstractmethod
-    def add_parser_arguments(self, parser: ArgumentParser) -> None:
-        raise Exception("subclass")
-
-    @abstractmethod
-    async def run(self, args: Namespace) -> None:
-        raise Exception("subclass")
 
     @property
     def allow_unknown_args(self) -> bool:
         return False
+
+    @property
+    @abstractmethod
+    def description(self) -> str:
+        ...
+
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        ...
+
+    @abstractmethod
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        ...
+
+    @abstractmethod
+    async def run(self, args: Namespace) -> None:
+        ...
 
 
 class CompositeCommand(Command, metaclass=ABCMeta):
