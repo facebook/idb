@@ -344,3 +344,35 @@ class FSShowCommand(FSCommand):
             async with aiofiles.open(destination_file, "rb") as f:
                 data = await f.read()
                 sys.stdout.buffer.write(data)
+
+
+class FSWriteCommand(FSCommand):
+    @property
+    def description(self) -> str:
+        return "Read stdin and write it to a remote file"
+
+    @property
+    def name(self) -> str:
+        return "write"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument("dst", help="Relatve container destination path", type=str)
+        super().add_parser_arguments(parser)
+
+    async def run_with_container(
+        self, container: FileContainer, args: Namespace, client: Client
+    ) -> None:
+        data = sys.stdin.buffer.read()
+        (destination_directory, destination_file_path) = os.path.split(args.dst)
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_file_path = os.path.join(
+                temporary_directory, destination_file_path
+            )
+            async with aiofiles.open(temporary_file_path, "wb") as f:
+                await f.write(data)
+            await client.push(
+                src_paths=[temporary_file_path],
+                container=container,
+                dest_path=destination_directory,
+            )

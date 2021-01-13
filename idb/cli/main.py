@@ -44,6 +44,7 @@ from idb.cli.commands.file import (
     FSMoveCommand,
     FSPullCommand,
     FSPushCommand,
+    FSWriteCommand,
     FSRemoveCommand,
     FSShowCommand,
 )
@@ -174,6 +175,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
                 FSRemoveCommand(),
                 FSListCommand(),
                 FSShowCommand(),
+                FSWriteCommand(),
             ],
         ),
         CommandGroup(
