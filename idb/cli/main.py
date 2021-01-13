@@ -160,7 +160,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
                 XctestInstallCommand(),
                 XctestsListBundlesCommand(),
                 XctestListTestsCommand(),
-                XctestRunCommand(),
+                XctestRunCommand,
             ],
         ),
         CommandGroup(

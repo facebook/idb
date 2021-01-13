@@ -9,7 +9,7 @@ from argparse import REMAINDER, ArgumentParser, Namespace
 from typing import List, Optional, Set
 
 from idb.cli import ClientCommand, Command
-from idb.common.command import CompositeCommand
+from idb.common.command import CommandGroup
 from idb.common.format import (
     human_format_installed_test_info,
     human_format_test_info,
@@ -317,29 +317,15 @@ class XctestRunLogicCommand(CommonRunXcTestCommand):
         return None
 
 
-class XctestRunCommand(CompositeCommand):
-    def __init__(self) -> None:
-        super().__init__()
-        self._subcommands: List[Command] = [
-            XctestRunAppCommand(),
-            XctestRunUICommand(),
-            XctestRunLogicCommand(),
-        ]
-
-    @property
-    def subcommands(self) -> List[Command]:
-        return self._subcommands
-
-    @property
-    def description(self) -> str:
-        return (
-            "Run an installed xctest. Any environment variables of the form IDB_X\n"
-            " will be passed through with the IDB_ prefix removed."
-        )
-
-    @property
-    def name(self) -> str:
-        return "run"
-
-    async def run_with_client(self, args: Namespace, client: Client) -> None:
-        await self.run(args)
+XctestRunCommand = CommandGroup(
+    name="run",
+    description=(
+        "Run an installed xctest. Any environment variables of the form IDB_X\n"
+        " will be passed through with the IDB_ prefix removed."
+    ),
+    commands=[
+        XctestRunAppCommand(),
+        XctestRunUICommand(),
+        XctestRunLogicCommand(),
+    ],
+)
