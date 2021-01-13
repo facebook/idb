@@ -314,14 +314,18 @@ class FSPullCommand(FSCommand):
         )
 
 
-class FSShowCommand(FSCommand):
+class FBSReadCommand(FSCommand):
     @property
     def description(self) -> str:
-        return "Write the contents of a remote file to stdout"
+        return "Read the contents of a remote file and write it to stdout"
 
     @property
     def name(self) -> str:
-        return "show"
+        return "read"
+
+    @property
+    def aliases(self) -> List[str]:
+        return ["show"]
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
