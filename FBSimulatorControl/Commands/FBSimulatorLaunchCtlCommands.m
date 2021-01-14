@@ -10,8 +10,6 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimRuntime.h>
 
-#import <FBControlCore/FBControlCore.h>
-
 #import "FBAgentLaunchStrategy.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
@@ -87,10 +85,12 @@
   return [[self
     runWithArguments:@[@"list"]]
     onQueue:self.simulator.asyncQueue fmap:^(NSString *text) {
-      FBLogSearchPredicate *predicate = [FBLogSearchPredicate substrings:@[substring]];
-      FBLogSearch *search = [FBLogSearch withText:text predicate:predicate];
+      NSArray<NSString *> *lines = [text componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
       NSMutableDictionary<NSString *, NSNumber *> *mapping = [NSMutableDictionary dictionary];
-      for (NSString *line in search.matchingLines) {
+      for (NSString *line in lines) {
+        if (![line containsString:substring]) {
+          continue;
+        }
         NSError *error = nil;
         pid_t processIdentifier = 0;
         NSString *serviceName = [FBSimulatorLaunchCtlCommands extractServiceNameFromListLine:line processIdentifierOut:&processIdentifier error:&error];
