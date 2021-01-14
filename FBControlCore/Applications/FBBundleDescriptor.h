@@ -7,9 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBFuture.h>
-#import <FBControlCore/FBJSONConversion.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -20,9 +18,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Concrete value wrapper around a Bundle on disk.
- Unlike NSBundle, FBBundleDescriptor is serializable. It represents the meta-information about a bundle, not the reified bundle instance itself.
  */
-@interface FBBundleDescriptor : NSObject <NSCopying, FBJSONSerializable, FBDebugDescribeable>
+@interface FBBundleDescriptor : NSObject <NSCopying>
 
 #pragma mark Initializers
 

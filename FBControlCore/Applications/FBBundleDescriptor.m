@@ -105,46 +105,13 @@
   return self.name.hash | self.path.hash | self.identifier.hash | self.binary.hash;
 }
 
-#pragma mark FBDebugDescribeable
-
 - (NSString *)description
-{
-  return [self shortDescription];
-}
-
-- (NSString *)shortDescription
 {
   return [NSString stringWithFormat:
     @"Name: %@ | ID: %@",
     self.name,
     self.identifier
   ];
-}
-
-- (NSString *)debugDescription
-{
-  return [NSString stringWithFormat:
-    @"%@ | Path: %@ | Binary (%@)",
-    self.shortDescription,
-    self.path,
-    self.binary
-  ];
-}
-
-#pragma mark FBJSONSerializable
-
-- (NSDictionary *)jsonSerializableRepresentation
-{
-  NSMutableDictionary *result = [[NSMutableDictionary alloc] init];
-
-  result[@"name"] = self.name;
-  result[@"bundle_id"] = self.identifier;
-  result[@"path"] = self.path;
-  if (self.binary) {
-    result[@"binary"] = self.binary.jsonSerializableRepresentation;
-  }
-
-  return result;
 }
 
 #pragma mark Public Methods

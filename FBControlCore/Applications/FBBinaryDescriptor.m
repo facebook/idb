@@ -437,34 +437,6 @@ static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic)
   ];
 }
 
-#pragma mark JSON Conversion
-
-+ (FBBinaryDescriptor *)inflateFromJSON:(id)json error:(NSError **)error
-{
-  NSString *path = json[@"path"];
-  if (![path isKindOfClass:NSString.class]) {
-    return [[FBControlCoreError describeFormat:@"%@ is not a valid binary path", path] fail:error];
-  }
-  NSError *innerError = nil;
-  FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:path error:&innerError];
-  if (!binary) {
-    return [[[FBControlCoreError
-      describeFormat:@"Could not create binary from path %@", path]
-      causedBy:innerError]
-      fail:error];
-  }
-  return binary;
-}
-
-- (NSDictionary *)jsonSerializableRepresentation
-{
-  return @{
-    @"name" : self.name,
-    @"path" : self.path,
-    @"architectures" : self.architectures.allObjects,
-  };
-}
-
 #pragma mark Public Methods
 
 - (NSArray<NSString *> *)rpathsWithError:(NSError **)error

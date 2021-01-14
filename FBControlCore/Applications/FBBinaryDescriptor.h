@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBJSONConversion.h>
-
 NS_ASSUME_NONNULL_BEGIN
 
 typedef NSString *FBBinaryArchitecture NS_STRING_ENUM;
@@ -21,7 +19,7 @@ extern FBBinaryArchitecture const FBBinaryArchitectureArm64;
 /**
  Concrete value wrapper around a binary artifact.
  */
-@interface FBBinaryDescriptor : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+@interface FBBinaryDescriptor : NSObject <NSCopying>
 
 #pragma mark Initializers
 
