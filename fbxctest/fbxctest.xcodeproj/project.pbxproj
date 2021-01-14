@@ -23,7 +23,6 @@
 		AA24FFB81D4A6DEA00B429CD /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = AA24FFAE1D4A6DEA00B429CD /* main.m */; };
 		AA2CEBB01D65C57F0051962D /* FBXCTestSimulatorFetcher.h in Headers */ = {isa = PBXBuildFile; fileRef = AA2CEBAE1D65C57F0051962D /* FBXCTestSimulatorFetcher.h */; };
 		AA2CEBB11D65C57F0051962D /* FBXCTestSimulatorFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2CEBAF1D65C57F0051962D /* FBXCTestSimulatorFetcher.m */; };
-		AA4417E4202A33B800368C1D /* FBXCTestDestinationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA4417E3202A33B800368C1D /* FBXCTestDestinationTests.m */; };
 		AA719E4F1D672DFC00947611 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA719E4E1D672DFC00947611 /* Foundation.framework */; };
 		AA8C727D1EB11019004320A8 /* FBXCTestCommandLine.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8C727B1EB11019004320A8 /* FBXCTestCommandLine.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA8C727E1EB11019004320A8 /* FBXCTestCommandLine.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8C727C1EB11019004320A8 /* FBXCTestCommandLine.m */; };
@@ -105,7 +104,6 @@
 		AA24FFC01D4A70BE00B429CD /* XCTestBootstrap.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTestBootstrap.framework; path = "../../../../../../Library/Developer/Xcode/DerivedData/fbxctest-eyhjyfgpghlzbnamzfzbhruxwscz/Build/Products/Debug/XCTestBootstrap.framework"; sourceTree = "<group>"; };
 		AA2CEBAE1D65C57F0051962D /* FBXCTestSimulatorFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestSimulatorFetcher.h; sourceTree = "<group>"; };
 		AA2CEBAF1D65C57F0051962D /* FBXCTestSimulatorFetcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestSimulatorFetcher.m; sourceTree = "<group>"; };
-		AA4417E3202A33B800368C1D /* FBXCTestDestinationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestDestinationTests.m; sourceTree = "<group>"; };
 		AA719E4E1D672DFC00947611 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		AA8C727B1EB11019004320A8 /* FBXCTestCommandLine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestCommandLine.h; sourceTree = "<group>"; };
 		AA8C727C1EB11019004320A8 /* FBXCTestCommandLine.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestCommandLine.m; sourceTree = "<group>"; };
@@ -236,7 +234,6 @@
 				EE0E343B1FAC7FCF0052AA1A /* FBiOSUITestConfigurationTests.m */,
 				EE0E34361FAC7CD90052AA1A /* FBOSXLogicTestConfigurationTests.m */,
 				EE737DC21FACD127005DF1F3 /* FBOSXUITestConfigurationTests.m */,
-				AA4417E3202A33B800368C1D /* FBXCTestDestinationTests.m */,
 			);
 			path = Unit;
 			sourceTree = "<group>";
@@ -429,6 +426,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = AA24FF8F1D4A6D8500B429CD;
@@ -490,7 +488,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0639461D999081004B3D12 /* FBControlCoreValueTestCase.m in Sources */,
-				AA4417E4202A33B800368C1D /* FBXCTestDestinationTests.m in Sources */,
 				EE0E343C1FAC7FCF0052AA1A /* FBiOSUITestConfigurationTests.m in Sources */,
 				EE0E34391FAC7CD90052AA1A /* FBOSXLogicTestConfigurationTests.m in Sources */,
 				050D46231D6074090038F72D /* FBXCTestKitIntegrationTests.m in Sources */,

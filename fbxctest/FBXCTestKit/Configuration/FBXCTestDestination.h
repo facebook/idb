@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Base Destination.
  */
-@interface FBXCTestDestination : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+@interface FBXCTestDestination : NSObject <NSCopying>
 
 @end
 
