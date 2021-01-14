@@ -285,22 +285,6 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark Public
 
-- (FBFuture<FBVideoStreamAttributes *> *)streamAttributes
-{
-  return [[self
-    attachConsumerIfNeeded]
-    onQueue:self.writeQueue fmap:^ FBFuture<FBVideoStreamAttributes *> * (id _) {
-      NSDictionary<NSString *, id> *dictionary = self.pixelBufferAttributes;
-      if (!dictionary) {
-        return [[FBSimulatorError
-          describe:@"Could not obtain stream attributes"]
-          failFuture];
-      }
-      FBVideoStreamAttributes *attributes = [[FBVideoStreamAttributes alloc] initWithAttributes:dictionary];
-      return [FBFuture futureWithResult:attributes];
-    }];
-}
-
 - (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer
 {
   return [[FBFuture

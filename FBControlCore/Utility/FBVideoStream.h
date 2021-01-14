@@ -8,27 +8,9 @@
 #import <Foundation/Foundation.h>
 #import <CoreMedia/CoreMedia.h>
 
-#import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBiOSTargetOperation.h>
 
 NS_ASSUME_NONNULL_BEGIN
-
-/**
- A Value container for Stream Attributes.
- */
-@interface FBVideoStreamAttributes : NSObject <FBJSONSerializable>
-
-/**
- The Underlying Dictionary Representation.
- */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *attributes;
-
-/**
- The Designated Initializer
- */
-- (instancetype)initWithAttributes:(NSDictionary<NSString *, id> *)attributes;
-
-@end
 
 @protocol FBDataConsumer;
 @protocol FBDataConsumerStackConsuming;
@@ -39,13 +21,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBVideoStream <FBiOSTargetOperation>
 
 #pragma mark Public Methods
-
-/**
- Obtains a Dictonary Describing the Attributes of the Stream.
-
- @return a Future wrapping the stream attributes.
- */
-- (FBFuture<FBVideoStreamAttributes *> *)streamAttributes;
 
 /**
  Starts the Streaming, to a Data Consumer.
