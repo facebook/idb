@@ -118,9 +118,9 @@
 - (BOOL)writeTargets
 {
   NSError *error = nil;
-  NSMutableArray<id<FBJSONSerializable>> *jsonArray = [[NSMutableArray alloc] init];
+  NSMutableArray<NSDictionary<NSString *, id> *> *jsonArray = [[NSMutableArray alloc] init];
   for (FBiOSTargetDescription *target in self.current.allValues) {
-    [jsonArray addObject:target.jsonSerializableRepresentation];
+    [jsonArray addObject:target.asJSON];
   }
   NSData *data = [NSJSONSerialization dataWithJSONObject:jsonArray options:0 error:&error];
   if (!data) {

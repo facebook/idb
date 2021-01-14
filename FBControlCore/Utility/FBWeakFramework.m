@@ -345,16 +345,4 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   return YES;
 }
 
-- (NSString *)debugDescription
-{
-  return [NSString stringWithFormat:
-    @"Name %@ | Base Path %@ | Relative Path %@ | Required Classes %@ | Required Frameworks [%@]",
-    self.name,
-    self.basePath,
-    self.relativePath,
-    self.requiredClassNames,
-    self.requiredFrameworks
-  ];
-}
-
 @end

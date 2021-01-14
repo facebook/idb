@@ -9,12 +9,10 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@protocol FBJSONSerializable, FBJSONDeserializable;
-
 /**
  A value type that holds values for serializing a target information in idb
  */
-@interface FBiOSTargetDescription : NSObject <FBJSONSerializable, NSCopying>
+@interface FBiOSTargetDescription : NSObject <NSCopying>
 
 /**
  The Designated Initializer.
@@ -28,5 +26,10 @@
  The UDID of the Target.
 */
 @property (nonatomic, copy, readonly) NSString *udid;
+
+/**
+ A JSON Dictionary representing the target description.
+ */
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *asJSON;
 
 @end

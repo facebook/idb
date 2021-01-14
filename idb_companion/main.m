@@ -78,7 +78,7 @@ static void WriteJSONToStdOut(id json)
 
 static void WriteTargetToStdOut(id<FBiOSTargetInfo> target)
 {
-  WriteJSONToStdOut([[FBiOSTargetDescription alloc] initWithTarget:target].jsonSerializableRepresentation);
+  WriteJSONToStdOut([[FBiOSTargetDescription alloc] initWithTarget:target].asJSON);
 }
 
 static FBFuture<FBSimulatorSet *> *SimulatorSetWithPath(NSString *deviceSetPath, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)

@@ -30,7 +30,6 @@
 #import <FBControlCore/FBCrashLogStore.h>
 #import <FBControlCore/FBDataBuffer.h>
 #import <FBControlCore/FBDataConsumer.h>
-#import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBDebuggerCommands.h>
 #import <FBControlCore/FBDeveloperDiskImage.h>
 #import <FBControlCore/FBDeveloperDiskImageCommands.h>
@@ -59,7 +58,6 @@
 #import <FBControlCore/FBiOSTargetPredicates.h>
 #import <FBControlCore/FBiOSTargetQuery.h>
 #import <FBControlCore/FBiOSTargetSet.h>
-#import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBLaunchedProcess.h>
 #import <FBControlCore/FBLocalizationOverride.h>
 #import <FBControlCore/FBLocationCommands.h>

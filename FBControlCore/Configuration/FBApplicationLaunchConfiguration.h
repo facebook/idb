@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBiOSTargetOperation.h>
-#import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
 
 @class FBBinaryDescriptor;

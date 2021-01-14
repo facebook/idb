@@ -67,7 +67,7 @@ static NSString *const KeyState = @"state";
 static NSString *const KeyType = @"type";
 static NSString *const KeyUDID = @"udid";
 
-- (NSDictionary<NSString *, id> *)jsonSerializableRepresentation
+- (NSDictionary<NSString *, id> *)asJSON
 {
   NSMutableDictionary<NSString *, id> *representation = [NSMutableDictionary dictionaryWithDictionary:@{
     KeyArchitecture : self.architecture ?: NSNull.null,

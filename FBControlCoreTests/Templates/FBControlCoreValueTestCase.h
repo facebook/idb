@@ -21,19 +21,4 @@
  */
 - (void)assertEqualityOfCopy:(NSArray<NSObject *> *)values;
 
-/**
- Asserts that values can be JSON Serialized
- */
-- (void)assertJSONSerialization:(NSArray<id<FBJSONSerializable>> *)values;
-
-/**
- Asserts that values can be serialized and deserialized via json.
- */
-- (void)assertJSONDeserialization:(NSArray<id<FBJSONDeserializable>> *)values;
-
-/**
- Asserts that configuration has correct semantics
- */
-- (void)assertValueSemanticsOfConfiguration:(id<NSObject, FBJSONSerializable, FBJSONDeserializable, NSCopying>)configuration;
-
 @end

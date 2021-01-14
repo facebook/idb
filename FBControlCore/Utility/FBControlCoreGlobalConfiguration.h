@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBJSONConversion.h>
-
 @protocol FBControlCoreLogger;
 
 NS_ASSUME_NONNULL_BEGIN
