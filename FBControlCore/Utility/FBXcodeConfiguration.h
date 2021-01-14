@@ -7,15 +7,13 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBJSONConversion.h>
-
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  XCode constants.
  These values can be accessed before the Private Frameworks are loaded.
  */
-@interface FBXcodeConfiguration : NSObject <FBJSONSerializable>
+@interface FBXcodeConfiguration : NSObject
 
 /**
  The File Path to of Xcode's /Xcode.app/Contents/Developer directory.

@@ -46,7 +46,7 @@
   arguments = [arguments subarrayWithRange:NSMakeRange(1, [arguments count] - 1)];
   [self.logger.debug logFormat:@"fbxctest arguments: %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
   [self.logger.debug logFormat:@"fbxtest pid: %i", NSProcessInfo.processInfo.processIdentifier];
-  [self.logger.debug logFormat:@"xcode configuration: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:FBXcodeConfiguration.new.jsonSerializableRepresentation]];
+  [self.logger.debug logFormat:@"xcode configuration: %@", FBXcodeConfiguration.description];
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine
     commandLineFromArguments:arguments
     processUnderTestEnvironment:@{}

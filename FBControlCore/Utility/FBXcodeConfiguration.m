@@ -114,17 +114,6 @@
   return [FBXcodeConfiguration description];
 }
 
-#pragma mark FBJSONConversion
-
-- (id)jsonSerializableRepresentation
-{
-  return @{
-     @"developer_directory" : FBXcodeConfiguration.developerDirectory,
-     @"xcode_version" : FBXcodeConfiguration.xcodeVersionNumber,
-     @"ios_sdk_version" : FBXcodeConfiguration.iosSDKVersionNumber,
-  };
-}
-
 #pragma mark Private
 
 + (NSString *)iPhoneSimulatorPlatformInfoPlistPath
