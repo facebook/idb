@@ -37,8 +37,6 @@
 #import <FBControlCore/FBDiagnosticInformationCommands.h>
 #import <FBControlCore/FBDispatchSourceNotifier.h>
 #import <FBControlCore/FBEraseCommands.h>
-#import <FBControlCore/FBEventConstants.h>
-#import <FBControlCore/FBEventInterpreter.h>
 #import <FBControlCore/FBEventReporter.h>
 #import <FBControlCore/FBEventReporterSubject.h>
 #import <FBControlCore/FBFileCommands.h>

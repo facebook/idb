@@ -10,6 +10,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import <objc/runtime.h>
+#import <asl.h>
 
 #import "FBDeviceControlError.h"
 

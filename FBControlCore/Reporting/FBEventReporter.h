@@ -7,14 +7,9 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBEventConstants.h>
-#import <FBControlCore/FBJSONConversion.h>
-
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBEventInterpreter;
-@protocol FBDataConsumer;
-@protocol FBEventReporterSubject;
+@class FBEventReporterSubject;
 
 /**
  An Event Reporter Protocol to interface to event reporting.
@@ -26,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param subject the subject to report.
  */
-- (void)report:(id<FBEventReporterSubject>)subject;
+- (void)report:(FBEventReporterSubject *)subject;
 
 /**
  Add metadata to attach to each report.
@@ -39,32 +34,6 @@ NS_ASSUME_NONNULL_BEGIN
  Gets the total metadata.
  */
 @property (nonatomic, strong, readonly) NSDictionary<NSString *, NSString *> *metadata;
-
-@end
-
-/**
- An implementation of an FBEventReporter, by composing other protocols.
- */
-@interface FBEventReporter : NSObject <FBEventReporter>
-
-/**
- The Designated Initializer
-
- @param interpreter the interpreter to use.
- @param consumer the consumer to write to.
- @return a new Event Reporter.
- */
-+ (id<FBEventReporter>)reporterWithInterpreter:(id<FBEventInterpreter>)interpreter consumer:(id<FBDataConsumer>)consumer;
-
-/**
- The Event Interpreter.
- */
-@property (nonatomic, strong, readonly) id<FBEventInterpreter> interpreter;
-
-/**
- The Consumer
- */
-@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
 
 @end
 

@@ -69,7 +69,7 @@
   NSDate *startDate = NSDate.date;
   NSString *methodName = [self.class methodName:invocation simplifiedNaming:self.simplifiedNaming];
   NSArray<NSString *> *descriptionOfArguments = [self.class descriptionOfArguments:invocation];
-  id<FBEventReporterSubject> beforeSubject = [self.class subjectForBeforeInvocation:methodName descriptionOfArguments:descriptionOfArguments logger:self.logger];
+  FBEventReporterSubject *beforeSubject = [self.class subjectForBeforeInvocation:methodName descriptionOfArguments:descriptionOfArguments logger:self.logger];
   [self.eventReporter report:beforeSubject];
 
   // Extract the first method argument and retain it, if it exists
@@ -89,7 +89,7 @@
   // Log the end of the call when the future resolves.
   if ([future isKindOfClass:FBFuture.class]) {
     [future onQueue:self.queue notifyOfCompletion:^(FBFuture *completedFuture) {
-      id<FBEventReporterSubject> afterSubject = [self.class subjectAfterCompletion:completedFuture methodName:methodName descriptionOfArguments:descriptionOfArguments startDate:startDate firstMethodArgument:firstMethodArgument logger:self.logger];
+      FBEventReporterSubject *afterSubject = [self.class subjectAfterCompletion:completedFuture methodName:methodName descriptionOfArguments:descriptionOfArguments startDate:startDate firstMethodArgument:firstMethodArgument logger:self.logger];
       [self.eventReporter report:afterSubject];
     }];
   }
@@ -97,13 +97,13 @@
 
 #pragma mark - Subjects
 
-+ (id<FBEventReporterSubject>)subjectForBeforeInvocation:(NSString *)methodName descriptionOfArguments:(NSArray<NSString *> *)descriptionOfArguments logger:(id<FBControlCoreLogger>)logger
++ (FBEventReporterSubject *)subjectForBeforeInvocation:(NSString *)methodName descriptionOfArguments:(NSArray<NSString *> *)descriptionOfArguments logger:(id<FBControlCoreLogger>)logger
 {
   [logger.info logFormat:@"%@ called with: %@", methodName, [FBCollectionInformation oneLineDescriptionFromArray:descriptionOfArguments]];
   return [FBEventReporterSubject subjectForStartedCall:methodName arguments:descriptionOfArguments];
 }
 
-+ (id<FBEventReporterSubject>)subjectAfterCompletion:(FBFuture *)future methodName:(NSString *)methodName descriptionOfArguments:(NSArray<NSString *> *)descriptionOfArguments startDate:(NSDate *)startDate firstMethodArgument:(id)firstMethodArgument logger:(id<FBControlCoreLogger>)logger
++ (FBEventReporterSubject *)subjectAfterCompletion:(FBFuture *)future methodName:(NSString *)methodName descriptionOfArguments:(NSArray<NSString *> *)descriptionOfArguments startDate:(NSDate *)startDate firstMethodArgument:(id)firstMethodArgument logger:(id<FBControlCoreLogger>)logger
 {
   NSTimeInterval duration = [NSDate.date timeIntervalSinceDate:startDate];
   NSError *error = future.error;
