@@ -10,29 +10,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-static NSString *const FailIfRunning = @"fail_if_running";
-static NSString *const ForegroundIfRunning = @"foreground_if_running";
-static NSString *const RelaunchIfRunning = @"foreground_if_running";
-
-static NSString *LaunchModeStringFromLaunchMode(FBApplicationLaunchMode launchMode)
-{
-  switch (launchMode){
-    case FBApplicationLaunchModeFailIfRunning:
-      return FailIfRunning;
-    case FBApplicationLaunchModeForegroundIfRunning:
-      return ForegroundIfRunning;
-    case FBApplicationLaunchModeRelaunchIfRunning:
-      return RelaunchIfRunning;
-    default:
-      return @"unknown";
-  }
-}
-
-static NSString *const KeyBundleID = @"bundle_id";
-static NSString *const KeyBundleName = @"bundle_name";
-static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
-static NSString *const KeyLaunchMode = @"launch_mode";
-
 @implementation FBApplicationLaunchConfiguration
 
 + (instancetype)configurationWithApplication:(FBBundleDescriptor *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output
@@ -98,26 +75,6 @@ static NSString *const KeyLaunchMode = @"launch_mode";
     launchMode:self.launchMode];
 }
 
-#pragma mark Abstract Methods
-
-- (NSString *)debugDescription
-{
-  return [NSString stringWithFormat:
-    @"%@ | Arguments %@ | Environment %@ | WaitForDebugger %@ | LaunchMode %@ | Output %@",
-    self.shortDescription,
-    [FBCollectionInformation oneLineDescriptionFromArray:self.arguments],
-    [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
-    self.waitForDebugger != 0 ? @"YES" : @"NO",
-    LaunchModeStringFromLaunchMode(self.launchMode),
-    self.output
-  ];
-}
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:@"App Launch %@ (%@)", self.bundleID, self.bundleName];
-}
-
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
@@ -146,7 +103,11 @@ static NSString *const KeyLaunchMode = @"launch_mode";
     (self.bundleName == object.bundleName || [self.bundleName isEqual:object.bundleName]) &&
     self.waitForDebugger == self.waitForDebugger &&
     self.launchMode == object.launchMode;
+}
 
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"App Launch %@ (%@)", self.bundleID, self.bundleName];
 }
 
 @end

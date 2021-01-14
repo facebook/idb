@@ -79,23 +79,4 @@ static NSString *const KeyOutput = @"output";
   return nil;
 }
 
-#pragma mark FBDebugDescribeable
-
-- (NSString *)shortDescription
-{
-  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (NSString *)debugDescription
-{
-  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (NSString *)description
-{
-  return [self debugDescription];
-}
-
 @end

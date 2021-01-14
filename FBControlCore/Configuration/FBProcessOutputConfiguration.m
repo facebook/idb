@@ -107,29 +107,6 @@ NSString *const FBProcessOutputToFileDefaultLocation = @"FBProcessOutputToFileDe
   return [NSString stringWithFormat:@"StdOut %@ | StdErr %@", self.stdOut, self.stdErr];
 }
 
-#pragma mark FBJSONSerializable
-
-static NSString *StdOutKey = @"stdout";
-static NSString *StdErrKey = @"stderr";
-
-+ (instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
-{
-  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"Process Output Configuration is not an Dictionary<String, Null|String> for %@", json]
-      fail:error];
-  }
-  return [self configurationWithStdOut:json[StdOutKey] stdErr:json[StdErrKey] error:error];
-}
-
-- (NSDictionary *)jsonSerializableRepresentation
-{
-  return @{
-    @"stdout": self.stdOut,
-    @"stderr": self.stdErr,
-  };
-}
-
 #pragma mark Private
 
 #pragma clang diagnostic push

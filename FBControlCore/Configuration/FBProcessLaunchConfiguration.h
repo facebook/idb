@@ -7,9 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBJSONConversion.h>
-#import <FBControlCore/FBDebugDescribeable.h>
-
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBBinaryDescriptor;
@@ -18,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An abstract value object for launching both agents and applications
  */
-@interface FBProcessLaunchConfiguration : NSObject <NSCopying, FBDebugDescribeable>
+@interface FBProcessLaunchConfiguration : NSObject <NSCopying>
 
 /**
  An NSArray<NSString *> of arguments to the process. Will not be nil.

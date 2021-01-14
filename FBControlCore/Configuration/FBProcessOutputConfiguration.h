@@ -23,7 +23,7 @@ extern NSString *const FBProcessOutputToFileDefaultLocation;
 /**
  The Output Configuration for a Process.
  */
-@interface FBProcessOutputConfiguration : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+@interface FBProcessOutputConfiguration : NSObject <NSCopying>
 
 #pragma mark Initializers
 

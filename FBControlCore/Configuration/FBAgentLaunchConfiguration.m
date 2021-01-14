@@ -10,8 +10,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-static NSString *const KeyBinary = @"binary";
-
 @implementation FBAgentLaunchConfiguration
 
 + (instancetype)configurationWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output mode:(FBAgentLaunchMode)mode
@@ -41,22 +39,6 @@ static NSString *const KeyBinary = @"binary";
   return self.agentBinary.path;
 }
 
-- (NSString *)debugDescription
-{
-  return [NSString stringWithFormat:
-    @"Agent Launch | Binary %@ | Arguments %@ | Environment %@ | Output %@",
-    self.agentBinary,
-    [FBCollectionInformation oneLineDescriptionFromArray:self.arguments],
-    [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
-    self.output
-  ];
-}
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:@"Agent Launch %@", self.agentBinary.name];
-}
-
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
@@ -81,6 +63,17 @@ static NSString *const KeyBinary = @"binary";
          [self.arguments isEqual:object.arguments] &&
          [self.environment isEqual:object.environment] &&
          self.mode == object.mode;
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Agent Launch | Binary %@ | Arguments %@ | Environment %@ | Output %@",
+    self.agentBinary,
+    [FBCollectionInformation oneLineDescriptionFromArray:self.arguments],
+    [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
+    self.output
+  ];
 }
 
 @end

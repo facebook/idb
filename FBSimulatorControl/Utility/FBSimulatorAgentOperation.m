@@ -117,7 +117,7 @@
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Agent Operation %@ | pid %d | State %@", self.configuration.shortDescription, self.processIdentifier, self.processStatus];
+  return [NSString stringWithFormat:@"Agent Operation %@ | pid %d | State %@", self.configuration.description, self.processIdentifier, self.processStatus];
 }
 
 @end

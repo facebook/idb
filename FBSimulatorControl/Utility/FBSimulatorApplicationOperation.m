@@ -79,7 +79,7 @@
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Application Operation %@ | pid %d | State %@", self.configuration.shortDescription, self.processIdentifier, self.completed];
+  return [NSString stringWithFormat:@"Application Operation %@ | pid %d | State %@", self.configuration.description, self.processIdentifier, self.completed];
 }
 
 #pragma mark Private
