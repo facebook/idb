@@ -26,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
  These arguments can be nil, but will not change during the lifetime of a connection.
  The 'Simulator Bridge' connection can be established lazily, that is to say the Bridge Connection can be made *after* the connection is created.
  */
-@interface FBSimulatorConnection : NSObject  <FBJSONSerializable>
+@interface FBSimulatorConnection : NSObject
 
 #pragma mark Initializers
 

@@ -69,17 +69,6 @@
   ];
 }
 
-#pragma mark FBJSONSerializable Implementation
-
-- (id)jsonSerializableRepresentation
-{
-  return @{
-    @"framebuffer" : self.framebuffer.jsonSerializableRepresentation ?: NSNull.null,
-    @"hid" : self.hid.jsonSerializableRepresentation ?: NSNull.null,
-    @"bridge" : self.bridge.jsonSerializableRepresentation ?: NSNull.null,
-  };
-}
-
 #pragma mark Lifecycle
 
 - (FBFuture<FBSimulatorBridge *> *)connectToBridge
