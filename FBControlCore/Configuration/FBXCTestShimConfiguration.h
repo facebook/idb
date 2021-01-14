@@ -19,7 +19,7 @@ extern NSString *const FBXCTestShimDirectoryEnvironmentOverride;
 /**
  A Configuration object for the location of the Test Shims.
  */
-@interface FBXCTestShimConfiguration : NSObject <FBJSONSerializable, FBJSONDeserializable, NSCopying>
+@interface FBXCTestShimConfiguration : NSObject <NSCopying>
 
 /**
  Constructs a Shim Configuration from the default base directory.

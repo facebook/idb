@@ -194,36 +194,4 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
   return self.iOSSimulatorTestShimPath.hash ^ self.macOSTestShimPath.hash;
 }
 
-#pragma mark JSON
-
-+ (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, NSString *> *)json error:(NSError **)error
-{
-  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSString.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ is not a Dictionary<String, String>", json]
-      fail:error];
-  }
-  NSString *simulatorTestShim = json[KeySimulatorTestShim];
-  if (![simulatorTestShim isKindOfClass:NSString.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ is not a String for %@", simulatorTestShim, KeySimulatorTestShim]
-      fail:error];
-  }
-  NSString *macTestShim = json[KeyMacTestShim];
-  if (![macTestShim isKindOfClass:NSString.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ is not a String for %@", macTestShim, KeyMacTestShim]
-      fail:error];
-  }
-  return [[FBXCTestShimConfiguration alloc] initWithiOSSimulatorTestShimPath:simulatorTestShim macOSTestShimPath:macTestShim];
-}
-
-- (id)jsonSerializableRepresentation
-{
-  return @{
-    KeySimulatorTestShim: self.iOSSimulatorTestShimPath,
-    KeyMacTestShim: self.macOSTestShimPath,
-  };
-}
-
 @end
