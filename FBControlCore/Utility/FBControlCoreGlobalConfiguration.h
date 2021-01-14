@@ -27,7 +27,7 @@ extern NSString *const FBControlCoreDebugLogging;
  Environment Globals & other derived constants.
  These values can be accessed before the Private Frameworks are loaded.
  */
-@interface FBControlCoreGlobalConfiguration : NSObject <FBJSONSerializable>
+@interface FBControlCoreGlobalConfiguration : NSObject
 
 /**
  A Timeout Value when waiting on events that should happen 'fast'

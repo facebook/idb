@@ -66,13 +66,6 @@ static id<FBControlCoreLogger> logger;
   return [FBControlCoreGlobalConfiguration description];
 }
 
-#pragma mark FBJSONConversion
-
-- (id)jsonSerializableRepresentation
-{
-  return @{};
-}
-
 #pragma mark Private
 
 + (id<FBControlCoreLogger>)createDefaultLogger
