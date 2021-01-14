@@ -25,7 +25,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
 /**
  A Value object with the information required to create a Simulator Pool.
  */
-@interface FBSimulatorControlConfiguration : NSObject <NSCopying, FBJSONSerializable, FBDebugDescribeable>
+@interface FBSimulatorControlConfiguration : NSObject <NSCopying>
 
 /**
  Creates and returns a new Configuration with the provided parameters.

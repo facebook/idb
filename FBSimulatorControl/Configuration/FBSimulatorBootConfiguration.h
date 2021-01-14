@@ -26,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Value Object for defining how to launch a Simulator.
  */
-@interface FBSimulatorBootConfiguration : NSObject <NSCopying, FBDebugDescribeable>
+@interface FBSimulatorBootConfiguration : NSObject <NSCopying>
 
 /**
  Options for how the Simulator should be launched.

@@ -78,8 +78,6 @@ static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsV
   return self.options ^ self.environment.hash ^ self.scale.hash ^ self.localizationOverride.hash ^ self.framebuffer.hash;
 }
 
-#pragma mark FBDebugDescribeable
-
 - (NSString *)description
 {
   return [NSString stringWithFormat:
@@ -90,16 +88,6 @@ static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsV
     [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorBootConfiguration stringsFromBootOptions:self.options]],
     self.framebuffer ?: @"No Framebuffer"
   ];
-}
-
-- (NSString *)shortDescription
-{
-  return [self description];
-}
-
-- (NSString *)debugDescription
-{
-  return [self description];
 }
 
 #pragma mark Accessors

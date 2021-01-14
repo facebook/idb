@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
  This is helpful when creating a device from something specified in an Environment Variable:
  `[FBSimulatorConfiguration.iPhone5 iOS:NSProcessInfo.processInfo.environment[@"TARGET_OS"]]`
  */
-@interface FBSimulatorConfiguration : NSObject <NSCopying, FBJSONSerializable, FBDebugDescribeable>
+@interface FBSimulatorConfiguration : NSObject <NSCopying>
 
 #pragma mark Properties
 

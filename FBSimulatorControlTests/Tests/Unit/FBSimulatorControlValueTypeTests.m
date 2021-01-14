@@ -20,34 +20,6 @@
 
 @implementation FBSimulatorControlValueTypeTests
 
-- (void)testSimulatorConfigurations
-{
-  NSArray<FBSimulatorConfiguration *> *values = @[
-    FBSimulatorConfiguration.defaultConfiguration,
-    [FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel],
-    [[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPadModel] withOSNamed:FBOSVersionNameiOS_8_3],
-  ];
-  [self assertEqualityOfCopy:values];
-
-  [self assertJSONSerialization:values];
-}
-
-- (void)testControlConfigurations
-{
-  NSArray<FBSimulatorControlConfiguration *> *values = @[
-    [FBSimulatorControlConfiguration
-      configurationWithDeviceSetPath:nil
-      options:FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart
-      logger:nil reporter:nil],
-    [FBSimulatorControlConfiguration
-      configurationWithDeviceSetPath:@"/foo/bar"
-      options:FBSimulatorManagementOptionsKillAllOnFirstStart | FBSimulatorManagementOptionsKillAllOnFirstStart
-      logger:nil reporter:nil]
-  ];
-  [self assertEqualityOfCopy:values];
-  [self assertJSONSerialization:values];
-}
-
 - (void)testLaunchConfigurations
 {
   NSArray<FBSimulatorBootConfiguration *> *values = @[
