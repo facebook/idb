@@ -245,13 +245,6 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
   return [[self attachedConsumers] containsObject:consumer];
 }
 
-#pragma mark FBJSONSerialization
-
-- (id)jsonSerializableRepresentation
-{
-  return @{};
-}
-
 @end
 
 @implementation FBFramebuffer_IOClient

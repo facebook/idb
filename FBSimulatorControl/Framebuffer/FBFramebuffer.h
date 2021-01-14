@@ -47,7 +47,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Provides a Framebuffer to interested consumers, wrapping the underlying implementation.
  */
-@interface FBFramebuffer : NSObject <FBJSONSerializable>
+@interface FBFramebuffer : NSObject
 
 #pragma mark Initializers
 

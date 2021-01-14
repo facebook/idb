@@ -74,9 +74,7 @@
          (self.imagePath == configuration.imagePath || [self.imagePath isEqual:configuration.imagePath]);
 }
 
-#pragma mark FBDebugDescribeable
-
-- (NSString *)shortDescription
+- (NSString *)description
 {
   return [NSString stringWithFormat:
     @"Scale %@ | Encoder %@ | Image Path %@",
