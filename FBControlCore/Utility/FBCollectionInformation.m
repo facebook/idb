@@ -7,8 +7,6 @@
 
 #import "FBCollectionInformation.h"
 
-#import "FBJSONConversion.h"
-
 @implementation FBCollectionInformation
 
 + (NSString *)oneLineDescriptionFromArray:(NSArray *)array
@@ -19,11 +17,6 @@
 + (NSString *)oneLineDescriptionFromArray:(NSArray *)array atKeyPath:(NSString *)keyPath
 {
   return [NSString stringWithFormat:@"[%@]", [[array valueForKeyPath:keyPath] componentsJoinedByString:@", "]];
-}
-
-+ (NSString *)oneLineJSONDescription:(id<FBJSONSerializable>)object
-{
-  return [[NSString alloc] initWithData:[NSJSONSerialization dataWithJSONObject:object.jsonSerializableRepresentation options:0 error:nil] encoding:NSUTF8StringEncoding];
 }
 
 + (NSString *)oneLineDescriptionFromDictionary:(NSDictionary *)dictionary
