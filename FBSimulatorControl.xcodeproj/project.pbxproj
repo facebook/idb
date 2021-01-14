@@ -526,10 +526,8 @@
 		AAF7B0DA1DDB1CD60079ED11 /* FBSimulatorShutdownStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF7B0D81DDB1CD60079ED11 /* FBSimulatorShutdownStrategy.m */; };
 		AAF7BA9620C1A4590073036B /* FBSimulatorTestPreparationStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF7BA9420C1A4580073036B /* FBSimulatorTestPreparationStrategy.m */; };
 		AAF7BA9720C1A4590073036B /* FBSimulatorTestPreparationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AAF7BA9520C1A4580073036B /* FBSimulatorTestPreparationStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AAF9D3BD257E76D000E6541D /* FBLogSearch.h in Headers */ = {isa = PBXBuildFile; fileRef = AAF9D3B7257E76D000E6541D /* FBLogSearch.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAF9D3BE257E76D000E6541D /* FBCrashLog.h in Headers */ = {isa = PBXBuildFile; fileRef = AAF9D3B8257E76D000E6541D /* FBCrashLog.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAF9D3BF257E76D000E6541D /* FBCrashLogNotifier.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF9D3B9257E76D000E6541D /* FBCrashLogNotifier.m */; };
-		AAF9D3C0257E76D000E6541D /* FBLogSearch.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF9D3BA257E76D000E6541D /* FBLogSearch.m */; };
 		AAF9D3C1257E76D000E6541D /* FBCrashLogNotifier.h in Headers */ = {isa = PBXBuildFile; fileRef = AAF9D3BB257E76D000E6541D /* FBCrashLogNotifier.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAF9D3C2257E76D000E6541D /* FBCrashLog.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF9D3BC257E76D000E6541D /* FBCrashLog.m */; };
 		AAF9D3EC257E7D4100E6541D /* FBiOSTargetOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = AAF9D3EA257E7D4100E6541D /* FBiOSTargetOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1418,10 +1416,8 @@
 		AAF7B0D81DDB1CD60079ED11 /* FBSimulatorShutdownStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorShutdownStrategy.m; sourceTree = "<group>"; };
 		AAF7BA9420C1A4580073036B /* FBSimulatorTestPreparationStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorTestPreparationStrategy.m; sourceTree = "<group>"; };
 		AAF7BA9520C1A4580073036B /* FBSimulatorTestPreparationStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorTestPreparationStrategy.h; sourceTree = "<group>"; };
-		AAF9D3B7257E76D000E6541D /* FBLogSearch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBLogSearch.h; sourceTree = "<group>"; };
 		AAF9D3B8257E76D000E6541D /* FBCrashLog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCrashLog.h; sourceTree = "<group>"; };
 		AAF9D3B9257E76D000E6541D /* FBCrashLogNotifier.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCrashLogNotifier.m; sourceTree = "<group>"; };
-		AAF9D3BA257E76D000E6541D /* FBLogSearch.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBLogSearch.m; sourceTree = "<group>"; };
 		AAF9D3BB257E76D000E6541D /* FBCrashLogNotifier.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCrashLogNotifier.h; sourceTree = "<group>"; };
 		AAF9D3BC257E76D000E6541D /* FBCrashLog.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCrashLog.m; sourceTree = "<group>"; };
 		AAF9D3EA257E7D4100E6541D /* FBiOSTargetOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetOperation.h; sourceTree = "<group>"; };
@@ -2573,8 +2569,6 @@
 				AAF9D3BC257E76D000E6541D /* FBCrashLog.m */,
 				AAF9D3BB257E76D000E6541D /* FBCrashLogNotifier.h */,
 				AAF9D3B9257E76D000E6541D /* FBCrashLogNotifier.m */,
-				AAF9D3B7257E76D000E6541D /* FBLogSearch.h */,
-				AAF9D3BA257E76D000E6541D /* FBLogSearch.m */,
 			);
 			path = Crashes;
 			sourceTree = "<group>";
@@ -3244,7 +3238,6 @@
 				AA391AD21CEF4CBC00817691 /* FBLocalizationOverride.h in Headers */,
 				AA0CA38720643CCF00347424 /* FBCrashLogCommands.h in Headers */,
 				AA682B2F1CEDC4F3009B6ECA /* FBiOSTarget.h in Headers */,
-				AAF9D3BD257E76D000E6541D /* FBLogSearch.h in Headers */,
 				AA6A3B091CC0C96E00E016C4 /* FBCollectionOperations.h in Headers */,
 				EEBD60941C908F8500298A07 /* FBCollectionInformation.h in Headers */,
 				EEBD60641C9062E900298A07 /* FBProcessInfo.h in Headers */,
@@ -3919,7 +3912,6 @@
 				1C0AAAB4254B646000001D3C /* FBXCTestShimConfiguration.m in Sources */,
 				AAE4D05D1D99972B0098A71E /* FBFileManager.m in Sources */,
 				AA6A3B0A1CC0C96E00E016C4 /* FBCollectionOperations.m in Sources */,
-				AAF9D3C0257E76D000E6541D /* FBLogSearch.m in Sources */,
 				AA9AAAEC1DE4C3F60056B127 /* FBProcessOutputConfiguration.m in Sources */,
 				73E0A9751F4F361800A216AD /* FBBundleDescriptor+Application.m in Sources */,
 				AA23F1D422424D9B00F504CC /* FBArchiveOperations.m in Sources */,
