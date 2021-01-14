@@ -43,7 +43,7 @@ extern FBXCTestType const FBXCTestTypeListTest;
 /**
  The Base Configuration for all tests.
  */
-@interface FBXCTestConfiguration : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+@interface FBXCTestConfiguration : NSObject <NSCopying>
 
 /**
  The Default Initializer.

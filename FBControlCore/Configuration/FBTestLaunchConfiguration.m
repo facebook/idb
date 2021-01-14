@@ -381,8 +381,6 @@
   return self.testBundlePath.hash ^ self.applicationLaunchConfiguration.hash ^ self.testHostPath.hash ^ (unsigned long) self.timeout ^ (unsigned long) self.shouldInitializeUITesting ^ (unsigned long) self.shouldUseXcodebuild ^ self.testsToRun.hash ^ self.testsToSkip.hash ^ self.targetApplicationPath.hash ^ self.targetApplicationBundleID.hash ^ self.xcTestRunProperties.hash ^ self.resultBundlePath.hash ^ self.shims.hash;
 }
 
-#pragma mark FBDebugDescribeable
-
 - (NSString *)description
 {
   return [NSString stringWithFormat:
@@ -400,16 +398,6 @@
     self.resultBundlePath,
     self.shims
   ];
-}
-
-- (NSString *)shortDescription
-{
-  return [self description];
-}
-
-- (NSString *)debugDescription
-{
-  return [self description];
 }
 
 @end

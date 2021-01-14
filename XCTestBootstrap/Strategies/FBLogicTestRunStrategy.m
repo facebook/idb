@@ -89,7 +89,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
 - (FBFuture<NSNull *> *)testFutureWithShimOutput:(id<FBProcessFileOutput>)shimOutput stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer shimConsumer:(id<FBDataConsumerLifecycle>)shimConsumer uuid:(NSUUID *)uuid
 {
-  [self.logger logFormat:@"Starting Logic Test execution of %@", [FBCollectionInformation oneLineJSONDescription:self.configuration]];
+  [self.logger logFormat:@"Starting Logic Test execution of %@", self.configuration];
   id<FBLogicXCTestReporter> reporter = self.reporter;
   [reporter didBeginExecutingTestPlan];
 

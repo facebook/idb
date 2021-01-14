@@ -115,13 +115,13 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
       return FBFuture.empty;
     }]
     onQueue:self.simulator.workQueue chain:^(FBFuture *future) {
-      [logger logFormat:@"Test Operation has completed for %@, with state '%@' removing it as the sole operation for this target", future, configuration.shortDescription];
+      [logger logFormat:@"Test Operation has completed for %@, with state '%@' removing it as the sole operation for this target", future, configuration.description];
       self.operation = nil;
       return future;
     }];
 
   self.operation = FBiOSTargetOperationFromFuture(completed);
-  [logger logFormat:@"Test Operation %@ has started for %@, storing it as the sole operation for this target", task, configuration.shortDescription];
+  [logger logFormat:@"Test Operation %@ has started for %@, storing it as the sole operation for this target", task, configuration.description];
 
   return self.operation;
 }

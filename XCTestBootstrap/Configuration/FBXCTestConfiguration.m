@@ -87,7 +87,7 @@ FBXCTestType const FBXCTestTypeUITest = @"ui-test";
 
 - (NSString *)description
 {
-  return [self.jsonSerializableRepresentation description];
+  return [FBCollectionInformation oneLineDescriptionFromDictionary:self.jsonSerializableRepresentation];
 }
 
 - (BOOL)isEqual:(FBXCTestConfiguration *)object
@@ -112,26 +112,25 @@ FBXCTestType const FBXCTestTypeUITest = @"ui-test";
 
 #pragma mark JSON
 
-NSString *const KeyEnvironment = @"environment";
-NSString *const KeyListTestsOnly = @"list_only";
-NSString *const KeyOSLogPath = @"os_log_path";
-NSString *const KeyRunnerAppPath = @"test_host_path";
-NSString *const KeyRunnerTargetPath = @"test_target_path";
-NSString *const KeyShims = @"shims";
-NSString *const KeyTestArtifactsFilenameGlobs = @"test_artifacts_filename_globs";
-NSString *const KeyTestBundlePath = @"test_bundle_path";
-NSString *const KeyTestFilter = @"test_filter";
-NSString *const KeyTestMirror = @"test_mirror";
-NSString *const KeyTestTimeout = @"test_timeout";
-NSString *const KeyTestType = @"test_type";
-NSString *const KeyVideoRecordingPath = @"video_recording_path";
-NSString *const KeyWaitForDebugger = @"wait_for_debugger";
-NSString *const KeyWorkingDirectory = @"working_directory";
+static NSString *const KeyEnvironment = @"environment";
+static NSString *const KeyListTestsOnly = @"list_only";
+static NSString *const KeyOSLogPath = @"os_log_path";
+static NSString *const KeyRunnerAppPath = @"test_host_path";
+static NSString *const KeyRunnerTargetPath = @"test_target_path";
+static NSString *const KeyShims = @"shims";
+static NSString *const KeyTestArtifactsFilenameGlobs = @"test_artifacts_filename_globs";
+static NSString *const KeyTestBundlePath = @"test_bundle_path";
+static NSString *const KeyTestFilter = @"test_filter";
+static NSString *const KeyTestMirror = @"test_mirror";
+static NSString *const KeyTestTimeout = @"test_timeout";
+static NSString *const KeyTestType = @"test_type";
+static NSString *const KeyVideoRecordingPath = @"video_recording_path";
+static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
+static NSString *const KeyWorkingDirectory = @"working_directory";
 
 - (id)jsonSerializableRepresentation
 {
   return @{
-    KeyShims: self.shims.jsonSerializableRepresentation ?: NSNull.null,
     KeyEnvironment: self.processUnderTestEnvironment,
     KeyWorkingDirectory: self.workingDirectory,
     KeyTestBundlePath: self.testBundlePath,
@@ -140,98 +139,6 @@ NSString *const KeyWorkingDirectory = @"working_directory";
     KeyWaitForDebugger: @(self.waitForDebugger),
     KeyTestTimeout: @(self.testTimeout),
   };
-}
-
-+ (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
-{
-  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a Dictionary<String, Any>", json]
-      fail:error];
-  }
-  NSString *testType = json[KeyTestType];
-  if (![testType isKindOfClass:NSString.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a String for %@", testType, KeyTestType]
-      fail:error];
-  }
-  NSNumber *listTestsOnly = json[KeyListTestsOnly] ?: @NO;
-  if (![listTestsOnly isKindOfClass:NSNumber.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a Number for %@", listTestsOnly, KeyListTestsOnly]
-      fail:error];
-  }
-  NSDictionary<NSString *, NSString *> *environment = json[KeyEnvironment];
-  if (![FBCollectionInformation isDictionaryHeterogeneous:environment keyClass:NSString.class valueClass:NSString.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a Dictionary<String, String> for %@", environment, KeyEnvironment]
-      fail:error];
-  }
-  NSString *workingDirectory = json[KeyWorkingDirectory];
-  if (![workingDirectory isKindOfClass:NSString.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a String for %@", workingDirectory, KeyWorkingDirectory]
-      fail:error];
-  }
-  NSString *testBundlePath = json[KeyTestBundlePath];
-  if (![testBundlePath isKindOfClass:NSString.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a String for %@", testBundlePath, KeyTestBundlePath]
-      fail:error];
-  }
-  NSNumber *waitForDebugger = [FBCollectionOperations nullableValueForDictionary:json key:KeyWaitForDebugger] ?: @NO;
-  if (![waitForDebugger isKindOfClass:NSNumber.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a Number for %@", waitForDebugger, KeyWaitForDebugger]
-      fail:error];
-  }
-  NSNumber *testTimeout = [FBCollectionOperations nullableValueForDictionary:json key:KeyTestTimeout] ?: @0;
-  if (![testTimeout isKindOfClass:NSNumber.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a Number for %@", testTimeout, KeyTestTimeout]
-      fail:error];
-  }
-  NSDictionary<NSString *, id> *shimsDictionary = [FBCollectionOperations nullableValueForDictionary:json key:KeyShims];
-  if (shimsDictionary && ![FBCollectionInformation isDictionaryHeterogeneous:shimsDictionary keyClass:NSString.class valueClass:NSObject.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a Dictonary<String, String> for %@", shimsDictionary, KeyShims]
-      fail:error];
-  }
-  FBXCTestShimConfiguration *shims = nil;
-  if (shimsDictionary) {
-    shims = [FBXCTestShimConfiguration inflateFromJSON:shimsDictionary error:error];
-    if (!shims) {
-      return nil;
-    }
-  }
-  Class clusterClass = nil;
-  if ([testType isEqualToString:FBXCTestTypeListTest]) {
-    clusterClass = FBListTestConfiguration.class;
-  } else if ([testType isEqualToString:FBXCTestTypeLogicTest]) {
-    clusterClass = listTestsOnly.boolValue ? FBListTestConfiguration.class : FBLogicTestConfiguration.class;
-  } else if ([testType isEqualToString:FBXCTestTypeApplicationTest]) {
-    clusterClass = FBTestManagerTestConfiguration.class;
-  } else if ([testType isEqualToString:FBXCTestTypeUITest]) {
-    clusterClass = FBTestManagerTestConfiguration.class;
-  } else {
-    return [[FBControlCoreError
-      describeFormat:@"Test Type %@ is not a value Test Type for %@", testType, KeyTestType]
-      fail:error];
-  }
-  return [clusterClass
-    inflateFromJSON:json
-    shims:shims
-    environment:environment
-    workingDirectory:workingDirectory
-    testBundlePath:testBundlePath
-    waitForDebugger:waitForDebugger.boolValue
-    timeout:testTimeout.doubleValue
-    error:nil];
-}
-
-+ (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  return [[self alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
 }
 
 #pragma mark NSCopying
@@ -333,17 +240,6 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   return [json copy];
 }
 
-+ (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  NSString *runnerAppPath = [FBCollectionOperations nullableValueForDictionary:json key:KeyRunnerAppPath];
-  if (runnerAppPath && ![runnerAppPath isKindOfClass:NSString.class]) {
-    return [[FBXCTestError
-             describeFormat:@"%@ is not a String for %@", runnerAppPath, KeyRunnerAppPath]
-            fail:error];
-  }
-  return [[FBListTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath runnerAppPath:runnerAppPath waitForDebugger:waitForDebugger timeout:timeout];
-}
-
 #pragma mark Private
 
 + (NSString *)copyFrameworkToApplicationAtPath:(NSString *)appPath frameworkPath:(NSString *)frameworkPath error:(NSError **)error
@@ -432,47 +328,6 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   return [json copy];
 }
 
-+ (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  NSString *runnerAppPath = json[KeyRunnerAppPath];
-  if (![runnerAppPath isKindOfClass:NSString.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a String for %@", runnerAppPath, KeyRunnerAppPath]
-      fail:error];
-  }
-  NSString *testTargetAppPath = json[KeyRunnerTargetPath];
-  if (testTargetAppPath != nil && ![testTargetAppPath isKindOfClass:NSString.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a String for %@", testTargetAppPath, KeyRunnerTargetPath]
-      fail:error];
-  }
-  NSString *testFilter = [FBCollectionOperations nullableValueForDictionary:json key:KeyTestFilter];
-  if (testFilter && ![testFilter isKindOfClass:NSString.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a String for %@", testFilter, KeyTestFilter]
-      fail:error];
-  }
-  NSString *videoRecordingPath = [FBCollectionOperations nullableValueForDictionary:json key:KeyVideoRecordingPath];
-  if (videoRecordingPath && ![videoRecordingPath isKindOfClass:NSString.class]) {
-    return [[FBXCTestError
-             describeFormat:@"%@ is not a String for %@", videoRecordingPath, KeyVideoRecordingPath]
-            fail:error];
-  }
-  NSArray<NSString *> *testArtifactsFilenameGlobs = [FBCollectionOperations nullableValueForDictionary:json key:KeyTestArtifactsFilenameGlobs];
-  if (testArtifactsFilenameGlobs && ![testArtifactsFilenameGlobs isKindOfClass:NSArray.class]) {
-    return [[FBXCTestError
-             describeFormat:@"%@ is not a Array for %@", testArtifactsFilenameGlobs, KeyTestArtifactsFilenameGlobs]
-            fail:error];
-  }
-  NSString *osLogPath = [FBCollectionOperations nullableValueForDictionary:json key:KeyOSLogPath];
-  if (osLogPath && ![osLogPath isKindOfClass:NSString.class]) {
-    return [[FBXCTestError
-             describeFormat:@"%@ is not a String for %@", osLogPath, KeyOSLogPath]
-            fail:error];
-  }
-  return [[FBTestManagerTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter videoRecordingPath:videoRecordingPath testArtifactsFilenameGlobs:testArtifactsFilenameGlobs osLogPath:osLogPath];
-}
-
 @end
 
 @implementation FBLogicTestConfiguration
@@ -511,23 +366,6 @@ NSString *const KeyWorkingDirectory = @"working_directory";
   NSMutableDictionary<NSString *, id> *json = [NSMutableDictionary dictionaryWithDictionary:[super jsonSerializableRepresentation]];
   json[KeyTestFilter] = self.testFilter ?: NSNull.null;
   return [json copy];
-}
-
-+ (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  NSString *keyTestFilter = [FBCollectionOperations nullableValueForDictionary:json key:KeyTestFilter];
-  if (keyTestFilter && ![keyTestFilter isKindOfClass:NSString.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a String for %@", keyTestFilter, KeyTestFilter]
-      fail:error];
-  }
-  NSNumber *mirrorOpts = [FBCollectionOperations nullableValueForDictionary:json key:KeyTestMirror];
-  if (mirrorOpts && ![mirrorOpts isKindOfClass:NSNumber.class]) {
-    return [[FBXCTestError
-             describeFormat:@"%@ is not a Number for %@", keyTestFilter, KeyTestFilter]
-            fail:error];
-  }
-  return [[FBLogicTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout testFilter:keyTestFilter mirroring:mirrorOpts.unsignedIntegerValue];
 }
 
 @end

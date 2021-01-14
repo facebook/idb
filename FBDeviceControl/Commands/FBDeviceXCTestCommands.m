@@ -142,13 +142,13 @@
     }]
     onQueue:self.device.workQueue chain:^(FBFuture *future) {
       // Always perform this, whether the operation was successful or not.
-      [logger logFormat:@"Test Operation has completed for %@, with state '%@' removing it as the sole operation for this target", future, configuration.shortDescription];
+      [logger logFormat:@"Test Operation has completed for %@, with state '%@' removing it as the sole operation for this target", future, configuration];
       self.operation = nil;
       return future;
     }];
 
   self.operation = FBiOSTargetOperationFromFuture(completed);
-  [logger logFormat:@"Test Operation %@ has started for %@, storing it as the sole operation for this target", task, configuration.shortDescription];
+  [logger logFormat:@"Test Operation %@ has started for %@, storing it as the sole operation for this target", task, configuration];
 
   return self.operation;
 }
