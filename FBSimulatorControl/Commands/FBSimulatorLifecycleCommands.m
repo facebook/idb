@@ -144,12 +144,12 @@
   FBSimulator *simulator = self.simulator;
   FBSimulatorConnection *connection = self.connection;
   if (!connection) {
-    [logger.debug logFormat:@"Simulator %@ does not have an active connection", simulator.shortDescription];
+    [logger.debug logFormat:@"Simulator %@ does not have an active connection", simulator.description];
     return FBFuture.empty;
   }
 
   NSDate *date = NSDate.date;
-  [logger.debug logFormat:@"Simulator %@ has a connection %@, stopping & wait with timeout %f", simulator.shortDescription, connection, timeout];
+  [logger.debug logFormat:@"Simulator %@ has a connection %@, stopping & wait with timeout %f", simulator.description, connection, timeout];
   return [[[connection
     terminate]
     timeout:timeout waitingFor:@"The Simulator Connection to teardown"]

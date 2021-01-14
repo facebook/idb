@@ -18,23 +18,6 @@
   return nil;
 }
 
-#pragma mark FBDebugDescribeable
-
-- (NSString *)description
-{
-  return [self debugDescription];
-}
-
-- (NSString *)debugDescription
-{
-  return [FBiOSTargetFormat.fullFormat format:self];
-}
-
-- (NSString *)shortDescription
-{
-  return [FBiOSTargetFormat.defaultFormat format:self];
-}
-
 - (dispatch_queue_t)workQueue
 {
   return dispatch_get_main_queue();
@@ -53,13 +36,6 @@
 - (NSDictionary<NSString *, id> *)extendedInformation
 {
   return @{};
-}
-
-#pragma mark FBJSONSerializable
-
-- (NSDictionary *)jsonSerializableRepresentation
-{
-  return [FBiOSTargetFormat.fullFormat extractFrom:self];
 }
 
 #pragma mark Protocol Inheritance

@@ -97,7 +97,7 @@
   // Since `-[FBSimDeviceWrapper shutdownWithError:]` will spin the run loop until CoreSimulator confirms that the device is shutdown,
   // this will give a sufficient amount of time between killing Applications.
 
-  [self.logger.debug logFormat:@"Killing %@", [FBCollectionInformation oneLineDescriptionFromArray:simulators atKeyPath:@"shortDescription"]];
+  [self.logger.debug logFormat:@"Killing %@", [FBCollectionInformation oneLineDescriptionFromArray:simulators]];
   NSMutableArray<FBFuture<FBSimulator *> *> *futures = [NSMutableArray array];
   for (FBSimulator *simulator in simulators) {
     [futures addObject:[self killSimulator:simulator]];
@@ -131,7 +131,7 @@
   FBProcessInfo *simulatorProcess = simulator.containerApplication ?: [self.processFetcher simulatorApplicationProcessForSimDevice:simulator.device];
   FBFuture<NSNull *> *simulatorAppProcessKillFuture = nil;
   if (simulatorProcess) {
-    [self.logger.debug logFormat:@"Simulator %@ has a Simulator.app Process %@, terminating it now", simulator.shortDescription, simulatorProcess];
+    [self.logger.debug logFormat:@"Simulator %@ has a Simulator.app Process %@, terminating it now", simulator.description, simulatorProcess];
     simulatorAppProcessKillFuture = [[self.processTerminationStrategy
       killProcess:simulatorProcess]
       onQueue:simulator.workQueue map:^(id _) {
@@ -139,7 +139,7 @@
         return NSNull.null;
       }];
   } else {
-    [self.logger.debug logFormat:@"Simulator %@ does not have a running Simulator.app Process", simulator.shortDescription];
+    [self.logger.debug logFormat:@"Simulator %@ does not have a running Simulator.app Process", simulator.description];
     simulatorAppProcessKillFuture = FBFuture.empty;
   }
 

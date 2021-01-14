@@ -74,7 +74,6 @@
     _bundleIDToProductMap = [FBMacDevice fetchInstalledApplications];
     _bundleIDToRunningTask = @{}.mutableCopy;
     _launchdProcess = [[FBProcessInfo alloc] initWithProcessIdentifier:1 launchPath:@"/sbin/launchd" arguments:@[] environment:@{}];
-    _shortDescription = _name = @"Local MacOSX host";
     _udid = [FBMacDevice resolveDeviceUDID];
     _state = FBiOSTargetStateBooted;
     _targetType = FBiOSTargetTypeLocalMac;
@@ -205,6 +204,7 @@
 }
 
 #pragma mark - FBiOSTarget
+
 @synthesize architecture = _architecture;
 @synthesize asyncQueue = _asyncQueue;
 @synthesize auxillaryDirectory = _auxillaryDirectory;
@@ -212,7 +212,6 @@
 @synthesize launchdProcess = _launchdProcess;
 @synthesize logger = _logger;
 @synthesize osVersion = _osVersion;
-@synthesize shortDescription = _shortDescription;
 @synthesize state = _state;
 @synthesize targetType = _targetType;
 @synthesize workQueue = _workQueue;
