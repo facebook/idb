@@ -196,14 +196,6 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   return nil;
 }
 
-#pragma mark FBJSONSerializable
-
-- (id)jsonSerializableRepresentation
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
 #pragma mark HID Manipulation
 
 - (FBFuture<NSNull *> *)sendKeyboardEventWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode
@@ -271,16 +263,6 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
     return [NSString stringWithFormat:@"Indigo HID Port: Registered %d but no reply port", self.registrationPort];
   }
   return [NSString stringWithFormat:@"Indigo HID Port: Registration Port %u, reply port %d", self.registrationPort, self.replyPort];
-}
-
-#pragma mark FBJSONSerializable
-
-- (id)jsonSerializableRepresentation
-{
-  return @{
-    @"registration_port" : (self.registrationPort == 0 ? NSNull.null : @(self.registrationPort)),
-    @"reply_port" : (self.replyPort == 0 ? NSNull.null : @(self.replyPort)),
-  };
 }
 
 #pragma mark Lifecycle
@@ -394,13 +376,6 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 - (NSString *)description
 {
   return [NSString stringWithFormat:@"SimulatorKit HID %@", self.client];
-}
-
-#pragma mark FBJSONSerializable
-
-- (id)jsonSerializableRepresentation
-{
-  return @{};
 }
 
 #pragma mark Lifecycle
