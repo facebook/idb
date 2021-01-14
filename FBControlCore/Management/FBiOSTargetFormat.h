@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBJSONConversion.h>
-
 NS_ASSUME_NONNULL_BEGIN
 
 typedef NSString *FBiOSTargetFormatKey NS_STRING_ENUM;
@@ -58,7 +56,7 @@ extern FBiOSTargetFormatKey const FBiOSTargetFormatContainerApplicationProcessId
 /**
  A Format Specifier for Describing an iOS Device/Simulator Target.
  */
-@interface FBiOSTargetFormat : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+@interface FBiOSTargetFormat : NSObject <NSCopying>
 
 /**
  Creates and returns a new Target Format.

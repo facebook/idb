@@ -65,28 +65,6 @@
   return @[target0, target1, target2, target3, target4, target5];
 }
 
-- (void)testValueSemantics
-{
-  NSArray<FBiOSTargetQuery *> *values = @[
-    [[[FBiOSTargetQuery udids:@[@"foo", @"bar"]] range:NSMakeRange(2, 10)] devices:@[FBDeviceModeliPhone5, FBDeviceModeliPad2]],
-    [[FBiOSTargetQuery states:[NSIndexSet indexSetWithIndex:FBiOSTargetStateBooting]] osVersions:@[FBOSVersionNameiOS_7_1, FBOSVersionNameiOS_9_0]],
-    [[FBiOSTargetQuery udids:@[@"BA1248D3-24B2-43F5-B1CD-57DCB000D12E"]] states:[FBCollectionOperations indecesFromArray:@[@(FBiOSTargetStateBooted), @(FBiOSTargetStateBooting)]]],
-    [FBiOSTargetQuery allTargets],
-    [FBiOSTargetQuery targetType:FBiOSTargetTypeDevice],
-    [FBiOSTargetQuery targetType:FBiOSTargetTypeSimulator],
-    [FBiOSTargetQuery targetType:FBiOSTargetTypeNone],
-    [FBiOSTargetQuery devices:@[FBDeviceModeliPad2, FBDeviceModeliPadAir]],
-    [FBiOSTargetQuery osVersions:@[FBOSVersionNameiOS_9_0, FBOSVersionNameiOS_9_1]],
-    [FBiOSTargetQuery states:[FBCollectionOperations indecesFromArray:@[@(FBiOSTargetStateCreating), @(FBiOSTargetStateShutdown)]]],
-    [FBiOSTargetQuery states:[FBCollectionOperations indecesFromArray:@[@(FBiOSTargetStateCreating), @(FBiOSTargetStateShutdown)]]],
-    [FBiOSTargetQuery udids:@[@"BA1248D3-24B2-43F5-B1CD-57DCB000D12E", @"C5579925-158B-4802-96C3-58B564C901C1", @"41862F9E-A8CA-4816-B4C1-251DA57C1143"]],
-  ];
-
-  [self assertEqualityOfCopy:values];
-  [self assertJSONSerialization:values];
-  [self assertJSONDeserialization:values];
-}
-
 - (void)testEmptyQuery
 {
   NSArray<id<FBiOSTarget>> *targets = self.targets;

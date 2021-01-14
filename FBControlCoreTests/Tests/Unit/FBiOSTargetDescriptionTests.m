@@ -18,18 +18,6 @@
 
 @implementation FBiOSTargetFormatTests
 
-- (void)testValueSemantics
-{
-  NSArray *values = @[
-    [FBiOSTargetFormat formatWithFields:@[FBiOSTargetFormatName, FBiOSTargetFormatUDID, FBiOSTargetFormatState]],
-    [FBiOSTargetFormat formatWithFields:@[FBiOSTargetFormatName, FBiOSTargetFormatUDID, FBiOSTargetFormatOSVersion, FBiOSTargetFormatModel]],
-    [FBiOSTargetFormat formatWithFields:@[]],
-  ];
-  [self assertEqualityOfCopy:values];
-  [self assertJSONSerialization:values];
-  [self assertJSONDeserialization:values];
-}
-
 - (void)testCorrectFormatStrings
 {
   NSDictionary<NSString *, NSArray<FBiOSTargetFormatKey> *> *inputs = @{

@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBiOSTarget.h>
-#import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBiOSTargetConfiguration.h>
 #import <FBControlCore/FBArchitecture.h>
 
@@ -19,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Value representing a way of fetching Simulators.
  */
-@interface FBiOSTargetQuery : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+@interface FBiOSTargetQuery : NSObject <NSCopying>
 
 /**
  A Query that matches all iOS Targets.

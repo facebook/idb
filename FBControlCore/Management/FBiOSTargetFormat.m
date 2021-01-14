@@ -140,23 +140,6 @@ FBiOSTargetFormatKey const FBiOSTargetFormatContainerApplicationProcessIdentifie
   return self;
 }
 
-#pragma mark JSON
-
-- (id)jsonSerializableRepresentation
-{
-  return self.fields;
-}
-
-+ (instancetype)inflateFromJSON:(NSArray<NSString *> *)json error:(NSError **)error
-{
-  if (![FBCollectionInformation isArrayHeterogeneous:json withClass:NSString.class]) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ is not an Array of Strings", json]
-      fail:error];
-  }
-  return [self formatWithFields:json];
-}
-
 #pragma mark Public
 
 - (instancetype)appendFields:(NSArray<FBiOSTargetFormatKey> *)fields
