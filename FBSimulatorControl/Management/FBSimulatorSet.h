@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  Complements SimDeviceSet with additional functionality and more resiliant behaviours.
  Performs the preconditions necessary to call certain SimDeviceSet/SimDevice methods.
  */
-@interface FBSimulatorSet : NSObject <FBDebugDescribeable, FBJSONSerializable, FBiOSTargetSet>
+@interface FBSimulatorSet : NSObject <FBiOSTargetSet>
 
 #pragma mark Intializers
 

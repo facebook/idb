@@ -273,28 +273,11 @@
   return [self deleteAll:self.allSimulators];
 }
 
-#pragma mark FBDebugDescribeable Protocol
-
-- (NSString *)shortDescription
-{
-  return [FBCollectionInformation oneLineDescriptionFromArray:[self.allSimulators valueForKey:NSStringFromSelector(@selector(shortDescription))]];
-}
-
-- (NSString *)debugDescription
-{
-  return [FBCollectionInformation oneLineDescriptionFromArray:[self.allSimulators valueForKey:NSStringFromSelector(@selector(debugDescription))]];
-}
+#pragma mark NSObject
 
 - (NSString *)description
 {
-  return [self shortDescription];
-}
-
-#pragma mark FBJSONSerializable Protocol
-
-- (id)jsonSerializableRepresentation
-{
-  return [self.allSimulators valueForKey:NSStringFromSelector(@selector(jsonSerializableRepresentation))];
+  return [FBCollectionInformation oneLineDescriptionFromArray:self.allSimulators];
 }
 
 #pragma mark Private Methods
