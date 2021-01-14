@@ -9,18 +9,20 @@
 
 @interface FBiOSTargetDescription ()
 
-@property (nonatomic, assign, readonly) FBiOSTargetState state;
-@property (nonatomic, assign, readonly) FBiOSTargetType targetType;
-@property (nonatomic, copy, readonly) FBArchitecture architecture;
 @property (nonatomic, copy, readonly) FBDeviceModel model;
-@property (nonatomic, copy, readonly) FBDeviceType *deviceType;
-@property (nonatomic, copy, readonly) FBOSVersion *osVersion;
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *extendedInformation;
-@property (nonatomic, copy, readonly) NSString *name;
-
 @end
 
 @implementation FBiOSTargetDescription
+
+@synthesize architecture = _architecture;
+@synthesize deviceType = _deviceType;
+@synthesize extendedInformation = _extendedInformation;
+@synthesize name = _name;
+@synthesize osVersion = _osVersion;
+@synthesize state = _state;
+@synthesize targetType = _targetType;
+@synthesize udid = _udid;
+@synthesize uniqueIdentifier = _uniqueIdentifier;
 
 static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
 {

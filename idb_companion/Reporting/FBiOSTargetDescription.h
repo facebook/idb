@@ -12,7 +12,7 @@
 /**
  A value type that holds values for serializing a target information in idb
  */
-@interface FBiOSTargetDescription : NSObject <NSCopying>
+@interface FBiOSTargetDescription : NSObject <FBiOSTargetInfo, NSCopying>
 
 /**
  The Designated Initializer.
@@ -21,11 +21,6 @@
  @return a new Target Update
  */
 - (instancetype)initWithTarget:(id<FBiOSTargetInfo>)target;
-
-/**
- The UDID of the Target.
-*/
-@property (nonatomic, copy, readonly) NSString *udid;
 
 /**
  A JSON Dictionary representing the target description.
