@@ -65,7 +65,7 @@
   }
   if (![process.launchPath isEqualToString:actual.launchPath]) {
     return [[FBControlCoreError
-      describeFormat:@"Processes '%@' and '%@' do not have the same launch path '%@' and '%@'", process.shortDescription, actual.shortDescription, process.launchPath, actual.launchPath]
+      describeFormat:@"Processes '%@' and '%@' do not have the same launch path '%@' and '%@'", process.description, actual.description, process.launchPath, actual.launchPath]
       failBool:error];
   }
   return YES;

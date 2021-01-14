@@ -7,9 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBDebugDescribeable.h>
-#import <FBControlCore/FBJSONConversion.h>
-
 @class FBProcessLaunchConfiguration;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -17,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Concrete Value of Process Information.
  */
-@interface FBProcessInfo : NSObject <NSCopying, FBJSONSerializable, FBDebugDescribeable>
+@interface FBProcessInfo : NSObject <NSCopying>
 
 /**
  The Designated Initializer.

@@ -31,6 +31,7 @@
   _launchPath = launchPath;
   _arguments = arguments;
   _environment = environment;
+
   return self;
 }
 
@@ -49,28 +50,7 @@
          [self.arguments isEqual:object.arguments];
 }
 
-#pragma mark Accessors
-
-- (NSString *)processName
-{
-  // This should be fetched from sysctl/libproc instead.
-  return self.launchPath.lastPathComponent;
-}
-
-#pragma mark FBDebugDescribeable
-
-- (NSString *)debugDescription
-{
-  return [NSString stringWithFormat:
-    @"Process %@ | PID %d | Arguments %@ | Environment %@",
-    self.launchPath,
-    self.processIdentifier,
-    self.arguments,
-    self.environment
-  ];
-}
-
-- (NSString *)shortDescription
+- (NSString *)description
 {
   return [NSString stringWithFormat:
     @"Process %@ | PID %d",
@@ -79,28 +59,19 @@
   ];
 }
 
-- (NSString *)description
+#pragma mark Accessors
+
+- (NSString *)processName
 {
-  return self.shortDescription;
+  // This should be fetched from sysctl/libproc instead.
+  return self.launchPath.lastPathComponent;
 }
 
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  return [[self.class alloc] initWithProcessIdentifier:self.processIdentifier launchPath:self.launchPath arguments:self.arguments environment:self.environment];
-}
-
-#pragma mark FBJSONSerializable
-
-- (NSDictionary *)jsonSerializableRepresentation
-{
-  return @{
-    @"launch_path" : self.launchPath,
-    @"arguments" : self.arguments,
-    @"name" : self.processName,
-    @"pid" : @(self.processIdentifier)
-  };
+  return self;
 }
 
 @end

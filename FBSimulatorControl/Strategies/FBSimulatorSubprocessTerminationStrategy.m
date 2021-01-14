@@ -54,14 +54,14 @@
   pid_t parentProcessIdentifier = [self.simulator.processFetcher.processFetcher parentOf:process.processIdentifier];
   if (parentProcessIdentifier != self.simulator.launchdProcess.processIdentifier) {
     return [[FBSimulatorError
-      describeFormat:@"Parent of %@ is not the launchd_sim (%@) it has a pid %d", process.shortDescription, self.simulator.launchdProcess.shortDescription, parentProcessIdentifier]
+      describeFormat:@"Parent of %@ is not the launchd_sim (%@) it has a pid %d", process.description, self.simulator.launchdProcess.description, parentProcessIdentifier]
       failFuture];
   }
 
   // Get the Service Name and then stop using the Service Name.
   return [[[self.simulator
     serviceNameForProcess:process]
-    rephraseFailure:@"Could not Obtain the Service Name for %@", process.shortDescription]
+    rephraseFailure:@"Could not Obtain the Service Name for %@", process.description]
     onQueue:self.simulator.workQueue fmap:^FBFuture *(NSString *serviceName) {
       // If the service represents an Application, use the SimDevice API.
       // Otherwise fallback to the Simulator's launchctl.
