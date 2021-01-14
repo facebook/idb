@@ -10,7 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBControlCoreError.h"
-#import "FBLogSearch.h"
 
 static NSString *const CDHashPrefix = @"CDHash=";
 
@@ -49,9 +48,14 @@ static NSString *const CDHashPrefix = @"CDHash=";
 
 #pragma mark - FBCodesignProvider protocol
 
-+ (FBLogSearchPredicate *)logSearchPredicateForCDHash
++ (NSRegularExpression *)cdHashRegex
 {
-  return [FBLogSearchPredicate substrings:@[CDHashPrefix]];
+  static dispatch_once_t onceToken;
+  static NSRegularExpression *regex;
+  dispatch_once(&onceToken, ^{
+    regex = [NSRegularExpression regularExpressionWithPattern:@"CDHash=(.+)" options:0 error:nil];
+  });
+  return regex;
 }
 
 - (FBFuture<NSNull *> *)signBundleAtPath:(NSString *)bundlePath
@@ -137,7 +141,7 @@ static NSString *const CDHashPrefix = @"CDHash=";
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]
     runUntilCompletion]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (FBTask<NSNull *,NSString *,NSString *> *task) {
+    onQueue:self.queue fmap:^ FBFuture<NSString *> * (FBTask<NSNull *,NSString *,NSString *> *task) {
       NSNumber *exitCode = task.exitCode.result;
       if (![exitCode isEqualTo:@0]) {
         return [[FBControlCoreError
@@ -145,17 +149,15 @@ static NSString *const CDHashPrefix = @"CDHash=";
           failFuture];
       }
       NSString *output = task.stdErr;
-      NSString *cdHash = [[[FBLogSearch
-        withText:output predicate:FBCodesignProvider.logSearchPredicateForCDHash]
-        firstMatchingLine]
-        stringByReplacingOccurrencesOfString:CDHashPrefix withString:@""];
-      if (!cdHash) {
+      NSTextCheckingResult *result = [FBCodesignProvider.cdHashRegex firstMatchInString:task.stdErr options:0 range:NSMakeRange(0, output.length)];
+      if (!result) {
         return [[FBControlCoreError
-          describeFormat:@"Could not find '%@' in output: %@", CDHashPrefix, output]
+          describeFormat:@"Could not find 'CDHash' in output: %@", output]
           failFuture];
       }
+      NSString *cdHash = [output substringWithRange:[result rangeAtIndex:1]];
       [logger logFormat:@"Successfully obtained hash %@ from bundle %@", cdHash, bundlePath];
-      return FBFuture.empty;
+      return [FBFuture futureWithResult:cdHash];
     }];
 }
 
