@@ -362,15 +362,6 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
   return @"Simulator Bridge: Disconnected";
 }
 
-#pragma mark FBJSONSerialization
-
-- (id)jsonSerializableRepresentation
-{
-  return @{
-    @"connected" : (self.bridge ? @YES : @NO ),
-  };
-}
-
 @end
 
 #pragma GCC diagnostic pop
