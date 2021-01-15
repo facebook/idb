@@ -529,6 +529,7 @@ class Client(ABC):
         fps: Optional[int],
         format: VideoFormat,
         compression_quality: float,
+        scale_factor: float = 1,
     ) -> AsyncGenerator[bytes, None]:
         yield
 

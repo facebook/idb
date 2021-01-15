@@ -76,6 +76,12 @@ class VideoStreamCommand(ClientCommand):
             default=0.2,
             help="The compression quality (between 0 and 1.0) for the stream",
         )
+        parser.add_argument(
+            "--scale-factor",
+            type=float,
+            default=1,
+            help="The scale factor for the source video (between 0 and 1.0) for the stream",
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
@@ -85,6 +91,7 @@ class VideoStreamCommand(ClientCommand):
                 fps=args.fps,
                 format=_FORMAT_CHOICE_MAP[args.format],
                 compression_quality=args.compression_quality,
+                scale_factor=args.scale_factor,
             ),
             name="stream",
             logger=self.logger,

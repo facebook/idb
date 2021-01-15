@@ -657,6 +657,7 @@ class TestParser(TestCase):
                     fps=None,
                     log_level_deprecated=None,
                     compression_quality=0.2,
+                    scale_factor=1,
                     root_command="video-stream",
                     udid=None,
                     json=False,

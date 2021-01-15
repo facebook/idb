@@ -896,6 +896,7 @@ class Client(ClientBase):
         fps: Optional[int],
         format: VideoFormat,
         compression_quality: float,
+        scale_factor: float = 1,
     ) -> AsyncGenerator[bytes, None]:
         self.logger.info("Starting connection to backend")
         async with self.stub.video_stream.open() as stream:
@@ -910,6 +911,7 @@ class Client(ClientBase):
                             fps=fps,
                             format=VIDEO_FORMAT_MAP[format],
                             compression_quality=compression_quality,
+                            scale_factor=scale_factor,
                         )
                     )
                 )
@@ -922,6 +924,7 @@ class Client(ClientBase):
                             fps=fps,
                             format=VIDEO_FORMAT_MAP[format],
                             compression_quality=compression_quality,
+                            scale_factor=scale_factor,
                         )
                     )
                 )
