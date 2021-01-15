@@ -363,6 +363,7 @@ message VideoStreamRequest {
     string file_path = 1;
     uint64 fps = 2;
     Format format = 3;
+    double compression_quality = 4;
   }
   message Stop {
   }

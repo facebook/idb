@@ -18,10 +18,10 @@
 - (void)testValueSemantics
 {
   NSArray<FBVideoStreamConfiguration *> *configurations = @[
-    [FBVideoStreamConfiguration configurationWithEncoding:FBVideoStreamEncodingBGRA framesPerSecond:@30],
-    [FBVideoStreamConfiguration configurationWithEncoding:FBVideoStreamEncodingBGRA framesPerSecond:@60],
-    [FBVideoStreamConfiguration configurationWithEncoding:FBVideoStreamEncodingBGRA framesPerSecond:nil],
-    [FBVideoStreamConfiguration configurationWithEncoding:FBVideoStreamEncodingH264 framesPerSecond:nil],
+    [[FBVideoStreamConfiguration alloc] initWithEncoding:FBVideoStreamEncodingBGRA framesPerSecond:@30 compressionQuality:@0.2],
+    [[FBVideoStreamConfiguration alloc] initWithEncoding:FBVideoStreamEncodingBGRA framesPerSecond:@60 compressionQuality:@0.2],
+    [[FBVideoStreamConfiguration alloc] initWithEncoding:FBVideoStreamEncodingBGRA framesPerSecond:nil compressionQuality:nil],
+    [[FBVideoStreamConfiguration alloc] initWithEncoding:FBVideoStreamEncodingH264 framesPerSecond:nil compressionQuality:@0.2],
   ];
 
   [self assertEqualityOfCopy:configurations];

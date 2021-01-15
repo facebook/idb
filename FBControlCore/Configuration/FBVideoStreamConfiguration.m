@@ -20,12 +20,7 @@ FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond
-{
-  return [[self alloc] initWithEncoding:encoding framesPerSecond:framesPerSecond];
-}
-
-- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond
+- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond compressionQuality:(nullable NSNumber *)compressionQuality
 {
   self = [super init];
   if (!self) {
@@ -34,6 +29,7 @@ FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
 
   _encoding = encoding;
   _framesPerSecond = framesPerSecond;
+  _compressionQuality = compressionQuality ?: @0.2;
 
   return self;
 }
@@ -54,20 +50,22 @@ FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
   }
 
   return (self.encoding == object.encoding || [self.encoding isEqualToString:object.encoding])
-      && (self.framesPerSecond == object.framesPerSecond || [self.framesPerSecond isEqualToNumber:object.framesPerSecond]);
+      && (self.framesPerSecond == object.framesPerSecond || [self.framesPerSecond isEqualToNumber:object.framesPerSecond])
+      && (self.compressionQuality == object.compressionQuality || [self.compressionQuality isEqualToNumber:object.compressionQuality]);
 }
 
 - (NSUInteger)hash
 {
-  return self.encoding.hash ^ self.framesPerSecond.hash;
+  return self.encoding.hash ^ self.framesPerSecond.hash ^ self.compressionQuality.hash;
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Encoding %@ | FPS %@",
+    @"Encoding %@ | FPS %@ | Quality %@",
     self.encoding,
-    self.framesPerSecond
+    self.framesPerSecond,
+    self.compressionQuality
   ];
 }
 
