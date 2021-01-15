@@ -524,7 +524,11 @@ class Client(ABC):
 
     @abstractmethod
     async def stream_video(
-        self, output_file: Optional[str], fps: Optional[int], format: VideoFormat
+        self,
+        output_file: Optional[str],
+        fps: Optional[int],
+        format: VideoFormat,
+        compression_quality: float,
     ) -> AsyncGenerator[bytes, None]:
         yield
 

@@ -891,7 +891,11 @@ class Client(ClientBase):
                 self.logger.info(f"Finished decompression to {output_file}")
 
     async def stream_video(
-        self, output_file: Optional[str], fps: Optional[int], format: VideoFormat
+        self,
+        output_file: Optional[str],
+        fps: Optional[int],
+        format: VideoFormat,
+        compression_quality: float,
     ) -> AsyncGenerator[bytes, None]:
         self.logger.info("Starting connection to backend")
         async with self.stub.video_stream.open() as stream:
@@ -905,6 +909,7 @@ class Client(ClientBase):
                             file_path=output_file,
                             fps=fps,
                             format=VIDEO_FORMAT_MAP[format],
+                            compression_quality=compression_quality,
                         )
                     )
                 )
@@ -916,6 +921,7 @@ class Client(ClientBase):
                             file_path=None,
                             fps=fps,
                             format=VIDEO_FORMAT_MAP[format],
+                            compression_quality=compression_quality,
                         )
                     )
                 )

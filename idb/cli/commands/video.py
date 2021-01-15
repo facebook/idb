@@ -70,6 +70,12 @@ class VideoStreamCommand(ClientCommand):
             default=None,
             help="h264 target file. When omitted, the stream will be written to stdout",
         )
+        parser.add_argument(
+            "--compression-quality",
+            type=float,
+            default=0.2,
+            help="The compression quality (between 0 and 1.0) for the stream",
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
@@ -78,6 +84,7 @@ class VideoStreamCommand(ClientCommand):
                 output_file=args.output_file,
                 fps=args.fps,
                 format=_FORMAT_CHOICE_MAP[args.format],
+                compression_quality=args.compression_quality,
             ),
             name="stream",
             logger=self.logger,
