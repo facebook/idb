@@ -9,7 +9,7 @@ import json
 import logging
 import subprocess
 from datetime import timedelta
-from logging import Logger
+from logging import Logger, DEBUG as LOG_LEVEL_DEBUG
 from typing import AsyncGenerator, Dict, List, Optional, Sequence, Union
 
 from idb.common.format import (
@@ -91,7 +91,13 @@ class Companion(CompanionBase):
             cmd.extend(["--device-set-path", device_set_path])
         cmd.extend(arguments)
         process = await asyncio.create_subprocess_exec(
-            *cmd, stdout=subprocess.PIPE, stderr=None
+            *cmd,
+            stdout=subprocess.PIPE,
+            stderr=(
+                None
+                if self._logger.getEffectiveLevel() <= LOG_LEVEL_DEBUG
+                else subprocess.DEVNULL
+            ),
         )
         logger = self._logger.getChild(f"{process.pid}:{' '.join(arguments)}")
         logger.info("Launched process")
