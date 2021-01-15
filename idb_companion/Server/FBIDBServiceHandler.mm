@@ -1047,7 +1047,8 @@ Status FBIDBServiceHandler::video_stream(ServerContext* context, grpc::ServerRea
       return Status(grpc::StatusCode::INTERNAL, "Invalid Video format provided");
   }
   NSNumber *compressionQuality = @(start.compression_quality());
-  FBVideoStreamConfiguration *configuration = [[FBVideoStreamConfiguration alloc] initWithEncoding:encoding framesPerSecond:framesPerSecond compressionQuality:compressionQuality];
+  NSNumber *scaleFactor = @(start.scale_factor());
+  FBVideoStreamConfiguration *configuration = [[FBVideoStreamConfiguration alloc] initWithEncoding:encoding framesPerSecond:framesPerSecond compressionQuality:compressionQuality scaleFactor:scaleFactor];
   id<FBVideoStream> videoStream = [[_target createStreamWithConfiguration:configuration] block:&error];
   if (!stream) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);

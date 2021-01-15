@@ -29,13 +29,19 @@ extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
  @param encoding the stream type to use.
  @param framesPerSecond the number of frames per second for an eager stream. nil if a lazy stream.
  @param compressionQuality the compression quality to use.
+ @param scaleFactor the scale factor, between 0-1. nil for no scaling.
  */
-- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond compressionQuality:(nullable NSNumber *)compressionQuality;
+- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond compressionQuality:(nullable NSNumber *)compressionQuality scaleFactor:(nullable NSNumber *)scaleFactor;
 
 /**
  The encoding of the stream.
  */
 @property (nonatomic, assign, readonly) FBVideoStreamEncoding encoding;
+
+/**
+ The compression quality to use.
+ */
+@property (nonatomic, copy, readonly) NSNumber *compressionQuality;
 
 /**
  The number of frames per second to use if using an eager stream.
@@ -44,9 +50,9 @@ extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
 @property (nonatomic, copy, nullable, readonly) NSNumber *framesPerSecond;
 
 /**
- The compression quality to use.
+ The scale factor between 0-1. nil for no scaling.
  */
-@property (nonatomic, copy, readonly) NSNumber *compressionQuality;
+@property (nonatomic, copy, nullable, readonly) NSNumber *scaleFactor;
 
 @end
 

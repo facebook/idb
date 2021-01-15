@@ -364,6 +364,7 @@ message VideoStreamRequest {
     uint64 fps = 2;
     Format format = 3;
     double compression_quality = 4;
+    double scale_factor = 5;
   }
   message Stop {
   }

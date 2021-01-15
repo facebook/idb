@@ -20,7 +20,7 @@ FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
 
 #pragma mark Initializers
 
-- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond compressionQuality:(nullable NSNumber *)compressionQuality
+- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond compressionQuality:(nullable NSNumber *)compressionQuality scaleFactor:(nullable NSNumber *)scaleFactor
 {
   self = [super init];
   if (!self) {
@@ -30,6 +30,7 @@ FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
   _encoding = encoding;
   _framesPerSecond = framesPerSecond;
   _compressionQuality = compressionQuality ?: @0.2;
+  _scaleFactor = scaleFactor;
 
   return self;
 }
@@ -38,6 +39,7 @@ FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
+  // Object is immutable.
   return self;
 }
 
@@ -51,21 +53,23 @@ FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
 
   return (self.encoding == object.encoding || [self.encoding isEqualToString:object.encoding])
       && (self.framesPerSecond == object.framesPerSecond || [self.framesPerSecond isEqualToNumber:object.framesPerSecond])
-      && (self.compressionQuality == object.compressionQuality || [self.compressionQuality isEqualToNumber:object.compressionQuality]);
+      && (self.compressionQuality == object.compressionQuality || [self.compressionQuality isEqualToNumber:object.compressionQuality])
+      && (self.scaleFactor == object.scaleFactor || [self.scaleFactor isEqualToNumber:object.scaleFactor]);
 }
 
 - (NSUInteger)hash
 {
-  return self.encoding.hash ^ self.framesPerSecond.hash ^ self.compressionQuality.hash;
+  return self.encoding.hash ^ self.framesPerSecond.hash ^ self.compressionQuality.hash ^ self.scaleFactor.hash;
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Encoding %@ | FPS %@ | Quality %@",
+    @"Encoding %@ | FPS %@ | Quality %@ | Scale %@",
     self.encoding,
     self.framesPerSecond,
-    self.compressionQuality
+    self.compressionQuality,
+    self.scaleFactor
   ];
 }
 
