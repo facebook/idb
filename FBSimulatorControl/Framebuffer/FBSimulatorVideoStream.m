@@ -208,14 +208,14 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 @property (nonatomic, assign, readonly) NSUInteger framesPerSecond;
 @property (nonatomic, strong, readwrite) FBDispatchSourceNotifier *timer;
 
-- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBVideoStreamEncoding)encoding writeQueue:(dispatch_queue_t)writeQueue framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration framesPerSecond:(NSUInteger)framesPerSecond writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
 @interface FBSimulatorVideoStream ()
 
 @property (nonatomic, weak, readonly) FBFramebuffer *framebuffer;
-@property (nonatomic, copy, readonly) FBVideoStreamEncoding encoding;
+@property (nonatomic, copy, readonly) FBVideoStreamConfiguration *configuration;
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startedFuture;
@@ -259,14 +259,15 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 + (nullable instancetype)streamWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
-  NSNumber *framesPerSecond = configuration.framesPerSecond;
-  if (framesPerSecond) {
-    return [[FBSimulatorVideoStream_Eager alloc] initWithFramebuffer:framebuffer encoding:configuration.encoding writeQueue:self.writeQueue framesPerSecond:framesPerSecond.unsignedIntegerValue logger:logger];
+  NSNumber *framesPerSecondNumber = configuration.framesPerSecond;
+  NSUInteger framesPerSecond = framesPerSecondNumber.unsignedIntegerValue;
+  if (framesPerSecondNumber && framesPerSecond > 0) {
+    return [[FBSimulatorVideoStream_Eager alloc] initWithFramebuffer:framebuffer configuration:configuration framesPerSecond:framesPerSecond writeQueue:self.writeQueue logger:logger];
   }
-  return [[FBSimulatorVideoStream_Lazy alloc] initWithFramebuffer:framebuffer encoding:configuration.encoding writeQueue:self.writeQueue logger:logger];
+  return [[FBSimulatorVideoStream_Lazy alloc] initWithFramebuffer:framebuffer configuration:configuration writeQueue:self.writeQueue logger:logger];
 }
 
-- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBVideoStreamEncoding)encoding writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -274,7 +275,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   }
 
   _framebuffer = framebuffer;
-  _encoding = encoding;
+  _configuration = configuration;
   _writeQueue = writeQueue;
   _logger = logger;
   _startedFuture = FBMutableFuture.future;
@@ -406,7 +407,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   self.pixelBuffer = buffer;
   self.pixelBufferAttributes = attributes;
 
-  id<FBSimulatorVideoStreamFramePusher> framePusher = [self framePusherForEncoding:self.encoding consumer:consumer error:error];
+  id<FBSimulatorVideoStreamFramePusher> framePusher = [self.class framePusherForConfiguration:self.configuration compressionSessionProperties:self.compressionSessionProperties consumer:consumer logger:self.logger error:nil];
   if (!framePusher) {
     return NO;
   }
@@ -443,31 +444,32 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   self.frameNumber = frameNumber + 1;
 }
 
-- (id<FBSimulatorVideoStreamFramePusher>)framePusherForEncoding:(FBVideoStreamEncoding)encoding consumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer error:(NSError **)error
++ (id<FBSimulatorVideoStreamFramePusher>)framePusherForConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties consumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   // Get the base compression session properties, and add the class-cluster properties to them.
-  NSMutableDictionary<NSString *, id> *compressionSessionProperties = [NSMutableDictionary dictionaryWithDictionary:@{
+  NSMutableDictionary<NSString *, id> *derivedCompressionSessionProperties = [NSMutableDictionary dictionaryWithDictionary:@{
     (NSString *) kVTCompressionPropertyKey_RealTime: @YES,
     (NSString *) kVTCompressionPropertyKey_AllowFrameReordering: @NO,
   }];
-  [compressionSessionProperties addEntriesFromDictionary:self.compressionSessionProperties];
-  if ([self.encoding isEqualToString:FBVideoStreamEncodingH264]) {
-    compressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *) kVTProfileLevel_H264_High_AutoLevel;
-    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc] initWithConsumer:consumer compressionSessionProperties:compressionSessionProperties videoCodec:kCMVideoCodecType_H264 compressorCallback:H264AnnexBCompressorCallback logger:self.logger];
+  [derivedCompressionSessionProperties addEntriesFromDictionary:compressionSessionProperties];
+  FBVideoStreamEncoding encoding = configuration.encoding;
+  if ([encoding isEqualToString:FBVideoStreamEncodingH264]) {
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *) kVTProfileLevel_H264_High_AutoLevel;
+    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc] initWithConsumer:consumer compressionSessionProperties:[derivedCompressionSessionProperties copy] videoCodec:kCMVideoCodecType_H264 compressorCallback:H264AnnexBCompressorCallback logger:logger];
   }
-  if ([self.encoding isEqualToString:FBVideoStreamEncodingMJPEG]) {
-    compressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = @(0.2);
-    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc] initWithConsumer:consumer compressionSessionProperties:compressionSessionProperties videoCodec:kCMVideoCodecType_JPEG compressorCallback:MJPEGCompressorCallback logger:self.logger];
+  if ([encoding isEqualToString:FBVideoStreamEncodingMJPEG]) {
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = @(0.2);
+    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc] initWithConsumer:consumer compressionSessionProperties:[derivedCompressionSessionProperties copy] videoCodec:kCMVideoCodecType_JPEG compressorCallback:MJPEGCompressorCallback logger:logger];
   }
-  if ([self.encoding isEqualToString:FBVideoStreamEncodingMinicap]) {
-    compressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = @(0.2);
-    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc] initWithConsumer:consumer compressionSessionProperties:compressionSessionProperties videoCodec:kCMVideoCodecType_JPEG compressorCallback:MinicapCompressorCallback logger:self.logger];
+  if ([encoding isEqualToString:FBVideoStreamEncodingMinicap]) {
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = @(0.2);
+    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc] initWithConsumer:consumer compressionSessionProperties:[derivedCompressionSessionProperties copy] videoCodec:kCMVideoCodecType_JPEG compressorCallback:MinicapCompressorCallback logger:logger];
   }
-  if ([self.encoding isEqual:FBVideoStreamEncodingBGRA]) {
+  if ([encoding isEqual:FBVideoStreamEncodingBGRA]) {
     return [[FBSimulatorVideoStreamFramePusher_Bitmap alloc] initWithConsumer:consumer];
   }
   return [[FBControlCoreError
-    describeFormat:@"%@ is not supported for Simulators", self.encoding]
+    describeFormat:@"%@ is not supported for Simulators", encoding]
     fail:error];
 }
 
@@ -500,9 +502,9 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 @implementation FBSimulatorVideoStream_Eager
 
-- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer encoding:(FBVideoStreamEncoding)encoding writeQueue:(dispatch_queue_t)writeQueue framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration framesPerSecond:(NSUInteger)framesPerSecond writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super initWithFramebuffer:framebuffer encoding:encoding writeQueue:writeQueue logger:logger];
+  self = [super initWithFramebuffer:framebuffer configuration:configuration writeQueue:writeQueue logger:logger];
   if (!self) {
     return nil;
   }
