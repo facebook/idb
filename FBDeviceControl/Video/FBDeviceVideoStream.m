@@ -285,7 +285,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   output.videoSettings = @{
     AVVideoCodecKey: AVVideoCodecTypeJPEG,
     AVVideoCompressionPropertiesKey: @{
-      AVVideoQualityKey: @(0.2),
+      AVVideoQualityKey: configuration.compressionQuality,
     },
   };
   return YES;
