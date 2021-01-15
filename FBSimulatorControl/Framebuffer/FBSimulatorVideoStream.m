@@ -32,8 +32,9 @@
 
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox : NSObject <FBSimulatorVideoStreamFramePusher>
 
-- (instancetype)initWithConsumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec consumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger;
 
+@property (nonatomic, copy, readonly) FBVideoStreamConfiguration *configuration;
 @property (nonatomic, assign, nullable, readwrite) VTCompressionSessionRef compressionSession;
 @property (nonatomic, assign, readonly) CMVideoCodecType videoCodec;
 @property (nonatomic, assign, readonly) VTCompressionOutputCallback compressorCallback;
@@ -106,13 +107,14 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 @implementation FBSimulatorVideoStreamFramePusher_VideoToolbox
 
-- (instancetype)initWithConsumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec consumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _configuration = configuration;
   _compressionSessionProperties = compressionSessionProperties;
   _compressorCallback = compressorCallback;
   _consumer = consumer;
@@ -127,16 +129,26 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   NSDictionary<NSString *, id> * encoderSpecification = @{
     (NSString *) kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder: @YES,
   };
+  size_t sourceWidth = CVPixelBufferGetWidth(pixelBuffer);
+  size_t sourceHeight = CVPixelBufferGetHeight(pixelBuffer);
+  int32_t destinationWidth = sourceWidth;
+  int32_t destinationHeight = sourceHeight;
   NSDictionary<NSString *, id> *sourceImageBufferAttributes = @{
-    (NSString *) kCVPixelBufferWidthKey: @(CVPixelBufferGetWidth(pixelBuffer)),
-    (NSString *) kCVPixelBufferHeightKey: @(CVPixelBufferGetHeight(pixelBuffer)),
+    (NSString *) kCVPixelBufferWidthKey: @(sourceWidth),
+    (NSString *) kCVPixelBufferHeightKey: @(sourceHeight),
   };
+  NSNumber *scaleFactor = self.configuration.scaleFactor;
+  if (scaleFactor && [scaleFactor isGreaterThan:@0] && [scaleFactor isLessThan:@1]) {
+    destinationWidth = floor(scaleFactor.doubleValue * sourceWidth);
+    destinationHeight = floor(scaleFactor.doubleValue * sourceHeight);
+    [self.logger.info logFormat:@"Applying %@ scale from w=%zu/h=%zu to w=%d/h=%d", scaleFactor, sourceWidth, sourceHeight, destinationWidth, destinationHeight];
+  }
 
   VTCompressionSessionRef compressionSession = NULL;
   OSStatus status = VTCompressionSessionCreate(
     nil, // Allocator
-    (int32_t) CVPixelBufferGetWidth(pixelBuffer),
-    (int32_t) CVPixelBufferGetHeight(pixelBuffer),
+    destinationWidth,
+    destinationHeight,
     self.videoCodec,
     (__bridge CFDictionaryRef) encoderSpecification,
     (__bridge CFDictionaryRef) sourceImageBufferAttributes,
@@ -455,15 +467,33 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   FBVideoStreamEncoding encoding = configuration.encoding;
   if ([encoding isEqualToString:FBVideoStreamEncodingH264]) {
     derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *) kVTProfileLevel_H264_High_AutoLevel;
-    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc] initWithConsumer:consumer compressionSessionProperties:[derivedCompressionSessionProperties copy] videoCodec:kCMVideoCodecType_H264 compressorCallback:H264AnnexBCompressorCallback logger:logger];
+    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
+      initWithConfiguration:configuration
+      compressionSessionProperties:[derivedCompressionSessionProperties copy]
+      videoCodec:kCMVideoCodecType_H264
+      consumer:consumer
+      compressorCallback:H264AnnexBCompressorCallback
+      logger:logger];
   }
   if ([encoding isEqualToString:FBVideoStreamEncodingMJPEG]) {
-    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = configuration.compressionQuality;
-    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc] initWithConsumer:consumer compressionSessionProperties:[derivedCompressionSessionProperties copy] videoCodec:kCMVideoCodecType_JPEG compressorCallback:MJPEGCompressorCallback logger:logger];
+      derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = configuration.compressionQuality;
+      return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
+        initWithConfiguration:configuration
+        compressionSessionProperties:[derivedCompressionSessionProperties copy]
+        videoCodec:kCMVideoCodecType_JPEG
+        consumer:consumer
+        compressorCallback:MJPEGCompressorCallback
+        logger:logger];
   }
   if ([encoding isEqualToString:FBVideoStreamEncodingMinicap]) {
     derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = configuration.compressionQuality;
-    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc] initWithConsumer:consumer compressionSessionProperties:[derivedCompressionSessionProperties copy] videoCodec:kCMVideoCodecType_JPEG compressorCallback:MinicapCompressorCallback logger:logger];
+    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
+        initWithConfiguration:configuration
+        compressionSessionProperties:[derivedCompressionSessionProperties copy]
+        videoCodec:kCMVideoCodecType_JPEG
+        consumer:consumer
+        compressorCallback:MinicapCompressorCallback
+        logger:logger];
   }
   if ([encoding isEqual:FBVideoStreamEncodingBGRA]) {
     return [[FBSimulatorVideoStreamFramePusher_Bitmap alloc] initWithConsumer:consumer];
