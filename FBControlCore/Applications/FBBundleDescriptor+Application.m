@@ -25,7 +25,7 @@
 {
   // If it's an App, we don't need to do anything, just return early.
   if ([FBBundleDescriptor isApplicationAtPath:path]) {
-    return [FBFutureContext futureContextWithFuture:[self extractedApplicationAtPath:path directory:nil]];
+    return [FBFutureContext futureContextWithFuture:[self extractedApplicationAtPath:path]];
   }
   return [[[self
     temporaryExtractPathWithQueue:queue logger:logger]
@@ -68,7 +68,7 @@
       describeFormat:@"Expected only one Application in IPA, found %lu: %@", applicationURLs.count, [FBCollectionInformation oneLineDescriptionFromArray:[applicationURLs.allObjects valueForKey:@"lastPathComponent"]]]
       failFuture];
   }
-  return [self extractedApplicationAtPath:[applicationURLs.allObjects.firstObject path] directory:directory];
+  return [self extractedApplicationAtPath:[applicationURLs.allObjects.firstObject path]];
 }
 
 + (BOOL)isApplicationAtPath:(NSString *)path
@@ -108,7 +108,7 @@
     }];
 }
 
-+ (FBFuture<FBBundleDescriptor *> *)extractedApplicationAtPath:(NSString *)appPath directory:(NSURL *)directory
++ (FBFuture<FBBundleDescriptor *> *)extractedApplicationAtPath:(NSString *)appPath
 {
   NSError *error = nil;
   FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:appPath error:&error];
