@@ -669,7 +669,7 @@ class Client(ClientBase):
         await self.hid(iterator_to_async_iterator(events))
 
     @log_and_handle_exceptions
-    async def tap(self, x: int, y: int, duration: Optional[float] = None) -> None:
+    async def tap(self, x: float, y: float, duration: Optional[float] = None) -> None:
         await self.send_events(tap_to_events(x, y, duration))
 
     @log_and_handle_exceptions

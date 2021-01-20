@@ -538,7 +538,7 @@ class Client(ABC):
         pass
 
     @abstractmethod
-    async def tap(self, x: int, y: int, duration: Optional[float] = None) -> None:
+    async def tap(self, x: float, y: float, duration: Optional[float] = None) -> None:
         pass
 
     @abstractmethod

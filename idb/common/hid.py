@@ -21,7 +21,9 @@ from idb.common.types import (
 )
 
 
-def tap_to_events(x: int, y: int, duration: Optional[float] = None) -> List[HIDEvent]:
+def tap_to_events(
+    x: float, y: float, duration: Optional[float] = None
+) -> List[HIDEvent]:
     return _press_with_duration(HIDTouch(point=Point(x=x, y=y)), duration=duration)
 
 
