@@ -25,8 +25,13 @@
   NSError *error;
   BOOL success = [NSFileManager.defaultManager createDirectoryAtURL:temporaryDirectory withIntermediateDirectories:YES attributes:nil error:&error];
   NSAssert(success, @"%@", error);
+  return [self temporaryDirectoryWithLogger:logger rootDirectory:temporaryDirectory];
+}
+
++ (instancetype)temporaryDirectoryWithLogger:(id<FBControlCoreLogger>)logger rootDirectory:(NSURL *)rootDirectory
+{
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.idb.fbtemporarydirectory", DISPATCH_QUEUE_SERIAL);
-  return [[self alloc] initWithRootDirectory:temporaryDirectory queue:queue logger:logger];
+  return [[self alloc] initWithRootDirectory:rootDirectory queue:queue logger:logger];
 }
 
 - (instancetype)initWithRootDirectory:(NSURL *)rootDirectory queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
