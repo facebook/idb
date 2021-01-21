@@ -21,33 +21,6 @@
 
 #pragma mark Public
 
-+ (FBFutureContext<FBBundleDescriptor *> *)onQueue:(dispatch_queue_t)queue findOrExtractApplicationAtPath:(NSString *)path  logger:(id<FBControlCoreLogger>)logger
-{
-  // If it's an App, we don't need to do anything, just return early.
-  if ([FBBundleDescriptor isApplicationAtPath:path]) {
-    return [FBFutureContext futureContextWithFuture:[self extractedApplicationAtPath:path]];
-  }
-  return [[[self
-    temporaryExtractPathWithQueue:queue logger:logger]
-    onQueue:queue pend:^(NSURL *extractPath) {
-      return [[FBArchiveOperations extractArchiveAtPath:path toPath:extractPath.path queue:queue logger:logger] mapReplace:extractPath];
-    }]
-    onQueue:queue pend:^(NSURL *extractPath) {
-      return [FBBundleDescriptor findAppPathFromDirectory:extractPath];
-    }];
-}
-
-+ (FBFutureContext<FBBundleDescriptor *> *)onQueue:(dispatch_queue_t)queue extractApplicationFromInput:(FBProcessInput *)input  logger:(id<FBControlCoreLogger>)logger
-{
-  return [[[self
-    temporaryExtractPathWithQueue:queue logger:logger]
-    onQueue:queue pend:^(NSURL *extractPath) {
-      return [[FBArchiveOperations extractArchiveFromStream:input toPath:extractPath.path queue:queue logger:logger] mapReplace:extractPath];
-    }]
-    onQueue:queue pend:^(NSURL *extractPath) {
-      return [FBBundleDescriptor findAppPathFromDirectory:extractPath];
-    }];
-}
 
 + (FBFuture<FBBundleDescriptor *> *)findAppPathFromDirectory:(NSURL *)directory
 {
@@ -78,34 +51,6 @@
     && [path hasSuffix:@".app"]
     && [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory]
     && isDirectory;
-}
-
-#pragma mark Private
-
-+ (FBFutureContext<NSURL *> *)temporaryExtractPathWithQueue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
-{
-  NSURL *temporaryPath = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString] isDirectory:YES];
-  return [[FBFuture
-    onQueue:queue resolve:^{
-      NSError *error = nil;
-      if (![NSFileManager.defaultManager createDirectoryAtURL:temporaryPath withIntermediateDirectories:YES attributes:nil error:&error]) {
-        return [[[FBControlCoreError
-          describeFormat:@"Could not create temporary directory for IPA extraction %@", temporaryPath]
-          causedBy:error]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:temporaryPath];
-    }]
-    onQueue:queue contextualTeardown:^(NSString *extractPath, FBFutureState __) {
-      [logger logFormat:@"Removing extracted directory %@", temporaryPath];
-      NSError *innerError = nil;
-      if ([NSFileManager.defaultManager removeItemAtPath:extractPath error:&innerError]) {
-        [logger logFormat:@"Removed extracted directory %@", temporaryPath];
-      } else {
-        [logger logFormat:@"Failed to remove extracted directory %@ with error %@", temporaryPath, innerError];
-      }
-      return FBFuture.empty;
-    }];
 }
 
 + (FBFuture<FBBundleDescriptor *> *)extractedApplicationAtPath:(NSString *)appPath

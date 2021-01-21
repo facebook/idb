@@ -81,12 +81,17 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
 
 - (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath
 {
-  return [self installExtractedApplication:[FBBundleDescriptor onQueue:self.target.asyncQueue findOrExtractApplicationAtPath:filePath logger:self.logger]];
+  // Use .app directly, or extract an .ipa
+  if ([FBBundleDescriptor isApplicationAtPath:filePath]) {
+    return [self installAppBundle:[FBFutureContext futureContextWithFuture:[FBBundleDescriptor extractedApplicationAtPath:filePath]]];
+  } else {
+    return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromFile:filePath]];
+  }
 }
 
 - (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input
 {
-  return [self installExtractedApplication:[FBBundleDescriptor onQueue:self.target.asyncQueue extractApplicationFromInput:input logger:self.logger]];
+  return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromStream:input]];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)install_xctest_app_file_path:(NSString *)filePath
@@ -678,9 +683,17 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)installExtractedApplication:(FBFutureContext<FBBundleDescriptor *> *)extractedApplication
+- (FBFuture<FBInstalledArtifact *> *)installExtractedApp:(FBFutureContext<NSURL *> *)extractedAppContext
 {
-  return [[extractedApplication
+  FBFutureContext<FBBundleDescriptor *> *bundleContext = [extractedAppContext onQueue:self.target.asyncQueue pend:^(NSURL *extractPath) {
+       return [FBBundleDescriptor findAppPathFromDirectory:extractPath];
+  }];
+  return [self installAppBundle:bundleContext];
+}
+
+- (FBFuture<FBInstalledArtifact *> *)installAppBundle:(FBFutureContext<FBBundleDescriptor *> *)bundleContext
+{
+  return [[bundleContext
     onQueue:self.target.workQueue pend:^(FBBundleDescriptor *appBundle){
       if (!appBundle) {
         return [FBFuture futureWithError:[FBControlCoreError errorForDescription:@"No app bundle could be extracted"]];

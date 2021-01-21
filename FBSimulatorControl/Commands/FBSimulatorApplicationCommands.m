@@ -48,12 +48,7 @@
 
 - (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
 {
-  return [[[FBBundleDescriptor
-    onQueue:self.simulator.asyncQueue findOrExtractApplicationAtPath:path logger:self.simulator.logger]
-    onQueue:self.simulator.workQueue pop:^(FBBundleDescriptor *bundle) {
-      return [self installExtractedApplicationWithPath:bundle.path];
-    }]
-    mapReplace:NSNull.null];
+  return [self installExtractedApplicationWithPath:path];
 }
 
 - (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
