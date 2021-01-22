@@ -42,6 +42,7 @@ class CompanionSpawnerTest(TestCase):
                 stderr=mock.ANY,
                 stdin=mock.ANY,
                 cwd=None,
+                env=os.environ,
                 preexec_fn=os.setpgrp,
             )
             self.assertEqual(port, 1234)
