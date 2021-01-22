@@ -90,7 +90,7 @@ from idb.cli.commands.xctest import (
     XctestsListBundlesCommand,
 )
 from idb.common.command import Command, CommandGroup
-from idb.common.types import IdbException
+from idb.common.types import IdbException, ExitWithCodeException
 
 
 COROUTINE_DRAIN_TIMEOUT = 2
@@ -280,6 +280,8 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
     except IdbException as e:
         print(e.args[0], file=sys.stderr)
         return 1
+    except ExitWithCodeException as e:
+        return e.exit_code
     except Exception:
         logger.exception("Exception thrown in main")
         return 1

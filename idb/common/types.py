@@ -38,6 +38,11 @@ class IdbConnectionException(Exception):
     pass
 
 
+@dataclass(frozen=True)
+class ExitWithCodeException(Exception):
+    exit_code: int
+
+
 class Permission(Enum):
     PHOTOS = 0
     CAMERA = 1
@@ -247,6 +252,10 @@ class TestRunInfo:
     failure_info: Optional[TestRunFailureInfo]
     activityLogs: Optional[List[TestActivity]]
     crashed: bool
+
+    @property
+    def crashed_outside_test_case(self) -> bool:
+        return self.crashed and self.class_name == "" and self.method_name == ""
 
 
 @dataclass(frozen=True)
