@@ -78,11 +78,6 @@
 
 @implementation FBApplicationLaunchConfiguration (Helpers)
 
-- (instancetype)overridingLocalization:(FBLocalizationOverride *)localizationOverride
-{
-  return [self withAdditionalArguments:localizationOverride.arguments];
-}
-
 - (NSString *)identifiableName
 {
   return self.bundleID;

@@ -23,8 +23,7 @@
 - (void)testLaunchConfigurations
 {
   NSArray<FBSimulatorBootConfiguration *> *values = @[
-    [[[FBSimulatorBootConfiguration.defaultConfiguration
-      withLocalizationOverride:[FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]]]
+    [[FBSimulatorBootConfiguration.defaultConfiguration
       withOptions:FBSimulatorBootOptionsEnableDirectLaunch]
       withScale:FBScale75],
     [[[FBSimulatorBootConfiguration.defaultConfiguration
@@ -37,8 +36,7 @@
 
 - (void)testLaunchConfigurationScaleAppliedToFramebufferConfiguration
 {
-  FBSimulatorBootConfiguration *launchConfiguration = [[[FBSimulatorBootConfiguration.defaultConfiguration
-    withLocalizationOverride:[FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]]]
+  FBSimulatorBootConfiguration *launchConfiguration = [[FBSimulatorBootConfiguration.defaultConfiguration
     withOptions:FBSimulatorBootOptionsEnableDirectLaunch]
     withFramebuffer:FBFramebufferConfiguration.defaultConfiguration];
   XCTAssertNotNil(launchConfiguration.framebuffer);

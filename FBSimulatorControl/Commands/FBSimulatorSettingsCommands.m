@@ -55,17 +55,6 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     }];
 }
 
-- (FBFuture<NSNull *> *)overridingLocalization:(FBLocalizationOverride *)localizationOverride
-{
-  if (!localizationOverride) {
-    return FBFuture.empty;
-  }
-
-  return [[FBLocalizationDefaultsModificationStrategy
-    strategyWithSimulator:self.simulator]
-    overrideLocalization:localizationOverride];
-}
-
 - (FBFuture<NSNull *> *)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout
 {
   return [[FBWatchdogOverrideModificationStrategy

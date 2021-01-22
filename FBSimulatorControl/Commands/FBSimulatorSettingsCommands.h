@@ -12,7 +12,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBBundleDescriptor;
-@class FBLocalizationOverride;
 @class FBSimulator;
 
 /**
@@ -27,14 +26,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Future that resolves when successful.
  */
 - (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled;
-
-/**
- Overrides the Global Localization of the Simulator.
-
- @param localizationOverride the Localization Override to set.
- @return A future that resolves when the setting change is complete.
- */
-- (FBFuture<NSNull *> *)overridingLocalization:(FBLocalizationOverride *)localizationOverride;
 
 /**
  Overrides the default SpringBoard watchdog timer for the applications. You can use this to give your application more

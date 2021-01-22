@@ -68,13 +68,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBApplicationLaunchConfiguration (Helpers)
 
 /**
- Overrides the launch of the Application with a given localization.
-
- @param localizationOverride the Localization Override to Apply.s
- */
-- (instancetype)overridingLocalization:(FBLocalizationOverride *)localizationOverride;
-
-/**
  Creates the Dictionary of launch options for launching an Application.
 
  @param stdOutPath the path to launch stdout to, may be nil.

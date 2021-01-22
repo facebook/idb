@@ -11,7 +11,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBLocalizationOverride;
 @class FBSimulator;
 
 /**
@@ -35,21 +34,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a future that resolves when completed.
  */
 - (FBFuture<NSNull *> *)modifyDefaultsInDomainOrPath:(nullable NSString *)domainOrPath defaults:(NSDictionary<NSString *, id> *)defaults;
-
-@end
-
-/**
- Modifies the Global Preferences for a Localization
- */
-@interface FBLocalizationDefaultsModificationStrategy : FBDefaultsModificationStrategy
-
-/**
- Adds a Localization Override.
-
- @param localizationOverride the Localization Override to use.
- @return a future that resolves when completed.
- */
-- (FBFuture<NSNull *> *)overrideLocalization:(FBLocalizationOverride *)localizationOverride;
 
 @end
 

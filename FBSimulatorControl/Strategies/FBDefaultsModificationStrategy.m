@@ -120,15 +120,6 @@
 
 @end
 
-@implementation FBLocalizationDefaultsModificationStrategy
-
-- (FBFuture<NSNull *> *)overrideLocalization:(FBLocalizationOverride *)localizationOverride
-{
-  return [self modifyDefaultsInDomainOrPath:nil defaults:localizationOverride.defaultsDictionary];
-}
-
-@end
-
 @implementation FBLocationServicesModificationStrategy
 
 - (FBFuture<NSNull *> *)approveLocationServicesForBundleIDs:(NSArray<NSString *> *)bundleIDs

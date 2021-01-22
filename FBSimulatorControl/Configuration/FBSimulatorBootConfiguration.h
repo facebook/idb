@@ -41,11 +41,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable, copy, readonly) NSDictionary<NSString *, NSString *> *environment;
 
 /**
- The Locale in which to Simulate, may be nil.
- */
-@property (nonatomic, nullable, strong, readonly) FBLocalizationOverride *localizationOverride;
-
-/**
  The Scale of the Framebuffer.
  */
 @property (nonatomic, nullable, copy, readonly) FBScale scale;
@@ -92,16 +87,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new FBSimulatorBootConfiguration with the arguments applied.
  */
 - (instancetype)withScale:(nullable FBScale)scale;
-
-#pragma mark Locale
-
-/**
- Updates the boot configuration with a new localization.
-
- @param localizationOverride the localization to update.
- @return a new FBSimulatorBootConfiguration with the arguments applied.
- */
-- (instancetype)withLocalizationOverride:(nullable FBLocalizationOverride *)localizationOverride;
 
 #pragma mark Framebuffer
 

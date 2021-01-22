@@ -31,10 +31,10 @@ static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsV
 
 - (instancetype)init
 {
-  return [self initWithOptions:DefaultBootOptions environment:nil scale:nil localizationOverride:nil framebuffer:nil];
+  return [self initWithOptions:DefaultBootOptions environment:nil scale:nil framebuffer:nil];
 }
 
-- (instancetype)initWithOptions:(FBSimulatorBootOptions)options environment:(NSDictionary<NSString *, NSString *> *)environment scale:(FBScale)scale localizationOverride:(FBLocalizationOverride *)localizationOverride framebuffer:(FBFramebufferConfiguration *)framebuffer
+- (instancetype)initWithOptions:(FBSimulatorBootOptions)options environment:(NSDictionary<NSString *, NSString *> *)environment scale:(FBScale)scale framebuffer:(FBFramebufferConfiguration *)framebuffer
 {
   self = [super init];
   if (!self) {
@@ -44,7 +44,6 @@ static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsV
   _options = options;
   _environment = environment;
   _scale = scale;
-  _localizationOverride = localizationOverride;
   _framebuffer = framebuffer;
 
   return self;
@@ -69,22 +68,20 @@ static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsV
   return self.options == configuration.options &&
          (self.environment == configuration.environment || [self.environment isEqualToDictionary:configuration.environment]) &&
          (self.scale == configuration.scale || [self.scale isEqualToString:configuration.scale]) &&
-         (self.localizationOverride == configuration.localizationOverride || [self.localizationOverride isEqual:configuration.localizationOverride]) &&
          (self.framebuffer == configuration.framebuffer || [self.framebuffer isEqual:configuration.framebuffer]);
 }
 
 - (NSUInteger)hash
 {
-  return self.options ^ self.environment.hash ^ self.scale.hash ^ self.localizationOverride.hash ^ self.framebuffer.hash;
+  return self.options ^ self.environment.hash ^ self.scale.hash ^ self.framebuffer.hash;
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Scale %@ | Environment %@ | %@ | Options %@ | %@",
+    @"Scale %@ | Environment %@ | Options %@ | %@",
     self.scale,
     [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
-    self.localizationOverride ? self.localizationOverride : @"No Locale Override",
     [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorBootConfiguration stringsFromBootOptions:self.options]],
     self.framebuffer ?: @"No Framebuffer"
   ];
@@ -101,14 +98,14 @@ static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsV
 
 - (instancetype)withOptions:(FBSimulatorBootOptions)options
 {
-  return [[self.class alloc] initWithOptions:options environment:self.environment scale:self.scale localizationOverride:self.localizationOverride framebuffer:self.framebuffer];
+  return [[self.class alloc] initWithOptions:options environment:self.environment scale:self.scale framebuffer:self.framebuffer];
 }
 
 #pragma mark Environment
 
 - (instancetype)withBootEnvironment:(nullable NSDictionary<NSString *, NSString *> *)environment
 {
-  return [[self.class alloc] initWithOptions:self.options environment:environment scale:self.scale localizationOverride:self.localizationOverride framebuffer:self.framebuffer];
+  return [[self.class alloc] initWithOptions:self.options environment:environment scale:self.scale framebuffer:self.framebuffer];
 }
 
 #pragma mark Scale
@@ -119,21 +116,14 @@ static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsV
     return self;
   }
   FBFramebufferConfiguration *framebuffer = [self.framebuffer withScale:scale];
-  return [[self.class alloc] initWithOptions:self.options environment:self.environment scale:scale localizationOverride:self.localizationOverride framebuffer:framebuffer];
-}
-
-#pragma mark Locale
-
-- (instancetype)withLocalizationOverride:(nullable FBLocalizationOverride *)localizationOverride
-{
-  return [[self.class alloc] initWithOptions:self.options environment:self.environment scale:self.scale localizationOverride:localizationOverride framebuffer:self.framebuffer];
+  return [[self.class alloc] initWithOptions:self.options environment:self.environment scale:scale framebuffer:framebuffer];
 }
 
 #pragma mark Video
 
 - (instancetype)withFramebuffer:(FBFramebufferConfiguration *)framebuffer
 {
-  return [[self.class alloc] initWithOptions:self.options environment:self.environment scale:self.scale localizationOverride:self.localizationOverride framebuffer:framebuffer];
+  return [[self.class alloc] initWithOptions:self.options environment:self.environment scale:self.scale framebuffer:framebuffer];
 }
 
 #pragma mark Utility
