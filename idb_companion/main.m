@@ -385,15 +385,6 @@ static FBFuture<NSNull *> *ActivateFuture(NSString *ecid, id<FBControlCoreLogger
     }];
 }
 
-static FBTemporaryDirectory *GetTemporaryDirectory(NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger) {
-  NSString *tmpdir = [NSProcessInfo.processInfo.environment objectForKey:@"TMPDIR"];
-  if (tmpdir) {
-    return [FBTemporaryDirectory temporaryDirectoryWithLogger:logger rootDirectory:[NSURL fileURLWithPath:tmpdir]];
-  } else {
-    return [FBTemporaryDirectory temporaryDirectoryWithLogger:logger];
-  }
-}
-
 static FBFuture<NSNull *> *CleanFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   return [TargetForUDID(udid, userDefaults, YES, logger, reporter)
@@ -406,7 +397,7 @@ static FBFuture<NSNull *> *CleanFuture(NSString *udid, NSUserDefaults *userDefau
       FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
         commandExecutorForTarget:target
         storageManager:storageManager
-        temporaryDirectory:GetTemporaryDirectory(userDefaults, logger)
+        temporaryDirectory:[FBTemporaryDirectory temporaryDirectoryWithLogger:logger]
         ports:[FBIDBPortsConfiguration portsWithArguments:userDefaults]
         logger:logger];
       return [commandExecutor clean];
@@ -422,7 +413,7 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
       [reporter report:[FBEventReporterSubject subjectForEvent:@"launched"]];
       // Start up the companion
       FBIDBPortsConfiguration *ports = [FBIDBPortsConfiguration portsWithArguments:userDefaults];
-      FBTemporaryDirectory *temporaryDirectory = GetTemporaryDirectory(userDefaults, logger);
+      FBTemporaryDirectory *temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:logger];
       NSError *error = nil;
       FBIDBCompanionServer *server = [FBIDBCompanionServer companionForTarget:target temporaryDirectory:temporaryDirectory ports:ports eventReporter:reporter logger:logger error:&error];
       if (!server) {

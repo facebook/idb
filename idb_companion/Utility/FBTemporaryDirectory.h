@@ -19,22 +19,12 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Initializers
 
 /**
- Create an FBTemporaryDirectory instance using NSTemporaryDirectory
+ The Designated Initializer.
 
  @param logger the logger to use.
  @return a new FBTemporaryDirectory instance.
  */
 + (instancetype)temporaryDirectoryWithLogger:(id<FBControlCoreLogger>)logger;
-
-
-/**
- Create an FBTemporaryDirectory instance using the specified tmp root
-
- @param logger the logger to use.
- @param rootDirectory tmp root to use
- @return a new FBTemporaryDirectory instance.
- */
-+ (instancetype)temporaryDirectoryWithLogger:(id<FBControlCoreLogger>)logger rootDirectory:(NSURL *)rootDirectory;
 
 #pragma mark Methods
 
