@@ -131,16 +131,16 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   };
   size_t sourceWidth = CVPixelBufferGetWidth(pixelBuffer);
   size_t sourceHeight = CVPixelBufferGetHeight(pixelBuffer);
-  int32_t destinationWidth = sourceWidth;
-  int32_t destinationHeight = sourceHeight;
+  int32_t destinationWidth = (int32_t) sourceWidth;
+  int32_t destinationHeight = (int32_t) sourceHeight;
   NSDictionary<NSString *, id> *sourceImageBufferAttributes = @{
     (NSString *) kCVPixelBufferWidthKey: @(sourceWidth),
     (NSString *) kCVPixelBufferHeightKey: @(sourceHeight),
   };
   NSNumber *scaleFactor = self.configuration.scaleFactor;
   if (scaleFactor && [scaleFactor isGreaterThan:@0] && [scaleFactor isLessThan:@1]) {
-    destinationWidth = floor(scaleFactor.doubleValue * sourceWidth);
-    destinationHeight = floor(scaleFactor.doubleValue * sourceHeight);
+    destinationWidth = (int32_t) floor(scaleFactor.doubleValue * sourceWidth);
+    destinationHeight = (int32_t) floor(scaleFactor.doubleValue * sourceHeight);
     [self.logger.info logFormat:@"Applying %@ scale from w=%zu/h=%zu to w=%d/h=%d", scaleFactor, sourceWidth, sourceHeight, destinationWidth, destinationHeight];
   }
 
