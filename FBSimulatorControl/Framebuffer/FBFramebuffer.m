@@ -105,56 +105,13 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 
 @end
 
-@interface FBFramebuffer_SimDeviceFramebufferService_Forwarder : NSObject
-
-@property (nonatomic, weak, readonly) id<FBFramebufferConsumer> consumer;
-
-@end
-
-@implementation FBFramebuffer_SimDeviceFramebufferService_Forwarder
-
-- (instancetype)initWithConsumer:(id<FBFramebufferConsumer>)consumer
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _consumer = consumer;
-
-  return self;
-}
-
-- (void)setIOSurface:(IOSurfaceRef)surface
-{
-  [self.consumer didChangeIOSurface:surface];
-}
-
-@end
-
 @interface FBFramebuffer ()
 
 @property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferConsumer>, id> *forwarders;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-
-@end
-
-@interface FBFramebuffer_IOClient : FBFramebuffer
-
 @property (nonatomic, strong, readonly) id<SimDeviceIOProtocol> ioClient;
 @property (nonatomic, strong, readonly) id<SimDeviceIOPortInterface> port;
 @property (nonatomic, strong, readonly) id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> surface;
-
-- (instancetype)initWithIOClient:(id<SimDeviceIOProtocol>)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger;
-
-@end
-
-@interface FBFramebuffer_FramebufferService : FBFramebuffer
-
-@property (nonatomic, strong, readonly) SimDeviceFramebufferService *framebufferService;
-@property (nonatomic, strong, readonly) dispatch_queue_t clientQueue;
-
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -185,16 +142,11 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
       [logger logFormat:@"SimDisplay Class is '%d' which is not the main display '0'", displayClass];
       continue;
     }
-    return [[FBFramebuffer_IOClient alloc] initWithIOClient:ioClient port:port surface:descriptor logger:logger];
+    return [[FBFramebuffer alloc] initWithIOClient:ioClient port:port surface:descriptor logger:logger];
   }
   return [[FBSimulatorError
     describeFormat:@"Could not find the Main Screen Surface for Clients %@ in %@", [FBCollectionInformation oneLineDescriptionFromArray:ioClient.ioPorts], ioClient]
     fail:error];
-}
-
-+ (instancetype)mainScreenSurfaceForFramebufferService:(SimDeviceFramebufferService *)framebufferService logger:(id<FBControlCoreLogger>)logger
-{
-  return [[FBFramebuffer_FramebufferService alloc] initWithFramebufferService:framebufferService logger:logger];
 }
 
 - (instancetype)initWithForwarders:(NSMapTable<id<FBFramebufferConsumer>, id> *)forwarders logger:(id<FBControlCoreLogger>)logger
@@ -210,58 +162,25 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
   return self;
 }
 
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
-{
-  NSMapTable<id<FBFramebufferConsumer>, id> *forwarders = [NSMapTable
-    mapTableWithKeyOptions:NSPointerFunctionsWeakMemory
-    valueOptions:NSPointerFunctionsStrongMemory];
-  return [self initWithForwarders:forwarders logger:logger];
-}
-
-#pragma mark Public Methods
-
-- (nullable IOSurfaceRef)attachConsumer:(id<FBFramebufferConsumer>)consumer onQueue:(dispatch_queue_t)queue
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (void)detachConsumer:(id<FBFramebufferConsumer>)consumer
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-}
-
-- (NSArray<id<FBFramebufferConsumer>> *)attachedConsumers
-{
-  NSMutableArray<id<FBFramebufferConsumer>> *consumers = [NSMutableArray array];
-  for (id<FBFramebufferConsumer> consumer in self.forwarders.keyEnumerator) {
-    [consumers addObject:consumer];
-  }
-  return [consumers copy];
-}
-
-- (BOOL)isConsumerAttached:(id<FBFramebufferConsumer>)consumer
-{
-  return [[self attachedConsumers] containsObject:consumer];
-}
-
-@end
-
-@implementation FBFramebuffer_IOClient
-
 - (instancetype)initWithIOClient:(id<SimDeviceIOProtocol>)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super initWithLogger:logger];
   if (!self) {
     return nil;
   }
+  NSMapTable<id<FBFramebufferConsumer>, id> *forwarders = [NSMapTable
+    mapTableWithKeyOptions:NSPointerFunctionsWeakMemory
+    valueOptions:NSPointerFunctionsStrongMemory];
 
+  _forwarders = forwarders;
+  _logger = logger;
   _ioClient = ioClient;
   _port = port;
   _surface = surface;
 
   return self;
 }
+
+#pragma mark Public Methods
 
 - (nullable IOSurfaceRef)attachConsumer:(id<FBFramebufferConsumer>)consumer onQueue:(dispatch_queue_t)queue
 {
@@ -309,64 +228,19 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
   }
 }
 
-- (CGRect)fullDamageRect
+- (NSArray<id<FBFramebufferConsumer>> *)attachedConsumers
 {
-  CGSize size = self.surface.displaySize;
-  return CGRectMake(0, 0, size.width, size.height);
-}
-
-@end
-
-@implementation FBFramebuffer_FramebufferService
-
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService logger:(id<FBControlCoreLogger>)logger
-{
-  self = [super initWithLogger:logger];
-  if (!self) {
-    return nil;
+  NSMutableArray<id<FBFramebufferConsumer>> *consumers = [NSMutableArray array];
+  for (id<FBFramebufferConsumer> consumer in self.forwarders.keyEnumerator) {
+    [consumers addObject:consumer];
   }
-
-  _framebufferService = framebufferService;
-
-  return self;
+  return [consumers copy];
 }
 
-- (nullable IOSurfaceRef)attachConsumer:(id<FBFramebufferConsumer>)consumer onQueue:(dispatch_queue_t)queue
+- (BOOL)isConsumerAttached:(id<FBFramebufferConsumer>)consumer
 {
-  // Don't attach the same consumer twice
-  FBFramebuffer_SimDeviceFramebufferService_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
-  NSAssert(forwarder == nil, @"Cannot re-attach the same consumer %@", forwarder.consumer);
-
-  // Create the forwarder and keep a reference to it.
-  forwarder = [[FBFramebuffer_SimDeviceFramebufferService_Forwarder alloc] initWithConsumer:consumer];
-  [self.forwarders setObject:forwarder forKey:consumer];
-
-  // Register for the callbacks.
-  [self.framebufferService registerClient:forwarder onQueue:self.clientQueue];
-
-  // We can't synchronously fetch a surface here.
-  return nil;
+  return [[self attachedConsumers] containsObject:consumer];
 }
 
-- (void)detachConsumer:(id<FBFramebufferConsumer>)consumer
-{
-  FBFramebuffer_SimDeviceFramebufferService_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
-  if (!consumer) {
-    return;
-  }
-  // Remove the forwarder, we have a strong reference to the consumer.
-  [self.forwarders removeObjectForKey:consumer];
-
-  // Unregister the client
-  [self.framebufferService unregisterClient:forwarder];
-  // Only call invalidate if the selector exists.
-  if ([self.framebufferService respondsToSelector:@selector(invalidate)]) {
-    // The call to this method has been dropped in Xcode 8.1, but exists in Xcode 8.0
-    // Don't call it on Xcode 8.1
-    if ([FBXcodeConfiguration.xcodeVersionNumber isLessThan:[NSDecimalNumber decimalNumberWithString:@"8.1"]]) {
-      [self.framebufferService invalidate];
-    }
-  }
-}
 
 @end

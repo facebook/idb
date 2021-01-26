@@ -60,15 +60,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable instancetype)mainScreenSurfaceForClient:(id<SimDeviceIOProtocol>)ioClient logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
-/**
- Obtains an IOSurface from the SimDeviceFramebufferService.
-
- @param framebufferService the Framebuffer Service to obtain from.
- @param logger the logger to log to.
- @return a new FBFramebuffer.
- */
-+ (instancetype)mainScreenSurfaceForFramebufferService:(SimDeviceFramebufferService *)framebufferService logger:(id<FBControlCoreLogger>)logger;
-
 #pragma mark Public Methods
 
 /**
