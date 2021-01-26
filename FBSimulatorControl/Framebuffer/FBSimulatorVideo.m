@@ -12,7 +12,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBAppleSimctlCommandExecutor.h"
-#import "FBFramebufferConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBVideoEncoderConfiguration.h"
 #import "FBVideoEncoderSimulatorKit.h"

@@ -57,13 +57,13 @@ typedef NS_OPTIONS(NSUInteger, FBVideoEncoderOptions) {
 #pragma mark Defaults & Initializers
 
 /**
- The Default Value of FBFramebufferConfiguration.
+ The Default Value of FBVideoEncoderConfiguration.
  Uses Reasonable Defaults.
  */
 + (instancetype)defaultConfiguration;
 
 /**
- The Default Value of FBFramebufferConfiguration.
+ The Default Value of FBVideoEncoderConfiguration.
  Use this in preference to 'defaultConfiguration' if video encoding is problematic.
  */
 + (instancetype)prudentConfiguration;
