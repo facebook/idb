@@ -12,11 +12,11 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class SimDeviceFramebufferService;
-@class SimDeviceIOClient;
 
 @protocol SimDisplayDamageRectangleDelegate;
 @protocol SimDisplayIOSurfaceRenderableDelegate;
 @protocol SimDeviceIOPortConsumer;
+@protocol SimDeviceIOProtocol;
 
 /**
  A Consumer of a Framebuffer.
@@ -58,7 +58,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a new FBFramebuffer.
  */
-+ (nullable instancetype)mainScreenSurfaceForClient:(SimDeviceIOClient *)ioClient logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable instancetype)mainScreenSurfaceForClient:(id<SimDeviceIOProtocol>)ioClient logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Obtains an IOSurface from the SimDeviceFramebufferService.

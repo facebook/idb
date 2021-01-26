@@ -24,7 +24,6 @@
 #import "FBSimulatorHID.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorProcessFetcher.h"
-#import "FBFramebufferConnectStrategy.h"
 
 @interface FBSimulatorConnection ()
 
@@ -90,13 +89,10 @@
   if (self.framebuffer) {
     return [FBFuture futureWithResult:self.framebuffer];
   }
-
-  return [[[FBFramebufferConnectStrategy
-    strategyWithConfiguration:[FBFramebufferConfiguration.defaultConfiguration inSimulator:self.simulator]]
-    connect:self.simulator]
-    onQueue:self.simulator.workQueue map:^(FBFramebuffer *framebuffer) {
-      self.framebuffer = framebuffer;
-      return framebuffer;
+  FBSimulator *simulator = self.simulator;
+  return [FBFuture
+    onQueue:simulator.workQueue resolveValue:^(NSError **error) {
+      return [FBFramebuffer mainScreenSurfaceForClient:simulator.device.io logger:simulator.logger error:error];
     }];
 }
 
