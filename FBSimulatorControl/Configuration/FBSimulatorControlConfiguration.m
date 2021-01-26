@@ -21,7 +21,6 @@
 @interface FBSimulatorControlConfiguration ()
 
 @property (nonatomic, copy, readwrite) NSString *deviceSetPath;
-@property (nonatomic, assign, readwrite) FBSimulatorManagementOptions options;
 
 @end
 
@@ -34,12 +33,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithDeviceSetPath:(NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
++ (instancetype)configurationWithDeviceSetPath:(NSString *)deviceSetPath logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
 {
-  return [[self alloc] initWithDeviceSetPath:deviceSetPath options:options logger:(logger ?: FBControlCoreGlobalConfiguration.defaultLogger) reporter:reporter];
+  return [[self alloc] initWithDeviceSetPath:deviceSetPath logger:(logger ?: FBControlCoreGlobalConfiguration.defaultLogger) reporter:reporter];
 }
 
-- (instancetype)initWithDeviceSetPath:(NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
+- (instancetype)initWithDeviceSetPath:(NSString *)deviceSetPath logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
 {
   self = [super init];
   if (!self) {
@@ -47,7 +46,6 @@
   }
 
   _deviceSetPath = deviceSetPath;
-  _options = options;
   _logger = logger;
   _reporter = reporter;
 
@@ -65,7 +63,7 @@
 
 - (NSUInteger)hash
 {
-  return self.deviceSetPath.hash | self.options;
+  return self.deviceSetPath.hash;
 }
 
 - (BOOL)isEqual:(FBSimulatorControlConfiguration *)object
@@ -73,16 +71,14 @@
   if (![object isKindOfClass:self.class]) {
     return NO;
   }
-  return ((self.deviceSetPath == nil && object.deviceSetPath == nil) || [self.deviceSetPath isEqual:object.deviceSetPath]) &&
-         self.options == object.options;
+  return ((self.deviceSetPath == nil && object.deviceSetPath == nil) || [self.deviceSetPath isEqual:object.deviceSetPath]);
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Pool Config | Set Path %@ | Options %ld",
-    self.deviceSetPath,
-    self.options
+    @"Pool Config | Set Path %@",
+    self.deviceSetPath
   ];
 }
 

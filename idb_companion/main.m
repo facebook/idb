@@ -88,7 +88,7 @@ static FBFuture<FBSimulatorSet *> *SimulatorSetWithPath(NSString *deviceSetPath,
   if(![FBSimulatorControlFrameworkLoader.essentialFrameworks loadPrivateFrameworks:logger error:&error]) {
     return [FBFuture futureWithError:error];
   }
-  FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:deviceSetPath options:0 logger:logger reporter:reporter];
+  FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:deviceSetPath logger:logger reporter:reporter];
   FBSimulatorControl *control = [FBSimulatorControl withConfiguration:configuration error:&error];
   if (!control) {
     return [FBFuture futureWithError:error];

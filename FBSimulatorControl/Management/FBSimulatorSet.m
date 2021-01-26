@@ -45,16 +45,7 @@
 
 + (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet delegate:(id<FBiOSTargetSetDelegate>)delegate logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter error:(NSError **)error
 {
-  NSError *innerError = nil;
-  FBSimulatorSet *set = [[FBSimulatorSet alloc] initWithConfiguration:configuration deviceSet:deviceSet delegate:delegate logger:logger reporter:reporter];
-  if (![set performSetPreconditionsWithConfiguration:configuration Error:&innerError]) {
-    return [[[[FBSimulatorError
-      describe:@"Failed meet simulator set preconditions"]
-      causedBy:innerError]
-      logger:logger]
-      fail:error];
-  }
-  return set;
+  return [[FBSimulatorSet alloc] initWithConfiguration:configuration deviceSet:deviceSet delegate:delegate logger:logger reporter:reporter];
 }
 
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet delegate:(id<FBiOSTargetSetDelegate>)delegate logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
@@ -79,59 +70,6 @@
   _notificationUpdateStrategy = [FBSimulatorNotificationUpdateStrategy strategyWithSet:self];
 
   return self;
-}
-
-- (BOOL)performSetPreconditionsWithConfiguration:(FBSimulatorControlConfiguration *)configuration Error:(NSError **)error
-{
-  NSError *innerError = nil;
-  BOOL killSpuriousCoreSimulatorServices = (configuration.options & FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices) == FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices;
-  if (killSpuriousCoreSimulatorServices) {
-    if (![self.coreSimulatorTerminationStrategy killSpuriousCoreSimulatorServicesWithError:&innerError]) {
-      return [[[[FBSimulatorError
-        describe:@"Failed to kill spurious CoreSimulatorServices"]
-        causedBy:innerError]
-        logger:self.logger]
-        failBool:error];
-    }
-  }
-
-  BOOL deleteOnStart = (configuration.options & FBSimulatorManagementOptionsDeleteAllOnFirstStart) == FBSimulatorManagementOptionsDeleteAllOnFirstStart;
-  if (deleteOnStart) {
-    if (![[self deleteAll] await:&innerError]) {
-      return [[[[FBSimulatorError
-        describe:@"Failed to delete all simulators"]
-        causedBy:innerError]
-        logger:self.logger]
-        failBool:error];
-    }
-  }
-
-  // Deletion requires killing, so don't duplicate killing.
-  BOOL killOnStart = (configuration.options & FBSimulatorManagementOptionsKillAllOnFirstStart) == FBSimulatorManagementOptionsKillAllOnFirstStart;
-  if (killOnStart && !deleteOnStart) {
-    if (![[self killAll] await:&innerError]) {
-      return [[[[FBSimulatorError
-        describe:@"Failed to kill all simulators"]
-        causedBy:innerError]
-        logger:self.logger]
-        failBool:error];
-    }
-  }
-
-  BOOL killSpuriousSimulators = (configuration.options & FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart) == FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart;
-  if (killSpuriousSimulators && !deleteOnStart) {
-    BOOL failOnSpuriousKillFail = (configuration.options & FBSimulatorManagementOptionsIgnoreSpuriousKillFail) != FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
-    if (![self  killSpuriousSimulatorsWithError:&innerError] && failOnSpuriousKillFail) {
-      return [[[[FBSimulatorError
-      describe:@"Failed to kill spurious simulators"]
-      causedBy:innerError]
-      logger:self.logger]
-      failBool:error];
-    }
-  }
-
-  [self.logger.debug logFormat:@"Completed Pool Preconditons"];
-  return YES;
 }
 
 #pragma mark Querying

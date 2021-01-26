@@ -29,7 +29,6 @@
   NSString *setPath = [self setPathForWorkingDirectory:workingDirectory logger:logger];
   FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
     configurationWithDeviceSetPath:setPath
-    options:0
     logger:logger
     reporter:nil];
 

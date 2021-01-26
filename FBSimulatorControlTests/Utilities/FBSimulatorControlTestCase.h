@@ -37,11 +37,6 @@ extern NSString *const FBSimulatorControlTestsLaunchTypeDirect;
 @interface FBSimulatorControlTestCase : XCTestCase
 
 /**
- The Per-TestCase Management Options for created FBSimulatorControl instances.
- */
-@property (nonatomic, assign, readwrite) FBSimulatorManagementOptions managementOptions;
-
-/**
  A default Simulator Configuration.
  */
 @property (nonatomic, strong, readwrite) FBSimulatorConfiguration *simulatorConfiguration;

@@ -48,7 +48,7 @@
   FBSimulatorControlTests_SimDeviceSet_Double *deviceSet = [FBSimulatorControlTests_SimDeviceSet_Double new];
   deviceSet.availableDevices = [simDevices copy];
 
-  FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:nil options:0 logger:nil reporter:nil];
+  FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:nil logger:nil reporter:nil];
   _set = [FBSimulatorSet setWithConfiguration:configuration deviceSet:(id)deviceSet delegate:nil logger:nil reporter:nil error:nil];
 
   NSArray<FBSimulator *> *simulators = _set.allSimulators;
