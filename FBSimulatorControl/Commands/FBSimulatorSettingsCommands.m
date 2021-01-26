@@ -209,13 +209,6 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   return FBFuture.empty;
 }
 
-- (FBFuture<NSNull *> *)setupKeyboard
-{
-  return [[FBKeyboardSettingsModificationStrategy
-    strategyWithSimulator:self.simulator]
-    setupKeyboard];
-}
-
 #pragma mark Private
 
 - (FBFuture<NSNull *> *)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs

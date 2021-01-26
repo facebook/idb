@@ -69,21 +69,4 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-/**
- Modifies the Keyboard Settings.
- */
-@interface FBKeyboardSettingsModificationStrategy : FBDefaultsModificationStrategy
-
-/**
- Prepares the Simulator Keyboard, prior to launch.
- 1) Disables Caps Lock
- 2) Disables Auto Capitalize
- 3) Disables Auto Correction / QuickType
-
- @return the receiver, for chaining.
- */
-- (FBFuture<NSNull *> *)setupKeyboard;
-
-@end
-
 NS_ASSUME_NONNULL_END

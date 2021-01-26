@@ -166,17 +166,3 @@
 }
 
 @end
-
-@implementation FBKeyboardSettingsModificationStrategy
-
-- (FBFuture<NSNull *> *)setupKeyboard
-{
-  NSDictionary<NSString *, NSString *> *defaults = @{
-    @"KeyboardCapsLock" : @"0",
-    @"KeyboardAutocapitalization" : @"0",
-    @"KeyboardAutocorrection" : @"0",
-  };
-  return [self modifyDefaultsInDomainOrPath:@"com.apple.Preferences" defaults:defaults];
-}
-
-@end

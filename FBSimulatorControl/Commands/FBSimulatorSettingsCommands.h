@@ -62,16 +62,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)updateContacts:(NSString *)databaseDirectory;
 
-/**
- Prepares the Simulator Keyboard, prior to launch.
- 1) Disables Caps Lock
- 2) Disables Auto Capitalize
- 3) Disables Auto Correction / QuickType
-
- @return A future that resolves when the setting change is complete.
- */
-- (FBFuture<NSNull *> *)setupKeyboard;
-
 @end
 
 /**
