@@ -46,11 +46,6 @@
   return (self.options & FBSimulatorBootOptionsEnableDirectLaunch) == FBSimulatorBootOptionsEnableDirectLaunch;
 }
 
-- (BOOL)shouldConnectFramebuffer
-{
-  return self.framebuffer != nil;
-}
-
 - (BOOL)shouldLaunchViaWorkspace
 {
   return (self.options & FBSimulatorBootOptionsUseNSWorkspace) == FBSimulatorBootOptionsUseNSWorkspace;
@@ -75,12 +70,6 @@
  Provides relevant options to CoreSimulator for Booting.
  */
 @protocol FBCoreSimulatorBootOptions <NSObject>
-
-/**
- YES if the Framebuffer should be created, NO otherwise.
- */
-- (BOOL)shouldCreateFramebuffer:(FBSimulatorBootConfiguration *)configuration;
-
 /**
  The Options to provide to the CoreSimulator API.
  */
@@ -166,12 +155,6 @@
 
 @implementation FBCoreSimulatorBootOptions_Xcode8
 
-- (BOOL)shouldCreateFramebuffer:(FBSimulatorBootConfiguration *)configuration
-{
-  // Framebuffer connection is optional on Xcode 8 so we should use the appropriate configuration.
-  return configuration.shouldConnectFramebuffer;
-}
-
 - (NSDictionary<NSString *, id> *)bootOptions:(FBSimulatorBootConfiguration *)configuration
 {
   // Since Xcode 8 Beta 5, 'simctl' uses the 'SIMULATOR_IS_HEADLESS' argument.
@@ -186,12 +169,6 @@
 @end
 
 @implementation FBCoreSimulatorBootOptions_Xcode9_10
-
-- (BOOL)shouldCreateFramebuffer:(FBSimulatorBootConfiguration *)configuration
-{
-  // Framebuffer connection is optional on Xcode 9 so we should use the appropriate configuration.
-  return configuration.shouldConnectFramebuffer;
-}
 
 - (NSDictionary<NSString *, id> *)bootOptions:(FBSimulatorBootConfiguration *)configuration
 {
@@ -230,40 +207,17 @@
   if (!self.shouldBootWithCoreSimulator) {
     return [self.simulator connect];
   }
-
-  // Create the Framebuffer (if required to do so).
-  FBFuture *framebufferFuture = FBFuture.empty;
-  if ([self.options shouldCreateFramebuffer:self.configuration]) {
-    // If we require a Framebuffer, but don't have one provided, we should use the default one.
-    FBFramebufferConfiguration *configuration = self.configuration.framebuffer;
-    if (!configuration) {
-      configuration = FBFramebufferConfiguration.defaultConfiguration;
-      [self.simulator.logger logFormat:@"No Framebuffer Launch Configuration provided, but required. Using default of %@", configuration];
-    }
-    // Update it to include the relevant paths for *this* simulator.
-    configuration = [configuration inSimulator:self.simulator];
-    // Then connect to it.
-    framebufferFuture = [[FBFramebufferConnectStrategy strategyWithConfiguration:configuration] connect:self.simulator];
-  }
-
-  // Create the HID Port
-  FBFuture *hidFuture = [FBSimulatorHID hidForSimulator:self.simulator];
-
-  return [[[FBFuture
-    futureWithFutures:@[
-      framebufferFuture,
-      hidFuture,
-    ]]
-    onQueue:self.simulator.workQueue fmap:^(NSArray *results) {
+  
+  return [[[FBSimulatorHID
+    hidForSimulator:self.simulator]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorHID *hid) {
       // Booting is simpler than the Simulator.app launch process since the caller calls CoreSimulator Framework directly.
       // Just pass in the options to ensure that the framebuffer service is registered when the Simulator is booted.
-      return [[self bootSimulatorWithOptions:[self.options bootOptions:self.configuration]] mapReplace:results];
+      return [[self bootSimulatorWithOptions:[self.options bootOptions:self.configuration]] mapReplace:hid];
     }]
-    onQueue:self.simulator.workQueue fmap:^(NSArray *results) {
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorHID *hid) {
       // Combine everything into the connection.
-      FBFramebuffer *framebuffer = [results[0] isKindOfClass:NSNull.class] ? nil : results[0];;
-      FBSimulatorHID *hid = results[1];
-      return [self.simulator connectWithHID:hid framebuffer:framebuffer];
+      return [self.simulator connectWithHID:hid framebuffer:nil];
     }];
 }
 

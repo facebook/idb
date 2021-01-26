@@ -8,9 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-
-@class FBFramebufferConfiguration;
-
 /**
  An Option Set for Direct Launching.
  */
@@ -44,12 +41,6 @@ NS_ASSUME_NONNULL_BEGIN
  The Scale of the Framebuffer.
  */
 @property (nonatomic, nullable, copy, readonly) FBScale scale;
-
-/**
- Configuration for the Framebuffer.
- If nil, means that the Framebuffer will not be connected on launch
- */
-@property (nonatomic, nullable, copy, readonly) FBFramebufferConfiguration *framebuffer;
 
 #pragma mark Default Instance
 
@@ -87,16 +78,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new FBSimulatorBootConfiguration with the arguments applied.
  */
 - (instancetype)withScale:(nullable FBScale)scale;
-
-#pragma mark Framebuffer
-
-/**
- Updates the boot configuration with a new framebuffer configuration.
-
- @param framebuffer the framebuffer configuration to apply.
- @return a new FBSimulatorBootConfiguration with the arguments applied.
- */
-- (instancetype)withFramebuffer:(nullable FBFramebufferConfiguration *)framebuffer;
 
 @end
 

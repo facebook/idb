@@ -93,11 +93,6 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
     : [FBVideoEncoderConfiguration defaultConfiguration];
 }
 
-+ (FBFramebufferConfiguration *)defaultFramebufferConfiguration
-{
-  return [FBFramebufferConfiguration.defaultConfiguration withEncoder:self.defaultEncoderConfiguration];
-}
-
 + (NSString *)defaultDeviceSetPath
 {
   NSString *value = NSProcessInfo.processInfo.environment[DeviceSetEnvKey];
@@ -109,9 +104,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 
 + (FBSimulatorBootConfiguration *)defaultBootConfiguration
 {
-  return [[FBSimulatorBootConfiguration.defaultConfiguration
-    withOptions:self.launchOptions]
-    withFramebuffer:self.defaultFramebufferConfiguration];
+  return [FBSimulatorBootConfiguration.defaultConfiguration withOptions:self.launchOptions];
 }
 
 #pragma mark XCTestCase

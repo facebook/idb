@@ -7,7 +7,6 @@
 
 #import "FBSimulatorBootConfiguration.h"
 
-#import "FBFramebufferConfiguration.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 
@@ -31,10 +30,10 @@ static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsV
 
 - (instancetype)init
 {
-  return [self initWithOptions:DefaultBootOptions environment:nil scale:nil framebuffer:nil];
+  return [self initWithOptions:DefaultBootOptions environment:nil scale:nil];
 }
 
-- (instancetype)initWithOptions:(FBSimulatorBootOptions)options environment:(NSDictionary<NSString *, NSString *> *)environment scale:(FBScale)scale framebuffer:(FBFramebufferConfiguration *)framebuffer
+- (instancetype)initWithOptions:(FBSimulatorBootOptions)options environment:(NSDictionary<NSString *, NSString *> *)environment scale:(FBScale)scale
 {
   self = [super init];
   if (!self) {
@@ -44,7 +43,6 @@ static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsV
   _options = options;
   _environment = environment;
   _scale = scale;
-  _framebuffer = framebuffer;
 
   return self;
 }
@@ -67,23 +65,21 @@ static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsV
 
   return self.options == configuration.options &&
          (self.environment == configuration.environment || [self.environment isEqualToDictionary:configuration.environment]) &&
-         (self.scale == configuration.scale || [self.scale isEqualToString:configuration.scale]) &&
-         (self.framebuffer == configuration.framebuffer || [self.framebuffer isEqual:configuration.framebuffer]);
+         (self.scale == configuration.scale || [self.scale isEqualToString:configuration.scale]);
 }
 
 - (NSUInteger)hash
 {
-  return self.options ^ self.environment.hash ^ self.scale.hash ^ self.framebuffer.hash;
+  return self.options ^ self.environment.hash ^ self.scale.hash;
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Scale %@ | Environment %@ | Options %@ | %@",
+    @"Scale %@ | Environment %@ | Options %@",
     self.scale,
     [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
-    [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorBootConfiguration stringsFromBootOptions:self.options]],
-    self.framebuffer ?: @"No Framebuffer"
+    [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorBootConfiguration stringsFromBootOptions:self.options]]
   ];
 }
 
@@ -98,32 +94,21 @@ static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsV
 
 - (instancetype)withOptions:(FBSimulatorBootOptions)options
 {
-  return [[self.class alloc] initWithOptions:options environment:self.environment scale:self.scale framebuffer:self.framebuffer];
+  return [[self.class alloc] initWithOptions:options environment:self.environment scale:self.scale];
 }
 
 #pragma mark Environment
 
 - (instancetype)withBootEnvironment:(nullable NSDictionary<NSString *, NSString *> *)environment
 {
-  return [[self.class alloc] initWithOptions:self.options environment:environment scale:self.scale framebuffer:self.framebuffer];
+  return [[self.class alloc] initWithOptions:self.options environment:environment scale:self.scale];
 }
 
 #pragma mark Scale
 
 - (instancetype)withScale:(FBScale)scale
 {
-  if (!scale) {
-    return self;
-  }
-  FBFramebufferConfiguration *framebuffer = [self.framebuffer withScale:scale];
-  return [[self.class alloc] initWithOptions:self.options environment:self.environment scale:scale framebuffer:framebuffer];
-}
-
-#pragma mark Video
-
-- (instancetype)withFramebuffer:(FBFramebufferConfiguration *)framebuffer
-{
-  return [[self.class alloc] initWithOptions:self.options environment:self.environment scale:self.scale framebuffer:framebuffer];
+  return [[self.class alloc] initWithOptions:self.options environment:self.environment scale:scale];
 }
 
 #pragma mark Utility

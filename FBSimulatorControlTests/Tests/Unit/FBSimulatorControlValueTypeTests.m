@@ -36,18 +36,15 @@
 
 - (void)testLaunchConfigurationScaleAppliedToFramebufferConfiguration
 {
-  FBSimulatorBootConfiguration *launchConfiguration = [[FBSimulatorBootConfiguration.defaultConfiguration
-    withOptions:FBSimulatorBootOptionsEnableDirectLaunch]
-    withFramebuffer:FBFramebufferConfiguration.defaultConfiguration];
-  XCTAssertNotNil(launchConfiguration.framebuffer);
+  FBSimulatorBootConfiguration *launchConfiguration = [[FBSimulatorBootConfiguration
+    defaultConfiguration]
+    withOptions:FBSimulatorBootOptionsEnableDirectLaunch];
   XCTAssertNil(launchConfiguration.scale);
   XCTAssertNil(launchConfiguration.scale);
 
   launchConfiguration = [launchConfiguration withScale:FBScale75];
   XCTAssertEqualObjects(launchConfiguration.scale, FBScale75);
-  XCTAssertEqualObjects(launchConfiguration.framebuffer.scale, FBScale75);
   XCTAssertNotEqualObjects(launchConfiguration.scale, FBScale50);
-  XCTAssertNotEqualObjects(launchConfiguration.framebuffer.scale, FBScale50);
 }
 
 - (void)testHIDEvents
