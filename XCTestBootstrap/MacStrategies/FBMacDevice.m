@@ -376,11 +376,6 @@
   return NSOrderedSame; // There should be only one
 }
 
-- (NSDictionary *)jsonSerializableRepresentation
-{
-  return [FBiOSTargetFormat.fullFormat extractFrom:self];
-}
-
 #pragma mark Not supported
 
 - (FBFuture<id<FBVideoStream>> *)createStreamWithConfiguration:(FBVideoStreamConfiguration *)configuration

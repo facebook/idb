@@ -117,56 +117,6 @@ static NSString *const KeyY = @"y";
   return self;
 }
 
-+ (instancetype)inflateFromJSON:(id)json error:(NSError **)error
-{
-  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
-    return [[FBSimulatorError
-      describe:@"Expected an input of Dictionary<String, Object>"]
-      fail:error];
-  }
-  NSString *class = json[KeyEventClass];
-  if (![class isEqualToString:EventClassStringTouch]) {
-    return [[FBSimulatorError
-      describeFormat:@"Expected %@ to be %@", class, EventClassStringTouch]
-      fail:error];
-  }
-  NSNumber *x = json[KeyX];
-  if (![x isKindOfClass:NSNumber.class]) {
-    return [[FBSimulatorError
-      describeFormat:@"Expected %@ for %@ to be a Number", x, KeyX]
-      fail:error];
-  }
-  NSNumber *y = json[KeyY];
-  if (![y isKindOfClass:NSNumber.class]) {
-    return [[FBSimulatorError
-      describeFormat:@"Expected %@ for %@ to be a Number", x, KeyY]
-      fail:error];
-  }
-  NSString *typeString = json[KeyDirection];
-  if (![typeString isKindOfClass:NSString.class]) {
-    return [[FBSimulatorError
-      describeFormat:@"Expected %@ for %@ to be a String", typeString, KeyDirection]
-      fail:error];
-  }
-  FBSimulatorHIDDirection type = [FBSimulatorHIDEvent directionFromDirectionString:typeString];
-  if (type < 1) {
-    return [[FBSimulatorError
-      describeFormat:@"%@ is not a valid event type", typeString]
-      fail:error];
-  }
-  return [[self alloc] initWithDirection:type x:x.unsignedIntegerValue y:y.unsignedIntegerValue];
-}
-
-- (id)jsonSerializableRepresentation
-{
-  return @{
-    KeyX: @(self.x),
-    KeyY: @(self.y),
-    KeyDirection: [FBSimulatorHIDEvent directionStringFromDirection:self.direction],
-    KeyEventClass: EventClassStringTouch,
-  };
-}
-
 - (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
 {
   return [hid sendTouchWithType:self.direction x:self.x y:self.y];
@@ -225,54 +175,6 @@ static NSString *const ButtonSiri = @"siri";
   return self;
 }
 
-+ (instancetype)inflateFromJSON:(id)json error:(NSError **)error
-{
-  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSString.class]) {
-    return [[FBSimulatorError
-      describe:@"Expected an input of Dictionary<String, String>"]
-      fail:error];
-  }
-  NSString *class = json[KeyEventClass];
-  if (![class isEqualToString:EventClassStringButton]) {
-    return [[FBSimulatorError
-      describeFormat:@"Expected %@ to be %@", class, EventClassStringButton]
-      fail:error];
-  }
-  NSString *buttonString = json[KeyButton];
-  if (![buttonString isKindOfClass:NSString.class]) {
-    return [[FBSimulatorError
-      describeFormat:@"Expected %@ for %@ to be a String", buttonString, KeyButton]
-      fail:error];
-  }
-  FBSimulatorHIDButton button = [self buttonFromButtonString:buttonString];
-  if (button < 1) {
-    return [[FBSimulatorError
-      describeFormat:@"Button %@ for %@ is not a valid button type", buttonString, KeyButton]
-      fail:error];
-  }
-  NSString *typeString = json[KeyDirection];
-  if (![typeString isKindOfClass:NSString.class]) {
-    return [[FBSimulatorError
-      describeFormat:@"Expected %@ for %@ to be a String", typeString, KeyDirection]
-      fail:error];
-  }
-  FBSimulatorHIDDirection type = [FBSimulatorHIDEvent directionFromDirectionString:typeString];
-  if (type < 1) {
-    return [[FBSimulatorError
-      describeFormat:@"%@ is not a valid event type", typeString]
-      fail:error];
-  }
-  return [[self alloc] initWithDirection:type button:button];
-}
-
-- (id)jsonSerializableRepresentation
-{
-  return @{
-    KeyButton: [FBSimulatorHIDEvent_Button buttonStringFromButton:self.button],
-    KeyDirection: [FBSimulatorHIDEvent directionStringFromDirection:self.type],
-    KeyEventClass: EventClassStringButton,
-  };
-}
 - (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
 {
   return [hid sendButtonEventWithDirection:self.type button:self.button];
@@ -363,49 +265,6 @@ static NSString *const KeyKeycode = @"keycode";
   return self;
 }
 
-+ (instancetype)inflateFromJSON:(id)json error:(NSError **)error
-{
-  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
-    return [[FBSimulatorError
-      describe:@"Expected an input of Dictionary<String, Object>"]
-      fail:error];
-  }
-  NSString *class = json[KeyEventClass];
-  if (![class isEqualToString:EventClassStringKeyboard]) {
-    return [[FBSimulatorError
-      describeFormat:@"Expected %@ to be %@", class, EventClassStringKeyboard]
-      fail:error];
-  }
-  NSNumber *keycode = json[KeyKeycode];
-  if (![keycode isKindOfClass:NSNumber.class]) {
-    return [[FBSimulatorError
-      describeFormat:@"Expected %@ for %@ to be a Number", keycode, KeyKeycode]
-      fail:error];
-  }
-  NSString *typeString = json[KeyDirection];
-  if (![typeString isKindOfClass:NSString.class]) {
-    return [[FBSimulatorError
-      describeFormat:@"Expected %@ for %@ to be a String", typeString, KeyDirection]
-      fail:error];
-  }
-  FBSimulatorHIDDirection type = [FBSimulatorHIDEvent directionFromDirectionString:typeString];
-  if (type < 1) {
-    return [[FBSimulatorError
-      describeFormat:@"%@ is not a valid event type", typeString]
-      fail:error];
-  }
-  return [[self alloc] initWithDirection:type keyCode:keycode.unsignedIntValue];
-}
-
-- (id)jsonSerializableRepresentation
-{
-  return @{
-    KeyKeycode: @(self.keyCode),
-    KeyDirection: [FBSimulatorHIDEvent directionStringFromDirection:self.direction],
-    KeyEventClass: EventClassStringKeyboard,
-  };
-}
-
 - (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
 {
   return [hid sendKeyboardEventWithDirection:self.direction keyCode:self.keyCode];
@@ -453,36 +312,6 @@ static NSString *const KeyDuration = @"duration";
   }
   _duration = duration;
   return self;
-}
-
-+ (instancetype)inflateFromJSON:(id)json error:(NSError **)error
-{
-  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
-    return [[FBSimulatorError
-      describe:@"Expected an input of Dictionary<String, Object>"]
-      fail:error];
-  }
-  NSString *class = json[KeyEventClass];
-  if (![class isEqualToString:EventClassStringDelay]) {
-    return [[FBSimulatorError
-      describeFormat:@"Expected %@ to be %@", class, EventClassStringDelay]
-      fail:error];
-  }
-  NSNumber *duration = json[KeyDuration];
-  if (![duration isKindOfClass:NSNumber.class]) {
-    return [[FBSimulatorError
-      describeFormat:@"Expected %@ for %@ to be a Number", duration, KeyDuration]
-      fail:error];
-  }
-  return [[self alloc] initWithDuration:duration.doubleValue];
-}
-
-- (id)jsonSerializableRepresentation
-{
-  return @{
-    KeyDuration: @(self.duration),
-    KeyEventClass: EventClassStringDelay,
-  };
 }
 
 - (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
@@ -612,44 +441,6 @@ static NSString *const KeyDuration = @"duration";
 + (instancetype)delay:(double)duration
 {
   return [[FBSimulatorHIDEvent_Delay alloc] initWithDuration:duration];
-}
-
-#pragma mark JSON
-
-+ (instancetype)inflateFromJSON:(id)json error:(NSError **)error
-{
-  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
-    return [[FBSimulatorError
-      describe:@"Expected an input of Dictionary<String, Object>"]
-      fail:error];
-  }
-  NSString *class = json[KeyEventClass];
-  if (![class isKindOfClass:NSString.class]) {
-    return [[FBSimulatorError
-      describeFormat:@"%@ for %@ is not a String", class, KeyEventClass]
-      fail:error];
-  }
-  if ([class isEqualToString:EventClassStringComposite]) {
-    return [FBSimulatorHIDEvent_Composite inflateFromJSON:json error:error];
-  }
-  if ([class isEqualToString:EventClassStringTouch]) {
-    return [FBSimulatorHIDEvent_Touch inflateFromJSON:json error:error];
-  }
-  if ([class isEqualToString:EventClassStringButton]) {
-    return [FBSimulatorHIDEvent_Button inflateFromJSON:json error:error];
-  }
-  if ([class isEqualToString:EventClassStringKeyboard]) {
-    return [FBSimulatorHIDEvent_Keyboard inflateFromJSON:json error:error];
-  }
-  return [[FBSimulatorError
-    describeFormat:@"%@ is not one of %@ %@", class, EventClassStringComposite, EventClassStringTouch]
-    fail:error];
-}
-
-- (id)jsonSerializableRepresentation
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
 }
 
 #pragma mark NSCopying
