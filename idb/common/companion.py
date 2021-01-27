@@ -164,7 +164,7 @@ class Companion(CompanionBase):
 
     @asynccontextmanager
     async def boot_headless(
-        self, udid: str, verify: bool = True
+        self, udid: str, verify: bool = True, timeout: Optional[timedelta] = None
     ) -> AsyncGenerator[None, None]:
         async with self._start_companion_command(
             [
@@ -177,7 +177,11 @@ class Companion(CompanionBase):
             ]
         ) as process:
             # The first line written to stdout is information about the booted sim.
-            line = (await none_throws(process.stdout).readline()).decode()
+            data = await asyncio.wait_for(
+                none_throws(process.stdout).readline(),
+                timeout=None if timeout is None else timeout.total_seconds(),
+            )
+            line = data.decode()
             target = target_description_from_json(line)
             self._logger.info(f"{target} is now booted")
             yield None

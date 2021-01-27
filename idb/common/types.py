@@ -347,7 +347,7 @@ class Companion(ABC):
 
     @abstractmethod
     async def boot_headless(  # pyre-fixme
-        self, udid: str, verify: bool = True
+        self, udid: str, verify: bool = True, timeout: Optional[timedelta] = None
     ) -> AsyncContextManager[None]:
         yield
 
