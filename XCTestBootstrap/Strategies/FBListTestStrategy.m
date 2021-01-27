@@ -91,46 +91,68 @@
 
 - (FBFuture<NSArray<NSString *> *> *)listTests
 {
-  id<FBConsumableBuffer> shimConsumer = [FBDataBuffer consumableBuffer];
+  id<FBConsumableBuffer> shimBuffer = FBDataBuffer.consumableBuffer;
   return [[[FBProcessOutput
-    outputForDataConsumer:shimConsumer]
+    outputForDataConsumer:shimBuffer]
     providedThroughFile]
     onQueue:self.executor.workQueue fmap:^(id<FBProcessFileOutput> shimOutput) {
-      return [self listTestsWithShimOutput:shimOutput shimConsumer:shimConsumer];
+      return [self listTestsWithShimOutput:shimOutput shimBuffer:shimBuffer];
     }];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSArray<NSString *> *> *)listTestsWithShimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBConsumableBuffer>)shimConsumer
+- (FBFuture<NSArray<NSString *> *> *)listTestsWithShimOutput:(id<FBProcessFileOutput>)shimOutput shimBuffer:(id<FBConsumableBuffer>)shimBuffer
 {
   NSDictionary<NSString *, NSString *> *environment = @{
     @"DYLD_INSERT_LIBRARIES": self.executor.shimPath,
     @"TEST_SHIM_OUTPUT_PATH": shimOutput.filePath,
     @"TEST_SHIM_BUNDLE_PATH": self.configuration.testBundlePath,
   };
+  id<FBConsumableBuffer> stdOutBuffer = FBDataBuffer.consumableBuffer;
+  id<FBDataConsumer> stdOutConsumer = [FBCompositeDataConsumer consumerWithConsumers:@[
+    stdOutBuffer,
+    [FBLoggingDataConsumer consumerWithLogger:self.logger],
+  ]];
+  id<FBConsumableBuffer> stdErrBuffer = FBDataBuffer.consumableBuffer;
+  id<FBDataConsumer> stdErrConsumer = [FBCompositeDataConsumer consumerWithConsumers:@[
+    stdErrBuffer,
+    [FBLoggingDataConsumer consumerWithLogger:self.logger],
+  ]];
 
   return [[self.configuration
     listTestProcessWithEnvironment:environment
-    stdOutConsumer:[FBLoggingDataConsumer consumerWithLogger:self.logger]
-    stdErrConsumer:[FBLoggingDataConsumer consumerWithLogger:self.logger]
+    stdOutConsumer:stdOutConsumer
+    stdErrConsumer:stdErrConsumer
     executor:self.executor
     logger:self.logger]
     onQueue:self.executor.workQueue fmap:^(id<FBLaunchedProcess> processInfo) {
-      return [FBListTestStrategy launchedProcess:processInfo shimOutput:shimOutput shimConsumer:shimConsumer queue:self.executor.workQueue];
+      return [FBListTestStrategy
+        launchedProcess:processInfo
+        shimOutput:shimOutput
+        shimBuffer:shimBuffer
+        stdOutBuffer:stdOutBuffer
+        stdErrBuffer:stdErrBuffer
+        queue:self.executor.workQueue];
     }];
 }
 
-+ (FBFuture<NSArray<NSString *> *> *)launchedProcess:(id<FBLaunchedProcess>)processInfo shimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBConsumableBuffer>)shimConsumer queue:(dispatch_queue_t)queue
++ (FBFuture<NSArray<NSString *> *> *)launchedProcess:(id<FBLaunchedProcess>)processInfo shimOutput:(id<FBProcessFileOutput>)shimOutput shimBuffer:(id<FBConsumableBuffer>)shimBuffer stdOutBuffer:(id<FBConsumableBuffer>)stdOutBuffer stdErrBuffer:(id<FBConsumableBuffer>)stdErrBuffer queue:(dispatch_queue_t)queue
 {
   return [[[shimOutput
     startReading]
     onQueue:queue fmap:^(id _) {
-      return [FBListTestStrategy onQueue:queue confirmExit:processInfo closingOutput:shimOutput consumer:shimConsumer];
+      return [FBListTestStrategy
+        onQueue:queue
+        confirmExit:processInfo
+        closingOutput:shimOutput
+        shimBuffer:shimBuffer
+        stdOutBuffer:stdOutBuffer
+        stdErrBuffer:stdErrBuffer];
     }]
     onQueue:queue fmap:^(id _) {
       NSError *error = nil;
-      NSArray<NSDictionary<NSString *, NSString *> *> *tests = [NSJSONSerialization JSONObjectWithData:shimConsumer.data options:0 error:&error];
+      NSArray<NSDictionary<NSString *, NSString *> *> *tests = [NSJSONSerialization JSONObjectWithData:shimBuffer.data options:0 error:&error];
       if (!tests) {
         return [FBFuture futureWithError:error];
       }
@@ -148,19 +170,20 @@
   }];
 }
 
-+ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue confirmExit:(id<FBLaunchedProcess>)process closingOutput:(id<FBProcessFileOutput>)output consumer:(id<FBConsumableBuffer>)consumer
++ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue confirmExit:(id<FBLaunchedProcess>)process closingOutput:(id<FBProcessFileOutput>)output shimBuffer:(id<FBConsumableBuffer>)shimBuffer stdOutBuffer:(id<FBConsumableBuffer>)stdOutBuffer stdErrBuffer:(id<FBConsumableBuffer>)stdErrBuffer
 {
-  return [process.exitCode onQueue:queue fmap:^(NSNumber *exitCode) {
-    if (exitCode.intValue != 0) {
-      return [[XCTestBootstrapError
-        describeFormat:@"Process %d Exited with non-zero %@", process.processIdentifier, exitCode]
-        failFuture];
-    }
-    return [FBFuture futureWithFutures:@[
-      [output stopReading],
-      [consumer finishedConsuming],
-    ]];
-  }];
+  return [process.exitCode
+    onQueue:queue fmap:^(NSNumber *exitCode) {
+      if (exitCode.intValue != 0) {
+        return [[XCTestBootstrapError
+          describeFormat:@"Listing of tests failed due to xctest binary exiting with non-zero exit code %@. (%@%@)", exitCode, stdOutBuffer.consumeCurrentString, stdErrBuffer.consumeCurrentString]
+          failFuture];
+      }
+      return [FBFuture futureWithFutures:@[
+        [output stopReading],
+        [shimBuffer finishedConsuming],
+      ]];
+    }];
 }
 
 - (id<FBXCTestRunner>)wrapInReporter:(id<FBXCTestReporter>)reporter
