@@ -419,7 +419,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
   return [[self
     remoteInstrumentsClient]
     onQueue:self.device.asyncQueue pop:^(FBInstrumentsClient *client) {
-      return [client runningApplications];
+      return [client runningProcesses];
     }];
 }
 
