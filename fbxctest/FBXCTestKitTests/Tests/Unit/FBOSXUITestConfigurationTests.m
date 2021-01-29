@@ -54,8 +54,6 @@
   XCTAssertTrue([commandLine.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
   XCTAssertEqualObjects(configuration.testType, FBXCTestTypeUITest);
 
-  [self assertValueSemanticsOfConfiguration:configuration];
-
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
     commandLineWithConfiguration:[FBTestManagerTestConfiguration
       configurationWithShims:configuration.shims
@@ -90,8 +88,6 @@
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([commandLine.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
   XCTAssertEqualObjects(configuration.testType, FBXCTestTypeUITest);
-
-  [self assertValueSemanticsOfConfiguration:configuration];
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
     commandLineWithConfiguration:[FBTestManagerTestConfiguration
@@ -128,8 +124,6 @@
   XCTAssertTrue([commandLine.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
   XCTAssertEqualObjects(configuration.testType, FBXCTestTypeApplicationTest);
 
-  [self assertValueSemanticsOfConfiguration:configuration];
-
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
     commandLineWithConfiguration:[FBTestManagerTestConfiguration
       configurationWithShims:configuration.shims
@@ -163,8 +157,6 @@
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([commandLine.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
   XCTAssertEqualObjects(configuration.testType, FBXCTestTypeApplicationTest);
-
-  [self assertValueSemanticsOfConfiguration:configuration];
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
     commandLineWithConfiguration:[FBTestManagerTestConfiguration

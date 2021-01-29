@@ -50,8 +50,6 @@
   XCTAssertEqual(configuration.waitForDebugger, NO);
   XCTAssertEqual(configuration.testType, FBXCTestTypeApplicationTest);
 
-  [self assertValueSemanticsOfConfiguration:configuration];
-
   FBTestManagerTestConfiguration *testManagerTestConfiguration = (FBTestManagerTestConfiguration *)configuration;
   XCTAssertEqualObjects(testManagerTestConfiguration.testFilter, shortTestFilter);
 }

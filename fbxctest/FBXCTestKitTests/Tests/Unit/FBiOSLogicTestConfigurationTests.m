@@ -54,7 +54,6 @@
   XCTAssertTrue([configuration isKindOfClass:FBLogicTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([commandLine.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
-  [self assertValueSemanticsOfConfiguration:configuration];
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
     commandLineWithConfiguration:[FBLogicTestConfiguration
@@ -93,7 +92,6 @@
   XCTAssertTrue([configuration isKindOfClass:FBLogicTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([commandLine.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
-  [self assertValueSemanticsOfConfiguration:configuration];
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
     commandLineWithConfiguration:[FBLogicTestConfiguration
@@ -134,7 +132,6 @@
   XCTAssertTrue([configuration isKindOfClass:FBLogicTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([commandLine.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
-  [self assertValueSemanticsOfConfiguration:configuration];
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
     commandLineWithConfiguration:[FBLogicTestConfiguration
