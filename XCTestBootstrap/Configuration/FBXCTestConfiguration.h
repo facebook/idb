@@ -113,17 +113,7 @@ extern FBXCTestType const FBXCTestTypeListTest;
  */
 + (instancetype)configurationWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath runnerAppPath:(nullable NSString *)runnerAppPath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout;
 
-/**
- Start an xctest process with the given configuration.
-
- @param environment environment variables passing to the process.
- @param stdOutConsumer the Consumer of the launched process stdout.
- @param stdErrConsumer the Consumer of the launched process stderr.
- @param executor the executor for running the list test process.
- @param logger the logger to log to
- @return the list test process
- */
-- (FBFuture<FBXCTestProcess *> *)listTestProcessWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor logger:(id<FBControlCoreLogger>)logger;
+@property (nonatomic, copy, readonly) NSString *runnerAppPath;
 
 @end
 
