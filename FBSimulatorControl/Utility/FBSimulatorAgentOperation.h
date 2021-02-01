@@ -22,17 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
  This class is explicitly a reference type as it retains the File Handles that are used by the Agent Process.
  The lifecycle of the process is managed internally and this class should not be instantiated directly by consumers.
  */
-@interface FBSimulatorAgentOperation : NSObject <FBiOSTargetOperation, FBLaunchedProcess>
-
-#pragma mark Helper Methods
-
-/**
- Extracts termination information for the provided process.
-
- @param statLoc the value from waitpid(2).
- @return YES if the termination is expected. NO otherwise.
- */
-+ (BOOL)isExpectedTerminationForStatLoc:(int)statLoc;
+@interface FBSimulatorAgentOperation : NSObject <FBLaunchedProcess>
 
 #pragma mark Properties
 
@@ -52,10 +42,17 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdErr;
 
 /**
- A Future representation of the completion of the agent process.
- The value of the future is the stat_loc value from waitpid(2).
+ A future that resolves with the the value from waitpid(2) on termination.
+ This will always resolve, regardless of whether the process exited or died from a signal.
+ Cancelling this future will cancel the underlying operation.
  */
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *processStatus;
+@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *statLoc;
+
+/**
+ A future that resolves when the process terminates with a signal.
+ If the process exited normally then this future will error.
+ */
+@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *signal;
 
 @end
 

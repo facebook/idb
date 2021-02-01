@@ -40,7 +40,7 @@
 
 - (FBFuture<NSNull *> *)completed
 {
-  return self.operation.completed;
+  return [self.operation.statLoc mapReplace:NSNull.null];
 }
 
 @end
@@ -105,7 +105,7 @@
     startLogCommand:arguments consumer:consumer]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorAgentOperation *operation) {
       // Re-Map from Launch to Exit
-      return [operation processStatus];
+      return [operation statLoc];
     }]
     onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSNull *> * (NSNumber *statLoc){
       // Check the exit code.

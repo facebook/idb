@@ -220,7 +220,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
   [[distantObject connectionForProxy] invalidate];
 
   // Dispose of the operation
-  [self.operation.completed cancel];
+  [self.operation.statLoc cancel];
   self.operation = nil;
 }
 

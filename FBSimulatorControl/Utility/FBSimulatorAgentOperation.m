@@ -14,12 +14,13 @@
 @interface FBSimulatorAgentOperation ()
 
 @property (nonatomic, weak, nullable, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
 
 @implementation FBSimulatorAgentOperation
 
-@synthesize exitCode = _exitCode;
+@synthesize statLoc = _statLoc;
 @synthesize processIdentifier = _processIdentifier;
 
 #pragma mark Initializers
@@ -45,7 +46,8 @@
   _stdOut = stdOut;
   _stdErr = stdErr;
   _processIdentifier = processIdentifier;
-  _processStatus = [[processStatusFuture
+  _queue = simulator.asyncQueue;
+  _statLoc = [[processStatusFuture
     onQueue:simulator.workQueue chain:^ FBFuture<NSNumber *> * (FBFuture<NSNumber *> *future) {
       FBFuture<NSNull *> *teardown = future.result
         ? [self processDidTerminate:future.result.intValue]
@@ -53,26 +55,42 @@
       return [teardown chainReplace:future];
     }]
     nameFormat:@"Completion of agent process %d", processIdentifier];
-  _exitCode = [[processStatusFuture
-    onQueue:simulator.asyncQueue map:^(NSNumber *statLocNumber) {
-      int stat_loc = statLocNumber.intValue;
-      if (WIFEXITED(stat_loc)) {
-        return @(WEXITSTATUS(stat_loc));
-      } else {
-        return @(WTERMSIG(stat_loc));
-      }
-    }]
-    nameFormat:@"Exit code of agent process %d", processIdentifier];
 
   return self;
 }
 
-+ (BOOL)isExpectedTerminationForStatLoc:(int)statLoc
+#pragma mark FBLaunchedProcess
+
+- (FBFuture<NSNumber *> *)exitCode
 {
-  if (WIFEXITED(statLoc)) {
-    return WEXITSTATUS(statLoc) == 0;
-  }
-  return NO;
+  pid_t processIdentifier = self.processIdentifier;
+  return [[self.statLoc
+    onQueue:self.queue fmap:^(NSNumber *statLocNumber) {
+      int statLoc = statLocNumber.intValue;
+      if (WIFSIGNALED(statLoc)) {
+        return [[FBControlCoreError
+          describeFormat:@"No normal exit code, process %d died with signal %d", processIdentifier, WTERMSIG(statLoc)]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:@(WEXITSTATUS(statLoc))];
+    }]
+    nameFormat:@"Exit code of agent process %d", self.processIdentifier];
+}
+
+- (FBFuture<NSNumber *> *)signal
+{
+  pid_t processIdentifier = self.processIdentifier;
+  return [[self.statLoc
+    onQueue:self.queue fmap:^(NSNumber *statLocNumber) {
+      int statLoc = statLocNumber.intValue;
+      if (!WIFSIGNALED(statLoc)) {
+        return [[FBControlCoreError
+          describeFormat:@"Did not exit with a signal, process %d died with exit status %d", processIdentifier, WEXITSTATUS(statLoc)]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:@(WTERMSIG(statLoc))];
+    }]
+    nameFormat:@"Exit code of agent process %d", self.processIdentifier];
 }
 
 #pragma mark Private
@@ -117,7 +135,7 @@
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Agent Operation %@ | pid %d | State %@", self.configuration.description, self.processIdentifier, self.processStatus];
+  return [NSString stringWithFormat:@"Agent Operation %@ | pid %d | State %@", self.configuration.description, self.processIdentifier, self.statLoc];
 }
 
 @end
