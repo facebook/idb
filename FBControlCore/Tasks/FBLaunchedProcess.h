@@ -37,9 +37,22 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) pid_t processIdentifier;
 
 /**
+ A future that resolves with the the value from waitpid(2) on termination.
+ This will always resolve on completion, regardless of whether the process was signalled or exited normally.
+ */
+@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *statLoc;
+
+/**
  A future that resolves with the exit code upon termination.
+ If the process exited abnormally then this future will error.
  */
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *exitCode;
+
+/**
+ A future that resolves when the process terminates with a signal.
+ If the process exited normally then this future will error.
+ */
+@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *signal;
 
 @end
 

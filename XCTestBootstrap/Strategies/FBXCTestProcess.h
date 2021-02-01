@@ -18,17 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
  A Platform-Agnostic wrapper responsible for managing an xctest process.
  Driven by an executor, which implements the platform-specific responsibilities of launching an xctest process.
  */
-@interface FBXCTestProcess : NSObject
-
-/**
- The Process Idenfifer of the Launched Process.
- */
-@property (nonatomic, assign, readonly) pid_t processIdentifier;
-
-/**
- A future that resolves with the exit code of the launched process, without checking for appropriate values.
- */
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *exitCode;
+@interface FBXCTestProcess : NSObject <FBLaunchedProcess>
 
 /**
  The fully completed xctest process. The value here mirrors `exitCode`.

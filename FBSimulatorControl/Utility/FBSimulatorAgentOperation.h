@@ -41,19 +41,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdErr;
 
-/**
- A future that resolves with the the value from waitpid(2) on termination.
- This will always resolve, regardless of whether the process exited or died from a signal.
- Cancelling this future will cancel the underlying operation.
- */
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *statLoc;
-
-/**
- A future that resolves when the process terminates with a signal.
- If the process exited normally then this future will error.
- */
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *signal;
-
 @end
 
 /**

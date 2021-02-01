@@ -57,6 +57,16 @@ static NSTimeInterval const SampleTimeoutSubtraction = SampleDuration + 1;
   return self.wrappedProcess.exitCode;
 }
 
+- (FBFuture<NSNumber *> *)statLoc
+{
+  return self.wrappedProcess.statLoc;
+}
+
+- (FBFuture<NSNumber *> *)signal
+{
+  return self.wrappedProcess.signal;
+}
+
 #pragma mark Public
 
 + (FBFuture<FBXCTestProcess *> *)startWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor timeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger
