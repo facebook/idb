@@ -23,7 +23,7 @@
       [logger logFormat:@"Process %d didn't exit after wait for %f seconds for sending signal %d, sending SIGKILL now.", [self processIdentifier], timeout, signo];
       return [self sendSignal:SIGKILL];
     }];
-  return [FBFuture race:@[signal, kill]];
+  return [[FBFuture race:@[signal, kill]] mapReplace:@(signo)];
 }
 
 @end

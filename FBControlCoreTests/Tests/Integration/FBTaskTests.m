@@ -418,8 +418,9 @@
   XCTAssertNil(error);
   XCTAssertTrue(success);
   XCTAssertEqual(task.completed.state, FBFutureStateCancelled);
-  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
-  XCTAssertEqualObjects(task.exitCode.result, @(SIGTERM));
+  XCTAssertEqual(task.exitCode.state, FBFutureStateFailed);
+  XCTAssertEqual(task.signal.state, FBFutureStateDone);
+  XCTAssertEqualObjects(task.signal.result, @(SIGTERM));
 }
 
 - (void)testSendingSIGINT
@@ -436,8 +437,9 @@
   BOOL success = [future await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
-  XCTAssertEqualObjects(task.exitCode.result, @(SIGINT));
+  XCTAssertEqual(task.exitCode.state, FBFutureStateFailed);
+  XCTAssertEqual(task.signal.state, FBFutureStateDone);
+  XCTAssertEqualObjects(task.signal.result, @(SIGINT));
 }
 
 - (void)testSendingSIGKILL
@@ -454,8 +456,9 @@
   XCTAssertNil(error);
   XCTAssertTrue(success);
   XCTAssertEqual(task.completed.state, FBFutureStateFailed);
-  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
-  XCTAssertEqualObjects(task.exitCode.result, @(SIGKILL));
+  XCTAssertEqual(task.exitCode.state, FBFutureStateFailed);
+  XCTAssertEqual(task.signal.state, FBFutureStateDone);
+  XCTAssertEqualObjects(task.signal.result, @(SIGKILL));
 }
 
 - (void)testHUPBackoffToKILL
@@ -471,8 +474,9 @@
   BOOL success = [[task sendSignal:SIGHUP backingOffToKillWithTimeout:0.5 logger:[FBControlCoreLoggerDouble new]] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
-  XCTAssertEqual(task.exitCode.result, @(SIGKILL));
+  XCTAssertEqual(task.exitCode.state, FBFutureStateFailed);
+  XCTAssertEqual(task.signal.state, FBFutureStateDone);
+  XCTAssertEqual(task.signal.result, @(SIGKILL));
 
   success = [task.completed await:&error] != nil;
   XCTAssertNotNil(error);

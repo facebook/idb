@@ -60,6 +60,8 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 @interface FBTaskProcessPosixSpawn : NSObject <FBLaunchedProcess>
 
 @property (nonatomic, strong, readonly) FBTaskConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *statLoc;
+@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *signal;
 @property (nonatomic, strong, nullable, readwrite) id stdIn;
 @property (nonatomic, strong, nullable, readwrite) id stdOut;
 @property (nonatomic, strong, nullable, readwrite) id stdErr;
@@ -134,14 +136,16 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
       failFuture];
   }
 
-  FBFuture<NSNumber *> *exitCode = [self exitCodeFutureForProcessIdentifier:processIdentifier logger:configuration.logger];
-  FBTaskProcessPosixSpawn *process = [[self alloc] initWithProcessIdentifier:processIdentifier exitCode:exitCode];
+  FBMutableFuture<NSNumber *> *statLoc = FBMutableFuture.future;
+  FBMutableFuture<NSNumber *> *exitCode = FBMutableFuture.future;
+  FBMutableFuture<NSNumber *> *signal = FBMutableFuture.future;
+  [self resolveProcessCompletion:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal logger:configuration.logger];
+  FBTaskProcessPosixSpawn *process = [[self alloc] initWithProcessIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal];
   return [FBFuture futureWithResult:process];
 }
 
-+ (FBFuture<NSNumber *> *)exitCodeFutureForProcessIdentifier:(pid_t)processIdentifier logger:(id<FBControlCoreLogger>)logger
++ (void)resolveProcessCompletion:(pid_t)processIdentifier statLoc:(FBMutableFuture<NSNumber *> *)statLoc exitCode:(FBMutableFuture<NSNumber *> *)exitCode signal:(FBMutableFuture<NSNumber *> *)signal logger:(id<FBControlCoreLogger>)logger
 {
-  FBMutableFuture<NSNumber *> *exitCode = FBMutableFuture.future;
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task.posix_spawn.wait", DISPATCH_QUEUE_SERIAL);
   dispatch_source_t source = dispatch_source_create(
     DISPATCH_SOURCE_TYPE_PROC,
@@ -154,22 +158,36 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     if (waitpid(processIdentifier, &status, WNOHANG) == -1) {
       [logger logFormat:@"Failed to get the exit status with waitpid: %s", strerror(errno)];
     }
-    if (WIFEXITED(status)) {
-      [exitCode resolveWithResult:@(WEXITSTATUS(status))];
-    } else if (WIFSIGNALED(status)) {
-      [exitCode resolveWithResult:@(WTERMSIG(status))];
+    // First resolve the statLoc future.
+    [statLoc resolveWithResult:@(status)];
+
+    // Then resolve the exitCode & signal future. These are essentially mutually exclusive
+    if (WIFSIGNALED(status)) {
+      int signalCode = WTERMSIG(status);
+      NSError *error = [[FBControlCoreError
+        describeFormat:@"No normal exit code, process %d died with signal %d", processIdentifier, signalCode]
+        build];
+      [exitCode resolveWithError:error];
+      [signal resolveWithResult:@(signalCode)];
     } else {
-      [exitCode resolveWithResult:@(status)];
+      int exitCodeValue = WEXITSTATUS(status);
+      NSError *error = [[FBControlCoreError
+        describeFormat:@"Normal exit code, process %d died with exit code %d", processIdentifier, exitCodeValue]
+        build];
+      [exitCode resolveWithResult:@(exitCodeValue)];
+      [signal resolveWithError:error];
     }
+
+
+
     // We only need a single notification and the dispatch_source must be retained until we resolve the future.
     // Cancelling the source at the end will release the source as the event handler will no longer be referenced.
     dispatch_cancel(source);
   });
   dispatch_resume(source);
-  return exitCode;
 }
 
-- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier exitCode:(FBFuture<NSNumber *> *)exitCode
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal
 {
   self = [super init];
   if (!self) {
@@ -177,7 +195,9 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   }
 
   _processIdentifier = processIdentifier;
+  _statLoc = statLoc;
   _exitCode = exitCode;
+  _signal = signal;
 
   return self;
 }
@@ -185,7 +205,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo
 {
   kill(self.processIdentifier, signo);
-  return self.exitCode;
+  return self.statLoc;
 }
 
 @end
@@ -280,9 +300,19 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 #pragma mark Accessors
 
+- (FBFuture<NSNumber *> *)statLoc
+{
+  return self.process.statLoc;
+}
+
 - (FBFuture<NSNumber *> *)exitCode
 {
   return self.process.exitCode;
+}
+
+- (FBFuture<NSNumber *> *)signal
+{
+  return self.process.signal;
 }
 
 - (pid_t)processIdentifier

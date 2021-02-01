@@ -59,6 +59,18 @@ extern NSString *const FBTaskErrorDomain;
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *completed;
 
 /**
+ A future that resolves with the the value from waitpid(2) on termination.
+ This will always resolve, regardless of whether the process exited or died from a signal.
+ */
+@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *statLoc;
+
+/**
+ A future that resolves when the process terminates with a signal.
+ If the process exited normally then this future will error.
+ */
+@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *signal;
+
+/**
  Returns the Process Identifier of the Launched Process.
  */
 @property (nonatomic, assign, readonly) pid_t processIdentifier;
