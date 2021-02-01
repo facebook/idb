@@ -7,13 +7,12 @@
 
 #import <Foundation/Foundation.h>
 
-typedef NS_ENUM(NSInteger, OTestExitCode) {
-  kSuccess = 0,
-  kDLOpenError = 1,
-  kBundleOpenError,
-  kUnsupportedFramework,
-  kClassLoadingError,
-  kMissingExecutable,
+typedef NS_ENUM(NSInteger, TestShimExitCode) {
+  TestShimExitCodeSuccess = 0,
+  TestShimExitCodeDLOpenError = 10,
+  TestShimExitCodeBundleOpenError = 11,
+  TestShimExitCodeMissingExecutable = 12,
+  TestShimExitCodeXCTestFailedLoading = 13,
 };
 
 #define kReporter_TimestampKey @"timestamp"

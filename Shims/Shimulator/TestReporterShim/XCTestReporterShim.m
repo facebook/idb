@@ -625,11 +625,11 @@ static void listBundle(NSString *testBundlePath, NSString *outputFile)
       "Bundle '%s' does not identify an accessible bundle directory.\n",
       testBundlePath.UTF8String
     );
-    exit(kBundleOpenError);
+    exit(TestShimExitCodeBundleOpenError);
   }
   if (![bundle executablePath]) {
     fprintf(stderr, "The bundle at %s does not contain an executable.\n", [testBundlePath UTF8String]);
-    exit(kMissingExecutable);
+    exit(TestShimExitCodeMissingExecutable);
   }
 
   // Make sure the 'XCTest' preference is cleared before we load the
@@ -654,7 +654,7 @@ static void listBundle(NSString *testBundlePath, NSString *outputFile)
   // something goes wrong, dlerror() gives us a much more helpful error message.
   if (dlopen([[bundle executablePath] UTF8String], RTLD_LAZY) == NULL) {
     fprintf(stderr, "%s\n", dlerror());
-    exit(kDLOpenError);
+    exit(TestShimExitCodeDLOpenError);
   }
 
   // Load the Test Bundle's 'Principal Class' and initialize it.
@@ -705,7 +705,7 @@ static void listBundle(NSString *testBundlePath, NSString *outputFile)
 
   // Close the file so the other end knows this is the end of the input.
   [fileHandle closeFile];
-  exit(kSuccess);
+  exit(TestShimExitCodeSuccess);
 }
 
 static BOOL NSBundle_loadAndReturnError(id self, SEL sel, NSError **error)

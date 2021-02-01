@@ -13,6 +13,7 @@
 #import "FBRuntimeTools.h"
 #import "XCTestPrivate.h"
 #import "FBDebugLog.h"
+#import "ReporterEvents.h"
 
 #include "TargetConditionals.h"
 
@@ -78,7 +79,7 @@ void FBDeployBlockWhenAppLoads(void(^mainBlock)()) {
 BOOL FBXCTestMain()
 {
   if (!FBLoadXCTestIfNeeded()) {
-    exit(2);
+    exit(TestShimExitCodeXCTestFailedLoading);
   }
   NSString *configurationPath = NSProcessInfo.processInfo.environment[@"XCTestConfigurationFilePath"];
   if (!configurationPath) {
