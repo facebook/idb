@@ -90,11 +90,22 @@ static NSTimeInterval const SampleTimeoutSubtraction = SampleDuration + 1;
     }];
 }
 
++ (FBFuture<NSNumber *> *)ensureProcess:(id<FBLaunchedProcess>)process completesWithin:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  return [self ensureProcessExitCode:process.exitCode processIdentifier:process.processIdentifier completesWithin:timeout queue:queue logger:logger];
+}
+
 #pragma mark Private
 
-+ (FBFuture<NSNumber *> *)onQueue:(dispatch_queue_t)queue decorateLaunchedWithErrorHandlingProcess:(id<FBLaunchedProcess>)processInfo startDate:(NSDate *)startDate timeout:(NSTimeInterval)timeout notifier:(FBCrashLogNotifier *)notifier logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNumber *> *)ensureProcessExitCode:(FBFuture<NSNumber *> *)exitCode processIdentifier:(pid_t)processIdentifier completesWithin:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  FBFuture<NSNumber *> *completionFuture = [[processInfo
+  FBFuture<NSNumber *> *timeoutFuture = [FBXCTestProcess onQueue:queue timeoutFuture:timeout processIdentifier:processIdentifier];
+  return [FBFuture race:@[exitCode, timeoutFuture]];
+}
+
++ (FBFuture<NSNumber *> *)onQueue:(dispatch_queue_t)queue decorateLaunchedWithErrorHandlingProcess:(id<FBLaunchedProcess>)process startDate:(NSDate *)startDate timeout:(NSTimeInterval)timeout notifier:(FBCrashLogNotifier *)notifier logger:(id<FBControlCoreLogger>)logger
+{
+  FBFuture<NSNumber *> *checkedExitCode = [[process
     exitCode]  // This will resolve a future with an exit code, so an error condition indicates a crash as checked below.
     onQueue:queue chain:^ FBFuture<NSNumber *> * (FBFuture<NSNumber *> *exitCodeFuture) {
       if (exitCodeFuture.state == FBFutureStateDone) {
@@ -104,13 +115,12 @@ static NSTimeInterval const SampleTimeoutSubtraction = SampleDuration + 1;
           return [FBFuture futureWithResult:@(exitCode)];
         }
         return [[FBControlCoreError
-          describeFormat:@"xctest process %@ exited with unexpected code %d", processInfo, exitCode]
+          describeFormat:@"xctest process %@ exited with unexpected code %d", process, exitCode]
           failFuture];
       }
-      return [FBXCTestProcess onQueue:queue performCrashLogQuery:processInfo.processIdentifier startDate:startDate notifier:notifier crashLogWaitTime:CrashLogWaitTime logger:logger];
+      return [FBXCTestProcess onQueue:queue performCrashLogQuery:process.processIdentifier startDate:startDate notifier:notifier crashLogWaitTime:CrashLogWaitTime logger:logger];
     }];
-  FBFuture<NSNumber *> *timeoutFuture = [FBXCTestProcess onQueue:queue timeoutFuture:timeout processIdentifier:processInfo.processIdentifier];
-  return [FBFuture race:@[completionFuture, timeoutFuture]];
+  return [self ensureProcessExitCode:checkedExitCode processIdentifier:process.processIdentifier completesWithin:timeout queue:queue logger:logger];
 }
 
 + (FBFuture<NSNumber *> *)onQueue:(dispatch_queue_t)queue timeoutFuture:(NSTimeInterval)timeout processIdentifier:(pid_t)processIdentifier

@@ -27,7 +27,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) FBFuture<NSNumber *> *completedNormally;
 
 /**
- Starts the Execution of an fbxctest process
+ Starts the Execution of an fbxctest process, returning an object that accounts for various parts of the execution through the "completedNormally" Future:
+ - Checks that the exit code is a valid one for xctest.
+ - If the test process crashes, an attempt is made find the crash log and attach it to the error of the future.
+ - If the test process fails to complete within a timeout, an attempt is made to sample the process and attach it to the error of the future.
 
  @param launchPath the Launch Path of the executable
  @param arguments the Arguments to the executable.
@@ -39,6 +42,19 @@ NS_ASSUME_NONNULL_BEGIN
  @return a future that resolves with the launched process.
  */
 + (FBFuture<FBXCTestProcess *> *)startWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor timeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger;
+
+/**
+ Ensures that the process completes within the given timeout.
+ "Completion" means that the process's exit code has been resolved successfully.
+ If the test process fails to complete within a timeout, an attempt is made to sample the process and attach it to the error of the future.
+
+ @param process the process to inspect.
+ @param timeout the timeout in seconds.
+ @param queue the queue to use.
+ @param logger the logger to log to.
+ @return a future that resolves with the exit code.
+ */
++ (FBFuture<NSNumber *> *)ensureProcess:(id<FBLaunchedProcess>)process completesWithin:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

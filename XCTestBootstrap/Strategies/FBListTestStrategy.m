@@ -127,9 +127,9 @@
     stdErrConsumer:stdErrConsumer
     executor:self.executor
     logger:self.logger]
-    onQueue:self.executor.workQueue fmap:^(FBXCTestProcess *process) {
+    onQueue:self.executor.workQueue fmap:^(FBFuture<NSNumber *> *exitCode) {
       return [FBListTestStrategy
-        launchedProcess:process
+        launchedProcessWithExitCode:exitCode
         shimOutput:shimOutput
         shimBuffer:shimBuffer
         stdOutBuffer:stdOutBuffer
@@ -138,14 +138,14 @@
     }];
 }
 
-+ (FBFuture<NSArray<NSString *> *> *)launchedProcess:(FBXCTestProcess *)process shimOutput:(id<FBProcessFileOutput>)shimOutput shimBuffer:(id<FBConsumableBuffer>)shimBuffer stdOutBuffer:(id<FBConsumableBuffer>)stdOutBuffer stdErrBuffer:(id<FBConsumableBuffer>)stdErrBuffer queue:(dispatch_queue_t)queue
++ (FBFuture<NSArray<NSString *> *> *)launchedProcessWithExitCode:(FBFuture<NSNumber *> *)exitCode shimOutput:(id<FBProcessFileOutput>)shimOutput shimBuffer:(id<FBConsumableBuffer>)shimBuffer stdOutBuffer:(id<FBConsumableBuffer>)stdOutBuffer stdErrBuffer:(id<FBConsumableBuffer>)stdErrBuffer queue:(dispatch_queue_t)queue
 {
   return [[[shimOutput
     startReading]
     onQueue:queue fmap:^(id _) {
       return [FBListTestStrategy
         onQueue:queue
-        confirmExit:process
+        confirmExit:exitCode
         closingOutput:shimOutput
         shimBuffer:shimBuffer
         stdOutBuffer:stdOutBuffer
@@ -171,13 +171,13 @@
   }];
 }
 
-+ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue confirmExit:(FBXCTestProcess *)process closingOutput:(id<FBProcessFileOutput>)output shimBuffer:(id<FBConsumableBuffer>)shimBuffer stdOutBuffer:(id<FBConsumableBuffer>)stdOutBuffer stdErrBuffer:(id<FBConsumableBuffer>)stdErrBuffer
++ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue confirmExit:(FBFuture<NSNumber *> *)exitCode closingOutput:(id<FBProcessFileOutput>)output shimBuffer:(id<FBConsumableBuffer>)shimBuffer stdOutBuffer:(id<FBConsumableBuffer>)stdOutBuffer stdErrBuffer:(id<FBConsumableBuffer>)stdErrBuffer
 {
-  return [process.exitCode
-    onQueue:queue fmap:^(NSNumber *exitCode) {
-      if (exitCode.intValue != 0) {
+  return [exitCode
+    onQueue:queue fmap:^(NSNumber *exitCodeNumber) {
+      if (exitCodeNumber.intValue != 0) {
         return [[XCTestBootstrapError
-          describeFormat:@"Listing of tests failed due to xctest binary exiting with non-zero exit code %@. (%@%@)", exitCode, stdOutBuffer.consumeCurrentString, stdErrBuffer.consumeCurrentString]
+          describeFormat:@"Listing of tests failed due to xctest binary exiting with non-zero exit code %@. (%@%@)", exitCodeNumber, stdOutBuffer.consumeCurrentString, stdErrBuffer.consumeCurrentString]
           failFuture];
       }
       return [FBFuture futureWithFutures:@[
@@ -187,10 +187,12 @@
     }];
 }
 
-+ (FBFuture<FBXCTestProcess *> *)listTestProcessWithConfiguration:(FBListTestConfiguration *)configuration environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBFuture<NSNumber *> *> *)listTestProcessWithConfiguration:(FBListTestConfiguration *)configuration environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor logger:(id<FBControlCoreLogger>)logger
 {
+  NSString *launchPath = executor.xctestPath;
+
+  // List test for app test bundle, so we use app binary instead of xctest to load test bundle.
   if ([FBBundleDescriptor isApplicationAtPath:configuration.runnerAppPath]) {
-    // List test for app test bundle, so we use app binary instead of xctest to load test bundle.
     NSString *xcTestFrameworkPath =
     [[FBXcodeConfiguration.developerDirectory
       stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform"]
@@ -212,29 +214,18 @@
     }
 
     FBBundleDescriptor *appBundle = [FBBundleDescriptor bundleFromPath:configuration.runnerAppPath error:nil];
-    return [FBXCTestProcess
-      startWithLaunchPath:appBundle.binary.path
-      arguments:@[]
-      environment:environment
-      waitForDebugger:NO
-      stdOutConsumer:stdOutConsumer
-      stdErrConsumer:stdErrConsumer
-      executor:executor
-      timeout:configuration.testTimeout
-      logger:logger];
+    launchPath = appBundle.binary.path;
   }
 
-  NSString *xctestPath = executor.xctestPath;
-  return [FBXCTestProcess
-    startWithLaunchPath:xctestPath
-    arguments:@[] // xctest needs no arguments as the shim will disregard & bypass them.
+  return [[executor
+    startProcessWithLaunchPath:executor.xctestPath
+    arguments:@[]
     environment:environment
-    waitForDebugger:NO
     stdOutConsumer:stdOutConsumer
-    stdErrConsumer:stdErrConsumer
-    executor:executor
-    timeout:configuration.testTimeout
-    logger:logger];
+    stdErrConsumer:stdErrConsumer]
+    onQueue:executor.workQueue map:^(id<FBLaunchedProcess> process) {
+      return [FBXCTestProcess ensureProcess:process completesWithin:20 queue:executor.workQueue logger:logger];
+    }];
 }
 
 + (NSString *)copyFrameworkToApplicationAtPath:(NSString *)appPath frameworkPath:(NSString *)frameworkPath error:(NSError **)error
