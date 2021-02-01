@@ -54,11 +54,11 @@
   return self;
 }
 
-#pragma mark FBLaunchedProcess
+#pragma mark FBLaunchedApplication
 
-- (FBFuture<NSNumber *> *)exitCode
+- (FBFuture<NSNull *> *)completed
 {
-  return self.gdbClient.exitCode;
+  return [self.gdbClient.exitCode mapReplace:NSNull.null];
 }
 
 @end

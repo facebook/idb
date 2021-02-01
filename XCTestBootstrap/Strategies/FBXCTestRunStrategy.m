@@ -66,17 +66,17 @@
         withTestRunnerConfiguration:runnerConfiguration];
       return [[self.iosTarget
         launchApplication:applicationConfiguration]
-        onQueue:self.iosTarget.workQueue map:^(id<FBLaunchedProcess> process) {
-          return @[process, runnerConfiguration];
+        onQueue:self.iosTarget.workQueue map:^(id<FBLaunchedApplication> application) {
+          return @[application, runnerConfiguration];
         }];
     }]
     onQueue:self.iosTarget.workQueue fmap:^(NSArray<id> *tuple) {
-      id<FBLaunchedProcess> applicationProcess = tuple[0];
+      id<FBLaunchedApplication> launchedApplcation = tuple[0];
       FBTestRunnerConfiguration *runnerConfiguration = tuple[1];
 
       // Make the Context for the Test Manager.
       FBTestManagerContext *context = [FBTestManagerContext
-        contextWithTestRunnerPID:applicationProcess.processIdentifier
+        contextWithTestRunnerPID:launchedApplcation.processIdentifier
         testRunnerBundleID:runnerConfiguration.testRunner.bundleID
         sessionIdentifier:runnerConfiguration.sessionIdentifier];
 
@@ -89,7 +89,7 @@
         testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
 
       // Add callback for when the app under test exists
-      [[applicationProcess exitCode] onQueue:self.iosTarget.workQueue doOnResolved:^(NSNumber * _) {
+      [launchedApplcation.completed onQueue:self.iosTarget.workQueue doOnResolved:^(NSNull *_) {
         [self.reporter appUnderTestExited];
       }];
 

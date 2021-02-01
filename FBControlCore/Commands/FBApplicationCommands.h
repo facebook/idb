@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBInstalledApplication;
 @class FBProcessInfo;
 
-@protocol FBLaunchedProcess;
+@protocol FBLaunchedApplication;
 
 /**
  Defines an interface for interacting with iOS Applications.
@@ -53,7 +53,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the Application Launch Configuration to use.
  @return A future that resolves with the launched process.
  */
-- (FBFuture<id<FBLaunchedProcess>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration;
+- (FBFuture<id<FBLaunchedApplication>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration;
 
 /**
  Kills application with the given bundle identifier.

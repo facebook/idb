@@ -92,7 +92,7 @@
     output:FBProcessOutputConfiguration.outputToDevNull];
   return [[[self.simulator
     launchApplication:configuration]
-    onQueue:self.simulator.workQueue fmap:^(id<FBLaunchedProcess> process) {
+    onQueue:self.simulator.workQueue fmap:^(id<FBLaunchedApplication> process) {
       return [self debugServerTaskForPort:port processIdentifier:process.processIdentifier];
     }]
     onQueue:self.simulator.workQueue map:^(FBTask<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *task) {

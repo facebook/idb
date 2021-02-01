@@ -290,7 +290,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [self.target killApplicationWithBundleID:bundleID];
 }
 
-- (FBFuture<id<FBLaunchedProcess>> *)launch_app:(FBApplicationLaunchConfiguration *)configuration
+- (FBFuture<id<FBLaunchedApplication>> *)launch_app:(FBApplicationLaunchConfiguration *)configuration
 {
   return [self.target launchApplication:[configuration withEnvironment:[self.storageManager interpolateEnvironmentReplacements:configuration.environment]]];
 }

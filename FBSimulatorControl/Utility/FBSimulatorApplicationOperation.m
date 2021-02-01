@@ -20,6 +20,7 @@
 @implementation FBSimulatorApplicationOperation
 
 @synthesize completed = _completed;
+@synthesize processIdentifier = _processIdentifier;
 
 #pragma mark Initializers
 
@@ -66,13 +67,6 @@
         killProcessIdentifier:processIdentifier];
       return FBFuture.empty;
     }];
-}
-
-#pragma mark FBLaunchedProcess
-
-- (FBFuture<NSNull *> *)exitCode
-{
-  return [self.completed mapReplace:@0];
 }
 
 #pragma mark NSObject

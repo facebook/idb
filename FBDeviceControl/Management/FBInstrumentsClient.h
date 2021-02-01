@@ -14,8 +14,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBAMDServiceConnection;
 @class FBApplicationLaunchConfiguration;
 
-@protocol FBLaunchedProcess;
-
 /**
  A client for Instruments.
  */

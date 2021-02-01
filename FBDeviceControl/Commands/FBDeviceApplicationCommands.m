@@ -40,7 +40,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
 
 @end
 
-@interface FBDeviceLaunchedApplication : NSObject <FBLaunchedProcess>
+@interface FBDeviceLaunchedApplication : NSObject <FBLaunchedApplication>
 
 @property (nonatomic, strong, readonly) FBDeviceApplicationCommands *commands;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
@@ -65,7 +65,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
   return self;
 }
 
-- (FBFuture<NSNull *> *)exitCode
+- (FBFuture<NSNull *> *)completed
 {
   FBDeviceApplicationCommands *commands = self.commands;
   pid_t processIdentifier = self.processIdentifier;
@@ -236,14 +236,14 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
     }];
 }
 
-- (FBFuture<id<FBLaunchedProcess>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
+- (FBFuture<id<FBLaunchedApplication>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   return [[[self
     remoteInstrumentsClient]
     onQueue:self.device.asyncQueue pop:^(FBInstrumentsClient *client) {
       return [client launchApplication:configuration];
     }]
-    onQueue:self.device.asyncQueue map:^ id<FBLaunchedProcess> (NSNumber *pid) {
+    onQueue:self.device.asyncQueue map:^ id<FBLaunchedApplication> (NSNumber *pid) {
       return [[FBDeviceLaunchedApplication alloc] initWithProcessIdentifier:pid.intValue commands:self queue:self.device.workQueue];
     }];
 }

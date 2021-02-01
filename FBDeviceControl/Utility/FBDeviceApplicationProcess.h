@@ -15,9 +15,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBGDBClient;
 
 /**
- A FBLaunchedProcess that wraps an appliation launch on a device.
+ A FBLaunchedApplication that wraps an appliation launch on a device.
  */
-@interface FBDeviceApplicationProcess : NSObject <FBLaunchedProcess>
+@interface FBDeviceApplicationProcess : NSObject <FBLaunchedApplication>
 
 #pragma mark Initializers
 
@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param stdOut the stdout to redirect to.
  @param stdErr the stderr to redirect to.
  @param launchFuture a future that resolves with the process id when launched.
- @return a future that resolves with a FBLaunchedProcess instance.
+ @return a future that resolves with a FBLaunchedApplication instance.
  */
 + (FBFuture<FBDeviceApplicationProcess *> *)processWithDevice:(FBDevice *)device configuration:(FBApplicationLaunchConfiguration *)configuration gdbClient:(FBGDBClient *)gdbClient stdOut:(id<FBProcessOutput>)stdOut stdErr:(id<FBProcessOutput>)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture;
 

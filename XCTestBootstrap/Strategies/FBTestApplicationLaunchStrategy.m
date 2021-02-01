@@ -43,7 +43,7 @@
   return [self.iosTarget installedApplicationWithBundleID:bundleID];
 }
 
-- (FBFuture<id<FBLaunchedProcess>> *)installAndLaunchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path
+- (FBFuture<id<FBLaunchedApplication>> *)installAndLaunchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path
 {
   if (!path) {
     return [[FBControlCoreError
@@ -81,8 +81,8 @@
       }
       return [self installAndLaunchApplication:configuration atPath:path];
     }]
-    onQueue:self.iosTarget.workQueue map:^(id<FBLaunchedProcess> process) {
-      return @(process.processIdentifier);
+    onQueue:self.iosTarget.workQueue map:^(id<FBLaunchedApplication> application) {
+      return @(application.processIdentifier);
     }];
 }
 

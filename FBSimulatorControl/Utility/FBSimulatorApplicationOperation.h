@@ -15,10 +15,12 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBProcessInfo;
 @class FBApplicationLaunchConfiguration;
 
+@protocol FBLaunchedApplication;
+
 /**
  An Operation for an Application.
  */
-@interface FBSimulatorApplicationOperation : NSObject <FBLaunchedProcess, FBiOSTargetOperation>
+@interface FBSimulatorApplicationOperation : NSObject <FBLaunchedApplication>
 
 #pragma mark Helper Methods
 
@@ -37,11 +39,6 @@ NS_ASSUME_NONNULL_BEGIN
  The Configuration Launched with.
  */
 @property (nonatomic, copy, readonly) FBApplicationLaunchConfiguration *configuration;
-
-/**
- The Process Identifier of the Launched Process.
- */
-@property (nonatomic, assign, readonly) pid_t processIdentifier;
 
 /**
  The stderr of the launched process.
