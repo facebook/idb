@@ -112,7 +112,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   // Construct and start the process
   return [[self
     startTestProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutConsumer:stdOutConsumer stdErrConsumer:stdErrConsumer]
-    onQueue:self.executor.workQueue fmap:^(id<FBLaunchedProcess> process) {
+    onQueue:self.executor.workQueue fmap:^(FBXCTestProcess *process) {
       return [self
         completeLaunchedProcess:process
         shimOutput:shimOutput
@@ -120,7 +120,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     }];
 }
 
-- (FBFuture<NSNull *> *)completeLaunchedProcess:(id<FBLaunchedProcess>)process shimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBDataConsumerLifecycle>)shimConsumer
+- (FBFuture<NSNull *> *)completeLaunchedProcess:(FBXCTestProcess *)process shimOutput:(id<FBProcessFileOutput>)shimOutput shimConsumer:(id<FBDataConsumerLifecycle>)shimConsumer
 {
   id<FBControlCoreLogger> logger = self.logger;
   id<FBLogicXCTestReporter> reporter = self.reporter;
@@ -134,7 +134,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     }]
     onQueue:queue fmap:^(FBFileReader *reader) {
       [logger logFormat:@"Shim output at %@ has been opened for reading, waiting for xctest process to exit", shimOutput.filePath];
-      return [self waitForExit:process closingOutput:shimOutput consumer:shimConsumer];
+      return [self waitForSuccessfulCompletion:process closingOutput:shimOutput consumer:shimConsumer];
     }]
     onQueue:queue handleError:^(NSError *error) {
       [logger logFormat:@"Abnormal exit of xctest process %@", error];
@@ -148,11 +148,12 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     }];
 }
 
-- (FBFuture<NSNull *> *)waitForExit:(id<FBLaunchedProcess>)process closingOutput:(id<FBProcessFileOutput>)output consumer:(id<FBDataConsumerLifecycle>)consumer
+- (FBFuture<NSNull *> *)waitForSuccessfulCompletion:(FBXCTestProcess *)process closingOutput:(id<FBProcessFileOutput>)output consumer:(id<FBDataConsumerLifecycle>)consumer
 {
   id<FBControlCoreLogger> logger = self.logger;
   dispatch_queue_t queue = self.executor.workQueue;
-  return [process.exitCode
+  return [[process
+    completedNormally] // Observe completedNormally, as this does resolve crashes where appropriate
     onQueue:queue fmap:^(NSNumber *exitCode) {
       [logger logFormat:@"xctest process %@ terminated, exit code %@", @(process.processIdentifier), exitCode];
       // Since there's no guarantee that the xctest process has closed the writing end of the fifo, we can't rely on getting and end-of-file naturally
@@ -243,7 +244,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     ]];
 }
 
-- (FBFuture<id<FBLaunchedProcess>> *)startTestProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer
+- (FBFuture<FBXCTestProcess *> *)startTestProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer
 {
   [self.logger logFormat:
     @"Launching xctest process with arguments %@, environment %@",

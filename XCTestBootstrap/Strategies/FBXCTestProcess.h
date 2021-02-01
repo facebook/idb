@@ -21,6 +21,22 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBXCTestProcess : NSObject
 
 /**
+ The Process Idenfifer of the Launched Process.
+ */
+@property (nonatomic, assign, readonly) pid_t processIdentifier;
+
+/**
+ A future that resolves with the exit code of the launched process, without checking for appropriate values.
+ */
+@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *exitCode;
+
+/**
+ The fully completed xctest process. The value here mirrors `exitCode`.
+ However observing this future will mean that you are observing the additional crash detection.
+ */
+@property (nonatomic, assign, readonly) FBFuture<NSNumber *> *completedNormally;
+
+/**
  Starts the Execution of an fbxctest process
 
  @param launchPath the Launch Path of the executable
@@ -30,9 +46,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param stdErrConsumer the Consumer of the launched xctest process stderr.
  @param executor the executor for running the test process.
  @param logger the logger to log to.
- @return a future that resolves with the launched process>
+ @return a future that resolves with the launched process.
  */
-+ (FBFuture<id<FBLaunchedProcess>> *)startWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor timeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<FBXCTestProcess *> *)startWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor timeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

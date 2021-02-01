@@ -180,7 +180,7 @@ static NSString *const KeyWorkingDirectory = @"working_directory";
   return FBXCTestTypeListTest;
 }
 
-- (FBFuture<id<FBLaunchedProcess>> *)listTestProcessWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<FBXCTestProcess *> *)listTestProcessWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor logger:(id<FBControlCoreLogger>)logger
 {
   if ([FBBundleDescriptor isApplicationAtPath:_runnerAppPath]) {
     // List test for app test bundle, so we use app binary instead of xctest to load test bundle.

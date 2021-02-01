@@ -126,9 +126,9 @@
     stdErrConsumer:stdErrConsumer
     executor:self.executor
     logger:self.logger]
-    onQueue:self.executor.workQueue fmap:^(id<FBLaunchedProcess> processInfo) {
+    onQueue:self.executor.workQueue fmap:^(FBXCTestProcess *process) {
       return [FBListTestStrategy
-        launchedProcess:processInfo
+        launchedProcess:process
         shimOutput:shimOutput
         shimBuffer:shimBuffer
         stdOutBuffer:stdOutBuffer
@@ -137,14 +137,14 @@
     }];
 }
 
-+ (FBFuture<NSArray<NSString *> *> *)launchedProcess:(id<FBLaunchedProcess>)processInfo shimOutput:(id<FBProcessFileOutput>)shimOutput shimBuffer:(id<FBConsumableBuffer>)shimBuffer stdOutBuffer:(id<FBConsumableBuffer>)stdOutBuffer stdErrBuffer:(id<FBConsumableBuffer>)stdErrBuffer queue:(dispatch_queue_t)queue
++ (FBFuture<NSArray<NSString *> *> *)launchedProcess:(FBXCTestProcess *)process shimOutput:(id<FBProcessFileOutput>)shimOutput shimBuffer:(id<FBConsumableBuffer>)shimBuffer stdOutBuffer:(id<FBConsumableBuffer>)stdOutBuffer stdErrBuffer:(id<FBConsumableBuffer>)stdErrBuffer queue:(dispatch_queue_t)queue
 {
   return [[[shimOutput
     startReading]
     onQueue:queue fmap:^(id _) {
       return [FBListTestStrategy
         onQueue:queue
-        confirmExit:processInfo
+        confirmExit:process
         closingOutput:shimOutput
         shimBuffer:shimBuffer
         stdOutBuffer:stdOutBuffer
@@ -170,7 +170,7 @@
   }];
 }
 
-+ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue confirmExit:(id<FBLaunchedProcess>)process closingOutput:(id<FBProcessFileOutput>)output shimBuffer:(id<FBConsumableBuffer>)shimBuffer stdOutBuffer:(id<FBConsumableBuffer>)stdOutBuffer stdErrBuffer:(id<FBConsumableBuffer>)stdErrBuffer
++ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue confirmExit:(FBXCTestProcess *)process closingOutput:(id<FBProcessFileOutput>)output shimBuffer:(id<FBConsumableBuffer>)shimBuffer stdOutBuffer:(id<FBConsumableBuffer>)stdOutBuffer stdErrBuffer:(id<FBConsumableBuffer>)stdErrBuffer
 {
   return [process.exitCode
     onQueue:queue fmap:^(NSNumber *exitCode) {
