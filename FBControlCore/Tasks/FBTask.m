@@ -21,28 +21,6 @@
 
 NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
-/**
- A protocol for abstracting over implementations of subprocesses.
- */
-@protocol FBTaskProcess <NSObject, FBLaunchedProcess>
-
-/**
- The designated initializer
-
- @param configuration the configuration of the task.
- @param io the io attachment.
- @return a new FBTaskProcess Instance.
- */
-+ (FBFuture<id<FBTaskProcess>> *)processWithConfiguration:(FBTaskConfiguration *)configuration io:(FBProcessIOAttachment *)io;
-
-/**
- Send a signal to the process.
- Returns a future with the resolved exit code of the process.
- */
-- (FBFuture<NSNumber *> *)sendSignal:(int)signo;
-
-@end
-
 static BOOL AddOutputFileActions(posix_spawn_file_actions_t *fileActions, FBProcessStreamAttachment *attachment, int targetFileDescriptor, NSError **error)
 {
   if (!attachment) {
@@ -79,7 +57,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   return YES;
 }
 
-@interface FBTaskProcess_PosixSpawn : NSObject <FBTaskProcess>
+@interface FBTaskProcessPosixSpawn : NSObject <FBLaunchedProcess>
 
 @property (nonatomic, strong, readonly) FBTaskConfiguration *configuration;
 @property (nonatomic, strong, nullable, readwrite) id stdIn;
@@ -88,12 +66,12 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 @end
 
-@implementation FBTaskProcess_PosixSpawn
+@implementation FBTaskProcessPosixSpawn
 
 @synthesize exitCode = _exitCode;
 @synthesize processIdentifier = _processIdentifier;
 
-+ (FBFuture<id<FBTaskProcess>> *)processWithConfiguration:(FBTaskConfiguration *)configuration io:(FBProcessIOAttachment *)io
++ (FBFuture<FBTaskProcessPosixSpawn *> *)processWithConfiguration:(FBTaskConfiguration *)configuration io:(FBProcessIOAttachment *)io
 {
   // Convert the arguments to the argv expected by posix_spawn
   NSArray<NSString *> *arguments = configuration.arguments;
@@ -157,7 +135,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   }
 
   FBFuture<NSNumber *> *exitCode = [self exitCodeFutureForProcessIdentifier:processIdentifier logger:configuration.logger];
-  id<FBTaskProcess> process = [[self alloc] initWithProcessIdentifier:processIdentifier exitCode:exitCode];
+  FBTaskProcessPosixSpawn *process = [[self alloc] initWithProcessIdentifier:processIdentifier exitCode:exitCode];
   return [FBFuture futureWithResult:process];
 }
 
@@ -219,7 +197,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 @property (nonatomic, copy, readonly) NSString *configurationDescription;
 @property (nonatomic, copy, readonly) NSString *programName;
 
-@property (nonatomic, strong, readwrite) id<FBTaskProcess> process;
+@property (nonatomic, strong, readwrite) FBTaskProcessPosixSpawn *process;
 @property (nonatomic, strong, nullable, readwrite) FBProcessIO *io;
 
 @end
@@ -235,9 +213,9 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     attach]
     onQueue:queue fmap:^(FBProcessIOAttachment *attachment) {
       // Everything is setup, launch the process now.
-      return [FBTaskProcess_PosixSpawn processWithConfiguration:configuration io:attachment];
+      return [FBTaskProcessPosixSpawn processWithConfiguration:configuration io:attachment];
     }]
-    onQueue:queue map:^(id<FBTaskProcess> process) {
+    onQueue:queue map:^(FBTaskProcessPosixSpawn *process) {
       return [[self alloc]
         initWithProcess:process
         io:configuration.io
@@ -248,7 +226,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     }];
 }
 
-- (instancetype)initWithProcess:(id<FBTaskProcess>)process io:(FBProcessIO *)io queue:(dispatch_queue_t)queue acceptableExitCodes:(nullable NSSet<NSNumber *> *)acceptableExitCodes configurationDescription:(NSString *)configurationDescription programName:(NSString *)programName
+- (instancetype)initWithProcess:(FBTaskProcessPosixSpawn *)process io:(FBProcessIO *)io queue:(dispatch_queue_t)queue acceptableExitCodes:(nullable NSSet<NSNumber *> *)acceptableExitCodes configurationDescription:(NSString *)configurationDescription programName:(NSString *)programName
 {
   self = [super init];
   if (!self) {
