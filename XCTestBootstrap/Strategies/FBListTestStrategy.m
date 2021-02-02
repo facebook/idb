@@ -175,9 +175,11 @@
 {
   return [exitCode
     onQueue:queue fmap:^(NSNumber *exitCodeNumber) {
-      if (exitCodeNumber.intValue != 0) {
+      int exitCodeValue = exitCodeNumber.intValue;
+      NSString *descriptionOfFailingExit = [FBXCTestProcess describeFailingExitCode:exitCodeValue];
+      if (descriptionOfFailingExit) {
         return [[XCTestBootstrapError
-          describeFormat:@"Listing of tests failed due to xctest binary exiting with non-zero exit code %@. (%@%@)", exitCodeNumber, stdOutBuffer.consumeCurrentString, stdErrBuffer.consumeCurrentString]
+          describeFormat:@"Listing of tests failed due to xctest binary exiting with non-zero exit code %d [%@] (%@%@)", exitCodeValue, descriptionOfFailingExit, stdOutBuffer.consumeCurrentString, stdErrBuffer.consumeCurrentString]
           failFuture];
       }
       return [FBFuture futureWithFutures:@[

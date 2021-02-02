@@ -56,6 +56,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (FBFuture<NSNumber *> *)ensureProcess:(id<FBLaunchedProcess>)process completesWithin:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
+/**
+ Describe the exit code, if an error.
+
+ @param exitCode the exit code of the xctest process.
+ @return a String representing the error, nil otherwise.
+*/
++ (nullable NSString *)describeFailingExitCode:(int)exitCode;
+
 @end
 
 NS_ASSUME_NONNULL_END

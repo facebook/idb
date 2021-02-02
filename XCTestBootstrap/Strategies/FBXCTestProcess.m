@@ -13,6 +13,7 @@
 
 #import "XCTestBootstrapError.h"
 #import "FBXCTestProcessExecutor.h"
+#import "ReporterEvents.h"
 
 static NSTimeInterval const CrashLogStartDateFuzz = -20;
 static NSTimeInterval const CrashLogWaitTime = 180; // In case resources are pegged, just wait
@@ -95,6 +96,26 @@ static NSTimeInterval const SampleTimeoutSubtraction = SampleDuration + 1;
   return [self ensureProcessExitCode:process.exitCode processIdentifier:process.processIdentifier completesWithin:timeout queue:queue logger:logger];
 }
 
++ (nullable NSString *)describeFailingExitCode:(int)exitCode
+{
+  switch (exitCode) {
+    case 0:
+      return nil;
+    case 1:
+      return nil;
+    case TestShimExitCodeDLOpenError:
+      return @"DLOpen Error";
+    case TestShimExitCodeBundleOpenError:
+      return @"Error opening test bundle";
+    case TestShimExitCodeMissingExecutable:
+      return @"Missing executable";
+    case TestShimExitCodeXCTestFailedLoading:
+      return @"XCTest Framework failed loading";
+    default:
+      return [NSString stringWithFormat:@"Unknown xctest exit code %d", exitCode];
+  }
+}
+
 #pragma mark Private
 
 + (FBFuture<NSNumber *> *)ensureProcessExitCode:(FBFuture<NSNumber *> *)exitCode processIdentifier:(pid_t)processIdentifier completesWithin:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
@@ -110,13 +131,13 @@ static NSTimeInterval const SampleTimeoutSubtraction = SampleDuration + 1;
     onQueue:queue chain:^ FBFuture<NSNumber *> * (FBFuture<NSNumber *> *exitCodeFuture) {
       if (exitCodeFuture.state == FBFutureStateDone) {
         int exitCode = exitCodeFuture.result.intValue;
-        // Expected results, return now
-        if (exitCode == 0 || exitCode == 1) {
-          return [FBFuture futureWithResult:@(exitCode)];
+        NSString *descriptionOfExit = [self describeFailingExitCode:exitCode];
+        if (descriptionOfExit) {
+          return [[FBControlCoreError
+            describeFormat:@"xctest process %@ exited with unexpected code %d (%@)", process, exitCode, descriptionOfExit]
+            failFuture];
         }
-        return [[FBControlCoreError
-          describeFormat:@"xctest process %@ exited with unexpected code %d", process, exitCode]
-          failFuture];
+        return [FBFuture futureWithResult:@(exitCode)];
       }
       return [FBXCTestProcess onQueue:queue performCrashLogQuery:process.processIdentifier startDate:startDate notifier:notifier crashLogWaitTime:CrashLogWaitTime logger:logger];
     }];
