@@ -285,9 +285,9 @@ This allows to avoid the permission popup the first time we open a deeplink
  Launch an application
 
  @param configuration the configuration to use.
- @return a Future that resolves with the launched process.
+ @return a Future that resolves with the launched application.
  */
-- (FBFuture<id<FBLaunchedProcess>> *)launch_app:(FBApplicationLaunchConfiguration *)configuration;
+- (FBFuture<id<FBLaunchedApplication>> *)launch_app:(FBApplicationLaunchConfiguration *)configuration;
 
 /**
  Lists Crashes according to a predicate

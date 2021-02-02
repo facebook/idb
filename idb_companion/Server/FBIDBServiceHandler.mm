@@ -856,8 +856,8 @@ Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerRea
       return Status(grpc::StatusCode::FAILED_PRECONDITION, error.localizedDescription.UTF8String);
     }
   }
-  id<FBLaunchedProcess> process = [[_commandExecutor launch_app:configuration] block:&error];
-  if (!process) {
+  id<FBLaunchedApplication> launchedApp = [[_commandExecutor launch_app:configuration] block:&error];
+  if (!launchedApp) {
     if (error.code != 0) {
       return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
     } else {
@@ -870,7 +870,7 @@ Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerRea
     return Status::OK;
   }
   stream->Read(&request);
-  [[process.exitCode cancel] block:nil];
+  [[launchedApp.completed cancel] block:nil];
   return Status::OK;
 }}
 
