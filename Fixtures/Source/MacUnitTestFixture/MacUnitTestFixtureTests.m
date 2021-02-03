@@ -74,4 +74,27 @@
   XCTFail(@"This always fails");
 }
 
+- (void)testAsyncExpectationPassing
+{
+  XCTestExpectation *expectation = [[XCTestExpectation alloc] initWithDescription:@"Async expectation passed"];
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+    sleep(1);
+    [expectation fulfill];
+  });
+
+  [self waitForExpectations:@[expectation] timeout:2];
+}
+
+- (void)testAsyncExpectationFailing
+{
+  XCTestExpectation *expectation = [[XCTestExpectation alloc] initWithDescription:@"Async expectation passed"];
+  expectation.inverted = YES;
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+    sleep(1);
+    [expectation fulfill];
+  });
+
+  [self waitForExpectations:@[expectation] timeout:2];
+}
+
 @end

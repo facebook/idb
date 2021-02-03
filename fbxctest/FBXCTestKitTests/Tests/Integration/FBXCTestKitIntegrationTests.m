@@ -323,6 +323,8 @@
 
   XCTAssertTrue(self.reporter.printReportWasCalled);
   NSArray<NSArray<NSString *> *> *expected = @[
+    @[@"iOSUnitTestFixtureTests", @"testAsyncExpectationFailing"],
+    @[@"iOSUnitTestFixtureTests", @"testAsyncExpectationPassing"],
     @[@"iOSUnitTestFixtureTests", @"testHostProcessIsMobileSafari"],
     @[@"iOSUnitTestFixtureTests", @"testHostProcessIsXctest"],
     @[@"iOSUnitTestFixtureTests", @"testIsRunningInIOSApp"],
@@ -529,6 +531,8 @@
 
   XCTAssertTrue(self.reporter.printReportWasCalled);
   NSArray<NSArray<NSString *> *> *expected = @[
+    @[@"MacUnitTestFixtureTests", @"testAsyncExpectationFailing"],
+    @[@"MacUnitTestFixtureTests", @"testAsyncExpectationPassing"],
     @[@"MacUnitTestFixtureTests", @"testHostProcessIsMobileSafari"],
     @[@"MacUnitTestFixtureTests", @"testHostProcessIsXctest"],
     @[@"MacUnitTestFixtureTests", @"testIsRunningInIOSApp"],
