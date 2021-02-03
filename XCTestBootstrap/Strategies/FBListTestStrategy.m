@@ -193,6 +193,7 @@
 + (FBFuture<FBFuture<NSNumber *> *> *)listTestProcessWithConfiguration:(FBListTestConfiguration *)configuration environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor logger:(id<FBControlCoreLogger>)logger
 {
   NSString *launchPath = executor.xctestPath;
+  NSInteger timeout = 20;
 
   // List test for app test bundle, so we use app binary instead of xctest to load test bundle.
   if ([FBBundleDescriptor isApplicationAtPath:configuration.runnerAppPath]) {
@@ -218,16 +219,18 @@
 
     FBBundleDescriptor *appBundle = [FBBundleDescriptor bundleFromPath:configuration.runnerAppPath error:nil];
     launchPath = appBundle.binary.path;
+    // Launching large binary like Facebook app could take a while.
+    timeout = 60;
   }
 
   return [[executor
-    startProcessWithLaunchPath:executor.xctestPath
+    startProcessWithLaunchPath:launchPath
     arguments:@[]
     environment:environment
     stdOutConsumer:stdOutConsumer
     stdErrConsumer:stdErrConsumer]
     onQueue:executor.workQueue map:^(id<FBLaunchedProcess> process) {
-      return [FBXCTestProcess ensureProcess:process completesWithin:20 queue:executor.workQueue logger:logger];
+      return [FBXCTestProcess ensureProcess:process completesWithin:timeout queue:executor.workQueue logger:logger];
     }];
 }
 
