@@ -178,8 +178,9 @@
       int exitCodeValue = exitCodeNumber.intValue;
       NSString *descriptionOfFailingExit = [FBXCTestProcess describeFailingExitCode:exitCodeValue];
       if (descriptionOfFailingExit) {
+        NSString *stdErrReversed = [stdErrBuffer.lines.reverseObjectEnumerator.allObjects componentsJoinedByString:@"\n"];
         return [[XCTestBootstrapError
-          describeFormat:@"Listing of tests failed due to xctest binary exiting with non-zero exit code %d [%@] (%@%@)", exitCodeValue, descriptionOfFailingExit, stdOutBuffer.consumeCurrentString, stdErrBuffer.consumeCurrentString]
+          describeFormat:@"Listing of tests failed due to xctest binary exiting with non-zero exit code %d [%@]: %@", exitCodeValue, descriptionOfFailingExit, stdErrReversed]
           failFuture];
       }
       return [FBFuture futureWithFutures:@[
