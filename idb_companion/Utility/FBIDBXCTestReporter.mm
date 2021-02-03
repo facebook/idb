@@ -78,17 +78,11 @@
   self.failureInfo = [self failureInfoWithMessage:message file:file line:line];
 }
 
-- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration
-{
-  [self testCaseDidFinishForTestClass:testClass method:method withStatus:status duration:duration logs:nil];
-}
-
 - (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(NSArray<NSString *> *)logs
 {
   const idb::XctestRunResponse_TestRunInfo info = [self runInfoForTestClass:testClass method:method withStatus:status duration:duration logs:logs];
   [self writeTestRunInfo:info];
 }
-
 
 - (void)testCase:(NSString *)testClass method:(NSString *)method didFinishActivity:(FBActivityRecord *)activity
 {
