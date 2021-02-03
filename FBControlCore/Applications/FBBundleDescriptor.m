@@ -67,7 +67,7 @@
   if (!identifier) {
     if (!fallbackIdentifier) {
       return [[FBControlCoreError
-        describeFormat:@"Could not obtain Bundle ID for bundle at path %@", path]
+        describeFormat:@"Could not obtain Bundle ID for bundle '%@' at %@", path.lastPathComponent, path]
         fail:error];
     }
     identifier = bundleName;
