@@ -160,6 +160,7 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
 @interface FBBlockDataConsumer_Dispatcher : NSObject <FBDataConsumer>
 
 @property (nonatomic, strong, nullable, readwrite) dispatch_queue_t queue;
+@property (nonatomic, strong, nullable, readwrite) dispatch_group_t group;
 @property (nonatomic, copy, nullable, readwrite) void (^consumer)(NSData *);
 
 @end
@@ -174,6 +175,7 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
   }
 
   _queue = queue;
+  _group = dispatch_group_create();
   _consumer = consumer;
 
   return self;
@@ -183,27 +185,33 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
 {
   void (^consumer)(NSData *) = nil;
   dispatch_queue_t queue;
+  dispatch_group_t group;
   @synchronized (self)
   {
     consumer = self.consumer;
     queue = self.queue;
-  }
-  if (!consumer) {
-    return;
-  }
-  if (queue) {
-    dispatch_async(queue, ^{
+    group = self.group;
+    if (!consumer) {
+      return;
+    }
+    if (queue) {
+      dispatch_group_async(group, queue, ^{
+        consumer(data);
+      });
+    } else {
       consumer(data);
-    });
-  } else {
-    consumer(data);
+    }
   }
 }
 
 - (void)consumeEndOfFile
 {
+  dispatch_group_t group;
   @synchronized (self)
   {
+    group = self.group;
+    dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+    self.group = nil;
     self.consumer = nil;
     self.queue = nil;
   }

@@ -871,6 +871,7 @@ Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerRea
   }
   stream->Read(&request);
   [[launchedApp.applicationTerminated cancel] block:nil];
+  [[FBFuture futureWithFutures:completions] block:nil];
   return Status::OK;
 }}
 
