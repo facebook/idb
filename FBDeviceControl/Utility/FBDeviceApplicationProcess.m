@@ -56,7 +56,7 @@
 
 #pragma mark FBLaunchedApplication
 
-- (FBFuture<NSNull *> *)completed
+- (FBFuture<NSNull *> *)applicationTerminated
 {
   return [self.gdbClient.exitCode mapReplace:NSNull.null];
 }

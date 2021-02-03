@@ -65,7 +65,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
   return self;
 }
 
-- (FBFuture<NSNull *> *)completed
+- (FBFuture<NSNull *> *)applicationTerminated
 {
   FBDeviceApplicationCommands *commands = self.commands;
   pid_t processIdentifier = self.processIdentifier;

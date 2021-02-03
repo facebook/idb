@@ -870,7 +870,7 @@ Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerRea
     return Status::OK;
   }
   stream->Read(&request);
-  [[launchedApp.completed cancel] block:nil];
+  [[launchedApp.applicationTerminated cancel] block:nil];
   return Status::OK;
 }}
 

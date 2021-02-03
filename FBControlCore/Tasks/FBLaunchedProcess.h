@@ -14,20 +14,28 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  An in-memory representation of a launched application.
- Distinct from FBLaunchedProcess, as the exit code is not available, but completion is.
+ This is distinct from FBLaunchedApplication, as exit information is not available.
+ However, termination of the application is communicated via a Future.
  */
-@protocol FBLaunchedApplication <NSObject, FBiOSTargetOperation>
+@protocol FBLaunchedApplication <NSObject>
 
 /**
  The Process Idenfifer of the Launched Application.
  */
 @property (nonatomic, assign, readonly) pid_t processIdentifier;
 
+/**
+ A future that resolves when the Application has terminated.
+ Cancelling this Future will cause the application to terminate.
+ Exit code/Signal status of the launched process is not available.
+ */
+@property (nonatomic, strong, readonly) FBFuture<NSNull *> *applicationTerminated;
+
 @end
 
 /**
  An in-memory representation of a launched process.
- Distinct from FBLaunchedApplication, as the exit code is not available.
+ This is distinct from FBLaunchedApplication, as exit information is available.
  */
 @protocol FBLaunchedProcess <NSObject>
 

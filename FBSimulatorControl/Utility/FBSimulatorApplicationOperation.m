@@ -19,7 +19,7 @@
 
 @implementation FBSimulatorApplicationOperation
 
-@synthesize completed = _completed;
+@synthesize applicationTerminated = _applicationTerminated;
 @synthesize processIdentifier = _processIdentifier;
 
 #pragma mark Initializers
@@ -47,7 +47,7 @@
   _stdOut = stdOut;
   _stdErr = stdErr;
   _processIdentifier = processIdentifier;
-  _completed = [terminationFuture
+  _applicationTerminated = [terminationFuture
     onQueue:simulator.workQueue chain:^(FBFuture *future) {
       return [[self performTeardown] chainReplace:future];
     }];
@@ -73,7 +73,7 @@
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Application Operation %@ | pid %d | State %@", self.configuration.description, self.processIdentifier, self.completed];
+  return [NSString stringWithFormat:@"Application Operation %@ | pid %d | State %@", self.configuration.description, self.processIdentifier, self.applicationTerminated];
 }
 
 #pragma mark Private

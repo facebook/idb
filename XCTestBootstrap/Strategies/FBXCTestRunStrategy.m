@@ -89,7 +89,7 @@
         testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
 
       // Add callback for when the app under test exists
-      [launchedApplcation.completed onQueue:self.iosTarget.workQueue doOnResolved:^(NSNull *_) {
+      [launchedApplcation.applicationTerminated onQueue:self.iosTarget.workQueue doOnResolved:^(NSNull *_) {
         [self.reporter appUnderTestExited];
       }];
 
