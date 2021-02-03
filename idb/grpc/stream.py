@@ -76,10 +76,11 @@ async def stop_wrapper(
         if stop_future in done:
             read.cancel()
             return
-        else:
-            # pyre-fixme[7]: Expected `AsyncIterator[Variable[_TRecv]]` but got
-            #  `AsyncGenerator[Optional[Variable[_TRecv]], None]`.
-            yield read.result()
+        result = read.result()
+        if result is None:
+            # Reached the end of the stream
+            return
+        yield result
 
 
 async def cancel_wrapper(
