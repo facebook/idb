@@ -28,6 +28,21 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled;
 
 /**
+ Sets the Locale, by Locale Identifier
+
+ @param identifier the locale identifier.
+ @return a Future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)setLocaleWithIdentifier:(NSString *)identifier;
+
+/**
+ Gets the Locale, by Locale Identifier
+
+ @return a Future that resolves with the current locale identifier.
+ */
+- (FBFuture<NSString *> *)getCurrentLocaleIdentifier;
+
+/**
  Overrides the default SpringBoard watchdog timer for the applications. You can use this to give your application more
  time to startup before being killed by SpringBoard. (SB's default is 20 seconds.)
 

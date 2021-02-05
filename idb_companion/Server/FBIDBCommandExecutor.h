@@ -368,6 +368,28 @@ This allows to avoid the permission popup the first time we open a deeplink
  */
 - (FBFuture<NSNull *> *)set_hardware_keyboard_enabled:(BOOL)enabled;
 
+/**
+ Sets the Locale with a Locale Identifier.
+
+ @param identifier the locale identifier.
+ @return a Future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)set_locale_with_identifier:(NSString *)identifier;
+
+/**
+ Gets the Locale, by Locale Identifier
+
+ @return a Future that resolves with the current locale identifier.
+ */
+- (FBFuture<NSString *> *)get_current_locale_identifier;
+
+/**
+ Lists all available Locale Identifiers
+
+ @return a list of locale identifiers.
+ */
+- (NSArray<NSString *> *)list_locale_identifiers;
+
 #pragma mark File Operations
 
 /**

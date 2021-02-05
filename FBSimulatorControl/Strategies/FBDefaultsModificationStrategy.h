@@ -38,6 +38,28 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
+ Modifies the Apple Locale used by Applications
+ */
+@interface FBLocaleModificationStrategy : FBDefaultsModificationStrategy
+
+/**
+ Sets the Locale, by Locale Identifier
+
+ @param localeIdentifier the locale identifier.
+ @return a Future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)setLocaleWithIdentifier:(NSString *)localeIdentifier;
+
+/**
+ Gets the Locale, by Locale Identifier
+
+ @return a Future that resolves with the current locale identifier.
+ */
+- (FBFuture<NSString *> *)getCurrentLocaleIdentifier;
+
+@end
+
+/**
  Modifies the defaults for the locationd daemon.
  */
 @interface FBLocationServicesModificationStrategy : FBDefaultsModificationStrategy

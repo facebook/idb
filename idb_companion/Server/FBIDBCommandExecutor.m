@@ -430,6 +430,29 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
+- (FBFuture<NSNull *> *)set_locale_with_identifier:(NSString *)identifier
+{
+  return [[self
+    settingsCommands]
+    onQueue:self.target.workQueue fmap:^(id<FBSimulatorSettingsCommands> commands) {
+      return [commands setLocaleWithIdentifier:identifier];
+    }];
+}
+
+- (FBFuture<NSString *> *)get_current_locale_identifier
+{
+  return [[self
+    settingsCommands]
+    onQueue:self.target.workQueue fmap:^(id<FBSimulatorSettingsCommands> commands) {
+      return [commands getCurrentLocaleIdentifier];
+    }];
+}
+
+- (NSArray<NSString *> *)list_locale_identifiers
+{
+  return NSLocale.availableLocaleIdentifiers;
+}
+
 #pragma mark File Commands
 
 - (FBFuture<NSNull *> *)move_paths:(NSArray<NSString *> *)originPaths to_path:(NSString *)destinationPath containerType:(NSString *)containerType

@@ -55,6 +55,20 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     }];
 }
 
+- (FBFuture<NSNull *> *)setLocaleWithIdentifier:(NSString *)identifier
+{
+  return [[FBLocaleModificationStrategy
+    strategyWithSimulator:self.simulator]
+    setLocaleWithIdentifier:identifier];
+}
+
+- (FBFuture<NSString *> *)getCurrentLocaleIdentifier
+{
+  return [[FBLocaleModificationStrategy
+    strategyWithSimulator:self.simulator]
+    getCurrentLocaleIdentifier];
+}
+
 - (FBFuture<NSNull *> *)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout
 {
   return [[FBWatchdogOverrideModificationStrategy

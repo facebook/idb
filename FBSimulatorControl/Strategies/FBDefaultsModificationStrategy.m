@@ -74,6 +74,33 @@
   }
   [arguments addObject:file];
 
+  return [[self performDefaultsCommandWithArguments:arguments] mapReplace:NSNull.null];
+}
+
+- (FBFuture<NSNull *> *)setDefaultInDomain:(NSString *)domain key:(NSString *)key value:(NSString *)value
+{
+  return [[self
+    performDefaultsCommandWithArguments:@[
+      @"write",
+      domain,
+      key,
+      value,
+    ]]
+    mapReplace:NSNull.null];
+}
+
+- (FBFuture<NSString *> *)getDefaultInDomain:(NSString *)domain key:(NSString *)key
+{
+  return [self
+    performDefaultsCommandWithArguments:@[
+      @"read",
+      domain,
+      key,
+    ]];
+}
+
+- (FBFuture<NSString *> *)performDefaultsCommandWithArguments:(NSArray<NSString *> *)arguments
+{
   // Make the Launch Config
   FBAgentLaunchConfiguration *configuration = [FBAgentLaunchConfiguration
     configurationWithBinary:self.defaultsBinary
@@ -82,10 +109,13 @@
     output:FBProcessOutputConfiguration.outputToDevNull
     mode:FBAgentLaunchModeDefault];
 
-  // Run the write, fail if the write fails.
-  return [[[FBAgentLaunchStrategy strategyWithSimulator:self.simulator]
-    launchAndNotifyOfCompletion:configuration]
-    mapReplace:NSNull.null];
+  // Run the defaults command.
+  return [[[FBAgentLaunchStrategy
+    strategyWithSimulator:self.simulator]
+    launchConsumingStdout:configuration]
+    onQueue:self.simulator.asyncQueue map:^(NSString *output) {
+      return [output stringByTrimmingCharactersInSet:NSCharacterSet.newlineCharacterSet];
+    }];
 }
 
 - (FBFuture<NSNull *> *)amendRelativeToPath:(NSString *)relativePath defaults:(NSDictionary<NSString *, id> *)defaults managingService:(NSString *)serviceName
@@ -116,6 +146,23 @@
         ? [[simulator startServiceWithName:serviceName] mapReplace:NSNull.null]
         : FBFuture.empty;
     }];
+}
+
+@end
+
+@implementation FBLocaleModificationStrategy
+
+static NSString *const AppleGlobalDomain = @"Apple Global Domain";
+static NSString *const AppleLocaleKey = @"AppleLocale";
+
+- (FBFuture<NSNull *> *)setLocaleWithIdentifier:(NSString *)localeIdentifier
+{
+  return [self setDefaultInDomain:AppleGlobalDomain key:AppleLocaleKey value:localeIdentifier];
+}
+
+- (FBFuture<NSString *> *)getCurrentLocaleIdentifier
+{
+  return [self getDefaultInDomain:AppleGlobalDomain key:AppleLocaleKey];
 }
 
 @end

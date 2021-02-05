@@ -798,9 +798,57 @@ Status FBIDBServiceHandler::setting(ServerContext* context, const idb::SettingRe
   switch (request->setting_case()) {
     case idb::SettingRequest::SettingCase::kHardwareKeyboard: {
       NSError *error = nil;
-      [[_commandExecutor set_hardware_keyboard_enabled:request->hardwarekeyboard().enabled()] await:&error];
+      NSNull *result = [[_commandExecutor set_hardware_keyboard_enabled:request->hardwarekeyboard().enabled()] await:&error];
+      if (!result) {
+        return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+      }
+      return Status::OK;
+    }
+    case idb::SettingRequest::SettingCase::kStringSetting: {
+      idb::SettingRequest::StringSetting stringSetting = request->stringsetting();
+      switch (stringSetting.setting()) {
+        case idb::Setting::LOCALE: {
+          NSError *error = nil;
+          NSNull *result = [[_commandExecutor set_locale_with_identifier:nsstring_from_c_string(stringSetting.value().c_str())] await:&error];
+          if (!result) {
+            return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+          }
+          return Status::OK;
+        }
+        default:
+          return Status(grpc::StatusCode::INTERNAL, "Unknown setting case");
+      }
+    }
+    default:
+      return Status(grpc::StatusCode::INTERNAL, "Unknown setting case");
+  }
+}}
+
+Status FBIDBServiceHandler::get_setting(ServerContext* context, const idb::GetSettingRequest* request, idb::GetSettingResponse* response)
+{@autoreleasepool{
+  switch (request->setting()) {
+    case idb::Setting::LOCALE: {
+      NSError *error = nil;
+      NSString *localeIdentifier = [[_commandExecutor get_current_locale_identifier] await:&error];
       if (error) {
         return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+      }
+      response->set_value(localeIdentifier.UTF8String);
+      return Status::OK;
+    }
+    default:
+      return Status(grpc::StatusCode::INTERNAL, "Unknown setting case");
+  }
+}}
+
+Status FBIDBServiceHandler::list_settings(ServerContext* context, const idb::ListSettingRequest* request, idb::ListSettingResponse* response)
+{@autoreleasepool{
+  switch (request->setting()) {
+    case idb::Setting::LOCALE: {
+      NSArray<NSString *> *localeIdentifiers = _commandExecutor.list_locale_identifiers;
+      auto values = response->mutable_values();
+      for (NSString *localeIdentifier in localeIdentifiers) {
+        values->Add(localeIdentifier.UTF8String);
       }
       return Status::OK;
     }

@@ -28,7 +28,9 @@ service CompanionService {
   rpc approve (ApproveRequest) returns (ApproveResponse) {}
   rpc clear_keychain (ClearKeychainRequest) returns (ClearKeychainResponse) {}
   rpc contacts_update (ContactsUpdateRequest) returns (ContactsUpdateResponse) {}
-  rpc setting (SettingRequest) returns (SettingResponse) {}
+  rpc setting (SettingRequest) returns (SettingResponse) {} // Sets settings
+  rpc get_setting (GetSettingRequest) returns (GetSettingResponse) {} // Gets current setting
+  rpc list_settings (ListSettingRequest) returns (ListSettingResponse) {} // Lists available settings
   // App
   rpc launch (stream LaunchRequest) returns (stream LaunchResponse) {}
   rpc list_apps (ListAppsRequest) returns (ListAppsResponse) {}
@@ -70,16 +72,41 @@ message CompanionInfo {
   bytes metadata = 6;
 }
 
+enum Setting {
+  LOCALE = 0;
+}
+
 message SettingRequest {
   message HardwareKeyboard {
     bool enabled = 1;
   }
-  oneof setting  {
+  message StringSetting {
+    Setting setting = 1;
+    string value = 2;
+  }
+  oneof setting {
     HardwareKeyboard hardwareKeyboard = 1;
+    StringSetting stringSetting = 2;
   }
 }
 
 message SettingResponse {
+}
+
+message GetSettingRequest {
+  Setting setting = 1;
+}
+
+message GetSettingResponse {
+  string value = 1;
+}
+
+message ListSettingRequest {
+  Setting setting = 1;
+}
+
+message ListSettingResponse {
+  repeated string values = 1;
 }
 
 message ListAppsRequest {

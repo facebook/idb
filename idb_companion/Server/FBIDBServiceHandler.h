@@ -59,6 +59,8 @@ public:
   Status screenshot(ServerContext *context, const idb::ScreenshotRequest *request, idb::ScreenshotResponse *response);
   Status set_location(ServerContext *context, const idb::SetLocationRequest *request, idb::SetLocationResponse *response);
   Status setting(ServerContext* context, const idb::SettingRequest* request, idb::SettingResponse* response);
+  Status get_setting(ServerContext* context, const idb::GetSettingRequest* request, idb::GetSettingResponse* response);
+  Status list_settings(ServerContext* context, const idb::ListSettingRequest* request, idb::ListSettingResponse* response);
   Status terminate(ServerContext *context, const idb::TerminateRequest *request, idb::TerminateResponse *response);
   Status uninstall(ServerContext *context, const idb::UninstallRequest *request, idb::UninstallResponse *response);
   Status video_stream(ServerContext* context, grpc::ServerReaderWriter<idb::VideoStreamResponse, idb::VideoStreamRequest>* stream);
