@@ -193,23 +193,3 @@ static NSString *const AppleLocaleKey = @"AppleLocale";
 }
 
 @end
-
-@implementation FBWatchdogOverrideModificationStrategy
-
-- (FBFuture<NSNull *> *)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs timeout:(NSTimeInterval)timeout
-{
-  NSParameterAssert(bundleIDs);
-  NSParameterAssert(timeout);
-
-  NSMutableDictionary<NSString *, NSNumber *> *exceptions = [NSMutableDictionary dictionary];
-  for (NSString *bundleID in bundleIDs) {
-    exceptions[bundleID] = @(timeout);
-  }
-  NSDictionary *defaults = @{@"FBLaunchWatchdogExceptions" : [exceptions copy]};
-  return [self
-    amendRelativeToPath:@"Library/Preferences/com.apple.springboard.plist"
-    defaults:defaults
-    managingService:@"com.apple.SpringBoard"];
-}
-
-@end

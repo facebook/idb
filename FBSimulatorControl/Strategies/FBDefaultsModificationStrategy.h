@@ -74,21 +74,4 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-/**
- Modifies the Frontboard Watchdog Override.
- */
-@interface FBWatchdogOverrideModificationStrategy : FBDefaultsModificationStrategy
-
-/**
- Overrides the default SpringBoard watchdog timer for the applications. You can use this to give your application more
- time to startup before being killed by SpringBoard. (SB's default is 20 seconds.)
-
- @param bundleIDs The bundle IDs of the applications to override.
- @param timeout The new startup timeout.
- @return YES if successful, NO otherwise.
- */
-- (FBFuture<NSNull *> *)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs timeout:(NSTimeInterval)timeout;
-
-@end
-
 NS_ASSUME_NONNULL_END

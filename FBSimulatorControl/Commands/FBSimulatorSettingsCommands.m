@@ -69,13 +69,6 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     getCurrentLocaleIdentifier];
 }
 
-- (FBFuture<NSNull *> *)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout
-{
-  return [[FBWatchdogOverrideModificationStrategy
-    strategyWithSimulator:self.simulator]
-    overrideWatchDogTimerForApplications:bundleIDs timeout:timeout];
-}
-
 - (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services
 {
   // We need at least one approval in the input

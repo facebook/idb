@@ -43,15 +43,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSString *> *)getCurrentLocaleIdentifier;
 
 /**
- Overrides the default SpringBoard watchdog timer for the applications. You can use this to give your application more
- time to startup before being killed by SpringBoard. (SB's default is 20 seconds.)
-
- @param bundleIDs The bundle IDs of the applications to override.
- @return A future that resolves when the setting change is complete.
- */
-- (FBFuture<NSNull *> *)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout;
-
-/**
  Grants access to the provided services.
 
  @param bundleIDs the bundle ids to provide access to.
