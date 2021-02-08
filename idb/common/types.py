@@ -514,6 +514,18 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def set_locale(self, locale_identifier: str) -> None:
+        pass
+
+    @abstractmethod
+    async def get_locale(self) -> str:
+        pass
+
+    @abstractmethod
+    async def list_locale_identifiers(self) -> List[str]:
+        pass
+
+    @abstractmethod
     async def open_url(self, url: str) -> None:
         pass
 

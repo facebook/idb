@@ -15,7 +15,7 @@ _ENABLE = "enable"
 _DISABLE = "disable"
 
 
-class HardwareKeyboardCommand(ClientCommand):
+class SetHardwareKeyboardCommand(ClientCommand):
     @property
     def description(self) -> str:
         return "Set the hardware keyboard"
@@ -38,8 +38,72 @@ class HardwareKeyboardCommand(ClientCommand):
         )
 
 
+class SetLocaleCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Sets the locale of the simulator"
+
+    @property
+    def name(self) -> str:
+        return "locale"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "locale_identifier",
+            help="The locale identifier",
+            type=str,
+        )
+        super().add_parser_arguments(parser)
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        await client.set_locale(
+            locale_identifier=args.locale_identifier,
+        )
+
+
+class GetLocaleCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Gets the locale of the simulator"
+
+    @property
+    def name(self) -> str:
+        return "locale"
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        locale_identifier = await client.get_locale()
+        print(locale_identifier)
+
+
+class ListLocaleCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Lists available locale identifiers"
+
+    @property
+    def name(self) -> str:
+        return "locale"
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        locale_identifiers = await client.list_locale_identifiers()
+        for locale_identifier in locale_identifiers:
+            print(locale_identifier)
+
+
 SetCommand = CommandGroup(
     name="set",
     description="Sets a preference on the target",
-    commands=[HardwareKeyboardCommand()],
+    commands=[SetHardwareKeyboardCommand(), SetLocaleCommand()],
+)
+
+GetCommand = CommandGroup(
+    name="get",
+    description="Gets a value from the target",
+    commands=[GetLocaleCommand()],
+)
+
+ListCommand = CommandGroup(
+    name="list",
+    description="Lists values from the target",
+    commands=[ListLocaleCommand()],
 )

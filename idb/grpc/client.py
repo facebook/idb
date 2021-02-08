@@ -102,6 +102,9 @@ from idb.grpc.idb_pb2 import (
     Location,
     LogRequest,
     LsRequest,
+    GetSettingRequest,
+    LOCALE as LocaleSetting,
+    ListSettingRequest,
     MkdirRequest,
     MvRequest,
     OpenUrlRequest,
@@ -1041,3 +1044,27 @@ class Client(ClientBase):
                 hardwareKeyboard=SettingRequest.HardwareKeyboard(enabled=enabled)
             )
         )
+
+    @log_and_handle_exceptions
+    async def set_locale(self, locale_identifier: str) -> None:
+        await self.stub.setting(
+            SettingRequest(
+                stringSetting=SettingRequest.StringSetting(
+                    setting=LocaleSetting, value=locale_identifier
+                )
+            )
+        )
+
+    @log_and_handle_exceptions
+    async def get_locale(self) -> str:
+        response = await self.stub.get_setting(GetSettingRequest(setting=LocaleSetting))
+        return response.value
+
+    @log_and_handle_exceptions
+    async def list_locale_identifiers(self) -> List[str]:
+        response = await self.stub.list_settings(
+            ListSettingRequest(
+                setting=LocaleSetting,
+            )
+        )
+        return list(response.values)
