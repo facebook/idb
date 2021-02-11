@@ -37,9 +37,8 @@
     onQueue:device.workQueue resolveUntil:^{
       AVCaptureDevice *captureDevice = [AVCaptureDevice deviceWithUniqueID:device.udid];
       if (!captureDevice) {
-        return [[[FBDeviceControlError
+        return [[FBDeviceControlError
           describeFormat:@"Capture Device %@ not available", device.udid]
-          noLogging]
           failFuture];
       }
       return [FBFuture futureWithResult:captureDevice];

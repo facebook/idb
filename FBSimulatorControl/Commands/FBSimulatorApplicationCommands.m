@@ -183,37 +183,32 @@ static NSString *const KeyDataContainer = @"DataContainer";
 {
   NSString *appName = appInfo[FBApplicationInstallInfoKeyBundleName];
   if (![appName isKindOfClass:NSString.class]) {
-    return [[[FBControlCoreError
+    return [[FBControlCoreError
       describeFormat:@"Bundle Name %@ is not a String for %@ in %@", appName, FBApplicationInstallInfoKeyBundleName, appInfo]
-      noLogging]
       fail:error];
   }
   NSString *bundleIdentifier = appInfo[FBApplicationInstallInfoKeyBundleIdentifier];
   if (![bundleIdentifier isKindOfClass:NSString.class]) {
-    return [[[FBControlCoreError
+    return [[FBControlCoreError
       describeFormat:@"Bundle Identifier %@ is not a String for %@ in %@", bundleIdentifier, FBApplicationInstallInfoKeyBundleIdentifier, appInfo]
-      noLogging]
       fail:error];
   }
   NSString *appPath = appInfo[FBApplicationInstallInfoKeyPath];
   if (![appPath isKindOfClass:NSString.class]) {
-    return [[[FBControlCoreError
+    return [[FBControlCoreError
       describeFormat:@"App Path %@ is not a String for %@ in %@", appPath, FBApplicationInstallInfoKeyPath, appInfo]
-      noLogging]
       fail:error];
   }
   NSString *typeString = appInfo[FBApplicationInstallInfoKeyApplicationType];
   if (![typeString isKindOfClass:NSString.class]) {
-    return [[[FBControlCoreError
+    return [[FBControlCoreError
       describeFormat:@"Install Type %@ is not a String for %@ in %@", typeString, FBApplicationInstallInfoKeyApplicationType, appInfo]
-      noLogging]
       fail:error];
   }
   NSURL *dataContainer = appInfo[KeyDataContainer];
   if (dataContainer && ![dataContainer isKindOfClass:NSURL.class]) {
-    return [[[FBControlCoreError
+    return [[FBControlCoreError
       describeFormat:@"Data Container %@ is not a NSURL for %@ in %@", dataContainer, KeyDataContainer, appInfo]
-      noLogging]
       fail:error];
   }
 

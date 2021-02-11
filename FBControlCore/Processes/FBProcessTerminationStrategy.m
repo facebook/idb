@@ -72,10 +72,9 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
     [self.logger.debug logFormat:@"Application %@ terminated after Forced Application Termination", process.description];
     return FBFuture.empty;
   }
-  return [[[[FBControlCoreError
+  return [[[FBControlCoreError
     describeFormat:@"Could not terminate Application %@", application]
     attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher]
-    logger:self.logger]
     failFuture];
 }
 
@@ -123,9 +122,8 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
   BOOL checkExists = (self.configuration.options & FBProcessTerminationStrategyOptionsCheckProcessExistsBeforeSignal) == FBProcessTerminationStrategyOptionsCheckProcessExistsBeforeSignal;
   NSError *innerError = nil;
   if (checkExists && ![self.processFetcher processIdentifierExists:processIdentifier error:&innerError]) {
-    return [[[[FBControlCoreError
+    return [[[FBControlCoreError
       describeFormat:@"Could not find that process %d exists", processIdentifier]
-      logger:self.logger]
       causedBy:innerError]
       failFuture];
   }
@@ -159,10 +157,9 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
       }
       BOOL backoff = (self.configuration.options & FBProcessTerminationStrategyOptionsBackoffToSIGKILL) == FBProcessTerminationStrategyOptionsBackoffToSIGKILL;
       if (self.configuration.signo == SIGKILL || !backoff) {
-        return [[[[FBControlCoreError
+        return [[[FBControlCoreError
           describeFormat:@"Timed out waiting for %d to dissapear from the process table", processIdentifier]
           attachProcessInfoForIdentifier:processIdentifier processFetcher:self.processFetcher]
-          logger:self.logger]
           failFuture];
       }
 

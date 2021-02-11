@@ -480,9 +480,8 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   NSString *description = [[NSString alloc] initWithFormat:format arguments:args];
   va_end(args);
 
-  FBFuture *timeoutFuture = [[[[FBControlCoreError
+  FBFuture *timeoutFuture = [[[FBControlCoreError
     describeFormat:@"Timed out after %f seconds waiting for %@", timeout, description]
-    noLogging]
     failFuture]
     delay:timeout];
   return [FBFuture race:@[self, timeoutFuture]];

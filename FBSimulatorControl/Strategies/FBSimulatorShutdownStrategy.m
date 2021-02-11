@@ -52,10 +52,9 @@
 
   // If the device is in a strange state, we should bail now
   if (simulator.state == FBiOSTargetStateUnknown) {
-    return [[[[FBSimulatorError
+    return [[[FBSimulatorError
       describe:@"Failed to prepare simulator for usage as it is in an unknown state"]
       inSimulator:simulator]
-      logger:logger]
       failFuture];
   }
 

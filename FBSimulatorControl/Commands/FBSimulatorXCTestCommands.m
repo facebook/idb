@@ -152,19 +152,17 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
 {
   const BOOL simulatorIsBooted = (self.simulator.state == FBiOSTargetStateBooted);
   if (!simulatorIsBooted) {
-    return [[[FBSimulatorError
+    return [[FBSimulatorError
       describe:@"Simulator should be already booted"]
-      logger:self.simulator.logger]
       failFutureContext];
   }
 
   NSError *innerError;
   int testManagerSocket = [self makeTestManagerDaemonSocketWithLogger:self.simulator.logger error:&innerError];
   if (testManagerSocket < 1) {
-    return [[[[FBSimulatorError
+    return [[[FBSimulatorError
       describe:@"Falied to create test manager dameon socket"]
       causedBy:innerError]
-      logger:self.simulator.logger]
       failFutureContext];
   }
 
@@ -198,35 +196,31 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
 {
   int socketFD = socket(AF_UNIX, SOCK_STREAM, 0);
   if (socketFD == -1) {
-    return [[[FBSimulatorError
+    return [[FBSimulatorError
       describe:@"Unable to create a unix domain socket"]
-      logger:logger]
       failInt:error];
   }
 
   NSString *testManagerSocketString = [self testManagerDaemonSocketPathWithLogger:logger];
   if (testManagerSocketString.length == 0) {
     close(socketFD);
-    return [[[FBSimulatorError
+    return [[FBSimulatorError
       describe:@"Failed to retrieve testmanagerd socket path"]
-      logger:logger]
       failInt:error];
   }
 
   if (![[NSFileManager new] fileExistsAtPath:testManagerSocketString]) {
     close(socketFD);
-    return [[[FBSimulatorError
+    return [[FBSimulatorError
       describeFormat:@"Simulator indicated unix domain socket for testmanagerd at path %@, but no file was found at that path.", testManagerSocketString]
-      logger:logger]
       failInt:error];
   }
 
   const char *testManagerSocketPath = testManagerSocketString.UTF8String;
   if (strlen(testManagerSocketPath) >= 0x68) {
     close(socketFD);
-    return [[[FBSimulatorError
+    return [[FBSimulatorError
       describeFormat:@"Unix domain socket path for simulator testmanagerd service '%s' is too big to fit in sockaddr_un.sun_path", testManagerSocketPath]
-      logger:logger]
       failInt:error];
   }
 
@@ -236,9 +230,8 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
   socklen_t length = (socklen_t)(strlen(remote.sun_path) + sizeof(remote.sun_family) + sizeof(remote.sun_len));
   if (connect(socketFD, (struct sockaddr *)&remote, length) == -1) {
     close(socketFD);
-    return [[[FBSimulatorError
+    return [[FBSimulatorError
       describe:@"Failed to connect to testmangerd socket"]
-      logger:logger]
       failInt:error];
   }
   return socketFD;

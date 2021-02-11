@@ -521,9 +521,8 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
     [logger.info logFormat:@"Cleaning %@", clean];
     return [FBFuture futureWithResult:CleanFuture(clean, userDefaults, logger, reporter)];
   }
-  return [[[FBIDBError
+  return [[FBIDBError
     describeFormat:@"You must specify at least one 'Mode of operation'\n\n%s", kUsageHelpMessage]
-    noLogging]
     failFuture];
 }
 

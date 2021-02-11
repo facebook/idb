@@ -197,9 +197,8 @@ static void EventStreamCallback(
        filteredArrayUsingPredicate:predicate]
        firstObject];
      if (!crashInfo) {
-       return [[[FBControlCoreError
+       return [[FBControlCoreError
          describeFormat:@"Crash Log Info for %@ could not be obtained", predicate]
-         noLogging]
          failFuture];
      }
      return [FBFuture futureWithResult:crashInfo];

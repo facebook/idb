@@ -443,15 +443,13 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     runUntilCompletion]
     onQueue:queue fmap:^(FBTask<NSNull *, NSString *, NSString *> *task) {
       if (![task.exitCode.result isEqualToNumber:@0]) {
-          return [[[FBSimulatorError
+          return [[FBSimulatorError
             describeFormat:@"Task did not exit 0: %@ %@ %@", task.exitCode.result, task.stdOut, task.stdErr]
-            logger:logger]
             failFuture];
       }
       if ([task.stdErr hasPrefix:@"Error"]) {
-        return [[[FBSimulatorError
+        return [[FBSimulatorError
           describeFormat:@"Failed to execute sqlite command: %@", task.stdErr]
-          logger:logger]
           failFuture];
       }
       return [FBFuture futureWithResult:task.stdOut];
