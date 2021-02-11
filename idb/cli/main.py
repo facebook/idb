@@ -67,6 +67,7 @@ from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.media import MediaAddCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
 from idb.cli.commands.settings import SetCommand, GetCommand, ListCommand
+from idb.cli.commands.shell import ShellCommand
 from idb.cli.commands.target import (
     ConnectCommandException,
     TargetBootCommand,
@@ -148,6 +149,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         default=True,
         help="If flagged will not modify local state when a companion is known to be unresponsive",
     )
+    shell_command = ShellCommand(parser=parser)
     commands: List[Command] = [
         AppInstallCommand(),
         AppUninstallCommand(),
@@ -259,6 +261,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         SetCommand,
         GetCommand,
         ListCommand,
+        shell_command,
     ]
     commands.extend(plugin.get_commands())
     root_command = CommandGroup(
@@ -267,6 +270,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         commands=sorted(commands, key=lambda command: command.name),
     )
     root_command.add_parser_arguments(parser)
+    shell_command.root_command = root_command
 
     # Parse input and run
     cmd_input = cmd_input or sys.argv[1:]
