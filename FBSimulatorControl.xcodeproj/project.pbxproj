@@ -559,8 +559,6 @@
 		EE2EC7B11CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.m in Sources */ = {isa = PBXBuildFile; fileRef = EE2EC7AF1CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.m */; };
 		EE48229C1FBD91B300AAA56E /* FBManagedTestRunStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA83EB1C1D6F608400E5C864 /* FBManagedTestRunStrategy.m */; };
 		EE48229D1FBD91C500AAA56E /* FBManagedTestRunStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA83EB1B1D6F608400E5C864 /* FBManagedTestRunStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		EE48229E1FBD932300AAA56E /* FBTestRunStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = EEFC63991FAC9FCF00715F55 /* FBTestRunStrategy.m */; };
-		EE48229F1FBD934800AAA56E /* FBTestRunStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = EEFC63981FAC9FCF00715F55 /* FBTestRunStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EE4F0D3A1C91B7DB00608E89 /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; };
 		EE4F0D761C91B82700608E89 /* FBProductBundle+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D501C91B82700608E89 /* FBProductBundle+Private.h */; };
 		EE4F0D771C91B82700608E89 /* FBProductBundle.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D511C91B82700608E89 /* FBProductBundle.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1528,8 +1526,6 @@
 		EEBD60931C908F8500298A07 /* FBCollectionInformation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCollectionInformation.m; sourceTree = "<group>"; };
 		EEF4497B1CE0A22200300C9F /* FBXCTestBootstrapFixtures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestBootstrapFixtures.h; sourceTree = "<group>"; };
 		EEF4497C1CE0A22200300C9F /* FBXCTestBootstrapFixtures.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestBootstrapFixtures.m; sourceTree = "<group>"; };
-		EEFC63981FAC9FCF00715F55 /* FBTestRunStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestRunStrategy.h; sourceTree = "<group>"; };
-		EEFC63991FAC9FCF00715F55 /* FBTestRunStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestRunStrategy.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2736,8 +2732,6 @@
 				AA83EB1C1D6F608400E5C864 /* FBManagedTestRunStrategy.m */,
 				AA8B2D901F4AF7C600E0393B /* FBTestApplicationLaunchStrategy.h */,
 				AA8B2D911F4AF7C600E0393B /* FBTestApplicationLaunchStrategy.m */,
-				EEFC63981FAC9FCF00715F55 /* FBTestRunStrategy.h */,
-				EEFC63991FAC9FCF00715F55 /* FBTestRunStrategy.m */,
 				EE4F0D631C91B82700608E89 /* FBXCTestPreparationStrategy.h */,
 				AA6062E81EE4A6B100E2EFEE /* FBXCTestProcess.h */,
 				AA6062E91EE4A6B100E2EFEE /* FBXCTestProcess.m */,
@@ -3128,7 +3122,6 @@
 				EE4F0D771C91B82700608E89 /* FBProductBundle.h in Headers */,
 				AA0DC7561CE3A29F0037A8A7 /* FBTestDaemonConnection.h in Headers */,
 				AAE5A0851EDF90DB00A1A811 /* FBXCTestReporter.h in Headers */,
-				EE48229F1FBD934800AAA56E /* FBTestRunStrategy.h in Headers */,
 				3E14993C1D4C5042005A5C8F /* FBTestManagerTestReporterJUnit.h in Headers */,
 				AAE5A0811EDF8C9C00A1A811 /* FBXCTestLogger.h in Headers */,
 				3E1499441D4C574F005A5C8F /* FBTestManagerTestReporterTestSuite.h in Headers */,
@@ -3759,7 +3752,6 @@
 				AA8B2D931F4AF7C600E0393B /* FBTestApplicationLaunchStrategy.m in Sources */,
 				AAE5A08B1EDF919700A1A811 /* FBJSONTestReporter.m in Sources */,
 				EE1277611C9338D700DE52A1 /* FBTestManager.m in Sources */,
-				EE48229E1FBD932300AAA56E /* FBTestRunStrategy.m in Sources */,
 				AAE5A08F1EDF926100A1A811 /* FBXCTestReporterAdapter.m in Sources */,
 				EE4F0D8E1C91B82700608E89 /* XCTestBootstrapError.m in Sources */,
 				AA7F12791D70679200929CD9 /* FBTestManagerResult.m in Sources */,

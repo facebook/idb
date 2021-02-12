@@ -31,7 +31,6 @@
 #import <XCTestBootstrap/FBTestManagerTestReporterTestSuite.h>
 #import <XCTestBootstrap/FBTestReporterForwarder.h>
 #import <XCTestBootstrap/FBTestRunnerConfiguration.h>
-#import <XCTestBootstrap/FBTestRunStrategy.h>
 #import <XCTestBootstrap/FBXcodeBuildOperation.h>
 #import <XCTestBootstrap/FBXCTestConfiguration.h>
 #import <XCTestBootstrap/FBXCTestLogger.h>

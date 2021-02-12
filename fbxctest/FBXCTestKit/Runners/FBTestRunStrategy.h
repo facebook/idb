@@ -14,9 +14,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 @protocol FBXCTestReporter;
 
-@class FBSimulator;
-@class FBTestManagerTestConfiguration;
-
 /**
  A Runner for test manager managed tests (UITests and Application tests).
  */
