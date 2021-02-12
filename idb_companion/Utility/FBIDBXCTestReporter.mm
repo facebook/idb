@@ -98,7 +98,7 @@
 
 - (void)didCrashDuringTest:(NSError *)error
 {
-  const idb::XctestRunResponse response = [self responseForCrashMessage:error.description];
+  const idb::XctestRunResponse response = [self responseForCrashMessage:error.localizedDescription];
   [self writeResponse:response];
 }
 
@@ -274,6 +274,7 @@
   info->set_class_name(self.currentTestClass.UTF8String ?: "");
   info->set_method_name(self.currentTestMethod.UTF8String ?: "");
   info->mutable_failure_info()->CopyFrom(self.failureInfo);
+  info->mutable_failure_info()->set_failure_message(message.UTF8String);
   info->set_status(idb::XctestRunResponse_TestRunInfo_Status_CRASHED);
   [self resetCurrentTestState];
   return response;
