@@ -228,7 +228,7 @@
     stdOutConsumer:stdOutConsumer
     stdErrConsumer:stdErrConsumer]
     onQueue:executor.workQueue map:^(id<FBLaunchedProcess> process) {
-      return [FBXCTestProcess ensureProcess:process completesWithin:timeout queue:executor.workQueue logger:logger];
+      return [FBXCTestProcess ensureProcess:process completesWithin:timeout withCrashLogDetection:NO queue:executor.workQueue logger:logger];
     }];
 }
 

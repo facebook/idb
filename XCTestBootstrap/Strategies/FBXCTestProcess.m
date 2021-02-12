@@ -20,80 +20,15 @@ static NSTimeInterval const CrashLogWaitTime = 180; // In case resources are peg
 static NSUInteger const SampleDuration = 1;
 static NSTimeInterval const SampleTimeoutSubtraction = SampleDuration + 1;
 
-@interface FBXCTestProcess ()
-
-@property (nonatomic, strong, readonly) id<FBLaunchedProcess> wrappedProcess;
-
-@end
-
 @implementation FBXCTestProcess
-
-#pragma mark Initializers
-
-- (instancetype)initWithWrappedProcess:(id<FBLaunchedProcess>)wrappedProcess completedNormally:(FBFuture<NSNumber *> *)completedNormally
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _wrappedProcess = wrappedProcess;
-  _completedNormally = completedNormally;
-
-  return self;
-}
-
-- (NSString *)description
-{
-  return [NSString stringWithFormat:@"xctest Process %@ | State %@", self.wrappedProcess, self.completedNormally];
-}
-
-- (pid_t)processIdentifier
-{
-  return self.wrappedProcess.processIdentifier;
-}
-
-- (FBFuture<NSNumber *> *)exitCode
-{
-  return self.wrappedProcess.exitCode;
-}
-
-- (FBFuture<NSNumber *> *)statLoc
-{
-  return self.wrappedProcess.statLoc;
-}
-
-- (FBFuture<NSNumber *> *)signal
-{
-  return self.wrappedProcess.signal;
-}
 
 #pragma mark Public
 
-+ (FBFuture<FBXCTestProcess *> *)startWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor timeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNumber *> *)ensureProcess:(id<FBLaunchedProcess>)process completesWithin:(NSTimeInterval)timeout withCrashLogDetection:(BOOL)crashLogDetection queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  FBCrashLogNotifier *notifier = [FBCrashLogNotifier.sharedInstance startListening:YES];
-  NSDate *startDate = NSDate.date;
-
-  return [[executor
-    startProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutConsumer:stdOutConsumer stdErrConsumer:stdErrConsumer]
-    onQueue:executor.workQueue map:^ FBXCTestProcess * (id<FBLaunchedProcess> process) {
-      // Since launching the process may make some time, we still want to respect the timeout.
-      // For this reason we have to take this delta into account.
-      // In addition, the timing out of the process is also more agressive, since we have to take into account the time to take a stack sample
-      NSTimeInterval realTimeout = MAX(timeout - [NSDate.date timeIntervalSinceDate:startDate] - SampleTimeoutSubtraction, 0);
-
-      // Additionally, we make the start date of the process appear slightly older than we might think, this is in order that we can catch crash logs that may match this process.
-      NSDate *fuzzedStartDate = [startDate dateByAddingTimeInterval:CrashLogStartDateFuzz];
-
-      FBFuture<NSNumber *> *completedNormally = [FBXCTestProcess onQueue:executor.workQueue decorateLaunchedWithErrorHandlingProcess:process startDate:fuzzedStartDate timeout:realTimeout notifier:notifier logger:logger];
-      return [[FBXCTestProcess alloc] initWithWrappedProcess:process completedNormally:completedNormally];
-    }];
-}
-
-+ (FBFuture<NSNumber *> *)ensureProcess:(id<FBLaunchedProcess>)process completesWithin:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
-{
-  return [self ensureProcessExitCode:process.exitCode processIdentifier:process.processIdentifier completesWithin:timeout queue:queue logger:logger];
+  return crashLogDetection
+    ? [self ensureProcessWithCrashDetection:process completesWithin:timeout queue:queue logger:logger]
+    : [self ensureProcessExitCode:process.exitCode processIdentifier:process.processIdentifier completesWithin:timeout queue:queue logger:logger];
 }
 
 + (nullable NSString *)describeFailingExitCode:(int)exitCode
@@ -118,42 +53,52 @@ static NSTimeInterval const SampleTimeoutSubtraction = SampleDuration + 1;
 
 #pragma mark Private
 
++ (FBFuture<NSNumber *> *)ensureProcessWithCrashDetection:(id<FBLaunchedProcess>)process completesWithin:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  FBCrashLogNotifier *notifier = [FBCrashLogNotifier.sharedInstance startListening:YES];
+  NSDate *startDate = NSDate.date;
+
+  // Since launching the process may make some time, we still want to respect the timeout.
+  // For this reason we have to take this delta into account.
+  // In addition, the timing out of the process is also more agressive, since we have to take into account the time to take a stack sample
+  NSTimeInterval realTimeout = MAX(timeout - [NSDate.date timeIntervalSinceDate:startDate] - SampleTimeoutSubtraction, 0);
+
+  // Additionally, we make the start date of the process appear slightly older than we might think, this is in order that we can catch crash logs that may match this process.
+  NSDate *fuzzedStartDate = [startDate dateByAddingTimeInterval:CrashLogStartDateFuzz];
+
+  return [FBXCTestProcess onQueue:queue decorateLaunchedWithErrorHandlingProcess:process startDate:fuzzedStartDate timeout:realTimeout notifier:notifier logger:logger];
+}
+
 + (FBFuture<NSNumber *> *)ensureProcessExitCode:(FBFuture<NSNumber *> *)exitCode processIdentifier:(pid_t)processIdentifier completesWithin:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  FBFuture<NSNumber *> *timeoutFuture = [FBXCTestProcess onQueue:queue timeoutFuture:timeout processIdentifier:processIdentifier];
+  FBFuture<NSNumber *> *timeoutFuture = [FBXCTestProcess timeoutFuture:timeout processIdentifier:processIdentifier queue:queue];
   return [FBFuture race:@[exitCode, timeoutFuture]];
 }
 
 + (FBFuture<NSNumber *> *)onQueue:(dispatch_queue_t)queue decorateLaunchedWithErrorHandlingProcess:(id<FBLaunchedProcess>)process startDate:(NSDate *)startDate timeout:(NSTimeInterval)timeout notifier:(FBCrashLogNotifier *)notifier logger:(id<FBControlCoreLogger>)logger
 {
-  FBFuture<NSNumber *> *checkedExitCode = [[process
-    exitCode]  // This will resolve a future with an exit code, so an error condition indicates a crash as checked below.
+  // Timeout should only apply to the duration of the process itself and not include sampling time.
+  FBFuture<NSNumber *> *exitCode = [self ensureProcessExitCode:process.exitCode processIdentifier:process.processIdentifier completesWithin:timeout queue:queue logger:logger];
+  return [exitCode  // This will resolve a future with an exit code, or error for crash/timeout.
     onQueue:queue chain:^ FBFuture<NSNumber *> * (FBFuture<NSNumber *> *exitCodeFuture) {
+      // Do not handle exit codes, this is done upstream.
       if (exitCodeFuture.state == FBFutureStateDone) {
-        int exitCode = exitCodeFuture.result.intValue;
-        NSString *descriptionOfExit = [self describeFailingExitCode:exitCode];
-        if (descriptionOfExit) {
-          return [[FBControlCoreError
-            describeFormat:@"xctest process %@ exited with unexpected code %d (%@)", process, exitCode, descriptionOfExit]
-            failFuture];
-        }
-        return [FBFuture futureWithResult:@(exitCode)];
+        return exitCodeFuture;
       }
-      return [FBXCTestProcess onQueue:queue performCrashLogQuery:process.processIdentifier startDate:startDate notifier:notifier crashLogWaitTime:CrashLogWaitTime logger:logger];
+      return [FBXCTestProcess performCrashLogQueryForProcess:process.processIdentifier startDate:startDate notifier:notifier crashLogWaitTime:CrashLogWaitTime queue:queue logger:logger];
     }];
-  return [self ensureProcessExitCode:checkedExitCode processIdentifier:process.processIdentifier completesWithin:timeout queue:queue logger:logger];
 }
 
-+ (FBFuture<NSNumber *> *)onQueue:(dispatch_queue_t)queue timeoutFuture:(NSTimeInterval)timeout processIdentifier:(pid_t)processIdentifier
++ (FBFuture<NSNumber *> *)timeoutFuture:(NSTimeInterval)timeout processIdentifier:(pid_t)processIdentifier queue:(dispatch_queue_t)queue
 {
   return [[FBFuture
     futureWithDelay:timeout future:FBFuture.empty]
     onQueue:queue fmap:^(id _) {
-      return [FBXCTestProcess onQueue:queue timeoutErrorWithTimeout:timeout processIdentifier:processIdentifier];
+      return [FBXCTestProcess performSampleStackshotForTimeout:timeout queue:queue processIdentifier:processIdentifier];
     }];
 }
 
-+ (FBFuture<id> *)onQueue:(dispatch_queue_t)queue timeoutErrorWithTimeout:(NSTimeInterval)timeout processIdentifier:(pid_t)processIdentifier
++ (FBFuture<id> *)performSampleStackshotForTimeout:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue processIdentifier:(pid_t)processIdentifier
 {
   return [[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/sample" arguments:@[@(processIdentifier).stringValue, @(SampleDuration).stringValue]]
@@ -165,11 +110,11 @@ static NSTimeInterval const SampleTimeoutSubtraction = SampleDuration + 1;
     }];
 }
 
-+ (FBFuture<NSNumber *> *)onQueue:(dispatch_queue_t)queue performCrashLogQuery:(pid_t)processIdentifier startDate:(NSDate *)startDate notifier:(FBCrashLogNotifier *)notifier crashLogWaitTime:(NSTimeInterval)crashLogWaitTime logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNumber *> *)performCrashLogQueryForProcess:(pid_t)processIdentifier startDate:(NSDate *)startDate notifier:(FBCrashLogNotifier *)notifier crashLogWaitTime:(NSTimeInterval)crashLogWaitTime queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   [logger logFormat:@"xctest process (%d) died prematurely, checking for crash log for %f seconds", processIdentifier, crashLogWaitTime];
   return [[[FBXCTestProcess
-    onQueue:queue crashLogsForTerminationOfProcess:processIdentifier since:startDate notifier:notifier crashLogWaitTime:crashLogWaitTime]
+    crashLogsForTerminationOfProcess:processIdentifier since:startDate notifier:notifier crashLogWaitTime:crashLogWaitTime queue:queue]
     rephraseFailure:@"xctest process (%d) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports", processIdentifier]
     onQueue:queue fmap:^(FBCrashLogInfo *crashInfo) {
       NSString *crashString = [NSString stringWithContentsOfFile:crashInfo.crashPath encoding:NSUTF8StringEncoding error:nil];
@@ -179,7 +124,7 @@ static NSTimeInterval const SampleTimeoutSubtraction = SampleDuration + 1;
     }];
 }
 
-+ (FBFuture<FBCrashLogInfo *> *)onQueue:(dispatch_queue_t)queue crashLogsForTerminationOfProcess:(pid_t)processIdentifier since:(NSDate *)sinceDate notifier:(FBCrashLogNotifier *)notifier crashLogWaitTime:(NSTimeInterval)crashLogWaitTime
++ (FBFuture<FBCrashLogInfo *> *)crashLogsForTerminationOfProcess:(pid_t)processIdentifier since:(NSDate *)sinceDate notifier:(FBCrashLogNotifier *)notifier crashLogWaitTime:(NSTimeInterval)crashLogWaitTime queue:(dispatch_queue_t)queue
 {
   NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[
     [FBCrashLogInfo predicateForCrashLogsWithProcessID:processIdentifier],
