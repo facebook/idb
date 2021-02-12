@@ -81,6 +81,7 @@
   NSString *developerLibraryPath = [developerRuntimePath stringByAppendingPathComponent:@"Library"];
   NSString *xctTargetBootstrapInjectPath = [developerRuntimePath stringByAppendingPathComponent:@"usr/lib/libXCTTargetBootstrapInject.dylib"];
   NSString *automationFrameworkPath = [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks/XCTAutomationSupport.framework"];
+
   NSArray<NSString *> *XCTestFrameworksPaths = @[
     [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"],
     [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks"],
@@ -136,13 +137,18 @@
       if (self.testLaunchConfiguration.coveragePath) {
         hostApplicationAdditionalEnvironment[@"LLVM_PROFILE_FILE"] = self.testLaunchConfiguration.coveragePath;
       }
+      // These Search Paths are added via "DYLD_FALLBACK_FRAMEWORK_PATH" so that they can be resolved when linked by the Application.
+      // This is needed so that the Application is aware of how to link the XCTest.framework from the developer directory.
+      // The Application binary will not contain linker opcodes that point to the XCTest.framework within the Simulator runtime bundle.
+      // Therefore we need to provide them to the test runner so it can pass them to the app launch.
+      NSArray<NSString *> *frameworkSearchPaths = [XCTestFrameworksPaths arrayByAddingObject:[hostApplication.path stringByAppendingPathComponent:@"Frameworks"]];
       return [FBTestRunnerConfiguration
         configurationWithSessionIdentifier:sessionIdentifier
         hostApplication:hostApplication
         hostApplicationAdditionalEnvironment:hostApplicationAdditionalEnvironment.copy
         testBundle:testBundle
         testConfigurationPath:testBundle.configuration.path
-        frameworkSearchPath:[XCTestFrameworksPaths componentsJoinedByString:@":"]
+        frameworkSearchPath:[frameworkSearchPaths componentsJoinedByString:@":"]
         testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
     }];
 }

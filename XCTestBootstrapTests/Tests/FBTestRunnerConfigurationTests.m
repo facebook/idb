@@ -47,8 +47,6 @@
 {
   NSDictionary<NSString *, NSString *> *expected = @{
     @"AppTargetLocation" : @"/blackhole/pray.app/app",
-    @"DYLD_FRAMEWORK_PATH" : @"/blackhole/pray.app/Frameworks",
-    @"DYLD_LIBRARY_PATH" : @"/blackhole/pray.app/Frameworks",
     @"DYLD_FALLBACK_FRAMEWORK_PATH" : @"/Apple",
     @"DYLD_FALLBACK_LIBRARY_PATH" : @"/Apple",
     @"OBJC_DISABLE_GC" : @"YES",

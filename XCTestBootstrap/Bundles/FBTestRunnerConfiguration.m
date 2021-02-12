@@ -67,12 +67,9 @@
 
 + (NSDictionary *)launchEnvironmentWithHostApplication:(FBProductBundle *)hostApplication hostApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath
 {
-  NSString *appFrameworks = [hostApplication.path stringByAppendingPathComponent:@"Frameworks"];
   NSMutableDictionary *environmentVariables = hostApplicationAdditionalEnvironment.mutableCopy;
   [environmentVariables addEntriesFromDictionary:@{
     @"AppTargetLocation" : hostApplication.binaryPath,
-    @"DYLD_FRAMEWORK_PATH" : appFrameworks ?: @"",
-    @"DYLD_LIBRARY_PATH" : appFrameworks ?: @"",
     @"DYLD_FALLBACK_FRAMEWORK_PATH" : frameworkSearchPath ?: @"",
     @"DYLD_FALLBACK_LIBRARY_PATH" : frameworkSearchPath ?: @"",
     @"OBJC_DISABLE_GC" : @"YES",
