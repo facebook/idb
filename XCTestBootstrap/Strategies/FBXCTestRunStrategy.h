@@ -28,21 +28,21 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param iosTarget ios target used to run tests.
  @param testPrepareStrategy test preparation strategy used to prepare device to test.
+ @param applicationLaunchConfiguration application launch configuration used to start test runner
  @param reporter the Reporter to report test progress to.
  @param logger the logger object to log events to, may be nil.
  @return operator
  */
-+ (instancetype)strategyWithIOSTarget:(id<FBiOSTarget>)iosTarget testPrepareStrategy:(id<FBXCTestPreparationStrategy>)testPrepareStrategy reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)strategyWithIOSTarget:(id<FBiOSTarget>)iosTarget testPrepareStrategy:(id<FBXCTestPreparationStrategy>)testPrepareStrategy applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods.
 
 /**
  Starts testing session
 
- @param applicationLaunchConfiguration application launch configuration used to start test runner
  @return A future that resolves with the Test Manager
  */
-- (FBFuture<FBTestManager *> *)startTestManagerWithApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
+- (FBFuture<FBTestManager *> *)startTestManager;
 
 @end
 

@@ -65,11 +65,12 @@
   FBXCTestRunStrategy *testRunStrategy = [FBXCTestRunStrategy
     strategyWithIOSTarget:self.target
     testPrepareStrategy:self.testPreparationStrategy
+    applicationLaunchConfiguration:self.configuration.applicationLaunchConfiguration
     reporter:self.reporter
     logger:self.logger];
 
   return [[testRunStrategy
-    startTestManagerWithApplicationLaunchConfiguration:self.configuration.applicationLaunchConfiguration]
+    startTestManager]
     onQueue:self.target.workQueue fmap:^(FBTestManager *testManager) {
       FBFuture<FBTestManagerResult *> *result = [testManager execute];
       if (result.error) {

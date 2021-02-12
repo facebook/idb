@@ -40,8 +40,8 @@
 - (void)testTestRunWithRequiredAttributes
 {
   id prepareTestMock = [OCMockObject niceMockForProtocol:@protocol(FBXCTestPreparationStrategy)];
-  FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithIOSTarget:[OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)] testPrepareStrategy:prepareTestMock reporter:nil logger:nil];
-  XCTAssertNoThrow([[strategy startTestManagerWithApplicationLaunchConfiguration:self.applicationLaunchConfiguration] await:nil]);
+  FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithIOSTarget:[OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)] testPrepareStrategy:prepareTestMock applicationLaunchConfiguration:self.applicationLaunchConfiguration reporter:nil logger:nil];
+  XCTAssertNoThrow([[strategy startTestManager] await:nil]);
 }
 
 - (void)testCallToTestPreparationStep
@@ -56,8 +56,8 @@
   OCMockObject<FBLaunchedApplication> *processMock = [OCMockObject niceMockForProtocol:@protocol(FBLaunchedApplication)];
   [(id<FBApplicationCommands>)[[iOSTarget stub] andReturn:[FBFuture futureWithResult:processMock]] launchApplication:[OCMArg any]];
 
-  FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithIOSTarget:(id)iOSTarget testPrepareStrategy:prepareTestMock reporter:nil logger:nil];
-  XCTAssertNoThrow([[strategy startTestManagerWithApplicationLaunchConfiguration:self.applicationLaunchConfiguration] await:nil]);
+  FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithIOSTarget:(id)iOSTarget testPrepareStrategy:prepareTestMock applicationLaunchConfiguration:self.applicationLaunchConfiguration reporter:nil logger:nil];
+  XCTAssertNoThrow([[strategy startTestManager] await:nil]);
   [prepareTestMock verify];
 }
 
@@ -88,8 +88,8 @@
   id prepareTestMock = [OCMockObject niceMockForProtocol:@protocol(FBXCTestPreparationStrategy)];
   [[[prepareTestMock stub] andReturn:[FBFuture futureWithResult:testConfigurationMock]] prepareTestWithIOSTarget:[OCMArg any]];
 
-  FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithIOSTarget:iosTargetMock testPrepareStrategy:prepareTestMock reporter:nil logger:nil];
-  XCTAssertTrue([[strategy startTestManagerWithApplicationLaunchConfiguration:[self.applicationLaunchConfiguration withEnvironment:@{@"A" : @"B"}]] await:nil]);
+  FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithIOSTarget:iosTargetMock testPrepareStrategy:prepareTestMock applicationLaunchConfiguration:[self.applicationLaunchConfiguration withEnvironment:@{@"A" : @"B"}] reporter:nil logger:nil];
+  XCTAssertTrue([[strategy startTestManager] await:nil]);
   [iosTargetMock verify];
 }
 
@@ -98,8 +98,8 @@
   OCMockObject<FBiOSTarget> *iosTargetMock = [OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)];
   [[[iosTargetMock stub] andReturn:dispatch_get_main_queue()] workQueue];
   id prepareTestMock = [OCMockObject niceMockForProtocol:@protocol(FBXCTestPreparationStrategy)];
-  FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithIOSTarget:iosTargetMock testPrepareStrategy:prepareTestMock reporter:nil logger:nil];
-  XCTAssertFalse([[strategy startTestManagerWithApplicationLaunchConfiguration:self.applicationLaunchConfiguration] await:nil]);
+  FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithIOSTarget:iosTargetMock testPrepareStrategy:prepareTestMock applicationLaunchConfiguration:self.applicationLaunchConfiguration reporter:nil logger:nil];
+  XCTAssertFalse([[strategy startTestManager] await:nil]);
   [iosTargetMock verify];
 }
 

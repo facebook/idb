@@ -22,6 +22,7 @@
 
 @property (nonatomic, strong, readonly) id<FBiOSTarget> iosTarget;
 @property (nonatomic, strong, readonly) id<FBXCTestPreparationStrategy> prepareStrategy;
+@property (nonatomic, strong, readonly) FBApplicationLaunchConfiguration *applicationLaunchConfiguration;
 @property (nonatomic, strong, readonly) id<FBTestManagerTestReporter> reporter;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
@@ -31,12 +32,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)strategyWithIOSTarget:(id<FBiOSTarget>)iosTarget testPrepareStrategy:(id<FBXCTestPreparationStrategy>)testPrepareStrategy reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)strategyWithIOSTarget:(id<FBiOSTarget>)iosTarget testPrepareStrategy:(id<FBXCTestPreparationStrategy>)testPrepareStrategy applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithIOSTarget:iosTarget testPrepareStrategy:testPrepareStrategy reporter:reporter logger:logger];
+  return [[self alloc] initWithIOSTarget:iosTarget testPrepareStrategy:testPrepareStrategy applicationLaunchConfiguration:applicationLaunchConfiguration reporter:reporter logger:logger];
 }
 
-- (instancetype)initWithIOSTarget:(id<FBiOSTarget>)iosTarget testPrepareStrategy:(id<FBXCTestPreparationStrategy>)prepareStrategy reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithIOSTarget:(id<FBiOSTarget>)iosTarget testPrepareStrategy:(id<FBXCTestPreparationStrategy>)prepareStrategy applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -45,6 +46,7 @@
 
   _iosTarget = iosTarget;
   _prepareStrategy = prepareStrategy;
+  _applicationLaunchConfiguration = applicationLaunchConfiguration;
   _reporter = reporter;
   _logger = logger;
 
@@ -53,10 +55,9 @@
 
 #pragma mark Public
 
-- (FBFuture<FBTestManager *> *)startTestManagerWithApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
+- (FBFuture<FBTestManager *> *)startTestManager
 {
-  NSAssert(self.iosTarget, @"iOS Target is needed to perform meaningful test");
-  NSAssert(self.prepareStrategy, @"Test preparation strategy is needed to perform meaningful test");
+  FBApplicationLaunchConfiguration *applicationLaunchConfiguration = self.applicationLaunchConfiguration;
 
   return [[[self.prepareStrategy
     prepareTestWithIOSTarget:self.iosTarget]
