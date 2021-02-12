@@ -156,7 +156,7 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
   return self.baseLogger.level;
 }
 
-- (FBFuture<id<FBDataConsumerLifecycle>> *)logConsumptionToFile:(id<FBDataConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *)logConsumptionToFile:(id<FBDataConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid logger:(id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
   NSString *fileName = [NSString stringWithFormat:@"%@.%@", uuid.UUIDString, outputKind];
