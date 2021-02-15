@@ -49,26 +49,26 @@ extern const NSInteger FBProtocolMinimumVersion;
 
 /**
  Establishes a connection between the host, testmanagerd and the Test Bundle.
- This connection is established synchronously, until a timeout occurs.
+ This connection is established asynchronously with a timeout applied.
+ Once this connection to testmanagerd has been established, the test bundle can be executed.
 
- @return A TestManager Result if an early-error occured, nil otherwise.
+ @return A future wrapping the TestManagerResult.
  */
 - (FBFuture<FBTestManagerResult *> *)connect;
 
 /**
- Executes the Test Plan over the established connection.
- This should be called after `-[FBTestManagerAPIMediator connectToTestManagerDaemonAndBundleWithTimeout:]`
- has successfully completed.
- Events will be delivered to the reporter asynchronously.
+ Executes the Test Plan over the previously-established 'testmanagerd' connection.
+ This should be called after `-[FBTestManagerAPIMediator connect]` has resolved.
+ Test events will be delivered to the reporter in the background.
 
- @return A TestManager Result if an early-error occured, nil otherwise.
+ @return A future wrapping the TestManagerResult.
  */
 - (FBFuture<FBTestManagerResult *> *)execute;
 
 /**
- Terminates connection between test runner(XCTest bundle) and testmanagerd.
+ Terminates connection between test testmanagerd and the test bundle execution
 
- @return the TestManager Result.
+ @return A future wrapping the TestManagerResult.
  */
 - (FBFuture<FBTestManagerResult *> *)disconnect;
 
