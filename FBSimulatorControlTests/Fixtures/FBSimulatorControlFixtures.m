@@ -36,11 +36,6 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"video0" ofType:@"mp4"];
 }
 
-+ (NSString *)JUnitXMLResult0Path
-{
-  return [[NSBundle bundleForClass:self] pathForResource:@"junitResult0" ofType:@"xml"];
-}
-
 + (NSString *)simulatorSystemLogPath
 {
   return [[NSBundle bundleForClass:self] pathForResource:@"simulator_system" ofType:@"log"];

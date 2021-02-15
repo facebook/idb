@@ -103,21 +103,6 @@
   XCTAssertEqualObjects(self.failedMethods, [NSSet setWithArray:failed]);
 }
 
-- (void)testInjectsApplicationTestIntoSampleAppWithJUnitReporter
-{
-  NSURL *outputFileURL =
-      [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString]];
-  FBTestManagerTestReporterJUnit *reporter = [FBTestManagerTestReporterJUnit withOutputFileURL:outputFileURL];
-  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
-  [self assertLaunchesTestWithConfiguration:self.testLaunchTableSearch reporter:reporter simulator:simulator];
-
-  NSURL *fixtureFileURL = [NSURL fileURLWithPath:[FBSimulatorControlFixtures JUnitXMLResult0Path]];
-  NSString *expected = [self stringWithContentsOfJUnitResult:fixtureFileURL];
-  NSString *actual = [self stringWithContentsOfJUnitResult:outputFileURL];
-
-  XCTAssertEqualObjects(expected, actual);
-}
-
 - (void)testInjectsApplicationTestWithTestsToRun
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
@@ -140,25 +125,6 @@
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
               failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX"]];
-}
-
-#pragma mark -
-
-- (NSString *)stringWithContentsOfJUnitResult:(NSURL *)path
-{
-  NSError *error;
-  NSString *string = [NSString stringWithContentsOfURL:path encoding:NSUTF8StringEncoding error:&error];
-  XCTAssertNil(error);
-
-  NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"time=\"[^\"]+\""
-                                                                         options:NSRegularExpressionCaseInsensitive
-                                                                           error:&error];
-  XCTAssertNil(error);
-
-  return [regex stringByReplacingMatchesInString:string
-                                         options:0
-                                           range:NSMakeRange(0, string.length)
-                                    withTemplate:@"time=\"0.00\""];
 }
 
 #pragma mark FBTestManagerTestReporter
