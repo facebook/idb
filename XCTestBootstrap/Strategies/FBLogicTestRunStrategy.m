@@ -20,6 +20,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
 @property (nonatomic, strong, readonly) id<FBDataConsumer, FBDataConsumerLifecycle> stdOutConsumer;
 @property (nonatomic, strong, readonly) id<FBDataConsumer, FBDataConsumerLifecycle> stdErrConsumer;
+@property (nonatomic, strong, readonly) id<FBConsumableBuffer> stdErrBuffer;
 @property (nonatomic, strong, readonly) id<FBDataConsumer, FBDataConsumerLifecycle> shimConsumer;
 @property (nonatomic, strong, readonly) id<FBProcessFileOutput> shimOutput;
 
@@ -27,7 +28,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
 @implementation FBLogicTestRunOutputs
 
-- (instancetype)initWithStdOutConsumer:(id<FBDataConsumer, FBDataConsumerLifecycle>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer, FBDataConsumerLifecycle>)stdErrConsumer shimConsumer:(id<FBDataConsumer, FBDataConsumerLifecycle>)shimConsumer shimOutput:(id<FBProcessFileOutput>)shimOutput
+- (instancetype)initWithStdOutConsumer:(id<FBDataConsumer, FBDataConsumerLifecycle>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer, FBDataConsumerLifecycle>)stdErrConsumer stdErrBuffer:(id<FBConsumableBuffer>)stdErrBuffer shimConsumer:(id<FBDataConsumer, FBDataConsumerLifecycle>)shimConsumer shimOutput:(id<FBProcessFileOutput>)shimOutput
 {
   self = [super init];
   if (!self) {
@@ -36,6 +37,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
   _stdOutConsumer = stdOutConsumer;
   _stdErrConsumer = stdErrConsumer;
+  _stdErrBuffer = stdErrBuffer;
   _shimConsumer = shimConsumer;
   _shimOutput = shimOutput;
 
@@ -179,8 +181,9 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
       int exitCodeValue = exitCodeNumber.intValue;
       NSString *descriptionOfExit = [FBXCTestProcess describeFailingExitCode:exitCodeValue];
       if (descriptionOfExit) {
+        NSString *stdErrReversed = [outputs.stdErrBuffer.lines.reverseObjectEnumerator.allObjects componentsJoinedByString:@"\n"];
         return [[FBControlCoreError
-          describeFormat:@"xctest process exited in failure (%d): %@", exitCodeValue, descriptionOfExit]
+          describeFormat:@"xctest process exited in failure (%d): %@ %@", exitCodeValue, descriptionOfExit, stdErrReversed]
           failFuture];
       }
       return [FBFuture futureWithResult:exitCodeNumber];
@@ -238,6 +241,8 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
   [stdErrConsumers addObject:stdErrReportingConsumer];
+  id<FBConsumableBuffer> stdErrBuffer = FBDataBuffer.consumableBuffer;
+  [stdErrConsumers addObject:stdErrBuffer];
 
   if (mirrorToLogger) {
     [shimConsumers addObject:[FBLoggingDataConsumer consumerWithLogger:logger]];
@@ -266,7 +271,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
         outputForDataConsumer:outputs[2]]
         providedThroughFile]
         onQueue:self.executor.workQueue map:^(id<FBProcessFileOutput> shimOutput) {
-          return [[FBLogicTestRunOutputs alloc] initWithStdOutConsumer:outputs[0] stdErrConsumer:outputs[1] shimConsumer:outputs[2] shimOutput:shimOutput];
+          return [[FBLogicTestRunOutputs alloc] initWithStdOutConsumer:outputs[0] stdErrConsumer:outputs[1] stdErrBuffer:stdErrBuffer shimConsumer:outputs[2] shimOutput:shimOutput];
         }];
     }];
 }
