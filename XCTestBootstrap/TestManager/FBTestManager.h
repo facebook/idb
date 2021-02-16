@@ -26,20 +26,13 @@ NS_ASSUME_NONNULL_BEGIN
  Creates and returns a test manager with given paramenters.
 
  @param context the Context of the Test Manager.
- @param iosTarget a ios target used to handle device.
+ @param target a ios target to run against.
  @param reporter an optional reporter to report test progress to.
  @param logger the logger object to log events to, may be nil.
  @param testedApplicationAdditionalEnvironment additional environment var passed, when launching application
  @return Prepared FBTestManager
  */
-+ (instancetype)testManagerWithContext:(FBTestManagerContext *)context iosTarget:(id<FBiOSTarget>)iosTarget reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
-
-/**
- Connects to the 'testmanagerd' daemon and to the test bundle.
-
- @return A TestManager Result if an early-error occured, nil otherwise.
- */
-- (FBFuture<FBTestManagerResult *> *)connect;
++ (FBFuture<FBTestManager *> *)connectToTestManager:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
 
 /**
  Connects to the 'testmanagerd' daemon and to the test bundle.

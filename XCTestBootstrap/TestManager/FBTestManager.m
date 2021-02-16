@@ -13,12 +13,9 @@
 
 @interface FBTestManager ()
 
-@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
 @property (nonatomic, strong, readonly) FBTestManagerAPIMediator *mediator;
-
-@property (nonatomic, strong, nullable, readonly) FBFuture<FBTestManagerResult *> *connectFuture;
-@property (nonatomic, strong, nullable, readonly) FBFuture<FBTestManagerResult *> *executeFuture;
-@property (nonatomic, strong, readonly) FBMutableFuture *terminationFuture;
+@property (nonatomic, strong, readonly) FBFuture<FBTestManagerResult *> *executeFuture;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
 
@@ -26,44 +23,34 @@
 
 #pragma mark Initializers
 
-+ (instancetype)testManagerWithContext:(FBTestManagerContext *)context iosTarget:(id<FBiOSTarget>)iosTarget reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
++ (FBFuture<FBTestManager *> *)connectToTestManager:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
 {
   FBTestManagerAPIMediator *mediator = [FBTestManagerAPIMediator
     mediatorWithContext:context
-    target:iosTarget
+    target:target
     reporter:reporter
     logger:logger
     testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
 
-  return [[FBTestManager alloc] initWithTarget:iosTarget mediator:mediator];
+  dispatch_queue_t queue = target.workQueue;
+  return [[mediator
+    connect]
+    onQueue:queue map:^(id _) {
+      return [[FBTestManager alloc] initWithMediator:mediator queue:queue];
+    }];
 }
 
-- (instancetype)initWithTarget:(id<FBiOSTarget>)target mediator:(FBTestManagerAPIMediator *)mediator
+- (instancetype)initWithMediator:(FBTestManagerAPIMediator *)mediator queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _target = target;
   _mediator = mediator;
-  _terminationFuture = [FBMutableFuture future];
+  _queue = queue;
 
   return self;
-}
-
-#pragma mark Public
-
-- (FBFuture<FBTestManagerResult *> *)connect
-{
-  if (self.connectFuture) {
-    return self.connectFuture;
-  }
-  _connectFuture = [self.mediator.connect
-    onQueue:self.target.workQueue respondToCancellation:^{
-      return [self teardown];
-    }];
-  return self.connectFuture;
 }
 
 - (FBFuture<FBTestManagerResult *> *)execute
@@ -71,9 +58,10 @@
   if (self.executeFuture) {
     return self.executeFuture;
   }
+  FBTestManagerAPIMediator *mediator = self.mediator;
   _executeFuture = [self.mediator.execute
-    onQueue:self.target.workQueue respondToCancellation:^{
-      return [self teardown];
+    onQueue:self.queue respondToCancellation:^{
+      return [mediator disconnect];
     }];
   return self.executeFuture;
 }
@@ -83,26 +71,11 @@
   return self.mediator.description;
 }
 
-#pragma mark Private
-
-- (FBFuture<NSNull *> *)teardown
-{
-  [self.mediator disconnect];
-  return [self.terminationFuture cancel];
-}
-
 #pragma mark FBiOSTargetOperation
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [[[self.connect
-    onQueue:self.target.workQueue fmap:^FBFuture *(FBTestManagerResult *_) {
-      return [self execute];
-    }]
-    mapReplace:NSNull.null]
-    onQueue:self.target.workQueue respondToCancellation:^{
-      return [self teardown];
-    }];
+  return [[self execute] mapReplace:NSNull.null];
 }
 
 @end

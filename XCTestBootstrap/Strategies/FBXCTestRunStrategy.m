@@ -81,27 +81,18 @@
         testRunnerBundleID:runnerConfiguration.testRunner.bundleID
         sessionIdentifier:runnerConfiguration.sessionIdentifier];
 
-      // Attach to the XCTest Test Runner host Process.
-      FBTestManager *testManager = [FBTestManager
-        testManagerWithContext:context
-        iosTarget:self.iosTarget
-        reporter:self.reporter
-        logger:self.logger
-        testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
-
       // Add callback for when the app under test exists
       [launchedApplcation.applicationTerminated onQueue:self.iosTarget.workQueue doOnResolved:^(NSNull *_) {
         [self.reporter appUnderTestExited];
       }];
 
-      return [[testManager
-        connect]
-        onQueue:self.iosTarget.workQueue fmap:^(FBTestManagerResult *result) {
-          if (result.error) {
-            return [FBFuture futureWithError:result.error];
-          }
-          return [FBFuture futureWithResult:testManager];
-      }];
+      // Attach to the XCTest Test Runner host Process.
+      return [FBTestManager
+        connectToTestManager:context
+        target:self.iosTarget
+        reporter:self.reporter
+        logger:self.logger
+        testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
     }];
 }
 
