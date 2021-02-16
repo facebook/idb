@@ -197,25 +197,26 @@
 
   // List test for app test bundle, so we use app binary instead of xctest to load test bundle.
   if ([FBBundleDescriptor isApplicationAtPath:configuration.runnerAppPath]) {
-    NSString *xcTestFrameworkPath =
-    [[FBXcodeConfiguration.developerDirectory
-      stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform"]
-      stringByAppendingPathComponent:@"Developer/Library/Frameworks/XCTest.framework"];
+    // Since we're loading the test bundle in app binary's process without booting a simulator,
+    // testing frameworks like XCTest.framework and XCTAutomationSupport.framework won't be available.
+    // (They are available in iOS simulator's runtime). To fix this, we could add the paths of those
+    // frameworks (developer library version) to `DYLD_FALLBACK_FRAMEWORK_PATH` to meet the dependency
+    // requirements of loading test bundle.
+    NSString *developerLibraryPath =
+    [FBXcodeConfiguration.developerDirectory
+      stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library"];
+    
+    NSArray<NSString *> *testFrameworkPaths = @[
+      [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"],
+      [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks"],
+    ];
 
-    // Since we spawn process using app binary directly without installation, we need to manully copy
-    // xctest framework to app's rpath so it can be found by dyld when we load test bundle later.
-    [self copyFrameworkToApplicationAtPath:configuration.runnerAppPath frameworkPath:xcTestFrameworkPath error:nil];
-
-    // Since Xcode 11, XCTest.framework load XCTAutomationSupport.framework use LC_LOAD_DYLIB, so
-    // we need to make sure XCTAutomationSupport.framework is available at @rpath when we load test bundle.
-    if ([FBXcodeConfiguration.xcodeVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"11.0"]]) {
-      NSString *XCTAutomationSupportFrameworkPath =
-      [[FBXcodeConfiguration.developerDirectory
-        stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform"]
-        stringByAppendingPathComponent:@"Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework"];
-
-      [self copyFrameworkToApplicationAtPath:configuration.runnerAppPath frameworkPath:XCTAutomationSupportFrameworkPath error:nil];
-    }
+    NSMutableDictionary *environmentVariables = environment.mutableCopy;
+    [environmentVariables addEntriesFromDictionary:@{
+      @"DYLD_FALLBACK_FRAMEWORK_PATH" : [testFrameworkPaths componentsJoinedByString:@":"],
+      @"DYLD_FALLBACK_LIBRARY_PATH" : [testFrameworkPaths componentsJoinedByString:@":"],
+    }];
+    environment = environmentVariables.copy;
 
     FBBundleDescriptor *appBundle = [FBBundleDescriptor bundleFromPath:configuration.runnerAppPath error:nil];
     launchPath = appBundle.binary.path;
@@ -230,43 +231,6 @@
     onQueue:executor.workQueue map:^(id<FBLaunchedProcess> process) {
       return [FBXCTestProcess ensureProcess:process completesWithin:timeout withCrashLogDetection:NO queue:executor.workQueue logger:logger];
     }];
-}
-
-+ (NSString *)copyFrameworkToApplicationAtPath:(NSString *)appPath frameworkPath:(NSString *)frameworkPath error:(NSError **)error
-{
-  if (![FBBundleDescriptor isApplicationAtPath:appPath]) {
-    return nil;
-  }
-
-  NSFileManager *fileManager = NSFileManager.defaultManager;
-  NSString *frameworksDir = [appPath stringByAppendingPathComponent:@"Frameworks"];
-  BOOL isDirectory = NO;
-  if ([fileManager fileExistsAtPath:frameworksDir isDirectory:&isDirectory]) {
-    if (!isDirectory) {
-      return [[FBControlCoreError
-        describeFormat:@"%@ is not a directory", frameworksDir]
-        fail:error];
-    }
-  } else {
-    if (![fileManager createDirectoryAtPath:frameworksDir withIntermediateDirectories:NO attributes:nil error:error]) {
-      return [[FBControlCoreError
-        describeFormat:@"Create framework directory %@ failed", frameworksDir]
-        fail:error];
-    }
-  }
-
-  NSString *toPath = [frameworksDir stringByAppendingPathComponent:[frameworkPath lastPathComponent]];
-  if ([[NSFileManager defaultManager] fileExistsAtPath:toPath]) {
-    return appPath;
-  }
-
-  if (![fileManager copyItemAtPath:frameworkPath toPath:toPath error:error]) {
-    return [[FBControlCoreError
-      describeFormat:@"Error copying framework %@ to app %@.", frameworkPath, appPath]
-      fail:error];
-  }
-
-  return appPath;
 }
 
 - (id<FBXCTestRunner>)wrapInReporter:(id<FBXCTestReporter>)reporter
