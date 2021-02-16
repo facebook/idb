@@ -14,8 +14,6 @@
 
 #import <FBControlCore/FBControlCoreLogger.h>
 
-#import <XCTestBootstrap/FBTestManager.h>
-
 #import "FBCoreSimulatorNotifier.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorConnection.h"

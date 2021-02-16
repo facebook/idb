@@ -112,7 +112,7 @@
 
   return [[[[[[runner
     connectAndStart]
-    onQueue:self.target.workQueue fmap:^(FBTestManager *manager) {
+    onQueue:self.target.workQueue fmap:^(FBFuture<FBTestManagerResult *> *executionFinished) {
       FBFuture<id> *startedVideoRecording = self.configuration.videoRecordingPath != nil
         ? (FBFuture<id> *) [self.target startRecordingToFile:self.configuration.videoRecordingPath]
         : (FBFuture<id> *) FBFuture.empty;
@@ -121,14 +121,14 @@
         ? (FBFuture<id> *) [self _startTailLogToFile:self.configuration.osLogPath]
         : (FBFuture<id> *) FBFuture.empty;
 
-      return [FBFuture futureWithFutures:@[[FBFuture futureWithResult:manager], startedVideoRecording, startedTailLog]];
+      return [FBFuture futureWithFutures:@[[FBFuture futureWithResult:executionFinished], startedVideoRecording, startedTailLog]];
     }]
     onQueue:self.target.workQueue fmap:^(NSArray<id> *results) {
-      FBTestManager *manager = results[0];
+      FBFuture<FBTestManagerResult *> *executionFinished = results[0];
       if (results[2] != nil && ![results[2] isEqual:NSNull.null]) {
         tailLogOperation = results[2];
       }
-      return [manager execute];
+      return executionFinished;
     }]
     onQueue:self.target.workQueue fmap:^(FBTestManagerResult *result) {
       FBFuture *stoppedVideoRecording = self.configuration.videoRecordingPath != nil

@@ -536,8 +536,6 @@
 		E7A30F0476B173B900000000 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E2976B173B900000000 /* Cocoa.framework */; };
 		E7A30F04A6018C7A00000000 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E29A6018C7A00000000 /* CoreGraphics.framework */; };
 		EE1277541C931C5E00DE52A1 /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; };
-		EE1277601C9338D700DE52A1 /* FBTestManager.h in Headers */ = {isa = PBXBuildFile; fileRef = EE12775A1C9338D700DE52A1 /* FBTestManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		EE1277611C9338D700DE52A1 /* FBTestManager.m in Sources */ = {isa = PBXBuildFile; fileRef = EE12775B1C9338D700DE52A1 /* FBTestManager.m */; };
 		EE1277621C9338D700DE52A1 /* FBTestManagerAPIMediator.h in Headers */ = {isa = PBXBuildFile; fileRef = EE12775C1C9338D700DE52A1 /* FBTestManagerAPIMediator.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EE1277641C9338D700DE52A1 /* FBTestManagerAPIMediator.m in Sources */ = {isa = PBXBuildFile; fileRef = EE12775E1C9338D700DE52A1 /* FBTestManagerAPIMediator.m */; };
 		EE2586F01FB06D9C00E7526E /* FBMacDevice.m in Sources */ = {isa = PBXBuildFile; fileRef = EE2586EE1FB06D9C00E7526E /* FBMacDevice.m */; };
@@ -1401,8 +1399,6 @@
 		D7C55B2F217E28D000A9BCB7 /* FBSimulatorMediaCommandsTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorMediaCommandsTests.m; sourceTree = "<group>"; };
 		D7E70C102440A2B40092422C /* FBAttachment.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBAttachment.h; sourceTree = "<group>"; };
 		D7E70C112440A2B40092422C /* FBAttachment.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBAttachment.m; sourceTree = "<group>"; };
-		EE12775A1C9338D700DE52A1 /* FBTestManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManager.h; sourceTree = "<group>"; };
-		EE12775B1C9338D700DE52A1 /* FBTestManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManager.m; sourceTree = "<group>"; };
 		EE12775C1C9338D700DE52A1 /* FBTestManagerAPIMediator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerAPIMediator.h; sourceTree = "<group>"; };
 		EE12775E1C9338D700DE52A1 /* FBTestManagerAPIMediator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerAPIMediator.m; sourceTree = "<group>"; };
 		EE2586EE1FB06D9C00E7526E /* FBMacDevice.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBMacDevice.m; sourceTree = "<group>"; };
@@ -2607,8 +2603,6 @@
 				AA0DC7551CE3A29F0037A8A7 /* FBTestDaemonConnection.m */,
 				AA83EB1F1D7023F200E5C864 /* FBTestDaemonResult.h */,
 				AA83EB201D7023F200E5C864 /* FBTestDaemonResult.m */,
-				EE12775A1C9338D700DE52A1 /* FBTestManager.h */,
-				EE12775B1C9338D700DE52A1 /* FBTestManager.m */,
 				EE12775C1C9338D700DE52A1 /* FBTestManagerAPIMediator.h */,
 				EE12775E1C9338D700DE52A1 /* FBTestManagerAPIMediator.m */,
 				AA46BF5E1D6DDC6A00C41DAF /* FBTestManagerContext.h */,
@@ -3097,7 +3091,6 @@
 				AA6062F21EE4B59900E2EFEE /* FBLogicTestRunStrategy.h in Headers */,
 				EE2586F11FB06D9C00E7526E /* FBMacDevice.h in Headers */,
 				AAE5A08E1EDF926100A1A811 /* FBXCTestReporterAdapter.h in Headers */,
-				EE1277601C9338D700DE52A1 /* FBTestManager.h in Headers */,
 				AAEA64751CDB31C600194B6B /* FBTestManagerTestReporter.h in Headers */,
 				EE4F0D7B1C91B82700608E89 /* FBTestConfiguration.h in Headers */,
 				AA7F12781D70679200929CD9 /* FBTestManagerResult.h in Headers */,
@@ -3712,7 +3705,6 @@
 				AA7FA7B31CE075DD00614A61 /* FBXCTestManagerLoggingForwarder.m in Sources */,
 				AA8B2D931F4AF7C600E0393B /* FBTestApplicationLaunchStrategy.m in Sources */,
 				AAE5A08B1EDF919700A1A811 /* FBJSONTestReporter.m in Sources */,
-				EE1277611C9338D700DE52A1 /* FBTestManager.m in Sources */,
 				AAE5A08F1EDF926100A1A811 /* FBXCTestReporterAdapter.m in Sources */,
 				EE4F0D8E1C91B82700608E89 /* XCTestBootstrapError.m in Sources */,
 				AA7F12791D70679200929CD9 /* FBTestManagerResult.m in Sources */,

@@ -347,18 +347,21 @@
 
 - (nonnull FBFuture<id<FBiOSTargetOperation>> *)startTestWithLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
 {
-  FBMacTestPreparationStrategy *testPreparationStrategy =
-    [FBMacTestPreparationStrategy
-     strategyWithTestLaunchConfiguration:testLaunchConfiguration
-     workingDirectory:self.workingDirectory];
-  return (FBFuture<id<FBiOSTargetOperation>> *)
-    [[FBManagedTestRunStrategy
-      strategyWithTarget:self
-      configuration:testLaunchConfiguration
-      reporter:reporter
-      logger:logger
-      testPreparationStrategy:testPreparationStrategy]
-    connectAndStart];
+  FBMacTestPreparationStrategy *testPreparationStrategy = [FBMacTestPreparationStrategy
+   strategyWithTestLaunchConfiguration:testLaunchConfiguration
+   workingDirectory:self.workingDirectory];
+  FBManagedTestRunStrategy *testRunStrategy = [FBManagedTestRunStrategy
+    strategyWithTarget:self
+    configuration:testLaunchConfiguration
+    reporter:reporter
+    logger:logger
+    testPreparationStrategy:testPreparationStrategy];
+
+  return [[testRunStrategy
+    connectAndStart]
+    onQueue:self.asyncQueue map:^(FBFuture<FBTestManagerResult *> *executionFinished) {
+      return FBiOSTargetOperationFromFuture([executionFinished mapReplace:NSNull.null]);
+    }];
 }
 
 - (NSString *)uniqueIdentifier

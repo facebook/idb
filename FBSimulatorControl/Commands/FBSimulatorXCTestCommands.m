@@ -187,9 +187,12 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
   FBSimulatorTestPreparationStrategy *testPreparationStrategy = [FBSimulatorTestPreparationStrategy
     strategyWithTestLaunchConfiguration:testLaunchConfiguration
     workingDirectory:workingDirectory];
-  return (FBFuture<id<FBiOSTargetOperation>> *) [[FBManagedTestRunStrategy
+  return [[[FBManagedTestRunStrategy
     strategyWithTarget:self.simulator configuration:testLaunchConfiguration reporter:reporter logger:logger testPreparationStrategy:testPreparationStrategy]
-    connectAndStart];
+    connectAndStart]
+    onQueue:self.simulator.asyncQueue map:^(FBFuture<FBTestManagerResult *> *executionFinished) {
+      return FBiOSTargetOperationFromFuture([executionFinished mapReplace:NSNull.null]);
+    }];
 }
 
 - (int)makeTestManagerDaemonSocketWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error

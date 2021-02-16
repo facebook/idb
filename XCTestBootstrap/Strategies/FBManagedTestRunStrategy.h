@@ -12,10 +12,9 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
-@class FBSimulator;
 @class FBTestLaunchConfiguration;
-@class FBTestManager;
 @class FBTestManagerResult;
+
 @protocol FBTestManagerTestReporter;
 @protocol FBXCTestPreparationStrategy;
 
@@ -43,9 +42,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Starts the Connection to the Test Host.
 
- @return A future that resolves with the Test Manager.
+ @return A future that resolves when the test has started. The value returned is a future that resolves when execution is finished.
  */
-- (FBFuture<FBTestManager *> *)connectAndStart;
+- (FBFuture<FBFuture<FBTestManagerResult *> *> *)connectAndStart;
 
 @end
 

@@ -8,8 +8,9 @@
 #import "FBManagedTestRunStrategy.h"
 
 #import "FBProductBundle.h"
-#import "FBTestManager.h"
+#import "FBTestManagerAPIMediator.h"
 #import "FBTestManagerContext.h"
+#import "FBTestManagerResult.h"
 #import "FBTestManagerTestReporter.h"
 #import "FBTestRunnerConfiguration.h"
 #import "FBXCTestPreparationStrategy.h"
@@ -56,7 +57,7 @@
 
 #pragma mark Public Methods
 
-- (FBFuture<FBTestManager *> *)connectAndStart
+- (FBFuture<FBFuture<FBTestManagerResult *> *> *)connectAndStart
 {
   NSParameterAssert(self.configuration.applicationLaunchConfiguration);
   NSParameterAssert(self.configuration.testBundlePath);
@@ -66,22 +67,6 @@
     return [XCTestBootstrapError failFutureWithError:error];
   }
 
-  return [[self
-    startTestManager]
-    onQueue:self.target.workQueue fmap:^(FBTestManager *testManager) {
-      FBFuture<FBTestManagerResult *> *result = [testManager execute];
-      if (result.error) {
-        return [FBFuture futureWithError:result.error];
-      }
-      return [FBFuture futureWithResult:testManager];
-    }];
-}
-
-#pragma mark Private
-
-
-- (FBFuture<FBTestManager *> *)startTestManager
-{
   FBApplicationLaunchConfiguration *applicationLaunchConfiguration = self.configuration.applicationLaunchConfiguration;
   id<FBiOSTarget> target = self.target;
   id<FBTestManagerTestReporter> reporter = self.reporter;
@@ -114,13 +99,28 @@
         [reporter appUnderTestExited];
       }];
 
-      // Attach to the XCTest Test Runner host Process.
-      return [FBTestManager
-        connectToTestManager:context
+      // Construct the mediator, the core of the test execution.
+      FBTestManagerAPIMediator *mediator = [FBTestManagerAPIMediator
+        mediatorWithContext:context
         target:target
         reporter:reporter
         logger:logger
         testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
+
+      return [[mediator
+        connect]
+        onQueue:target.workQueue fmap:^(FBTestManagerResult *connectResult) {
+          NSError *connectError = connectResult.error;
+          if (connectError) {
+            return [FBFuture futureWithError:connectError];
+          }
+          FBFuture<FBTestManagerResult *> *executionFinished = [[mediator
+            execute]
+            onQueue:target.workQueue respondToCancellation:^{
+              return [mediator disconnect];
+            }];
+          return [FBFuture futureWithResult:executionFinished];
+        }];
     }];
 }
 
@@ -148,6 +148,5 @@
   }
   return [mEnvironment copy];
 }
-
 
 @end
