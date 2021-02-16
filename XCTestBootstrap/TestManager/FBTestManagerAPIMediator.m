@@ -29,7 +29,6 @@
 #import "FBTestBundleConnection.h"
 #import "FBTestDaemonConnection.h"
 #import "FBTestManagerContext.h"
-#import "FBTestBundleResult.h"
 #import "FBTestManagerResult.h"
 #import "FBTestApplicationLaunchStrategy.h"
 
@@ -108,11 +107,13 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
     [self.logger.error log:@"FBTestManager does not support reconnecting to testmanagerd. You should create new FBTestManager to establish new connection"];
     return [FBFuture futureWithResult:self.result];
   }
-  return [self.bundleConnection.connect
+  return [[self.bundleConnection
+    connect]
     onQueue:self.target.workQueue
-    fmap:^(FBTestBundleResult *bundleResult) {
-      if (!bundleResult.didEndSuccessfully) {
-        return [FBFuture futureWithResult:[FBTestManagerResult bundleConnectionFailed:bundleResult]];
+    chain:^(FBFuture<NSNull *> *bundleResult) {
+      NSError *bundleError = bundleResult.error;
+      if (bundleError) {
+        return [FBFuture futureWithResult:[FBTestManagerResult bundleConnectionFailed:bundleError]];
       }
       return [[self.daemonConnection
         connect]

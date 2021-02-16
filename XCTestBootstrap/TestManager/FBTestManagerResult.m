@@ -8,7 +8,6 @@
 #import "FBTestManagerResult.h"
 
 #import "XCTestBootstrapError.h"
-#import "FBTestBundleResult.h"
 
 @interface FBTestManagerResult_Success : FBTestManagerResult
 @end
@@ -106,50 +105,6 @@
 
 @end
 
-@interface FBTestManagerResult_TestHostCrashed : FBTestManagerResult
-
-@property (nonatomic, strong, readonly) FBCrashLog *underlyingCrash;
-
-@end
-
-@implementation FBTestManagerResult_TestHostCrashed
-
-- (instancetype)initWithCrashDiagnostic:(FBCrashLog *)crash
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _underlyingCrash = crash;
-
-  return self;
-}
-
-- (BOOL)didEndSuccessfully
-{
-  return NO;
-}
-
-- (NSError *)error
-{
-  return [[XCTestBootstrapError
-    describeFormat:@"The Test Host Crashed: %@", self.underlyingCrash]
-    build];
-}
-
-- (FBCrashLog *)crash
-{
-  return self.underlyingCrash;
-}
-
-- (NSString *)description
-{
-  return @"The Test Host Process crashed";
-}
-
-@end
-
 @interface FBTestManagerResult_InternalError : FBTestManagerResult
 @property (nonatomic, strong, readonly) NSError *underlyingError;
 @end
@@ -209,14 +164,9 @@
   return [[FBTestManagerResult_Timeout alloc] initWithTimeout:timeout];
 }
 
-+ (instancetype)bundleConnectionFailed:(FBTestBundleResult *)bundleResult
++ (instancetype)bundleConnectionFailed:(NSError *)bundleError
 {
-  NSParameterAssert(bundleResult.didEndSuccessfully == NO);
-  if (bundleResult.crash) {
-    return [[FBTestManagerResult_TestHostCrashed alloc] initWithCrashDiagnostic:bundleResult.crash];
-  }
-  NSParameterAssert(bundleResult.error);
-  return [[FBTestManagerResult_InternalError alloc] initWithError:bundleResult.error];
+  return [[FBTestManagerResult_InternalError alloc] initWithError:bundleError];
 }
 
 + (instancetype)daemonConnectionFailed:(NSError *)daemonError

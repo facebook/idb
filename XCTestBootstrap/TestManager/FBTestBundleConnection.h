@@ -11,13 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class DTXConnection;
-@class DVTDevice;
-@class FBTestBundleResult;
 @class FBTestManagerContext;
-@class XCTestBootstrapError;
 
-@protocol XCTestDriverInterface;
 @protocol XCTestManager_IDEInterface;
 
 /**
@@ -46,7 +41,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that resolves when the Bundle Connection is established.
  */
-- (FBFuture<FBTestBundleResult *> *)connect;
+- (FBFuture<NSNull *> *)connect;
 
 /**
  Starts the Test Plan.
@@ -54,14 +49,14 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that resolves when the Test Plan has completed.
  */
-- (FBFuture<FBTestBundleResult *> *)startTestPlan;
+- (FBFuture<NSNull *> *)startTestPlan;
 
 /**
  A future for the end of the test run.
 
  @return a Future that resolves when the Test Run has completed.
  */
-- (FBFuture<FBTestBundleResult *> *)completeTestRun;
+- (FBFuture<NSNull *> *)completeTestRun;
 
 /**
  Disconnects any active connection.

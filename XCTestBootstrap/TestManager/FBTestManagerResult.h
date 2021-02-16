@@ -44,10 +44,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Test Run in which the Bundle Connection Failed
 
- @param bundleResult the Bundle Result
+ @param bundleError the error from the bundle connection.
  @return a Test Manger Result.
  */
-+ (instancetype)bundleConnectionFailed:(FBTestBundleResult *)bundleResult;
++ (instancetype)bundleConnectionFailed:(NSError *)bundleError;
 
 /**
  A Test Run in which the Daemon Connection Failed
