@@ -7,8 +7,12 @@
 
 #import "FBManagedTestRunStrategy.h"
 
+#import "FBProductBundle.h"
 #import "FBTestManager.h"
-#import "FBXCTestRunStrategy.h"
+#import "FBTestManagerContext.h"
+#import "FBTestManagerTestReporter.h"
+#import "FBTestRunnerConfiguration.h"
+#import "FBXCTestPreparationStrategy.h"
 #import "XCTestBootstrapError.h"
 #import "XCTestBootstrapFrameworkLoader.h"
 
@@ -62,14 +66,7 @@
     return [XCTestBootstrapError failFutureWithError:error];
   }
 
-  FBXCTestRunStrategy *testRunStrategy = [FBXCTestRunStrategy
-    strategyWithIOSTarget:self.target
-    testPrepareStrategy:self.testPreparationStrategy
-    applicationLaunchConfiguration:self.configuration.applicationLaunchConfiguration
-    reporter:self.reporter
-    logger:self.logger];
-
-  return [[testRunStrategy
+  return [[self
     startTestManager]
     onQueue:self.target.workQueue fmap:^(FBTestManager *testManager) {
       FBFuture<FBTestManagerResult *> *result = [testManager execute];
@@ -79,5 +76,78 @@
       return [FBFuture futureWithResult:testManager];
     }];
 }
+
+#pragma mark Private
+
+
+- (FBFuture<FBTestManager *> *)startTestManager
+{
+  FBApplicationLaunchConfiguration *applicationLaunchConfiguration = self.configuration.applicationLaunchConfiguration;
+  id<FBiOSTarget> target = self.target;
+  id<FBTestManagerTestReporter> reporter = self.reporter;
+  id<FBControlCoreLogger> logger = self.logger;
+
+  return [[[self.testPreparationStrategy
+    prepareTestWithIOSTarget:target]
+    onQueue:target.workQueue fmap:^(FBTestRunnerConfiguration *runnerConfiguration) {
+      FBApplicationLaunchConfiguration *applicationConfiguration = [self
+        prepareApplicationLaunchConfiguration:applicationLaunchConfiguration
+        withTestRunnerConfiguration:runnerConfiguration];
+      return [[target
+        launchApplication:applicationConfiguration]
+        onQueue:target.workQueue map:^(id<FBLaunchedApplication> application) {
+          return @[application, runnerConfiguration];
+        }];
+    }]
+    onQueue:target.workQueue fmap:^(NSArray<id> *tuple) {
+      id<FBLaunchedApplication> launchedApplcation = tuple[0];
+      FBTestRunnerConfiguration *runnerConfiguration = tuple[1];
+
+      // Make the Context for the Test Manager.
+      FBTestManagerContext *context = [FBTestManagerContext
+        contextWithTestRunnerPID:launchedApplcation.processIdentifier
+        testRunnerBundleID:runnerConfiguration.testRunner.bundleID
+        sessionIdentifier:runnerConfiguration.sessionIdentifier];
+
+      // Add callback for when the app under test exists
+      [launchedApplcation.applicationTerminated onQueue:target.workQueue doOnResolved:^(NSNull *_) {
+        [reporter appUnderTestExited];
+      }];
+
+      // Attach to the XCTest Test Runner host Process.
+      return [FBTestManager
+        connectToTestManager:context
+        target:target
+        reporter:reporter
+        logger:logger
+        testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
+    }];
+}
+
+- (FBApplicationLaunchConfiguration *)prepareApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration withTestRunnerConfiguration:(FBTestRunnerConfiguration *)testRunnerConfiguration
+{
+  return [FBApplicationLaunchConfiguration
+    configurationWithBundleID:testRunnerConfiguration.testRunner.bundleID
+    bundleName:testRunnerConfiguration.testRunner.bundleID
+    arguments:[self argumentsFromConfiguration:testRunnerConfiguration attributes:applicationLaunchConfiguration.arguments]
+    environment:[self environmentFromConfiguration:testRunnerConfiguration environment:applicationLaunchConfiguration.environment]
+    output:applicationLaunchConfiguration.output
+    launchMode:FBApplicationLaunchModeFailIfRunning];
+}
+
+- (NSArray<NSString *> *)argumentsFromConfiguration:(FBTestRunnerConfiguration *)configuration attributes:(NSArray<NSString *> *)attributes
+{
+  return [(configuration.launchArguments ?: @[]) arrayByAddingObjectsFromArray:(attributes ?: @[])];
+}
+
+- (NSDictionary<NSString *, NSString *> *)environmentFromConfiguration:(FBTestRunnerConfiguration *)configuration environment:(NSDictionary<NSString *, NSString *> *)environment
+{
+  NSMutableDictionary<NSString *, NSString *> *mEnvironment = (configuration.launchEnvironment ?: @{}).mutableCopy;
+  if (environment) {
+    [mEnvironment addEntriesFromDictionary:environment];
+  }
+  return [mEnvironment copy];
+}
+
 
 @end
