@@ -11,7 +11,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBCrashLog;
 @class FBTestBundleResult;
-@class FBTestDaemonResult;
 @class XCTestBootstrapError;
 
 /**
@@ -53,10 +52,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Test Run in which the Daemon Connection Failed
 
- @param daemonResult the Daemon Result
+ @param daemonError the error from the daemon connection.
  @return a Test Manger Result.
  */
-+ (instancetype)daemonConnectionFailed:(FBTestDaemonResult *)daemonResult;
++ (instancetype)daemonConnectionFailed:(NSError *)daemonError;
 
 /**
  A Test Run in which an internal error occured.

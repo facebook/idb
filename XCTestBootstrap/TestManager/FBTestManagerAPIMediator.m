@@ -31,7 +31,6 @@
 #import "FBTestManagerContext.h"
 #import "FBTestBundleResult.h"
 #import "FBTestManagerResult.h"
-#import "FBTestDaemonResult.h"
 #import "FBTestApplicationLaunchStrategy.h"
 
 const NSInteger FBProtocolVersion = 0x16;
@@ -115,12 +114,14 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
       if (!bundleResult.didEndSuccessfully) {
         return [FBFuture futureWithResult:[FBTestManagerResult bundleConnectionFailed:bundleResult]];
       }
-      return [self.daemonConnection.connect
-        onQueue:self.target.workQueue map:^(FBTestDaemonResult *daemonResult) {
-          if (!daemonResult.didEndSuccessfully) {
-            return [FBTestManagerResult daemonConnectionFailed:daemonResult];
+      return [[self.daemonConnection
+        connect]
+        onQueue:self.target.workQueue chain:^ FBFuture<FBTestManagerResult *> * (FBFuture<NSNull *> *daemonResult) {
+          NSError *daemonError = daemonResult.error;
+          if (daemonError) {
+            return [FBFuture futureWithResult:[FBTestManagerResult daemonConnectionFailed:daemonError]];
           }
-          return [FBTestManagerResult success];
+          return [FBFuture futureWithResult:FBTestManagerResult.success];
         }];
     }];
 }
@@ -130,7 +131,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   id<FBTestManagerTestReporter> reporter = self.reporter;
   return [[[FBFuture
     futureWithFutures:@[self.bundleConnection.startTestPlan, self.daemonConnection.notifyTestPlanStarted]]
-    onQueue:self.target.workQueue fmap:^FBFuture *(FBTestManagerResult *result) {
+    onQueue:self.target.workQueue fmap:^ FBFuture<NSArray<id> *> * (FBTestManagerResult *result) {
       return [FBFuture futureWithFutures:@[self.bundleConnection.completeTestRun, self.daemonConnection.completed]];
     }]
     onQueue:self.target.workQueue chain:^ FBFuture <FBTestManagerResult *> * (FBFuture<NSArray<id> *> *future){

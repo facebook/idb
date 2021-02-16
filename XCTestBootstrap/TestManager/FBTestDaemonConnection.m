@@ -24,7 +24,6 @@
 #import "XCTestBootstrapError.h"
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestManagerContext.h"
-#import "FBTestDaemonResult.h"
 
 typedef NSString *FBTestDaemonConnectionState NS_STRING_ENUM;
 static FBTestDaemonConnectionState const FBTestDaemonConnectionStateNotConnected = @"not connected";
@@ -48,12 +47,11 @@ static FBTestDaemonConnectionState const FBTestDaemonConnectionStateResultAvaila
 
 @property (atomic, strong, readwrite) FBTestDaemonConnectionState state;
 @property (atomic, assign, readwrite) long long daemonProtocolVersion;
-@property (atomic, nullable, strong, readwrite) FBTestDaemonResult *result;
 @property (atomic, nullable, strong, readwrite) id<XCTestManager_DaemonConnectionInterface> daemonProxy;
 @property (atomic, nullable, strong, readwrite) DTXConnection *daemonConnection;
 
-@property (nonatomic, strong, readonly) FBMutableFuture<FBTestDaemonResult *> *connectFuture;
-@property (nonatomic, strong, readonly) FBMutableFuture<FBTestDaemonResult *> *resultFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *connectFuture;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *resultFuture;
 
 @end
 
@@ -117,56 +115,60 @@ static FBTestDaemonConnectionState const FBTestDaemonConnectionStateResultAvaila
 
 #pragma mark Public
 
-- (FBFuture<FBTestDaemonResult *> *)connect
+- (FBFuture<NSNull *> *)connect
 {
   if (self.state != FBTestDaemonConnectionStateNotConnected) {
-    XCTestBootstrapError *error = [XCTestBootstrapError describeFormat:@"State should be '%@' got '%@", FBTestDaemonConnectionStateNotConnected, self.state];
-    [self concludeWithResult:[FBTestDaemonResult failedInError:error]];
-    return self.connectFuture;
+    NSError *error = [[XCTestBootstrapError
+      describeFormat:@"State should be '%@' got '%@", FBTestDaemonConnectionStateNotConnected, self.state]
+      build];
+    [self concludeWithError:error];
+    return [FBFuture futureWithError:error];
   }
   [self doConnect];
   return self.connectFuture;
 }
 
-- (FBFuture<FBTestDaemonResult *> *)notifyTestPlanStarted
+- (FBFuture<NSNull *> *)notifyTestPlanStarted
 {
   if (self.state != FBTestDaemonConnectionStateReadyToExecuteTestPlan) {
-    XCTestBootstrapError *error = [XCTestBootstrapError describeFormat:@"State should be '%@' got '%@", FBTestDaemonConnectionStateReadyToExecuteTestPlan, self.state];
-    return [FBFuture futureWithResult:[self concludeWithResult:[FBTestDaemonResult failedInError:error]]];
+    NSError *error = [[XCTestBootstrapError
+      describeFormat:@"State should be '%@' got '%@", FBTestDaemonConnectionStateReadyToExecuteTestPlan, self.state]
+      build];
+    [self concludeWithError:error];
+    return [FBFuture futureWithError:error];
   }
 
   [self.logger log:@"Daemon Notified of start of test plan"];
   self.state = FBTestDaemonConnectionStateExecutingTestPlan;
-  return [FBFuture futureWithResult:FBTestDaemonResult.success];
+  return FBFuture.empty;
 }
 
-- (FBFuture<FBTestDaemonResult *> *)notifyTestPlanEnded
+- (FBFuture<NSNull *> *)notifyTestPlanEnded
 {
   if (self.state != FBTestDaemonConnectionStateExecutingTestPlan) {
-    XCTestBootstrapError *error = [XCTestBootstrapError describeFormat:@"State should be '%@' got '%@", FBTestDaemonConnectionStateExecutingTestPlan, self.state];
-    return [FBFuture futureWithResult:[self concludeWithResult:[FBTestDaemonResult failedInError:error]]];
+    NSError *error = [[XCTestBootstrapError
+      describeFormat:@"State should be '%@' got '%@", FBTestDaemonConnectionStateExecutingTestPlan, self.state]
+      build];
+    [self concludeWithError:error];
+    return [FBFuture futureWithError:error];
   }
 
   [self.logger log:@"Daemon Notified of end of test plan"];
   self.state = FBTestDaemonConnectionStateEndedTestPlan;
-  return [FBFuture futureWithResult:FBTestDaemonResult.success];
+  return FBFuture.empty;
 }
 
-- (FBFuture<FBTestDaemonResult *> *)completed
+- (FBFuture<NSNull *> *)completed
 {
   return self.resultFuture;
 }
 
-- (FBTestDaemonResult *)disconnect
+- (FBFuture<NSNull *> *)disconnect
 {
   [self.logger logFormat:@"Disconnecting Daemon from state '%@'", self.state];
 
-  FBTestDaemonResult *result = nil;
-  if (self.state == FBTestDaemonConnectionStateEndedTestPlan) {
-    result = [self concludeWithResult:FBTestDaemonResult.success];
-  } else {
-    result = [self concludeWithResult:FBTestDaemonResult.clientRequestedDisconnect];
-  }
+  // Disconnect means we've finished without error.
+  [self concludeWithError:nil];
 
   [self.daemonConnection suspend];
   [self.daemonConnection cancel];
@@ -174,7 +176,7 @@ static FBTestDaemonConnectionState const FBTestDaemonConnectionStateResultAvaila
   self.daemonProxy = nil;
   self.daemonProtocolVersion = 0;
 
-  return result;
+  return FBFuture.empty;
 }
 
 #pragma mark Private
@@ -193,11 +195,12 @@ static FBTestDaemonConnectionState const FBTestDaemonConnectionStateResultAvaila
       return [self createDaemonConnectionWithTransport:transport];
     }]
     onQueue:self.target.workQueue handleError:^(NSError *innerError) {
-      XCTestBootstrapError *error = [[XCTestBootstrapError
+      NSError *error = [[[XCTestBootstrapError
         describe:@"Failed to created secondary test manager transport"]
-        causedBy:innerError];
-      [self concludeWithResult:[FBTestDaemonResult failedInError:error]];
-      return [FBFuture futureWithError:error.build];
+        causedBy:innerError]
+        build];
+      [self concludeWithError:error];
+      return [FBFuture futureWithError:error];
     }];
 }
 
@@ -229,23 +232,22 @@ static FBTestDaemonConnectionState const FBTestDaemonConnectionStateResultAvaila
     [self.logger logFormat:@"Got whitelisting response and daemon protocol version %lld", self.daemonProtocolVersion];
     [self.logger log:@"Ready to execute test plan"];
     self.state = FBTestDaemonConnectionStateReadyToExecuteTestPlan;
-    [self.connectFuture resolveWithResult:FBTestDaemonResult.success];
+    [self.connectFuture resolveWithResult:NSNull.null];
   }];
   return connection;
 }
 
-- (FBTestDaemonResult *)daemonDisconnectedWithState:(FBTestDaemonConnectionState)state
+- (FBFuture<NSNull *> *)daemonDisconnectedWithState:(FBTestDaemonConnectionState)state
 {
   [self.logger logFormat:@"Notified that daemon disconnected from state '%@'", state];
-  if (self.result) {
-    return self.result;
-  }
   if (state != FBTestDaemonConnectionStateEndedTestPlan) {
-    XCTestBootstrapError *error = [XCTestBootstrapError
-      describeFormat:@"Disconnected with state %@", state];
-    return [self concludeWithResult:[FBTestDaemonResult failedInError:error]];
+    NSError *error = [[XCTestBootstrapError
+      describeFormat:@"Disconnected before the end of the test plan. %@", state]
+      build];
+    [self concludeWithError:error];
+    return [FBFuture futureWithError:error];
   }
-  return [self concludeWithResult:FBTestDaemonResult.success];
+  return FBFuture.empty;
 }
 
 - (DTXRemoteInvocationReceipt *)setupDaemonConnectionViaLegacyProtocol
@@ -264,24 +266,18 @@ static FBTestDaemonConnectionState const FBTestDaemonConnectionStateResultAvaila
   return receipt;
 }
 
-- (FBTestDaemonResult *)concludeWithResult:(FBTestDaemonResult *)result
+- (void)concludeWithError:(NSError *)error
 {
-  if (self.result) {
-    return self.result;
-  }
-  [self.logger logFormat:@"Daemon Connection Ended with result: %@", result];
-  self.result = result;
   self.state = FBTestDaemonConnectionStateResultAvailable;
-  NSError *error = result.error;
   if (error) {
+    [self.logger logFormat:@"Daemon Connection ended in error: %@", error];
     [self.resultFuture resolveWithError:error];
     [self.connectFuture resolveWithError:error];
   } else {
-    [self.resultFuture resolveWithResult:result];
-    [self.connectFuture resolveWithResult:result];
+    [self.logger log:@"Daemon Connection ended normally"];
+    [self.resultFuture resolveWithResult:NSNull.null];
+    [self.connectFuture resolveWithResult:NSNull.null];
   }
-
-  return result;
 }
 
 @end

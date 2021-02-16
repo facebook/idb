@@ -13,7 +13,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class DTXConnection;
 @class DVTDevice;
-@class FBTestDaemonResult;
 @class FBTestManagerContext;
 @class XCTestBootstrapError;
 
@@ -49,7 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that resolves when the Daemon Connection is established.
  */
-- (FBFuture<FBTestDaemonResult *> *)connect;
+- (FBFuture<NSNull *> *)connect;
 
 /**
  Notifies the Connection that the Test Plan has started.
@@ -57,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that resolves when the notification is successful.
  */
-- (FBFuture<FBTestDaemonResult *> *)notifyTestPlanStarted;
+- (FBFuture<NSNull *> *)notifyTestPlanStarted;
 
 /**
  Notifies the Connection that the Test Plan has ended.
@@ -65,21 +64,19 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that resolves when the notification is successful.
  */
-- (FBFuture<FBTestDaemonResult *> *)notifyTestPlanEnded;
+- (FBFuture<NSNull *> *)notifyTestPlanEnded;
 
 /**
  Checks that a Result is available.
  
  @return a Future that resolves when the daemon has completed it's work.
  */
-- (FBFuture<FBTestDaemonResult *> *)completed;
+- (FBFuture<NSNull *> *)completed;
 
 /**
  Disconnects any active connection.
-
- @return a Future that resolves when the disconnection has completed.
  */
-- (FBTestDaemonResult *)disconnect;
+- (FBFuture<NSNull *> *)disconnect;
 
 @end
 
