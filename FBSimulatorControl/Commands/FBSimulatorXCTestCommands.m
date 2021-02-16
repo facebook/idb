@@ -190,8 +190,8 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
   return [[[FBManagedTestRunStrategy
     strategyWithTarget:self.simulator configuration:testLaunchConfiguration reporter:reporter logger:logger testPreparationStrategy:testPreparationStrategy]
     connectAndStart]
-    onQueue:self.simulator.asyncQueue map:^(FBFuture<FBTestManagerResult *> *executionFinished) {
-      return FBiOSTargetOperationFromFuture([executionFinished mapReplace:NSNull.null]);
+    onQueue:self.simulator.asyncQueue map:^(FBFuture<NSNull *> *executionFinished) {
+      return FBiOSTargetOperationFromFuture(executionFinished);
     }];
 }
 

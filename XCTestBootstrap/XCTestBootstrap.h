@@ -18,7 +18,6 @@
 #import <XCTestBootstrap/FBTestBundle.h>
 #import <XCTestBootstrap/FBTestConfiguration.h>
 #import <XCTestBootstrap/FBTestManagerAPIMediator.h>
-#import <XCTestBootstrap/FBTestManagerResult.h>
 #import <XCTestBootstrap/FBTestManagerResultSummary.h>
 #import <XCTestBootstrap/FBTestManagerTestReporter.h>
 #import <XCTestBootstrap/FBTestManagerTestReporterBase.h>

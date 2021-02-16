@@ -10,7 +10,6 @@
 #import "FBProductBundle.h"
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestManagerContext.h"
-#import "FBTestManagerResult.h"
 #import "FBTestManagerTestReporter.h"
 #import "FBTestRunnerConfiguration.h"
 #import "FBXCTestPreparationStrategy.h"
@@ -57,7 +56,7 @@
 
 #pragma mark Public Methods
 
-- (FBFuture<FBFuture<FBTestManagerResult *> *> *)connectAndStart
+- (FBFuture<FBFuture<NSNull *> *> *)connectAndStart
 {
   NSParameterAssert(self.configuration.applicationLaunchConfiguration);
   NSParameterAssert(self.configuration.testBundlePath);
@@ -109,12 +108,8 @@
 
       return [[mediator
         connect]
-        onQueue:target.workQueue fmap:^(FBTestManagerResult *connectResult) {
-          NSError *connectError = connectResult.error;
-          if (connectError) {
-            return [FBFuture futureWithError:connectError];
-          }
-          FBFuture<FBTestManagerResult *> *executionFinished = [[mediator
+        onQueue:target.workQueue fmap:^(id _) {
+          FBFuture<NSNull *> *executionFinished = [[mediator
             execute]
             onQueue:target.workQueue respondToCancellation:^{
               return [mediator disconnect];

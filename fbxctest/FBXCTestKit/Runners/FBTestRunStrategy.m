@@ -112,7 +112,7 @@
 
   return [[[[[[runner
     connectAndStart]
-    onQueue:self.target.workQueue fmap:^(FBFuture<FBTestManagerResult *> *executionFinished) {
+    onQueue:self.target.workQueue fmap:^(FBFuture<NSNull *> *executionFinished) {
       FBFuture<id> *startedVideoRecording = self.configuration.videoRecordingPath != nil
         ? (FBFuture<id> *) [self.target startRecordingToFile:self.configuration.videoRecordingPath]
         : (FBFuture<id> *) FBFuture.empty;
@@ -124,23 +124,23 @@
       return [FBFuture futureWithFutures:@[[FBFuture futureWithResult:executionFinished], startedVideoRecording, startedTailLog]];
     }]
     onQueue:self.target.workQueue fmap:^(NSArray<id> *results) {
-      FBFuture<FBTestManagerResult *> *executionFinished = results[0];
+      FBFuture<NSNull *> *executionFinished = results[0];
       if (results[2] != nil && ![results[2] isEqual:NSNull.null]) {
         tailLogOperation = results[2];
       }
       return executionFinished;
     }]
-    onQueue:self.target.workQueue fmap:^(FBTestManagerResult *result) {
+    onQueue:self.target.workQueue chain:^(FBFuture<NSNull *> *executionFinished) {
       FBFuture *stoppedVideoRecording = self.configuration.videoRecordingPath != nil
         ? [self.target stopRecording]
         : FBFuture.empty;
       FBFuture *stopTailLog = tailLogOperation != nil
         ? [tailLogOperation.completed cancel]
         : FBFuture.empty;
-      return [FBFuture futureWithFutures:@[[FBFuture futureWithResult:result], stoppedVideoRecording, stopTailLog]];
+      return [FBFuture futureWithFutures:@[[FBFuture futureWithResult:executionFinished], stoppedVideoRecording, stopTailLog]];
     }]
     onQueue:self.target.workQueue fmap:^ FBFuture<NSNull *> * (NSArray<id> *results) {
-      FBTestManagerResult *result = results[0];
+      FBFuture<NSNull *> *executionFinished = results[0];
       if (self.configuration.videoRecordingPath != nil) {
         [self.reporter didRecordVideoAtPath:self.configuration.videoRecordingPath];
       }
@@ -149,14 +149,9 @@
         [self.reporter didSaveOSLogAtPath:self.configuration.osLogPath];
       }
 
-      if (result.crash) {
-        return [[FBXCTestError
-          describeFormat:@"The Application Crashed during the Test Run\n%@", result.crash]
-          failFuture];
-      }
-      if (result.error) {
-        [self.logger logFormat:@"Failed to execute test bundle %@", result.error];
-        return [FBFuture futureWithError:result.error];
+      NSError *executionError = executionFinished.error;
+      if (executionError) {
+        return [FBFuture futureWithError:executionError];
       }
       return FBFuture.empty;
     }]

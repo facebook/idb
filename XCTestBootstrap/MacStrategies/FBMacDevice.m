@@ -359,8 +359,8 @@
 
   return [[testRunStrategy
     connectAndStart]
-    onQueue:self.asyncQueue map:^(FBFuture<FBTestManagerResult *> *executionFinished) {
-      return FBiOSTargetOperationFromFuture([executionFinished mapReplace:NSNull.null]);
+    onQueue:self.asyncQueue map:^(FBFuture<NSNull *> *executionFinished) {
+      return FBiOSTargetOperationFromFuture(executionFinished);
     }];
 }
 

@@ -12,7 +12,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBTestManagerContext;
-@class FBTestManagerResult;
 
 @protocol FBControlCoreLogger;
 @protocol FBiOSTarget;
@@ -54,7 +53,7 @@ extern const NSInteger FBProtocolMinimumVersion;
 
  @return A future wrapping the TestManagerResult.
  */
-- (FBFuture<FBTestManagerResult *> *)connect;
+- (FBFuture<NSNull *> *)connect;
 
 /**
  Executes the Test Plan over the previously-established 'testmanagerd' connection.
@@ -63,14 +62,14 @@ extern const NSInteger FBProtocolMinimumVersion;
 
  @return A future wrapping the TestManagerResult.
  */
-- (FBFuture<FBTestManagerResult *> *)execute;
+- (FBFuture<NSNull *> *)execute;
 
 /**
  Terminates connection between test testmanagerd and the test bundle execution
 
  @return A future wrapping the TestManagerResult.
  */
-- (FBFuture<FBTestManagerResult *> *)disconnect;
+- (FBFuture<NSNull *> *)disconnect;
 
 @end
 

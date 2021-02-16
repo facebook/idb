@@ -29,7 +29,6 @@
 #import "FBTestBundleConnection.h"
 #import "FBTestDaemonConnection.h"
 #import "FBTestManagerContext.h"
-#import "FBTestManagerResult.h"
 #import "FBTestApplicationLaunchStrategy.h"
 
 const NSInteger FBProtocolVersion = 0x16;
@@ -50,7 +49,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 @property (nonatomic, strong, readonly) FBTestBundleConnection *bundleConnection;
 @property (nonatomic, strong, readonly) FBTestDaemonConnection *daemonConnection;
-@property (nonatomic, strong, nullable, readwrite) FBTestManagerResult *result;
+@property (nonatomic, assign, readwrite) BOOL startedExecution;
 
 @end
 
@@ -94,79 +93,45 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 {
   return [NSString stringWithFormat:
     @"TestManager %@ for (%@)",
-    self.result ?: @"Awaiting Result",
+    self.startedExecution ? @"Execution Started" : @"Execution not Started.",
     self.context
   ];
 }
 
 #pragma mark - Public
 
-- (FBFuture<FBTestManagerResult *> *)connect
+- (FBFuture<NSNull *> *)connect
 {
-  if (self.result) {
-    [self.logger.error log:@"FBTestManager does not support reconnecting to testmanagerd. You should create new FBTestManager to establish new connection"];
-    return [FBFuture futureWithResult:self.result];
+  if (self.startedExecution) {
+    return [[XCTestBootstrapError
+      describe:@"FBTestManager does not support reconnecting to testmanagerd. You should create new FBTestManager to establish new connection"]
+      failFuture];
   }
+  self.startedExecution = YES;
   return [[self.bundleConnection
     connect]
-    onQueue:self.target.workQueue
-    chain:^(FBFuture<NSNull *> *bundleResult) {
-      NSError *bundleError = bundleResult.error;
-      if (bundleError) {
-        return [FBFuture futureWithResult:[FBTestManagerResult bundleConnectionFailed:bundleError]];
-      }
-      return [[self.daemonConnection
-        connect]
-        onQueue:self.target.workQueue chain:^ FBFuture<FBTestManagerResult *> * (FBFuture<NSNull *> *daemonResult) {
-          NSError *daemonError = daemonResult.error;
-          if (daemonError) {
-            return [FBFuture futureWithResult:[FBTestManagerResult daemonConnectionFailed:daemonError]];
-          }
-          return [FBFuture futureWithResult:FBTestManagerResult.success];
-        }];
+    onQueue:self.target.workQueue fmap:^(id _) {
+      return [[self
+        daemonConnection]
+        connect];
     }];
 }
 
-- (FBFuture<FBTestManagerResult *> *)execute
+- (FBFuture<NSNull *> *)execute
 {
-  id<FBTestManagerTestReporter> reporter = self.reporter;
   return [[[FBFuture
     futureWithFutures:@[self.bundleConnection.startTestPlan, self.daemonConnection.notifyTestPlanStarted]]
-    onQueue:self.target.workQueue fmap:^ FBFuture<NSArray<id> *> * (FBTestManagerResult *result) {
+    onQueue:self.target.workQueue fmap:^ FBFuture<NSArray<id> *> * (id _) {
       return [FBFuture futureWithFutures:@[self.bundleConnection.completeTestRun, self.daemonConnection.completed]];
     }]
-    onQueue:self.target.workQueue chain:^ FBFuture <FBTestManagerResult *> * (FBFuture<NSArray<id> *> *future){
-      NSError *error = future.error;
-      if (error) {
-        [reporter testManagerMediator:self testPlanDidFailWithMessage:error.description];
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:FBTestManagerResult.success];
-    }];
+    mapReplace:NSNull.null];
 }
 
-- (FBFuture<FBTestManagerResult *> *)disconnect
+- (FBFuture<NSNull *> *)disconnect
 {
   return [[FBFuture
     futureWithFutures:@[[self.bundleConnection disconnect], [self.daemonConnection disconnect]]]
-    onQueue:self.target.workQueue map:^(id _) {
-      if (self.result) {
-        return [FBFuture futureWithResult:self.result];
-      }
-      return [FBFuture futureWithResult:[self concludeWithResult:FBTestManagerResult.clientRequestedDisconnect]];
-    }];
-}
-
-#pragma mark Reporting
-
-- (FBTestManagerResult *)concludeWithResult:(FBTestManagerResult *)result
-{
-  if (self.result) {
-    return self.result;
-  }
-
-  self.result = result;
-  return result;
+    mapReplace:NSNull.null];
 }
 
 #pragma mark - XCTestManager_IDEInterface protocol
@@ -273,11 +238,12 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 - (id)_XCT_testSuite:(NSString *)tests didStartAt:(NSString *)time
 {
   if (tests.length == 0) {
-    XCTestBootstrapError *error = [[[XCTestBootstrapError
+    NSError *error = [[[[XCTestBootstrapError
       describe:@"Test reported a suite with nil or empty identifier. This is unsupported."]
       inDomain:@"IDETestOperationsObserverErrorDomain"]
-      code:0x9];
-    [self concludeWithResult:[FBTestManagerResult internalError:error]];
+      code:0x9]
+      build];
+    [self.logger logFormat:@"%@", error];
   }
 
   return nil;
