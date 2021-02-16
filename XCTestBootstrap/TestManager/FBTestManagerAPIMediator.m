@@ -108,13 +108,12 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
       failFuture];
   }
   self.startedExecution = YES;
-  return [[self.bundleConnection
-    connect]
-    onQueue:self.target.workQueue fmap:^(id _) {
-      return [[self
-        daemonConnection]
-        connect];
-    }];
+  return [[FBFuture
+    futureWithFutures:@[
+      [self.bundleConnection connect],
+      [self.daemonConnection connect],
+    ]]
+    mapReplace:NSNull.null];
 }
 
 - (FBFuture<NSNull *> *)execute
