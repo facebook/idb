@@ -15,36 +15,6 @@
 #import "FBSimulatorAgentOperation.h"
 #import "FBSimulatorError.h"
 
-@interface FBSimulatorLogOperation : NSObject <FBLogOperation>
-
-@property (nonatomic, strong, readonly) FBSimulatorAgentOperation *operation;
-
-@end
-
-@implementation FBSimulatorLogOperation
-
-@synthesize consumer = _consumer;
-
-- (instancetype)initWithOperation:(FBSimulatorAgentOperation *)operation consumer:(id<FBDataConsumer>)consumer
-{
-  self = [self init];
-  if (!self) {
-    return nil;
-  }
-
-  _operation = operation;
-  _consumer = consumer;
-
-  return self;
-}
-
-- (FBFuture<NSNull *> *)completed
-{
-  return [self.operation.statLoc mapReplace:NSNull.null];
-}
-
-@end
-
 @interface FBSimulatorLogCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
@@ -79,7 +49,7 @@
   return (FBFuture<id<FBLogOperation>> *) [[self
     startLogCommand:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer]
     onQueue:self.simulator.workQueue map:^(FBSimulatorAgentOperation *operation) {
-      return [[FBSimulatorLogOperation alloc] initWithOperation:operation consumer:consumer];
+      return [[FBProcessLogOperation alloc] initWithProcess:operation consumer:consumer];
     }];
 }
 

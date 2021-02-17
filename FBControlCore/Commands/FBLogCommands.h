@@ -14,6 +14,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBDataConsumer;
+@protocol FBLaunchedProcess;
 
 /**
  A logging operation of indeterminate duration.
@@ -24,6 +25,26 @@ NS_ASSUME_NONNULL_BEGIN
  The consumer of the operation.
  */
 @property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+
+@end
+
+/**
+ A log operation that is contained within an FBLaunchedProcess
+ */
+@interface FBProcessLogOperation : NSObject <FBLogOperation>
+
+/**
+ The wrapped launched process.
+ */
+@property (nonatomic, strong, readonly) id<FBLaunchedProcess> process;
+
+/**
+ The Designated Initializer
+
+ @param process the wrapped process.
+ @param consumer the wrapped consumer.
+ */
+- (instancetype)initWithProcess:(id<FBLaunchedProcess>)process consumer:(id<FBDataConsumer>)consumer;
 
 @end
 
