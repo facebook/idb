@@ -46,6 +46,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (instancetype)initWithProcess:(id<FBLaunchedProcess>)process consumer:(id<FBDataConsumer>)consumer;
 
+/**
+ Inserts the base "stream" argument into the argument array for os_log, if a subcommand is not already present.
+
+ @param arguments the existing arguments
+ @return a new arguments array containing either the original subcommand, or a stream subcommand.
+ */
++ (NSArray<NSString *> *)osLogArgumentsInsertStreamIfNeeded:(NSArray<NSString *> *)arguments;
+
 @end
 
 /**

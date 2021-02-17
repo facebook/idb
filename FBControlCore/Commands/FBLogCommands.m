@@ -31,5 +31,36 @@
   return [self.process.statLoc mapReplace:NSNull.null];
 }
 
++ (NSArray<NSString *> *)osLogArgumentsInsertStreamIfNeeded:(NSArray<NSString *> *)arguments
+{
+  NSString *firstArgument = arguments.firstObject;
+  if (!firstArgument) {
+    return @[@"stream"];
+  }
+  if ([self.osLogSubcommands containsObject:firstArgument]) {
+    return arguments;
+  }
+  return [@[@"stream"] arrayByAddingObjectsFromArray:arguments];
+}
+
+#pragma mark Private
+
++ (NSSet<NSString *> *)osLogSubcommands
+{
+  static dispatch_once_t onceToken;
+  static NSSet<NSString *> *subcommands;
+  dispatch_once(&onceToken, ^{
+    subcommands = [NSSet setWithArray:@[
+      @"collect",
+      @"config",
+      @"erase",
+      @"show",
+      @"stream",
+      @"stats",
+    ]];
+  });
+  return subcommands;
+}
+
 @end
 

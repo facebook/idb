@@ -46,8 +46,8 @@
 
 - (FBFuture<id<FBLogOperation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
-  return (FBFuture<id<FBLogOperation>> *) [[self
-    startLogCommand:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer]
+  return [[self
+    startLogCommand:[FBProcessLogOperation osLogArgumentsInsertStreamIfNeeded:arguments] consumer:consumer]
     onQueue:self.simulator.workQueue map:^(FBSimulatorAgentOperation *operation) {
       return [[FBProcessLogOperation alloc] initWithProcess:operation consumer:consumer];
     }];
