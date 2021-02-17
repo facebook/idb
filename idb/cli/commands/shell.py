@@ -33,7 +33,6 @@ class ShellCommand(ClientCommand):
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         # Setup
         root_command = none_throws(self.root_command)
-        last_success = True
         # Prompt loop
         while True:
             sys.stdout.flush()
@@ -42,9 +41,6 @@ class ShellCommand(ClientCommand):
             # Special shell commands
             if new_args == ["exit"]:
                 return
-            elif new_args == ["last_success"]:
-                print("1" if last_success else "0")
-                continue
             # Run the specified command
             try:
                 args = self.parser.parse_args(new_args)
@@ -53,7 +49,7 @@ class ShellCommand(ClientCommand):
                     print("shell commands must be client commands", file=sys.stderr)
                     continue
                 await command.run_with_client(args, client)
-                last_success = True
+                print("SUCCESS=1")
             except IdbException as e:
                 print(e.args[0], file=sys.stderr)
-                last_success = False
+                print("SUCCESS=0")
