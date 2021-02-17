@@ -83,40 +83,7 @@
     }];
 }
 
-- (FBFuture<NSArray<NSString *> *> *)logLinesWithArguments:(NSArray<NSString *> *)arguments
-{
-  id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
-  return [[self
-    runLogCommandAndWait:arguments consumer:consumer]
-    onQueue:self.simulator.asyncQueue fmap:^(id _){
-      NSArray<NSString *> *lines = consumer.lines;
-      if (lines.count < 2) {
-        return [FBFuture futureWithResult:@[]];
-      }
-      return [FBFuture futureWithResult:[lines subarrayWithRange:NSMakeRange(1, lines.count - 1)]];
-  }];
-}
-
 #pragma mark Private
-
-- (FBFuture<NSNull *> *)runLogCommandAndWait:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
-{
-  return [[[self
-    startLogCommand:arguments consumer:consumer]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorAgentOperation *operation) {
-      // Re-Map from Launch to Exit
-      return [operation statLoc];
-    }]
-    onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSNull *> * (NSNumber *statLoc){
-      // Check the exit code.
-      int value = statLoc.intValue;
-      int exitCode = WEXITSTATUS(value);
-      if (exitCode != 0) {
-        return [FBFuture futureWithError:[FBSimulatorError errorForFormat:@"log exited with code %d, arguments %@", exitCode, arguments]];
-      }
-      return FBFuture.empty;
-  }];
-}
 
 - (FBFuture<FBSimulatorAgentOperation *> *)startLogCommand:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {

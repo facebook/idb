@@ -405,12 +405,6 @@
   return nil;
 }
 
-- (nonnull FBFuture<NSArray<NSString *> *> *)logLinesWithArguments:(nonnull NSArray<NSString *> *)arguments
-{
-  NSAssert(nil, @"logLinesWithArguments: is not yet supported");
-  return nil;
-}
-
 - (nonnull FBFuture<id<FBiOSTargetOperation>> *)tailLog:(nonnull NSArray<NSString *> *)arguments consumer:(nonnull id<FBDataConsumer>)consumer
 {
   NSAssert(nil, @"tailLog:consumer: is not yet supported");
