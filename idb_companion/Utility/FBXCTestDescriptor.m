@@ -220,14 +220,21 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 + (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBTestLaunchConfiguration *)configuration target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   FBXCTestReporterAdapter *adapter = [FBXCTestReporterAdapter adapterWithReporter:reporter];
-  return [[target installedApplicationWithBundleID:configuration.targetApplicationBundleID ?: configuration.applicationLaunchConfiguration.bundleID] onQueue:target.workQueue fmap:^(FBInstalledApplication *installedApp) {
-    NSString *binaryPath = [FBProductBundleBuilder productBundleFromInstalledApplication:installedApp error:nil].binaryPath;
-    return [[target
-      startTestWithLaunchConfiguration:configuration reporter:adapter logger:logger]
-      onQueue:target.workQueue map:^(id<FBiOSTargetOperation> operation) {
-        return [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:configuration.resultBundlePath coveragePath:configuration.coveragePath binaryPath:binaryPath reporter:reporter logger:logger completed:operation.completed queue:target.workQueue];
-      }];
-  }];
+  return [[target
+    installedApplicationWithBundleID:configuration.targetApplicationBundleID ?: configuration.applicationLaunchConfiguration.bundleID]
+    onQueue:target.workQueue map:^(FBInstalledApplication *installedApp) {
+      NSString *binaryPath = [FBProductBundleBuilder productBundleFromInstalledApplication:installedApp error:nil].binaryPath;
+      FBFuture<NSNull *> *testCompleted = [target runTestWithLaunchConfiguration:configuration reporter:adapter logger:logger];
+      return [[FBIDBTestOperation alloc]
+        initWithConfiguration:configuration
+        resultBundlePath:configuration.resultBundlePath
+        coveragePath:configuration.coveragePath
+        binaryPath:binaryPath
+        reporter:reporter
+        logger:logger
+        completed:testCompleted
+        queue:target.workQueue];
+    }];
 }
 
 @end

@@ -29,9 +29,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param testLaunchConfiguration the configuration used for the test launch.
  @param reporter the reporter to report to.
  @param logger the logger to log to.
- @return a Future, wrapping a test operation.
+ @return a Future that resolves when the test run has completed.
  */
-- (FBFuture<id<FBiOSTargetOperation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
+- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Lists the testables for a provided test bundle.
