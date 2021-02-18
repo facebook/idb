@@ -101,18 +101,17 @@
     strategyWithTestLaunchConfiguration:testLaunchConfiguration
     workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]];
 
-  FBManagedTestRunStrategy *runner = [FBManagedTestRunStrategy
-    strategyWithTarget:self.target
+  FBFuture<NSNull *> *executionFinished = [FBManagedTestRunStrategy
+    runToCompletionWithTarget:self.target
     configuration:testLaunchConfiguration
     reporter:[FBXCTestReporterAdapter adapterWithReporter:self.reporter]
-    logger:self.target.logger
-    testPreparationStrategy:testPreparationStrategy];
+    testPreparationStrategy:testPreparationStrategy
+    logger:self.target.logger];
 
   __block id<FBiOSTargetOperation> tailLogOperation = nil;
 
-  return [[[[[[runner
-    connectAndStart]
-    onQueue:self.target.workQueue fmap:^(FBFuture<NSNull *> *executionFinished) {
+  return [[[[[FBFuture
+    onQueue:self.target.workQueue resolve:^{
       FBFuture<id> *startedVideoRecording = self.configuration.videoRecordingPath != nil
         ? (FBFuture<id> *) [self.target startRecordingToFile:self.configuration.videoRecordingPath]
         : (FBFuture<id> *) FBFuture.empty;
@@ -121,26 +120,24 @@
         ? (FBFuture<id> *) [self _startTailLogToFile:self.configuration.osLogPath]
         : (FBFuture<id> *) FBFuture.empty;
 
-      return [FBFuture futureWithFutures:@[[FBFuture futureWithResult:executionFinished], startedVideoRecording, startedTailLog]];
+      return [FBFuture futureWithFutures:@[startedVideoRecording, startedTailLog]];
     }]
     onQueue:self.target.workQueue fmap:^(NSArray<id> *results) {
-      FBFuture<NSNull *> *executionFinished = results[0];
-      if (results[2] != nil && ![results[2] isEqual:NSNull.null]) {
-        tailLogOperation = results[2];
+      if (results[1] != nil && ![results[1] isEqual:NSNull.null]) {
+        tailLogOperation = results[1];
       }
       return executionFinished;
     }]
-    onQueue:self.target.workQueue chain:^(FBFuture<NSNull *> *executionFinished) {
+    onQueue:self.target.workQueue chain:^(id _) {
       FBFuture *stoppedVideoRecording = self.configuration.videoRecordingPath != nil
         ? [self.target stopRecording]
         : FBFuture.empty;
       FBFuture *stopTailLog = tailLogOperation != nil
         ? [tailLogOperation.completed cancel]
         : FBFuture.empty;
-      return [FBFuture futureWithFutures:@[[FBFuture futureWithResult:executionFinished], stoppedVideoRecording, stopTailLog]];
+      return [FBFuture futureWithFutures:@[stoppedVideoRecording, stopTailLog]];
     }]
-    onQueue:self.target.workQueue fmap:^ FBFuture<NSNull *> * (NSArray<id> *results) {
-      FBFuture<NSNull *> *executionFinished = results[0];
+    onQueue:self.target.workQueue fmap:^ FBFuture<NSNull *> * (id _) {
       if (self.configuration.videoRecordingPath != nil) {
         [self.reporter didRecordVideoAtPath:self.configuration.videoRecordingPath];
       }

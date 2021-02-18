@@ -350,18 +350,13 @@
   FBMacTestPreparationStrategy *testPreparationStrategy = [FBMacTestPreparationStrategy
    strategyWithTestLaunchConfiguration:testLaunchConfiguration
    workingDirectory:self.workingDirectory];
-  FBManagedTestRunStrategy *testRunStrategy = [FBManagedTestRunStrategy
-    strategyWithTarget:self
+
+  return [FBManagedTestRunStrategy
+    runToCompletionWithTarget:self
     configuration:testLaunchConfiguration
     reporter:reporter
-    logger:logger
-    testPreparationStrategy:testPreparationStrategy];
-
-  return [[testRunStrategy
-    connectAndStart]
-    onQueue:self.asyncQueue fmap:^(FBFuture<NSNull *> *executionFinished) {
-      return executionFinished;
-    }];
+    testPreparationStrategy:testPreparationStrategy
+    logger:logger];
 }
 
 - (NSString *)uniqueIdentifier

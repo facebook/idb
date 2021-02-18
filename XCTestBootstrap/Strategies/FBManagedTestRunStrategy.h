@@ -30,20 +30,11 @@ NS_ASSUME_NONNULL_BEGIN
  @param target the Target to use.
  @param configuration the configuration to use.
  @param reporter the reporter to use.
- @param logger the logger to use.
  @param testPreparationStrategy Test preparation strategy to use
+ @param logger the logger to use.
  @return a new Test Run Strategy instance.
  */
-+ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategy:(id<FBXCTestPreparationStrategy>)testPreparationStrategy;
-
-#pragma mark Public Methods
-
-/**
- Starts the Connection to the Test Host.
-
- @return A future that resolves when the test has started. The value returned is a future that resolves when execution is finished.
- */
-- (FBFuture<FBFuture<NSNull *> *> *)connectAndStart;
++ (FBFuture<NSNull *> *)runToCompletionWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter testPreparationStrategy:(id<FBXCTestPreparationStrategy>)testPreparationStrategy logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
