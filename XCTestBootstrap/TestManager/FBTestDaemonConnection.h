@@ -39,44 +39,8 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a new Strategy
  */
-+ (instancetype)connectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBFutureContext<NSNull *> *)daemonConnectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger;
 
-#pragma mark Lifecycle
-
-/**
- Asynchronously Connects the Daemon.
-
- @return a Future that resolves when the Daemon Connection is established.
- */
-- (FBFuture<NSNull *> *)connect;
-
-/**
- Notifies the Connection that the Test Plan has started.
- Test Events will be delivered asynchronously to the interface.
-
- @return a Future that resolves when the notification is successful.
- */
-- (FBFuture<NSNull *> *)notifyTestPlanStarted;
-
-/**
- Notifies the Connection that the Test Plan has ended.
- Test Events will be delivered asynchronously to the interface.
-
- @return a Future that resolves when the notification is successful.
- */
-- (FBFuture<NSNull *> *)notifyTestPlanEnded;
-
-/**
- Checks that a Result is available.
- 
- @return a Future that resolves when the daemon has completed it's work.
- */
-- (FBFuture<NSNull *> *)completed;
-
-/**
- Disconnects any active connection.
- */
-- (FBFuture<NSNull *> *)disconnect;
 
 @end
 

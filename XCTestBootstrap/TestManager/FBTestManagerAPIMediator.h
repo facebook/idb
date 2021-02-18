@@ -11,6 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class DTXConnection;
 @class FBTestManagerContext;
 
 @protocol FBControlCoreLogger;
@@ -30,7 +31,7 @@ extern const NSInteger FBProtocolMinimumVersion;
  */
 @interface FBTestManagerAPIMediator : NSObject
 
-#pragma mark Initializers
+#pragma mark Public
 
 /**
  Performs the entire process of test execution.
@@ -46,6 +47,17 @@ extern const NSInteger FBProtocolMinimumVersion;
  @return A future that resolves when test execution has fully completed, or an error occured with the execution.
  */
 + (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
+
+/**
+ Establishes a connection to the testmanagerd service.
+ The wrapped DTXConnection is initialized but `resume` must be called on it to be used.
+
+ @param target the target to connect to.
+ @param queue the queue to use.
+ @param logger the logger to use.
+ @return a Future Context wrapping the DTXConnection.
+ */
++ (FBFutureContext<DTXConnection *> *)testmanagerdConnectionWithTarget:(id<FBiOSTarget>)target queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

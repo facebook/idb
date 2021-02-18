@@ -25,14 +25,6 @@
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestManagerContext.h"
 
-typedef NSString *FBTestDaemonConnectionState NS_STRING_ENUM;
-static FBTestDaemonConnectionState const FBTestDaemonConnectionStateNotConnected = @"not connected";
-static FBTestDaemonConnectionState const FBTestDaemonConnectionStateConnecting = @"connecting";
-static FBTestDaemonConnectionState const FBTestDaemonConnectionStateReadyToExecuteTestPlan = @"ready to execute test plan";
-static FBTestDaemonConnectionState const FBTestDaemonConnectionStateExecutingTestPlan = @"executing test plan";
-static FBTestDaemonConnectionState const FBTestDaemonConnectionStateEndedTestPlan = @"ended test plan";
-static FBTestDaemonConnectionState const FBTestDaemonConnectionStateResultAvailable = @"result available";
-
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
 #pragma clang diagnostic ignored "-Wincomplete-implementation"
@@ -45,23 +37,16 @@ static FBTestDaemonConnectionState const FBTestDaemonConnectionStateResultAvaila
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
 @property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
 
-@property (atomic, strong, readwrite) FBTestDaemonConnectionState state;
-@property (atomic, assign, readwrite) long long daemonProtocolVersion;
-@property (atomic, nullable, strong, readwrite) id<XCTestManager_DaemonConnectionInterface> daemonProxy;
-@property (atomic, nullable, strong, readwrite) DTXConnection *daemonConnection;
-
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *connectFuture;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *resultFuture;
-
 @end
 
 @implementation FBTestDaemonConnection
 
 #pragma mark Initializers
 
-+ (instancetype)connectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
++ (FBFutureContext<NSNull *> *)daemonConnectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithWithContext:context target:target interface:interface requestQueue:requestQueue logger:logger];
+  FBTestDaemonConnection *connection = [[self alloc] initWithWithContext:context target:target interface:interface requestQueue:requestQueue logger:logger];
+  return [connection connect];
 }
 
 - (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
@@ -77,20 +62,10 @@ static FBTestDaemonConnectionState const FBTestDaemonConnectionStateResultAvaila
   _requestQueue = requestQueue;
   _logger = logger;
 
-  _state = FBTestDaemonConnectionStateNotConnected;
-
-  _connectFuture = FBMutableFuture.new;
-  _resultFuture = FBMutableFuture.new;
-
   return self;
 }
 
 #pragma mark NSObject
-
-- (NSString *)description
-{
-  return [NSString stringWithFormat:@"Test Daemon Connection %@", self.state];
-}
 
 #pragma mark Delegate Forwarding
 
@@ -115,169 +90,72 @@ static FBTestDaemonConnectionState const FBTestDaemonConnectionStateResultAvaila
 
 #pragma mark Public
 
-- (FBFuture<NSNull *> *)connect
+- (FBFutureContext<NSNull *> *)connect
 {
-  if (self.state != FBTestDaemonConnectionStateNotConnected) {
-    NSError *error = [[XCTestBootstrapError
-      describeFormat:@"State should be '%@' got '%@", FBTestDaemonConnectionStateNotConnected, self.state]
-      build];
-    [self concludeWithError:error];
-    return [FBFuture futureWithError:error];
-  }
-  [self doConnect];
-  return self.connectFuture;
-}
-
-- (FBFuture<NSNull *> *)notifyTestPlanStarted
-{
-  if (self.state != FBTestDaemonConnectionStateReadyToExecuteTestPlan) {
-    NSError *error = [[XCTestBootstrapError
-      describeFormat:@"State should be '%@' got '%@", FBTestDaemonConnectionStateReadyToExecuteTestPlan, self.state]
-      build];
-    [self concludeWithError:error];
-    return [FBFuture futureWithError:error];
-  }
-
-  [self.logger log:@"Daemon Notified of start of test plan"];
-  self.state = FBTestDaemonConnectionStateExecutingTestPlan;
-  return FBFuture.empty;
-}
-
-- (FBFuture<NSNull *> *)notifyTestPlanEnded
-{
-  if (self.state != FBTestDaemonConnectionStateExecutingTestPlan) {
-    NSError *error = [[XCTestBootstrapError
-      describeFormat:@"State should be '%@' got '%@", FBTestDaemonConnectionStateExecutingTestPlan, self.state]
-      build];
-    [self concludeWithError:error];
-    return [FBFuture futureWithError:error];
-  }
-
-  [self.logger log:@"Daemon Notified of end of test plan"];
-  self.state = FBTestDaemonConnectionStateEndedTestPlan;
-  return FBFuture.empty;
-}
-
-- (FBFuture<NSNull *> *)completed
-{
-  return self.resultFuture;
-}
-
-- (FBFuture<NSNull *> *)disconnect
-{
-  [self.logger logFormat:@"Disconnecting Daemon from state '%@'", self.state];
-
-  // Disconnect means we've finished without error.
-  [self concludeWithError:nil];
-
-  [self.daemonConnection suspend];
-  [self.daemonConnection cancel];
-  self.daemonConnection = nil;
-  self.daemonProxy = nil;
-  self.daemonProtocolVersion = 0;
-
-  return FBFuture.empty;
+  [self.logger log:@"Starting the daemon connection"];
+  return [[FBTestManagerAPIMediator
+    testmanagerdConnectionWithTarget:self.target queue:self.requestQueue logger:self.logger]
+    onQueue:self.requestQueue pend:^(DTXConnection *connection) {
+      id<XCTestManager_DaemonConnectionInterface> daemonProxy = [self createDaemonProxyWithConnection:connection];
+      return [[FBTestDaemonConnection
+        initateControlSession:daemonProxy testProcess:self.context.testRunnerPID logger:self.logger]
+        mapReplace:NSNull.null];
+    }];
 }
 
 #pragma mark Private
 
-- (void)doConnect
+- (id<XCTestManager_DaemonConnectionInterface>)createDaemonProxyWithConnection:(DTXConnection *)connection
 {
-  self.state = FBTestDaemonConnectionStateConnecting;
-  [self.logger log:@"Starting the daemon connection"];
-
-  [[[self.target
-    transportForTestManagerService]
-    onQueue:self.requestQueue enter:^(NSNumber *socket, FBMutableFuture<NSNull *> *teardown){
-      DTXTransport *transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket.intValue disconnectAction:^{
-        [teardown resolveWithResult:NSNull.null];
-      }];
-      return [self createDaemonConnectionWithTransport:transport];
-    }]
-    onQueue:self.target.workQueue handleError:^(NSError *innerError) {
-      NSError *error = [[[XCTestBootstrapError
-        describe:@"Failed to created secondary test manager transport"]
-        causedBy:innerError]
-        build];
-      [self concludeWithError:error];
-      return [FBFuture futureWithError:error];
-    }];
-}
-
-- (DTXConnection *)createDaemonConnectionWithTransport:(DTXTransport *)transport
-{
-  DTXConnection *connection = [[objc_lookUpClass("DTXConnection") alloc] initWithTransport:transport];
-  [connection registerDisconnectHandler:^{
-    [self daemonDisconnectedWithState:self.state];
-  }];
-  [self.logger logFormat:@"Resuming the daemon connection."];
-  self.daemonConnection = connection;
-
+  // The connection must be started/resumed first.
+  [self.logger log:@"Resuming the daemon testmanagerd connection"];
   [connection resume];
+
   DTXProxyChannel *channel = [connection
     makeProxyChannelWithRemoteInterface:@protocol(XCTestManager_DaemonConnectionInterface)
     exportedInterface:@protocol(XCTestManager_IDEInterface)];
   [channel setExportedObject:self queue:self.target.workQueue];
-  self.daemonProxy = (id<XCTestManager_DaemonConnectionInterface>)channel.remoteObjectProxy;
 
-  [self.logger logFormat:@"Whitelisting test process ID %d", self.context.testRunnerPID];
-  DTXRemoteInvocationReceipt *receipt = [self.daemonProxy _IDE_initiateControlSessionForTestProcessID:@(self.context.testRunnerPID) protocolVersion:@(FBProtocolVersion)];
+  id<XCTestManager_DaemonConnectionInterface> interface = (id<XCTestManager_DaemonConnectionInterface>)channel.remoteObjectProxy;
+  [self.logger logFormat:@"Constructed channel for remote interface XCTestManager_DaemonConnectionInterface %@", interface];
+  return interface;
+}
+
++ (FBFuture<NSNumber *> *)initateControlSession:(id<XCTestManager_DaemonConnectionInterface>)daemonProxy testProcess:(pid_t)testRunnerPID logger:(id<FBControlCoreLogger>)logger
+{
+  FBMutableFuture<NSNumber *> *future = FBMutableFuture.future;
+
+  [logger logFormat:@"Initiating Control Session for %d", testRunnerPID];
+  DTXRemoteInvocationReceipt *receipt = [daemonProxy _IDE_initiateControlSessionForTestProcessID:@(testRunnerPID) protocolVersion:@(FBProtocolVersion)];
+
   [receipt handleCompletion:^(NSNumber *version, NSError *error) {
+    [logger logFormat:@"%@ resolved for %@", receipt, NSStringFromSelector(@selector(_IDE_initiateControlSessionForTestProcessID:protocolVersion:))];
     if (error) {
-      [self.logger log:@"Error in establishing daemon connection, trying legacy protocol"];
-      [self setupDaemonConnectionViaLegacyProtocol];
+      [logger log:@"Error in establishing daemon connection, trying legacy protocol"];
+      [future resolveFromFuture:[self initateControlSessionLegacy:daemonProxy testProcess:testRunnerPID logger:logger]];
       return;
     }
-    self.daemonProtocolVersion = version.integerValue;
-    [self.logger logFormat:@"Got whitelisting response and daemon protocol version %lld", self.daemonProtocolVersion];
-    [self.logger log:@"Ready to execute test plan"];
-    self.state = FBTestDaemonConnectionStateReadyToExecuteTestPlan;
-    [self.connectFuture resolveWithResult:NSNull.null];
+    [logger logFormat:@"Got whitelisting response and daemon protocol version %@", version];
+    [future resolveWithResult:version];
   }];
-  return connection;
+
+  return future;
 }
 
-- (FBFuture<NSNull *> *)daemonDisconnectedWithState:(FBTestDaemonConnectionState)state
++ (FBFuture<NSNumber *> *)initateControlSessionLegacy:(id<XCTestManager_DaemonConnectionInterface>)daemonProxy testProcess:(pid_t)testRunnerPID logger:(id<FBControlCoreLogger>)logger
 {
-  [self.logger logFormat:@"Notified that daemon disconnected from state '%@'", state];
-  if (state != FBTestDaemonConnectionStateEndedTestPlan) {
-    NSError *error = [[XCTestBootstrapError
-      describeFormat:@"Disconnected before the end of the test plan. %@", state]
-      build];
-    [self concludeWithError:error];
-    return [FBFuture futureWithError:error];
-  }
-  return FBFuture.empty;
-}
-
-- (DTXRemoteInvocationReceipt *)setupDaemonConnectionViaLegacyProtocol
-{
-  DTXRemoteInvocationReceipt *receipt = [self.daemonProxy _IDE_initiateControlSessionForTestProcessID:@(self.context.testRunnerPID)];
+  FBMutableFuture<NSNumber *> *future = FBMutableFuture.future;
+  DTXRemoteInvocationReceipt *receipt = [daemonProxy _IDE_initiateControlSessionForTestProcessID:@(testRunnerPID)];
   [receipt handleCompletion:^(NSNumber *version, NSError *error) {
     if (error) {
-      [self.logger logFormat:@"Error in whitelisting response from testmanagerd: %@ (%@), ignoring for now.", error.localizedDescription, error.localizedRecoverySuggestion];
-    } else {
-      self.daemonProtocolVersion = version.integerValue;
-      [self.logger logFormat:@"Got legacy whitelisting response, daemon protocol version is 14"];
+      [logger logFormat:@"Error in whitelisting response from testmanagerd: %@ (%@), ignoring for now.", error.localizedDescription, error.localizedRecoverySuggestion];
+      [future resolveWithError:error];
+      return;
     }
-    [self.logger log:@"Daemon Connection connected via legacy protocol"];
-    self.state = FBTestDaemonConnectionStateReadyToExecuteTestPlan;
+    [logger logFormat:@"Got legacy whitelisting response, daemon protocol version is %@", version];
+    [future resolveWithResult:version];
   }];
-  return receipt;
-}
-
-- (void)concludeWithError:(NSError *)error
-{
-  self.state = FBTestDaemonConnectionStateResultAvailable;
-  if (error) {
-    [self.logger logFormat:@"Daemon Connection ended in error: %@", error];
-    [self.resultFuture resolveWithError:error];
-    [self.connectFuture resolveWithError:error];
-  } else {
-    [self.logger log:@"Daemon Connection ended normally"];
-    [self.resultFuture resolveWithResult:NSNull.null];
-    [self.connectFuture resolveWithResult:NSNull.null];
-  }
+  return future;
 }
 
 @end

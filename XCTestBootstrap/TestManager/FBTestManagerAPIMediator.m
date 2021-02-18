@@ -14,6 +14,7 @@
 #import <DTXConnectionServices/DTXConnection.h>
 #import <DTXConnectionServices/DTXProxyChannel.h>
 #import <DTXConnectionServices/DTXRemoteInvocationReceipt.h>
+#import <DTXConnectionServices/DTXSocketTransport.h>
 #import <DTXConnectionServices/DTXTransport.h>
 
 #import <FBControlCore/FBControlCore.h>
@@ -48,7 +49,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 @property (nonatomic, strong, readonly) NSMutableDictionary *tokenToBundleIDMap;
 
 @property (nonatomic, strong, readonly) FBTestBundleConnection *bundleConnection;
-@property (nonatomic, strong, readonly) FBTestDaemonConnection *daemonConnection;
 
 @end
 
@@ -82,7 +82,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   _loggingForwarder = [FBXCTestManagerLoggingForwarder withIDEInterface:(id<XCTestManager_IDEInterface, NSObject>)_reporterForwarder logger:logger];
 
   _bundleConnection = [FBTestBundleConnection connectionWithContext:context target:target interface:(id)_loggingForwarder requestQueue:_requestQueue logger:logger];
-  _daemonConnection = [FBTestDaemonConnection connectionWithContext:context target:target interface:(id)_loggingForwarder requestQueue:_requestQueue logger:logger];
 
   return self;
 }
@@ -97,42 +96,61 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   ];
 }
 
+#pragma mark - Public
+
++ (FBFutureContext<DTXConnection *> *)testmanagerdConnectionWithTarget:(id<FBiOSTarget>)target queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  [logger log:@"Starting a fresh testmanagerd connection"];
+  return [[target
+    transportForTestManagerService]
+    onQueue:queue push:^(NSNumber *socket) {
+      return [FBTestManagerAPIMediator connectionWithSocket:socket.intValue queue:queue logger:logger];
+    }];
+}
+
 #pragma mark - Private
 
 - (FBFuture<NSNull *> *)connectAndRunUntilCompletion
 {
-  return [[[[[FBFuture
-    futureWithFutures:@[
-      [self.bundleConnection connect],
-      [self.daemonConnection connect],
-    ]]
-    onQueue:self.requestQueue fmap:^(id _) {
-      return [FBFuture
-        futureWithFutures:@[
-          [self.bundleConnection startTestPlan],
-          [self.daemonConnection notifyTestPlanStarted],
-        ]];
+  return [[[[[[FBTestDaemonConnection
+    daemonConnectionWithContext:self.context target:self.target interface:(id)self.loggingForwarder requestQueue:self.requestQueue logger:self.logger]
+    onQueue:self.requestQueue pend:^(id _) {
+      return [self.bundleConnection connect];
     }]
-    onQueue:self.requestQueue fmap:^(id _) {
-      return [FBFuture
-        futureWithFutures:@[
-          [self.bundleConnection completeTestRun],
-          [self.daemonConnection completed],
-        ]];
+    onQueue:self.requestQueue pend:^(id _) {
+      return [self.bundleConnection startTestPlan];
+    }]
+    onQueue:self.requestQueue pop:^(id _) {
+      return [self.bundleConnection completeTestRun];
     }]
     onQueue:self.requestQueue chain:^(FBFuture<id> *future) {
-     return [[self disconnect] chainReplace:future];
+      return [[self.bundleConnection disconnect] chainReplace:future];
     }]
     onQueue:self.requestQueue respondToCancellation:^{
-      return [self disconnect];
+      return [self.bundleConnection disconnect];
     }];
 }
 
-- (FBFuture<NSNull *> *)disconnect
++ (FBFutureContext<DTXConnection *> *)connectionWithSocket:(int)socket queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
+  [logger logFormat:@"Wrapping socket %d in DTX Transport and Connection", socket];
+  DTXTransport *transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket disconnectAction:^{
+    [logger logFormat:@"Notified that daemon socket disconnected"];
+  }];
+  DTXConnection *connection = [[objc_lookUpClass("DTXConnection") alloc] initWithTransport:transport];
+  [connection registerDisconnectHandler:^{
+    [logger logFormat:@"Notified that daemon connection disconnected"];
+  }];
+  [logger logFormat:@"Socket %d wrapped in %@", socket, connection];
+
   return [[FBFuture
-    futureWithFutures:@[[self.bundleConnection disconnect], [self.daemonConnection disconnect]]]
-    mapReplace:NSNull.null];
+    futureWithResult:connection]
+    onQueue:queue contextualTeardown:^(id _, FBFutureState __) {
+      [logger logFormat:@"Ending the deamon connection. %@", connection];
+      [connection suspend];
+      [connection cancel];
+      return FBFuture.empty;
+    }];
 }
 
 #pragma mark - XCTestManager_IDEInterface protocol
@@ -257,8 +275,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (id)_XCT_didFinishExecutingTestPlan
 {
-  [self.daemonConnection notifyTestPlanEnded];
-  [self.daemonConnection disconnect];
   [self.bundleConnection disconnect];
   return nil;
 }
