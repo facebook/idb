@@ -7,7 +7,7 @@
 
 #import "FBJSONTestReporter.h"
 
-#import <XCTestBootstrap/XCTestBootstrap.h>
+#import "XCTestBootstrapError.h"
 
 static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString *methodName);
 
