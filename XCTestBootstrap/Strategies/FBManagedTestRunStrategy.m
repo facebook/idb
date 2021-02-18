@@ -59,22 +59,13 @@
         [reporter appUnderTestExited];
       }];
 
-      // Construct the mediator, the core of the test execution.
-      FBTestManagerAPIMediator *mediator = [FBTestManagerAPIMediator
-        mediatorWithContext:context
+      // Construct and run the mediator, the core of the test execution.
+      return [FBTestManagerAPIMediator
+        connectAndRunUntilCompletionWithContext:context
         target:target
         reporter:reporter
         logger:logger
         testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
-
-      return [[[mediator
-        connect]
-        onQueue:target.workQueue fmap:^(id _) {
-          return [mediator execute];
-        }]
-        onQueue:target.workQueue respondToCancellation:^{
-          return [mediator disconnect];
-        }];
     }];
 }
 

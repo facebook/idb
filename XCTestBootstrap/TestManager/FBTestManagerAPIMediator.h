@@ -33,43 +33,19 @@ extern const NSInteger FBProtocolMinimumVersion;
 #pragma mark Initializers
 
 /**
- Creates and returns a mediator with given paramenters
+ Performs the entire process of test execution.
+ This incorporates the connection to the 'testmanagerd' daemon, the test bundle and the test execution itself.
+ An "error" in the future represents any reason why the test bundle could not be run until completion.
+ If the bundle was executed correctly and there are test failures, this does not represent an error.
 
  @param context the Context of the Test Manager.
  @param target the target.
  @param reporter the (optional) delegate to report test progress too.
  @param logger the (optional) logger to events to.
  @param testedApplicationAdditionalEnvironment Additional Environment Variables to pass to the application under test
- @return Prepared FBTestRunnerConfiguration
+ @return A future that resolves when test execution has fully completed, or an error occured with the execution.
  */
-+ (instancetype)mediatorWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
-
-#pragma mark Lifecycle
-
-/**
- Establishes a connection between the host, testmanagerd and the Test Bundle.
- This connection is established asynchronously with a timeout applied.
- Once this connection to testmanagerd has been established, the test bundle can be executed.
-
- @return A future wrapping the TestManagerResult.
- */
-- (FBFuture<NSNull *> *)connect;
-
-/**
- Executes the Test Plan over the previously-established 'testmanagerd' connection.
- This should be called after `-[FBTestManagerAPIMediator connect]` has resolved.
- Test events will be delivered to the reporter in the background.
-
- @return A future wrapping the TestManagerResult.
- */
-- (FBFuture<NSNull *> *)execute;
-
-/**
- Terminates connection between test testmanagerd and the test bundle execution
-
- @return A future wrapping the TestManagerResult.
- */
-- (FBFuture<NSNull *> *)disconnect;
++ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
 
 @end
 

@@ -49,7 +49,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 @property (nonatomic, strong, readonly) FBTestBundleConnection *bundleConnection;
 @property (nonatomic, strong, readonly) FBTestDaemonConnection *daemonConnection;
-@property (nonatomic, assign, readwrite) BOOL startedExecution;
 
 @end
 
@@ -57,9 +56,10 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 #pragma mark - Initializers
 
-+ (instancetype)mediatorWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
++ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
 {
-  return  [[self alloc] initWithContext:context target:target reporter:reporter logger:logger testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
+  FBTestManagerAPIMediator *mediator = [[self alloc] initWithContext:context target:target reporter:reporter logger:logger testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
+  return [mediator connectAndRunUntilCompletion];
 }
 
 - (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
@@ -92,38 +92,40 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"TestManager %@ for (%@)",
-    self.startedExecution ? @"Execution Started" : @"Execution not Started.",
+    @"TestManager for (%@)",
     self.context
   ];
 }
 
-#pragma mark - Public
+#pragma mark - Private
 
-- (FBFuture<NSNull *> *)connect
+- (FBFuture<NSNull *> *)connectAndRunUntilCompletion
 {
-  if (self.startedExecution) {
-    return [[XCTestBootstrapError
-      describe:@"FBTestManager does not support reconnecting to testmanagerd. You should create new FBTestManager to establish new connection"]
-      failFuture];
-  }
-  self.startedExecution = YES;
-  return [[FBFuture
+  return [[[[[FBFuture
     futureWithFutures:@[
       [self.bundleConnection connect],
       [self.daemonConnection connect],
     ]]
-    mapReplace:NSNull.null];
-}
-
-- (FBFuture<NSNull *> *)execute
-{
-  return [[[FBFuture
-    futureWithFutures:@[self.bundleConnection.startTestPlan, self.daemonConnection.notifyTestPlanStarted]]
-    onQueue:self.target.workQueue fmap:^ FBFuture<NSArray<id> *> * (id _) {
-      return [FBFuture futureWithFutures:@[self.bundleConnection.completeTestRun, self.daemonConnection.completed]];
+    onQueue:self.requestQueue fmap:^(id _) {
+      return [FBFuture
+        futureWithFutures:@[
+          [self.bundleConnection startTestPlan],
+          [self.daemonConnection notifyTestPlanStarted],
+        ]];
     }]
-    mapReplace:NSNull.null];
+    onQueue:self.requestQueue fmap:^(id _) {
+      return [FBFuture
+        futureWithFutures:@[
+          [self.bundleConnection completeTestRun],
+          [self.daemonConnection completed],
+        ]];
+    }]
+    onQueue:self.requestQueue chain:^(FBFuture<id> *future) {
+     return [[self disconnect] chainReplace:future];
+    }]
+    onQueue:self.requestQueue respondToCancellation:^{
+      return [self disconnect];
+    }];
 }
 
 - (FBFuture<NSNull *> *)disconnect
