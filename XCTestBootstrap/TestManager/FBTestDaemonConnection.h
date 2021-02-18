@@ -11,15 +11,10 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class DTXConnection;
-@class DVTDevice;
 @class FBTestManagerContext;
-@class XCTestBootstrapError;
 
 @protocol FBControlCoreLogger;
 @protocol FBiOSTarget;
-@protocol XCTestDriverInterface;
-@protocol XCTestManager_DaemonConnectionInterface;
 @protocol XCTestManager_IDEInterface;
 
 /**
