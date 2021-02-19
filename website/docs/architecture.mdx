@@ -39,9 +39,9 @@ iOS Devices and Simulators behave in substantially different ways, as well as Si
 - iOS Simulators and their child processes, appear as regular processes on the host operating system.
 - iOS Simulators run executables that are native to macOS. This is unlike emulators for Android which may run across a variety of host operating systems, will always run native Android executables and may translate [between ISAs](https://en.wikipedia.org/wiki/Instruction_set_architecture).
 - As iOS Simulators appear as native processes to macOS, many of the macOS level APIs for interacting with files and processes work just the same. This is useful in implementing Simulator functionality. The iOS Simulator uses the same kernel as the host macOS, which also goes some way to explain that some Xcode versions have increased macOS version requirements (there may be new kernel functionality in newer iOS versions that means that Simulators require this functionality through a macOS upgrade).
-- iOS Simulators do not use exactly the same system frameworks as macOS. These Frameworks are implemented in the "Simulator Runtime" that is bundled within Xcode. The runtime contains Frameworks that are broadly the same as those on an iOS Device, except they are compiled for the macOS host archiecture.
+- iOS Simulators do not use exactly the same system frameworks as macOS. These Frameworks are implemented in the "Simulator Runtime" that is bundled within Xcode. The runtime contains Frameworks that are broadly the same as those on an iOS Device, except they are compiled for the macOS host architecture.
 - As Simulators run natively, they have similar performance characteristics to that of the host. In a sense Simulator Applications perform in a similar way to a macOS application running on macOS. This usually means that Simulators are substantially more performant than emulators, even when an emulator has access to a hypervisor and is running the same ISA.
-- iOS Simulators have the concept of a "root" directory, which can be thought of as the Simulator's Filesystem. Applications running inside the Simulator still have access to files outside of this root (there is no [`chroot`'ing](https://en.wikipedia.org/wiki/Chroot) inside of the Simulator), so are able to manipulate files that outside of this root. Applications are also able to manipulate files outside of their own "Application Sandbox" which is not the case on iOS Devices.
+- iOS Simulators have the concept of a "root" directory, which can be thought of as the Simulator's Filesystem. Applications running inside the Simulator still have access to files outside of this root (there is no [`chroot`'ing](https://en.wikipedia.org/wiki/Chroot) inside of the Simulator), so are able to manipulate files that are outside of this root. Applications are also able to manipulate files outside of their own "Application Sandbox" which is not the case on iOS Devices.
 - This lack of isolation in iOS Simulators is a double edged sword. It can make certain automation cases more convenient to implement, but it is not easy to ensure that a Simulator has access to a limited amount of system resources. For example, emulators typically allow setting an upper limit on the number of cores or memory that can be consumed by the "guest" OS, where iOS Simulators can access the same resources that any application on the host can. This makes it harder to isolate multiple iOS Simulators running on the same host from each other. For instance, an iOS Simulator Application that consumes extreme amounts of system resources will exhaust these resources for other applications, processes or Simulators running on the same host.
 - iOS Devices are very strict about isolating processes from each other as well as the host to which it is attached. Interaction between the host and attached iOS Device is only possible through purpose-built APIs that exposes functionality for existing host-device behaviours. For instance, iOS App launching is implemented on iOS Devices through APIs that are used by the "Instruments" Application. This functionality is typically provided over a socket transport, with varying different protocol implementations depending on the domain. Access to these services is arbitrated via a `lockdown` service running on the iOS Device.
 - As such, the implementations for functionality across iOS Simulators & Devices are drastically different, even within Xcode's own Frameworks.
@@ -52,7 +52,7 @@ There are two frameworks in `FBSimulatorControl` and `FBDeviceControl` that exis
 
 ### Targets
 
-A instance of a target (`FBiOSTarget`) is an object that represents a single iOS Simulator or Device. `FBiOSTarget` is a protocol definition that describes the functionality that is implemented by both `FBSimulator` and `FBDevice`. This abstraction means that higher-level applications and Frameworks are able to treat a target then same, regardless of whether it is an iOS Simulator or Device.
+A instance of a target (`FBiOSTarget`) is an object that represents a single iOS Simulator or Device. `FBiOSTarget` is a protocol definition that describes the functionality that is implemented by both `FBSimulator` and `FBDevice`. This abstraction means that higher-level applications and Frameworks are able to treat a target the same, regardless of whether it is an iOS Simulator or Device.
 
 As there are substantial differences in the way that iOS Simulators and Devices operate, this level of abstraction allows the Frameworks to smooth over the differences present in implementing common functionality.
 
@@ -70,7 +70,7 @@ These types exist so that APIs do not require extremely long and cumbersome argu
 
 ### Command Protocols & Implementations
 
-The protocols provide common APIs across Simulators and Devices. This allows the caller to treat the reciever the same, whether it is a Simulator or Device. There may be some protocols that are only supported by one or the other, depending on the target. For instance there is no concept of "Activation" on a iOS Simulator, so `FBDeviceActivationCommands` is only implemented by `FBDevice`.
+The protocols provide common APIs across Simulators and Devices. This allows the caller to treat the receiver the same, whether it is a Simulator or Device. There may be some protocols that are only supported by one or the other, depending on the target. For instance there is no concept of "Activation" on an iOS Simulator, so `FBDeviceActivationCommands` is only implemented by `FBDevice`.
 
 Implementations across Simulators & Devices are completely separated and implemented in their respective Frameworks. As an example, `FBApplicationCommands` (which provides an API for launching and listing Applications on an iOS Target), is implemented separately in `FBSimulatorApplicationCommands` and `FBDeviceApplicationCommands`.
 
@@ -78,13 +78,13 @@ If functionality is common to both Simulators & Devices, it's protocol is added 
 
 ### Logging
 
-`FBControlCoreLogger` is used throughout the codebase. This provides a common interface for logging out to system level loggers as well as files. Since all these Frameworks may be used in a variety of different scenarios, included where a logging client may be remote this abstraction provides a common way of directing logs to the appropriate place. This is an "unstructured logger", which recieves arbitrary strings.
+`FBControlCoreLogger` is used throughout the codebase. This provides a common interface for logging out to system level loggers as well as files. Since all these Frameworks may be used in a variety of different scenarios, included where a logging client may be remote this abstraction provides a common way of directing logs to the appropriate place. This is an "unstructured logger", which receives arbitrary strings.
 
 There are also classes that are used for intercepting internal calls (`FBLoggingWrapper`) and logging them out to a "structured logger" (`FBEventReporter`). This is used in `idb` to produce accurate logging of all API calls that are made in the server. This supports user-defined classes, so is ideal for pushing into datastores that support aggregation.
 
 ### IO
 
-Due to the nature of the functionality that is offerend in the Frameworks, IO is a very common task. There are a number of abstractions for reading and writing data between various sources and sinks. For example, the common interface (`FBFileReader`) is used to read output from a spawned Application process and relay it to a consumer (`FBFileWriter`). This is then used to pipe Application output over `idb`'s gRPC interface without the Application launcher having to be aware of what is consuming the output.
+Due to the nature of the functionality that is offered in the Frameworks, IO is a very common task. There are a number of abstractions for reading and writing data between various sources and sinks. For example, the common interface (`FBFileReader`) is used to read output from a spawned Application process and relay it to a consumer (`FBFileWriter`). This is then used to pipe Application output over `idb`'s gRPC interface without the Application launcher having to be aware of what is consuming the output.
 
 All of this is backed by `libdispatch`, due to it's affordance for asynchronous IO, where file reading and writing is managed in an efficient manner without the user having to build their own IO multiplexer.
 
@@ -92,14 +92,14 @@ All of this is backed by `libdispatch`, due to it's affordance for asynchronous 
 
 A huge amount of the "work" that is done inside the Frameworks is based on IO and calling out to other APIs that perform IO. This work is very asynchronous, which means that there is a strong case for a consistent API for performing and waiting on this work.
 
-Since the Frameworks are Objective-C Frameworks, as well as the absence of an API such as `async`/`await` within the Swift language, the `FBFuture` class is used to encapsulate this asynchronous work. It is preferrable for these features to exist at the language or standard library level to avoid implementing this kind of functionality, however there are benefits to doing so:
+Since the Frameworks are Objective-C Frameworks, as well as the absence of an API such as `async`/`await` within the Swift language, the `FBFuture` class is used to encapsulate this asynchronous work. It is preferable for these features to exist at the language or standard library level to avoid implementing this kind of functionality, however there are benefits to doing so:
 
-- **Error conditions**. Nearly all of the asynchronous operations represented by a `FBFuture` are failible in some way, so an `FBFuture` can be resolved to an error state with a full `NSError`.
+- **Error conditions**. Nearly all of the asynchronous operations represented by a `FBFuture` are fallible in some way, so an `FBFuture` can be resolved to an error state with a full `NSError`.
 - **Chaining**. A single high-level API may be formed of a sequence of asynchronous calls that occur one after another. The `FBFuture` syntax provides a way of threading these all together in a quasi-imperative way.
 - **Queues must be always defined**. In order to prevent unintended behaviour, where an async callback is called on an arbitrary or private queue, any consumer of an `FBFuture` must provide the queue that the callback will be called on. This is also true of chaining, which promotes the separation of queues that are used for serializing calls to other APIs or queues that are used for background behaviour that can be performed on any thread. For example, all calls to `CoreSimulator` must be serialized on the same thread but work in a Future that performs pure data transformation with no side-effects can be performed on an arbitrary background queue.
 - **No waiter thread**. All resolution of Futures is performed asynchronously, there does not need to be a thread or queue waiting on the resolution of a Future. This means that if multiple Futures are running concurrently there is not a danger of thread exhaustion.
 
-Code that is a consumer of `FBFuture` can use it's calls to recieve a callback upon completion, or to `await:` it's result synchronously to obtain a value. The internal usage of `FBFuture` avoids any synchronous work as far as possible. A consumer of `idb` need not be aware of these details, as they are internal to the implementation of the `idb_companion`.
+Code that is a consumer of `FBFuture` can use it's calls to receive a callback upon completion, or to `await:` it's result synchronously to obtain a value. The internal usage of `FBFuture` avoids any synchronous work as far as possible. A consumer of `idb` need not be aware of these details, as they are internal to the implementation of the `idb_companion`.
 
 ## `idb_companion` concepts
 
@@ -115,7 +115,7 @@ Additionally, it exposes a number of "CRUD" commands that are destructive for ma
 
 ### [`FBIDBServiceHandler`](https://github.com/facebook/idb/blob/master/idb_companion/Server/FBIDBServiceHandler.mm)
 
-This is an C++ class that [implements the gRPC interface](https://github.com/facebook/idb/blob/master/proto/idb.proto). This is a C++ class as the `idb_companion` is using the gRPC library for C++. 
+This is an C++ class that [implements the gRPC interface](https://github.com/facebook/idb/blob/master/proto/idb.proto). This is a C++ class as the `idb_companion` is using the gRPC library for C++.
 
 Requests are forwarded to the handler on a thread pool that is internal to the gRPC C++ library. The overwhelming majority of calls made to the companion will call out to APIs that are backed by an `FBFuture`. This means that the handler thread is then responsible for awaiting the resolution of that `FBFuture`. Each handler call is wrapped in an autorelease pool to prevent memory leakage. The calls to the underlying Frameworks will serialize work appropriately, due to their usage of Futures.
 
