@@ -32,16 +32,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the Logger to Log to.
  @return a new Bundle Connection instance.
  */
-+ (instancetype)connectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBFutureContext<FBTestBundleConnection *> *)bundleConnectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Lifecycle
-
-/**
- Asynchronously Connects the to the Bundle
-
- @return a Future that resolves when the Bundle Connection is established.
- */
-- (FBFuture<NSNull *> *)connect;
 
 /**
  Starts the Test Plan.
@@ -49,21 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that resolves when the Test Plan has completed.
  */
-- (FBFuture<NSNull *> *)startTestPlan;
-
-/**
- A future for the end of the test run.
-
- @return a Future that resolves when the Test Run has completed.
- */
-- (FBFuture<NSNull *> *)completeTestRun;
-
-/**
- Disconnects any active connection.
-
- @return a Future that resolves when the connection has been disconnected.
- */
-- (FBFuture *)disconnect;
+- (FBFuture<NSNull *> *)runTestPlanUntilCompletion;
 
 @end
 

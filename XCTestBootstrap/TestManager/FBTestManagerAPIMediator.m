@@ -48,8 +48,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 @property (nonatomic, strong, readonly) FBXCTestManagerLoggingForwarder *loggingForwarder;
 @property (nonatomic, strong, readonly) NSMutableDictionary *tokenToBundleIDMap;
 
-@property (nonatomic, strong, readonly) FBTestBundleConnection *bundleConnection;
-
 @end
 
 @implementation FBTestManagerAPIMediator
@@ -81,8 +79,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   _reporterForwarder = [FBTestReporterForwarder withAPIMediator:self reporter:reporter];
   _loggingForwarder = [FBXCTestManagerLoggingForwarder withIDEInterface:(id<XCTestManager_IDEInterface, NSObject>)_reporterForwarder logger:logger];
 
-  _bundleConnection = [FBTestBundleConnection connectionWithContext:context target:target interface:(id)_loggingForwarder requestQueue:_requestQueue logger:logger];
-
   return self;
 }
 
@@ -112,22 +108,22 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (FBFuture<NSNull *> *)connectAndRunUntilCompletion
 {
-  return [[[[[[FBTestDaemonConnection
-    daemonConnectionWithContext:self.context target:self.target interface:(id)self.loggingForwarder requestQueue:self.requestQueue logger:self.logger]
-    onQueue:self.requestQueue pend:^(id _) {
-      return [self.bundleConnection connect];
+  id<FBControlCoreLogger> logger = self.logger;
+  return [[[FBFutureContext
+    futureContextWithFutureContexts:@[
+      [FBTestDaemonConnection daemonConnectionWithContext:self.context target:self.target interface:(id)self.loggingForwarder requestQueue:self.requestQueue logger:logger],
+      [FBTestBundleConnection bundleConnectionWithContext:self.context target:self.target interface:(id)self.loggingForwarder requestQueue:self.requestQueue logger:logger],
+    ]]
+    onQueue:self.requestQueue pop:^(NSArray<id> *connections) {
+      FBTestBundleConnection *bundleConnection = connections[1];
+      return [bundleConnection runTestPlanUntilCompletion];
     }]
-    onQueue:self.requestQueue pend:^(id _) {
-      return [self.bundleConnection startTestPlan];
-    }]
-    onQueue:self.requestQueue pop:^(id _) {
-      return [self.bundleConnection completeTestRun];
-    }]
-    onQueue:self.requestQueue chain:^(FBFuture<id> *future) {
-      return [[self.bundleConnection disconnect] chainReplace:future];
-    }]
-    onQueue:self.requestQueue respondToCancellation:^{
-      return [self.bundleConnection disconnect];
+    onQueue:self.requestQueue chain:^(FBFuture<NSNull *> *future) {
+      NSError *error = future.error;
+      if (error) {
+        [logger logFormat:@"Test Execution finished in error %@", error];
+      }
+      return future;
     }];
 }
 
@@ -275,7 +271,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (id)_XCT_didFinishExecutingTestPlan
 {
-  [self.bundleConnection disconnect];
   return nil;
 }
 

@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Wrapped Interface.
  */
-@property (nonatomic, weak, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
+@property (nonatomic, strong, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
 
 /**
  The logger.
