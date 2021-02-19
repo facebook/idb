@@ -29,7 +29,7 @@
 #pragma clang diagnostic ignored "-Wprotocol"
 #pragma clang diagnostic ignored "-Wincomplete-implementation"
 
-@interface FBTestDaemonConnection () <XCTestManager_IDEInterface>
+@interface FBTestDaemonConnection ()
 
 @property (nonatomic, strong, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
 @property (nonatomic, strong, readonly) FBTestManagerContext *context;
@@ -65,29 +65,6 @@
   return self;
 }
 
-#pragma mark NSObject
-
-#pragma mark Delegate Forwarding
-
-- (BOOL)respondsToSelector:(SEL)selector
-{
-  return [super respondsToSelector:selector] || [self.interface respondsToSelector:selector];
-}
-
-- (NSMethodSignature *)methodSignatureForSelector:(SEL)selector
-{
-  return [super methodSignatureForSelector:selector] ?: [(id)self.interface methodSignatureForSelector:selector];
-}
-
-- (void)forwardInvocation:(NSInvocation *)invocation
-{
-  if ([self.interface respondsToSelector:invocation.selector]) {
-    [invocation invokeWithTarget:self.interface];
-  } else {
-    [super forwardInvocation:invocation];
-  }
-}
-
 #pragma mark Public
 
 - (FBFutureContext<NSNull *> *)connect
@@ -114,7 +91,7 @@
   DTXProxyChannel *channel = [connection
     makeProxyChannelWithRemoteInterface:@protocol(XCTestManager_DaemonConnectionInterface)
     exportedInterface:@protocol(XCTestManager_IDEInterface)];
-  [channel setExportedObject:self queue:self.target.workQueue];
+  [channel setExportedObject:self.interface queue:self.target.workQueue];
 
   id<XCTestManager_DaemonConnectionInterface> interface = (id<XCTestManager_DaemonConnectionInterface>)channel.remoteObjectProxy;
   [self.logger logFormat:@"Constructed channel for remote interface XCTestManager_DaemonConnectionInterface %@", interface];
@@ -159,5 +136,3 @@
 }
 
 @end
-
-#pragma clang diagnostic pop
