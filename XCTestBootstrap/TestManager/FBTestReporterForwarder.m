@@ -19,7 +19,7 @@
 #pragma clang diagnostic ignored "-Wprotocol"
 #pragma clang diagnostic ignored "-Wincomplete-implementation"
 
-@interface FBTestReporterForwarder ()
+@interface FBTestReporterForwarder () <XCTestManager_IDEInterface>
 
 @property (nonatomic, weak, readonly) FBTestManagerAPIMediator<XCTestManager_IDEInterface> *mediator;
 @property (nonatomic, strong, readonly) id<FBTestManagerTestReporter> reporter;

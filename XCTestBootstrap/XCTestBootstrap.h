@@ -25,7 +25,6 @@
 #import <XCTestBootstrap/FBXcodeBuildOperation.h>
 #import <XCTestBootstrap/FBXCTestConfiguration.h>
 #import <XCTestBootstrap/FBXCTestLogger.h>
-#import <XCTestBootstrap/FBXCTestManagerLoggingForwarder.h>
 #import <XCTestBootstrap/FBXCTestProcess.h>
 #import <XCTestBootstrap/FBXCTestProcessExecutor.h>
 #import <XCTestBootstrap/FBXCTestReporter.h>

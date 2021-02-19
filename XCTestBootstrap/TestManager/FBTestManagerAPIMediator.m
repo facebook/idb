@@ -22,7 +22,6 @@
 #import <objc/runtime.h>
 
 #import "XCTestBootstrapError.h"
-#import "FBXCTestManagerLoggingForwarder.h"
 
 #import "FBTestReporterForwarder.h"
 #import "FBTestManagerTestReporter.h"
@@ -44,7 +43,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
 @property (nonatomic, strong, readonly) FBTestReporterForwarder *reporterForwarder;
-@property (nonatomic, strong, readonly) FBXCTestManagerLoggingForwarder *loggingForwarder;
 @property (nonatomic, strong, readonly) NSMutableDictionary *tokenToBundleIDMap;
 
 @end
@@ -75,7 +73,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   _requestQueue = dispatch_queue_create("com.facebook.xctestboostrap.mediator", DISPATCH_QUEUE_PRIORITY_DEFAULT);
 
   _reporterForwarder = [FBTestReporterForwarder withAPIMediator:self reporter:reporter];
-  _loggingForwarder = [FBXCTestManagerLoggingForwarder withIDEInterface:(id<XCTestManager_IDEInterface, NSObject>)_reporterForwarder logger:logger];
 
   return self;
 }
@@ -109,8 +106,8 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   id<FBControlCoreLogger> logger = self.logger;
   return [[[FBFutureContext
     futureContextWithFutureContexts:@[
-      [FBTestDaemonConnection daemonConnectionWithContext:self.context target:self.target interface:(id)self.loggingForwarder requestQueue:self.requestQueue logger:logger],
-      [FBTestBundleConnection bundleConnectionWithContext:self.context target:self.target interface:(id)self.loggingForwarder requestQueue:self.requestQueue logger:logger],
+      [FBTestDaemonConnection daemonConnectionWithContext:self.context target:self.target interface:(id)self.reporterForwarder requestQueue:self.requestQueue logger:logger],
+      [FBTestBundleConnection bundleConnectionWithContext:self.context target:self.target interface:(id)self.reporterForwarder requestQueue:self.requestQueue logger:logger],
     ]]
     onQueue:self.requestQueue pop:^(NSArray<id> *connections) {
       FBTestBundleConnection *bundleConnection = connections[1];
@@ -250,6 +247,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (id)_XCT_testSuite:(NSString *)tests didStartAt:(NSString *)time
 {
+  [self.logger logFormat:@"Test Suite %@ started", tests];
   if (tests.length == 0) {
     NSError *error = [[[[XCTestBootstrapError
       describe:@"Test reported a suite with nil or empty identifier. This is unsupported."]
@@ -279,21 +277,22 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (id)_XCT_testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
 {
+  [self.logger logFormat:@"Test Case %@/%@ did start", testClass, method];
   return nil;
 }
 
 - (id)_XCT_testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line
 {
+  [self.logger logFormat:@"Test Case %@/%@ did fail: %@", testClass, method, message];
   return nil;
 }
 
-// This looks like tested application logs
 - (id)_XCT_logDebugMessage:(NSString *)debugMessage
 {
+  [self.logger log:[debugMessage stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet]];
   return nil;
 }
 
-// ?
 - (id)_XCT_logMessage:(NSString *)message
 {
   return nil;
@@ -301,11 +300,13 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (id)_XCT_testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(NSString *)statusString duration:(NSNumber *)duration
 {
+  [self.logger logFormat:@"Test Case %@/%@ did finish (%@)", testClass, method, statusString];
   return nil;
 }
 
 - (id)_XCT_testSuite:(NSString *)arg1 didFinishAt:(NSString *)arg2 runCount:(NSNumber *)arg3 withFailures:(NSNumber *)arg4 unexpected:(NSNumber *)arg5 testDuration:(NSNumber *)arg6 totalDuration:(NSNumber *)arg7
 {
+  [self.logger logFormat:@"Test Suite Did Finish %@", arg1];
   return nil;
 }
 
