@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBTestLaunchConfiguration;
 @protocol FBControlCoreLogger;
-@protocol FBTestManagerTestReporter;
+@protocol FBXCTestReporter;
 
 /**
  Commands related to XCTest Execution.
@@ -31,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a Future that resolves when the test run has completed.
  */
-- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
+- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Lists the testables for a provided test bundle.

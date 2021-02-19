@@ -53,7 +53,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
 
 #pragma mark Public
 
-- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   // Use FBXCTestBootstrap to run the test if `shouldUseXcodebuild` is not set in the test launch.
   if (!testLaunchConfiguration.shouldUseXcodebuild) {
@@ -103,7 +103,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
     logger:[logger withName:@"xcodebuild"]];
 }
 
-- (FBFuture<NSNull * > *)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<NSNull * > *)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   return [[[task
     completed]
@@ -116,7 +116,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
       return FBFuture.empty;
     }]
     onQueue:self.simulator.workQueue fmap:^(id _) {
-      [reporter testManagerMediatorDidFinishExecutingTestPlan:nil];
+      [reporter didFinishExecutingTestPlan];
       return FBFuture.empty;
     }];
 }
@@ -189,7 +189,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger workingDirectory:(nullable NSString *)workingDirectory
+- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger workingDirectory:(nullable NSString *)workingDirectory
 {
   if (self.simulator.state != FBiOSTargetStateBooted) {
     return [[[FBSimulatorError

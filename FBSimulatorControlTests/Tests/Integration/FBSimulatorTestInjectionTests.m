@@ -16,7 +16,7 @@
 #import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlAssertions.h"
 
-@interface FBSimulatorTestInjection : FBSimulatorControlTestCase <FBTestManagerTestReporter>
+@interface FBSimulatorTestInjection : FBSimulatorControlTestCase <FBXCTestReporter>
 
 @property (nonatomic, strong, readwrite) NSMutableSet *passedMethods;
 @property (nonatomic, strong, readwrite) NSMutableSet *failedMethods;
@@ -49,7 +49,7 @@
   return simulator;
 }
 
-- (void)assertLaunchesTestWithConfiguration:(FBTestLaunchConfiguration *)testLaunch reporter:(id<FBTestManagerTestReporter>)reporter simulator:(FBSimulator *)simulator
+- (void)assertLaunchesTestWithConfiguration:(FBTestLaunchConfiguration *)testLaunch reporter:(id<FBXCTestReporter>)reporter simulator:(FBSimulator *)simulator
 {
   NSError *error = nil;
   id result = [[simulator runTestWithLaunchConfiguration:testLaunch reporter:reporter logger:simulator.logger] await:&error];
@@ -123,19 +123,19 @@
               failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX"]];
 }
 
-#pragma mark FBTestManagerTestReporter
+#pragma mark FBXCTestReporter
 
-- (void)testManagerMediatorDidBeginExecutingTestPlan:(FBTestManagerAPIMediator *)mediator
+- (void)didBeginExecutingTestPlan
 {
 
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime
+- (void)testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime
 {
 
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration
+- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration
 {
   switch (status) {
     case FBTestReportStatusPassed:
@@ -148,27 +148,69 @@
   }
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line
+- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line
 {
 
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testBundleReadyWithProtocolVersion:(NSInteger)protocolVersion minimumVersion:(NSInteger)minimumVersion
+- (void)testBundleReadyWithProtocolVersion:(NSInteger)protocolVersion minimumVersion:(NSInteger)minimumVersion
 {
 
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
+- (void)testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
 {
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator finishedWithSummary:(FBTestManagerResultSummary *)summary
+- (void)finishedWithSummary:(FBTestManagerResultSummary *)summary
 {
   XCTAssertNotNil(summary.finishTime);
   XCTAssertNotNil(summary.testSuite);
 }
 
-- (void)testManagerMediatorDidFinishExecutingTestPlan:(FBTestManagerAPIMediator *)mediator
+- (void)didFinishExecutingTestPlan
+{
+
+}
+
+- (void)appUnderTestExited
+{
+
+}
+
+- (void)debuggerAttached
+{
+
+}
+
+- (void)didCrashDuringTest:(NSError *)error
+{
+
+}
+
+
+- (void)handleExternalEvent:(NSString *)event
+{
+
+}
+
+
+- (BOOL)printReportWithError:(NSError **)error
+{
+  return YES;
+}
+
+- (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid
+{
+
+}
+
+- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(NSArray<NSString *> *)logs
+{
+
+}
+
+- (void)testHadOutput:(NSString *)output
 {
 
 }

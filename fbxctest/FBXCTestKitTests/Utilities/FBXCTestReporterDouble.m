@@ -139,6 +139,11 @@
   }
 }
 
+- (void)didCrashDuringTest:(NSError *)error
+{
+  
+}
+
 #pragma mark Accessors
 
 - (NSArray<NSArray<NSString *> *> *)startedSuites

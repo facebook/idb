@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulator;
 @class FBTestLaunchConfiguration;
 
-@protocol FBTestManagerTestReporter;
+@protocol FBXCTestReporter;
 @protocol FBXCTestPreparationStrategy;
 
 /**
@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new Test Run Strategy instance.
  */
-+ (FBFuture<NSNull *> *)runToCompletionWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter testPreparationStrategy:(id<FBXCTestPreparationStrategy>)testPreparationStrategy logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<NSNull *> *)runToCompletionWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter testPreparationStrategy:(id<FBXCTestPreparationStrategy>)testPreparationStrategy logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

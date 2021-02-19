@@ -10,9 +10,9 @@
 #import "FBProductBundle.h"
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestManagerContext.h"
-#import "FBTestManagerTestReporter.h"
 #import "FBTestRunnerConfiguration.h"
 #import "FBXCTestPreparationStrategy.h"
+#import "FBXCTestReporter.h"
 #import "XCTestBootstrapError.h"
 #import "XCTestBootstrapFrameworkLoader.h"
 
@@ -20,7 +20,7 @@
 
 #pragma mark Initializers
 
-+ (FBFuture<NSNull *> *)runToCompletionWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter testPreparationStrategy:(id<FBXCTestPreparationStrategy>)testPreparationStrategy logger:(id<FBControlCoreLogger>)logger 
++ (FBFuture<NSNull *> *)runToCompletionWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter testPreparationStrategy:(id<FBXCTestPreparationStrategy>)testPreparationStrategy logger:(id<FBControlCoreLogger>)logger 
 {
   NSParameterAssert(target);
   NSParameterAssert(configuration.applicationLaunchConfiguration);

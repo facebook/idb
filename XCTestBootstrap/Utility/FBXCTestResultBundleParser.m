@@ -105,7 +105,7 @@ static inline NSDate *dateFromString(NSString *date)
 
 #pragma mark PUBLIC
 
-+ (FBFuture<NSNull *> *)parse:(NSString *)resultBundlePath target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNull *> *)parse:(NSString *)resultBundlePath target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   [logger logFormat:@"Parsing the result bundle %@", resultBundlePath];
 
@@ -145,14 +145,14 @@ static inline NSDate *dateFromString(NSString *date)
       }];
   }
   else {
-    [reporter testManagerMediator:nil testPlanDidFailWithMessage:@"No test results were produced"];
+    [reporter testPlanDidFailWithMessage:@"No test results were produced"];
     return FBFuture.empty;
   }
 }
 
 #pragma mark Private: Legacy XCTest Result Parsing
 
-+ (void)reportResults:(NSDictionary<NSString *, NSArray *> *)results reporter:(id<FBTestManagerTestReporter>)reporter
++ (void)reportResults:(NSDictionary<NSString *, NSArray *> *)results reporter:(id<FBXCTestReporter>)reporter
 {
   NSAssert([results isKindOfClass:NSDictionary.class], @"Test results not a NSDictionary");
   NSArray<NSDictionary *> *testTargets = results[@"TestableSummaries"];
@@ -160,7 +160,7 @@ static inline NSDate *dateFromString(NSString *date)
   [self reportTargetTests:testTargets reporter:reporter];
 }
 
-+ (void)reportTargetTests:(NSArray<NSDictionary *> *)targetTests reporter:(id<FBTestManagerTestReporter>)reporter
++ (void)reportTargetTests:(NSArray<NSDictionary *> *)targetTests reporter:(id<FBXCTestReporter>)reporter
 {
   NSAssert(targetTests, @"targetTests is nil");
   NSAssert([targetTests isKindOfClass:NSArray.class], @"targetTests not a NSArray");
@@ -170,7 +170,7 @@ static inline NSDate *dateFromString(NSString *date)
   }
 }
 
-+ (void)reportTargetTest:(NSDictionary<NSString *, NSObject *> *)targetTest reporter:(id<FBTestManagerTestReporter>)reporter
++ (void)reportTargetTest:(NSDictionary<NSString *, NSObject *> *)targetTest reporter:(id<FBXCTestReporter>)reporter
 {
   NSAssert(targetTest, @"targetTest is nil");
   NSAssert([targetTest isKindOfClass:NSDictionary.class], @"targetTest not a NSDictionary");
@@ -180,7 +180,7 @@ static inline NSDate *dateFromString(NSString *date)
   [self reportSelectedTests:selectedTests testBundleName:testBundleName reporter:reporter];
 }
 
-+ (void)reportSelectedTests:(NSArray<NSDictionary *> *)selectedTests testBundleName:(NSString *)testBundleName reporter:(id<FBTestManagerTestReporter>)reporter
++ (void)reportSelectedTests:(NSArray<NSDictionary *> *)selectedTests testBundleName:(NSString *)testBundleName reporter:(id<FBXCTestReporter>)reporter
 {
   NSAssert(selectedTests, @"selectedTests is nil");
   NSAssert([selectedTests isKindOfClass:NSArray.class], @"selectedTests not a NSArray");
@@ -190,7 +190,7 @@ static inline NSDate *dateFromString(NSString *date)
   }
 }
 
-+ (void)reportSelectedTest:(NSDictionary<NSString *, NSObject *> *)selectedTest testBundleName:(NSString *)testBundleName reporter:(id<FBTestManagerTestReporter>)reporter
++ (void)reportSelectedTest:(NSDictionary<NSString *, NSObject *> *)selectedTest testBundleName:(NSString *)testBundleName reporter:(id<FBXCTestReporter>)reporter
 {
   NSAssert(selectedTest, @"selectedTest is nil");
   NSAssert([selectedTest isKindOfClass:NSDictionary.class], @"selectedTest not a NSDictionary");
@@ -199,7 +199,7 @@ static inline NSDate *dateFromString(NSString *date)
   [self reportTestTargetXctests:testTargetXctests testBundleName:testBundleName reporter:reporter];
 }
 
-+ (void)reportTestTargetXctests:(NSArray<NSDictionary *> *)testTargetXctests testBundleName:(NSString *)testBundleName reporter:(id<FBTestManagerTestReporter>)reporter
++ (void)reportTestTargetXctests:(NSArray<NSDictionary *> *)testTargetXctests testBundleName:(NSString *)testBundleName reporter:(id<FBXCTestReporter>)reporter
 {
   NSAssert(testTargetXctests, @"testTargetXctests is nil");
   NSAssert([testTargetXctests isKindOfClass:NSArray.class], @"testTargetXctests not a NSArray");
@@ -209,7 +209,7 @@ static inline NSDate *dateFromString(NSString *date)
   }
 }
 
-+ (void)reportTestTargetXctest:(NSDictionary<NSString *, NSObject *> *)testTargetXctest testBundleName:(NSString *)testBundleName reporter:(id<FBTestManagerTestReporter>)reporter
++ (void)reportTestTargetXctest:(NSDictionary<NSString *, NSObject *> *)testTargetXctest testBundleName:(NSString *)testBundleName reporter:(id<FBXCTestReporter>)reporter
 {
   NSAssert(testTargetXctest, @"selectedTest is nil");
   NSAssert([testTargetXctest isKindOfClass:NSDictionary.class], @"testTargetXctest not a NSDictionary");
@@ -218,7 +218,7 @@ static inline NSDate *dateFromString(NSString *date)
   [self reportTestClasses:testClasses testBundleName:testBundleName reporter:reporter];
 }
 
-+ (void)reportTestClasses:(NSArray<NSDictionary *> *)testClasses testBundleName:(NSString *)testBundleName reporter:(id<FBTestManagerTestReporter>)reporter
++ (void)reportTestClasses:(NSArray<NSDictionary *> *)testClasses testBundleName:(NSString *)testBundleName reporter:(id<FBXCTestReporter>)reporter
 {
   NSAssert(testClasses, @"selectedTest is nil");
   NSAssert([testClasses isKindOfClass:NSArray.class], @"testClasses not a NSArray");
@@ -228,7 +228,7 @@ static inline NSDate *dateFromString(NSString *date)
   }
 }
 
-+ (void)reportTestClass:(NSDictionary<NSString *, NSObject *> *)testClass testBundleName:(NSString *)testBundleName reporter:(id<FBTestManagerTestReporter>)reporter
++ (void)reportTestClass:(NSDictionary<NSString *, NSObject *> *)testClass testBundleName:(NSString *)testBundleName reporter:(id<FBXCTestReporter>)reporter
 {
   NSAssert(testClass, @"selectedTest is nil");
   NSAssert([testClass isKindOfClass:NSDictionary.class], @"testClass not a NSDictionary");
@@ -238,7 +238,7 @@ static inline NSDate *dateFromString(NSString *date)
   [self reportTestMethods:testMethods testBundleName:testBundleName testClassName:testClassName reporter:reporter];
 }
 
-+ (void)reportTestMethods:(NSArray<NSDictionary *> *)testMethods testBundleName:(NSString *)testBundleName testClassName:(NSString *)testClassName reporter:(id<FBTestManagerTestReporter>)reporter
++ (void)reportTestMethods:(NSArray<NSDictionary *> *)testMethods testBundleName:(NSString *)testBundleName testClassName:(NSString *)testClassName reporter:(id<FBXCTestReporter>)reporter
 {
   NSAssert(testMethods, @"testMethods is nil");
   NSAssert([testMethods isKindOfClass:NSArray.class], @"testMethods not a NSArray");
@@ -248,7 +248,7 @@ static inline NSDate *dateFromString(NSString *date)
   }
 }
 
-+ (void)reportTestMethod:(NSDictionary<NSString *, NSObject *> *)testMethod testBundleName:(NSString *)testBundleName testClassName:(NSString *)testClassName reporter:(id<FBTestManagerTestReporter>)reporter
++ (void)reportTestMethod:(NSDictionary<NSString *, NSObject *> *)testMethod testBundleName:(NSString *)testBundleName testClassName:(NSString *)testClassName reporter:(id<FBXCTestReporter>)reporter
 {
   NSAssert(testMethod, @"testMethod is nil");
   NSAssert([testMethod isKindOfClass:NSDictionary.class], @"testMethod not a NSDictionary");
@@ -273,18 +273,13 @@ static inline NSDate *dateFromString(NSString *date)
                                        testPassed:status == FBTestReportStatusPassed
                                          duration:[duration doubleValue]];
 
-  [reporter testManagerMediator:nil testCaseDidStartForTestClass:testClassName method:testMethodName];
+  [reporter testCaseDidStartForTestClass:testClassName method:testMethodName];
   if (status == FBTestReportStatusFailed) {
     NSArray *failureSummaries = readArrayFromDict(testMethod, @"FailureSummaries");
-    [reporter testManagerMediator:nil testCaseDidFailForTestClass:testClassName method:testMethodName withMessage:[self buildErrorMessageLegacy:failureSummaries] file:nil line:0];
+    [reporter testCaseDidFailForTestClass:testClassName method:testMethodName withMessage:[self buildErrorMessageLegacy:failureSummaries] file:nil line:0];
   }
 
-  if ([reporter respondsToSelector:@selector(testManagerMediator:testCaseDidFinishForTestClass:method:withStatus:duration:logs:)]) {
-    [reporter testManagerMediator:nil testCaseDidFinishForTestClass:testClassName method:testMethodName withStatus:status duration:[duration doubleValue] logs:[logs copy]];
-  }
-  else {
-    [reporter testManagerMediator:nil testCaseDidFinishForTestClass:testClassName method:testMethodName withStatus:status duration:[duration doubleValue]];
-  }
+  [reporter testCaseDidFinishForTestClass:testClassName method:testMethodName withStatus:status duration:[duration doubleValue] logs:[logs copy]];
 }
 
 + (NSMutableArray<NSString *> *)buildTestLogLegacy:(NSArray<NSDictionary *> *)activitySummaries
@@ -391,7 +386,7 @@ static inline NSDate *dateFromString(NSString *date)
 }
 
 + (void)reportSummaries:(NSArray<NSDictionary *> *)summaries
-               reporter:(id<FBTestManagerTestReporter>)reporter
+               reporter:(id<FBXCTestReporter>)reporter
                   queue:(dispatch_queue_t)queue
        resultBundlePath:(NSString *)resultBundlePath
                  logger:(id<FBControlCoreLogger>)logger
@@ -405,7 +400,7 @@ static inline NSDate *dateFromString(NSString *date)
 }
 
 + (void)reportResults:(NSDictionary<NSString *, NSDictionary *> *)results
-             reporter:(id<FBTestManagerTestReporter>)reporter
+             reporter:(id<FBXCTestReporter>)reporter
                 queue:(dispatch_queue_t)queue
      resultBundlePath:(NSString *)resultBundlePath
                logger:(id<FBControlCoreLogger>)logger
@@ -417,7 +412,7 @@ static inline NSDate *dateFromString(NSString *date)
 }
 
 + (void)reportTargetTests:(NSArray<NSDictionary *> *)targetTests
-                 reporter:(id<FBTestManagerTestReporter>)reporter
+                 reporter:(id<FBXCTestReporter>)reporter
                     queue:(dispatch_queue_t)queue
          resultBundlePath:(NSString *)resultBundlePath
                    logger:(id<FBControlCoreLogger>)logger
@@ -431,7 +426,7 @@ static inline NSDate *dateFromString(NSString *date)
 }
 
 + (void)reportTargetTest:(NSDictionary<NSString *, NSDictionary *> *)targetTest
-                reporter:(id<FBTestManagerTestReporter>)reporter
+                reporter:(id<FBXCTestReporter>)reporter
                    queue:(dispatch_queue_t)queue
         resultBundlePath:(NSString *)resultBundlePath
                   logger:(id<FBControlCoreLogger>)logger
@@ -447,13 +442,13 @@ static inline NSDate *dateFromString(NSString *date)
   else {
     [logger log:@"Test failed and no test results found in the bundle"];
     NSArray *failureSummaries = accessAndUnwrapValues(targetTest, @"failureSummaries", logger);
-    [reporter testManagerMediator:nil testCaseDidFailForTestClass:@"" method:@"" withMessage:[self buildErrorMessage:failureSummaries logger:logger] file:nil line:0];
+    [reporter testCaseDidFailForTestClass:@"" method:@"" withMessage:[self buildErrorMessage:failureSummaries logger:logger] file:nil line:0];
   }
 }
 
 + (void)reportSelectedTests:(NSArray<NSDictionary *> *)selectedTests
              testBundleName:(NSString *)testBundleName
-                   reporter:(id<FBTestManagerTestReporter>)reporter
+                   reporter:(id<FBXCTestReporter>)reporter
                       queue:(dispatch_queue_t)queue
            resultBundlePath:(NSString *)resultBundlePath
                      logger:(id<FBControlCoreLogger>)logger
@@ -468,7 +463,7 @@ static inline NSDate *dateFromString(NSString *date)
 
 + (void)reportSelectedTest:(NSDictionary<NSString *, NSDictionary *> *)selectedTest
             testBundleName:(NSString *)testBundleName
-                  reporter:(id<FBTestManagerTestReporter>)reporter
+                  reporter:(id<FBXCTestReporter>)reporter
                      queue:(dispatch_queue_t)queue
           resultBundlePath:(NSString *)resultBundlePath
                     logger:(id<FBControlCoreLogger>)logger
@@ -482,13 +477,13 @@ static inline NSDate *dateFromString(NSString *date)
   }
   else {
     [logger log:@"Test failed and no target test results found in the bundle"];
-    [reporter testManagerMediator:nil testCaseDidFailForTestClass:@"" method:@"" withMessage:@"" file:nil line:0];
+    [reporter testCaseDidFailForTestClass:@"" method:@"" withMessage:@"" file:nil line:0];
   }
 }
 
 + (void)reportTestTargetXctests:(NSArray<NSDictionary *> *)testTargetXctests
                  testBundleName:(NSString *)testBundleName
-                       reporter:(id<FBTestManagerTestReporter>)reporter
+                       reporter:(id<FBXCTestReporter>)reporter
                           queue:(dispatch_queue_t)queue
                resultBundlePath:(NSString *)resultBundlePath
                          logger:(id<FBControlCoreLogger>)logger
@@ -503,7 +498,7 @@ static inline NSDate *dateFromString(NSString *date)
 
 + (void)reportTestTargetXctest:(NSDictionary<NSString *, NSDictionary *> *)testTargetXctest
                 testBundleName:(NSString *)testBundleName
-                      reporter:(id<FBTestManagerTestReporter>)reporter
+                      reporter:(id<FBXCTestReporter>)reporter
                          queue:(dispatch_queue_t)queue
               resultBundlePath:(NSString *)resultBundlePath
                         logger:(id<FBControlCoreLogger>)logger
@@ -517,13 +512,13 @@ static inline NSDate *dateFromString(NSString *date)
   }
   else {
     [logger log:@"Test failed and no test class results found in the bundle"];
-    [reporter testManagerMediator:nil testCaseDidFailForTestClass:@"" method:@"" withMessage:@"" file:nil line:0];
+    [reporter testCaseDidFailForTestClass:@"" method:@"" withMessage:@"" file:nil line:0];
   }
 }
 
 + (void)reportTestClasses:(NSArray<NSDictionary *> *)testClasses
            testBundleName:(NSString *)testBundleName
-                 reporter:(id<FBTestManagerTestReporter>)reporter
+                 reporter:(id<FBXCTestReporter>)reporter
                     queue:(dispatch_queue_t)queue
          resultBundlePath:(NSString *)resultBundlePath
                    logger:(id<FBControlCoreLogger>)logger
@@ -538,7 +533,7 @@ static inline NSDate *dateFromString(NSString *date)
 
 + (void)reportTestClass:(NSDictionary<NSString *, NSDictionary *> *)testClass
          testBundleName:(NSString *)testBundleName
-               reporter:(id<FBTestManagerTestReporter>)reporter
+               reporter:(id<FBXCTestReporter>)reporter
                   queue:(dispatch_queue_t)queue
        resultBundlePath:(NSString *)resultBundlePath
                  logger:(id<FBControlCoreLogger>)logger
@@ -553,14 +548,14 @@ static inline NSDate *dateFromString(NSString *date)
   }
   else {
     [logger logFormat:@"Test failed for %@ and no test method results found", testClassName];
-    [reporter testManagerMediator:nil testCaseDidFailForTestClass:testClassName method:@"" withMessage:@"" file:nil line:0];
+    [reporter testCaseDidFailForTestClass:testClassName method:@"" withMessage:@"" file:nil line:0];
   }
 }
 
 + (void)reportTestMethods:(NSArray<NSDictionary *> *)testMethods
            testBundleName:(NSString *)testBundleName
             testClassName:(NSString *)testClassName
-                 reporter:(id<FBTestManagerTestReporter>)reporter
+                 reporter:(id<FBXCTestReporter>)reporter
                     queue:(dispatch_queue_t)queue
          resultBundlePath:(NSString *)resultBundlePath
                    logger:(id<FBControlCoreLogger>)logger
@@ -576,7 +571,7 @@ static inline NSDate *dateFromString(NSString *date)
 + (void)reportTestMethod:(NSDictionary<NSString *, NSDictionary *> *)testMethod
           testBundleName:(NSString *)testBundleName
            testClassName:(NSString *)testClassName
-                reporter:(id<FBTestManagerTestReporter>)reporter
+                reporter:(id<FBXCTestReporter>)reporter
                    queue:(dispatch_queue_t)queue
         resultBundlePath:(NSString *)resultBundlePath
                   logger:(id<FBControlCoreLogger>)logger
@@ -596,7 +591,7 @@ static inline NSDate *dateFromString(NSString *date)
     status = FBTestReportStatusFailed;
   }
 
-  [reporter testManagerMediator:nil testCaseDidStartForTestClass:testClassName method:testMethodIdentifier];
+  [reporter testCaseDidStartForTestClass:testClassName method:testMethodIdentifier];
 
   NSDictionary<NSString *, NSDictionary *> *summaryRef = testMethod[@"summaryRef"];
   NSAssert(summaryRef, @"Summary reference is nil");
@@ -608,7 +603,7 @@ static inline NSDate *dateFromString(NSString *date)
       onQueue:queue doOnResolved:^(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *actionTestSummary) {
         if (status == FBTestReportStatusFailed) {
           NSArray *failureSummaries = accessAndUnwrapValues(actionTestSummary, @"failureSummaries", logger);
-          [reporter testManagerMediator:nil testCaseDidFailForTestClass:testClassName method:testMethodIdentifier withMessage:[self buildErrorMessage:failureSummaries logger:logger] file:nil line:0];
+          [reporter testCaseDidFailForTestClass:testClassName method:testMethodIdentifier withMessage:[self buildErrorMessage:failureSummaries logger:logger] file:nil line:0];
         }
 
         NSArray<NSDictionary *> *performanceMetrics = accessAndUnwrapValues(actionTestSummary, @"performanceMetrics", logger);
@@ -624,19 +619,15 @@ static inline NSDate *dateFromString(NSString *date)
         NSArray<NSDictionary *> *activitySummaries = accessAndUnwrapValues(actionTestSummary, @"activitySummaries", logger);
         [self extractScreenshotsFromActivities:activitySummaries queue:queue resultBundlePath:resultBundlePath logger:logger];
 
-        if ([reporter respondsToSelector:@selector(testManagerMediator:testCaseDidFinishForTestClass:method:withStatus:duration:logs:)]) {
-          NSMutableArray *logs = [self buildTestLog:activitySummaries
-                                     testBundleName:testBundleName
-                                      testClassName:testClassName
-                                     testMethodName:testMethodIdentifier
-                                         testPassed:status == FBTestReportStatusPassed
-                                           duration:[duration doubleValue]
-                                             logger:logger];
-          [reporter testManagerMediator:nil testCaseDidFinishForTestClass:testClassName method:testMethodIdentifier withStatus:status duration:[duration doubleValue] logs:[logs copy]];
-        }
-        else {
-          [reporter testManagerMediator:nil testCaseDidFinishForTestClass:testClassName method:testMethodIdentifier withStatus:status duration:[duration doubleValue]];
-        }
+
+        NSMutableArray *logs = [self buildTestLog:activitySummaries
+          testBundleName:testBundleName
+          testClassName:testClassName
+          testMethodName:testMethodIdentifier
+          testPassed:status == FBTestReportStatusPassed
+          duration:[duration doubleValue]
+          logger:logger];
+        [reporter testCaseDidFinishForTestClass:testClassName method:testMethodIdentifier withStatus:status duration:[duration doubleValue] logs:[logs copy]];
     }] awaitWithTimeout:XCTestOperationTimeoutSecs error:nil];
   }
 }

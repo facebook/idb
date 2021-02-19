@@ -22,6 +22,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 @property (nonatomic, copy, readonly) NSMutableArray<NSString *> *pendingTestOutput;
 
 @property (nonatomic, copy, readwrite) NSString *currentTestName;
+@property (nonatomic, copy, readwrite) NSError *crashError;
 @property (nonatomic, assign, readwrite) BOOL started;
 @property (nonatomic, assign, readwrite) BOOL finished;
 
@@ -50,13 +51,19 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   return self;
 }
 
+#pragma mark FBXCTestReporter
+
 - (BOOL)printReportWithError:(NSError **)error
 {
   if (!_started) {
     return [[FBXCTestError describe:[self noStartOfTestPlanErrorMessage]] failBool:error];
   }
   if (!_finished) {
+    NSError *crashError = nil;
     NSString *errorMessage = @"No didFinishExecutingTestPlan event was received, the test bundle has likely crashed.";
+    if (crashError) {
+      errorMessage = crashError.localizedDescription;
+    }
     if (_currentTestName) {
       errorMessage = [errorMessage stringByAppendingString:@". Crash occurred while this test was running: "];
       errorMessage = [errorMessage stringByAppendingString:_currentTestName];
@@ -67,20 +74,6 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   [self.dataConsumer consumeEndOfFile];
   return YES;
 }
-
-- (void)printEvent:(NSDictionary *)event
-{
-  NSMutableDictionary *timestamped = event.mutableCopy;
-  if (!timestamped[@"timestamp"]) {
-    timestamped[@"timestamp"] = @(NSDate.date.timeIntervalSince1970);
-  }
-
-  NSData *data = [NSJSONSerialization dataWithJSONObject:timestamped options:0 error:nil];
-  [self.dataConsumer consumeData:data];
-  [self.dataConsumer consumeData:[NSData dataWithBytes:"\n" length:1]];
-}
-
-#pragma mark FBXCTestReporter
 
 - (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid
 {
@@ -202,8 +195,24 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 {
 }
 
+- (void)didCrashDuringTest:(NSError *)error
+{
+  self.crashError = error;
+}
 
-#pragma mark Event Synthesis
+#pragma mark Private
+
+- (void)printEvent:(NSDictionary *)event
+{
+  NSMutableDictionary *timestamped = event.mutableCopy;
+  if (!timestamped[@"timestamp"]) {
+    timestamped[@"timestamp"] = @(NSDate.date.timeIntervalSince1970);
+  }
+
+  NSData *data = [NSJSONSerialization dataWithJSONObject:timestamped options:0 error:nil];
+  [self.dataConsumer consumeData:data];
+  [self.dataConsumer consumeData:[NSData dataWithBytes:"\n" length:1]];
+}
 
 - (NSString *)noStartOfTestPlanErrorMessage
 {

@@ -50,7 +50,7 @@
 
 #pragma mark FBXCTestCommands Implementation
 
-- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   // Return early and fail if there is already a test run for the device.
   // There should only ever be one test run per-device.
@@ -121,7 +121,7 @@
     logger:[logger withName:@"xcodebuild"]];
 }
 
-- (FBFuture<NSNull *> *)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<NSNull *> *)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   return [[[task
     completed]
@@ -136,7 +136,7 @@
     }]
     onQueue:self.device.workQueue fmap:^(id _) {
       [logger log:@"Reporting test results"];
-      [reporter testManagerMediatorDidFinishExecutingTestPlan:nil];
+      [reporter didFinishExecutingTestPlan];
       return FBFuture.empty;
     }];
 }

@@ -7,9 +7,16 @@
 
 #import <Foundation/Foundation.h>
 
-#import <XCTestBootstrap/FBTestManagerTestReporter.h>
-
 NS_ASSUME_NONNULL_BEGIN
+
+/**
+ An Enumerated Type for Test Report Results.
+ */
+typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
+  FBTestReportStatusUnknown = 0,
+  FBTestReportStatusPassed = 1,
+  FBTestReportStatusFailed = 2
+};
 
 /**
  A Summary of Test Results.

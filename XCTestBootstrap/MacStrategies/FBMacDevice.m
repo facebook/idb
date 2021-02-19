@@ -345,7 +345,7 @@
   return [FBFuture futureWithResult:runningProcesses];
 }
 
-- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
+- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
 {
   FBMacTestPreparationStrategy *testPreparationStrategy = [FBMacTestPreparationStrategy
    strategyWithTestLaunchConfiguration:testLaunchConfiguration

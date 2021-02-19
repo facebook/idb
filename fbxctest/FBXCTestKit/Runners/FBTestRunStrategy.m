@@ -104,7 +104,7 @@
   FBFuture<NSNull *> *executionFinished = [FBManagedTestRunStrategy
     runToCompletionWithTarget:self.target
     configuration:testLaunchConfiguration
-    reporter:[FBXCTestReporterAdapter adapterWithReporter:self.reporter]
+    reporter:self.reporter
     testPreparationStrategy:testPreparationStrategy
     logger:self.target.logger];
 

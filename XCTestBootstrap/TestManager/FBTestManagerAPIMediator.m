@@ -24,7 +24,6 @@
 #import "XCTestBootstrapError.h"
 
 #import "FBTestReporterForwarder.h"
-#import "FBTestManagerTestReporter.h"
 #import "FBTestManagerResultSummary.h"
 #import "FBTestBundleConnection.h"
 #import "FBTestDaemonConnection.h"
@@ -38,7 +37,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 @property (nonatomic, strong, readonly) FBTestManagerContext *context;
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
-@property (nonatomic, strong, readonly) id<FBTestManagerTestReporter> reporter;
+@property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
@@ -51,13 +50,13 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 #pragma mark - Initializers
 
-+ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   FBTestManagerAPIMediator *mediator = [[self alloc] initWithContext:context target:target reporter:reporter logger:logger];
   return [mediator connectAndRunUntilCompletion];
 }
 
-- (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {

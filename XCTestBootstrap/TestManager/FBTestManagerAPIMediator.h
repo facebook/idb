@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBControlCoreLogger;
 @protocol FBiOSTarget;
-@protocol FBTestManagerTestReporter;
+@protocol FBXCTestReporter;
 
 extern const NSInteger FBProtocolVersion;
 extern const NSInteger FBProtocolMinimumVersion;
@@ -45,7 +45,7 @@ extern const NSInteger FBProtocolMinimumVersion;
  @param logger the (optional) logger to events to.
  @return A future that resolves when test execution has fully completed, or an error occured with the execution.
  */
-+ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Establishes a connection to the testmanagerd service.
