@@ -41,7 +41,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
 @property (nonatomic, strong, readonly) id<FBTestManagerTestReporter> reporter;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, copy, nullable, readonly) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
 
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
 @property (nonatomic, strong, readonly) FBTestReporterForwarder *reporterForwarder;
@@ -54,13 +53,13 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 #pragma mark - Initializers
 
-+ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
++ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  FBTestManagerAPIMediator *mediator = [[self alloc] initWithContext:context target:target reporter:reporter logger:logger testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
+  FBTestManagerAPIMediator *mediator = [[self alloc] initWithContext:context target:target reporter:reporter logger:logger];
   return [mediator connectAndRunUntilCompletion];
 }
 
-- (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
+- (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -71,7 +70,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   _target = target;
   _reporter = reporter;
   _logger = logger;
-  _testedApplicationAdditionalEnvironment = testedApplicationAdditionalEnvironment;
 
   _tokenToBundleIDMap = [NSMutableDictionary new];
   _requestQueue = dispatch_queue_create("com.facebook.xctestboostrap.mediator", DISPATCH_QUEUE_PRIORITY_DEFAULT);
@@ -157,7 +155,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 {
   [self.logger logFormat:@"Test process requested process launch with bundleID %@", bundleID];
   NSMutableDictionary<NSString *, NSString *> *targetEnvironment = @{}.mutableCopy;
-  [targetEnvironment addEntriesFromDictionary:self.testedApplicationAdditionalEnvironment];
+  [targetEnvironment addEntriesFromDictionary:self.context.testedApplicationAdditionalEnvironment];
   [targetEnvironment addEntriesFromDictionary:environment];
 
 

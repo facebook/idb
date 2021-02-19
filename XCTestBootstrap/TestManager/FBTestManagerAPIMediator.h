@@ -43,10 +43,9 @@ extern const NSInteger FBProtocolMinimumVersion;
  @param target the target.
  @param reporter the (optional) delegate to report test progress too.
  @param logger the (optional) logger to events to.
- @param testedApplicationAdditionalEnvironment Additional Environment Variables to pass to the application under test
  @return A future that resolves when test execution has fully completed, or an error occured with the execution.
  */
-+ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
++ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Establishes a connection to the testmanagerd service.

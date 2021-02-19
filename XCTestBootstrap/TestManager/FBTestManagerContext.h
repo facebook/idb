@@ -9,23 +9,44 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
- Context for the Test Manager.
+ Context for FBTestManagerAPIMediator.
  */
 @interface FBTestManagerContext : NSObject <NSCopying>
 
 /**
  Constructor for the Test Manager Context.
 
- @param testRunnerPID a process id of the Test Host Process. This is the process into which the Test Bundle is injected.
+ @param testRunnerPID the process id of the Test Host Process. This is the process into which the Test Bundle is injected.
  @param testRunnerBundleID the Bundle ID of the Test Host Process. This is the process into which the Test Bundle is injected.
  @param sessionIdentifier a session identifier of test that should be started
+ @param testedApplicationAdditionalEnvironment Additional environment for the app-under-test.
  @return a new FBTestManagerContext instance.
  */
-+ (instancetype)contextWithTestRunnerPID:(pid_t)testRunnerPID testRunnerBundleID:(NSString *)testRunnerBundleID sessionIdentifier:(NSUUID *)sessionIdentifier;
+- (instancetype)initWithTestRunnerPID:(pid_t)testRunnerPID testRunnerBundleID:(NSString *)testRunnerBundleID sessionIdentifier:(NSUUID *)sessionIdentifier testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
 
+/**
+ The process id of the Test Host Process. This is the process into which the Test Bundle is injected.
+ */
 @property (nonatomic, assign, readonly) pid_t testRunnerPID;
+
+/**
+ The Bundle ID of the Test Host Process. This is the process into which the Test Bundle is injected
+ */
 @property (nonatomic, copy, readonly) NSString *testRunnerBundleID;
+
+/**
+ A session identifier of test that should be started
+ */
 @property (nonatomic, copy, readonly) NSUUID *sessionIdentifier;
 
+/**
+ Additional environment for the app-under-test.
+ */
+@property (nonatomic, copy, readonly, nullable) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
+
 @end
+
+NS_ASSUME_NONNULL_END

@@ -49,10 +49,11 @@
       FBTestRunnerConfiguration *runnerConfiguration = tuple[1];
 
       // Make the Context for the Test Manager.
-      FBTestManagerContext *context = [FBTestManagerContext
-        contextWithTestRunnerPID:launchedApplcation.processIdentifier
+      FBTestManagerContext *context = [[FBTestManagerContext alloc]
+        initWithTestRunnerPID:launchedApplcation.processIdentifier
         testRunnerBundleID:runnerConfiguration.testRunner.bundleID
-        sessionIdentifier:runnerConfiguration.sessionIdentifier];
+        sessionIdentifier:runnerConfiguration.sessionIdentifier
+        testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
 
       // Add callback for when the app under test exists
       [launchedApplcation.applicationTerminated onQueue:target.workQueue doOnResolved:^(NSNull *_) {
@@ -64,8 +65,7 @@
         connectAndRunUntilCompletionWithContext:context
         target:target
         reporter:reporter
-        logger:logger
-        testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
+        logger:logger];
     }];
 }
 

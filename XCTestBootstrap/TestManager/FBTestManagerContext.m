@@ -9,12 +9,7 @@
 
 @implementation FBTestManagerContext
 
-+ (instancetype)contextWithTestRunnerPID:(pid_t)testRunnerPID testRunnerBundleID:(NSString *)testRunnerBundleID sessionIdentifier:(NSUUID *)sessionIdentifier
-{
-  return [[self alloc] initWithTestRunnerPID:testRunnerPID testRunnerBundleID:testRunnerBundleID sessionIdentifier:sessionIdentifier];
-}
-
-- (instancetype)initWithTestRunnerPID:(pid_t)testRunnerPID testRunnerBundleID:(NSString *)testRunnerBundleID sessionIdentifier:(NSUUID *)sessionIdentifier
+- (instancetype)initWithTestRunnerPID:(pid_t)testRunnerPID testRunnerBundleID:(NSString *)testRunnerBundleID sessionIdentifier:(NSUUID *)sessionIdentifier testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
 {
   self = [super init];
   if (!self) {
@@ -24,26 +19,9 @@
   _testRunnerPID = testRunnerPID;
   _testRunnerBundleID = testRunnerBundleID;
   _sessionIdentifier = sessionIdentifier;
+  _testedApplicationAdditionalEnvironment = testedApplicationAdditionalEnvironment;
 
   return self;
-}
-
-#pragma mark NSObject
-
-- (NSUInteger)hash
-{
-  return (NSUInteger) self.testRunnerPID ^ self.testRunnerBundleID.hash ^ self.sessionIdentifier.hash;
-}
-
-- (BOOL)isEqual:(FBTestManagerContext *)context
-{
-  if (![context isKindOfClass:self.class]) {
-    return NO;
-  }
-
-  return self.testRunnerPID == context.testRunnerPID &&
-         [self.testRunnerBundleID isEqualToString:context.testRunnerBundleID] &&
-         [self.sessionIdentifier isEqual:context.sessionIdentifier];
 }
 
 - (NSString *)description
@@ -58,8 +36,9 @@
 
 #pragma mark NSCopying
 
-- (instancetype)copyWithZone:(NSZone *)zone
+- (id)copyWithZone:(NSZone *)zone
 {
+  // Class is immutable.
   return self;
 }
 
