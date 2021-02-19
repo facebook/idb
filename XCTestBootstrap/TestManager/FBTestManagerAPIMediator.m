@@ -23,12 +23,13 @@
 
 #import "XCTestBootstrapError.h"
 
-#import "FBTestReporterForwarder.h"
-#import "FBTestManagerResultSummary.h"
+#import "FBTestApplicationLaunchStrategy.h"
 #import "FBTestBundleConnection.h"
 #import "FBTestDaemonConnection.h"
 #import "FBTestManagerContext.h"
-#import "FBTestApplicationLaunchStrategy.h"
+#import "FBTestManagerResultSummary.h"
+#import "FBTestReporterForwarder.h"
+#import "FBXCTestReporter.h"
 
 const NSInteger FBProtocolVersion = 0x16;
 const NSInteger FBProtocolMinimumVersion = 0x8;
@@ -103,6 +104,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 - (FBFuture<NSNull *> *)connectAndRunUntilCompletion
 {
   id<FBControlCoreLogger> logger = self.logger;
+  id<FBXCTestReporter> reporter = self.reporter;
   return [[[FBFutureContext
     futureContextWithFutureContexts:@[
       [FBTestDaemonConnection daemonConnectionWithContext:self.context target:self.target interface:(id)self.reporterForwarder requestQueue:self.requestQueue logger:logger],
@@ -116,6 +118,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
       NSError *error = future.error;
       if (error) {
         [logger logFormat:@"Test Execution finished in error %@", error];
+        [reporter didCrashDuringTest:error];
       }
       return future;
     }];
