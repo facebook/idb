@@ -9,7 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBProductBundle.h"
 #import "FBTestBundle.h"
 #import "FBTestConfiguration.h"
 #import "FBTestRunnerConfiguration.h"
@@ -110,17 +109,12 @@
   }
 
   // Prepare test runner
-  return [[[iosTarget
+  return [[iosTarget
     installedApplicationWithBundleID:self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID]
-    onQueue:iosTarget.workQueue fmap:^(FBInstalledApplication *installedApplication) {
-      return [FBFuture resolveValue:^(NSError **innerError) {
-        return [FBProductBundleBuilder productBundleFromInstalledApplication:installedApplication error:innerError];
-      }];
-    }]
-    onQueue:iosTarget.workQueue map:^(FBProductBundle *hostApplication) {
+    onQueue:iosTarget.workQueue map:^(FBInstalledApplication *hostApplication) {
       return [FBTestRunnerConfiguration
         configurationWithSessionIdentifier:sessionIdentifier
-        hostApplication:hostApplication
+        hostApplication:hostApplication.bundle
         hostApplicationAdditionalEnvironment:hostApplicationAdditionalEnvironment
         testBundle:testBundle
         testConfigurationPath:testBundle.configuration.path

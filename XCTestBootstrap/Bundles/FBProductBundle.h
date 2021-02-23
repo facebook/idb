@@ -106,15 +106,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable FBProductBundle *)buildWithError:(NSError **)error;
 
-/**
- Make a Product Bundle from an FBInstalledApplication.
-
- @param installedApplication the application install.
- @param error an error out for any error occurs
- @return A Product bundle, or nil on error.
- */
-+ (nullable FBProductBundle *)productBundleFromInstalledApplication:(FBInstalledApplication *)installedApplication error:(NSError **)error;
-
 @end
 
 NS_ASSUME_NONNULL_END

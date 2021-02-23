@@ -115,14 +115,9 @@
   }
   FBXCTestShimConfiguration *shims = self.shims;
 
-  return [[[simulator
+  return [[simulator
     installedApplicationWithBundleID:self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID]
-    onQueue:simulator.workQueue fmap:^(FBInstalledApplication *installedApplication) {
-      return [FBFuture resolveValue:^(NSError **innerError) {
-        return [FBProductBundleBuilder productBundleFromInstalledApplication:installedApplication error:innerError];
-      }];
-    }]
-    onQueue:simulator.workQueue map:^(FBProductBundle *hostApplication) {
+    onQueue:simulator.workQueue map:^(FBInstalledApplication *installedApplication) {
       NSMutableDictionary<NSString *, NSString *> *hostApplicationAdditionalEnvironment = [NSMutableDictionary dictionary];
       hostApplicationAdditionalEnvironment[@"SHIMULATOR_START_XCTEST"] = @"1";
       hostApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = shims.iOSSimulatorTestShimPath;
@@ -133,10 +128,10 @@
       // This is needed so that the Application is aware of how to link the XCTest.framework from the developer directory.
       // The Application binary will not contain linker opcodes that point to the XCTest.framework within the Simulator runtime bundle.
       // Therefore we need to provide them to the test runner so it can pass them to the app launch.
-      NSArray<NSString *> *frameworkSearchPaths = [XCTestFrameworksPaths arrayByAddingObject:[hostApplication.path stringByAppendingPathComponent:@"Frameworks"]];
+      NSArray<NSString *> *frameworkSearchPaths = [XCTestFrameworksPaths arrayByAddingObject:[installedApplication.bundle.path stringByAppendingPathComponent:@"Frameworks"]];
       return [FBTestRunnerConfiguration
         configurationWithSessionIdentifier:sessionIdentifier
-        hostApplication:hostApplication
+        hostApplication:installedApplication.bundle
         hostApplicationAdditionalEnvironment:hostApplicationAdditionalEnvironment.copy
         testBundle:testBundle
         testConfigurationPath:testBundle.configuration.path

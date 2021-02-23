@@ -9,7 +9,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBProductBundle;
+@class FBBundleDescriptor;
 @class FBTestBundle;
 @class FBTestConfiguration;
 
@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param frameworkSearchPath the search path for Frameworks.
  @param testedApplicationAdditionalEnvironment Launch environment variables added to test target application
  */
-+ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBProductBundle *)hostApplication hostApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
++ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBBundleDescriptor *)hostApplication hostApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
 
 /**
  Test session identifier
@@ -39,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Test runner app used for testing
  */
-@property (nonatomic, strong, readonly) FBProductBundle *testRunner;
+@property (nonatomic, strong, readonly) FBBundleDescriptor *testRunner;
 
 /**
   Launch arguments for test runner

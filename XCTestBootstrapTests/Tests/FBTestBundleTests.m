@@ -8,9 +8,6 @@
 #import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
-
-#import <OCMock/OCMock.h>
-
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBXCTestBootstrapFixtures.h"

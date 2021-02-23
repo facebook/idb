@@ -13,7 +13,6 @@
 
 #import "FBMacTestPreparationStrategy.h"
 #import "FBManagedTestRunStrategy.h"
-#import "FBProductBundle.h"
 #import "XCTestBootstrapError.h"
 
 @protocol XCTestManager_XPCControl <NSObject>
@@ -21,7 +20,7 @@
 @end
 
 @interface FBMacDevice()
-@property (nonatomic, strong) NSMutableDictionary<NSString *, FBProductBundle *> *bundleIDToProductMap;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, FBBundleDescriptor *> *bundleIDToProductMap;
 @property (nonatomic, strong) NSMutableDictionary<NSString *, FBTask *> *bundleIDToRunningTask;
 @property (nonatomic, strong) NSXPCConnection *connection;
 @property (nonatomic, copy) NSString *workingDirectory;
@@ -40,21 +39,18 @@
   return _value;
 }
 
-+ (NSMutableDictionary<NSString *, FBProductBundle *> *)fetchInstalledApplications
++ (NSMutableDictionary<NSString *, FBBundleDescriptor *> *)fetchInstalledApplications
 {
-  NSMutableDictionary<NSString *, FBProductBundle *> *mapping = @{}.mutableCopy;
+  NSMutableDictionary<NSString *, FBBundleDescriptor *> *mapping = @{}.mutableCopy;
   NSArray<NSString *> *content = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:self.applicationInstallDirectory error:nil];
   for (NSString *fileOrDirectory in content) {
     if (![fileOrDirectory.pathExtension isEqualToString:@"app"]) {
       continue;
     }
     NSString *path = [FBMacDevice.applicationInstallDirectory stringByAppendingPathComponent:fileOrDirectory];
-    FBProductBundle *product =
-    [[[FBProductBundleBuilder builder]
-      withBundlePath:path]
-     buildWithError:nil];
-    if (product && product.bundleID) {
-      mapping[product.bundleID] = product;
+    FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:path error:nil];
+    if (bundle && bundle.identifier) {
+      mapping[bundle.identifier] = bundle;
     }
   }
   return mapping;
@@ -225,7 +221,7 @@
   return nil;
 }
 
-- (nonnull FBFuture<NSNull *> *)installApplicationWithPath:(nonnull NSString *)path
+- (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
 {
   NSError *error;
   NSFileManager *fm = [NSFileManager defaultManager];
@@ -244,26 +240,24 @@
   if (![fm copyItemAtPath:path toPath:dest error:&error]) {
     return [FBFuture futureWithResult:error];
   }
-  FBProductBundle *product =
-  [[[FBProductBundleBuilder builder]
-    withBundlePath:dest]
-   buildWithError:&error];
+  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:dest error:&error];
   if (error) {
     return [FBFuture futureWithResult:error];
   }
-  self.bundleIDToProductMap[product.bundleID] = product;
-  return [FBFuture futureWithResult:[NSNull null]];
+  self.bundleIDToProductMap[bundle.identifier] = bundle;
+  return FBFuture.empty;
 }
 
 - (nonnull FBFuture<NSNull *> *)uninstallApplicationWithBundleID:(nonnull NSString *)bundleID
 {
-  FBProductBundle *product = self.bundleIDToProductMap[bundleID];
-  if (!product) {
-    NSError *error = [XCTestBootstrapError errorForFormat:@"Application with bundleID (%@) was not installed by XCTestBootstrap", bundleID];
-    return [FBFuture futureWithError:error];
+  FBBundleDescriptor *bundle = self.bundleIDToProductMap[bundleID];
+  if (!bundle) {
+    return [[XCTestBootstrapError
+      describeFormat:@"Application with bundleID (%@) was not installed by XCTestBootstrap", bundleID]
+      failFuture];
   }
   NSError *error;
-  if (![[NSFileManager defaultManager] removeItemAtPath:product.path error:&error]) {
+  if (![[NSFileManager defaultManager] removeItemAtPath:bundle.path error:&error]) {
     return [FBFuture futureWithResult:error];
   }
   [self.bundleIDToProductMap removeObjectForKey:bundleID];
@@ -274,9 +268,9 @@
 {
   NSMutableArray *result = [NSMutableArray array];
   for (NSString *bundleID in self.bundleIDToProductMap) {
-    FBProductBundle *productBundle = self.bundleIDToProductMap[bundleID];
+    FBBundleDescriptor *bundle = self.bundleIDToProductMap[bundleID];
     NSError *error;
-    FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:productBundle.path error:&error];
+    bundle = [FBBundleDescriptor bundleFromPath:bundle.path error:&error];
     if (!bundle) {
       return [FBFuture futureWithError:error];
     }
@@ -287,9 +281,9 @@
 
 - (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID
 {
-  FBProductBundle *productBundle = self.bundleIDToProductMap[bundleID];
+  FBBundleDescriptor *bundle = self.bundleIDToProductMap[bundleID];
   NSError *error;
-  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:productBundle.path error:&error];
+  bundle = [FBBundleDescriptor bundleFromPath:bundle.path error:&error];
   if (!bundle) {
     return [FBFuture futureWithError:error];
   }
@@ -316,17 +310,19 @@
 
 - (FBFuture<id<FBLaunchedProcess>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
-  FBProductBundle *product = self.bundleIDToProductMap[configuration.bundleID];
-  if (!product) {
-    return [FBFuture futureWithResult:@0];
+  FBBundleDescriptor *bundle = self.bundleIDToProductMap[configuration.bundleID];
+  if (!bundle) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not find application for %@", configuration.bundleID]
+      failFuture];
   }
   return [[[[[FBTaskBuilder
-    withLaunchPath:product.binaryPath]
+    withLaunchPath:bundle.binary.path]
     withArguments:configuration.arguments]
     withEnvironment:configuration.environment]
     start]
     onQueue:self.workQueue map:^ id<FBLaunchedProcess> (FBTask *task) {
-      self.bundleIDToRunningTask[product.bundleID] = task;
+      self.bundleIDToRunningTask[bundle.identifier] = task;
       return task;
     }];
 }

@@ -7,8 +7,6 @@
 
 #import <XCTest/XCTest.h>
 
-#import <OCMock/OCMock.h>
-
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 @interface FBTestConfigurationTests : XCTestCase

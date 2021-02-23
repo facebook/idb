@@ -7,7 +7,6 @@
 
 #import "FBManagedTestRunStrategy.h"
 
-#import "FBProductBundle.h"
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestManagerContext.h"
 #import "FBTestRunnerConfiguration.h"
@@ -51,7 +50,7 @@
       // Make the Context for the Test Manager.
       FBTestManagerContext *context = [[FBTestManagerContext alloc]
         initWithTestRunnerPID:launchedApplcation.processIdentifier
-        testRunnerBundleID:runnerConfiguration.testRunner.bundleID
+        testRunnerBundleID:runnerConfiguration.testRunner.identifier
         sessionIdentifier:runnerConfiguration.sessionIdentifier
         testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
 
@@ -72,8 +71,8 @@
 + (FBApplicationLaunchConfiguration *)prepareApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration withTestRunnerConfiguration:(FBTestRunnerConfiguration *)testRunnerConfiguration
 {
   return [FBApplicationLaunchConfiguration
-    configurationWithBundleID:testRunnerConfiguration.testRunner.bundleID
-    bundleName:testRunnerConfiguration.testRunner.bundleID
+    configurationWithBundleID:testRunnerConfiguration.testRunner.identifier
+    bundleName:testRunnerConfiguration.testRunner.identifier
     arguments:[self argumentsFromConfiguration:testRunnerConfiguration attributes:applicationLaunchConfiguration.arguments]
     environment:[self environmentFromConfiguration:testRunnerConfiguration environment:applicationLaunchConfiguration.environment]
     output:applicationLaunchConfiguration.output

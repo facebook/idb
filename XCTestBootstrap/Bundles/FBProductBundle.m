@@ -131,13 +131,4 @@
   return bundleProduct;
 }
 
-+ (FBProductBundle *)productBundleFromInstalledApplication:(FBInstalledApplication *)installedApplication error:(NSError **)error
-{
-  return [[[[[self builder]
-    withBundlePath:installedApplication.bundle.path]
-    withBundleID:installedApplication.bundle.identifier]
-    withBinaryName:installedApplication.bundle.name]
-    buildWithError:error];
-}
-
 @end

@@ -22,13 +22,12 @@
   id testBundleMock = [OCMockObject mockForClass:FBTestBundle.class];
   [[[testBundleMock stub] andReturn:@"/blackhole/xctwda.xctest"] path];
 
-  id appBundleMock = [OCMockObject mockForClass:FBProductBundle.class];
-  [[[appBundleMock stub] andReturn:@"/blackhole/pray.app"] path];
-  [[[appBundleMock stub] andReturn:@"/blackhole/pray.app/app"] binaryPath];
+  FBBinaryDescriptor *hostApplicationBinary = [[FBBinaryDescriptor alloc] initWithName:@"HostApplicationBinaryName" architectures:NSSet.set uuid:NSUUID.UUID path:@"/blackhole/pray.app/app"];
+  FBBundleDescriptor *hostApplication = [[FBBundleDescriptor alloc] initWithName:@"HostApplicationName" identifier:@"HostApplicationIdentifier" path:@"/blackhole/pray.app" binary:hostApplicationBinary];
 
   return [FBTestRunnerConfiguration
     configurationWithSessionIdentifier:NSUUID.UUID
-    hostApplication:appBundleMock
+    hostApplication:hostApplication
     hostApplicationAdditionalEnvironment:@{@"MAGIC": @"IS_HERE"}
     testBundle:testBundleMock
     testConfigurationPath:@"/booo/magic.xctestconfiguration"

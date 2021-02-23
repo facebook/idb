@@ -18,47 +18,6 @@
 
 @implementation FBProductBundleTests
 
-- (void)testProductBundleLoadWithPathOnIOS
-{
-  NSError *error;
-  NSBundle *bundle = [FBProductBundleTests iosUnitTestBundleFixture];
-  FBProductBundle *productBundle =
-  [[[FBProductBundleBuilder builder]
-    withBundlePath:bundle.bundlePath]
-   buildWithError:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue([productBundle isKindOfClass:FBProductBundle.class]);
-  XCTAssertEqualObjects(productBundle.name, @"iOSUnitTestFixture");
-  XCTAssertEqualObjects(productBundle.filename, @"iOSUnitTestFixture.xctest");
-  XCTAssertEqualObjects(productBundle.path, bundle.bundlePath);
-  XCTAssertEqualObjects(productBundle.bundleID, @"com.facebook.iOSUnitTestFixture");
-  XCTAssertEqualObjects(productBundle.binaryName, @"iOSUnitTestFixture");
-  XCTAssertEqualObjects(productBundle.binaryPath, [bundle.bundlePath stringByAppendingPathComponent:@"iOSUnitTestFixture"]);
-}
-
-- (void)testProductBundleLoadWithPathOnMacOSX
-{
-  NSError *error;
-  NSBundle *bundle = [FBProductBundleTests macUnitTestBundleFixture];
-  FBProductBundle *productBundle =
-  [[[FBProductBundleBuilder builder]
-    withBundlePath:bundle.bundlePath]
-   buildWithError:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue([productBundle isKindOfClass:FBProductBundle.class]);
-  XCTAssertEqualObjects(productBundle.name, @"MacUnitTestFixture");
-  XCTAssertEqualObjects(productBundle.filename, @"MacUnitTestFixture.xctest");
-  XCTAssertEqualObjects(productBundle.path, bundle.bundlePath);
-  XCTAssertEqualObjects(productBundle.bundleID, @"com.facebook.MacUnitTestFixture");
-  XCTAssertEqualObjects(productBundle.binaryName, @"MacUnitTestFixture");
-  XCTAssertEqualObjects(productBundle.binaryPath, [bundle.bundlePath stringByAppendingPathComponent:@"Contents/MacOS/MacUnitTestFixture"]);
-}
-
-- (void)testNoBundlePath
-{
-  XCTAssertThrows([[FBProductBundleBuilder builder] buildWithError:nil]);
-}
-
 - (void)testWorkingDirectory
 {
   NSBundle *bundle = [FBProductBundleTests iosUnitTestBundleFixture];
@@ -87,18 +46,6 @@
   XCTAssertEqualObjects(productBundle.bundleID, @"bundleID");
   XCTAssertEqualObjects(productBundle.binaryPath, [targetPath stringByAppendingPathComponent:@"exec"]);
   [fileManagerMock verify];
-}
-
-- (void)testFromInstalledApplication
-{
-  FBInstalledApplication *application = [FBInstalledApplication
-    installedApplicationWithBundle:[[FBBundleDescriptor alloc] initWithName:@"FooApp" identifier:@"com.foo.app" path:@"/Foo.app" binary:nil]
-    installType:FBApplicationInstallTypeUser
-    dataContainer:@"/tmp/container"];
-  NSError *error = nil;
-  FBProductBundle *bundle = [FBProductBundleBuilder productBundleFromInstalledApplication:application error:&error];
-  XCTAssertNil(error);
-  XCTAssertEqualObjects(bundle.binaryName, @"FooApp");
 }
 
 @end
