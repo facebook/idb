@@ -12,7 +12,6 @@
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
-#import "FBFileManager.h"
 #import "FBTaskBuilder.h"
 #import "FBXCodeConfiguration.h"
 

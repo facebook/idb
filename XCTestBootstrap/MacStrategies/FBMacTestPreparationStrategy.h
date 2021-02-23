@@ -12,8 +12,6 @@
 @class FBTestLaunchConfiguration;
 @class FBXCTestShimConfiguration;
 
-@protocol FBFileManager;
-
 /**
  Strategy used to run XCTest with MacOSX.
  It will copy the Test Bundle to a working directory and update with an appropriate xctestconfiguration.

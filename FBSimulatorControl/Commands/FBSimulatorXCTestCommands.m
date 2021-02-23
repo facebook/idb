@@ -204,7 +204,6 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
         initWithTestLaunchConfiguration:testLaunchConfiguration
         shims:shims
         workingDirectory:self.simulator.auxillaryDirectory
-        fileManager:NSFileManager.defaultManager
         codesign:[FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:self.simulator.logger]];
 
       return [FBManagedTestRunStrategy

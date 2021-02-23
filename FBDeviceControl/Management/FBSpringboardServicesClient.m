@@ -77,7 +77,7 @@ static NSString *const IconJSONFile = @"icons.json";
         if (!data) {
           return [FBFuture futureWithError:error];
         }
-        if (![NSFileManager.defaultManager writeData:data toFile:destinationPath options:NSDataWritingAtomic error:&error]) {
+        if (![data writeToFile:destinationPath options:NSDataWritingAtomic error:&error]) {
           return [FBFuture futureWithError:error];
         }
         return [FBFuture futureWithResult:destinationPath];
@@ -87,7 +87,7 @@ static NSString *const IconJSONFile = @"icons.json";
         if (!data) {
           return [FBFuture futureWithError:error];
         }
-        if (![NSFileManager.defaultManager writeData:data toFile:destinationPath options:NSDataWritingAtomic error:&error]) {
+        if (![data writeToFile:destinationPath options:NSDataWritingAtomic error:&error]) {
           return [FBFuture futureWithError:error];
         }
         return [FBFuture futureWithResult:destinationPath];

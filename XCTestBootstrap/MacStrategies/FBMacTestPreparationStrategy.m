@@ -18,14 +18,14 @@
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
 @property (nonatomic, copy, readonly) FBTestLaunchConfiguration *testLaunchConfiguration;
 @property (nonatomic, copy, readonly) FBXCTestShimConfiguration *shims;
-@property (nonatomic, strong, readonly) id<FBFileManager> fileManager;
+@property (nonatomic, strong, readonly) NSFileManager *fileManager;
 @property (nonatomic, strong, readonly) FBCodesignProvider *codesign;
 
 @end
 
 @implementation FBMacTestPreparationStrategy
 
-- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration shims:(FBXCTestShimConfiguration *)shims workingDirectory:(NSString *)workingDirectory fileManager:(id<FBFileManager>)fileManager codesign:(FBCodesignProvider *)codesign
+- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration shims:(FBXCTestShimConfiguration *)shims workingDirectory:(NSString *)workingDirectory codesign:(FBCodesignProvider *)codesign
 {
   NSAssert(workingDirectory, @"Working directory is needed to prepare bundles");
   NSAssert(testLaunchConfiguration.applicationLaunchConfiguration.bundleID, @"Test runner bundle ID is needed to load bundles");
@@ -39,7 +39,6 @@
   _testLaunchConfiguration = testLaunchConfiguration;
   _shims = shims;
   _workingDirectory = workingDirectory;
-  _fileManager = fileManager;
   _codesign = codesign;
 
   return self;

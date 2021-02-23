@@ -347,7 +347,6 @@
         initWithTestLaunchConfiguration:testLaunchConfiguration
         shims:shimConfiguation
         workingDirectory:self.workingDirectory
-        fileManager:NSFileManager.defaultManager
         codesign:[FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:nil]];
 
       return [FBManagedTestRunStrategy

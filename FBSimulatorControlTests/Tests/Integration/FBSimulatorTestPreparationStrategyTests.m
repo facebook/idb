@@ -23,7 +23,7 @@
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   FBXCTestShimConfiguration *shims = [[FBXCTestShimConfiguration defaultShimConfigurationWithLogger:simulator.logger] await:nil];
-  FBSimulatorTestPreparationStrategy *strategy = [[FBSimulatorTestPreparationStrategy alloc] initWithTestLaunchConfiguration:self.defaultTestLaunch shims:shims workingDirectory:NSTemporaryDirectory() fileManager:NSFileManager.defaultManager codesign:(id) NSNull.null];
+  FBSimulatorTestPreparationStrategy *strategy = [[FBSimulatorTestPreparationStrategy alloc] initWithTestLaunchConfiguration:self.defaultTestLaunch shims:shims workingDirectory:NSTemporaryDirectory() codesign:(id) NSNull.null];
 
   NSError *error = nil;
   FBTestRunnerConfiguration *configuration = [[strategy prepareTestWithIOSTarget:simulator] await:&error];

@@ -14,7 +14,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBTestRunnerConfiguration;
 
 @protocol FBiOSTarget;
-@protocol FBFileManager;
 
 /**
  A protocol that defines an interface for preparing a test configuration.
@@ -30,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param workingDirectory directory used to prepare all bundles.
  @return a FBXCTestPreparationStrategy instance.
  */
-- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration shims:(FBXCTestShimConfiguration *)shims workingDirectory:(NSString *)workingDirectory fileManager:(id<FBFileManager>)fileManager codesign:(FBCodesignProvider *)codesign;
+- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration shims:(FBXCTestShimConfiguration *)shims workingDirectory:(NSString *)workingDirectory codesign:(FBCodesignProvider *)codesign;
 
 #pragma mark Public Methods
 

@@ -40,7 +40,6 @@
 #import <FBControlCore/FBEventReporterSubject.h>
 #import <FBControlCore/FBFileCommands.h>
 #import <FBControlCore/FBFileContainer.h>
-#import <FBControlCore/FBFileManager.h>
 #import <FBControlCore/FBFileReader.h>
 #import <FBControlCore/FBFileWriter.h>
 #import <FBControlCore/FBFuture+Sync.h>

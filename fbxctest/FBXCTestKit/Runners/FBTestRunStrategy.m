@@ -107,7 +107,6 @@
         initWithTestLaunchConfiguration:testLaunchConfiguration
         shims:shims
         workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]
-        fileManager:NSFileManager.defaultManager
         codesign:[FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:self.target.logger]];
 
       executionFinished = [FBManagedTestRunStrategy

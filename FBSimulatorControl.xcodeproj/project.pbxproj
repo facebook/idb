@@ -457,8 +457,6 @@
 		AAE42AA91D2D77D800DCD0EA /* FBSimulatorBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = AAE42AA71D2D77D800DCD0EA /* FBSimulatorBridge.m */; };
 		AAE4D0081F70F66F005EA6C3 /* FBSettingsApproval.m in Sources */ = {isa = PBXBuildFile; fileRef = AAE4D0061F70F66F005EA6C3 /* FBSettingsApproval.m */; };
 		AAE4D00B1F70FB38005EA6C3 /* FBSettingsApproval.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE4D0071F70F66F005EA6C3 /* FBSettingsApproval.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AAE4D05B1D9996DB0098A71E /* FBFileManager.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE4D05A1D9996DB0098A71E /* FBFileManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AAE4D05D1D99972B0098A71E /* FBFileManager.m in Sources */ = {isa = PBXBuildFile; fileRef = AAE4D05C1D99972B0098A71E /* FBFileManager.m */; };
 		AAE5A0811EDF8C9C00A1A811 /* FBXCTestLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE5A07F1EDF8C9C00A1A811 /* FBXCTestLogger.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAE5A0821EDF8C9C00A1A811 /* FBXCTestLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = AAE5A0801EDF8C9C00A1A811 /* FBXCTestLogger.m */; };
 		AAE5A0851EDF90DB00A1A811 /* FBXCTestReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE5A0841EDF90DB00A1A811 /* FBXCTestReporter.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1292,8 +1290,6 @@
 		AAE42AA71D2D77D800DCD0EA /* FBSimulatorBridge.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorBridge.m; sourceTree = "<group>"; };
 		AAE4D0061F70F66F005EA6C3 /* FBSettingsApproval.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBSettingsApproval.m; sourceTree = "<group>"; };
 		AAE4D0071F70F66F005EA6C3 /* FBSettingsApproval.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBSettingsApproval.h; sourceTree = "<group>"; };
-		AAE4D05A1D9996DB0098A71E /* FBFileManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBFileManager.h; sourceTree = "<group>"; };
-		AAE4D05C1D99972B0098A71E /* FBFileManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFileManager.m; sourceTree = "<group>"; };
 		AAE5A07F1EDF8C9C00A1A811 /* FBXCTestLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestLogger.h; sourceTree = "<group>"; };
 		AAE5A0801EDF8C9C00A1A811 /* FBXCTestLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestLogger.m; sourceTree = "<group>"; };
 		AAE5A0841EDF90DB00A1A811 /* FBXCTestReporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestReporter.h; sourceTree = "<group>"; };
@@ -2810,8 +2806,6 @@
 				AA685CB12550252100E2DD9D /* FBDeveloperDiskImage.m */,
 				AAB123801DB4B16900F20555 /* FBDispatchSourceNotifier.h */,
 				AAB123811DB4B16900F20555 /* FBDispatchSourceNotifier.m */,
-				AAE4D05A1D9996DB0098A71E /* FBFileManager.h */,
-				AAE4D05C1D99972B0098A71E /* FBFileManager.m */,
 				AA4A7E2B1DD9F4EB001F9D8E /* FBFileReader.h */,
 				AA4A7E2C1DD9F4EB001F9D8E /* FBFileReader.m */,
 				AA7728AC1E5238A6008FCF7C /* FBFileWriter.h */,
@@ -3100,7 +3094,6 @@
 				AA4AF522224A9461008DDDC0 /* FBFuture+Sync.h in Headers */,
 				AA6F98EB1D2B9C8E00464B0F /* FBBinaryDescriptor.h in Headers */,
 				AA5449951CFF4A6700443C2F /* FBiOSTargetConfiguration.h in Headers */,
-				AAE4D05B1D9996DB0098A71E /* FBFileManager.h in Headers */,
 				AA58F88C1D95917D006F8D81 /* FBBundleDescriptor.h in Headers */,
 				AA8004BA24F3C32E00D7DD35 /* FBProvisioningProfileCommands.h in Headers */,
 				AABBF32B1DAC112900E2B6AF /* FBTaskConfiguration.h in Headers */,
@@ -3696,7 +3689,6 @@
 				EEBD60831C9062E900298A07 /* FBControlCoreLogger.m in Sources */,
 				AA90708F223AC97800805706 /* FBInstrumentsConfiguration.m in Sources */,
 				1C0AAAB4254B646000001D3C /* FBXCTestShimConfiguration.m in Sources */,
-				AAE4D05D1D99972B0098A71E /* FBFileManager.m in Sources */,
 				AA6A3B0A1CC0C96E00E016C4 /* FBCollectionOperations.m in Sources */,
 				AA9AAAEC1DE4C3F60056B127 /* FBProcessOutputConfiguration.m in Sources */,
 				73E0A9751F4F361800A216AD /* FBBundleDescriptor+Application.m in Sources */,
