@@ -27,32 +27,12 @@
 
 @implementation FBMacTestPreparationStrategy
 
-+ (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
-                                   workingDirectory:(NSString *)workingDirectory
+- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration shims:(FBXCTestShimConfiguration *)shims workingDirectory:(NSString *)workingDirectory fileManager:(id<FBFileManager>)fileManager codesign:(FBCodesignProvider *)codesign
 {
-  id<FBFileManager> fileManager = NSFileManager.defaultManager;
-  FBCodesignProvider *codesign = [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:nil];
-  FBXCTestShimConfiguration *shims = [[FBXCTestShimConfiguration defaultShimConfigurationWithLogger:nil] await:nil];
-  return [self strategyWithTestLaunchConfiguration:testLaunchConfiguration shims:shims workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
-}
+  NSAssert(workingDirectory, @"Working directory is needed to prepare bundles");
+  NSAssert(testLaunchConfiguration.applicationLaunchConfiguration.bundleID, @"Test runner bundle ID is needed to load bundles");
+  NSAssert(testLaunchConfiguration.testBundlePath, @"Path to test bundle is needed to load bundles");
 
-
-+ (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
-                                              shims:(FBXCTestShimConfiguration *)shims
-                                   workingDirectory:(NSString *)workingDirectory
-                                        fileManager:(id<FBFileManager>)fileManager
-                                           codesign:(FBCodesignProvider *)codesign
-{
-  return [[self alloc] initWithTestLaunchConfiguration:testLaunchConfiguration shims:shims workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
-}
-
-
-- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
-                                          shims:(FBXCTestShimConfiguration *)shims
-                               workingDirectory:(NSString *)workingDirectory
-                                    fileManager:(id<FBFileManager>)fileManager
-                                       codesign:(FBCodesignProvider *)codesign
-{
   self = [super init];
   if (!self) {
     return nil;
@@ -72,10 +52,6 @@
 - (FBFuture<FBTestRunnerConfiguration *> *)prepareTestWithIOSTarget:(id<FBiOSTarget>)iosTarget
 {
   NSAssert(iosTarget, @"iosTarget is needed to load bundles");
-  NSAssert(self.workingDirectory, @"Working directory is needed to prepare bundles");
-  NSAssert(self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID, @"Test runner bundle ID is needed to load bundles");
-  NSAssert(self.testLaunchConfiguration.testBundlePath, @"Path to test bundle is needed to load bundles");
-
   return [self prepareTestWithIOSTargetAfterCheckingCodesignature:iosTarget];
 }
 

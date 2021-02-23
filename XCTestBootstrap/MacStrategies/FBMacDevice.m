@@ -344,16 +344,23 @@
 
 - (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
 {
-  FBMacTestPreparationStrategy *testPreparationStrategy = [FBMacTestPreparationStrategy
-   strategyWithTestLaunchConfiguration:testLaunchConfiguration
-   workingDirectory:self.workingDirectory];
+  return [[FBXCTestShimConfiguration
+    defaultShimConfigurationWithLogger:nil]
+    onQueue:self.workQueue fmap:^(FBXCTestShimConfiguration *shimConfiguation) {
+      FBMacTestPreparationStrategy *testPreparationStrategy = [[FBMacTestPreparationStrategy alloc]
+        initWithTestLaunchConfiguration:testLaunchConfiguration
+        shims:shimConfiguation
+        workingDirectory:self.workingDirectory
+        fileManager:NSFileManager.defaultManager
+        codesign:[FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:nil]];
 
-  return [FBManagedTestRunStrategy
-    runToCompletionWithTarget:self
-    configuration:testLaunchConfiguration
-    reporter:reporter
-    testPreparationStrategy:testPreparationStrategy
-    logger:logger];
+      return [FBManagedTestRunStrategy
+        runToCompletionWithTarget:self
+        configuration:testLaunchConfiguration
+        reporter:reporter
+        testPreparationStrategy:testPreparationStrategy
+        logger:logger];
+    }];
 }
 
 - (NSString *)uniqueIdentifier

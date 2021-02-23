@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param workingDirectory directory used to prepare all bundles.
  @return a FBXCTestPreparationStrategy instance.
  */
-+ (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration workingDirectory:(NSString *)workingDirectory;
+- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration shims:(FBXCTestShimConfiguration *)shims workingDirectory:(NSString *)workingDirectory fileManager:(id<FBFileManager>)fileManager codesign:(FBCodesignProvider *)codesign;
 
 #pragma mark Public Methods
 

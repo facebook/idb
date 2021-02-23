@@ -18,8 +18,9 @@
 
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
 @property (nonatomic, copy, readonly) FBTestLaunchConfiguration *testLaunchConfiguration;
+@property (nonatomic, copy, readonly) FBXCTestShimConfiguration *shims;
 @property (nonatomic, strong, readonly) id<FBFileManager> fileManager;
-@property (nonatomic, strong, readonly) FBCodesignProvider * codesign;
+@property (nonatomic, strong, readonly) FBCodesignProvider *codesign;
 
 @end
 
@@ -27,21 +28,19 @@
 
 #pragma mark Initializers
 
-+ (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration workingDirectory:(NSString *)workingDirectory
+- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration shims:(FBXCTestShimConfiguration *)shims workingDirectory:(NSString *)workingDirectory fileManager:(id<FBFileManager>)fileManager codesign:(FBCodesignProvider *)codesign
 {
-  id<FBFileManager> fileManager = NSFileManager.defaultManager;
-  FBCodesignProvider * codesign = [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:nil];
-  return [[self alloc] initWithTestLaunchConfiguration:testLaunchConfiguration  workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
-}
+  NSAssert(workingDirectory, @"Working directory is needed to prepare bundles");
+  NSAssert(testLaunchConfiguration.applicationLaunchConfiguration.bundleID, @"Test runner bundle ID is needed to load bundles");
+  NSAssert(testLaunchConfiguration.testBundlePath, @"Path to test bundle is needed to load bundles");
 
-- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration workingDirectory:(NSString *)workingDirectory fileManager:(id<FBFileManager>)fileManager codesign:(FBCodesignProvider *)codesign
-{
   self = [super init];
   if (!self) {
     return nil;
   }
 
   _testLaunchConfiguration = testLaunchConfiguration;
+  _shims = shims;
   _workingDirectory = workingDirectory;
   _fileManager = fileManager;
   _codesign = codesign;
@@ -54,9 +53,6 @@
 - (FBFuture<FBTestRunnerConfiguration *> *)prepareTestWithIOSTarget:(FBSimulator *)simulator
 {
   NSParameterAssert([simulator isKindOfClass:FBSimulator.class]);
-  NSAssert(self.workingDirectory, @"Working directory is needed to prepare bundles");
-  NSAssert(self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID, @"Test runner bundle ID is needed to load bundles");
-  NSAssert(self.testLaunchConfiguration.testBundlePath, @"Path to test bundle is needed to load bundles");
 
   // Check the bundle is codesigned (if required).
   if (FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid) {
@@ -117,20 +113,16 @@
       causedBy:error]
       failFuture];
   }
+  FBXCTestShimConfiguration *shims = self.shims;
 
   return [[[simulator
     installedApplicationWithBundleID:self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID]
     onQueue:simulator.workQueue fmap:^(FBInstalledApplication *installedApplication) {
-      return [FBFuture futureWithFutures:@[
-        [FBFuture resolveValue:^(NSError **innerError) {
-          return [FBProductBundleBuilder productBundleFromInstalledApplication:installedApplication error:innerError];
-        }],
-        [FBXCTestShimConfiguration defaultShimConfigurationWithLogger:simulator.logger],
-      ]];
+      return [FBFuture resolveValue:^(NSError **innerError) {
+        return [FBProductBundleBuilder productBundleFromInstalledApplication:installedApplication error:innerError];
+      }];
     }]
-    onQueue:simulator.workQueue map:^(NSArray<id> *tuple) {
-      FBProductBundle *hostApplication = tuple[0];
-      FBXCTestShimConfiguration *shims = tuple[1];
+    onQueue:simulator.workQueue map:^(FBProductBundle *hostApplication) {
       NSMutableDictionary<NSString *, NSString *> *hostApplicationAdditionalEnvironment = [NSMutableDictionary dictionary];
       hostApplicationAdditionalEnvironment[@"SHIMULATOR_START_XCTEST"] = @"1";
       hostApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = shims.iOSSimulatorTestShimPath;

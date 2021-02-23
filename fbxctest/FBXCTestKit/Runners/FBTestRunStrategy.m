@@ -17,7 +17,7 @@
 @property (nonatomic, strong, readonly) FBTestManagerTestConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
-@property (nonatomic, strong, readonly) Class<FBXCTestPreparationStrategy> testPreparationStrategyClass;
+@property (nonatomic, strong, readonly) Class testPreparationStrategyClass;
 @end
 
 @implementation FBTestRunStrategy
@@ -97,21 +97,26 @@
     testLaunchConfiguration = [testLaunchConfiguration withTestsToRun:testsToRun];
   }
 
-  id<FBXCTestPreparationStrategy> testPreparationStrategy = [self.testPreparationStrategyClass
-    strategyWithTestLaunchConfiguration:testLaunchConfiguration
-    workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]];
-
-  FBFuture<NSNull *> *executionFinished = [FBManagedTestRunStrategy
-    runToCompletionWithTarget:self.target
-    configuration:testLaunchConfiguration
-    reporter:self.reporter
-    testPreparationStrategy:testPreparationStrategy
-    logger:self.target.logger];
-
   __block id<FBiOSTargetOperation> tailLogOperation = nil;
+  __block FBFuture<NSNull *> *executionFinished = nil;
 
-  return [[[[[FBFuture
-    onQueue:self.target.workQueue resolve:^{
+  return [[[[[[FBXCTestShimConfiguration
+    defaultShimConfigurationWithLogger:self.target.logger]
+    onQueue:self.target.workQueue fmap:^(FBXCTestShimConfiguration *shims) {
+      id<FBXCTestPreparationStrategy> testPreparationStrategy = [[self.testPreparationStrategyClass alloc]
+        initWithTestLaunchConfiguration:testLaunchConfiguration
+        shims:shims
+        workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]
+        fileManager:NSFileManager.defaultManager
+        codesign:[FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:self.target.logger]];
+
+      executionFinished = [FBManagedTestRunStrategy
+        runToCompletionWithTarget:self.target
+        configuration:testLaunchConfiguration
+        reporter:self.reporter
+        testPreparationStrategy:testPreparationStrategy
+        logger:self.target.logger];
+
       FBFuture<id> *startedVideoRecording = self.configuration.videoRecordingPath != nil
         ? (FBFuture<id> *) [self.target startRecordingToFile:self.configuration.videoRecordingPath]
         : (FBFuture<id> *) FBFuture.empty;

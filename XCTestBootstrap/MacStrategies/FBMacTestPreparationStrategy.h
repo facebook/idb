@@ -21,31 +21,4 @@
 
 @interface FBMacTestPreparationStrategy : NSObject <FBXCTestPreparationStrategy>
 
-/**
- Creates and returns a Strategy strategyWith given paramenters.
- Will use default implementations of the File Manager and Codesign.
-
- @param testLaunchConfiguration configuration used to launch test.
- @param workingDirectory directory used to prepare all bundles.
- @return A new FBSimulatorTestRunStrategy Instance.
- */
-+ (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
-                                   workingDirectory:(NSString *)workingDirectory;
-
-/**
- Creates and returns a Strategy strategyWith given paramenters.
-
- @param testLaunchConfiguration configuration used to launch test.
- @param shims shim configuration
- @param workingDirectory directory used to prepare all bundles.
- @param fileManager file manager used to prepare all bundles.
- @param codesign a codesign provider
- @return A new FBSimulatorTestRunStrategy Instance.
- */
-+ (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
-                                              shims:(FBXCTestShimConfiguration *)shims
-                                   workingDirectory:(NSString *)workingDirectory
-                                        fileManager:(id<FBFileManager>)fileManager
-                                           codesign:(FBCodesignProvider *)codesign;
-
 @end
