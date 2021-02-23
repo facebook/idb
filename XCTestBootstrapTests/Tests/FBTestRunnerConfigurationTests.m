@@ -7,8 +7,6 @@
 
 #import <XCTest/XCTest.h>
 
-#import <OCMock/OCMock.h>
-
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 @interface FBTestRunnerConfigurationTests : XCTestCase
@@ -19,8 +17,8 @@
 
 - (FBTestRunnerConfiguration *)buildConfiguration
 {
-  id testBundleMock = [OCMockObject mockForClass:FBTestBundle.class];
-  [[[testBundleMock stub] andReturn:@"/blackhole/xctwda.xctest"] path];
+  FBBinaryDescriptor *testBundleBinary = [[FBBinaryDescriptor alloc] initWithName:@"TestBinaryName" architectures:NSSet.set uuid:NSUUID.UUID path:@"/blackhole/xctwda.xctest/test"];
+  FBBundleDescriptor *testBundle = [[FBBundleDescriptor alloc] initWithName:@"TestBundleName" identifier:@"TestBundleIdentifier" path:@"/blackhole/xctwda.xctest" binary:testBundleBinary];
 
   FBBinaryDescriptor *hostApplicationBinary = [[FBBinaryDescriptor alloc] initWithName:@"HostApplicationBinaryName" architectures:NSSet.set uuid:NSUUID.UUID path:@"/blackhole/pray.app/app"];
   FBBundleDescriptor *hostApplication = [[FBBundleDescriptor alloc] initWithName:@"HostApplicationName" identifier:@"HostApplicationIdentifier" path:@"/blackhole/pray.app" binary:hostApplicationBinary];
@@ -29,7 +27,7 @@
     configurationWithSessionIdentifier:NSUUID.UUID
     hostApplication:hostApplication
     hostApplicationAdditionalEnvironment:@{@"MAGIC": @"IS_HERE"}
-    testBundle:testBundleMock
+    testBundle:testBundle
     testConfigurationPath:@"/booo/magic.xctestconfiguration"
     frameworkSearchPath:@"/Apple"
     testedApplicationAdditionalEnvironment:nil];

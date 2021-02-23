@@ -9,7 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBTestBundle.h"
 #import "FBTestConfiguration.h"
 #import "FBTestRunnerConfiguration.h"
 #import "XCTestBootstrapError.h"
@@ -89,21 +88,29 @@
   // Prepare XCTest bundle
   NSError *error;
   NSUUID *sessionIdentifier = [NSUUID UUID];
-  FBTestBundle *testBundle = [[[[[[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
-    withBundlePath:self.testLaunchConfiguration.testBundlePath]
-    withUITesting:self.testLaunchConfiguration.shouldInitializeUITesting]
-    withTestsToSkip:self.testLaunchConfiguration.testsToSkip]
-    withTestsToRun:self.testLaunchConfiguration.testsToRun]
-    withWorkingDirectory:self.workingDirectory]
-    withSessionIdentifier:sessionIdentifier]
-    withTargetApplicationPath:self.testLaunchConfiguration.targetApplicationPath]
-    withTargetApplicationBundleID:self.testLaunchConfiguration.targetApplicationBundleID]
-    withAutomationFrameworkPath:automationFrameworkPath]
-    buildWithError:&error];
-
+  FBBundleDescriptor *testBundle = [FBBundleDescriptor bundleFromPath:self.testLaunchConfiguration.testBundlePath error:&error];
   if (!testBundle) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare test bundle"]
+      causedBy:error]
+      failFuture];
+  }
+
+  FBTestConfiguration *testConfiguration = [FBTestConfiguration
+    configurationByWritingToFileWithSessionIdentifier:sessionIdentifier
+    moduleName:testBundle.name
+    testBundlePath:testBundle.path
+    uiTesting:self.testLaunchConfiguration.shouldInitializeUITesting
+    testsToRun:self.testLaunchConfiguration.testsToRun
+    testsToSkip:self.testLaunchConfiguration.testsToSkip
+    targetApplicationPath:self.testLaunchConfiguration.targetApplicationPath
+    targetApplicationBundleID:self.testLaunchConfiguration.targetApplicationBundleID
+    automationFrameworkPath:automationFrameworkPath
+    reportActivities:NO
+    error:&error];
+  if (!testBundle) {
+    return [[[XCTestBootstrapError
+      describe:@"Failed to prepare test configuration"]
       causedBy:error]
       failFuture];
   }
@@ -117,7 +124,7 @@
         hostApplication:hostApplication.bundle
         hostApplicationAdditionalEnvironment:hostApplicationAdditionalEnvironment
         testBundle:testBundle
-        testConfigurationPath:testBundle.configuration.path
+        testConfigurationPath:testConfiguration.path
         frameworkSearchPath:[XCTestFrameworksPaths componentsJoinedByString:@":"]
         testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
     }];

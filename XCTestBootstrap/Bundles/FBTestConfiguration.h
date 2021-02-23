@@ -9,17 +9,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBFileManager;
-
 /**
  Represents XCTestConfiguration class used by Apple to configure tests (aka .xctestconfiguration)
  */
 @interface FBTestConfiguration : NSObject
 
 /**
- Creates a Test Configuration.
+ Creates a Test Configuration, writing it out to a file and returning the result.
 
- @param fileManager the file manager to use.
  @param sessionIdentifier the session identifier.
  @param moduleName name the test module name.
  @param testBundlePath the full path to the test bundle.
@@ -29,11 +26,11 @@ NS_ASSUME_NONNULL_BEGIN
  @param targetApplicationPath Target application path
  @param targetApplicationBundleID Target application bundle id
  @param automationFrameworkPath Path to automation framework
- @param savePath the path to save the configuration to.
  @param reportActivities whether to report activities
  @param error an error out for any error that occurs.
+ @return a test configuration after it has been written out to disk.
  */
-+ (nullable instancetype)configurationWithFileManager:(id<FBFileManager>)fileManager sessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID automationFrameworkPath:(nullable NSString *)automationFrameworkPath savePath:(NSString *)savePath reportActivities:(BOOL)reportActivities error:(NSError **)error;
++ (nullable instancetype)configurationByWritingToFileWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID automationFrameworkPath:(nullable NSString *)automationFrameworkPath reportActivities:(BOOL)reportActivities error:(NSError **)error;
 
 /**
  Creates a Test Configuration.
@@ -63,17 +60,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The path to test configuration, if saved
  */
-@property (nonatomic, copy, readonly) NSString *path;
-
-/**
- Determines whether should initialize for UITesting
- */
-@property (nonatomic, assign, readonly) BOOL shouldInitializeForUITesting;
+@property (nonatomic, copy, readonly, nullable) NSString *path;
 
 /**
  The path to automation framework
  */
 @property (nonatomic, copy, readonly, nullable) NSString *automationFramework;
+
+/**
+ Determines whether should initialize for UITesting
+ */
+@property (nonatomic, assign, readonly) BOOL shouldInitializeForUITesting;
 
 @end
 

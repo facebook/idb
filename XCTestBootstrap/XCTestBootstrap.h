@@ -13,9 +13,7 @@
 #import <XCTestBootstrap/FBMacTestPreparationStrategy.h>
 #import <XCTestBootstrap/FBMacXCTestProcessExecutor.h>
 #import <XCTestBootstrap/FBManagedTestRunStrategy.h>
-#import <XCTestBootstrap/FBProductBundle.h>
 #import <XCTestBootstrap/FBTestApplicationLaunchStrategy.h>
-#import <XCTestBootstrap/FBTestBundle.h>
 #import <XCTestBootstrap/FBTestConfiguration.h>
 #import <XCTestBootstrap/FBTestManagerAPIMediator.h>
 #import <XCTestBootstrap/FBTestManagerResultSummary.h>

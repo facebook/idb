@@ -95,24 +95,33 @@
   // Prepare XCTest bundle
   NSError *error;
   NSUUID *sessionIdentifier = [NSUUID UUID];
-  FBTestBundle *testBundle = [[[[[[[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
-    withBundlePath:self.testLaunchConfiguration.testBundlePath]
-    withUITesting:self.testLaunchConfiguration.shouldInitializeUITesting]
-    withTestsToSkip:self.testLaunchConfiguration.testsToSkip]
-    withTestsToRun:self.testLaunchConfiguration.testsToRun]
-    withWorkingDirectory:self.workingDirectory]
-    withSessionIdentifier:sessionIdentifier]
-    withTargetApplicationPath:self.testLaunchConfiguration.targetApplicationPath]
-    withTargetApplicationBundleID:self.testLaunchConfiguration.targetApplicationBundleID]
-    withAutomationFrameworkPath:automationFrameworkPath]
-    withReportActivities:self.testLaunchConfiguration.reportActivities]
-    buildWithError:&error];
+  FBBundleDescriptor *testBundle = [FBBundleDescriptor bundleFromPath:self.testLaunchConfiguration.testBundlePath error:&error];
   if (!testBundle) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare test bundle"]
       causedBy:error]
       failFuture];
   }
+
+  FBTestConfiguration *testConfiguration = [FBTestConfiguration
+    configurationByWritingToFileWithSessionIdentifier:sessionIdentifier
+    moduleName:testBundle.name
+    testBundlePath:testBundle.path
+    uiTesting:self.testLaunchConfiguration.shouldInitializeUITesting
+    testsToRun:self.testLaunchConfiguration.testsToRun
+    testsToSkip:self.testLaunchConfiguration.testsToSkip
+    targetApplicationPath:self.testLaunchConfiguration.targetApplicationPath
+    targetApplicationBundleID:self.testLaunchConfiguration.targetApplicationBundleID
+    automationFrameworkPath:automationFrameworkPath
+    reportActivities:self.testLaunchConfiguration.reportActivities
+    error:&error];
+  if (!testBundle) {
+    return [[[XCTestBootstrapError
+      describe:@"Failed to prepare test configuration"]
+      causedBy:error]
+      failFuture];
+  }
+
   FBXCTestShimConfiguration *shims = self.shims;
 
   return [[simulator
@@ -134,7 +143,7 @@
         hostApplication:installedApplication.bundle
         hostApplicationAdditionalEnvironment:hostApplicationAdditionalEnvironment.copy
         testBundle:testBundle
-        testConfigurationPath:testBundle.configuration.path
+        testConfigurationPath:testConfiguration.path
         frameworkSearchPath:[frameworkSearchPaths componentsJoinedByString:@":"]
         testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
     }];

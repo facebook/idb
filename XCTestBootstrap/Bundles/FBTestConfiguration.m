@@ -18,8 +18,9 @@
 
 @implementation FBTestConfiguration
 
-+ (nullable instancetype)configurationWithFileManager:(id<FBFileManager>)fileManager sessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID automationFrameworkPath:(nullable NSString *)automationFrameworkPath savePath:(NSString *)savePath reportActivities:(BOOL)reportActivities error:(NSError **)error
++ (nullable instancetype)configurationByWritingToFileWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID automationFrameworkPath:(nullable NSString *)automationFrameworkPath reportActivities:(BOOL)reportActivities error:(NSError **)error
 {
+  // Construct the XCTestConfiguration class.
   XCTestConfiguration *testConfiguration = [objc_lookUpClass("XCTestConfiguration") new];
   testConfiguration.sessionIdentifier = sessionIdentifier;
   testConfiguration.testBundleURL = (testBundlePath ? [NSURL fileURLWithPath:testBundlePath] : nil);
@@ -35,7 +36,10 @@
   testConfiguration.automationFrameworkPath = automationFrameworkPath;
   testConfiguration.reportActivities = reportActivities;
   NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
-  if (![fileManager writeData:data toFile:savePath options:NSDataWritingAtomic error:error]) {
+
+  // Write it to file.
+  NSString *savePath = [testBundlePath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@-%@.xctestconfiguration", moduleName, sessionIdentifier.UUIDString]];
+  if (![data writeToFile:savePath options:NSDataWritingAtomic error:error]) {
     return nil;
   }
   return [self configurationWithSessionIdentifier:sessionIdentifier moduleName:moduleName testBundlePath:testBundlePath path:savePath uiTesting:uiTesting];

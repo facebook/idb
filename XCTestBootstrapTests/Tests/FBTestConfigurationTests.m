@@ -37,27 +37,23 @@
 {
   NSError *error;
   NSUUID *sessionIdentifier = NSUUID.UUID;
-  NSString *savePath = [NSTemporaryDirectory() stringByAppendingPathComponent:sessionIdentifier.UUIDString];
 
   FBTestConfiguration *testConfiguration = [FBTestConfiguration
-    configurationWithFileManager:NSFileManager.defaultManager
-    sessionIdentifier:sessionIdentifier
+    configurationByWritingToFileWithSessionIdentifier:sessionIdentifier
     moduleName:@"ModuleName"
-    testBundlePath:@"BundlePath"
+    testBundlePath:NSTemporaryDirectory()
     uiTesting:YES
     testsToRun:[NSSet set]
     testsToSkip:[NSSet set]
     targetApplicationPath:@"targetAppPath"
     targetApplicationBundleID:@"targetBundleID"
     automationFrameworkPath:nil
-    savePath:savePath
     reportActivities:NO
     error:&error];
 
   XCTAssertNil(error);
   XCTAssertNotNil(testConfiguration);
-  XCTAssertEqual(testConfiguration.path, savePath);
-  XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:savePath]);
+  XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:testConfiguration.path]);
 }
 
 @end
