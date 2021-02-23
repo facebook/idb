@@ -81,21 +81,22 @@
     output:FBProcessOutputConfiguration.outputToDevNull
     launchMode:FBApplicationLaunchModeFailIfRunning];
 
-  FBTestLaunchConfiguration *testLaunchConfiguration = [[FBTestLaunchConfiguration
-    configurationWithTestBundlePath:self.configuration.testBundlePath]
-    withApplicationLaunchConfiguration:appLaunch];
-
-  if (testTargetApp) {
-    testLaunchConfiguration = [[[testLaunchConfiguration
-     withTargetApplicationPath:testTargetApp.path]
-     withTargetApplicationBundleID:testTargetApp.identifier]
-     withUITesting:YES];
-  }
-
-  if (self.configuration.testFilter != nil) {
-    NSSet<NSString *> *testsToRun = [NSSet setWithObject:self.configuration.testFilter];
-    testLaunchConfiguration = [testLaunchConfiguration withTestsToRun:testsToRun];
-  }
+  FBTestLaunchConfiguration *testLaunchConfiguration = [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.configuration.testBundlePath
+    applicationLaunchConfiguration:appLaunch
+    testHostPath:nil
+    timeout:0
+    initializeUITesting:(testTargetApp ? YES : NO)
+    useXcodebuild:NO
+    testsToRun:(self.configuration.testFilter ? [NSSet setWithObject:self.configuration.testFilter] : nil)
+    testsToSkip:nil
+    targetApplicationPath:testTargetApp.path
+    targetApplicationBundleID:testTargetApp.identifier
+    xcTestRunProperties:nil
+    resultBundlePath:nil
+    reportActivities:NO
+    coveragePath:nil
+    shims:nil];
 
   __block id<FBiOSTargetOperation> tailLogOperation = nil;
   __block FBFuture<NSNull *> *executionFinished = nil;

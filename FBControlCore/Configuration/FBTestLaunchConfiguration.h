@@ -21,11 +21,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Designated Initializer
-
- @param testBundlePath path to test bundle
- @return a new FBTestLaunchConfiguration Instance
  */
-+ (instancetype)configurationWithTestBundlePath:(NSString *)testBundlePath;
+- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostPath:(nullable NSString *)testHostPath timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicaitonBundleID xcTestRunProperties:(nullable NSDictionary *)xcTestRunProperties resultBundlePath:(nullable NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coveragePath:(nullable NSString *)coveragePath shims:(nullable FBXCTestShimConfiguration *)shims;
 
 /**
  Path to XCTest bundle used for testing
@@ -35,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Configuration used to launch test runner application.
  */
-@property (nonatomic, copy, readonly, nullable) FBApplicationLaunchConfiguration *applicationLaunchConfiguration;
+@property (nonatomic, copy, readonly) FBApplicationLaunchConfiguration *applicationLaunchConfiguration;
 
 /**
  Path to host app.
@@ -101,120 +98,6 @@ NS_ASSUME_NONNULL_BEGIN
  Shims to be applied to test execution
  */
 @property (nonatomic, copy, readonly, nullable) FBXCTestShimConfiguration *shims;
-
-/**
- Adds application launch configuration
-
- @param applicationLaunchConfiguration added application launch configuration
- @return new test launch configuration with changes applied.
- */
-- (instancetype)withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
-
-/**
- Adds timeout.
-
- @param timeout timeout
- @return new test launch configuration with changes applied.
- */
-- (instancetype)withTimeout:(NSTimeInterval)timeout;
-
-/**
- Adds test host path.
-
- @param testHostPath test host path
- @return new test launch configuration with changes applied.
- */
-- (instancetype)withTestHostPath:(NSString *)testHostPath;
-
-/**
- Determines whether should initialize for UITesting
-
- @param shouldInitializeUITesting sets whether should initialize UITesting when starting test
- @return new test launch configuration with changes applied.
- */
-- (instancetype)withUITesting:(BOOL)shouldInitializeUITesting;
-
-/**
- Determines whether should use xcodebuild to run the test
-
- @param shouldUseXcodebuild sets whether should use xcodebuild to run the test
- @return new test launch configuration with changes applied.
- */
-- (instancetype)withXcodebuild:(BOOL)shouldUseXcodebuild;
-
-/**
- Adds tests to skip.
-
- @param testsToSkip tests to skip. Format: "className/methodName"
- @return new test launch configuration with changes applied.
- */
-- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip;
-
-/**
- Adds tests to run.
-
- @param testsToRun tests to run. Format: "className/methodName"
- @return new test launch configuration with changes applied.
- */
-- (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun;
-
-/**
- Adds path to the target application for UI tests.
- @param targetApplicationPath path to the target application
- @return new test launch configuration with changes applied.
- */
-- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath;
-
-/**
- Adds path to the target application for UI tests.
- @param targetApplicationBundleID bundle ID of to the target application
- @return new test launch configuration with changes applied.
- */
-- (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID;
-
-/**
- Adds xcTestRunProperties. When launching tests those properties will
- be passed to xcodebuild. Some of them will be overwritten with other
- values specified in this config.
-
- @param xcTestRunProperties the dictionary with contents of xctestrun file
- @return new test launch configuration with changes applied.
- */
-- (instancetype)withXCTestRunProperties:(NSDictionary<NSString *, id> *)xcTestRunProperties;
-
-/**
- Adds path to where xcodebuild will save results.
- Will be passed to xcodebuild with the -resultBundlePath argument.
-
- @param resultBundlePath path to the result bundle
- @return new test launch configuration with changes applied.
- */
-- (instancetype)withResultBundlePath:(NSString *)resultBundlePath;
-
-
-/**
- If set xctest will report activity data
-
- @param reportActivities set to report activity data
- @return new test launch configuration with changes applied.
- */
-- (instancetype)withReportActivities:(BOOL)reportActivities;
-
-/**
- Coverage data will be collected and saved to this path
-
- @param coveragePath  path to save coverage data to
- @return new test launch configuration with changes applied.
- */
-- (instancetype)withCoveragePath:(NSString *)coveragePath;
-
-/**
- Add shim files
-
- @param shims  shims to be applied to test execution
- @return new test launch configuration with changes applied.
- */
-- (instancetype)withShims:(FBXCTestShimConfiguration *)shims;
 
 @end
 

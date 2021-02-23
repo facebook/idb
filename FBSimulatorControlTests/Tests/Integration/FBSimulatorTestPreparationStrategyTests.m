@@ -41,9 +41,22 @@
 
 - (FBTestLaunchConfiguration *)defaultTestLaunch
 {
-  return [[FBTestLaunchConfiguration
-    configurationWithTestBundlePath:self.iOSUnitTestBundlePath]
-    withApplicationLaunchConfiguration:self.safariAppLaunch];
+  return [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.iOSUnitTestBundlePath
+    applicationLaunchConfiguration:self.safariAppLaunch
+    testHostPath:nil
+    timeout:0
+    initializeUITesting:NO
+    useXcodebuild:NO
+    testsToRun:nil
+    testsToSkip:nil
+    targetApplicationPath:nil
+    targetApplicationBundleID:nil
+    xcTestRunProperties:nil
+    resultBundlePath:nil
+    reportActivities:NO
+    coveragePath:nil
+    shims:nil];
 }
 
 @end

@@ -57,18 +57,42 @@
 
 - (FBTestLaunchConfiguration *)testLaunchTableSearch
 {
-  return [[[FBTestLaunchConfiguration
-    configurationWithTestBundlePath:self.iOSUnitTestBundlePath]
-    withApplicationLaunchConfiguration:self.tableSearchAppLaunch]
-    withUITesting:NO];
+  return [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.iOSUnitTestBundlePath
+    applicationLaunchConfiguration:self.tableSearchAppLaunch
+    testHostPath:nil
+    timeout:0
+    initializeUITesting:NO
+    useXcodebuild:NO
+    testsToRun:nil
+    testsToSkip:nil
+    targetApplicationPath:nil
+    targetApplicationBundleID:nil
+    xcTestRunProperties:nil
+    resultBundlePath:nil
+    reportActivities:NO
+    coveragePath:nil
+    shims:nil];
 }
 
 - (FBTestLaunchConfiguration *)testLaunchSafari
 {
-  return [[[FBTestLaunchConfiguration
-    configurationWithTestBundlePath:self.iOSUnitTestBundlePath]
-    withApplicationLaunchConfiguration:self.safariAppLaunch]
-    withUITesting:NO];
+  return [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.iOSUnitTestBundlePath
+    applicationLaunchConfiguration:self.safariAppLaunch
+    testHostPath:nil
+    timeout:0
+    initializeUITesting:NO
+    useXcodebuild:NO
+    testsToRun:nil
+    testsToSkip:nil
+    targetApplicationPath:nil
+    targetApplicationBundleID:nil
+    xcTestRunProperties:nil
+    resultBundlePath:nil
+    reportActivities:NO
+    coveragePath:nil
+    shims:nil];
 }
 
 - (FBBundleDescriptor *)tableSearchApplication

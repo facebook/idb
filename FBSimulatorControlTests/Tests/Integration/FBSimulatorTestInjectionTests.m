@@ -80,7 +80,22 @@
   NSString *stdOutPath = [path stringByAppendingPathComponent:@"stdout.log"];
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration configurationWithStdOut:stdOutPath stdErr:stdErrPath error:nil];
   FBApplicationLaunchConfiguration *applicationLaunchConfiguration = [self.safariAppLaunch withOutput:output];
-  FBTestLaunchConfiguration *testLaunch = [self.testLaunchSafari withApplicationLaunchConfiguration:applicationLaunchConfiguration];
+  FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.testLaunchSafari.testBundlePath
+    applicationLaunchConfiguration:applicationLaunchConfiguration
+    testHostPath:nil
+    timeout:0
+    initializeUITesting:NO
+    useXcodebuild:NO
+    testsToRun:nil
+    testsToSkip:nil
+    targetApplicationPath:nil
+    targetApplicationBundleID:nil
+    xcTestRunProperties:nil
+    resultBundlePath:nil
+    reportActivities:NO
+    coveragePath:nil
+    shims:nil];
 
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
@@ -102,9 +117,22 @@
 - (void)testInjectsApplicationTestWithTestsToRun
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  FBTestLaunchConfiguration *testLaunch = [[self.testLaunchSafari
-    withTestsToRun:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]]
-    withApplicationLaunchConfiguration:self.safariAppLaunch];
+  FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.testLaunchSafari.testBundlePath
+    applicationLaunchConfiguration:self.safariAppLaunch
+    testHostPath:nil
+    timeout:0
+    initializeUITesting:NO
+    useXcodebuild:NO
+    testsToRun:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]
+    testsToSkip:nil
+    targetApplicationPath:nil
+    targetApplicationBundleID:nil
+    xcTestRunProperties:nil
+    resultBundlePath:nil
+    reportActivities:NO
+    coveragePath:nil
+    shims:nil];
 
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningOnIOS"]
@@ -114,9 +142,22 @@
 - (void)testInjectsApplicationTestWithTestsToSkip
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  FBTestLaunchConfiguration *testLaunch = [[self.testLaunchSafari
-    withTestsToSkip:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]]
-    withApplicationLaunchConfiguration:self.safariAppLaunch];
+  FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.testLaunchSafari.testBundlePath
+    applicationLaunchConfiguration:self.safariAppLaunch
+    testHostPath:nil
+    timeout:0
+    initializeUITesting:NO
+    useXcodebuild:NO
+    testsToRun:nil
+    testsToSkip:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]
+    targetApplicationPath:nil
+    targetApplicationBundleID:nil
+    xcTestRunProperties:nil
+    resultBundlePath:nil
+    reportActivities:NO
+    coveragePath:nil
+    shims:nil];
 
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]

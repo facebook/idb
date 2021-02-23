@@ -28,10 +28,22 @@
     waitForDebugger:NO
     output:FBProcessOutputConfiguration.outputToDevNull];
 
-  FBTestLaunchConfiguration *configuration = [[[FBTestLaunchConfiguration
-    configurationWithTestBundlePath:testBundlePath]
-    withTestHostPath:testHostPath]
-    withApplicationLaunchConfiguration:appLaunch];
+  FBTestLaunchConfiguration *configuration = [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:testBundlePath
+    applicationLaunchConfiguration:appLaunch
+    testHostPath:testHostPath
+    timeout:0
+    initializeUITesting:NO
+    useXcodebuild:NO
+    testsToRun:nil
+    testsToSkip:nil
+    targetApplicationPath:nil
+    targetApplicationBundleID:nil
+    xcTestRunProperties:nil
+    resultBundlePath:nil
+    reportActivities:NO
+    coveragePath:nil
+    shims:nil];
 
   NSDictionary *properties = [FBXcodeBuildOperation xctestRunProperties:configuration];
   NSDictionary *stubBundleProperties = properties[@"StubBundleId"];

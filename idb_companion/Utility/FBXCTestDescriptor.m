@@ -466,33 +466,43 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
 - (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  FBTestLaunchConfiguration *config = [[[[FBTestLaunchConfiguration
-  configurationWithTestBundlePath:self.testBundle.path]
-  withTestsToRun:request.testsToRun]
-  withTestsToSkip:request.testsToSkip]
-  withReportActivities:request.reportActivities];
-
+  BOOL uiTesting = NO;
+  NSString *targetApplicationPath = nil;
+  NSString *targetApplicationBundleID = nil;
+  FBApplicationLaunchConfiguration *applicationLaunchConfiguration = nil;
   if (request.isUITest) {
     FBApplicationLaunchConfiguration *runnerLaunchConfig = BuildAppLaunchConfig(testApps.testHostApp.bundle.identifier, request.environment, request.arguments, logger);
-
     // Test config
-    config = [[[[config
-      withUITesting:YES]
-      withApplicationLaunchConfiguration:runnerLaunchConfig]
-      withTargetApplicationPath:testApps.applicationUnderTest.bundle.path]
-      withTargetApplicationBundleID:testApps.applicationUnderTest.bundle.identifier];
+    uiTesting = YES;
+    applicationLaunchConfiguration = runnerLaunchConfig;
+    targetApplicationPath = testApps.applicationUnderTest.bundle.path;
+    targetApplicationBundleID = testApps.applicationUnderTest.bundle.identifier;
   } else {
-    FBApplicationLaunchConfiguration *launchConfig = BuildAppLaunchConfig(request.appBundleID, request.environment, request.arguments, logger);
-    config = [config withApplicationLaunchConfiguration:launchConfig];
+    applicationLaunchConfiguration = BuildAppLaunchConfig(request.appBundleID, request.environment, request.arguments, logger);
   }
 
+  NSString *coveragePath = nil;
   if (request.collectCoverage) {
     NSString *coverageFileName = [NSString stringWithFormat:@"coverage_%@.profraw", NSUUID.UUID.UUIDString];
-    NSString *coveragePath = [self.targetAuxillaryDirectory stringByAppendingPathComponent:coverageFileName];
-    config = [config withCoveragePath:coveragePath];
+    coveragePath = [self.targetAuxillaryDirectory stringByAppendingPathComponent:coverageFileName];
   }
 
-  return config;
+  return [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.testBundle.path
+    applicationLaunchConfiguration:applicationLaunchConfiguration
+    testHostPath:nil
+    timeout:0
+    initializeUITesting:uiTesting
+    useXcodebuild:NO
+    testsToRun:request.testsToRun
+    testsToSkip:request.testsToSkip
+    targetApplicationPath:targetApplicationPath
+    targetApplicationBundleID:targetApplicationBundleID
+    xcTestRunProperties:nil
+    resultBundlePath:nil
+    reportActivities:request.reportActivities
+    coveragePath:coveragePath
+    shims:nil];
 }
 
 @end
@@ -568,18 +578,22 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   if (!properties) {
     return nil;
   }
-  return [[[[[[[[[[[FBTestLaunchConfiguration
-    configurationWithTestBundlePath:self.testBundle.path]
-    withTestHostPath:self.testHostBundle.path]
-    withApplicationLaunchConfiguration:launchConfig]
-    withXcodebuild:YES]
-    withUITesting:request.isUITest]
-    withXCTestRunProperties:properties]
-    withTestsToRun:request.testsToRun]
-    withTestsToSkip:request.testsToSkip]
-    withResultBundlePath:resultBundlePath]
-    withShims:shims]
-    withReportActivities:request.reportActivities];
+  return [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.testBundle.path
+    applicationLaunchConfiguration:launchConfig
+    testHostPath:self.testHostBundle.path
+    timeout:0
+    initializeUITesting:request.isUITest
+    useXcodebuild:YES
+    testsToRun:request.testsToRun
+    testsToSkip:request.testsToSkip
+    targetApplicationPath:nil
+    targetApplicationBundleID:nil
+    xcTestRunProperties:properties
+    resultBundlePath:resultBundlePath
+    reportActivities:request.reportActivities
+    coveragePath:nil
+    shims:shims];
 }
 
 @end
