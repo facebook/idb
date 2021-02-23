@@ -6,9 +6,9 @@
 
 import json
 from argparse import REMAINDER, ArgumentParser, Namespace
-from typing import List, Optional, Set
+from typing import Optional, Set
 
-from idb.cli import ClientCommand, Command
+from idb.cli import ClientCommand
 from idb.common.command import CommandGroup
 from idb.common.format import (
     human_format_installed_test_info,
