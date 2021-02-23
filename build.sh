@@ -22,23 +22,6 @@ function invoke_xcodebuild() {
   fi
 }
 
-function assert_has_carthage() {
-  if ! command -v carthage; then
-      echo "build needs 'carthage' to bootstrap dependencies"
-      echo "You can install it using brew. E.g. $ brew install carthage"
-      exit 1;
-  fi
-}
-
-function build_test_deps() {
-  if [ -z "$CUSTOM_TEST_DEPS_SCRIPT" ]; then
-    assert_has_carthage
-    carthage bootstrap --platform Mac
-  else
-    "$CUSTOM_TEST_DEPS_SCRIPT"
-  fi
-}
-
 function framework_build() {
   local name=$1
   local output_directory=$2
@@ -257,7 +240,6 @@ case $TARGET in
       build)
         all_frameworks_build $OUTPUT_DIRECTORY;;
       test)
-        build_test_deps
         all_frameworks_test;;
       *)
         echo "Unknown Command $2"
@@ -268,7 +250,6 @@ case $TARGET in
       build)
         cli_build fbxctest $OUTPUT_DIRECTORY;;
       test)
-        build_test_deps
         cli_framework_test fbxctest;;
       *)
         echo "Unknown Command $COMMAND"

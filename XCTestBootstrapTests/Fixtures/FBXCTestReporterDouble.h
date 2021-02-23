@@ -17,6 +17,16 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBXCTestReporterDouble : NSObject <FBXCTestReporter>
 
 /**
+ An array of the started test suites.
+ */
+@property (nonatomic, copy, readonly) NSArray<NSString *> *startedSuites;
+
+/**
+ An array of ended test suites
+ */
+@property (nonatomic, copy, readonly) NSArray<NSString *> *endedSuites;
+
+/**
  An array of called test class/method pairs.
  */
 @property (nonatomic, copy, readonly) NSArray<NSArray<NSString *> *> *startedTests;
@@ -30,11 +40,6 @@ NS_ASSUME_NONNULL_BEGIN
  An array of failed test class/method pairs.
  */
 @property (nonatomic, copy, readonly) NSArray<NSArray<NSString *> *> *failedTests;
-
-/**
- An array of the started test suites.
- */
-@property (nonatomic, copy, readonly) NSArray<NSString *> *startedSuites;
 
 /**
  Confirmation -[FBXCTestReporter printReportWithError:] was called.

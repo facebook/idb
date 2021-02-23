@@ -9,11 +9,12 @@
 
 @interface FBXCTestReporterDouble ()
 
-@property (nonatomic, copy, readonly) NSMutableArray<NSString *> *mutableStartedTestSuites;
-@property (nonatomic, copy, readonly) NSMutableArray<NSArray<NSString *> *> *mutableStartedTestCases;
-@property (nonatomic, copy, readonly) NSMutableArray<NSArray<NSString *> *> *mutablePassedTests;
-@property (nonatomic, copy, readonly) NSMutableArray<NSArray<NSString *> *> *mutableFailedTests;
-@property (nonatomic, copy, readonly) NSMutableArray<NSDictionary *> *mutableExternalEvents;
+@property (nonatomic, strong, readonly) NSMutableArray<NSString *> *mutableStartedSuites;
+@property (nonatomic, strong, readonly) NSMutableArray<NSString *> *mutableEndedSuites;
+@property (nonatomic, strong, readonly) NSMutableArray<NSArray<NSString *> *> *mutableStartedTestCases;
+@property (nonatomic, strong, readonly) NSMutableArray<NSArray<NSString *> *> *mutablePassedTests;
+@property (nonatomic, strong, readonly) NSMutableArray<NSArray<NSString *> *> *mutableFailedTests;
+@property (nonatomic, strong, readonly) NSMutableArray<NSDictionary *> *mutableExternalEvents;
 @property (nonatomic, assign, readwrite) BOOL printReportWasCalled;
 
 @end
@@ -29,7 +30,8 @@
     return nil;
   }
 
-  _mutableStartedTestSuites = [NSMutableArray array];
+  _mutableStartedSuites = [NSMutableArray array];
+  _mutableEndedSuites = [NSMutableArray array];
   _mutableStartedTestCases = [NSMutableArray array];
   _mutablePassedTests = [NSMutableArray array];
   _mutableFailedTests = [NSMutableArray array];
@@ -70,7 +72,7 @@
 
 - (void)testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime
 {
-  [self.mutableStartedTestSuites addObject:testSuite];
+  [self.mutableStartedSuites addObject:testSuite];
 }
 
 - (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line
@@ -80,7 +82,7 @@
 
 - (void)finishedWithSummary:(FBTestManagerResultSummary *)summary
 {
-
+  [self.mutableEndedSuites addObject:summary.testSuite];
 }
 
 - (void)didFinishExecutingTestPlan
@@ -146,9 +148,14 @@
 
 #pragma mark Accessors
 
-- (NSArray<NSArray<NSString *> *> *)startedSuites
+- (NSArray<NSString *> *)startedSuites
 {
-  return [self.mutableStartedTestSuites copy];
+  return [self.mutableStartedSuites copy];
+}
+
+- (NSArray<NSString *> *)endedSuites
+{
+  return [self.mutableEndedSuites copy];
 }
 
 - (NSArray<NSArray<NSString *> *> *)startedTests
