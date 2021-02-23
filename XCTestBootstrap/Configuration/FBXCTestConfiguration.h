@@ -99,8 +99,6 @@ extern FBXCTestType const FBXCTestTypeListTest;
 
 @end
 
-@class FBXCTestProcess;
-
 @protocol FBXCTestProcessExecutor;
 
 /**

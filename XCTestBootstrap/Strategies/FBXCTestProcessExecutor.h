@@ -11,8 +11,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBXCTestProcess;
-
 @protocol FBDataConsumer;
 
 /**
