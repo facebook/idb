@@ -57,6 +57,11 @@ extern NSString *const FBControlCoreDebugLogging;
  */
 @property (nonatomic, assign, readonly, class) BOOL confirmCodesignaturesAreValid;
 
+/**
+ Environment in this process that should be passed down to child processes.
+ */
+@property (nonatomic, copy, readonly, class) NSDictionary<NSString *, NSString *> *safeSubprocessEnvironment;
+
 @end
 
 NS_ASSUME_NONNULL_END

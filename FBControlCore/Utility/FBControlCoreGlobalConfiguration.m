@@ -66,6 +66,19 @@ static id<FBControlCoreLogger> logger;
   return [FBControlCoreGlobalConfiguration description];
 }
 
++ (NSDictionary<NSString *, NSString *> *)safeSubprocessEnvironment
+{
+  NSDictionary<NSString *, NSString *> *env = NSProcessInfo.processInfo.environment;
+  NSMutableDictionary<NSString *, NSString *> *modified = NSMutableDictionary.dictionary;
+  for (NSString *key in env) {
+    if ([key containsString:@"TERMCAP"]) {
+      continue;
+    }
+    modified[key] = env[key];
+  }
+  return [modified copy];
+}
+
 #pragma mark Private
 
 + (id<FBControlCoreLogger>)createDefaultLogger

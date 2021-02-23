@@ -547,15 +547,7 @@ static FBFuture<NSNumber *> *signalHandlerFuture(uintptr_t signalCode, NSString 
 
 static NSString *EnvDescription()
 {
-  NSDictionary<NSString *, NSString *> *env = NSProcessInfo.processInfo.environment;
-  NSMutableDictionary<NSString *, NSString *> *modified = NSMutableDictionary.dictionary;
-  for (NSString *key in env) {
-    if ([key containsString:@"TERMCAP"]) {
-      continue;
-    }
-    modified[key] = env[key];
-  }
-  return [FBCollectionInformation oneLineDescriptionFromDictionary:modified];
+  return [FBCollectionInformation oneLineDescriptionFromDictionary:FBControlCoreGlobalConfiguration.safeSubprocessEnvironment];
 }
 
 int main(int argc, const char *argv[]) {
