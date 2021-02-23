@@ -109,12 +109,10 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   NSString *shimPath = self.executor.shimPath;
 
   // The environment the bundle path to the xctest target and where to redirect stdout to.
-  NSMutableDictionary<NSString *, NSString *> *environment = [NSMutableDictionary dictionaryWithDictionary:@{
-    @"DYLD_INSERT_LIBRARIES": shimPath,
-    @"TEST_SHIM_STDOUT_PATH": outputs.shimOutput.filePath,
-    @"TEST_SHIM_BUNDLE_PATH": self.configuration.testBundlePath,
-  }];
-  [environment addEntriesFromDictionary:self.configuration.processUnderTestEnvironment];
+  NSMutableDictionary<NSString *, NSString *> *environment = [self.configuration.processUnderTestEnvironment mutableCopy];
+  environment[@"DYLD_INSERT_LIBRARIES"] = shimPath;
+  environment[@"TEST_SHIM_STDOUT_PATH"] = outputs.shimOutput.filePath;
+  environment[@"TEST_SHIM_BUNDLE_PATH"] = self.configuration.testBundlePath;
 
   // Get the Launch Path and Arguments for the xctest process.
   NSString *testSpecifier = self.configuration.testFilter ?: @"All";
