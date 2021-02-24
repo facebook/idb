@@ -288,6 +288,8 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         return 1
     except ExitWithCodeException as e:
         return e.exit_code
+    except SystemExit as e:
+        return e.code
     except Exception:
         logger.exception("Exception thrown in main")
         return 1
