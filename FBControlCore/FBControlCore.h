@@ -14,8 +14,6 @@
 #import <FBControlCore/FBArchiveOperations.h>
 #import <FBControlCore/FBBinaryDescriptor.h>
 #import <FBControlCore/FBBundleDescriptor+Application.h>
-#import <FBControlCore/FBBundleDescriptor.h>
-#import <FBControlCore/FBBundleDescriptor.h>
 #import <FBControlCore/FBCodesignProvider.h>
 #import <FBControlCore/FBCollectionInformation.h>
 #import <FBControlCore/FBCollectionOperations.h>
@@ -74,7 +72,7 @@
 #import <FBControlCore/FBScale.h>
 #import <FBControlCore/FBScreenshotCommands.h>
 #import <FBControlCore/FBServiceManagement.h>
-#import <FBControlCore/FBSettingsApproval.h>
+#import <FBControlCore/FBSettingsCommands.h>
 #import <FBControlCore/FBSocketServer.h>
 #import <FBControlCore/FBTask+Helpers.h>
 #import <FBControlCore/FBTask.h>
