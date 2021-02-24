@@ -90,4 +90,7 @@
 #import <FBControlCore/FBXcodeDirectory.h>
 #import <FBControlCore/FBXCTestCommands.h>
 #import <FBControlCore/FBXCTestShimConfiguration.h>
+#import <FBControlCore/FBXCTraceRecordCommands.h>
+#import <FBControlCore/FBXCTraceConfiguration.h>
+#import <FBControlCore/FBXCTraceOperation.h>
 #import <FBControlCore/NSPredicate+FBControlCore.h>

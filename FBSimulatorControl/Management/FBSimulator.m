@@ -250,6 +250,7 @@
       FBSimulatorSettingsCommands.class,
       FBSimulatorVideoRecordingCommands.class,
       FBSimulatorXCTestCommands.class,
+      FBXCTraceRecordCommands.class,
     ];
   });
   return commandClasses;

@@ -18,6 +18,7 @@ service CompanionService {
   rpc install (stream InstallRequest) returns (stream InstallResponse) {}
   rpc instruments_run (stream InstrumentsRunRequest) returns (stream InstrumentsRunResponse) {}
   rpc log (LogRequest) returns (stream LogResponse) {}
+  rpc xctrace_record (stream XctraceRecordRequest) returns (stream XctraceRecordResponse) {}
   // Interaction
   rpc accessibility_info (AccessibilityInfoRequest) returns (AccessibilityInfoResponse) {}
   rpc focus (FocusRequest) returns (FocusResponse) {}
@@ -477,6 +478,50 @@ message InstrumentsRunResponse {
   }
   oneof output {
     bytes log_output = 1;
+    Payload payload = 2;
+    State state = 3;
+  }
+}
+
+message XctraceRecordRequest {
+  message LauchProcess {
+    string process_to_launch = 1;
+    repeated string launch_args = 2;
+    string target_stdin = 3;
+    string target_stdout = 4;
+    map<string, string> process_env = 5;
+  }
+  message Target {
+    oneof target {
+      bool all_processes = 1;
+      string process_to_attach = 2;
+      LauchProcess launch_process = 3;
+    }
+  }
+  message Start {
+    string template_name = 1;
+    double time_limit = 2;
+    string package = 3;
+    Target target = 4;
+  }
+  message Stop {
+    double timeout = 1;
+    repeated string args = 2;
+  }
+  oneof control {
+    Start start = 1;
+    Stop stop = 2;
+  }
+}
+
+message XctraceRecordResponse {
+  enum State {
+    UNKNOWN = 0;
+    RUNNING = 1;
+    PROCESSING = 2;
+  }
+  oneof output {
+    bytes log = 1;
     Payload payload = 2;
     State state = 3;
   }

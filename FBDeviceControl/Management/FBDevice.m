@@ -297,6 +297,7 @@
       FBDeviceScreenshotCommands.class,
       FBDeviceVideoRecordingCommands.class,
       FBDeviceXCTestCommands.class,
+      FBXCTraceRecordCommands.class,
       FBInstrumentsCommands.class,
     ];
   });

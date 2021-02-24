@@ -17,6 +17,7 @@
 #import <FBControlCore/FBScreenshotCommands.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
 #import <FBControlCore/FBXCTestCommands.h>
+#import <FBControlCore/FBXCTraceRecordCommands.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -126,7 +127,7 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 /**
  A protocol that defines an interactible and informational target.
  */
-@protocol FBiOSTarget <NSObject, FBiOSTargetInfo, FBApplicationCommands, FBVideoStreamCommands, FBCrashLogCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands, FBInstrumentsCommands, FBDebuggerCommands>
+@protocol FBiOSTarget <NSObject, FBiOSTargetInfo, FBApplicationCommands, FBVideoStreamCommands, FBCrashLogCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands, FBXCTraceRecordCommands, FBInstrumentsCommands, FBDebuggerCommands>
 
 /**
  The Target's Logger.

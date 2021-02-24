@@ -394,6 +394,22 @@ static FBInstrumentsConfiguration *translate_instruments_configuration(idb::Inst
     ];
 }
 
+static FBXCTraceRecordConfiguration *translate_xctrace_record_configuration(idb::XctraceRecordRequest_Start request)
+{
+  return [FBXCTraceRecordConfiguration
+    RecordWithTemplateName:nsstring_from_c_string(request.template_name())
+    timeLimit:request.time_limit() ?: DefaultXCTraceRecordOperationTimeLimit
+    package:nsstring_from_c_string(request.package())
+    allProcesses:request.target().all_processes()
+    processToAttach:nsstring_from_c_string(request.target().process_to_attach())
+    processToLaunch:nsstring_from_c_string(request.target().launch_process().process_to_launch())
+    launchArgs:extract_string_array(request.target().launch_process().launch_args())
+    targetStdin:nsstring_from_c_string(request.target().launch_process().target_stdin())
+    targetStdout:nsstring_from_c_string(request.target().launch_process().target_stdout())
+    processEnv:extract_str_dict(request.target().launch_process().process_env())
+  ];
+}
+
 static idb::DebugServerResponse translate_debugserver_status(id<FBDebugServer> debugServer)
 {
   idb::DebugServerResponse response;
@@ -1345,4 +1361,75 @@ Status FBIDBServiceHandler::connect(grpc::ServerContext *context, const idb::Con
   populate_companion_info(info, _eventReporter, _target);
 
   return Status::OK;
+}}
+
+Status FBIDBServiceHandler::xctrace_record(ServerContext *context,grpc::ServerReaderWriter<idb::XctraceRecordResponse, idb::XctraceRecordRequest> *stream)
+{@autoreleasepool{
+  __block idb::XctraceRecordRequest recordRequest;
+  __block pthread_mutex_t mutex;
+  pthread_mutex_init(&mutex, NULL);
+  __block bool finished_writing = NO;
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.idb.xctrace.record", DISPATCH_QUEUE_SERIAL);
+  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
+  dispatch_sync(queue, ^{
+    idb::XctraceRecordRequest request;
+    stream->Read(&request);
+    recordRequest = request;
+  });
+
+  FBXCTraceRecordConfiguration *configuration = translate_xctrace_record_configuration(recordRequest.start());
+
+  NSError *error = nil;
+  id<FBDataConsumer> consumer = [FBBlockDataConsumer asynchronousDataConsumerOnQueue:queue consumer:^(NSData *data) {
+    idb::XctraceRecordResponse response;
+    response.set_log(data.bytes, data.length);
+    pthread_mutex_lock(&mutex);
+    if (!finished_writing) {
+      stream->Write(response);
+    }
+    pthread_mutex_unlock(&mutex);
+  }];
+  id<FBControlCoreLogger> logger = [FBControlCoreLogger compositeLoggerWithLoggers:@[
+    [FBControlCoreLogger loggerToConsumer:consumer],
+    _target.logger,
+  ]];
+
+  FBXCTraceRecordOperation *operation = [[_target startXctraceRecord:configuration logger:logger] block:&error];
+  if (!operation) {
+    pthread_mutex_lock(&mutex);
+    finished_writing = YES;
+    pthread_mutex_unlock(&mutex);
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
+  dispatch_sync(queue, ^{
+    idb::XctraceRecordResponse response;
+    response.set_state(idb::XctraceRecordResponse::State::XctraceRecordResponse_State_RUNNING);
+    stream->Write(response);
+    idb::XctraceRecordRequest request;
+    stream->Read(&request);
+    recordRequest = request;
+  });
+  NSTimeInterval stopTimeout = recordRequest.stop().timeout() ?: DefaultXCTraceRecordStopTimeout;
+  if (![[operation stopWithTimeout:stopTimeout] succeeds:&error]) {
+    pthread_mutex_lock(&mutex);
+    finished_writing = YES;
+    pthread_mutex_unlock(&mutex);
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+  NSArray<NSString *> *postProcessArgs = extract_string_array(recordRequest.stop().args());
+  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
+  dispatch_sync(queue, ^{
+    idb::XctraceRecordResponse response;
+    response.set_state(idb::XctraceRecordResponse::State::XctraceRecordResponse_State_PROCESSING);
+    stream->Write(response);
+  });
+  NSURL *processed = [[FBInstrumentsOperation postProcess:postProcessArgs traceDir:operation.traceDir queue:queue logger:logger] block:&error];
+  pthread_mutex_lock(&mutex);
+  finished_writing = YES;
+  pthread_mutex_unlock(&mutex);
+  if (!processed) {
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+  return drain_writer([FBArchiveOperations createGzippedTarForPath:processed.path queue:queue logger:_target.logger], stream);
 }}
