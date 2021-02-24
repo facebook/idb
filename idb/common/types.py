@@ -327,6 +327,10 @@ class FileContainerType(Enum):
     MEDIA = "media"
     CRASHES = "crashes"
     PROVISIONING_PROFILES = "provisioning_profiles"
+    MDM_PROFILES = "mdm_profiles"
+    SPRINGBOARD_ICONS = "springboard_icons"
+    WALLPAPER = "wallpaper"
+    DISK_IMAGES = "disk_images"
 
 
 FileContainer = Optional[Union[str, FileContainerType]]

@@ -104,6 +104,27 @@ class FSCommand(ClientCommand):
             const=FileContainerType.PROVISIONING_PROFILES,
             help="Use the provisioning profiles container",
         )
+        group.add_argument(
+            "--mdm-profiles",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.MDM_PROFILES,
+            help="Use the mdm profiles container",
+        )
+        group.add_argument(
+            "--springboard-icons",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.SPRINGBOARD_ICONS,
+            help="Use the springboard icons container",
+        )
+        group.add_argument(
+            "--wallpaper",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.WALLPAPER,
+            help="Use the wallpaper container",
+        )
         super().add_parser_arguments(parser)
 
     @abstractmethod

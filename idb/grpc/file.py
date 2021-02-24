@@ -21,4 +21,12 @@ def container_to_grpc(container: FileContainer) -> GrpcFileContainer:
         return GrpcFileContainer(kind=GrpcFileContainer.ROOT)
     if container == FileContainerType.PROVISIONING_PROFILES:
         return GrpcFileContainer(kind=GrpcFileContainer.PROVISIONING_PROFILES)
+    if container == FileContainerType.MDM_PROFILES:
+        return GrpcFileContainer(kind=GrpcFileContainer.MDM_PROFILES)
+    if container == FileContainerType.SPRINGBOARD_ICONS:
+        return GrpcFileContainer(kind=GrpcFileContainer.SPRINGBOARD_ICONS)
+    if container == FileContainerType.WALLPAPER:
+        return GrpcFileContainer(kind=GrpcFileContainer.WALLPAPER)
+    if container == FileContainerType.DISK_IMAGES:
+        return GrpcFileContainer(kind=GrpcFileContainer.DISK_IMAGES)
     return GrpcFileContainer(kind=GrpcFileContainer.NONE)
