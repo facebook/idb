@@ -64,7 +64,7 @@ static void AFCConnectionCallback(void *connectionRefPtr, void *arg1, void *afcO
       FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:afcConnection calls:calls logger:logger];
       if (![connection connectionIsValid]) {
         return [[FBDeviceControlError
-          describeFormat:@"Connection is not valid"]
+          describeFormat:@"Created AFC Connection %@ is not valid", afcConnection]
           failFuture];
       }
       return [FBFuture futureWithResult:connection];
@@ -118,7 +118,7 @@ const char *DoubleDot = "..";
   mach_error_t result = self.calls.DirectoryOpen(self.connection, path.UTF8String, &directory);
   if (result != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"Error when opening directory: %@", [self errorMessageWithCode:result]]
+      describeFormat:@"Error when opening directory %@: %@", path, [self errorMessageWithCode:result]]
       fail:error];
   }
   NSMutableArray<NSString *> *dirs = [NSMutableArray array];
@@ -136,7 +136,7 @@ const char *DoubleDot = "..";
   }
 
   self.calls.DirectoryClose(self.connection, directory);
-  [self.logger logFormat:@"Contents of directory %@", [FBCollectionInformation oneLineDescriptionFromArray:dirs]];
+  [self.logger logFormat:@"Contents of directory %@ %@", path, [FBCollectionInformation oneLineDescriptionFromArray:dirs]];
   return [NSArray arrayWithArray:dirs];
 }
 
@@ -144,10 +144,10 @@ const char *DoubleDot = "..";
 {
   [self.logger logFormat:@"Contents of path %@", path];
   CFTypeRef file;
-  mach_error_t result = self.calls.FileRefOpen(self.connection, [path UTF8String], FBAFCReadOnlyMode, &file);
+  mach_error_t result = self.calls.FileRefOpen(self.connection, path.UTF8String, FBAFCReadOnlyMode, &file);
   if (result != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"Error when opening file: %@", [self errorMessageWithCode:result]]
+      describeFormat:@"Error when opening file %@: %@", path, [self errorMessageWithCode:result]]
       fail:error];
   }
   self.calls.FileRefSeek(self.connection, file, 0, 2);
@@ -164,7 +164,7 @@ const char *DoubleDot = "..";
     if (result != 0) {
       self.calls.FileRefClose(self.connection, file);
       return [[FBDeviceControlError
-        describeFormat:@"Error when reading file: %@", [self errorMessageWithCode:result]]
+        describeFormat:@"Error when reading file %@: %@", path, [self errorMessageWithCode:result]]
         fail:error];
     }
   }
@@ -182,7 +182,7 @@ const char *DoubleDot = "..";
     mach_error_t result = self.calls.RemovePath(self.connection, [path UTF8String]);
     if (result != 0) {
       return [[FBDeviceControlError
-        describeFormat:@"Error when removing path: %@", [self errorMessageWithCode:result]]
+        describeFormat:@"Error when removing path %@: %@", path, [self errorMessageWithCode:result]]
         failBool:error];
     }
     [self.logger logFormat:@"Removed file path %@", path];
@@ -238,7 +238,7 @@ const char *DoubleDot = "..";
   mach_error_t result = self.calls.FileRefOpen(self.connection, containerPath.UTF8String, FBAFCreateReadAndWrite, &fileReference);
   if (result != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"Error when opening file: %@", [self errorMessageWithCode:result]]
+      describeFormat:@"Error when opening file %@: %@", containerPath, [self errorMessageWithCode:result]]
       failBool:error];
   }
 
@@ -255,7 +255,7 @@ const char *DoubleDot = "..";
   self.calls.FileRefClose(self.connection, fileReference);
   if (writeResult != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"Error when writing file: %@", [self errorMessageWithCode:writeResult]]
+      describeFormat:@"Error when writing file %@: %@", containerPath, [self errorMessageWithCode:writeResult]]
       failBool:error];
   }
   [self.logger logFormat:@"Copied from %@ to %@", path, containerPath];
@@ -293,7 +293,7 @@ const char *DoubleDot = "..";
   );
   if (operation == nil) {
     return [[FBDeviceControlError
-      describe:@"Operation couldn't be created"]
+      describeFormat:@"Operation for path removal %@ couldn't be created", path]
       failBool:error];
   }
   int op_result = self.calls.ConnectionProcessOperation(self.connection, operation);
