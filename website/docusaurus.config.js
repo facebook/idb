@@ -14,6 +14,10 @@ module.exports = {
   organizationName: 'facebook',
   projectName: 'idb',
   themeConfig: {
+    algolia: {
+      apiKey: "0908032af0955efe731222e1de3bad86",
+      indexName: "idb",
+    },
     navbar: {
       title: 'idb',
       items: [
