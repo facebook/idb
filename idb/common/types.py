@@ -625,6 +625,27 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def xctrace_record(
+        self,
+        stop: asyncio.Event,
+        output: str,
+        template_name: str,
+        all_processes: bool = False,
+        time_limit: Optional[float] = None,
+        package: Optional[str] = None,
+        process_to_attach: Optional[str] = None,
+        process_to_launch: Optional[str] = None,
+        process_env: Optional[Dict[str, str]] = None,
+        launch_args: Optional[List[str]] = None,
+        target_stdin: Optional[str] = None,
+        target_stdout: Optional[str] = None,
+        post_args: Optional[List[str]] = None,
+        stop_timeout: Optional[float] = None,
+        started: Optional[asyncio.Event] = None,
+    ) -> List[str]:
+        pass
+
+    @abstractmethod
     async def crash_list(self, query: CrashLogQuery) -> List[CrashLogInfo]:
         pass
 

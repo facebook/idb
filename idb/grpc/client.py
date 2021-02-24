@@ -120,6 +120,7 @@ from idb.grpc.idb_pb2 import (
     VideoStreamRequest,
     XctestListBundlesRequest,
     XctestListTestsRequest,
+    XctraceRecordRequest,
 )
 from idb.grpc.install import (
     Bundle,
@@ -149,6 +150,10 @@ from idb.grpc.xctest import (
     write_result_bundle,
 )
 from idb.grpc.xctest_log_parser import XCTestLogParser
+from idb.grpc.xctrace import (
+    xctrace_drain_until_running,
+    xctrace_generate_bytes,
+)
 from idb.utils.contextlib import asynccontextmanager
 
 
@@ -1049,3 +1054,104 @@ class Client(ClientBase):
             )
         )
         return list(response.values)
+
+    @log_and_handle_exceptions
+    async def xctrace_record(
+        self,
+        stop: asyncio.Event,
+        # original 'xctrace record' options
+        output: str,
+        template_name: str,
+        all_processes: bool = False,
+        time_limit: Optional[float] = None,
+        package: Optional[str] = None,
+        process_to_attach: Optional[str] = None,
+        process_to_launch: Optional[str] = None,
+        process_env: Optional[Dict[str, str]] = None,
+        launch_args: Optional[List[str]] = None,
+        target_stdin: Optional[str] = None,
+        target_stdout: Optional[str] = None,
+        # FB options
+        post_args: Optional[List[str]] = None,
+        stop_timeout: Optional[float] = None,
+        # control events
+        started: Optional[asyncio.Event] = None,
+    ) -> List[str]:
+        self.logger.info("Starting xctrace connection")
+        async with self.stub.xctrace_record.open() as stream:
+            self.logger.info("Sending xctrace record request")
+            target = None
+            if all_processes:
+                target = XctraceRecordRequest.Target(all_processes=all_processes)
+            elif process_to_attach:
+                target = XctraceRecordRequest.Target(
+                    process_to_attach=process_to_attach
+                )
+            else:
+                target = XctraceRecordRequest.Target(
+                    launch_process=XctraceRecordRequest.LauchProcess(
+                        process_to_launch=process_to_launch,
+                        launch_args=launch_args,
+                        target_stdin=target_stdin,
+                        target_stdout=target_stdout,
+                        process_env=process_env,
+                    )
+                )
+            await stream.send_message(
+                XctraceRecordRequest(
+                    start=XctraceRecordRequest.Start(
+                        template_name=template_name,
+                        time_limit=time_limit,
+                        package=package,
+                        target=target,
+                    )
+                )
+            )
+            self.logger.info("Starting xctrace record")
+            await xctrace_drain_until_running(stream=stream, logger=self.logger)
+            if started:
+                started.set()
+            self.logger.info("Xctrace record has started, waiting for stop")
+            async for response in stop_wrapper(stream=stream, stop=stop):
+                log = response.log
+                if len(log):
+                    self.logger.info(log.decode())
+            self.logger.info("Stopping xctrace record")
+            await stream.send_message(
+                XctraceRecordRequest(
+                    stop=XctraceRecordRequest.Stop(
+                        timeout=stop_timeout,
+                        args=post_args,
+                    )
+                )
+            )
+            await stream.end()
+
+            result = []
+
+            with tempfile.TemporaryDirectory() as tmp_trace_dir:
+                self.logger.info(f"Writing xctrace data from tar to {tmp_trace_dir}")
+                await drain_untar(
+                    xctrace_generate_bytes(stream=stream, logger=self.logger),
+                    output_path=tmp_trace_dir,
+                )
+                if os.path.exists(
+                    os.path.join(os.path.abspath(tmp_trace_dir), "instrument_data")
+                ):
+                    trace_file = f"{output}.trace"
+                    shutil.copytree(tmp_trace_dir, trace_file)
+                    result.append(trace_file)
+                    self.logger.info(f"Trace written to {trace_file}")
+                else:
+                    # tar is a folder containing one or more trace files
+                    for file in os.listdir(tmp_trace_dir):
+                        _, file_extension = os.path.splitext(file)
+                        tmp_trace_file = os.path.join(
+                            os.path.abspath(tmp_trace_dir), file
+                        )
+                        trace_file = f"{output}{file_extension}"
+                        shutil.move(tmp_trace_file, trace_file)
+                        result.append(trace_file)
+                        self.logger.info(f"Trace written to {trace_file}")
+
+            return result

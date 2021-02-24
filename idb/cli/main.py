@@ -90,6 +90,7 @@ from idb.cli.commands.xctest import (
     XctestRunCommand,
     XctestsListBundlesCommand,
 )
+from idb.cli.commands.xctrace import XctraceRecordCommand
 from idb.common.command import Command, CommandGroup
 from idb.common.types import IdbException, ExitWithCodeException
 
@@ -257,6 +258,11 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
             name="companion",
             description="commands related to the companion",
             commands=[CompanionLogCommand()],
+        ),
+        CommandGroup(
+            name="xctrace",
+            description="Run xctrace commands",
+            commands=[XctraceRecordCommand()],
         ),
         SetCommand,
         GetCommand,
