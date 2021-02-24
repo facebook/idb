@@ -138,7 +138,10 @@ class CommonRunXcTestCommand(ClientCommand):
             help="Path to save the result bundle",
         )
         parser.add_argument(
-            "--timeout", help="Seconds before timeout occurs", default=3600, type=int
+            "--timeout",
+            help="The number of seconds to wait before the test times out. When the timeout is exceeded the test will exit and an attempt will be made to obtain a sample of the hung process",
+            default=None,
+            type=int,
         )
         parser.add_argument(
             "--report-activities",

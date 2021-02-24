@@ -12,7 +12,6 @@ from typing import Any, Optional, Tuple, TypeVar
 from unittest.mock import ANY, MagicMock, patch
 
 from idb.cli.main import gen_main as cli_main
-from idb.common.constants import XCTEST_TIMEOUT
 from idb.common.types import (
     CrashLogQuery,
     DomainSocketAddress,
@@ -467,7 +466,7 @@ class TestParser(TestCase):
             )
             namespace = self.xctest_run_namespace("app", test_bundle_id)
             namespace.app_bundle_id = app_under_test_id
-            namespace.timeout = XCTEST_TIMEOUT
+            namespace.timeout = None
             mock.assert_called_once_with(namespace)
 
     async def test_xctest_run_ui(self) -> None:
@@ -492,7 +491,7 @@ class TestParser(TestCase):
             namespace = self.xctest_run_namespace("ui", test_bundle_id)
             namespace.app_bundle_id = app_under_test_id
             namespace.test_host_app_bundle_id = test_host_app_bundle_id
-            namespace.timeout = XCTEST_TIMEOUT
+            namespace.timeout = None
             mock.assert_called_once_with(namespace)
 
     async def test_xctest_run_logic(self) -> None:
@@ -504,7 +503,7 @@ class TestParser(TestCase):
             test_bundle_id = "com.me.tests"
             await cli_main(cmd_input=["xctest", "run", "logic", test_bundle_id])
             namespace = self.xctest_run_namespace("logic", test_bundle_id)
-            namespace.timeout = XCTEST_TIMEOUT
+            namespace.timeout = None
             mock.assert_called_once_with(namespace)
 
     async def test_xctest_list(self) -> None:

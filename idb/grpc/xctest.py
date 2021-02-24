@@ -117,15 +117,16 @@ def make_request(
         mode = Mode(application=Application(app_bundle_id=app_bundle_id))
 
     return XctestRunRequest(
+        arguments=args,
+        collect_coverage=collect_coverage,
+        environment=env,
         mode=mode,
+        report_activities=report_activities,
+        report_attachments=report_attachments,
         test_bundle_id=test_bundle_id,
         tests_to_run=list(tests_to_run or []),
         tests_to_skip=list(tests_to_skip or []),
-        environment=env,
-        arguments=args,
-        report_activities=report_activities,
-        collect_coverage=collect_coverage,
-        report_attachments=report_attachments,
+        timeout=(timeout if timeout is not None else 0),
     )
 
 
