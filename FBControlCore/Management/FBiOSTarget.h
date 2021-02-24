@@ -140,6 +140,16 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 @property (nonatomic, copy, readonly) NSString *auxillaryDirectory;
 
 /**
+ The root of the "Runtime" where applicable
+ */
+@property (nonatomic, copy, readonly) NSString *runtimeRootDirectory;
+
+/**
+ The root of the "Runtime" where applicable
+ */
+@property (nonatomic, copy, readonly) NSString *platformRootDirectory;
+
+/**
  The Screen Info for the Target.
  */
 @property (nonatomic, copy, nullable, readonly) FBiOSTargetScreenInfo *screenInfo;

@@ -11,6 +11,7 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 #import <CoreSimulator/SimDeviceType.h>
+#import <CoreSimulator/SimRuntime.h>
 
 #import <Foundation/Foundation.h>
 
@@ -126,6 +127,16 @@
 - (FBOSVersion *)osVersion
 {
   return self.configuration.os;
+}
+
+- (NSString *)runtimeRootDirectory
+{
+  return self.device.runtime.root;
+}
+
+- (NSString *)platformRootDirectory
+{
+  return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform"];
 }
 
 - (FBiOSTargetScreenInfo *)screenInfo

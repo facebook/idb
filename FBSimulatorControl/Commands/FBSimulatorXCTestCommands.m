@@ -19,7 +19,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorXCTestProcessExecutor.h"
-#import "FBSimulatorTestPreparationStrategy.h"
 
 static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator/Devices";
 
@@ -200,17 +199,13 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
   return [[FBXCTestShimConfiguration
     defaultShimConfigurationWithLogger:self.simulator.logger]
     onQueue:self.simulator.workQueue fmap:^(FBXCTestShimConfiguration *shims) {
-      FBSimulatorTestPreparationStrategy *testPreparationStrategy = [[FBSimulatorTestPreparationStrategy alloc]
-        initWithTestLaunchConfiguration:testLaunchConfiguration
-        shims:shims
-        workingDirectory:self.simulator.auxillaryDirectory
-        codesign:[FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:self.simulator.logger]];
-
       return [FBManagedTestRunStrategy
         runToCompletionWithTarget:self.simulator
         configuration:testLaunchConfiguration
+        shims:shims
+        codesign:(FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid ? [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:self.simulator.logger] : nil)
+        workingDirectory:self.simulator.auxillaryDirectory
         reporter:reporter
-        testPreparationStrategy:testPreparationStrategy
         logger:logger];
     }];
 }

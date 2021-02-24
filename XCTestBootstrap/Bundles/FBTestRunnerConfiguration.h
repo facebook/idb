@@ -7,16 +7,22 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBBundleDescriptor;
 @class FBTestBundle;
 @class FBTestConfiguration;
 
+@protocol FBiOSTarget;
+
 /**
  A Configuration Value for the Test Runner.
  */
 @interface FBTestRunnerConfiguration : NSObject <NSCopying>
+
+#pragma mark Initializers
 
 /**
  The Designated Initializer
@@ -30,6 +36,19 @@ NS_ASSUME_NONNULL_BEGIN
  @param testedApplicationAdditionalEnvironment Launch environment variables added to test target application
  */
 + (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBBundleDescriptor *)hostApplication hostApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(FBBundleDescriptor *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
+
+/**
+ Prepares a Test Runner Configuration
+
+ @param target the target to run against.
+ @param testLaunchConfiguration the configuration for the test launch
+ @param shims the shims to use.
+ @param workingDirectory the working directory to use.
+ @param codesign if set this will be used for checking code signatures.
+ */
++ (FBFuture<FBTestRunnerConfiguration *> *)prepareConfigurationWithTarget:(id<FBiOSTarget>)target testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration shims:(FBXCTestShimConfiguration *)shims workingDirectory:(NSString *)workingDirectory codesign:(nullable FBCodesignProvider *)codesign;
+
+#pragma mark Properties
 
 /**
  Test session identifier

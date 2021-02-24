@@ -11,7 +11,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <IOKit/IOKitLib.h>
 
-#import "FBMacTestPreparationStrategy.h"
 #import "FBManagedTestRunStrategy.h"
 #import "XCTestBootstrapError.h"
 
@@ -113,6 +112,15 @@
   return [FBFuture futureWithResult:[NSNull null]];
 }
 
+- (NSString *)runtimeRootDirectory
+{
+  return [self platformRootDirectory];
+}
+
+- (NSString *)platformRootDirectory
+{
+  return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/MacOSX.platform"];
+}
 
 + (NSString *)resolveDeviceUDID
 {
@@ -343,17 +351,13 @@
   return [[FBXCTestShimConfiguration
     defaultShimConfigurationWithLogger:nil]
     onQueue:self.workQueue fmap:^(FBXCTestShimConfiguration *shimConfiguation) {
-      FBMacTestPreparationStrategy *testPreparationStrategy = [[FBMacTestPreparationStrategy alloc]
-        initWithTestLaunchConfiguration:testLaunchConfiguration
-        shims:shimConfiguation
-        workingDirectory:self.workingDirectory
-        codesign:[FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:nil]];
-
       return [FBManagedTestRunStrategy
         runToCompletionWithTarget:self
         configuration:testLaunchConfiguration
+        shims:shimConfiguation
+        codesign:nil
+        workingDirectory:self.workingDirectory
         reporter:reporter
-        testPreparationStrategy:testPreparationStrategy
         logger:logger];
     }];
 }

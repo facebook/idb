@@ -49,7 +49,6 @@
 #import <FBSimulatorControl/FBSimulatorShutdownStrategy.h>
 #import <FBSimulatorControl/FBSimulatorSubprocessTerminationStrategy.h>
 #import <FBSimulatorControl/FBSimulatorTerminationStrategy.h>
-#import <FBSimulatorControl/FBSimulatorTestPreparationStrategy.h>
 #import <FBSimulatorControl/FBSimulatorVideo.h>
 #import <FBSimulatorControl/FBSimulatorVideoRecordingCommands.h>
 #import <FBSimulatorControl/FBSimulatorVideoStream.h>

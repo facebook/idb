@@ -77,7 +77,7 @@
   FBMacDevice *device = [[FBMacDevice alloc] initWithLogger:self.context.logger];
 
   if ([self.configuration isKindOfClass:FBTestManagerTestConfiguration.class]) {
-    return [[[FBTestRunStrategy strategyWithTarget:device configuration:(FBTestManagerTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger testPreparationStrategyClass:FBMacTestPreparationStrategy.class] execute] onQueue:device.workQueue chain:^(FBFuture *future) {
+    return [[[FBTestRunStrategy strategyWithTarget:device configuration:(FBTestManagerTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] execute] onQueue:device.workQueue chain:^(FBFuture *future) {
       return [[device restorePrimaryDeviceState] chainReplace:future];
     }];
   }
@@ -108,7 +108,7 @@
 - (FBFuture<NSNull *> *)runTestWithSimulator:(FBSimulator *)simulator
 {
   if ([self.configuration isKindOfClass:FBTestManagerTestConfiguration.class]) {
-    return [[FBTestRunStrategy strategyWithTarget:simulator configuration:(FBTestManagerTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger testPreparationStrategyClass:FBSimulatorTestPreparationStrategy.class] execute];
+    return [[FBTestRunStrategy strategyWithTarget:simulator configuration:(FBTestManagerTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] execute];
   }
   id<FBXCTestProcessExecutor> executor = [FBSimulatorXCTestProcessExecutor executorWithSimulator:simulator shims:self.configuration.shims];
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {

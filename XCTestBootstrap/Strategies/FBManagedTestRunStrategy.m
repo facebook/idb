@@ -10,7 +10,6 @@
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestManagerContext.h"
 #import "FBTestRunnerConfiguration.h"
-#import "FBXCTestPreparationStrategy.h"
 #import "FBXCTestReporter.h"
 #import "XCTestBootstrapError.h"
 #import "XCTestBootstrapFrameworkLoader.h"
@@ -19,7 +18,7 @@
 
 #pragma mark Initializers
 
-+ (FBFuture<NSNull *> *)runToCompletionWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter testPreparationStrategy:(id<FBXCTestPreparationStrategy>)testPreparationStrategy logger:(id<FBControlCoreLogger>)logger 
++ (FBFuture<NSNull *> *)runToCompletionWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration shims:(FBXCTestShimConfiguration *)shims codesign:(FBCodesignProvider *)codesign workingDirectory:(NSString *)workingDirectory reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   NSParameterAssert(target);
   NSParameterAssert(configuration.applicationLaunchConfiguration);
@@ -31,8 +30,8 @@
   }
 
   FBApplicationLaunchConfiguration *applicationLaunchConfiguration = configuration.applicationLaunchConfiguration;
-  return [[[testPreparationStrategy
-    prepareTestWithIOSTarget:target]
+  return [[[FBTestRunnerConfiguration
+    prepareConfigurationWithTarget:target testLaunchConfiguration:configuration shims:shims workingDirectory:workingDirectory codesign:codesign]
     onQueue:target.workQueue fmap:^(FBTestRunnerConfiguration *runnerConfiguration) {
       FBApplicationLaunchConfiguration *applicationConfiguration = [self
         prepareApplicationLaunchConfiguration:applicationLaunchConfiguration

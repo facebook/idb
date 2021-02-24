@@ -17,17 +17,16 @@
 @property (nonatomic, strong, readonly) FBTestManagerTestConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
-@property (nonatomic, strong, readonly) Class testPreparationStrategyClass;
 @end
 
 @implementation FBTestRunStrategy
 
-+ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBTestManagerTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass
++ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBTestManagerTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithTarget:target configuration:configuration reporter:reporter logger:logger testPreparationStrategyClass:testPreparationStrategyClass];
+  return [[self alloc] initWithTarget:target configuration:configuration reporter:reporter logger:logger];
 }
 
-- (instancetype)initWithTarget:(id<FBiOSTarget>)target configuration:(FBTestManagerTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategyClass:(Class<FBXCTestPreparationStrategy>)testPreparationStrategyClass
+- (instancetype)initWithTarget:(id<FBiOSTarget>)target configuration:(FBTestManagerTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -38,7 +37,7 @@
   _configuration = configuration;
   _reporter = reporter;
   _logger = logger;
-  _testPreparationStrategyClass = testPreparationStrategyClass;
+
   return self;
 }
 
@@ -104,17 +103,13 @@
   return [[[[[[FBXCTestShimConfiguration
     defaultShimConfigurationWithLogger:self.target.logger]
     onQueue:self.target.workQueue fmap:^(FBXCTestShimConfiguration *shims) {
-      id<FBXCTestPreparationStrategy> testPreparationStrategy = [[self.testPreparationStrategyClass alloc]
-        initWithTestLaunchConfiguration:testLaunchConfiguration
-        shims:shims
-        workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]
-        codesign:[FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:self.target.logger]];
-
       executionFinished = [FBManagedTestRunStrategy
         runToCompletionWithTarget:self.target
         configuration:testLaunchConfiguration
+        shims:shims
+        codesign:(FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid ? [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:self.target.logger] : nil)
+        workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]
         reporter:self.reporter
-        testPreparationStrategy:testPreparationStrategy
         logger:self.target.logger];
 
       FBFuture<id> *startedVideoRecording = self.configuration.videoRecordingPath != nil

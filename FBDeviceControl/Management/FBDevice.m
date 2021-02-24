@@ -102,6 +102,16 @@
   return [NSFileManager.defaultManager isWritableFileAtPath:cwd] ? cwd : @"/tmp";
 }
 
+- (NSString *)platformRootDirectory
+{
+  return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform"];
+}
+
+- (NSString *)runtimeRootDirectory
+{
+  return [self platformRootDirectory];
+}
+
 - (FBiOSTargetScreenInfo *)screenInfo
 {
   return nil;
