@@ -31,6 +31,11 @@
   return self;
 }
 
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Crash Info: %@ \n Crash Report: %@\n", _info, _contents];
+}
+
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
