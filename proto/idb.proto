@@ -728,14 +728,12 @@ message LsResponse {
 }
 
 message LsRequest {
-  string bundle_id = 1;
   string path = 2;
   FileContainer container = 3;
   repeated string paths = 4;
 }
 
 message MkdirRequest {
-  string bundle_id = 1;
   string path = 2;
   FileContainer container = 3;
 }
@@ -744,7 +742,6 @@ message MkdirResponse {
 }
 
 message MvRequest {
-  string bundle_id = 1;
   repeated string src_paths = 2;
   string dst_path = 3;
   FileContainer container = 4;
@@ -754,7 +751,6 @@ message MvResponse {
 }
 
 message RmRequest {
-  string bundle_id = 1;
   repeated string paths = 2;
   FileContainer container = 3;
 }
@@ -764,7 +760,6 @@ message RmResponse {
 
 message PushRequest {
   message Inner {
-    string bundle_id = 1;
     string dst_path = 2;
     FileContainer container = 3;
   }
@@ -778,7 +773,6 @@ message PushResponse {
 }
 
 message PullRequest {
-  string bundle_id = 1;
   string src_path = 2;
   string dst_path = 3;
   FileContainer container = 4;
