@@ -19,23 +19,28 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Constructor for the Test Manager Context.
 
- @param testHostLaunchConfiguration the process id of the Test Host Process. This is the process into which the Test Bundle is injected.
  @param sessionIdentifier a session identifier of test that should be started
+ @param timeout the maximum amount of time permitted for the test execution to finish.
+ @param testHostLaunchConfiguration the process id of the Test Host Process. This is the process into which the Test Bundle is injected.
  @param testedApplicationAdditionalEnvironment Additional environment for the app-under-test.
  @return a new FBTestManagerContext instance.
  */
-- (instancetype)initWithTestHostLaunchConfiguration:(FBApplicationLaunchConfiguration *)testHostLaunchConfiguration sessionIdentifier:(NSUUID *)sessionIdentifier testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
-
-/**
- The launch configuration for the test host.
- */
-@property (nonatomic, strong, readonly) FBApplicationLaunchConfiguration *testHostLaunchConfiguration;
+- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier timeout:(NSTimeInterval)timeout testHostLaunchConfiguration:(FBApplicationLaunchConfiguration *)testHostLaunchConfiguration  testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
 
 /**
  A session identifier of test that should be started
  */
 @property (nonatomic, copy, readonly) NSUUID *sessionIdentifier;
 
+/**
+ The maximum amount of time permitted for the test execution to finish
+ */
+@property (nonatomic, assign, readonly) NSTimeInterval timeout;
+
+/**
+ The launch configuration for the test host.
+ */
+@property (nonatomic, strong, readonly) FBApplicationLaunchConfiguration *testHostLaunchConfiguration;
 /**
  Additional environment for the app-under-test.
  */

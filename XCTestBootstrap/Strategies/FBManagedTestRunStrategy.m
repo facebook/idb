@@ -40,8 +40,9 @@
 
       // Make the Context for the Test Manager.
       FBTestManagerContext *context = [[FBTestManagerContext alloc]
-        initWithTestHostLaunchConfiguration:testHostLaunchConfiguration
-        sessionIdentifier:runnerConfiguration.sessionIdentifier
+        initWithSessionIdentifier:runnerConfiguration.sessionIdentifier
+        timeout:configuration.timeout
+        testHostLaunchConfiguration:testHostLaunchConfiguration
         testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
 
       // Construct and run the mediator, the core of the test execution.

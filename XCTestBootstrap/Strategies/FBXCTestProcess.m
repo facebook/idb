@@ -37,7 +37,7 @@ static NSTimeInterval const SampleDuration = 1;
   return [[[process
     statLoc]
     onQueue:queue timeout:timeout handler:^{
-      return [FBXCTestProcess performSampleStackshotOnProcess:process forTimeout:timeout queue:queue logger:logger];;
+      return [FBXCTestProcess performSampleStackshotOnProcessIdentifier:process.processIdentifier forTimeout:timeout queue:queue logger:logger];;
     }]
     onQueue:queue fmap:^(id _) {
       // This will not be reached if the sample error ran.
@@ -78,26 +78,32 @@ static NSTimeInterval const SampleDuration = 1;
   }
 }
 
-#pragma mark Private
-
-+ (FBFuture<id> *)performSampleStackshotOnProcess:(id<FBLaunchedProcess>)process forTimeout:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<id> *)performSampleStackshotOnProcessIdentifier:(pid_t)processIdentifier forTimeout:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  [logger logFormat:@"Performing stackshot on process %d as it has not exited after %f seconds", process.processIdentifier, timeout];
-  return [[[[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/sample" arguments:@[@(process.processIdentifier).stringValue, @(SampleDuration).stringValue]]
+  [logger logFormat:@"Performing stackshot on process %d as it has not exited after %f seconds", processIdentifier, timeout];
+  return [[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/sample" arguments:@[@(processIdentifier).stringValue, @(SampleDuration).stringValue]]
     runUntilCompletion]
     onQueue:queue handleError:^(NSError *error) {
       return [[[FBXCTestError
-        describeFormat:@"Failed to obtain a stack sample of stalled xctest process %d", process.processIdentifier]
+        describeFormat:@"Failed to obtain a stack sample of stalled xctest process %d", processIdentifier]
         causedBy:error]
         failFuture];
     }]
     onQueue:queue fmap:^(FBTask<NSNull *, NSData *, NSData *> *task) {
-      [logger logFormat:@"Stackshot completed of process %d", process.processIdentifier];
+      [logger logFormat:@"Stackshot completed of process %d", processIdentifier];
       return [[FBXCTestError
-        describeFormat:@"Waited %f seconds for process %d to terminate, but the xctest process stalled: %@", timeout, process.processIdentifier, task.stdOut]
+        describeFormat:@"Waited %f seconds for process %d to terminate, but the xctest process stalled: %@", timeout, processIdentifier, task.stdOut]
         failFuture];
-    }]
+    }];
+}
+
+#pragma mark Private
+
++ (FBFuture<id> *)performSampleStackshotOnProcess:(id<FBLaunchedProcess>)process forTimeout:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  return [[self
+    performSampleStackshotOnProcessIdentifier:process.processIdentifier forTimeout:timeout queue:queue logger:logger]
     onQueue:queue notifyOfCompletion:^(id _) {
       [logger logFormat:@"Terminating stalled xctest process %d", process.processIdentifier];
       [process.statLoc cancel];

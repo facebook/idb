@@ -29,6 +29,7 @@
 #import "FBTestManagerContext.h"
 #import "FBTestManagerResultSummary.h"
 #import "FBTestReporterForwarder.h"
+#import "FBXCTestProcess.h"
 #import "FBXCTestReporter.h"
 
 const NSInteger FBProtocolVersion = 0x16;
@@ -101,24 +102,35 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 #pragma mark - Private
 
+static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
+
 - (FBFuture<NSNull *> *)connectAndRunUntilCompletion
 {
   id<FBControlCoreLogger> logger = self.logger;
   id<FBXCTestReporter> reporter = self.reporter;
-  return [[[[self
+  dispatch_queue_t queue = self.requestQueue;
+  NSTimeInterval timeout = self.context.timeout <= 0 ? DefaultTestTimeout : self.context.timeout;
+  __block id<FBLaunchedApplication> launchedApplication = nil;
+
+  return [[[[[self
     startAndRunApplicationTestHost]
-    onQueue:self.requestQueue push:^(id<FBLaunchedApplication> launchedApplication) {
+    onQueue:queue push:^(id<FBLaunchedApplication> innerLaunchedApplication) {
+      launchedApplication = innerLaunchedApplication;
       return [FBFutureContext
         futureContextWithFutureContexts:@[
           [FBTestDaemonConnection daemonConnectionWithContext:self.context target:self.target interface:(id)self.reporterForwarder testHostApplication:launchedApplication requestQueue:self.requestQueue logger:logger],
           [FBTestBundleConnection bundleConnectionWithContext:self.context target:self.target interface:(id)self.reporterForwarder testHostApplication:launchedApplication requestQueue:self.requestQueue logger:logger],
         ]];
     }]
-    onQueue:self.requestQueue pop:^(NSArray<id> *connections) {
+    onQueue:queue pop:^(NSArray<id> *connections) {
       FBTestBundleConnection *bundleConnection = connections[1];
       return [bundleConnection runTestPlanUntilCompletion];
     }]
-    onQueue:self.requestQueue chain:^(FBFuture<NSNull *> *future) {
+    onQueue:queue timeout:timeout handler:^{
+      [logger logFormat:@"Timed out after %f, attempting stack sample", timeout];
+      return [FBXCTestProcess performSampleStackshotOnProcessIdentifier:launchedApplication.processIdentifier forTimeout:timeout queue:queue logger:logger];
+    }]
+    onQueue:queue chain:^(FBFuture<NSNull *> *future) {
       NSError *error = future.error;
       if (error) {
         [logger logFormat:@"Test Execution finished in error %@", error];

@@ -9,15 +9,16 @@
 
 @implementation FBTestManagerContext
 
-- (instancetype)initWithTestHostLaunchConfiguration:(FBApplicationLaunchConfiguration *)testHostLaunchConfiguration sessionIdentifier:(NSUUID *)sessionIdentifier testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
+- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier timeout:(NSTimeInterval)timeout testHostLaunchConfiguration:(FBApplicationLaunchConfiguration *)testHostLaunchConfiguration  testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _testHostLaunchConfiguration = testHostLaunchConfiguration;
   _sessionIdentifier = sessionIdentifier;
+  _timeout = timeout;
+  _testHostLaunchConfiguration = testHostLaunchConfiguration;
   _testedApplicationAdditionalEnvironment = testedApplicationAdditionalEnvironment;
 
   return self;
@@ -26,9 +27,10 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Test Host %@ | Session ID %@",
+    @"Test Host %@ | Session ID %@ | Timeout %f",
     self.testHostLaunchConfiguration,
-    self.sessionIdentifier.UUIDString
+    self.sessionIdentifier.UUIDString,
+    self.timeout
   ];
 }
 
