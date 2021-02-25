@@ -251,6 +251,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (id)_XCT_didBeginInitializingForUITesting
 {
+  [self.logger log:@"Started initilizing for UI testing."];
   return nil;
 }
 
@@ -283,11 +284,13 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (id)_XCT_didBeginExecutingTestPlan
 {
+  [self.logger logFormat:@"Test Plan Started"];
   return nil;
 }
 
 - (id)_XCT_didFinishExecutingTestPlan
 {
+  [self.logger logFormat:@"Test Plan Ended"];
   return nil;
 }
 

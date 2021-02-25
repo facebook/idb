@@ -334,15 +334,8 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
 
 #pragma mark XCTestDriverInterface
 
-- (id)_XCT_didBeginExecutingTestPlan
-{
-  [self.logger logFormat:@"Test Plan Started"];
-  return [self.interface _XCT_didBeginExecutingTestPlan];
-}
-
 - (id)_XCT_didFinishExecutingTestPlan
 {
-  [self.logger logFormat:@"Test Plan Ended"];
   [self.testPlanFuture resolveWithResult:NSNull.null];
   return [self.interface _XCT_didFinishExecutingTestPlan];
 }
@@ -372,12 +365,6 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
   [self.logger logFormat:@"Test Bundle is Ready"];
   [self.bundleReadyFuture resolveWithResult:NSNull.null];
   return [self.interface _XCT_testBundleReadyWithProtocolVersion:protocolVersion minimumVersion:minimumVersion];
-}
-
-- (id)_XCT_didBeginInitializingForUITesting
-{
-  [self.logger log:@"Started initilizing for UI testing."];
-  return nil;
 }
 
 - (id)_XCT_initializationForUITestingDidFailWithError:(NSError *)error
