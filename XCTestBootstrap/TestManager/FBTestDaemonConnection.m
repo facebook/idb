@@ -31,9 +31,10 @@
 
 @interface FBTestDaemonConnection ()
 
-@property (nonatomic, strong, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
 @property (nonatomic, strong, readonly) FBTestManagerContext *context;
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
+@property (nonatomic, strong, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
+@property (nonatomic, strong, readonly) id<FBLaunchedApplication> testHostApplication;
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
 @property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
 
@@ -43,13 +44,13 @@
 
 #pragma mark Initializers
 
-+ (FBFutureContext<NSNull *> *)daemonConnectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
++ (FBFutureContext<NSNull *> *)daemonConnectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
 {
-  FBTestDaemonConnection *connection = [[self alloc] initWithWithContext:context target:target interface:interface requestQueue:requestQueue logger:logger];
+  FBTestDaemonConnection *connection = [[self alloc] initWithWithContext:context target:target interface:interface testHostApplication:testHostApplication requestQueue:requestQueue logger:logger];
   return [connection connect];
 }
 
-- (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -59,6 +60,7 @@
   _context = context;
   _target = target;
   _interface = interface;
+  _testHostApplication = testHostApplication;
   _requestQueue = requestQueue;
   _logger = logger;
 
@@ -69,13 +71,14 @@
 
 - (FBFutureContext<NSNull *> *)connect
 {
-  [self.logger log:@"Starting the daemon connection"];
+  id<FBLaunchedApplication> testHostApplication = self.testHostApplication;
+  [self.logger logFormat:@"Starting the daemon connection to Application %@", testHostApplication];
   return [[FBTestManagerAPIMediator
     testmanagerdConnectionWithTarget:self.target queue:self.requestQueue logger:self.logger]
     onQueue:self.requestQueue pend:^(DTXConnection *connection) {
       id<XCTestManager_DaemonConnectionInterface> daemonProxy = [self createDaemonProxyWithConnection:connection];
       return [[FBTestDaemonConnection
-        initateControlSession:daemonProxy testProcess:self.context.testRunnerPID logger:self.logger]
+        initateControlSession:daemonProxy testProcess:testHostApplication.processIdentifier logger:self.logger]
         mapReplace:NSNull.null];
     }];
 }

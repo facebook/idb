@@ -36,11 +36,12 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
 
 @interface FBTestBundleConnection () <XCTestManager_IDEInterface>
 
-@property (nonatomic, strong, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
-@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBTestManagerContext *context;
-@property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
+@property (nonatomic, strong, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
+@property (nonatomic, strong, readonly) id<FBLaunchedApplication> testHostApplication;
+@property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
+@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *bundleDisconnected;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *bundleReadyFuture;
@@ -78,13 +79,13 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
   return _clientProcessDisplayPath;
 }
 
-+ (FBFutureContext<FBTestBundleConnection *> *)bundleConnectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
++ (FBFutureContext<FBTestBundleConnection *> *)bundleConnectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
 {
-  FBTestBundleConnection *connection = [[self alloc] initWithWithContext:context target:target interface:interface requestQueue:requestQueue logger:logger];
+  FBTestBundleConnection *connection = [[self alloc] initWithWithContext:context target:target interface:interface testHostApplication:testHostApplication requestQueue:requestQueue logger:logger];
   return [connection connect];
 }
 
-- (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -94,11 +95,9 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
   _context = context;
   _target = target;
   _interface = interface;
+  _testHostApplication = testHostApplication;
   _requestQueue = requestQueue;
   _logger = logger;
-
-  _applicationLaunchDate = NSDate.date;
-  _testPlanFuture = FBMutableFuture.new;
 
   _bundleDisconnected = FBMutableFuture.future;
   _bundleReadyFuture = FBMutableFuture.future;
@@ -287,8 +286,10 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
 
 - (FBFuture<FBCrashLog *> *)findCrashedProcessLog
 {
+  id<FBLaunchedApplication> testHostApplication = self.testHostApplication;
+  NSString *testHostBundleID = self.context.testHostLaunchConfiguration.bundleID;
   return [[[self.target
-    processIDWithBundleID:self.context.testRunnerBundleID]
+    processIDWithBundleID:self.context.testHostLaunchConfiguration.bundleID]
     onQueue:self.target.workQueue chain:^ FBFuture<FBCrashLogInfo *> * (FBFuture<NSNumber *> *processIdentifierFuture) {
       if (processIdentifierFuture.result) {
         return [[FBControlCoreError
@@ -310,9 +311,9 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
       }
 
       return [[crashLog
-        notifyOfCrash:[FBCrashLogInfo predicateForCrashLogsWithProcessID:self.context.testRunnerPID]]
+        notifyOfCrash:[FBCrashLogInfo predicateForCrashLogsWithProcessID:testHostApplication.processIdentifier]]
         timeout:crashWaitTimeout
-        waitingFor:@"Getting crash log for process with pid %d, bunndle ID: %@", self.context.testRunnerPID, self.context.testRunnerBundleID];
+        waitingFor:@"Getting crash log for process with pid %d, bunndle ID: %@", testHostApplication.processIdentifier, testHostBundleID];
     }]
     onQueue:self.target.workQueue fmap:^(FBCrashLogInfo *info) {
       NSError *error = nil;

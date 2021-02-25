@@ -28,11 +28,12 @@ NS_ASSUME_NONNULL_BEGIN
  @param context the Context of the Test Manager.
  @param target the iOS Target.
  @param interface the interface to delegate to.
+ @param testHostApplication the hosting
  @param requestQueue the queue for asynchronous deliver.
  @param logger the Logger to Log to.
  @return a new Bundle Connection instance.
  */
-+ (FBFutureContext<FBTestBundleConnection *> *)bundleConnectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBFutureContext<FBTestBundleConnection *> *)bundleConnectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Lifecycle
 

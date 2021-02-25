@@ -9,15 +9,14 @@
 
 @implementation FBTestManagerContext
 
-- (instancetype)initWithTestRunnerPID:(pid_t)testRunnerPID testRunnerBundleID:(NSString *)testRunnerBundleID sessionIdentifier:(NSUUID *)sessionIdentifier testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
+- (instancetype)initWithTestHostLaunchConfiguration:(FBApplicationLaunchConfiguration *)testHostLaunchConfiguration sessionIdentifier:(NSUUID *)sessionIdentifier testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _testRunnerPID = testRunnerPID;
-  _testRunnerBundleID = testRunnerBundleID;
+  _testHostLaunchConfiguration = testHostLaunchConfiguration;
   _sessionIdentifier = sessionIdentifier;
   _testedApplicationAdditionalEnvironment = testedApplicationAdditionalEnvironment;
 
@@ -27,9 +26,8 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Test Host PID %d | Test Host Bundle %@ | Session ID %@",
-    self.testRunnerPID,
-    self.testRunnerBundleID,
+    @"Test Host %@ | Session ID %@",
+    self.testHostLaunchConfiguration,
     self.sessionIdentifier.UUIDString
   ];
 }

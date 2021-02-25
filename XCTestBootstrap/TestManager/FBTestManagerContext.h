@@ -19,23 +19,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Constructor for the Test Manager Context.
 
- @param testRunnerPID the process id of the Test Host Process. This is the process into which the Test Bundle is injected.
- @param testRunnerBundleID the Bundle ID of the Test Host Process. This is the process into which the Test Bundle is injected.
+ @param testHostLaunchConfiguration the process id of the Test Host Process. This is the process into which the Test Bundle is injected.
  @param sessionIdentifier a session identifier of test that should be started
  @param testedApplicationAdditionalEnvironment Additional environment for the app-under-test.
  @return a new FBTestManagerContext instance.
  */
-- (instancetype)initWithTestRunnerPID:(pid_t)testRunnerPID testRunnerBundleID:(NSString *)testRunnerBundleID sessionIdentifier:(NSUUID *)sessionIdentifier testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
+- (instancetype)initWithTestHostLaunchConfiguration:(FBApplicationLaunchConfiguration *)testHostLaunchConfiguration sessionIdentifier:(NSUUID *)sessionIdentifier testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
 
 /**
- The process id of the Test Host Process. This is the process into which the Test Bundle is injected.
+ The launch configuration for the test host.
  */
-@property (nonatomic, assign, readonly) pid_t testRunnerPID;
-
-/**
- The Bundle ID of the Test Host Process. This is the process into which the Test Bundle is injected
- */
-@property (nonatomic, copy, readonly) NSString *testRunnerBundleID;
+@property (nonatomic, strong, readonly) FBApplicationLaunchConfiguration *testHostLaunchConfiguration;
 
 /**
  A session identifier of test that should be started

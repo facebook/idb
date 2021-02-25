@@ -30,33 +30,19 @@
   }
 
   FBApplicationLaunchConfiguration *applicationLaunchConfiguration = configuration.applicationLaunchConfiguration;
-  return [[[FBTestRunnerConfiguration
+  return [[FBTestRunnerConfiguration
     prepareConfigurationWithTarget:target testLaunchConfiguration:configuration shims:shims workingDirectory:workingDirectory codesign:codesign]
     onQueue:target.workQueue fmap:^(FBTestRunnerConfiguration *runnerConfiguration) {
-      FBApplicationLaunchConfiguration *applicationConfiguration = [self
+      // The launch configuration for the test bundle host.
+      FBApplicationLaunchConfiguration *testHostLaunchConfiguration = [self
         prepareApplicationLaunchConfiguration:applicationLaunchConfiguration
         withTestRunnerConfiguration:runnerConfiguration];
-      return [[target
-        launchApplication:applicationConfiguration]
-        onQueue:target.workQueue map:^(id<FBLaunchedApplication> application) {
-          return @[application, runnerConfiguration];
-        }];
-    }]
-    onQueue:target.workQueue fmap:^(NSArray<id> *tuple) {
-      id<FBLaunchedApplication> launchedApplcation = tuple[0];
-      FBTestRunnerConfiguration *runnerConfiguration = tuple[1];
 
       // Make the Context for the Test Manager.
       FBTestManagerContext *context = [[FBTestManagerContext alloc]
-        initWithTestRunnerPID:launchedApplcation.processIdentifier
-        testRunnerBundleID:runnerConfiguration.testRunner.identifier
+        initWithTestHostLaunchConfiguration:testHostLaunchConfiguration
         sessionIdentifier:runnerConfiguration.sessionIdentifier
         testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
-
-      // Add callback for when the app under test exists
-      [launchedApplcation.applicationTerminated onQueue:target.workQueue doOnResolved:^(NSNull *_) {
-        [reporter appUnderTestExited];
-      }];
 
       // Construct and run the mediator, the core of the test execution.
       return [FBTestManagerAPIMediator

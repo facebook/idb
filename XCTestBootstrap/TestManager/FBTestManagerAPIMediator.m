@@ -105,11 +105,15 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 {
   id<FBControlCoreLogger> logger = self.logger;
   id<FBXCTestReporter> reporter = self.reporter;
-  return [[[FBFutureContext
-    futureContextWithFutureContexts:@[
-      [FBTestDaemonConnection daemonConnectionWithContext:self.context target:self.target interface:(id)self.reporterForwarder requestQueue:self.requestQueue logger:logger],
-      [FBTestBundleConnection bundleConnectionWithContext:self.context target:self.target interface:(id)self.reporterForwarder requestQueue:self.requestQueue logger:logger],
-    ]]
+  return [[[[self
+    startAndRunApplicationTestHost]
+    onQueue:self.requestQueue push:^(id<FBLaunchedApplication> launchedApplication) {
+      return [FBFutureContext
+        futureContextWithFutureContexts:@[
+          [FBTestDaemonConnection daemonConnectionWithContext:self.context target:self.target interface:(id)self.reporterForwarder testHostApplication:launchedApplication requestQueue:self.requestQueue logger:logger],
+          [FBTestBundleConnection bundleConnectionWithContext:self.context target:self.target interface:(id)self.reporterForwarder testHostApplication:launchedApplication requestQueue:self.requestQueue logger:logger],
+        ]];
+    }]
     onQueue:self.requestQueue pop:^(NSArray<id> *connections) {
       FBTestBundleConnection *bundleConnection = connections[1];
       return [bundleConnection runTestPlanUntilCompletion];
@@ -146,6 +150,21 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
     }];
 }
 
+- (FBFutureContext<id<FBLaunchedApplication>> *)startAndRunApplicationTestHost
+{
+  id<FBXCTestReporter> reporter = self.reporter;
+  return [[[self.target
+    launchApplication:self.context.testHostLaunchConfiguration]
+    onQueue:self.target.asyncQueue map:^(id<FBLaunchedApplication> launchedApplication) {
+      [launchedApplication.applicationTerminated onQueue:self.requestQueue doOnResolved:^(NSNull *_) {
+        [reporter appUnderTestExited];
+      }];
+      return launchedApplication;
+    }]
+    onQueue:self.target.workQueue contextualTeardown:^(id<FBLaunchedApplication> launchedApplication, FBFutureState _) {
+      return [launchedApplication.applicationTerminated cancel];
+    }];
+}
 #pragma mark - XCTestManager_IDEInterface protocol
 
 #pragma mark Process Launch Delegation
