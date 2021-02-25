@@ -487,6 +487,20 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return [FBFuture race:@[self, timeoutFuture]];
 }
 
+- (FBFuture *)onQueue:(dispatch_queue_t)queue timeout:(NSTimeInterval)timeout handler:(FBFuture * (^)(void))handler
+{
+  return [FBFuture
+    race:@[
+      self,
+      [[FBFuture
+        futureWithDelay:timeout future:FBFuture.empty]
+        onQueue:queue fmap:^(id _) {
+          return handler();
+        }],
+      ]
+    ];
+}
+
 + (FBFuture *)futureWithFutures:(NSArray<FBFuture *> *)futures
 {
   if (futures.count == 0) {

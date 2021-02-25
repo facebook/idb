@@ -231,12 +231,24 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
 /**
  Cancels the receiver if it doesn't resolve within the timeout.
+ The chained future is resolved in error, with the provided error message.
 
  @param timeout the amount of time to time out the receiver in
- @param format the description of the timeout
+ @param format the description of the timeout.
  @return the current future with a timeout applied.
  */
 - (FBFuture *)timeout:(NSTimeInterval)timeout waitingFor:(NSString *)format, ... NS_FORMAT_FUNCTION(2,3);
+
+/**
+ Cancels the receiver if it doesn't resolve within the timeout.
+ The chained future is resolved based upon the value returned within the handler.
+
+ @param queue the queue to call the handler on.
+ @param timeout the amount of time to time out the receiver in
+ @param handler the block that will be fired on timeout.
+ @return the current future with a timeout applied.
+ */
+- (FBFuture *)onQueue:(dispatch_queue_t)queue timeout:(NSTimeInterval)timeout handler:(FBFuture * (^)(void))handler;
 
 /**
  Replaces the value on a successful future.

@@ -651,6 +651,22 @@
   ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
+- (void)testRemappedTimeout
+{
+  FBFuture<NSNumber *> *future = [[[FBFuture
+    futureWithResult:@0]
+    delay:10]
+    onQueue:self.queue timeout:0.1 handler:^{
+      return [FBFuture futureWithResult:@1];
+    }];
+
+  [self waitForExpectations:@[
+    [self keyValueObservingExpectationForObject:future keyPath:@"hasCompleted" expectedValue:@YES],
+    [self keyValueObservingExpectationForObject:future keyPath:@"result" expectedValue:@1],
+    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateDone)]
+  ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
 - (void)testFallback
 {
   NSError *error = [NSError errorWithDomain:@"foo" code:0 userInfo:nil];
