@@ -491,7 +491,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     initWithTestBundlePath:self.testBundle.path
     applicationLaunchConfiguration:applicationLaunchConfiguration
     testHostPath:nil
-    timeout:0
+    timeout:(request.testTimeout ? request.testTimeout.doubleValue : 0)
     initializeUITesting:uiTesting
     useXcodebuild:NO
     testsToRun:request.testsToRun
