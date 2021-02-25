@@ -34,11 +34,11 @@ static NSTimeInterval const SampleDuration = 1;
   }
 
   [logger logFormat:@"Waiting for %d to exit within %f seconds", process.processIdentifier, timeout];
-  return [[FBFuture
-    race:@[
-      [process.statLoc mapReplace:NSNull.null], // This will resolve on any exit, if this resolves then we can re-fmap to the signal-checking exit code future below.
-      [FBXCTestProcess sampleProcess:process whenFailingToExitWithinTimeout:timeout queue:queue logger:logger], // If this resolves, the chain will break out early.
-    ]]
+  return [[[process
+    statLoc]
+    onQueue:queue timeout:timeout handler:^{
+      return [FBXCTestProcess performSampleStackshotOnProcess:process forTimeout:timeout queue:queue logger:logger];;
+    }]
     onQueue:queue fmap:^(id _) {
       // This will not be reached if the sample error ran.
       return [[process
@@ -79,15 +79,6 @@ static NSTimeInterval const SampleDuration = 1;
 }
 
 #pragma mark Private
-
-+ (FBFuture<NSNumber *> *)sampleProcess:(id<FBLaunchedProcess>)process whenFailingToExitWithinTimeout:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
-{
-  return [[FBFuture
-    futureWithDelay:timeout future:FBFuture.empty]
-    onQueue:queue fmap:^(id _) {
-      return [FBXCTestProcess performSampleStackshotOnProcess:process forTimeout:timeout queue:queue logger:logger];
-    }];
-}
 
 + (FBFuture<id> *)performSampleStackshotOnProcess:(id<FBLaunchedProcess>)process forTimeout:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
