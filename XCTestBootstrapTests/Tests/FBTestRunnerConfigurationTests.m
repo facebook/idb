@@ -15,7 +15,7 @@
 
 @implementation FBTestRunnerConfigurationTests
 
-- (FBTestRunnerConfiguration *)buildConfiguration
+- (void)testLaunchEnvironment
 {
   FBBinaryDescriptor *testBundleBinary = [[FBBinaryDescriptor alloc] initWithName:@"TestBinaryName" architectures:NSSet.set uuid:NSUUID.UUID path:@"/blackhole/xctwda.xctest/test"];
   FBBundleDescriptor *testBundle = [[FBBundleDescriptor alloc] initWithName:@"TestBundleName" identifier:@"TestBundleIdentifier" path:@"/blackhole/xctwda.xctest" binary:testBundleBinary];
@@ -23,25 +23,6 @@
   FBBinaryDescriptor *hostApplicationBinary = [[FBBinaryDescriptor alloc] initWithName:@"HostApplicationBinaryName" architectures:NSSet.set uuid:NSUUID.UUID path:@"/blackhole/pray.app/app"];
   FBBundleDescriptor *hostApplication = [[FBBundleDescriptor alloc] initWithName:@"HostApplicationName" identifier:@"HostApplicationIdentifier" path:@"/blackhole/pray.app" binary:hostApplicationBinary];
 
-  return [FBTestRunnerConfiguration
-    configurationWithSessionIdentifier:NSUUID.UUID
-    hostApplication:hostApplication
-    hostApplicationAdditionalEnvironment:@{@"MAGIC": @"IS_HERE"}
-    testBundle:testBundle
-    testConfigurationPath:@"/booo/magic.xctestconfiguration"
-    frameworkSearchPath:@"/Apple"
-    testedApplicationAdditionalEnvironment:nil];
-}
-
-- (void)testLaunchArguments
-{
-  NSArray<NSString *> *expected = @[@"-NSTreatUnknownArgumentsAsOpen", @"NO", @"-ApplePersistenceIgnoreState", @"YES"];
-  XCTAssertEqualObjects(self.buildConfiguration.launchArguments, expected);
-  XCTAssertEqualObjects([[self.buildConfiguration copy] launchArguments], expected);
-}
-
-- (void)testLaunchEnvironment
-{
   NSDictionary<NSString *, NSString *> *expected = @{
     @"AppTargetLocation" : @"/blackhole/pray.app/app",
     @"DYLD_FALLBACK_FRAMEWORK_PATH" : @"/Apple",
@@ -52,8 +33,13 @@
     @"XCODE_DBG_XPC_EXCLUSIONS" : @"com.apple.dt.xctestSymbolicator",
     @"XCTestConfigurationFilePath" : @"/booo/magic.xctestconfiguration",
   };
-  XCTAssertEqualObjects(self.buildConfiguration.launchEnvironment, expected);
-  XCTAssertEqualObjects([[self.buildConfiguration copy] launchEnvironment], expected);
+  NSDictionary<NSString *, NSString *> *actual = [FBTestRunnerConfiguration
+    launchEnvironmentWithHostApplication:hostApplication
+    hostApplicationAdditionalEnvironment:@{@"MAGIC": @"IS_HERE"}
+    testBundle:testBundle
+    testConfigurationPath:@"/booo/magic.xctestconfiguration"
+    frameworkSearchPaths:@[@"/Apple"]];
+  XCTAssertEqualObjects(expected, actual);
 }
 
 @end

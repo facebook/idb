@@ -25,28 +25,30 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Initializers
 
 /**
- The Designated Initializer
-
- @param sessionIdentifier identifier used to run test.
- @param hostApplication the test host.
- @param hostApplicationAdditionalEnvironment additional environment variable used to launch test host app
- @param testBundle the test bundle.
- @param testConfigurationPath path to test configuration that should be used to start tests.
- @param frameworkSearchPath the search path for Frameworks.
- @param testedApplicationAdditionalEnvironment Launch environment variables added to test target application
- */
-+ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBBundleDescriptor *)hostApplication hostApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(FBBundleDescriptor *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
-
-/**
- Prepares a Test Runner Configuration
+ Prepares a Test Runner Configuration.
 
  @param target the target to run against.
  @param testLaunchConfiguration the configuration for the test launch
  @param shims the shims to use.
  @param workingDirectory the working directory to use.
  @param codesign if set this will be used for checking code signatures.
+ @return a Future that will resolve with the Test Runner configuration.
  */
 + (FBFuture<FBTestRunnerConfiguration *> *)prepareConfigurationWithTarget:(id<FBiOSTarget>)target testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration shims:(FBXCTestShimConfiguration *)shims workingDirectory:(NSString *)workingDirectory codesign:(nullable FBCodesignProvider *)codesign;
+
+#pragma mark Public
+
+/**
+ Construct the environment variables that are used by the runner app.
+
+ @param hostApplication the application bundle.
+ @param hostApplicationAdditionalEnvironment additional environment variables that are passed into the runner app.
+ @param testBundle the test bundle.
+ @param testConfigurationPath the path on disk of the test configuration used.
+ @param frameworkSearchPaths the list of search paths to add in the launch.
+ @return a new environment dictionary.
+ */
++ (NSDictionary<NSString *, NSString *> *)launchEnvironmentWithHostApplication:(FBBundleDescriptor *)hostApplication hostApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(FBBundleDescriptor *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPaths:(NSArray<NSString *> *)frameworkSearchPaths;
 
 #pragma mark Properties
 

@@ -14,24 +14,7 @@
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBBundleDescriptor *)hostApplication hostApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(FBBundleDescriptor *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
-{
-  NSParameterAssert(sessionIdentifier);
-  NSParameterAssert(hostApplication);
-  NSParameterAssert(testConfigurationPath);
-  NSParameterAssert(testBundle);
-
-  NSArray<NSString *> *launchArguments = [self launchArguments];
-  NSDictionary<NSString *, NSString *> *launchEnvironment = [self
-                                                             launchEnvironmentWithHostApplication:hostApplication
-                                                             hostApplicationAdditionalEnvironment:hostApplicationAdditionalEnvironment
-                                                             testBundle:testBundle
-                                                             testConfigurationPath:testConfigurationPath
-                                                             frameworkSearchPath:frameworkSearchPath];
-  return [[self alloc] initWithSessionIdentifier:sessionIdentifier testRunner:hostApplication launchArguments:launchArguments launchEnvironment:launchEnvironment testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
-}
-
-- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier testRunner:(FBBundleDescriptor *)testRunner launchArguments:(NSArray<NSString *> *)launchArguments launchEnvironment:(NSDictionary<NSString *, NSString *> *)launchEnvironment testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
+- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier testRunner:(FBBundleDescriptor *)testRunner launchEnvironment:(NSDictionary<NSString *, NSString *> *)launchEnvironment testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
 {
   self = [super init];
   if (!self) {
@@ -40,12 +23,13 @@
 
   _sessionIdentifier = sessionIdentifier;
   _testRunner = testRunner;
-  _launchArguments = launchArguments;
   _launchEnvironment = launchEnvironment;
   _testedApplicationAdditionalEnvironment = testedApplicationAdditionalEnvironment;
 
   return self;
 }
+
+#pragma mark Public
 
 + (FBFuture<FBTestRunnerConfiguration *> *)prepareConfigurationWithTarget:(id<FBiOSTarget>)target testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration shims:(FBXCTestShimConfiguration *)shims workingDirectory:(NSString *)workingDirectory codesign:(FBCodesignProvider *)codesign
 {
@@ -60,26 +44,10 @@
   return [self prepareConfigurationWithTargetAfterCodesignatureCheck:target testLaunchConfiguration:testLaunchConfiguration shims:shims workingDirectory:workingDirectory];
 }
 
-#pragma mark NSCopying
-
-- (instancetype)copyWithZone:(NSZone *)zone
-{
-  return self;
-}
-
-#pragma mark Private
-
-+ (NSArray<NSString *> *)launchArguments
-{
-  return @[
-    @"-NSTreatUnknownArgumentsAsOpen", @"NO",
-    @"-ApplePersistenceIgnoreState", @"YES"
-  ];
-}
-
-+ (NSDictionary *)launchEnvironmentWithHostApplication:(FBBundleDescriptor *)hostApplication hostApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(FBBundleDescriptor *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath
++ (NSDictionary<NSString *, NSString *> *)launchEnvironmentWithHostApplication:(FBBundleDescriptor *)hostApplication hostApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(FBBundleDescriptor *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPaths:(NSArray<NSString *> *)frameworkSearchPaths
 {
   NSMutableDictionary *environmentVariables = hostApplicationAdditionalEnvironment.mutableCopy;
+  NSString *frameworkSearchPath = [frameworkSearchPaths componentsJoinedByString:@":"];
   [environmentVariables addEntriesFromDictionary:@{
     @"AppTargetLocation" : hostApplication.binary.path,
     @"DYLD_FALLBACK_FRAMEWORK_PATH" : frameworkSearchPath ?: @"",
@@ -92,7 +60,24 @@
   return [self addAdditionalEnvironmentVariables:environmentVariables.copy];
 }
 
-+ (NSDictionary *)addAdditionalEnvironmentVariables:(NSDictionary *)currentEnvironmentVariables
+- (NSArray<NSString *> *)launchArguments
+{
+  return @[
+    @"-NSTreatUnknownArgumentsAsOpen", @"NO",
+    @"-ApplePersistenceIgnoreState", @"YES"
+  ];
+}
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  return self;
+}
+
+#pragma mark Private
+
++ (NSDictionary<NSString *, NSString *> *)addAdditionalEnvironmentVariables:(NSDictionary<NSString *, NSString *> *)currentEnvironmentVariables
 {
   NSString *prefix = @"CUSTOM_";
   NSPredicate *predicate = [NSPredicate predicateWithFormat:@"self BEGINSWITH %@", prefix];
@@ -107,6 +92,7 @@
 
   return [NSDictionary dictionaryWithDictionary:envs];
 }
+
 
 + (FBFuture<FBTestRunnerConfiguration *> *)prepareConfigurationWithTargetAfterCodesignatureCheck:(id<FBiOSTarget>)target testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration shims:(FBXCTestShimConfiguration *)shims workingDirectory:(NSString *)workingDirectory
 {
@@ -170,7 +156,7 @@
 
   return [[target
     installedApplicationWithBundleID:testLaunchConfiguration.applicationLaunchConfiguration.bundleID]
-    onQueue:target.asyncQueue map:^(FBInstalledApplication *installedApplication) {
+    onQueue:target.asyncQueue map:^(FBInstalledApplication *hostApplication) {
       NSMutableDictionary<NSString *, NSString *> *hostApplicationAdditionalEnvironment = [NSMutableDictionary dictionary];
       hostApplicationAdditionalEnvironment[@"SHIMULATOR_START_XCTEST"] = @"1";
       if (target.targetType == FBiOSTargetTypeSimulator) {
@@ -185,14 +171,20 @@
       // This is needed so that the Application is aware of how to link the XCTest.framework from the developer directory.
       // The Application binary will not contain linker opcodes that point to the XCTest.framework within the Simulator runtime bundle.
       // Therefore we need to provide them to the test runner so it can pass them to the app launch.
-      NSArray<NSString *> *frameworkSearchPaths = [XCTestFrameworksPaths arrayByAddingObject:[installedApplication.bundle.path stringByAppendingPathComponent:@"Frameworks"]];
-      return [FBTestRunnerConfiguration
-        configurationWithSessionIdentifier:sessionIdentifier
-        hostApplication:installedApplication.bundle
-        hostApplicationAdditionalEnvironment:hostApplicationAdditionalEnvironment.copy
+      NSArray<NSString *> *frameworkSearchPaths = [XCTestFrameworksPaths arrayByAddingObject:[hostApplication.bundle.path stringByAppendingPathComponent:@"Frameworks"]];
+
+      // The environment constructed for the app launch must contain the relevant env vars to point at the relevant configuration.
+      NSDictionary<NSString *, NSString *> *launchEnvironment = [FBTestRunnerConfiguration
+        launchEnvironmentWithHostApplication:hostApplication.bundle
+        hostApplicationAdditionalEnvironment:hostApplicationAdditionalEnvironment
         testBundle:testBundle
         testConfigurationPath:testConfiguration.path
-        frameworkSearchPath:[frameworkSearchPaths componentsJoinedByString:@":"]
+        frameworkSearchPaths:frameworkSearchPaths];
+
+      return [[FBTestRunnerConfiguration alloc]
+        initWithSessionIdentifier:sessionIdentifier
+        testRunner:hostApplication.bundle
+        launchEnvironment:launchEnvironment
         testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
     }];
 }
