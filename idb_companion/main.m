@@ -564,11 +564,12 @@ int main(int argc, const char *argv[]) {
     [logger.info logFormat:@"Invoked with args=%@ env=%@", [FBCollectionInformation oneLineDescriptionFromArray:NSProcessInfo.processInfo.arguments], EnvDescription()];
     NSError *error = nil;
 
-    // Check that xcode-select returns a valid path
+    // Check that xcode-select returns a valid path, throw a big
+    // warning if not
     [FBXcodeDirectory.xcodeSelectFromCommandLine.xcodePath await:&error];
     if (error) {
       [logger.error log:error.localizedDescription];
-      return 1;
+      error = nil;
     }
 
     FBFuture<NSNumber *> *signalled = [FBFuture race:@[
