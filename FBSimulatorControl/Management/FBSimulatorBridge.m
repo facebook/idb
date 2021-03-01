@@ -125,8 +125,8 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
     return [FBFuture futureWithError:error];
   }
 
-  FBAgentLaunchConfiguration *config = [FBAgentLaunchConfiguration
-    configurationWithLaunchPath:bridgeLaunchPath
+  FBAgentLaunchConfiguration *config = [[FBAgentLaunchConfiguration alloc]
+    initWithLaunchPath:bridgeLaunchPath
     arguments:@[portName]
     environment:@{}
     output:output

@@ -12,13 +12,6 @@
 
 @implementation FBAgentLaunchConfiguration
 
-+ (instancetype)configurationWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output mode:(FBAgentLaunchMode)mode
-{
-  if (!launchPath || !arguments || !environment) {
-    return nil;
-  }
-  return [[self alloc] initWithLaunchPath:launchPath arguments:arguments environment:environment output:output mode:mode];
-}
 - (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output mode:(FBAgentLaunchMode)mode
 {
   self = [super initWithArguments:arguments environment:environment output:output];

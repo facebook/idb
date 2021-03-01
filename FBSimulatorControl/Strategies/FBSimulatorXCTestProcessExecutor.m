@@ -55,8 +55,8 @@
     return [FBFuture futureWithError:error];
   }
 
-  FBAgentLaunchConfiguration *configuration = [FBAgentLaunchConfiguration
-   configurationWithLaunchPath:launchPath
+  FBAgentLaunchConfiguration *configuration = [[FBAgentLaunchConfiguration alloc]
+   initWithLaunchPath:launchPath
    arguments:arguments
    environment:environment
    output:output

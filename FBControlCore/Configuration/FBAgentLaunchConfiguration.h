@@ -26,7 +26,7 @@ typedef NS_ENUM(NSUInteger, FBAgentLaunchMode) {
 @interface FBAgentLaunchConfiguration : FBProcessLaunchConfiguration
 
 /**
- Creates and returns a new Configuration with the provided parameters
+ The designated initializer.
 
  @param launchPath the path to the executable to launch.
  @param arguments an array-of-strings of arguments to the process. Must not be nil.
@@ -35,7 +35,7 @@ typedef NS_ENUM(NSUInteger, FBAgentLaunchMode) {
  @param mode the launch mode to use.
  @return a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output mode:(FBAgentLaunchMode)mode;
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output mode:(FBAgentLaunchMode)mode;
 
 /**
  The Binary Path of the agent to Launch.

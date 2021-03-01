@@ -70,8 +70,8 @@
     return [FBSimulatorError failFutureWithError:error];
   }
 
-  FBAgentLaunchConfiguration *configuration = [FBAgentLaunchConfiguration
-    configurationWithLaunchPath:launchPath
+  FBAgentLaunchConfiguration *configuration = [[FBAgentLaunchConfiguration alloc]
+    initWithLaunchPath:launchPath
     arguments:arguments
     environment:@{}
     output:output
