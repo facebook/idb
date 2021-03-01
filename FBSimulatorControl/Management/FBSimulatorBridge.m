@@ -45,11 +45,15 @@ static NSTimeInterval BridgeReadyTimeout = 5.0;
   return dispatch_queue_create("com.facebook.fbsimulatorcontrol.bridge", DISPATCH_QUEUE_SERIAL);
 }
 
-+ (nullable FBBinaryDescriptor *)simulatorBridgeBinaryWithError:(NSError **)error
++ (NSString *)simulatorBridgeLaunchPathWithError:(NSError **)error
 {
   FBBundleDescriptor *simulatorApp = [FBBundleDescriptor xcodeSimulator];
   NSString *path = [simulatorApp.path stringByAppendingPathComponent:@"Contents/Resources/Platforms/iphoneos/usr/libexec/SimulatorBridge"];
-  return [FBBinaryDescriptor binaryWithPath:path error:error];
+  FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:path error:error];
+  if (!binary) {
+    return nil;
+  }
+  return binary.path;
 }
 
 + (FBFuture<id<SimulatorBridge>> *)bridgeForSimulator:(FBSimulator *)simulator
@@ -107,8 +111,8 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
 + (FBFuture<FBSimulatorAgentOperation *> *)bridgeOperationForSimulator:(FBSimulator *)simulator portName:(NSString *)portName
 {
   NSError *error = nil;
-  FBBinaryDescriptor *bridgeBinary = [self simulatorBridgeBinaryWithError:&error];
-  if (!bridgeBinary) {
+  NSString *bridgeLaunchPath = [self simulatorBridgeLaunchPathWithError:&error];
+  if (!bridgeLaunchPath) {
     return [FBFuture futureWithError:error];
   }
   id<FBControlCoreLogger> logger = [simulator.logger withName:@"SimulatorBridge"];
@@ -122,7 +126,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
   }
 
   FBAgentLaunchConfiguration *config = [FBAgentLaunchConfiguration
-    configurationWithBinary:bridgeBinary
+    configurationWithLaunchPath:bridgeLaunchPath
     arguments:@[portName]
     environment:@{}
     output:output

@@ -9,7 +9,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBBinaryDescriptor;
 @class FBProcessOutputConfiguration;
 
 /**

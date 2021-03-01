@@ -58,8 +58,8 @@
 - (FBFuture<FBSimulatorAgentOperation *> *)startLogCommand:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
   NSError *error = nil;
-  FBBinaryDescriptor *binary = [self logBinaryDescriptorWithError:&error];
-  if (!binary) {
+  NSString *launchPath = [self logExecutablePathWithError:&error];
+  if (!launchPath) {
     return [FBSimulatorError failFutureWithError:error];
   }
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
@@ -71,7 +71,7 @@
   }
 
   FBAgentLaunchConfiguration *configuration = [FBAgentLaunchConfiguration
-    configurationWithBinary:binary
+    configurationWithLaunchPath:launchPath
     arguments:arguments
     environment:@{}
     output:output
@@ -82,13 +82,17 @@
     launchAgent:configuration];
 }
 
-- (FBBinaryDescriptor *)logBinaryDescriptorWithError:(NSError **)error
+- (NSString *)logExecutablePathWithError:(NSError **)error
 {
   NSString *path = [[[self.simulator.device.runtime.root
     stringByAppendingPathComponent:@"usr"]
     stringByAppendingPathComponent:@"bin"]
     stringByAppendingPathComponent:@"log"];
-  return [FBBinaryDescriptor binaryWithPath:path error:error];
+  FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:path error:error];
+  if (!binary) {
+    return nil;
+  }
+  return binary.path;
 }
 
 @end

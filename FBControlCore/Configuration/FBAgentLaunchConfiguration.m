@@ -12,31 +12,24 @@
 
 @implementation FBAgentLaunchConfiguration
 
-+ (instancetype)configurationWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output mode:(FBAgentLaunchMode)mode
++ (instancetype)configurationWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output mode:(FBAgentLaunchMode)mode
 {
-  if (!agentBinary || !arguments || !environment) {
+  if (!launchPath || !arguments || !environment) {
     return nil;
   }
-  return [[self alloc] initWithBinary:agentBinary arguments:arguments environment:environment output:output mode:mode];
+  return [[self alloc] initWithLaunchPath:launchPath arguments:arguments environment:environment output:output mode:mode];
 }
-- (instancetype)initWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output mode:(FBAgentLaunchMode)mode
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output mode:(FBAgentLaunchMode)mode
 {
   self = [super initWithArguments:arguments environment:environment output:output];
   if (!self) {
     return nil;
   }
 
-  _agentBinary = agentBinary;
+  _launchPath = launchPath;
   _mode = mode;
 
   return self;
-}
-
-#pragma mark Abstract Methods
-
-- (NSString *)launchPath
-{
-  return self.agentBinary.path;
 }
 
 #pragma mark NSCopying
@@ -51,7 +44,7 @@
 
 - (NSUInteger)hash
 {
-  return [super hash] | self.agentBinary.hash | self.mode;
+  return [super hash] | self.launchPath.hash | self.mode;
 }
 
 - (BOOL)isEqual:(FBAgentLaunchConfiguration *)object
@@ -59,7 +52,7 @@
   if (![object isKindOfClass:self.class]) {
     return NO;
   }
-  return [self.agentBinary isEqual:object.agentBinary] &&
+  return [self.launchPath isEqual:object.launchPath] &&
          [self.arguments isEqual:object.arguments] &&
          [self.environment isEqual:object.environment] &&
          self.mode == object.mode;
@@ -69,7 +62,7 @@
 {
   return [NSString stringWithFormat:
     @"Agent Launch | Binary %@ | Arguments %@ | Environment %@ | Output %@",
-    self.agentBinary,
+    self.launchPath,
     [FBCollectionInformation oneLineDescriptionFromArray:self.arguments],
     [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
     self.output

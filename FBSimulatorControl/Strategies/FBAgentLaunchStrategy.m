@@ -68,10 +68,10 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
     attach]
     onQueue:simulator.workQueue fmap:^(FBProcessIOAttachment *attachment) {
       // Launch the Process
-      FBMutableFuture<NSNumber *> *processStatusFuture = [FBMutableFuture futureWithNameFormat:@"Process completion of %@ on %@", agentLaunch.agentBinary.path, simulator.udid];
+      FBMutableFuture<NSNumber *> *processStatusFuture = [FBMutableFuture futureWithNameFormat:@"Process completion of %@ on %@", agentLaunch.launchPath, simulator.udid];
       FBFuture<NSNumber *> *launchFuture = [FBAgentLaunchStrategy
         launchAgentWithSimulator:simulator
-        launchPath:agentLaunch.agentBinary.path
+        launchPath:agentLaunch.launchPath
         arguments:agentLaunch.arguments
         environment:agentLaunch.environment
         waitForDebugger:NO

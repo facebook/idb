@@ -39,7 +39,7 @@
   return self;
 }
 
-- (FBBinaryDescriptor *)defaultsBinary
+- (NSString *)defaultsBinary
 {
   NSString *path = [[[self.simulator.device.runtime.root
     stringByAppendingPathComponent:@"usr"]
@@ -48,7 +48,7 @@
   NSError *error = nil;
   FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:path error:&error];
   NSAssert(binary, @"Could not locate defaults at expected location '%@', error %@", path, error);
-  return binary;
+  return binary.path;
 }
 
 - (FBFuture<NSNull *> *)modifyDefaultsInDomainOrPath:(NSString *)domainOrPath defaults:(NSDictionary<NSString *, id> *)defaults
@@ -103,7 +103,7 @@
 {
   // Make the Launch Config
   FBAgentLaunchConfiguration *configuration = [FBAgentLaunchConfiguration
-    configurationWithBinary:self.defaultsBinary
+    configurationWithLaunchPath:self.defaultsBinary
     arguments:arguments
     environment:@{}
     output:FBProcessOutputConfiguration.outputToDevNull

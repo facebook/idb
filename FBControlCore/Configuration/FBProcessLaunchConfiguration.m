@@ -73,10 +73,4 @@ static NSString *const KeyOutput = @"output";
          [self.output isEqual:object.output];
 }
 
-- (NSString *)launchPath
-{
-  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
-  return nil;
-}
-
 @end

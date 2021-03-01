@@ -54,13 +54,9 @@
   if (!output) {
     return [FBFuture futureWithError:error];
   }
-  FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:launchPath error:&error];
-  if (!binary) {
-    return [FBFuture futureWithError:error];
-  }
 
   FBAgentLaunchConfiguration *configuration = [FBAgentLaunchConfiguration
-   configurationWithBinary:binary
+   configurationWithLaunchPath:launchPath
    arguments:arguments
    environment:environment
    output:output
