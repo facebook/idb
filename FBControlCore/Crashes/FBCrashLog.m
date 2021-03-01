@@ -400,6 +400,8 @@ static NSUInteger MaxLineSearch = 20;
   dispatch_once(&onceToken, ^{
     dateFormatter = [NSDateFormatter new];
     dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss.SSS Z";
+    dateFormatter.lenient = YES;
+    dateFormatter.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
   });
   return dateFormatter;
 }
