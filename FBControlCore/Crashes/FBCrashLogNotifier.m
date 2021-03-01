@@ -193,7 +193,7 @@ static void EventStreamCallback(
   return [FBFuture
    onQueue:queue resolveUntil:^{
      FBCrashLogInfo *crashInfo = [[[FBCrashLogInfo
-       crashInfoAfterDate:FBCrashLogNotifier.sharedInstance.sinceDate]
+       crashInfoAfterDate:FBCrashLogNotifier.sharedInstance.sinceDate logger:nil]
        filteredArrayUsingPredicate:predicate]
        firstObject];
      if (!crashInfo) {

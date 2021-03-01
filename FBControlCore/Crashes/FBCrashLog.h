@@ -11,6 +11,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBCrashLog;
 
+@protocol FBControlCoreLogger;
+
 /**
  The Process Type of the Crash Log
 */
@@ -92,9 +94,10 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  Returns nil on error.
 
  @param path the path to extract crash log info from.
+ @param error an error out for any error that occurs.
  @return a Crash Log Info on success, nil otherwise.
  */
-+ (nullable instancetype)fromCrashLogAtPath:(NSString *)path;
++ (nullable instancetype)fromCrashLogAtPath:(NSString *)path error:(NSError **)error;
 
 #pragma mark Public Methods
 
@@ -114,7 +117,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @param date the first date to search from.
  @return an Array of all found Crash Log info.
  */
-+ (NSArray<FBCrashLogInfo *> *)crashInfoAfterDate:(NSDate *)date;
++ (NSArray<FBCrashLogInfo *> *)crashInfoAfterDate:(NSDate *)date logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Contents
 

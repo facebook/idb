@@ -20,16 +20,16 @@
 + (NSArray<FBCrashLogInfo *> *)allCrashLogs
 {
   return @[
-    [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.assetsdCrashPathWithCustomDeviceSet],
-    [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.agentCrashPathWithCustomDeviceSet],
-    [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.appCrashPathWithDefaultDeviceSet],
-    [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.appCrashPathWithCustomDeviceSet],
+    [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.assetsdCrashPathWithCustomDeviceSet error:nil],
+    [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.agentCrashPathWithCustomDeviceSet error:nil],
+    [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.appCrashPathWithDefaultDeviceSet error:nil],
+    [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.appCrashPathWithCustomDeviceSet error:nil],
   ];
 }
 
 - (void)testAssetsdCustomSet
 {
-  FBCrashLogInfo *info = [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.assetsdCrashPathWithCustomDeviceSet];
+  FBCrashLogInfo *info = [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.assetsdCrashPathWithCustomDeviceSet error:nil];
   XCTAssertNotNil(info);
   XCTAssertEqual(info.processIdentifier, 39942);
   XCTAssertEqual(info.parentProcessIdentifier, 39927);
@@ -43,7 +43,7 @@
 
 - (void)testAgentCustomSet
 {
-  FBCrashLogInfo *info = [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.agentCrashPathWithCustomDeviceSet];
+  FBCrashLogInfo *info = [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.agentCrashPathWithCustomDeviceSet error:nil];
   XCTAssertNotNil(info);
   XCTAssertEqual(info.processIdentifier, 39655);
   XCTAssertEqual(info.parentProcessIdentifier, 39576);
@@ -57,7 +57,7 @@
 
 - (void)testAppDefaultSet
 {
-  FBCrashLogInfo *info = [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.appCrashPathWithDefaultDeviceSet];
+  FBCrashLogInfo *info = [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.appCrashPathWithDefaultDeviceSet error:nil];
   XCTAssertNotNil(info);
   XCTAssertEqual(info.processIdentifier, 37083);
   XCTAssertEqual(info.parentProcessIdentifier, 37007);
@@ -71,7 +71,7 @@
 
 - (void)testAppCustomSet
 {
-  FBCrashLogInfo *info = [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.appCrashPathWithCustomDeviceSet];
+  FBCrashLogInfo *info = [FBCrashLogInfo fromCrashLogAtPath:FBControlCoreFixtures.appCrashPathWithCustomDeviceSet error:nil];
   XCTAssertNotNil(info);
   XCTAssertEqual(info.processIdentifier, 40119);
   XCTAssertEqual(info.parentProcessIdentifier, 39927);
