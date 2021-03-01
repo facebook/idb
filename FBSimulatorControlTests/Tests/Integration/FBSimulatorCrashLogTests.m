@@ -27,8 +27,17 @@
 
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
   NSString *path = [[NSBundle bundleForClass: self.class] pathForResource:@"libShimulator" ofType:@"dylib"];
-  FBApplicationLaunchConfiguration *configuration = [self.tableSearchAppLaunch injectingLibrary:path];
-  FBApplicationLaunchConfiguration *appLaunch = [configuration withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
+  FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch;
+  NSMutableDictionary<NSString *, NSString *> *environment = [appLaunch.environment mutableCopy];
+  environment[@"SHIMULATOR_CRASH_AFTER"] = @"1";
+  environment[@"DYLD_INSERT_LIBRARIES"] = path;
+  appLaunch = [FBApplicationLaunchConfiguration
+    configurationWithBundleID:appLaunch.bundleID
+    bundleName:appLaunch.bundleName
+    arguments:appLaunch.arguments
+    environment:environment
+    output:appLaunch.output
+    launchMode:appLaunch.launchMode];
 
   FBFuture<FBCrashLogInfo *> *crashLogFuture = [simulator notifyOfCrash:[FBCrashLogInfo predicateForIdentifier:@"TableSearch"]];
 

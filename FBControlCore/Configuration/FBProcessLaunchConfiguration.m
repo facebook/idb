@@ -8,12 +8,6 @@
 #import "FBProcessLaunchConfiguration.h"
 #import "FBProcessOutputConfiguration.h"
 
-#import <FBControlCore/FBControlCore.h>
-
-static NSString *const KeyArguments = @"arguments";
-static NSString *const KeyEnvironment = @"environment";
-static NSString *const KeyOutput = @"output";
-
 @implementation FBProcessLaunchConfiguration
 
 #pragma mark Initializers
@@ -30,22 +24,6 @@ static NSString *const KeyOutput = @"output";
   _output = output;
 
   return self;
-}
-
-- (instancetype)withEnvironment:(NSDictionary<NSString *, NSString *> *)environment
-{
-  NSParameterAssert([FBCollectionInformation isDictionaryHeterogeneous:environment keyClass:NSString.class valueClass:NSString.class]);
-  FBProcessLaunchConfiguration *configuration = [self copy];
-  configuration->_environment = environment;
-  return configuration;
-}
-
-- (instancetype)withArguments:(NSArray<NSString *> *)arguments
-{
-  NSParameterAssert([FBCollectionInformation isArrayHeterogeneous:arguments withClass:NSString.class]);
-  FBProcessLaunchConfiguration *configuration = [self copy];
-  configuration->_arguments = arguments;
-  return configuration;
 }
 
 #pragma mark NSCopying

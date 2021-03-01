@@ -19,38 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBProcessLaunchConfiguration (Simulator)
 
 /**
-  Adds Environment to the Launch Configuration
-
-  @param environmentAdditions the Environment to Add. Must be an NSDictionary<NSString *, NSString*>>
-  @return a new Launch Configuration with the Environment Applied.
-*/
-- (instancetype)withEnvironmentAdditions:(NSDictionary<NSString *, NSString *> *)environmentAdditions;
-
-/**
- Adds Diagnostic Environment information to the receiver's environment configuration.
-
- @return a new Launch Configuration with the Diagnostic Environment Applied.
- */
-- (instancetype)withDiagnosticEnvironment;
-
-/**
- Uses DYLD_INSERT_LIBRARIES to inject a dylib into the launched application's process.
-
- @param filePath the File Path to the Dynamic Library. Must not be nil.
- */
-- (instancetype)injectingLibrary:(NSString *)filePath;
-
-/**
- Injects the Shimulator Dylib into the launched process;
- */
-- (instancetype)injectingShimulator;
-
-/**
- A Name used to distinguish between Launch Configurations.
- */
-- (NSString *)identifiableName;
-
-/**
  Builds the CoreSimulator launch Options for Launching an App or Process on a Simulator.
 
  @param arguments the arguments to use.

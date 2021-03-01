@@ -32,22 +32,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) FBProcessOutputConfiguration *output;
 
 /**
- Creates a copy of the receiver, with the environment applied.
-
- @param environment the environment to use.
- @return a copy of the receiver, with the environment applied.
- */
-- (instancetype)withEnvironment:(NSDictionary<NSString *, NSString *> *)environment;
-
-/**
- Creates a copy of the receiver, with the arguments applied.
-
- @param arguments the arguments to use.
- @return a copy of the receiver, with the arguments applied.
- */
-- (instancetype)withArguments:(NSArray<NSString *> *)arguments;
-
-/**
  The Designated Initializer.
 
  @param arguments the Arguments.

@@ -46,7 +46,18 @@
 
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration configurationWithStdOut:stdOutPath stdErr:stdErrPath error:nil];
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
-  FBApplicationLaunchConfiguration *appLaunch = [[self.tableSearchAppLaunch withOutput:output] injectingShimulator];
+
+  NSString *shimulatorPath = [[NSBundle bundleForClass: self.class] pathForResource:@"libShimulator" ofType:@"dylib"];
+  FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch;
+  NSMutableDictionary<NSString *, NSString *> *environment = [appLaunch.environment mutableCopy];
+  environment[@"DYLD_INSERT_LIBRARIES"] = shimulatorPath;
+  appLaunch = [FBApplicationLaunchConfiguration
+    configurationWithBundleID:appLaunch.bundleID
+    bundleName:appLaunch.bundleName
+    arguments:appLaunch.arguments
+    environment:environment
+    output:output
+    launchMode:appLaunch.launchMode];
 
   NSError *error = nil;
   BOOL success = [[simulator launchApplication:appLaunch] await:&error] != nil;

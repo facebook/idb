@@ -298,7 +298,16 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 - (FBFuture<id<FBLaunchedApplication>> *)launch_app:(FBApplicationLaunchConfiguration *)configuration
 {
-  return [self.target launchApplication:[configuration withEnvironment:[self.storageManager interpolateEnvironmentReplacements:configuration.environment]]];
+  NSMutableDictionary<NSString *, NSString *> *environment = [configuration.environment mutableCopy];
+  [environment addEntriesFromDictionary:[self.storageManager interpolateEnvironmentReplacements:configuration.environment]];
+  FBApplicationLaunchConfiguration *derived = [FBApplicationLaunchConfiguration
+    configurationWithBundleID:configuration.bundleID
+    bundleName:configuration.bundleID
+    arguments:configuration.arguments
+    environment:configuration.environment
+    waitForDebugger:configuration.waitForDebugger
+    output:configuration.output];
+  return [self.target launchApplication:derived];
 }
 
 - (FBFuture<FBIDBTestOperation *> *)xctest_run:(FBXCTestRunRequest *)request reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
