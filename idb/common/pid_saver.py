@@ -64,7 +64,8 @@ class PidSaver:
     def kill_saved_pids(self) -> None:
         self._load()
         all_pids = list(self.companion_pids)
-        all_pids.append(self.notifier_pid)
+        if self.notifier_pid != 0:
+            all_pids.append(self.notifier_pid)
         for pid in all_pids:
             try:
                 os.kill(pid, signal.SIGTERM)
