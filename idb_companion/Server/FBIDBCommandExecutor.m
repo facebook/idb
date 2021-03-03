@@ -300,13 +300,14 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 {
   NSMutableDictionary<NSString *, NSString *> *environment = [configuration.environment mutableCopy];
   [environment addEntriesFromDictionary:[self.storageManager interpolateEnvironmentReplacements:configuration.environment]];
-  FBApplicationLaunchConfiguration *derived = [FBApplicationLaunchConfiguration
-    configurationWithBundleID:configuration.bundleID
-    bundleName:configuration.bundleID
+  FBApplicationLaunchConfiguration *derived = [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:configuration.bundleID
+    bundleName:configuration.bundleName
     arguments:configuration.arguments
     environment:configuration.environment
     waitForDebugger:configuration.waitForDebugger
-    output:configuration.output];
+    output:configuration.output
+    launchMode:configuration.launchMode];
   return [self.target launchApplication:derived];
 }
 
