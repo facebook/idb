@@ -70,6 +70,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly, class) NSString *description;
 
+
+/**
+ Return Developer directory if exist or nil.
+ */
++ (NSString *)getDeveloperDirectoryIfExists;
+
 @end
 
 

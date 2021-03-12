@@ -21,9 +21,22 @@
   static dispatch_once_t onceToken;
   static NSString *directory;
   dispatch_once(&onceToken, ^{
-    directory = [self findXcodeDeveloperDirectoryOrAssert];
+      NSError *error = nil;
+      directory = [self findXcodeDeveloperDirectory: error];
+      NSAssert(directory, error.description);
   });
   return directory;
+}
+
++ (NSString *)getDeveloperDirectoryIfExists
+{
+    static dispatch_once_t onceToken;
+    static NSString *directory;
+    dispatch_once(&onceToken, ^{
+        NSError *error = nil;
+        directory = [self findXcodeDeveloperDirectory: error];
+    });
+    return directory;
 }
 
 + (NSString *)contentsDirectory
@@ -130,11 +143,9 @@
     stringByAppendingPathComponent:@"Info.plist"];
 }
 
-+ (NSString *)findXcodeDeveloperDirectoryOrAssert
++ (NSString *)findXcodeDeveloperDirectory:(NSError *)error
 {
-  NSError *error = nil;
   NSString *directory = [FBXcodeDirectory.xcodeSelectFromCommandLine.xcodePath await:&error];
-  NSAssert(directory, error.description);
   return directory;
 }
 
