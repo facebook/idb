@@ -12,6 +12,7 @@
 #import "FBControlCoreLogger.h"
 #import "FBDataConsumer.h"
 #import "FBFuture.h"
+#import "FBXcodeConfiguration.h"
 #import "FBXCTraceConfiguration.h"
 #import "FBiOSTarget.h"
 #import "FBTask+Helpers.h"
@@ -36,7 +37,7 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
   NSString *traceFile = [traceDir stringByAppendingPathComponent:@"trace.trace"];
 
   NSMutableArray<NSString *> *arguments = [NSMutableArray new];
-  [arguments addObjectsFromArray:@[@"xctrace", @"record", @"--template", configuration.templateName, @"--device", target.udid, @"--output", traceFile, @"--time-limit", [NSString stringWithFormat:@"%ds", (int)configuration.timeLimit]]];
+  [arguments addObjectsFromArray:@[@"record", @"--template", configuration.templateName, @"--device", target.udid, @"--output", traceFile, @"--time-limit", [NSString stringWithFormat:@"%ds", (int)configuration.timeLimit]]];
   if ([configuration.package length] > 0) {
     [arguments addObjectsFromArray:@[@"--package", configuration.package]];
   }
@@ -60,9 +61,15 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
     }
   }
   [logger logFormat:@"Starting xctrace with arguments: %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
+  
+  // Find the absolute path to xtrace
+  NSString *xctracePath = [FBXCTraceRecordOperation xctracePathWithError:&error];
+  if (!xctracePath) {
+    return [FBControlCoreError failFutureWithError:error];
+  }
 
   return [[[[[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/xcrun"]
+    withLaunchPath:xctracePath]
     withArguments:arguments]
     withStdOutToLogger:logger]
     withStdErrToLogger:logger]
@@ -131,6 +138,17 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
     onQueue:queue map:^(id _) {
       return outputTraceFile;
     }];
+}
+
++ (NSString *)xctracePathWithError:(NSError **)error
+{
+  NSString *path = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"/usr/bin/xctrace"];
+  if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
+    return [[FBControlCoreError
+      describeFormat:@"xctrace does not exist at expected path %@", path]
+      fail:error];
+  }
+  return path;
 }
 
 #pragma mark FBiOSTargetOperation

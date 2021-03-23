@@ -88,6 +88,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (FBFuture<NSURL *> *)postProcess:(nullable NSArray<NSString *> *)arguments traceDir:(NSURL *)traceDir queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
+/**
+ Get the xctrace path.
+
+ @param error an error out for any error that occurs.
+ @return xctrace path
+ */
++ (NSString *)xctracePathWithError:(NSError **)error;
+
 @end
 
 NS_ASSUME_NONNULL_END
