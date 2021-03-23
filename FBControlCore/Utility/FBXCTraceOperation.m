@@ -54,11 +54,11 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
     [arguments addObjectsFromArray:@[@"--attach", configuration.processToAttach]];
   }
   if ([configuration.processToLaunch length] > 0) {
-    [arguments addObjectsFromArray:@[@"--launch", @"--", configuration.processToLaunch]];
-    [arguments addObjectsFromArray:configuration.launchArgs];
     for (NSString *key in configuration.processEnv) {
       [arguments addObjectsFromArray:@[@"--env", [NSString stringWithFormat:@"%@=%@", key, configuration.processEnv[key]]]];
     }
+    [arguments addObjectsFromArray:@[@"--launch", @"--", configuration.processToLaunch]];
+    [arguments addObjectsFromArray:configuration.launchArgs];
   }
   [logger logFormat:@"Starting xctrace with arguments: %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
   
