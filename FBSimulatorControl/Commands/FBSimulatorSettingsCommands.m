@@ -249,6 +249,9 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     if (data == nil) {
       data = [[sectionInfo[@"sectionInfo"] allValues] firstObject];
     }
+    if (data == nil) {
+      return [[FBSimulatorError describeFormat:@"No section info for %@", bundleID] failFuture];
+    }
 
     NSError *readError = nil;
     NSDictionary<NSString *, id> *properties = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListMutableContainersAndLeaves format:nil error:&readError];
