@@ -252,7 +252,7 @@ static NSString *const AXPrefix = @"AX";
 
 - (id)accessibilityTranslationRootParentWithToken:(NSString *)token
 {
-  NSAssert(NO, @"Delegate method '%@', with unknown implementation called", NSStringFromSelector(_cmd));
+  [self.logger logFormat:@"Delegate method '%@', with unknown implementation called with token %@. Returning nil.", NSStringFromSelector(_cmd), token];
   return nil;
 }
 
@@ -270,7 +270,7 @@ static NSString *const AXPrefix = @"AX";
 
 - (id)accessibilityTranslationRootParent
 {
-  NSAssert(NO, @"Delegate method '%@', with unknown implementation called", NSStringFromSelector(_cmd));
+  [self.logger logFormat:@"Delegate method '%@', with unknown implementation called. Returning nil.", NSStringFromSelector(_cmd)];
   return nil;
 }
 
