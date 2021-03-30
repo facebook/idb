@@ -63,7 +63,7 @@ com.apple.mobileslideshow | MobileSlideShow | system | x86_64 | Not running | No
 com.apple.mobilesafari | MobileSafari | system | x86_64 | Not running | Not Debuggable
 ```
 
-`launch` will launch an application the application:
+`launch` will launch an application in the simulator:
 
 ```
 $ idb launch com.apple.mobilesafari
