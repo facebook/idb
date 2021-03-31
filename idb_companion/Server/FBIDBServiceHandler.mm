@@ -1038,16 +1038,16 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
 Status FBIDBServiceHandler::log(ServerContext *context, const idb::LogRequest *request, grpc::ServerWriter<idb::LogResponse> *response)
 {@autoreleasepool{
   NSArray<NSString *> *arguments = extract_string_array(request->arguments());
-  FBMutableFuture<NSNull *> *clientClosed = FBMutableFuture.future;
+  FBFuture<NSNull *> *clientClosed = [FBFuture onQueue:_target.asyncQueue resolveWhen:^ BOOL {
+    return context->IsCancelled();
+  }];
   id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
     if (clientClosed.hasCompleted) {
       return;
     }
     idb::LogResponse item;
     item.set_output(data.bytes, data.length);
-    if (!response->Write(item)) {
-      [clientClosed resolveWithResult:NSNull.null];
-    }
+    response->Write(item);
   }];
   NSError *error = nil;
   BOOL logFromCompanion = request->source() == idb::LogRequest::Source::LogRequest_Source_COMPANION;
