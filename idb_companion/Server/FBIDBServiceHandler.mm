@@ -407,6 +407,7 @@ static FBXCTraceRecordConfiguration *translate_xctrace_record_configuration(idb:
     targetStdin:nsstring_from_c_string(request.target().launch_process().target_stdin())
     targetStdout:nsstring_from_c_string(request.target().launch_process().target_stdout())
     processEnv:extract_str_dict(request.target().launch_process().process_env())
+    shim:nil
   ];
 }
 

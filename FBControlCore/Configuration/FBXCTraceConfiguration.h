@@ -7,6 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import "FBXCTestShimConfiguration.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -28,7 +30,8 @@ NS_ASSUME_NONNULL_BEGIN
                             launchArgs:(nullable NSArray<NSString *> *)launchArgs
                            targetStdin:(nullable NSString *)targetStdin
                           targetStdout:(nullable NSString *)targetStdout
-                            processEnv:(nullable NSDictionary<NSString *, NSString *> *)processEnv;
+                            processEnv:(nullable NSDictionary<NSString *, NSString *> *)processEnv
+                                 shim:(nullable FBXCTestShimConfiguration *)shim;
 
 - (instancetype)initWithTemplateName:(NSString *)templateName
                            timeLimit:(NSTimeInterval)timeLimit
@@ -39,7 +42,15 @@ NS_ASSUME_NONNULL_BEGIN
                           launchArgs:(nullable NSArray<NSString *> *)launchArgs
                          targetStdin:(nullable NSString *)targetStdin
                         targetStdout:(nullable NSString *)targetStdout
-                          processEnv:(nullable NSDictionary<NSString *, NSString *> *)processEnv;
+                          processEnv:(nullable NSDictionary<NSString *, NSString *> *)processEnv
+                               shim:(nullable FBXCTestShimConfiguration *)shim;
+/**
+ Add shim to xctrace
+
+ @param shim shim to be applied to xctrace
+ @return new xctrace record config with shim added
+ */
+- (instancetype)withShim:(FBXCTestShimConfiguration *)shim;
 
 #pragma mark Properties
 
@@ -92,6 +103,11 @@ NS_ASSUME_NONNULL_BEGIN
  Set specified environment variable for the launched process
  */
 @property (nullable, nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *processEnv;
+
+/**
+ Shim to be applied to xctrace
+ */
+@property (nonatomic, copy, readonly, nullable) FBXCTestShimConfiguration *shim;
 
 @end
 

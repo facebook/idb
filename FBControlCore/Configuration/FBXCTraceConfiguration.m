@@ -15,28 +15,30 @@
 
 + (instancetype)RecordWithTemplateName:(NSString *)templateName
                              timeLimit:(NSTimeInterval)timeLimit
-                               package:(nullable NSString *)package
+                               package:(NSString *)package
                           allProcesses:(BOOL)allProcesses
-                       processToAttach:(nullable NSString *)processToAttach
-                       processToLaunch:(nullable NSString *)processToLaunch
-                            launchArgs:(nullable NSArray<NSString *> *)launchArgs
-                           targetStdin:(nullable NSString *)targetStdin
-                          targetStdout:(nullable NSString *)targetStdout
+                       processToAttach:(NSString *)processToAttach
+                       processToLaunch:(NSString *)processToLaunch
+                            launchArgs:(NSArray<NSString *> *)launchArgs
+                           targetStdin:(NSString *)targetStdin
+                          targetStdout:(NSString *)targetStdout
                             processEnv:(NSDictionary<NSString *, NSString *> *)processEnv
+                                 shim:(FBXCTestShimConfiguration *)shim
 {
-  return [[self alloc] initWithTemplateName:templateName timeLimit:timeLimit package:package allProcesses:allProcesses processToAttach:processToAttach processToLaunch:processToLaunch launchArgs:launchArgs targetStdin:targetStdin targetStdout:targetStdout processEnv:processEnv];
+  return [[self alloc] initWithTemplateName:templateName timeLimit:timeLimit package:package allProcesses:allProcesses processToAttach:processToAttach processToLaunch:processToLaunch launchArgs:launchArgs targetStdin:targetStdin targetStdout:targetStdout processEnv:processEnv shim:shim];
 }
 
 - (instancetype)initWithTemplateName:(NSString *)templateName
                            timeLimit:(NSTimeInterval)timeLimit
-                             package:(nullable NSString *)package
+                             package:(NSString *)package
                         allProcesses:(BOOL)allProcesses
-                     processToAttach:(nullable NSString *)processToAttach
-                     processToLaunch:(nullable NSString *)processToLaunch
-                          launchArgs:(nullable NSArray<NSString *> *)launchArgs
-                         targetStdin:(nullable NSString *)targetStdin
-                        targetStdout:(nullable NSString *)targetStdout
+                     processToAttach:(NSString *)processToAttach
+                     processToLaunch:(NSString *)processToLaunch
+                          launchArgs:(NSArray<NSString *> *)launchArgs
+                         targetStdin:(NSString *)targetStdin
+                        targetStdout:(NSString *)targetStdout
                           processEnv:(NSDictionary<NSString *, NSString *> *)processEnv
+                               shim:(FBXCTestShimConfiguration *)shim;
 {
   self = [super init];
   if (!self) {
@@ -53,7 +55,24 @@
   _targetStdin = targetStdin;
   _targetStdout = targetStdout;
   _processEnv = processEnv;
+  _shim = shim;
   return self;
+}
+
+- (instancetype)withShim:(FBXCTestShimConfiguration *)shim
+{
+  return [[FBXCTraceRecordConfiguration alloc]
+    initWithTemplateName:self.templateName
+    timeLimit:self.timeLimit
+    package:self.package
+    allProcesses:self.allProcesses
+    processToAttach:self.processToAttach
+    processToLaunch:self.processToLaunch
+    launchArgs:self.launchArgs
+    targetStdin:self.targetStdin
+    targetStdout:self.targetStdout
+    processEnv:self.processEnv
+    shim:shim];
 }
 
 #pragma mark NSObject
@@ -61,7 +80,7 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"xctrace record: template %@ | duration %f | process to launch %@ | process to attach %@ | package %@ | target stdin %@ | target stdout %@ | target arguments %@ | target environment %@ | record all processes %@",
+    @"xctrace record: template %@ | duration %f | process to launch %@ | process to attach %@ | package %@ | target stdin %@ | target stdout %@ | target arguments %@ | target environment %@ | record all processes %@ | shim %@",
     self.templateName,
     self.timeLimit,
     self.processToLaunch,
@@ -71,7 +90,8 @@
     self.targetStdout,
     [FBCollectionInformation oneLineDescriptionFromArray:self.launchArgs],
     [FBCollectionInformation oneLineDescriptionFromDictionary:self.processEnv],
-    self.allProcesses ? @"Yes" : @"No"
+    self.allProcesses ? @"Yes" : @"No",
+    self.shim
   ];
 }
 
