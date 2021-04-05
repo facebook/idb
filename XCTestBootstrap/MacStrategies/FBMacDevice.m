@@ -377,6 +377,11 @@
   return NSOrderedSame; // There should be only one
 }
 
+- (NSString *)customDeviceSetPath
+{
+  return nil;
+}
+
 #pragma mark Not supported
 
 - (FBFuture<id<FBVideoStream>> *)createStreamWithConfiguration:(FBVideoStreamConfiguration *)configuration

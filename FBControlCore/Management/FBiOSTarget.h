@@ -135,6 +135,11 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 @property (nonatomic, strong, readonly, nullable) id<FBControlCoreLogger> logger;
 
 /**
+ The path to the custom (non-default) device set if applicable.
+ */
+@property (nonatomic, copy, nullable, readonly) NSString *customDeviceSetPath;
+
+/**
  The Directory that the target uses to store per-target files on the host.
  */
 @property (nonatomic, copy, readonly) NSString *auxillaryDirectory;

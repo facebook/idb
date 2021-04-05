@@ -42,6 +42,8 @@
 #pragma clang diagnostic ignored "-Wprotocol"
 #pragma clang diagnostic ignored "-Wincomplete-implementation"
 
+static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/Devices";
+
 @implementation FBSimulator
 
 @synthesize auxillaryDirectory = _auxillaryDirectory;
@@ -194,6 +196,11 @@
   return self.device.dataPath;
 }
 
+- (NSString *)customDeviceSetPath
+{
+  return [self.device.deviceSet.setPath isEqualToString:[DefaultDeviceSet stringByExpandingTildeInPath]] ? nil : self.device.deviceSet.setPath;
+}
+
 - (FBAppleSimctlCommandExecutor *)simctlExecutor
 {
   return [FBAppleSimctlCommandExecutor executorForSimulator:self];
@@ -219,7 +226,7 @@
     return NO;
   }
   return [self.device isEqual:simulator.device];
-} 
+}
 
 - (NSString *)description
 {

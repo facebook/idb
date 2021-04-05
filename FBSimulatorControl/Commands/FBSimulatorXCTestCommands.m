@@ -13,7 +13,6 @@
 #import <sys/un.h>
 
 #import <CoreSimulator/SimDevice.h>
-#import <CoreSimulator/SimDeviceSet.h>
 
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
@@ -97,7 +96,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
     configuration:configuration
     xcodeBuildPath:xcodeBuildPath
     testRunFilePath:filePath
-    simDeviceSet:[self.simulator.device.deviceSet.setPath isEqualToString:[DefaultSimDeviceSet stringByExpandingTildeInPath]] ? nil : self.simulator.device.deviceSet.setPath
+    simDeviceSet:self.simulator.customDeviceSetPath
     queue:self.simulator.workQueue
     logger:[logger withName:@"xcodebuild"]];
 }

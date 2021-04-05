@@ -19,6 +19,8 @@
 
 @property (nonatomic, copy, readwrite) NSString *auxillaryDirectory;
 
+@property (nonatomic, copy, readwrite) NSString *customDeviceSetPath;
+
 @property (nonatomic, strong, readwrite) FBiOSTargetDiagnostics *diagnostics;
 
 @property (nonatomic, assign, readwrite) FBiOSTargetState state;

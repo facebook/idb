@@ -117,6 +117,11 @@
   return nil;
 }
 
+- (NSString *)customDeviceSetPath
+{
+  return nil;
+}
+
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target
 {
   return FBiOSTargetComparison(self, target);
