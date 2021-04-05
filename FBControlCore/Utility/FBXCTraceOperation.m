@@ -61,16 +61,26 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
     [arguments addObjectsFromArray:configuration.launchArgs];
   }
   [logger logFormat:@"Starting xctrace with arguments: %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
-  
-  // Find the absolute path to xtrace
+
+  // Find the absolute path to xctrace
   NSString *xctracePath = [FBXCTraceRecordOperation xctracePathWithError:&error];
   if (!xctracePath) {
     return [FBControlCoreError failFutureWithError:error];
   }
 
-  return [[[[[[FBTaskBuilder
+  NSMutableDictionary<NSString *, NSString *> *environment = [NSMutableDictionary new];
+  if (target.customDeviceSetPath) {
+    if (!configuration.shim || !configuration.shim.macOSTestShimPath) {
+      return [[FBControlCoreError describe:@"Failed to locate the shim file for xctrace method swizzling"] failFuture];
+    }
+    environment[@"SIM_DEVICE_SET_PATH"] = target.customDeviceSetPath;
+    environment[@"DYLD_INSERT_LIBRARIES"] = configuration.shim.macOSTestShimPath;
+  }
+
+  return [[[[[[[FBTaskBuilder
     withLaunchPath:xctracePath]
     withArguments:arguments]
+    withEnvironmentAdditions:environment]
     withStdOutToLogger:logger]
     withStdErrToLogger:logger]
     start]

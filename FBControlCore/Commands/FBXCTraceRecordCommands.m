@@ -7,6 +7,7 @@
 
 #import "FBXCTraceRecordCommands.h"
 
+#import "FBXCTestShimConfiguration.h"
 #import "FBXCTraceConfiguration.h"
 #import "FBXCTraceOperation.h"
 #import "FBiOSTarget.h"
@@ -36,7 +37,11 @@
 
 - (FBFuture<FBXCTraceRecordOperation *> *)startXctraceRecord:(FBXCTraceRecordConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
-  return [FBXCTraceRecordOperation operationWithTarget:self.target configuration:configuration logger:logger];
+  return [[FBXCTestShimConfiguration
+    defaultShimConfigurationWithLogger:logger]
+    onQueue:self.target.workQueue fmap:^(FBXCTestShimConfiguration *shim) {
+      return [FBXCTraceRecordOperation operationWithTarget:self.target configuration:[configuration withShim:shim] logger:logger];
+  }];
 }
 
 @end
