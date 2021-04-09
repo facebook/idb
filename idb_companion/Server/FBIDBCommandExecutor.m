@@ -209,10 +209,18 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
     }];
 }
 
-- (FBFuture<NSNull *> *)clean
+- (FBFuture<NSNull *> *)remove_all_storage_and_clear_keychain
 {
-  // Kill and uninstall all apps
-  return [[[self list_apps:NO] onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(NSDictionary<FBInstalledApplication *,id> *apps) {
+  NSError *error = nil;
+  if (![self.storageManager clean:&error]) {
+    return [FBFuture futureWithError:error];
+  }
+  return [self clear_keychain];
+}
+
+- (FBFuture<NSNull *> *)uninstall_all_applications
+{
+  return [[self list_apps:NO] onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(NSDictionary<FBInstalledApplication *,id> *apps) {
     NSMutableArray<FBFuture<NSNull *> *> *uninstall_futures = NSMutableArray.array;
     for (FBInstalledApplication *app in apps) {
       if (app.installType == FBApplicationInstallTypeUser){
@@ -222,13 +230,17 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
       }
     }
     return [FBFuture futureWithFutures:uninstall_futures];
-  // Remove all storage and clear keychain
-  }] onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(id _) {
-    NSError *error = nil;
-    if (![self.storageManager clean:&error]) {
-      return [FBFuture futureWithError:error];
-    }
-    return [self clear_keychain];
+  }];
+}
+
+- (FBFuture<NSNull *> *)clean
+{
+  if (self.target.state == FBiOSTargetStateShutdown) {
+    return [self remove_all_storage_and_clear_keychain];
+  }
+  
+  return [[self uninstall_all_applications] onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(id _) {
+    return [self remove_all_storage_and_clear_keychain];
   }];
 }
 
