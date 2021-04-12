@@ -382,6 +382,11 @@
   return nil;
 }
 
+- (NSDictionary<NSString *, NSString *> *)replacementMapping
+{
+  return NSDictionary.dictionary;
+}
+
 #pragma mark Not supported
 
 - (FBFuture<id<FBVideoStream>> *)createStreamWithConfiguration:(FBVideoStreamConfiguration *)configuration

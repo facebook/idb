@@ -167,6 +167,13 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
   return FBiOSTargetComparison(self, target);
 }
 
+- (NSDictionary<NSString *, NSString *> *)replacementMapping
+{
+  return @{
+    @"%%SIM_ROOT%%": self.dataDirectory,
+  };
+}
+
 #pragma mark Properties
 
 - (FBControlCoreProductFamily)productFamily

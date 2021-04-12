@@ -127,6 +127,11 @@
   return FBiOSTargetComparison(self, target);
 }
 
+- (NSDictionary<NSString *, NSString *> *)replacementMapping
+{
+  return NSDictionary.dictionary;
+}
+
 #pragma mark NSObject
 
 - (NSString *)description

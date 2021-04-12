@@ -42,6 +42,11 @@
 
 #pragma mark Protocol Inheritance
 
+- (NSDictionary<NSString *, NSString *> *)replacementMapping
+{
+  return @{};
+}
+
 - (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
 {
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];

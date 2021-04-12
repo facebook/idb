@@ -190,6 +190,14 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
  */
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target;
 
+/**
+  Env var replacements
+ 
+  @return a dictionary with the replacements defined
+ */
+- (NSDictionary<NSString *, NSString *> *)replacementMapping;
+
+
 @end
 
 #if defined __cplusplus

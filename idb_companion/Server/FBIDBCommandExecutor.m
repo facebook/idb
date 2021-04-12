@@ -310,17 +310,37 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 - (FBFuture<id<FBLaunchedApplication>> *)launch_app:(FBApplicationLaunchConfiguration *)configuration
 {
-  NSMutableDictionary<NSString *, NSString *> *environment = [configuration.environment mutableCopy];
-  [environment addEntriesFromDictionary:[self.storageManager interpolateEnvironmentReplacements:configuration.environment]];
+  NSMutableDictionary<NSString *, NSString *> *replacements = NSMutableDictionary.dictionary;
+  [replacements addEntriesFromDictionary:self.storageManager.replacementMapping];
+  [replacements addEntriesFromDictionary:self.target.replacementMapping];
+  NSDictionary<NSString *, NSString *> *environment = [self applyEnvironmentReplacements:configuration.environment replacements:replacements];
+  
   FBApplicationLaunchConfiguration *derived = [[FBApplicationLaunchConfiguration alloc]
     initWithBundleID:configuration.bundleID
     bundleName:configuration.bundleName
     arguments:configuration.arguments
-    environment:configuration.environment
+    environment:environment
     waitForDebugger:configuration.waitForDebugger
     output:configuration.output
     launchMode:configuration.launchMode];
   return [self.target launchApplication:derived];
+}
+
+- (NSDictionary<NSString *, NSString *> *)applyEnvironmentReplacements:(NSDictionary<NSString *, NSString *> *)environment replacements:(NSDictionary<NSString *, NSString *> *)replacements
+{
+  [self.logger logFormat:@"Original environment: %@", environment];
+  [self.logger logFormat:@"Existing replacement mapping: %@", replacements];
+  NSMutableDictionary<NSString *, NSString *> *interpolatedEnvironment = [NSMutableDictionary dictionaryWithCapacity:environment.count];
+  for (NSString *name in environment.allKeys) {
+    NSString *value = environment[name];
+    for (NSString *interpolationName in replacements.allKeys) {
+      NSString *interpolationValue = replacements[interpolationName];
+      value = [value stringByReplacingOccurrencesOfString:interpolationName withString:interpolationValue];
+    }
+    interpolatedEnvironment[name] = value;
+  }
+  [self.logger logFormat:@"Interpolated environment: %@", interpolatedEnvironment];
+  return interpolatedEnvironment;
 }
 
 - (FBFuture<FBIDBTestOperation *> *)xctest_run:(FBXCTestRunRequest *)request reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
