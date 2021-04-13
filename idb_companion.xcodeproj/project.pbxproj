@@ -9,6 +9,10 @@
 /* Begin PBXBuildFile section */
 		623D9F0D22E40DCB00D9129C /* FBIDBLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = 623D9F0B22E40DCB00D9129C /* FBIDBLogger.h */; };
 		623D9F0E22E40DCB00D9129C /* FBIDBLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 623D9F0C22E40DCB00D9129C /* FBIDBLogger.m */; };
+		716E3C1F26210B5C00D7DA42 /* libgrpc++.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 716E3C1E26210B5C00D7DA42 /* libgrpc++.dylib */; };
+		716E3C2226210B9B00D7DA42 /* libgrpc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 716E3C2126210B9B00D7DA42 /* libgrpc.dylib */; };
+		716E3C792625D7AE00D7DA42 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 716E3C782625D7AE00D7DA42 /* libz.tbd */; };
+		716E3C7C2625D96300D7DA42 /* libprotobuf.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DFA32265E76200B01F14 /* libprotobuf.a */; };
 		AA0DB07D23CF0D9800E8CDEE /* FBIDBTestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0DB07B23CF0D9800E8CDEE /* FBIDBTestOperation.m */; };
 		AA0DB07E23CF0D9800E8CDEE /* FBIDBTestOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0DB07C23CF0D9800E8CDEE /* FBIDBTestOperation.h */; };
 		AA0DB08123CF0DCB00E8CDEE /* FBIDBXCTestReporter.mm in Sources */ = {isa = PBXBuildFile; fileRef = AA0DB07F23CF0DCA00E8CDEE /* FBIDBXCTestReporter.mm */; };
@@ -18,8 +22,6 @@
 		AA8F751F249116B700F3BF18 /* FBiOSTargetDescription.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8F751D249116B700F3BF18 /* FBiOSTargetDescription.h */; };
 		AA8F7520249116B700F3BF18 /* FBiOSTargetDescription.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8F751E249116B700F3BF18 /* FBiOSTargetDescription.m */; };
 		D7107CF822E708C00007FF32 /* FBIDBCompanionServer.mm in Sources */ = {isa = PBXBuildFile; fileRef = D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */; };
-		D720AE7923CE1E140040F01B /* libz.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D720AE7823CE1E140040F01B /* libz.1.dylib */; };
-		D720AE7A23CE1E140040F01B /* libz.1.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = D720AE7823CE1E140040F01B /* libz.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		D72CB1C52277837000265160 /* FBDataDownloadInput.h in Headers */ = {isa = PBXBuildFile; fileRef = D72CB1C32277837000265160 /* FBDataDownloadInput.h */; };
 		D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */ = {isa = PBXBuildFile; fileRef = D72CB1C42277837000265160 /* FBDataDownloadInput.m */; };
 		D7D6DF892265DE4E00B01F14 /* FBControlCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */; };
@@ -74,17 +76,6 @@
 /* End PBXBuildRule section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		D720AE7623CE1D6E0040F01B /* Embed Libraries */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				D720AE7A23CE1E140040F01B /* libz.1.dylib in Embed Libraries */,
-			);
-			name = "Embed Libraries";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		D7D6DF102265DDEC00B01F14 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -99,6 +90,9 @@
 /* Begin PBXFileReference section */
 		623D9F0B22E40DCB00D9129C /* FBIDBLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBLogger.h; sourceTree = "<group>"; };
 		623D9F0C22E40DCB00D9129C /* FBIDBLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBLogger.m; sourceTree = "<group>"; };
+		716E3C1E26210B5C00D7DA42 /* libgrpc++.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libgrpc++.dylib"; path = "/usr/local/lib/libgrpc++.dylib"; sourceTree = "<absolute>"; };
+		716E3C2126210B9B00D7DA42 /* libgrpc.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgrpc.dylib; path = /usr/local/lib/libgrpc.dylib; sourceTree = "<absolute>"; };
+		716E3C782625D7AE00D7DA42 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		AA0DB07B23CF0D9800E8CDEE /* FBIDBTestOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBTestOperation.m; sourceTree = "<group>"; };
 		AA0DB07C23CF0D9800E8CDEE /* FBIDBTestOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBTestOperation.h; sourceTree = "<group>"; };
 		AA0DB07F23CF0DCA00E8CDEE /* FBIDBXCTestReporter.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = FBIDBXCTestReporter.mm; sourceTree = "<group>"; };
@@ -108,11 +102,7 @@
 		AA8F751D249116B700F3BF18 /* FBiOSTargetDescription.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetDescription.h; sourceTree = "<group>"; };
 		AA8F751E249116B700F3BF18 /* FBiOSTargetDescription.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetDescription.m; sourceTree = "<group>"; };
 		D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FBIDBCompanionServer.mm; sourceTree = "<group>"; };
-		D720AE6F23CE1B5F0040F01B /* libgrpc++.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libgrpc++.dylib"; path = "/usr/local/lib/libgrpc++.dylib"; sourceTree = "<group>"; };
-		D720AE7123CE1B690040F01B /* libgrpc.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgrpc.dylib; path = /usr/local/lib/libgrpc.dylib; sourceTree = "<group>"; };
 		D720AE7323CE1D6E0040F01B /* libcares.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcares.2.dylib; path = /usr/local/lib/libcares.2.dylib; sourceTree = "<group>"; };
-		D720AE7723CE1DF50040F01B /* libz.1.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.1.tbd; path = /usr/lib/libz.1.tbd; sourceTree = SDKROOT; };
-		D720AE7823CE1E140040F01B /* libz.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.1.dylib; path = /usr/lib/libz.1.dylib; sourceTree = "<group>"; };
 		D72CB1C32277837000265160 /* FBDataDownloadInput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDataDownloadInput.h; sourceTree = "<group>"; };
 		D72CB1C42277837000265160 /* FBDataDownloadInput.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDataDownloadInput.m; sourceTree = "<group>"; };
 		D7D6DF122265DDEC00B01F14 /* idb_companion */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = idb_companion; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -122,9 +112,7 @@
 		D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = XCTestBootstrap.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7D6DF942265DF2200B01F14 /* libidbGRPC.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libidbGRPC.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7D6DF992265DF2B00B01F14 /* idb.proto */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.protobuf; path = idb.proto; sourceTree = "<group>"; };
-		D7D6DFA22265E76200B01F14 /* libgrpc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgrpc.a; path = /usr/local/lib/libgrpc.a; sourceTree = "<group>"; };
 		D7D6DFA32265E76200B01F14 /* libprotobuf.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libprotobuf.a; path = /usr/local/lib/libprotobuf.a; sourceTree = "<group>"; };
-		D7D6DFA42265E76200B01F14 /* libgrpc++.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libgrpc++.a"; path = "/usr/local/lib/libgrpc++.a"; sourceTree = "<group>"; };
 		D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBError.h; sourceTree = "<group>"; };
 		D7D6DFBC2265F0DF00B01F14 /* FBIDBError.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBError.m; sourceTree = "<group>"; };
 		D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBPortsConfiguration.h; sourceTree = "<group>"; };
@@ -157,11 +145,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				716E3C792625D7AE00D7DA42 /* libz.tbd in Frameworks */,
+				716E3C2226210B9B00D7DA42 /* libgrpc.dylib in Frameworks */,
+				716E3C1F26210B5C00D7DA42 /* libgrpc++.dylib in Frameworks */,
 				D7D6DF892265DE4E00B01F14 /* FBControlCore.framework in Frameworks */,
-				D720AE7923CE1E140040F01B /* libz.1.dylib in Frameworks */,
 				D7D6DF8B2265DE4E00B01F14 /* FBDeviceControl.framework in Frameworks */,
 				D7D6DF8D2265DE4E00B01F14 /* FBSimulatorControl.framework in Frameworks */,
 				D7D6DF9D2265E04800B01F14 /* libidbGRPC.a in Frameworks */,
+				716E3C7C2625D96300D7DA42 /* libprotobuf.a in Frameworks */,
 				D7D6DF8F2265DE4E00B01F14 /* XCTestBootstrap.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -176,6 +167,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		716E3C752625D74100D7DA42 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				716E3C2126210B9B00D7DA42 /* libgrpc.dylib */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		D7D6DF092265DDEC00B01F14 = {
 			isa = PBXGroup;
 			children = (
@@ -183,6 +182,7 @@
 				D7D6DF982265DF2B00B01F14 /* proto */,
 				D7D6DF132265DDEC00B01F14 /* Products */,
 				D7D6DF872265DE4E00B01F14 /* Frameworks */,
+				716E3C752625D74100D7DA42 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -198,16 +198,12 @@
 		D7D6DF872265DE4E00B01F14 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				D720AE7823CE1E140040F01B /* libz.1.dylib */,
-				D720AE7723CE1DF50040F01B /* libz.1.tbd */,
+				716E3C782625D7AE00D7DA42 /* libz.tbd */,
+				716E3C1E26210B5C00D7DA42 /* libgrpc++.dylib */,
 				D720AE7323CE1D6E0040F01B /* libcares.2.dylib */,
-				D720AE7123CE1B690040F01B /* libgrpc.dylib */,
-				D720AE6F23CE1B5F0040F01B /* libgrpc++.dylib */,
 				D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */,
 				D7D6DF8A2265DE4E00B01F14 /* FBDeviceControl.framework */,
 				D7D6DF8C2265DE4E00B01F14 /* FBSimulatorControl.framework */,
-				D7D6DFA42265E76200B01F14 /* libgrpc++.a */,
-				D7D6DFA22265E76200B01F14 /* libgrpc.a */,
 				D7D6DFA32265E76200B01F14 /* libprotobuf.a */,
 				D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */,
 			);
@@ -345,7 +341,6 @@
 				D7D6DF9E2265E35300B01F14 /* Headers */,
 				D7D6DF0F2265DDEC00B01F14 /* Frameworks */,
 				D7D6DF102265DDEC00B01F14 /* CopyFiles */,
-				D720AE7623CE1D6E0040F01B /* Embed Libraries */,
 			);
 			buildRules = (
 			);
@@ -426,7 +421,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "";
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -591,11 +586,6 @@
 				INFOPLIST_FILE = "$(SRCROOT)/idb_companion/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
-				OTHER_LDFLAGS = (
-					"/usr/local/lib/libgrpc++.a",
-					/usr/local/lib/libgrpc.a,
-					/usr/local/lib/libprotobuf.a,
-				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
@@ -613,11 +603,6 @@
 				INFOPLIST_FILE = "$(SRCROOT)/idb_companion/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
-				OTHER_LDFLAGS = (
-					"/usr/local/lib/libgrpc++.a",
-					/usr/local/lib/libgrpc.a,
-					/usr/local/lib/libprotobuf.a,
-				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
