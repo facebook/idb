@@ -167,14 +167,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		716E3C752625D74100D7DA42 /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-				716E3C2126210B9B00D7DA42 /* libgrpc.dylib */,
-			);
-			name = "Recovered References";
-			sourceTree = "<group>";
-		};
 		D7D6DF092265DDEC00B01F14 = {
 			isa = PBXGroup;
 			children = (
@@ -182,7 +174,6 @@
 				D7D6DF982265DF2B00B01F14 /* proto */,
 				D7D6DF132265DDEC00B01F14 /* Products */,
 				D7D6DF872265DE4E00B01F14 /* Frameworks */,
-				716E3C752625D74100D7DA42 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -199,6 +190,7 @@
 			isa = PBXGroup;
 			children = (
 				716E3C782625D7AE00D7DA42 /* libz.tbd */,
+				716E3C2126210B9B00D7DA42 /* libgrpc.dylib */,
 				716E3C1E26210B5C00D7DA42 /* libgrpc++.dylib */,
 				D720AE7323CE1D6E0040F01B /* libcares.2.dylib */,
 				D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */,
