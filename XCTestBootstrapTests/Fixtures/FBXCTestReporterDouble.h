@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Double for verifiying callers of FBXCTestReporter
  */
-@interface FBXCTestReporterDouble : NSObject <FBXCTestReporter>
+@interface FBXCTestReporterDouble : NSObject <FBXCTestReporter, FBXCTestReporterWithFiles>
 
 /**
  An array of the started test suites.
@@ -45,6 +45,11 @@ NS_ASSUME_NONNULL_BEGIN
  Confirmation -[FBXCTestReporter printReportWithError:] was called.
  */
 @property (nonatomic, assign, readonly) BOOL printReportWasCalled;
+
+/**
+ Path to logs directory
+ */
+@property (nonatomic, nullable, copy) NSString *logDirectoryPath;
 
 /**
  Get events by name that were recieved from `-[FBXCTestReporter handleExternalEvent:]`

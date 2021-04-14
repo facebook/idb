@@ -59,7 +59,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param collectCoverage will collect llvm coverage data
  @return an FBXCTestRunRequest instance.
  */
-+ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage;
++ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs;
 
 /**
 The Initializer for App Tests.
@@ -156,6 +156,11 @@ The Initializer for UI Tests.
  If set llvm coverage data will be collected
  */
 @property (nonatomic, assign, readonly) BOOL collectCoverage;
+
+/**
+ If set tests' output logs will be collected
+ */
+@property (nonatomic, assign, readonly) BOOL collectLogs;
 
 /**
  Starts the test operation.

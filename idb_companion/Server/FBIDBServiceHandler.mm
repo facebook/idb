@@ -262,6 +262,7 @@ static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *r
   NSString *testBundleID = nsstring_from_c_string(request->test_bundle_id());
   BOOL reportActivities = request->report_activities();
   BOOL collectCoverage = request->collect_coverage();
+  BOOL collectLogs = request->collect_logs();
 
   if (request->tests_to_run_size() > 0) {
     testsToRun = NSMutableSet.set;
@@ -278,7 +279,7 @@ static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *r
 
   switch (request->mode().mode_case()) {
     case idb::XctestRunRequest_Mode::kLogic: {
-      return [FBXCTestRunRequest logicTestWithTestBundleID:testBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage];
+      return [FBXCTestRunRequest logicTestWithTestBundleID:testBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage collectLogs:collectLogs];
     }
     case idb::XctestRunRequest_Mode::kApplication: {
       const idb::XctestRunRequest::Application application = request->mode().application();
@@ -1023,12 +1024,12 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
   NSError *error = nil;
   FBIDBXCTestReporter *reporter = [[FBIDBXCTestReporter alloc] initWithResponseWriter:response reportAttachments:request->report_attachments() queue:_target.workQueue logger:_target.logger];
   FBIDBTestOperation *operation = [[_commandExecutor xctest_run:xctestRunRequest reporter:reporter logger:[FBControlCoreLogger loggerToConsumer:reporter]] block:&error];
-  reporter.resultBundlePath = operation.resultBundlePath;
-  reporter.coveragePath = operation.coveragePath;
-  reporter.binaryPath = operation.binaryPath;
   if (!operation) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
+  reporter.resultBundlePath = operation.resultBundlePath;
+  reporter.coveragePath = operation.coveragePath;
+  reporter.binaryPath = operation.binaryPath;
   // First wait for the test operation to finish
   [operation.completed block:&error];
   // Then make sure we've reported everything, otherwise we could write in the background (use-after-free)

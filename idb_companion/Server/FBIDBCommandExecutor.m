@@ -238,7 +238,7 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
   if (self.target.state == FBiOSTargetStateShutdown) {
     return [self remove_all_storage_and_clear_keychain];
   }
-  
+
   return [[self uninstall_all_applications] onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(id _) {
     return [self remove_all_storage_and_clear_keychain];
   }];
@@ -314,7 +314,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   [replacements addEntriesFromDictionary:self.storageManager.replacementMapping];
   [replacements addEntriesFromDictionary:self.target.replacementMapping];
   NSDictionary<NSString *, NSString *> *environment = [self applyEnvironmentReplacements:configuration.environment replacements:replacements];
-  
+
   FBApplicationLaunchConfiguration *derived = [[FBApplicationLaunchConfiguration alloc]
     initWithBundleID:configuration.bundleID
     bundleName:configuration.bundleName
@@ -343,7 +343,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return interpolatedEnvironment;
 }
 
-- (FBFuture<FBIDBTestOperation *> *)xctest_run:(FBXCTestRunRequest *)request reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<FBIDBTestOperation *> *)xctest_run:(FBXCTestRunRequest *)request reporter:(id<FBXCTestReporter, FBXCTestReporterWithFiles>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   return [request startWithBundleStorageManager:self.storageManager.xctest target:self.target reporter:reporter logger:logger temporaryDirectory:self.temporaryDirectory];
 }

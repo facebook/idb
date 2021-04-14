@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
  Bridges from the FBXCTestReporter protocol to a GRPC result writer.
  This also keeps track of the terminal condition of the reporter, so this can be used to know when reporting has fully terminated.
  */
-@interface FBIDBXCTestReporter : NSObject <FBXCTestReporter, FBDataConsumer>
+@interface FBIDBXCTestReporter : NSObject <FBXCTestReporter, FBXCTestReporterWithFiles, FBDataConsumer>
 
 #pragma mark Initializers
 
@@ -50,6 +50,11 @@ NS_ASSUME_NONNULL_BEGIN
  Coverage file path
  */
 @property (nonatomic, copy, nullable, readwrite) NSString *coveragePath;
+
+/**
+ Log directory path
+ */
+@property (nonatomic, copy, nullable, readwrite) NSString *logDirectoryPath;
 
 /**
  App binary path

@@ -347,6 +347,19 @@
       return [FBFuture futureWithResult:NSNull.null];
     }]];
   }
+  if (self.logDirectoryPath) {
+      [futures addObject:[[self getLogDirectoryData] onQueue:self.queue chain:^FBFuture<NSNull *> *(FBFuture<NSData *> *future) {
+        NSData *data = future.result;
+        if (data) {
+          idb::Payload *payload = responseCaptured.mutable_log_directory();
+          payload->set_data(data.bytes, data.length);
+        } else {
+          [self.logger.info logFormat:@"Failed to get log drectory %@", future];
+        }
+        return [FBFuture futureWithResult:NSNull.null];
+      }]];
+
+  }
   if (futures.count == 0) {
     [self writeResponseFinal:responseCaptured];
     return;
@@ -363,7 +376,7 @@
   {
     // Break out if the terminating condition happens twice.
     if (self.reportingTerminated.hasCompleted || self.writer == nil) {
-      [self.logger.error log:@"writeResponse called, but the last response has already be written!!"];
+      [self.logger.error log:@"writeResponse called, but the last response has already been written!!"];
       return;
     }
 
@@ -406,5 +419,10 @@
   return [FBArchiveOperations createGzippedTarDataForPath:self.resultBundlePath queue:self.queue logger:self.logger];
 }
 
+-(FBFuture<NSData *> *)getLogDirectoryData
+{
+    return [FBArchiveOperations createGzippedTarDataForPath:self.logDirectoryPath queue:self.queue logger:self.logger];
+
+}
 
 @end

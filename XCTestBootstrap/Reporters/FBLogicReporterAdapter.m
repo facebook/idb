@@ -13,14 +13,14 @@
 
 @interface FBLogicReporterAdapter ()
 
-@property (nonatomic, readonly) id<FBXCTestReporter> reporter;
+@property (nonatomic, readonly) id<FBXCTestReporter, FBXCTestReporterWithFiles> reporter;
 @property (nonatomic, readonly) FBXCTestLogger *logger;
 
 @end
 
 @implementation FBLogicReporterAdapter
 
-- (instancetype)initWithReporter:(id<FBXCTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithReporter:(id<FBXCTestReporter, FBXCTestReporterWithFiles>)reporter logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [self init];
   if (!self) {
@@ -136,6 +136,10 @@
   if ([self.reporter respondsToSelector:@selector(didCrashDuringTest:)]) {
     [self.reporter didCrashDuringTest:error];
   }
+}
+
+- (void)setLogDirectoryPath:(NSString *)logDirectoryPath {
+    [self.reporter setLogDirectoryPath:logDirectoryPath];
 }
 
 @end

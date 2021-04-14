@@ -247,12 +247,12 @@ static NSString *const KeyWorkingDirectory = @"working_directory";
 
 #pragma mark Initializers
 
-+ (instancetype)configurationWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring
++ (instancetype)configurationWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory logDirectoryPath:(nullable NSString *)logDirectoryPath testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring
 {
-  return [[FBLogicTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout testFilter:testFilter  mirroring:mirroring];
+  return [[FBLogicTestConfiguration alloc] initWithShims:shims environment:environment workingDirectory:workingDirectory logDirectoryPath:logDirectoryPath testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout testFilter:testFilter  mirroring:mirroring];
 }
 
-- (instancetype)initWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring
+- (instancetype)initWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory logDirectoryPath:(NSString *)logDirectoryPath testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring
 {
   self = [super initWithShims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout];
   if (!self) {
@@ -261,6 +261,7 @@ static NSString *const KeyWorkingDirectory = @"working_directory";
 
   _testFilter = testFilter;
   _mirroring = mirroring;
+  _logDirectoryPath = logDirectoryPath;
 
   return self;
 }

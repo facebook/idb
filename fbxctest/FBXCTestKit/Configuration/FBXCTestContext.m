@@ -22,13 +22,13 @@
 
 #pragma mark Initializers
 
-+ (instancetype)contextWithReporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger
++ (instancetype)contextWithReporter:(nullable id<FBXCTestReporter, FBXCTestReporterWithFiles>)reporter logger:(nullable FBXCTestLogger *)logger
 {
   return [[FBXCTestContext alloc] initWithReporter:reporter logger:logger];
 }
 
 
-- (instancetype)initWithReporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger
+- (instancetype)initWithReporter:(nullable id<FBXCTestReporter,FBXCTestReporterWithFiles>)reporter logger:(nullable FBXCTestLogger *)logger
 {
   self = [super init];
   if (!self) {

@@ -332,6 +332,10 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   };
 }
 
+- (void)setLogDirectoryPath:(NSString *)logDirectoryPath
+{
+}
+
 @end
 
 static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString *methodName)

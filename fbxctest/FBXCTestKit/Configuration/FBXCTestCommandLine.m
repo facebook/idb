@@ -75,6 +75,7 @@
       configurationWithShims:shims
       environment:environment
       workingDirectory:workingDirectory
+      logDirectoryPath:nil
       testBundlePath:testBundlePath
       waitForDebugger:waitForDebugger
       timeout:timeout
