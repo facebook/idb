@@ -50,6 +50,10 @@ FBXCTestType const FBXCTestTypeUITest = @"ui-test";
 
 - (NSTimeInterval)defaultTimeout
 {
+  // TSAN is known to slow down all tests from running, bump the default test timeout to 1800s (instead of 500s).
+#if __has_feature(thread_sanitizer) || defined(__SANITIZE_THREAD__)
+  return 1800.0;
+#endif
   return 500;
 }
 
