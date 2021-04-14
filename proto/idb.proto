@@ -642,6 +642,7 @@ message XctestRunRequest {
   bool report_activities = 8;
   bool collect_coverage = 9;
   bool report_attachments = 10;
+  bool collect_logs = 11;
 }
 
 message XctestRunResponse {
@@ -692,6 +693,7 @@ message XctestRunResponse {
   repeated string log_output = 3;
   Payload result_bundle = 4;
   string coverage_json = 5;
+  Payload log_directory = 6;
 }
 
 // File
