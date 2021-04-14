@@ -165,6 +165,12 @@ class CommonRunXcTestCommand(ClientCommand):
             help="Outputs coverage information in the llvm json format",
         )
         parser.add_argument(
+            "--log-directory-path",
+            default=None,
+            type=str,
+            help="Path to save the test logs collected",
+        )
+        parser.add_argument(
             "--install",
             help="When this option is provided bundle_ids are assumed "
             "to be paths instead. They are installed before running.",
@@ -206,6 +212,7 @@ class CommonRunXcTestCommand(ClientCommand):
             report_attachments=args.report_attachments,
             activities_output_path=args.activities_output_path,
             coverage_output_path=args.coverage_output_path,
+            log_directory_path=args.log_directory_path,
         ):
             print(formatter(test_result))
             crashed_outside_test_case = (

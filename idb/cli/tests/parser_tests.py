@@ -450,6 +450,7 @@ class TestParser(TestCase):
         namespace.report_attachments = False
         namespace.activities_output_path = None
         namespace.coverage_output_path = None
+        namespace.log_directory_path = None
         namespace.install = False
         return namespace
 

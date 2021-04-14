@@ -450,6 +450,7 @@ class Client(ABC):
         report_attachments: bool = False,
         activities_output_path: Optional[str] = None,
         coverage_output_path: Optional[str] = None,
+        log_directory_path: Optional[str] = None,
     ) -> AsyncIterator[TestRunInfo]:
         yield
 

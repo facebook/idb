@@ -147,7 +147,7 @@ from idb.grpc.xctest import (
     make_request,
     make_results,
     save_attachments,
-    write_result_bundle,
+    untar_into_path,
 )
 from idb.grpc.xctest_log_parser import XCTestLogParser
 from idb.grpc.xctrace import (
@@ -952,6 +952,7 @@ class Client(ClientBase):
         report_attachments: bool = False,
         activities_output_path: Optional[str] = None,
         coverage_output_path: Optional[str] = None,
+        log_directory_path: Optional[str] = None,
     ) -> AsyncIterator[TestRunInfo]:
         async with self.stub.xctest_run.open() as stream:
             request = make_request(
@@ -973,6 +974,7 @@ class Client(ClientBase):
                 ),
                 report_attachments=report_attachments,
                 collect_coverage=coverage_output_path is not None,
+                collect_logs=log_directory_path is not None,
             )
             log_parser = XCTestLogParser()
             await stream.send_message(request)
@@ -991,9 +993,17 @@ class Client(ClientBase):
                         idb_log_buffer.write(line)
 
                 if result_bundle_path:
-                    await write_result_bundle(
-                        response=response,
+                    await untar_into_path(
+                        payload=response.result_bundle,
+                        description="result bundle",
                         output_path=result_bundle_path,
+                        logger=self.logger,
+                    )
+                if log_directory_path:
+                    await untar_into_path(
+                        payload=response.log_directory,
+                        description="log directory",
+                        output_path=log_directory_path,
                         logger=self.logger,
                     )
                 if response.coverage_json and coverage_output_path:
