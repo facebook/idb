@@ -59,11 +59,7 @@
   return [[self
     dataContainer]
     onQueue:self.queue fmap:^ FBFuture<NSString *> * (NSString *dataContainer) {
-      NSError *traversalError;
-      NSString *source = [self safePathAppend:dataContainer component:containerPath error:&traversalError];
-      if (!source) {
-        return [FBFuture futureWithError:traversalError];
-      }
+      NSString *source = [dataContainer stringByAppendingPathComponent:containerPath];
       BOOL srcIsDirecory = NO;
       if (![NSFileManager.defaultManager fileExistsAtPath:source isDirectory:&srcIsDirecory]) {
         return [[FBSimulatorError
@@ -108,10 +104,7 @@
     dataContainer]
     onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *dataContainer) {
       NSError *error;
-      NSString *fullPath = [self safePathAppend:dataContainer component:directoryPath error:&error];
-      if (!fullPath) {
-        return [FBFuture futureWithError:error];
-      }
+      NSString *fullPath = [dataContainer stringByAppendingPathComponent:directoryPath];
       if (![NSFileManager.defaultManager createDirectoryAtPath:fullPath withIntermediateDirectories:YES attributes:nil error:&error]) {
         return [[[FBSimulatorError
           describeFormat:@"Could not create directory %@ in container %@: %@", directoryPath, dataContainer, error]
@@ -128,15 +121,8 @@
     dataContainer]
     onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *dataContainer) {
       NSError *error;
-      NSString *fullDestinationPath = [self safePathAppend:dataContainer component:destinationPath error:&error];
-      if (!fullDestinationPath) {
-        return [FBFuture futureWithError:error];
-      }
-      NSString *fullSourcePath = [self safePathAppend:dataContainer component:sourcePath error:&error];
-      if (!fullSourcePath) {
-        return [FBFuture futureWithError:error];
-      }
-
+      NSString *fullDestinationPath = [dataContainer stringByAppendingPathComponent:destinationPath];
+      NSString *fullSourcePath = [dataContainer stringByAppendingPathComponent:sourcePath];
       if (![NSFileManager.defaultManager moveItemAtPath:fullSourcePath toPath:fullDestinationPath error:&error]) {
         return [[[FBSimulatorError
           describeFormat:@"Could not move item at %@ to %@: %@", fullSourcePath, fullDestinationPath, error]
@@ -153,10 +139,7 @@
     dataContainer]
     onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *dataContainer) {
       NSError *error;
-      NSString *fullPath = [self safePathAppend:dataContainer component:path error:&error];
-      if (!fullPath) {
-        return [FBFuture futureWithError:error];
-      }
+      NSString *fullPath = [dataContainer stringByAppendingPathComponent:path];
       if (![NSFileManager.defaultManager removeItemAtPath:fullPath error:&error]) {
         return [[[FBSimulatorError
           describeFormat:@"Could not remove item at path %@: %@", fullPath, error]
@@ -172,11 +155,8 @@
   return [[self
     dataContainer]
     onQueue:self.queue fmap:^(NSString *dataContainer) {
+      NSString *fullPath = [dataContainer stringByAppendingPathComponent:path];
       NSError *error;
-      NSString *fullPath = [self safePathAppend:dataContainer component:path error:&error];
-      if (!fullPath) {
-        return [FBFuture futureWithError:error];
-      }
       NSArray<NSString *> *contents = [NSFileManager.defaultManager contentsOfDirectoryAtPath:fullPath error:&error];
       if (!contents) {
         return [FBFuture futureWithError:error];
@@ -188,20 +168,6 @@
 - (FBFuture<NSString *> *)dataContainer
 {
   return [FBFuture futureWithResult:self.containerPath];
-}
-
-- (NSString *)safePathAppend:(NSString *)root component:(NSString *)component error:(NSError **)error
-{
-  NSString *fullPath = [root stringByAppendingPathComponent:component];
-  NSURLRelationship relationship = NSURLRelationshipOther;
-  if (![NSFileManager.defaultManager getRelationship:&relationship ofDirectoryAtURL:[NSURL fileURLWithPath:root] toItemAtURL:[NSURL fileURLWithPath:fullPath] error:error]) {
-    return nil;
-  }
-  if (relationship == NSURLRelationshipContains || relationship == NSURLRelationshipSame) {
-    return fullPath;
-  } else {
-    return [[FBSimulatorError describeFormat:@"Trying to traverse outside of the root %@, %@", root, fullPath] fail:error];
-  }
 }
 
 @end
