@@ -183,7 +183,7 @@ struct __va_list_tag {
 - (SEL)selector;
 - (instancetype)initWithSelector:(SEL)arg1;
 - (instancetype)initWithInvocation:(id)arg1;
-- (id)init;
+- (instancetype)init;
 
 @end
 
@@ -306,7 +306,7 @@ struct __va_list_tag {
 + (void)setActiveTestConfiguration:(id)arg1;
 
 - (BOOL)writeToFile:(id)arg1;
-- (id)init;
+- (instancetype)init;
 
 @end
 
