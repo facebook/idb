@@ -64,6 +64,11 @@ message Payload {
     string file_path = 1;
     bytes data = 2;
     string url = 3;
+    Compression compression = 4;
+  }
+  enum Compression {
+    GZIP = 0;
+    ZSTD = 1;
   }
 }
 
