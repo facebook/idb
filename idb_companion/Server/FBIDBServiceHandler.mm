@@ -196,7 +196,7 @@ static FBFuture<NSArray<NSURL *> *> *filepaths_from_stream(const idb::Payload in
 static FBFutureContext<NSArray<NSURL *> *> *filepaths_from_tar(FBTemporaryDirectory *temporaryDirectory, FBProcessInput<NSOutputStream *> *input, bool extract_from_subdir, id<FBControlCoreLogger> logger)
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.idb.processinput", DISPATCH_QUEUE_SERIAL);
-  FBFutureContext<NSURL *> *tarContext = [temporaryDirectory withArchiveExtractedFromStream:input];
+  FBFutureContext<NSURL *> *tarContext = [temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP];
   if (extract_from_subdir) {
     // Extract from subdirectories
     return [temporaryDirectory filesFromSubdirs:tarContext];
@@ -460,6 +460,19 @@ static void populate_companion_info(idb::CompanionInfo *info, id<FBEventReporter
   }
 }
 
+static FBCompressionFormat read_compression_format(const idb::Payload payload)
+{
+  idb::Payload_Compression comp = payload.compression();
+  switch (comp) {
+    case idb::Payload_Compression::Payload_Compression_GZIP:
+      return FBCompressionFormatGZIP;
+    case idb::Payload_Compression::Payload_Compression_ZSTD:
+      return FBCompressionFormatZSTD;
+    default:
+      return FBCompressionFormatGZIP;
+  }
+}
+
 #pragma mark Constructors
 
 FBIDBServiceHandler::FBIDBServiceHandler(FBIDBCommandExecutor *commandExecutor, id<FBiOSTarget> target, id<FBEventReporter> eventReporter)
@@ -489,13 +502,19 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
     stream->Read(&request);
   }
   payload = request.payload();
-
+  FBCompressionFormat compression = FBCompressionFormatGZIP;
+  if (payload.source_case() == idb::Payload::kCompression) {
+    compression = read_compression_format(payload);
+    stream->Read(&request);
+    payload = request.payload();
+  }
+  
   switch (payload.source_case()) {
     case idb::Payload::kData: {
       FBProcessInput<NSOutputStream *> *dataStream = pipe_to_input_output(payload, stream);
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_app_stream:dataStream];
+          return [_commandExecutor install_app_stream:dataStream compression:compression];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:dataStream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
@@ -513,7 +532,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
       FBDataDownloadInput *download = [FBDataDownloadInput dataDownloadWithURL:url logger:_target.logger];
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_app_stream:download.input];
+          return [_commandExecutor install_app_stream:download.input compression:compression];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:download.input];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:

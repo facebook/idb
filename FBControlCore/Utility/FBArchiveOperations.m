@@ -12,6 +12,9 @@
 #import "FBTask.h"
 #import "FBTaskBuilder.h"
 
+FBCompressionFormat const FBCompressionFormatGZIP = @"gzip";
+FBCompressionFormat const FBCompressionFormatZSTD = @"zstd";
+
 static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 
 @implementation FBArchiveOperations
@@ -28,11 +31,16 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     mapReplace:extractPath];
 }
 
-+ (FBFuture<NSString *> *)extractArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSString *> *)extractArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger compression:(FBCompressionFormat)compression
 {
+  NSArray *extractCommand = @[@"-vzxp", @"-C", extractPath, @"-f", @"-"];
+  if (compression == FBCompressionFormatZSTD) {
+    extractCommand = @[@"--use-compress-program", @"pzstd -d", @"-vxp", @"-C", extractPath, @"-f", @"-"];
+  }
+  
   return [[[[[[[[FBTaskBuilder
     withLaunchPath:BSDTarPath]
-    withArguments:@[@"-vzxp", @"-C", extractPath, @"-f", @"-"]]
+    withArguments:extractCommand]
     withStdIn:stream]
     withStdErrToLoggerAndErrorMessage:logger.debug]
     withStdOutToLogger:logger.debug]

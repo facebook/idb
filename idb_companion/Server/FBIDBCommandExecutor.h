@@ -89,9 +89,10 @@ extern FBFileContainerKind const FBFileContainerKindDiskImages;
  Install an App via a Data stream.
 
  @param input the input to pipe.
+ @param compression the compression type to use
  @return A future that resolves with the App Bundle Id
  */
-- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input;
+- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression;
 
 /**
  Installs an xctest bundle by file path.

@@ -89,9 +89,9 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
   }
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input
+- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression
 {
-  return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromStream:input]];
+  return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:compression]];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)install_xctest_app_file_path:(NSString *)filePath
@@ -101,7 +101,7 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
 
 - (FBFuture<FBInstalledArtifact *> *)install_xctest_app_stream:(FBProcessInput *)stream
 {
-  return [self installXctest:[self.temporaryDirectory withArchiveExtractedFromStream:stream]];
+  return [self installXctest:[self.temporaryDirectory withArchiveExtractedFromStream:stream compression:FBCompressionFormatGZIP]];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)install_dylib_file_path:(NSString *)filePath
@@ -121,7 +121,7 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
 
 - (FBFuture<FBInstalledArtifact *> *)install_framework_stream:(FBProcessInput *)input
 {
-  return [self installBundle:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.storageManager.framework];
+  return [self installBundle:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP] intoStorage:self.storageManager.framework];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath
@@ -131,7 +131,7 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
 
 - (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input
 {
-  return [self installFile:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.storageManager.dsym];
+  return [self installFile:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP] intoStorage:self.storageManager.dsym];
 }
 
 #pragma mark Public Methods

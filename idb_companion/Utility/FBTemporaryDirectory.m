@@ -78,15 +78,15 @@
 
 - (FBFutureContext<NSURL *> *)withArchiveExtracted:(NSData *)tarData
 {
-  return [self withArchiveExtractedFromStream:[FBProcessInput inputFromData:tarData]];
+  return [self withArchiveExtractedFromStream:[FBProcessInput inputFromData:tarData] compression:FBCompressionFormatGZIP];
 }
 
-- (FBFutureContext<NSURL *> *)withArchiveExtractedFromStream:(FBProcessInput *)input
+- (FBFutureContext<NSURL *> *)withArchiveExtractedFromStream:(FBProcessInput *)input compression:(FBCompressionFormat)compression
 {
   return [[self
     withTemporaryDirectory]
     onQueue:self.queue pend:^(NSURL *tempDir) {
-      return [[FBArchiveOperations extractArchiveFromStream:input toPath:tempDir.path queue:self.queue logger:self.logger] mapReplace:tempDir];
+    return [[FBArchiveOperations extractArchiveFromStream:input toPath:tempDir.path queue:self.queue logger:self.logger compression:compression] mapReplace:tempDir];
     }];
 }
 
