@@ -13,7 +13,7 @@ from idb.common.format import (
     human_format_installed_app_info,
     json_format_installed_app_info,
 )
-from idb.common.types import Client, InstalledArtifact
+from idb.common.types import Client, InstalledArtifact, Compression
 from idb.utils.typing import none_throws
 
 
@@ -34,7 +34,10 @@ class AppInstallCommand(ClientCommand):
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         artifact: Optional[InstalledArtifact] = None
-        async for info in client.install(args.bundle_path):
+        compression = (
+            Compression[args.compression] if args.compression is not None else None
+        )
+        async for info in client.install(args.bundle_path, compression):
             artifact = info
             progress = info.progress
             if progress is None:

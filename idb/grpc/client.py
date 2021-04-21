@@ -51,6 +51,7 @@ from idb.common.types import (
     Client as ClientBase,
     Companion,
     CompanionInfo,
+    Compression,
     CrashLog,
     CrashLogInfo,
     CrashLogQuery,
@@ -171,6 +172,11 @@ VIDEO_FORMAT_MAP: Dict[VideoFormat, "VideoStreamRequest.Format"] = {
     VideoFormat.RBGA: VideoStreamRequest.RBGA,
     VideoFormat.MJPEG: VideoStreamRequest.MJPEG,
     VideoFormat.MINICAP: VideoStreamRequest.MINICAP,
+}
+
+COMPRESSION_MAP: Dict[Compression, "Payload.Compression"] = {
+    Compression.GZIP: Payload.GZIP,
+    Compression.ZSTD: Payload.ZSTD,
 }
 
 
@@ -324,7 +330,10 @@ class Client(ClientBase):
                 yield message.output.decode()
 
     async def _install_to_destination(
-        self, bundle: Bundle, destination: Destination
+        self,
+        bundle: Bundle,
+        destination: Destination,
+        compression: Optional[Compression] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async with self.stub.install.open() as stream:
             generator = None
@@ -345,7 +354,10 @@ class Client(ClientBase):
                     else:
                         # chunk file from file_path
                         generator = generate_binary_chunks(
-                            path=file_path, destination=destination, logger=self.logger
+                            path=file_path,
+                            destination=destination,
+                            compression=compression,
+                            logger=self.logger,
                         )
 
             else:
@@ -353,6 +365,12 @@ class Client(ClientBase):
                 generator = generate_io_chunks(io=bundle, logger=self.logger)
                 # stream to companion
             await stream.send_message(InstallRequest(destination=destination))
+            if compression is not None:
+                await stream.send_message(
+                    InstallRequest(
+                        payload=Payload(compression=COMPRESSION_MAP[compression])
+                    )
+                )
             async for message in generator:
                 await stream.send_message(message)
             await stream.end()
@@ -558,9 +576,13 @@ class Client(ClientBase):
         return _to_crash_log(response)
 
     @log_and_handle_exceptions
-    async def install(self, bundle: Bundle) -> AsyncIterator[InstalledArtifact]:
+    async def install(
+        self,
+        bundle: Bundle,
+        compression: Optional[Compression] = None,
+    ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
-            bundle=bundle, destination=InstallRequest.APP
+            bundle=bundle, destination=InstallRequest.APP, compression=compression
         ):
             yield response
 

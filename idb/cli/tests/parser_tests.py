@@ -13,6 +13,7 @@ from unittest.mock import ANY, MagicMock, patch
 
 from idb.cli.main import gen_main as cli_main
 from idb.common.types import (
+    Compression,
     CrashLogQuery,
     DomainSocketAddress,
     HIDButtonType,
@@ -147,8 +148,24 @@ class TestParser(TestCase):
     async def test_install(self) -> None:
         self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
         app_path = "testApp.app"
+        compression = None
         await cli_main(cmd_input=["install", app_path])
-        self.client_mock.install.assert_called_once_with(app_path)
+        self.client_mock.install.assert_called_once_with(app_path, compression)
+
+    async def test_install_with_bad_compression(self) -> None:
+        self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
+        app_path = "testApp.app"
+        exit_code = await cli_main(
+            cmd_input=["--compression", "PZSTD", "install", app_path]
+        )
+        self.assertEqual(exit_code, 2)
+        self.client_mock.install.assert_not_called()
+
+    async def test_install_with_compression(self) -> None:
+        self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
+        app_path = "testApp.app"
+        await cli_main(cmd_input=["--compression", "ZSTD", "install", app_path])
+        self.client_mock.install.assert_called_once_with(app_path, Compression.ZSTD)
 
     async def test_uninstall(self) -> None:
         self.client_mock.uninstall = AsyncMock()
@@ -429,6 +446,7 @@ class TestParser(TestCase):
         namespace.companion_path = COMPANION_PATH
         namespace.companion = None
         namespace.companion_local = False
+        namespace.compression = None
         namespace.prune_dead_companion = True
         namespace.log_level = "WARNING"
         namespace.log_level_deprecated = None
@@ -532,6 +550,7 @@ class TestParser(TestCase):
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
             namespace.companion_local = False
+            namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.daemon_port = port
             namespace.daemon_grpc_port = grpc_port
@@ -559,6 +578,7 @@ class TestParser(TestCase):
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
             namespace.companion_local = False
+            namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.log_level = "WARNING"
             namespace.log_level_deprecated = None
@@ -576,6 +596,7 @@ class TestParser(TestCase):
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
             namespace.companion_local = False
+            namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.log_level = "WARNING"
             namespace.log_level_deprecated = None
@@ -630,6 +651,7 @@ class TestParser(TestCase):
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
             namespace.companion_local = False
+            namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.log_level = "WARNING"
             namespace.log_level_deprecated = None
@@ -651,6 +673,7 @@ class TestParser(TestCase):
                     companion=None,
                     companion_path=COMPANION_PATH,
                     companion_local=False,
+                    compression=None,
                     prune_dead_companion=True,
                     log_level="WARNING",
                     format="h264",

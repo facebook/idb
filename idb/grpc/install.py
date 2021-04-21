@@ -6,13 +6,14 @@
 
 import os
 from logging import Logger
-from typing import IO, AsyncIterator, List, Union
+from typing import IO, AsyncIterator, List, Union, Optional
 
 import aiofiles
 import idb.common.gzip as gzip
 import idb.common.tar as tar
 from grpclib.const import Status
 from grpclib.exceptions import GRPCError
+from idb.common.types import Compression
 from idb.grpc.idb_pb2 import InstallRequest, Payload
 from idb.grpc.xctest import xctest_paths_to_tar
 
@@ -36,10 +37,10 @@ async def _generate_ipa_chunks(
 
 
 async def _generate_app_chunks(
-    app_path: str, logger: Logger
+    app_path: str, compression: Compression, logger: Logger
 ) -> AsyncIterator[InstallRequest]:
     logger.debug(f"Generating chunks for .app {app_path}")
-    async for chunk in tar.generate_tar([app_path]):
+    async for chunk in tar.generate_tar(paths=[app_path], compression=compression):
         yield InstallRequest(payload=Payload(data=chunk))
     logger.debug(f"Finished generating .app chunks {app_path}")
 
@@ -102,13 +103,20 @@ async def generate_io_chunks(
 
 
 def generate_binary_chunks(
-    path: str, destination: Destination, logger: Logger
+    path: str,
+    destination: Destination,
+    compression: Optional[Compression],
+    logger: Logger,
 ) -> AsyncIterator[InstallRequest]:
     if destination == InstallRequest.APP:
         if path.endswith(".ipa"):
             return _generate_ipa_chunks(ipa_path=path, logger=logger)
         elif path.endswith(".app"):
-            return _generate_app_chunks(app_path=path, logger=logger)
+            return _generate_app_chunks(
+                app_path=path,
+                compression=compression or Compression.GZIP,
+                logger=logger,
+            )
     elif destination == InstallRequest.XCTEST:
         return _generate_xctest_chunks(path=path, logger=logger)
     elif destination == InstallRequest.DYLIB:

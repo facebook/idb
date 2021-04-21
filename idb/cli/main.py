@@ -92,7 +92,7 @@ from idb.cli.commands.xctest import (
 )
 from idb.cli.commands.xctrace import XctraceRecordCommand
 from idb.common.command import Command, CommandGroup
-from idb.common.types import IdbException, ExitWithCodeException
+from idb.common.types import IdbException, ExitWithCodeException, Compression
 
 
 COROUTINE_DRAIN_TIMEOUT = 2
@@ -120,6 +120,15 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default="WARNING",
         help="Set the logging level",
+    )
+    parser.add_argument(
+        "--compression",
+        dest="compression",
+        choices=[str(key) for (key, _) in Compression.__members__.items()],
+        default=None,
+        help="Compression algorithm, default: GZIP. "
+        "Compressor should be available at this host. "
+        "Decompressor should be available at the destination site (where IDB companion is hosted)",
     )
     parser.add_argument(
         "--companion",

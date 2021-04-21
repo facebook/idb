@@ -336,6 +336,11 @@ class FileContainerType(Enum):
 FileContainer = Optional[Union[str, FileContainerType]]
 
 
+class Compression(Enum):
+    GZIP = 0
+    ZSTD = 1
+
+
 class Companion(ABC):
     @abstractmethod
     async def create(
@@ -456,7 +461,9 @@ class Client(ABC):
 
     @abstractmethod
     async def install(
-        self, bundle: Union[str, IO[bytes]]
+        self,
+        bundle: Union[str, IO[bytes]],
+        compression: Optional[Compression] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
