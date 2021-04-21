@@ -116,7 +116,7 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
       return [self.task sendSignal:SIGINT backingOffToKillWithTimeout:timeout logger:self.logger];
     }] chainReplace:[[self.task exitCode]
     onQueue:self.queue fmap:^FBFuture<NSURL *> *(NSNumber *exitCode) {
-      if ([exitCode isEqualToNumber:@(0)]) {
+      if ([exitCode isEqualToNumber:@0]) {
         return [FBFuture futureWithResult:self.traceDir];
       } else {
         return [[FBControlCoreError describeFormat:@"Xctrace record exited with failure - status: %@", exitCode] failFuture];

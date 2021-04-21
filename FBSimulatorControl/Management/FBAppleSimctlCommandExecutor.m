@@ -70,7 +70,7 @@
     arguments:derived]
     withStdOutToLogger:self.logger]
     withStdErrToLogger:self.logger]
-    withAcceptableExitCodes:[NSSet setWithObject:@(0)]];
+    withAcceptableExitCodes:[NSSet setWithObject:@0]];
 }
 
 @end
