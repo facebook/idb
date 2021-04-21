@@ -236,6 +236,7 @@ class Client(ClientBase):
         is_local: Optional[bool] = None,
         exchange_metadata: bool = True,
         extra_metadata: Optional[Dict[str, str]] = None,
+        use_tls: bool = False,
     ) -> AsyncGenerator["Client", None]:
         metadata_to_companion = (
             {
@@ -249,8 +250,16 @@ class Client(ClientBase):
             if exchange_metadata
             else {}
         )
+        ssl_context = plugin.channel_ssl_context() if use_tls else None
+        if use_tls:
+            assert ssl_context is not None
         async with (
-            Channel(host=address.host, port=address.port, loop=asyncio.get_event_loop())
+            Channel(
+                host=address.host,
+                port=address.port,
+                loop=asyncio.get_event_loop(),
+                ssl=ssl_context,
+            )
             if isinstance(address, TCPAddress)
             else Channel(path=address.path, loop=asyncio.get_event_loop())
         ) as channel:

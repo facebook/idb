@@ -40,6 +40,7 @@ async def do_spawn_companion(
     cwd: Optional[str],
     tmp_path: Optional[str],
     reparent: bool,
+    tls_cert_path: Optional[str] = None,
 ) -> Tuple[asyncio.subprocess.Process, int]:
     arguments: List[str] = [
         path,
@@ -48,6 +49,8 @@ async def do_spawn_companion(
         "--grpc-port",
         str(port) if port is not None else "0",
     ]
+    if tls_cert_path is not None:
+        arguments.extend(["--tls-cert-path", tls_cert_path])
     if device_set_path is not None:
         arguments.extend(["--device-set-path", device_set_path])
 
@@ -71,7 +74,7 @@ async def do_spawn_companion(
             extracted_port = await _extract_port_from_spawned_companion(stdout)
         except Exception as e:
             raise CompanionSpawnerException(
-                f"Failed to spawn companion, couldn't read port"
+                f"Failed to spawn companion, couldn't read port "
                 f"stderr: {get_last_n_lines(log_file_path, 30)}"
             ) from e
         if extracted_port == 0:
