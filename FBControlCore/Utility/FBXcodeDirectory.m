@@ -16,7 +16,7 @@
 
 @implementation FBXcodeDirectory
 
-+ (NSString *)xcodeSelectFromCommandLine
++ (FBXcodeDirectory *)xcodeSelectFromCommandLine
 {
   return [self new];
 }
