@@ -692,7 +692,12 @@ static inline NSDate *dateFromString(NSString *date)
                                         logger:(id<FBControlCoreLogger>)logger
 {
   // Extract all screenshots to the "Attachments" folder just as in the legacy test result bundle
-  NSString *screenshotsPath = [self ensureSubdirectory:@"Attachments" insideResultBundle:resultBundlePath];
+  NSError *error = nil;
+  NSString *screenshotsPath = [self ensureSubdirectory:@"Attachments" insideResultBundle:resultBundlePath error:&error];
+  if (error != nil) {
+    [logger logFormat:@"Failed to ensure attachments directory %@", error];
+    return;
+  }
   for (NSDictionary *activity in activities) {
     if (activity[@"attachments"]) {
       NSArray<NSDictionary *> *attachments = accessAndUnwrapValues(activity, @"attachments", logger);
@@ -705,18 +710,18 @@ static inline NSDate *dateFromString(NSString *date)
   }
 }
 
-+ (NSString *)ensureSubdirectory:(NSString *)subdirectory insideResultBundle:(NSString *)resultBundlePath {
-  NSError *error = nil;
++ (NSString *)ensureSubdirectory:(NSString *)subdirectory insideResultBundle:(NSString *)resultBundlePath error:(NSError **)error
+{
   NSFileManager *fileManager = NSFileManager.defaultManager;
   NSString *subdirectoryFullPath = [resultBundlePath stringByAppendingPathComponent:subdirectory];
   BOOL isDirectory = NO;
   if ([fileManager fileExistsAtPath:subdirectoryFullPath isDirectory:&isDirectory]) {
     if (!isDirectory) {
-      return [[FBControlCoreError describeFormat:@"%@ is not a directory", subdirectoryFullPath] fail:&error];
+      return [[FBControlCoreError describeFormat:@"%@ is not a directory", subdirectoryFullPath] fail:error];
     }
   } else {
-    if (![fileManager createDirectoryAtPath:subdirectoryFullPath withIntermediateDirectories:NO attributes:nil error:&error]) {
-      return [[FBControlCoreError describeFormat:@"Failed to create directory at %@", subdirectoryFullPath] fail:&error];
+    if (![fileManager createDirectoryAtPath:subdirectoryFullPath withIntermediateDirectories:NO attributes:nil error:error]) {
+      return [[FBControlCoreError describeFormat:@"Failed to create directory at %@", subdirectoryFullPath] fail:error];
     }
   }
   return subdirectoryFullPath;
@@ -777,18 +782,26 @@ static inline NSDate *dateFromString(NSString *date)
     [metrics addObject:metric];
   }
 
-  if ([NSJSONSerialization isValidJSONObject:metrics]) {
-    NSError *error = nil;
-    NSData *json = [NSJSONSerialization dataWithJSONObject:metrics options:NSJSONWritingPrettyPrinted error:&error];
-    if (error != nil) {
-      [logger logFormat:@"Failed to serilize performance metrics %@ with error %@", metrics, error];
-    }
-    else if (json != nil) {
-      NSString *performanceMetricsDirectory = [self ensureSubdirectory:@"Metrics" insideResultBundle:resultBundlePath];
-      NSString *metricFilePath = [performanceMetricsDirectory stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_%@_%@.json", testTarget, testClass, testMethod]];
-      [json writeToFile:metricFilePath atomically:YES];
-    }
+  if (![NSJSONSerialization isValidJSONObject:metrics]) {
+    [logger log:@"Not saving performance metrics as they're not valid json"];
+    return;
   }
+  NSError *error = nil;
+  NSData *json = [NSJSONSerialization dataWithJSONObject:metrics options:NSJSONWritingPrettyPrinted error:&error];
+  if (error != nil) {
+    [logger logFormat:@"Failed to serilize performance metrics %@ with error %@", metrics, error];
+    return;
+  }
+  if (json == nil) {
+    return;
+  }
+  NSString *performanceMetricsDirectory = [self ensureSubdirectory:@"Metrics" insideResultBundle:resultBundlePath error:&error];
+  if (error != nil) {
+    [logger logFormat:@"Failed to ensure performance metrics directory %@", error];
+    return;
+  }
+  NSString *metricFilePath = [performanceMetricsDirectory stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_%@_%@.json", testTarget, testClass, testMethod]];
+  [json writeToFile:metricFilePath atomically:YES];
 }
 
 + (NSString *)buildErrorMessage:(NSArray<NSDictionary *> *)failureSummmaries logger:(id<FBControlCoreLogger>)logger {
