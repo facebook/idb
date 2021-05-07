@@ -764,8 +764,8 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 - (FBFuture<FBInstalledArtifact *> *)installAppBundle:(FBFutureContext<FBBundleDescriptor *> *)bundleContext
 {
-  return [[bundleContext
-    onQueue:self.target.workQueue pend:^(FBBundleDescriptor *appBundle){
+  return [bundleContext
+    onQueue:self.target.asyncQueue pop:^(FBBundleDescriptor *appBundle){
       if (!appBundle) {
         return [FBFuture futureWithError:[FBControlCoreError errorForDescription:@"No app bundle could be extracted"]];
       }
@@ -773,12 +773,13 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       if (![self.storageManager.application checkArchitecture:appBundle error:&error]) {
         return [FBFuture futureWithError:error];
       }
-      return [[self.target installApplicationWithPath:appBundle.path] mapReplace:appBundle];
-    }]
-    onQueue:self.target.workQueue pop:^(FBBundleDescriptor *appBundle){
-      [self.logger logFormat:@"Persisting application bundle %@", appBundle];
-      return [self.storageManager.application saveBundle:appBundle];
-    }];
+      return [[FBFuture futureWithFutures:@[
+        [[self.target installApplicationWithPath:appBundle.path] onQueue:self.target.workQueue],
+        [self.storageManager.application saveBundle:appBundle],
+      ]] onQueue:self.target.asyncQueue map:^FBInstalledArtifact *(NSArray *results) {
+        return results[1];
+      }];
+  }];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)installXctest:(FBFutureContext<NSURL *> *)extractedXctest

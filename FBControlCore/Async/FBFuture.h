@@ -220,6 +220,15 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  */
 - (FBFuture *)onQueue:(dispatch_queue_t)queue map:(id (^)(T result))map;
 
+
+/**
+ Returns a copy of this future that'll resolve on a specific queue
+
+ @param queue the queue to resolve on
+ @returns a copy of this future that'll resolve on the specified queue
+ */
+- (FBFuture<T> *)onQueue:(dispatch_queue_t)queue;
+
 /**
  Attempt to handle an error.
 

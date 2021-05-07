@@ -23,7 +23,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 {
   return [[[[[[[FBTaskBuilder
     withLaunchPath:BSDTarPath]
-    withArguments:@[@"-vzxp", @"-C", extractPath, @"-f", path]]
+    withArguments:@[@"-zxp", @"-C", extractPath, @"-f", path]]
     withStdErrToLoggerAndErrorMessage:logger.debug]
     withStdOutToLogger:logger.debug]
     withAcceptableExitCodes:[NSSet setWithObject:@0]]
@@ -33,9 +33,9 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 
 + (FBFuture<NSString *> *)extractArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger compression:(FBCompressionFormat)compression
 {
-  NSArray *extractCommand = @[@"-vzxp", @"-C", extractPath, @"-f", @"-"];
+  NSArray *extractCommand = @[@"-zxp", @"-C", extractPath, @"-f", @"-"];
   if (compression == FBCompressionFormatZSTD) {
-    extractCommand = @[@"--use-compress-program", @"pzstd -d", @"-vxp", @"-C", extractPath, @"-f", @"-"];
+    extractCommand = @[@"--use-compress-program", @"pzstd -d", @"-xp", @"-C", extractPath, @"-f", @"-"];
   }
   
   return [[[[[[[[FBTaskBuilder
@@ -53,7 +53,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 {
   return [[[[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/gunzip"]
-    withArguments:@[@"-v", @"--to-stdout"]]
+    withArguments:@[@"--to-stdout"]]
     withStdIn:stream]
     withStdErrToLoggerAndErrorMessage:logger.debug]
     withStdOutPath:extractPath]
@@ -66,7 +66,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 {
   return (FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *) [[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/gzip"]
-    withArguments:@[@"--to-stdout", @"--verbose", path]]
+    withArguments:@[@"--to-stdout", path]]
     withStdErrToLoggerAndErrorMessage:logger]
     withStdOutToInputStream]
     withAcceptableExitCodes:[NSSet setWithObject:@0]]
