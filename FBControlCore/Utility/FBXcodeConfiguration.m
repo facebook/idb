@@ -112,6 +112,11 @@
   return [FBXcodeConfiguration.xcodeVersionNumber compare:[NSDecimalNumber decimalNumberWithString:@"12.0"]] != NSOrderedAscending;
 }
 
++ (BOOL)isXcode12_5OrGreater
+{
+  return [FBXcodeConfiguration.xcodeVersionNumber compare:[NSDecimalNumber decimalNumberWithString:@"12.5"]] != NSOrderedAscending;
+}
+
 + (NSString *)description
 {
   return [NSString stringWithFormat:

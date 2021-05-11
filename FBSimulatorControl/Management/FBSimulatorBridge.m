@@ -48,6 +48,11 @@ static NSTimeInterval BridgeReadyTimeout = 5.0;
 + (NSString *)simulatorBridgeLaunchPathWithError:(NSError **)error
 {
   FBBundleDescriptor *simulatorApp = [FBBundleDescriptor xcodeSimulator];
+  if (FBXcodeConfiguration.isXcode12_5OrGreater) {
+    return [[FBControlCoreError
+      describe:@"Some idb functionality is not yet available with Xcode 12.5, downgrade your Xcode version and try again."]
+      fail:error];
+  }
   NSString *path = [simulatorApp.path stringByAppendingPathComponent:@"Contents/Resources/Platforms/iphoneos/usr/libexec/SimulatorBridge"];
   FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:path error:error];
   if (!binary) {
