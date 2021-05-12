@@ -9,6 +9,7 @@ import asyncio
 import concurrent.futures
 import logging
 import os
+import shutil
 import sys
 from typing import List, Optional, Set
 
@@ -105,6 +106,12 @@ logging.basicConfig(
 logger: logging.Logger = logging.getLogger()
 
 
+def get_default_companion_path() -> Optional[str]:
+    if sys.platform != "darwin":
+        return None
+    return shutil.which("idb_companion") or "/usr/local/bin/idb_companion"
+
+
 async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
     # Make sure all files are created with global rw permissions
     os.umask(0o000)
@@ -140,7 +147,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
     parser.add_argument(
         "--companion-path",
         type=str,
-        default="/usr/local/bin/idb_companion" if sys.platform == "darwin" else None,
+        default=get_default_companion_path(),
         help="The path to the idb companion binary. This is only valid when running on macOS platforms",
     )
     parser.add_argument(
