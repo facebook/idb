@@ -508,6 +508,8 @@
 		AAFE93B71CE4954500A50F76 /* FBSimulatorEraseStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AAFE93B51CE4954500A50F76 /* FBSimulatorEraseStrategy.m */; };
 		C0B32FC91E4E459700A48CF4 /* FBArchitecture.h in Headers */ = {isa = PBXBuildFile; fileRef = C0B32FC71E4E459700A48CF4 /* FBArchitecture.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		C0B32FCA1E4E459700A48CF4 /* FBArchitecture.m in Sources */ = {isa = PBXBuildFile; fileRef = C0B32FC81E4E459700A48CF4 /* FBArchitecture.m */; };
+		D75ACC6B264BEF82009862C4 /* FBOToolDynamicLibs.m in Sources */ = {isa = PBXBuildFile; fileRef = D75ACC69264BEF82009862C4 /* FBOToolDynamicLibs.m */; };
+		D75ACC6C264BEF82009862C4 /* FBOToolDynamicLibs.h in Headers */ = {isa = PBXBuildFile; fileRef = D75ACC6A264BEF82009862C4 /* FBOToolDynamicLibs.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D76C2AEE1F13F61E000EF13D /* FBEventReporterSubject.h in Headers */ = {isa = PBXBuildFile; fileRef = D76C2AEC1F13F61E000EF13D /* FBEventReporterSubject.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D76C2AEF1F13F61E000EF13D /* FBEventReporterSubject.m in Sources */ = {isa = PBXBuildFile; fileRef = D76C2AED1F13F61E000EF13D /* FBEventReporterSubject.m */; };
 		D76F95091F56D65C0003D341 /* FBXCTestCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = D76F95071F56D65C0003D341 /* FBXCTestCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1347,6 +1349,8 @@
 		AAFE93B51CE4954500A50F76 /* FBSimulatorEraseStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorEraseStrategy.m; sourceTree = "<group>"; };
 		C0B32FC71E4E459700A48CF4 /* FBArchitecture.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBArchitecture.h; sourceTree = "<group>"; };
 		C0B32FC81E4E459700A48CF4 /* FBArchitecture.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBArchitecture.m; sourceTree = "<group>"; };
+		D75ACC69264BEF82009862C4 /* FBOToolDynamicLibs.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBOToolDynamicLibs.m; sourceTree = "<group>"; };
+		D75ACC6A264BEF82009862C4 /* FBOToolDynamicLibs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBOToolDynamicLibs.h; sourceTree = "<group>"; };
 		D76C2AEC1F13F61E000EF13D /* FBEventReporterSubject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FBEventReporterSubject.h; path = Reporting/FBEventReporterSubject.h; sourceTree = "<group>"; };
 		D76C2AED1F13F61E000EF13D /* FBEventReporterSubject.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = FBEventReporterSubject.m; path = Reporting/FBEventReporterSubject.m; sourceTree = "<group>"; };
 		D76F95071F56D65C0003D341 /* FBXCTestCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestCommands.h; sourceTree = "<group>"; };
@@ -2613,6 +2617,8 @@
 		EE4F0D691C91B82700608E89 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
+				D75ACC6A264BEF82009862C4 /* FBOToolDynamicLibs.h */,
+				D75ACC69264BEF82009862C4 /* FBOToolDynamicLibs.m */,
 				71C4D3182638555D00DD186B /* FBOToolOperation.h */,
 				71C4D3172638555D00DD186B /* FBOToolOperation.m */,
 				1C5091E624EDB8F600FAB67E /* FBXCTestResultBundleParser.h */,
@@ -3005,6 +3011,7 @@
 				842A2B731F6AC89C00063EB1 /* FBActivityRecord.h in Headers */,
 				D7E70C122440A2B40092422C /* FBAttachment.h in Headers */,
 				AAFD455925E54161001407CC /* FBTestConfiguration.h in Headers */,
+				D75ACC6C264BEF82009862C4 /* FBOToolDynamicLibs.h in Headers */,
 				1C5091E824EDB8F600FAB67E /* FBXCTestResultBundleParser.h in Headers */,
 				AA7FA7AA1CDCF26E00614A61 /* FBTestManagerResultSummary.h in Headers */,
 				2F8294D31FBC798C0011E722 /* FBLogicXCTestReporter.h in Headers */,
@@ -3588,6 +3595,7 @@
 				1F6F440F239B6A55001C7F72 /* FBXCTestResultToolOperation.m in Sources */,
 				AA1F2C8B1CEA4176003E0BDE /* XCTestBootstrapFrameworkLoader.m in Sources */,
 				AA9738BB1EE11BED002802F1 /* FBXCTestConfiguration.m in Sources */,
+				D75ACC6B264BEF82009862C4 /* FBOToolDynamicLibs.m in Sources */,
 				AA12D5451CE1086300CCD944 /* FBTestReporterForwarder.m in Sources */,
 				1C5091E924EDB8F600FAB67E /* FBXCTestResultBundleParser.m in Sources */,
 				AAE5A0821EDF8C9C00A1A811 /* FBXCTestLogger.m in Sources */,
