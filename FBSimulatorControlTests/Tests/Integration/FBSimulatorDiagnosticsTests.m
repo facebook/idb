@@ -41,6 +41,8 @@
   }
 
   NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
+  XCTAssertTrue([[NSFileManager defaultManager] createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:nil]);
+
   NSString *stdErrPath = [path stringByAppendingPathComponent:@"stderr.log"];
   NSString *stdOutPath = [path stringByAppendingPathComponent:@"stdout.log"];
 
