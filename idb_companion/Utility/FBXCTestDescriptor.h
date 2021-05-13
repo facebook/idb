@@ -228,10 +228,10 @@ The Initializer for UI Tests.
  @param testApps the materialized Applications that are used as a part of testing.
  @param shims the shims to use for relevant test runs
  @param logger the logger to log to
- @param error an error out for any error that occurs
+ @param queue the queue to be used for async operations
  @return a Future wrapping the test launch configuration if constructed successfully or an error.
  */
-- (FBFuture<FBTestLaunchConfiguration *> *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(nullable FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
+- (FBFuture<FBTestLaunchConfiguration *> *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(nullable FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;
 
 /**
  Obtains the Test Application Components for the provided target and request
