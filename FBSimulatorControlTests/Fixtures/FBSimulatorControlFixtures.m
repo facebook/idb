@@ -72,6 +72,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coveragePath:nil
+    logDirectoryPath:nil
     shims:nil];
 }
 
@@ -92,6 +93,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coveragePath:nil
+    logDirectoryPath:nil
     shims:nil];
 }
 

@@ -95,6 +95,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coveragePath:nil
+    logDirectoryPath:nil
     shims:nil];
 
   __block id<FBiOSTargetOperation> tailLogOperation = nil;

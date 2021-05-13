@@ -43,6 +43,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coveragePath:nil
+    logDirectoryPath:nil
     shims:nil];
 
   NSDictionary *properties = [FBXcodeBuildOperation xctestRunProperties:configuration];

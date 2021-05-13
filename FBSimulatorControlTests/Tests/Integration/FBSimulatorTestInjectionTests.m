@@ -97,6 +97,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coveragePath:nil
+    logDirectoryPath:nil
     shims:nil];
 
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
@@ -134,6 +135,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coveragePath:nil
+    logDirectoryPath:nil
     shims:nil];
 
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
@@ -159,6 +161,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coveragePath:nil
+    logDirectoryPath:nil
     shims:nil];
 
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
