@@ -229,9 +229,9 @@ The Initializer for UI Tests.
  @param shims the shims to use for relevant test runs
  @param logger the logger to log to
  @param error an error out for any error that occurs
- @return a test launch configuration if constructed successfully.
+ @return a Future wrapping the test launch configuration if constructed successfully or an error.
  */
-- (nullable FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(nullable FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
+- (FBFuture<FBTestLaunchConfiguration *> *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(nullable FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Obtains the Test Application Components for the provided target and request
