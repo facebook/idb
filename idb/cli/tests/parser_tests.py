@@ -180,10 +180,15 @@ class TestParser(TestCase):
 
     async def test_list_apps_direct_companion_tcp(self) -> None:
         self.client_mock.list_apps = AsyncMock(return_value=[])
-        await cli_main(cmd_input=["--companion", "thehost:123", "list-apps"])
+        await cli_main(
+            cmd_input=["--companion", "thehost:123", "--companion-tls", "list-apps"]
+        )
         self.client_mock.list_apps.assert_called_once()
         self.client_mock.build.assert_called_once_with(
-            address=TCPAddress(host="thehost", port=123), is_local=False, logger=ANY
+            address=TCPAddress(host="thehost", port=123),
+            is_local=False,
+            logger=ANY,
+            use_tls=True,
         )
 
     async def test_list_apps_direct_companion_uxd(self) -> None:
@@ -191,7 +196,10 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["--companion", "/foo/sock", "list-apps"])
         self.client_mock.list_apps.assert_called_once()
         self.client_mock.build.assert_called_once_with(
-            address=DomainSocketAddress(path="/foo/sock"), is_local=False, logger=ANY
+            address=DomainSocketAddress(path="/foo/sock"),
+            is_local=False,
+            logger=ANY,
+            use_tls=False,
         )
 
     async def test_connect_with_host_and_port(self) -> None:
@@ -470,6 +478,7 @@ class TestParser(TestCase):
         namespace.coverage_output_path = None
         namespace.log_directory_path = None
         namespace.install = False
+        namespace.companion_tls = False
         return namespace
 
     async def test_xctest_run_app(self) -> None:
@@ -561,6 +570,7 @@ class TestParser(TestCase):
             namespace.reply_fd = None
             namespace.prefer_ipv6 = False
             namespace.notifier_path = None
+            namespace.companion_tls = False
             mock.assert_called_once_with(namespace)
 
     async def test_terminate(self) -> None:
@@ -586,6 +596,7 @@ class TestParser(TestCase):
             namespace.udid = "1234"
             namespace.json = False
             namespace.log_arguments = []
+            namespace.companion_tls = False
             mock.assert_called_once_with(namespace)
 
     async def test_log_arguments(self) -> None:
@@ -604,6 +615,7 @@ class TestParser(TestCase):
             namespace.udid = None
             namespace.json = False
             namespace.log_arguments = ["--", "--style", "json"]
+            namespace.companion_tls = False
             mock.assert_called_once_with(namespace)
 
     async def test_clear_keychain(self) -> None:
@@ -659,6 +671,7 @@ class TestParser(TestCase):
             namespace.udid = None
             namespace.json = False
             namespace.output_file = output_file
+            namespace.companion_tls = False
             mock.assert_called_once_with(namespace)
 
     async def test_video_stream(self) -> None:
@@ -685,6 +698,7 @@ class TestParser(TestCase):
                     udid=None,
                     json=False,
                     output_file=output_file,
+                    companion_tls=False,
                 )
             )
 

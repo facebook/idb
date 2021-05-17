@@ -160,6 +160,12 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         "Can also be set with the IDB_COMPANION_LOCAL environment variable",
     )
     parser.add_argument(
+        "--companion-tls",
+        action="store_true",
+        default=False,
+        help="Will force idb client to use TLS encrypted connection to companion",
+    )
+    parser.add_argument(
         "--no-prune-dead-companion",
         dest="prune_dead_companion",
         action="store_false",
