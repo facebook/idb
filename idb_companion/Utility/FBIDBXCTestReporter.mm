@@ -342,7 +342,7 @@
       if (coverageData) {
         responseCaptured.set_coverage_json(coverageData.UTF8String ?: "");
       } else {
-        [self.logger.info logFormat:@"Failed to get coverage data %@", future];
+        [self.logger.info logFormat:@"Failed to get coverage data: %@", future.error.localizedDescription];
       }
       return [FBFuture futureWithResult:NSNull.null];
     }]];
@@ -354,7 +354,7 @@
           idb::Payload *payload = responseCaptured.mutable_log_directory();
           payload->set_data(data.bytes, data.length);
         } else {
-          [self.logger.info logFormat:@"Failed to get log drectory %@", future];
+          [self.logger.info logFormat:@"Failed to get log drectory: %@", future.error.localizedDescription];
         }
         return [FBFuture futureWithResult:NSNull.null];
       }]];
@@ -398,19 +398,37 @@
 
 - (FBFuture<NSString *> *)getCoverageData
 {
+  FBFuture<FBTask<NSNull *, NSString *, NSString *> *> * (^checkXcrunError)(FBTask<NSNull *, NSData *, NSString *> *) =
+    ^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> * (FBTask<NSNull *, NSData *, NSString *> *task) {
+      NSNumber *exitCode = task.exitCode.result;
+      if ([exitCode isEqual:@0]) {
+        return [FBFuture futureWithResult:task];
+      } else {
+        return [[FBControlCoreError
+          describeFormat:@"xcrun failed to export code coverage data %@, %@", exitCode, task.stdErr]
+          failFuture];
+      }
+    };
+  
   NSString *profdataPath = [[self.coveragePath stringByDeletingPathExtension] stringByAppendingPathExtension:@"profdata"];
-  return [self.appUnderTestExitedMutable onQueue:self.queue fmap:^FBFuture<NSString *> *(NSNull* _) {
-    return [[[[FBTaskBuilder
+  return [[[[[self.appUnderTestExitedMutable onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
+    return [[[[[FBTaskBuilder
       withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-profdata", @"merge", @"-o", profdataPath, self.coveragePath]]
-      runUntilCompletion]
-      onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSData *> *> *(id result) {
-        return [[[FBTaskBuilder
-          withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-cov", @"export", @"-instr-profile", profdataPath, self.binaryPath]]
-          withStdOutInMemoryAsString]
-          runUntilCompletion];
-      }] onQueue:self.queue map:^NSString *(FBTask<NSNull *, NSString *, NSData *> *task) {
-          return task.stdOut;
-      }];
+      withStdOutInMemoryAsString]
+      withStdErrInMemoryAsString]
+      withNoUnacceptableStatusCodes]
+      runUntilCompletion];
+  }] onQueue:self.queue fmap:[checkXcrunError copy]
+  ] onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
+      return [[[[[FBTaskBuilder
+        withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-cov", @"export", @"-instr-profile", profdataPath, self.binaryPath]]
+        withStdOutInMemoryAsString]
+        withStdErrInMemoryAsString]
+        withNoUnacceptableStatusCodes]
+        runUntilCompletion];
+  }] onQueue:self.queue fmap:[checkXcrunError copy]
+  ] onQueue:self.queue map:^NSString *(FBTask<NSNull *,NSString *,NSString *> *task) {
+    return task.stdOut;
   }];
 }
 
