@@ -14,7 +14,7 @@
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *reportingTerminatedMutable;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *appUnderTestExitedMutable;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *processUnderTestExitedMutable;
 
 @property (nonatomic, nullable, copy, readwrite) NSString *currentBundleName;
 @property (nonatomic, nullable, copy, readwrite) NSString *currentTestClass;
@@ -42,7 +42,7 @@
   _logger = logger;
   _currentActivityRecords = NSMutableArray.array;
   _reportingTerminatedMutable = FBMutableFuture.future;
-  _appUnderTestExitedMutable = FBMutableFuture.future;
+  _processUnderTestExitedMutable = FBMutableFuture.future;
 
   return self;
 }
@@ -120,8 +120,8 @@
   [self writeResponse:response];
 }
 
-- (void)appUnderTestExited {
-  [self.appUnderTestExitedMutable resolveWithResult:NSNull.null];
+- (void)processUnderTestDidExit {
+  [self.processUnderTestExitedMutable resolveWithResult:NSNull.null];
 }
 
 #pragma mark FBXCTestReporter (Unused)
@@ -409,9 +409,9 @@
           failFuture];
       }
     };
-  
+
   NSString *profdataPath = [[self.coveragePath stringByDeletingPathExtension] stringByAppendingPathExtension:@"profdata"];
-  return [[[[[self.appUnderTestExitedMutable onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
+  return [[[[[self.processUnderTestExitedMutable onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
     return [[[[[FBTaskBuilder
       withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-profdata", @"merge", @"-o", profdataPath, self.coveragePath]]
       withStdOutInMemoryAsString]

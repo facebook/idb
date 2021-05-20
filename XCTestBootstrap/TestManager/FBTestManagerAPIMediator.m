@@ -169,7 +169,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
     launchApplication:self.context.testHostLaunchConfiguration]
     onQueue:self.target.asyncQueue map:^(id<FBLaunchedApplication> launchedApplication) {
       [launchedApplication.applicationTerminated onQueue:self.requestQueue doOnResolved:^(NSNull *_) {
-        [reporter appUnderTestExited];
+        [reporter processUnderTestDidExit];
       }];
       return launchedApplication;
     }]

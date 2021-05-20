@@ -187,6 +187,16 @@ typedef NS_OPTIONS(NSUInteger, FBLogicTestMirrorLogs) {
 @property (nonatomic, readonly) FBLogicTestMirrorLogs mirroring;
 
 /**
+ The path to the coverage file
+*/
+@property (nonatomic, nullable, copy, readonly) NSString *coveragePath;
+
+/**
+ The path to the test bundle binary
+*/
+@property (nonatomic, nullable, copy, readonly) NSString *binaryPath;
+
+/**
  The Directory to use for storing logs generated during the execution of the test run.
  */
 @property (nonatomic, nullable, copy, readonly) NSString *logDirectoryPath;
@@ -194,7 +204,7 @@ typedef NS_OPTIONS(NSUInteger, FBLogicTestMirrorLogs) {
 /**
  The Designated Initializer.
  */
-+ (instancetype)configurationWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory logDirectoryPath:(nullable NSString *)logDirectoryPath testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(nullable NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring;
++ (instancetype)configurationWithShims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(nullable NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring coveragePath:(nullable NSString *)coveragePath binaryPath:(nullable NSString *)binaryPath logDirectoryPath:(nullable NSString *)logDirectoryPath;
 
 @end
 

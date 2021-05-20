@@ -45,6 +45,7 @@
 - (void)didFinishExecutingTestPlan
 {
   [self.reporter didFinishExecutingTestPlan];
+  [self.reporter processUnderTestDidExit];
 }
 
 - (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid

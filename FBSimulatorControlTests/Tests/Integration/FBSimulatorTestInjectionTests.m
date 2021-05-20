@@ -219,7 +219,7 @@
 
 }
 
-- (void)appUnderTestExited
+- (void)processUnderTestDidExit
 {
 
 }

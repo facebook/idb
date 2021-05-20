@@ -147,6 +147,13 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
         logDirectoryPath = dir.path;
         [reporter setLogDirectoryPath:logDirectoryPath];
       }
+      
+      NSString *coveragePath = nil;
+      if (self.collectCoverage) {
+        NSURL *dir = [temporaryDirectory ephemeralTemporaryDirectory];
+        NSString *coverageFileName = [NSString stringWithFormat:@"coverage_%@.profraw", NSUUID.UUID.UUIDString];
+        coveragePath = [dir.path stringByAppendingPathComponent:coverageFileName];
+      }
 
       NSString *testFilter = nil;
       NSArray<NSString *> *testsToSkip = self.testsToSkip.allObjects ?: @[];
@@ -168,12 +175,14 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
         configurationWithShims:shims
         environment:self.environment
         workingDirectory:workingDirectory.path
-        logDirectoryPath:logDirectoryPath
         testBundlePath:testDescriptor.testBundle.path
         waitForDebugger:NO
         timeout:timeout
         testFilter:testFilter
-        mirroring:FBLogicTestMirrorFileLogs];
+        mirroring:FBLogicTestMirrorFileLogs
+        coveragePath:coveragePath
+        binaryPath:testDescriptor.testBundle.binary.path
+        logDirectoryPath:logDirectoryPath];
 
       return [self startTestExecution:configuration target:target reporter:reporter logger:logger];
     }];
@@ -190,7 +199,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
       if (completed.error) {
         return [FBFuture futureWithError:completed.error];
       }
-      FBIDBTestOperation *operation = [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:nil coveragePath:nil binaryPath:nil reporter:reporter logger:logger completed:completed queue:target.workQueue];
+      FBIDBTestOperation *operation = [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:nil coveragePath:configuration.coveragePath binaryPath:configuration.binaryPath reporter:reporter logger:logger completed:completed queue:target.workQueue];
       return [FBFuture futureWithResult:operation];
     }];
 }

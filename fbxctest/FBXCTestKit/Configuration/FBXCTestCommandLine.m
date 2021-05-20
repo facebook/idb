@@ -75,12 +75,14 @@
       configurationWithShims:shims
       environment:environment
       workingDirectory:workingDirectory
-      logDirectoryPath:nil
       testBundlePath:testBundlePath
       waitForDebugger:waitForDebugger
       timeout:timeout
       testFilter:testFilter
-      mirroring:FBLogicTestMirrorFileLogs];
+      mirroring:FBLogicTestMirrorFileLogs
+      coveragePath:nil
+      binaryPath:nil
+      logDirectoryPath:nil];
   } else if ([argumentSet containsObject:@"-appTest"]) {
     NSMutableDictionary<NSString *, NSString *> *allEnvironment = [NSProcessInfo.processInfo.environment mutableCopy];
     [allEnvironment addEntriesFromDictionary:environment];
