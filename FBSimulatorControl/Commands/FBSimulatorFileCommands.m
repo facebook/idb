@@ -43,6 +43,8 @@
       NSURL *basePathURL =  [NSURL fileURLWithPathComponents:@[dataContainer, destinationPath]];
       NSFileManager *fileManager = NSFileManager.defaultManager;
       NSURL *destURL = [basePathURL URLByAppendingPathComponent:sourcePath.lastPathComponent];
+      // Attempt to delete first to overwrite
+      [fileManager removeItemAtURL:destURL error:nil];
       if (![fileManager copyItemAtURL:sourcePath toURL:destURL error:&error]) {
         return [[[FBSimulatorError
           describeFormat:@"Could not copy from %@ to %@: %@", sourcePath, destURL, error]
