@@ -97,7 +97,7 @@ static Status drain_writer(FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *ta
     }
     T response;
     idb::Payload *payload = response.mutable_payload();
-    payload->set_data(buffer, size);
+    payload->set_data(reinterpret_cast<void *>(buffer), size);
     stream->Write(response);
   }
   [inputStream close];
