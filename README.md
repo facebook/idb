@@ -83,13 +83,19 @@ pip3 install .
 
 To build the objective-c/c++ part:
 
-Make sure you have installed gRPC dependencies: ```brew tap grpc/grpc && brew install grpc```
+Firstly, install idb's dependencies: 
+```
+brew tap grpc/grpc
+brew install grpc
+brew install cocoapods
+pod install
+```
+
+This will open an Xcode project that you can build and run:
 
 ```
 open idb_companion.xcworkspace
 ```
-
-This will open an Xcode project that you can build and run.
 
 After opening the Xcode project you will need to add a `--udid` argument for launch.
 - Get the UDID of either your device or simulator
