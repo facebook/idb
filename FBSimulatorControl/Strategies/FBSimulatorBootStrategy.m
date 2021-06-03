@@ -507,7 +507,7 @@
       return [[self.appLauncher launchSimulatorApplication] mapReplace:connection];
     }]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
-      if (!self.configuration.shouldConnectBridge) {
+      if (!self.configuration.shouldConnectBridge || FBXcodeConfiguration.isXcode12_5OrGreater) {
         return [FBFuture futureWithResult:connection];
       }
       return [[connection

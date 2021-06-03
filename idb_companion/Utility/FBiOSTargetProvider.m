@@ -53,6 +53,11 @@
   if (![lifecycle conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
     return [FBFuture futureWithResult:target];;
   }
+  
+  if (FBXcodeConfiguration.isXcode12_5OrGreater) {
+    return [FBFuture futureWithResult:target];
+  }
+  
   return [[lifecycle
     connectToBridge]
     mapReplace:target];
