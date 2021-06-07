@@ -720,6 +720,9 @@
 		2F8294CF1FBC5AAE0011E722 /* FBLogicReporterAdapterTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBLogicReporterAdapterTests.m; sourceTree = "<group>"; };
 		2FB8110E1FB5C97400A848FB /* FBDeviceLogCommands.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBDeviceLogCommands.h; sourceTree = "<group>"; };
 		2FB8110F1FB5C97400A848FB /* FBDeviceLogCommands.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBDeviceLogCommands.m; sourceTree = "<group>"; };
+		30DF57E5266E3C6F00EC9015 /* XCTTestIdentifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTTestIdentifier.h; sourceTree = "<group>"; };
+		30DF57E6266E3C6F00EC9015 /* XCTTestIdentifierSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTTestIdentifierSet.h; sourceTree = "<group>"; };
+		30DF57E7266E3C6F00EC9015 /* XCTTestIdentifierSetBuilder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTTestIdentifierSetBuilder.h; sourceTree = "<group>"; };
 		71C4D3172638555D00DD186B /* FBOToolOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBOToolOperation.m; sourceTree = "<group>"; };
 		71C4D3182638555D00DD186B /* FBOToolOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBOToolOperation.h; sourceTree = "<group>"; };
 		7352B4D81F44BE4100B6D0EA /* FBXcodeConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXcodeConfiguration.h; sourceTree = "<group>"; };
@@ -2683,6 +2686,9 @@
 		EE4F0DD21C91B85800608E89 /* XCTest */ = {
 			isa = PBXGroup;
 			children = (
+				30DF57E5266E3C6F00EC9015 /* XCTTestIdentifier.h */,
+				30DF57E6266E3C6F00EC9015 /* XCTTestIdentifierSet.h */,
+				30DF57E7266E3C6F00EC9015 /* XCTTestIdentifierSetBuilder.h */,
 				EE4F0DD31C91B85800608E89 /* CDStructures.h */,
 				EE4F0DD41C91B85800608E89 /* XCTestConfiguration.h */,
 				EE4F0DD51C91B85800608E89 /* XCTestDriverInterface-Protocol.h */,
