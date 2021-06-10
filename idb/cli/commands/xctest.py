@@ -6,6 +6,7 @@
 
 import json
 from argparse import REMAINDER, ArgumentParser, Namespace
+from pathlib import Path
 from typing import Optional, Set
 
 from idb.cli import ClientCommand
@@ -103,8 +104,9 @@ class XctestListTestsCommand(ClientCommand):
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         if args.install:
             await self.install_bundles(args, client)
+        app_path = args.app_path and str(Path(args.app_path).resolve(strict=True))
         tests = await client.list_test_bundle(
-            test_bundle_id=args.test_bundle_id, app_path=args.app_path
+            test_bundle_id=args.test_bundle_id, app_path=app_path
         )
         if args.json:
             print(json.dumps(tests))
