@@ -238,7 +238,14 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath = @"FB
 
 + (nullable NSString *)deviceSetPathForApplicationProcess:(FBProcessInfo *)process
 {
-  return process.environment[FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath];
+  if (process.environment[FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath]) {
+    return process.environment[FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath];
+  }
+  NSUInteger deviceIndex = [process.arguments indexOfObject:@"-DeviceSetPath"];
+  if (deviceIndex != NSNotFound && deviceIndex + 1 < process.arguments.count) {
+    return process.arguments[deviceIndex + 1];
+  }
+  return nil;
 }
 
 + (NSCharacterSet *)launchdSimEnvironmentVariableUDIDSplitCharacterSet

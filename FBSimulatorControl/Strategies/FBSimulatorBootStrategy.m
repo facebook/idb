@@ -424,7 +424,7 @@
       return [self.simulator resolveState:FBiOSTargetStateBooted];
     }]
     onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (NSNull *_) {
-      FBProcessInfo *containerApplication = [self.simulator.processFetcher simulatorApplicationProcessForSimDevice:self.simulator.device];
+      FBProcessInfo *containerApplication = self.simulator.processFetcher.simulatorApplicationProcessesByDeviceSetPath[self.simulator.set.deviceSet.setPath];
       if (!containerApplication) {
         return [[FBSimulatorError
           describe:@"Could not obtain process info for container application"]
