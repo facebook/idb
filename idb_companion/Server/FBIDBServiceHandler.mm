@@ -928,19 +928,14 @@ Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerRea
       return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
     }
   }
-  FBApplicationLaunchConfiguration *configuration = [FBApplicationLaunchConfiguration
-    configurationWithBundleID:nsstring_from_c_string(start.bundle_id())
+  FBApplicationLaunchConfiguration *configuration = [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:nsstring_from_c_string(start.bundle_id())
     bundleName:nil
     arguments:extract_string_array(start.app_args())
     environment:extract_str_dict(start.env())
+    waitForDebugger:(start.wait_for_debugger() ? YES : NO)
     output:output
     launchMode:start.foreground_if_running() ? FBApplicationLaunchModeForegroundIfRunning : FBApplicationLaunchModeFailIfRunning];
-  if (start.wait_for_debugger()) {
-    configuration = [configuration withWaitForDebugger:&error];
-    if (error) {
-      return Status(grpc::StatusCode::FAILED_PRECONDITION, error.localizedDescription.UTF8String);
-    }
-  }
   id<FBLaunchedApplication> launchedApp = [[_commandExecutor launch_app:configuration] block:&error];
   if (!launchedApp) {
     if (error.code != 0) {

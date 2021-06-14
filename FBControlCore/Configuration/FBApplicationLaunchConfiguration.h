@@ -37,67 +37,11 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleName the BundleName (CFBundleName) of the App to Launch. May be nil.
  @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
  @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
- @param output the output configuration for the launched process.
- @param launchMode an enum that describes how to launch the application
- @return a new Configuration Object with the arguments applied.
- */
-+ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output launchMode:(FBApplicationLaunchMode)launchMode;
-
-/**
- Creates and returns a new Configuration with the provided parameters.
-
- @param application the Application to Launch.
- @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
- @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
  @param waitForDebugger a boolean describing whether the Application should stop after Launch and wait for a debugger to be attached.
  @param output the output configuration for the launched process.
- @return a new Configuration Object with the arguments applied.
- */
-+ (instancetype)configurationWithApplication:(FBBundleDescriptor *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output;
-
-/**
- Creates and returns a new Configuration with the provided parameters.
-
- @param bundleID the Bundle ID (CFBundleIdentifier) of the App to Launch. Must not be nil.
- @param bundleName the BundleName (CFBundleName) of the App to Launch. May be nil.
- @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
- @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
- @param waitForDebugger a boolean describing whether the Application should stop after Launch and wait for a debugger to be attached.
- @param output the output configuration for the launched process.
- @return a new Configuration Object with the arguments applied.
- */
-+ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output;
-
-
-/**
- Creates and returns a new Configuration with the provided parameters.
-
- @param bundleID the Bundle ID (CFBundleIdentifier) of the App to Launch. Must not be nil.
- @param bundleName the BundleName (CFBundleName) of the App to Launch. May be nil.
- @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
- @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
- @param waitForDebugger a boolean describing whether the Application should stop after Launch and wait for a debugger to be attached.
- @param output the output configuration for the launched process.
- @param launchMode an enum that describes how to launch the application
  @return a new Configuration Object with the arguments applied.
  */
 - (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output launchMode:(FBApplicationLaunchMode)launchMode;
-
-/**
- Call if the app launch should wait for a debugger to be attached
-
- @param error set if this conflicts with the exising configuration
- @return new application launch configuration with changes applied.
- */
-- (instancetype)withWaitForDebugger:(NSError **)error;
-
-/**
- Adds output configuration.
-
- @param output output configuration
- @return new application launch configuration with changes applied.
- */
-- (instancetype)withOutput:(FBProcessOutputConfiguration *)output;
 
 /**
  The Bundle ID (CFBundleIdentifier) of the the Application to Launch. Will not be nil.

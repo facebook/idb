@@ -31,26 +31,29 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
     stdErrFuture = [mirrorLogger logConsumptionToFile:stdErrConsumer outputKind:@"err" udid:udid logger:logger];
   }
 
-  return [[[FBFuture futureWithFutures:@[stdOutFuture, stdErrFuture]]
-   onQueue:queue fmap:^ FBFuture<FBProcessOutputConfiguration *> * (NSArray<id<FBDataConsumer, FBDataConsumerLifecycle>> *outputs) {
-    NSError *error = nil;
-    FBProcessOutputConfiguration *processOutput = [FBProcessOutputConfiguration
-      configurationWithStdOut:outputs[0]
-      stdErr:outputs[1]
-      error:&error];
+  return [[[FBFuture
+    futureWithFutures:@[stdOutFuture, stdErrFuture]]
+    onQueue:queue fmap:^ FBFuture<FBProcessOutputConfiguration *> * (NSArray<id<FBDataConsumer, FBDataConsumerLifecycle>> *outputs) {
+      NSError *error = nil;
+      FBProcessOutputConfiguration *processOutput = [FBProcessOutputConfiguration
+        configurationWithStdOut:outputs[0]
+        stdErr:outputs[1]
+        error:&error];
       if (!processOutput) {
         return [[[FBControlCoreError describe:@"Could not build process output"] causedBy:error] failFuture];
       }
-
-    return [FBFuture futureWithResult:processOutput];
-  }] onQueue:queue map:^(FBProcessOutputConfiguration *processOutput) {
-    return [FBApplicationLaunchConfiguration configurationWithBundleID:bundleID
-                                                            bundleName:nil
-                                                            arguments:arguments ?: @[]
-                                                            environment:environment ?: @{}
-                                                            output:processOutput
-                                                            launchMode:FBApplicationLaunchModeFailIfRunning];
-  }];
+      return [FBFuture futureWithResult:processOutput];
+    }]
+    onQueue:queue map:^(FBProcessOutputConfiguration *processOutput) {
+      return [[FBApplicationLaunchConfiguration alloc]
+        initWithBundleID:bundleID
+        bundleName:nil
+        arguments:arguments ?: @[]
+        environment:environment ?: @{}
+        waitForDebugger:NO
+        output:processOutput
+        launchMode:FBApplicationLaunchModeFailIfRunning];
+    }];
 }
 
 static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.

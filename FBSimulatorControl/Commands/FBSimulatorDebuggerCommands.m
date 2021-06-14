@@ -85,11 +85,14 @@
 
 - (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(FBBundleDescriptor *)application port:(in_port_t)port
 {
-  FBApplicationLaunchConfiguration *configuration = [FBApplicationLaunchConfiguration
-    configurationWithApplication:application arguments:@[]
+  FBApplicationLaunchConfiguration *configuration = [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:application.identifier
+    bundleName:application.name
+    arguments:@[]
     environment:@{}
     waitForDebugger:YES
-    output:FBProcessOutputConfiguration.outputToDevNull];
+    output:FBProcessOutputConfiguration.outputToDevNull
+    launchMode:FBApplicationLaunchModeFailIfRunning];
   return [[[self.simulator
     launchApplication:configuration]
     onQueue:self.simulator.workQueue fmap:^(id<FBLaunchedApplication> process) {

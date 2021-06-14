@@ -115,12 +115,14 @@ static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
   if (!application) {
     return nil;
   }
-  return [FBApplicationLaunchConfiguration
-    configurationWithApplication:application
+  return [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:application.identifier
+    bundleName:application.name
     arguments:@[]
     environment:@{@"FROM" : @"FBSIMULATORCONTROL"}
     waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull];
+    output:FBProcessOutputConfiguration.outputToDevNull
+    launchMode:FBApplicationLaunchModeFailIfRunning];
 }
 
 - (FBApplicationLaunchConfiguration *)safariAppLaunch
@@ -130,11 +132,12 @@ static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
 
 - (FBApplicationLaunchConfiguration *)safariAppLaunchWithMode:(FBApplicationLaunchMode)launchMode
 {
-  return [FBApplicationLaunchConfiguration
-    configurationWithBundleID:MobileSafariBundleIdentifier
+  return [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:MobileSafariBundleIdentifier
     bundleName:MobileSafariBundleName
     arguments:@[]
     environment:@{@"FROM" : @"FBSIMULATORCONTROL"}
+    waitForDebugger:NO
     output:FBProcessOutputConfiguration.outputToDevNull
     launchMode:launchMode];
 }

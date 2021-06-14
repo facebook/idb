@@ -56,11 +56,12 @@
 
 + (FBApplicationLaunchConfiguration *)prepareApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration withTestRunnerConfiguration:(FBTestRunnerConfiguration *)testRunnerConfiguration
 {
-  return [FBApplicationLaunchConfiguration
-    configurationWithBundleID:testRunnerConfiguration.testRunner.identifier
+  return [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:testRunnerConfiguration.testRunner.identifier
     bundleName:testRunnerConfiguration.testRunner.identifier
     arguments:[self argumentsFromConfiguration:testRunnerConfiguration attributes:applicationLaunchConfiguration.arguments]
     environment:[self environmentFromConfiguration:testRunnerConfiguration environment:applicationLaunchConfiguration.environment]
+    waitForDebugger:NO
     output:applicationLaunchConfiguration.output
     launchMode:FBApplicationLaunchModeFailIfRunning];
 }

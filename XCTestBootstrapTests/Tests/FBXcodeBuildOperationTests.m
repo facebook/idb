@@ -20,13 +20,14 @@
   NSString *testHostPath = @"/tmp/test_host_path.app";
   NSString *testBundlePath = @"/tmp/test_host_path.app/test_bundle_path.xctest";
 
-  FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-    configurationWithBundleID:@"com.bundle.id"
+  FBApplicationLaunchConfiguration *appLaunch = [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:@"com.bundle.id"
     bundleName:@"BundleName"
     arguments:@[]
     environment:@{}
     waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull];
+    output:FBProcessOutputConfiguration.outputToDevNull
+    launchMode:FBApplicationLaunchModeFailIfRunning];
 
   FBTestLaunchConfiguration *configuration = [[FBTestLaunchConfiguration alloc]
     initWithTestBundlePath:testBundlePath

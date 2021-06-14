@@ -197,11 +197,12 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   NSAssert(processOutput, @"Could not construct application output configuration %@", error);
 
   DTXRemoteInvocationReceipt *receipt = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
-  FBApplicationLaunchConfiguration *launch = [FBApplicationLaunchConfiguration
-    configurationWithBundleID:bundleID
+  FBApplicationLaunchConfiguration *launch = [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:bundleID
     bundleName:bundleID
     arguments:arguments
     environment:targetEnvironment
+    waitForDebugger:NO
     output:processOutput
     launchMode:FBApplicationLaunchModeFailIfRunning];
   id token = @(receipt.hash);

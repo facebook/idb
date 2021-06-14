@@ -31,11 +31,12 @@
   NSMutableDictionary<NSString *, NSString *> *environment = [appLaunch.environment mutableCopy];
   environment[@"SHIMULATOR_CRASH_AFTER"] = @"1";
   environment[@"DYLD_INSERT_LIBRARIES"] = path;
-  appLaunch = [FBApplicationLaunchConfiguration
-    configurationWithBundleID:appLaunch.bundleID
+  appLaunch = [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:appLaunch.bundleID
     bundleName:appLaunch.bundleName
     arguments:appLaunch.arguments
     environment:environment
+    waitForDebugger:NO
     output:appLaunch.output
     launchMode:appLaunch.launchMode];
 

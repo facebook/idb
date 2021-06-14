@@ -65,7 +65,7 @@
   FBSimulator *simulator = self.simulator;
   return [[[[FBFuture futureWithFutures:@[
       [self ensureApplicationIsInstalled:appLaunch.bundleID],
-      [self confirmApplicationLaunchState:appLaunch.bundleID launchMode:appLaunch.launchMode],
+      [self confirmApplicationLaunchState:appLaunch.bundleID launchMode:appLaunch.launchMode waitForDebugger:appLaunch.waitForDebugger],
     ]]
     onQueue:simulator.workQueue fmap:^(id _) {
       return [appLaunch.output createIOForTarget:simulator];
@@ -99,8 +99,14 @@
     }];
 }
 
-- (FBFuture<NSNumber *> *)confirmApplicationLaunchState:(NSString *)bundleID launchMode:(FBApplicationLaunchMode)launchMode
+- (FBFuture<NSNumber *> *)confirmApplicationLaunchState:(NSString *)bundleID launchMode:(FBApplicationLaunchMode)launchMode waitForDebugger:(BOOL)waitForDebugger
 {
+  if (waitForDebugger && launchMode == FBApplicationLaunchModeForegroundIfRunning) {
+    return [[FBSimulatorError
+      describe:@"'Foreground if running' and 'wait for debugger cannot be applied simultaneously"]
+      failFuture];
+  }
+
   FBSimulator *simulator = self.simulator;
   return [[simulator
     processIDWithBundleID:bundleID]

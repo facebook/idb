@@ -81,7 +81,14 @@
   NSString *stdErrPath = [path stringByAppendingPathComponent:@"stderr.log"];
   NSString *stdOutPath = [path stringByAppendingPathComponent:@"stdout.log"];
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration configurationWithStdOut:stdOutPath stdErr:stdErrPath error:nil];
-  FBApplicationLaunchConfiguration *applicationLaunchConfiguration = [self.safariAppLaunch withOutput:output];
+  FBApplicationLaunchConfiguration *applicationLaunchConfiguration = [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:self.safariAppLaunch.bundleID
+    bundleName:self.safariAppLaunch.bundleName
+    arguments:self.safariAppLaunch.arguments
+    environment:self.safariAppLaunch.environment
+    waitForDebugger:NO
+    output:output
+    launchMode:self.safariAppLaunch.launchMode];
   FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration alloc]
     initWithTestBundlePath:self.testLaunchSafari.testBundlePath
     applicationLaunchConfiguration:applicationLaunchConfiguration

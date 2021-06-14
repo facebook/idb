@@ -53,11 +53,12 @@
   FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch;
   NSMutableDictionary<NSString *, NSString *> *environment = [appLaunch.environment mutableCopy];
   environment[@"DYLD_INSERT_LIBRARIES"] = shimulatorPath;
-  appLaunch = [FBApplicationLaunchConfiguration
-    configurationWithBundleID:appLaunch.bundleID
+  appLaunch = [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:appLaunch.bundleID
     bundleName:appLaunch.bundleName
     arguments:appLaunch.arguments
     environment:environment
+    waitForDebugger:NO
     output:output
     launchMode:appLaunch.launchMode];
 
