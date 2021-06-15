@@ -321,7 +321,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     arguments:configuration.arguments
     environment:environment
     waitForDebugger:configuration.waitForDebugger
-    output:configuration.output
+    io:configuration.io
     launchMode:configuration.launchMode];
   return [self.target launchApplication:derived];
 }

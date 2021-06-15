@@ -63,25 +63,17 @@
 - (FBFuture<FBSimulatorApplicationOperation *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch
 {
   FBSimulator *simulator = self.simulator;
-  return [[[[FBFuture futureWithFutures:@[
+  FBProcessIO *io = appLaunch.io;
+  return [[[FBFuture futureWithFutures:@[
       [self ensureApplicationIsInstalled:appLaunch.bundleID],
       [self confirmApplicationLaunchState:appLaunch.bundleID launchMode:appLaunch.launchMode waitForDebugger:appLaunch.waitForDebugger],
     ]]
     onQueue:simulator.workQueue fmap:^(id _) {
-      return [appLaunch.output createIOForTarget:simulator];
+      return [io attachViaFile];
     }]
-    onQueue:simulator.workQueue fmap:^(FBProcessIO *io) {
-      return [FBFuture futureWithFutures:@[
-          [io.stdOut providedThroughFile],
-          [io.stdErr providedThroughFile],
-      ]];
-    }]
-    onQueue:simulator.workQueue fmap:^ FBFuture<FBSimulatorApplicationOperation *> * (NSArray<id<FBProcessFileOutput>> *outputs) {
-      id<FBProcessFileOutput> stdOut = outputs[0];
-      id<FBProcessFileOutput> stdErr = outputs[1];
-
-      FBFuture<NSNumber *> *launch = [self launchApplication:appLaunch stdOut:stdOut stdErr:stdErr];
-      return [FBSimulatorApplicationOperation operationWithSimulator:simulator configuration:appLaunch stdOut:stdOut stdErr:stdErr launchFuture:launch];
+    onQueue:simulator.workQueue fmap:^ FBFuture<FBSimulatorApplicationOperation *> * (FBProcessFileAttachment *attachment) {
+      FBFuture<NSNumber *> *launch = [self launchApplication:appLaunch stdOut:attachment.stdOut stdErr:attachment.stdErr];
+      return [FBSimulatorApplicationOperation operationWithSimulator:simulator configuration:appLaunch stdOut:attachment.stdOut stdErr:attachment.stdErr launchFuture:launch];
     }];
 }
 

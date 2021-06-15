@@ -26,7 +26,7 @@
     arguments:@[]
     environment:@{}
     waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull
+    io:FBProcessIO.outputToDevNull
     launchMode:FBApplicationLaunchModeFailIfRunning];
 
   FBTestLaunchConfiguration *configuration = [[FBTestLaunchConfiguration alloc]

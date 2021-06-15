@@ -27,6 +27,23 @@
 
 @end
 
+@implementation FBProcessFileAttachment
+
+- (instancetype)initWithStdOut:(nullable id<FBProcessFileOutput>)stdOut stdErr:(nullable id<FBProcessFileOutput>)stdErr
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _stdOut = stdOut;
+  _stdErr = stdErr;
+
+  return self;
+}
+
+@end
+
 @implementation FBProcessIO
 
 - (instancetype)initWithStdIn:(nullable FBProcessInput *)stdIn stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr
@@ -42,6 +59,11 @@
   _queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
 
   return self;
+}
+
++ (instancetype)outputToDevNull
+{
+  return [[self alloc] initWithStdIn:nil stdOut:FBProcessOutput.outputForNullDevice stdErr:FBProcessOutput.outputForNullDevice];
 }
 
 #pragma mark Methods
@@ -82,6 +104,33 @@
     }];
 }
 
+- (FBFuture<FBProcessFileAttachment *> *)attachViaFile
+{
+  return [[FBFuture
+    futureWithFutures:@[
+      [self wrapFileAttachment:self.stdOut],
+      [self wrapFileAttachment:self.stdErr],
+    ]]
+    onQueue:self.queue fmap:^ FBFuture * (NSArray<id> *attachments) {
+      id stdOut = attachments[0];
+      if ([stdOut isKindOfClass:NSError.class]) {
+        return [self detachRepropogate:stdOut];
+      }
+      if ([stdOut isKindOfClass:NSNumber.class]) {
+        stdOut = nil;
+      }
+      id stdErr = attachments[1];
+      if ([stdErr isKindOfClass:NSError.class]) {
+        return [self detachRepropogate:stdErr];
+      }
+      if ([stdErr isKindOfClass:NSNumber.class]) {
+        stdErr = nil;
+      }
+      // Everything is setup, launch the process now.
+      return [FBFuture futureWithResult:[[FBProcessFileAttachment alloc] initWithStdOut:stdOut stdErr:stdErr]];
+    }];
+}
+
 - (FBFuture<NSNull *> *)detach
 {
   return [[FBFuture
@@ -110,6 +159,18 @@
   }
   return [[stream
     attach]
+    onQueue:self.queue handleError:^(NSError *error) {
+      return [FBFuture futureWithResult:error];
+    }];
+}
+
+- (FBFuture *)wrapFileAttachment:(id<FBProcessOutput>)output
+{
+  if (!output) {
+    return [FBFuture futureWithResult:@YES];
+  }
+  return [[output
+    providedThroughFile]
     onQueue:self.queue handleError:^(NSError *error) {
       return [FBFuture futureWithResult:error];
     }];

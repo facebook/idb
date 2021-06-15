@@ -6,15 +6,14 @@
  */
 
 #import "FBProcessLaunchConfiguration.h"
-#import "FBProcessOutputConfiguration.h"
 
 #import <FBControlCore/FBControlCore.h>
 
 @implementation FBAgentLaunchConfiguration
 
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output mode:(FBAgentLaunchMode)mode
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io mode:(FBAgentLaunchMode)mode;
 {
-  self = [super initWithArguments:arguments environment:environment output:output];
+  self = [super initWithArguments:arguments environment:environment io:io];
   if (!self) {
     return nil;
   }
@@ -50,7 +49,7 @@
     self.launchPath,
     [FBCollectionInformation oneLineDescriptionFromArray:self.arguments],
     [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
-    self.output
+    self.io
   ];
 }
 

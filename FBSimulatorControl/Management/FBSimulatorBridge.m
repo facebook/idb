@@ -122,19 +122,16 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
   }
   id<FBControlCoreLogger> logger = [simulator.logger withName:@"SimulatorBridge"];
   id<FBNotifyingBuffer> buffer = FBDataBuffer.notifyingBuffer;
-  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
-    configurationWithStdOut:buffer
-    stdErr:[FBLoggingDataConsumer consumerWithLogger:logger]
-    error:&error];
-  if (!output) {
-    return [FBFuture futureWithError:error];
-  }
+  FBProcessIO *processIO = [[FBProcessIO alloc]
+    initWithStdIn:nil
+    stdOut:[FBProcessOutput outputForDataConsumer:buffer]
+    stdErr:[FBProcessOutput outputForLogger:logger]];
 
   FBAgentLaunchConfiguration *config = [[FBAgentLaunchConfiguration alloc]
     initWithLaunchPath:bridgeLaunchPath
     arguments:@[portName]
     environment:@{}
-    output:output
+    io:processIO
     mode:FBAgentLaunchModeDefault];
 
   [logger logFormat:@"Launching SimulatorBridge agent for %@", portName];

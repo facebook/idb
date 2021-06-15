@@ -6,15 +6,14 @@
  */
 
 #import "FBProcessLaunchConfiguration.h"
-#import "FBProcessOutputConfiguration.h"
 
 #import <FBControlCore/FBControlCore.h>
 
 @implementation FBApplicationLaunchConfiguration
 
-- (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output launchMode:(FBApplicationLaunchMode)launchMode
+- (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger io:(FBProcessIO *)io launchMode:(FBApplicationLaunchMode)launchMode
 {
-  self = [super initWithArguments:arguments environment:environment output:output];
+  self = [super initWithArguments:arguments environment:environment io:io];
   if (!self) {
     return nil;
   }

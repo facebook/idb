@@ -188,13 +188,10 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   [targetEnvironment addEntriesFromDictionary:self.context.testedApplicationAdditionalEnvironment];
   [targetEnvironment addEntriesFromDictionary:environment];
 
-
-  NSError *error = nil;
-  FBProcessOutputConfiguration *processOutput = [FBProcessOutputConfiguration
-    configurationWithStdOut:[FBLoggingDataConsumer consumerWithLogger:self.logger]
-    stdErr:[FBLoggingDataConsumer consumerWithLogger:self.logger]
-    error:&error];
-  NSAssert(processOutput, @"Could not construct application output configuration %@", error);
+  FBProcessIO *processIO = [[FBProcessIO alloc]
+    initWithStdIn:nil
+    stdOut:[FBProcessOutput outputForLogger:self.logger]
+    stdErr:[FBProcessOutput outputForLogger:self.logger]];
 
   DTXRemoteInvocationReceipt *receipt = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
   FBApplicationLaunchConfiguration *launch = [[FBApplicationLaunchConfiguration alloc]
@@ -203,7 +200,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
     arguments:arguments
     environment:targetEnvironment
     waitForDebugger:NO
-    output:processOutput
+    io:processIO
     launchMode:FBApplicationLaunchModeFailIfRunning];
   id token = @(receipt.hash);
 

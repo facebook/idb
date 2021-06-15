@@ -247,7 +247,7 @@
     initWithLaunchPath:self.launchctlLaunchPath
     arguments:arguments
     environment:@{}
-    output:FBProcessOutputConfiguration.outputToDevNull
+    io:FBProcessIO.outputToDevNull
     mode:FBAgentLaunchModeDefault];
 
   // Spawn and get the output

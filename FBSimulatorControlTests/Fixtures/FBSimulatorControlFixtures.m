@@ -121,7 +121,7 @@ static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
     arguments:@[]
     environment:@{@"FROM" : @"FBSIMULATORCONTROL"}
     waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull
+    io:FBProcessIO.outputToDevNull
     launchMode:FBApplicationLaunchModeFailIfRunning];
 }
 
@@ -138,7 +138,7 @@ static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
     arguments:@[]
     environment:@{@"FROM" : @"FBSIMULATORCONTROL"}
     waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull
+    io:FBProcessIO.outputToDevNull
     launchMode:launchMode];
 }
 
@@ -148,7 +148,7 @@ static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
     initWithLaunchPath:[FBBinaryDescriptor binaryWithPath:NSProcessInfo.processInfo.arguments[0] error:nil].path
     arguments:@[@"BINGBONG"]
     environment:@{@"FIB" : @"BLE"}
-    output:FBProcessOutputConfiguration.outputToDevNull
+    io:FBProcessIO.outputToDevNull
     mode:FBAgentLaunchModeDefault];
 }
 

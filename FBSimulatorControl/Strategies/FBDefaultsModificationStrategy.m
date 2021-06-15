@@ -106,7 +106,7 @@
     initWithLaunchPath:self.defaultsBinary
     arguments:arguments
     environment:@{}
-    output:FBProcessOutputConfiguration.outputToDevNull
+    io:FBProcessIO.outputToDevNull
     mode:FBAgentLaunchModeDefault];
 
   // Run the defaults command.

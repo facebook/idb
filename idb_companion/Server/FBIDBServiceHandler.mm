@@ -164,9 +164,9 @@ static FBProcessInput<NSOutputStream *> *pipe_to_input_output(const idb::Payload
 return input;
 }
 
-static id<FBDataConsumerLifecycle> pipe_output(const idb::LaunchResponse::Interface interface, dispatch_queue_t queue, grpc::ServerReaderWriter<idb::LaunchResponse, idb::LaunchRequest> *stream)
+static id<FBDataConsumer, FBDataConsumerLifecycle> pipe_output(const idb::LaunchResponse::Interface interface, dispatch_queue_t queue, grpc::ServerReaderWriter<idb::LaunchResponse, idb::LaunchRequest> *stream)
 {
-  id<FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer asynchronousDataConsumerOnQueue:queue consumer:^(NSData *data) {
+  id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer asynchronousDataConsumerOnQueue:queue consumer:^(NSData *data) {
     idb::LaunchResponse response;
     response.set_interface(interface);
     idb::LaunchResponse_Pipe *pipe = response.mutable_pipe();
@@ -911,30 +911,29 @@ Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerRea
   stream->Read(&request);
   idb::LaunchRequest_Start start = request.start();
   NSError *error = nil;
-  FBProcessOutputConfiguration *output = FBProcessOutputConfiguration.outputToDevNull;
+  FBProcessOutput *stdOut = FBProcessOutput.outputForNullDevice;
+  FBProcessOutput *stdErr = FBProcessOutput.outputForNullDevice;
   NSMutableArray<FBFuture *> *completions = NSMutableArray.array;
   if (start.wait_for()) {
     dispatch_queue_t writeQueue = dispatch_queue_create("com.facebook.idb.launch.write", DISPATCH_QUEUE_SERIAL);
-    id<FBDataConsumerLifecycle> consumer = pipe_output(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDOUT, writeQueue, stream);
+    id<FBDataConsumer, FBDataConsumerLifecycle> consumer = pipe_output(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDOUT, writeQueue, stream);
     [completions addObject:consumer.finishedConsuming];
-    output = [output withStdOut:consumer error:&error];
-    if (!output) {
-      return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
-    }
+    stdOut = [FBProcessOutput outputForDataConsumer:consumer];
     consumer = pipe_output(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDERR, writeQueue, stream);
     [completions addObject:consumer.finishedConsuming];
-    output = [output withStdErr:consumer error:&error];
-    if (!output) {
-      return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
-    }
+    stdErr = [FBProcessOutput outputForDataConsumer:consumer];
   }
+  FBProcessIO *io = [[FBProcessIO alloc]
+    initWithStdIn:nil
+    stdOut:stdOut
+    stdErr:stdErr];
   FBApplicationLaunchConfiguration *configuration = [[FBApplicationLaunchConfiguration alloc]
     initWithBundleID:nsstring_from_c_string(start.bundle_id())
     bundleName:nil
     arguments:extract_string_array(start.app_args())
     environment:extract_str_dict(start.env())
     waitForDebugger:(start.wait_for_debugger() ? YES : NO)
-    output:output
+    io:io
     launchMode:start.foreground_if_running() ? FBApplicationLaunchModeForegroundIfRunning : FBApplicationLaunchModeFailIfRunning];
   id<FBLaunchedApplication> launchedApp = [[_commandExecutor launch_app:configuration] block:&error];
   if (!launchedApp) {

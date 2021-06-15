@@ -52,18 +52,8 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 - (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch
 {
   FBSimulator *simulator = self.simulator;
-  return [[agentLaunch.output
-    createIOForTarget:simulator]
-    onQueue:simulator.workQueue fmap:^(FBProcessIO *io) {
-      return [self launchAgent:agentLaunch io:io];
-    }];
-}
 
-- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch io:(FBProcessIO *)io
-{
-  FBSimulator *simulator = self.simulator;
-
-  return [[io
+  return [[agentLaunch.io
     attach]
     onQueue:simulator.workQueue fmap:^(FBProcessIOAttachment *attachment) {
       // Launch the Process
@@ -83,8 +73,8 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
       return [FBSimulatorAgentOperation
         operationWithSimulator:simulator
         configuration:agentLaunch
-        stdOut:io.stdOut
-        stdErr:io.stdErr
+        stdOut:agentLaunch.io.stdOut
+        stdErr:agentLaunch.io.stdErr
         launchFuture:launchFuture
         processStatusFuture:processStatusFuture];
     }];
@@ -94,14 +84,8 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
 - (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBAgentLaunchConfiguration *)agentLaunch
 {
-  return [self launchAndNotifyOfCompletion:agentLaunch consumer:[FBNullDataConsumer new]];
-}
-
-- (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBAgentLaunchConfiguration *)agentLaunch consumer:(id<FBDataConsumer>)consumer
-{
-  FBProcessIO *io = [[FBProcessIO alloc] initWithStdIn:nil stdOut:[FBProcessOutput outputForDataConsumer:consumer] stdErr:FBProcessOutput.outputForNullDevice];
   return [[self
-    launchAgent:agentLaunch io:io]
+    launchAgent:agentLaunch]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorAgentOperation *operation) {
       return [operation exitCode];
     }];
@@ -110,8 +94,18 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 - (FBFuture<NSString *> *)launchConsumingStdout:(FBAgentLaunchConfiguration *)agentLaunch
 {
   id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
+  FBProcessIO *io = [[FBProcessIO alloc]
+    initWithStdIn:agentLaunch.io.stdIn
+    stdOut:[FBProcessOutput outputForDataConsumer:consumer]
+    stdErr:agentLaunch.io.stdOut];
+  FBAgentLaunchConfiguration *derived = [[FBAgentLaunchConfiguration alloc]
+    initWithLaunchPath:agentLaunch.launchPath
+    arguments:agentLaunch.arguments
+    environment:agentLaunch.environment
+    io:io
+    mode:agentLaunch.mode];
   return [[self
-    launchAndNotifyOfCompletion:agentLaunch consumer:consumer]
+    launchAndNotifyOfCompletion:derived]
     onQueue:self.simulator.workQueue map:^(NSNumber *_) {
       return [[NSString alloc] initWithData:consumer.data encoding:NSUTF8StringEncoding];
     }];

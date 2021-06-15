@@ -78,7 +78,7 @@
     arguments:@[]
     environment:self.configuration.processUnderTestEnvironment
     waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull
+    io:FBProcessIO.outputToDevNull
     launchMode:FBApplicationLaunchModeFailIfRunning];
 
   FBTestLaunchConfiguration *testLaunchConfiguration = [[FBTestLaunchConfiguration alloc]

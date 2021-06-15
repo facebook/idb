@@ -91,7 +91,7 @@
     arguments:@[]
     environment:@{}
     waitForDebugger:YES
-    output:FBProcessOutputConfiguration.outputToDevNull
+    io:FBProcessIO.outputToDevNull
     launchMode:FBApplicationLaunchModeFailIfRunning];
   return [[[self.simulator
     launchApplication:configuration]

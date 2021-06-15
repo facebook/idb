@@ -9,7 +9,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBProcessOutputConfiguration;
+@class FBProcessIO;
 
 /**
  An abstract value object for launching both agents and applications
@@ -29,17 +29,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Process Output Configuration.
  */
-@property (nonatomic, copy, readonly) FBProcessOutputConfiguration *output;
+@property (nonatomic, strong, readonly) FBProcessIO *io;
 
 /**
  The Designated Initializer.
 
  @param arguments the Arguments.
  @param environment the Environment.
- @param output the Output Configuration.
+ @param io the IO object.
  @return a new FBProcessLaunchConfiguration Instance.
  */
-- (instancetype)initWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output;
+- (instancetype)initWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io;
 
 @end
 

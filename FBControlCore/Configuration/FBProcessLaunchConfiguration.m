@@ -6,13 +6,14 @@
  */
 
 #import "FBProcessLaunchConfiguration.h"
-#import "FBProcessOutputConfiguration.h"
+
+#import "FBProcessIO.h"
 
 @implementation FBProcessLaunchConfiguration
 
 #pragma mark Initializers
 
-- (instancetype)initWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output
+- (instancetype)initWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io
 {
   self = [super init];
   if (!self) {
@@ -21,7 +22,7 @@
 
   _arguments = arguments;
   _environment = environment;
-  _output = output;
+  _io = io;
 
   return self;
 }
@@ -30,7 +31,7 @@
 
 - (NSUInteger)hash
 {
-  return self.arguments.hash ^ (self.environment.hash & self.output.hash);
+  return self.arguments.hash ^ (self.environment.hash & self.io.hash);
 }
 
 - (BOOL)isEqual:(FBProcessLaunchConfiguration *)object
@@ -40,7 +41,7 @@
   }
   return [self.arguments isEqual:object.arguments] &&
          [self.environment isEqual:object.environment] &&
-         [self.output isEqual:object.output];
+         [self.io isEqual:object.io];
 }
 
 @end

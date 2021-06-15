@@ -46,20 +46,16 @@
 
 - (FBFuture<FBSimulatorAgentOperation *> *)startProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer
 {
-  NSError *error = nil;
-  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
-    configurationWithStdOut:stdOutConsumer
-    stdErr:stdErrConsumer
-    error:&error];
-  if (!output) {
-    return [FBFuture futureWithError:error];
-  }
+  FBProcessIO *io = [[FBProcessIO alloc]
+    initWithStdIn:nil
+    stdOut:[FBProcessOutput outputForDataConsumer:stdOutConsumer]
+    stdErr:[FBProcessOutput outputForDataConsumer:stdErrConsumer]];
 
   FBAgentLaunchConfiguration *configuration = [[FBAgentLaunchConfiguration alloc]
    initWithLaunchPath:launchPath
    arguments:arguments
    environment:environment
-   output:output
+   io:io
    mode:FBAgentLaunchModePosixSpawn];
 
   return [[FBAgentLaunchStrategy

@@ -62,19 +62,16 @@
   if (!launchPath) {
     return [FBSimulatorError failFutureWithError:error];
   }
-  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
-    configurationWithStdOut:consumer
-    stdErr:NSNull.null
-    error:&error];
-  if (!output) {
-    return [FBSimulatorError failFutureWithError:error];
-  }
+  FBProcessIO *processIO = [[FBProcessIO alloc]
+    initWithStdIn:nil
+    stdOut:[FBProcessOutput outputForDataConsumer:consumer]
+    stdErr:nil];
 
   FBAgentLaunchConfiguration *configuration = [[FBAgentLaunchConfiguration alloc]
     initWithLaunchPath:launchPath
     arguments:arguments
     environment:@{}
-    output:output
+    io:processIO
     mode:FBAgentLaunchModeDefault];
 
   return [[FBAgentLaunchStrategy

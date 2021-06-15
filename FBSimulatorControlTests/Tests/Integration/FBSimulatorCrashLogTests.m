@@ -37,7 +37,7 @@
     arguments:appLaunch.arguments
     environment:environment
     waitForDebugger:NO
-    output:appLaunch.output
+    io:appLaunch.io
     launchMode:appLaunch.launchMode];
 
   FBFuture<FBCrashLogInfo *> *crashLogFuture = [simulator notifyOfCrash:[FBCrashLogInfo predicateForIdentifier:@"TableSearch"]];

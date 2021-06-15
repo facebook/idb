@@ -12,7 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- A composite of all attachments.
+ A result of "attaching" to an IO object, realized as file descriptors.
  */
 @interface FBProcessIOAttachment : NSObject
 
@@ -36,6 +36,23 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
+ A result of "attaching" to an IO object, realized as file paths.
+ */
+@interface FBProcessFileAttachment : NSObject
+
+/**
+ The attachment for stdout.
+ */
+@property (nonatomic, strong, nullable, readonly) id<FBProcessFileOutput> stdOut;
+
+/**
+ The attachment for stderr.
+ */
+@property (nonatomic, strong, nullable, readonly) id<FBProcessFileOutput> stdErr;
+
+@end
+
+/**
  A composite of FBProcessStream.
  */
 @interface FBProcessIO : NSObject
@@ -51,6 +68,11 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new FBProcessIO instance.
  */
 - (instancetype)initWithStdIn:(nullable FBProcessInput *)stdIn stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr;
+
+/**
+ An IO object that accepts no input and returns no output.
+ */
++ (instancetype)outputToDevNull;
 
 #pragma mark Properties
 
@@ -77,11 +99,18 @@ The FBProcessOutput for stdout.
 #pragma mark Methods
 
 /**
- Attach to all the streams, returning the composite attachment.
+ Attach to all the streams, returning the composite attachment for file descriptors.
  Will error if any of the stream attachments error.
  If any of the stream attachments error, then any succeeding attachments will detach.
  */
 - (FBFuture<FBProcessIOAttachment *> *)attach;
+
+/**
+ Attach to all the streams, returning the composite attachment for file paths.
+ Will error if any of the stream attachments error.
+ If any of the stream attachments error, then any succeeding attachments will detach.
+ */
+- (FBFuture<FBProcessFileAttachment *> *)attachViaFile;
 
 /**
  Detach from all the streams.

@@ -46,7 +46,11 @@
   NSString *stdErrPath = [path stringByAppendingPathComponent:@"stderr.log"];
   NSString *stdOutPath = [path stringByAppendingPathComponent:@"stdout.log"];
 
-  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration configurationWithStdOut:stdOutPath stdErr:stdErrPath error:nil];
+  FBProcessIO *io = [[FBProcessIO alloc]
+    initWithStdIn:nil
+    stdOut:[FBProcessOutput outputForFilePath:stdOutPath]
+    stdErr:[FBProcessOutput outputForFilePath:stdErrPath]];
+
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
 
   NSString *shimulatorPath = [[NSBundle bundleForClass: self.class] pathForResource:@"libShimulator" ofType:@"dylib"];
@@ -59,7 +63,7 @@
     arguments:appLaunch.arguments
     environment:environment
     waitForDebugger:NO
-    output:output
+    io:io
     launchMode:appLaunch.launchMode];
 
   NSError *error = nil;

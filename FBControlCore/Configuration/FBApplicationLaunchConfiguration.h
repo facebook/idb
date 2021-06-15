@@ -9,11 +9,6 @@
 
 #import <FBControlCore/FBiOSTargetOperation.h>
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
-
-@class FBBinaryDescriptor;
-@class FBBundleDescriptor;
-@class FBProcessOutputConfiguration;
-
 /**
  Launch Modes for an Applicaton
  */
@@ -24,6 +19,10 @@ typedef NS_ENUM(NSUInteger, FBApplicationLaunchMode) {
 };
 
 NS_ASSUME_NONNULL_BEGIN
+
+@class FBBinaryDescriptor;
+@class FBBundleDescriptor;
+@class FBProcessIO;
 
 /**
  A Value object with the information required to launch an Application.
@@ -38,10 +37,11 @@ NS_ASSUME_NONNULL_BEGIN
  @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
  @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
  @param waitForDebugger a boolean describing whether the Application should stop after Launch and wait for a debugger to be attached.
- @param output the output configuration for the launched process.
+ @param io the output configuration for the launched process.
  @return a new Configuration Object with the arguments applied.
  */
-- (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output launchMode:(FBApplicationLaunchMode)launchMode;
+
+- (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger io:(FBProcessIO *)io launchMode:(FBApplicationLaunchMode)launchMode;
 
 /**
  The Bundle ID (CFBundleIdentifier) of the the Application to Launch. Will not be nil.
