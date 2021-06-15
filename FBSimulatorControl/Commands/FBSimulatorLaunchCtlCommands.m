@@ -243,12 +243,12 @@
 - (FBFuture<NSString *> *)runWithArguments:(NSArray<NSString *> *)arguments
 {
   // Construct a Launch Configuration for launchctl we'll use the 'list' command.
-  FBAgentLaunchConfiguration *launchConfiguration = [[FBAgentLaunchConfiguration alloc]
+  FBProcessSpawnConfiguration *launchConfiguration = [[FBProcessSpawnConfiguration alloc]
     initWithLaunchPath:self.launchctlLaunchPath
     arguments:arguments
     environment:@{}
     io:FBProcessIO.outputToDevNull
-    mode:FBAgentLaunchModeDefault];
+    mode:FBProcessSpawnModeDefault];
 
   // Spawn and get the output
   return [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchConsumingStdout:launchConfiguration];

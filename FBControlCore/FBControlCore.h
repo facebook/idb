@@ -7,7 +7,6 @@
 
 #import <FBControlCore/FBAccessibilityCommands.h>
 #import <FBControlCore/FBAccessibilityTraits.h>
-#import <FBControlCore/FBAgentLaunchConfiguration.h>
 #import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBApplicationLaunchConfiguration.h>
 #import <FBControlCore/FBArchitecture.h>
@@ -65,6 +64,7 @@
 #import <FBControlCore/FBProcessInfo.h>
 #import <FBControlCore/FBProcessIO.h>
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
+#import <FBControlCore/FBProcessSpawnConfiguration.h>
 #import <FBControlCore/FBProcessStream.h>
 #import <FBControlCore/FBProcessTerminationStrategy.h>
 #import <FBControlCore/FBProvisioningProfileCommands.h>
@@ -87,7 +87,7 @@
 #import <FBControlCore/FBXcodeDirectory.h>
 #import <FBControlCore/FBXCTestCommands.h>
 #import <FBControlCore/FBXCTestShimConfiguration.h>
-#import <FBControlCore/FBXCTraceRecordCommands.h>
 #import <FBControlCore/FBXCTraceConfiguration.h>
 #import <FBControlCore/FBXCTraceOperation.h>
+#import <FBControlCore/FBXCTraceRecordCommands.h>
 #import <FBControlCore/NSPredicate+FBControlCore.h>

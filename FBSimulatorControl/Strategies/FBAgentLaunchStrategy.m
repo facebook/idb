@@ -49,7 +49,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
 #pragma mark Long-Running Processes
 
-- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch
+- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBProcessSpawnConfiguration *)agentLaunch
 {
   FBSimulator *simulator = self.simulator;
 
@@ -82,7 +82,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
 #pragma mark Short-Running Processes
 
-- (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBAgentLaunchConfiguration *)agentLaunch
+- (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBProcessSpawnConfiguration *)agentLaunch
 {
   return [[self
     launchAgent:agentLaunch]
@@ -91,14 +91,14 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
     }];
 }
 
-- (FBFuture<NSString *> *)launchConsumingStdout:(FBAgentLaunchConfiguration *)agentLaunch
+- (FBFuture<NSString *> *)launchConsumingStdout:(FBProcessSpawnConfiguration *)agentLaunch
 {
   id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
   FBProcessIO *io = [[FBProcessIO alloc]
     initWithStdIn:agentLaunch.io.stdIn
     stdOut:[FBProcessOutput outputForDataConsumer:consumer]
     stdErr:agentLaunch.io.stdOut];
-  FBAgentLaunchConfiguration *derived = [[FBAgentLaunchConfiguration alloc]
+  FBProcessSpawnConfiguration *derived = [[FBProcessSpawnConfiguration alloc]
     initWithLaunchPath:agentLaunch.launchPath
     arguments:agentLaunch.arguments
     environment:agentLaunch.environment
@@ -126,7 +126,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
 #pragma mark Private
 
-+ (FBFuture<NSNumber *> *)launchAgentWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr mode:(FBAgentLaunchMode)mode processStatusFuture:(FBMutableFuture<NSNumber *> *)processStatusFuture
++ (FBFuture<NSNumber *> *)launchAgentWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr mode:(FBProcessSpawnMode)mode processStatusFuture:(FBMutableFuture<NSNumber *> *)processStatusFuture
 {
   // Get the Options
   NSDictionary<NSString *, id> *options = [FBAgentLaunchStrategy
@@ -168,7 +168,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
   return launchFuture;
 }
 
-+ (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr mode:(FBAgentLaunchMode)mode
++ (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr mode:(FBProcessSpawnMode)mode
 {
   // argv[0] should be launch path of the process. SimDevice does not do this automatically, so we need to add it.
   arguments = [@[launchPath] arrayByAddingObjectsFromArray:arguments];
@@ -183,13 +183,13 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
   return [options copy];
 }
 
-+ (BOOL)shouldLaunchStandaloneOnSimulator:(FBSimulator *)simulator mode:(FBAgentLaunchMode)mode
++ (BOOL)shouldLaunchStandaloneOnSimulator:(FBSimulator *)simulator mode:(FBProcessSpawnMode)mode
 {
   // Standalone means "launch directly, not via launchd"
   switch (mode) {
-    case FBAgentLaunchModeLaunchd:
+    case FBProcessSpawnModeLaunchd:
       return NO;
-    case FBAgentLaunchModePosixSpawn:
+    case FBProcessSpawnModePosixSpawn:
       return YES;
     default:
       // Default behaviour is to use launchd if booted, otherwise use standalone.

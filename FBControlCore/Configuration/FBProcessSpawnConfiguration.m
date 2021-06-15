@@ -9,9 +9,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@implementation FBAgentLaunchConfiguration
+@implementation FBProcessSpawnConfiguration
 
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io mode:(FBAgentLaunchMode)mode;
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io mode:(FBProcessSpawnMode)mode;
 {
   self = [super initWithArguments:arguments environment:environment io:io];
   if (!self) {
@@ -31,7 +31,7 @@
   return [super hash] | self.launchPath.hash | self.mode;
 }
 
-- (BOOL)isEqual:(FBAgentLaunchConfiguration *)object
+- (BOOL)isEqual:(FBProcessSpawnConfiguration *)object
 {
   if (![object isKindOfClass:self.class]) {
     return NO;

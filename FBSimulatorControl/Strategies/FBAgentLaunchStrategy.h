@@ -11,7 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBAgentLaunchConfiguration;
+@class FBProcessSpawnConfiguration;
 @class FBSimulator;
 @class FBSimulatorAgentOperation;
 
@@ -38,7 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param agentLaunch the agent to launch.
  @return an Agent Launch Operation, wrapped in a future.
  */
-- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch;
+- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBProcessSpawnConfiguration *)agentLaunch;
 
 #pragma mark Short-Running Processes
 
@@ -48,7 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param agentLaunch the agent to launch.
  @return the stat_loc exit of the process, wrapped in a Future.
  */
-- (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBAgentLaunchConfiguration *)agentLaunch;
+- (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBProcessSpawnConfiguration *)agentLaunch;
 
 /**
  Launches an agent, consuming it's output and returning it as a String.
@@ -56,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param agentLaunch the configuration for launching the process. The 'output' of the configuration will be ignored.
  @return A future that wraps the stdout of the launched process.
  */
-- (FBFuture<NSString *> *)launchConsumingStdout:(FBAgentLaunchConfiguration *)agentLaunch;
+- (FBFuture<NSString *> *)launchConsumingStdout:(FBProcessSpawnConfiguration *)agentLaunch;
 
 #pragma mark Helpers
 

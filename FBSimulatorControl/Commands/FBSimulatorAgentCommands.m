@@ -45,7 +45,7 @@
 
 #pragma mark FBSimulatorAgentCommands Implementation
 
-- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch
+- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBProcessSpawnConfiguration *)agentLaunch
 {
   NSParameterAssert(agentLaunch);
   return [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchAgent:agentLaunch];

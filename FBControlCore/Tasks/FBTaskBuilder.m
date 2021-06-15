@@ -14,7 +14,7 @@
 #import "FBProcessIO.h"
 #import "FBProcessStream.h"
 #import "FBTask.h"
-#import "FBTaskConfiguration.h"
+#import "FBProcessSpawnConfiguration.h"
 
 @interface FBTaskBuilder ()
 
@@ -297,13 +297,14 @@
 
 #pragma mark Private
 
-- (FBTaskConfiguration *)buildConfiguration
+- (FBProcessSpawnConfiguration *)buildConfiguration
 {
-  return [[FBTaskConfiguration alloc]
+  return [[FBProcessSpawnConfiguration alloc]
     initWithLaunchPath:self.launchPath
     arguments:self.arguments
     environment:self.environment
-    io:[[FBProcessIO alloc] initWithStdIn:self.stdIn stdOut:self.stdOut stdErr:self.stdErr]];
+    io:[[FBProcessIO alloc] initWithStdIn:self.stdIn stdOut:self.stdOut stdErr:self.stdErr]
+    mode:FBProcessSpawnModeDefault];
 }
 
 + (NSDictionary<NSString *, NSString *> *)defaultEnvironmentForSubprocess

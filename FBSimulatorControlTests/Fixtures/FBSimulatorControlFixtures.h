@@ -8,11 +8,11 @@
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
 
-@class FBAgentLaunchConfiguration;
 @class FBApplicationLaunchConfiguration;
 @class FBBundleDescriptor;
 @class FBDiagnostic;
 @class FBProcessInfo;
+@class FBProcessSpawnConfiguration;
 @class FBTestLaunchConfiguration;
 
 typedef NS_ENUM(NSUInteger, FBApplicationLaunchMode);
@@ -81,7 +81,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An Agent Launch Config. Not to be used to launch agents for real.
  */
-- (FBAgentLaunchConfiguration *)agentLaunch1;
+- (FBProcessSpawnConfiguration *)agentLaunch1;
 
 /**
  An iOS Unit Test XCTest Target.

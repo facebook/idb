@@ -25,7 +25,7 @@
 
 #pragma mark Initializers
 
-+ (FBFuture<FBSimulatorAgentOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
++ (FBFuture<FBSimulatorAgentOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
 {
   return [launchFuture
     onQueue:simulator.workQueue map:^(NSNumber *processIdentifierNumber) {
@@ -34,7 +34,7 @@
     }];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr processIdentifier:(pid_t)processIdentifier processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr processIdentifier:(pid_t)processIdentifier processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
 {
   self = [super init];
   if (!self) {

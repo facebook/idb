@@ -51,12 +51,12 @@
     stdOut:[FBProcessOutput outputForDataConsumer:stdOutConsumer]
     stdErr:[FBProcessOutput outputForDataConsumer:stdErrConsumer]];
 
-  FBAgentLaunchConfiguration *configuration = [[FBAgentLaunchConfiguration alloc]
+  FBProcessSpawnConfiguration *configuration = [[FBProcessSpawnConfiguration alloc]
    initWithLaunchPath:launchPath
    arguments:arguments
    environment:environment
    io:io
-   mode:FBAgentLaunchModePosixSpawn];
+   mode:FBProcessSpawnModePosixSpawn];
 
   return [[FBAgentLaunchStrategy
     strategyWithSimulator:self.simulator]

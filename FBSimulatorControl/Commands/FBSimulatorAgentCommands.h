@@ -11,7 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBAgentLaunchConfiguration;
+@class FBProcessSpawnConfiguration;
 @class FBSimulator;
 @class FBSimulatorAgentOperation;
 
@@ -26,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param agentLaunch the Agent Launch Configuration to Launch.
  @return A future wrapping the Agent Operation.
  */
-- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch;
+- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBProcessSpawnConfiguration *)agentLaunch;
 
 @end
 

@@ -16,16 +16,16 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An enum representing how an agent should be launched.
  */
-typedef NS_ENUM(NSUInteger, FBAgentLaunchMode) {
-  FBAgentLaunchModeDefault = 0,
-  FBAgentLaunchModePosixSpawn = 1,
-  FBAgentLaunchModeLaunchd = 2,
+typedef NS_ENUM(NSUInteger, FBProcessSpawnMode) {
+  FBProcessSpawnModeDefault = 0,
+  FBProcessSpawnModePosixSpawn = 1,
+  FBProcessSpawnModeLaunchd = 2,
 };
 
 /**
- A Value object with the information required to launch a Binary Agent.
+ A configuration for spawning an executable.
  */
-@interface FBAgentLaunchConfiguration : FBProcessLaunchConfiguration
+@interface FBProcessSpawnConfiguration : FBProcessLaunchConfiguration
 
 /**
  The designated initializer.
@@ -37,7 +37,7 @@ typedef NS_ENUM(NSUInteger, FBAgentLaunchMode) {
  @param mode the launch mode to use.
  @return a new Configuration Object with the arguments applied.
  */
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io mode:(FBAgentLaunchMode)mode;
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io mode:(FBProcessSpawnMode)mode;
 
 /**
  The Binary Path of the agent to Launch.
@@ -47,7 +47,7 @@ typedef NS_ENUM(NSUInteger, FBAgentLaunchMode) {
 /**
  How the agent should be launched.
  */
-@property (nonatomic, assign, readonly) FBAgentLaunchMode mode;
+@property (nonatomic, assign, readonly) FBProcessSpawnMode mode;
 
 @end
 

@@ -102,12 +102,12 @@
 - (FBFuture<NSString *> *)performDefaultsCommandWithArguments:(NSArray<NSString *> *)arguments
 {
   // Make the Launch Config
-  FBAgentLaunchConfiguration *configuration = [[FBAgentLaunchConfiguration alloc]
+  FBProcessSpawnConfiguration *configuration = [[FBProcessSpawnConfiguration alloc]
     initWithLaunchPath:self.defaultsBinary
     arguments:arguments
     environment:@{}
     io:FBProcessIO.outputToDevNull
-    mode:FBAgentLaunchModeDefault];
+    mode:FBProcessSpawnModeDefault];
 
   // Run the defaults command.
   return [[[FBAgentLaunchStrategy

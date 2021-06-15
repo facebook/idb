@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 static const size_t FBTaskOutputErrorMessageLength = 200;
 
-@class FBTaskConfiguration;
+@class FBProcessSpawnConfiguration;
 
 /**
  Error Doman for all FBTask errors.
@@ -35,7 +35,7 @@ extern NSString *const FBTaskErrorDomain;
  @param logger an optional logger to use for logging.
  @return a future that resolves when the task has been started.
  */
-+ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBTaskConfiguration *)configuration logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBProcessSpawnConfiguration *)configuration logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 

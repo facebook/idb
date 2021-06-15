@@ -142,14 +142,14 @@ static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
     launchMode:launchMode];
 }
 
-- (FBAgentLaunchConfiguration *)agentLaunch1
+- (FBProcessSpawnConfiguration *)agentLaunch1
 {
-  return [[FBAgentLaunchConfiguration alloc]
+  return [[FBProcessSpawnConfiguration alloc]
     initWithLaunchPath:[FBBinaryDescriptor binaryWithPath:NSProcessInfo.processInfo.arguments[0] error:nil].path
     arguments:@[@"BINGBONG"]
     environment:@{@"FIB" : @"BLE"}
     io:FBProcessIO.outputToDevNull
-    mode:FBAgentLaunchModeDefault];
+    mode:FBProcessSpawnModeDefault];
 }
 
 - (nullable NSString *)iOSUnitTestBundlePath

@@ -17,7 +17,7 @@
 #import "FBLaunchedProcess.h"
 #import "FBProcessIO.h"
 #import "FBProcessStream.h"
-#import "FBTaskConfiguration.h"
+#import "FBProcessSpawnConfiguration.h"
 
 NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
@@ -59,7 +59,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 @interface FBTaskProcessPosixSpawn : NSObject <FBLaunchedProcess>
 
-@property (nonatomic, strong, readonly) FBTaskConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBProcessSpawnConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *statLoc;
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *signal;
 @property (nonatomic, strong, nullable, readwrite) id stdIn;
@@ -73,7 +73,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 @synthesize exitCode = _exitCode;
 @synthesize processIdentifier = _processIdentifier;
 
-+ (FBFuture<FBTaskProcessPosixSpawn *> *)processWithConfiguration:(FBTaskConfiguration *)configuration io:(FBProcessIOAttachment *)io logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBTaskProcessPosixSpawn *> *)processWithConfiguration:(FBProcessSpawnConfiguration *)configuration io:(FBProcessIOAttachment *)io logger:(id<FBControlCoreLogger>)logger
 {
   // Convert the arguments to the argv expected by posix_spawn
   NSArray<NSString *> *arguments = configuration.arguments;
@@ -225,7 +225,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 #pragma mark Initializers
 
-+ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBTaskConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
   return [[[configuration.io
