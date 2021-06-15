@@ -27,14 +27,6 @@
   return self;
 }
 
-#pragma mark NSCopying
-
-- (instancetype)copyWithZone:(NSZone *)zone
-{
-  // Class is immutable
-  return self;
-}
-
 #pragma mark NSObject
 
 - (NSUInteger)hash

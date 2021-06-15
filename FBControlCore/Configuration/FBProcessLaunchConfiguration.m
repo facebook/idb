@@ -26,14 +26,6 @@
   return self;
 }
 
-#pragma mark NSCopying
-
-- (instancetype)copyWithZone:(NSZone *)zone
-{
-  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
-  return nil;
-}
-
 #pragma mark NSObject
 
 - (NSUInteger)hash
