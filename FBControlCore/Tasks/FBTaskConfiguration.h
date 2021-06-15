@@ -7,6 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBProcessLaunchConfiguration.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBProcessIO;
@@ -16,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Configuration for an FBTask.
  */
-@interface FBTaskConfiguration : NSObject
+@interface FBTaskConfiguration : FBProcessLaunchConfiguration
 
 /**
  Creates a Task Configuration with the provided parameters.
@@ -29,26 +31,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSString *launchPath;
 
 /**
- The Arguments to launch with.
- */
-@property (nonatomic, copy, readonly) NSArray<NSString *> *arguments;
-
-/**
- The Environment of the process.
- */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *environment;
-
-/**
  The exit codes that are permitted for the launched process to indicate.
  Any other exit code, including signals are considered erroneous.
  A nil value indicates that this check will not occur.
  */
 @property (nonatomic, copy, nullable, readonly) NSSet<NSNumber *> *acceptableExitCodes;
-
-/**
-The FBProcessIO object.
- */
-@property (nonatomic, strong, nullable, readonly) FBProcessIO *io;
 
 /**
  The logger to log to.
