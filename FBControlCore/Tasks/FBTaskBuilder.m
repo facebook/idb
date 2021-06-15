@@ -261,7 +261,7 @@
 
 - (FBFuture<FBTask *> *)start
 {
-  return [FBTask startTaskWithConfiguration:self.buildConfiguration];
+  return [FBTask startTaskWithConfiguration:self.buildConfiguration logger:self.logger];
 }
 
 - (FBFuture<FBTask *> *)runUntilCompletion
@@ -303,8 +303,7 @@
     initWithLaunchPath:self.launchPath
     arguments:self.arguments
     environment:self.environment
-    io:[[FBProcessIO alloc] initWithStdIn:self.stdIn stdOut:self.stdOut stdErr:self.stdErr]
-    logger:self.logger];
+    io:[[FBProcessIO alloc] initWithStdIn:self.stdIn stdOut:self.stdOut stdErr:self.stdErr]];
 }
 
 + (NSDictionary<NSString *, NSString *> *)defaultEnvironmentForSubprocess

@@ -23,17 +23,13 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a Task Configuration with the provided parameters.
  */
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io logger:(nullable id<FBControlCoreLogger>)logger;
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io;
 
 /**
  The Launch Path of the Process to launch.
  */
 @property (nonatomic, copy, readonly) NSString *launchPath;
 
-/**
- The logger to log to.
- */
-@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 @end
 
 NS_ASSUME_NONNULL_END

@@ -73,7 +73,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 @synthesize exitCode = _exitCode;
 @synthesize processIdentifier = _processIdentifier;
 
-+ (FBFuture<FBTaskProcessPosixSpawn *> *)processWithConfiguration:(FBTaskConfiguration *)configuration io:(FBProcessIOAttachment *)io
++ (FBFuture<FBTaskProcessPosixSpawn *> *)processWithConfiguration:(FBTaskConfiguration *)configuration io:(FBProcessIOAttachment *)io logger:(id<FBControlCoreLogger>)logger
 {
   // Convert the arguments to the argv expected by posix_spawn
   NSArray<NSString *> *arguments = configuration.arguments;
@@ -139,7 +139,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   FBMutableFuture<NSNumber *> *statLoc = FBMutableFuture.future;
   FBMutableFuture<NSNumber *> *exitCode = FBMutableFuture.future;
   FBMutableFuture<NSNumber *> *signal = FBMutableFuture.future;
-  [self resolveProcessCompletion:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal logger:configuration.logger];
+  [self resolveProcessCompletion:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal logger:logger];
   FBTaskProcessPosixSpawn *process = [[self alloc] initWithProcessIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal];
   return [FBFuture futureWithResult:process];
 }
@@ -225,14 +225,14 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 #pragma mark Initializers
 
-+ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBTaskConfiguration *)configuration
++ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBTaskConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
   return [[[configuration.io
     attach]
     onQueue:queue fmap:^(FBProcessIOAttachment *attachment) {
       // Everything is setup, launch the process now.
-      return [FBTaskProcessPosixSpawn processWithConfiguration:configuration io:attachment];
+      return [FBTaskProcessPosixSpawn processWithConfiguration:configuration io:attachment logger:logger];
     }]
     onQueue:queue map:^(FBTaskProcessPosixSpawn *process) {
       return [[self alloc]

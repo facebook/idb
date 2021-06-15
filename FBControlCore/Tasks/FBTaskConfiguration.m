@@ -11,7 +11,7 @@
 
 @implementation FBTaskConfiguration
 
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io
 {
   self = [super initWithArguments:arguments environment:environment io:io];
   if (!self) {
@@ -19,7 +19,6 @@
   }
 
   _launchPath = launchPath;
-  _logger = logger;
 
   return self;
 }
