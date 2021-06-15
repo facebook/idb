@@ -13,7 +13,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBProcessSpawnConfiguration;
 @class FBSimulator;
-@class FBSimulatorAgentOperation;
+
+@protocol FBLaunchedProcess;
 
 /**
  A Strategy for Launching Agents on a Simulator.
@@ -36,9 +37,9 @@ NS_ASSUME_NONNULL_BEGIN
  Launches a long-running process with the given configuration.
 
  @param agentLaunch the agent to launch.
- @return an Agent Launch Operation, wrapped in a future.
+ @return a future, wrapping the launched process.
  */
-- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBProcessSpawnConfiguration *)agentLaunch;
+- (FBFuture<id<FBLaunchedProcess>> *)launchAgent:(FBProcessSpawnConfiguration *)agentLaunch;
 
 #pragma mark Short-Running Processes
 

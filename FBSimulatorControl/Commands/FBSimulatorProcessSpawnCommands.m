@@ -5,25 +5,25 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBSimulatorAgentCommands.h"
+#import "FBSimulatorProcessSpawnCommands.h"
 
 #import <CoreSimulator/SimDevice.h>
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulator+Private.h"
 #import "FBAgentLaunchStrategy.h"
+#import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorProcessFetcher.h"
 
-@interface FBSimulatorAgentCommands ()
+@interface FBSimulatorProcessSpawnCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
 
 @end
 
-@implementation FBSimulatorAgentCommands
+@implementation FBSimulatorProcessSpawnCommands
 
 #pragma mark Initializers
 
@@ -40,15 +40,16 @@
   }
 
   _simulator = simulator;
+
   return self;
 }
 
-#pragma mark FBSimulatorAgentCommands Implementation
+#pragma mark FBSimulatorProcessSpawnCommands Implementation
 
-- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBProcessSpawnConfiguration *)agentLaunch
+- (FBFuture<id<FBLaunchedProcess>> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
 {
-  NSParameterAssert(agentLaunch);
-  return [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchAgent:agentLaunch];
+  NSParameterAssert(configuration);
+  return [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchAgent:configuration];
 }
 
 @end

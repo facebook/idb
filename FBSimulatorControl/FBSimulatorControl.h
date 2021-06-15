@@ -15,7 +15,6 @@
 #import <FBSimulatorControl/FBSimulator+Private.h>
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorAccessibilityCommands.h>
-#import <FBSimulatorControl/FBSimulatorAgentCommands.h>
 #import <FBSimulatorControl/FBSimulatorAgentOperation.h>
 #import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
 #import <FBSimulatorControl/FBSimulatorApplicationOperation.h>
@@ -40,6 +39,7 @@
 #import <FBSimulatorControl/FBSimulatorMediaCommands.h>
 #import <FBSimulatorControl/FBSimulatorPredicates.h>
 #import <FBSimulatorControl/FBSimulatorProcessFetcher.h>
+#import <FBSimulatorControl/FBSimulatorProcessSpawnCommands.h>
 #import <FBSimulatorControl/FBSimulatorScreenshotCommands.h>
 #import <FBSimulatorControl/FBSimulatorServiceContext.h>
 #import <FBSimulatorControl/FBSimulatorSet+Private.h>

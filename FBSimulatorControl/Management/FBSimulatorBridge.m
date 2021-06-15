@@ -136,15 +136,15 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
 
   [logger logFormat:@"Launching SimulatorBridge agent for %@", portName];
   return [[[simulator
-    launchAgent:config]
-    onQueue:simulator.asyncQueue fmap:^(FBSimulatorAgentOperation *operation) {
+    launchProcess:config]
+    onQueue:simulator.asyncQueue fmap:^(id<FBLaunchedProcess> process) {
       return [[[buffer
         consumeAndNotifyWhen:[@"READY" dataUsingEncoding:NSUTF8StringEncoding]]
-        timeout:BridgeReadyTimeout waitingFor:@"The launched operation %@ to specify 'READY' for %@", operation, portName]
-        mapReplace:operation];
+        timeout:BridgeReadyTimeout waitingFor:@"The launched operation %@ to specify 'READY' for %@", process, portName]
+        mapReplace:process];
     }]
-    onQueue:simulator.asyncQueue doOnResolved:^(FBSimulatorAgentOperation *operation) {
-      [logger logFormat:@"Bridge operation is launched %@. %@ is now ready", operation, portName];
+    onQueue:simulator.asyncQueue doOnResolved:^(id<FBLaunchedProcess> process) {
+      [logger logFormat:@"Bridge operation is launched %@. %@ is now ready", process, portName];
     }];
 }
 

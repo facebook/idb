@@ -18,20 +18,20 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBAppleSimctlCommandExecutor.h"
-#import "FBSimulatorAgentCommands.h"
 #import "FBSimulatorApplicationCommands.h"
-#import "FBSimulatorFileCommands.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorCrashLogCommands.h"
 #import "FBSimulatorDebuggerCommands.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorFileCommands.h"
 #import "FBSimulatorHIDEvent.h"
 #import "FBSimulatorLifecycleCommands.h"
 #import "FBSimulatorLocationCommands.h"
 #import "FBSimulatorLogCommands.h"
 #import "FBSimulatorMediaCommands.h"
+#import "FBSimulatorProcessSpawnCommands.h"
 #import "FBSimulatorScreenshotCommands.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorSettingsCommands.h"
@@ -260,17 +260,17 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
     commandClasses = @[
       FBInstrumentsCommands.class,
       FBSimulatorAccessibilityCommands.class,
-      FBSimulatorAgentCommands.class,
       FBSimulatorApplicationCommands.class,
-      FBSimulatorFileCommands.class,
       FBSimulatorCrashLogCommands.class,
       FBSimulatorDebuggerCommands.class,
+      FBSimulatorFileCommands.class,
       FBSimulatorKeychainCommands.class,
       FBSimulatorLaunchCtlCommands.class,
       FBSimulatorLifecycleCommands.class,
       FBSimulatorLocationCommands.class,
       FBSimulatorLogCommands.class,
       FBSimulatorMediaCommands.class,
+      FBSimulatorProcessSpawnCommands.class,
       FBSimulatorScreenshotCommands.class,
       FBSimulatorSettingsCommands.class,
       FBSimulatorVideoRecordingCommands.class,

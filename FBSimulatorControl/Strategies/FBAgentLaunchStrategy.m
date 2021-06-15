@@ -49,7 +49,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
 #pragma mark Long-Running Processes
 
-- (FBFuture<FBSimulatorAgentOperation *> *)launchAgent:(FBProcessSpawnConfiguration *)agentLaunch
+- (FBFuture<id<FBLaunchedProcess>> *)launchAgent:(FBProcessSpawnConfiguration *)agentLaunch
 {
   FBSimulator *simulator = self.simulator;
 

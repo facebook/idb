@@ -55,7 +55,7 @@
 
 #pragma mark Private
 
-- (FBFuture<FBSimulatorAgentOperation *> *)startLogCommand:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
+- (FBFuture<id<FBLaunchedProcess>> *)startLogCommand:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
   NSError *error = nil;
   NSString *launchPath = [self logExecutablePathWithError:&error];
