@@ -11,17 +11,17 @@
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBSimulatorApplicationLaunchStrategy.h"
-#import "FBSimulatorApplicationOperation.h"
+#import "FBAgentLaunchStrategy.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
+#import "FBSimulatorApplicationLaunchStrategy.h"
+#import "FBSimulatorApplicationOperation.h"
 #import "FBSimulatorBridge.h"
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorLaunchCtlCommands.h"
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSubprocessTerminationStrategy.h"
-#import "FBProcessLaunchConfiguration+Simulator.h"
-#import "FBSimulatorLaunchCtlCommands.h"
 
 @interface FBSimulatorApplicationLaunchStrategy ()
 
@@ -156,10 +156,10 @@
 - (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
   FBSimulator *simulator = self.simulator;
-  NSDictionary<NSString *, id> *options = [appLaunch
-    simDeviceLaunchOptionsWithStdOutPath:[self translateAbsolutePath:stdOutPath toPathRelativeTo:simulator.dataDirectory]
-    stdErrPath:[self translateAbsolutePath:stdErrPath toPathRelativeTo:simulator.dataDirectory]
-    waitForDebugger:appLaunch.waitForDebugger];
+  NSDictionary<NSString *, id> *options = [FBSimulatorApplicationLaunchStrategy
+    simDeviceLaunchOptionsForAppLaunch:appLaunch
+    stdOutPath:[self translateAbsolutePath:stdOutPath toPathRelativeTo:simulator.dataDirectory]
+    stdErrPath:[self translateAbsolutePath:stdErrPath toPathRelativeTo:simulator.dataDirectory]];
 
   FBMutableFuture<NSNumber *> *future = [FBMutableFuture future];
   [simulator.device launchApplicationAsyncWithID:appLaunch.bundleID options:options completionQueue:simulator.workQueue completionHandler:^(NSError *error, pid_t pid){
@@ -187,5 +187,18 @@
   }
   return [translatedPath stringByAppendingPathComponent:absolutePath];
 }
+
++ (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsForAppLaunch:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(nullable NSString *)stdOutPath stdErrPath:(nullable NSString *)stdErrPath
+{
+  NSMutableDictionary<NSString *, id> *options = [[FBAgentLaunchStrategy launchOptionsWithArguments:appLaunch.arguments environment:appLaunch.environment waitForDebugger:appLaunch.waitForDebugger] mutableCopy];
+  if (stdOutPath){
+    options[@"stdout"] = stdOutPath;
+  }
+  if (stdErrPath) {
+    options[@"stderr"] = stdErrPath;
+  }
+  return [options copy];
+}
+
 
 @end

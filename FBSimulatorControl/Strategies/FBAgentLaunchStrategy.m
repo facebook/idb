@@ -11,7 +11,6 @@
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBProcessLaunchConfiguration+Simulator.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorAgentOperation.h"
 #import "FBSimulatorError.h"
@@ -118,6 +117,19 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
     }];
 }
 
+#pragma mark Helpers
+
++ (NSDictionary<NSString *, id> *)launchOptionsWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger
+{
+  NSMutableDictionary<NSString *, id> *options = [NSMutableDictionary dictionary];
+  options[@"arguments"] = arguments;
+  options[@"environment"] = environment ? environment: @{@"__SOME_MAGIC__" : @"__IS_ALIVE__"};
+  if (waitForDebugger) {
+    options[@"wait_for_debugger"] = @1;
+  }
+  return options;
+}
+
 #pragma mark Private
 
 + (FBFuture<NSNumber *> *)launchAgentWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr mode:(FBAgentLaunchMode)mode processStatusFuture:(FBMutableFuture<NSNumber *> *)processStatusFuture
@@ -166,7 +178,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 {
   // argv[0] should be launch path of the process. SimDevice does not do this automatically, so we need to add it.
   arguments = [@[launchPath] arrayByAddingObjectsFromArray:arguments];
-  NSMutableDictionary<NSString *, id> *options = [FBProcessLaunchConfiguration launchOptionsWithArguments:arguments environment:environment waitForDebugger:waitForDebugger];
+  NSMutableDictionary<NSString *, id> *options = [[FBAgentLaunchStrategy launchOptionsWithArguments:arguments environment:environment waitForDebugger:waitForDebugger] mutableCopy];
   if (stdOut){
     options[@"stdout"] = @(stdOut.fileDescriptor);
   }
