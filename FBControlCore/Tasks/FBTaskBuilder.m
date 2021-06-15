@@ -304,8 +304,7 @@
     arguments:self.arguments
     environment:self.environment
     io:[[FBProcessIO alloc] initWithStdIn:self.stdIn stdOut:self.stdOut stdErr:self.stdErr]
-    logger:self.logger
-    programName:self.programName];
+    logger:self.logger];
 }
 
 + (NSDictionary<NSString *, NSString *> *)defaultEnvironmentForSubprocess

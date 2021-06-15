@@ -215,7 +215,6 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, copy, nullable, readonly) NSSet<NSNumber *> *acceptableExitCodes;
 @property (nonatomic, copy, readonly) NSString *configurationDescription;
-@property (nonatomic, copy, readonly) NSString *programName;
 
 @property (nonatomic, strong, readwrite) FBTaskProcessPosixSpawn *process;
 @property (nonatomic, strong, nullable, readwrite) FBProcessIO *io;
@@ -240,12 +239,11 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
         initWithProcess:process
         io:configuration.io
         queue:queue
-        configurationDescription:configuration.description
-        programName:configuration.programName];
+        configurationDescription:configuration.description];
     }];
 }
 
-- (instancetype)initWithProcess:(FBTaskProcessPosixSpawn *)process io:(FBProcessIO *)io queue:(dispatch_queue_t)queue configurationDescription:(NSString *)configurationDescription programName:(NSString *)programName
+- (instancetype)initWithProcess:(FBTaskProcessPosixSpawn *)process io:(FBProcessIO *)io queue:(dispatch_queue_t)queue configurationDescription:(NSString *)configurationDescription
 {
   self = [super init];
   if (!self) {
@@ -256,7 +254,6 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   _io = io;
   _queue = queue;
   _configurationDescription = configurationDescription;
-  _programName = programName;
 
   // Do not propogate cancellation of completed to the exit code future.
   FBMutableFuture<NSNumber *> *shieldedExitCode = FBMutableFuture.future;
