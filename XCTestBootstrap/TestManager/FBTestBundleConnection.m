@@ -216,45 +216,20 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
     atPath:self.class.clientProcessDisplayPath
     protocolVersion:@(FBProtocolVersion)];
 
+  NSString *sessionStartMethod = NSStringFromSelector(@selector(_IDE_initiateSessionWithIdentifier:forClient:atPath:protocolVersion:));
+
   FBMutableFuture<NSNumber *> *future = FBMutableFuture.future;
   [receipt handleCompletion:^(NSNumber *version, NSError *error){
-    if (error || !version) {
-      [self.logger logFormat:@"Client Daemon Interface failed, trying legacy format."];
-      [future resolveFromFuture:[self setupLegacyProtocolConnectionViaRemoteProxy:remoteProxy proxyChannel:proxyChannel]];
-      return;
+    [proxyChannel cancel];
+    if (error) {
+      [self.logger logFormat:@"testmanagerd did %@ failed: %@", sessionStartMethod, error];
+      [future resolveWithError:error];
     }
     [future resolveWithResult:version];
     [self.logger logFormat:@"testmanagerd handled session request using protcol version %ld.", (long)FBProtocolVersion];
-    [proxyChannel cancel];
   }];
 
-  return [future timeout:DaemonSessionReadyTimeout waitingFor:@"_IDE_initiateSessionWithIdentifier to be resolved"];
-}
-
-- (FBFuture<NSNumber *> *)setupLegacyProtocolConnectionViaRemoteProxy:(id<XCTestManager_DaemonConnectionInterface>)remoteProxy proxyChannel:(DTXProxyChannel *)proxyChannel
-{
-  DTXRemoteInvocationReceipt *receipt = [remoteProxy
-    _IDE_beginSessionWithIdentifier:self.context.sessionIdentifier
-    forClient:self.class.clientProcessUniqueIdentifier
-    atPath:self.class.clientProcessDisplayPath];
-
-  FBMutableFuture<NSNumber *> *future = FBMutableFuture.future;
-  [receipt handleCompletion:^(NSNumber *version, NSError *error) {
-    if (error) {
-      NSError *innerError = [[[XCTestBootstrapError
-        describe:@"Client Daemon Interface failed"]
-        causedBy:error]
-        build];
-      [future resolveWithError:innerError];
-      return;
-    }
-
-    [future resolveWithResult:version];
-    [self.logger logFormat:@"testmanagerd handled session request using legacy protocol %@", version];
-    [proxyChannel cancel];
-  }];
-
-  return future;
+  return [future timeout:DaemonSessionReadyTimeout waitingFor:@"%@ to be resolved", sessionStartMethod];
 }
 
 - (FBFuture<NSNull *> *)bundleDisconnectedSuccessfully
