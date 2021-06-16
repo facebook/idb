@@ -25,7 +25,6 @@
 
 #import "FBTestApplicationLaunchStrategy.h"
 #import "FBTestBundleConnection.h"
-#import "FBTestDaemonConnection.h"
 #import "FBTestManagerContext.h"
 #import "FBTestManagerResultSummary.h"
 #import "FBTestReporterForwarder.h"
@@ -115,15 +114,9 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return [[[[[self
     startAndRunApplicationTestHost]
     onQueue:queue push:^(id<FBLaunchedApplication> innerLaunchedApplication) {
-      launchedApplication = innerLaunchedApplication;
-      return [FBFutureContext
-        futureContextWithFutureContexts:@[
-          [FBTestDaemonConnection daemonConnectionWithContext:self.context target:self.target interface:(id)self.reporterForwarder testHostApplication:launchedApplication requestQueue:self.requestQueue logger:logger],
-          [FBTestBundleConnection bundleConnectionWithContext:self.context target:self.target interface:(id)self.reporterForwarder testHostApplication:launchedApplication requestQueue:self.requestQueue logger:logger],
-        ]];
+      return [FBTestBundleConnection bundleConnectionWithContext:self.context target:self.target interface:(id)self.reporterForwarder testHostApplication:launchedApplication requestQueue:self.requestQueue logger:logger];
     }]
-    onQueue:queue pop:^(NSArray<id> *connections) {
-      FBTestBundleConnection *bundleConnection = connections[1];
+    onQueue:queue pop:^(FBTestBundleConnection *bundleConnection) {
       return [bundleConnection runTestPlanUntilCompletion];
     }]
     onQueue:queue timeout:timeout handler:^{
