@@ -91,11 +91,29 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
 
 + (BOOL)setInternalLogHandler
 {
-  void *coreSimulatorBundle = [[NSBundle bundleWithIdentifier:@"com.apple.CoreSimulator"] dlopenExecutablePath];
+  NSBundle *coreSimulatorBundle = [NSBundle bundleWithIdentifier:@"com.apple.CoreSimulator"];
   if (!coreSimulatorBundle) {
     return NO;
   }
-  void (*SetHandler)(void *) = FBGetSymbolFromHandleOptional(coreSimulatorBundle, "SimLogSetHandler");
+  NSString *bundleVersionString = coreSimulatorBundle.infoDictionary[@"CFBundleVersion"];
+  if (!bundleVersionString) {
+    return NO;
+  }
+  NSDecimalNumber *bundleVersion = [NSDecimalNumber decimalNumberWithString:bundleVersionString];
+  if (!bundleVersion) {
+    return NO;
+  }
+  if ([bundleVersion isEqualToNumber:NSDecimalNumber.notANumber]) {
+    return NO;
+  }
+  if ([bundleVersion isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"757"]]) {
+    return NO;
+  }
+  void *coreSimulatorHandle = [coreSimulatorBundle dlopenExecutablePath];
+  if (!coreSimulatorHandle) {
+    return NO;
+  }
+  void (*SetHandler)(void *) = FBGetSymbolFromHandleOptional(coreSimulatorHandle, "SimLogSetHandler");
   if (!SetHandler) {
     return NO;
   }
