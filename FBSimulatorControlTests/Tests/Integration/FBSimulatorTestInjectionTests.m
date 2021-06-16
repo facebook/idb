@@ -61,16 +61,16 @@
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithTableSearch];
   [self assertLaunchesTestWithConfiguration:self.testLaunchTableSearch reporter:self simulator:simulator];
-  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
-              failed:@[@"testHostProcessIsMobileSafari", @"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
+  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass", @"testAsyncExpectationPassing"]
+              failed:@[@"testHostProcessIsMobileSafari", @"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail", @"testAsyncExpectationFailing"]];
 }
 
 - (void)testInjectsApplicationTestIntoSafari
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   [self assertLaunchesTestWithConfiguration:self.testLaunchSafari reporter:self simulator:simulator];
-  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
-              failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
+  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass", @"testAsyncExpectationPassing"]
+              failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail", @"testAsyncExpectationFailing"]];
 }
 
 - (void)testInjectsApplicationTestWithCustomOutputConfiguration
@@ -191,7 +191,7 @@
 
 }
 
-- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration
+- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(NSArray<NSString *> *)logs
 {
   switch (status) {
     case FBTestReportStatusPassed:
@@ -216,6 +216,7 @@
 
 - (void)testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
 {
+
 }
 
 - (void)finishedWithSummary:(FBTestManagerResultSummary *)summary
@@ -257,11 +258,6 @@
 }
 
 - (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid
-{
-
-}
-
-- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(NSArray<NSString *> *)logs
 {
 
 }
