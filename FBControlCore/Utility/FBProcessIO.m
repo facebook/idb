@@ -8,6 +8,7 @@
 #import "FBProcessIO.h"
 
 #import "FBProcessStream.h"
+#import "FBControlCoreError.h"
 
 @implementation FBProcessIOAttachment
 
@@ -44,6 +45,13 @@
 
 @end
 
+@interface FBProcessIO ()
+
+@property (nonatomic, assign, readwrite) BOOL attached;
+@property (nonatomic, nullable, readwrite) FBMutableFuture<NSNull *> *detachment;
+
+@end
+
 @implementation FBProcessIO
 
 - (instancetype)initWithStdIn:(nullable FBProcessInput *)stdIn stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr
@@ -56,7 +64,7 @@
   _stdIn = stdIn;
   _stdOut = stdOut;
   _stdErr = stdErr;
-  _queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+  _queue = dispatch_queue_create("com.facebook.FBControlCore.FBProcessIO", DISPATCH_QUEUE_SERIAL);
 
   return self;
 }
@@ -70,12 +78,15 @@
 
 - (FBFuture<FBProcessIOAttachment *> *)attach
 {
-  return [[FBFuture
-    futureWithFutures:@[
-      [self wrapAttachment:self.stdIn],
-      [self wrapAttachment:self.stdOut],
-      [self wrapAttachment:self.stdErr],
-    ]]
+  return [[[self
+    startExclusiveAttachment]
+    onQueue:self.queue fmap:^(id _) {
+      return [FBFuture futureWithFutures:@[
+        [self wrapAttachment:self.stdIn],
+        [self wrapAttachment:self.stdOut],
+        [self wrapAttachment:self.stdErr],
+      ]];
+    }]
     onQueue:self.queue fmap:^ FBFuture * (NSArray<id> *attachments) {
       // Mount all the relevant std streams.
       id stdIn = attachments[0];
@@ -106,11 +117,14 @@
 
 - (FBFuture<FBProcessFileAttachment *> *)attachViaFile
 {
-  return [[FBFuture
-    futureWithFutures:@[
-      [self wrapFileAttachment:self.stdOut],
-      [self wrapFileAttachment:self.stdErr],
-    ]]
+  return [[[self
+    startExclusiveAttachment]
+    onQueue:self.queue fmap:^(id _) {
+      return [FBFuture futureWithFutures:@[
+        [self wrapFileAttachment:self.stdOut],
+        [self wrapFileAttachment:self.stdErr],
+      ]];
+    }]
     onQueue:self.queue fmap:^ FBFuture * (NSArray<id> *attachments) {
       id stdOut = attachments[0];
       if ([stdOut isKindOfClass:NSError.class]) {
@@ -133,6 +147,42 @@
 
 - (FBFuture<NSNull *> *)detach
 {
+  return [FBFuture
+    onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
+      if (self.attached == NO) {
+        return [[FBControlCoreError
+          describeFormat:@"Cannot detach when -attach has not been called"]
+          failFuture];
+      }
+      FBMutableFuture<NSNull *> *detachment = self.detachment;
+      if (detachment) {
+        return detachment;
+      }
+      detachment = FBMutableFuture.future;
+      self.detachment = detachment;
+      [detachment resolveFromFuture:[self performDetachment]];
+      return detachment;
+    }];
+}
+
+#pragma mark Private
+
+- (FBFuture<NSNull *> *)startExclusiveAttachment
+{
+  return [FBFuture
+    onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
+      if (self.attached) {
+        return [[FBControlCoreError
+          describeFormat:@"Cannot -attach twice"]
+          failFuture];
+      }
+      self.attached = YES;
+      return FBFuture.empty;
+    }];
+}
+
+- (FBFuture<NSNull *> *)performDetachment
+{
   return [[FBFuture
     futureWithFutures:@[
       [self.stdIn detach] ?: FBFuture.empty,
@@ -149,8 +199,6 @@
       return FBFuture.empty;
     }];
 }
-
-#pragma mark Private
 
 - (FBFuture *)wrapAttachment:(id<FBStandardStream>)stream
 {

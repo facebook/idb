@@ -102,6 +102,7 @@ The FBProcessOutput for stdout.
  Attach to all the streams, returning the composite attachment for file descriptors.
  Will error if any of the stream attachments error.
  If any of the stream attachments error, then any succeeding attachments will detach.
+ This should only be called once. Calling attach more than once per instance will fail.
  */
 - (FBFuture<FBProcessIOAttachment *> *)attach;
 
@@ -114,6 +115,7 @@ The FBProcessOutput for stdout.
 
 /**
  Detach from all the streams.
+ This may be called multiple times, the underlying streams will only detach once per instance.
  */
 - (FBFuture<NSNull *> *)detach;
 
