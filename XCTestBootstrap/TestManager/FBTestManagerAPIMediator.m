@@ -87,18 +87,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   ];
 }
 
-#pragma mark - Public
-
-+ (FBFutureContext<DTXConnection *> *)testmanagerdConnectionWithTarget:(id<FBiOSTarget>)target queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
-{
-  [logger log:@"Starting a fresh testmanagerd connection"];
-  return [[target
-    transportForTestManagerService]
-    onQueue:queue push:^(NSNumber *socket) {
-      return [FBTestManagerAPIMediator connectionWithSocket:socket.intValue queue:queue logger:logger];
-    }];
-}
-
 #pragma mark - Private
 
 static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
@@ -130,28 +118,6 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
         [reporter didCrashDuringTest:error];
       }
       return future;
-    }];
-}
-
-+ (FBFutureContext<DTXConnection *> *)connectionWithSocket:(int)socket queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
-{
-  [logger logFormat:@"Wrapping socket %d in DTX Transport and Connection", socket];
-  DTXTransport *transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket disconnectAction:^{
-    [logger logFormat:@"Notified that daemon socket disconnected"];
-  }];
-  DTXConnection *connection = [[objc_lookUpClass("DTXConnection") alloc] initWithTransport:transport];
-  [connection registerDisconnectHandler:^{
-    [logger logFormat:@"Notified that daemon connection disconnected"];
-  }];
-  [logger logFormat:@"Socket %d wrapped in %@", socket, connection];
-
-  return [[FBFuture
-    futureWithResult:connection]
-    onQueue:queue contextualTeardown:^(id _, FBFutureState __) {
-      [logger logFormat:@"Ending the deamon connection. %@", connection];
-      [connection suspend];
-      [connection cancel];
-      return FBFuture.empty;
     }];
 }
 

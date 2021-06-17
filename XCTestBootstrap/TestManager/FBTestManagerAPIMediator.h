@@ -47,17 +47,6 @@ extern const NSInteger FBProtocolMinimumVersion;
  */
 + (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
-/**
- Establishes a connection to the testmanagerd service.
- The wrapped DTXConnection is initialized but `resume` must be called on it to be used.
-
- @param target the target to connect to.
- @param queue the queue to use.
- @param logger the logger to use.
- @return a Future Context wrapping the DTXConnection.
- */
-+ (FBFutureContext<DTXConnection *> *)testmanagerdConnectionWithTarget:(id<FBiOSTarget>)target queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
-
 @end
 
 NS_ASSUME_NONNULL_END

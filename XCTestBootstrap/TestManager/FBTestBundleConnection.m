@@ -151,8 +151,8 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
 {
   [self.logger log:@"Connecting Test Bundle"];
 
-  return [[[[FBTestManagerAPIMediator
-    testmanagerdConnectionWithTarget:self.target queue:self.requestQueue logger:self.logger]
+  return [[[[self
+    startTestmanagerdConnection]
     onQueue:self.requestQueue pend:^(DTXConnection *connection) {
       [connection registerDisconnectHandler:^{
         [self.bundleDisconnected resolveWithResult:NSNull.null];
@@ -175,6 +175,40 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
     onQueue:self.requestQueue contextualTeardown:^(id _, FBFutureState __) {
       self.testBundleProxy = nil;
       self.testBundleConnection = nil;
+      return FBFuture.empty;
+    }];
+}
+
+- (FBFutureContext<DTXConnection *> *)startTestmanagerdConnection
+{
+  id<FBControlCoreLogger> logger = self.logger;
+  dispatch_queue_t queue = self.requestQueue;
+  [logger log:@"Starting a fresh testmanagerd connection"];
+  return [[self.target
+    transportForTestManagerService]
+    onQueue:queue push:^(NSNumber *socket) {
+      return [FBTestBundleConnection connectionWithSocket:socket.intValue queue:queue logger:logger];
+    }];
+}
+
++ (FBFutureContext<DTXConnection *> *)connectionWithSocket:(int)socket queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  [logger logFormat:@"Wrapping testmanagerd socket (%d) in DTXTransport and DTXConnection", socket];
+  DTXTransport *transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket disconnectAction:^{
+    [logger logFormat:@"Notified that daemon socket disconnected"];
+  }];
+  DTXConnection *connection = [[objc_lookUpClass("DTXConnection") alloc] initWithTransport:transport];
+  [connection registerDisconnectHandler:^{
+    [logger logFormat:@"Notified that testmanagerd connection disconnected"];
+  }];
+  [logger logFormat:@"testmanagerd socket %d wrapped in %@", socket, connection];
+
+  return [[FBFuture
+    futureWithResult:connection]
+    onQueue:queue contextualTeardown:^(id _, FBFutureState __) {
+      [logger logFormat:@"Ending the testmanagerd connection. %@", connection];
+      [connection suspend];
+      [connection cancel];
       return FBFuture.empty;
     }];
 }
