@@ -21,22 +21,20 @@
   static dispatch_once_t onceToken;
   static NSString *directory;
   dispatch_once(&onceToken, ^{
-      NSError *error = nil;
-      directory = [self findXcodeDeveloperDirectory: error];
-      NSAssert(directory, error.description);
+      directory = [self findXcodeDeveloperDirectoryOrAssert];
   });
   return directory;
 }
 
 + (NSString *)getDeveloperDirectoryIfExists
 {
-    static dispatch_once_t onceToken;
-    static NSString *directory;
-    dispatch_once(&onceToken, ^{
-        NSError *error = nil;
-        directory = [self findXcodeDeveloperDirectory: error];
-    });
-    return directory;
+  static dispatch_once_t onceToken;
+  static NSString *directory;
+  dispatch_once(&onceToken, ^{
+    NSError *error = nil;
+    directory = [self findXcodeDeveloperDirectoryFromXcodeSelect:&error];
+  });
+  return directory;
 }
 
 + (NSString *)contentsDirectory
@@ -148,10 +146,17 @@
     stringByAppendingPathComponent:@"Info.plist"];
 }
 
-+ (NSString *)findXcodeDeveloperDirectory:(NSError *)error
++ (NSString *)findXcodeDeveloperDirectoryOrAssert
 {
-  NSString *directory = [FBXcodeDirectory.xcodeSelectFromCommandLine.xcodePath await:&error];
+  NSError *error = nil;
+  NSString *directory = [self findXcodeDeveloperDirectoryFromXcodeSelect:&error];
+  NSAssert(directory, @"Failed to get developer directory from xcode-select: %@", error.description);
   return directory;
+}
+
++ (NSString *)findXcodeDeveloperDirectoryFromXcodeSelect:(NSError **)error
+{
+  return [FBXcodeDirectory.xcodeSelectFromCommandLine.xcodePath await:error];
 }
 
 + (nullable id)readValueForKey:(NSString *)key fromPlistAtPath:(NSString *)plistPath
