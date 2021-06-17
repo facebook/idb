@@ -104,6 +104,7 @@ def make_request(
     report_attachments: bool,
     collect_coverage: bool,
     collect_logs: bool,
+    wait_for_debugger: bool,
 ) -> XctestRunRequest:
     if is_logic_test:
         mode = Mode(logic=Logic())
@@ -129,6 +130,7 @@ def make_request(
         tests_to_skip=list(tests_to_skip or []),
         timeout=(timeout if timeout is not None else 0),
         collect_logs=collect_logs,
+        wait_for_debugger=wait_for_debugger,
     )
 
 

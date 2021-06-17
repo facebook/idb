@@ -648,6 +648,7 @@ message XctestRunRequest {
   bool collect_coverage = 9;
   bool report_attachments = 10;
   bool collect_logs = 11;
+  bool wait_for_debugger = 12;
 }
 
 message XctestRunResponse {
@@ -699,6 +700,7 @@ message XctestRunResponse {
   Payload result_bundle = 4;
   string coverage_json = 5;
   Payload log_directory = 6;
+  DebuggerInfo debugger = 7;
 }
 
 // File
@@ -787,4 +789,10 @@ message PullRequest {
 
 message PullResponse {
   Payload payload = 1;
+}
+
+message DebuggerInfo{
+    uint64 pid = 1;
+    string host = 2;
+    uint64 port = 3;
 }

@@ -984,6 +984,7 @@ class Client(ClientBase):
         activities_output_path: Optional[str] = None,
         coverage_output_path: Optional[str] = None,
         log_directory_path: Optional[str] = None,
+        wait_for_debugger: bool = False,
     ) -> AsyncIterator[TestRunInfo]:
         async with self.stub.xctest_run.open() as stream:
             request = make_request(
@@ -1006,6 +1007,7 @@ class Client(ClientBase):
                 report_attachments=report_attachments,
                 collect_coverage=coverage_output_path is not None,
                 collect_logs=log_directory_path is not None,
+                wait_for_debugger=wait_for_debugger,
             )
             log_parser = XCTestLogParser()
             await stream.send_message(request)
