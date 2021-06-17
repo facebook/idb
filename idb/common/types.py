@@ -456,6 +456,7 @@ class Client(ABC):
         activities_output_path: Optional[str] = None,
         coverage_output_path: Optional[str] = None,
         log_directory_path: Optional[str] = None,
+        wait_for_debugger: bool = False,
     ) -> AsyncIterator[TestRunInfo]:
         yield
 

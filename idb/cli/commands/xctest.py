@@ -173,6 +173,11 @@ class CommonRunXcTestCommand(ClientCommand):
             help="Path to save the test logs collected",
         )
         parser.add_argument(
+            "--wait-for-debugger",
+            action="store_true",
+            help="Suspend test run process to wait for a debugger to be attached. (Only supported by logic test).",
+        )
+        parser.add_argument(
             "--install",
             help="When this option is provided bundle_ids are assumed "
             "to be paths instead. They are installed before running.",
@@ -196,6 +201,11 @@ class CommonRunXcTestCommand(ClientCommand):
         is_ui = args.run == "ui"
         is_logic = args.run == "logic"
 
+        if args.wait_for_debugger and not is_logic:
+            print(
+                "--wait_for_debugger flag is only supported for logic tests. Default to False for app and ui tests."
+            )
+
         formatter = json_format_test_info if args.json else human_format_test_info
         crashed_outside_test_case = False
         async for test_result in client.run_xctest(
@@ -215,6 +225,7 @@ class CommonRunXcTestCommand(ClientCommand):
             activities_output_path=args.activities_output_path,
             coverage_output_path=args.coverage_output_path,
             log_directory_path=args.log_directory_path,
+            wait_for_debugger=args.wait_for_debugger,
         ):
             print(formatter(test_result))
             crashed_outside_test_case = (

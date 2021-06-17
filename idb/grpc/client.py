@@ -1042,6 +1042,11 @@ class Client(ClientBase):
                 if response.coverage_json and coverage_output_path:
                     with open(coverage_output_path, "w") as f:
                         f.write(response.coverage_json)
+
+                if wait_for_debugger and response.debugger.pid:
+                    print("Tests waiting for debugger. To debug run:")
+                    print(f"lldb -p {response.debugger.pid}")
+
                 for result in make_results(response, log_parser):
                     if activities_output_path:
                         save_attachments(

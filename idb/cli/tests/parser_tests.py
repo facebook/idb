@@ -477,6 +477,7 @@ class TestParser(TestCase):
         namespace.activities_output_path = None
         namespace.coverage_output_path = None
         namespace.log_directory_path = None
+        namespace.wait_for_debugger = False
         namespace.install = False
         namespace.companion_tls = False
         return namespace
