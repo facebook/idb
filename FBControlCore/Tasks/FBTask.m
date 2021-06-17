@@ -223,6 +223,10 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 @implementation FBTask
 
+@synthesize exitCode = _exitCode;
+@synthesize signal = _signal;
+@synthesize statLoc = _statLoc;
+
 #pragma mark Initializers
 
 + (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
@@ -255,11 +259,16 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   _queue = queue;
   _configurationDescription = configurationDescription;
 
+  // Wrap the underlying FBLaunchedProcess with IO termination before resolution.
+  _statLoc = [FBTask onQueue:queue wrapNumberFuture:process.statLoc inTeardownOfIO:io];
+  _exitCode = [FBTask onQueue:queue wrapNumberFuture:process.exitCode inTeardownOfIO:io];
+  _signal = [FBTask onQueue:queue wrapNumberFuture:process.signal inTeardownOfIO:io];
+
   // Do not propogate cancellation of completed to the exit code future.
   FBMutableFuture<NSNumber *> *shieldedExitCode = FBMutableFuture.future;
   [shieldedExitCode resolveFromFuture:self.exitCode];
   _completed = [[[shieldedExitCode
-    onQueue:self.queue chain:^ FBFuture<NSNumber *> * (FBFuture<NSNumber *> *future) {
+  onQueue:self.queue chain:^ FBFuture<NSNumber *> * (FBFuture<NSNumber *> *future) {
       // We have a cancellation responder, so de-duplicate the handling of it.
       if (future.state == FBFutureStateCancelled) {
         return future;
@@ -294,21 +303,6 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 }
 
 #pragma mark Accessors
-
-- (FBFuture<NSNumber *> *)statLoc
-{
-  return self.process.statLoc;
-}
-
-- (FBFuture<NSNumber *> *)exitCode
-{
-  return self.process.exitCode;
-}
-
-- (FBFuture<NSNumber *> *)signal
-{
-  return self.process.signal;
-}
 
 - (pid_t)processIdentifier
 {
@@ -348,6 +342,15 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     return [self.process sendSignal:SIGTERM];
   }
   return self.process.exitCode;
+}
+
++ (FBFuture<NSNumber *> *)onQueue:(dispatch_queue_t)queue wrapNumberFuture:(FBFuture<NSNumber *> *)future inTeardownOfIO:(FBProcessIO *)io
+{
+  return [[future
+    onQueue:queue chain:^(id _) {
+      return [io detach];
+    }]
+    chainReplace:future];
 }
 
 #pragma mark NSObject
