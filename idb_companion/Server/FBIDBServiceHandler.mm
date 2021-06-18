@@ -263,6 +263,7 @@ static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *r
   BOOL reportActivities = request->report_activities();
   BOOL collectCoverage = request->collect_coverage();
   BOOL collectLogs = request->collect_logs();
+  BOOL waitForDebugger = request->wait_for_debugger();
 
   if (request->tests_to_run_size() > 0) {
     testsToRun = NSMutableSet.set;
@@ -279,7 +280,7 @@ static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *r
 
   switch (request->mode().mode_case()) {
     case idb::XctestRunRequest_Mode::kLogic: {
-      return [FBXCTestRunRequest logicTestWithTestBundleID:testBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage collectLogs:collectLogs];
+      return [FBXCTestRunRequest logicTestWithTestBundleID:testBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage collectLogs:collectLogs waitForDebugger:waitForDebugger];
     }
     case idb::XctestRunRequest_Mode::kApplication: {
       const idb::XctestRunRequest::Application application = request->mode().application();
@@ -1043,6 +1044,7 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
   reporter.resultBundlePath = operation.resultBundlePath;
   reporter.coveragePath = operation.coveragePath;
   reporter.binaryPath = operation.binaryPath;
+
   // First wait for the test operation to finish
   [operation.completed block:&error];
   // Then make sure we've reported everything, otherwise we could write in the background (use-after-free)

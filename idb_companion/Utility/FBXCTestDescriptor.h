@@ -57,9 +57,10 @@ NS_ASSUME_NONNULL_BEGIN
  @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
  @param reportActivities if set activities and their data will be reported
  @param collectCoverage will collect llvm coverage data
+ @param waitForDebugger a boolean describing whether the tests should stop after Run and wait for a debugger to be attached.
  @return an FBXCTestRunRequest instance.
  */
-+ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs;
++ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger;
 
 /**
 The Initializer for App Tests.
@@ -161,6 +162,11 @@ The Initializer for UI Tests.
  If set tests' output logs will be collected
  */
 @property (nonatomic, assign, readonly) BOOL collectLogs;
+
+/**
+ If set tests' would stop after Run and wait for a debugger to be attached.
+ */
+@property (nonatomic, assign, readonly) BOOL waitForDebugger;
 
 /**
  Starts the test operation.

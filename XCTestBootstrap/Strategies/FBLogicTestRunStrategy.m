@@ -116,13 +116,14 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     return [[FBOToolDynamicLibs findFullPathForSanitiserDyldInBundle:self.configuration.testBundlePath onQueue:self.executor.workQueue]
             onQueue:(self.executor.workQueue) fmap:^FBFuture<NSNull *> * (NSArray<NSString *> * _Nonnull libraries) {
 
-
-        NSDictionary<NSString *, NSString *> *environment = [self setupEnvironmentWithDylibs:self.configuration.processUnderTestEnvironment
+        NSDictionary<NSString *, NSString *> *environment = [self setupEnvironmentWithDylibs:[self.configuration.processUnderTestEnvironment mutableCopy]
             withLibraries:libraries
             shimOutputFilePath:outputs.shimOutput.filePath
             shimPath:shimPath
             bundlePath:self.configuration.testBundlePath
-            coveragePath:self.configuration.coveragePath];
+            coveragePath:self.configuration.coveragePath
+            waitForDebugger:self.configuration.waitForDebugger
+                                                             ];
 
         return [[self
                  startTestProcessWithLaunchPath:launchPath arguments:arguments environment:environment outputs:outputs]
@@ -132,7 +133,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     }];
 }
 
-- (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSDictionary<NSString *, NSString *> *)environment withLibraries:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath shimPath:(NSString *)shimPath bundlePath:(NSString *)bundlePath coveragePath:(nullable NSString *)coveragePath{
+- (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSDictionary<NSString *, NSString *> *)environment withLibraries:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath shimPath:(NSString *)shimPath bundlePath:(NSString *)bundlePath coveragePath:(nullable NSString *)coveragePath waitForDebugger:(BOOL)waitForDebugger {
 
     NSMutableDictionary<NSString *, NSString *> *updatedEnvironment = [NSMutableDictionary dictionaryWithDictionary:environment];
 
@@ -144,6 +145,8 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     if (coveragePath) {
       updatedEnvironment[@"LLVM_PROFILE_FILE"] = coveragePath;
     }
+
+    updatedEnvironment[@"XCTOOL_WAIT_FOR_DEBUGGER"] = waitForDebugger ? @"YES" : @"NO";
 
     return [NSDictionary dictionaryWithDictionary:updatedEnvironment];
 }

@@ -143,7 +143,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
         logDirectoryPath = dir.path;
         [reporter setLogDirectoryPath:logDirectoryPath];
       }
-      
+
       NSString *coveragePath = nil;
       if (self.collectCoverage) {
         NSURL *dir = [temporaryDirectory ephemeralTemporaryDirectory];
@@ -172,7 +172,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
         environment:self.environment
         workingDirectory:workingDirectory.path
         testBundlePath:testDescriptor.testBundle.path
-        waitForDebugger:NO
+        waitForDebugger:self.waitForDebugger
         timeout:timeout
         testFilter:testFilter
         mirroring:FBLogicTestMirrorFileLogs
@@ -308,22 +308,22 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
 #pragma mark Initializers
 
-+ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout  reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs
++ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout  reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger
 {
-  return [[FBXCTestRunRequest_LogicTest alloc] initWithTestBundleID:testBundleID appBundleID:nil testHostAppBundleID:nil environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage collectLogs:collectLogs];
+  return [[FBXCTestRunRequest_LogicTest alloc] initWithTestBundleID:testBundleID appBundleID:nil testHostAppBundleID:nil environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage collectLogs:collectLogs waitForDebugger:waitForDebugger];
 }
 
 + (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip  testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs
 {
-  return [[FBXCTestRunRequest_AppTest alloc] initWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:nil environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage collectLogs:collectLogs];
+  return [[FBXCTestRunRequest_AppTest alloc] initWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:nil environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage collectLogs:collectLogs waitForDebugger:NO];
 }
 
 + (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout  reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs
 {
-  return [[FBXCTestRunRequest_UITest alloc] initWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage collectLogs:collectLogs];
+  return [[FBXCTestRunRequest_UITest alloc] initWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage collectLogs:collectLogs waitForDebugger:NO];
 }
 
-- (instancetype)initWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs
+- (instancetype)initWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger
 {
   self = [super init];
   if (!self) {
@@ -341,6 +341,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   _reportActivities = reportActivities;
   _collectCoverage = collectCoverage;
   _collectLogs = collectLogs;
+  _waitForDebugger = waitForDebugger;
 
   return self;
 }
@@ -506,7 +507,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 - (FBFuture<FBTestLaunchConfiguration *> *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue
 {
   BOOL uiTesting = NO;
-  
+
   NSString *logsDirectory = nil;
   if (request.collectLogs) {
     logsDirectory = [self.targetAuxillaryDirectory stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
@@ -516,7 +517,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
       return [[[FBControlCoreError describe:@"Couldn't create logs directory"] causedBy:error] failFuture];
     }
   }
-  
+
   NSString *targetApplicationPath = nil;
   NSString *targetApplicationBundleID = nil;
   FBFuture<FBApplicationLaunchConfiguration *> *appLaunchConfigFuture = nil;

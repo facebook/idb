@@ -133,10 +133,19 @@
 
 - (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid
 {
+  [self.logger.info logFormat:@"Tests waiting for debugger. To debug run: lldb -p %d", pid];
+  idb::XctestRunResponse response;
+  response.set_status(idb::XctestRunResponse_Status_RUNNING);
+  
+  idb::DebuggerInfo *debugger_info = response.mutable_debugger();
+  debugger_info->set_pid(pid);
+  
+  [self writeResponse:response];
 }
 
 - (void)debuggerAttached
 {
+  [self.logger.info log:@"Debugger attached"];
 }
 
 - (void)didBeginExecutingTestPlan
