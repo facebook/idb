@@ -10,11 +10,11 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimRuntime.h>
 
-#import "FBAgentLaunchStrategy.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
-#import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorProcessFetcher.h"
+#import "FBSimulatorProcessLaunchStrategy.h"
 
 @interface FBSimulatorLaunchCtlCommands ()
 
@@ -251,7 +251,7 @@
     mode:FBProcessSpawnModeDefault];
 
   // Spawn and get the output
-  return [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchConsumingStdout:launchConfiguration];
+  return [[FBSimulatorProcessLaunchStrategy strategyWithSimulator:self.simulator] launchConsumingStdout:launchConfiguration];
 }
 
 @end

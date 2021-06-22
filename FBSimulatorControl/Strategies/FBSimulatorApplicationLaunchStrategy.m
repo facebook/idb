@@ -11,7 +11,7 @@
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBAgentLaunchStrategy.h"
+#import "FBSimulatorProcessLaunchStrategy.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplicationLaunchStrategy.h"
@@ -182,7 +182,7 @@
 
 + (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsForAppLaunch:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(nullable NSString *)stdOutPath stdErrPath:(nullable NSString *)stdErrPath
 {
-  NSMutableDictionary<NSString *, id> *options = [[FBAgentLaunchStrategy launchOptionsWithArguments:appLaunch.arguments environment:appLaunch.environment waitForDebugger:appLaunch.waitForDebugger] mutableCopy];
+  NSMutableDictionary<NSString *, id> *options = [[FBSimulatorProcessLaunchStrategy launchOptionsWithArguments:appLaunch.arguments environment:appLaunch.environment waitForDebugger:appLaunch.waitForDebugger] mutableCopy];
   if (stdOutPath){
     options[@"stdout"] = stdOutPath;
   }

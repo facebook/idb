@@ -11,11 +11,11 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBAgentLaunchStrategy.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorProcessFetcher.h"
+#import "FBSimulatorProcessLaunchStrategy.h"
 
 @interface FBSimulatorProcessSpawnCommands ()
 
@@ -49,7 +49,7 @@
 - (FBFuture<id<FBLaunchedProcess>> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
 {
   NSParameterAssert(configuration);
-  return [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchAgent:configuration];
+  return [[FBSimulatorProcessLaunchStrategy strategyWithSimulator:self.simulator] launchAgent:configuration];
 }
 
 @end

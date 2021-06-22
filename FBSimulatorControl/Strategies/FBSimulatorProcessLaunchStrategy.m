@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBAgentLaunchStrategy.h"
+#import "FBSimulatorProcessLaunchStrategy.h"
 
 #import <FBControlCore/FBControlCore.h>
 
@@ -18,14 +18,14 @@
 
 typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
-@interface FBAgentLaunchStrategy ()
+@interface FBSimulatorProcessLaunchStrategy ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
 @property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 
 @end
 
-@implementation FBAgentLaunchStrategy
+@implementation FBSimulatorProcessLaunchStrategy
 
 #pragma mark Initializers
 
@@ -58,7 +58,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
     onQueue:simulator.workQueue fmap:^(FBProcessIOAttachment *attachment) {
       // Launch the Process
       FBMutableFuture<NSNumber *> *processStatusFuture = [FBMutableFuture futureWithNameFormat:@"Process completion of %@ on %@", agentLaunch.launchPath, simulator.udid];
-      FBFuture<NSNumber *> *launchFuture = [FBAgentLaunchStrategy
+      FBFuture<NSNumber *> *launchFuture = [FBSimulatorProcessLaunchStrategy
         launchAgentWithSimulator:simulator
         launchPath:agentLaunch.launchPath
         arguments:agentLaunch.arguments
@@ -129,7 +129,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 + (FBFuture<NSNumber *> *)launchAgentWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr mode:(FBProcessSpawnMode)mode processStatusFuture:(FBMutableFuture<NSNumber *> *)processStatusFuture
 {
   // Get the Options
-  NSDictionary<NSString *, id> *options = [FBAgentLaunchStrategy
+  NSDictionary<NSString *, id> *options = [FBSimulatorProcessLaunchStrategy
     simDeviceLaunchOptionsWithSimulator:simulator
     launchPath:launchPath
     arguments:arguments
@@ -172,7 +172,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 {
   // argv[0] should be launch path of the process. SimDevice does not do this automatically, so we need to add it.
   arguments = [@[launchPath] arrayByAddingObjectsFromArray:arguments];
-  NSMutableDictionary<NSString *, id> *options = [[FBAgentLaunchStrategy launchOptionsWithArguments:arguments environment:environment waitForDebugger:waitForDebugger] mutableCopy];
+  NSMutableDictionary<NSString *, id> *options = [[FBSimulatorProcessLaunchStrategy launchOptionsWithArguments:arguments environment:environment waitForDebugger:waitForDebugger] mutableCopy];
   if (stdOut){
     options[@"stdout"] = @(stdOut.fileDescriptor);
   }

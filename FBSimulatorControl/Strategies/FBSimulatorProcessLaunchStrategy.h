@@ -17,9 +17,9 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBLaunchedProcess;
 
 /**
- A Strategy for Launching Agents on a Simulator.
+ A Strategy for launching processes on a Simulator.
  */
-@interface FBAgentLaunchStrategy : NSObject
+@interface FBSimulatorProcessLaunchStrategy : NSObject
 
 #pragma mark Initializer
 

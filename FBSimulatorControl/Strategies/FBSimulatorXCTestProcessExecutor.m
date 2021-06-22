@@ -9,9 +9,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBAgentLaunchStrategy.h"
 #import "FBSimulator.h"
 #import "FBSimulatorLaunchedProcess.h"
+#import "FBSimulatorProcessLaunchStrategy.h"
 
 @interface FBSimulatorXCTestProcessExecutor ()
 
@@ -58,7 +58,7 @@
    io:io
    mode:FBProcessSpawnModePosixSpawn];
 
-  return [[FBAgentLaunchStrategy
+  return [[FBSimulatorProcessLaunchStrategy
     strategyWithSimulator:self.simulator]
     launchAgent:configuration];
 }

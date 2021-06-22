@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <FBSimulatorControl/FBAgentLaunchStrategy.h>
 #import <FBSimulatorControl/FBBundleDescriptor+Simulator.h>
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
 #import <FBSimulatorControl/FBCoreSimulatorTerminationStrategy.h>

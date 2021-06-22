@@ -13,7 +13,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorLaunchCtlCommands.h"
-#import "FBAgentLaunchStrategy.h"
+#import "FBSimulatorProcessLaunchStrategy.h"
 
 @interface FBDefaultsModificationStrategy ()
 
@@ -110,7 +110,7 @@
     mode:FBProcessSpawnModeDefault];
 
   // Run the defaults command.
-  return [[[FBAgentLaunchStrategy
+  return [[[FBSimulatorProcessLaunchStrategy
     strategyWithSimulator:self.simulator]
     launchConsumingStdout:configuration]
     onQueue:self.simulator.asyncQueue map:^(NSString *output) {

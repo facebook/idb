@@ -10,10 +10,10 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimRuntime.h>
 
-#import "FBAgentLaunchStrategy.h"
 #import "FBSimulator+Private.h"
-#import "FBSimulatorLaunchedProcess.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorLaunchedProcess.h"
+#import "FBSimulatorProcessLaunchStrategy.h"
 
 @interface FBSimulatorLogCommands ()
 
@@ -74,7 +74,7 @@
     io:processIO
     mode:FBProcessSpawnModeDefault];
 
-  return [[FBAgentLaunchStrategy
+  return [[FBSimulatorProcessLaunchStrategy
     strategyWithSimulator:self.simulator]
     launchAgent:configuration];
 }
