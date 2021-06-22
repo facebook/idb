@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBBundleDescriptor;
 @class FBProcessInfo;
 @class FBSimulator;
-@class FBSimulatorApplicationOperation;
+@class FBSimulatorLaunchedApplication;
 
 /**
  A Strategy for Launching Applications inside a Simulator.
@@ -40,7 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param appLaunch the Application Configuration to Launch.
  @return A Future that resolves with the launched Application.
  */
-- (FBFuture<FBSimulatorApplicationOperation *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
+- (FBFuture<FBSimulatorLaunchedApplication *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
 
 @end
 

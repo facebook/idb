@@ -11,16 +11,16 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBSimulator;
-@class FBProcessInfo;
 @class FBApplicationLaunchConfiguration;
+@class FBProcessInfo;
+@class FBSimulator;
 
 @protocol FBLaunchedApplication;
 
 /**
  An Operation for an Application.
  */
-@interface FBSimulatorApplicationOperation : NSObject <FBLaunchedApplication>
+@interface FBSimulatorLaunchedApplication : NSObject <FBLaunchedApplication>
 
 #pragma mark Helper Methods
 
@@ -55,7 +55,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Private methods that should not be called by consumers.
  */
-@interface FBSimulatorApplicationOperation (Private)
+@interface FBSimulatorLaunchedApplication (Private)
 
 /**
  The Designated Initializer.
@@ -67,7 +67,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param launchFuture a future that resolves when the Application has finished launching.
  @return a new Application Operation.
  */
-+ (FBFuture<FBSimulatorApplicationOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration stdOut:(id<FBProcessFileOutput>)stdOut stdErr:(id<FBProcessFileOutput>)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture;
++ (FBFuture<FBSimulatorLaunchedApplication *> *)applicationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration stdOut:(id<FBProcessFileOutput>)stdOut stdErr:(id<FBProcessFileOutput>)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture;
 
 @end
 

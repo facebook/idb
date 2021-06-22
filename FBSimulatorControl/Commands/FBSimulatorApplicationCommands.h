@@ -12,7 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
-@class FBSimulatorApplicationOperation;
+@class FBSimulatorLaunchedApplication;
 /**
  Implementation of FBApplicationCommands for Simulators.
  */

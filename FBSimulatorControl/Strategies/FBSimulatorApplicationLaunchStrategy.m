@@ -11,16 +11,16 @@
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBSimulatorProcessLaunchStrategy.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplicationLaunchStrategy.h"
-#import "FBSimulatorApplicationOperation.h"
 #import "FBSimulatorBridge.h"
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorLaunchCtlCommands.h"
+#import "FBSimulatorLaunchedApplication.h"
 #import "FBSimulatorProcessFetcher.h"
+#import "FBSimulatorProcessLaunchStrategy.h"
 #import "FBSimulatorSubprocessTerminationStrategy.h"
 
 @interface FBSimulatorApplicationLaunchStrategy ()
@@ -60,7 +60,7 @@
 
 #pragma mark Public
 
-- (FBFuture<FBSimulatorApplicationOperation *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch
+- (FBFuture<FBSimulatorLaunchedApplication *> *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch
 {
   FBSimulator *simulator = self.simulator;
   FBProcessIO *io = appLaunch.io;
@@ -71,9 +71,9 @@
     onQueue:simulator.workQueue fmap:^(id _) {
       return [io attachViaFile];
     }]
-    onQueue:simulator.workQueue fmap:^ FBFuture<FBSimulatorApplicationOperation *> * (FBProcessFileAttachment *attachment) {
+    onQueue:simulator.workQueue fmap:^ FBFuture<FBSimulatorLaunchedApplication *> * (FBProcessFileAttachment *attachment) {
       FBFuture<NSNumber *> *launch = [self launchApplication:appLaunch stdOut:attachment.stdOut stdErr:attachment.stdErr];
-      return [FBSimulatorApplicationOperation operationWithSimulator:simulator configuration:appLaunch stdOut:attachment.stdOut stdErr:attachment.stdErr launchFuture:launch];
+      return [FBSimulatorLaunchedApplication applicationWithSimulator:simulator configuration:appLaunch stdOut:attachment.stdOut stdErr:attachment.stdErr launchFuture:launch];
     }];
 }
 

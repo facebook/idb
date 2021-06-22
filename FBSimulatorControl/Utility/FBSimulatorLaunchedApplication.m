@@ -5,32 +5,32 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBSimulatorApplicationOperation.h"
+#import "FBSimulatorLaunchedApplication.h"
 
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorProcessFetcher.h"
 
-@interface FBSimulatorApplicationOperation ()
+@interface FBSimulatorLaunchedApplication ()
 
 @property (nonatomic, weak, nullable, readonly) FBSimulator *simulator;
 
 @end
 
-@implementation FBSimulatorApplicationOperation
+@implementation FBSimulatorLaunchedApplication
 
 @synthesize applicationTerminated = _applicationTerminated;
 @synthesize processIdentifier = _processIdentifier;
 
 #pragma mark Initializers
 
-+ (FBFuture<FBSimulatorApplicationOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration stdOut:(id<FBProcessFileOutput>)stdOut stdErr:(id<FBProcessFileOutput>)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture
++ (FBFuture<FBSimulatorLaunchedApplication *> *)applicationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration stdOut:(id<FBProcessFileOutput>)stdOut stdErr:(id<FBProcessFileOutput>)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture
 {
   return [launchFuture
     onQueue:simulator.workQueue map:^(NSNumber *processIdentifierNumber) {
       pid_t processIdentifier = processIdentifierNumber.intValue;
-      FBFuture<NSNull *> *terminationFuture = [FBSimulatorApplicationOperation terminationFutureForSimulator:simulator processIdentifier:processIdentifier];
-      FBSimulatorApplicationOperation *operation = [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr processIdentifier:processIdentifier terminationFuture:terminationFuture];
+      FBFuture<NSNull *> *terminationFuture = [FBSimulatorLaunchedApplication terminationFutureForSimulator:simulator processIdentifier:processIdentifier];
+      FBSimulatorLaunchedApplication *operation = [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr processIdentifier:processIdentifier terminationFuture:terminationFuture];
       return operation;
     }];
 }

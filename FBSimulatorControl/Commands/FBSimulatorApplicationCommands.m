@@ -11,12 +11,12 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulatorApplicationLaunchStrategy.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
-#import "FBSimulatorApplicationOperation.h"
+#import "FBSimulatorApplicationLaunchStrategy.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorLaunchCtlCommands.h"
+#import "FBSimulatorLaunchedApplication.h"
 #import "FBSimulatorSubprocessTerminationStrategy.h"
 
 @interface FBSimulatorApplicationCommands ()
@@ -61,7 +61,7 @@
     }];
 }
 
-- (FBFuture<FBSimulatorApplicationOperation *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
+- (FBFuture<FBSimulatorLaunchedApplication *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   return [[FBSimulatorApplicationLaunchStrategy
     strategyWithSimulator:self.simulator]
