@@ -62,9 +62,6 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 @property (nonatomic, strong, readonly) FBProcessSpawnConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *statLoc;
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *signal;
-@property (nonatomic, strong, nullable, readwrite) id stdIn;
-@property (nonatomic, strong, nullable, readwrite) id stdOut;
-@property (nonatomic, strong, nullable, readwrite) id stdErr;
 
 @end
 
@@ -73,7 +70,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 @synthesize exitCode = _exitCode;
 @synthesize processIdentifier = _processIdentifier;
 
-+ (FBFuture<FBTaskProcessPosixSpawn *> *)processWithConfiguration:(FBProcessSpawnConfiguration *)configuration io:(FBProcessIOAttachment *)io logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBTaskProcessPosixSpawn *> *)processWithConfiguration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment logger:(id<FBControlCoreLogger>)logger
 {
   // Convert the arguments to the argv expected by posix_spawn
   NSArray<NSString *> *arguments = configuration.arguments;
@@ -100,13 +97,13 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   posix_spawn_file_actions_init(&fileActions);
 
   NSError *error = nil;
-  if (!AddInputFileActions(&fileActions, io.stdIn, STDIN_FILENO, &error)) {
+  if (!AddInputFileActions(&fileActions, attachment.stdIn, STDIN_FILENO, &error)) {
     return [FBFuture futureWithError:error];
   }
-  if (!AddOutputFileActions(&fileActions, io.stdOut, STDOUT_FILENO, &error)) {
+  if (!AddOutputFileActions(&fileActions, attachment.stdOut, STDOUT_FILENO, &error)) {
     return [FBFuture futureWithError:error];
   }
-  if (!AddOutputFileActions(&fileActions, io.stdErr, STDERR_FILENO, &error)) {
+  if (!AddOutputFileActions(&fileActions, attachment.stdErr, STDERR_FILENO, &error)) {
     return [FBFuture futureWithError:error];
   }
 
@@ -212,12 +209,10 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 @interface FBTask ()
 
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, copy, nullable, readonly) NSSet<NSNumber *> *acceptableExitCodes;
 @property (nonatomic, copy, readonly) NSString *configurationDescription;
-
-@property (nonatomic, strong, readwrite) FBTaskProcessPosixSpawn *process;
-@property (nonatomic, strong, nullable, readwrite) FBProcessIO *io;
+@property (nonatomic, strong, readonly) FBProcessIO *io;
+@property (nonatomic, strong, readonly) FBTaskProcessPosixSpawn *process;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
 
@@ -236,7 +231,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     attach]
     onQueue:queue fmap:^(FBProcessIOAttachment *attachment) {
       // Everything is setup, launch the process now.
-      return [FBTaskProcessPosixSpawn processWithConfiguration:configuration io:attachment logger:logger];
+      return [FBTaskProcessPosixSpawn processWithConfiguration:configuration attachment:attachment logger:logger];
     }]
     onQueue:queue map:^(FBTaskProcessPosixSpawn *process) {
       return [[self alloc]
