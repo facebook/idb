@@ -5,27 +5,27 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBSimulatorAgentOperation.h"
+#import "FBSimulatorLaunchedProcess.h"
 
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorProcessFetcher.h"
 
-@interface FBSimulatorAgentOperation ()
+@interface FBSimulatorLaunchedProcess ()
 
 @property (nonatomic, weak, nullable, readonly) FBSimulator *simulator;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
 
-@implementation FBSimulatorAgentOperation
+@implementation FBSimulatorLaunchedProcess
 
 @synthesize statLoc = _statLoc;
 @synthesize processIdentifier = _processIdentifier;
 
 #pragma mark Initializers
 
-+ (FBFuture<FBSimulatorAgentOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
++ (FBFuture<FBSimulatorLaunchedProcess *> *)processWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
 {
   return [launchFuture
     onQueue:simulator.workQueue map:^(NSNumber *processIdentifierNumber) {

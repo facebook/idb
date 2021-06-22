@@ -15,7 +15,6 @@
 #import <FBSimulatorControl/FBSimulator+Private.h>
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorAccessibilityCommands.h>
-#import <FBSimulatorControl/FBSimulatorAgentOperation.h>
 #import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
 #import <FBSimulatorControl/FBSimulatorApplicationOperation.h>
 #import <FBSimulatorControl/FBSimulatorBootConfiguration.h>

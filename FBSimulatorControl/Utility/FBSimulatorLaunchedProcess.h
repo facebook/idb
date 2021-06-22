@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import <FBSimulatorControl/FBAgentLaunchStrategy.h>
-
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationLaunchConfiguration;
@@ -18,11 +16,10 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBProcessOutput;
 
 /**
- An Operation for an Agent.
- This class is explicitly a reference type as it retains the File Handles that are used by the Agent Process.
+ An implementation of FBLaunchedProcess for processes within a Simulator.
  The lifecycle of the process is managed internally and this class should not be instantiated directly by consumers.
  */
-@interface FBSimulatorAgentOperation : NSObject <FBLaunchedProcess>
+@interface FBSimulatorLaunchedProcess : NSObject <FBLaunchedProcess>
 
 #pragma mark Properties
 
@@ -46,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Private methods that should not be called by consumers.
  */
-@interface FBSimulatorAgentOperation (Private)
+@interface FBSimulatorLaunchedProcess (Private)
 
 /**
  The Designated Initializer.
@@ -59,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param processStatusFuture a future that will fire when the process has terminated. The value is that of waitpid(2).
  @return a Future that resolves when the process is launched.
  */
-+ (FBFuture<FBSimulatorAgentOperation *> *)operationWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture;
++ (FBFuture<FBSimulatorLaunchedProcess *> *)processWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture;
 
 @end
 

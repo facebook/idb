@@ -10,8 +10,8 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBAgentLaunchStrategy.h"
-#import "FBSimulatorAgentOperation.h"
 #import "FBSimulator.h"
+#import "FBSimulatorLaunchedProcess.h"
 
 @interface FBSimulatorXCTestProcessExecutor ()
 
