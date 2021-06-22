@@ -261,37 +261,15 @@
 
 - (FBFuture<FBTask *> *)start
 {
-  return [FBTask startTaskWithConfiguration:self.buildConfiguration logger:self.logger];
+  return [FBTask startTaskWithConfiguration:self.buildConfiguration acceptableExitCodes:self.acceptableExitCodes logger:self.logger];
 }
 
 - (FBFuture<FBTask *> *)runUntilCompletion
 {
-  NSSet<NSNumber *> *acceptableExitCodes = self.acceptableExitCodes;
-  FBProcessOutput *stdErr = self.stdErr;
-  dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
   return [[self
     start]
-    onQueue:queue fmap:^(FBTask *task) {
-      return [[task
-        exitCode]
-        onQueue:queue fmap:^(NSNumber *exitCode) {
-          // If exit codes are defined, check them.
-          if (acceptableExitCodes == nil) {
-            return [FBFuture futureWithResult:task];
-          }
-          if ([acceptableExitCodes containsObject:exitCode]) {
-            return [FBFuture futureWithResult:task];
-          }
-          NSString *message = [NSString stringWithFormat:@"%@ Returned non-zero status code %@", self.programName, exitCode];
-          if ([stdErr.contents conformsToProtocol:@protocol(FBAccumulatingBuffer)]) {
-            NSData *outputData = [stdErr.contents data];
-            message = [message stringByAppendingFormat:@": %@", [[NSString alloc] initWithData:outputData encoding:NSUTF8StringEncoding]];
-          }
-          return [[[FBControlCoreError
-            describe:message]
-            inDomain:FBTaskErrorDomain]
-            failFuture];
-        }];
+    onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0) fmap:^(FBTask *task) {
+      return [[task completed] mapReplace:task];
     }];
 }
 

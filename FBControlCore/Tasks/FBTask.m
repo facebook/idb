@@ -9,6 +9,7 @@
 
 #include <spawn.h>
 
+#import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 #import "FBDataBuffer.h"
@@ -209,6 +210,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 @interface FBTask ()
 
+@property (nonatomic, copy, nullable, readonly) NSSet<NSNumber *> *acceptableExitCodes;
 @property (nonatomic, copy, readonly) NSString *configurationDescription;
 @property (nonatomic, strong, readonly) FBProcessIO *io;
 @property (nonatomic, strong, readonly) FBTaskProcessPosixSpawn *process;
@@ -224,7 +226,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 #pragma mark Initializers
 
-+ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBProcessSpawnConfiguration *)configuration acceptableExitCodes:(NSSet<NSNumber *> *)acceptableExitCodes logger:(id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
   return [[[configuration.io
@@ -238,11 +240,12 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
         initWithProcess:process
         io:configuration.io
         queue:queue
+        acceptableExitCodes:acceptableExitCodes
         configurationDescription:configuration.description];
     }];
 }
 
-- (instancetype)initWithProcess:(FBTaskProcessPosixSpawn *)process io:(FBProcessIO *)io queue:(dispatch_queue_t)queue configurationDescription:(NSString *)configurationDescription
+- (instancetype)initWithProcess:(FBTaskProcessPosixSpawn *)process io:(FBProcessIO *)io queue:(dispatch_queue_t)queue acceptableExitCodes:(nullable NSSet<NSNumber *> *)acceptableExitCodes configurationDescription:(NSString *)configurationDescription
 {
   self = [super init];
   if (!self) {
@@ -252,6 +255,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   _process = process;
   _io = io;
   _queue = queue;
+  _acceptableExitCodes = acceptableExitCodes;
   _configurationDescription = configurationDescription;
 
   // Wrap the underlying FBLaunchedProcess with IO termination before resolution.
@@ -323,11 +327,30 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 - (FBFuture<NSNumber *> *)terminate
 {
-  return [[self
+  NSSet<NSNumber *> *acceptableExitCodes = self.acceptableExitCodes;
+  return [[[self
     teardownProcess] // Wait for the process to exit, terminating it if necessary.
     onQueue:self.queue chain:^(FBFuture<NSNumber *> *exitCodeFuture) {
       // Then tear-down the resources, this should happen regardless of the exit status.
       return [[self.io detach] chainReplace:exitCodeFuture];
+    }]
+    onQueue:self.queue fmap:^(NSNumber *exitCode) {
+      // If exit codes are defined, check them.
+      if (acceptableExitCodes == nil) {
+        return [FBFuture futureWithResult:exitCode];
+      }
+      if ([acceptableExitCodes containsObject:exitCode]) {
+        return [FBFuture futureWithResult:exitCode];
+      }
+      NSString *message = [NSString stringWithFormat:@"Exit Code %@ is not acceptable %@", exitCode, [FBCollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]];
+      if ([self.stdErr conformsToProtocol:@protocol(FBAccumulatingBuffer)]) {
+        NSData *outputData = [self.stdErr data];
+        message = [message stringByAppendingFormat:@": %@", [[NSString alloc] initWithData:outputData encoding:NSUTF8StringEncoding]];
+      }
+      return [[[FBControlCoreError
+        describe:message]
+        inDomain:FBTaskErrorDomain]
+        failFuture];
     }];
 }
 
