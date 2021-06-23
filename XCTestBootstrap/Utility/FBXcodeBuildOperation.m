@@ -60,10 +60,11 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
   }
 
   [logger logFormat:@"Starting test with xcodebuild | Arguments: %@ | Environments: %@", [arguments componentsJoinedByString:@" "], [environment description]];
-  FBTaskBuilder *builder = [[[FBTaskBuilder
+  FBTaskBuilder *builder = [[[[FBTaskBuilder
     withLaunchPath:xcodeBuildPath arguments:arguments]
     withEnvironment:environment]
-    withAcceptableExitCodes:[NSSet setWithObjects:@0, @65, nil]];
+    withAcceptableExitCodes:[NSSet setWithObjects:@0, @65, nil]]
+    withTaskLifecycleLoggingTo:logger];
   if (logger) {
     [builder withStdOutToLoggerAndErrorMessage:logger];
     [builder withStdErrToLoggerAndErrorMessage:logger];
