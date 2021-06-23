@@ -256,29 +256,18 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBTaskBuilder<StdInType, StdOutType, id<FBAccumulatingBuffer>> *)withStdErrToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger;
 
-#pragma mark Loggers
+#pragma mark Logging
 
 /**
- Enables logging of the task lifecycle
+ Enables logging of the task lifecycle to the provided logger.
+ By default the task will be constructed without this logging.
+ To get detailed information, pass a logger to this method.
+ Logging can be disabled by passing nil.
 
- @param logger the logger to log to.
+ @param logger the logger to log to. Nil may be passed to disable task lifecycle logging, which is the default.
  @return the receiver for chaining.
  */
-- (instancetype)withLoggingTo:(id<FBControlCoreLogger>)logger;
-
-/**
- Disables logging of the task lifecycle
-
- @return the receiver for chaining.
- */
-- (instancetype)withNoLogging;
-
-/**
- Custom program name
-
- @return the receiver for chaining.
- */
-- (instancetype)withProgramName:(NSString *)programName;
+- (instancetype)withTaskLifecycleLoggingTo:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Building
 

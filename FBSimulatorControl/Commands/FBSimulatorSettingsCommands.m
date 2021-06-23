@@ -442,7 +442,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]
     withAcceptableExitCodes:[NSSet setWithArray:@[@0, @1]]]
-    withLoggingTo:logger]
+    withTaskLifecycleLoggingTo:logger]
     runUntilCompletion]
     onQueue:queue fmap:^(FBTask<NSNull *, NSString *, NSString *> *task) {
       if (![task.exitCode.result isEqualToNumber:@0]) {

@@ -239,21 +239,9 @@
 
 #pragma mark Loggers
 
-- (instancetype)withLoggingTo:(id<FBControlCoreLogger>)logger
+- (instancetype)withTaskLifecycleLoggingTo:(id<FBControlCoreLogger>)logger;
 {
   self.logger = logger;
-  return self;
-}
-
-- (instancetype)withNoLogging
-{
-  self.logger = nil;
-  return self;
-}
-
-- (instancetype)withProgramName:(NSString *)programName
-{
-  self.programName = programName;
   return self;
 }
 
