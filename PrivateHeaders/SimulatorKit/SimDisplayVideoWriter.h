@@ -7,13 +7,26 @@
 
 #import <Foundation/Foundation.h>
 
-#import <SimulatorKit/CDStructures.h>
 #import <SimulatorKit/SimDeviceIOPortConsumer-Protocol.h>
 #import <SimulatorKit/SimDisplayDamageRectangleDelegate-Protocol.h>
 #import <SimulatorKit/SimDisplayIOSurfaceRenderableDelegate-Protocol.h>
 
 @class MTLTextureDescriptor, NSString, NSUUID, SimVideoFile;
 @protocol MTLCommandQueue, MTLComputePipelineState, MTLDevice, MTLFunction, MTLLibrary, OS_dispatch_io, OS_dispatch_queue;
+
+typedef struct {
+    unsigned long long _field1;
+    void *_field2;
+    unsigned long long *_field3;
+    unsigned long long _field4[5];
+} CDStruct_70511ce9;
+
+typedef struct {
+    long long value;
+    int timescale;
+    unsigned int flags;
+    long long epoch;
+} CDStruct_1b6d18a9;
 
 @interface SimDisplayVideoWriter : NSObject <SimDeviceIOPortConsumer, SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate>
 {

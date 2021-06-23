@@ -897,38 +897,7 @@
 		AA386D4D1E44F04F005C6118 /* SimRuntime+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimRuntime+Removed.h"; sourceTree = "<group>"; };
 		AA386D4E1E44F04F005C6118 /* SimRuntimePairingReuirements.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimRuntimePairingReuirements.h; sourceTree = "<group>"; };
 		AA386D4F1E44F04F005C6118 /* SimServiceContext.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimServiceContext.h; sourceTree = "<group>"; };
-		AA386D501E44F3EA005C6118 /* _TtC12SimulatorKit20SimDeviceBootMonitor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _TtC12SimulatorKit20SimDeviceBootMonitor.h; sourceTree = "<group>"; };
-		AA386D511E44F3EA005C6118 /* _TtC12SimulatorKit24SimDisplayRenderableView-SimulatorKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "_TtC12SimulatorKit24SimDisplayRenderableView-SimulatorKit.h"; sourceTree = "<group>"; };
-		AA386D521E44F3EA005C6118 /* _TtC12SimulatorKit24SimDisplayRenderableView-SimulatorKit1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "_TtC12SimulatorKit24SimDisplayRenderableView-SimulatorKit1.h"; sourceTree = "<group>"; };
-		AA386D531E44F3EA005C6118 /* _TtC12SimulatorKit24SimDisplayRenderableView-SimulatorKit2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "_TtC12SimulatorKit24SimDisplayRenderableView-SimulatorKit2.h"; sourceTree = "<group>"; };
-		AA386D541E44F3EA005C6118 /* _TtC12SimulatorKit24SimDisplayRenderableView-SimulatorKit3.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "_TtC12SimulatorKit24SimDisplayRenderableView-SimulatorKit3.h"; sourceTree = "<group>"; };
-		AA386D551E44F3EA005C6118 /* _TtC12SimulatorKit24SimDisplayRenderableView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _TtC12SimulatorKit24SimDisplayRenderableView.h; sourceTree = "<group>"; };
-		AA386D561E44F3EA005C6118 /* _TtC12SimulatorKit26SimDisplayScreenshotWriter-SimulatorKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "_TtC12SimulatorKit26SimDisplayScreenshotWriter-SimulatorKit.h"; sourceTree = "<group>"; };
-		AA386D571E44F3EA005C6118 /* _TtC12SimulatorKit26SimDisplayScreenshotWriter-SimulatorKit1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "_TtC12SimulatorKit26SimDisplayScreenshotWriter-SimulatorKit1.h"; sourceTree = "<group>"; };
-		AA386D581E44F3EA005C6118 /* _TtC12SimulatorKit26SimDisplayScreenshotWriter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _TtC12SimulatorKit26SimDisplayScreenshotWriter.h; sourceTree = "<group>"; };
-		AA386D591E44F3EA005C6118 /* _TtP12SimulatorKit20_ExposeQuartzCoreSPI_-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "_TtP12SimulatorKit20_ExposeQuartzCoreSPI_-Protocol.h"; sourceTree = "<group>"; };
-		AA386D5A1E44F3EA005C6118 /* _TtP12SimulatorKit32SimDisplayRenderableViewDelegate_-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "_TtP12SimulatorKit32SimDisplayRenderableViewDelegate_-Protocol.h"; sourceTree = "<group>"; };
-		AA386D5B1E44F3EA005C6118 /* _TtP12SimulatorKit40SimDisplayRenderableViewRotationDelegate_-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "_TtP12SimulatorKit40SimDisplayRenderableViewRotationDelegate_-Protocol.h"; sourceTree = "<group>"; };
-		AA386D5C1E44F3EA005C6118 /* _TtPs9AnyObject_-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "_TtPs9AnyObject_-Protocol.h"; sourceTree = "<group>"; };
-		AA386D5D1E44F3EA005C6118 /* _TtPs10_NSCopying_-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "_TtPs10_NSCopying_-Protocol.h"; sourceTree = "<group>"; };
-		AA386D5E1E44F3EA005C6118 /* _TtPs13_NSStringCore_-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "_TtPs13_NSStringCore_-Protocol.h"; sourceTree = "<group>"; };
-		AA386D5F1E44F3EA005C6118 /* _TtPs15_ShadowProtocol_-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "_TtPs15_ShadowProtocol_-Protocol.h"; sourceTree = "<group>"; };
-		AA386D601E44F3EA005C6118 /* _TtPs18_NSFastEnumeration_-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "_TtPs18_NSFastEnumeration_-Protocol.h"; sourceTree = "<group>"; };
-		AA386D611E44F3EA005C6118 /* CDStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDStructures.h; sourceTree = "<group>"; };
-		AA386D621E44F3EA005C6118 /* CIImage-SimulatorKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CIImage-SimulatorKit.h"; sourceTree = "<group>"; };
 		AA386D631E44F3EA005C6118 /* FoundationXPCProtocolProxyable-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FoundationXPCProtocolProxyable-Protocol.h"; sourceTree = "<group>"; };
-		AA386D641E44F3EA005C6118 /* NSDate-CoreMedia.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSDate-CoreMedia.h"; sourceTree = "<group>"; };
-		AA386D651E44F3EA005C6118 /* NSError-SimulatorKitNSErrorAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSError-SimulatorKitNSErrorAdditions.h"; sourceTree = "<group>"; };
-		AA386D661E44F3EA005C6118 /* NSMutableData-AVCCFormat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSMutableData-AVCCFormat.h"; sourceTree = "<group>"; };
-		AA386D671E44F3EA005C6118 /* NSMutableData-cstdint.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSMutableData-cstdint.h"; sourceTree = "<group>"; };
-		AA386D681E44F3EA005C6118 /* NSMutableData-NSString.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSMutableData-NSString.h"; sourceTree = "<group>"; };
-		AA386D691E44F3EA005C6118 /* NSMutableData-QuicktimeFormat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSMutableData-QuicktimeFormat.h"; sourceTree = "<group>"; };
-		AA386D6B1E44F3EA005C6118 /* NSString-SimDisplayConsoleDebugger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSString-SimDisplayConsoleDebugger.h"; sourceTree = "<group>"; };
-		AA386D6C1E44F3EA005C6118 /* NSString-SIMPackedVersion.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSString-SIMPackedVersion.h"; sourceTree = "<group>"; };
-		AA386D6D1E44F3EA005C6118 /* NSValue-CoreMedia.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSValue-CoreMedia.h"; sourceTree = "<group>"; };
-		AA386D6E1E44F3EA005C6118 /* OS_dispatch_source_timer-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OS_dispatch_source_timer-Protocol.h"; sourceTree = "<group>"; };
-		AA386D6F1E44F3EA005C6118 /* OS_dispatch_source-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OS_dispatch_source-Protocol.h"; sourceTree = "<group>"; };
-		AA386D701E44F3EA005C6118 /* OS_xpc_object-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OS_xpc_object-Protocol.h"; sourceTree = "<group>"; };
 		AA386D711E44F3EA005C6118 /* SimDeviceBootInfo-SimulatorKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceBootInfo-SimulatorKit.h"; sourceTree = "<group>"; };
 		AA386D731E44F3EA005C6118 /* SimDeviceFramebufferService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceFramebufferService.h; sourceTree = "<group>"; };
 		AA386D751E44F3EA005C6118 /* SimDeviceIOPortConsumer-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceIOPortConsumer-Protocol.h"; sourceTree = "<group>"; };
@@ -1711,38 +1680,7 @@
 		AA2DDC221C283F40000689C6 /* SimulatorKit */ = {
 			isa = PBXGroup;
 			children = (
-				AA386D501E44F3EA005C6118 /* _TtC12SimulatorKit20SimDeviceBootMonitor.h */,
-				AA386D511E44F3EA005C6118 /* _TtC12SimulatorKit24SimDisplayRenderableView-SimulatorKit.h */,
-				AA386D521E44F3EA005C6118 /* _TtC12SimulatorKit24SimDisplayRenderableView-SimulatorKit1.h */,
-				AA386D531E44F3EA005C6118 /* _TtC12SimulatorKit24SimDisplayRenderableView-SimulatorKit2.h */,
-				AA386D541E44F3EA005C6118 /* _TtC12SimulatorKit24SimDisplayRenderableView-SimulatorKit3.h */,
-				AA386D551E44F3EA005C6118 /* _TtC12SimulatorKit24SimDisplayRenderableView.h */,
-				AA386D561E44F3EA005C6118 /* _TtC12SimulatorKit26SimDisplayScreenshotWriter-SimulatorKit.h */,
-				AA386D571E44F3EA005C6118 /* _TtC12SimulatorKit26SimDisplayScreenshotWriter-SimulatorKit1.h */,
-				AA386D581E44F3EA005C6118 /* _TtC12SimulatorKit26SimDisplayScreenshotWriter.h */,
-				AA386D591E44F3EA005C6118 /* _TtP12SimulatorKit20_ExposeQuartzCoreSPI_-Protocol.h */,
-				AA386D5A1E44F3EA005C6118 /* _TtP12SimulatorKit32SimDisplayRenderableViewDelegate_-Protocol.h */,
-				AA386D5B1E44F3EA005C6118 /* _TtP12SimulatorKit40SimDisplayRenderableViewRotationDelegate_-Protocol.h */,
-				AA386D5C1E44F3EA005C6118 /* _TtPs9AnyObject_-Protocol.h */,
-				AA386D5D1E44F3EA005C6118 /* _TtPs10_NSCopying_-Protocol.h */,
-				AA386D5E1E44F3EA005C6118 /* _TtPs13_NSStringCore_-Protocol.h */,
-				AA386D5F1E44F3EA005C6118 /* _TtPs15_ShadowProtocol_-Protocol.h */,
-				AA386D601E44F3EA005C6118 /* _TtPs18_NSFastEnumeration_-Protocol.h */,
-				AA386D611E44F3EA005C6118 /* CDStructures.h */,
-				AA386D621E44F3EA005C6118 /* CIImage-SimulatorKit.h */,
 				AA386D631E44F3EA005C6118 /* FoundationXPCProtocolProxyable-Protocol.h */,
-				AA386D641E44F3EA005C6118 /* NSDate-CoreMedia.h */,
-				AA386D651E44F3EA005C6118 /* NSError-SimulatorKitNSErrorAdditions.h */,
-				AA386D661E44F3EA005C6118 /* NSMutableData-AVCCFormat.h */,
-				AA386D671E44F3EA005C6118 /* NSMutableData-cstdint.h */,
-				AA386D681E44F3EA005C6118 /* NSMutableData-NSString.h */,
-				AA386D691E44F3EA005C6118 /* NSMutableData-QuicktimeFormat.h */,
-				AA386D6B1E44F3EA005C6118 /* NSString-SimDisplayConsoleDebugger.h */,
-				AA386D6C1E44F3EA005C6118 /* NSString-SIMPackedVersion.h */,
-				AA386D6D1E44F3EA005C6118 /* NSValue-CoreMedia.h */,
-				AA386D6E1E44F3EA005C6118 /* OS_dispatch_source_timer-Protocol.h */,
-				AA386D6F1E44F3EA005C6118 /* OS_dispatch_source-Protocol.h */,
-				AA386D701E44F3EA005C6118 /* OS_xpc_object-Protocol.h */,
 				AA386D711E44F3EA005C6118 /* SimDeviceBootInfo-SimulatorKit.h */,
 				AA386D731E44F3EA005C6118 /* SimDeviceFramebufferService.h */,
 				AA386D751E44F3EA005C6118 /* SimDeviceIOPortConsumer-Protocol.h */,
