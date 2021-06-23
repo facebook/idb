@@ -33,7 +33,7 @@ extern NSString *const FBTaskErrorDomain;
 
  @param configuration the configuration to use.
  @param acceptableExitCodes the set of status codes that apply to the "completed" future.
- @param logger an optional logger to use for logging.
+ @param logger an optional logger to log task lifecycle events to.
  @return a future that resolves when the task has been started.
  */
 + (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBProcessSpawnConfiguration *)configuration acceptableExitCodes:(nullable NSSet<NSNumber *> *)acceptableExitCodes logger:(nullable id<FBControlCoreLogger>)logger;

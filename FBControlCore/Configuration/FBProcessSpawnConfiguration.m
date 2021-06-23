@@ -24,6 +24,11 @@
   return self;
 }
 
+- (NSString *)processName
+{
+  return self.launchPath.lastPathComponent;
+}
+
 #pragma mark NSObject
 
 - (NSUInteger)hash

@@ -43,8 +43,9 @@
 
 - (void)testTrueExit
 {
-  FBFuture *futureTask = [[FBTaskBuilder
+  FBFuture *futureTask = [[[FBTaskBuilder
     withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"true"]]
+    withTaskLifecycleLoggingTo:FBControlCoreGlobalConfiguration.defaultLogger]
     runUntilCompletion];
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
