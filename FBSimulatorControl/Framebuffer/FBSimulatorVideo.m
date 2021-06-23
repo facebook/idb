@@ -13,15 +13,12 @@
 
 #import "FBAppleSimctlCommandExecutor.h"
 #import "FBSimulatorError.h"
-#import "FBVideoEncoderConfiguration.h"
 #import "FBVideoEncoderSimulatorKit.h"
 
 @interface FBSimulatorVideo ()
 
-@property (nonatomic, strong, readonly) FBVideoEncoderConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
-
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *completedFuture;
 
 
@@ -32,7 +29,7 @@
 @property (nonatomic, strong, readonly) FBFramebuffer *framebuffer;
 @property (nonatomic, strong, readwrite) FBVideoEncoderSimulatorKit *encoder;
 
-- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration framebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -50,9 +47,9 @@
 
 #pragma mark Initializers
 
-+ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration framebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger
++ (instancetype)videoWithFramebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBSimulatorVideo_SimulatorKit alloc] initWithConfiguration:configuration framebuffer:framebuffer logger:logger];
+  return [[FBSimulatorVideo_SimulatorKit alloc] initWithFramebuffer:framebuffer logger:logger];
 }
 
 + (instancetype)videoWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor logger:(id<FBControlCoreLogger>)logger
@@ -60,19 +57,17 @@
   return [[FBSimulatorVideo_SimCtl alloc] initWithWithSimctlExecutor:simctlExecutor logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _configuration = configuration;
   _logger = logger;
   _queue = dispatch_queue_create("com.facebook.simulatorvideo.simctl", DISPATCH_QUEUE_SERIAL);
 
   _completedFuture = FBMutableFuture.future;
-
 
   return self;
 }
@@ -104,19 +99,14 @@
 
 @implementation FBSimulatorVideo_SimulatorKit
 
-- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration framebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super initWithConfiguration:configuration logger:logger];
+  self = [super initWithLogger:logger];
   if (!self) {
     return nil;
   }
 
   _framebuffer = framebuffer;
-
-  BOOL pendingStart = (configuration.options & FBVideoEncoderOptionsAutorecord) == FBVideoEncoderOptionsAutorecord;
-  if (pendingStart) {
-    [self startRecordingToFile:configuration.filePath];
-  }
 
   return self;
 }
@@ -161,7 +151,7 @@
 
 - (instancetype)initWithWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super initWithConfiguration:FBVideoEncoderConfiguration.defaultConfiguration logger:logger];
+  self = [super initWithLogger:logger];
   if (!self) {
     return nil;
   }

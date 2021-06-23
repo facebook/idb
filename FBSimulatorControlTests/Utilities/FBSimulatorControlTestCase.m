@@ -86,13 +86,6 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
   return options;
 }
 
-+ (FBVideoEncoderConfiguration *)defaultEncoderConfiguration
-{
-  return [NSProcessInfo.processInfo.environment[RecordVideoEnvKey] boolValue]
-    ? [FBVideoEncoderConfiguration withOptions:FBVideoEncoderConfiguration.defaultConfiguration.options | FBVideoEncoderOptionsAutorecord]
-    : [FBVideoEncoderConfiguration defaultConfiguration];
-}
-
 + (NSString *)defaultDeviceSetPath
 {
   NSString *value = NSProcessInfo.processInfo.environment[DeviceSetEnvKey];

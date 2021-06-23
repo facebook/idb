@@ -16,7 +16,6 @@
 #import "FBFramebuffer.h"
 #import "FBSimulatorVideo.h"
 #import "FBSimulatorVideoStream.h"
-#import "FBVideoEncoderConfiguration.h"
 
 @interface FBSimulatorVideoRecordingCommands ()
 
@@ -99,7 +98,7 @@
   return [[self.simulator
     connectToFramebuffer]
     onQueue:self.simulator.workQueue map:^(FBFramebuffer *framebuffer) {
-      self.video = [FBSimulatorVideo videoWithConfiguration:FBVideoEncoderConfiguration.defaultConfiguration framebuffer:framebuffer logger:self.simulator.logger];
+      self.video = [FBSimulatorVideo videoWithFramebuffer:framebuffer logger:self.simulator.logger];
       return self.video;
     }];
 }
