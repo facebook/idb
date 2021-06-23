@@ -91,7 +91,7 @@
   FBSimulator *simulator = self.simulator;
   return [FBFuture
     onQueue:simulator.workQueue resolveValue:^(NSError **error) {
-      return [FBFramebuffer mainScreenSurfaceForClient:simulator.device.io logger:simulator.logger error:error];
+      return [FBFramebuffer mainScreenSurfaceForSimulator:simulator logger:simulator.logger error:error];
     }];
 }
 

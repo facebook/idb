@@ -15,18 +15,17 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <CoreSimulator/SimDevice.h>
+
 #import <SimulatorKit/SimDeviceFramebufferService.h>
-#import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
-#import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
-#import <SimulatorKit/SimDisplayRenderable-Protocol.h>
-#import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
-#import <SimulatorKit/SimDisplayDescriptorState-Protocol.h>
 #import <SimulatorKit/SimDeviceIOPortConsumer-Protocol.h>
 #import <SimulatorKit/SimDeviceIOPortDescriptorState-Protocol.h>
 #import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
+#import <SimulatorKit/SimDisplayDescriptorState-Protocol.h>
 #import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
 #import <SimulatorKit/SimDisplayRenderable-Protocol.h>
 
+#import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
 
 static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
@@ -50,7 +49,7 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
   return surface;
 }
 
-@interface FBFramebuffer_IOClient_Forwarder : NSObject <SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDeviceIOPortConsumer>
+@interface FBFramebuffer_Queue_Forwarder : NSObject <SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDeviceIOPortConsumer>
 
 @property (nonatomic, weak, readonly) id<FBFramebufferConsumer> consumer;
 @property (nonatomic, strong, readonly) dispatch_queue_t consumerQueue;
@@ -58,7 +57,7 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 
 @end
 
-@implementation FBFramebuffer_IOClient_Forwarder
+@implementation FBFramebuffer_Queue_Forwarder
 
 - (instancetype)initWithConsumer:(id<FBFramebufferConsumer>)consumer consumerQueue:(dispatch_queue_t)consumerQueue
 {
@@ -119,8 +118,9 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 
 #pragma mark Initializers
 
-+ (nullable instancetype)mainScreenSurfaceForClient:(id<SimDeviceIOProtocol>)ioClient logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (instancetype)mainScreenSurfaceForSimulator:(FBSimulator *)simulator logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 {
+  id<SimDeviceIOProtocol> ioClient = simulator.device.io;
   for (id<SimDeviceIOPortInterface> port in ioClient.ioPorts) {
     if (![port conformsToProtocol:@protocol(SimDeviceIOPortInterface)]) {
       continue;
@@ -185,11 +185,11 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 - (nullable IOSurfaceRef)attachConsumer:(id<FBFramebufferConsumer>)consumer onQueue:(dispatch_queue_t)queue
 {
   // Don't attach the same consumer twice
-  FBFramebuffer_IOClient_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
+  FBFramebuffer_Queue_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
   NSAssert(forwarder == nil, @"Cannot re-attach the same consumer %@", forwarder.consumer);
 
   // Create the forwarder and keep a reference to it.
-  forwarder = [[FBFramebuffer_IOClient_Forwarder alloc] initWithConsumer:consumer consumerQueue:queue];
+  forwarder = [[FBFramebuffer_Queue_Forwarder alloc] initWithConsumer:consumer consumerQueue:queue];
   [self.forwarders setObject:forwarder forKey:consumer];
 
   // Extract the IOSurface if one does not exist.
@@ -216,7 +216,7 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 
 - (void)detachConsumer:(id<FBFramebufferConsumer>)consumer
 {
-  FBFramebuffer_IOClient_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
+  FBFramebuffer_Queue_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
   if (!forwarder) {
     return;
   }
