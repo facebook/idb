@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Encodes Device Video to a File, using an AVCaptureSession
  */
-@interface FBDeviceVideoFileEncoder : NSObject
+@interface FBVideoFileWriter : NSObject
 
 #pragma mark Initializers
 
@@ -28,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @param error an error out for any error that occurs.
  */
-+ (nullable instancetype)encoderWithSession:(AVCaptureSession *)session filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable instancetype)writerWithSession:(AVCaptureSession *)session filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 #pragma mark Public Methods
 

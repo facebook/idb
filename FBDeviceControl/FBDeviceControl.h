@@ -20,7 +20,6 @@
 #import <FBDeviceControl/FBDeviceSet.h>
 #import <FBDeviceControl/FBDeviceVideo.h>
 #import <FBDeviceControl/FBDeviceVideo.h>
-#import <FBDeviceControl/FBDeviceVideoFileEncoder.h>
 #import <FBDeviceControl/FBDeviceVideoStream.h>
 #import <FBDeviceControl/FBDeviceXCTestCommands.h>
 #import <FBDeviceControl/FBGDBClient.h>

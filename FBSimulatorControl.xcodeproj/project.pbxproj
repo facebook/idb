@@ -109,9 +109,9 @@
 		AA274283204546F800CFAC3B /* FBProcessStreamTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA274282204546F800CFAC3B /* FBProcessStreamTests.m */; };
 		AA280F4D1E714779006BB9E0 /* FBDeviceVideo.h in Headers */ = {isa = PBXBuildFile; fileRef = AA280F4B1E714779006BB9E0 /* FBDeviceVideo.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA280F4E1E714779006BB9E0 /* FBDeviceVideo.m in Sources */ = {isa = PBXBuildFile; fileRef = AA280F4C1E714779006BB9E0 /* FBDeviceVideo.m */; };
-		AA280F511E714823006BB9E0 /* FBDeviceVideoFileEncoder.h in Headers */ = {isa = PBXBuildFile; fileRef = AA280F4F1E714823006BB9E0 /* FBDeviceVideoFileEncoder.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA280F521E714823006BB9E0 /* FBDeviceVideoFileEncoder.m in Sources */ = {isa = PBXBuildFile; fileRef = AA280F501E714823006BB9E0 /* FBDeviceVideoFileEncoder.m */; };
 		AA2942811D00AB0800880984 /* FBiOSTarget.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2942801D00AB0800880984 /* FBiOSTarget.m */; };
+		AA2B266326821F1200EF31AA /* FBVideoFileWriter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA2B266126821F1200EF31AA /* FBVideoFileWriter.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA2B266426821F1200EF31AA /* FBVideoFileWriter.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2B266226821F1200EF31AA /* FBVideoFileWriter.m */; };
 		AA2D494525DC3A2C007566C2 /* FBLogCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2D494425DC3A2B007566C2 /* FBLogCommands.m */; };
 		AA2E38E121E629C20065C800 /* FBDebuggerCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AA2E38E021E626B10065C800 /* FBDebuggerCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA2F41F2252481C1002279A2 /* FBSpringboardServicesClient.h in Headers */ = {isa = PBXBuildFile; fileRef = AA2F41F0252481C1002279A2 /* FBSpringboardServicesClient.h */; };
@@ -802,9 +802,9 @@
 		AA274282204546F800CFAC3B /* FBProcessStreamTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBProcessStreamTests.m; sourceTree = "<group>"; };
 		AA280F4B1E714779006BB9E0 /* FBDeviceVideo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceVideo.h; sourceTree = "<group>"; };
 		AA280F4C1E714779006BB9E0 /* FBDeviceVideo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceVideo.m; sourceTree = "<group>"; };
-		AA280F4F1E714823006BB9E0 /* FBDeviceVideoFileEncoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceVideoFileEncoder.h; sourceTree = "<group>"; };
-		AA280F501E714823006BB9E0 /* FBDeviceVideoFileEncoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceVideoFileEncoder.m; sourceTree = "<group>"; };
 		AA2942801D00AB0800880984 /* FBiOSTarget.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTarget.m; sourceTree = "<group>"; };
+		AA2B266126821F1200EF31AA /* FBVideoFileWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBVideoFileWriter.h; sourceTree = "<group>"; };
+		AA2B266226821F1200EF31AA /* FBVideoFileWriter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBVideoFileWriter.m; sourceTree = "<group>"; };
 		AA2D494425DC3A2B007566C2 /* FBLogCommands.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBLogCommands.m; sourceTree = "<group>"; };
 		AA2E38E021E626B10065C800 /* FBDebuggerCommands.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBDebuggerCommands.h; sourceTree = "<group>"; };
 		AA2E9B552469617400F94F5D /* NSAccessibilityCustomElementDataProvider-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSAccessibilityCustomElementDataProvider-Protocol.h"; sourceTree = "<group>"; };
@@ -1669,8 +1669,6 @@
 			children = (
 				AA280F4B1E714779006BB9E0 /* FBDeviceVideo.h */,
 				AA280F4C1E714779006BB9E0 /* FBDeviceVideo.m */,
-				AA280F4F1E714823006BB9E0 /* FBDeviceVideoFileEncoder.h */,
-				AA280F501E714823006BB9E0 /* FBDeviceVideoFileEncoder.m */,
 				AA4D306E1E79983700A9FBD0 /* FBDeviceVideoStream.h */,
 				AA4D306F1E79983700A9FBD0 /* FBDeviceVideoStream.m */,
 			);
@@ -2747,6 +2745,8 @@
 				AA5D012E2003F38B005FF117 /* FBProcessStream.m */,
 				AAC706F31EFD2E4100BF8303 /* FBScale.h */,
 				AAC706F41EFD2E4100BF8303 /* FBScale.m */,
+				AA2B266126821F1200EF31AA /* FBVideoFileWriter.h */,
+				AA2B266226821F1200EF31AA /* FBVideoFileWriter.m */,
 				AA4D306A1E79972E00A9FBD0 /* FBVideoStream.h */,
 				AA4D306B1E79972E00A9FBD0 /* FBVideoStream.m */,
 				EE2EC7AA1CAC3F97009A7BB1 /* FBWeakFramework.h */,
@@ -2818,7 +2818,6 @@
 				AA280F4D1E714779006BB9E0 /* FBDeviceVideo.h in Headers */,
 				AAC8B2571CEC51520034A865 /* FBDeviceControlError.h in Headers */,
 				AAA8DE982508D57B00964222 /* FBDeviceProvisioningProfileCommands.h in Headers */,
-				AA280F511E714823006BB9E0 /* FBDeviceVideoFileEncoder.h in Headers */,
 				AAF2CCE52524951000C68D39 /* FBManagedConfigClient.h in Headers */,
 				AAD4B12324892FC30021487B /* FBDeviceManager.h in Headers */,
 				AAA8DEA32508D5E400964222 /* FBDeviceEraseCommands.h in Headers */,
@@ -3030,6 +3029,7 @@
 				EE2EC7AC1CAC3F97009A7BB1 /* FBWeakFramework.h in Headers */,
 				AA8D347824D04CCE000FAC59 /* FBLocationCommands.h in Headers */,
 				D76F950D1F56D6700003D341 /* FBTestLaunchConfiguration.h in Headers */,
+				AA2B266326821F1200EF31AA /* FBVideoFileWriter.h in Headers */,
 				D76F95091F56D65C0003D341 /* FBXCTestCommands.h in Headers */,
 				AAB123821DB4B16900F20555 /* FBDispatchSourceNotifier.h in Headers */,
 				D76C2AEE1F13F61E000EF13D /* FBEventReporterSubject.h in Headers */,
@@ -3445,7 +3445,6 @@
 				AAF2CCE62524951000C68D39 /* FBManagedConfigClient.m in Sources */,
 				AAC8B2581CEC51520034A865 /* FBDeviceControlError.m in Sources */,
 				AABA7CF520BB450B00C1E73A /* FBDeviceFileCommands.m in Sources */,
-				AA280F521E714823006BB9E0 /* FBDeviceVideoFileEncoder.m in Sources */,
 				AAE248031DF8978700E0949D /* FBDeviceVideoRecordingCommands.m in Sources */,
 				AABD72AD1E64A957004D6EBE /* FBDeviceXCTestCommands.m in Sources */,
 				AA682B1B1CEC9E8B009B6ECA /* FBDeviceSet.m in Sources */,
@@ -3599,6 +3598,7 @@
 				EEBD60831C9062E900298A07 /* FBControlCoreLogger.m in Sources */,
 				AA90708F223AC97800805706 /* FBInstrumentsConfiguration.m in Sources */,
 				1C0AAAB4254B646000001D3C /* FBXCTestShimConfiguration.m in Sources */,
+				AA2B266426821F1200EF31AA /* FBVideoFileWriter.m in Sources */,
 				AADBB6B525E5689600AFB15D /* FBSettingsCommands.m in Sources */,
 				AA6A3B0A1CC0C96E00E016C4 /* FBCollectionOperations.m in Sources */,
 				73E0A9751F4F361800A216AD /* FBBundleDescriptor+Application.m in Sources */,

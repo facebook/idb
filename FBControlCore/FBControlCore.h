@@ -79,6 +79,7 @@
 #import <FBControlCore/FBTaskBuilder.h>
 #import <FBControlCore/FBTestLaunchConfiguration.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
+#import <FBControlCore/FBVideoFileWriter.h>
 #import <FBControlCore/FBVideoStream.h>
 #import <FBControlCore/FBVideoStreamCommands.h>
 #import <FBControlCore/FBVideoStreamConfiguration.h>

@@ -5,14 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBDeviceVideoFileEncoder.h"
+#import "FBVideoFileWriter.h"
 
 #import <FBControlCore/FBControlCore.h>
 #import <AVFoundation/AVFoundation.h>
 
-#import "FBDeviceControlError.h"
+#import "FBControlCoreError.h"
 
-@interface FBDeviceVideoFileEncoder () <AVCaptureFileOutputRecordingDelegate>
+@interface FBVideoFileWriter () <AVCaptureFileOutputRecordingDelegate>
 
 @property (nonatomic, strong, readonly) AVCaptureSession *session;
 @property (nonatomic, strong, readonly) AVCaptureMovieFileOutput *output;
@@ -23,20 +23,20 @@
 
 @end
 
-@implementation FBDeviceVideoFileEncoder
+@implementation FBVideoFileWriter
 
-+ (nullable instancetype)encoderWithSession:(AVCaptureSession *)session filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (nullable instancetype)writerWithSession:(AVCaptureSession *)session filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   // Add the Output to the Session.
   AVCaptureMovieFileOutput *output = [[AVCaptureMovieFileOutput alloc] init];
   if (![session canAddOutput:output]) {
-    return [[FBDeviceControlError
+    return [[FBControlCoreError
       describeFormat:@"Cannot add File Output to session for %@", filePath]
       fail:error];
   }
   [session addOutput:output];
 
-  return [[FBDeviceVideoFileEncoder alloc] initWithSession:session output:output filePath:filePath logger:logger];
+  return [[FBVideoFileWriter alloc] initWithSession:session output:output filePath:filePath logger:logger];
 }
 
 - (instancetype)initWithSession:(AVCaptureSession *)session output:(AVCaptureMovieFileOutput *)output filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger
@@ -64,7 +64,7 @@
   if ([NSFileManager.defaultManager fileExistsAtPath:self.filePath]) {
     [self.logger logFormat:@"File already exists at %@, deleting", self.filePath];
     if (![NSFileManager.defaultManager removeItemAtPath:self.filePath error:&innerError]) {
-      return [[[FBDeviceControlError
+      return [[[FBControlCoreError
         describeFormat:@"Failed to remove existing device video at %@", self.filePath]
         causedBy:innerError]
         failFuture];
@@ -72,7 +72,7 @@
     [self.logger logFormat:@"Removed video file at %@", self.filePath];
   }
   if (![NSFileManager.defaultManager createDirectoryAtPath:self.filePath.stringByDeletingLastPathComponent withIntermediateDirectories:YES attributes:nil error:&innerError]) {
-    return [[[FBDeviceControlError
+    return [[[FBControlCoreError
       describeFormat:@"Failed to remove create auxillary directory for device at %@", self.filePath]
       causedBy:innerError]
       failFuture];
