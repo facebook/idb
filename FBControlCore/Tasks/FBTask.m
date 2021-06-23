@@ -176,8 +176,6 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
       [signal resolveWithError:error];
     }
 
-
-
     // We only need a single notification and the dispatch_source must be retained until we resolve the future.
     // Cancelling the source at the end will release the source as the event handler will no longer be referenced.
     dispatch_cancel(source);
@@ -211,7 +209,6 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 @interface FBTask ()
 
 @property (nonatomic, copy, nullable, readonly) NSSet<NSNumber *> *acceptableExitCodes;
-@property (nonatomic, copy, readonly) NSString *configurationDescription;
 @property (nonatomic, strong, readonly) FBProcessIO *io;
 @property (nonatomic, strong, readonly) FBTaskProcessPosixSpawn *process;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
@@ -240,12 +237,11 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
         initWithProcess:process
         io:configuration.io
         queue:queue
-        acceptableExitCodes:acceptableExitCodes
-        configurationDescription:configuration.description];
+        acceptableExitCodes:acceptableExitCodes];
     }];
 }
 
-- (instancetype)initWithProcess:(FBTaskProcessPosixSpawn *)process io:(FBProcessIO *)io queue:(dispatch_queue_t)queue acceptableExitCodes:(nullable NSSet<NSNumber *> *)acceptableExitCodes configurationDescription:(NSString *)configurationDescription
+- (instancetype)initWithProcess:(FBTaskProcessPosixSpawn *)process io:(FBProcessIO *)io queue:(dispatch_queue_t)queue acceptableExitCodes:(nullable NSSet<NSNumber *> *)acceptableExitCodes
 {
   self = [super init];
   if (!self) {
@@ -256,7 +252,6 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   _io = io;
   _queue = queue;
   _acceptableExitCodes = acceptableExitCodes;
-  _configurationDescription = configurationDescription;
 
   // Wrap the underlying FBLaunchedProcess with IO termination before resolution.
   _statLoc = [FBTask onQueue:queue wrapNumberFuture:process.statLoc inTeardownOfIO:io];
@@ -274,7 +269,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
       }
       return [self terminate];
     }]
-    named:self.configurationDescription]
+    named:process.configuration.description]
     onQueue:self.queue respondToCancellation:^{
       // Respond to cancellation in the handler, instead of in chain.
       // This means that the caller can be notified of the full teardown with the value of -[FBFuture cancel]
@@ -377,7 +372,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 {
   return [NSString
     stringWithFormat:@"%@ | State %@",
-    self.configurationDescription,
+    self.process.configuration.description,
     self.completed
   ];
 }
