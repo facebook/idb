@@ -139,7 +139,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   FBMutableFuture<NSNumber *> *exitCode = FBMutableFuture.future;
   FBMutableFuture<NSNumber *> *signal = FBMutableFuture.future;
   [self resolveProcessCompletion:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration logger:logger];
-  FBTaskProcessPosixSpawn *process = [[self alloc] initWithProcessIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal];
+  FBTaskProcessPosixSpawn *process = [[self alloc] initWithConfiguration:configuration processIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal];
   return [FBFuture futureWithResult:process];
 }
 
@@ -163,14 +163,14 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     // Then resolve the exitCode & signal future. These are essentially mutually exclusive
     if (WIFSIGNALED(status)) {
       int signalCode = WTERMSIG(status);
-      NSString *message = [NSString stringWithFormat:@"No normal exit code, process %d (%@) died with signal %d", processIdentifier, configuration.processName, signalCode];
+      NSString *message = [NSString stringWithFormat:@"Process %d (%@) died with signal %d", processIdentifier, configuration.processName, signalCode];
       [logger log:message];
       NSError *error = [[FBControlCoreError describe:message] build];
       [exitCode resolveWithError:error];
       [signal resolveWithResult:@(signalCode)];
     } else {
       int exitCodeValue = WEXITSTATUS(status);
-      NSString *message = [NSString stringWithFormat:@"Normal exit code, process %d (%@) died with exit code %d", processIdentifier, configuration.processName, exitCodeValue];
+      NSString *message = [NSString stringWithFormat:@"Process %d (%@) died with exit code %d", processIdentifier, configuration.processName, exitCodeValue];
       [logger log:message];
       NSError *error = [[FBControlCoreError describe:message] build];
       [exitCode resolveWithResult:@(exitCodeValue)];
@@ -184,13 +184,14 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   dispatch_resume(source);
 }
 
-- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal
+- (instancetype)initWithConfiguration:(FBProcessSpawnConfiguration *)configuration processIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _configuration = configuration;
   _processIdentifier = processIdentifier;
   _statLoc = statLoc;
   _exitCode = exitCode;
@@ -209,11 +210,9 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 @interface FBTask ()
 
-@property (nonatomic, copy, nullable, readonly) NSSet<NSNumber *> *acceptableExitCodes;
 @property (nonatomic, strong, readonly) FBProcessIO *io;
 @property (nonatomic, strong, readonly) FBTaskProcessPosixSpawn *process;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -254,37 +253,40 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   _process = process;
   _io = io;
   _queue = queue;
-  _acceptableExitCodes = acceptableExitCodes;
-  _logger = logger;
 
-  // Wrap the underlying FBLaunchedProcess with IO termination before resolution.
+  // We only need to teardown the IO once, statLoc will fire on any exit condition of the process, so can be chained here.
   _statLoc = [FBTask wrapNumberFuture:process.statLoc inTeardownOfIO:io process:process queue:queue logger:logger];
-  _exitCode = [FBTask wrapNumberFuture:process.exitCode inTeardownOfIO:io process:process queue:queue logger:logger];
-  _signal = [FBTask wrapNumberFuture:process.signal inTeardownOfIO:io process:process queue:queue logger:logger];
 
-  // Do not propogate cancellation of completed to the exit code future.
-  FBMutableFuture<NSNumber *> *shieldedExitCode = FBMutableFuture.future;
-  [shieldedExitCode resolveFromFuture:self.exitCode];
-  _completed = [[[shieldedExitCode
-  onQueue:self.queue chain:^ FBFuture<NSNumber *> * (FBFuture<NSNumber *> *future) {
-      // We have a cancellation responder, so de-duplicate the handling of it.
-      if (future.state == FBFutureStateCancelled) {
-        return future;
-      }
-      return [self terminate];
-    }]
-    named:process.configuration.description]
+  // The remainder of the futures should have the values from the process object, but need to occur after the IO teardown that happens in statLoc.
+  _exitCode = [self.statLoc chainReplace:process.exitCode];
+  _signal = [self.statLoc chainReplace:process.signal];
+
+  // Never cancel the underlying statLoc future. We can layer the cancellation and exit code checking semantics on top.
+  FBMutableFuture<NSNumber *> *shieldedProcessFinished = FBMutableFuture.future;
+  [shieldedProcessFinished resolveFromFuture:self.statLoc];
+  _completed = [[[shieldedProcessFinished
     onQueue:self.queue respondToCancellation:^{
-      // Respond to cancellation in the handler, instead of in chain.
-      // This means that the caller can be notified of the full teardown with the value of -[FBFuture cancel]
-      return [[self
-        terminate]
-        onQueue:self.queue chain:^(id _) {
-          // Avoid any kind of error in a cancellation handler.
-          return FBFuture.empty;
-        }];
+      return [self sendSignal:SIGTERM];
+    }]
+    chainReplace:self.exitCode]
+    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSNumber *exitCode) {
+      // If exit codes are defined, check them.
+      if (acceptableExitCodes == nil) {
+        return FBFuture.empty;
+      }
+      if ([acceptableExitCodes containsObject:exitCode]) {
+        return FBFuture.empty;
+      }
+      NSString *message = [NSString stringWithFormat:@"Exit Code %@ is not acceptable %@", exitCode, [FBCollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]];
+      if ([self.stdErr conformsToProtocol:@protocol(FBAccumulatingBuffer)]) {
+        NSData *outputData = [self.stdErr data];
+        message = [message stringByAppendingFormat:@": %@", [[NSString alloc] initWithData:outputData encoding:NSUTF8StringEncoding]];
+      }
+      return [[[FBControlCoreError
+        describe:message]
+        inDomain:FBTaskErrorDomain]
+        failFuture];
     }];
-
 
   return self;
 }
@@ -324,53 +326,16 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 #pragma mark Private
 
-- (FBFuture<NSNumber *> *)terminate
-{
-  NSSet<NSNumber *> *acceptableExitCodes = self.acceptableExitCodes;
-  return [[[self
-    teardownProcess] // Wait for the process to exit, terminating it if necessary.
-    onQueue:self.queue chain:^(FBFuture<NSNumber *> *exitCodeFuture) {
-      // Then tear-down the resources, this should happen regardless of the exit status.
-      return [[self.io detach] chainReplace:exitCodeFuture];
-    }]
-    onQueue:self.queue fmap:^(NSNumber *exitCode) {
-      // If exit codes are defined, check them.
-      if (acceptableExitCodes == nil) {
-        return [FBFuture futureWithResult:exitCode];
-      }
-      if ([acceptableExitCodes containsObject:exitCode]) {
-        return [FBFuture futureWithResult:exitCode];
-      }
-      NSString *message = [NSString stringWithFormat:@"Exit Code %@ is not acceptable %@", exitCode, [FBCollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]];
-      if ([self.stdErr conformsToProtocol:@protocol(FBAccumulatingBuffer)]) {
-        NSData *outputData = [self.stdErr data];
-        message = [message stringByAppendingFormat:@": %@", [[NSString alloc] initWithData:outputData encoding:NSUTF8StringEncoding]];
-      }
-      return [[[FBControlCoreError
-        describe:message]
-        inDomain:FBTaskErrorDomain]
-        failFuture];
-    }];
-}
-
-- (FBFuture<NSNumber *> *)teardownProcess
-{
-  if (self.process.exitCode.state == FBFutureStateRunning) {
-    return [self.process sendSignal:SIGTERM];
-  }
-  return self.process.exitCode;
-}
-
 + (FBFuture<NSNumber *> *)wrapNumberFuture:(FBFuture<NSNumber *> *)future inTeardownOfIO:(FBProcessIO *)io process:(FBTaskProcessPosixSpawn *)process queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  return [[[future
+  return [[future
     onQueue:queue chain:^(id _) {
-      [logger logFormat:@"Process %@ (%d) has exited, tearing down IO...", process.configuration.launchPath, process.processIdentifier];
+      [logger logFormat:@"Process %d (%@) has exited, tearing down IO...", process.processIdentifier, process.configuration.processName];
       return [io detach];
     }]
-    chainReplace:future]
-    onQueue:queue notifyOfCompletion:^(id _) {
-      [logger logFormat:@"Teardown of IO for process %@ (%d) has completed", process.configuration.launchPath, process.processIdentifier];
+    onQueue:queue chain:^(id _) {
+      [logger logFormat:@"Teardown of IO for process %d (%@) has completed", process.processIdentifier, process.configuration.processName];
+      return future;
     }];
 }
 
