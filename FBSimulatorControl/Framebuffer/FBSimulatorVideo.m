@@ -17,10 +17,12 @@
 
 @interface FBSimulatorVideo ()
 
+@property (nonatomic, copy, readonly) NSString *filePath;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *completedFuture;
 
+- (instancetype)initWithFilePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -29,7 +31,7 @@
 @property (nonatomic, strong, readonly) FBFramebuffer *framebuffer;
 @property (nonatomic, strong, readwrite) FBVideoEncoderSimulatorKit *encoder;
 
-- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -37,9 +39,8 @@
 
 @property (nonatomic, strong, readonly) FBAppleSimctlCommandExecutor *simctlExecutor;
 @property (nonatomic, strong, nullable, readwrite) FBFuture<FBTask<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *recordingStarted;
-@property (nonatomic, copy, nullable, readwrite) NSString *filePath;
 
-- (instancetype)initWithWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor filePath:(NSString *)filePath  logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -47,23 +48,24 @@
 
 #pragma mark Initializers
 
-+ (instancetype)videoWithFramebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger
++ (instancetype)videoWithFramebuffer:(FBFramebuffer *)framebuffer filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBSimulatorVideo_SimulatorKit alloc] initWithFramebuffer:framebuffer logger:logger];
+  return [[FBSimulatorVideo_SimulatorKit alloc] initWithFramebuffer:framebuffer filePath:filePath logger:logger];
 }
 
-+ (instancetype)videoWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor logger:(id<FBControlCoreLogger>)logger
++ (instancetype)videoWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBSimulatorVideo_SimCtl alloc] initWithWithSimctlExecutor:simctlExecutor logger:logger];
+  return [[FBSimulatorVideo_SimCtl alloc] initWithWithSimctlExecutor:simctlExecutor filePath:filePath logger:logger];
 }
 
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFilePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _filePath = filePath;
   _logger = logger;
   _queue = dispatch_queue_create("com.facebook.simulatorvideo.simctl", DISPATCH_QUEUE_SERIAL);
 
@@ -74,13 +76,13 @@
 
 #pragma mark Public Methods
 
-- (FBFuture<FBSimulatorVideo *> *)startRecordingToFile:(NSString *)filePath
+- (FBFuture<NSNull *> *)startRecording
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
 }
 
-- (FBFuture<FBSimulatorVideo *> *)stopRecording
+- (FBFuture<NSNull *> *)stopRecording
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -99,9 +101,9 @@
 
 @implementation FBSimulatorVideo_SimulatorKit
 
-- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super initWithLogger:logger];
+  self = [super initWithFilePath:filePath logger:logger];
   if (!self) {
     return nil;
   }
@@ -149,9 +151,9 @@
 
 @implementation FBSimulatorVideo_SimCtl
 
-- (instancetype)initWithWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super initWithLogger:logger];
+  self = [super initWithFilePath:filePath logger:logger];
   if (!self) {
     return nil;
   }
@@ -163,7 +165,7 @@
 
 #pragma mark Public
 
-- (FBFuture<NSNull *> *)startRecordingToFile:(NSString *)filePath
+- (FBFuture<NSNull *> *)startRecording
 {
   // Fail early if there's a task running.
   if (self.recordingStarted) {
@@ -218,7 +220,7 @@
 
       NSArray<NSString *> *ioCommandArguments = [[@[@"recordVideo"]
         arrayByAddingObjectsFromArray:recordVideoParameters]
-        arrayByAddingObject:filePath];
+        arrayByAddingObject:self.filePath];
 
       return [[[[self.simctlExecutor
         taskBuilderWithCommand:@"io" arguments:ioCommandArguments]
@@ -226,8 +228,6 @@
         withStdErrToLogger:self.logger]
         start];
     }];
-
-  self.filePath = filePath;
 
   return [self.recordingStarted mapReplace:NSNull.null];
 }
@@ -247,8 +247,6 @@
       describe:@"Cannot Stop Recording, the recording task hasn't started"]
       failFuture];
   }
-  NSString *filePath = self.filePath;
-  self.filePath = nil;
 
   // Grab the task and see if it died already.
   if (recordingTask.completed.hasCompleted) {
@@ -268,7 +266,7 @@
     logCompletion:self.logger withPurpose:@"The video recording task terminated"]
     onQueue:self.queue fmap:^(NSNumber *result) {
       self.recordingStarted = nil;
-      return [FBSimulatorVideo_SimCtl confirmFileHasBeenWritten:filePath queue:self.queue];
+      return [FBSimulatorVideo_SimCtl confirmFileHasBeenWritten:self.filePath queue:self.queue];
     }]
     onQueue:self.queue handleError:^(NSError *error) {
       [self.logger logFormat:@"Failed confirm video file been written %@", error];

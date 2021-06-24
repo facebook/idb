@@ -47,27 +47,35 @@
 
 - (FBFuture<id<FBiOSTargetOperation>> *)startRecordingToFile:(NSString *)filePath
 {
-  return [[self
-    obtainVideo]
+  if (self.video) {
+    return [[FBSimulatorError
+      describe:@"Cannot create a new video recording session, one is already active"]
+      failFuture];
+  }
+
+  return [[FBSimulatorVideoRecordingCommands
+    videoImplementationForSimulator:self.simulator filePath:filePath]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorVideo *video) {
-      return [[video startRecordingToFile:filePath] mapReplace:video];
+      return [[video
+        startRecording]
+        onQueue:self.simulator.workQueue map:^(id _) {
+          self.video = video;
+          return video;
+        }];
     }];
 }
 
 - (FBFuture<NSNull *> *)stopRecording
 {
-  return [[FBFuture
-    onQueue:self.simulator.workQueue resolve:^ FBFuture<NSNull *> * {
-       if (!self.video) {
-         return [[FBSimulatorError
-          describe:@"Cannot start recording, there is not an active recorder"]
-          failFuture];
-       }
-       return [self.video stopRecording];
-    }]
-    onQueue:self.simulator.workQueue notifyOfCompletion:^(id _){
-      self.video = nil;
-    }];
+  FBSimulatorVideo *video = self.video;
+  self.video = nil;
+  if (!video) {
+    return [[FBSimulatorError
+      describeFormat:@"There was no existing video instance for %@", self.simulator]
+      failFuture];
+  }
+
+  return [video stopRecording];
 }
 
 #pragma mark FBSimulatorStreamingCommands
@@ -84,22 +92,17 @@
 
 #pragma mark Private
 
-- (FBFuture<FBSimulatorVideo *> *)obtainVideo
++ (FBFuture<FBSimulatorVideo *> *)videoImplementationForSimulator:(FBSimulator *)simulator filePath:(NSString *)filePath
 {
-  if (self.video) {
-    return [FBFuture futureWithResult:self.video];
-  }
   if (FBSimulatorVideoRecordingCommands.shouldUseSimctlEncoder) {
-    self.video = [FBSimulatorVideo videoWithSimctlExecutor:self.simulator.simctlExecutor logger:self.simulator.logger];
-    return [FBFuture futureWithResult:self.video];
+    FBSimulatorVideo *video = [FBSimulatorVideo videoWithSimctlExecutor:simulator.simctlExecutor filePath:filePath logger:simulator.logger];
+    return [FBFuture futureWithResult:video];
   }
 
-
-  return [[self.simulator
+  return [[simulator
     connectToFramebuffer]
-    onQueue:self.simulator.workQueue map:^(FBFramebuffer *framebuffer) {
-      self.video = [FBSimulatorVideo videoWithFramebuffer:framebuffer logger:self.simulator.logger];
-      return self.video;
+    onQueue:simulator.workQueue map:^(FBFramebuffer *framebuffer) {
+      return [FBSimulatorVideo videoWithFramebuffer:framebuffer filePath:filePath logger:simulator.logger];
     }];
 }
 
