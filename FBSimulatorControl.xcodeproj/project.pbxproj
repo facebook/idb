@@ -75,7 +75,7 @@
 		AA15549B1E4BA0A1001933F9 /* FBSimulatorHIDEvent.m in Sources */ = {isa = PBXBuildFile; fileRef = AA1554991E4BA0A1001933F9 /* FBSimulatorHIDEvent.m */; };
 		AA15688C1F0EDBDF000743D5 /* FBSimulatorLaunchedApplication.h in Headers */ = {isa = PBXBuildFile; fileRef = AA15688A1F0EDBDF000743D5 /* FBSimulatorLaunchedApplication.h */; };
 		AA15688D1F0EDBDF000743D5 /* FBSimulatorLaunchedApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = AA15688B1F0EDBDF000743D5 /* FBSimulatorLaunchedApplication.m */; };
-		AA18568B1E68093600ED6EA7 /* FBVideoEncoderSimulatorKit.h in Headers */ = {isa = PBXBuildFile; fileRef = AA1856891E68093600ED6EA7 /* FBVideoEncoderSimulatorKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA18568B1E68093600ED6EA7 /* FBVideoEncoderSimulatorKit.h in Headers */ = {isa = PBXBuildFile; fileRef = AA1856891E68093600ED6EA7 /* FBVideoEncoderSimulatorKit.h */; };
 		AA18568C1E68093600ED6EA7 /* FBVideoEncoderSimulatorKit.m in Sources */ = {isa = PBXBuildFile; fileRef = AA18568A1E68093600ED6EA7 /* FBVideoEncoderSimulatorKit.m */; };
 		AA1958781D6F4CF20059886F /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA1958771D6F4CF20059886F /* ServiceManagement.framework */; };
 		AA1958791D6F4CF90059886F /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E2976B173B900000000 /* Cocoa.framework */; };
