@@ -101,7 +101,7 @@ static Status drain_writer(FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *ta
     stream->Write(response);
   }
   [inputStream close];
-  NSNumber *exitCode = [task.completed block:&error];
+  NSNumber *exitCode = [task.exitCode block:&error];
   if (exitCode.integerValue != 0) {
     NSString *errorString = [NSString stringWithFormat:@"Draining operation failed with exit code %ld", (long)exitCode.integerValue];
     return Status(grpc::StatusCode::INTERNAL, errorString.UTF8String);
