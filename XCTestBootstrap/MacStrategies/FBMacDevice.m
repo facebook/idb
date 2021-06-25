@@ -13,6 +13,9 @@
 
 #import "FBManagedTestRunStrategy.h"
 #import "XCTestBootstrapError.h"
+#import "FBListTestStrategy.h"
+#import "FBMacXCTestProcessExecutor.h"
+#import "FBXCTestConfiguration.h"
 
 @protocol XCTestManager_XPCControl <NSObject>
 - (void)_XCT_requestConnectedSocketForTransport:(void (^)(NSFileHandle *, NSError *))arg1;
@@ -409,8 +412,24 @@
 
 - (nonnull FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(nonnull NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
 {
-  NSAssert(nil, @"listTestsForBundleAtPath:timeout: is not yet supported");
-  return nil;
+  return [[FBXCTestShimConfiguration
+      defaultShimConfigurationWithLogger:self.logger]
+      onQueue:self.workQueue fmap:^(FBXCTestShimConfiguration *shims) {
+        FBListTestConfiguration *configuration = [FBListTestConfiguration
+          configurationWithShims:shims
+          environment:@{}
+          workingDirectory:self.auxillaryDirectory
+          testBundlePath:bundlePath
+          runnerAppPath:appPath
+          waitForDebugger:NO
+          timeout:timeout];
+
+        return [[FBListTestStrategy
+          strategyWithExecutor:[FBMacXCTestProcessExecutor executorWithMacDevice:self shims:configuration.shims]
+          configuration:configuration
+          logger:self.logger]
+          listTests];
+    }];
 }
 
 - (nonnull FBFuture<id<FBiOSTargetOperation>> *)tailLog:(nonnull NSArray<NSString *> *)arguments consumer:(nonnull id<FBDataConsumer>)consumer
