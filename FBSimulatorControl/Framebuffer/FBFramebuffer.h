@@ -11,6 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class IOSurface;
+
 /**
  A Consumer of a Framebuffer.
  */
@@ -21,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param surface the surface, or NULL if a surface is not available/becomes unavailable
  */
-- (void)didChangeIOSurface:(nullable IOSurfaceRef)surface;
+- (void)didChangeIOSurface:(nullable IOSurface *)surface;
 
 /**
  When a Damage Rect becomes available.
@@ -64,7 +66,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param queue the queue to notify the consumer on.
  @return A Surface is one is *immediately* available. This is not mutually exclusive the consumer being called on a queue.
  */
-- (nullable IOSurfaceRef)attachConsumer:(id<FBFramebufferConsumer>)consumer onQueue:(dispatch_queue_t)queue;
+- (nullable IOSurface *)attachConsumer:(id<FBFramebufferConsumer>)consumer onQueue:(dispatch_queue_t)queue;
 
 /**
  Detaches a Consumer.

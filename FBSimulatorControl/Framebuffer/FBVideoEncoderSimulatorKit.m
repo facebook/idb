@@ -173,7 +173,7 @@ void (^VideoWriterGlobalCallback)(NSError *) = ^(NSError *error){
   [self.logger log:@"Start Writing in Video Writer"];
   [self.writer startWriting];
   [self.logger log:@"Attaching Consumer in Video Writer"];
-  IOSurfaceRef surface = [self.framebuffer attachConsumer:self onQueue:self.mediaQueue];
+  IOSurface *surface = [self.framebuffer attachConsumer:self onQueue:self.mediaQueue];
   if (surface) {
     dispatch_async(self.mediaQueue, ^{
       [self didChangeIOSurface:surface];
@@ -217,7 +217,7 @@ void (^VideoWriterGlobalCallback)(NSError *) = ^(NSError *error){
 
 #pragma mark FBFramebufferConsumable
 
-- (void)didChangeIOSurface:(IOSurfaceRef)surface
+- (void)didChangeIOSurface:(IOSurface *)surface
 {
   if (!surface) {
     [self.logger log:@"IOSurface Removed"];
@@ -227,9 +227,9 @@ void (^VideoWriterGlobalCallback)(NSError *) = ^(NSError *error){
   [self.logger logFormat:@"IOSurface for Encoder %@ changed to %@", self, surface];
   [self.startedWriting resolveWithResult:NSNull.null];
   if (FBXcodeConfiguration.isXcode9OrGreater) {
-    [self.writer didChangeIOSurface:(__bridge id) surface];
+    [self.writer didChangeIOSurface:surface];
   } else {
-    xpc_object_t xpcSurface = IOSurfaceCreateXPCObject(surface);
+    xpc_object_t xpcSurface = IOSurfaceCreateXPCObject((__bridge IOSurfaceRef) surface);
     [self.writer didChangeIOSurface:xpcSurface];
   }
 }

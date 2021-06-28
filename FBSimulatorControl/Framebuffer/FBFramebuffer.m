@@ -25,18 +25,20 @@
 #import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
 #import <SimulatorKit/SimDisplayRenderable-Protocol.h>
 
+#import <IOSurface/IOSurfaceObjC.h>
+
 #import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
 
-static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
+static IOSurface * extractSurfaceFromUnknown(id unknown)
 {
   // Return the Surface Immediately, if one is immediately available.
   if (!unknown) {
     return nil;
   }
   // If the object returns an
-  if (CFGetTypeID((__bridge CFTypeRef)(unknown)) == IOSurfaceGetTypeID()) {
-    return (__bridge IOSurfaceRef)(unknown);
+  if ([unknown isKindOfClass:IOSurface.class]) {
+    return unknown;
   }
 
   // We need to convert the surface, treat it as an xpc_object_t
@@ -45,8 +47,7 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
   if (!surface) {
     return nil;
   }
-  CFAutorelease(surface);
-  return surface;
+  return (__bridge IOSurface *)(surface);
 }
 
 @interface FBFramebuffer_Queue_Forwarder : NSObject <SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDeviceIOPortConsumer>
@@ -75,17 +76,15 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 
 - (void)didChangeIOSurface:(nullable id)unknown
 {
-  IOSurfaceRef surface = extractSurfaceFromUnknown(unknown);
+  IOSurface *surface = extractSurfaceFromUnknown(unknown);
   if (!surface) {
     [self.consumer didChangeIOSurface:NULL];
     return;
   }
   // Ensure the Surface is retained as it is delivered asynchronously.
   id<FBFramebufferConsumer> consumer = self.consumer;
-  CFRetain(surface);
   dispatch_async(self.consumerQueue, ^{
     [consumer didChangeIOSurface:surface];
-    CFRelease(surface);
   });
 }
 
@@ -182,7 +181,7 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 
 #pragma mark Public Methods
 
-- (nullable IOSurfaceRef)attachConsumer:(id<FBFramebufferConsumer>)consumer onQueue:(dispatch_queue_t)queue
+- (nullable IOSurface *)attachConsumer:(id<FBFramebufferConsumer>)consumer onQueue:(dispatch_queue_t)queue
 {
   // Don't attach the same consumer twice
   FBFramebuffer_Queue_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
@@ -193,7 +192,7 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
   [self.forwarders setObject:forwarder forKey:consumer];
 
   // Extract the IOSurface if one does not exist.
-  IOSurfaceRef surface = extractSurfaceFromUnknown(self.surface.ioSurface);
+  IOSurface *surface = extractSurfaceFromUnknown(self.surface.ioSurface);
 
   // Register the consumer.
   if ([self.ioClient respondsToSelector:@selector(attachConsumer:withUUID:toPort:errorQueue:errorHandler:)]) {
