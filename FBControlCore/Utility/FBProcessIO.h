@@ -33,6 +33,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, nullable, readonly) FBProcessStreamAttachment *stdErr;
 
+/**
+ Detach from all the streams.
+ This may be called multiple times, the underlying streams will only detach once per instance.
+ */
+- (FBFuture<NSNull *> *)detach;
+
 @end
 
 /**
@@ -50,10 +56,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, nullable, readonly) id<FBProcessFileOutput> stdErr;
 
+/**
+ Detach from all the streams.
+ This may be called multiple times, the underlying streams will only detach once per instance.
+ */
+- (FBFuture<NSNull *> *)detach;
+
 @end
 
 /**
- A composite of FBProcessStream.
+ A composite of streams for the stdin, stdout and stderr streams connected to a process.
  */
 @interface FBProcessIO : NSObject
 
@@ -112,12 +124,6 @@ The FBProcessOutput for stdout.
  If any of the stream attachments error, then any succeeding attachments will detach.
  */
 - (FBFuture<FBProcessFileAttachment *> *)attachViaFile;
-
-/**
- Detach from all the streams.
- This may be called multiple times, the underlying streams will only detach once per instance.
- */
-- (FBFuture<NSNull *> *)detach;
 
 @end
 

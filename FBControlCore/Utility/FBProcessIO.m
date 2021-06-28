@@ -10,15 +10,31 @@
 #import "FBProcessStream.h"
 #import "FBControlCoreError.h"
 
+@interface FBProcessIO ()
+
+@property (nonatomic, assign, readwrite) BOOL attached;
+@property (nonatomic, nullable, readwrite) FBMutableFuture<NSNull *> *detachment;
+
+- (FBFuture<NSNull *> *)detach;
+
+@end
+
+@interface FBProcessIOAttachment ()
+
+@property (nonatomic, strong, readonly) FBProcessIO *io;
+
+@end
+
 @implementation FBProcessIOAttachment
 
-- (instancetype)initWithStdIn:(nullable FBProcessStreamAttachment *)stdIn stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr
+- (instancetype)initWithIO:(FBProcessIO *)io stdIn:(nullable FBProcessStreamAttachment *)stdIn stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _io = io;
   _stdIn = stdIn;
   _stdOut = stdOut;
   _stdErr = stdErr;
@@ -26,29 +42,39 @@
   return self;
 }
 
+- (FBFuture<NSNull *> *)detach
+{
+  return [self.io detach];
+}
+
+@end
+
+@interface FBProcessFileAttachment ()
+
+@property (nonatomic, strong, readonly) FBProcessIO *io;
+
 @end
 
 @implementation FBProcessFileAttachment
 
-- (instancetype)initWithStdOut:(nullable id<FBProcessFileOutput>)stdOut stdErr:(nullable id<FBProcessFileOutput>)stdErr
+- (instancetype)initWithIO:(FBProcessIO *)io stdOut:(nullable id<FBProcessFileOutput>)stdOut stdErr:(nullable id<FBProcessFileOutput>)stdErr
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _io = io;
   _stdOut = stdOut;
   _stdErr = stdErr;
 
   return self;
 }
 
-@end
-
-@interface FBProcessIO ()
-
-@property (nonatomic, assign, readwrite) BOOL attached;
-@property (nonatomic, nullable, readwrite) FBMutableFuture<NSNull *> *detachment;
+- (FBFuture<NSNull *> *)detach
+{
+  return [self.io detach];
+}
 
 @end
 
@@ -111,7 +137,7 @@
         stdErr = nil;
       }
       // Everything is setup, launch the process now.
-      return [FBFuture futureWithResult:[[FBProcessIOAttachment alloc] initWithStdIn:stdIn stdOut:stdOut stdErr:stdErr]];
+      return [FBFuture futureWithResult:[[FBProcessIOAttachment alloc] initWithIO:self stdIn:stdIn stdOut:stdOut stdErr:stdErr]];
     }];
 }
 
@@ -141,9 +167,11 @@
         stdErr = nil;
       }
       // Everything is setup, launch the process now.
-      return [FBFuture futureWithResult:[[FBProcessFileAttachment alloc] initWithStdOut:stdOut stdErr:stdErr]];
+      return [FBFuture futureWithResult:[[FBProcessFileAttachment alloc] initWithIO:self stdOut:stdOut stdErr:stdErr]];
     }];
 }
+
+#pragma mark Private
 
 - (FBFuture<NSNull *> *)detach
 {
@@ -164,8 +192,6 @@
       return detachment;
     }];
 }
-
-#pragma mark Private
 
 - (FBFuture<NSNull *> *)startExclusiveAttachment
 {

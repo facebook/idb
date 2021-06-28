@@ -210,7 +210,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 @interface FBTask ()
 
-@property (nonatomic, strong, readonly) FBProcessIO *io;
+@property (nonatomic, strong, readonly) FBProcessIOAttachment *attachment;
 @property (nonatomic, strong, readonly) FBTaskProcessPosixSpawn *process;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
@@ -227,23 +227,24 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 + (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBProcessSpawnConfiguration *)configuration acceptableExitCodes:(NSSet<NSNumber *> *)acceptableExitCodes logger:(id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
-  return [[[configuration.io
+  return [[configuration.io
     attach]
     onQueue:queue fmap:^(FBProcessIOAttachment *attachment) {
       // Everything is setup, launch the process now.
-      return [FBTaskProcessPosixSpawn processWithConfiguration:configuration attachment:attachment logger:logger];
-    }]
-    onQueue:queue map:^(FBTaskProcessPosixSpawn *process) {
-      return [[self alloc]
-        initWithProcess:process
-        io:configuration.io
-        queue:queue
-        acceptableExitCodes:acceptableExitCodes
-        logger:logger];
+      return [[FBTaskProcessPosixSpawn
+        processWithConfiguration:configuration attachment:attachment logger:logger]
+        onQueue:queue map:^(FBTaskProcessPosixSpawn *process) {
+          return [[self alloc]
+            initWithProcess:process
+            attachment:attachment
+            queue:queue
+            acceptableExitCodes:acceptableExitCodes
+            logger:logger];
+        }];
     }];
 }
 
-- (instancetype)initWithProcess:(FBTaskProcessPosixSpawn *)process io:(FBProcessIO *)io queue:(dispatch_queue_t)queue acceptableExitCodes:(NSSet<NSNumber *> *)acceptableExitCodes logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithProcess:(FBTaskProcessPosixSpawn *)process attachment:(FBProcessIOAttachment *)attachment queue:(dispatch_queue_t)queue acceptableExitCodes:(NSSet<NSNumber *> *)acceptableExitCodes logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -251,16 +252,17 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   }
 
   _process = process;
-  _io = io;
+  _attachment = attachment;
   _queue = queue;
 
   // We only need to teardown the IO once, statLoc will fire on any exit condition of the process, so can be chained here.
-  _statLoc = [FBTask wrapNumberFuture:process.statLoc inTeardownOfIO:io process:process queue:queue logger:logger];
+  _statLoc = [FBTask wrapNumberFuture:process.statLoc inTeardownOfIOAttachment:attachment process:process queue:queue logger:logger];
 
   // The remainder of the futures should have the values from the process object, but need to occur after the IO teardown that happens in statLoc.
   _exitCode = [self.statLoc chainReplace:process.exitCode];
   _signal = [self.statLoc chainReplace:process.signal];
 
+  // Do not propogate cancellation of completed to the exit code future.
   // Never cancel the underlying statLoc future. We can layer the cancellation and exit code checking semantics on top.
   FBMutableFuture<NSNumber *> *shieldedProcessFinished = FBMutableFuture.future;
   [shieldedProcessFinished resolveFromFuture:self.statLoc];
@@ -311,27 +313,27 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 - (nullable id)stdIn
 {
-  return [self.io.stdIn contents];
+  return [self.process.configuration.io.stdIn contents];
 }
 
 - (nullable id)stdOut
 {
-  return [self.io.stdOut contents];
+  return [self.process.configuration.io.stdOut contents];
 }
 
 - (nullable id)stdErr
 {
-  return [self.io.stdErr contents];
+  return [self.process.configuration.io.stdErr contents];
 }
 
 #pragma mark Private
 
-+ (FBFuture<NSNumber *> *)wrapNumberFuture:(FBFuture<NSNumber *> *)future inTeardownOfIO:(FBProcessIO *)io process:(FBTaskProcessPosixSpawn *)process queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNumber *> *)wrapNumberFuture:(FBFuture<NSNumber *> *)future inTeardownOfIOAttachment:(FBProcessIOAttachment *)attachment process:(FBTaskProcessPosixSpawn *)process queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [[future
     onQueue:queue chain:^(id _) {
       [logger logFormat:@"Process %d (%@) has exited, tearing down IO...", process.processIdentifier, process.configuration.processName];
-      return [io detach];
+      return [attachment detach];
     }]
     onQueue:queue chain:^(id _) {
       [logger logFormat:@"Teardown of IO for process %d (%@) has completed", process.processIdentifier, process.configuration.processName];

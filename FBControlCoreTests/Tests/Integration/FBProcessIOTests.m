@@ -25,9 +25,9 @@
   FBProcessIO *io = [[FBProcessIO alloc] initWithStdIn:nil stdOut:[FBProcessOutput outputForDataConsumer:stdInConsumer] stdErr:[FBProcessOutput outputForDataConsumer:stdOutConsumer]];
 
   NSError *error = nil;
-  BOOL success = [[io attach] await:&error] != nil;
+  FBProcessIOAttachment *attachment = [[io attach] await:&error];
   XCTAssertNil(error);
-  XCTAssertTrue(success);
+  XCTAssertNotNil(attachment);
 
   dispatch_queue_t concurrentQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
   dispatch_group_t group = dispatch_group_create();
@@ -37,21 +37,21 @@
   __block FBFuture<NSNull *> *fourth;
 
   dispatch_group_async(group, concurrentQueue, ^{
-    first = [io detach];
+    first = [attachment detach];
   });
   dispatch_group_async(group, concurrentQueue, ^{
-    second = [io detach];
+    second = [attachment detach];
   });
   dispatch_group_async(group, concurrentQueue, ^{
-    third = [io detach];
+    third = [attachment detach];
   });
   dispatch_group_async(group, concurrentQueue, ^{
-    fourth = [io detach];
+    fourth = [attachment detach];
   });
   dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
 
   for (FBFuture<NSNull *> *attempt in @[first, second, third, fourth]) {
-    success = [attempt await:&error] != nil;
+    BOOL success = [attempt await:&error] != nil;
     XCTAssertNil(error);
     XCTAssertTrue(success);
     XCTAssertTrue(stdInConsumer.finishedConsuming.hasCompleted);
@@ -65,16 +65,16 @@
   FBProcessIO *io = [[FBProcessIO alloc] initWithStdIn:nil stdOut:[FBProcessOutput outputForDataConsumer:stdInConsumer] stdErr:[FBProcessOutput outputForDataConsumer:stdOutConsumer]];
 
   NSError *error = nil;
-  BOOL success = [[io attach] await:&error] != nil;
+  FBProcessIOAttachment *attachment = [[io attach] await:&error];
   XCTAssertNil(error);
-  XCTAssertTrue(success);
+  XCTAssertNotNil(attachment);
 
-  success = [[io attach] await:&error] != nil;
+  BOOL success = [[io attach] await:&error] != nil;
   XCTAssertNotNil(error);
   XCTAssertFalse(success);
 
   error = nil;
-  success = [[io detach] await:&error] != nil;
+  success = [[attachment detach] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }
