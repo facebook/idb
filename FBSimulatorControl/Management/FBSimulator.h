@@ -29,7 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBProcessFetcher;
 @class FBProcessInfo;
 @class FBSimulatorConfiguration;
-@class FBSimulatorDiagnostics;
 @class FBSimulatorSet;
 @class SimDevice;
 
@@ -46,19 +45,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly, nonnull) SimDevice *device;
 
 /**
- Whether the Simulator is allocated or not.
- */
-@property (nonatomic, assign, readonly, getter=isAllocated) BOOL allocated;
-
-/**
  The Simulator Set that the Simulator belongs to.
  */
 @property (nonatomic, weak, readonly, nullable) FBSimulatorSet *set;
-
-/**
- The State of the allocated Simulator.
- */
-@property (nonatomic, assign, readonly) FBiOSTargetState state;
 
 /**
  The Product Family of the Simulator.
@@ -84,11 +73,6 @@ NS_ASSUME_NONNULL_BEGIN
  The FBProcessInfo associated with the Container Application that launched the Simulator.
  */
 @property (nonatomic, copy, readonly, nullable) FBProcessInfo *containerApplication;
-
-/**
- The FBSimulatorDiagnostics instance for fetching diagnostics for the Simulator.
- */
-@property (nonatomic, strong, readonly, nonnull) FBSimulatorDiagnostics *simulatorDiagnostics;
 
 /**
  A command executor for simctl
