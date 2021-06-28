@@ -324,6 +324,12 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return nextContext;
 }
 
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue handleError:(nonnull FBFuture * _Nonnull (^)(NSError * _Nonnull))handler
+{
+  FBFuture *next = [self.future onQueue:queue handleError:handler];
+  return [[FBFutureContext alloc] initWithFuture:next teardowns:self.teardowns];
+}
+
 - (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:( FBFuture<NSNull *> * (^)(id, FBFutureState) )action
 {
   FBFutureContext_Teardown *teardown = [[FBFutureContext_Teardown alloc] initWithFuture:self.future queue:queue action:action];

@@ -545,6 +545,17 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 - (FBFutureContext *)onQueue:(dispatch_queue_t)queue replace:(FBFutureContext * (^)(T result))replace;
 
 /**
+ Continue to keep the context alive, but handleError: a new future.
+ The receiver's teardown will not occur after the `handleError`'s Future has resolved.
+
+ @param queue the queue to chain on.
+ @param handler the function to re-map the error to a new future, only executed if caller resolves to a failure.
+ @return a Context derived from the handleError.
+ */
+
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue handleError:(nonnull FBFuture * _Nonnull (^)(NSError * _Nonnull))handler;
+
+/**
  Adds a teardown to the context
 
  @param queue the queue to call the teardown on
