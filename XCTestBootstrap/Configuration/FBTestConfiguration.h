@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param sessionIdentifier the session identifier.
  @param moduleName name the test module name.
- @param testBundlePath the full path to the test bundle.
+ @param testBundlePath the absolute path to the test bundle.
  @param uiTesting YES if to initialize the Test Configuraiton for UI Testing, NO otherwise.
  @param testsToRun the tests to run.
  @param testsToSkip the tests to skip.
@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param sessionIdentifier the session identifier.
  @param moduleName name the test module name.
- @param testBundlePath the full path to the test bundle.
+ @param testBundlePath the absolute path to the test bundle.
  @param uiTesting YES if to initialize the Test Configuraiton for UI Testing, NO otherwise.
  */
 + (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting;

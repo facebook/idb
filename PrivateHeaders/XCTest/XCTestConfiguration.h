@@ -20,7 +20,6 @@
     _Bool _initializeForUITesting;
     _Bool _gatherLocalizableStringsData;
     _Bool _emitOSLogs;
-    NSString *_absolutePath;
     NSString *_testBundleRelativePath;
     NSURL *_testBundleURL;
     id _testsToRun;
@@ -76,7 +75,11 @@
 @property(copy) id testsToRun; // @synthesize testsToRun=_testsToRun;
 @property(copy, nonatomic) NSURL *testBundleURL; // @synthesize testBundleURL=_testBundleURL;
 @property(copy) NSString *testBundleRelativePath; // @synthesize testBundleRelativePath=_testBundleRelativePath;
-@property(copy) NSString *absolutePath; // @synthesize absolutePath=_absolutePath;
+
+// `absolutePath` has been replaced by `basePathForTestBundleResolution` on XCode 13.0. We don't use either.
+// @property(copy) NSString *absolutePath; // @synthesize absolutePath=_absolutePath;
+// @property (copy,nonatomic) NSString *basePathForTestBundleResolution;
+
 @property(readonly) long long testMode;
 - (_Bool)isEqual:(id)arg1;
 - (unsigned long long)hash;
@@ -88,4 +91,3 @@
 - (id)init;
 
 @end
-

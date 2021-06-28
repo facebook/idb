@@ -102,7 +102,6 @@ BOOL FBXCTestMain()
     NSLog(@"Loaded XCTestConfiguration is nil");
     return NO;
   }
-  [configuration setAbsolutePath:configurationPath];
 
   NSURL *testBundleURL = configuration.testBundleURL;
   if (!testBundleURL) {

@@ -255,7 +255,6 @@ struct __va_list_tag {
 {
   NSURL *_testBundleURL;
   NSString *_testBundleRelativePath;
-  NSString *_absolutePath;
   id _testsToSkip;
   id _testsToRun;
   BOOL _reportResultsToIDE;
@@ -299,7 +298,10 @@ struct __va_list_tag {
 @property(copy) id testsToRun; // @synthesize testsToRun=_testsToRun;
 @property(copy, nonatomic) NSURL *testBundleURL; // @synthesize testBundleURL=_testBundleURL;
 @property(copy) NSString *testBundleRelativePath; // @synthesize testBundleRelativePath=_testBundleRelativePath;
-@property(copy) NSString *absolutePath; // @synthesize absolutePath=_absolutePath;
+
+// `absolutePath` has been replaced by `basePathForTestBundleResolution` on XCode 13.0. We don't use either.
+// @property(copy) NSString *absolutePath; // @synthesize absolutePath=_absolutePath;
+// @property (copy,nonatomic) NSString *basePathForTestBundleResolution;
 
 + (id)configurationWithContentsOfFile:(id)arg1;
 + (id)activeTestConfiguration;
