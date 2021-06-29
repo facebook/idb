@@ -53,12 +53,34 @@ BOOL FBLoadXCTestIfNeeded()
     return YES;
   }
   FBDebugLog(@"[XCTestMainEntryPoint] Loading XCTest framework");
-  if (!dlopen("XCTest.framework/XCTest", RTLD_LAZY)) {
-    FBDebugLog(@"[XCTestMainEntryPoint] Failed to load XCTest.framework. %@", [NSString stringWithUTF8String:dlerror()]);
-    return NO;
+  if (dlopen("XCTest.framework/XCTest", RTLD_LAZY)) {
+    FBDebugLog(@"[XCTestMainEntryPoint] XCTest loaded");
+    return YES;
   }
-  FBDebugLog(@"[XCTestMainEntryPoint] XCTest loaded");
-  return YES;
+  FBDebugLog(@"[XCTestMainEntryPoint] Failed to load XCTest.framework. %@", [NSString stringWithUTF8String:dlerror()]);
+
+  // Even though XCTest.framework actually is located in one of the `DYLD_FALLBACK_FRAMEWORK_PATH` directories, starting
+  // on Xcode13.0/iOS15.0, dlopen does not look into those directories, failing to load XCTest.
+  // As a last attempt, idb tries itself to find XCTest.framework and passes the absolute path to `dlopen`
+  NSArray<NSString *> *fallbackFrameworkDirs = [[[NSProcessInfo processInfo].environment objectForKey:@"DYLD_FALLBACK_FRAMEWORK_PATH"] componentsSeparatedByString:@":"];
+
+  FBDebugLog(@"[XCTestMainEntryPoint] Explictly looking for XCTest.framework in DYLD_FALLBACK_FRAMEWORK_PATH: %@", fallbackFrameworkDirs);
+
+  for(NSString *frameworkDir in fallbackFrameworkDirs) {
+    NSString *possibleLocation = [frameworkDir stringByAppendingPathComponent:@"XCTest.framework/XCTest"];
+    if ([NSFileManager.defaultManager fileExistsAtPath:possibleLocation isDirectory:NO]) {
+      if (dlopen([possibleLocation cStringUsingEncoding:NSUTF8StringEncoding], RTLD_LAZY)) {
+        FBDebugLog(@"[XCTestMainEntryPoint] Found and loaded XCTest from %@", possibleLocation);
+        return YES;
+      } else {
+        FBDebugLog(@"[XCTestMainEntryPoint] Failed to load XCTest.framework. %@", [NSString stringWithUTF8String:dlerror()]);
+      }
+    } else {
+      FBDebugLog(@"[XCTestMainEntryPoint] XCTest not found at %@", possibleLocation);
+    }
+  }
+  FBDebugLog(@"[XCTestMainEntryPoint] Could not load XCTest.framework");
+  return NO;
 }
 
 void FBDeployBlockWhenAppLoads(void(^mainBlock)()) {
