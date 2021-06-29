@@ -71,12 +71,13 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
       NSString *environmentDefinedDirectory = NSProcessInfo.processInfo.environment[FBXCTestShimDirectoryEnvironmentOverride];
       if (environmentDefinedDirectory) {
         [searchPaths addObject:environmentDefinedDirectory];
+      } else {
+        [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"lib"]];
+        [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"bin"]];
+        [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"idb"]];
+        [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"idb/bin"]];
+        [searchPaths addObject:[NSBundle bundleForClass:self].resourcePath];
       }
-      [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"lib"]];
-      [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"bin"]];
-      [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"idb"]];
-      [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"idb/bin"]];
-      [searchPaths addObject:[NSBundle bundleForClass:self].resourcePath];
 
       NSMutableArray<FBFuture<NSString *> *> *futures = NSMutableArray.array;
       for (NSString *path in searchPaths) {
@@ -91,8 +92,9 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
             }
             return [FBFuture futureWithResult:path];
           }
+          NSArray<NSString *> *shimNames = self.canonicalShimNameToShimFilenames.allValues;
           return [[FBControlCoreError
-            describeFormat:@"Could not find shims in any of the expected directories %@", [FBCollectionInformation oneLineDescriptionFromArray:searchPaths]]
+            describeFormat:@"Could not find all shims %@ in any of the expected directories %@", [FBCollectionInformation oneLineDescriptionFromArray:shimNames], [FBCollectionInformation oneLineDescriptionFromArray:searchPaths]]
             failFuture];
         }];
     }];
