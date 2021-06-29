@@ -146,12 +146,43 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
 }
 
 #pragma mark Private
+/*
+ * Checks if:
+ *  - there is a process for the test host application
+ *  - the pid of existing process is the same pid we prepared to execute the tests
+ * The returned FBFuture will always fail, either with the original error or an error
+ * indicating which of the checks above failed.
+ */
+- (FBFuture<NSNull *> *)performDiagnosisOnBundleConnectionError:(NSError *)error {
+  return [[[self.target
+             processIDWithBundleID:self.context.testHostLaunchConfiguration.bundleID]
+            onQueue:self.requestQueue handleError:^FBFuture *(NSError *pidLookupError) {
+    NSString *msg = @"Error while establishing connection to test bundle: "
+                    @"Could not find process for test host application. "
+                    @"The host application is likely to have crashed during startup.";
+    // In this case the application lived long enough to avoid a relaunch (see bellow), but crashed before idb could connect to it.
+    return [[[FBXCTestError describe:msg] causedBy:pidLookupError] failFuture];
+  }]
+  onQueue:self.requestQueue fmap:^FBFuture *(NSNumber *runningPid) {
+    if (self.testHostApplication.processIdentifier != runningPid.intValue) {
+      NSString *msg = @"Error while establishing connection to test bundle: "
+                      @"Running test host application pid is different from the pid launched and set up to execute the tests. "
+                      @"The host application is likely to have crashed during startup and been relaunched by iOS.";
+      // Sometimes when an application crashes very early (e.g. during dylib loading) iOS retries launching the
+      // app with none of the settings idb added in the original launch configuration.
+      // idb can't work with this 'vanilla' app process, resulting in errors connecting to the bundle (there won't be a bundle to connect to).
+      return [[[FBXCTestError describe:msg] causedBy:error] failFuture];
+    }
+    // No obvious issue with the process, returning the original error
+    return [FBFuture futureWithError:error];
+  }];
+}
 
 - (FBFutureContext<FBTestBundleConnection *> *)connect
 {
   [self.logger log:@"Connecting Test Bundle"];
 
-  return [[[[self
+  return [[[[[self
     startTestmanagerdConnection]
     onQueue:self.requestQueue pend:^(DTXConnection *connection) {
       [connection registerDisconnectHandler:^{
@@ -171,6 +202,9 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
       return [[self.bundleReadyFuture
         timeout:BundleReadyTimeout waitingFor:@"Bundle Ready to be called"]
         mapReplace:self];
+    }]
+    onQueue:self.requestQueue handleError:^FBFuture * _Nonnull(NSError * _Nonnull error) {
+      return [self performDiagnosisOnBundleConnectionError:error];
     }]
     onQueue:self.requestQueue contextualTeardown:^(id _, FBFutureState __) {
       self.testBundleProxy = nil;
