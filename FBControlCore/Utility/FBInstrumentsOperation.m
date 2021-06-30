@@ -214,16 +214,4 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
     }];
 }
 
-#pragma mark FBiOSTargetOperation
-
-- (FBFuture<NSNull *> *)completed
-{
-  return [[[self.task.completed
-    mapReplace:NSNull.null]
-    shieldCancellation]
-    onQueue:self.queue respondToCancellation:^{
-      return [[self stop] mapReplace:NSNull.null];
-    }];
-}
-
 @end
