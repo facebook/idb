@@ -12,10 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationLaunchConfiguration;
-@class FBProcessInfo;
 @class FBSimulator;
-
-@protocol FBLaunchedApplication;
 
 /**
  An Operation for an Application.
@@ -40,16 +37,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) FBApplicationLaunchConfiguration *configuration;
 
-/**
- The stderr of the launched process.
- */
-@property (nonatomic, strong, readonly) id<FBProcessFileOutput> stdOut;
-
-/**
- The stdout of the launched process.
- */
-@property (nonatomic, strong, readonly) id<FBProcessFileOutput> stdErr;
-
 @end
 
 /**
@@ -62,12 +49,11 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param simulator the Simulator that launched the Application.
  @param configuration the configuration with which the application was launched.
- @param stdOut the stdout of the launched process.
- @param stdErr the stderr of the launched process.
+ @param attachment the files to attach.
  @param launchFuture a future that resolves when the Application has finished launching.
  @return a new Application Operation.
  */
-+ (FBFuture<FBSimulatorLaunchedApplication *> *)applicationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration stdOut:(id<FBProcessFileOutput>)stdOut stdErr:(id<FBProcessFileOutput>)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture;
++ (FBFuture<FBSimulatorLaunchedApplication *> *)applicationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration attachment:(FBProcessFileAttachment *)attachment launchFuture:(FBFuture<NSNumber *> *)launchFuture;
 
 @end
 

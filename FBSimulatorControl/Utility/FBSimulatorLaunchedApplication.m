@@ -13,6 +13,7 @@
 
 @interface FBSimulatorLaunchedApplication ()
 
+@property (nonatomic, strong, readonly) FBProcessFileAttachment *attachment;
 @property (nonatomic, weak, nullable, readonly) FBSimulator *simulator;
 
 @end
@@ -24,18 +25,18 @@
 
 #pragma mark Initializers
 
-+ (FBFuture<FBSimulatorLaunchedApplication *> *)applicationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration stdOut:(id<FBProcessFileOutput>)stdOut stdErr:(id<FBProcessFileOutput>)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture
++ (FBFuture<FBSimulatorLaunchedApplication *> *)applicationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration attachment:(FBProcessFileAttachment *)attachment launchFuture:(FBFuture<NSNumber *> *)launchFuture
 {
   return [launchFuture
     onQueue:simulator.workQueue map:^(NSNumber *processIdentifierNumber) {
       pid_t processIdentifier = processIdentifierNumber.intValue;
       FBFuture<NSNull *> *terminationFuture = [FBSimulatorLaunchedApplication terminationFutureForSimulator:simulator processIdentifier:processIdentifier];
-      FBSimulatorLaunchedApplication *operation = [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr processIdentifier:processIdentifier terminationFuture:terminationFuture];
+      FBSimulatorLaunchedApplication *operation = [[self alloc] initWithSimulator:simulator configuration:configuration attachment:attachment processIdentifier:processIdentifier terminationFuture:terminationFuture];
       return operation;
     }];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration stdOut:(id<FBProcessFileOutput>)stdOut stdErr:(id<FBProcessFileOutput>)stdErr processIdentifier:(pid_t)processIdentifier terminationFuture:(FBFuture<NSNull *> *)terminationFuture
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration attachment:(FBProcessFileAttachment *)attachment processIdentifier:(pid_t)processIdentifier terminationFuture:(FBFuture<NSNull *> *)terminationFuture
 {
   self = [super init];
   if (!self) {
@@ -44,14 +45,25 @@
 
   _simulator = simulator;
   _configuration = configuration;
-  _stdOut = stdOut;
-  _stdErr = stdErr;
+  _attachment = attachment;
   _processIdentifier = processIdentifier;
   _applicationTerminated = [terminationFuture
     onQueue:simulator.workQueue chain:^(FBFuture *future) {
-      return [[self performTeardown] chainReplace:future];
+      return [[attachment detach] chainReplace:future];
     }];
   return self;
+}
+
+#pragma mark Properties
+
+- (id<FBProcessFileOutput>)stdOut
+{
+  return self.attachment.stdOut;
+}
+
+- (id<FBProcessFileOutput>)stdErr
+{
+  return self.attachment.stdErr;
 }
 
 #pragma mark Helpers
@@ -74,18 +86,6 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:@"Application Operation %@ | pid %d | State %@", self.configuration.description, self.processIdentifier, self.applicationTerminated];
-}
-
-#pragma mark Private
-
-- (FBFuture<NSNull *> *)performTeardown
-{
-  return [[FBFuture
-    futureWithFutures:@[
-      [self.stdOut stopReading],
-      [self.stdErr stopReading],
-    ]]
-    mapReplace:NSNull.null];
 }
 
 @end

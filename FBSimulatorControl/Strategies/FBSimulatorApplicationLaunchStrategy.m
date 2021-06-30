@@ -73,7 +73,7 @@
     }]
     onQueue:simulator.workQueue fmap:^ FBFuture<FBSimulatorLaunchedApplication *> * (FBProcessFileAttachment *attachment) {
       FBFuture<NSNumber *> *launch = [self launchApplication:appLaunch stdOut:attachment.stdOut stdErr:attachment.stdErr];
-      return [FBSimulatorLaunchedApplication applicationWithSimulator:simulator configuration:appLaunch stdOut:attachment.stdOut stdErr:attachment.stdErr launchFuture:launch];
+      return [FBSimulatorLaunchedApplication applicationWithSimulator:simulator configuration:appLaunch attachment:attachment launchFuture:launch];
     }];
 }
 
