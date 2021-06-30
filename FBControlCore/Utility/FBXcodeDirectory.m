@@ -27,7 +27,7 @@
 {
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
 
-  return [[[FBTaskBuilder
+  return [[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
     runUntilCompletion]
     onQueue:queue fmap:^(FBTask *task) {
@@ -71,7 +71,8 @@
           failFuture];
       }
       return [FBFuture futureWithResult:directory];
-    }];
+    }]
+    timeout:10 waitingFor:@"xcode-select to complete"];
 }
 
 @end
