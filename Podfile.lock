@@ -358,10 +358,10 @@ PODS:
   - BoringSSL-GRPC/Implementation (0.0.18):
     - BoringSSL-GRPC/Interface (= 0.0.18)
   - BoringSSL-GRPC/Interface (0.0.18)
-  - "gRPC-C++ (1.38.0)":
-    - "gRPC-C++/Implementation (= 1.38.0)"
-    - "gRPC-C++/Interface (= 1.38.0)"
-  - "gRPC-C++/Implementation (1.38.0)":
+  - "gRPC-C++ (1.38.1)":
+    - "gRPC-C++/Implementation (= 1.38.1)"
+    - "gRPC-C++/Interface (= 1.38.1)"
+  - "gRPC-C++/Implementation (1.38.1)":
     - abseil/base/base (= 1.20210324.0)
     - abseil/container/flat_hash_map (= 1.20210324.0)
     - abseil/container/inlined_vector (= 1.20210324.0)
@@ -374,15 +374,15 @@ PODS:
     - abseil/synchronization/synchronization (= 1.20210324.0)
     - abseil/time/time (= 1.20210324.0)
     - abseil/types/optional (= 1.20210324.0)
-    - "gRPC-C++/Interface (= 1.38.0)"
-    - gRPC-Core (= 1.38.0)
-  - "gRPC-C++/Interface (1.38.0)"
-  - "gRPC-C++/Protobuf (1.38.0)":
-    - "gRPC-C++/Interface (= 1.38.0)"
-  - gRPC-Core (1.38.0):
-    - gRPC-Core/Implementation (= 1.38.0)
-    - gRPC-Core/Interface (= 1.38.0)
-  - gRPC-Core/Implementation (1.38.0):
+    - "gRPC-C++/Interface (= 1.38.1)"
+    - gRPC-Core (= 1.38.1)
+  - "gRPC-C++/Interface (1.38.1)"
+  - "gRPC-C++/Protobuf (1.38.1)":
+    - "gRPC-C++/Interface (= 1.38.1)"
+  - gRPC-Core (1.38.1):
+    - gRPC-Core/Implementation (= 1.38.1)
+    - gRPC-Core/Interface (= 1.38.1)
+  - gRPC-Core/Implementation (1.38.1):
     - abseil/base/base (= 1.20210324.0)
     - abseil/container/flat_hash_map (= 1.20210324.0)
     - abseil/container/inlined_vector (= 1.20210324.0)
@@ -396,14 +396,14 @@ PODS:
     - abseil/time/time (= 1.20210324.0)
     - abseil/types/optional (= 1.20210324.0)
     - BoringSSL-GRPC (= 0.0.18)
-    - gRPC-Core/Interface (= 1.38.0)
-  - gRPC-Core/Interface (1.38.0)
-  - "Protobuf-C++ (3.17.0)"
+    - gRPC-Core/Interface (= 1.38.1)
+  - gRPC-Core/Interface (1.38.1)
+  - "Protobuf-C++ (3.17.3)"
 
 DEPENDENCIES:
   - "gRPC-C++"
   - "gRPC-C++/Protobuf"
-  - "Protobuf-C++"
+  - "Protobuf-C++ (from `https://github.com/google/protobuf.git`, tag `v3.17.3`)"
 
 SPEC REPOS:
   trunk:
@@ -411,15 +411,24 @@ SPEC REPOS:
     - BoringSSL-GRPC
     - "gRPC-C++"
     - gRPC-Core
-    - "Protobuf-C++"
+
+EXTERNAL SOURCES:
+  "Protobuf-C++":
+    :git: https://github.com/google/protobuf.git
+    :tag: v3.17.3
+
+CHECKOUT OPTIONS:
+  "Protobuf-C++":
+    :git: https://github.com/google/protobuf.git
+    :tag: v3.17.3
 
 SPEC CHECKSUMS:
   abseil: c12cac4b0b499c3335ac47ac46adf303f0618d13
   BoringSSL-GRPC: 7e40b384c402232a29badbfd6093e7bda8e3ef87
-  "gRPC-C++": 4211b7f97c5b50ed03b2db940baf787be6b7145f
-  gRPC-Core: ec0ec984186034c926064eafff552b6935d0ee54
-  "Protobuf-C++": b3d88e0ec4d89f53da7d580edfe26f99693f8875
+  "gRPC-C++": 72567dc69da737240387ead8b0aa62c91127d22e
+  gRPC-Core: 901b231f16411ded693ab489cb3e49388b7c5e22
+  "Protobuf-C++": 09467b43c30aeea730319291bb12048b4ae28352
 
-PODFILE CHECKSUM: 6e850673026a9e80181421da5b2a61e3ee21334e
+PODFILE CHECKSUM: 9781d66d53387d429f53a652871715cd4c11474d
 
 COCOAPODS: 1.10.1
