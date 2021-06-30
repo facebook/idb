@@ -26,7 +26,6 @@
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdErr;
 @property (nonatomic, strong, nullable, readwrite) FBProcessInput *stdIn;
 @property (nonatomic, strong, nullable, readwrite) id<FBControlCoreLogger> logger;
-@property (nonatomic, copy, readwrite) NSString *programName;
 
 @end
 
@@ -48,8 +47,7 @@
   _stdOut = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   _stdErr = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   _stdIn = nil;
-  _logger = [FBControlCoreGlobalConfiguration.defaultLogger withName:[NSString stringWithFormat:@"FBTask_%@", launchPath.lastPathComponent]];
-  _programName = [launchPath lastPathComponent];
+  _logger = nil;
 
   return self;
 }

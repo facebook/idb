@@ -77,12 +77,13 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
     environment[@"DYLD_INSERT_LIBRARIES"] = configuration.shim.macOSTestShimPath;
   }
 
-  return [[[[[[[FBTaskBuilder
+  return [[[[[[[[FBTaskBuilder
     withLaunchPath:xctracePath]
     withArguments:arguments]
     withEnvironmentAdditions:environment]
     withStdOutToLogger:logger]
     withStdErrToLogger:logger]
+    withTaskLifecycleLoggingTo:logger]
     start]
     onQueue:target.asyncQueue map:^ FBXCTraceRecordOperation * (FBTask *task) {
       [logger logFormat:@"Started xctrace %@", task];
@@ -137,13 +138,14 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
   }
 
   [logger logFormat:@"Starting post processing | Launch path: %@ | Arguments: %@", arguments[0], [FBCollectionInformation oneLineDescriptionFromArray:launchArguments]];
-  return [[[[[[[[FBTaskBuilder
+  return [[[[[[[[[FBTaskBuilder
     withLaunchPath:arguments[0]]
     withArguments:launchArguments]
     withStdInConnected]
     withStdOutToLogger:logger]
     withStdErrToLogger:logger]
     withAcceptableExitCodes:[NSSet setWithObject:@0]]
+    withTaskLifecycleLoggingTo:logger]
     runUntilCompletion]
     onQueue:queue map:^(id _) {
       return outputTraceFile;

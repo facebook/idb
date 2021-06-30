@@ -122,11 +122,12 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   id<FBControlCoreLogger> instrumentsLogger = [FBControlCoreLogger loggerToConsumer:instrumentsConsumer];
   id<FBControlCoreLogger> compositeLogger = [FBControlCoreLogger compositeLoggerWithLoggers:@[logger, instrumentsLogger]];
 
-  return [[[[[[[FBTaskBuilder
+  return [[[[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/instruments"]
     withArguments:arguments]
     withStdOutToLogger:compositeLogger]
     withStdErrToLogger:compositeLogger]
+    withTaskLifecycleLoggingTo:logger]
     start]
     onQueue:target.asyncQueue fmap:^ FBFuture * (FBTask *task) {
       return [instrumentsConsumer.hasStartedLoadingTemplate
@@ -199,13 +200,14 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   }
 
   [logger logFormat:@"Starting post processing | Launch path: %@ | Arguments: %@", arguments[0], [FBCollectionInformation oneLineDescriptionFromArray:launchArguments]];
-  return [[[[[[[[FBTaskBuilder
+  return [[[[[[[[[FBTaskBuilder
     withLaunchPath:arguments[0]]
     withArguments:launchArguments]
     withStdInConnected]
     withStdOutToLogger:logger]
     withStdErrToLogger:logger]
     withAcceptableExitCodes:[NSSet setWithObject:@0]]
+    withTaskLifecycleLoggingTo:logger]
     runUntilCompletion]
     onQueue:queue map:^(id _) {
       return outputTraceFile;
