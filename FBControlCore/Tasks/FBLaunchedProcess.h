@@ -12,6 +12,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBProcessSpawnConfiguration;
+
 /**
  An in-memory representation of a launched application.
  This is distinct from FBLaunchedApplication, as exit information is not available.
@@ -61,6 +63,11 @@ NS_ASSUME_NONNULL_BEGIN
  If the process exited normally then this future will error.
  */
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *signal;
+
+/**
+ The IO Object attached to the process.
+ */
+@property (nonatomic, strong, readonly) FBProcessSpawnConfiguration *configuration;
 
 @end
 

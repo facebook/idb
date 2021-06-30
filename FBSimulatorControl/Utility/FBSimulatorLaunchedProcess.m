@@ -21,8 +21,9 @@
 
 @implementation FBSimulatorLaunchedProcess
 
-@synthesize statLoc = _statLoc;
+@synthesize configuration = _configuration;
 @synthesize processIdentifier = _processIdentifier;
+@synthesize statLoc = _statLoc;
 
 #pragma mark Initializers
 

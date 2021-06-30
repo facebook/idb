@@ -68,6 +68,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 @implementation FBTaskProcessPosixSpawn
 
+@synthesize configuration = _configuration;
 @synthesize exitCode = _exitCode;
 @synthesize processIdentifier = _processIdentifier;
 
@@ -305,6 +306,11 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 }
 
 #pragma mark Accessors
+
+- (FBProcessSpawnConfiguration *)configuration
+{
+  return self.process.configuration;
+}
 
 - (pid_t)processIdentifier
 {

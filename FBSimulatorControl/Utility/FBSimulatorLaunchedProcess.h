@@ -19,13 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorLaunchedProcess : NSObject <FBLaunchedProcess>
 
-#pragma mark Properties
-
-/**
- The Configuration Launched with.
- */
-@property (nonatomic, copy, readonly) FBProcessSpawnConfiguration *configuration;
-
 @end
 
 /**
