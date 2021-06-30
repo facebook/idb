@@ -13,3 +13,5 @@
  In case SHIMULATOR_START_XCTEST is not present, nothing will get triggered
  */
 BOOL FBXCTestMain(void);
+
+void FBXCTestMainEntryPoint();
