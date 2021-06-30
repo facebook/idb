@@ -3196,6 +3196,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = EEBD601F1C90628F00298A07 /* Build configuration list for PBXNativeTarget "FBControlCore" */;
 			buildPhases = (
+				71B9E0DA268C68A700D40A91 /* ShellScript */,
 				EEBD60091C90628F00298A07 /* Sources */,
 				EEBD600A1C90628F00298A07 /* Frameworks */,
 				EEBD600B1C90628F00298A07 /* Headers */,
@@ -3387,6 +3388,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		71B9E0DA268C68A700D40A91 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -exu\nfunction build_shim() {\n  local shim_to_build=$1 \n  local shim_destination=$2 \n  local build_log_mirror=$TEMP_DIR/$shim_to_build-build.log\n\n  xcodebuild -project Shims/Shimulator/Shimulator.xcodeproj -scheme $shim_to_build build | tee $build_log_mirror\n  \n  local build_out_file=$(grep \"SHIM_DYLIB_PATH\" $build_log_mirror | cut -d \"=\" -f2-)\n\n  echo cp $build_out_file $shim_destination/.\n    cp $build_out_file $shim_destination/.\n}\n\n# SRCROOT refers to FBSimulatorControl project\nbuild_shim Shimulator $SRCROOT/Shims/Binaries\nbuild_shim Maculator $SRCROOT/Shims/Binaries\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		1870857F0000000000000000 /* Sources */ = {

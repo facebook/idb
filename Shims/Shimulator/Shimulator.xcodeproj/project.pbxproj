@@ -180,6 +180,8 @@
 				AA017F3D1BD7776B00F45E9D /* Sources */,
 				AA017F3E1BD7776B00F45E9D /* Frameworks */,
 				AA017F3F1BD7776B00F45E9D /* Headers */,
+				71B9E0DD268C810D00D40A91 /* Verify Signature */,
+				71B9E0DB268C792900D40A91 /* Print Shim Path */,
 			);
 			buildRules = (
 			);
@@ -197,6 +199,8 @@
 				AA56EADE1EEF08720062C2BC /* Sources */,
 				AA56EADF1EEF08720062C2BC /* Frameworks */,
 				AA56EAE01EEF08720062C2BC /* Headers */,
+				71B9E0DE268C821C00D40A91 /* Verify Absence of Signature */,
+				71B9E0DC268C7A4600D40A91 /* Print Shim Path */,
 			);
 			buildRules = (
 			);
@@ -256,7 +260,79 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [[ \"${ARCHS}\" == *\"arm\"* ]];then\necho \"error: This will build an ARM binary, you (probably) don't want this (${ARCHS})\"\necho \"error: Tip: Perform a Run with Release configuration and use the resulting binary\"\nexit 1\nfi";
+			shellScript = "if [[ \"${ARCHS}\" == *\"arm\"* ]];then\necho \"error: This will build an ARM binary, you (probably) don't want this (${ARCHS})\"\necho \"error: Tip: Perform a Run with Release configuration and use the resulting binary\"\nexit 1\nfi\n";
+		};
+		71B9E0DB268C792900D40A91 /* Print Shim Path */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Print Shim Path";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "echo SHIM_DYLIB_PATH=$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\n";
+		};
+		71B9E0DC268C7A4600D40A91 /* Print Shim Path */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Print Shim Path";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "echo SHIM_DYLIB_PATH=$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\n";
+		};
+		71B9E0DD268C810D00D40A91 /* Verify Signature */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Verify Signature";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if codesign -dvvv $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME; then\n    echo Shimulator was signed\nelse\n    echo Shimulator was not signed, but it should have been\n    exit 1\nfi\n\n";
+		};
+		71B9E0DE268C821C00D40A91 /* Verify Absence of Signature */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Verify Absence of Signature";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if codesign -dvvv $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME; then\n    echo Maculator was signed, but it should not have been\n    exit 1\nelse\n    echo Maculator was not signed\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
