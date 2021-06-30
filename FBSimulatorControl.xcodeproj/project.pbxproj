@@ -24,6 +24,8 @@
 		2F8294D31FBC798C0011E722 /* FBLogicXCTestReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = 2F8294C81FBC571A0011E722 /* FBLogicXCTestReporter.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2FB811101FB5C97400A848FB /* FBDeviceLogCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = 2FB8110E1FB5C97400A848FB /* FBDeviceLogCommands.h */; };
 		2FB811111FB5C97400A848FB /* FBDeviceLogCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = 2FB8110F1FB5C97400A848FB /* FBDeviceLogCommands.m */; };
+		71B9E099268C5FB600D40A91 /* libShimulator.dylib in Resources */ = {isa = PBXBuildFile; fileRef = AA017F4C1BD7784700F45E9D /* libShimulator.dylib */; };
+		71B9E09A268C5FB600D40A91 /* libMaculator.dylib in Resources */ = {isa = PBXBuildFile; fileRef = AA56EAEE1EEFCA340062C2BC /* libMaculator.dylib */; };
 		71C4D3192638555E00DD186B /* FBOToolOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 71C4D3172638555D00DD186B /* FBOToolOperation.m */; };
 		71C4D31A2638555E00DD186B /* FBOToolOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 71C4D3182638555D00DD186B /* FBOToolOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7352B4DA1F44BE4100B6D0EA /* FBXcodeConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 7352B4D81F44BE4100B6D0EA /* FBXcodeConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -559,6 +561,20 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		71B9E0C0268C616200D40A91 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 71B9E0BB268C616200D40A91 /* Shimulator.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = AA017F411BD7776B00F45E9D;
+			remoteInfo = Shimulator;
+		};
+		71B9E0C2268C616200D40A91 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 71B9E0BB268C616200D40A91 /* Shimulator.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = AA56EAE21EEF08720062C2BC;
+			remoteInfo = Maculator;
+		};
 		AA819DB81B9FB40D002F58CA /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 96C84793390C419500000000 /* Project object */;
@@ -714,6 +730,7 @@
 		30DF57E5266E3C6F00EC9015 /* XCTTestIdentifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTTestIdentifier.h; sourceTree = "<group>"; };
 		30DF57E6266E3C6F00EC9015 /* XCTTestIdentifierSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTTestIdentifierSet.h; sourceTree = "<group>"; };
 		30DF57E7266E3C6F00EC9015 /* XCTTestIdentifierSetBuilder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTTestIdentifierSetBuilder.h; sourceTree = "<group>"; };
+		71B9E0BB268C616200D40A91 /* Shimulator.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Shimulator.xcodeproj; sourceTree = "<group>"; };
 		71C4D3172638555D00DD186B /* FBOToolOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBOToolOperation.m; sourceTree = "<group>"; };
 		71C4D3182638555D00DD186B /* FBOToolOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBOToolOperation.h; sourceTree = "<group>"; };
 		7352B4D81F44BE4100B6D0EA /* FBXcodeConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXcodeConfiguration.h; sourceTree = "<group>"; };
@@ -1497,9 +1514,27 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		71B9E0A5268C616200D40A91 /* Shimulator */ = {
+			isa = PBXGroup;
+			children = (
+				71B9E0BB268C616200D40A91 /* Shimulator.xcodeproj */,
+			);
+			path = Shimulator;
+			sourceTree = "<group>";
+		};
+		71B9E0BC268C616200D40A91 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				71B9E0C1268C616200D40A91 /* libShimulator.dylib */,
+				71B9E0C3268C616200D40A91 /* libMaculator.dylib */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		AA017F4A1BD7784700F45E9D /* Shims */ = {
 			isa = PBXGroup;
 			children = (
+				71B9E0A5268C616200D40A91 /* Shimulator */,
 				AA017F4B1BD7784700F45E9D /* Binaries */,
 			);
 			path = Shims;
@@ -3236,6 +3271,12 @@
 			);
 			mainGroup = B401C979EFB6AC4600000000 /* mainGroup */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 71B9E0BC268C616200D40A91 /* Products */;
+					ProjectRef = 71B9E0BB268C616200D40A91 /* Shimulator.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				EEBD600D1C90628F00298A07 /* FBControlCore */,
@@ -3249,6 +3290,23 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		71B9E0C1268C616200D40A91 /* libShimulator.dylib */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.dylib";
+			path = libShimulator.dylib;
+			remoteRef = 71B9E0C0268C616200D40A91 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		71B9E0C3268C616200D40A91 /* libMaculator.dylib */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.dylib";
+			path = libMaculator.dylib;
+			remoteRef = 71B9E0C2268C616200D40A91 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		AA017F571BD7786200F45E9D /* Resources */ = {
@@ -3309,6 +3367,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				71B9E099268C5FB600D40A91 /* libShimulator.dylib in Resources */,
+				71B9E09A268C5FB600D40A91 /* libMaculator.dylib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
