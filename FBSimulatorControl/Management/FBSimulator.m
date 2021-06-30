@@ -301,6 +301,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
       FBSimulatorLifecycleCommands.class,
       FBSimulatorScreenshotCommands.class,
       FBSimulatorVideoRecordingCommands.class,
+      FBSimulatorXCTestCommands.class,
     ]];
   });
   return statefulCommands;
