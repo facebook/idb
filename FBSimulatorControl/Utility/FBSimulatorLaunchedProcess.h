@@ -12,8 +12,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationLaunchConfiguration;
-@class FBProcessInfo;
-@class FBProcessOutput;
 
 /**
  An implementation of FBLaunchedProcess for processes within a Simulator.
@@ -28,16 +26,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) FBProcessSpawnConfiguration *configuration;
 
-/**
- The stdout File Handle.
- */
-@property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdOut;
-
-/**
- The stderr File Handle.
- */
-@property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdErr;
-
 @end
 
 /**
@@ -50,13 +38,12 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param simulator the Simulator the Agent is launched in.
  @param configuration the configuration the process was launched with.
- @param stdOut the Stdout output.
- @param stdErr the Stderr output.
+ @param attachment the IO attachment.
  @param launchFuture a future that will fire when the process has launched. The value is the process identifier.
  @param processStatusFuture a future that will fire when the process has terminated. The value is that of waitpid(2).
  @return a Future that resolves when the process is launched.
  */
-+ (FBFuture<FBSimulatorLaunchedProcess *> *)processWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture;
++ (FBFuture<FBSimulatorLaunchedProcess *> *)processWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment launchFuture:(FBFuture<NSNumber *> *)launchFuture processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture;
 
 @end
 

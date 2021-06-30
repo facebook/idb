@@ -73,8 +73,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
       return [FBSimulatorLaunchedProcess
         processWithSimulator:simulator
         configuration:agentLaunch
-        stdOut:agentLaunch.io.stdOut
-        stdErr:agentLaunch.io.stdErr
+        attachment:attachment
         launchFuture:launchFuture
         processStatusFuture:processStatusFuture];
     }];

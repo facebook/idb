@@ -14,6 +14,7 @@
 @interface FBSimulatorLaunchedProcess ()
 
 @property (nonatomic, weak, nullable, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, readonly) FBProcessIOAttachment *attachment;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
@@ -25,16 +26,16 @@
 
 #pragma mark Initializers
 
-+ (FBFuture<FBSimulatorLaunchedProcess *> *)processWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr launchFuture:(FBFuture<NSNumber *> *)launchFuture processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
++ (FBFuture<FBSimulatorLaunchedProcess *> *)processWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment launchFuture:(FBFuture<NSNumber *> *)launchFuture processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
 {
   return [launchFuture
     onQueue:simulator.workQueue map:^(NSNumber *processIdentifierNumber) {
       pid_t processIdentifier = processIdentifierNumber.intValue;
-      return [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr processIdentifier:processIdentifier processStatusFuture:processStatusFuture];
+      return [[self alloc] initWithSimulator:simulator configuration:configuration attachment:attachment processIdentifier:processIdentifier processStatusFuture:processStatusFuture];
     }];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr processIdentifier:(pid_t)processIdentifier processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment processIdentifier:(pid_t)processIdentifier processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
 {
   self = [super init];
   if (!self) {
@@ -43,8 +44,7 @@
 
   _simulator = simulator;
   _configuration = configuration;
-  _stdOut = stdOut;
-  _stdErr = stdErr;
+  _attachment = attachment;
   _processIdentifier = processIdentifier;
   _queue = simulator.asyncQueue;
   _statLoc = [[processStatusFuture
@@ -97,13 +97,12 @@
 
 - (FBFuture<NSNull *> *)processDidTerminate:(int)stat_loc
 {
-  FBFuture<NSNull *> *teardown = [self performTeardown];
-  return teardown;
+  return [self.attachment detach];
 }
 
 - (FBFuture<NSNull *> *)processWasCancelled
 {
-  FBFuture<NSNull *> *teardown = [self performTeardown];
+  FBFuture<NSNull *> *teardown = [self.attachment detach];
 
   // When cancelled, the process is may still be alive. Therefore, the process needs to be terminated to fulfill the cancellation contract.
   [[FBProcessTerminationStrategy
@@ -111,17 +110,6 @@
     killProcessIdentifier:self.processIdentifier];
 
   return teardown;
-}
-
-- (FBFuture<NSNull *> *)performTeardown
-{
-  // Tear down the other resources.
-  return [[FBFuture
-    futureWithFutures:@[
-      [self.stdOut detach] ?: FBFuture.empty,
-      [self.stdErr detach] ?: FBFuture.empty,
-    ]]
-    mapReplace:NSNull.null];
 }
 
 #pragma mark FBiOSTargetOperation
