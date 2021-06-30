@@ -14,16 +14,7 @@
 
 @implementation FBXcodeDirectory
 
-#pragma mark Initializers
-
-+ (FBXcodeDirectory *)xcodeSelectFromCommandLine
-{
-  return [self new];
-}
-
-#pragma mark Public Methods
-
-- (FBFuture<NSString *> *)xcodePath
++ (FBFuture<NSString *> *)xcodeSelectDeveloperDirectory
 {
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
 

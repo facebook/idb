@@ -567,7 +567,7 @@ int main(int argc, const char *argv[]) {
 
     // Check that xcode-select returns a valid path, throw a big
     // warning if not
-    [FBXcodeDirectory.xcodeSelectFromCommandLine.xcodePath await:&error];
+    [FBXcodeDirectory.xcodeSelectDeveloperDirectory await:&error];
     if (error) {
       [logger.error log:error.localizedDescription];
       error = nil;

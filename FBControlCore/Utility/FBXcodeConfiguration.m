@@ -156,7 +156,7 @@
 
 + (NSString *)findXcodeDeveloperDirectoryFromXcodeSelect:(NSError **)error
 {
-  return [FBXcodeDirectory.xcodeSelectFromCommandLine.xcodePath await:error];
+  return [FBXcodeDirectory.xcodeSelectDeveloperDirectory await:error];
 }
 
 + (nullable id)readValueForKey:(NSString *)key fromPlistAtPath:(NSString *)plistPath

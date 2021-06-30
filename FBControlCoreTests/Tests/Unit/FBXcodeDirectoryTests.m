@@ -18,7 +18,7 @@
 - (void)testDirectoryExists
 {
   NSError *error = nil;
-  NSString *directory = [FBXcodeDirectory.xcodeSelectFromCommandLine.xcodePath await:&error];
+  NSString *directory = [FBXcodeDirectory.xcodeSelectDeveloperDirectory await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(directory);
 
