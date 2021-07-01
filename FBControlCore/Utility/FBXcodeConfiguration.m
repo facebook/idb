@@ -18,23 +18,12 @@
 
 + (NSString *)developerDirectory
 {
-  static dispatch_once_t onceToken;
-  static NSString *directory;
-  dispatch_once(&onceToken, ^{
-      directory = [self findXcodeDeveloperDirectoryOrAssert];
-  });
-  return directory;
+  return [self findXcodeDeveloperDirectoryOrAssert];
 }
 
 + (NSString *)getDeveloperDirectoryIfExists
 {
-  static dispatch_once_t onceToken;
-  static NSString *directory;
-  dispatch_once(&onceToken, ^{
-    NSError *error = nil;
-    directory = [self findXcodeDeveloperDirectoryFromXcodeSelect:&error];
-  });
-  return directory;
+  return [self findXcodeDeveloperDirectoryFromXcodeSelect:nil];
 }
 
 + (NSString *)contentsDirectory
@@ -156,7 +145,18 @@
 
 + (NSString *)findXcodeDeveloperDirectoryFromXcodeSelect:(NSError **)error
 {
-  return [FBXcodeDirectory.xcodeSelectDeveloperDirectory await:error];
+  static dispatch_once_t onceToken;
+  static NSString *directory;
+  static NSError *savedError;
+  dispatch_once(&onceToken, ^{
+    NSError *innerError = nil;
+    directory = [FBXcodeDirectory.xcodeSelectDeveloperDirectory await:&innerError];
+    savedError = innerError;
+  });
+  if (error) {
+    *error = savedError;
+  }
+  return directory;
 }
 
 + (nullable id)readValueForKey:(NSString *)key fromPlistAtPath:(NSString *)plistPath
