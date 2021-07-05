@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 47;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -3196,7 +3196,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = EEBD601F1C90628F00298A07 /* Build configuration list for PBXNativeTarget "FBControlCore" */;
 			buildPhases = (
-				71B9E0DA268C68A700D40A91 /* ShellScript */,
+				71B9E0DA268C68A700D40A91 /* Build Shimulators */,
 				EEBD60091C90628F00298A07 /* Sources */,
 				EEBD600A1C90628F00298A07 /* Frameworks */,
 				EEBD600B1C90628F00298A07 /* Headers */,
@@ -3390,8 +3390,9 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		71B9E0DA268C68A700D40A91 /* ShellScript */ = {
+		71B9E0DA268C68A700D40A91 /* Build Shimulators */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -3399,13 +3400,15 @@
 			);
 			inputPaths = (
 			);
+			name = "Build Shimulators";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -exu\nfunction build_shim() {\n  local shim_to_build=$1 \n  local shim_destination=$2 \n  local build_log_mirror=$TEMP_DIR/$shim_to_build-build.log\n\n  xcodebuild -project Shims/Shimulator/Shimulator.xcodeproj -scheme $shim_to_build build | tee $build_log_mirror\n  \n  local build_out_file=$(grep \"SHIM_DYLIB_PATH\" $build_log_mirror | cut -d \"=\" -f2-)\n\n  echo cp $build_out_file $shim_destination/.\n    cp $build_out_file $shim_destination/.\n}\n\n# SRCROOT refers to FBSimulatorControl project\nbuild_shim Shimulator $SRCROOT/Shims/Binaries\nbuild_shim Maculator $SRCROOT/Shims/Binaries\n";
+			shellScript = "set -exu\nfunction build_shim() {\n  local shim_to_build=$1 \n  local shim_destination=$2 \n  local build_log_mirror=$TEMP_DIR/$shim_to_build-build.log\n\n  xcodebuild -project Shims/Shimulator/Shimulator.xcodeproj -scheme $shim_to_build build | tee $build_log_mirror\n  \n  local build_out_file=$(grep \"SHIM_DYLIB_PATH\" $build_log_mirror | cut -d \"=\" -f2-)\n\n  echo cp $build_out_file $shim_destination/.\n    cp $build_out_file $shim_destination/.\n}\n\n# SRCROOT refers to FBSimulatorControl project\nbuild_shim Shimulator $SRCROOT/Shims/Binaries\nif codesign -dvvv $SRCROOT/Shims/Binaries/libShimulator.dylib; then\n    echo Shimulator was signed\nelse\n    echo Shimulator was not signed, but it should have been\n    exit 1\nfi\n\nbuild_shim Maculator $SRCROOT/Shims/Binaries\nif codesign -dvvv $SRCROOT/Shims/Binaries/libMaculator.dylib; then\n    echo Maculator was signed, but it should not have been\n    exit 1\nelse\n    echo Maculator was not signed\nfi\n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -3938,7 +3941,11 @@
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
 				INFOPLIST_FILE = "XCTestBootstrapTests/XCTestBootstrapTests-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -3953,7 +3960,11 @@
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
 				INFOPLIST_FILE = "XCTestBootstrapTests/XCTestBootstrapTests-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -3968,7 +3979,11 @@
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
 				INFOPLIST_FILE = "XCTestBootstrapTests/XCTestBootstrapTests-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
