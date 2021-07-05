@@ -10,7 +10,7 @@
 
 static NSString *const ShimulatorCrashAfter = @"SHIMULATOR_CRASH_AFTER";
 
-void FBPerformCrashAfter(void)
+static void PerformCrashAfter(void)
 {
   if (!NSProcessInfo.processInfo.environment[ShimulatorCrashAfter]) {
     return;
@@ -20,9 +20,18 @@ void FBPerformCrashAfter(void)
   [NSFileManager.defaultManager performSelector:@selector(stringWithFormat:) withObject:@"NOPE" afterDelay:timeInterval];
 }
 
-void FBPrintProcessInfo(void)
+static void PrintProcessInfo(void)
 {
   NSProcessInfo *processInfo = NSProcessInfo.processInfo;
   NSLog(@"Arguments [%@]", [processInfo.arguments componentsJoinedByString:@" "]);
 }
 
+__attribute__((constructor)) static void EntryPoint()
+{
+  NSLog(@"Start of Shimulator");
+
+  PrintProcessInfo();
+  PerformCrashAfter();
+
+  NSLog(@"End of Shimulator");
+}

@@ -25,7 +25,7 @@
 
 static NSString *const ShimulatorStartXCTest = @"SHIMULATOR_START_XCTEST";
 
-void FBXCTestMainEntryPoint()
+__attribute__((constructor)) static void XCTestMainEntryPoint()
 {
   FBDebugLog(@"[XCTestMainEntryPoint] Running inside: %@", [[NSBundle mainBundle] bundleIdentifier]);
   if (!NSProcessInfo.processInfo.environment[ShimulatorStartXCTest]) {

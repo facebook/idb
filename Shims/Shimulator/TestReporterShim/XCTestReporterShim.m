@@ -496,7 +496,7 @@ static BOOL XCTestCase__enableSymbolication(id self, SEL sel)
  *  The not obvious and weird part is that we need to print "\n" before closing.
  *  For some reason `select()`, `poll()` and `dispatch_io_read()` will be stuck
  *  if a test calls `exit()` or `abort()`. The found workaround was to print
- *  anything to a pipe before closing it. Simply closing a pipe doesn't send EOF
+ *  anithing to a pipe before closing it. Simply closing a pipe doesn't send EOF
  *  to the pipe reader. Printing "\n" should be safe because reader is skipping
  *  empty lines.
  */
@@ -774,8 +774,10 @@ static void SwizzleXcodebuildMethods()
   });
 }
 
-void FBXCTestReporterShimEntryPoint()
+__attribute__((constructor)) static void EntryPoint()
 {
+  // Unset so we don't cascade into any other process that might be spawned.
+  unsetenv("DYLD_INSERT_LIBRARIES");
 
   NSString *bundlePath = NSProcessInfo.processInfo.environment[@"TEST_SHIM_BUNDLE_PATH"];
   if (bundlePath) {
@@ -819,7 +821,7 @@ void FBXCTestReporterShimEntryPoint()
   }
 }
 
-void FBXCTestReporterShimExitPoint()
+__attribute__((destructor)) static void ExitPoint()
 {
   PrintNewlineAndCloseFDs();
 }
