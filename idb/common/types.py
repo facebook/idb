@@ -305,6 +305,7 @@ class HIDSwipe:
     start: Point
     end: Point
     delta: Optional[float]
+    duration: Optional[float]
 
 
 @dataclass(frozen=True)

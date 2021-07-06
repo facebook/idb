@@ -101,6 +101,7 @@ def swipe_to_grpc(swipe: HIDSwipe) -> GrpcHIDSwipe:
         start=point_to_grpc(swipe.start),
         end=point_to_grpc(swipe.end),
         delta=swipe.delta,
+        duration=swipe.duration,
     )
 
 
